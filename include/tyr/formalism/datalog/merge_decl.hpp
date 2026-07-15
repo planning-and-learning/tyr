@@ -19,7 +19,7 @@
 #define TYR_FORMALISM_DATALOG_MERGE_DECL_HPP_
 
 #include "tyr/formalism/datalog/builder.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 
 namespace tyr::formalism::datalog
 {

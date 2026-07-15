@@ -19,7 +19,7 @@
 #define TYR_FORMALISM_PLANNING_MERGE_DECL_HPP_
 
 #include "tyr/formalism/planning/builder.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 
 namespace tyr::formalism::planning
 {

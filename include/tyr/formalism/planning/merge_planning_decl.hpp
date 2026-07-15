@@ -18,10 +18,9 @@
 #ifndef TYR_FORMALISM_PLANNING_MERGE_PLANNING_DECL_HPP_
 #define TYR_FORMALISM_PLANNING_MERGE_PLANNING_DECL_HPP_
 
-#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/repository.hpp"
 
 namespace tyr::formalism::planning
 {

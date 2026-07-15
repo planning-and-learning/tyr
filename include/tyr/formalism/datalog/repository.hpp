@@ -44,21 +44,6 @@
 
 namespace tyr::formalism::datalog
 {
-using SymbolRepository = ygg::ApplyTypeListT<::ygg::formalism::SymbolRepository, SymbolRepositoryTypes>;
-
-template<typename... Ts>
-using TaggedRelationRepository = ::ygg::formalism::RelationRepository<ObjectTag, Ts...>;
-
-using RelationRepository = ygg::ApplyTypeListT<TaggedRelationRepository, RelationRepositoryTypes>;
-
-using Repository = ::ygg::formalism::Repository<SymbolRepository, RelationRepository>;
-
-using RepositoryPtr = std::shared_ptr<Repository>;
-
-using RepositoryFactory = ::ygg::formalism::RepositoryFactory<SymbolRepository, RelationRepository>;
-
-using RepositoryFactoryPtr = std::shared_ptr<RepositoryFactory>;
-
 template<typename T>
 using ArithmeticOperatorView = ygg::View<ygg::Data<ArithmeticOperator<T>>, Repository>;
 using LiftedArithmeticOperatorView = ygg::View<ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>, Repository>;

@@ -20,14 +20,7 @@
 
 #include "tyr/declarations.hpp"
 
-#include <concepts>
 #include <memory>
-#include <yggdrasil/containers/optional.hpp>
-#include <yggdrasil/containers/variant.hpp>
-#include <yggdrasil/containers/vector.hpp>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
-#include <yggdrasil/execution/onetbb.hpp>
 
 namespace tyr
 {

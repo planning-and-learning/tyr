@@ -21,7 +21,6 @@
 #include "tyr/analysis/listeners.hpp"              // for ListenerStratum
 #include "tyr/analysis/stratification.hpp"         // for RuleStratum, Rule...
 #include "tyr/formalism/datalog/declarations.hpp"  // for FluentTag (ptr only)
-#include "tyr/formalism/datalog/repository.hpp"    // for Repository
 #include "tyr/formalism/datalog/rule_index.hpp"    // for ygg::Index
 
 #include <boost/dynamic_bitset/dynamic_bitset.hpp>  // for dynamic_bitset

@@ -19,7 +19,6 @@
 #define TYR_PLANNING_GROUND_MATCH_TREE_MATCH_TREE_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_data.hpp"

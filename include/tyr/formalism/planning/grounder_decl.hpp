@@ -19,9 +19,11 @@
 #define TYR_FORMALISM_PLANNING_GROUNDER_DECL_HPP_
 
 #include "tyr/formalism/planning/builder.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 
 #include <yggdrasil/containers/associative_containers.hpp>
+#include <yggdrasil/semantics/equal_to.hpp>
+#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::planning
 {

@@ -43,20 +43,6 @@
 
 namespace tyr::formalism::planning
 {
-
-using SymbolRepository = ygg::ApplyTypeListT<::ygg::formalism::SymbolRepository, SymbolRepositoryTypes>;
-
-template<typename... Ts>
-using TaggedRelationRepository = ::ygg::formalism::RelationRepository<ObjectTag, Ts...>;
-
-using RelationRepository = ygg::ApplyTypeListT<TaggedRelationRepository, RelationRepositoryTypes>;
-
-using Repository = ::ygg::formalism::Repository<SymbolRepository, RelationRepository>;
-using RepositoryPtr = std::shared_ptr<Repository>;
-
-using RepositoryFactory = ::ygg::formalism::RepositoryFactory<SymbolRepository, RelationRepository>;
-using RepositoryFactoryPtr = std::shared_ptr<RepositoryFactory>;
-
 using ActionView = ygg::View<ygg::Index<Action>, Repository>;
 using ActionListView = ygg::View<ygg::IndexList<Action>, Repository>;
 using ActionViewList = std::vector<ActionView>;

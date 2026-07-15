@@ -23,7 +23,6 @@
 #include "tyr/datalog/policies/annotation_concept.hpp"
 #include "tyr/datalog/policies/cost_concept.hpp"
 #include "tyr/datalog/policies/termination_concept.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 
 namespace tyr::datalog
 {

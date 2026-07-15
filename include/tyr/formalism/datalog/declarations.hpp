@@ -24,6 +24,8 @@
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/core/types.hpp>
 
+#include <memory>
+
 namespace tyr::formalism::datalog
 {
 
@@ -240,6 +242,19 @@ using SymbolRepositoryTypes = ygg::ConcatTypeListsT<CoreTypes,
 
 using RelationRepositoryTypes = ygg::ConcatTypeListsT<PredicateTypes, FunctionTypes, ygg::TypeList<Rule>>;
 using BuilderTypes = ygg::ConcatTypeListsT<SymbolRepositoryTypes, ygg::MapTypeListT<RelationBinding, RelationRepositoryTypes>>;
+
+using SymbolRepository = ygg::ApplyTypeListT<::ygg::formalism::SymbolRepository, SymbolRepositoryTypes>;
+
+template<typename... Ts>
+using TaggedRelationRepository = ::ygg::formalism::RelationRepository<ObjectTag, Ts...>;
+
+using RelationRepository = ygg::ApplyTypeListT<TaggedRelationRepository, RelationRepositoryTypes>;
+
+using Repository = ::ygg::formalism::Repository<SymbolRepository, RelationRepository>;
+using RepositoryPtr = std::shared_ptr<Repository>;
+
+using RepositoryFactory = ::ygg::formalism::RepositoryFactory<SymbolRepository, RelationRepository>;
+using RepositoryFactoryPtr = std::shared_ptr<RepositoryFactory>;
 
 /**
  * Context

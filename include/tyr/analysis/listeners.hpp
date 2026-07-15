@@ -24,7 +24,6 @@
 #include <yggdrasil/semantics/hash.hpp>          // for Hash
 #include <yggdrasil/core/types.hpp>
 #include "tyr/formalism/datalog/declarations.hpp"  // for FluentTag, Predicate, Rule
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/function_index.hpp"
 #include "tyr/formalism/predicate_index.hpp"  // for ygg::Index
 

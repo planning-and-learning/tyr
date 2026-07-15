@@ -29,6 +29,21 @@
 
 #include <tuple>
 
+namespace ygg::formalism
+{
+template<typename... Ts>
+class SymbolRepository;
+
+template<typename ObjectTag, typename... Ts>
+class RelationRepository;
+
+template<typename SymbolRepo, typename RelationRepo>
+class Repository;
+
+template<typename SymbolRepo, typename RelationRepo>
+class RepositoryFactory;
+}
+
 namespace tyr
 {
 }
