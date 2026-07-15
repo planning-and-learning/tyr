@@ -28,7 +28,7 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 
-#include <loki/loki.hpp>
+#include <loki/formalism/declarations.hpp>
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>

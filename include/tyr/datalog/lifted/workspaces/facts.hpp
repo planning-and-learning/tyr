@@ -21,7 +21,7 @@
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/lifted/assignment_sets.hpp"
 #include "tyr/datalog/workspaces/facts.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
 namespace tyr::datalog

@@ -19,7 +19,7 @@
 #define TYR_FORMALISM_PLANNING_INVARIANTS_MUTEXES_HPP_
 
 #include "tyr/formalism/planning/invariants/invariant.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 
 #include <vector>
 

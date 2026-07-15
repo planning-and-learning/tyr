@@ -19,7 +19,6 @@
 #define TYR_ANALYSIS_STRATIFICATION_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"  // for Program (ptr only), Rule
-#include "tyr/formalism/datalog/repository.hpp"
 
 #include <vector>                    // for vector
 #include <yggdrasil/core/types.hpp>  // for ygg::IndexList

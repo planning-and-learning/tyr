@@ -19,9 +19,9 @@
 #define TYR_ANALYSIS_DOMAINS_HPP_
 
 #include "tyr/analysis/declarations.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/object_index.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 
 #include <utility>
 #include <vector>

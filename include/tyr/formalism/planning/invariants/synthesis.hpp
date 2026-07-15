@@ -19,7 +19,7 @@
 #define TYR_FORMALISM_PLANNING_INVARIANTS_SYNTHESIS_HPP_
 
 #include "tyr/formalism/planning/invariants/invariant.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 
 namespace tyr::formalism::planning::invariant
 {

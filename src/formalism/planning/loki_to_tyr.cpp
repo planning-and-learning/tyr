@@ -19,6 +19,9 @@
 
 #include "tyr/planning/lifted/task.hpp"
 
+#include <loki/formalism/repository.hpp>
+#include <loki/formalism/views.hpp>
+
 #include <algorithm>
 #include <functional>
 #include <unordered_set>

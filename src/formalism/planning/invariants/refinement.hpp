@@ -21,7 +21,7 @@
 #include "proof.hpp"
 #include "tyr/formalism/planning/invariants/invariant.hpp"
 #include "tyr/formalism/planning/mutable/action.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 
 namespace tyr::formalism::planning::invariant
 {

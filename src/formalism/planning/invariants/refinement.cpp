@@ -17,6 +17,8 @@
 
 #include "refinement.hpp"
 
+#include "tyr/formalism/planning/repository.hpp"
+
 #include "matching.hpp"
 #include "normalization.hpp"
 #include "proof.hpp"

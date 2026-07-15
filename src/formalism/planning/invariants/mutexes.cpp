@@ -17,6 +17,8 @@
 
 #include "tyr/formalism/planning/invariants/mutexes.hpp"
 
+#include "tyr/formalism/planning/repository.hpp"
+
 #include "matching.hpp"
 
 #include <algorithm>

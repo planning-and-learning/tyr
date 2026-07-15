@@ -296,7 +296,7 @@ if(TYR_BUILD_TESTS OR TYR_BUILD_PROFILING)
         OUTPUT_VARIABLE TYR_BENCHMARKS_DIR
         RESULT_VARIABLE TYR_BENCHMARKS_RESULT)
     if(NOT TYR_BENCHMARKS_RESULT EQUAL 0)
-        message(FATAL_ERROR "Could not resolve the benchmark data root; install 'pypddl-datasets>=0.0.5,<0.1' into the configuring Python (${Python_EXECUTABLE}).")
+        message(FATAL_ERROR "Could not resolve the benchmark data root; install 'pypddl-datasets>=0.0.7,<0.1' into the configuring Python (${Python_EXECUTABLE}).")
     endif()
     message(STATUS "Benchmark data: ${TYR_BENCHMARKS_DIR}")
     add_compile_definitions(BENCHMARKS_DIR="${TYR_BENCHMARKS_DIR}")

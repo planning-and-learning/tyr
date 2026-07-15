@@ -22,7 +22,6 @@
 #include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/containers/vector.hpp>
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/variable_dependency_graph_details.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 

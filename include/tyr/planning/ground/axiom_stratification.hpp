@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_GROUND_AXIOM_STRATIFICATION_HPP_
 #define TYR_PLANNING_GROUND_AXIOM_STRATIFICATION_HPP_
 
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 
 #include <vector>
 #include <yggdrasil/core/types.hpp>

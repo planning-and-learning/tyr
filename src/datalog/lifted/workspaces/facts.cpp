@@ -17,6 +17,8 @@
 
 #include "tyr/datalog/lifted/workspaces/facts.hpp"
 
+#include "tyr/formalism/datalog/repository.hpp"
+
 namespace a = tyr::analysis;
 namespace f = tyr::formalism;
 namespace fd = tyr::formalism::datalog;

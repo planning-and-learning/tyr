@@ -20,7 +20,7 @@
 
 #include "tyr/formalism/planning/invariants/invariant.hpp"
 #include "tyr/formalism/planning/mutable/atom.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/unification/match.hpp"
 #include "tyr/formalism/unification/substitution.hpp"
 
