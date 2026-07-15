@@ -43,7 +43,6 @@
 #include <utility>
 #include <variant>
 #include <vector>
-#include <yggdrasil/buffer/declarations.hpp>
 #include <yggdrasil/core/types.hpp>
 
 namespace tyr::planning::match_tree
@@ -94,13 +93,6 @@ static std::optional<StackEntry<Tag>> try_create_stack_entry(BaseEntry<Tag> base
                                                              const std::vector<std::pair<PreconditionVariant, ygg::IndexList<Tag>>>& sorted_preconditions,
                                                              const PreconditionDetails<Tag>& details,
                                                              const ::tyr::formalism::planning::Repository& context);
-
-template<typename Tag>
-struct GetResultContext
-{
-    Repository<Tag>& destination;
-    ygg::buffer::Buffer& buffer;
-};
 
 template<typename Tag>
 struct AtomStackEntry
@@ -233,6 +225,13 @@ struct GeneratorStackEntry
     }
 };
 
+template<typename Entry, typename Tag>
+auto store_result(Entry& entry, Repository<Tag>& repository)
+{
+    canonicalize(entry.result);
+    return repository.get_or_create(entry.result).first;
+}
+
 template<typename Tag>
 bool explored(const AtomStackEntry<Tag>& el) noexcept
 {
@@ -253,13 +252,6 @@ std::optional<StackEntry<Tag>> next_entry(const AtomStackEntry<Tag>& el,
         return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.dontcare_elements }, sorted_preconditions, details, context);
     else
         throw std::logic_error("Unexpected case.");
-}
-
-template<typename Tag>
-ygg::Data<Node<Tag>> get_result(AtomStackEntry<Tag>& el, GetResultContext<Tag>& context)
-{
-    canonicalize(el.result);
-    return ygg::Data<Node<Tag>>(context.destination.get_or_create(el.result).first);
 }
 
 template<typename Tag>
@@ -299,13 +291,6 @@ std::optional<StackEntry<Tag>> next_entry(const VariableStackEntry<Tag>& el,
 }
 
 template<typename Tag>
-ygg::Data<Node<Tag>> get_result(VariableStackEntry<Tag>& el, GetResultContext<Tag>& context)
-{
-    canonicalize(el.result);
-    return ygg::Data<Node<Tag>>(context.destination.get_or_create(el.result).first);
-}
-
-template<typename Tag>
 void push_result(VariableStackEntry<Tag>& el, ygg::Data<Node<Tag>> node)
 {
     if (!el.explored_children())
@@ -340,13 +325,6 @@ std::optional<StackEntry<Tag>> next_entry(const NegativeFactStackEntry<Tag>& el,
 }
 
 template<typename Tag>
-ygg::Data<Node<Tag>> get_result(NegativeFactStackEntry<Tag>& el, GetResultContext<Tag>& context)
-{
-    canonicalize(el.result);
-    return ygg::Data<Node<Tag>>(context.destination.get_or_create(el.result).first);
-}
-
-template<typename Tag>
 void push_result(NegativeFactStackEntry<Tag>& el, ygg::Data<Node<Tag>> node)
 {
     if (!el.explored_true_child())
@@ -378,13 +356,6 @@ std::optional<StackEntry<Tag>> next_entry(const ConstraintStackEntry<Tag>& el,
 }
 
 template<typename Tag>
-ygg::Data<Node<Tag>> get_result(ConstraintStackEntry<Tag>& el, GetResultContext<Tag>& context)
-{
-    canonicalize(el.result);
-    return ygg::Data<Node<Tag>>(context.destination.get_or_create(el.result).first);
-}
-
-template<typename Tag>
 void push_result(ConstraintStackEntry<Tag>& el, ygg::Data<Node<Tag>> node)
 {
     if (!el.result.true_child && !el.true_elements.empty())
@@ -408,13 +379,6 @@ std::optional<StackEntry<Tag>> next_entry(const GeneratorStackEntry<Tag>& el,
                                           const ::tyr::formalism::planning::Repository& context)
 {
     return std::nullopt;
-}
-
-template<typename Tag>
-ygg::Data<Node<Tag>> get_result(GeneratorStackEntry<Tag>& el, GetResultContext<Tag>& context)
-{
-    canonicalize(el.result);
-    return ygg::Data<Node<Tag>>(context.destination.get_or_create(el.result).first);
 }
 
 template<typename Tag>
@@ -723,9 +687,6 @@ MatchTree<Tag>::MatchTree(ygg::IndexList<Tag> elements_, const ::tyr::formalism:
 
     stack.emplace_back(std::move(initial_entry.value()));
 
-    auto buffer = ygg::buffer::Buffer {};
-    auto result_context = GetResultContext { *m_context, buffer };
-
     // iterative post-order dfs
     while (!stack.empty())
     {
@@ -744,8 +705,8 @@ MatchTree<Tag>::MatchTree(ygg::IndexList<Tag> elements_, const ::tyr::formalism:
                 }
                 else
                 {
-                    // std::cout << "get_result" << std::endl;
-                    produced = get_result(frame, result_context);
+                    const auto view = store_result(frame, *m_context);
+                    produced = ygg::Data<Node<Tag>>(view.get_handle());
                 }
             },
             entry);

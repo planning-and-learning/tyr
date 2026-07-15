@@ -43,13 +43,10 @@
 
 #include <cassert>
 #include <optional>
-#include <tuple>
 #include <utility>
-#include <yggdrasil/buffer/declarations.hpp>
-#include <yggdrasil/buffer/indexed_hash_set.hpp>
-#include <yggdrasil/buffer/segmented_buffer.hpp>
-#include <yggdrasil/containers/tuple.hpp>
+#include <yggdrasil/core/type_list.hpp>
 #include <yggdrasil/core/types.hpp>
+#include <yggdrasil/formalism/symbol_repository.hpp>
 
 namespace tyr::planning::match_tree
 {
@@ -58,37 +55,16 @@ template<typename Tag>
 class Repository
 {
 private:
-    template<typename T>
-    struct Entry
-    {
-        using value_type = T;
-        using container_type = ygg::buffer::IndexedHashSet<T>;
-
-        container_type container;
-
-        Entry(ygg::buffer::Buffer& buffer, ygg::buffer::SegmentedBuffer& arena) : container(buffer, arena) {}
-    };
-
-    using RepositoryStorage = ygg::TypeListToTupleT<ygg::MapTypeListT<Entry, RepositoryTypes<Tag>>>;
+    using SymbolRepository = ygg::ApplyTypeListT<::ygg::formalism::SymbolRepository, RepositoryTypes<Tag>>;
 
     const ::tyr::formalism::planning::Repository& m_formalism_repository;
-    ygg::buffer::SegmentedBuffer m_arena;
-    ygg::buffer::Buffer m_buffer;
-    RepositoryStorage m_repository;
+    SymbolRepository m_repository;
     ygg::uint_t m_index;
-
-    template<typename... Ts>
-    static RepositoryStorage make_repository_storage(ygg::TypeList<Ts...>, ygg::buffer::Buffer& buffer, ygg::buffer::SegmentedBuffer& arena)
-    {
-        return RepositoryStorage(Entry<Ts>(buffer, arena)...);
-    }
 
 public:
     explicit Repository(ygg::uint_t index, const ::tyr::formalism::planning::Repository& formalism_repository) :
         m_formalism_repository(formalism_repository),
-        m_arena(),
-        m_buffer(),
-        m_repository(make_repository_storage(RepositoryTypes<Tag> {}, m_buffer, m_arena)),
+        m_repository(),
         m_index(index)
     {
     }
@@ -102,26 +78,19 @@ public:
     const ::tyr::formalism::planning::Repository& get_formalism_repository() const noexcept { return m_formalism_repository; }
 
     template<typename T>
-    std::optional<ygg::Index<T>> find(const ygg::Data<T>& builder) const noexcept
+    std::optional<ygg::View<ygg::Index<T>, Repository>> find(const ygg::Data<T>& builder) const noexcept
     {
-        const auto& indexed_hash_set = std::get<Entry<T>>(m_repository).container;
-
-        if (const auto index_or_nullopt = indexed_hash_set.find(builder))
-            return *index_or_nullopt;
+        if (const auto view_or_nullopt = m_repository.find(builder))
+            return ygg::make_view(view_or_nullopt->get_handle(), *this);
 
         return std::nullopt;
     }
 
     template<typename T>
-    std::pair<ygg::Index<T>, bool> get_or_create(ygg::Data<T>& builder)
+    std::pair<ygg::View<ygg::Index<T>, Repository>, bool> get_or_create(ygg::Data<T>& builder)
     {
-        auto& indexed_hash_set = std::get<Entry<T>>(m_repository).container;
-
-        builder.index.value = indexed_hash_set.size();
-
-        const auto [index, success] = indexed_hash_set.insert(builder);
-
-        return std::make_pair(index, success);
+        const auto [view, success] = m_repository.get_or_create(builder);
+        return std::make_pair(ygg::make_view(view.get_handle(), *this), success);
     }
 
     /// @brief Access the element with the given index.
@@ -129,33 +98,26 @@ public:
     const ygg::Data<T>& operator[](ygg::Index<T> index) const noexcept
     {
         assert(index != ygg::Index<T>::max() && "Unassigned index.");
-
-        const auto& repository = std::get<Entry<T>>(m_repository).container;
-
-        return repository[index];
+        return m_repository[index];
     }
 
     template<typename T>
     const ygg::Data<T>& front() const
     {
-        const auto& repository = std::get<Entry<T>>(m_repository).container;
-
-        return repository.front();
+        return m_repository.template front<T>();
     }
 
     /// @brief Get the number of stored elements.
     template<typename T>
     size_t size() const noexcept
     {
-        const auto& repository = std::get<Entry<T>>(m_repository).container;
-
-        return repository.size();
+        return m_repository.template size<T>();
     }
 
     /// @brief Clear the repository but keep memory allocated.
     void clear() noexcept
     {
-        std::apply([](auto&... slots) { (slots.container.clear(), ...); }, m_repository);
+        m_repository.clear();
     }
 };
 
