@@ -1,5 +1,5 @@
-from pathlib import Path
 from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
 
 # Load public native dependency packages before this package loads native extensions.
 import pypddl as pypddl
@@ -40,6 +40,19 @@ def native_prefix() -> Path:
         if (parent / "include" / "tyr").is_dir():
             return parent
     return native_dir
+
+
+def native_include_dir() -> Path:
+    return native_prefix() / "include"
+
+
+def native_lib_dir() -> Path:
+    native_dir = native_prefix()
+    for lib_dir_name in ("lib", "lib64"):
+        lib_dir = native_dir / lib_dir_name
+        if lib_dir.is_dir():
+            return lib_dir
+    return native_dir / "lib"
 
 
 def cmake_prefix() -> Path:
