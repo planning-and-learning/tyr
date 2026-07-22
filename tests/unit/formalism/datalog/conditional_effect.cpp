@@ -17,6 +17,7 @@ static_assert(std::totally_ordered<Index>);
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
 static_assert(std::same_as<View, fd::ConditionalEffectView>);
+static_assert(std::constructible_from<Data, fd::VariableViewList, fd::ConjunctiveConditionView, fd::ConjunctiveEffectView>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.variables;

@@ -29,6 +29,8 @@
 #include "tyr/formalism/object_index.hpp"
 #include "tyr/formalism/predicate_index.hpp"
 
+#include <optional>
+#include <vector>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -54,33 +56,72 @@ struct Data<::tyr::formalism::datalog::Program>
     ygg::IndexList<::tyr::formalism::datalog::Rule> rules;
 
     Data() = default;
-    Data(ygg::Index<::tyr::formalism::datalog::Program> index,
-         ygg::IndexList<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>> static_predicates,
-         ygg::IndexList<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>> fluent_predicates,
-         ygg::IndexList<::tyr::formalism::Function<::tyr::formalism::StaticTag>> static_functions,
-         ygg::IndexList<::tyr::formalism::Function<::tyr::formalism::FluentTag>> fluent_functions,
-         ygg::IndexList<::tyr::formalism::Object> objects,
-         ygg::IndexList<::tyr::formalism::datalog::GroundAtom<::tyr::formalism::StaticTag>> static_atoms,
-         ygg::IndexList<::tyr::formalism::datalog::GroundAtom<::tyr::formalism::FluentTag>> fluent_atoms,
-         ygg::IndexList<::tyr::formalism::datalog::GroundFunctionTermValue<::tyr::formalism::StaticTag>> static_fterm_values,
-         ygg::IndexList<::tyr::formalism::datalog::GroundFunctionTermValue<::tyr::formalism::FluentTag>> fluent_fterm_values,
-         ::cista::optional<ygg::Index<::tyr::formalism::datalog::GroundConjunctiveCondition>> goal,
-         ::cista::optional<ygg::Index<::tyr::formalism::datalog::Metric>> metric,
-         ygg::IndexList<::tyr::formalism::datalog::Rule> rules) :
-        index(index),
-        static_predicates(std::move(static_predicates)),
-        fluent_predicates(std::move(fluent_predicates)),
-        static_functions(std::move(static_functions)),
-        fluent_functions(std::move(fluent_functions)),
-        objects(std::move(objects)),
-        static_atoms(std::move(static_atoms)),
-        fluent_atoms(std::move(fluent_atoms)),
-        static_fterm_values(std::move(static_fterm_values)),
-        fluent_fterm_values(std::move(fluent_fterm_values)),
-        goal(goal),
-        metric(metric),
-        rules(std::move(rules))
+    Data(ygg::IndexList<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>> static_predicates_,
+         ygg::IndexList<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>> fluent_predicates_,
+         ygg::IndexList<::tyr::formalism::Function<::tyr::formalism::StaticTag>> static_functions_,
+         ygg::IndexList<::tyr::formalism::Function<::tyr::formalism::FluentTag>> fluent_functions_,
+         ygg::IndexList<::tyr::formalism::Object> objects_,
+         ygg::IndexList<::tyr::formalism::datalog::GroundAtom<::tyr::formalism::StaticTag>> static_atoms_,
+         ygg::IndexList<::tyr::formalism::datalog::GroundAtom<::tyr::formalism::FluentTag>> fluent_atoms_,
+         ygg::IndexList<::tyr::formalism::datalog::GroundFunctionTermValue<::tyr::formalism::StaticTag>> static_fterm_values_,
+         ygg::IndexList<::tyr::formalism::datalog::GroundFunctionTermValue<::tyr::formalism::FluentTag>> fluent_fterm_values_,
+         ::cista::optional<ygg::Index<::tyr::formalism::datalog::GroundConjunctiveCondition>> goal_,
+         ::cista::optional<ygg::Index<::tyr::formalism::datalog::Metric>> metric_,
+         ygg::IndexList<::tyr::formalism::datalog::Rule> rules_) :
+        index(),
+        static_predicates(std::move(static_predicates_)),
+        fluent_predicates(std::move(fluent_predicates_)),
+        static_functions(std::move(static_functions_)),
+        fluent_functions(std::move(fluent_functions_)),
+        objects(std::move(objects_)),
+        static_atoms(std::move(static_atoms_)),
+        fluent_atoms(std::move(fluent_atoms_)),
+        static_fterm_values(std::move(static_fterm_values_)),
+        fluent_fterm_values(std::move(fluent_fterm_values_)),
+        goal(goal_),
+        metric(metric_),
+        rules(std::move(rules_))
     {
+    }
+    template<typename C>
+    Data(const std::vector<::ygg::View<ygg::Index<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>, C>>& static_predicates_,
+         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>, C>>& fluent_predicates_,
+         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::Function<::tyr::formalism::StaticTag>>, C>>& static_functions_,
+         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::Function<::tyr::formalism::FluentTag>>, C>>& fluent_functions_,
+         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::Object>, C>>& objects_,
+         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundAtom<::tyr::formalism::StaticTag>>, C>>& static_atoms_,
+         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundAtom<::tyr::formalism::FluentTag>>, C>>& fluent_atoms_,
+         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundFunctionTermValue<::tyr::formalism::StaticTag>>, C>>& static_fterm_values_,
+         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundFunctionTermValue<::tyr::formalism::FluentTag>>, C>>& fluent_fterm_values_,
+         const std::optional<::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundConjunctiveCondition>, C>>& goal_,
+         const std::optional<::ygg::View<ygg::Index<::tyr::formalism::datalog::Metric>, C>>& metric_,
+         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::datalog::Rule>, C>>& rules_) :
+        index(),
+        static_predicates(),
+        fluent_predicates(),
+        static_functions(),
+        fluent_functions(),
+        objects(),
+        static_atoms(),
+        fluent_atoms(),
+        static_fterm_values(),
+        fluent_fterm_values(),
+        goal(),
+        metric(),
+        rules()
+    {
+        set(static_predicates_, static_predicates);
+        set(fluent_predicates_, fluent_predicates);
+        set(static_functions_, static_functions);
+        set(fluent_functions_, fluent_functions);
+        set(objects_, objects);
+        set(static_atoms_, static_atoms);
+        set(fluent_atoms_, fluent_atoms);
+        set(static_fterm_values_, static_fterm_values);
+        set(fluent_fterm_values_, fluent_fterm_values);
+        set(goal_, goal);
+        set(metric_, metric);
+        set(rules_, rules);
     }
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;

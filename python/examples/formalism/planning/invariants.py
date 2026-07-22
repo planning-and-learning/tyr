@@ -32,15 +32,14 @@ from pytyr.formalism.planning import (
 def rigid_parameter_domains_from_task_variable_domains(
     inv: Invariant,
     task_variable_domains: TaskVariableDomains,
-    all_object_indices: set[ObjectIndex]
+    all_object_indices: set[ObjectIndex],
 ) -> list[list[ObjectIndex]]:
-    
     domains = [set(all_object_indices) for _ in range(inv.num_rigid_variables)]
 
     fluent_predicate_domains = task_variable_domains.fluent_predicate_domains
 
     for atom in inv.atoms:
-        predicate_domains = fluent_predicate_domains.get(atom.predicate)
+        predicate_domains = fluent_predicate_domains[atom.predicate]
 
         for position, term in enumerate(atom.terms):
             value = term.value
@@ -53,8 +52,7 @@ def rigid_parameter_domains_from_task_variable_domains(
                 continue
 
             allowed_objects = {
-                obj.get_index()
-                for obj in predicate_domains[position].objects
+                obj.get_index() for obj in predicate_domains[position].objects
             }
 
             domains[parameter] &= allowed_objects
@@ -70,7 +68,7 @@ def rigid_parameter_domains_from_task_variable_domains(
 
 def enumerate_rigid_bindings(
     inv: Invariant,
-    task_variable_domains,
+    task_variable_domains: TaskVariableDomains,
     all_object_indices: set[ObjectIndex],
 ) -> list[ObjectSubstitution]:
     """
@@ -107,7 +105,7 @@ def enumerate_rigid_bindings(
 
 def build_invariant_match_data(
     invariants: list[Invariant],
-    task_variable_domains,
+    task_variable_domains: TaskVariableDomains,
     all_object_indices: set[ObjectIndex],
 ) -> list[InvariantMatchData]:
     """
@@ -128,12 +126,24 @@ def build_invariant_match_data(
     return result
 
 
-def main():
+def main() -> None:
     arg_parser = argparse.ArgumentParser(
         description="Parse and traverse planning formalism structures."
     )
-    arg_parser.add_argument("-d", "--domain-filepath", type=Path, required=True, help="Path to a PDDL domain file.")
-    arg_parser.add_argument("-p", "--task-filepath", type=Path, required=True, help="Path to PDDL task file.")
+    arg_parser.add_argument(
+        "-d",
+        "--domain-filepath",
+        type=Path,
+        required=True,
+        help="Path to a PDDL domain file.",
+    )
+    arg_parser.add_argument(
+        "-p",
+        "--task-filepath",
+        type=Path,
+        required=True,
+        help="Path to PDDL task file.",
+    )
     args = arg_parser.parse_args()
 
     domain_filepath: Path = args.domain_filepath
@@ -160,10 +170,7 @@ def main():
 
     # 3. Build invariant match data by substituting all candidate objects
     #    for the rigid variables, constrained by task_variable_domains.
-    all_object_indices = {
-        obj.get_index()
-        for obj in task.get_task().get_objects()
-    }
+    all_object_indices = {obj.get_index() for obj in task.get_task().get_objects()}
 
     invariant_match_data = build_invariant_match_data(
         invariants[:1],  # Use only the first invariant for demonstration purposes.

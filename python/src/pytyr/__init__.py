@@ -6,6 +6,7 @@ import pypddl as pypddl
 import pyyggdrasil as pyyggdrasil
 
 from . import (
+    datalog as datalog,
     formalism as formalism,
     planning as planning,
 )
@@ -25,12 +26,9 @@ def _source_version() -> str:
 
 
 try:
-    from ._version import __version__
-except ImportError:
-    try:
-        __version__ = version("pytyr")
-    except PackageNotFoundError:
-        __version__ = _source_version()
+    __version__ = version("pytyr")
+except PackageNotFoundError:
+    __version__ = _source_version()
 
 
 def native_prefix() -> Path:

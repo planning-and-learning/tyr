@@ -23,13 +23,9 @@ from enum import Enum
 from pyyggdrasil.execution import ExecutionContext
 
 from pypddl.formalism import ParserOptions
-from pytyr.formalism.planning import (
-    Parser
-)
+from pytyr.formalism.planning import Parser
 
-from pytyr.planning import (
-    SearchStatus
-)
+from pytyr.planning import SearchStatus
 
 from pytyr.planning.lifted import (
     StateIndex,
@@ -44,7 +40,7 @@ from pytyr.planning.lifted import (
     Node,
     LabeledNode,
     Plan,
-    Task
+    Task,
 )
 
 
@@ -63,17 +59,21 @@ class SearchNode:
     status: SearchNodeStatus
 
 
-def backtrack_plan(goal_node: Node, goal_search_node: SearchNode, search_nodes: dict[StateIndex, SearchNode], successor_generator: SuccessorGenerator):
+def backtrack_plan(
+    goal_node: Node,
+    search_nodes: dict[StateIndex, SearchNode],
+    successor_generator: SuccessorGenerator,
+) -> Plan:
     """
     Backtracks from the goal search node to compute the plan inducing state trajectory,
     followed by computing the ground actions connecting subsequent state in the trajectory.
     """
     cur_state_index = goal_node.get_state().get_index()
-    backward_state_trajectory = []
+    backward_state_trajectory: list[StateIndex] = []
 
     while cur_state_index is not None:
         backward_state_trajectory.append(cur_state_index)
-        search_node = search_nodes.get(cur_state_index)
+        search_node = search_nodes[cur_state_index]
         cur_state_index = search_node.parent
 
     forward_state_trajectory = list(reversed(backward_state_trajectory))
@@ -97,7 +97,9 @@ def backtrack_plan(goal_node: Node, goal_search_node: SearchNode, search_nodes: 
     return Plan(start_node, labeled_succ_nodes)
 
 
-def find_solution(task: Task, successor_generator: SuccessorGenerator, heuristic: Heuristic) -> SearchResult:
+def find_solution(
+    task: Task, successor_generator: SuccessorGenerator, heuristic: Heuristic
+) -> SearchResult:
 
     state_repository = successor_generator.get_state_repository()
 
@@ -125,18 +127,20 @@ def find_solution(task: Task, successor_generator: SuccessorGenerator, heuristic
     initial_state_index = initial_state.get_index()
 
     search_nodes: dict[StateIndex, SearchNode] = dict()
-    search_nodes[initial_state_index] = SearchNode(initial_g_value, None, SearchNodeStatus.NEW)
+    search_nodes[initial_state_index] = SearchNode(
+        initial_g_value, None, SearchNodeStatus.NEW
+    )
 
-    queue = PriorityQueue()
+    queue: PriorityQueue[tuple[float, float, StateIndex]] = PriorityQueue()
     # Note: we insert cheap state indices to allow memory to be returned to the pool.
     # We can always retrieve a state by calling state_repository.get_registered_state(i) for a StateIndex i.
     queue.put((initial_h_value, initial_g_value, initial_state_index))
 
     while not queue.empty():
-        h_value, g_value, state_index = queue.get()
+        _, g_value, state_index = queue.get()
         state = state_repository.get_registered_state(state_index)
         node = Node(state, g_value)
-        search_node = search_nodes.get(state_index)
+        search_node = search_nodes[state_index]
 
         state_h_value = heuristic.evaluate(state)
         preferred_actions = heuristic.get_preferred_action_views()
@@ -154,9 +158,11 @@ def find_solution(task: Task, successor_generator: SuccessorGenerator, heuristic
             succ_state_index = succ_state.get_index()
 
             if succ_state_index not in search_nodes:
-                search_nodes[succ_state_index] = SearchNode(succ_g_value, state_index, SearchNodeStatus.NEW)
+                search_nodes[succ_state_index] = SearchNode(
+                    succ_g_value, state_index, SearchNodeStatus.NEW
+                )
 
-            succ_search_node: SearchNode = search_nodes.get(succ_state_index)
+            succ_search_node = search_nodes[succ_state_index]
 
             if not succ_search_node.status == SearchNodeStatus.NEW:
                 continue
@@ -169,23 +175,37 @@ def find_solution(task: Task, successor_generator: SuccessorGenerator, heuristic
 
             if goal_strategy.is_dynamic_goal_satisfied(initial_state, succ_state):
                 search_result.goal_node = succ_node
-                search_result.plan = backtrack_plan(succ_node, succ_search_node, search_nodes, successor_generator)
+                search_result.plan = backtrack_plan(
+                    succ_node, search_nodes, successor_generator
+                )
                 search_result.status = SearchStatus.SOLVED
                 return search_result
 
             succ_search_node.status = SearchNodeStatus.OPEN
             queue.put((state_h_value, succ_g_value, succ_state_index))
 
-
     search_result.goal_node = None
     search_result.plan = None
     search_result.status = SearchStatus.EXHAUSTED
     return search_result
 
-def main():
+
+def main() -> None:
     arg_parser = argparse.ArgumentParser(description="GBFS Lazy Search.")
-    arg_parser.add_argument("-d", "--domain-filepath", type=Path, required=True, help="Path to a PDDL domain file.")
-    arg_parser.add_argument("-p", "--task-filepath", type=Path, required=True, help="Path to PDDL task file.")
+    arg_parser.add_argument(
+        "-d",
+        "--domain-filepath",
+        type=Path,
+        required=True,
+        help="Path to a PDDL domain file.",
+    )
+    arg_parser.add_argument(
+        "-p",
+        "--task-filepath",
+        type=Path,
+        required=True,
+        help="Path to PDDL task file.",
+    )
     args = arg_parser.parse_args()
 
     domain_filepath: Path = args.domain_filepath
@@ -201,7 +221,9 @@ def main():
     successor_generator_factory = SuccessorGeneratorFactory()
     axiom_evaluator = axiom_evaluator_factory.create(lifted_task, execution_context)
     state_repository = state_repository_factory.create(lifted_task, axiom_evaluator)
-    successor_generator = successor_generator_factory.create(lifted_task, execution_context, state_repository)
+    successor_generator = successor_generator_factory.create(
+        lifted_task, execution_context, state_repository
+    )
 
     search_result = find_solution(lifted_task, successor_generator, heuristic)
 
@@ -214,6 +236,7 @@ def main():
         print(plan)
     else:
         print("No solution was found.")
+
 
 if __name__ == "__main__":
     main()

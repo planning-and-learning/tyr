@@ -43,8 +43,45 @@ struct Data<::tyr::formalism::datalog::GroundFunctionExpression>
 
     Variant value;
 
+    template<typename C>
+    using ViewVariant =
+        std::variant<ygg::float_t,
+                     ::ygg::View<ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>>>, C>,
+                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundFunctionTerm<::tyr::formalism::StaticTag>>, C>,
+                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundFunctionTerm<::tyr::formalism::FluentTag>>, C>,
+                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundFunctionTerm<::tyr::formalism::AuxiliaryTag>>, C>>;
+
     Data() = default;
-    Data(Variant value) : value(value) {}
+    Data(Variant value_) : value(value_) {}
+    template<typename C>
+    Data(ViewVariant<C> value_) :
+        value(std::visit(
+            [](const auto& arg) -> Variant
+            {
+                using Alternative = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<Alternative, ygg::float_t>)
+                    return Variant(arg);
+                else if constexpr (std::is_same_v<Alternative,
+                                                  ::ygg::View<ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<
+                                                                  ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>>>,
+                                                              C>>)
+                    return Variant(arg.get_data());
+                else if constexpr (std::is_same_v<Alternative,
+                                                  ::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundFunctionTerm<::tyr::formalism::StaticTag>>, C>>)
+                    return Variant(arg.get_index());
+                else if constexpr (std::is_same_v<Alternative,
+                                                  ::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundFunctionTerm<::tyr::formalism::FluentTag>>, C>>)
+                    return Variant(arg.get_index());
+                else if constexpr (std::is_same_v<Alternative,
+                                                  ::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundFunctionTerm<::tyr::formalism::AuxiliaryTag>>, C>>)
+                    return Variant(arg.get_index());
+                else
+                    static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
+            },
+            value_))
+    {
+    }
     Data(const Data& other) = default;
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;

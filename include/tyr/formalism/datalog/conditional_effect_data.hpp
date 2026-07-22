@@ -49,6 +49,19 @@ struct Data<::tyr::formalism::datalog::ConditionalEffect>
         effect(effect_)
     {
     }
+    template<typename C>
+    Data(const std::vector<::ygg::View<ygg::Index<::tyr::formalism::Variable>, C>>& variables_,
+         ::ygg::View<ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition>, C> condition_,
+         ::ygg::View<ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect>, C> effect_) :
+        index(),
+        variables(),
+        condition(),
+        effect()
+    {
+        set(variables_, variables);
+        set(condition_, condition);
+        set(effect_, effect);
+    }
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;

@@ -18,7 +18,6 @@
 #include "tyr/planning/lifted/programs/ground.hpp"
 
 #include "../../programs/common.hpp"
-#include "tyr/analysis/domains.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
@@ -402,11 +401,7 @@ static auto create_datalog_program(fp::TaskView task,
     auto factory = std::make_shared<fd::RepositoryFactory>();
     auto repository = factory->create_shared();
     auto program = create_program(task, translation_context, predicate_to_actions, predicate_to_axioms, *repository);
-    auto domains = analysis::compute_variable_domains(program);
-    auto strata = analysis::compute_rule_stratification(program);
-    auto listeners = analysis::compute_listeners(strata, *repository);
-
-    return datalog::Program<LiftedTag>(program, std::move(repository), std::move(factory), std::move(domains), std::move(strata), std::move(listeners));
+    return datalog::Program<LiftedTag>(program, std::move(repository), std::move(factory));
 }
 
 }

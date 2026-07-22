@@ -18,17 +18,17 @@
 #ifndef TYR_FORMALISM_DATALOG_FUNCTION_TERM_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_FUNCTION_TERM_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/function_term_index.hpp"
 #include "tyr/formalism/function_index.hpp"
 #include "tyr/formalism/term_data.hpp"
 
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
+
 namespace ygg
 {
 using namespace ::tyr;
-
 
 template<::tyr::formalism::FactKind T>
 struct Data<::tyr::formalism::datalog::FunctionTerm<T>>
@@ -38,11 +38,20 @@ struct Data<::tyr::formalism::datalog::FunctionTerm<T>>
     ygg::DataList<::tyr::formalism::Term> terms;
 
     Data() = default;
-    Data(ygg::Index<::tyr::formalism::datalog::FunctionTerm<T>> index, ygg::Index<::tyr::formalism::Function<T>> function, ygg::DataList<::tyr::formalism::Term> terms) :
-        index(index),
-        function(function),
-        terms(std::move(terms))
+    Data(ygg::Index<::tyr::formalism::Function<T>> function_, ygg::DataList<::tyr::formalism::Term> terms_) :
+        index(),
+        function(function_),
+        terms(std::move(terms_))
     {
+    }
+    template<typename C>
+    Data(::ygg::View<ygg::Index<::tyr::formalism::Function<T>>, C> function_, const std::vector<::ygg::View<ygg::Data<::tyr::formalism::Term>, C>>& terms_) :
+        index(),
+        function(),
+        terms()
+    {
+        set(function_, function);
+        set(terms_, terms);
     }
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;

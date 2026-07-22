@@ -18,12 +18,13 @@
 #ifndef TYR_FORMALISM_DATALOG_ATOM_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_ATOM_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/datalog/atom_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/predicate_index.hpp"
 #include "tyr/formalism/term_data.hpp"
+
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
 
 namespace ygg
 {
@@ -37,11 +38,20 @@ struct Data<::tyr::formalism::datalog::Atom<T>>
     ygg::DataList<::tyr::formalism::Term> terms;
 
     Data() = default;
-    Data(ygg::Index<::tyr::formalism::Predicate<T>> predicate, ygg::Index<::tyr::formalism::datalog::Atom<T>> index, ygg::DataList<::tyr::formalism::Term> terms) :
-        index(index),
-        predicate(predicate),
-        terms(std::move(terms))
+    Data(ygg::Index<::tyr::formalism::Predicate<T>> predicate_, ygg::DataList<::tyr::formalism::Term> terms_) :
+        index(),
+        predicate(predicate_),
+        terms(std::move(terms_))
     {
+    }
+    template<typename C>
+    Data(::ygg::View<ygg::Index<::tyr::formalism::Predicate<T>>, C> predicate_, const std::vector<::ygg::View<ygg::Data<::tyr::formalism::Term>, C>>& terms_) :
+        index(),
+        predicate(),
+        terms()
+    {
+        set(predicate_, predicate);
+        set(terms_, terms);
     }
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;

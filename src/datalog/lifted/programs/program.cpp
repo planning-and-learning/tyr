@@ -17,8 +17,24 @@
 
 #include "tyr/datalog/lifted/programs/program.hpp"
 
+#include "tyr/analysis/domains.hpp"
+
 namespace tyr::datalog
 {
+
+Program<LiftedTag>::Program(::tyr::formalism::datalog::ProgramView<LiftedTag> program,
+                            ::tyr::formalism::datalog::RepositoryPtr program_repository,
+                            ::tyr::formalism::datalog::RepositoryFactoryPtr repository_factory) :
+    m_program(program),
+    m_program_repository(std::move(program_repository)),
+    m_repository_factory(std::move(repository_factory)),
+    m_workspace_repository(m_repository_factory->create_shared(m_program_repository.get())),
+    m_domains(analysis::compute_variable_domains(m_program)),
+    m_strata(analysis::compute_rule_stratification(m_program)),
+    m_listeners(analysis::compute_listeners(m_strata, *m_program_repository)),
+    m_const_program_workspace(*this)
+{
+}
 
 Program<LiftedTag>::Program(::tyr::formalism::datalog::ProgramView<LiftedTag> program,
                             ::tyr::formalism::datalog::RepositoryPtr program_repository,

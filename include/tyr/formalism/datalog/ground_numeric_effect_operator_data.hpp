@@ -21,6 +21,7 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/ground_numeric_effect_index.hpp"
 
+#include <variant>
 #include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
@@ -41,8 +42,20 @@ struct Data<::tyr::formalism::datalog::GroundNumericEffectOperator<::tyr::formal
 
     Variant value;
 
+    template<typename C>
+    using ViewVariant =
+        std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<::tyr::formalism::Assign, ::tyr::formalism::FluentTag>>, C>,
+                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<::tyr::formalism::Increase, ::tyr::formalism::FluentTag>>, C>,
+                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<::tyr::formalism::Decrease, ::tyr::formalism::FluentTag>>, C>,
+                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<::tyr::formalism::ScaleUp, ::tyr::formalism::FluentTag>>, C>,
+                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<::tyr::formalism::ScaleDown, ::tyr::formalism::FluentTag>>, C>>;
+
     Data() = default;
     Data(Variant value_) : value(value_) {}
+    template<typename C>
+    Data(ViewVariant<C> value_) : value(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, value_))
+    {
+    }
 
     void clear() noexcept { ygg::clear(value); }
 

@@ -31,3 +31,4 @@ concept LiteralContract = std::constructible_from<ygg::Index<Entity>, ygg::uint_
                              };
 
 static_assert([]<typename... Entities>(ygg::TypeList<Entities...>) { return (LiteralContract<Entities> && ...); }(fd::LiteralTypes {}));
+static_assert(std::constructible_from<ygg::Data<fd::Literal<tyr::formalism::StaticTag>>, fd::AtomView<tyr::formalism::StaticTag>, bool>);

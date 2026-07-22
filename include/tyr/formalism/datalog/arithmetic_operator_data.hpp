@@ -18,12 +18,14 @@
 #ifndef TYR_FORMALISM_DATALOG_ARITHMETIC_OPERATOR_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_ARITHMETIC_OPERATOR_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/datalog/binary_operator_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/multi_operator_index.hpp"
 #include "tyr/formalism/datalog/unary_operator_index.hpp"
+
+#include <variant>
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
 
 namespace ygg
 {
@@ -42,8 +44,21 @@ struct Data<::tyr::formalism::datalog::ArithmeticOperator<T>>
 
     Variant value;
 
+    template<typename C>
+    using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::UnaryOperator<::tyr::formalism::Sub, T>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Add, T>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Sub, T>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Mul, T>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Div, T>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::MultiOperator<::tyr::formalism::Add, T>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::MultiOperator<::tyr::formalism::Mul, T>>, C>>;
+
     Data() = default;
-    Data(Variant value) : value(value) {}
+    Data(Variant value_) : value(value_) {}
+    template<typename C>
+    Data(ViewVariant<C> value_) : value(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, value_))
+    {
+    }
 
     void clear() noexcept { ygg::clear(value); }
 

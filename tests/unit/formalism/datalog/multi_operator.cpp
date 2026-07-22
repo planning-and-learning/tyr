@@ -34,3 +34,5 @@ using GroundTypes = ygg::MapTypeListT<fd::GroundMultiOperatorType, f::MultiArith
 using Types = ygg::ConcatTypeListsT<LiftedTypes, GroundTypes>;
 
 static_assert([]<typename... Entities>(ygg::TypeList<Entities...>) { return (MultiOperatorContract<Entities> && ...); }(Types {}));
+static_assert(std::constructible_from<ygg::Data<fd::LiftedMultiOperatorType<f::Add>>, std::vector<fd::FunctionExpressionView>>);
+static_assert(std::constructible_from<ygg::Data<fd::GroundMultiOperatorType<f::Add>>, std::vector<fd::GroundFunctionExpressionView>>);

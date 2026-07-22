@@ -41,6 +41,14 @@ struct Data<::tyr::formalism::datalog::ConjunctiveEffect>
         numeric_effects(std::move(numeric_effects_))
     {
     }
+    template<typename C>
+    explicit Data(
+        const std::vector<::ygg::View<ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<::tyr::formalism::FluentTag>>, C>>& numeric_effects_) :
+        index(),
+        numeric_effects()
+    {
+        set(numeric_effects_, numeric_effects);
+    }
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;

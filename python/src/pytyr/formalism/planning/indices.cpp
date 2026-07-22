@@ -47,21 +47,10 @@ void bind_relation_binding_index(nb::module_& m, const std::string& name)
 
 void bind_indices(nb::module_& m)
 {
-    bind_index<ygg::Index<Row>>(m, "RowIndex");
-    bind_index<ygg::Index<Object>>(m, "ObjectIndex");
-    bind_index<ygg::Index<Variable>>(m, "VariableIndex");
-
-    bind_relation_binding_index<Predicate<StaticTag>>(m, "StaticPredicateBindingIndex");
-    bind_relation_binding_index<Predicate<FluentTag>>(m, "FluentPredicateBindingIndex");
     bind_relation_binding_index<Predicate<DerivedTag>>(m, "DerivedPredicateBindingIndex");
-    bind_relation_binding_index<Function<StaticTag>>(m, "StaticFunctionBindingIndex");
-    bind_relation_binding_index<Function<FluentTag>>(m, "FluentFunctionBindingIndex");
-    bind_relation_binding_index<Function<AuxiliaryTag>>(m, "AuxiliaryFunctionBindingIndex");
     bind_relation_binding_index<Action>(m, "ActionBindingIndex");
     bind_relation_binding_index<Axiom>(m, "AxiomBindingIndex");
 
-    bind_index<ygg::Index<Predicate<StaticTag>>>(m, "StaticPredicateIndex");
-    bind_index<ygg::Index<Predicate<FluentTag>>>(m, "FluentPredicateIndex");
     bind_index<ygg::Index<Predicate<DerivedTag>>>(m, "DerivedPredicateIndex");
 
     bind_index<ygg::Index<Atom<StaticTag>>>(m, "StaticAtomIndex");
@@ -81,10 +70,6 @@ void bind_indices(nb::module_& m)
     bind_index<ygg::Index<GroundLiteral<DerivedTag>>>(m, "DerivedGroundLiteralIndex");
 
     bind_index<ygg::Index<FDRVariable<FluentTag>>>(m, "FluentFDRVariableIndex");
-
-    bind_index<ygg::Index<Function<StaticTag>>>(m, "StaticFunctionIndex");
-    bind_index<ygg::Index<Function<FluentTag>>>(m, "FluentFunctionIndex");
-    bind_index<ygg::Index<Function<AuxiliaryTag>>>(m, "AuxiliaryFunctionIndex");
 
     bind_index<ygg::Index<FunctionTerm<StaticTag>>>(m, "StaticFunctionTermIndex");
     bind_index<ygg::Index<FunctionTerm<FluentTag>>>(m, "FluentFunctionTermIndex");

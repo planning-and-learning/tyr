@@ -31,3 +31,6 @@ concept GroundNumericEffectContract = std::constructible_from<ygg::Index<Entity>
                                          };
 
 static_assert([]<typename... Entities>(ygg::TypeList<Entities...>) { return (GroundNumericEffectContract<Entities> && ...); }(fd::GroundNumericEffectTypes {}));
+static_assert(std::constructible_from<ygg::Data<fd::GroundNumericEffect<tyr::formalism::Assign, tyr::formalism::FluentTag>>,
+                                      fd::GroundFunctionTermView<tyr::formalism::FluentTag>,
+                                      fd::GroundFunctionExpressionView>);

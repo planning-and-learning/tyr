@@ -39,6 +39,11 @@ struct Data<::tyr::formalism::datalog::GroundFunctionTerm<T>>
 
     Data() = default;
     Data(ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::Function<T>>> binding_) : index(), binding(binding_) {}
+    template<typename C>
+    Data(::ygg::View<ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::Function<T>>>, C> binding_) : index(), binding()
+    {
+        set(binding_, binding);
+    }
     Data(const Data& other) = default;
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;

@@ -38,3 +38,5 @@ using GroundBooleanTypes = ygg::MapTypeListT<fd::GroundBinaryOperatorType, f::Bo
 using Types = ygg::ConcatTypeListsT<LiftedArithmeticTypes, LiftedBooleanTypes, GroundArithmeticTypes, GroundBooleanTypes>;
 
 static_assert([]<typename... Entities>(ygg::TypeList<Entities...>) { return (BinaryOperatorContract<Entities> && ...); }(Types {}));
+static_assert(std::constructible_from<ygg::Data<fd::LiftedBinaryOperatorType<f::Add>>, fd::FunctionExpressionView, fd::FunctionExpressionView>);
+static_assert(std::constructible_from<ygg::Data<fd::GroundBinaryOperatorType<f::Add>>, fd::GroundFunctionExpressionView, fd::GroundFunctionExpressionView>);

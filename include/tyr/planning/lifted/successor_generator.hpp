@@ -86,6 +86,7 @@ public:
     // Diagnostics
     void print_summary(size_t verbosity) const;
 
+    const auto& get_action_program() const noexcept { return m_action_program; }
     const auto& get_state_repository() const noexcept { return m_state_repository; }
     const auto& get_workspace() const noexcept { return m_workspace; }
     auto get_index() const noexcept { return m_index; }

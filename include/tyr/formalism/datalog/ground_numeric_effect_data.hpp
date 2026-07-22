@@ -46,6 +46,16 @@ struct Data<::tyr::formalism::datalog::GroundNumericEffect<Op, T>>
         fexpr(fexpr_)
     {
     }
+    template<typename C>
+    Data(::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundFunctionTerm<T>>, C> fterm_,
+         ::ygg::View<ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>, C> fexpr_) :
+        index(),
+        fterm(),
+        fexpr()
+    {
+        set(fterm_, fterm);
+        set(fexpr_, fexpr);
+    }
 
     void clear() noexcept
     {

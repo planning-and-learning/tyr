@@ -18,11 +18,12 @@
 #ifndef TYR_FORMALISM_DATALOG_LITERAL_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_LITERAL_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/datalog/atom_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/literal_index.hpp"
+
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
 
 namespace ygg
 {
@@ -36,7 +37,12 @@ struct Data<::tyr::formalism::datalog::Literal<T>>
     bool polarity;
 
     Data() = default;
-    Data(ygg::Index<::tyr::formalism::datalog::Literal<T>> index, ygg::Index<::tyr::formalism::datalog::Atom<T>> atom, bool polarity) : index(index), atom(atom), polarity(polarity) {}
+    Data(ygg::Index<::tyr::formalism::datalog::Atom<T>> atom_, bool polarity_) : index(), atom(atom_), polarity(polarity_) {}
+    template<typename C>
+    Data(::ygg::View<ygg::Index<::tyr::formalism::datalog::Atom<T>>, C> atom_, bool polarity_) : index(), atom(), polarity(polarity_)
+    {
+        set(atom_, atom);
+    }
     Data(const Data& other) = default;
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;

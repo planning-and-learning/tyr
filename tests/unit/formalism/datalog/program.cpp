@@ -18,6 +18,19 @@ static_assert(std::totally_ordered<Index>);
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
 static_assert(std::same_as<View, fd::ProgramView<tyr::LiftedTag>>);
+static_assert(std::constructible_from<Data,
+                                      fd::PredicateViewList<f::StaticTag>,
+                                      fd::PredicateViewList<f::FluentTag>,
+                                      fd::FunctionViewList<f::StaticTag>,
+                                      fd::FunctionViewList<f::FluentTag>,
+                                      fd::ObjectViewList,
+                                      fd::GroundAtomViewList<f::StaticTag>,
+                                      fd::GroundAtomViewList<f::FluentTag>,
+                                      fd::GroundFunctionTermValueViewList<f::StaticTag>,
+                                      fd::GroundFunctionTermValueViewList<f::FluentTag>,
+                                      std::optional<fd::GroundConjunctiveConditionView>,
+                                      std::optional<fd::MetricView>,
+                                      fd::RuleViewList>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.static_predicates;

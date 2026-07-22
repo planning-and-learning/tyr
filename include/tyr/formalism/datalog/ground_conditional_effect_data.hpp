@@ -44,6 +44,16 @@ struct Data<::tyr::formalism::datalog::GroundConditionalEffect>
         effect(effect_)
     {
     }
+    template<typename C>
+    Data(::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundConjunctiveCondition>, C> condition_,
+         ::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundConjunctiveEffect>, C> effect_) :
+        index(),
+        condition(),
+        effect()
+    {
+        set(condition_, condition);
+        set(effect_, effect);
+    }
     Data(const Data& other) = default;
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;

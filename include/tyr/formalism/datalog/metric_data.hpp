@@ -22,11 +22,10 @@
 #include "tyr/formalism/datalog/ground_function_expression_data.hpp"
 #include "tyr/formalism/datalog/metric_index.hpp"
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
-
 #include <tuple>
 #include <utility>
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
 
 namespace ygg
 {
@@ -40,6 +39,11 @@ struct Data<::tyr::formalism::datalog::Metric>
 
     Data() = default;
     explicit Data(ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression> fexpr_) : index(), fexpr(std::move(fexpr_)) {}
+    template<typename C>
+    explicit Data(::ygg::View<ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>, C> fexpr_) : index(), fexpr()
+    {
+        set(fexpr_, fexpr);
+    }
     Data(const Data& other) = default;
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;

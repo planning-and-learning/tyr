@@ -18,13 +18,14 @@
 #ifndef TYR_FORMALISM_DATALOG_GROUND_ATOM_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_GROUND_ATOM_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/ground_atom_index.hpp"
 #include "tyr/formalism/object_index.hpp"
 #include "tyr/formalism/predicate_index.hpp"
+
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
 
 namespace ygg
 {
@@ -37,7 +38,12 @@ struct Data<::tyr::formalism::datalog::GroundAtom<T>>
     ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::Predicate<T>>> binding;
 
     Data() = default;
-    Data(ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::Predicate<T>>> binding) : index(), binding(binding) {}
+    Data(ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::Predicate<T>>> binding_) : index(), binding(binding_) {}
+    template<typename C>
+    Data(::ygg::View<ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::Predicate<T>>>, C> binding_) : index(), binding()
+    {
+        set(binding_, binding);
+    }
     Data(const Data& other) = default;
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;

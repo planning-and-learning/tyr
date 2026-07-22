@@ -18,10 +18,12 @@
 #ifndef TYR_FORMALISM_DATALOG_BOOLEAN_OPERATOR_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_BOOLEAN_OPERATOR_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/datalog/binary_operator_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
+
+#include <variant>
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
 
 namespace ygg
 {
@@ -39,8 +41,20 @@ struct Data<::tyr::formalism::datalog::BooleanOperator<T>>
 
     Variant value;
 
+    template<typename C>
+    using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Eq, T>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Ne, T>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Le, T>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Lt, T>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Ge, T>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Gt, T>>, C>>;
+
     Data() = default;
-    Data(Variant value) : value(value) {}
+    Data(Variant value_) : value(value_) {}
+    template<typename C>
+    Data(ViewVariant<C> value_) : value(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, value_))
+    {
+    }
 
     void clear() noexcept { ygg::clear(value); }
 
@@ -57,6 +71,5 @@ namespace tyr::formalism::datalog
 using BooleanOperatorData = ygg::Data<BooleanOperator<ygg::Data<FunctionExpression>>>;
 using GroundBooleanOperatorData = ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>;
 }
-
 
 #endif

@@ -18,12 +18,13 @@
 #ifndef TYR_FORMALISM_DATALOG_BINARY_OPERATOR_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_BINARY_OPERATOR_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/datalog/binary_operator_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/function_expression_data.hpp"
 #include "tyr/formalism/datalog/ground_function_expression_data.hpp"
+
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
 
 namespace ygg
 {
@@ -39,7 +40,13 @@ struct Data<::tyr::formalism::datalog::BinaryOperator<Op, T>>
     T rhs;
 
     Data() = default;
-    Data(ygg::Index<::tyr::formalism::datalog::BinaryOperator<Op, T>> index, T lhs, T rhs) : index(index), lhs(lhs), rhs(rhs) {}
+    Data(T lhs_, T rhs_) : index(), lhs(lhs_), rhs(rhs_) {}
+    template<typename C>
+    Data(::ygg::View<T, C> lhs_, ::ygg::View<T, C> rhs_) : index(), lhs(), rhs()
+    {
+        set(lhs_, lhs);
+        set(rhs_, rhs);
+    }
     Data(const Data& other) = default;
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
@@ -56,7 +63,8 @@ struct Data<::tyr::formalism::datalog::BinaryOperator<Op, T>>
     auto identifying_members() const noexcept { return std::tie(Op::kind, lhs, rhs); }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Add, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>>);
+static_assert(
+    !ygg::uses_trivial_storage_v<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Add, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>>);
 
 }
 

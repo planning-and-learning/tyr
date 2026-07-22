@@ -18,12 +18,13 @@
 #ifndef TYR_FORMALISM_DATALOG_MULTI_OPERATOR_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_MULTI_OPERATOR_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/function_expression_data.hpp"
 #include "tyr/formalism/datalog/ground_function_expression_data.hpp"
 #include "tyr/formalism/datalog/multi_operator_index.hpp"
+
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
 
 namespace ygg
 {
@@ -38,7 +39,12 @@ struct Data<::tyr::formalism::datalog::MultiOperator<Op, T>>
     ::cista::offset::vector<T> args;
 
     Data() = default;
-    Data(ygg::Index<::tyr::formalism::datalog::MultiOperator<Op, T>> index, ::cista::offset::vector<T> args) : index(index), args(std::move(args)) {}
+    Data(::cista::offset::vector<T> args_) : index(), args(std::move(args_)) {}
+    template<typename C>
+    Data(const std::vector<::ygg::View<T, C>>& args_) : index(), args()
+    {
+        set(args_, args);
+    }
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
@@ -54,7 +60,8 @@ struct Data<::tyr::formalism::datalog::MultiOperator<Op, T>>
     auto identifying_members() const noexcept { return std::tie(Op::kind, args); }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::MultiOperator<::tyr::formalism::Add, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>>);
+static_assert(
+    !ygg::uses_trivial_storage_v<::tyr::formalism::datalog::MultiOperator<::tyr::formalism::Add, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>>);
 
 }
 

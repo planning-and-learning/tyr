@@ -65,7 +65,7 @@ struct GroundQueueFixture
 
     fd::GroundLiteralView<f::FluentTag> fluent_literal(fd::GroundAtomView<f::FluentTag> atom, bool polarity = true)
     {
-        auto literal_builder = ygg::Data<fd::GroundLiteral<f::FluentTag>>(ygg::Index<fd::GroundLiteral<f::FluentTag>> {}, atom.get_index(), polarity);
+        auto literal_builder = ygg::Data<fd::GroundLiteral<f::FluentTag>>(atom.get_index(), polarity);
         canonicalize(literal_builder);
         return repository.get_or_create(literal_builder).first;
     }

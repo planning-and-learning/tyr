@@ -33,3 +33,6 @@ concept GroundFunctionTermValueContract =
 
 static_assert([]<typename... Entities>(ygg::TypeList<Entities...>)
               { return (GroundFunctionTermValueContract<Entities> && ...); }(fd::GroundFunctionTermValueTypes {}));
+static_assert(std::constructible_from<ygg::Data<fd::GroundFunctionTermValue<tyr::formalism::StaticTag>>,
+                                      fd::GroundFunctionTermView<tyr::formalism::StaticTag>,
+                                      ygg::float_t>);

@@ -27,3 +27,5 @@ concept GroundNumericEffectOperatorContract =
 
 static_assert([]<typename... Entities>(ygg::TypeList<Entities...>)
               { return (GroundNumericEffectOperatorContract<Entities> && ...); }(fd::GroundNumericEffectOperatorTypes {}));
+static_assert(std::constructible_from<ygg::Data<fd::GroundNumericEffectOperator<tyr::formalism::FluentTag>>,
+                                      ygg::Data<fd::GroundNumericEffectOperator<tyr::formalism::FluentTag>>::ViewVariant<fd::Repository>>);

@@ -44,6 +44,7 @@ private:
 public:
     void compute_extended_state(UnpackedState<LiftedTag>& unpacked_state);
 
+    const auto& get_axiom_program() const noexcept { return m_axiom_program; }
     const auto& get_workspace() const noexcept { return m_workspace; }
     const auto& get_execution_context() const noexcept { return m_execution_context; }
     auto get_index() const noexcept { return m_index; }

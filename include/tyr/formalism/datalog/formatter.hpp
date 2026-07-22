@@ -199,7 +199,7 @@ struct formatter<ygg::Data<tyr::formalism::datalog::GroundAtom<T>>, char>
     template<typename FormatContext>
     auto format(const ygg::Data<tyr::formalism::datalog::GroundAtom<T>>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {})", value.index.group, fmt::join(ygg::to_strings(value.objects), " "));
+        return fmt::format_to(ctx.out(), "({})", value.binding);
     }
 };
 
@@ -269,7 +269,7 @@ struct formatter<ygg::Data<tyr::formalism::datalog::GroundFunctionTerm<T>>, char
     template<typename FormatContext>
     auto format(const ygg::Data<tyr::formalism::datalog::GroundFunctionTerm<T>>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {})", value.index.group, fmt::join(ygg::to_strings(value.objects), " "));
+        return fmt::format_to(ctx.out(), "({})", value.binding);
     }
 };
 
@@ -456,6 +456,28 @@ struct formatter<tyr::formalism::datalog::GroundFunctionExpressionView, char>
     auto format(const tyr::formalism::datalog::GroundFunctionExpressionView& value, FormatContext& ctx) const
     {
         return fmt::format_to(ctx.out(), "{}", value.get_variant());
+    }
+};
+
+template<>
+struct formatter<ygg::Data<tyr::formalism::datalog::Metric>, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+    template<typename FormatContext>
+    auto format(const ygg::Data<tyr::formalism::datalog::Metric>& value, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "{}", value.fexpr);
+    }
+};
+
+template<>
+struct formatter<tyr::formalism::datalog::MetricView, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+    template<typename FormatContext>
+    auto format(const tyr::formalism::datalog::MetricView& value, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "{}", value.get_fexpr());
     }
 };
 

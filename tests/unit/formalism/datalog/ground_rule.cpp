@@ -17,6 +17,11 @@ static_assert(std::totally_ordered<Index>);
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
 static_assert(std::same_as<View, fd::GroundRuleView>);
+static_assert(std::constructible_from<Data,
+                                      fd::RuleBindingView,
+                                      fd::GroundConjunctiveConditionView,
+                                      Data::HeadView<fd::Repository>,
+                                      fd::GroundNumericEffectOperatorViewList<tyr::formalism::FluentTag>>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.binding;

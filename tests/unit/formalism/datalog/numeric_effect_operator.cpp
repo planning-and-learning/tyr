@@ -26,3 +26,5 @@ concept NumericEffectOperatorContract = std::totally_ordered<ygg::Data<Entity>> 
 
 static_assert([]<typename... Entities>(ygg::TypeList<Entities...>)
               { return (NumericEffectOperatorContract<Entities> && ...); }(fd::NumericEffectOperatorTypes {}));
+static_assert(std::constructible_from<ygg::Data<fd::NumericEffectOperator<tyr::formalism::FluentTag>>,
+                                      ygg::Data<fd::NumericEffectOperator<tyr::formalism::FluentTag>>::ViewVariant<fd::Repository>>);

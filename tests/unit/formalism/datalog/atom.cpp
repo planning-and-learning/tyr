@@ -31,3 +31,4 @@ concept AtomContract = std::constructible_from<ygg::Index<Entity>, ygg::uint_t> 
                           };
 
 static_assert([]<typename... Entities>(ygg::TypeList<Entities...>) { return (AtomContract<Entities> && ...); }(fd::AtomTypes {}));
+static_assert(std::constructible_from<ygg::Data<fd::Atom<tyr::formalism::StaticTag>>, fd::PredicateView<tyr::formalism::StaticTag>, fd::TermViewList>);

@@ -43,6 +43,10 @@ struct Data<::tyr::formalism::datalog::GroundRule>
     using Head = ::cista::offset::variant<ygg::Index<::tyr::formalism::datalog::GroundAtom<::tyr::formalism::FluentTag>>,
                                           ygg::Data<::tyr::formalism::datalog::GroundNumericEffectOperator<::tyr::formalism::FluentTag>>>;
 
+    template<typename C>
+    using HeadView = std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundAtom<::tyr::formalism::FluentTag>>, C>,
+                                  ::ygg::View<ygg::Data<::tyr::formalism::datalog::GroundNumericEffectOperator<::tyr::formalism::FluentTag>>, C>>;
+
     ygg::Index<::tyr::formalism::datalog::GroundRule> index;
     ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::datalog::Rule>> binding;
     ygg::Index<::tyr::formalism::datalog::GroundConjunctiveCondition> body;
@@ -50,17 +54,41 @@ struct Data<::tyr::formalism::datalog::GroundRule>
     ygg::DataList<::tyr::formalism::datalog::GroundNumericEffectOperator<::tyr::formalism::FluentTag>> metric_effects;
 
     Data() = default;
-    Data(ygg::Index<::tyr::formalism::datalog::GroundRule> index,
-         ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::datalog::Rule>> binding,
-         ygg::Index<::tyr::formalism::datalog::GroundConjunctiveCondition> body,
-         Head head,
-         ygg::DataList<::tyr::formalism::datalog::GroundNumericEffectOperator<::tyr::formalism::FluentTag>> metric_effects = {}) :
-        index(index),
-        binding(binding),
-        body(body),
-        head(head),
-        metric_effects(std::move(metric_effects))
+    Data(ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::datalog::Rule>> binding_,
+         ygg::Index<::tyr::formalism::datalog::GroundConjunctiveCondition> body_,
+         Head head_,
+         ygg::DataList<::tyr::formalism::datalog::GroundNumericEffectOperator<::tyr::formalism::FluentTag>> metric_effects_ = {}) :
+        index(),
+        binding(binding_),
+        body(body_),
+        head(head_),
+        metric_effects(std::move(metric_effects_))
     {
+    }
+    template<typename C>
+    Data(::ygg::View<ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::datalog::Rule>>, C> binding_,
+         ::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundConjunctiveCondition>, C> body_,
+         HeadView<C> head_,
+         const std::vector<::ygg::View<ygg::Data<::tyr::formalism::datalog::GroundNumericEffectOperator<::tyr::formalism::FluentTag>>, C>>&
+             metric_effects_ = {}) :
+        index(),
+        binding(),
+        body(),
+        head(std::visit(
+            [](const auto& view) -> Head
+            {
+                using Alternative = std::decay_t<decltype(view)>;
+                if constexpr (std::is_same_v<Alternative, ::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundAtom<::tyr::formalism::FluentTag>>, C>>)
+                    return Head(view.get_index());
+                else
+                    return Head(view.get_data());
+            },
+            head_)),
+        metric_effects()
+    {
+        set(binding_, binding);
+        set(body_, body);
+        set(metric_effects_, metric_effects);
     }
     Data(const Data& other) = default;
     Data& operator=(const Data& other) = default;

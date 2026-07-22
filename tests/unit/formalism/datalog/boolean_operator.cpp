@@ -23,3 +23,5 @@ static_assert(std::same_as<ygg::Data<Lifted>, fd::BooleanOperatorData>);
 static_assert(std::same_as<ygg::Data<Ground>, fd::GroundBooleanOperatorData>);
 static_assert(std::same_as<ygg::View<ygg::Data<Lifted>, fd::Repository>, fd::LiftedBooleanOperatorView>);
 static_assert(std::same_as<ygg::View<ygg::Data<Ground>, fd::Repository>, fd::GroundBooleanOperatorView>);
+static_assert(std::constructible_from<ygg::Data<Lifted>, ygg::Data<Lifted>::ViewVariant<fd::Repository>>);
+static_assert(std::constructible_from<ygg::Data<Ground>, ygg::Data<Ground>::ViewVariant<fd::Repository>>);

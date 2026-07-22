@@ -14,6 +14,8 @@ nanobind_add_module(
     module.cpp
     pytyr/module.cpp
     pytyr/formalism/module.cpp
+    pytyr/formalism/datas.cpp
+    pytyr/formalism/indices.cpp
     pytyr/formalism/planning.cpp
     pytyr/formalism/planning/datas.cpp
     pytyr/formalism/planning/domains.cpp
@@ -21,6 +23,13 @@ nanobind_add_module(
     pytyr/formalism/planning/invariants.cpp
     pytyr/formalism/planning/mutable.cpp
     pytyr/formalism/planning/views.cpp
+    pytyr/formalism/datalog.cpp
+    pytyr/formalism/datalog/datas.cpp
+    pytyr/formalism/datalog/indices.cpp
+    pytyr/formalism/datalog/views.cpp
+    pytyr/datalog/module.cpp
+    pytyr/datalog/ground/module.cpp
+    pytyr/datalog/lifted/module.cpp
     pytyr/planning/module.cpp
     pytyr/planning/ground/module.cpp
     pytyr/planning/lifted/module.cpp
@@ -80,7 +89,11 @@ yggdrasil_install_python_files(
         pytyr/__main__.py
         pytyr/__init__.pyi
         pytyr/formalism/__init__.py
+        pytyr/formalism/datalog/__init__.py
         pytyr/formalism/planning/__init__.py
+        pytyr/datalog/__init__.py
+        pytyr/datalog/ground/__init__.py
+        pytyr/datalog/lifted/__init__.py
         pytyr/planning/__init__.py
         pytyr/planning/ground/__init__.py
         pytyr/planning/ground/astar_eager/__init__.py

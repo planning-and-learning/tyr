@@ -17,15 +17,62 @@
 
 #include "module.hpp"
 
+#include "datalog/module.hpp"
+#include "datas.hpp"
+#include "indices.hpp"
 #include "planning/module.hpp"
 
 namespace tyr::formalism
 {
+namespace
+{
+void alias_shared_types(nb::module_& source, nb::module_& target)
+{
+    for (const auto* name : { "ParameterIndex",
+                              "RowIndex",
+                              "ObjectIndex",
+                              "ObjectData",
+                              "VariableIndex",
+                              "VariableData",
+                              "TermData",
+                              "StaticPredicateBindingIndex",
+                              "StaticPredicateBindingData",
+                              "FluentPredicateBindingIndex",
+                              "FluentPredicateBindingData",
+                              "StaticFunctionBindingIndex",
+                              "StaticFunctionBindingData",
+                              "FluentFunctionBindingIndex",
+                              "FluentFunctionBindingData",
+                              "AuxiliaryFunctionBindingIndex",
+                              "AuxiliaryFunctionBindingData",
+                              "StaticPredicateIndex",
+                              "StaticPredicateData",
+                              "FluentPredicateIndex",
+                              "FluentPredicateData",
+                              "StaticFunctionIndex",
+                              "StaticFunctionData",
+                              "FluentFunctionIndex",
+                              "FluentFunctionData",
+                              "AuxiliaryFunctionIndex",
+                              "AuxiliaryFunctionData" })
+    {
+        target.attr(name) = source.attr(name);
+    }
+}
+}
 
 void bind_module_definitions(nb::module_& m)
 {
+    bind_indices(m);
+    bind_datas(m);
+
     auto planning_module = m.def_submodule("planning");
     planning::bind_module_definitions(planning_module);
+    alias_shared_types(m, planning_module);
+
+    auto datalog_module = m.def_submodule("datalog");
+    datalog::bind_module_definitions(datalog_module);
+    alias_shared_types(m, datalog_module);
 }
 
 }  // namespace tyr::formalism

@@ -18,17 +18,17 @@
 #ifndef TYR_FORMALISM_DATALOG_GROUND_FUNCTION_TERM_VALUE_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_GROUND_FUNCTION_TERM_VALUE_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/ground_function_term_index.hpp"
 #include "tyr/formalism/datalog/ground_function_term_value_index.hpp"
 #include "tyr/formalism/term_data.hpp"
 
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
+
 namespace ygg
 {
 using namespace ::tyr;
-
 
 template<::tyr::formalism::FactKind T>
 struct Data<::tyr::formalism::datalog::GroundFunctionTermValue<T>>
@@ -38,11 +38,11 @@ struct Data<::tyr::formalism::datalog::GroundFunctionTermValue<T>>
     ygg::float_t value;
 
     Data() = default;
-    Data(ygg::Index<::tyr::formalism::datalog::GroundFunctionTermValue<T>> index, ygg::Index<::tyr::formalism::datalog::GroundFunctionTerm<T>> fterm, ygg::float_t value) :
-        index(index),
-        fterm(fterm),
-        value(value)
+    Data(ygg::Index<::tyr::formalism::datalog::GroundFunctionTerm<T>> fterm_, ygg::float_t value_) : index(), fterm(fterm_), value(value_) {}
+    template<typename C>
+    Data(::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundFunctionTerm<T>>, C> fterm_, ygg::float_t value_) : index(), fterm(), value(value_)
     {
+        set(fterm_, fterm);
     }
     Data(const Data& other) = default;
     Data& operator=(const Data& other) = default;

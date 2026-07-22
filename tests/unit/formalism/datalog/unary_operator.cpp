@@ -34,3 +34,5 @@ using GroundTypes = ygg::MapTypeListT<fd::GroundUnaryOperatorType, f::UnaryArith
 using Types = ygg::ConcatTypeListsT<LiftedTypes, GroundTypes>;
 
 static_assert([]<typename... Entities>(ygg::TypeList<Entities...>) { return (UnaryOperatorContract<Entities> && ...); }(Types {}));
+static_assert(std::constructible_from<ygg::Data<fd::LiftedUnaryOperatorType<f::Sub>>, fd::FunctionExpressionView>);
+static_assert(std::constructible_from<ygg::Data<fd::GroundUnaryOperatorType<f::Sub>>, fd::GroundFunctionExpressionView>);

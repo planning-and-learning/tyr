@@ -1,9 +1,13 @@
 # Import all classes for better IDE support
 
 from ..._pytyr.planning.lifted import (
+    ApplicableActionProgram,
+    AxiomEvaluatorProgram,
+    GroundTaskProgram,
     GroundTaskInstantiationStatus,
     GroundTaskInstantiationResult,
     GroundTaskInstantiationOptions,
+    RPGProgram,
 )
 
 from ..._pytyr.planning.lifted import (

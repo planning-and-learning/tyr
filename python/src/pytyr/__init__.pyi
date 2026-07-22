@@ -5,6 +5,7 @@ import pypddl as pypddl
 import pyyggdrasil as pyyggdrasil
 
 from . import (
+    datalog as datalog,
     formalism as formalism,
     planning as planning,
 )

@@ -12,6 +12,7 @@ using View = ygg::View<Data, fd::Repository>;
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
 static_assert(std::same_as<View, fd::GroundFunctionExpressionView>);
+static_assert(std::constructible_from<Data, Data::ViewVariant<fd::Repository>>);
 static_assert(requires(Data& data, const View& view) {
     data.value;
     data.clear();

@@ -18,12 +18,13 @@
 #ifndef TYR_FORMALISM_DATALOG_UNARY_OPERATOR_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_UNARY_OPERATOR_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/function_expression_data.hpp"
 #include "tyr/formalism/datalog/ground_function_expression_data.hpp"
 #include "tyr/formalism/datalog/unary_operator_index.hpp"
+
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
 
 namespace ygg
 {
@@ -38,7 +39,12 @@ struct Data<::tyr::formalism::datalog::UnaryOperator<Op, T>>
     T arg;
 
     Data() = default;
-    Data(ygg::Index<::tyr::formalism::datalog::UnaryOperator<Op, T>> index, T arg) : index(index), arg(arg) {}
+    Data(T arg_) : index(), arg(arg_) {}
+    template<typename C>
+    Data(::ygg::View<T, C> arg_) : index(), arg()
+    {
+        set(arg_, arg);
+    }
     Data(const Data& other) = default;
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
@@ -54,7 +60,8 @@ struct Data<::tyr::formalism::datalog::UnaryOperator<Op, T>>
     auto identifying_members() const noexcept { return std::tie(Op::kind, arg); }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::UnaryOperator<::tyr::formalism::Add, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>>);
+static_assert(
+    !ygg::uses_trivial_storage_v<::tyr::formalism::datalog::UnaryOperator<::tyr::formalism::Add, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>>);
 
 }
 

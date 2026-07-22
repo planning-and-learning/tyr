@@ -31,3 +31,4 @@ concept GroundLiteralContract = std::constructible_from<ygg::Index<Entity>, ygg:
                                    };
 
 static_assert([]<typename... Entities>(ygg::TypeList<Entities...>) { return (GroundLiteralContract<Entities> && ...); }(fd::GroundLiteralTypes {}));
+static_assert(std::constructible_from<ygg::Data<fd::GroundLiteral<tyr::formalism::StaticTag>>, fd::GroundAtomView<tyr::formalism::StaticTag>, bool>);

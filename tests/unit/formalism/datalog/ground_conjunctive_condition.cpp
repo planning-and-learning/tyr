@@ -18,6 +18,8 @@ static_assert(std::totally_ordered<Index>);
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
 static_assert(std::same_as<View, fd::GroundConjunctiveConditionView>);
+static_assert(
+    std::constructible_from<Data, fd::GroundLiteralViewList<f::StaticTag>, fd::GroundLiteralViewList<f::FluentTag>, fd::GroundBooleanOperatorViewList>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.static_literals;

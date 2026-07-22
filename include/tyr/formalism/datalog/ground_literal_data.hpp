@@ -18,16 +18,16 @@
 #ifndef TYR_FORMALISM_DATALOG_GROUND_LITERAL_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_GROUND_LITERAL_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/ground_atom_index.hpp"
 #include "tyr/formalism/datalog/ground_literal_index.hpp"
 
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
+
 namespace ygg
 {
 using namespace ::tyr;
-
 
 template<::tyr::formalism::FactKind T>
 struct Data<::tyr::formalism::datalog::GroundLiteral<T>>
@@ -37,11 +37,11 @@ struct Data<::tyr::formalism::datalog::GroundLiteral<T>>
     bool polarity;
 
     Data() = default;
-    Data(ygg::Index<::tyr::formalism::datalog::GroundLiteral<T>> index, ygg::Index<::tyr::formalism::datalog::GroundAtom<T>> atom, bool polarity) :
-        index(index),
-        atom(atom),
-        polarity(polarity)
+    Data(ygg::Index<::tyr::formalism::datalog::GroundAtom<T>> atom_, bool polarity_) : index(), atom(atom_), polarity(polarity_) {}
+    template<typename C>
+    Data(::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundAtom<T>>, C> atom_, bool polarity_) : index(), atom(), polarity(polarity_)
     {
+        set(atom_, atom);
     }
     Data(const Data& other) = default;
     Data& operator=(const Data& other) = default;

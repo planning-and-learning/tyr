@@ -32,3 +32,4 @@ concept GroundAtomContract = std::constructible_from<ygg::Index<Entity>, ygg::ui
                                 };
 
 static_assert([]<typename... Entities>(ygg::TypeList<Entities...>) { return (GroundAtomContract<Entities> && ...); }(fd::GroundAtomTypes {}));
+static_assert(std::constructible_from<ygg::Data<fd::GroundAtom<tyr::formalism::StaticTag>>, fd::PredicateBindingView<tyr::formalism::StaticTag>>);

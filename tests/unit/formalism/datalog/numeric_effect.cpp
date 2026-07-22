@@ -31,3 +31,6 @@ concept NumericEffectContract = std::constructible_from<ygg::Index<Entity>, ygg:
                                    };
 
 static_assert([]<typename... Entities>(ygg::TypeList<Entities...>) { return (NumericEffectContract<Entities> && ...); }(fd::NumericEffectTypes {}));
+static_assert(std::constructible_from<ygg::Data<fd::NumericEffect<tyr::formalism::Assign, tyr::formalism::FluentTag>>,
+                                      fd::FunctionTermView<tyr::formalism::FluentTag>,
+                                      fd::FunctionExpressionView>);

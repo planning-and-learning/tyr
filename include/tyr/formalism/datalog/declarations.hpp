@@ -21,10 +21,10 @@
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
+#include <memory>
+#include <vector>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/core/types.hpp>
-
-#include <memory>
 
 namespace tyr::formalism::datalog
 {
@@ -276,6 +276,8 @@ using AtomView = ygg::View<ygg::Index<Atom<T>>, Repository>;
 
 template<::tyr::formalism::FactKind T>
 using AtomListView = ygg::View<ygg::IndexList<Atom<T>>, Repository>;
+template<::tyr::formalism::FactKind T>
+using AtomViewList = std::vector<AtomView<T>>;
 
 template<::tyr::formalism::OpKind Op, typename T>
 using BinaryOperatorView = ygg::View<ygg::Index<BinaryOperator<Op, T>>, Repository>;
@@ -297,7 +299,6 @@ template<FactKind T>
 using FunctionBindingView = ygg::View<ygg::Index<RelationBinding<Function<T>>>, Repository>;
 using RuleBindingView = ygg::View<ygg::Index<RelationBinding<Rule>>, Repository>;
 
-
 template<typename T>
 using BooleanOperatorView = ygg::View<ygg::Data<BooleanOperator<T>>, Repository>;
 using LiftedBooleanOperatorView = ygg::View<ygg::Data<BooleanOperator<ygg::Data<FunctionExpression>>>, Repository>;
@@ -307,6 +308,8 @@ template<typename T>
 using BooleanOperatorListView = ygg::View<ygg::DataList<BooleanOperator<T>>, Repository>;
 using LiftedBooleanOperatorListView = ygg::View<ygg::DataList<BooleanOperator<ygg::Data<FunctionExpression>>>, Repository>;
 using GroundBooleanOperatorListView = ygg::View<ygg::DataList<BooleanOperator<ygg::Data<GroundFunctionExpression>>>, Repository>;
+using LiftedBooleanOperatorViewList = std::vector<LiftedBooleanOperatorView>;
+using GroundBooleanOperatorViewList = std::vector<GroundBooleanOperatorView>;
 
 using ConjunctiveConditionView = ygg::View<ygg::Index<ConjunctiveCondition>, Repository>;
 
@@ -319,6 +322,7 @@ using ConjunctiveEffectListView = ygg::View<ygg::IndexList<ConjunctiveEffect>, R
 using ConditionalEffectView = ygg::View<ygg::Index<ConditionalEffect>, Repository>;
 
 using ConditionalEffectListView = ygg::View<ygg::IndexList<ConditionalEffect>, Repository>;
+using ConditionalEffectViewList = std::vector<ConditionalEffectView>;
 
 using FunctionExpressionView = ygg::View<ygg::Data<FunctionExpression>, Repository>;
 
@@ -335,12 +339,16 @@ using FunctionView = ygg::View<ygg::Index<Function<T>>, Repository>;
 
 template<FactKind T>
 using FunctionListView = ygg::View<ygg::IndexList<Function<T>>, Repository>;
+template<FactKind T>
+using FunctionViewList = std::vector<FunctionView<T>>;
 
 template<::tyr::formalism::FactKind T>
 using GroundAtomView = ygg::View<ygg::Index<GroundAtom<T>>, Repository>;
 
 template<::tyr::formalism::FactKind T>
 using GroundAtomListView = ygg::View<ygg::IndexList<GroundAtom<T>>, Repository>;
+template<::tyr::formalism::FactKind T>
+using GroundAtomViewList = std::vector<GroundAtomView<T>>;
 
 using GroundConjunctiveConditionView = ygg::View<ygg::Index<GroundConjunctiveCondition>, Repository>;
 
@@ -353,6 +361,7 @@ using GroundConjunctiveEffectListView = ygg::View<ygg::IndexList<GroundConjuncti
 using GroundConditionalEffectView = ygg::View<ygg::Index<GroundConditionalEffect>, Repository>;
 
 using GroundConditionalEffectListView = ygg::View<ygg::IndexList<GroundConditionalEffect>, Repository>;
+using GroundConditionalEffectViewList = std::vector<GroundConditionalEffectView>;
 
 using GroundFunctionExpressionView = ygg::View<ygg::Data<GroundFunctionExpression>, Repository>;
 
@@ -363,28 +372,39 @@ using GroundFunctionTermValueView = ygg::View<ygg::Index<GroundFunctionTermValue
 
 template<::tyr::formalism::FactKind T>
 using GroundFunctionTermValueListView = ygg::View<ygg::IndexList<GroundFunctionTermValue<T>>, Repository>;
+template<::tyr::formalism::FactKind T>
+using GroundFunctionTermValueViewList = std::vector<GroundFunctionTermValueView<T>>;
 
 template<::tyr::formalism::FactKind T>
 using GroundFunctionTermView = ygg::View<ygg::Index<GroundFunctionTerm<T>>, Repository>;
 
 template<::tyr::formalism::FactKind T>
 using GroundFunctionTermListView = ygg::View<ygg::IndexList<GroundFunctionTerm<T>>, Repository>;
+template<::tyr::formalism::FactKind T>
+using GroundFunctionTermViewList = std::vector<GroundFunctionTermView<T>>;
 
 template<::tyr::formalism::FactKind T>
 using GroundLiteralView = ygg::View<ygg::Index<GroundLiteral<T>>, Repository>;
 
 template<::tyr::formalism::FactKind T>
 using GroundLiteralListView = ygg::View<ygg::IndexList<GroundLiteral<T>>, Repository>;
+template<::tyr::formalism::FactKind T>
+using GroundLiteralViewList = std::vector<GroundLiteralView<T>>;
 
 template<NumericEffectOpKind Op, ::tyr::formalism::FactKind T>
 using GroundNumericEffectView = ygg::View<ygg::Index<GroundNumericEffect<Op, T>>, Repository>;
 
 template<::tyr::formalism::FactKind T>
 using GroundNumericEffectOperatorView = ygg::View<ygg::Data<GroundNumericEffectOperator<T>>, Repository>;
+template<::tyr::formalism::FactKind T>
+using GroundNumericEffectOperatorListView = ygg::View<ygg::DataList<GroundNumericEffectOperator<T>>, Repository>;
+template<::tyr::formalism::FactKind T>
+using GroundNumericEffectOperatorViewList = std::vector<GroundNumericEffectOperatorView<T>>;
 
 using GroundRuleView = ygg::View<ygg::Index<GroundRule>, Repository>;
 
 using GroundRuleListView = ygg::View<ygg::IndexList<GroundRule>, Repository>;
+using GroundRuleViewList = std::vector<GroundRuleView>;
 
 using GroundProgramView = ygg::View<ygg::Index<ProgramTag<::tyr::GroundTag>>, Repository>;
 
@@ -399,6 +419,8 @@ using LiteralView = ygg::View<ygg::Index<Literal<T>>, Repository>;
 
 template<::tyr::formalism::FactKind T>
 using LiteralListView = ygg::View<ygg::IndexList<Literal<T>>, Repository>;
+template<::tyr::formalism::FactKind T>
+using LiteralViewList = std::vector<LiteralView<T>>;
 
 template<::tyr::formalism::OpKind Op, typename T>
 using MultiOperatorView = ygg::View<ygg::Index<MultiOperator<Op, T>>, Repository>;
@@ -417,18 +439,25 @@ using GroundMultiOperatorListView = ygg::View<ygg::IndexList<MultiOperator<Op, y
 using ObjectView = ygg::View<ygg::Index<Object>, Repository>;
 
 using ObjectListView = ygg::View<ygg::IndexList<Object>, Repository>;
+using ObjectViewList = std::vector<ObjectView>;
 
 template<NumericEffectOpKind Op, ::tyr::formalism::FactKind T>
 using NumericEffectView = ygg::View<ygg::Index<NumericEffect<Op, T>>, Repository>;
 
 template<::tyr::formalism::FactKind T>
 using NumericEffectOperatorView = ygg::View<ygg::Data<NumericEffectOperator<T>>, Repository>;
+template<::tyr::formalism::FactKind T>
+using NumericEffectOperatorListView = ygg::View<ygg::DataList<NumericEffectOperator<T>>, Repository>;
+template<::tyr::formalism::FactKind T>
+using NumericEffectOperatorViewList = std::vector<NumericEffectOperatorView<T>>;
 
 template<FactKind T>
 using PredicateView = ygg::View<ygg::Index<Predicate<T>>, Repository>;
 
 template<FactKind T>
 using PredicateListView = ygg::View<ygg::IndexList<Predicate<T>>, Repository>;
+template<FactKind T>
+using PredicateViewList = std::vector<PredicateView<T>>;
 
 template<::tyr::TaskKind Kind>
 using ProgramView = ygg::View<ygg::Index<ProgramTag<Kind>>, Repository>;
@@ -439,10 +468,12 @@ using ProgramListView = ygg::View<ygg::IndexList<ProgramTag<Kind>>, Repository>;
 using RuleView = ygg::View<ygg::Index<Rule>, Repository>;
 
 using RuleListView = ygg::View<ygg::IndexList<Rule>, Repository>;
+using RuleViewList = std::vector<RuleView>;
 
 using TermView = ygg::View<ygg::Data<Term>, Repository>;
 
 using TermListView = ygg::View<ygg::DataList<Term>, Repository>;
+using TermViewList = std::vector<TermView>;
 
 template<::tyr::formalism::OpKind Op, typename T>
 using UnaryOperatorView = ygg::View<ygg::Index<UnaryOperator<Op, T>>, Repository>;
@@ -461,7 +492,7 @@ using GroundUnaryOperatorListView = ygg::View<ygg::IndexList<UnaryOperator<Op, y
 using VariableView = ygg::View<ygg::Index<Variable>, Repository>;
 
 using VariableListView = ygg::View<ygg::IndexList<Variable>, Repository>;
-
+using VariableViewList = std::vector<VariableView>;
 
 /**
  * Context

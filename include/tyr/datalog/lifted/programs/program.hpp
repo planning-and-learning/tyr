@@ -35,6 +35,10 @@ class Program<LiftedTag>
 public:
     Program(::tyr::formalism::datalog::ProgramView<LiftedTag> program,
             ::tyr::formalism::datalog::RepositoryPtr program_repository,
+            ::tyr::formalism::datalog::RepositoryFactoryPtr repository_factory);
+
+    Program(::tyr::formalism::datalog::ProgramView<LiftedTag> program,
+            ::tyr::formalism::datalog::RepositoryPtr program_repository,
             ::tyr::formalism::datalog::RepositoryFactoryPtr repository_factory,
             analysis::ProgramVariableDomains domains,
             analysis::RuleStrata strata,

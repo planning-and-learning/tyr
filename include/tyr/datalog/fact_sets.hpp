@@ -96,6 +96,8 @@ private:
 public:
     explicit FunctionFactSet(::tyr::formalism::datalog::FunctionView<T> function, const ::tyr::formalism::datalog::Repository& repository);
 
+    auto get_function() const noexcept { return m_function; }
+
     void reset() noexcept;
 
     bool insert(const FunctionFactSet& other);

@@ -34,40 +34,6 @@ namespace
  * ygg::Data
  */
 
-void bind_object_data(nb::module_& m, const std::string& name)
-{
-    using V = ygg::Data<Object>;
-
-    auto cls = nb::class_<V>(m, name.c_str())  //
-                   .def(nb::init<const std::string&>(), "name"_a)
-                   .def_rw("name", &V::name);
-    ygg::add_comparison(cls);
-}
-
-void bind_variable_data(nb::module_& m, const std::string& name)
-{
-    using V = ygg::Data<Variable>;
-
-    auto cls = nb::class_<V>(m, name.c_str())  //
-                   .def(nb::init<const std::string&>(), "name"_a)
-                   .def_rw("name", &V::name);
-    ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
-}
-
-void bind_term_data(nb::module_& m, const std::string& name)
-{
-    using V = ygg::Data<Term>;
-
-    auto cls = nb::class_<V>(m, name.c_str())  //
-                   .def(nb::init<typename V::template ViewVariant<Repository>>(), "value"_a)
-                   .def_rw("value", &V::value);
-    ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
-}
-
 template<typename Tag>
 void bind_relation_binding_data(nb::module_& m, const std::string& name)
 {
@@ -159,18 +125,6 @@ void bind_fdr_fact_data(nb::module_& m, const std::string& name)
 
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<FDRVariableView<T>, FDRValue>(), "variable"_a, "value"_a);
-    ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
-}
-
-template<FactKind T>
-void bind_function_data(nb::module_& m, const std::string& name)
-{
-    using V = ygg::Data<Function<T>>;
-
-    auto cls = nb::class_<V>(m, name.c_str())  //
-                   .def(nb::init<const std::string&, ygg::uint_t>(), "name"_a, "arity"_a);
     ygg::add_print(cls);
     ygg::add_comparison(cls);
     ygg::add_hash(cls);
@@ -629,20 +583,10 @@ void bind_boolean_operator_data(nb::module_& m, const std::string& name)
 
 void bind_datas(nb::module_& m)
 {
-    bind_object_data(m, "ObjectData");
-    bind_variable_data(m, "VariableData");
-    bind_term_data(m, "TermData");
-    bind_relation_binding_data<Predicate<StaticTag>>(m, "StaticPredicateBindingData");
-    bind_relation_binding_data<Predicate<FluentTag>>(m, "FluentPredicateBindingData");
     bind_relation_binding_data<Predicate<DerivedTag>>(m, "DerivedPredicateBindingData");
-    bind_relation_binding_data<Function<StaticTag>>(m, "StaticFunctionBindingData");
-    bind_relation_binding_data<Function<FluentTag>>(m, "FluentFunctionBindingData");
-    bind_relation_binding_data<Function<AuxiliaryTag>>(m, "AuxiliaryFunctionBindingData");
     bind_relation_binding_data<Action>(m, "ActionBindingData");
     bind_relation_binding_data<Axiom>(m, "AxiomBindingData");
 
-    bind_predicate_data<StaticTag>(m, "StaticPredicateData");
-    bind_predicate_data<FluentTag>(m, "FluentPredicateData");
     bind_predicate_data<DerivedTag>(m, "DerivedPredicateData");
 
     bind_atom_data<StaticTag>(m, "StaticAtomData");
@@ -663,10 +607,6 @@ void bind_datas(nb::module_& m)
 
     bind_fdr_variable_data<FluentTag>(m, "FluentFDRVariableData");
     bind_fdr_fact_data<FluentTag>(m, "FluentFDRFactData");
-
-    bind_function_data<StaticTag>(m, "StaticFunctionData");
-    bind_function_data<FluentTag>(m, "FluentFunctionData");
-    bind_function_data<AuxiliaryTag>(m, "AuxiliaryFunctionData");
 
     bind_function_term_data<StaticTag>(m, "StaticFunctionTermData");
     bind_function_term_data<FluentTag>(m, "FluentFunctionTermData");
