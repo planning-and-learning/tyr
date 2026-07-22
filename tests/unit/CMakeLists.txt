@@ -2,7 +2,6 @@ enable_testing()
 
 find_package(GTest "1.11.0" REQUIRED COMPONENTS GTest PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 
-# Helper function to create and register a test executable
 function(add_gtest test_name)
     add_executable(${test_name} ${ARGN} main.cpp)
     target_link_libraries(${test_name} PRIVATE tyr::core TBB::tbb GTest::gtest)
@@ -12,7 +11,8 @@ endfunction()
 
 # Compile related repository families together while keeping one source per public family.
 
-add_gtest(formalism_core_types
+add_gtest(
+    formalism_core_types
     "formalism/binding.cpp"
     "formalism/function.cpp"
     "formalism/object.cpp"
@@ -22,7 +22,8 @@ add_gtest(formalism_core_types
     "formalism/variable.cpp"
 )
 
-add_gtest(formalism_datalog_types
+add_gtest(
+    formalism_datalog_types
     "formalism/datalog/arithmetic_operator.cpp"
     "formalism/datalog/atom.cpp"
     "formalism/datalog/binary_operator.cpp"
@@ -54,7 +55,8 @@ add_gtest(formalism_datalog_types
     "formalism/datalog/unary_operator.cpp"
 )
 
-add_gtest(formalism_planning_types
+add_gtest(
+    formalism_planning_types
     "formalism/planning/action.cpp"
     "formalism/planning/arithmetic_operator.cpp"
     "formalism/planning/atom.cpp"
@@ -91,7 +93,8 @@ add_gtest(formalism_planning_types
     "formalism/planning/unary_operator.cpp"
 )
 
-add_gtest(planning_match_tree_types
+add_gtest(
+    planning_match_tree_types
     "planning/ground/match_tree/nodes/atom.cpp"
     "planning/ground/match_tree/nodes/constraint.cpp"
     "planning/ground/match_tree/nodes/generator.cpp"
@@ -100,18 +103,19 @@ add_gtest(planning_match_tree_types
     "planning/ground/match_tree/nodes/variable.cpp"
 )
 
-add_gtest(planning_state_types
+add_gtest(
+    planning_state_types
     "planning/ground/state.cpp"
     "planning/lifted/state.cpp"
     "planning/state.cpp"
 )
 
-add_gtest(formalism_planning_invariants_synthesis        "formalism/planning/invariants/synthesis.cpp")
+add_gtest(formalism_planning_invariants_synthesis "formalism/planning/invariants/synthesis.cpp")
 target_link_libraries(formalism_planning_invariants_synthesis PRIVATE Boost::json)
-add_gtest(formalism_unification                          "formalism/unification.cpp")
+add_gtest(formalism_unification "formalism/unification.cpp")
 
-add_gtest(datalog_cost_policy                           "datalog/cost_policy.cpp")
-add_gtest(datalog_ground_queue                         "datalog/ground_queue.cpp")
+add_gtest(datalog_cost_policy "datalog/cost_policy.cpp")
+add_gtest(datalog_ground_queue "datalog/ground_queue.cpp")
 
 foreach(task_kind ground lifted)
     foreach(heuristic rpg_max rpg_add rpg_ff lmcut)
@@ -122,12 +126,15 @@ endforeach()
 
 foreach(task_kind ground lifted)
     foreach(algorithm brfs astar gbfs iw siw)
-        add_gtest(planning_algorithms_statistics_${task_kind}_${algorithm} "planning/algorithms/statistics/${task_kind}/${algorithm}.cpp")
+        add_gtest(
+            planning_algorithms_statistics_${task_kind}_${algorithm}
+            "planning/algorithms/statistics/${task_kind}/${algorithm}.cpp"
+        )
         target_link_libraries(planning_algorithms_statistics_${task_kind}_${algorithm} PRIVATE Boost::json)
     endforeach()
 endforeach()
-add_gtest(planning_algorithms_utils                      "planning/algorithms/utils.cpp")
-add_gtest(planning_algorithms_portable_shuffle           "planning/algorithms/portable_shuffle.cpp")
-add_gtest(planning_algorithms_iw_novelty_table           "planning/algorithms/iw/novelty_table.cpp")
-add_gtest(planning_algorithms_serialized                 "planning/algorithms/serialized.cpp")
+add_gtest(planning_algorithms_utils "planning/algorithms/utils.cpp")
+add_gtest(planning_algorithms_portable_shuffle "planning/algorithms/portable_shuffle.cpp")
+add_gtest(planning_algorithms_iw_novelty_table "planning/algorithms/iw/novelty_table.cpp")
+add_gtest(planning_algorithms_serialized "planning/algorithms/serialized.cpp")
 target_link_libraries(planning_algorithms_serialized PRIVATE Boost::json)

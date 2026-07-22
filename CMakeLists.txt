@@ -5,36 +5,43 @@ tyr_read_project_version(TYR_PROJECT_VERSION "${CMAKE_CURRENT_SOURCE_DIR}/pyproj
 
 project(tyr VERSION "${TYR_PROJECT_VERSION}")
 
-
-##############################################################
-# Language setup
-##############################################################
+# Project configuration
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+include(GNUInstallDirs)
 
-##############################################################
 # Options
-##############################################################
 
+option(TYR_USE_LLD "Use LLVM lld with Clang when available." ON)
+option(TYR_ENABLE_LTO "Enable link-time optimization for Release builds." ON)
+option(
+    TYR_HEADER_INSTANTIATION
+    "Instantiate templates in in-tree translation units at higher compile time cost."
+    OFF
+)
+set(TYR_STATE_STORAGE_POLICY "Tree" CACHE STRING "Policy used for storing states.")
+option(TYR_BUILD_PYTYR "Build pytyr Python bindings." OFF)
+option(TYR_BUILD_TESTS "Build Tyr tests." OFF)
+option(TYR_BUILD_EXECUTABLES "Build Tyr executables." OFF)
+option(TYR_BUILD_PROFILING "Build Tyr profiling targets." OFF)
 
+# Build configuration
+
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(
+        CMAKE_BUILD_TYPE "Release" CACHE STRING
+        "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE
+    )
+endif()
 
 add_compile_definitions(YGG_ENABLE_FMT_FORMATTERS=1)
 
-option(TYR_USE_LLD "Use LLVM lld linker when available" ON)
-
-message("Build shared libraries enabled.")
-
-option(TYR_ENABLE_LTO "Enable link-time optimization for optimized builds." ON)
-
-option(TYR_HEADER_INSTANTIATION "Enable stronger inlining at higher compile time costs." OFF)
 if(TYR_HEADER_INSTANTIATION)
     add_compile_definitions(TYR_HEADER_INSTANTIATION)
 endif()
-
-set(TYR_STATE_STORAGE_POLICY "Tree" CACHE STRING "Policy used for storing states.")
 
 if("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Tree")
     add_compile_definitions(TYR_STATE_STORAGE_TREE)
@@ -44,46 +51,22 @@ else()
     message(FATAL_ERROR "TYR_STATE_STORAGE_POLICY must be Tree or Hashset")
 endif()
 
-
-##############################################################
-# Build Targets
-##############################################################
-
-option(TYR_BUILD_PYTYR "Build pytyr Python bindings." OFF)
-option(TYR_BUILD_TESTS "Build Tyr tests." OFF)
-option(TYR_BUILD_EXECUTABLES "Build Tyr executables." OFF)
-option(TYR_BUILD_PROFILING "Build Tyr profiling targets." OFF)
-
-
-##############################################################
-# Common Settings
-##############################################################
-
-# make cache variables for install destinations
-include(GNUInstallDirs)
-
 if(MSVC)
-    if(NOT CMAKE_BUILD_TYPE)
-        set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
-    endif()
-
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W1 /EHsc /bigobj /MP")
     string(APPEND CMAKE_EXE_LINKER_FLAGS " /IGNORE:4006,4044,4075")
 else()
-    if(NOT CMAKE_BUILD_TYPE)
-        set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
-    endif()
     # TODO: Add -Wextra and fix all warnings
 
-    message("CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID}")
-
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
     add_compile_options(-Wall)
 
-    # add_compile_options(-ftime-report)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og -g2 -ggdb")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -g2 -fno-omit-frame-pointer -fno-lto")
 
-    if(TYR_USE_LLD AND (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"))
+    if(
+        TYR_USE_LLD
+        AND (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    )
         find_program(LLD_LINKER NAMES ld.lld)
         if(LLD_LINKER)
             message(STATUS "Using lld: ${LLD_LINKER}")
@@ -91,79 +74,50 @@ else()
         else()
             message(STATUS "lld not found, falling back to default linker")
         endif()
-    elseif(TYR_USE_LLD AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    elseif(TYR_USE_LLD AND TYR_ENABLE_LTO AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         message(STATUS "Skipping lld with GNU because GCC LTO requires the GCC linker plugin")
     endif()
 
     if(TYR_ENABLE_LTO AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-
-        # Release: enable LTO but cap parallelism to reduce RAM spikes
-        set(CMAKE_CXX_FLAGS_RELEASE
-            "${CMAKE_CXX_FLAGS_RELEASE} -flto=2")
-        set(CMAKE_EXE_LINKER_FLAGS_RELEASE
-            "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -flto=2")
-        set(CMAKE_SHARED_LINKER_FLAGS_RELEASE
-            "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -flto=2")
-
-        # RelWithDebInfo: make debug info cheap (big compile-time/RAM win)
-        set(CMAKE_CXX_FLAGS_RELWITHDEBINFO
-            "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -g2 -fno-omit-frame-pointer -fno-lto")
-
-        # Debug: keep your choices (CMake will supply -O0 or -Og depending on toolchain,
-        # but if you want -Og specifically, keep it here; otherwise omit -Og)
-        set(CMAKE_CXX_FLAGS_DEBUG
-            "${CMAKE_CXX_FLAGS_DEBUG} -Og -g2 -ggdb")
-
-    elseif(TYR_ENABLE_LTO AND (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"))
-
-        # Release: prefer ThinLTO for much lower compile/link cost than full LTO
-        set(CMAKE_CXX_FLAGS_RELEASE
-            "${CMAKE_CXX_FLAGS_RELEASE} -flto=thin")
+        # Cap release LTO parallelism to reduce RAM spikes.
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto=2")
+        set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -flto=2")
+        set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -flto=2")
+        set(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${CMAKE_MODULE_LINKER_FLAGS_RELEASE} -flto=2")
+    elseif(
+        TYR_ENABLE_LTO
+        AND (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    )
+        # ThinLTO reduces release compile and link costs compared with full LTO.
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto=thin")
         if(APPLE)
-            set(CMAKE_EXE_LINKER_FLAGS_RELEASE
-                "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -Wl,-mllvm,-threads=2")
-            set(CMAKE_SHARED_LINKER_FLAGS_RELEASE
-                "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -Wl,-mllvm,-threads=2")
+            set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -Wl,-mllvm,-threads=2")
+            set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -Wl,-mllvm,-threads=2")
+            set(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${CMAKE_MODULE_LINKER_FLAGS_RELEASE} -Wl,-mllvm,-threads=2")
         else()
-            set(CMAKE_EXE_LINKER_FLAGS_RELEASE
-                "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -Wl,--thinlto-jobs=2")
-            set(CMAKE_SHARED_LINKER_FLAGS_RELEASE
-                "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -Wl,--thinlto-jobs=2")
+            set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -Wl,--thinlto-jobs=2")
+            set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -Wl,--thinlto-jobs=2")
+            set(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${CMAKE_MODULE_LINKER_FLAGS_RELEASE} -Wl,--thinlto-jobs=2")
         endif()
-
-        # RelWithDebInfo: cheap debug info
-        set(CMAKE_CXX_FLAGS_RELWITHDEBINFO
-            "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -g2 -fno-omit-frame-pointer -fno-lto")
-
-        # Debug (same note as above)
-        set(CMAKE_CXX_FLAGS_DEBUG
-            "${CMAKE_CXX_FLAGS_DEBUG} -Og -g2 -ggdb")
-
     endif()
 endif()
 
-message(STATUS "Build configuration: ${CMAKE_BUILD_TYPE}")
+if(CMAKE_CONFIGURATION_TYPES)
+    message(STATUS "Build configurations: ${CMAKE_CONFIGURATION_TYPES}")
+else()
+    message(STATUS "Build configuration: ${CMAKE_BUILD_TYPE}")
+endif()
 
 set(ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 add_definitions(-DROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
-message("ROOT_DIR: ${ROOT_DIR}")
 
-
-##############################################################
-# Dependency Handling
-##############################################################
-
-# set(CMAKE_FIND_DEBUG_MODE TRUE)
+# Dependencies
 
 include("${PROJECT_SOURCE_DIR}/cmake/bootstrap_pyyggdrasil.cmake")
 
-# ---------
-# yggdrasil
-# ---------
-
 find_package(yggdrasil 0.0.25 CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 if(yggdrasil_FOUND)
-  message(STATUS "Found yggdrasil: ${yggdrasil_DIR} (found version ${yggdrasil_VERSION})")
+    message(STATUS "Found yggdrasil: ${yggdrasil_DIR} (found version ${yggdrasil_VERSION})")
 endif()
 
 yggdrasil_find_python_native_prefix(pypddl PYPDDL_NATIVE_PREFIX)
@@ -172,108 +126,67 @@ yggdrasil_register_native_dependency_prefix("${PYPDDL_NATIVE_PREFIX}")
 yggdrasil_register_python_native_runtime_prefix("pypddl/native" "${PYPDDL_NATIVE_PREFIX}")
 yggdrasil_register_python_native_runtime_prefix("pyyggdrasil" "${YGGDRASIL_NATIVE_PREFIX}")
 
-# -----
-# argparse
-# -----
-
 find_package(argparse CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 if(argparse_FOUND)
-  message(STATUS "Found argparse: ${argparse_DIR} (found version ${argparse_VERSION})")
+    message(STATUS "Found argparse: ${argparse_DIR} (found version ${argparse_VERSION})")
 endif()
 
-# -----
-# Boost
-# -----
-
-# Find Boost headers only according to https://cmake.org/cmake/help/latest/module/FindBoost.html
 find_package(Boost 1.74.0 REQUIRED COMPONENTS iostreams json PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 if(Boost_FOUND)
-  message(STATUS "Found Boost: ${Boost_DIR} (found version ${Boost_VERSION})")
+    message(STATUS "Found Boost: ${Boost_DIR} (found version ${Boost_VERSION})")
 endif()
-
-# -----
-# GTL
-# -----
 
 find_package(gtl CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 if(gtl_FOUND)
-  message(STATUS "Found gtl: ${gtl_DIR}")
+    message(STATUS "Found gtl: ${gtl_DIR}")
 endif()
-
-# -----
-# Cista
-# -----
 
 find_package(cista CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 if(cista_FOUND)
-  message(STATUS "Found cista: ${cista_DIR} (found version ${cista_VERSION})")
+    message(STATUS "Found cista: ${cista_DIR} (found version ${cista_VERSION})")
 endif()
-
-# -----
-# Fmt
-# -----
 
 find_package(fmt CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 if(fmt_FOUND)
-  message(STATUS "Found fmt: ${fmt_DIR} (found version ${fmt_VERSION})")
+    message(STATUS "Found fmt: ${fmt_DIR} (found version ${fmt_VERSION})")
 endif()
 
-# -----
-# Threads
-# -----
-
-# Prefer -pthread over -lpthread on platforms that support it
+# Prefer -pthread over -lpthread on platforms that support it.
 set(THREADS_PREFER_PTHREAD_FLAG ON)
-# CMake's built-in module; no PATHS/NO_DEFAULT_PATH here
 find_package(Threads REQUIRED)
 if(Threads_FOUND)
-  message(STATUS "Found Threads: ${CMAKE_THREAD_LIBS_INIT}")
+    message(STATUS "Found Threads: ${CMAKE_THREAD_LIBS_INIT}")
 endif()
-
-# -----
-# TBB
-# -----
 
 find_package(TBB CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 if(TBB_FOUND)
-  include_directories(${TBB_INCLUDE_DIRS})
-  message(STATUS "Found TBB: ${TBB_DIR} (found version ${TBB_VERSION})")
+    include_directories(${TBB_INCLUDE_DIRS})
+    message(STATUS "Found TBB: ${TBB_DIR} (found version ${TBB_VERSION})")
 endif()
-
-# -----
-# valla
-# -----
 
 find_package(valla CONFIG COMPONENTS core REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 if(valla_FOUND)
-  message(STATUS "Found valla: ${valla_DIR} (found version ${valla_VERSION})")
+    message(STATUS "Found valla: ${valla_DIR} (found version ${valla_VERSION})")
 endif()
-
-# -----
-# Loki
-# -----
 
 find_package(loki 1.0.25 COMPONENTS parsers REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 if(loki_FOUND)
-  message(STATUS "Found loki: ${loki_DIR} (found version ${loki_VERSION})")
+    message(STATUS "Found loki: ${loki_DIR} (found version ${loki_VERSION})")
 endif()
 
+# Benchmark setup
 
-##############################################################
-# Add library and executable targets
-##############################################################
-
-# ------------
-# Target Tyr
-# ------------
 if(TYR_BUILD_TESTS OR TYR_BUILD_PROFILING)
-    # Benchmark PDDL comes from the pypddl-datasets cache, resolved (and
-    # downloaded on demand) at configure time.
+    # Benchmark PDDL is resolved from the pypddl-datasets cache and downloaded on demand at configure time.
     find_package(Python 3.10 REQUIRED COMPONENTS Interpreter)
     execute_process(
-        COMMAND "${Python_EXECUTABLE}" -c "import pypddl_datasets, sys; sys.stdout.write(str(pypddl_datasets.data_root()))"
+        COMMAND
+            "${Python_EXECUTABLE}"
+            -c
+            "import pypddl_datasets, sys; sys.stdout.write(str(pypddl_datasets.data_root()))"
         OUTPUT_VARIABLE TYR_BENCHMARKS_DIR
-        RESULT_VARIABLE TYR_BENCHMARKS_RESULT)
+        RESULT_VARIABLE TYR_BENCHMARKS_RESULT
+    )
     if(NOT TYR_BENCHMARKS_RESULT EQUAL 0)
         message(FATAL_ERROR "Could not resolve the benchmark data root; install 'pypddl-datasets>=0.0.9,<0.1' into the configuring Python (${Python_EXECUTABLE}).")
     endif()
@@ -281,53 +194,43 @@ if(TYR_BUILD_TESTS OR TYR_BUILD_PROFILING)
     add_compile_definitions(BENCHMARKS_DIR="${TYR_BENCHMARKS_DIR}")
 endif()
 
+# Targets
+
 add_subdirectory(src)
 
-# -------------------
-# Target Python Tyr
-# -------------------
 if(TYR_BUILD_PYTYR)
     add_subdirectory(python/src)
 endif()
 
-# ----------
-# Target Exe
-# ----------
 if(TYR_BUILD_EXECUTABLES)
     add_subdirectory(exe)
 endif()
 
-# ----------------
-# Target Profiling
-# ----------------
 if(TYR_BUILD_PROFILING)
     add_subdirectory(profiling)
 endif()
 
-# -----------
-# Target Test
-# -----------
 if(TYR_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif()
 
-
-
-##############################################################
-# Install Package Files
-##############################################################
+# Installation and package export
 
 include(CMakePackageConfigHelpers)
 
 set(TYR_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/tyr")
 set(TYR_INSTALL_CMAKE_HELPERDIR "${TYR_INSTALL_CMAKEDIR}/cmake")
 
-install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/tyr"
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+install(
+    DIRECTORY "${PROJECT_SOURCE_DIR}/include/tyr"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+)
 
-install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cmake/"
-    DESTINATION "${TYR_INSTALL_CMAKE_HELPERDIR}")
+install(
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cmake/"
+    DESTINATION "${TYR_INSTALL_CMAKE_HELPERDIR}"
+)
 
 write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/tyrConfigVersion.cmake"

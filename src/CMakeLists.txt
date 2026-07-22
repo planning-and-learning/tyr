@@ -1,26 +1,26 @@
-# List of subdirectory names
 set(SUBDIRECTORIES "analysis" "buffer" "common" "formalism" "datalog" "planning")
-# set(SUBDIRECTORIES "analysis" "buffer" "common" "formalism" "datalog" "planning")
 
-# Initialize empty lists for source and header files
 set(TYR_SRC_FILES "")
 set(TYR_PRIVATE_HEADER_FILES "")
 set(TYR_PUBLIC_HEADER_FILES "")
 
-# Loop over the subdirectories for source files
 foreach(subdir ${SUBDIRECTORIES})
     file(GLOB_RECURSE TMP_PRIVATE_HEADER_FILES "${subdir}/*.hpp" "${subdir}/**/*.hpp")
     list(APPEND TYR_PRIVATE_HEADER_FILES ${TMP_PRIVATE_HEADER_FILES})
 
-    file(GLOB_RECURSE TMP_PUBLIC_HEADER_FILES 
-        "../include/tyr/${subdir}/*.hpp" "../include/tyr/${subdir}/**/*.hpp")
+    file(
+        GLOB_RECURSE TMP_PUBLIC_HEADER_FILES
+        "../include/tyr/${subdir}/*.hpp"
+        "../include/tyr/${subdir}/**/*.hpp"
+    )
     list(APPEND TYR_PUBLIC_HEADER_FILES ${TMP_PUBLIC_HEADER_FILES})
 endforeach()
 
 list(APPEND TYR_PUBLIC_HEADER_FILES "../include/tyr/tyr.hpp")
 
 if("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Hashset")
-    set(TYR_STATE_STORAGE_SRC_FILES
+    set(
+        TYR_STATE_STORAGE_SRC_FILES
         planning/state_storage/hash_set/numeric.cpp
         planning/ground/state_storage/hash_set/atom.cpp
         planning/ground/state_storage/hash_set/fact.cpp
@@ -29,7 +29,8 @@ if("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Hashset")
         planning/lifted/state_storage/hash_set/fact.cpp
     )
 elseif("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Tree")
-    set(TYR_STATE_STORAGE_SRC_FILES
+    set(
+        TYR_STATE_STORAGE_SRC_FILES
         planning/state_storage/tree_compression/numeric.cpp
         planning/ground/state_storage/tree_compression/atom.cpp
         planning/ground/state_storage/tree_compression/fact.cpp
@@ -39,7 +40,8 @@ elseif("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Tree")
     )
 endif()
 
-add_library(core SHARED ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
+add_library(
+    core SHARED ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     analysis/listeners.cpp
     analysis/program_domains.cpp
     analysis/stratification.cpp
@@ -52,7 +54,6 @@ add_library(core SHARED ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     formalism/datalog/repository.cpp
     formalism/datalog/views.cpp
     formalism/datalog/variable_dependency_graph.cpp
-
 
     formalism/planning/invariants/constraints.cpp
     formalism/planning/invariants/matching.cpp
@@ -147,7 +148,51 @@ add_library(core SHARED ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     planning/plan.cpp
     planning/task_utils.cpp
 )
+add_library(tyr::core ALIAS core)
 set_target_properties(core PROPERTIES OUTPUT_NAME tyr_core)
+
+target_compile_features(core PUBLIC cxx_std_20)
+
+target_compile_definitions(
+    core
+    PUBLIC
+        FMT_HEADER_ONLY
+        BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
+        BOOST_MPL_LIMIT_LIST_SIZE=50
+)
+
+if("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Hashset")
+    target_compile_definitions(core PUBLIC TYR_STATE_STORAGE_HASHSET)
+elseif("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Tree")
+    target_compile_definitions(core PUBLIC TYR_STATE_STORAGE_TREE)
+endif()
+
+target_include_directories(
+    core
+    PUBLIC
+        "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
+        "$<BUILD_INTERFACE:${YGGDRASIL_NATIVE_DEPENDENCY_INCLUDE_DIRECTORIES}>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+)
+
+foreach(prefix IN LISTS CMAKE_PREFIX_PATH)
+    if(EXISTS "${prefix}/include")
+        target_include_directories(core PUBLIC "$<BUILD_INTERFACE:${prefix}/include>")
+    endif()
+endforeach()
+
+target_link_libraries(
+    core
+    PUBLIC
+        yggdrasil::yggdrasil
+        TBB::tbb
+        valla::core
+        fmt::fmt-header-only
+        gtl::gtl
+        loki::parsers
+    PRIVATE
+        Threads::Threads
+)
 
 if(APPLE)
     set(TYR_LIBRARY_ORIGIN "@loader_path")
@@ -161,55 +206,13 @@ foreach(prefix IN LISTS CMAKE_PREFIX_PATH)
     endif()
 endforeach()
 
-set_target_properties(core PROPERTIES
-    BUILD_RPATH "${TYR_CORE_BUILD_RPATHS}"
-    INSTALL_RPATH "${TYR_LIBRARY_ORIGIN}")
-
-# Create an alias for simpler reference
-add_library(tyr::core ALIAS core)
-
-target_compile_features(core PUBLIC cxx_std_20)
-
-target_link_libraries(core
-  PUBLIC
-    yggdrasil::yggdrasil
-    TBB::tbb
-    valla::core
-    fmt::fmt-header-only
-    gtl::gtl
-    loki::parsers
-  PRIVATE
-    Threads::Threads
+set_target_properties(
+    core
+    PROPERTIES
+        BUILD_RPATH "${TYR_CORE_BUILD_RPATHS}"
+        INSTALL_RPATH "${TYR_LIBRARY_ORIGIN}"
 )
 
-target_compile_definitions(core
-    PUBLIC
-        FMT_HEADER_ONLY
-        BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
-        BOOST_MPL_LIMIT_LIST_SIZE=50
-)
-
-if("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Hashset")
-    target_compile_definitions(core PUBLIC TYR_STATE_STORAGE_HASHSET)
-elseif("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Tree")
-    target_compile_definitions(core PUBLIC TYR_STATE_STORAGE_TREE)
-endif()
-
-# Use include depending on building or using from installed location
-target_include_directories(core
-    PUBLIC
-        "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
-        "$<BUILD_INTERFACE:${YGGDRASIL_NATIVE_DEPENDENCY_INCLUDE_DIRECTORIES}>"
-        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
-)
-
-foreach(prefix IN LISTS CMAKE_PREFIX_PATH)
-    if(EXISTS "${prefix}/include")
-        target_include_directories(core PUBLIC "$<BUILD_INTERFACE:${prefix}/include>")
-    endif()
-endforeach()
-
-# Install the target and create export-set
 install(
     TARGETS core
     EXPORT tyrcoreTargets
@@ -219,16 +222,16 @@ install(
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-# Generate and install export file
-install(EXPORT tyrcoreTargets
+install(
+    EXPORT tyrcoreTargets
     NAMESPACE tyr::
     COMPONENT core
     FILE "tyrcoreTargets.cmake"
     DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/tyr"
 )
 
-# Generate build tree export file
-export(EXPORT tyrcoreTargets
+export(
+    EXPORT tyrcoreTargets
     FILE "${CMAKE_CURRENT_BINARY_DIR}/cmake/tyrcoreTargets.cmake"
     NAMESPACE tyr::
 )

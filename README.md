@@ -153,11 +153,16 @@ CMake options:
 | `TYR_BUILD_EXECUTABLES` | `OFF` | Build Tyr executables. |
 | `TYR_BUILD_PROFILING` | `OFF` | Build Tyr profiling targets. |
 | `TYR_BUILD_PYTYR` | `OFF` | Build `pytyr` Python bindings. |
-| `TYR_HEADER_INSTANTIATION` | `OFF` | Enable stronger inlining at higher compile-time cost. |
-| `TYR_ENABLE_INNER_PARALLELISM` | `OFF` | Enable inner rule parallelism. |
-| `TYR_USE_LLD` | `ON` | Use LLVM `lld` when available. |
-| `TYR_ENABLE_LTO` | `ON` | Enable link-time optimization for optimized builds. |
+| `TYR_HEADER_INSTANTIATION` | `OFF` | Instantiate templates in in-tree translation units at higher compile-time cost. |
+| `TYR_USE_LLD` | `ON` | Use LLVM `lld` with Clang when available. |
+| `TYR_ENABLE_LTO` | `ON` | Enable link-time optimization for Release builds. |
 | `TYR_STATE_STORAGE_POLICY` | `Tree` | State storage backend; accepted values are `Tree` and `Hashset`. |
+
+Single-config CMake builds default to Release. On GCC and Clang, Debug builds
+use `-Og` with debug symbols, RelWithDebInfo keeps frame pointers and disables
+LTO, and Release LTO uses GCC LTO or Clang ThinLTO. Editable installs and
+wheels disable `TYR_USE_LLD` and `TYR_ENABLE_LTO` by default for build
+reliability.
 
 Install Tyr from a configured build directory with:
 
