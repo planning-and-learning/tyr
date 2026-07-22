@@ -35,17 +35,14 @@ Stage: build
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 
-    python3.10 -m pip install --no-cache-dir --upgrade pip
-    PYYGGDRASIL_JOBS=2 PYPDDL_JOBS=2 python3.10 -m pip install --no-cache-dir typing_extensions 'pyyggdrasil>=0.0.23,<0.1' 'pypddl>=1.0.19,<1.1'
-
     # Set working directory
     cd /opt/tyr
 
-    NATIVE_PREFIX_PATH="$(python3.10 -c 'import pypddl, pyyggdrasil; print(f"{pypddl.native_prefix()};{pyyggdrasil.native_prefix()}")')"
+    python3.10 -m pip install --no-cache-dir --upgrade pip uv
+    PYPDDL_JOBS=2 uv pip install --python /usr/bin/python3.10 --break-system-packages --no-cache -r pyproject.toml
 
     # Build Tyr
     cmake -S . -B build \
-        -DCMAKE_PREFIX_PATH="${NATIVE_PREFIX_PATH}" \
         -DCMAKE_BUILD_TYPE=Release \
         -DPython_EXECUTABLE=/usr/bin/python3.10 \
         -DTYR_BUILD_TESTS=OFF \
