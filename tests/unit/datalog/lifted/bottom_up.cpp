@@ -253,7 +253,7 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchAtOneAndMaximumThreads)
 {
     const auto& test_case = GetParam();
 
-    for (const auto num_threads : { ygg::uint_t(1), ygg::ExecutionContext::get_max_num_threads() })
+    for (const auto num_threads : { ygg::ExecutionContext::uint_t(1), ygg::ExecutionContext::get_max_num_threads() })
     {
         auto execution_context = ygg::ExecutionContext::create(num_threads);
         auto task = p::Task<p::LiftedTag>::create(make_test_parser(test_case.domain_file).parse_task(test_case.task_file));
