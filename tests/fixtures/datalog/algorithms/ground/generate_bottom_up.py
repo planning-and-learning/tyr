@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Regenerate lifted bottom-up binding and cost fixtures for the initial state.
+"""Regenerate ground bottom-up binding and cost fixtures for the initial state.
 
 Usage:
-    .venv/bin/python -m tests.fixtures.datalog.algorithms.lifted.generate_bottom_up [CASE ...]
+    .venv/bin/python -m tests.fixtures.datalog.algorithms.ground.generate_bottom_up [CASE ...]
 """
 
 from __future__ import annotations
@@ -19,35 +19,30 @@ from pypddl.formalism import ParserOptions
 from pytyr import datalog
 from pytyr.formalism.planning import Parser, PlanningTask
 from pytyr.planning import CostMode
-from pytyr.planning import lifted as planning
+from pytyr.planning import ground as planning
+from pytyr.planning import lifted
 from pyyggdrasil.execution import ExecutionContext
 
 ROOT = Path(__file__).resolve().parents[5]
 BENCHMARKS_ROOT = pypddl_datasets.data_root()
 BENCHMARKS_FIXTURE = ROOT / "tests/fixtures/planning/benchmarks.json"
-FIXTURE = ROOT / "tests/fixtures/datalog/algorithms/lifted/bottom_up.json.gz"
+FIXTURE = ROOT / "tests/fixtures/datalog/algorithms/ground/bottom_up.json.gz"
 
 ConfigName = Literal[
-    "applicable_action",
-    "axiom_evaluator",
-    "ground_task",
-    "rpg_sum_unit",
-    "rpg_sum_general",
-    "rpg_max_unit",
-    "rpg_max_general",
+    "rpg_sum_override_unit",
+    "rpg_sum_override_general",
+    "rpg_max_override_unit",
+    "rpg_max_override_general",
     "rpg_achiever_max_override_unit",
     "rpg_achiever_max_override_general",
 ]
 FixtureCase = dict[str, object]
 
 CONFIGS: tuple[ConfigName, ...] = (
-    "applicable_action",
-    "axiom_evaluator",
-    "ground_task",
-    "rpg_sum_unit",
-    "rpg_sum_general",
-    "rpg_max_unit",
-    "rpg_max_general",
+    "rpg_sum_override_unit",
+    "rpg_sum_override_general",
+    "rpg_max_override_unit",
+    "rpg_max_override_general",
     "rpg_achiever_max_override_unit",
     "rpg_achiever_max_override_general",
 )
@@ -57,8 +52,8 @@ KNOWN_GENERAL_COST_SKIP = (
 )
 GENERAL_RPG_CONFIGS: frozenset[ConfigName] = frozenset(
     {
-        "rpg_sum_general",
-        "rpg_max_general",
+        "rpg_sum_override_general",
+        "rpg_max_override_general",
         "rpg_achiever_max_override_general",
     }
 )
@@ -76,10 +71,9 @@ class PredicateAtoms(TypedDict):
 
 
 Workspace = Union[
-    datalog.lifted.UnannotatedProgramWorkspace,
-    datalog.lifted.SumGoalProgramWorkspace,
-    datalog.lifted.MaxGoalProgramWorkspace,
-    datalog.lifted.MaxAchieverGoalOverrideProgramWorkspace,
+    datalog.ground.SumGoalOverrideProgramWorkspace,
+    datalog.ground.MaxGoalOverrideProgramWorkspace,
+    datalog.ground.MaxAchieverGoalOverrideProgramWorkspace,
 ]
 
 
@@ -87,7 +81,6 @@ Workspace = Union[
 class Context:
     execution_context: ExecutionContext
     task: planning.Task
-    axiom_evaluator: planning.AxiomEvaluator
     successor_generator: planning.SuccessorGenerator
     initial_node: planning.Node
 
@@ -101,12 +94,17 @@ def parse_task(domain_file: Path, task_file: Path) -> PlanningTask:
 
 def make_context(domain_file: Path, task_file: Path) -> Context:
     execution_context = ExecutionContext(1)
-    task = planning.Task(parse_task(domain_file, task_file))
+    lifted_task = lifted.Task(parse_task(domain_file, task_file))
+    result = lifted_task.instantiate_ground_task(
+        execution_context,
+        lifted.GroundTaskInstantiationOptions(),
+    )
+    task = result.task
     axiom_evaluator = planning.AxiomEvaluatorFactory().create(task, execution_context)
     state_repository = planning.StateRepositoryFactory().create(task, axiom_evaluator)
     successor_generator = planning.SuccessorGeneratorFactory().create(task, execution_context, state_repository)
     initial_node = successor_generator.get_initial_node()
-    return Context(execution_context, task, axiom_evaluator, successor_generator, initial_node)
+    return Context(execution_context, task, successor_generator, initial_node)
 
 
 def atoms_by_predicate(workspace: Workspace) -> list[PredicateAtoms]:
@@ -139,24 +137,10 @@ def cost_mode(config: ConfigName) -> CostMode:
 
 
 def run_config(context: Context, config: ConfigName) -> list[PredicateAtoms]:
-    if config == "axiom_evaluator":
-        return atoms_by_predicate(context.axiom_evaluator.get_workspace())
-
-    if config == "applicable_action":
-        context.successor_generator.get_applicable_action_bindings(context.initial_node)
-        return atoms_by_predicate(context.successor_generator.get_workspace())
-
-    if config == "ground_task":
-        program = planning.GroundTaskProgram(context.task.get_task())
-        workspace = datalog.lifted.UnannotatedProgramWorkspace(program.get_datalog_program())
-        execution = datalog.lifted.UnannotatedProgramExecutionContext(workspace)
-        datalog.lifted.solve(execution, context.execution_context)
-        return atoms_by_predicate(workspace)
-
     mode = cost_mode(config)
-    if config.startswith("rpg_sum_"):
+    if config.startswith("rpg_sum_override_"):
         heuristic = planning.AddRPGHeuristic(context.task, context.execution_context, mode)
-    elif config.startswith("rpg_max_"):
+    elif config.startswith("rpg_max_override_"):
         heuristic = planning.MaxRPGHeuristic(context.task, context.execution_context, mode)
     elif config.startswith("rpg_achiever_max_override_"):
         heuristic = planning.LMCutHeuristic(context.task, context.execution_context, mode)
@@ -203,7 +187,7 @@ def main() -> None:
     for case in cases_in:
         if filters and case["name"] not in filters:
             continue
-        print(f"Generating lifted::bottom_up :: {case['name']}", flush=True)
+        print(f"Generating ground::bottom_up :: {case['name']}", flush=True)
         cases.append(generate_case(case))
 
     if not filters:

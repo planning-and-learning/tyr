@@ -470,9 +470,10 @@ void bind_rpg_max_heuristic(nb::module_& m, const std::string& name)
                         "cost_mode"_a = CostMode::GENERAL)
                    .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::GENERAL);
 
+    cls.def("get_workspace", &T::get_workspace, nb::rv_policy::reference_internal);
+
     if constexpr (std::same_as<Kind, LiftedTag>)
-        cls.def("get_workspace", &T::get_workspace, nb::rv_policy::reference_internal)
-            .def("get_rpg_program", &T::get_rpg_program, nb::rv_policy::reference_internal);
+        cls.def("get_rpg_program", &T::get_rpg_program, nb::rv_policy::reference_internal);
 }
 
 template<TaskKind Kind>
@@ -488,9 +489,10 @@ void bind_rpg_add_heuristic(nb::module_& m, const std::string& name)
                         "cost_mode"_a = CostMode::GENERAL)
                    .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::GENERAL);
 
+    cls.def("get_workspace", &T::get_workspace, nb::rv_policy::reference_internal);
+
     if constexpr (std::same_as<Kind, LiftedTag>)
-        cls.def("get_workspace", &T::get_workspace, nb::rv_policy::reference_internal)
-            .def("get_rpg_program", &T::get_rpg_program, nb::rv_policy::reference_internal);
+        cls.def("get_rpg_program", &T::get_rpg_program, nb::rv_policy::reference_internal);
 }
 
 template<TaskKind Kind>
@@ -506,9 +508,10 @@ void bind_rpg_ff_heuristic(nb::module_& m, const std::string& name)
                         "cost_mode"_a = CostMode::GENERAL)
                    .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::GENERAL);
 
+    cls.def("get_workspace", &T::get_workspace, nb::rv_policy::reference_internal);
+
     if constexpr (std::same_as<Kind, LiftedTag>)
-        cls.def("get_workspace", &T::get_workspace, nb::rv_policy::reference_internal)
-            .def("get_rpg_program", &T::get_rpg_program, nb::rv_policy::reference_internal);
+        cls.def("get_rpg_program", &T::get_rpg_program, nb::rv_policy::reference_internal);
 }
 
 template<TaskKind Kind>
@@ -524,9 +527,10 @@ void bind_lmcut_heuristic(nb::module_& m, const std::string& name)
                         "cost_mode"_a = CostMode::GENERAL)
                    .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::GENERAL);
 
+    cls.def("get_workspace", &T::get_workspace, nb::rv_policy::reference_internal);
+
     if constexpr (std::same_as<Kind, LiftedTag>)
-        cls.def("get_workspace", &T::get_workspace, nb::rv_policy::reference_internal)
-            .def("get_rpg_program", &T::get_rpg_program, nb::rv_policy::reference_internal);
+        cls.def("get_rpg_program", &T::get_rpg_program, nb::rv_policy::reference_internal);
 }
 
 }  // namespace tyr::planning

@@ -15,11 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/lifted/bottom_up.hpp"
-
 #include "planning/parser.hpp"
-#include "tyr/datalog/lifted/contexts/program.hpp"
-#include "tyr/planning/lifted/programs/ground.hpp"
+#include "tyr/datalog/ground/queue.hpp"
 #include "tyr/planning/planning.hpp"
 
 #include <algorithm>
@@ -40,7 +37,6 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <tuple>
 #include <utility>
 #include <vector>
 #include <yggdrasil/serialization/json.hpp>
@@ -54,19 +50,13 @@ namespace tyr::tests
 {
 namespace
 {
-inline constexpr const char* kBottomUpFixture = "tests/fixtures/datalog/algorithms/lifted/bottom_up.json.gz";
+inline constexpr const char* kBottomUpFixture = "tests/fixtures/datalog/algorithms/ground/bottom_up.json.gz";
 inline constexpr const char* kBenchmarksFixture = "tests/fixtures/planning/benchmarks.json";
 inline constexpr std::string_view kKnownGeneralCostSkip =
     "GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.";
-inline constexpr auto kConfigNames = std::array<std::string_view, 9> { "applicable_action",
-                                                                       "axiom_evaluator",
-                                                                       "ground_task",
-                                                                       "rpg_sum_unit",
-                                                                       "rpg_sum_general",
-                                                                       "rpg_max_unit",
-                                                                       "rpg_max_general",
-                                                                       "rpg_achiever_max_override_unit",
-                                                                       "rpg_achiever_max_override_general" };
+inline constexpr auto kConfigNames =
+    std::array<std::string_view, 6> { "rpg_sum_override_unit",    "rpg_sum_override_general",       "rpg_max_override_unit",
+                                      "rpg_max_override_general", "rpg_achiever_max_override_unit", "rpg_achiever_max_override_general" };
 
 struct AtomBinding
 {
@@ -168,7 +158,7 @@ BottomUpCase parse_case(const boost::json::object& object)
     }
 
     if (!std::ranges::all_of(seen, [](bool value) { return value; }))
-        throw std::runtime_error("bottom-up configurations do not match the nine-config matrix in " + result.name);
+        throw std::runtime_error("bottom-up configurations do not match the six-config matrix in " + result.name);
 
     return result;
 }
@@ -209,7 +199,7 @@ std::vector<BottomUpCase> load_cases()
 }
 
 void append_atoms_by_predicate(const d::TaggedFactSets<f::FluentTag>& fact_sets,
-                               const d::SelectedPredicateAnnotations<LiftedTag>& annotations,
+                               const d::SelectedPredicateAnnotations<GroundTag>& annotations,
                                AtomsByPredicate& result)
 {
     for (const auto& set : fact_sets.predicate.get_sets())
@@ -232,7 +222,7 @@ template<typename Workspace>
 AtomsByPredicate collect_atoms_by_predicate(const Workspace& workspace)
 {
     auto result = AtomsByPredicate {};
-    append_atoms_by_predicate(workspace.facts.fact_sets, workspace.and_annot, result);
+    append_atoms_by_predicate(workspace.facts.fluent_fact_sets, workspace.and_annot, result);
     return result;
 }
 
@@ -256,10 +246,14 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchAtOneAndEightThreads)
     for (const auto num_threads : { ygg::uint_t(1), ygg::uint_t(8) })
     {
         auto execution_context = ygg::ExecutionContext::create(num_threads);
-        auto task = p::Task<p::LiftedTag>::create(make_test_parser(test_case.domain_file).parse_task(test_case.task_file));
-        auto axiom_evaluator = p::AxiomEvaluatorFactory<p::LiftedTag>().create(task, execution_context);
-        auto state_repository = p::StateRepositoryFactory<p::LiftedTag>().create(task, axiom_evaluator);
-        auto successor_generator = p::SuccessorGeneratorFactory<p::LiftedTag>().create(task, execution_context, state_repository);
+        auto lifted_task = p::Task<p::LiftedTag>::create(make_test_parser(test_case.domain_file).parse_task(test_case.task_file));
+        auto instantiation = lifted_task->instantiate_ground_task(*execution_context);
+        ASSERT_EQ(instantiation.status, p::GroundTaskInstantiationStatus::SUCCESS);
+        ASSERT_NE(instantiation.task, nullptr);
+        auto task = std::move(instantiation.task);
+        auto axiom_evaluator = p::AxiomEvaluatorFactory<p::GroundTag>().create(task, execution_context);
+        auto state_repository = p::StateRepositoryFactory<p::GroundTag>().create(task, axiom_evaluator);
+        auto successor_generator = p::SuccessorGeneratorFactory<p::GroundTag>().create(task, execution_context, state_repository);
         const auto initial_node = successor_generator->get_initial_node();
 
         for (size_t config_index = 0; config_index < kConfigNames.size(); ++config_index)
@@ -270,41 +264,23 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchAtOneAndEightThreads)
 
             const auto run_config = [&]() -> AtomsByPredicate
             {
-                if (config == "axiom_evaluator")
-                    return collect_atoms_by_predicate(axiom_evaluator->get_workspace());
-
-                if (config == "applicable_action")
+                if (config.starts_with("rpg_sum_override_"))
                 {
-                    successor_generator->get_applicable_action_bindings(initial_node);
-                    return collect_atoms_by_predicate(successor_generator->get_workspace());
-                }
-
-                if (config == "ground_task")
-                {
-                    auto program = p::GroundTaskProgram(task->get_task());
-                    auto workspace = d::ProgramWorkspace<p::LiftedTag>(program.get_datalog_program());
-                    auto context = d::ProgramExecutionContext(workspace);
-                    execution_context->arena().execute([&] { d::solve_bottom_up(context); });
-                    return collect_atoms_by_predicate(workspace);
-                }
-
-                if (config.starts_with("rpg_sum_"))
-                {
-                    auto heuristic = p::AddRPGHeuristic<p::LiftedTag>::create(task, execution_context, parse_cost_mode(config));
+                    auto heuristic = p::AddRPGHeuristic<p::GroundTag>::create(task, execution_context, parse_cost_mode(config));
                     heuristic->evaluate(initial_node.get_state());
                     return collect_atoms_by_predicate(heuristic->get_workspace());
                 }
 
-                if (config.starts_with("rpg_max_"))
+                if (config.starts_with("rpg_max_override_"))
                 {
-                    auto heuristic = p::MaxRPGHeuristic<p::LiftedTag>::create(task, execution_context, parse_cost_mode(config));
+                    auto heuristic = p::MaxRPGHeuristic<p::GroundTag>::create(task, execution_context, parse_cost_mode(config));
                     heuristic->evaluate(initial_node.get_state());
                     return collect_atoms_by_predicate(heuristic->get_workspace());
                 }
 
                 if (config.starts_with("rpg_achiever_max_override_"))
                 {
-                    auto heuristic = p::LMCutHeuristic<p::LiftedTag>::create(task, execution_context, parse_cost_mode(config));
+                    auto heuristic = p::LMCutHeuristic<p::GroundTag>::create(task, execution_context, parse_cost_mode(config));
                     heuristic->evaluate(initial_node.get_state());
                     return collect_atoms_by_predicate(heuristic->get_workspace());
                 }
@@ -335,7 +311,7 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchAtOneAndEightThreads)
     }
 }
 
-INSTANTIATE_TEST_SUITE_P(TyrDatalogLiftedBottomUpFixture,
+INSTANTIATE_TEST_SUITE_P(TyrDatalogGroundBottomUpFixture,
                          BottomUpFixtureTest,
                          ::testing::ValuesIn(load_cases()),
                          [](const testing::TestParamInfo<BottomUpCase>& info) { return info.param.name; });

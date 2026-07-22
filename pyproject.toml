@@ -34,6 +34,7 @@ test = [
 
 [tool.pytest.ini_options]
 testpaths = ["python/tests"]
+pythonpath = ["."]
 
 [tool.scikit-build]
 build.targets = ["pytyr_wheel"]
