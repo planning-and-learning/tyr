@@ -145,7 +145,7 @@ TEST(TyrDatalogLiftedDeltaKPKC, InnerParallelismMatchesSequentialRPG)
                                                   .parse_task(root / "classical/profiling/rovers-large-simple/p-r1-w1000-o1-1-g2.pddl"));
 
     auto sequential_context = ygg::ExecutionContext::create(1);
-    auto parallel_context = ygg::ExecutionContext::create(8);
+    auto parallel_context = ygg::ExecutionContext::create(ygg::ExecutionContext::get_max_num_threads());
     auto axiom_evaluator = p::AxiomEvaluatorFactory<p::LiftedTag>().create(task, sequential_context);
     auto state_repository = p::StateRepositoryFactory<p::LiftedTag>().create(task, axiom_evaluator);
     auto successor_generator = p::SuccessorGeneratorFactory<p::LiftedTag>().create(task, sequential_context, state_repository);

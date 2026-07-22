@@ -239,11 +239,11 @@ class BottomUpFixtureTest : public ::testing::TestWithParam<BottomUpCase>
 {
 };
 
-TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchAtOneAndEightThreads)
+TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchAtOneAndMaximumThreads)
 {
     const auto& test_case = GetParam();
 
-    for (const auto num_threads : { ygg::uint_t(1), ygg::uint_t(8) })
+    for (const auto num_threads : { ygg::uint_t(1), ygg::ExecutionContext::get_max_num_threads() })
     {
         auto execution_context = ygg::ExecutionContext::create(num_threads);
         auto lifted_task = p::Task<p::LiftedTag>::create(make_test_parser(test_case.domain_file).parse_task(test_case.task_file));
