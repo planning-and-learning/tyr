@@ -28,7 +28,6 @@
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
 
 namespace tyr::datalog
 {
@@ -55,7 +54,7 @@ public:
     ygg::ClosedInterval<ygg::float_t> lookup_static(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::StaticTag> term) const;
     ygg::ClosedInterval<ygg::float_t> current_interval(Key key) const;
     const NumericIntervalAnnotations<LiftedTag>::Entries* find_entries(Key key) const;
-    bool keys_equal(Key lhs, Key rhs) const noexcept { return m_binding_equal(lhs, rhs); }
+    bool keys_equal(Key lhs, Key rhs) const noexcept { return lhs == rhs; }
     Cost missing_entries_cost() const noexcept { return std::numeric_limits<Cost>::max(); }
 
     /**
@@ -85,7 +84,6 @@ public:
 private:
     FactSets m_fact_sets;
     const NumericIntervalAnnotations<LiftedTag>& m_annotations;
-    ygg::EqualTo<Key> m_binding_equal;
 };
 
 }

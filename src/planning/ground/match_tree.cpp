@@ -42,6 +42,7 @@
 #include <span>
 #include <utility>
 #include <variant>
+#include <yggdrasil/semantics/comparison.hpp>
 #include <vector>
 #include <yggdrasil/core/types.hpp>
 
@@ -663,9 +664,7 @@ MatchTree<Tag>::MatchTree(ygg::IndexList<Tag> elements_, const ::tyr::formalism:
     {
         if (lhs.index() != rhs.index())
             return lhs.index() < rhs.index();
-        return std::visit([&](const auto& lhs_alt)
-                          { return ygg::Less<std::decay_t<decltype(lhs_alt)>> {}(lhs_alt, std::get<std::decay_t<decltype(lhs_alt)>>(rhs)); },
-                          lhs);
+        return std::visit([&](const auto& lhs_alt) { return lhs_alt < std::get<std::decay_t<decltype(lhs_alt)>>(rhs); }, lhs);
     };
     std::sort(sorted_preconditions.begin(),
               sorted_preconditions.end(),

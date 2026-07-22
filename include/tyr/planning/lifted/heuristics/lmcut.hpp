@@ -27,38 +27,69 @@
 
 #include <deque>
 #include <tuple>
+#include <utility>
 #include <variant>
 #include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::planning
 {
 
-struct LiftedLMCutNumericNode
+struct LiftedLMCutNumericNode : ygg::comparison::Mixin<LiftedLMCutNumericNode>
 {
     ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding;
     ygg::ClosedInterval<ygg::float_t> interval;
 
+    LiftedLMCutNumericNode() = default;
+    LiftedLMCutNumericNode(
+        ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding,
+        ygg::ClosedInterval<ygg::float_t> interval) :
+        binding(binding),
+        interval(interval)
+    {
+    }
+
     auto identifying_members() const noexcept { return std::make_tuple(binding, lower(interval), upper(interval)); }
 };
 
-struct LiftedLMCutRuleEdge
+struct LiftedLMCutRuleEdge : ygg::comparison::Mixin<LiftedLMCutRuleEdge>
 {
     ygg::Index<::tyr::formalism::datalog::Rule> rule;
     ygg::IndexList<::tyr::formalism::Object> objects;
 
+    LiftedLMCutRuleEdge() = default;
+    LiftedLMCutRuleEdge(ygg::Index<::tyr::formalism::datalog::Rule> rule, ygg::IndexList<::tyr::formalism::Object> objects) :
+        rule(rule),
+        objects(std::move(objects))
+    {
+    }
+
     auto identifying_members() const noexcept { return std::tie(rule, objects); }
 };
 
-struct LiftedLMCutNumericEdge
+struct LiftedLMCutNumericEdge : ygg::comparison::Mixin<LiftedLMCutNumericEdge>
 {
     ygg::Index<::tyr::formalism::datalog::Rule> rule;
     ygg::IndexList<::tyr::formalism::Object> rule_objects;
     ygg::Index<::tyr::formalism::Function<::tyr::formalism::FluentTag>> function;
     ygg::IndexList<::tyr::formalism::Object> function_objects;
     ygg::ClosedInterval<ygg::float_t> interval;
+
+    LiftedLMCutNumericEdge() = default;
+    LiftedLMCutNumericEdge(ygg::Index<::tyr::formalism::datalog::Rule> rule,
+                           ygg::IndexList<::tyr::formalism::Object> rule_objects,
+                           ygg::Index<::tyr::formalism::Function<::tyr::formalism::FluentTag>> function,
+                           ygg::IndexList<::tyr::formalism::Object> function_objects,
+                           ygg::ClosedInterval<ygg::float_t> interval) :
+        rule(rule),
+        rule_objects(std::move(rule_objects)),
+        function(function),
+        function_objects(std::move(function_objects)),
+        interval(interval)
+    {
+    }
 
     auto identifying_members() const noexcept { return std::make_tuple(rule, rule_objects, function, function_objects, lower(interval), upper(interval)); }
 };

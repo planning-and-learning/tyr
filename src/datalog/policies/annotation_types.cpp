@@ -22,7 +22,6 @@
 
 #include <algorithm>
 #include <utility>
-#include <yggdrasil/semantics/comparators.hpp>
 
 namespace tyr::datalog
 {
@@ -44,7 +43,7 @@ WitnessAnnotation<Kind>::WitnessAnnotation(WitnessRuleKeyT<Kind> rule_key_, Metr
     cost(cost_),
     numeric_supports(std::move(numeric_supports_))
 {
-    std::sort(numeric_supports.begin(), numeric_supports.end(), ygg::Less<NumericSupport<Kind>> {});
+    std::sort(numeric_supports.begin(), numeric_supports.end());
 }
 
 template<TaskKind Kind>

@@ -24,14 +24,18 @@
 #include <limits>
 #include <valla/valla.hpp>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning
 {
 
 template<TaskKind Kind>
-struct NumericPackedStorage<Kind, TreeCompression>
+struct NumericPackedStorage<Kind, TreeCompression> : ygg::comparison::Mixin<NumericPackedStorage<Kind, TreeCompression>>
 {
     valla::Slot<ygg::uint_t> slot;
+
+    NumericPackedStorage() = default;
+    explicit NumericPackedStorage(valla::Slot<ygg::uint_t> slot) : slot(slot) {}
 
     auto identifying_members() const noexcept { return std::tie(slot.i1, slot.i2); }
 };

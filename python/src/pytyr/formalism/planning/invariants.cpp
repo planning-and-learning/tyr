@@ -105,6 +105,7 @@ void bind_substitution_function(nb::module_& m, const std::string& name)
                         })
                    .def("__contains__", [](const V& self, ParameterIndex p) { return self.contains_parameter(p); }, "parameter"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -118,6 +119,7 @@ void bind_invariant(nb::module_& m, const std::string& name)
                    .def_ro("atoms", &V::atoms)
                    .def_ro("predicates", &V::predicates);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 

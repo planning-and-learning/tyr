@@ -18,20 +18,18 @@
 #ifndef TYR_SRC_ANALYSIS_STRATIFICATION_UTILS_HPP_
 #define TYR_SRC_ANALYSIS_STRATIFICATION_UTILS_HPP_
 
-#include <yggdrasil/core/config.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
-
 #include <algorithm>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/strong_components.hpp>
 #include <boost/graph/topological_sort.hpp>
+#include <gtl/phmap.hpp>
 #include <limits>
 #include <stdexcept>
 #include <utility>
 #include <vector>
-
-#include <gtl/phmap.hpp>
+#include <yggdrasil/core/config.hpp>
+#include <yggdrasil/semantics/equal_to.hpp>
+#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::analysis::stratification
 {
@@ -85,7 +83,10 @@ inline Dag build_condensation_dag(const DepGraph& g, const std::vector<ygg::uint
 {
     Dag dag(num_comps);
 
-    using EdgeMap = gtl::flat_hash_map<std::pair<ygg::uint_t, ygg::uint_t>, EdgeKind, ygg::Hash<std::pair<ygg::uint_t, ygg::uint_t>>, ygg::EqualTo<std::pair<ygg::uint_t, ygg::uint_t>>>;
+    using EdgeMap = gtl::flat_hash_map<std::pair<ygg::uint_t, ygg::uint_t>,
+                                       EdgeKind,
+                                       ygg::Hash<std::pair<ygg::uint_t, ygg::uint_t>>,
+                                       ygg::EqualTo<std::pair<ygg::uint_t, ygg::uint_t>>>;
     auto best = EdgeMap {};
     best.reserve(boost::num_edges(g));
 

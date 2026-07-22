@@ -34,7 +34,7 @@
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/semantics/comparators.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::datalog
 {
@@ -61,11 +61,14 @@ template<TaskKind Kind>
 using FunctionAnnotationHeadT = typename AnnotationPolicyTypes<Kind>::FunctionHead;
 
 template<TaskKind Kind>
-struct NumericSupport
+struct NumericSupport : ygg::comparison::Mixin<NumericSupport<Kind>>
 {
     NumericSupportKeyT<Kind> key;
     ygg::ClosedInterval<ygg::float_t> interval;
     Cost cost;
+
+    NumericSupport() = default;
+    NumericSupport(NumericSupportKeyT<Kind> key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost) : key(key), interval(interval), cost(cost) {}
 
     auto get_key() const noexcept { return key; }
     auto get_interval() const noexcept { return interval; }
@@ -75,7 +78,7 @@ struct NumericSupport
 };
 
 template<TaskKind Kind>
-struct WitnessAnnotation
+struct WitnessAnnotation : ygg::comparison::Mixin<WitnessAnnotation<Kind>>
 {
     using Metric = ygg::ClosedInterval<ygg::float_t>;
     using NumericSupports = std::vector<NumericSupport<Kind>>;
@@ -100,7 +103,7 @@ private:
 };
 
 template<TaskKind Kind>
-struct BaseAnnotation
+struct BaseAnnotation : ygg::comparison::Mixin<BaseAnnotation<Kind>>
 {
 public:
     using Metric = ygg::ClosedInterval<ygg::float_t>;
@@ -191,10 +194,15 @@ template<TaskKind Kind>
 using SelectedPredicateAnnotations = PredicateAnnotationMap<Kind>;
 
 template<TaskKind Kind>
-struct NumericIntervalAnnotation
+struct NumericIntervalAnnotation : ygg::comparison::Mixin<NumericIntervalAnnotation<Kind>>
 {
     ygg::ClosedInterval<ygg::float_t> interval;
     Annotation<Kind> annotation;
+
+    NumericIntervalAnnotation() = default;
+    NumericIntervalAnnotation(ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind> annotation) : interval(interval), annotation(std::move(annotation))
+    {
+    }
 
     auto identifying_members() const noexcept { return std::make_tuple(get_cost(annotation), interval, annotation); }
 };
@@ -258,7 +266,7 @@ public:
 
         auto entry = Entry { interval, std::move(annotation) };
         auto& entries = m_partitions[NumericIntervalBindingParts<Kind>::get_relation(binding)][NumericIntervalBindingParts<Kind>::get_key(binding)];
-        entries.insert(std::upper_bound(entries.begin(), entries.end(), entry, ygg::Less<Entry> {}), std::move(entry));
+        entries.insert(std::upper_bound(entries.begin(), entries.end(), entry), std::move(entry));
         ++m_size;
     }
 

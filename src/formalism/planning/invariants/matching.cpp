@@ -104,7 +104,7 @@ struct EffectCoverPolicy : tyr::formalism::unification::DefaultMatchPolicy
         if (state.counted.is_unbound(lhs))
             return state.counted.assign(lhs, T(rhs));
 
-        return ygg::EqualTo<T> {}(*state.counted[lhs], T(rhs));
+        return *state.counted[lhs] == T(rhs);
     }
 
     template<typename T>
@@ -116,7 +116,7 @@ struct EffectCoverPolicy : tyr::formalism::unification::DefaultMatchPolicy
         if (state.counted.is_unbound(lhs))
             return state.counted.assign(lhs, rhs);
 
-        return ygg::EqualTo<T> {}(*state.counted[lhs], rhs);
+        return *state.counted[lhs] == rhs;
     }
 
     template<typename T>

@@ -18,10 +18,13 @@
 #ifndef TYR_FORMALISM_PLANNING_MULTI_OPERATOR_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_MULTI_OPERATOR_DATA_HPP_
 
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/function_expression_data.hpp"
+#include "tyr/formalism/planning/ground_function_expression_data.hpp"
+#include "tyr/formalism/planning/multi_operator_index.hpp"
+
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
-#include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/multi_operator_index.hpp"
 
 namespace ygg
 {
@@ -58,7 +61,8 @@ struct Data<::tyr::formalism::planning::MultiOperator<Op, T>>
     auto identifying_members() const noexcept { return std::tie(Op::kind, args); }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::MultiOperator<::tyr::formalism::Add, ygg::Data<::tyr::formalism::planning::FunctionExpression>>>);
+static_assert(
+    !ygg::uses_trivial_storage_v<::tyr::formalism::planning::MultiOperator<::tyr::formalism::Add, ygg::Data<::tyr::formalism::planning::FunctionExpression>>>);
 
 }
 

@@ -37,7 +37,12 @@ struct Data<::tyr::formalism::planning::Atom<T>>
     ygg::DataList<::tyr::formalism::Term> terms;
 
     Data() = default;
-    Data(ygg::Index<::tyr::formalism::Predicate<T>> predicate_, ygg::DataList<::tyr::formalism::Term> terms_) : index(), predicate(predicate), terms(std::move(terms)) {}
+    Data(ygg::Index<::tyr::formalism::Predicate<T>> predicate_, ygg::DataList<::tyr::formalism::Term> terms_) :
+        index(),
+        predicate(predicate_),
+        terms(std::move(terms_))
+    {
+    }
     // Python constructor
     template<typename C>
     Data(::ygg::View<ygg::Index<::tyr::formalism::Predicate<T>>, C> predicate_, const std::vector<::ygg::View<ygg::Data<::tyr::formalism::Term>, C>>& terms_) : index(), predicate(), terms()

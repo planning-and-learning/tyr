@@ -18,8 +18,7 @@
 #ifndef TYR_FORMALISM_PLANNING_MUTABLE_ACTION_HPP_
 #define TYR_FORMALISM_PLANNING_MUTABLE_ACTION_HPP_
 
-#include <yggdrasil/semantics/comparators.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 #include "tyr/formalism/planning/mutable/conditional_effect.hpp"
 #include "tyr/formalism/planning/mutable/conjunctive_condition.hpp"
@@ -34,7 +33,7 @@
 
 namespace tyr::formalism::planning
 {
-struct MutableAction
+struct MutableAction : ygg::comparison::Mixin<MutableAction>
 {
     size_t num_variables;
     MutableConjunctiveCondition condition;
@@ -54,10 +53,6 @@ struct MutableAction
     }
 
     auto identifying_members() const noexcept { return std::tie(num_variables, condition, effects); }
-
-    friend bool operator==(const MutableAction& lhs, const MutableAction& rhs) { return ygg::EqualTo<MutableAction> {}(lhs, rhs); }
-
-    friend bool operator<(const MutableAction& lhs, const MutableAction& rhs) { return ygg::Less<MutableAction> {}(lhs, rhs); }
 };
 
 using MutableActionList = std::vector<MutableAction>;

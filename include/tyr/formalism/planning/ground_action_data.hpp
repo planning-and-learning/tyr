@@ -18,20 +18,21 @@
 #ifndef TYR_FORMALISM_PLANNING_GROUND_ACTION_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_GROUND_ACTION_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/function_index.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/ground_action_index.hpp"
+#include "tyr/formalism/planning/ground_conditional_effect_index.hpp"
 #include "tyr/formalism/planning/ground_conjunctive_condition_index.hpp"
 #include "tyr/formalism/planning/ground_conjunctive_effect_index.hpp"
+
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
 
 namespace ygg
 {
 using namespace ::tyr;
-
 
 template<>
 struct Data<::tyr::formalism::planning::GroundAction>

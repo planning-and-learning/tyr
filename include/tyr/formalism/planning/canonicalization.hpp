@@ -26,7 +26,7 @@
 
 #include <algorithm>
 #include <yggdrasil/semantics/canonicalization.hpp>
-#include <yggdrasil/semantics/comparators.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -50,13 +50,13 @@ bool is_canonical(const ygg::Data<BinaryOperator<Op, T>>& data)
 template<typename T>
 bool is_canonical(const ygg::Data<BinaryOperator<Add, T>>& data)
 {
-    return ygg::LessEqual<T> {}(data.lhs, data.rhs);
+    return data.lhs <= data.rhs;
 }
 
 template<typename T>
 bool is_canonical(const ygg::Data<BinaryOperator<Mul, T>>& data)
 {
-    return ygg::LessEqual<T> {}(data.lhs, data.rhs);
+    return data.lhs <= data.rhs;
 }
 
 template<OpKind Op, typename T>
@@ -231,14 +231,14 @@ void canonicalize(ygg::Data<BinaryOperator<Op, T>>& data)
 template<typename T>
 void canonicalize(ygg::Data<BinaryOperator<Add, T>>& data)
 {
-    if (ygg::Greater<T> {}(data.lhs, data.rhs))
+    if (data.lhs > data.rhs)
         std::swap(data.lhs, data.rhs);
 }
 
 template<typename T>
 void canonicalize(ygg::Data<BinaryOperator<Mul, T>>& data)
 {
-    if (ygg::Greater<T> {}(data.lhs, data.rhs))
+    if (data.lhs > data.rhs)
         std::swap(data.lhs, data.rhs);
 }
 

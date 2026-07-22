@@ -18,15 +18,16 @@
 #ifndef TYR_FORMALISM_PLANNING_FDR_VARIABLE_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_FDR_VARIABLE_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_variable_index.hpp"
+#include "tyr/formalism/planning/ground_atom_index.hpp"
+
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
 
 namespace ygg
 {
 using namespace ::tyr;
-
 
 template<::tyr::formalism::FactKind T>
 struct Data<::tyr::formalism::planning::FDRVariable<T>>

@@ -18,16 +18,17 @@
 #ifndef TYR_FORMALISM_PLANNING_FUNCTION_TERM_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_FUNCTION_TERM_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include "tyr/formalism/function_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/function_term_index.hpp"
 #include "tyr/formalism/term_data.hpp"
 
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
+
 namespace ygg
 {
 using namespace ::tyr;
-
 
 template<::tyr::formalism::FactKind T>
 struct Data<::tyr::formalism::planning::FunctionTerm<T>>
@@ -37,10 +38,18 @@ struct Data<::tyr::formalism::planning::FunctionTerm<T>>
     ygg::DataList<::tyr::formalism::Term> terms;
 
     Data() = default;
-    Data(ygg::Index<::tyr::formalism::Function<T>> function_, ygg::DataList<::tyr::formalism::Term> terms_) : index(), function(function_), terms(std::move(terms_)) {}
+    Data(ygg::Index<::tyr::formalism::Function<T>> function_, ygg::DataList<::tyr::formalism::Term> terms_) :
+        index(),
+        function(function_),
+        terms(std::move(terms_))
+    {
+    }
     // Python constructor
     template<typename C>
-    Data(::ygg::View<ygg::Index<::tyr::formalism::Function<T>>, C> function_, const std::vector<::ygg::View<ygg::Data<::tyr::formalism::Term>, C>>& terms_) : index(), function(), terms()
+    Data(::ygg::View<ygg::Index<::tyr::formalism::Function<T>>, C> function_, const std::vector<::ygg::View<ygg::Data<::tyr::formalism::Term>, C>>& terms_) :
+        index(),
+        function(),
+        terms()
     {
         set(function_, function);
         set(terms_, terms);

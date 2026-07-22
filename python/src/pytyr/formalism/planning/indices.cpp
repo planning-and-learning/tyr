@@ -35,6 +35,7 @@ void bind_relation_binding_index(nb::module_& m, const std::string& name)
                    .def_ro("relation_index", &V::relation)
                    .def_ro("row_index", &V::row);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 

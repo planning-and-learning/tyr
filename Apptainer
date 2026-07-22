@@ -32,7 +32,6 @@ Stage: build
         python3.10 \
         python3.10-dev \
         python3-pip \
-        ccache \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 
@@ -49,7 +48,6 @@ Stage: build
         -DCMAKE_PREFIX_PATH="${NATIVE_PREFIX_PATH}" \
         -DCMAKE_BUILD_TYPE=Release \
         -DPython_EXECUTABLE=/usr/bin/python3.10 \
-        -DPython3_EXECUTABLE=/usr/bin/python3.10 \
         -DTYR_BUILD_TESTS=OFF \
         -DTYR_BUILD_PROFILING=OFF \
         -DTYR_BUILD_PYTYR=OFF \

@@ -70,15 +70,17 @@ void bind_module_definitions(nb::module_& m)
             .def("get_domain", &Parser::get_domain);
     }
 
-    nb::class_<Minimize>(m, "Minimize")
-        .def(nb::init<>())
-        .def("__str__", [](const Minimize& self) { return ygg::to_string(self); })
-        .def("__repr__", [](const Minimize& self) { return ygg::to_string(self); });
+    auto minimize_cls = nb::class_<Minimize>(m, "Minimize")
+                            .def(nb::init<>())
+                            .def("__str__", [](const Minimize& self) { return ygg::to_string(self); })
+                            .def("__repr__", [](const Minimize& self) { return ygg::to_string(self); });
+    ygg::add_comparison(minimize_cls);
 
-    nb::class_<Maximize>(m, "Maximize")
-        .def(nb::init<>())
-        .def("__str__", [](const Maximize& self) { return ygg::to_string(self); })
-        .def("__repr__", [](const Maximize& self) { return ygg::to_string(self); });
+    auto maximize_cls = nb::class_<Maximize>(m, "Maximize")
+                            .def(nb::init<>())
+                            .def("__str__", [](const Maximize& self) { return ygg::to_string(self); })
+                            .def("__repr__", [](const Maximize& self) { return ygg::to_string(self); });
+    ygg::add_comparison(maximize_cls);
 
     /**
      * Common

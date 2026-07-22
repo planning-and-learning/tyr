@@ -22,7 +22,7 @@
 
 #include <limits>
 #include <variant>
-#include <yggdrasil/semantics/comparators.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::datalog
 {
@@ -41,7 +41,7 @@ bool witness_wins_tie(const WitnessAnnotation<Kind>& witness, const Annotation<K
     if (!incumbent)
         return true;
     const auto* incumbent_witness = std::get_if<WitnessAnnotation<Kind>>(incumbent);
-    return incumbent_witness && ygg::Less<WitnessAnnotation<Kind>> {}(witness, *incumbent_witness);
+    return incumbent_witness && witness < *incumbent_witness;
 }
 
 template<TaskKind Kind, typename Binding>

@@ -20,7 +20,7 @@
 namespace tyr::tests
 {
 using StatisticsTaskKind = ::tyr::planning::GroundTag;
-inline constexpr const char* kStatisticsFixture = "tests/unit/planning/algorithms/statistics/ground/iw.json";
+inline constexpr const char* kStatisticsFixture = "tests/fixtures/planning/algorithms/ground/iw.json";
 }
 
 #include "../iw.hpp"

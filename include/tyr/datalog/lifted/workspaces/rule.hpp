@@ -44,8 +44,7 @@
 #include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
-#include <yggdrasil/semantics/comparators.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::datalog
@@ -78,7 +77,7 @@ struct PredicateHeadIteration
     }
 };
 
-struct FunctionHeadUpdate
+struct FunctionHeadUpdate : ygg::comparison::Mixin<FunctionHeadUpdate>
 {
     ygg::Index<::tyr::formalism::Row> row;
     ygg::ClosedInterval<ygg::float_t> interval;
@@ -114,7 +113,7 @@ struct FunctionHeadIteration
     const std::vector<FunctionHeadUpdate>& get_sorted_updates()
     {
         sorted_updates.assign(updates.begin(), updates.end());
-        std::sort(sorted_updates.begin(), sorted_updates.end(), ygg::Less<FunctionHeadUpdate> {});
+        std::sort(sorted_updates.begin(), sorted_updates.end());
         return sorted_updates;
     }
 };
@@ -370,7 +369,7 @@ const std::vector<::tyr::formalism::datalog::RuleBindingView>& RuleWorkspace<Lif
     pending_rule_binding_scratch.assign(pending_rule_bindings.begin(), pending_rule_bindings.end());
     // DeltaKPKC emits canonical bindings within a worker. This sort only stabilizes unordered
     // worker-merge traversal, so RuleBindingView identity is sufficient and avoids object lookup.
-    std::sort(pending_rule_binding_scratch.begin(), pending_rule_binding_scratch.end(), ygg::Less<::tyr::formalism::datalog::RuleBindingView> {});
+    std::sort(pending_rule_binding_scratch.begin(), pending_rule_binding_scratch.end());
     return pending_rule_binding_scratch;
 }
 

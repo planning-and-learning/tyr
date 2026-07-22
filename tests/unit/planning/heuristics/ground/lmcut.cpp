@@ -22,7 +22,7 @@ namespace tyr::tests
 using HeuristicTaskKind = ::tyr::planning::GroundTag;
 template<::tyr::planning::TaskKind Kind>
 using TestedHeuristic = ::tyr::planning::LMCutHeuristic<Kind>;
-inline constexpr const char* kHeuristicFixture = "tests/unit/planning/heuristics/ground/lmcut.json";
+inline constexpr const char* kHeuristicFixture = "tests/fixtures/planning/heuristics/ground/lmcut.json";
 }
 
 #include "../heuristic.hpp"

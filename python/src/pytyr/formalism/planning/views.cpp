@@ -37,6 +37,7 @@ void bind_object(nb::module_& m, const std::string& name)
                    .def("get_index", &V::get_index)
                    .def("get_name", &V::get_name);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -48,6 +49,7 @@ void bind_variable(nb::module_& m, const std::string& name)
                    .def("get_index", &V::get_index)
                    .def("get_name", &V::get_name);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -58,6 +60,7 @@ void bind_term(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def("get_variant", &V::get_variant);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -72,6 +75,7 @@ void bind_relation_binding(nb::module_& m, const std::string& name)
                    .def("get_objects", &V::get_objects)
                    .def("get_key", &V::get_key);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -85,6 +89,7 @@ void bind_predicate(nb::module_& m, const std::string& name)
                    .def("get_name", &V::get_name)
                    .def("get_arity", &V::get_arity);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -98,6 +103,7 @@ void bind_atom(nb::module_& m, const std::string& name)
                    .def("get_predicate", &V::get_predicate, nb::keep_alive<0, 1>())
                    .def("get_terms", &V::get_terms);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -112,6 +118,7 @@ void bind_ground_atom(nb::module_& m, const std::string& name)
                    .def("get_objects", &V::get_objects)
                    .def("get_key", &V::get_key);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -125,6 +132,7 @@ void bind_literal(nb::module_& m, const std::string& name)
                    .def("get_atom", &V::get_atom, nb::keep_alive<0, 1>())
                    .def("get_polarity", &V::get_polarity);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -138,6 +146,7 @@ void bind_ground_literal(nb::module_& m, const std::string& name)
                    .def("get_atom", &V::get_atom, nb::keep_alive<0, 1>())
                    .def("get_polarity", &V::get_polarity);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -151,6 +160,7 @@ void bind_fdr_variable(nb::module_& m, const std::string& name)
                    .def("get_domain_size", &V::get_domain_size)
                    .def("get_atoms", &V::get_atoms);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -165,6 +175,7 @@ void bind_fdr_fact(nb::module_& m, const std::string& name)
                    .def("has_value", &V::has_value)
                    .def("get_atom", &V::get_atom, nb::keep_alive<0, 1>());
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -178,6 +189,7 @@ void bind_function(nb::module_& m, const std::string& name)
                    .def("get_name", &V::get_name)
                    .def("get_arity", &V::get_arity);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -191,6 +203,7 @@ void bind_function_term(nb::module_& m, const std::string& name)
                    .def("get_function", &V::get_function, nb::keep_alive<0, 1>())
                    .def("get_terms", &V::get_terms);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -205,6 +218,7 @@ void bind_ground_function_term(nb::module_& m, const std::string& name)
                    .def("get_objects", &V::get_objects)
                    .def("get_key", &V::get_key);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -218,6 +232,7 @@ void bind_ground_function_term_value(nb::module_& m, const std::string& name)
                    .def("get_fterm", &V::get_fterm, nb::keep_alive<0, 1>())
                    .def("get_value", &V::get_value);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -231,6 +246,7 @@ void bind_numeric_effect(nb::module_& m, const std::string& name)
                    .def("get_fterm", &V::get_fterm, nb::keep_alive<0, 1>())
                    .def("get_fexpr", &V::get_fexpr, nb::keep_alive<0, 1>());
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -244,6 +260,7 @@ void bind_ground_numeric_effect(nb::module_& m, const std::string& name)
                    .def("get_fterm", &V::get_fterm, nb::keep_alive<0, 1>())
                    .def("get_fexpr", &V::get_fexpr, nb::keep_alive<0, 1>());
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -255,6 +272,7 @@ void bind_numeric_effect_operator(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def("get_variant", &V::get_variant);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -266,6 +284,7 @@ void bind_ground_numeric_effect_operator(nb::module_& m, const std::string& name
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def("get_variant", &V::get_variant);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -276,6 +295,7 @@ void bind_function_expression(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def("get_variant", &V::get_variant);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -292,6 +312,7 @@ void bind_conjunctive_condition(nb::module_& m, const std::string& name)
                    .def("get_derived_literals", &V::get_literals<DerivedTag>)
                    .def("get_numeric_constraints", &V::get_numeric_constraints);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -305,6 +326,7 @@ void bind_conjunctive_effect(nb::module_& m, const std::string& name)
                    .def("get_numeric_effects", &V::get_numeric_effects)
                    .def("get_auxiliary_numeric_effect", &V::get_auxiliary_numeric_effect);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -319,6 +341,7 @@ void bind_conditional_effect(nb::module_& m, const std::string& name)
                    .def("get_condition", &V::get_condition, nb::keep_alive<0, 1>())
                    .def("get_effect", &V::get_effect, nb::keep_alive<0, 1>());
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -336,6 +359,7 @@ void bind_action(nb::module_& m, const std::string& name)
                    .def("get_condition", &V::get_condition, nb::keep_alive<0, 1>())
                    .def("get_effects", &V::get_effects);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -350,6 +374,7 @@ void bind_axiom(nb::module_& m, const std::string& name)
                    .def("get_body", &V::get_body, nb::keep_alive<0, 1>())
                    .def("get_head", &V::get_head, nb::keep_alive<0, 1>());
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -360,6 +385,7 @@ void bind_ground_function_expression(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def("get_variant", &V::get_variant);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -375,6 +401,7 @@ void bind_ground_conjunctive_condition(nb::module_& m, const std::string& name)
                    .def("get_negative_facts", &V::get_facts<NegativeTag>)
                    .def("get_numeric_constraints", &V::get_numeric_constraints);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -389,6 +416,7 @@ void bind_ground_conjunctive_effect(nb::module_& m, const std::string& name)
                    .def("get_numeric_effects", &V::get_numeric_effects)
                    .def("get_auxiliary_numeric_effect", &V::get_auxiliary_numeric_effect);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -401,6 +429,7 @@ void bind_ground_conditional_effect(nb::module_& m, const std::string& name)
                    .def("get_condition", &V::get_condition, nb::keep_alive<0, 1>())
                    .def("get_effect", &V::get_effect, nb::keep_alive<0, 1>());
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -417,6 +446,7 @@ void bind_ground_action(nb::module_& m, const std::string& name)
                    .def("get_condition", &V::get_condition, nb::keep_alive<0, 1>())
                    .def("get_effects", &V::get_effects);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -433,6 +463,7 @@ void bind_ground_axiom(nb::module_& m, const std::string& name)
                    .def("get_body", &V::get_body, nb::keep_alive<0, 1>())
                    .def("get_head", &V::get_head, nb::keep_alive<0, 1>());
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -445,6 +476,7 @@ void bind_metric(nb::module_& m, const std::string& name)
                    .def("get_objective", &V::get_objective)
                    .def("get_fexpr", &V::get_fexpr, nb::keep_alive<0, 1>());
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -465,6 +497,7 @@ void bind_domain(nb::module_& m, const std::string& name)
                    .def("get_actions", &V::get_actions)
                    .def("get_axioms", &V::get_axioms);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -487,6 +520,7 @@ void bind_lifted_task(nb::module_& m, const std::string& name)
                    .def("get_metric", &V::get_metric)
                    .def("get_axioms", &V::get_axioms);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -514,6 +548,7 @@ void bind_ground_task(nb::module_& m, const std::string& name)
                    .def("get_ground_actions", &V::get_ground_actions)
                    .def("get_ground_axioms", &V::get_ground_axioms);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -526,6 +561,7 @@ void bind_unary_operator(nb::module_& m, const std::string& name)
                    .def("get_index", &V::get_index)
                    .def("get_arg", &V::get_arg);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -539,6 +575,7 @@ void bind_binary_operator(nb::module_& m, const std::string& name)
                    .def("get_lhs", &V::get_lhs)
                    .def("get_rhs", &V::get_rhs);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -551,6 +588,7 @@ void bind_multi_operator(nb::module_& m, const std::string& name)
                    .def("get_index", &V::get_index)
                    .def("get_args", &V::get_args);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -562,6 +600,7 @@ void bind_arithmetic_operator(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def("get_variant", &V::get_variant);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -573,6 +612,7 @@ void bind_boolean_operator(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def("get_variant", &V::get_variant);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 }

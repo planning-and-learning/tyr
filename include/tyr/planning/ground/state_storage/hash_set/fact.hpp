@@ -28,14 +28,18 @@
 #include <limits>
 #include <valla/valla.hpp>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning
 {
 
 template<>
-struct FactPackedStorage<GroundTag, HashSet>
+struct FactPackedStorage<GroundTag, HashSet> : ygg::comparison::Mixin<FactPackedStorage<GroundTag, HashSet>>
 {
     ygg::uint_t index;
+
+    FactPackedStorage() = default;
+    explicit FactPackedStorage(ygg::uint_t index) : index(index) {}
 
     auto identifying_members() const noexcept { return std::tie(index); }
 };

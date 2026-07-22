@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-find_package(Python 3.8 REQUIRED COMPONENTS Interpreter Development.Module)
+find_package(Python 3.9 REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(nanobind CONFIG REQUIRED)
 find_package(tyr CONFIG REQUIRED COMPONENTS core)
 

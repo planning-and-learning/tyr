@@ -20,7 +20,7 @@
 namespace tyr::tests
 {
 using StatisticsTaskKind = ::tyr::planning::GroundTag;
-inline constexpr const char* kStatisticsFixture = "tests/unit/planning/algorithms/statistics/ground/gbfs.json";
+inline constexpr const char* kStatisticsFixture = "tests/fixtures/planning/algorithms/ground/gbfs.json";
 }
 
 #include "../gbfs.hpp"

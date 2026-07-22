@@ -18,7 +18,7 @@
 #ifndef TYR_FORMALISM_UNIFICATION_APPLY_SUBSTITUTION_HPP_
 #define TYR_FORMALISM_UNIFICATION_APPLY_SUBSTITUTION_HPP_
 
-#include <yggdrasil/semantics/equal_to.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 #include "tyr/formalism/unification/structure_traits.hpp"
 #include "tyr/formalism/unification/structure_traits_impl.hpp"
 #include "tyr/formalism/unification/substitution.hpp"
@@ -119,7 +119,7 @@ template<TermSubstitution S1, TermSubstitution S2>
         auto value = ygg::Data<Term>(parameter);
         value = apply_substitution_fixpoint(apply_substitution_fixpoint(value, inner), outer);
 
-        if (!ygg::EqualTo<ygg::Data<Term>> {}(value, ygg::Data<Term>(parameter)))
+        if (value != ygg::Data<Term>(parameter))
         {
             [[maybe_unused]] const auto inserted = result.assign(parameter, value);
             assert(inserted);

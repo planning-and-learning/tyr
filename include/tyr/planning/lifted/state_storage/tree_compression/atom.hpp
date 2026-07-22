@@ -25,14 +25,18 @@
 #include "tyr/planning/state_storage/tags.hpp"
 
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning
 {
 
 template<>
-struct AtomPackedStorage<LiftedTag, TreeCompression>
+struct AtomPackedStorage<LiftedTag, TreeCompression> : ygg::comparison::Mixin<AtomPackedStorage<LiftedTag, TreeCompression>>
 {
     valla::Slot<ygg::uint_t> slot;
+
+    AtomPackedStorage() = default;
+    explicit AtomPackedStorage(valla::Slot<ygg::uint_t> slot) : slot(slot) {}
 
     auto identifying_members() const noexcept { return std::tie(slot.i1, slot.i2); }
 };

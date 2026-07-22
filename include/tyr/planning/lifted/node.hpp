@@ -24,6 +24,7 @@
 
 #include <tuple>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 
 /**
  * Definitions
@@ -32,7 +33,7 @@
 namespace tyr::planning
 {
 template<>
-class Node<LiftedTag>
+class Node<LiftedTag> : public ygg::comparison::Mixin<Node<LiftedTag>>
 {
 public:
     using TaskType = Task<LiftedTag>;

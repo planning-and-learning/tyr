@@ -2,9 +2,9 @@
 
 Tyr consumes native third-party dependencies from Python packages:
 
-- `pyyggdrasil>=0.0.23,<0.1` provides shared libraries, headers, and CMake packages for common native dependencies.
-- `pypddl>=1.0.24,<1.1` provides Loki's PDDL parser library, headers, and CMake package.
-- `pypddl-datasets>=0.0.7,<0.1` provides the PDDL benchmark data used by the C++ test and profiling fixtures (resolved from its cache at CMake configure time).
+- `pyyggdrasil>=0.0.25,<0.1` provides shared libraries, headers, and CMake packages for common native dependencies.
+- `pypddl>=1.0.25,<1.1` provides Loki's PDDL parser library, headers, and CMake package.
+- `pypddl-datasets>=0.0.9,<0.1` provides the PDDL benchmark data used by the C++ test and profiling fixtures (resolved from its cache at CMake configure time).
 
 ## Requirements
 
@@ -18,7 +18,7 @@ Create a virtual environment and install the native dependency providers:
 
 ```console
 uv venv
-uv pip install 'pyyggdrasil>=0.0.23,<0.1' 'pypddl>=1.0.24,<1.1' 'pypddl-datasets>=0.0.7,<0.1'
+uv pip install 'pyyggdrasil>=0.0.25,<0.1' 'pypddl>=1.0.25,<1.1' 'pypddl-datasets>=0.0.9,<0.1'
 ```
 
 For plain `pip`, use:
@@ -26,7 +26,7 @@ For plain `pip`, use:
 ```console
 python -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install 'pyyggdrasil>=0.0.23,<0.1' 'pypddl>=1.0.24,<1.1' 'pypddl-datasets>=0.0.7,<0.1'
+.venv/bin/python -m pip install 'pyyggdrasil>=0.0.25,<0.1' 'pypddl>=1.0.25,<1.1' 'pypddl-datasets>=0.0.9,<0.1'
 ```
 
 ## C++ Build
@@ -36,7 +36,6 @@ Configure Tyr with the native prefixes from the installed Python packages:
 ```console
 cmake -S . -B build \
   -DPython_EXECUTABLE=${PWD}/.venv/bin/python \
-  -DPython3_EXECUTABLE=${PWD}/.venv/bin/python \
   -DCMAKE_PREFIX_PATH="$(.venv/bin/python -c 'import pypddl, pyyggdrasil; print(f"{pypddl.native_prefix()};{pyyggdrasil.native_prefix()}")')"
 
 cmake --build build -j$(nproc)
@@ -47,7 +46,6 @@ Enable optional targets as needed:
 ```console
 cmake -S . -B build \
   -DPython_EXECUTABLE=${PWD}/.venv/bin/python \
-  -DPython3_EXECUTABLE=${PWD}/.venv/bin/python \
   -DCMAKE_PREFIX_PATH="$(.venv/bin/python -c 'import pypddl, pyyggdrasil; print(f"{pypddl.native_prefix()};{pyyggdrasil.native_prefix()}")')" \
   -DTYR_BUILD_TESTS=ON \
   -DTYR_BUILD_EXECUTABLES=ON \

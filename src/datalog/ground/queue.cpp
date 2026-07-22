@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <functional>
 #include <limits>
 #include <map>
 #include <optional>
@@ -34,7 +35,6 @@
 #include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/semantics/comparators.hpp>
 
 namespace tyr::datalog
 {
@@ -433,7 +433,7 @@ void push_rule(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundRuleView rule)
     queued_cost = cost;
 
     out.queue_storage().push_back(GroundQueueEntry { cost, out.queue().next_sequence++, rule });
-    std::push_heap(out.queue_storage().begin(), out.queue_storage().end(), ygg::Greater<GroundQueueEntry> {});
+    std::push_heap(out.queue_storage().begin(), out.queue_storage().end(), std::greater<> {});
 
     ++out.statistics().num_queue_pushes;
     out.statistics().max_queue_size = std::max(out.statistics().max_queue_size, static_cast<ygg::uint_t>(out.queue_storage().size()));
@@ -498,7 +498,7 @@ std::optional<GroundQueueEntry> pop_next_entry(GroundCtx<OrAP, AndAP, TP, CP>& c
     if (out.queue_storage().empty())
         return std::nullopt;
 
-    std::pop_heap(out.queue_storage().begin(), out.queue_storage().end(), ygg::Greater<GroundQueueEntry> {});
+    std::pop_heap(out.queue_storage().begin(), out.queue_storage().end(), std::greater<> {});
     const auto entry = out.queue_storage().back();
     out.queue_storage().pop_back();
     ++out.statistics().num_queue_pops;
@@ -824,7 +824,7 @@ bool commit_numeric_bucket(GroundCtx<OrAP, AndAP, TP, CP>& ctx, PendingNumericBu
 
     // Keep equal-cost rule notifications independent of unordered bucket iteration.
     if (changed_terms.size() > 1)
-        std::sort(changed_terms.begin(), changed_terms.end(), ygg::Less<fd::GroundFunctionTermView<f::FluentTag>> {});
+        std::sort(changed_terms.begin(), changed_terms.end());
     for (const auto term : changed_terms)
         notify_numeric_interval_changed(ctx, term);
 

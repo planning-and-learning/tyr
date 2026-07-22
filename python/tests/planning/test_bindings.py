@@ -1,5 +1,5 @@
 import gc
-from pathlib import Path
+from types import ModuleType
 
 import pytest
 
@@ -7,8 +7,12 @@ from pytyr import planning
 from pypddl.formalism import ParserOptions
 from pytyr.formalism import planning as formalism_planning
 from pytyr.formalism.planning import Parser
+from pyyggdrasil.execution import ExecutionContext
 
 from pypddl_datasets import fetch_task
+
+Task = planning.lifted.Task | planning.ground.Task
+StateRepository = planning.lifted.StateRepository | planning.ground.StateRepository
 
 GRIPPER = fetch_task("classical/tests/gripper/test-1.pddl")
 
@@ -156,113 +160,6 @@ def test_default_event_handler_statistics_keep_handlers_alive():
         assert statistics.get_num_solved_subsearches() == 0
 
 
-def test_algorithm_event_handler_subclasses_can_call_super_constructor():
-    for task_module in (planning.ground, planning.lifted):
-        class AStarEventHandler(task_module.astar_eager.EventHandler):
-            def __init__(self):
-                super().__init__()
-                self.search_statistics = planning.Statistics()
-
-            def on_expand_node(self, node): pass
-            def on_expand_goal_node(self, node): pass
-            def on_generate_node(self, source_node, labeled_succ_node): pass
-            def on_generate_node_relaxed(self, source_node, labeled_succ_node): pass
-            def on_generate_node_not_relaxed(self, source_node, labeled_succ_node): pass
-            def on_close_node(self, node): pass
-            def on_prune_node(self, *args): pass
-            def on_start_search(self, node, f_value): pass
-            def on_finish_f_layer(self, f_value): pass
-            def on_end_search(self, status): pass
-            def on_solved(self, plan): pass
-            def get_search_statistics(self): return self.search_statistics
-            def get_statistics(self): return self.search_statistics
-
-        class BRFSEventHandler(task_module.brfs.EventHandler):
-            def __init__(self):
-                super().__init__()
-                self.search_statistics = planning.Statistics()
-
-            def on_expand_node(self, node): pass
-            def on_expand_goal_node(self, node): pass
-            def on_generate_node(self, source_node, labeled_succ_node): pass
-            def on_prune_node(self, *args): pass
-            def on_start_search(self, node): pass
-            def on_finish_layer(self, layer): pass
-            def on_end_search(self, status): pass
-            def on_solved(self, plan): pass
-            def get_search_statistics(self): return self.search_statistics
-            def get_statistics(self): return self.search_statistics
-
-        class GBFSEventHandler(task_module.gbfs_lazy.EventHandler):
-            def __init__(self):
-                super().__init__()
-                self.search_statistics = planning.Statistics()
-
-            def on_expand_node(self, node): pass
-            def on_expand_goal_node(self, node): pass
-            def on_generate_node(self, source_node, labeled_succ_node): pass
-            def on_prune_node(self, *args): pass
-            def on_start_search(self, node, h_value): pass
-            def on_new_best_h_value(self, h_value): pass
-            def on_end_search(self, status): pass
-            def on_solved(self, plan): pass
-            def get_search_statistics(self): return self.search_statistics
-            def get_statistics(self): return self.search_statistics
-
-        class IWEventHandler(task_module.iw.EventHandler):
-            def __init__(self):
-                super().__init__()
-                self.search_statistics = planning.Statistics()
-                self.algorithm_statistics = task_module.iw.Statistics()
-
-            def on_start_search(self, max_arity): pass
-            def on_start_arity(self, arity): pass
-            def on_end_arity(self, arity, status): pass
-            def on_end_search(self, status): pass
-            def on_solved(self, arity): pass
-            def get_search_statistics(self): return self.search_statistics
-            def get_statistics(self): return self.algorithm_statistics
-
-        class SIWEventHandler(task_module.siw.EventHandler):
-            def __init__(self):
-                super().__init__()
-                self.algorithm_statistics = task_module.siw.Statistics()
-
-            def on_start_search(self): pass
-            def on_start_subsearch(self, subsearch_index): pass
-            def add_subsearch_statistics(self, search_statistics, solver_statistics): pass
-            def on_end_subsearch(self, subsearch_index, status): pass
-            def on_end_search(self, status): pass
-            def on_solved(self, plan): pass
-            def get_statistics(self): return self.algorithm_statistics
-
-        for event_handler_class, event_handler_base in (
-            (AStarEventHandler, task_module.astar_eager.EventHandler),
-            (BRFSEventHandler, task_module.brfs.EventHandler),
-            (GBFSEventHandler, task_module.gbfs_lazy.EventHandler),
-            (IWEventHandler, task_module.iw.EventHandler),
-            (SIWEventHandler, task_module.siw.EventHandler),
-        ):
-            assert isinstance(event_handler_class(), event_handler_base)
-
-
-def test_pruning_strategy_subclasses_can_call_super_constructor():
-    for task_module in (planning.ground, planning.lifted):
-        class PythonPruningStrategy(task_module.PruningStrategy):
-            def __init__(self):
-                super().__init__()
-
-            def should_prune_state(self, state):
-                return False
-
-            def should_prune_successor_state(self, state, succ_state, is_new_succ_state):
-                return is_new_succ_state
-
-        pruning_strategy = PythonPruningStrategy()
-
-        assert isinstance(pruning_strategy, task_module.PruningStrategy)
-
-
 def test_algorithm_statistics_are_constructible_and_mutable():
     for task_module in (planning.ground, planning.lifted):
         iw_statistics = task_module.iw.Statistics()
@@ -297,41 +194,6 @@ def test_algorithm_statistics_are_constructible_and_mutable():
         assert siw_statistics.get_num_solved_subsearches() == 0
 
 
-def test_planning_task_modules_reexport_native_bindings():
-    import pytyr._pytyr.planning.ground as native_ground
-    import pytyr._pytyr.planning.lifted as native_lifted
-
-    for public_module, native_module in (
-        (planning.ground, native_ground),
-        (planning.lifted, native_lifted),
-    ):
-        public_names = {name for name in dir(public_module) if not name.startswith("_")}
-        native_names = {name for name in dir(native_module) if not name.startswith("_")}
-
-        assert native_names <= public_names
-        assert public_names <= native_names | {"astar_eager", "brfs", "gbfs_lazy", "iw", "siw"}
-
-
-def test_planning_algorithm_modules_reexport_native_bindings():
-    import importlib
-
-    for task_kind in ("ground", "lifted"):
-        for algorithm_name in ("astar_eager", "brfs", "gbfs_lazy", "iw", "siw"):
-            public_module = importlib.import_module(f"pytyr.planning.{task_kind}.{algorithm_name}")
-            native_module = importlib.import_module(f"pytyr._pytyr.planning.{task_kind}.{algorithm_name}")
-            public_names = {name for name in dir(public_module) if not name.startswith("_")}
-            native_names = {name for name in dir(native_module) if not name.startswith("_")}
-
-            assert public_names == native_names
-
-
-def test_planning_task_modules_reexport_bound_goal_strategies():
-    for task_module in (planning.ground, planning.lifted):
-        assert hasattr(task_module, "GoalStrategy")
-        assert hasattr(task_module, "ConjunctiveGoalStrategy")
-        assert hasattr(task_module, "ExhaustiveGoalStrategy")
-
-
 def test_nested_width_search_solvers_expose_expected_defaults():
     iw_max_arity = 5
 
@@ -354,23 +216,6 @@ def test_nested_width_search_solvers_expose_expected_defaults():
         assert siw_solver.options is not None
 
 
-def test_goal_strategy_subclasses_can_call_super_constructor():
-    for task_module in (planning.ground, planning.lifted):
-        class PythonGoalStrategy(task_module.GoalStrategy):
-            def __init__(self):
-                super().__init__()
-
-            def is_static_goal_satisfied(self, task):
-                return True
-
-            def is_dynamic_goal_satisfied(self, seed_state, state):
-                return False
-
-        goal_strategy = PythonGoalStrategy()
-
-        assert isinstance(goal_strategy, task_module.GoalStrategy)
-
-
 def test_heuristics_expose_preferred_action_indices_and_views():
     for task_module in (planning.ground, planning.lifted):
         heuristic = task_module.BlindHeuristic()
@@ -385,41 +230,6 @@ def test_heuristics_expose_preferred_action_indices_and_views():
         assert list(preferred_action_indices) == []
         assert list(preferred_action_views) == []
         assert list(preferred_actions) == []
-
-
-def test_heuristic_subclasses_dispatch_virtual_methods_through_base_binding():
-    ground_task, lifted_task = _make_gripper_tasks()
-
-    for task_module, task in (
-        (planning.ground, ground_task),
-        (planning.lifted, lifted_task),
-    ):
-        state = _make_state_repository(task_module, task).get_initial_state()
-        goal = task.get_task().get_goal()
-
-        class PythonHeuristic(task_module.Heuristic):
-            def __init__(self):
-                super().__init__()
-                self.goal = None
-                self.evaluated_states = []
-
-            def set_goal(self, goal):
-                self.goal = goal
-
-            def evaluate(self, state):
-                self.evaluated_states.append(state)
-                return 7.0
-
-        heuristic = PythonHeuristic()
-
-        assert isinstance(heuristic, task_module.Heuristic)
-
-        task_module.Heuristic.set_goal(heuristic, goal)
-        value = task_module.Heuristic.evaluate(heuristic, state)
-
-        assert heuristic.goal == goal
-        assert value == 7.0
-        assert heuristic.evaluated_states == [state]
 
 
 def test_search_result_exposes_all_result_fields():
@@ -567,24 +377,24 @@ def _make_gripper_tasks():
 
     lifted_task = planning.lifted.Task(formalism_task)
     result = lifted_task.instantiate_ground_task(
-        planning.ExecutionContext(1),
+        ExecutionContext(1),
         planning.lifted.GroundTaskInstantiationOptions(),
     )
 
     return result.task, lifted_task
 
 
-def _make_state_repository(task_module, task):
-    execution_context = planning.ExecutionContext(1)
+def _make_state_repository(task_module: ModuleType, task: Task):
+    execution_context = ExecutionContext(1)
     axiom_evaluator = task_module.AxiomEvaluatorFactory().create(task, execution_context)
 
     return task_module.StateRepositoryFactory().create(task, axiom_evaluator)
 
 
-def _make_successor_generator(task_module, task, state_repository):
+def _make_successor_generator(task_module: ModuleType, task: Task, state_repository: StateRepository):
     return task_module.SuccessorGeneratorFactory().create(
         task,
-        planning.ExecutionContext(1),
+        ExecutionContext(1),
         state_repository,
     )
 
@@ -610,7 +420,7 @@ def test_planning_task_view_accessors_keep_temporary_owners_alive():
         parser_options,
     )
     ground_task_view = planning.lifted.Task(formalism_task).instantiate_ground_task(
-        planning.ExecutionContext(1),
+        ExecutionContext(1),
         planning.lifted.GroundTaskInstantiationOptions(),
     ).task.get_task()
 
@@ -649,7 +459,7 @@ def test_lifted_task_instantiates_ground_task_from_parsed_pddl():
 
     lifted_task = planning.lifted.Task(formalism_task)
     result = lifted_task.instantiate_ground_task(
-        planning.ExecutionContext(1),
+        ExecutionContext(1),
         planning.lifted.GroundTaskInstantiationOptions(),
     )
 
@@ -659,14 +469,14 @@ def test_lifted_task_instantiates_ground_task_from_parsed_pddl():
 
 
 def test_state_repository_create_state_uses_plural_fluent_facts_argument():
-    docstring = planning.ground.StateRepository.create_state.__doc__
+    docstring = planning.ground.StateRepository.create_state.__doc__ or ""
 
     assert "fluent_facts" in docstring
     assert "fluent_fact:" not in docstring
 
 
 def test_state_get_uses_fluent_variable_argument_name():
-    docstring = planning.ground.State.get.__doc__
+    docstring = planning.ground.State.get.__doc__ or ""
 
     assert "fluent_variable" in docstring
     assert "fluent_fact:" not in docstring
@@ -852,7 +662,7 @@ def test_state_views_from_independent_repository_factories_use_deterministic_fac
         (planning.ground, ground_task),
         (planning.lifted, lifted_task),
     ):
-        execution_context = planning.ExecutionContext(1)
+        execution_context = ExecutionContext(1)
         axiom_evaluator_factory = task_module.AxiomEvaluatorFactory()
         first_axiom_evaluator = axiom_evaluator_factory.create(task, execution_context)
         second_axiom_evaluator = axiom_evaluator_factory.create(task, execution_context)

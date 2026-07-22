@@ -24,6 +24,7 @@
 
 #include <tuple>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 
 /**
  * Definitions
@@ -32,7 +33,7 @@
 namespace tyr::planning
 {
 template<>
-class Node<GroundTag>
+class Node<GroundTag> : public ygg::comparison::Mixin<Node<GroundTag>>
 {
 public:
     using TaskType = Task<GroundTag>;

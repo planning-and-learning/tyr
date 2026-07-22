@@ -22,7 +22,6 @@
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 
-#include <yggdrasil/semantics/comparators.hpp>
 #include <yggdrasil/semantics/equal_to.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 
@@ -228,7 +227,7 @@ inline auto collect_fterms(LiftedBooleanOperatorView element)
     auto result = ygg::UnorderedSet<FunctionTermView<T>> {};
     visit([&](auto&& arg) { collect_fterms(arg, result); }, element.get_variant());
     auto result_vec = std::vector<FunctionTermView<T>>(result.begin(), result.end());
-    std::sort(result_vec.begin(), result_vec.end(), ygg::Less<FunctionTermView<T>> {});
+    std::sort(result_vec.begin(), result_vec.end());
     return result_vec;
 }
 
@@ -238,7 +237,7 @@ inline auto collect_fterms(GroundBooleanOperatorView element)
     auto result = ygg::UnorderedSet<GroundFunctionTermView<T>> {};
     visit([&](auto&& arg) { collect_fterms(arg, result); }, element.get_variant());
     auto result_vec = std::vector<GroundFunctionTermView<T>>(result.begin(), result.end());
-    std::sort(result_vec.begin(), result_vec.end(), ygg::Less<GroundFunctionTermView<T>> {});
+    std::sort(result_vec.begin(), result_vec.end());
     return result_vec;
 }
 }

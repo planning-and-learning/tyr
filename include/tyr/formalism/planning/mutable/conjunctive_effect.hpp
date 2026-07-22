@@ -18,8 +18,7 @@
 #ifndef TYR_FORMALISM_PLANNING_MUTABLE_CONJUNCTIVE_EFFECT_HPP_
 #define TYR_FORMALISM_PLANNING_MUTABLE_CONJUNCTIVE_EFFECT_HPP_
 
-#include <yggdrasil/semantics/comparators.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 #include "tyr/formalism/planning/mutable/literal.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -33,7 +32,7 @@
 
 namespace tyr::formalism::planning
 {
-struct MutableConjunctiveEffect
+struct MutableConjunctiveEffect : ygg::comparison::Mixin<MutableConjunctiveEffect>
 {
     size_t num_parent_variables;
     size_t num_variables;
@@ -56,16 +55,6 @@ struct MutableConjunctiveEffect
     }
 
     auto identifying_members() const noexcept { return std::tie(num_parent_variables, num_variables, literals); }
-
-    friend bool operator==(const MutableConjunctiveEffect& lhs, const MutableConjunctiveEffect& rhs)
-    {
-        return ygg::EqualTo<MutableConjunctiveEffect> {}(lhs, rhs);
-    }
-
-    friend bool operator<(const MutableConjunctiveEffect& lhs, const MutableConjunctiveEffect& rhs)
-    {
-        return ygg::Less<MutableConjunctiveEffect> {}(lhs, rhs);
-    }
 };
 
 using MutableConjunctiveEffectList = std::vector<MutableConjunctiveEffect>;

@@ -150,24 +150,6 @@ message("ROOT_DIR: ${ROOT_DIR}")
 
 
 ##############################################################
-# CMake modules and macro files
-##############################################################
-
-list(APPEND CMAKE_MODULE_PATH
-  "${PROJECT_SOURCE_DIR}/cmake"
-)
-include("configure_boost")
-include("configure_ccache")
-
-##############################################################
-# CCache
-##############################################################
-
-# CCache
-configure_ccache()
-
-
-##############################################################
 # Dependency Handling
 ##############################################################
 
@@ -179,7 +161,7 @@ include("${PROJECT_SOURCE_DIR}/cmake/bootstrap_pyyggdrasil.cmake")
 # yggdrasil
 # ---------
 
-find_package(yggdrasil 0.0.18 CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+find_package(yggdrasil 0.0.25 CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 if(yggdrasil_FOUND)
   message(STATUS "Found yggdrasil: ${yggdrasil_DIR} (found version ${yggdrasil_VERSION})")
 endif()
@@ -204,8 +186,7 @@ endif()
 # -----
 
 # Find Boost headers only according to https://cmake.org/cmake/help/latest/module/FindBoost.html
-configure_boost()
-find_package(Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS iostreams json PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+find_package(Boost 1.74.0 REQUIRED COMPONENTS iostreams json PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 if(Boost_FOUND)
   message(STATUS "Found Boost: ${Boost_DIR} (found version ${Boost_VERSION})")
 endif()
@@ -272,7 +253,7 @@ endif()
 # Loki
 # -----
 
-find_package(loki 1.0.17 COMPONENTS parsers REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+find_package(loki 1.0.25 COMPONENTS parsers REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 if(loki_FOUND)
   message(STATUS "Found loki: ${loki_DIR} (found version ${loki_VERSION})")
 endif()
@@ -288,15 +269,13 @@ endif()
 if(TYR_BUILD_TESTS OR TYR_BUILD_PROFILING)
     # Benchmark PDDL comes from the pypddl-datasets cache, resolved (and
     # downloaded on demand) at configure time.
-    if(NOT Python_EXECUTABLE)
-        find_package(Python 3.8 REQUIRED COMPONENTS Interpreter)
-    endif()
+    find_package(Python 3.10 REQUIRED COMPONENTS Interpreter)
     execute_process(
         COMMAND "${Python_EXECUTABLE}" -c "import pypddl_datasets, sys; sys.stdout.write(str(pypddl_datasets.data_root()))"
         OUTPUT_VARIABLE TYR_BENCHMARKS_DIR
         RESULT_VARIABLE TYR_BENCHMARKS_RESULT)
     if(NOT TYR_BENCHMARKS_RESULT EQUAL 0)
-        message(FATAL_ERROR "Could not resolve the benchmark data root; install 'pypddl-datasets>=0.0.7,<0.1' into the configuring Python (${Python_EXECUTABLE}).")
+        message(FATAL_ERROR "Could not resolve the benchmark data root; install 'pypddl-datasets>=0.0.9,<0.1' into the configuring Python (${Python_EXECUTABLE}).")
     endif()
     message(STATUS "Benchmark data: ${TYR_BENCHMARKS_DIR}")
     add_compile_definitions(BENCHMARKS_DIR="${TYR_BENCHMARKS_DIR}")

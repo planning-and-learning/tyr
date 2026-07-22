@@ -24,7 +24,7 @@
 #include "tyr/planning/search_node.hpp"
 
 #include <yggdrasil/containers/segmented_vector.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning
 {
@@ -76,7 +76,7 @@ LabeledNodeList<Kind> extract_labeled_node_trajectory(const NodeList<Kind>& node
             const auto successor_g_value = compute_successor_g_value(cur_node.get_metric(), labeled_succ_node.node.get_metric(), action_cost_mode);
             const auto normalized_succ_node = Node<Kind>(labeled_succ_node.node.get_state(), successor_g_value);
 
-            if (ygg::EqualTo<Node<Kind>> {}(normalized_succ_node, node_trajectory[i]))
+            if (normalized_succ_node == node_trajectory[i])
             {
                 labeled_node_trajectory.push_back(LabeledNode<Kind> { labeled_succ_node.label, normalized_succ_node });
                 cur_node = normalized_succ_node;

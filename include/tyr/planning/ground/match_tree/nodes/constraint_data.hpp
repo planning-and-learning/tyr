@@ -20,6 +20,7 @@
 
 #include "tyr/formalism/planning/boolean_operator_data.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
+#include "tyr/planning/ground/match_tree/nodes/constraint_index.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
 
 #include <yggdrasil/core/types.hpp>

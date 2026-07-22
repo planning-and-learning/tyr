@@ -22,6 +22,7 @@
 #include "tyr/formalism/datalog/ground_atom_index.hpp"
 #include "tyr/formalism/datalog/ground_conjunctive_condition_index.hpp"
 #include "tyr/formalism/datalog/ground_function_term_value_index.hpp"
+#include "tyr/formalism/datalog/metric_index.hpp"
 #include "tyr/formalism/datalog/program_index.hpp"
 #include "tyr/formalism/datalog/rule_index.hpp"
 #include "tyr/formalism/function_index.hpp"

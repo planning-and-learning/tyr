@@ -46,7 +46,6 @@
 #include <vector>
 #include <yggdrasil/containers/dynamic_bitset.hpp>
 #include <yggdrasil/containers/vector.hpp>
-#include <yggdrasil/semantics/comparators.hpp>
 #include <yggdrasil/semantics/equal_to.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 
@@ -512,8 +511,8 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
                 }
             });
     }
-    std::sort(fluent_atoms.begin(), fluent_atoms.end(), ygg::Less<fp::GroundAtomView<f::FluentTag>> {});
-    std::sort(derived_atoms.begin(), derived_atoms.end(), ygg::Less<fp::GroundAtomView<f::DerivedTag>> {});
+    std::sort(fluent_atoms.begin(), fluent_atoms.end());
+    std::sort(derived_atoms.begin(), derived_atoms.end());
 
     auto fluent_atoms_set = ygg::UnorderedSet<fp::GroundAtomView<f::FluentTag>>(fluent_atoms.begin(), fluent_atoms.end());
     auto derived_atoms_set = ygg::UnorderedSet<fp::GroundAtomView<f::DerivedTag>>(derived_atoms.begin(), derived_atoms.end());

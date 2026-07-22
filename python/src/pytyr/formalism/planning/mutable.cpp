@@ -39,6 +39,7 @@ void bind_atom(nb::module_& m, const std::string& name)
                    .def_rw("predicate", &V::predicate)
                    .def_rw("terms", &V::terms);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -51,6 +52,7 @@ void bind_literal(nb::module_& m, const std::string& name)
                    .def(nb::init<MutableAtom<T>, bool>(), "atom"_a, "polarity"_a)
                    .def(nb::init<LiteralView<T>>(), "literal"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -61,6 +63,7 @@ void bind_conjunctive_condition(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<size_t, ConjunctiveConditionView>(), "num_parent_variables"_a, "condition"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -71,6 +74,7 @@ void bind_conjunctive_effect(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<size_t, size_t, ConjunctiveEffectView>(), "num_parent_variables"_a, "num_variables"_a, "effect"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -81,6 +85,7 @@ void bind_conditional_effect(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<size_t, ConditionalEffectView>(), "num_parent_variables"_a, "effect"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -91,6 +96,7 @@ void bind_action(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<ActionView>(), "action"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 }

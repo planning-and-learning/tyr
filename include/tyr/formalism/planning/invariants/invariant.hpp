@@ -18,11 +18,6 @@
 #ifndef TYR_FORMALISM_PLANNING_INVARIANTS_INVARIANT_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANTS_INVARIANT_HPP_
 
-#include <yggdrasil/containers/block_array_comparators.hpp>
-#include <yggdrasil/semantics/comparators.hpp>
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/mutable/atom.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -32,11 +27,15 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+#include <yggdrasil/containers/associative_containers.hpp>
+#include <yggdrasil/containers/block_array_comparators.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
+#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::planning::invariant
 {
 
-struct Invariant
+struct Invariant : ygg::comparison::Mixin<Invariant>
 {
     size_t num_rigid_variables = 0;
     size_t num_counted_variables = 0;
@@ -66,8 +65,8 @@ struct Invariant
 
     void canonicalize()
     {
-        std::sort(atoms.begin(), atoms.end(), ygg::Less<MutableAtom<FluentTag>> {});
-        atoms.erase(std::unique(atoms.begin(), atoms.end(), ygg::EqualTo<MutableAtom<FluentTag>> {}), atoms.end());
+        std::sort(atoms.begin(), atoms.end());
+        atoms.erase(std::unique(atoms.begin(), atoms.end()), atoms.end());
 
         predicates.clear();
         for (const auto& atom : atoms)
@@ -75,10 +74,6 @@ struct Invariant
     }
 
     auto identifying_members() const noexcept { return std::tie(num_rigid_variables, num_counted_variables, atoms); }
-
-    friend bool operator==(const Invariant& lhs, const Invariant& rhs) { return ygg::EqualTo<Invariant> {}(lhs, rhs); }
-
-    friend bool operator<(const Invariant& lhs, const Invariant& rhs) { return ygg::Less<Invariant> {}(lhs, rhs); }
 };
 
 using InvariantList = std::vector<Invariant>;

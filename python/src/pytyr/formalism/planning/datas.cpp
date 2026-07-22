@@ -38,9 +38,10 @@ void bind_object_data(nb::module_& m, const std::string& name)
 {
     using V = ygg::Data<Object>;
 
-    nb::class_<V>(m, name.c_str())  //
-        .def(nb::init<const std::string&>(), "name"_a)
-        .def_rw("name", &V::name);
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<const std::string&>(), "name"_a)
+                   .def_rw("name", &V::name);
+    ygg::add_comparison(cls);
 }
 
 void bind_variable_data(nb::module_& m, const std::string& name)
@@ -51,6 +52,7 @@ void bind_variable_data(nb::module_& m, const std::string& name)
                    .def(nb::init<const std::string&>(), "name"_a)
                    .def_rw("name", &V::name);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -62,6 +64,7 @@ void bind_term_data(nb::module_& m, const std::string& name)
                    .def(nb::init<typename V::template ViewVariant<Repository>>(), "value"_a)
                    .def_rw("value", &V::value);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -73,6 +76,7 @@ void bind_relation_binding_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<ygg::View<ygg::Index<Tag>, Repository>, const ObjectViewList&>(), "relation"_a, "objects"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -84,6 +88,7 @@ void bind_predicate_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<const std::string&, ygg::uint_t>(), "name"_a, "arity"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -95,6 +100,7 @@ void bind_atom_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<PredicateView<T>, const TermViewList&>(), "predicate"_a, "terms"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -106,6 +112,7 @@ void bind_ground_atom_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<PredicateBindingView<T>>(), "binding"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -117,6 +124,7 @@ void bind_literal_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<AtomView<T>, bool>(), "atom"_a, "polarity"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -128,6 +136,7 @@ void bind_ground_literal_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<GroundAtomView<T>, bool>(), "atom"_a, "polarity"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -139,6 +148,7 @@ void bind_fdr_variable_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<const GroundAtomViewList<T>>(), "atoms"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -150,6 +160,7 @@ void bind_fdr_fact_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<FDRVariableView<T>, FDRValue>(), "variable"_a, "value"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -161,6 +172,7 @@ void bind_function_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<const std::string&, ygg::uint_t>(), "name"_a, "arity"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -172,6 +184,7 @@ void bind_function_term_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<FunctionView<T>, const TermViewList&>(), "function"_a, "terms"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -183,6 +196,7 @@ void bind_ground_function_term_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<FunctionBindingView<T>>(), "binding"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -194,6 +208,7 @@ void bind_ground_function_term_value_data(nb::module_& m, const std::string& nam
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<GroundFunctionTermView<T>, ygg::float_t>(), "fterm"_a, "value"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -205,6 +220,7 @@ void bind_numeric_effect_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<FunctionTermView<T>, FunctionExpressionView>(), "fterm"_a, "fexpr"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -216,6 +232,7 @@ void bind_ground_numeric_effect_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<GroundFunctionTermView<T>, GroundFunctionExpressionView>(), "fterm"_a, "fexpr"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -227,6 +244,7 @@ void bind_numeric_effect_operator_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<typename V::template ViewVariant<Repository>>(), "value"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -238,6 +256,7 @@ void bind_ground_numeric_effect_operator_data(nb::module_& m, const std::string&
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<typename V::template ViewVariant<Repository>>(), "value"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -248,6 +267,7 @@ void bind_function_expression_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<typename V::template ViewVariant<Repository>>(), "value"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -267,6 +287,7 @@ void bind_conjunctive_condition_data(nb::module_& m, const std::string& name)
                         "derived_literals"_a,
                         "numeric_constraints"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -282,6 +303,7 @@ void bind_conjunctive_effect_data(nb::module_& m, const std::string& name)
                         "fluent_numeric_effects"_a,
                         "auxiliary_numeric_effect"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -292,6 +314,7 @@ void bind_conditional_effect_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<const VariableViewList&, ConjunctiveConditionView, ConjunctiveEffectView>(), "variables"_a, "condition"_a, "effect"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -319,6 +342,7 @@ void bind_action_data(nb::module_& m, const std::string& name)
                         "condition"_a,
                         "effects"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -329,6 +353,7 @@ void bind_axiom_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<const VariableViewList&, ConjunctiveConditionView, AtomView<DerivedTag>>(), "variables"_a, "body"_a, "head"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -339,6 +364,7 @@ void bind_ground_function_expression_data(nb::module_& m, const std::string& nam
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<typename V::template ViewVariant<Repository>>(), "value"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -358,6 +384,7 @@ void bind_ground_conjunctive_condition_data(nb::module_& m, const std::string& n
                         "negative_facts"_a,
                         "numeric_constraints"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -375,6 +402,7 @@ void bind_ground_conjunctive_effect_data(nb::module_& m, const std::string& name
                         "fluent_numeric_effects"_a,
                         "auxiliary_numeric_effect"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -385,6 +413,7 @@ void bind_ground_conditional_effect_data(nb::module_& m, const std::string& name
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<GroundConjunctiveConditionView, GroundConjunctiveEffectView>(), "condition"_a, "effect"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -398,6 +427,7 @@ void bind_ground_action_data(nb::module_& m, const std::string& name)
                         "condition"_a,
                         "effects"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -408,6 +438,7 @@ void bind_ground_axiom_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<AxiomBindingView, GroundConjunctiveConditionView, GroundAtomView<DerivedTag>>(), "binding"_a, "body"_a, "head"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -418,6 +449,7 @@ void bind_metric_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<typename V::ObjectiveVariant, GroundFunctionExpressionView>(), "objective_kind"_a, "fexpr"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -447,6 +479,7 @@ void bind_domain_data(nb::module_& m, const std::string& name)
                         "actions"_a,
                         "axioms"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -480,6 +513,7 @@ void bind_lifted_task_data(nb::module_& m, const std::string& name)
                         "metric"_a,
                         "axioms"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -524,6 +558,7 @@ void bind_ground_task_data(nb::module_& m, const std::string& name)
                         "ground_actions"_a,
                         "ground_axioms"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -535,6 +570,7 @@ void bind_unary_operator_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<ygg::View<T, Repository>>(), "arg"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -546,6 +582,7 @@ void bind_binary_operator_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<ygg::View<T, Repository>, ygg::View<T, Repository>>(), "lhs"_a, "rhs"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -557,6 +594,7 @@ void bind_multi_operator_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<const std::vector<ygg::View<T, Repository>>&>(), "args"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -568,6 +606,7 @@ void bind_arithmetic_operator_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<typename V::template ViewVariant<Repository>>(), "value"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -579,6 +618,7 @@ void bind_boolean_operator_data(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<typename V::template ViewVariant<Repository>>(), "value"_a);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 }

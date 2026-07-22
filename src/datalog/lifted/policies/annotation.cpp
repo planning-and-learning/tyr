@@ -42,7 +42,7 @@
 #include <vector>
 #include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/semantics/comparators.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::datalog
 {
@@ -119,7 +119,7 @@ OrAnnotationPolicy<LiftedTag>::update_annotation(::tyr::formalism::datalog::Pred
         // wins its tie.
         const auto* incumbent = program_and_annot.find(program_head);
         const auto* incumbent_witness = incumbent ? std::get_if<WitnessAnnotation<LiftedTag>>(incumbent) : nullptr;
-        if (incumbent_witness && ygg::Less<::tyr::formalism::datalog::RuleBindingView> {}(witness.get_rule_key(), incumbent_witness->get_rule_key()))
+        if (incumbent_witness && witness.get_rule_key() < incumbent_witness->get_rule_key())
             program_and_annot.insert_or_assign(program_head, Annotation<LiftedTag>(witness));
     }
 

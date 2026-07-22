@@ -21,6 +21,7 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_data.hpp"
+#include "tyr/planning/state_index.hpp"
 #include "tyr/planning/state_storage/config.hpp"
 
 #include <yggdrasil/semantics/canonicalization.hpp>

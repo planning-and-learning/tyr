@@ -30,14 +30,13 @@
 #include <utility>
 #include <variant>
 #include <vector>
-#include <yggdrasil/semantics/comparators.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::planning
 {
 template<FactKind T>
-struct MutableAtom
+struct MutableAtom : ygg::comparison::Mixin<MutableAtom<T>>
 {
     PredicateView<T> predicate;
     std::vector<ygg::Data<Term>> terms;
@@ -61,9 +60,6 @@ struct MutableAtom
     }
 
     auto identifying_members() const noexcept { return std::tie(predicate, terms); }
-
-    friend bool operator==(const MutableAtom& lhs, const MutableAtom& rhs) { return ygg::EqualTo<MutableAtom> {}(lhs, rhs); }
-    friend bool operator<(const MutableAtom& lhs, const MutableAtom& rhs) { return ygg::Less<MutableAtom> {}(lhs, rhs); }
 };
 
 template<FactKind T>
@@ -80,7 +76,7 @@ struct structure_traits<tyr::formalism::planning::MutableAtom<T>>
     template<typename F>
     static bool zip_terms(const Type& lhs, const Type& rhs, F&& f)
     {
-        if (!ygg::EqualTo<tyr::formalism::planning::PredicateView<T>> {}(lhs.predicate, rhs.predicate))
+        if (lhs.predicate != rhs.predicate)
             return false;
 
         if (lhs.terms.size() != rhs.terms.size())

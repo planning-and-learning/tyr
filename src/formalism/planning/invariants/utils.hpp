@@ -29,7 +29,7 @@ inline const MutableAtom<FluentTag>* find_part(const Invariant& inv, PredicateVi
 {
     const auto it = std::find_if(inv.atoms.begin(),
                                  inv.atoms.end(),
-                                 [&](const auto& atom) { return ygg::EqualTo<PredicateView<FluentTag>> {}(atom.predicate, predicate); });
+                                 [&](const auto& atom) { return atom.predicate == predicate; });
 
     return (it == inv.atoms.end()) ? nullptr : &*it;
 }

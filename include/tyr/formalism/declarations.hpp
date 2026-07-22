@@ -26,6 +26,7 @@
 #include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/formalism/declarations.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 
 #include <tuple>
 
@@ -85,55 +86,65 @@ using FluentDerivedTags = ygg::TypeList<FluentTag, DerivedTag>;
  * Tags to dispatch operators
  */
 
-struct Eq
+struct Eq : ygg::comparison::Mixin<Eq>
 {
     static constexpr int kind = 0;
-    auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto cista_members() const noexcept { return std::tie(); }
 };
-struct Ne
+struct Ne : ygg::comparison::Mixin<Ne>
 {
     static constexpr int kind = 1;
-    auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto cista_members() const noexcept { return std::tie(); }
 };
-struct Le
+struct Le : ygg::comparison::Mixin<Le>
 {
     static constexpr int kind = 2;
-    auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto cista_members() const noexcept { return std::tie(); }
 };
-struct Lt
+struct Lt : ygg::comparison::Mixin<Lt>
 {
     static constexpr int kind = 3;
-    auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto cista_members() const noexcept { return std::tie(); }
 };
-struct Ge
+struct Ge : ygg::comparison::Mixin<Ge>
 {
     static constexpr int kind = 4;
-    auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto cista_members() const noexcept { return std::tie(); }
 };
-struct Gt
+struct Gt : ygg::comparison::Mixin<Gt>
 {
     static constexpr int kind = 5;
-    auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto cista_members() const noexcept { return std::tie(); }
 };
-struct Add
+struct Add : ygg::comparison::Mixin<Add>
 {
     static constexpr int kind = 0;
-    auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto cista_members() const noexcept { return std::tie(); }
 };
-struct Sub
+struct Sub : ygg::comparison::Mixin<Sub>
 {
     static constexpr int kind = 1;
-    auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto cista_members() const noexcept { return std::tie(); }
 };
-struct Mul
+struct Mul : ygg::comparison::Mixin<Mul>
 {
     static constexpr int kind = 2;
-    auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto cista_members() const noexcept { return std::tie(); }
 };
-struct Div
+struct Div : ygg::comparison::Mixin<Div>
 {
     static constexpr int kind = 3;
-    auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto cista_members() const noexcept { return std::tie(); }
 };
 
 template<typename T>
@@ -159,35 +170,40 @@ enum class EffectFamily
     SCALE_UP_SCALE_DOWN = 3,
 };
 
-struct Assign
+struct Assign : ygg::comparison::Mixin<Assign>
 {
     static constexpr EffectFamily family = EffectFamily::ASSIGN;
     static constexpr int kind = 0;
-    auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto cista_members() const noexcept { return std::tie(); }
 };
-struct Increase
+struct Increase : ygg::comparison::Mixin<Increase>
 {
     static constexpr EffectFamily family = EffectFamily::INCREASE_DECREASE;
     static constexpr int kind = 1;
-    auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto cista_members() const noexcept { return std::tie(); }
 };
-struct Decrease
+struct Decrease : ygg::comparison::Mixin<Decrease>
 {
     static constexpr EffectFamily family = EffectFamily::INCREASE_DECREASE;
     static constexpr int kind = 2;
-    auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto cista_members() const noexcept { return std::tie(); }
 };
-struct ScaleUp
+struct ScaleUp : ygg::comparison::Mixin<ScaleUp>
 {
     static constexpr EffectFamily family = EffectFamily::SCALE_UP_SCALE_DOWN;
     static constexpr int kind = 3;
-    auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto cista_members() const noexcept { return std::tie(); }
 };
-struct ScaleDown
+struct ScaleDown : ygg::comparison::Mixin<ScaleDown>
 {
     static constexpr EffectFamily family = EffectFamily::SCALE_UP_SCALE_DOWN;
     static constexpr int kind = 4;
-    auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto cista_members() const noexcept { return std::tie(); }
 };
 
 template<typename T>

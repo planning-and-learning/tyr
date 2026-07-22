@@ -30,32 +30,54 @@
 #include <variant>
 #include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::planning
 {
 
-struct GroundLMCutNumericNode
+struct GroundLMCutNumericNode : ygg::comparison::Mixin<GroundLMCutNumericNode>
 {
     ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term;
     ygg::ClosedInterval<ygg::float_t> interval;
+
+    GroundLMCutNumericNode() = default;
+    GroundLMCutNumericNode(
+        ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term,
+        ygg::ClosedInterval<ygg::float_t> interval) :
+        term(term),
+        interval(interval)
+    {
+    }
 
     auto identifying_members() const noexcept { return std::make_tuple(term, lower(interval), upper(interval)); }
 };
 
-struct GroundLMCutRuleEdge
+struct GroundLMCutRuleEdge : ygg::comparison::Mixin<GroundLMCutRuleEdge>
 {
     ::tyr::formalism::datalog::GroundRuleView rule;
+
+    GroundLMCutRuleEdge() = default;
+    explicit GroundLMCutRuleEdge(::tyr::formalism::datalog::GroundRuleView rule) : rule(rule) {}
 
     auto identifying_members() const noexcept { return std::tie(rule); }
 };
 
-struct GroundLMCutNumericEdge
+struct GroundLMCutNumericEdge : ygg::comparison::Mixin<GroundLMCutNumericEdge>
 {
     ::tyr::formalism::datalog::GroundRuleView rule;
     ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term;
     ygg::ClosedInterval<ygg::float_t> interval;
+
+    GroundLMCutNumericEdge() = default;
+    GroundLMCutNumericEdge(::tyr::formalism::datalog::GroundRuleView rule,
+                           ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term,
+                           ygg::ClosedInterval<ygg::float_t> interval) :
+        rule(rule),
+        term(term),
+        interval(interval)
+    {
+    }
 
     auto identifying_members() const noexcept { return std::make_tuple(rule, term, lower(interval), upper(interval)); }
 };

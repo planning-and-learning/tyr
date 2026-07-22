@@ -16,7 +16,6 @@ Tyr disables optional targets by default. Enable only the parts needed for the t
 ```console
 cmake -S . -B build \
   -DPython_EXECUTABLE=${PWD}/.venv/bin/python \
-  -DPython3_EXECUTABLE=${PWD}/.venv/bin/python \
   -DCMAKE_PREFIX_PATH="$(.venv/bin/python -c 'import pypddl, pyyggdrasil; print(f"{pypddl.native_prefix()};{pyyggdrasil.native_prefix()}")')" \
   -DTYR_BUILD_TESTS=ON \
   -DTYR_BUILD_EXECUTABLES=ON \

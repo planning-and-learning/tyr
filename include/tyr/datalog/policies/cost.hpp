@@ -26,16 +26,25 @@
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::datalog
 {
 
 template<TaskKind Kind>
-struct NumericTransitionCostKey
+struct NumericTransitionCostKey : ygg::comparison::Mixin<NumericTransitionCostKey<Kind>>
 {
     WitnessRuleKeyT<Kind> rule_key;
     NumericSupportKeyT<Kind> numeric_key;
     ygg::ClosedInterval<ygg::float_t> interval;
+
+    NumericTransitionCostKey() = default;
+    NumericTransitionCostKey(WitnessRuleKeyT<Kind> rule_key, NumericSupportKeyT<Kind> numeric_key, ygg::ClosedInterval<ygg::float_t> interval) :
+        rule_key(rule_key),
+        numeric_key(numeric_key),
+        interval(interval)
+    {
+    }
 
     auto identifying_members() const noexcept { return std::make_tuple(rule_key, numeric_key, lower(interval), upper(interval)); }
 };

@@ -93,3 +93,16 @@ _deps
 
 # Benchmark data materialized by pypddl-datasets (see README)
 data/
+
+# Non-canonical fixture previews produced by filtered generator runs
+*.generated
+
+# Experiment outputs
+/experiments/**/data/
+/experiments/**/results*/
+/experiments/**/*-eval/
+/experiments/**/*.tar
+/experiments/**/*.tar.*
+/experiments/**/*.tgz
+/experiments/**/*.zip
+/experiments/**/*.png

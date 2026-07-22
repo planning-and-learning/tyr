@@ -19,9 +19,6 @@
 
 #include "normalization.hpp"
 #include "refinement.hpp"
-#include <yggdrasil/semantics/comparators.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 #include "tyr/formalism/planning/expression_arity.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/invariants/formatter.hpp"
@@ -31,12 +28,14 @@
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <algorithm>
+#include <gtl/phmap.hpp>
 #include <map>
 #include <optional>
 #include <variant>
 #include <vector>
-
-#include <gtl/phmap.hpp>
+#include <yggdrasil/semantics/comparators.hpp>
+#include <yggdrasil/semantics/equal_to.hpp>
+#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::planning::invariant
 {

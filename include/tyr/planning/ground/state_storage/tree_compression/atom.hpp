@@ -27,14 +27,18 @@
 #include <boost/dynamic_bitset.hpp>
 #include <limits>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning
 {
 
 template<>
-struct AtomPackedStorage<GroundTag, TreeCompression>
+struct AtomPackedStorage<GroundTag, TreeCompression> : ygg::comparison::Mixin<AtomPackedStorage<GroundTag, TreeCompression>>
 {
     ygg::uint_t index;
+
+    AtomPackedStorage() = default;
+    explicit AtomPackedStorage(ygg::uint_t index) : index(index) {}
 
     auto identifying_members() const noexcept { return std::tie(index); }
 };

@@ -66,6 +66,7 @@ install(FILES "${PYTYR_GENERATED_VERSION_FILE}"
 
 yggdrasil_install_python_files(pytyr "${CMAKE_CURRENT_SOURCE_DIR}"
     FILES
+    pytyr/py.typed
     pytyr/__init__.py
     pytyr/__main__.py
     pytyr/__init__.pyi

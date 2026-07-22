@@ -25,14 +25,18 @@
 #include "tyr/planning/state_storage/tags.hpp"
 
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning
 {
 
 template<>
-struct AtomPackedStorage<LiftedTag, HashSet>
+struct AtomPackedStorage<LiftedTag, HashSet> : ygg::comparison::Mixin<AtomPackedStorage<LiftedTag, HashSet>>
 {
     ygg::uint_t index;
+
+    AtomPackedStorage() = default;
+    explicit AtomPackedStorage(ygg::uint_t index) : index(index) {}
 
     auto identifying_members() const noexcept { return std::tie(index); }
 };

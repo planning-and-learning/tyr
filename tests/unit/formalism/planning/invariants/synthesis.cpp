@@ -87,7 +87,7 @@ void expect_invariant_sets_equal(std::vector<fpi::Invariant> actual, std::vector
 
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesis)
 {
-    const auto suite = ygg::common::load_json_file(ygg::common::root_path() / "tests/unit/formalism/planning/invariants/synthesis.json");
+    const auto suite = ygg::common::load_json_file(ygg::common::root_path() / "tests/fixtures/formalism/invariants/synthesis.json");
     const auto& suite_object = ygg::common::as_object(suite, "suite");
     for (const auto& case_value : ygg::common::as_array(suite_object, "cases", "suite"))
     {

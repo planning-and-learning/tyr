@@ -18,10 +18,6 @@
 #ifndef TYR_FORMALISM_UNIFICATION_SUBSTITUTION_HPP_
 #define TYR_FORMALISM_UNIFICATION_SUBSTITUTION_HPP_
 
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/semantics/comparators.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/term_data.hpp"
 
@@ -29,12 +25,15 @@
 #include <cassert>
 #include <optional>
 #include <vector>
+#include <yggdrasil/containers/associative_containers.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
+#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::unification
 {
 
 template<typename T>
-class SubstitutionFunction
+class SubstitutionFunction : public ygg::comparison::Mixin<SubstitutionFunction<T>>
 {
 public:
     using value_type = T;

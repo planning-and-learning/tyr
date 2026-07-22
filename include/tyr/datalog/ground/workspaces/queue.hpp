@@ -26,15 +26,24 @@
 #include <tuple>
 #include <vector>
 #include <yggdrasil/core/types.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::datalog
 {
 
-struct GroundQueueEntry
+struct GroundQueueEntry : ygg::comparison::Mixin<GroundQueueEntry>
 {
     Cost cost;
     ygg::uint_t sequence;
     ::tyr::formalism::datalog::GroundRuleView rule;
+
+    GroundQueueEntry() = default;
+    GroundQueueEntry(Cost cost, ygg::uint_t sequence, ::tyr::formalism::datalog::GroundRuleView rule) :
+        cost(cost),
+        sequence(sequence),
+        rule(rule)
+    {
+    }
 
     auto identifying_members() const noexcept { return std::make_tuple(cost, sequence); }
 };

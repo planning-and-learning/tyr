@@ -15,18 +15,14 @@ ROOT_DIR = Path(__file__).resolve().parents[3]
 DOWNSTREAM_PACKAGE_DIR = Path(__file__).resolve().parent / "minimal_downstream_package"
 
 
-def _native_prefix(module):
-    return Path(module.native_prefix())
-
-
-def test_downstream_python_binding_imports_public_pytyr_api_and_links_tyr_core(tmp_path):
+def test_downstream_python_binding_imports_public_pytyr_api_and_links_tyr_core(tmp_path: Path) -> None:
     cmake = shutil.which("cmake")
     if cmake is None:
         pytest.skip("cmake is required for the downstream binding smoke test")
 
     pytyr_prefix = Path(pytyr.native_prefix())
     pypddl_prefix = Path(pypddl.native_prefix())
-    pyyggdrasil_prefix = _native_prefix(pyyggdrasil)
+    pyyggdrasil_prefix = Path(pyyggdrasil.native_prefix())
     tyr_library_dir = pytyr_prefix / "lib"
     dependency_library_dirs = [
         tyr_library_dir,
@@ -58,7 +54,6 @@ def test_downstream_python_binding_imports_public_pytyr_api_and_links_tyr_core(t
             f"-DCMAKE_PREFIX_PATH={pytyr_prefix};{pypddl_prefix};{pyyggdrasil_prefix}",
             f"-Dtyr_DIR={tyr_cmake_dir}",
             f"-DPython_EXECUTABLE={sys.executable}",
-            f"-DPython3_EXECUTABLE={sys.executable}",
             f"-DDOWNSTREAM_RUNTIME_LIBRARY_DIRS={';'.join(str(path) for path in dependency_library_dirs)}",
             env.get("CMAKE_ARGS", ""),
         ]
@@ -75,7 +70,6 @@ def test_downstream_python_binding_imports_public_pytyr_api_and_links_tyr_core(t
             f"-DCMAKE_PREFIX_PATH={pytyr_prefix};{pypddl_prefix};{pyyggdrasil_prefix}",
             f"-Dtyr_DIR={tyr_cmake_dir}",
             f"-DPython_EXECUTABLE={sys.executable}",
-            f"-DPython3_EXECUTABLE={sys.executable}",
             f"-DDOWNSTREAM_RUNTIME_LIBRARY_DIRS={';'.join(str(path) for path in dependency_library_dirs)}",
         ],
         check=True,

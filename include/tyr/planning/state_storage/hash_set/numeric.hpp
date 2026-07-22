@@ -24,13 +24,17 @@
 #include <limits>
 #include <yggdrasil/containers/raw_vector_set.hpp>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning
 {
 template<TaskKind Kind>
-struct NumericPackedStorage<Kind, HashSet>
+struct NumericPackedStorage<Kind, HashSet> : ygg::comparison::Mixin<NumericPackedStorage<Kind, HashSet>>
 {
     ygg::uint_t index;
+
+    NumericPackedStorage() = default;
+    explicit NumericPackedStorage(ygg::uint_t index) : index(index) {}
 
     auto identifying_members() const noexcept { return std::tie(index); }
 };

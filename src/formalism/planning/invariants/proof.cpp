@@ -137,7 +137,7 @@ ConstraintSystem make_param_system(const MutableAction& op, const MutableConditi
             const auto r1 = representative_of(t1);
             const auto r2 = representative_of(t2);
 
-            if (!ygg::EqualTo<ConstraintTerm> {}(r1, r2))
+            if (r1 != r2)
                 param_system.add_inequality_disjunction(InequalityDisjunction({ { t1, t2 } }));
         }
     }

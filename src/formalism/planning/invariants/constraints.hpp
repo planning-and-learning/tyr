@@ -26,41 +26,39 @@
 #include <optional>
 #include <variant>
 #include <vector>
+#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::formalism::planning::invariant
 {
 
-struct InvariantParameter
+struct InvariantParameter : ygg::comparison::Mixin<InvariantParameter>
 {
     size_t index;
 
+    InvariantParameter() = default;
+    explicit InvariantParameter(size_t index) : index(index) {}
+
     auto identifying_members() const noexcept { return std::tie(index); }
-
-    friend bool operator==(const InvariantParameter& lhs, const InvariantParameter& rhs) { return ygg::EqualTo<InvariantParameter> {}(lhs, rhs); }
-
-    friend bool operator<(const InvariantParameter& lhs, const InvariantParameter& rhs) { return ygg::Less<InvariantParameter> {}(lhs, rhs); }
 };
 
-struct VariableTerm
+struct VariableTerm : ygg::comparison::Mixin<VariableTerm>
 {
     ParameterIndex index;
 
+    VariableTerm() = default;
+    explicit VariableTerm(ParameterIndex index) : index(index) {}
+
     auto identifying_members() const noexcept { return std::tie(index); }
-
-    friend bool operator==(const VariableTerm& lhs, const VariableTerm& rhs) { return ygg::EqualTo<VariableTerm> {}(lhs, rhs); }
-
-    friend bool operator<(const VariableTerm& lhs, const VariableTerm& rhs) { return ygg::Less<VariableTerm> {}(lhs, rhs); }
 };
 
-struct ObjectTerm
+struct ObjectTerm : ygg::comparison::Mixin<ObjectTerm>
 {
     ygg::Index<Object> index;
 
+    ObjectTerm() = default;
+    explicit ObjectTerm(ygg::Index<Object> index) : index(index) {}
+
     auto identifying_members() const noexcept { return std::tie(index); }
-
-    friend bool operator==(const ObjectTerm& lhs, const ObjectTerm& rhs) { return ygg::EqualTo<ObjectTerm> {}(lhs, rhs); }
-
-    friend bool operator<(const ObjectTerm& lhs, const ObjectTerm& rhs) { return ygg::Less<ObjectTerm> {}(lhs, rhs); }
 };
 
 using ConstraintTerm = std::variant<InvariantParameter, VariableTerm, ObjectTerm>;

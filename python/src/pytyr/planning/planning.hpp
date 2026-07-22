@@ -165,6 +165,7 @@ void bind_state(nb::module_& m, const std::string& name)
                        },
                        nb::keep_alive<0, 1>());
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 
@@ -178,6 +179,7 @@ void bind_node(nb::module_& m, const std::string& name)
                    .def("get_state", &T::get_state, nb::rv_policy::reference_internal)
                    .def("get_metric", &T::get_metric, nb::rv_policy::copy);
     ygg::add_print(cls);
+    ygg::add_comparison(cls);
     ygg::add_hash(cls);
 }
 

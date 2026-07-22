@@ -36,7 +36,7 @@ ygg::Data<f::Term> parameter(size_t index) { return ygg::Data<f::Term>(f::Parame
 
 ygg::Data<f::Term> object(size_t index) { return ygg::Data<f::Term>(ygg::Index<f::Object>(index)); }
 
-void expect_term_eq(const ygg::Data<f::Term>& lhs, const ygg::Data<f::Term>& rhs) { EXPECT_TRUE(ygg::EqualTo<ygg::Data<f::Term>> {}(lhs, rhs)); }
+void expect_term_eq(const ygg::Data<f::Term>& lhs, const ygg::Data<f::Term>& rhs) { EXPECT_EQ(lhs, rhs); }
 }
 
 TEST(TyrTests, TyrFormalismUnificationApplySubstitutionFixpoint)

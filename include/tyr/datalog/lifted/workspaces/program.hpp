@@ -170,7 +170,7 @@ public:
     {
         const auto& bucket = get_current_bucket();
         m_predicate_bucket_scratch.assign(bucket.begin(), bucket.end());
-        std::sort(m_predicate_bucket_scratch.begin(), m_predicate_bucket_scratch.end(), ygg::Less<PredicateViewType> {});
+        std::sort(m_predicate_bucket_scratch.begin(), m_predicate_bucket_scratch.end());
         return m_predicate_bucket_scratch;
     }
 
@@ -181,7 +181,7 @@ public:
         m_function_bucket_scratch.reserve(bucket.size());
         for (const auto& [head, interval] : bucket)
             m_function_bucket_scratch.emplace_back(head, interval);
-        std::sort(m_function_bucket_scratch.begin(), m_function_bucket_scratch.end(), ygg::Less<FunctionBucketEntry> {});
+        std::sort(m_function_bucket_scratch.begin(), m_function_bucket_scratch.end());
         return m_function_bucket_scratch;
     }
 

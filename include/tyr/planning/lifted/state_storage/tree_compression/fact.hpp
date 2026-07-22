@@ -25,14 +25,18 @@
 #include "tyr/planning/state_storage/tags.hpp"
 
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning
 {
 
 template<>
-struct FactPackedStorage<LiftedTag, TreeCompression>
+struct FactPackedStorage<LiftedTag, TreeCompression> : ygg::comparison::Mixin<FactPackedStorage<LiftedTag, TreeCompression>>
 {
     valla::Slot<ygg::uint_t> slot;
+
+    FactPackedStorage() = default;
+    explicit FactPackedStorage(valla::Slot<ygg::uint_t> slot) : slot(slot) {}
 
     auto identifying_members() const noexcept { return std::tie(slot.i1, slot.i2); }
 };

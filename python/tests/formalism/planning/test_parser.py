@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from pypddl.formalism import ParserOptions
 from pytyr.formalism.planning import Parser
 
@@ -59,7 +57,9 @@ def test_nested_task_view_accessors_keep_temporary_parent_views_alive():
     assert domain.get_name() == "gripper-strips"
     positive_goal_facts = list(goal.get_positive_facts())
     assert len(positive_goal_facts) == 1
-    assert positive_goal_facts[0].get_atom().get_predicate().get_name() == "at"
+    goal_atom = positive_goal_facts[0].get_atom()
+    assert goal_atom is not None
+    assert goal_atom.get_predicate().get_name() == "at"
 
 
 def test_parsed_domain_exposes_symbol_metadata():

@@ -186,7 +186,7 @@ bool ConstraintSystem::is_solvable() const
         {
             const auto ra = rep.contains(a) ? rep.at(a) : a;
             const auto rb = rep.contains(b) ? rep.at(b) : b;
-            if (!ygg::EqualTo<ConstraintTerm> {}(ra, rb))
+            if (ra != rb)
                 return true;
         }
         return false;
@@ -299,7 +299,7 @@ ConstraintTerm make_invariant_parameter_term(size_t index) { return InvariantPar
 
 EqualityConjunction make_cover_equality_conjunction(const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& atom, const Invariant& inv)
 {
-    assert(ygg::EqualTo<PredicateView<FluentTag>> {}(pattern.predicate, atom.predicate));
+    assert(pattern.predicate == atom.predicate);
     assert(pattern.terms.size() == atom.terms.size());
 
     std::vector<std::pair<ConstraintTerm, ConstraintTerm>> equalities;
@@ -333,7 +333,7 @@ void ensure_cover(ConstraintSystem& system, const MutableAtom<FluentTag>& patter
 
 void ensure_inequality(ConstraintSystem& system, const MutableAtom<FluentTag>& lhs, const MutableAtom<FluentTag>& rhs)
 {
-    if (!ygg::EqualTo<PredicateView<FluentTag>> {}(lhs.predicate, rhs.predicate) || lhs.terms.empty())
+    if (lhs.predicate != rhs.predicate || lhs.terms.empty())
         return;
 
     std::vector<std::pair<ConstraintTerm, ConstraintTerm>> parts;

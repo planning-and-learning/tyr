@@ -159,15 +159,17 @@ struct GroundAxiom
 {
 };
 
-struct Minimize
+struct Minimize : ygg::comparison::Mixin<Minimize>
 {
     static constexpr int kind = 0;
-    auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto cista_members() const noexcept { return std::tie(); }
 };
-struct Maximize
+struct Maximize : ygg::comparison::Mixin<Maximize>
 {
     static constexpr int kind = 1;
-    auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto identifying_members() const noexcept { return std::tie(kind); }
+    constexpr auto cista_members() const noexcept { return std::tie(); }
 };
 
 template<typename T>

@@ -25,7 +25,9 @@
 #include <cassert>
 #include <optional>
 #include <tuple>
+#include <utility>
 #include <vector>
+#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::formalism::planning::invariant
 {
@@ -80,7 +82,7 @@ bool instantiate_matches_ground_atom(const MutableAtom<FluentTag>& pattern,
                                      std::optional<ygg::Index<Object>> counted_value,
                                      GroundAtomView<FluentTag> ground_atom)
 {
-    if (!ygg::EqualTo<PredicateView<FluentTag>> {}(pattern.predicate, ground_atom.get_predicate()))
+    if (pattern.predicate != ground_atom.get_predicate())
         return false;
     if (pattern.terms.size() != ground_atom.get_objects().size())
         return false;
@@ -156,7 +158,7 @@ instantiate_group(const Invariant& inv, const std::vector<ygg::Index<Object>>& r
 
         for (const auto atom : all_atoms)
         {
-            if (!ygg::EqualTo<PredicateView<FluentTag>> {}(pattern.predicate, atom.get_predicate()))
+            if (pattern.predicate != atom.get_predicate())
                 continue;
             if (pattern.terms.size() != atom.get_objects().size())
                 continue;
@@ -180,19 +182,32 @@ instantiate_group(const Invariant& inv, const std::vector<ygg::Index<Object>>& r
     return result;
 }
 
-struct PrecomputedGroup
+struct PrecomputedGroup : ygg::comparison::Mixin<PrecomputedGroup>
 {
     size_t inv_index;
     std::vector<ygg::Index<Object>> rigid_values;
     GroundAtomViewList<FluentTag> atoms;
 
+    PrecomputedGroup(size_t inv_index, std::vector<ygg::Index<Object>> rigid_values, GroundAtomViewList<FluentTag> atoms) :
+        inv_index(inv_index),
+        rigid_values(std::move(rigid_values)),
+        atoms(std::move(atoms))
+    {
+    }
+
     auto identifying_members() const noexcept { return std::tie(inv_index, rigid_values, atoms); }
 };
 
-struct GroupKey
+struct GroupKey : ygg::comparison::Mixin<GroupKey>
 {
     size_t invariant_index;
     std::vector<ygg::Index<Object>> rigid_values;
+
+    GroupKey(size_t invariant_index, std::vector<ygg::Index<Object>> rigid_values) :
+        invariant_index(invariant_index),
+        rigid_values(std::move(rigid_values))
+    {
+    }
 
     auto identifying_members() const noexcept { return std::tie(invariant_index, rigid_values); }
 };
@@ -267,7 +282,7 @@ precompute_groups(const GroundAtomViewList<FluentTag>& initial_atoms, const Grou
 
             for (const auto& part : inv.atoms)
             {
-                if (!ygg::EqualTo<PredicateView<FluentTag>> {}(part.predicate, atom.get_predicate()))
+                if (part.predicate != atom.get_predicate())
                     continue;
                 if (!initial_atom_matches_part(inv, part, atom))
                     continue;
@@ -289,7 +304,7 @@ precompute_groups(const GroundAtomViewList<FluentTag>& initial_atoms, const Grou
                 {
                     if (std::find_if(initial_atoms.begin(),
                                      initial_atoms.end(),
-                                     [&](const auto initial_atom) { return ygg::EqualTo<GroundAtomView<FluentTag>> {}(initial_atom, gatom); })
+                                     [&](const auto initial_atom) { return initial_atom == gatom; })
                         != initial_atoms.end())
                         ++initial_count;
                 }
@@ -299,11 +314,7 @@ precompute_groups(const GroundAtomViewList<FluentTag>& initial_atoms, const Grou
 
                 std::sort(instantiated_group.begin(), instantiated_group.end(), [](const auto lhs, const auto rhs) { return structural_less(lhs, rhs); });
 
-                groups.push_back(PrecomputedGroup {
-                    .inv_index = inv_index,
-                    .rigid_values = *rigid_values,
-                    .atoms = std::move(instantiated_group),
-                });
+                groups.emplace_back(inv_index, *rigid_values, std::move(instantiated_group));
             }
         }
     }

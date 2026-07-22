@@ -18,8 +18,7 @@
 #ifndef TYR_FORMALISM_PLANNING_MUTABLE_CONJUNCTIVE_CONDITION_HPP_
 #define TYR_FORMALISM_PLANNING_MUTABLE_CONJUNCTIVE_CONDITION_HPP_
 
-#include <yggdrasil/semantics/comparators.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 #include "tyr/formalism/planning/mutable/literal.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -33,7 +32,7 @@
 
 namespace tyr::formalism::planning
 {
-struct MutableConjunctiveCondition
+struct MutableConjunctiveCondition : ygg::comparison::Mixin<MutableConjunctiveCondition>
 {
     size_t num_parent_variables;
     size_t num_variables;
@@ -64,16 +63,6 @@ struct MutableConjunctiveCondition
     }
 
     auto identifying_members() const noexcept { return std::tie(num_parent_variables, num_variables, static_literals, fluent_literals); }
-
-    friend bool operator==(const MutableConjunctiveCondition& lhs, const MutableConjunctiveCondition& rhs)
-    {
-        return ygg::EqualTo<MutableConjunctiveCondition> {}(lhs, rhs);
-    }
-
-    friend bool operator<(const MutableConjunctiveCondition& lhs, const MutableConjunctiveCondition& rhs)
-    {
-        return ygg::Less<MutableConjunctiveCondition> {}(lhs, rhs);
-    }
 };
 
 using MutableConjunctiveConditionList = std::vector<MutableConjunctiveCondition>;
