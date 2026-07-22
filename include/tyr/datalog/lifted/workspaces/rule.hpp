@@ -32,11 +32,8 @@
 #include "tyr/formalism/object_index.hpp"
 
 #include <algorithm>
-#include <atomic>
 #include <cassert>
-#include <chrono>
-#include <oneapi/tbb/enumerable_thread_specific.h>
-#include <oneapi/tbb/spin_mutex.h>
+#include <deque>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -233,7 +230,7 @@ struct RuleWorkspace<LiftedTag>
 
         Common common;
 
-        oneapi::tbb::enumerable_thread_specific<Worker> worker;
+        std::deque<Worker> worker;
     };
 };
 
@@ -401,9 +398,18 @@ RuleWorkspace<LiftedTag>::Instance<AndAP>::Instance(::tyr::formalism::datalog::R
                                                     const ConstRuleWorkspace<LiftedTag>& cws_,
                                                     const AndAP& and_ap_) :
     common(program_repository_, workspace_repository_, cws_.get_static_consistency_graph()),
-    worker([this, program_repository = &program_repository_, workspace_repository = &workspace_repository_, factory = &factory_, cws = &cws_, and_ap = and_ap_]
-           { return Worker(*factory, *program_repository, *workspace_repository, *cws, this->common, and_ap); })
+    worker()
 {
+    worker.emplace_back(factory_, program_repository_, workspace_repository_, cws_, common, and_ap_);
+
+#ifdef TYR_ENABLE_INNER_PARALLELISM
+    const auto has_propositional_head =
+        visit([](auto&& head) { return std::is_same_v<std::decay_t<decltype(head)>, ::tyr::formalism::datalog::AtomView<::tyr::formalism::FluentTag>>; },
+              cws_.get_rule().get_head());
+
+    if (has_propositional_head && cws_.get_rule().get_arity() > 2)
+        worker.emplace_back(factory_, program_repository_, workspace_repository_, cws_, common, and_ap_);
+#endif
 }
 
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>

@@ -22,6 +22,7 @@ option(
     "Instantiate templates in in-tree translation units at higher compile time cost."
     OFF
 )
+option(TYR_ENABLE_INNER_PARALLELISM "Enable inner parallelism for expensive lifted rule evaluation." OFF)
 set(TYR_STATE_STORAGE_POLICY "Tree" CACHE STRING "Policy used for storing states.")
 option(TYR_BUILD_PYTYR "Build pytyr Python bindings." OFF)
 option(TYR_BUILD_TESTS "Build Tyr tests." OFF)

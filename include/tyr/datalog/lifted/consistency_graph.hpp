@@ -220,8 +220,7 @@ public:
     void initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
                                                const kpkc::GraphLayout& layout,
                                                kpkc::Graph& delta_graph,
-                                               kpkc::Graph& full_graph,
-                                               std::vector<kpkc::Edge>& delta_edges) const;
+                                               kpkc::Graph& full_graph) const;
 
     auto get_vertices() const noexcept { return std::ranges::subrange(m_vertices.cbegin(), m_vertices.cend()); }
 

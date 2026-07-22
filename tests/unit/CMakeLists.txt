@@ -116,6 +116,7 @@ add_gtest(formalism_unification "formalism/unification.cpp")
 
 add_gtest(datalog_cost_policy "datalog/cost_policy.cpp")
 add_gtest(datalog_ground_queue "datalog/ground_queue.cpp")
+add_gtest(datalog_lifted_delta_kpkc "datalog/lifted/delta_kpkc.cpp")
 
 foreach(task_kind ground lifted)
     foreach(heuristic rpg_max rpg_add rpg_ff lmcut)

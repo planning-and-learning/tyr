@@ -1043,8 +1043,7 @@ StaticConsistencyGraph::StaticConsistencyGraph(fd::RuleView rule,
 void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
                                                                    const kpkc::GraphLayout& layout,
                                                                    kpkc::Graph& delta_graph,
-                                                                   kpkc::Graph& full_graph,
-                                                                   std::vector<kpkc::Edge>& delta_edges) const
+                                                                   kpkc::Graph& full_graph) const
 {
     // static struct Statistics
     // {
@@ -1119,8 +1118,6 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
     /// 3. Monotonically update full explicitly consistent edges
 
     {
-        delta_edges.clear();
-
         const auto binary_overapproximation_constraints = m_binary_overapproximation_condition.get_numeric_constraints();
 
         for (ygg::uint_t pi = 0; pi < layout.k; ++pi)
@@ -1178,8 +1175,6 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
                         delta_edges_i.set(bj);
                         delta_graph.matrix.get_bitset(vj, pi).set(bi);
-
-                        delta_edges.emplace_back(kpkc::Vertex(vi), kpkc::Vertex(vj));
 
                         // Set/test affected partitions
                         assert(full_affected_partition_i.test(bi));

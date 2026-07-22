@@ -161,6 +161,10 @@ target_compile_definitions(
         BOOST_MPL_LIMIT_LIST_SIZE=50
 )
 
+if(TYR_ENABLE_INNER_PARALLELISM)
+    target_compile_definitions(core PUBLIC TYR_ENABLE_INNER_PARALLELISM)
+endif()
+
 if("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Hashset")
     target_compile_definitions(core PUBLIC TYR_STATE_STORAGE_HASHSET)
 elseif("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Tree")

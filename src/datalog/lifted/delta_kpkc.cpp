@@ -33,8 +33,9 @@ DeltaKPKC::DeltaKPKC(const StaticConsistencyGraph& static_graph) :
 
 void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const AssignmentSets& assignment_sets)
 {
-    static_graph.initialize_dynamic_consistency_graphs(assignment_sets, m_layout, m_delta_graph, m_full_graph, m_delta_edges);
+    static_graph.initialize_dynamic_consistency_graphs(assignment_sets, m_layout, m_delta_graph, m_full_graph);
 
+    m_delta_edges.clear();
     ++m_iteration;
 }
 
@@ -42,7 +43,15 @@ void DeltaKPKC::reset()
 {
     m_delta_graph.reset();
     m_full_graph.reset();
+    m_delta_edges.clear();
     m_iteration = 0;
+}
+
+const std::vector<Edge>& DeltaKPKC::materialize_delta_edges()
+{
+    m_delta_edges.clear();
+    m_delta_graph.matrix.for_each_edge([&](auto&& edge) { m_delta_edges.push_back(edge); });
+    return m_delta_edges;
 }
 
 void DeltaKPKC::seed_without_anchor(Workspace& workspace) const

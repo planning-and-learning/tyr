@@ -64,6 +64,9 @@ public:
     /// @brief Reset should be called before first iteration.
     void reset();
 
+    /// @brief Materialize the current delta edges before parallel enumeration.
+    const std::vector<Edge>& materialize_delta_edges();
+
     /**
      * Sequential API
      */
@@ -106,7 +109,6 @@ public:
     const Graph& get_delta_graph() const noexcept { return m_delta_graph; }
     const Graph& get_full_graph() const noexcept { return m_full_graph; }
     size_t get_iteration() const noexcept { return m_iteration; }
-    const auto& get_delta_edges() const noexcept { return m_delta_edges; }
 
 private:
     template<typename Callback>

@@ -47,6 +47,7 @@
 #include <fmt/ostream.h>
 #include <iostream>
 #include <memory>
+#include <oneapi/tbb/parallel_for.h>
 #include <oneapi/tbb/parallel_for_each.h>
 #include <oneapi/tbb/task_arena.h>
 #include <span>
@@ -496,7 +497,7 @@ template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
 void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
 {
     auto& rule_out = rctx.out();
-    const auto& kpkc_algorithm = rule_out.kpkc();
+    auto& kpkc_algorithm = rule_out.kpkc();
 
     auto for_each_relevant_clique = [&](auto&& head, auto&& callback, auto& workspace)
     {
@@ -509,16 +510,59 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
             kpkc_algorithm.for_each_new_k_clique(std::forward<decltype(callback)>(callback), workspace);
     };
 
-    auto wrctx = rctx.get_rule_worker_execution_context();
-    const auto& numeric_support_selector = wrctx.in().numeric_support_selector();
-    auto& out = wrctx.out();
-    auto& kpkc_workspace = out.kpkc_workspace();
-    ++out.statistics().num_executions;
-
     visit(
         [&](auto&& head)
         {
             using Head = std::decay_t<decltype(head)>;
+
+#ifdef TYR_ENABLE_INNER_PARALLELISM
+            if constexpr (std::is_same_v<Head, fd::AtomView<f::FluentTag>>)
+            {
+                constexpr size_t kNumStripes = 2;
+                constexpr size_t kParallelThreshold = 1024;
+
+                if (kpkc_algorithm.get_iteration() > 1 && rctx.in().cws_rule().get_rule().get_arity() > 2
+                    && oneapi::tbb::this_task_arena::max_concurrency() >= 2)
+                {
+                    const auto& delta_edges = kpkc_algorithm.materialize_delta_edges();
+
+                    if (delta_edges.size() >= kParallelThreshold)
+                    {
+                        assert(rctx.out().workers().size() == kNumStripes);
+
+                        oneapi::tbb::parallel_for(size_t(0),
+                                                  kNumStripes,
+                                                  [&](size_t stripe)
+                                                  {
+                                                      auto wrctx = rctx.get_rule_worker_execution_context(stripe);
+                                                      const auto& numeric_support_selector = wrctx.in().numeric_support_selector();
+                                                      auto& out = wrctx.out();
+                                                      auto& kpkc_workspace = out.kpkc_workspace();
+                                                      ++out.statistics().num_executions;
+
+                                                      for (auto edge_index = stripe; edge_index < delta_edges.size(); edge_index += kNumStripes)
+                                                      {
+                                                          if (!kpkc_algorithm.seed_from_anchor(delta_edges[edge_index], kpkc_workspace))
+                                                              continue;
+
+                                                          kpkc_algorithm.template complete_from_seed<kpkc::Edge>(
+                                                              [&](auto&& clique) { process_clique(wrctx, numeric_support_selector, clique, true); },
+                                                              0,
+                                                              kpkc_workspace);
+                                                      }
+                                                  });
+                        return;
+                    }
+                }
+            }
+#endif
+
+            auto wrctx = rctx.get_rule_worker_execution_context();
+            const auto& numeric_support_selector = wrctx.in().numeric_support_selector();
+            auto& out = wrctx.out();
+            auto& kpkc_workspace = out.kpkc_workspace();
+            ++out.statistics().num_executions;
+
             for_each_relevant_clique(
                 head,
                 [&](auto&& clique)

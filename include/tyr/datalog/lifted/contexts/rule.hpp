@@ -30,8 +30,7 @@
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/rule_index.hpp"
 
-#include <tbb/global_control.h>
-#include <tbb/info.h>
+#include <cstddef>
 
 namespace tyr::datalog
 {
@@ -253,7 +252,10 @@ struct RuleExecutionContext
      * Subcontext
      */
 
-    auto get_rule_worker_execution_context() { return RuleWorkerExecutionContext<OrAP, AndAP, TP, CP>(*this, out().workers().local()); }
+    auto get_rule_worker_execution_context(std::size_t worker_index = 0)
+    {
+        return RuleWorkerExecutionContext<OrAP, AndAP, TP, CP>(*this, out().workers()[worker_index]);
+    }
 
     const auto& in() const noexcept { return m_in; }
     auto& out() noexcept { return m_out; }
