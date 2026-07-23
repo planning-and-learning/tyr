@@ -114,9 +114,17 @@ add_definitions(-DROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Dependencies
 
+set(TYR_YGGDRASIL_REQUIRED_VERSION 0.0.25)
+set(TYR_LOKI_REQUIRED_VERSION 1.0.25)
+
 include("${PROJECT_SOURCE_DIR}/cmake/bootstrap_pyyggdrasil.cmake")
 
-find_package(yggdrasil 0.0.25 CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+find_package(
+    yggdrasil ${TYR_YGGDRASIL_REQUIRED_VERSION}
+    CONFIG REQUIRED
+    PATHS ${CMAKE_PREFIX_PATH}
+    NO_DEFAULT_PATH
+)
 if(yggdrasil_FOUND)
     message(STATUS "Found yggdrasil: ${yggdrasil_DIR} (found version ${yggdrasil_VERSION})")
 endif()
@@ -170,7 +178,12 @@ if(valla_FOUND)
     message(STATUS "Found valla: ${valla_DIR} (found version ${valla_VERSION})")
 endif()
 
-find_package(loki 1.0.25 COMPONENTS parsers REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+find_package(
+    loki ${TYR_LOKI_REQUIRED_VERSION}
+    CONFIG REQUIRED COMPONENTS parsers
+    PATHS ${CMAKE_PREFIX_PATH}
+    NO_DEFAULT_PATH
+)
 if(loki_FOUND)
     message(STATUS "Found loki: ${loki_DIR} (found version ${loki_VERSION})")
 endif()
@@ -226,11 +239,13 @@ set(TYR_INSTALL_CMAKE_HELPERDIR "${TYR_INSTALL_CMAKEDIR}/cmake")
 install(
     DIRECTORY "${PROJECT_SOURCE_DIR}/include/tyr"
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+    COMPONENT tyr
 )
 
 install(
     DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cmake/"
     DESTINATION "${TYR_INSTALL_CMAKE_HELPERDIR}"
+    COMPONENT tyr
 )
 
 write_basic_package_version_file(
@@ -251,4 +266,5 @@ install(
         "${CMAKE_CURRENT_BINARY_DIR}/tyrConfig.cmake"
         "${CMAKE_CURRENT_BINARY_DIR}/tyrConfigVersion.cmake"
     DESTINATION "${TYR_INSTALL_CMAKEDIR}"
+    COMPONENT tyr
 )
