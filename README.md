@@ -155,6 +155,7 @@ CMake options:
 | `TYR_BUILD_PYTYR` | `OFF` | Build `pytyr` Python bindings. |
 | `TYR_HEADER_INSTANTIATION` | `OFF` | Instantiate templates in in-tree translation units at higher compile-time cost. |
 | `TYR_ENABLE_INNER_PARALLELISM` | `OFF` | Enable inner parallelism for expensive lifted rule evaluation. |
+| `TYR_ENABLE_SEMI_NAIVE` | `ON` | Enable semi-naive lifted Datalog evaluation. |
 | `TYR_USE_LLD` | `ON` | Use LLVM `lld` with Clang when available. |
 | `TYR_ENABLE_LTO` | `ON` | Enable link-time optimization for Release builds. |
 | `TYR_STATE_STORAGE_POLICY` | `Tree` | State storage backend; accepted values are `Tree` and `Hashset`. |

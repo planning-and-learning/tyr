@@ -207,16 +207,21 @@ ygg::DataList<fd::NumericEffectOperator<f::FluentTag>> create_metric_effects(fp:
 
     for (const auto cond_eff : action.get_effects())
     {
-        if (is_real_conditional_effect(cond_eff))
-            throw std::invalid_argument("GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.");
-
         for (const auto numeric_effect : cond_eff.get_effect().get_numeric_effects())
             if (targets_metric_function(numeric_effect, metric_functions, context))
+            {
+                if (is_real_conditional_effect(cond_eff))
+                    throw std::invalid_argument("GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.");
                 result.push_back(merge_p2d(numeric_effect, context));
+            }
 
         if (const auto auxiliary_numeric_effect = cond_eff.get_effect().get_auxiliary_numeric_effect())
             if (targets_metric_function(auxiliary_numeric_effect.value(), metric_functions, context))
+            {
+                if (is_real_conditional_effect(cond_eff))
+                    throw std::invalid_argument("GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.");
                 result.push_back(merge_p2d<f::AuxiliaryTag, f::FluentTag>(auxiliary_numeric_effect.value(), context));
+            }
     }
 
     return result;

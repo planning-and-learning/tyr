@@ -459,16 +459,16 @@ void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP, CP>& wrctx,
                     return;  ///< optimal cost proven
                 }
 
-                // IMPORTANT: A binding can fail the nullary part (e.g., arm-empty) even though the clique already exists.
-                // Later, nullary may become true without any new kPKC edges/vertices, so delta-kPKC will NOT re-enumerate this binding.
-                // Therefore we must store it as pending (keyed by binding) and recheck in the next fact envelope.
                 if (!dynamically_applicable)
                 {
+#ifdef TYR_ENABLE_SEMI_NAIVE
+                    // Delta KPKC will not revisit this binding when only its nullary part becomes true.
                     ++out.statistics().num_pending_rules;
 
                     const auto rule_binding = fd::ground_binding(in.cws_rule().get_conflicting_overapproximation_rule(), out.ground_context_solve()).first;
 
                     out.pending_rule_bindings().emplace(rule_binding);
+#endif
                     return;
                 }
 
@@ -501,6 +501,7 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
 
     auto for_each_relevant_clique = [&](auto&& head, auto&& callback, auto& workspace)
     {
+#ifdef TYR_ENABLE_SEMI_NAIVE
         using Head = std::decay_t<decltype(head)>;
 
         // Note: rules with numeric effects are non-idempotent, so we must consider all k-cliques, not just new ones.
@@ -508,14 +509,19 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
             kpkc_algorithm.for_each_k_clique(std::forward<decltype(callback)>(callback), workspace);
         else
             kpkc_algorithm.for_each_new_k_clique(std::forward<decltype(callback)>(callback), workspace);
+#else
+        kpkc_algorithm.for_each_k_clique(std::forward<decltype(callback)>(callback), workspace);
+#endif
     };
 
     visit(
         [&](auto&& head)
         {
+#ifdef TYR_ENABLE_SEMI_NAIVE
             using Head = std::decay_t<decltype(head)>;
+#endif
 
-#ifdef TYR_ENABLE_INNER_PARALLELISM
+#if defined(TYR_ENABLE_INNER_PARALLELISM) && defined(TYR_ENABLE_SEMI_NAIVE)
             if constexpr (std::is_same_v<Head, fd::AtomView<f::FluentTag>>)
             {
                 constexpr size_t kNumStripes = 2;
@@ -563,10 +569,14 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
             auto& kpkc_workspace = out.kpkc_workspace();
             ++out.statistics().num_executions;
 
+#ifdef TYR_ENABLE_SEMI_NAIVE
+            constexpr auto require_novel_binding = !std::is_same_v<Head, fd::NumericEffectOperatorView<f::FluentTag>>;
+#else
+            constexpr auto require_novel_binding = false;
+#endif
             for_each_relevant_clique(
                 head,
-                [&](auto&& clique)
-                { process_clique(wrctx, numeric_support_selector, clique, !std::is_same_v<Head, fd::NumericEffectOperatorView<f::FluentTag>>); },
+                [&](auto&& clique) { process_clique(wrctx, numeric_support_selector, clique, require_novel_binding); },
                 kpkc_workspace);
         },
         rctx.in().cws_rule().get_rule().get_head());
@@ -692,11 +702,13 @@ void run_active_rules(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx)
             rctx.initialize();  ///< Initialize before process_pending_rule_bindings/generate
         }
 
+#ifdef TYR_ENABLE_SEMI_NAIVE
         {
             const auto process_pending_time = ygg::StopwatchScope(rule_out.statistics().process_pending_time);
 
             process_pending_rule_bindings(rctx);
         }
+#endif
 
         {
             const auto process_generate_time = ygg::StopwatchScope(rule_out.statistics().process_generate_time);
@@ -784,17 +796,19 @@ template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
          TerminationPolicyConcept<LiftedTag> TP,
          RuleCostPolicyConcept<LiftedTag> CP>
 /// Commit the cheapest bucket: insert its heads into the fact and assignment sets and notify the scheduler.
-void commit_current_bucket(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx)
+bool commit_current_bucket(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx)
 {
     auto& program_out = ctx.out().program();
     auto& scheduler = ctx.out().scheduler();
     auto& facts = program_out.facts();
     auto& cost_buckets = program_out.cost_buckets();
+    auto changed = false;
 
     for (const auto head : cost_buckets.get_current_bucket_sorted())
     {
         if (facts.fact_sets.predicate.insert(head))
         {
+            changed = true;
             scheduler.on_generate(head.get_index().relation);
             facts.assignment_sets.predicate.insert(head);
         }
@@ -804,12 +818,14 @@ void commit_current_bucket(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx)
     {
         if (facts.fact_sets.function.insert(head, interval))
         {
+            changed = true;
             scheduler.on_generate(head.get_index().relation);
             facts.assignment_sets.function.insert(head, interval);
         }
     }
 
     program_out.rebuild_numeric_support_selector(ctx.in().program().facts().fact_sets);
+    return changed;
 }
 
 template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
@@ -839,12 +855,26 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP, CP>& c
         cost_buckets.clear_current();  ///< Clear before merging to avoid handling current heads twice.
         merge_worker_results(ctx);
 
+#ifdef TYR_ENABLE_SEMI_NAIVE
         if (!cost_buckets.advance_to_next_nonempty())
             return;  ///< All reachable heads are committed.
-
         commit_current_bucket(ctx);
-
         scheduler.on_finish_iteration();
+#else
+        auto changed = false;
+        while (cost_buckets.advance_to_next_nonempty())
+        {
+            if (commit_current_bucket(ctx))
+            {
+                changed = true;
+                break;
+            }
+            cost_buckets.clear_current();
+        }
+        if (!changed)
+            return;  ///< All reachable heads are committed.
+        scheduler.activate_all();
+#endif
     }
 }
 

@@ -137,7 +137,7 @@ TEST(TyrDatalogLiftedDeltaKPKC, DeltaEdgesSupportRoundRobinAnchorReplay)
     EXPECT_EQ(striped_cliques, sequential_cliques);
 }
 
-#ifdef TYR_ENABLE_INNER_PARALLELISM
+#if defined(TYR_ENABLE_INNER_PARALLELISM) && defined(TYR_ENABLE_SEMI_NAIVE)
 TEST(TyrDatalogLiftedDeltaKPKC, InnerParallelismMatchesSequentialRPG)
 {
     const auto root = std::filesystem::path(BENCHMARKS_DIR);

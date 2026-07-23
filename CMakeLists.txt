@@ -23,6 +23,7 @@ option(
     OFF
 )
 option(TYR_ENABLE_INNER_PARALLELISM "Enable inner parallelism for expensive lifted rule evaluation." OFF)
+option(TYR_ENABLE_SEMI_NAIVE "Enable semi-naive lifted Datalog evaluation." ON)
 set(TYR_STATE_STORAGE_POLICY "Tree" CACHE STRING "Policy used for storing states.")
 option(TYR_BUILD_PYTYR "Build pytyr Python bindings." OFF)
 option(TYR_BUILD_TESTS "Build Tyr tests." OFF)

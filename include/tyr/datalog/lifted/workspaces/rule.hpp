@@ -402,12 +402,9 @@ RuleWorkspace<LiftedTag>::Instance<AndAP>::Instance(::tyr::formalism::datalog::R
 {
     worker.emplace_back(factory_, program_repository_, workspace_repository_, cws_, common, and_ap_);
 
-#ifdef TYR_ENABLE_INNER_PARALLELISM
-    const auto has_propositional_head =
-        visit([](auto&& head) { return std::is_same_v<std::decay_t<decltype(head)>, ::tyr::formalism::datalog::AtomView<::tyr::formalism::FluentTag>>; },
-              cws_.get_rule().get_head());
-
-    if (has_propositional_head && cws_.get_rule().get_arity() > 2)
+#if defined(TYR_ENABLE_INNER_PARALLELISM) && defined(TYR_ENABLE_SEMI_NAIVE)
+    // Only propositional heads use partitionable delta KPKC; numeric effects require full KPKC enumeration.
+    if (std::holds_alternative<PredicateHeadIteration>(worker.front().iteration.head) && cws_.get_rule().get_arity() > 2)
         worker.emplace_back(factory_, program_repository_, workspace_repository_, cws_, common, and_ap_);
 #endif
 }

@@ -213,7 +213,47 @@
                     ]
                 }
             },
+            "hmax_general": {
+                "num_generated": 15,
+                "num_expanded": 8,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 8,
+                    "length": 8,
+                    "actions": [
+                        "(move airplane_cfbeg medium south seg_rw_0_400 seg_rww_0_50 south)",
+                        "(move airplane_cfbeg medium south seg_rww_0_50 seg_tww4_0_50 north)",
+                        "(move airplane_cfbeg medium north seg_tww4_0_50 seg_tww3_0_50 north)",
+                        "(move airplane_cfbeg medium north seg_tww3_0_50 seg_tww2_0_50 north)",
+                        "(move airplane_cfbeg medium north seg_tww2_0_50 seg_tww1_0_200 north)",
+                        "(move airplane_cfbeg medium north seg_tww1_0_200 seg_ppdoor_0_40 south)",
+                        "(move airplane_cfbeg medium south seg_ppdoor_0_40 seg_pp_0_60 south)",
+                        "(park airplane_cfbeg medium seg_pp_0_60 south)"
+                    ]
+                }
+            },
             "hadd_unit": {
+                "num_generated": 15,
+                "num_expanded": 8,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 8,
+                    "length": 8,
+                    "actions": [
+                        "(move airplane_cfbeg medium south seg_rw_0_400 seg_rww_0_50 south)",
+                        "(move airplane_cfbeg medium south seg_rww_0_50 seg_tww4_0_50 north)",
+                        "(move airplane_cfbeg medium north seg_tww4_0_50 seg_tww3_0_50 north)",
+                        "(move airplane_cfbeg medium north seg_tww3_0_50 seg_tww2_0_50 north)",
+                        "(move airplane_cfbeg medium north seg_tww2_0_50 seg_tww1_0_200 north)",
+                        "(move airplane_cfbeg medium north seg_tww1_0_200 seg_ppdoor_0_40 south)",
+                        "(move airplane_cfbeg medium south seg_ppdoor_0_40 seg_pp_0_60 south)",
+                        "(park airplane_cfbeg medium seg_pp_0_60 south)"
+                    ]
+                }
+            },
+            "hadd_general": {
                 "num_generated": 15,
                 "num_expanded": 8,
                 "num_deadends": 0,
@@ -253,6 +293,26 @@
                     ]
                 }
             },
+            "hff_general": {
+                "num_generated": 15,
+                "num_expanded": 8,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 8,
+                    "length": 8,
+                    "actions": [
+                        "(move airplane_cfbeg medium south seg_rw_0_400 seg_rww_0_50 south)",
+                        "(move airplane_cfbeg medium south seg_rww_0_50 seg_tww4_0_50 north)",
+                        "(move airplane_cfbeg medium north seg_tww4_0_50 seg_tww3_0_50 north)",
+                        "(move airplane_cfbeg medium north seg_tww3_0_50 seg_tww2_0_50 north)",
+                        "(move airplane_cfbeg medium north seg_tww2_0_50 seg_tww1_0_200 north)",
+                        "(move airplane_cfbeg medium north seg_tww1_0_200 seg_ppdoor_0_40 south)",
+                        "(move airplane_cfbeg medium south seg_ppdoor_0_40 seg_pp_0_60 south)",
+                        "(park airplane_cfbeg medium seg_pp_0_60 south)"
+                    ]
+                }
+            },
             "hlmcut_unit": {
                 "num_generated": 15,
                 "num_expanded": 8,
@@ -273,11 +333,25 @@
                     ]
                 }
             },
-            "skipped": {
-                "hmax_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
-                "hadd_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
-                "hff_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
-                "hlmcut_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first."
+            "hlmcut_general": {
+                "num_generated": 15,
+                "num_expanded": 8,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 8,
+                    "length": 8,
+                    "actions": [
+                        "(move airplane_cfbeg medium south seg_rw_0_400 seg_rww_0_50 south)",
+                        "(move airplane_cfbeg medium south seg_rww_0_50 seg_tww4_0_50 north)",
+                        "(move airplane_cfbeg medium north seg_tww4_0_50 seg_tww3_0_50 north)",
+                        "(move airplane_cfbeg medium north seg_tww3_0_50 seg_tww2_0_50 north)",
+                        "(move airplane_cfbeg medium north seg_tww2_0_50 seg_tww1_0_200 north)",
+                        "(move airplane_cfbeg medium north seg_tww1_0_200 seg_ppdoor_0_40 south)",
+                        "(move airplane_cfbeg medium south seg_ppdoor_0_40 seg_pp_0_60 south)",
+                        "(park airplane_cfbeg medium seg_pp_0_60 south)"
+                    ]
+                }
             }
         },
         {
@@ -323,7 +397,33 @@
                     ]
                 }
             },
+            "hmax_general": {
+                "num_generated": 0,
+                "num_expanded": 1,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 1,
+                    "length": 1,
+                    "actions": [
+                        "(assemble a-1-0 a-0-0)"
+                    ]
+                }
+            },
             "hadd_unit": {
+                "num_generated": 0,
+                "num_expanded": 1,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 1,
+                    "length": 1,
+                    "actions": [
+                        "(assemble a-1-0 a-0-0)"
+                    ]
+                }
+            },
+            "hadd_general": {
                 "num_generated": 0,
                 "num_expanded": 1,
                 "num_deadends": 0,
@@ -349,6 +449,19 @@
                     ]
                 }
             },
+            "hff_general": {
+                "num_generated": 0,
+                "num_expanded": 1,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 1,
+                    "length": 1,
+                    "actions": [
+                        "(assemble a-1-0 a-0-0)"
+                    ]
+                }
+            },
             "hlmcut_unit": {
                 "num_generated": 0,
                 "num_expanded": 1,
@@ -362,11 +475,18 @@
                     ]
                 }
             },
-            "skipped": {
-                "hmax_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
-                "hadd_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
-                "hff_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
-                "hlmcut_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first."
+            "hlmcut_general": {
+                "num_generated": 0,
+                "num_expanded": 1,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 1,
+                    "length": 1,
+                    "actions": [
+                        "(assemble a-1-0 a-0-0)"
+                    ]
+                }
             }
         },
         {
@@ -2560,7 +2680,45 @@
                     ]
                 }
             },
+            "hmax_general": {
+                "num_generated": 44,
+                "num_expanded": 35,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 7,
+                    "length": 7,
+                    "actions": [
+                        "(stop f0)",
+                        "(up f0 f2)",
+                        "(stop f2)",
+                        "(down f2 f0)",
+                        "(up f0 f1)",
+                        "(stop f1)",
+                        "(stop f1)"
+                    ]
+                }
+            },
             "hadd_unit": {
+                "num_generated": 44,
+                "num_expanded": 35,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 7,
+                    "length": 7,
+                    "actions": [
+                        "(stop f0)",
+                        "(up f0 f2)",
+                        "(stop f2)",
+                        "(down f2 f0)",
+                        "(up f0 f1)",
+                        "(stop f1)",
+                        "(stop f1)"
+                    ]
+                }
+            },
+            "hadd_general": {
                 "num_generated": 44,
                 "num_expanded": 35,
                 "num_deadends": 0,
@@ -2598,6 +2756,25 @@
                     ]
                 }
             },
+            "hff_general": {
+                "num_generated": 44,
+                "num_expanded": 35,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 7,
+                    "length": 7,
+                    "actions": [
+                        "(stop f0)",
+                        "(up f0 f2)",
+                        "(stop f2)",
+                        "(down f2 f0)",
+                        "(up f0 f1)",
+                        "(stop f1)",
+                        "(stop f1)"
+                    ]
+                }
+            },
             "hlmcut_unit": {
                 "num_generated": 44,
                 "num_expanded": 35,
@@ -2617,11 +2794,24 @@
                     ]
                 }
             },
-            "skipped": {
-                "hmax_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
-                "hadd_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
-                "hff_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
-                "hlmcut_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first."
+            "hlmcut_general": {
+                "num_generated": 44,
+                "num_expanded": 35,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 7,
+                    "length": 7,
+                    "actions": [
+                        "(stop f0)",
+                        "(up f0 f2)",
+                        "(stop f2)",
+                        "(down f2 f0)",
+                        "(up f0 f1)",
+                        "(stop f1)",
+                        "(stop f1)"
+                    ]
+                }
             }
         },
         {
@@ -2676,7 +2866,39 @@
                     ]
                 }
             },
+            "hmax_general": {
+                "num_generated": 3,
+                "num_expanded": 4,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 4,
+                    "length": 4,
+                    "actions": [
+                        "(up f0 f1)",
+                        "(stop f1)",
+                        "(down f1 f0)",
+                        "(stop f0)"
+                    ]
+                }
+            },
             "hadd_unit": {
+                "num_generated": 3,
+                "num_expanded": 4,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 4,
+                    "length": 4,
+                    "actions": [
+                        "(up f0 f1)",
+                        "(stop f1)",
+                        "(down f1 f0)",
+                        "(stop f0)"
+                    ]
+                }
+            },
+            "hadd_general": {
                 "num_generated": 3,
                 "num_expanded": 4,
                 "num_deadends": 0,
@@ -2708,6 +2930,22 @@
                     ]
                 }
             },
+            "hff_general": {
+                "num_generated": 3,
+                "num_expanded": 4,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 4,
+                    "length": 4,
+                    "actions": [
+                        "(up f0 f1)",
+                        "(stop f1)",
+                        "(down f1 f0)",
+                        "(stop f0)"
+                    ]
+                }
+            },
             "hlmcut_unit": {
                 "num_generated": 3,
                 "num_expanded": 4,
@@ -2724,11 +2962,21 @@
                     ]
                 }
             },
-            "skipped": {
-                "hmax_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
-                "hadd_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
-                "hff_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
-                "hlmcut_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first."
+            "hlmcut_general": {
+                "num_generated": 3,
+                "num_expanded": 4,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 4,
+                    "length": 4,
+                    "actions": [
+                        "(up f0 f1)",
+                        "(stop f1)",
+                        "(down f1 f0)",
+                        "(stop f0)"
+                    ]
+                }
             }
         },
         {
@@ -3499,7 +3747,39 @@
                     ]
                 }
             },
+            "hmax_general": {
+                "num_generated": 308,
+                "num_expanded": 62,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 4,
+                    "length": 4,
+                    "actions": [
+                        "(wait cb2)",
+                        "(open sd11)",
+                        "(open sd7)",
+                        "(close sd3)"
+                    ]
+                }
+            },
             "hadd_unit": {
+                "num_generated": 308,
+                "num_expanded": 62,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 4,
+                    "length": 4,
+                    "actions": [
+                        "(wait cb2)",
+                        "(open sd11)",
+                        "(open sd7)",
+                        "(close sd3)"
+                    ]
+                }
+            },
+            "hadd_general": {
                 "num_generated": 308,
                 "num_expanded": 62,
                 "num_deadends": 0,
@@ -3531,6 +3811,22 @@
                     ]
                 }
             },
+            "hff_general": {
+                "num_generated": 308,
+                "num_expanded": 62,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 4,
+                    "length": 4,
+                    "actions": [
+                        "(wait cb2)",
+                        "(open sd11)",
+                        "(open sd7)",
+                        "(close sd3)"
+                    ]
+                }
+            },
             "hlmcut_unit": {
                 "num_generated": 308,
                 "num_expanded": 62,
@@ -3547,11 +3843,21 @@
                     ]
                 }
             },
-            "skipped": {
-                "hmax_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
-                "hadd_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
-                "hff_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
-                "hlmcut_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first."
+            "hlmcut_general": {
+                "num_generated": 308,
+                "num_expanded": 62,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 4,
+                    "length": 4,
+                    "actions": [
+                        "(wait cb2)",
+                        "(open sd11)",
+                        "(open sd7)",
+                        "(close sd3)"
+                    ]
+                }
             }
         },
         {
@@ -3562,13 +3868,13 @@
                 "blind_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "blind_general": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hmax_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hmax_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
+                "hmax_general": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hadd_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hadd_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
+                "hadd_general": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hff_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hff_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
+                "hff_general": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hlmcut_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hlmcut_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first."
+                "hlmcut_general": "status OUT_OF_TIME within 1.0s/1000000 states"
             }
         },
         {
@@ -4142,7 +4448,35 @@
                     ]
                 }
             },
+            "hmax_general": {
+                "num_generated": 367,
+                "num_expanded": 22,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 2,
+                    "length": 2,
+                    "actions": [
+                        "(do-lathe a0)",
+                        "(do-roll b0)"
+                    ]
+                }
+            },
             "hadd_unit": {
+                "num_generated": 367,
+                "num_expanded": 22,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 2,
+                    "length": 2,
+                    "actions": [
+                        "(do-lathe a0)",
+                        "(do-roll b0)"
+                    ]
+                }
+            },
+            "hadd_general": {
                 "num_generated": 367,
                 "num_expanded": 22,
                 "num_deadends": 0,
@@ -4170,6 +4504,20 @@
                     ]
                 }
             },
+            "hff_general": {
+                "num_generated": 60,
+                "num_expanded": 2,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 2,
+                    "length": 2,
+                    "actions": [
+                        "(do-lathe a0)",
+                        "(do-roll b0)"
+                    ]
+                }
+            },
             "hlmcut_unit": {
                 "num_generated": 367,
                 "num_expanded": 22,
@@ -4184,11 +4532,19 @@
                     ]
                 }
             },
-            "skipped": {
-                "hmax_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
-                "hadd_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
-                "hff_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.",
-                "hlmcut_general": "unsupported heuristic: GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first."
+            "hlmcut_general": {
+                "num_generated": 367,
+                "num_expanded": 22,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 2,
+                    "length": 2,
+                    "actions": [
+                        "(do-lathe a0)",
+                        "(do-roll b0)"
+                    ]
+                }
             }
         },
         {

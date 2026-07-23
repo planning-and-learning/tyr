@@ -85,8 +85,6 @@ struct PredicateAtoms
     friend bool operator==(const PredicateAtoms&, const PredicateAtoms&) = default;
 };
 
-void PrintTo(const PredicateAtoms& atoms, std::ostream* os) { *os << atoms.predicate << '/' << atoms.arity << '=' << atoms.bindings.size(); }
-
 using AtomsByPredicate = std::vector<PredicateAtoms>;
 
 struct BottomUpCase
@@ -111,6 +109,7 @@ PredicateAtoms parse_predicate_atoms(const boost::json::object& object)
     auto bindings = std::vector<AtomBinding> {};
     for (const auto& value : ygg::common::as_array(object, "bindings", "predicate atoms"))
         bindings.push_back(parse_atom_binding(ygg::common::as_object(value, "atom binding")));
+    std::ranges::sort(bindings, {}, &AtomBinding::objects);
 
     return PredicateAtoms { ygg::common::as_string(object, "predicate", "predicate atoms"),
                             boost::json::value_to<ygg::uint_t>(object.at("arity")),
@@ -222,6 +221,7 @@ void append_atoms_by_predicate(const d::TaggedFactSets<f::FluentTag>& fact_sets,
                 cost = d::get_cost(*annotation);
             bindings.push_back(AtomBinding { ygg::to_string(binding.get_objects()), cost });
         }
+        std::ranges::sort(bindings, {}, &AtomBinding::objects);
 
         const auto predicate = set.get_predicate();
         result.push_back(PredicateAtoms { predicate.get_name().str(), predicate.get_arity(), std::move(bindings) });

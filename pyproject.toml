@@ -71,6 +71,7 @@ TYR_ENABLE_LTO = {env = "TYR_ENABLE_LTO", default = false}
 CMAKE_INSTALL_LIBDIR = "lib"
 TYR_HEADER_INSTANTIATION = {env = "TYR_HEADER_INSTANTIATION", default = false}
 TYR_ENABLE_INNER_PARALLELISM = {env = "TYR_ENABLE_INNER_PARALLELISM", default = false}
+TYR_ENABLE_SEMI_NAIVE = {env = "TYR_ENABLE_SEMI_NAIVE", default = true}
 
 [tool.cibuildwheel]
 container-engine = "docker"

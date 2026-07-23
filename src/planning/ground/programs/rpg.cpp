@@ -299,16 +299,21 @@ create_metric_effects(fp::GroundActionView action,
 
     for (const auto cond_eff : action.get_effects())
     {
-        if (is_real_conditional_effect(cond_eff))
-            throw std::invalid_argument("GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.");
-
         for (const auto numeric_effect : cond_eff.get_effect().get_numeric_effects())
             if (targets_metric_fterm(numeric_effect, metric_fterms, context.merge_context))
+            {
+                if (is_real_conditional_effect(cond_eff))
+                    throw std::invalid_argument("GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.");
                 result.push_back(fp::merge_p2d(numeric_effect, context.merge_context));
+            }
 
         if (const auto auxiliary_numeric_effect = cond_eff.get_effect().get_auxiliary_numeric_effect())
             if (targets_metric_fterm(auxiliary_numeric_effect.value(), metric_fterms, context.merge_context))
+            {
+                if (is_real_conditional_effect(cond_eff))
+                    throw std::invalid_argument("GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.");
                 result.push_back(fp::merge_p2d<f::AuxiliaryTag, f::FluentTag>(auxiliary_numeric_effect.value(), context.merge_context));
+            }
     }
 
     return result;

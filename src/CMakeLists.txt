@@ -165,6 +165,10 @@ if(TYR_ENABLE_INNER_PARALLELISM)
     target_compile_definitions(core PUBLIC TYR_ENABLE_INNER_PARALLELISM)
 endif()
 
+if(TYR_ENABLE_SEMI_NAIVE)
+    target_compile_definitions(core PUBLIC TYR_ENABLE_SEMI_NAIVE)
+endif()
+
 if("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Hashset")
     target_compile_definitions(core PUBLIC TYR_STATE_STORAGE_HASHSET)
 elseif("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Tree")

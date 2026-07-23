@@ -20,10 +20,10 @@
             "configs": {
                 "unit": {
                     "h": 8
+                },
+                "general": {
+                    "h": 8
                 }
-            },
-            "skipped": {
-                "general": "GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first."
             }
         },
         {
@@ -33,10 +33,10 @@
             "configs": {
                 "unit": {
                     "h": 1
+                },
+                "general": {
+                    "h": 1
                 }
-            },
-            "skipped": {
-                "general": "GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first."
             }
         },
         {
@@ -202,10 +202,10 @@
             "configs": {
                 "unit": {
                     "h": 0
+                },
+                "general": {
+                    "h": 0
                 }
-            },
-            "skipped": {
-                "general": "GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first."
             }
         },
         {
@@ -215,10 +215,10 @@
             "configs": {
                 "unit": {
                     "h": 3
+                },
+                "general": {
+                    "h": 3
                 }
-            },
-            "skipped": {
-                "general": "GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first."
             }
         },
         {
@@ -267,10 +267,10 @@
             "configs": {
                 "unit": {
                     "h": 0
+                },
+                "general": {
+                    "h": 0
                 }
-            },
-            "skipped": {
-                "general": "GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first."
             }
         },
         {
@@ -280,10 +280,10 @@
             "configs": {
                 "unit": {
                     "h": 11
+                },
+                "general": {
+                    "h": 11
                 }
-            },
-            "skipped": {
-                "general": "GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first."
             }
         },
         {
@@ -332,10 +332,10 @@
             "configs": {
                 "unit": {
                     "h": 1
+                },
+                "general": {
+                    "h": 1
                 }
-            },
-            "skipped": {
-                "general": "GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first."
             }
         },
         {

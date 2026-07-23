@@ -75,8 +75,6 @@ struct PredicateAtoms
     friend bool operator==(const PredicateAtoms&, const PredicateAtoms&) = default;
 };
 
-void PrintTo(const PredicateAtoms& atoms, std::ostream* os) { *os << atoms.predicate << '/' << atoms.arity << '=' << atoms.bindings.size(); }
-
 using AtomsByPredicate = std::vector<PredicateAtoms>;
 
 struct BottomUpCase

@@ -301,7 +301,9 @@ void AchieverAndAnnotationPolicy<LiftedTag, AggregationFunction>::record_achieve
     auto witness = try_ground_witness<AggregationFunction>(context);
     if (witness)
     {
-        m_achievers[program_head.get_index()].push_back(std::move(*witness));
+        auto& achievers = m_achievers[program_head.get_index()];
+        if (std::find(achievers.begin(), achievers.end(), *witness) == achievers.end())
+            achievers.push_back(std::move(*witness));
     }
 }
 

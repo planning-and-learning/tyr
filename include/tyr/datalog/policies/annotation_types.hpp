@@ -266,7 +266,10 @@ public:
 
         auto entry = Entry { interval, std::move(annotation) };
         auto& entries = m_partitions[NumericIntervalBindingParts<Kind>::get_relation(binding)][NumericIntervalBindingParts<Kind>::get_key(binding)];
-        entries.insert(std::upper_bound(entries.begin(), entries.end(), entry), std::move(entry));
+        const auto pos = std::upper_bound(entries.begin(), entries.end(), entry);
+        if (pos != entries.begin() && *(pos - 1) == entry)
+            return;
+        entries.insert(pos, std::move(entry));
         ++m_size;
     }
 
