@@ -48,24 +48,18 @@ namespace tyr::datalog
 {
 namespace
 {
-template<TaskKind Kind, typename Binding>
-std::optional<WitnessAnnotation<Kind>> fetch_witness(Binding binding, const SelectedPredicateAnnotations<Kind>& annotations)
+bool canonical_witness_less(const WitnessAnnotation<LiftedTag>& lhs, const WitnessAnnotation<LiftedTag>& rhs)
 {
-    if (const auto* annotation = annotations.find(binding))
-        if (const auto* witness = std::get_if<WitnessAnnotation<Kind>>(annotation))
-            return *witness;
-    return std::nullopt;
+    return canonical_rule_binding_less(lhs.get_rule_key(), rhs.get_rule_key());
 }
 
-template<TaskKind Kind>
-CostUpdate<Kind> update_min_cost(Cost& cost, Cost candidate)
+bool canonical_rule_binding_wins_tie(WitnessRuleKeyT<LiftedTag> rule_key, const Annotation<LiftedTag>* incumbent)
 {
-    const auto old_cost = cost;
-    if (candidate < old_cost)
-        cost = candidate;
-    return CostUpdate<Kind>(old_cost, cost);
+    if (!incumbent)
+        return true;
+    const auto* incumbent_witness = std::get_if<WitnessAnnotation<LiftedTag>>(incumbent);
+    return incumbent_witness && canonical_rule_binding_less(rule_key, incumbent_witness->get_rule_key());
 }
-
 }
 
 /**
@@ -91,37 +85,25 @@ OrAnnotationPolicy<LiftedTag>::update_annotation(::tyr::formalism::datalog::Pred
                                                  const SelectedPredicateAnnotations<LiftedTag>& delta_and_annot,
                                                  SelectedPredicateAnnotations<LiftedTag>& program_and_annot) const
 {
-    // Fast path 1: already optimal
-    auto old_cost = fetch_annotation_cost<LiftedTag>(program_head, program_and_annot);
-    auto or_cost = old_cost;
-    if (or_cost == Cost(0))
-        return CostUpdate<LiftedTag>(or_cost, or_cost);
+    const auto* old_annotation = program_and_annot.find(program_head);
+    const auto old_cost = old_annotation ? get_cost(*old_annotation) : std::numeric_limits<Cost>::max();
+    if (old_cost == Cost(0))
+        return CostUpdate<LiftedTag>(old_cost, old_cost);
 
-    const auto result = fetch_witness<LiftedTag>(delta_head, delta_and_annot);
+    const auto* delta_annotation = delta_and_annot.find(delta_head);
+    const auto* witness = delta_annotation ? std::get_if<WitnessAnnotation<LiftedTag>>(delta_annotation) : nullptr;
+    if (!witness)
+        return CostUpdate<LiftedTag>(old_cost, old_cost);
 
-    // Fast path 2: no witness available => no update
-    if (!result)
-        return CostUpdate<LiftedTag>(or_cost, or_cost);
-
-    const auto witness = result.value();
-
-    const auto cost_update = update_min_cost<LiftedTag>(or_cost, witness.get_cost());
-
-    if (or_cost < old_cost)
+    const auto new_cost = witness->get_cost();
+    if (new_cost < old_cost)
     {
-        program_and_annot.insert_or_assign(program_head, Annotation<LiftedTag>(witness));
+        program_and_annot.insert_or_assign(program_head, *delta_annotation);
+        return CostUpdate<LiftedTag>(old_cost, new_cost);
     }
-    else if (witness.get_cost() == old_cost)
-    {
-        // Binding identity contains the worker repository; compare logical rule and objects so the
-        // winner is independent of worker merge order. A BaseAnnotation incumbent always wins.
-        const auto* incumbent = program_and_annot.find(program_head);
-        const auto* incumbent_witness = incumbent ? std::get_if<WitnessAnnotation<LiftedTag>>(incumbent) : nullptr;
-        if (incumbent_witness && canonical_rule_binding_less(witness.get_rule_key(), incumbent_witness->get_rule_key()))
-            program_and_annot.insert_or_assign(program_head, Annotation<LiftedTag>(witness));
-    }
-
-    return cost_update;
+    if (new_cost == old_cost && witness_wins_tie<LiftedTag>(*witness, old_annotation, canonical_witness_less))
+        program_and_annot.insert_or_assign(program_head, *delta_annotation);
+    return CostUpdate<LiftedTag>(old_cost, old_cost);
 }
 
 /**
@@ -130,13 +112,6 @@ OrAnnotationPolicy<LiftedTag>::update_annotation(::tyr::formalism::datalog::Pred
 
 namespace
 {
-
-Cost fetch_current_best_cost(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> delta_head,
-                             const SelectedPredicateAnnotations<LiftedTag>& delta_and_annot)
-{
-    return fetch_annotation_cost<LiftedTag>(delta_head, delta_and_annot);
-}
-
 template<typename AggregationFunction, typename CanWin>
 std::optional<WitnessAnnotation<LiftedTag>> try_ground_witness(const AndAnnotationContext<LiftedTag>& context, CanWin&& can_win)
 {
@@ -209,23 +184,14 @@ std::optional<WitnessAnnotation<LiftedTag>> try_ground_better_witness(Cost best_
     return try_ground_witness<AggregationFunction>(context, [best_cost](Cost lower_bound) { return lower_bound < best_cost; });
 }
 
-/// Like try_ground_better_witness but admits equal-cost witnesses, whose canonical tie-break the caller decides.
 template<typename AggregationFunction>
 std::optional<WitnessAnnotation<LiftedTag>>
-try_ground_witness_leq(Cost best_cost, const Annotation<LiftedTag>* incumbent, const AndAnnotationContext<LiftedTag>& context)
+try_ground_winning_witness(Cost best_cost, const Annotation<LiftedTag>* incumbent, const AndAnnotationContext<LiftedTag>& context)
 {
+    const auto wins_tie = canonical_rule_binding_wins_tie(context.rule_binding, incumbent);
     return try_ground_witness<AggregationFunction>(context,
-                                                   [best_cost, incumbent, rule_key = context.rule_binding](Cost lower_bound)
-                                                   {
-                                                       if (lower_bound != best_cost)
-                                                           return lower_bound < best_cost;
-                                                       if (!incumbent)
-                                                           return true;
-                                                       const auto* incumbent_witness = std::get_if<WitnessAnnotation<LiftedTag>>(incumbent);
-                                                       // Rule keys are the first canonical witness field, so a
-                                                       // larger or identical key cannot recover a tie.
-                                                       return incumbent_witness && canonical_rule_binding_less(rule_key, incumbent_witness->get_rule_key());
-                                                   });
+                                                   [best_cost, wins_tie](Cost lower_bound)
+                                                   { return lower_bound < best_cost || (lower_bound == best_cost && wins_tie); });
 }
 }
 
@@ -238,7 +204,7 @@ void AndAnnotationPolicy<LiftedTag, AggregationFunction>::update_annotation(
 {
     // Use min among global minimum in cost of last iteration and thread local minimum.
     const auto best_global_cost = fetch_annotation_cost<LiftedTag>(program_head, context.program_and_annot);
-    const auto best_local_cost = fetch_current_best_cost(delta_head, delta_and_annot);
+    const auto best_local_cost = fetch_annotation_cost<LiftedTag>(delta_head, delta_and_annot);
     const auto best_cost = std::min(best_global_cost, best_local_cost);
     const auto cur_cost_lower_bound = context.current_cost + context.metric_effect_cost;
 
@@ -247,13 +213,9 @@ void AndAnnotationPolicy<LiftedTag, AggregationFunction>::update_annotation(
 
     const auto* incumbent =
         select_incumbent<LiftedTag>(program_head, delta_head, best_global_cost, best_local_cost, context.program_and_annot, delta_and_annot);
-    auto witness = try_ground_witness_leq<AggregationFunction>(best_cost, incumbent, context);
+    auto witness = try_ground_winning_witness<AggregationFunction>(best_cost, incumbent, context);
     if (!witness)
         return;  ///< No local or global improvement or tie
-
-    const auto* incumbent_witness = incumbent ? std::get_if<WitnessAnnotation<LiftedTag>>(incumbent) : nullptr;
-    if (witness->get_cost() == best_cost && (!incumbent_witness || !canonical_rule_binding_less(witness->get_rule_key(), incumbent_witness->get_rule_key())))
-        return;  ///< Grounded into a tie that loses canonically
 
     /// Update improved or canonically tie-winning witness and cost annotation
     delta_and_annot.insert_or_assign(delta_head, Annotation<LiftedTag>(std::move(*witness)));

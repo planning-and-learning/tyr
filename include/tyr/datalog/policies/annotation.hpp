@@ -35,13 +35,19 @@ Cost fetch_annotation_cost(Binding binding, const SelectedPredicateAnnotations<K
     return std::numeric_limits<Cost>::max();
 }
 
-template<TaskKind Kind>
-bool witness_wins_tie(const WitnessAnnotation<Kind>& witness, const Annotation<Kind>* incumbent)
+template<TaskKind Kind, typename Less>
+bool witness_wins_tie(const WitnessAnnotation<Kind>& witness, const Annotation<Kind>* incumbent, Less less)
 {
     if (!incumbent)
         return true;
     const auto* incumbent_witness = std::get_if<WitnessAnnotation<Kind>>(incumbent);
-    return incumbent_witness && witness < *incumbent_witness;
+    return incumbent_witness && less(witness, *incumbent_witness);
+}
+
+template<TaskKind Kind>
+bool witness_wins_tie(const WitnessAnnotation<Kind>& witness, const Annotation<Kind>* incumbent)
+{
+    return witness_wins_tie(witness, incumbent, ygg::Less<> {});
 }
 
 template<TaskKind Kind, typename Binding>
