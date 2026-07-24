@@ -436,10 +436,10 @@ void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP, CP>& wrctx,
     const auto nullary_condition = in.cws_rule().get_nullary_condition();
     const auto conflicting_condition = in.cws_rule().get_conflicting_overapproximation_rule().get_body();
 
-    if (!is_statically_applicable(nullary_condition, conflicting_condition, in.fact_sets(), out.ground_context_iteration()))
-        return;
-
-    const auto dynamically_applicable = is_dynamically_applicable(nullary_condition, conflicting_condition, in.fact_sets(), out.ground_context_iteration());
+    const auto statically_applicable = [&]()
+    { return is_statically_applicable(nullary_condition, conflicting_condition, in.fact_sets(), out.ground_context_iteration()); };
+    const auto dynamically_applicable = [&]()
+    { return is_dynamically_applicable(nullary_condition, conflicting_condition, in.fact_sets(), out.ground_context_iteration()); };
 
     visit(
         [&](auto&& head)
@@ -453,13 +453,16 @@ void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP, CP>& wrctx,
                 {
                     if constexpr (records_propositional_achievers<AndAP>)
                     {
-                        if (dynamically_applicable)
+                        if (statically_applicable() && dynamically_applicable())
                             record_propositional_achiever(head, input);
                     }
                     return;  ///< optimal cost proven
                 }
 
-                if (!dynamically_applicable)
+                if (!statically_applicable())
+                    return;
+
+                if (!dynamically_applicable())
                 {
 #ifdef TYR_ENABLE_SEMI_NAIVE
                     // Delta KPKC will not revisit this binding when only its nullary part becomes true.
@@ -478,7 +481,7 @@ void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP, CP>& wrctx,
             }
             else
             {
-                if (!dynamically_applicable)
+                if (!statically_applicable() || !dynamically_applicable())
                     return;
 
                 if (!is_valid_binding(in.cws_rule().get_rule().get_body(), in.fact_sets(), out.ground_context_iteration()))

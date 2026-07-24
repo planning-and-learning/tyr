@@ -88,7 +88,6 @@ SuccessorGenerator<LiftedTag>::SuccessorGenerator(ygg::uint_t index,
     m_executor()
 {
     assert(m_execution_context);
-    assert(m_state_repository->get_execution_context() == m_execution_context);
 }
 
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_initial_node()

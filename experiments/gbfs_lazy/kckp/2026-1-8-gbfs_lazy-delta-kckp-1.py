@@ -121,7 +121,7 @@ for SUITE in SUITES:
 
             run.add_command(
                 f"gbfs-lazy-delta-kckp-hff-pref-ff-{NUM_THREADS}",
-                base_cmd + ["-S"],
+                base_cmd + ["-S", "--heuristic-cost-type", "unit"],
                 time_limit=None,
                 wall_time_limit=WALL_TIME_LIMIT,
                 memory_limit=MEMORY_LIMIT,

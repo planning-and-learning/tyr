@@ -55,6 +55,9 @@ public:
 
     AxiomEvaluatorPtr<Kind> create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context)
     {
+        if (!task->has_axioms())
+            return nullptr;
+
         return AxiomEvaluatorPtr<Kind>(new AxiomEvaluator<Kind>(m_next_index++, std::move(task), std::move(execution_context)));
     }
 

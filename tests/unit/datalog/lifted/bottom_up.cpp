@@ -268,6 +268,9 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchAtOneAndMaximumThreads)
             const auto& expected = test_case.configs[config_index];
             SCOPED_TRACE("threads=" + std::to_string(num_threads) + ", config=" + std::string(config));
 
+            if (config == "axiom_evaluator" && !axiom_evaluator)
+                continue;
+
             const auto run_config = [&]() -> AtomsByPredicate
             {
                 if (config == "axiom_evaluator")
