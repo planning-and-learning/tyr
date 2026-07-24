@@ -160,7 +160,7 @@ struct RuleWorkspace<LiftedTag>
             /// Heads
             RuleHeadIteration head;
 
-            // Annotation<LiftedTag>s stored in program_overlay_repository
+            // Propositional annotations are keyed by heads in workspace_overlay_repository.
             SelectedPredicateAnnotations<LiftedTag> and_annot;
             SelectedFunctionAnnotations<LiftedTag> numeric_and_annot;
 

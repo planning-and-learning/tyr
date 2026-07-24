@@ -342,7 +342,7 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchAtOneAndMaximumThreads)
     }
 }
 
-TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternRuleBindings)
+TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindings)
 {
     auto factory = std::make_shared<fd::RepositoryFactory>();
     auto repository = factory->create_shared();
@@ -407,6 +407,7 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternRuleBindings)
 
     const auto& rule_repository = workspace.rules.front()->worker.front().solve.program_overlay_repository;
     EXPECT_EQ(rule_repository.size(rule.get_index()), 1);
+    EXPECT_EQ(rule_repository.size(goal.get_index()), 0);
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, PredicateAnnotationsUseRelationAndRowIndices)

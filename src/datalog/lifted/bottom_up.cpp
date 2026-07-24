@@ -250,10 +250,9 @@ Cost metric_effect_cost(fd::RuleBindingView rule_binding, const RuleUpdateInput<
 }
 
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
-static void record_propositional_achiever(fd::AtomView<f::FluentTag> head, const RuleUpdateInput<AndAP, CP>& input)
+static void record_propositional_achiever(fd::PredicateBindingView<f::FluentTag> program_head, const RuleUpdateInput<AndAP, CP>& input)
     requires records_propositional_achievers<AndAP>
 {
-    const auto program_head = fd::ground_binding(head, input.iteration_context).first;
     const auto rule_binding = fd::ground_binding(input.rule, input.solve_context).first;
     const auto cost = metric_effect_cost(rule_binding, input);
     if (cost == std::numeric_limits<Cost>::max())
@@ -268,19 +267,17 @@ static void record_propositional_achiever(fd::AtomView<f::FluentTag> head, const
 }
 
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
-static void record_propositional_achiever(fd::AtomView<f::FluentTag> head, const RuleUpdateInput<AndAP, CP>& input) noexcept
+static void record_propositional_achiever(fd::PredicateBindingView<f::FluentTag>, const RuleUpdateInput<AndAP, CP>&) noexcept
     requires(!records_propositional_achievers<AndAP>)
 {
 }
 
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
-static void insert_propositional_update(fd::AtomView<f::FluentTag> head,
+static void insert_propositional_update(fd::PredicateBindingView<f::FluentTag> program_head,
                                         const RuleUpdateInput<AndAP, CP>& input,
                                         RuleHeadIteration& head_iteration,
                                         SelectedPredicateAnnotations<LiftedTag>& and_annot)
 {
-    const auto program_head = fd::ground_binding(head, input.iteration_context).first;
-    const auto worker_head = fd::ground_binding(head, input.solve_context).first;
     auto rule_binding = std::optional<fd::RuleBindingView> {};
     auto cost = Cost(0);
     if constexpr (std::same_as<CP, RuleCostPolicy<LiftedTag>> && !records_propositional_achievers<AndAP>)
@@ -302,9 +299,9 @@ static void insert_propositional_update(fd::AtomView<f::FluentTag> head,
 
     input.and_ap.record_achiever(program_head, context);
 
-    std::get<PredicateHeadIteration>(head_iteration).rows.insert(worker_head.get_index().row);
+    std::get<PredicateHeadIteration>(head_iteration).rows.insert(program_head.get_index().row);
 
-    input.and_ap.update_annotation(program_head, worker_head, context, and_annot);
+    input.and_ap.update_annotation(program_head, program_head, context, and_annot);
 }
 
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
@@ -373,7 +370,8 @@ void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
 
                 if constexpr (std::is_same_v<Head, fd::AtomView<f::FluentTag>>)
                 {
-                    insert_propositional_update(head, input, out.head(), out.and_annot());
+                    const auto program_head = fd::ground_binding(head, out.ground_context_iteration()).first;
+                    insert_propositional_update(program_head, input, out.head(), out.and_annot());
                 }
                 else
                 {
@@ -471,7 +469,7 @@ void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP, CP>& wrctx,
                     if constexpr (records_propositional_achievers<AndAP>)
                     {
                         if (statically_applicable() && dynamically_applicable())
-                            record_propositional_achiever(head, input);
+                            record_propositional_achiever(program_head, input);
                     }
                     return;  ///< optimal cost proven
                 }
@@ -494,7 +492,7 @@ void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP, CP>& wrctx,
 
                 assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context_iteration(), in.fact_sets()));
 
-                insert_propositional_update(head, input, out.head(), out.and_annot());
+                insert_propositional_update(program_head, input, out.head(), out.and_annot());
             }
             else
             {
@@ -661,7 +659,7 @@ void process_pending_rule_bindings(RuleExecutionContext<OrAP, AndAP, TP, CP>& rc
                                 {
                                     assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context_iteration(), in.fact_sets()));
 
-                                    record_propositional_achiever(head, input);
+                                    record_propositional_achiever(program_head, input);
                                     erase_pending = true;
                                 }
                             }
@@ -677,7 +675,7 @@ void process_pending_rule_bindings(RuleExecutionContext<OrAP, AndAP, TP, CP>& rc
                         {
                             assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context_iteration(), in.fact_sets()));
 
-                            insert_propositional_update(head, input, out.head(), out.and_annot());
+                            insert_propositional_update(program_head, input, out.head(), out.and_annot());
                             erase_pending = true;
                         }
                     }
@@ -779,7 +777,7 @@ void merge_worker_results(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx)
                         {
                             const auto worker_head =
                                 ygg::make_view(ygg::Index<f::RelationBinding<f::Predicate<f::FluentTag>>> { head_iteration.relation, worker_head_index },
-                                               worker.solve.program_overlay_repository);
+                                               worker.iteration.workspace_overlay_repository);
 
                             const auto program_head = fd::merge_d2d(worker_head, merge_context).first;
 

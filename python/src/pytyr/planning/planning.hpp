@@ -300,7 +300,7 @@ void bind_state_repository_factory(nb::module_& m, const std::string& name)
 
     nb::class_<T>(m, name.c_str())  //
         .def(nb::init<>())
-        .def("create", &T::create, "task"_a, "axiom_evaluator"_a);
+        .def("create", &T::create, "task"_a, "axiom_evaluator"_a.none());
 }
 
 template<TaskKind Kind>
