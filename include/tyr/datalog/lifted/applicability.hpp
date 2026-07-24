@@ -246,6 +246,12 @@ inline bool is_applicable(::tyr::formalism::datalog::GroundConjunctiveConditionV
            && is_applicable(element.get_numeric_constraints(), fact_sets);
 }
 
+inline bool is_dynamically_applicable(::tyr::formalism::datalog::GroundConjunctiveConditionView element, const FactSets& fact_sets)
+{
+    return is_applicable(element.template get_literals<::tyr::formalism::FluentTag>(), fact_sets)
+           && is_applicable(element.get_numeric_constraints(), fact_sets);
+}
+
 // GroundRule
 
 inline bool is_applicable(::tyr::formalism::datalog::GroundRuleView element, const FactSets& fact_sets) { return is_applicable(element.get_body(), fact_sets); }

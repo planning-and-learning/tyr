@@ -359,9 +359,24 @@ void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
 
     create_nullary_binding(out.ground_context_solve().binding);
 
+    const auto nullary_condition = in.cws_rule().get_nullary_condition();
+    const auto conflicting_condition = in.cws_rule().get_rule().get_body();
+    auto& applicability_cache = out.applicability_cache();
+
+    const auto statically_applicable = [&]()
+    {
+        return applicability_cache.static_nullary
+               && is_valid_binding(conflicting_condition.template get_literals<f::StaticTag>(), in.fact_sets(), out.ground_context_iteration());
+    };
+    const auto dynamically_applicable = [&]()
+    {
+        if (!applicability_cache.dynamic_nullary)
+            applicability_cache.dynamic_nullary = is_dynamically_applicable(nullary_condition, in.fact_sets());
+        return applicability_cache.dynamic_nullary && is_valid_binding(conflicting_condition, in.fact_sets(), out.ground_context_iteration());
+    };
+
     // Note: we never go through the consistency graph, and hence, have to check validity on the entire rule body.
-    if (is_applicable(in.cws_rule().get_nullary_condition(), in.fact_sets())
-        && is_valid_binding(in.cws_rule().get_rule().get_body(), in.fact_sets(), out.ground_context_iteration()))
+    if (statically_applicable() && dynamically_applicable())
     {
         visit(
             [&](auto&& head)
@@ -412,23 +427,6 @@ void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
     return inserted;
 }
 
-static bool is_statically_applicable(fd::GroundConjunctiveConditionView nullary_condition,
-                                     fd::ConjunctiveConditionView conflicting_condition,
-                                     const FactSets& fact_sets,
-                                     fd::GrounderContext& context)
-{
-    return is_applicable(nullary_condition.get_literals<f::StaticTag>(), fact_sets)
-           && is_valid_binding(conflicting_condition.get_literals<f::StaticTag>(), fact_sets, context);
-}
-
-static bool is_dynamically_applicable(fd::GroundConjunctiveConditionView nullary_condition,
-                                      fd::ConjunctiveConditionView conflicting_condition,
-                                      const FactSets& fact_sets,
-                                      fd::GrounderContext& context)
-{
-    return is_applicable(nullary_condition, fact_sets) && is_valid_binding(conflicting_condition, fact_sets, context);
-}
-
 template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
          AndAnnotationPolicyConcept<LiftedTag> AndAP,
          TerminationPolicyConcept<LiftedTag> TP,
@@ -450,11 +448,22 @@ void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP, CP>& wrctx,
 
     const auto nullary_condition = in.cws_rule().get_nullary_condition();
     const auto conflicting_condition = in.cws_rule().get_conflicting_overapproximation_rule().get_body();
+    auto& applicability_cache = out.applicability_cache();
 
     const auto statically_applicable = [&]()
-    { return is_statically_applicable(nullary_condition, conflicting_condition, in.fact_sets(), out.ground_context_iteration()); };
+    {
+        return applicability_cache.static_nullary
+               && is_valid_binding(conflicting_condition.template get_literals<f::StaticTag>(), in.fact_sets(), out.ground_context_iteration());
+    };
     const auto dynamically_applicable = [&]()
-    { return is_dynamically_applicable(nullary_condition, conflicting_condition, in.fact_sets(), out.ground_context_iteration()); };
+    {
+        if (!applicability_cache.dynamic_nullary)
+            applicability_cache.dynamic_nullary = is_dynamically_applicable(nullary_condition, in.fact_sets());
+        return applicability_cache.dynamic_nullary && is_valid_binding(conflicting_condition, in.fact_sets(), out.ground_context_iteration());
+    };
+
+    if (!statically_applicable())
+        return;
 
     visit(
         [&](auto&& head)
@@ -468,14 +477,11 @@ void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP, CP>& wrctx,
                 {
                     if constexpr (records_propositional_achievers<AndAP>)
                     {
-                        if (statically_applicable() && dynamically_applicable())
+                        if (dynamically_applicable())
                             record_propositional_achiever(program_head, input);
                     }
                     return;  ///< optimal cost proven
                 }
-
-                if (!statically_applicable())
-                    return;
 
                 if (!dynamically_applicable())
                 {
@@ -496,7 +502,7 @@ void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP, CP>& wrctx,
             }
             else
             {
-                if (!statically_applicable() || !dynamically_applicable())
+                if (!dynamically_applicable())
                     return;
 
                 if (!is_valid_binding(in.cws_rule().get_rule().get_body(), in.fact_sets(), out.ground_context_iteration()))
@@ -628,8 +634,18 @@ void process_pending_rule_bindings(RuleExecutionContext<OrAP, AndAP, TP, CP>& rc
         auto& out = wrctx.out();
         const auto& numeric_support_selector = in.numeric_support_selector();
         const auto input = make_rule_update_input(in, out, numeric_support_selector);
+        const auto nullary_condition = in.cws_rule().get_nullary_condition();
+        const auto conflicting_condition = in.cws_rule().get_conflicting_overapproximation_rule().get_body();
+        auto& applicability_cache = out.applicability_cache();
+        const auto dynamically_applicable = [&]()
+        {
+            if (!applicability_cache.dynamic_nullary)
+                applicability_cache.dynamic_nullary = is_dynamically_applicable(nullary_condition, in.fact_sets());
+            return applicability_cache.dynamic_nullary && is_valid_binding(conflicting_condition, in.fact_sets(), out.ground_context_iteration());
+        };
 
         auto& pending = out.pending_rule_bindings();
+        assert(pending.empty() || applicability_cache.static_nullary);
         for (const auto pending_binding : out.sorted_pending_rule_bindings())
         {
             out.ground_context_solve().binding.clear();
@@ -637,6 +653,7 @@ void process_pending_rule_bindings(RuleExecutionContext<OrAP, AndAP, TP, CP>& rc
                 out.ground_context_solve().binding.push_back(object.get_index());
 
             assert(out.ground_context_solve().binding == out.ground_context_iteration().binding);
+            assert(is_valid_binding(conflicting_condition.template get_literals<f::StaticTag>(), in.fact_sets(), out.ground_context_iteration()));
 
             auto erase_pending = false;
             visit(
@@ -652,10 +669,7 @@ void process_pending_rule_bindings(RuleExecutionContext<OrAP, AndAP, TP, CP>& rc
                         {
                             if constexpr (records_propositional_achievers<AndAP>)
                             {
-                                if (is_dynamically_applicable(in.cws_rule().get_nullary_condition(),
-                                                              in.cws_rule().get_conflicting_overapproximation_rule().get_body(),
-                                                              in.fact_sets(),
-                                                              out.ground_context_iteration()))
+                                if (dynamically_applicable())
                                 {
                                     assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context_iteration(), in.fact_sets()));
 
@@ -668,15 +682,15 @@ void process_pending_rule_bindings(RuleExecutionContext<OrAP, AndAP, TP, CP>& rc
                                 erase_pending = true;
                             }
                         }
-                        else if (is_dynamically_applicable(in.cws_rule().get_nullary_condition(),
-                                                           in.cws_rule().get_conflicting_overapproximation_rule().get_body(),
-                                                           in.fact_sets(),
-                                                           out.ground_context_iteration()))
+                        else
                         {
-                            assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context_iteration(), in.fact_sets()));
+                            if (dynamically_applicable())
+                            {
+                                assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context_iteration(), in.fact_sets()));
 
-                            insert_propositional_update(program_head, input, out.head(), out.and_annot());
-                            erase_pending = true;
+                                insert_propositional_update(program_head, input, out.head(), out.and_annot());
+                                erase_pending = true;
+                            }
                         }
                     }
                     else
@@ -718,6 +732,12 @@ void run_active_rules(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx)
             const auto initialize_time = ygg::StopwatchScope(rule_out.statistics().initialize_time);
 
             rctx.initialize();  ///< Initialize before process_pending_rule_bindings/generate
+
+            const auto nullary_condition = rctx.in().cws_rule().get_nullary_condition();
+            const auto static_nullary =
+                is_applicable(nullary_condition.template get_literals<f::StaticTag>(), rctx.get_rule_worker_execution_context().in().fact_sets());
+            for (auto& worker : rule_out.workers())
+                worker.solve.applicability_cache.static_nullary = static_nullary;
         }
 
 #ifdef TYR_ENABLE_SEMI_NAIVE

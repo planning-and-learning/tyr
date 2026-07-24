@@ -118,6 +118,7 @@ public:
         auto& numeric_support_selector_workspace() noexcept { return m_ws_worker.solve.numeric_support_selector_workspace; }
         auto& numeric_support_scratch() noexcept { return m_ws_worker.solve.numeric_support_scratch; }
         auto& witness_support_scratch() noexcept { return m_ws_worker.solve.witness_support_scratch; }
+        auto& applicability_cache() noexcept { return m_ws_worker.solve.applicability_cache; }
         auto& statistics() noexcept { return m_ws_worker.solve.statistics; }
 
         auto& ground_context_solve() noexcept { return m_ground_context_solve; }

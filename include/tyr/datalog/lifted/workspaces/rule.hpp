@@ -117,6 +117,18 @@ struct FunctionHeadIteration
 
 using RuleHeadIteration = std::variant<PredicateHeadIteration, FunctionHeadIteration>;
 
+struct ApplicabilityCache
+{
+    bool static_nullary = false;
+    bool dynamic_nullary = false;
+
+    void clear() noexcept
+    {
+        static_nullary = false;
+        dynamic_nullary = false;
+    }
+};
+
 template<>
 struct RuleWorkspace<LiftedTag>
 {
@@ -193,6 +205,7 @@ struct RuleWorkspace<LiftedTag>
             NumericSupportSelectorWorkspace<LiftedTag> numeric_support_selector_workspace;
             std::vector<NumericSupport<LiftedTag>> numeric_support_scratch;
             std::vector<NumericSupport<LiftedTag>> witness_support_scratch;
+            ApplicabilityCache applicability_cache;
 
             /// Statistics
             RuleWorkerStatistics statistics;
@@ -343,6 +356,7 @@ RuleWorkspace<LiftedTag>::Instance<AndAP>::Solve::Solve(::tyr::formalism::datalo
     numeric_support_selector_workspace(),
     numeric_support_scratch(),
     witness_support_scratch(),
+    applicability_cache(),
     statistics()
 {
 }
@@ -357,6 +371,7 @@ void RuleWorkspace<LiftedTag>::Instance<AndAP>::Solve::clear() noexcept
     numeric_support_selector_workspace.clear();
     numeric_support_scratch.clear();
     witness_support_scratch.clear();
+    applicability_cache.clear();
     and_ap.clear_achievers();
 }
 
