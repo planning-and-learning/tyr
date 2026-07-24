@@ -139,11 +139,15 @@ Cost fetch_current_best_cost(::tyr::formalism::datalog::PredicateBindingView<::t
     return fetch_annotation_cost<LiftedTag>(delta_head, delta_and_annot);
 }
 
-template<typename AggregationFunction>
-std::optional<WitnessAnnotation<LiftedTag>> try_ground_witness(const AndAnnotationContext<LiftedTag>& context)
+template<typename AggregationFunction, typename CanWin>
+std::optional<WitnessAnnotation<LiftedTag>> try_ground_witness(const AndAnnotationContext<LiftedTag>& context, CanWin&& can_win)
 {
     auto body_metric = ygg::ClosedInterval<ygg::float_t>();
     auto body_cost = AggregationFunction::identity();
+    const auto lower_bound = [&] { return std::max(body_cost, context.current_cost) + context.metric_effect_cost; };
+    if (!can_win(lower_bound()))
+        return std::nullopt;
+
     auto& numeric_supports = context.witness_support_scratch;
     numeric_supports.clear();
 
@@ -159,8 +163,10 @@ std::optional<WitnessAnnotation<LiftedTag>> try_ground_witness(const AndAnnotati
         const auto program_binding_cost = get_cost(*annotation);
         assert(program_binding_cost != std::numeric_limits<Cost>::max());
 
-        body_metric = aggregate_metric_support(body_metric, get_metric(*annotation));
         body_cost = AggregationFunction()(body_cost, program_binding_cost);
+        if (!can_win(lower_bound()))
+            return std::nullopt;
+        body_metric = aggregate_metric_support(body_metric, get_metric(*annotation));
     }
 
     for (const auto numeric_constraint : context.witness_condition.get_numeric_constraints())
@@ -173,14 +179,16 @@ std::optional<WitnessAnnotation<LiftedTag>> try_ground_witness(const AndAnnotati
         if (constraint_cost == std::numeric_limits<Cost>::max())
             return std::nullopt;
 
+        body_cost = AggregationFunction()(body_cost, constraint_cost);
+        if (!can_win(lower_bound()))
+            return std::nullopt;
+
         for (const auto& entry : context.numeric_support_selector_workspace.selection)
         {
             if (entry.annotation)
                 body_metric = aggregate_metric_support(body_metric, get_metric(entry.annotation->annotation));
             numeric_supports.push_back(NumericSupport<LiftedTag> { entry.key, entry.interval, entry.cost });
         }
-
-        body_cost = AggregationFunction()(body_cost, constraint_cost);
     }
 
     body_cost = std::max(body_cost, context.current_cost);
@@ -200,28 +208,25 @@ std::optional<WitnessAnnotation<LiftedTag>> try_ground_witness(const AndAnnotati
 template<typename AggregationFunction>
 std::optional<WitnessAnnotation<LiftedTag>> try_ground_better_witness(Cost best_cost, const AndAnnotationContext<LiftedTag>& context)
 {
-    if (best_cost <= AggregationFunction::identity() + context.metric_effect_cost)
-        return std::nullopt;
-
-    auto witness = try_ground_witness<AggregationFunction>(context);
-    if (!witness || best_cost <= witness->get_cost())
-        return std::nullopt;
-
-    return witness;
+    return try_ground_witness<AggregationFunction>(context, [best_cost](Cost lower_bound) { return lower_bound < best_cost; });
 }
 
 /// Like try_ground_better_witness but admits equal-cost witnesses, whose canonical tie-break the caller decides.
 template<typename AggregationFunction>
-std::optional<WitnessAnnotation<LiftedTag>> try_ground_witness_leq(Cost best_cost, const AndAnnotationContext<LiftedTag>& context)
+std::optional<WitnessAnnotation<LiftedTag>>
+try_ground_witness_leq(Cost best_cost, const Annotation<LiftedTag>* incumbent, const AndAnnotationContext<LiftedTag>& context)
 {
-    if (best_cost < AggregationFunction::identity() + context.metric_effect_cost)
-        return std::nullopt;
-
-    auto witness = try_ground_witness<AggregationFunction>(context);
-    if (!witness || best_cost < witness->get_cost())
-        return std::nullopt;
-
-    return witness;
+    return try_ground_witness<AggregationFunction>(context,
+                                                   [best_cost, incumbent, rule_key = context.rule_binding](Cost lower_bound)
+                                                   {
+                                                       if (lower_bound != best_cost)
+                                                           return lower_bound < best_cost;
+                                                       if (!incumbent)
+                                                           return true;
+                                                       const auto* incumbent_witness = std::get_if<WitnessAnnotation<LiftedTag>>(incumbent);
+                                                       // Rule keys are the first canonical witness field, so a larger key cannot recover a tie.
+                                                       return incumbent_witness && rule_key <= incumbent_witness->get_rule_key();
+                                                   });
 }
 }
 
@@ -241,14 +246,13 @@ void AndAnnotationPolicy<LiftedTag, AggregationFunction>::update_annotation(
     if (best_cost < cur_cost_lower_bound)
         return;  ///< No local or global improvement or tie
 
-    auto witness = try_ground_witness_leq<AggregationFunction>(best_cost, context);
+    const auto* incumbent =
+        select_incumbent<LiftedTag>(program_head, delta_head, best_global_cost, best_local_cost, context.program_and_annot, delta_and_annot);
+    auto witness = try_ground_witness_leq<AggregationFunction>(best_cost, incumbent, context);
     if (!witness)
         return;  ///< No local or global improvement or tie
 
-    if (witness->get_cost() == best_cost
-        && !witness_wins_tie<LiftedTag>(
-            *witness,
-            select_incumbent<LiftedTag>(program_head, delta_head, best_global_cost, best_local_cost, context.program_and_annot, delta_and_annot)))
+    if (witness->get_cost() == best_cost && !witness_wins_tie<LiftedTag>(*witness, incumbent))
         return;  ///< Grounded into a tie that loses canonically
 
     /// Update improved or canonically tie-winning witness and cost annotation
@@ -298,7 +302,7 @@ template<typename AggregationFunction>
 void AchieverAndAnnotationPolicy<LiftedTag, AggregationFunction>::record_achiever(PredicateBinding program_head,
                                                                                   const AndAnnotationContext<LiftedTag>& context) const
 {
-    auto witness = try_ground_witness<AggregationFunction>(context);
+    auto witness = try_ground_witness<AggregationFunction>(context, [](Cost) { return true; });
     if (witness)
     {
         auto& achievers = m_achievers[program_head.get_index()];
