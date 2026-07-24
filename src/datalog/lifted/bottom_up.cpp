@@ -50,6 +50,7 @@
 #include <oneapi/tbb/parallel_for.h>
 #include <oneapi/tbb/parallel_for_each.h>
 #include <oneapi/tbb/task_arena.h>
+#include <optional>
 #include <span>
 #include <stdexcept>
 #include <tuple>
@@ -111,8 +112,9 @@ struct RuleUpdateInput
     fd::GrounderContext& solve_context;
     fd::GrounderContext& iteration_context;
 
-    AndAnnotationContext<LiftedTag>
-    make_annotation_context(fd::RuleBindingView rule_binding, Cost metric_effect_cost, std::span<const NumericSupport<LiftedTag>> numeric_supports = {}) const
+    AndAnnotationContext<LiftedTag> make_annotation_context(std::optional<fd::RuleBindingView> rule_binding,
+                                                            Cost metric_effect_cost,
+                                                            std::span<const NumericSupport<LiftedTag>> numeric_supports = {}) const
     {
         return AndAnnotationContext<LiftedTag> { current_cost,
                                                  numeric_supports,
@@ -227,7 +229,7 @@ static bool collect_metric_effect_supports(const RuleUpdateInput<AndAP, CP>& inp
 }
 
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
-Cost metric_effect_cost(fd::RuleBindingView rule_binding, const RuleUpdateInput<AndAP, CP>& input)
+Cost metric_effect_delta(const RuleUpdateInput<AndAP, CP>& input)
 {
     auto delta = Cost(0);
     for (const auto metric_effect : input.rule.get_metric_effects())
@@ -238,7 +240,13 @@ Cost metric_effect_cost(fd::RuleBindingView rule_binding, const RuleUpdateInput<
         delta += effect_delta;
     }
 
-    return reduce_cost(delta, input.cost_policy.get_cost(rule_binding));
+    return delta;
+}
+
+template<AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
+Cost metric_effect_cost(fd::RuleBindingView rule_binding, const RuleUpdateInput<AndAP, CP>& input)
+{
+    return reduce_cost(metric_effect_delta(input), input.cost_policy.get_cost(rule_binding));
 }
 
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
@@ -273,8 +281,17 @@ static void insert_propositional_update(fd::AtomView<f::FluentTag> head,
 {
     const auto program_head = fd::ground_binding(head, input.iteration_context).first;
     const auto worker_head = fd::ground_binding(head, input.solve_context).first;
-    const auto rule_binding = fd::ground_binding(input.rule, input.solve_context).first;
-    const auto cost = metric_effect_cost(rule_binding, input);
+    auto rule_binding = std::optional<fd::RuleBindingView> {};
+    auto cost = Cost(0);
+    if constexpr (std::same_as<CP, RuleCostPolicy<LiftedTag>> && !records_propositional_achievers<AndAP>)
+    {
+        cost = metric_effect_delta(input);
+    }
+    else
+    {
+        rule_binding = fd::ground_binding(input.rule, input.solve_context).first;
+        cost = metric_effect_cost(*rule_binding, input);
+    }
     if (cost == std::numeric_limits<Cost>::max())
         return;
     auto& numeric_supports = input.numeric_support_scratch;

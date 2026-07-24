@@ -19,6 +19,9 @@
 
 #include "planning/parser.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
+#include "tyr/datalog/lifted/programs/program.hpp"
+#include "tyr/formalism/datalog/canonicalization.hpp"
+#include "tyr/formalism/datalog/datas.hpp"
 #include "tyr/planning/lifted/programs/ground.hpp"
 #include "tyr/planning/planning.hpp"
 
@@ -48,6 +51,7 @@
 
 namespace d = tyr::datalog;
 namespace f = tyr::formalism;
+namespace fd = tyr::formalism::datalog;
 namespace p = tyr::planning;
 
 namespace tyr::tests
@@ -336,6 +340,114 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchAtOneAndMaximumThreads)
             EXPECT_EQ(run_config(), *expected);
         }
     }
+}
+
+TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternRuleBindings)
+{
+    auto factory = std::make_shared<fd::RepositoryFactory>();
+    auto repository = factory->create_shared();
+    const auto intern = [&]<typename T>(ygg::Data<T> data)
+    {
+        if constexpr (requires { fd::canonicalize(data); })
+            fd::canonicalize(data);
+        else
+            f::canonicalize(data);
+        return repository->get_or_create(data).first;
+    };
+
+    const auto source = intern(ygg::Data<f::Predicate<f::FluentTag>>(std::string("source"), 1));
+    const auto goal = intern(ygg::Data<f::Predicate<f::FluentTag>>(std::string("goal"), 0));
+    const auto variable = intern(ygg::Data<f::Variable>(std::string("x")));
+
+    auto source_atom_data = ygg::Data<fd::Atom<f::FluentTag>>();
+    source_atom_data.predicate = source.get_index();
+    source_atom_data.terms.emplace_back(f::ParameterIndex(0));
+    const auto source_atom = intern(std::move(source_atom_data));
+
+    const auto source_literal = intern(ygg::Data<fd::Literal<f::FluentTag>>(source_atom.get_index(), true));
+    auto body_data = ygg::Data<fd::ConjunctiveCondition>();
+    body_data.variables.push_back(variable.get_index());
+    body_data.fluent_literals.push_back(source_literal.get_index());
+    const auto body = intern(std::move(body_data));
+
+    auto goal_atom_data = ygg::Data<fd::Atom<f::FluentTag>>();
+    goal_atom_data.predicate = goal.get_index();
+    const auto goal_atom = intern(std::move(goal_atom_data));
+
+    auto rule_data = ygg::Data<fd::Rule>();
+    rule_data.variables.push_back(variable.get_index());
+    rule_data.body = body.get_index();
+    rule_data.head = goal_atom.get_index();
+    const auto rule = intern(std::move(rule_data));
+
+    auto program_data = ygg::Data<fd::Program>();
+    program_data.fluent_predicates.push_back(source.get_index());
+    program_data.fluent_predicates.push_back(goal.get_index());
+    program_data.rules.push_back(rule.get_index());
+    for (const auto* name : { "a", "b", "c", "d" })
+    {
+        const auto object = intern(ygg::Data<f::Object>(std::string(name)));
+        program_data.objects.push_back(object.get_index());
+
+        auto binding_data = ygg::Data<f::RelationBinding<f::Predicate<f::FluentTag>>>();
+        binding_data.relation = source.get_index();
+        binding_data.objects.push_back(object.get_index());
+        const auto binding = intern(std::move(binding_data));
+        program_data.fluent_atoms.push_back(intern(ygg::Data<fd::GroundAtom<f::FluentTag>>(binding.get_index())).get_index());
+    }
+    const auto program_view = intern(std::move(program_data));
+
+    auto program = d::Program<LiftedTag>(program_view, repository, factory);
+    using OrPolicy = d::OrAnnotationPolicy<LiftedTag>;
+    using AndPolicy = d::AndAnnotationPolicy<LiftedTag, d::SumAggregation>;
+    using Termination = d::NoTerminationPolicy<LiftedTag>;
+    auto workspace = d::ProgramWorkspace<LiftedTag, OrPolicy, AndPolicy, Termination>(program);
+    auto context = d::ProgramExecutionContext(workspace);
+    d::solve_bottom_up(context);
+
+    const auto& rule_repository = workspace.rules.front()->worker.front().solve.program_overlay_repository;
+    EXPECT_EQ(rule_repository.size(rule.get_index()), 1);
+}
+
+TEST(TyrDatalogLiftedBottomUpTest, PredicateAnnotationsUseRelationAndRowIndices)
+{
+    auto factory = std::make_shared<fd::RepositoryFactory>();
+    auto repository = factory->create_shared();
+    const auto intern = [&]<typename T>(ygg::Data<T> data)
+    {
+        f::canonicalize(data);
+        return repository->get_or_create(data).first;
+    };
+
+    const auto first_predicate = intern(ygg::Data<f::Predicate<f::FluentTag>>(std::string("first"), 1));
+    const auto second_predicate = intern(ygg::Data<f::Predicate<f::FluentTag>>(std::string("second"), 1));
+    const auto first_object = intern(ygg::Data<f::Object>(std::string("a")));
+    const auto second_object = intern(ygg::Data<f::Object>(std::string("b")));
+    const auto make_binding = [&](auto predicate, auto object)
+    {
+        auto data = ygg::Data<f::RelationBinding<f::Predicate<f::FluentTag>>>();
+        data.relation = predicate.get_index();
+        data.objects.push_back(object.get_index());
+        return intern(std::move(data));
+    };
+
+    const auto first = make_binding(first_predicate, first_object);
+    const auto hole = make_binding(first_predicate, second_object);
+    const auto second = make_binding(second_predicate, first_object);
+    auto annotations = d::SelectedPredicateAnnotations<LiftedTag>();
+
+    annotations.insert_or_assign(first, d::BaseAnnotation<LiftedTag>(3));
+    annotations.insert_or_assign(second, d::BaseAnnotation<LiftedTag>(5));
+    EXPECT_EQ(d::get_cost(*annotations.find(first)), 3);
+    EXPECT_EQ(d::get_cost(*std::as_const(annotations).find(second)), 5);
+    EXPECT_EQ(annotations.find(hole), nullptr);
+
+    annotations.insert_or_assign(first, d::BaseAnnotation<LiftedTag>(2));
+    EXPECT_EQ(d::get_cost(*annotations.find(first)), 2);
+
+    annotations.clear();
+    EXPECT_EQ(annotations.find(first), nullptr);
+    EXPECT_EQ(annotations.find(second), nullptr);
 }
 
 INSTANTIATE_TEST_SUITE_P(TyrDatalogLiftedBottomUpFixture,

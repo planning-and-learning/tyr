@@ -60,6 +60,27 @@ bool canonical_rule_binding_wins_tie(WitnessRuleKeyT<LiftedTag> rule_key, const 
     const auto* incumbent_witness = std::get_if<WitnessAnnotation<LiftedTag>>(incumbent);
     return incumbent_witness && canonical_rule_binding_less(rule_key, incumbent_witness->get_rule_key());
 }
+
+bool canonical_rule_binding_wins_tie(const AndAnnotationContext<LiftedTag>& context, const Annotation<LiftedTag>* incumbent)
+{
+    if (context.rule_binding)
+        return canonical_rule_binding_wins_tie(*context.rule_binding, incumbent);
+    if (!incumbent)
+        return true;
+
+    const auto* incumbent_witness = std::get_if<WitnessAnnotation<LiftedTag>>(incumbent);
+    if (!incumbent_witness)
+        return false;
+
+    const auto incumbent_key = incumbent_witness->get_rule_key().get_key();
+    const auto rule = context.rule.get_index();
+    if (rule != incumbent_key.first)
+        return ygg::Less<> {}(rule, incumbent_key.first);
+
+    // The transient object tuple and the repository-backed tuple have different range types,
+    // so the heterogeneous logical-key comparison cannot use RuleBindingView::get_key().
+    return ygg::less_range(context.delta_context.binding, incumbent_key.second);
+}
 }
 
 /**
@@ -172,7 +193,9 @@ std::optional<WitnessAnnotation<LiftedTag>> try_ground_witness(const AndAnnotati
                           ygg::ClosedInterval<ygg::float_t>(lower(body_metric) + context.metric_effect_cost, upper(body_metric) + context.metric_effect_cost);
 
     numeric_supports.insert(numeric_supports.end(), context.numeric_supports.begin(), context.numeric_supports.end());
-    return WitnessAnnotation<LiftedTag>(context.rule_binding,
+    const auto rule_binding =
+        context.rule_binding ? *context.rule_binding : ::tyr::formalism::datalog::ground_binding(context.rule, context.delta_context).first;
+    return WitnessAnnotation<LiftedTag>(rule_binding,
                                         body_metric,
                                         body_cost + context.metric_effect_cost,
                                         std::span<const NumericSupport<LiftedTag>>(numeric_supports));
@@ -188,7 +211,7 @@ template<typename AggregationFunction>
 std::optional<WitnessAnnotation<LiftedTag>>
 try_ground_winning_witness(Cost best_cost, const Annotation<LiftedTag>* incumbent, const AndAnnotationContext<LiftedTag>& context)
 {
-    const auto wins_tie = canonical_rule_binding_wins_tie(context.rule_binding, incumbent);
+    const auto wins_tie = canonical_rule_binding_wins_tie(context, incumbent);
     return try_ground_witness<AggregationFunction>(context,
                                                    [best_cost, wins_tie](Cost lower_bound)
                                                    { return lower_bound < best_cost || (lower_bound == best_cost && wins_tie); });

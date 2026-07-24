@@ -164,30 +164,54 @@ class PredicateAnnotationMap
 public:
     using Key = PredicateAnnotationKeyT<Kind>;
 
-    void clear() noexcept { annotations.clear(); }
+    void clear() noexcept
+    {
+        for (auto& relation_annotations : m_annotations)
+            relation_annotations.clear();
+    }
 
     template<typename Binding>
     void insert_or_assign(Binding binding, Annotation<Kind> annotation)
     {
-        annotations.insert_or_assign(get_predicate_annotation_key<Kind>(binding), std::move(annotation));
+        const auto index = get_predicate_annotation_key<Kind>(binding).get_index();
+        const auto relation = ygg::uint_t(index.relation);
+        const auto row = ygg::uint_t(index.row);
+
+        if (relation >= m_annotations.size())
+            m_annotations.resize(relation + 1);
+
+        auto& relation_annotations = m_annotations[relation];
+        if (row >= relation_annotations.size())
+            relation_annotations.resize(row + 1);
+
+        relation_annotations[row] = std::move(annotation);
     }
 
     template<typename Binding>
     const Annotation<Kind>* find(Binding binding) const noexcept
     {
-        const auto it = annotations.find(get_predicate_annotation_key<Kind>(binding));
-        return it == annotations.end() ? nullptr : &it->second;
+        const auto index = get_predicate_annotation_key<Kind>(binding).get_index();
+        const auto relation = ygg::uint_t(index.relation);
+        const auto row = ygg::uint_t(index.row);
+
+        if (relation >= m_annotations.size())
+            return nullptr;
+
+        const auto& relation_annotations = m_annotations[relation];
+        if (row >= relation_annotations.size() || !relation_annotations[row])
+            return nullptr;
+
+        return &*relation_annotations[row];
     }
 
     template<typename Binding>
     Annotation<Kind>* find(Binding binding) noexcept
     {
-        const auto it = annotations.find(get_predicate_annotation_key<Kind>(binding));
-        return it == annotations.end() ? nullptr : &it->second;
+        return const_cast<Annotation<Kind>*>(std::as_const(*this).find(binding));
     }
 
 private:
-    ygg::UnorderedMap<Key, Annotation<Kind>> annotations;
+    std::vector<std::vector<std::optional<Annotation<Kind>>>> m_annotations;
 };
 
 template<TaskKind Kind>

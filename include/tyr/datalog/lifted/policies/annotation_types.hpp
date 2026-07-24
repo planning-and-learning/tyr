@@ -21,6 +21,7 @@
 #include "tyr/datalog/policies/annotation_types.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
+#include <optional>
 #include <span>
 
 namespace tyr::datalog
@@ -65,7 +66,7 @@ struct AndAnnotationContext<LiftedTag>
     std::span<const NumericSupport<LiftedTag>> numeric_supports;
     std::vector<NumericSupport<LiftedTag>>& witness_support_scratch;
     ::tyr::formalism::datalog::RuleView rule;
-    ::tyr::formalism::datalog::RuleBindingView rule_binding;
+    std::optional<::tyr::formalism::datalog::RuleBindingView> rule_binding;
     Cost metric_effect_cost;
     ::tyr::formalism::datalog::ConjunctiveConditionView witness_condition;
     const NumericSupportSelector<LiftedTag>& numeric_support_selector;
