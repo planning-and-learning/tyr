@@ -113,13 +113,11 @@ OrAnnotationPolicy<LiftedTag>::update_annotation(::tyr::formalism::datalog::Pred
     }
     else if (witness.get_cost() == old_cost)
     {
-        // DeltaKPKC emits canonical bindings within a worker. RuleBindingView identity is enough
-        // to stabilize the remaining worker-merge order without dereferencing objects through a
-        // possibly different repository layer. A BaseAnnotation incumbent (initial fact) always
-        // wins its tie.
+        // Binding identity contains the worker repository; compare logical rule and objects so the
+        // winner is independent of worker merge order. A BaseAnnotation incumbent always wins.
         const auto* incumbent = program_and_annot.find(program_head);
         const auto* incumbent_witness = incumbent ? std::get_if<WitnessAnnotation<LiftedTag>>(incumbent) : nullptr;
-        if (incumbent_witness && witness.get_rule_key() < incumbent_witness->get_rule_key())
+        if (incumbent_witness && canonical_rule_binding_less(witness.get_rule_key(), incumbent_witness->get_rule_key()))
             program_and_annot.insert_or_assign(program_head, Annotation<LiftedTag>(witness));
     }
 
@@ -224,8 +222,9 @@ try_ground_witness_leq(Cost best_cost, const Annotation<LiftedTag>* incumbent, c
                                                        if (!incumbent)
                                                            return true;
                                                        const auto* incumbent_witness = std::get_if<WitnessAnnotation<LiftedTag>>(incumbent);
-                                                       // Rule keys are the first canonical witness field, so a larger key cannot recover a tie.
-                                                       return incumbent_witness && rule_key <= incumbent_witness->get_rule_key();
+                                                       // Rule keys are the first canonical witness field, so a
+                                                       // larger or identical key cannot recover a tie.
+                                                       return incumbent_witness && canonical_rule_binding_less(rule_key, incumbent_witness->get_rule_key());
                                                    });
 }
 }
@@ -252,7 +251,8 @@ void AndAnnotationPolicy<LiftedTag, AggregationFunction>::update_annotation(
     if (!witness)
         return;  ///< No local or global improvement or tie
 
-    if (witness->get_cost() == best_cost && !witness_wins_tie<LiftedTag>(*witness, incumbent))
+    const auto* incumbent_witness = incumbent ? std::get_if<WitnessAnnotation<LiftedTag>>(incumbent) : nullptr;
+    if (witness->get_cost() == best_cost && (!incumbent_witness || !canonical_rule_binding_less(witness->get_rule_key(), incumbent_witness->get_rule_key())))
         return;  ///< Grounded into a tie that loses canonically
 
     /// Update improved or canonically tie-winning witness and cost annotation

@@ -130,4 +130,16 @@ TEST(TyrDatalogCostPolicyTest, RuleCostOverridePolicyLiftedUsesEquivalentOverrid
     EXPECT_EQ(policy.get_cost(second_fixture.binding), 3);
 }
 
+TEST(TyrDatalogCostPolicyTest, CanonicalRuleBindingOrderIgnoresRepositoryIdentity)
+{
+    auto factory = fd::RepositoryFactory();
+    auto first_repository = factory.create();
+    auto second_repository = factory.create();
+    const auto first = make_nullary_rule_binding(first_repository).binding;
+    const auto second = make_nullary_rule_binding(second_repository).binding;
+
+    EXPECT_FALSE(d::canonical_rule_binding_less(first, second));
+    EXPECT_FALSE(d::canonical_rule_binding_less(second, first));
+}
+
 }

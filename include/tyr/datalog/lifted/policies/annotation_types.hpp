@@ -38,6 +38,8 @@ struct WitnessRuleKey<LiftedTag>
     using type = ::tyr::formalism::datalog::RuleBindingView;
 };
 
+inline bool canonical_rule_binding_less(WitnessRuleKeyT<LiftedTag> lhs, WitnessRuleKeyT<LiftedTag> rhs) { return ygg::Less<> {}(lhs.get_key(), rhs.get_key()); }
+
 template<>
 struct AnnotationPolicyTypes<LiftedTag>
 {
