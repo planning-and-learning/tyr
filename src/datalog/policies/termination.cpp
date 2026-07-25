@@ -65,7 +65,7 @@ Cost TerminationPolicy<Kind, AggregationFunction>::get_total_cost(const FactSets
         if (!literal.get_polarity())
             continue;
 
-        const auto* annotation = and_annot.find(literal.get_atom());
+        const auto* annotation = and_annot.find(literal.get_atom().get_row());
         assert(annotation);
         if (!annotation)
             return std::numeric_limits<Cost>::max();

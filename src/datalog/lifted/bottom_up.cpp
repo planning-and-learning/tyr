@@ -276,7 +276,7 @@ template<AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<Lift
 static void insert_propositional_update(fd::PredicateBindingView<f::FluentTag> program_head,
                                         const RuleUpdateInput<AndAP, CP>& input,
                                         RuleHeadIteration& head_iteration,
-                                        SelectedPredicateAnnotations<LiftedTag>& and_annot)
+                                        DeltaPredicateAnnotations<LiftedTag>& and_annot)
 {
     auto rule_binding = std::optional<fd::RuleBindingView> {};
     auto cost = Cost(0);
@@ -309,7 +309,7 @@ static void insert_numeric_update(fd::NumericEffectOperatorView<f::FluentTag> he
                                   const FactSets& fact_sets,
                                   const RuleUpdateInput<AndAP, CP>& input,
                                   RuleHeadIteration& head_iteration,
-                                  SelectedFunctionAnnotations<LiftedTag>& numeric_and_annot)
+                                  DeltaFunctionAnnotations<LiftedTag>& numeric_and_annot)
 {
     const auto interval = is_valid_binding(head, fact_sets, input.iteration_context);
     if (empty(interval))

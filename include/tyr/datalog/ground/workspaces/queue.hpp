@@ -68,8 +68,8 @@ struct GroundQueueScratch
     std::vector<SelectionEntry> metric_selection;
     std::vector<SelectionEntry> evaluation_selection;
     std::vector<NumericSupport<GroundTag>> numeric_supports;
-    SelectedPredicateAnnotations<GroundTag> predicate_annotations;
-    SelectedFunctionAnnotations<GroundTag> function_annotations;
+    DeltaPredicateAnnotations<GroundTag> predicate_annotations;
+    DeltaFunctionAnnotations<GroundTag> function_annotations;
     std::vector<Term> changed_terms;
 
     void clear() noexcept

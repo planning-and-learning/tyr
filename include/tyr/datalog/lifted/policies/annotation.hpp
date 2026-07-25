@@ -53,7 +53,7 @@ public:
 
     CostUpdate<LiftedTag> update_annotation(PredicateHead program_head,
                                             PredicateHead delta_head,
-                                            const SelectedPredicateAnnotations<LiftedTag>& delta_and_annot,
+                                            const DeltaPredicateAnnotations<LiftedTag>& delta_and_annot,
                                             SelectedPredicateAnnotations<LiftedTag>& program_and_annot) const;
 };
 
@@ -73,13 +73,13 @@ public:
     void update_annotation(PredicateHead program_head,
                            PredicateHead delta_head,
                            const AndAnnotationContext<LiftedTag>& context,
-                           SelectedPredicateAnnotations<LiftedTag>& delta_and_annot) const;
+                           DeltaPredicateAnnotations<LiftedTag>& delta_and_annot) const;
 
     void update_annotation(FunctionHead program_head,
                            FunctionHead delta_head,
                            ygg::ClosedInterval<ygg::float_t> interval,
                            const AndAnnotationContext<LiftedTag>& context,
-                           SelectedFunctionAnnotations<LiftedTag>& delta_numeric_and_annot) const;
+                           DeltaFunctionAnnotations<LiftedTag>& delta_numeric_and_annot) const;
 };
 
 template<typename AggregationFunction>

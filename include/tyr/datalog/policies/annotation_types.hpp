@@ -138,42 +138,23 @@ inline Cost get_cost(const Annotation<Kind>& annotation) noexcept
 }
 
 template<TaskKind Kind>
-struct PredicateAnnotationKey
-{
-    using type = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
-};
-
-template<TaskKind Kind>
-using PredicateAnnotationKeyT = typename PredicateAnnotationKey<Kind>::type;
-
-template<TaskKind Kind>
-inline PredicateAnnotationKeyT<Kind> get_predicate_annotation_key(PredicateAnnotationKeyT<Kind> binding) noexcept
-{
-    return binding;
-}
-
-template<TaskKind Kind>
-inline PredicateAnnotationKeyT<Kind> get_predicate_annotation_key(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> atom) noexcept
-{
-    return atom.get_row();
-}
-
-template<TaskKind Kind>
 class PredicateAnnotationMap
 {
 public:
-    using Key = PredicateAnnotationKeyT<Kind>;
+    /// Both engines key predicate annotations by the fluent predicate binding; the ground engine's atom
+    /// heads convert with get_row() at the call site.
+    using Key = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
 
-    void clear() noexcept
-    {
-        for (auto& relation_annotations : m_annotations)
-            relation_annotations.clear();
-    }
+    /// Resetting bumps the generation rather than touching the slots: the delta map is reset once per
+    /// rule per iteration, while its dense row span grows with the number of derived atoms, so an
+    /// O(span) reset would dominate on large tasks. Slots of older generations read as absent and keep
+    /// their annotation storage, so a later write into the same row reuses the numeric-support buffer
+    /// instead of reallocating it.
+    void clear() noexcept { ++m_generation; }
 
-    template<typename Binding>
-    void insert_or_assign(Binding binding, Annotation<Kind> annotation)
+    void insert_or_assign(Key key, Annotation<Kind> annotation)
     {
-        const auto index = get_predicate_annotation_key<Kind>(binding).get_index();
+        const auto index = key.get_index();
         const auto relation = ygg::uint_t(index.relation);
         const auto row = ygg::uint_t(index.row);
 
@@ -184,13 +165,14 @@ public:
         if (row >= relation_annotations.size())
             relation_annotations.resize(row + 1);
 
-        relation_annotations[row] = std::move(annotation);
+        auto& slot = relation_annotations[row];
+        slot.generation = m_generation;
+        slot.annotation = std::move(annotation);
     }
 
-    template<typename Binding>
-    const Annotation<Kind>* find(Binding binding) const noexcept
+    const Annotation<Kind>* find(Key key) const noexcept
     {
-        const auto index = get_predicate_annotation_key<Kind>(binding).get_index();
+        const auto index = key.get_index();
         const auto relation = ygg::uint_t(index.relation);
         const auto row = ygg::uint_t(index.row);
 
@@ -198,24 +180,65 @@ public:
             return nullptr;
 
         const auto& relation_annotations = m_annotations[relation];
-        if (row >= relation_annotations.size() || !relation_annotations[row])
+        if (row >= relation_annotations.size())
             return nullptr;
 
-        return &*relation_annotations[row];
+        const auto& slot = relation_annotations[row];
+        return slot.generation == m_generation ? &slot.annotation : nullptr;
     }
 
-    template<typename Binding>
-    Annotation<Kind>* find(Binding binding) noexcept
+    Annotation<Kind>* find(Key key) noexcept { return const_cast<Annotation<Kind>*>(std::as_const(*this).find(key)); }
+
+private:
+    /// Generation 0 marks a slot that was never written, so the live generation starts at 1.
+    struct Slot
     {
-        return const_cast<Annotation<Kind>*>(std::as_const(*this).find(binding));
+        uint64_t generation { 0 };
+        Annotation<Kind> annotation {};
+    };
+
+    std::vector<std::vector<Slot>> m_annotations;
+    uint64_t m_generation { 1 };
+};
+
+/// Sparse counterpart of PredicateAnnotationMap for the rule-level delta annotations. Those hold a
+/// handful of entries and are reset per rule per iteration, so the dense row span - which grows with
+/// the number of derived atoms - would dominate. Resetting clears the table without destroying it, so
+/// its buckets stay allocated for the next iteration.
+template<TaskKind Kind>
+class DeltaPredicateAnnotationMap
+{
+public:
+    using Key = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
+
+    /// Clears the table without releasing it, so its buckets stay allocated for the next iteration.
+    void clear() noexcept { m_annotations.clear(); }
+
+    void insert_or_assign(Key key, Annotation<Kind> annotation) { m_annotations.insert_or_assign(key, std::move(annotation)); }
+
+    const Annotation<Kind>* find(Key key) const noexcept
+    {
+        const auto it = m_annotations.find(key);
+        return it == m_annotations.end() ? nullptr : &it->second;
+    }
+
+    Annotation<Kind>* find(Key key) noexcept
+    {
+        const auto it = m_annotations.find(key);
+        return it == m_annotations.end() ? nullptr : &it->second;
     }
 
 private:
-    std::vector<std::vector<std::optional<Annotation<Kind>>>> m_annotations;
+    ygg::UnorderedMap<Key, Annotation<Kind>> m_annotations;
 };
 
+/// Solve-level annotations: dense indexing, reset once per solve.
 template<TaskKind Kind>
 using SelectedPredicateAnnotations = PredicateAnnotationMap<Kind>;
+
+/// Rule-level delta annotations: sparse, reset per rule per iteration.
+template<TaskKind Kind>
+using DeltaPredicateAnnotations = DeltaPredicateAnnotationMap<Kind>;
 
 template<TaskKind Kind>
 struct NumericIntervalAnnotation : ygg::comparison::Mixin<NumericIntervalAnnotation<Kind>>
@@ -235,7 +258,7 @@ template<TaskKind Kind>
 struct NumericIntervalBindingParts;
 
 template<TaskKind Kind>
-class NumericIntervalAnnotations
+class DeltaNumericIntervalAnnotations
 {
 public:
     using Binding = typename NumericIntervalBindingParts<Kind>::Binding;
@@ -246,6 +269,8 @@ public:
     using KeyPartitions = ygg::UnorderedMap<Key, Entries>;
     using Partitions = ygg::UnorderedMap<Relation, KeyPartitions>;
 
+    /// Clears the nested entry vectors in place: releasing them would hand the buffers back only to
+    /// reallocate them next iteration.
     void clear() noexcept
     {
         m_size = 0;
@@ -256,7 +281,15 @@ public:
 
     size_t size() const noexcept { return m_size; }
 
-    const Partitions& partitions() const noexcept { return m_partitions; }
+    const Entries* find_entries(Relation relation, Key key) const noexcept
+    {
+        const auto relation_it = m_partitions.find(relation);
+        if (relation_it == m_partitions.end())
+            return nullptr;
+
+        const auto key_it = relation_it->second.find(key);
+        return key_it == relation_it->second.end() ? nullptr : &key_it->second;
+    }
 
     const Annotation<Kind>* find(Binding binding) const noexcept
     {
@@ -322,8 +355,126 @@ private:
     size_t m_size = 0;
 };
 
+/// Solve-level counterpart of DeltaNumericIntervalAnnotations: dense in (relation, key) because it is
+/// queried per candidate, and reset once per solve by bumping a generation so no nested container is
+/// released. Mirrors the split between PredicateAnnotationMap and DeltaPredicateAnnotationMap.
+template<TaskKind Kind>
+class NumericIntervalAnnotations
+{
+public:
+    using Binding = typename NumericIntervalBindingParts<Kind>::Binding;
+    using Relation = typename NumericIntervalBindingParts<Kind>::Relation;
+    using Key = typename NumericIntervalBindingParts<Kind>::Key;
+    using Entry = NumericIntervalAnnotation<Kind>;
+    using Entries = std::vector<Entry>;
+
+    void clear() noexcept
+    {
+        ++m_generation;
+        m_size = 0;
+    }
+
+    size_t size() const noexcept { return m_size; }
+
+    const Entries* find_entries(Relation relation, Key key) const noexcept
+    {
+        const auto relation_index = ygg::uint_t(relation.get_index());
+        if (relation_index >= m_slots.size())
+            return nullptr;
+
+        const auto& key_slots = m_slots[relation_index];
+        const auto key_index = ygg::uint_t(key);
+        if (key_index >= key_slots.size())
+            return nullptr;
+
+        const auto& slot = key_slots[key_index];
+        return slot.generation == m_generation ? &slot.entries : nullptr;
+    }
+
+    const Annotation<Kind>* find(Binding binding) const noexcept
+    {
+        const auto* entries = find_entries(binding);
+        return (!entries || entries->empty()) ? nullptr : &entries->back().annotation;
+    }
+
+    Annotation<Kind>* find(Binding binding) noexcept
+    {
+        auto* entries = const_cast<Entries*>(find_entries(binding));
+        return (!entries || entries->empty()) ? nullptr : &entries->back().annotation;
+    }
+
+    const Annotation<Kind>* find(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
+    {
+        const auto* entries = find_entries(binding);
+        if (!entries)
+            return nullptr;
+
+        for (const auto& entry : *entries)
+            if (entry.interval == interval)
+                return &entry.annotation;
+
+        return nullptr;
+    }
+
+    void insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind> annotation)
+    {
+        if (empty(interval))
+            return;
+
+        auto entry = Entry { interval, std::move(annotation) };
+        auto& entries = entries_for_write(binding);
+        const auto pos = std::upper_bound(entries.begin(), entries.end(), entry);
+        if (pos != entries.begin() && *(pos - 1) == entry)
+            return;
+        entries.insert(pos, std::move(entry));
+        ++m_size;
+    }
+
+private:
+    /// Generation 0 marks a slot that was never written, so the live generation starts at 1.
+    struct Slot
+    {
+        uint64_t generation { 0 };
+        Entries entries;
+    };
+
+    const Entries* find_entries(Binding binding) const noexcept
+    {
+        return find_entries(NumericIntervalBindingParts<Kind>::get_relation(binding), NumericIntervalBindingParts<Kind>::get_key(binding));
+    }
+
+    Entries& entries_for_write(Binding binding)
+    {
+        const auto relation_index = ygg::uint_t(NumericIntervalBindingParts<Kind>::get_relation(binding).get_index());
+        if (relation_index >= m_slots.size())
+            m_slots.resize(relation_index + 1);
+
+        auto& key_slots = m_slots[relation_index];
+        const auto key_index = ygg::uint_t(NumericIntervalBindingParts<Kind>::get_key(binding));
+        if (key_index >= key_slots.size())
+            key_slots.resize(key_index + 1);
+
+        auto& slot = key_slots[key_index];
+        if (slot.generation != m_generation)
+        {
+            slot.entries.clear();  ///< clear, never release: the buffer is reused next generation
+            slot.generation = m_generation;
+        }
+        return slot.entries;
+    }
+
+    std::vector<std::vector<Slot>> m_slots;
+    uint64_t m_generation { 1 };
+    size_t m_size { 0 };
+};
+
+/// Solve-level numeric annotations: dense, reset once per solve.
 template<TaskKind Kind>
 using SelectedFunctionAnnotations = NumericIntervalAnnotations<Kind>;
+
+/// Rule-level delta numeric annotations: sparse, reset per rule per iteration.
+template<TaskKind Kind>
+using DeltaFunctionAnnotations = DeltaNumericIntervalAnnotations<Kind>;
 
 template<TaskKind Kind>
 struct AndAnnotationContext;

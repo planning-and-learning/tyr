@@ -27,10 +27,20 @@
 namespace tyr::datalog
 {
 
-template<TaskKind Kind, typename Binding>
-Cost fetch_annotation_cost(Binding binding, const SelectedPredicateAnnotations<Kind>& annotations)
+/// Two overloads rather than one container template: solve-level annotations are dense, rule-level
+/// delta annotations are sparse, and the head type follows from the tag.
+template<TaskKind Kind>
+Cost fetch_annotation_cost(typename SelectedPredicateAnnotations<Kind>::Key key, const SelectedPredicateAnnotations<Kind>& annotations)
 {
-    if (const auto* annotation = annotations.find(binding))
+    if (const auto* annotation = annotations.find(key))
+        return get_cost(*annotation);
+    return std::numeric_limits<Cost>::max();
+}
+
+template<TaskKind Kind>
+Cost fetch_annotation_cost(typename DeltaPredicateAnnotations<Kind>::Key key, const DeltaPredicateAnnotations<Kind>& annotations)
+{
+    if (const auto* annotation = annotations.find(key))
         return get_cost(*annotation);
     return std::numeric_limits<Cost>::max();
 }
@@ -50,13 +60,13 @@ bool witness_wins_tie(const WitnessAnnotation<Kind>& witness, const Annotation<K
     return witness_wins_tie(witness, incumbent, ygg::Less<> {});
 }
 
-template<TaskKind Kind, typename Binding>
-const Annotation<Kind>* select_incumbent(Binding program_head,
-                                         Binding delta_head,
+template<TaskKind Kind>
+const Annotation<Kind>* select_incumbent(typename SelectedPredicateAnnotations<Kind>::Key program_head,
+                                         typename SelectedPredicateAnnotations<Kind>::Key delta_head,
                                          Cost best_global_cost,
                                          Cost best_local_cost,
                                          const SelectedPredicateAnnotations<Kind>& program_and_annot,
-                                         const SelectedPredicateAnnotations<Kind>& delta_and_annot)
+                                         const DeltaPredicateAnnotations<Kind>& delta_and_annot)
 {
     return best_local_cost <= best_global_cost ? delta_and_annot.find(delta_head) : program_and_annot.find(program_head);
 }
@@ -72,7 +82,7 @@ public:
     void initialize_annotation(FunctionHead, ygg::ClosedInterval<ygg::float_t>, SelectedFunctionAnnotations<Kind>&) const noexcept {}
 
     CostUpdate<Kind>
-    update_annotation(PredicateHead, PredicateHead, const SelectedPredicateAnnotations<Kind>&, SelectedPredicateAnnotations<Kind>&) const noexcept
+    update_annotation(PredicateHead, PredicateHead, const DeltaPredicateAnnotations<Kind>&, SelectedPredicateAnnotations<Kind>&) const noexcept
     {
         return {};
     }
@@ -89,13 +99,13 @@ public:
 
     void record_achiever(PredicateHead, const AndAnnotationContext<Kind>&) const noexcept {}
 
-    void update_annotation(PredicateHead, PredicateHead, const AndAnnotationContext<Kind>&, SelectedPredicateAnnotations<Kind>&) const noexcept {}
+    void update_annotation(PredicateHead, PredicateHead, const AndAnnotationContext<Kind>&, DeltaPredicateAnnotations<Kind>&) const noexcept {}
 
     void update_annotation(FunctionHead,
                            FunctionHead,
                            ygg::ClosedInterval<ygg::float_t>,
                            const AndAnnotationContext<Kind>&,
-                           SelectedFunctionAnnotations<Kind>&) const noexcept
+                           DeltaFunctionAnnotations<Kind>&) const noexcept
     {
     }
 };

@@ -32,7 +32,7 @@ concept OrAnnotationPolicyConcept = TaskKind<Kind>
                                                 PredicateAnnotationHeadT<Kind> delta_head,
                                                 FunctionAnnotationHeadT<Kind> function_head,
                                                 ygg::ClosedInterval<ygg::float_t> interval,
-                                                const SelectedPredicateAnnotations<Kind>& delta_and_annot,
+                                                const DeltaPredicateAnnotations<Kind>& delta_and_annot,
                                                 SelectedPredicateAnnotations<Kind>& program_and_annot,
                                                 SelectedFunctionAnnotations<Kind>& program_numeric_and_annot) {
                                            { policy.initialize_annotation(program_head, program_and_annot) } -> std::same_as<void>;
@@ -51,8 +51,8 @@ concept AndAnnotationPolicyConcept = TaskKind<Kind>
                                                  FunctionAnnotationHeadT<Kind> function_head,
                                                  ygg::ClosedInterval<ygg::float_t> interval,
                                                  const AndAnnotationContext<Kind>& context,
-                                                 SelectedPredicateAnnotations<Kind>& delta_and_annot,
-                                                 SelectedFunctionAnnotations<Kind>& delta_numeric_and_annot) {
+                                                 DeltaPredicateAnnotations<Kind>& delta_and_annot,
+                                                 DeltaFunctionAnnotations<Kind>& delta_numeric_and_annot) {
                                             { policy.clear_achievers() } -> std::same_as<void>;
                                             { const_policy.record_achiever(program_head, context) } -> std::same_as<void>;
                                             { const_policy.update_annotation(program_head, delta_head, context, delta_and_annot) } -> std::same_as<void>;

@@ -45,7 +45,7 @@ public:
 
     CostUpdate<GroundTag> update_annotation(PredicateHead program_head,
                                             PredicateHead delta_head,
-                                            const SelectedPredicateAnnotations<GroundTag>& delta_and_annot,
+                                            const DeltaPredicateAnnotations<GroundTag>& delta_and_annot,
                                             SelectedPredicateAnnotations<GroundTag>& program_and_annot) const;
 };
 
@@ -65,13 +65,13 @@ public:
     void update_annotation(PredicateHead program_head,
                            PredicateHead delta_head,
                            const AndAnnotationContext<GroundTag>& context,
-                           SelectedPredicateAnnotations<GroundTag>& delta_and_annot) const;
+                           DeltaPredicateAnnotations<GroundTag>& delta_and_annot) const;
 
     void update_annotation(FunctionHead program_head,
                            FunctionHead delta_head,
                            ygg::ClosedInterval<ygg::float_t> interval,
                            const AndAnnotationContext<GroundTag>& context,
-                           SelectedFunctionAnnotations<GroundTag>& delta_numeric_and_annot) const;
+                           DeltaFunctionAnnotations<GroundTag>& delta_numeric_and_annot) const;
 };
 
 template<typename AggregationFunction>

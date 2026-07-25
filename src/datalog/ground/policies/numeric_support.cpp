@@ -47,12 +47,7 @@ ygg::ClosedInterval<ygg::float_t> NumericSupportSelector<GroundTag>::current_int
 
 const NumericIntervalAnnotations<GroundTag>::Entries* NumericSupportSelector<GroundTag>::find_entries(Key key) const
 {
-    const auto relation_it = m_annotations.partitions().find(key.get_function());
-    if (relation_it == m_annotations.partitions().end())
-        return nullptr;
-
-    const auto term_it = relation_it->second.find(key.get_index());
-    return term_it == relation_it->second.end() ? nullptr : &term_it->second;
+    return m_annotations.find_entries(key.get_function(), key.get_index());
 }
 
 }

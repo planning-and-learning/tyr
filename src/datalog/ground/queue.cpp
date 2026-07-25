@@ -177,7 +177,7 @@ Metric aggregate_body_metric(fd::GroundRuleView rule, const GroundCtx<OrAP, AndA
         {
             if (!literal.get_polarity())
                 continue;
-            const auto* annotation = ctx.out().and_annot().find(literal.get_atom());
+            const auto* annotation = ctx.out().and_annot().find(literal.get_atom().get_row());
             assert(annotation && "enabled ground rule has a positive fluent body atom without a cost annotation");
             metric = aggregate_metric_support(metric, get_metric(*annotation));
         }
@@ -264,7 +264,7 @@ Cost aggregate_numeric_effect_support_cost(fd::GroundRuleView rule,
         {
             if (!literal.get_polarity())
                 continue;
-            const auto* annotation = ctx.out().and_annot().find(literal.get_atom());
+            const auto* annotation = ctx.out().and_annot().find(literal.get_atom().get_row());
             assert(annotation && "enabled ground rule has a positive fluent body atom without a cost annotation");
             cost = AndAP::agg(cost, get_cost(*annotation));
         }
@@ -751,7 +751,7 @@ update_fact_annotation(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundRuleView r
     out.and_ap().record_achiever(fact, context);
     out.and_ap().update_annotation(fact, fact, context, scratch.predicate_annotations);
 
-    if (scratch.predicate_annotations.find(fact))
+    if (scratch.predicate_annotations.find(fact.get_row()))
         return out.or_ap().update_annotation(fact, fact, scratch.predicate_annotations, out.and_annot());
 
     return std::nullopt;

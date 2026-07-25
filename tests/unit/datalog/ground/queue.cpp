@@ -398,7 +398,7 @@ TEST(TyrDatalogGroundQueueTest, GroundUsedCostOverrideDoesNotCreateMetricEffectC
     dq::solve_ground_queue(ctx);
 
     EXPECT_EQ(atom_indices(ctx.out().fluent_atoms()), expected_indices({ a, b }));
-    const auto* annotation = ctx.out().and_annot().find(a);
+    const auto* annotation = ctx.out().and_annot().find(a.get_row());
     ASSERT_NE(annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*annotation), 0);
 }

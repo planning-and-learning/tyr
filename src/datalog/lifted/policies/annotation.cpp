@@ -46,43 +46,6 @@
 
 namespace tyr::datalog
 {
-namespace
-{
-bool canonical_witness_less(const WitnessAnnotation<LiftedTag>& lhs, const WitnessAnnotation<LiftedTag>& rhs)
-{
-    return canonical_rule_binding_less(lhs.get_rule_key(), rhs.get_rule_key());
-}
-
-bool canonical_rule_binding_wins_tie(WitnessRuleKeyT<LiftedTag> rule_key, const Annotation<LiftedTag>* incumbent)
-{
-    if (!incumbent)
-        return true;
-    const auto* incumbent_witness = std::get_if<WitnessAnnotation<LiftedTag>>(incumbent);
-    return incumbent_witness && canonical_rule_binding_less(rule_key, incumbent_witness->get_rule_key());
-}
-
-bool canonical_rule_binding_wins_tie(const AndAnnotationContext<LiftedTag>& context, const Annotation<LiftedTag>* incumbent)
-{
-    if (context.rule_binding)
-        return canonical_rule_binding_wins_tie(*context.rule_binding, incumbent);
-    if (!incumbent)
-        return true;
-
-    const auto* incumbent_witness = std::get_if<WitnessAnnotation<LiftedTag>>(incumbent);
-    if (!incumbent_witness)
-        return false;
-
-    const auto incumbent_key = incumbent_witness->get_rule_key().get_key();
-    const auto rule = context.rule.get_index();
-    if (rule != incumbent_key.first)
-        return ygg::Less<> {}(rule, incumbent_key.first);
-
-    // The transient object tuple and the repository-backed tuple have different range types,
-    // so the heterogeneous logical-key comparison cannot use RuleBindingView::get_key().
-    return ygg::less_range(context.delta_context.binding, incumbent_key.second);
-}
-}
-
 /**
  * OrAnnotationPolicy
  */
@@ -103,7 +66,7 @@ void OrAnnotationPolicy<LiftedTag>::initialize_annotation(::tyr::formalism::data
 CostUpdate<LiftedTag>
 OrAnnotationPolicy<LiftedTag>::update_annotation(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> program_head,
                                                  ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> delta_head,
-                                                 const SelectedPredicateAnnotations<LiftedTag>& delta_and_annot,
+                                                 const DeltaPredicateAnnotations<LiftedTag>& delta_and_annot,
                                                  SelectedPredicateAnnotations<LiftedTag>& program_and_annot) const
 {
     const auto* old_annotation = program_and_annot.find(program_head);
@@ -122,9 +85,7 @@ OrAnnotationPolicy<LiftedTag>::update_annotation(::tyr::formalism::datalog::Pred
         program_and_annot.insert_or_assign(program_head, *delta_annotation);
         return CostUpdate<LiftedTag>(old_cost, new_cost);
     }
-    if (new_cost == old_cost && witness_wins_tie<LiftedTag>(*witness, old_annotation, canonical_witness_less))
-        program_and_annot.insert_or_assign(program_head, *delta_annotation);
-    return CostUpdate<LiftedTag>(old_cost, old_cost);
+    return CostUpdate<LiftedTag>(old_cost, old_cost);  ///< First witness of a cost wins, see try_ground_better_witness.
 }
 
 /**
@@ -207,15 +168,6 @@ std::optional<WitnessAnnotation<LiftedTag>> try_ground_better_witness(Cost best_
     return try_ground_witness<AggregationFunction>(context, [best_cost](Cost lower_bound) { return lower_bound < best_cost; });
 }
 
-template<typename AggregationFunction>
-std::optional<WitnessAnnotation<LiftedTag>>
-try_ground_winning_witness(Cost best_cost, const Annotation<LiftedTag>* incumbent, const AndAnnotationContext<LiftedTag>& context)
-{
-    const auto wins_tie = canonical_rule_binding_wins_tie(context, incumbent);
-    return try_ground_witness<AggregationFunction>(context,
-                                                   [best_cost, wins_tie](Cost lower_bound)
-                                                   { return lower_bound < best_cost || (lower_bound == best_cost && wins_tie); });
-}
 }
 
 template<typename AggregationFunction>
@@ -223,7 +175,7 @@ void AndAnnotationPolicy<LiftedTag, AggregationFunction>::update_annotation(
     ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> program_head,
     ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> delta_head,
     const AndAnnotationContext<LiftedTag>& context,
-    SelectedPredicateAnnotations<LiftedTag>& delta_and_annot) const
+    DeltaPredicateAnnotations<LiftedTag>& delta_and_annot) const
 {
     // Use min among global minimum in cost of last iteration and thread local minimum.
     const auto best_global_cost = fetch_annotation_cost<LiftedTag>(program_head, context.program_and_annot);
@@ -231,16 +183,20 @@ void AndAnnotationPolicy<LiftedTag, AggregationFunction>::update_annotation(
     const auto best_cost = std::min(best_global_cost, best_local_cost);
     const auto cur_cost_lower_bound = context.current_cost + context.metric_effect_cost;
 
-    if (best_cost < cur_cost_lower_bound)
-        return;  ///< No local or global improvement or tie
+    /// Only strict improvements update the annotation, so the first witness of a given cost wins.
+    /// Which witness that is depends on the clique enumeration order, hence changing that order (or the
+    /// rule schedule) changes the recorded witness and moves the search-statistics fixtures. That is
+    /// expected, not a defect. Determinism at one worker rests on run_active_rules pinning the sorted
+    /// rule order plus the sorted consumers (get_sorted_rows/updates/pending_rule_bindings). Under
+    /// inner parallelism it would need deterministic key ownership per stripe, not a tie-break.
+    if (best_cost <= cur_cost_lower_bound)
+        return;  ///< No local or global improvement
 
-    const auto* incumbent =
-        select_incumbent<LiftedTag>(program_head, delta_head, best_global_cost, best_local_cost, context.program_and_annot, delta_and_annot);
-    auto witness = try_ground_winning_witness<AggregationFunction>(best_cost, incumbent, context);
+    auto witness = try_ground_better_witness<AggregationFunction>(best_cost, context);
     if (!witness)
-        return;  ///< No local or global improvement or tie
+        return;  ///< No local or global improvement
 
-    /// Update improved or canonically tie-winning witness and cost annotation
+    /// Update improved witness and cost annotation
     delta_and_annot.insert_or_assign(delta_head, Annotation<LiftedTag>(std::move(*witness)));
 }
 
@@ -250,7 +206,7 @@ void AndAnnotationPolicy<LiftedTag, AggregationFunction>::update_annotation(
     ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> delta_head,
     ygg::ClosedInterval<ygg::float_t> interval,
     const AndAnnotationContext<LiftedTag>& context,
-    SelectedFunctionAnnotations<LiftedTag>& delta_numeric_and_annot) const
+    DeltaFunctionAnnotations<LiftedTag>& delta_numeric_and_annot) const
 {
     const auto best_cost = std::numeric_limits<Cost>::max();
     const auto cur_cost_lower_bound = context.current_cost + context.metric_effect_cost;

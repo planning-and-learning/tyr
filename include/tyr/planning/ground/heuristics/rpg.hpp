@@ -232,7 +232,7 @@ template<typename Derived,
 datalog::Cost
 RPGBase<GroundTag, Derived, OrAP, AndAP, TP, CP>::get_atom_cost(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> atom) const noexcept
 {
-    const auto* annotation = m_workspace.and_annot.find(atom);
+    const auto* annotation = m_workspace.and_annot.find(atom.get_row());
     return annotation ? datalog::get_cost(*annotation) : datalog::Cost(0);
 }
 

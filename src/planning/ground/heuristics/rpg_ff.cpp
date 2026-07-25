@@ -115,7 +115,7 @@ void FFRPGHeuristic<GroundTag>::extract_relaxed_plan_and_preferred_actions(fd::G
     if (mark_atom(atom))
         return;
 
-    const auto* annotation = this->m_workspace.and_annot.find(atom);
+    const auto* annotation = this->m_workspace.and_annot.find(atom.get_row());
     if (!annotation)
         return;
 

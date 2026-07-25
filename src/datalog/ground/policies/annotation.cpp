@@ -28,7 +28,7 @@ namespace tyr::datalog
 void OrAnnotationPolicy<GroundTag>::initialize_annotation(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> program_head,
                                                           SelectedPredicateAnnotations<GroundTag>& program_and_annot) const
 {
-    program_and_annot.insert_or_assign(program_head, BaseAnnotation<GroundTag>(Cost(0)));
+    program_and_annot.insert_or_assign(program_head.get_row(), BaseAnnotation<GroundTag>(Cost(0)));
 }
 
 void OrAnnotationPolicy<GroundTag>::initialize_annotation(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> program_head,
@@ -40,30 +40,30 @@ void OrAnnotationPolicy<GroundTag>::initialize_annotation(::tyr::formalism::data
 
 CostUpdate<GroundTag> OrAnnotationPolicy<GroundTag>::update_annotation(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> program_head,
                                                                        ::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> delta_head,
-                                                                       const SelectedPredicateAnnotations<GroundTag>& delta_and_annot,
+                                                                       const DeltaPredicateAnnotations<GroundTag>& delta_and_annot,
                                                                        SelectedPredicateAnnotations<GroundTag>& program_and_annot) const
 {
-    const auto* delta_annotation = delta_and_annot.find(delta_head);
+    const auto* delta_annotation = delta_and_annot.find(delta_head.get_row());
     if (!delta_annotation)
         return {};
 
     const auto new_cost = get_cost(*delta_annotation);
-    if (const auto* old_annotation = program_and_annot.find(program_head))
+    if (const auto* old_annotation = program_and_annot.find(program_head.get_row()))
     {
         const auto old_cost = get_cost(*old_annotation);
         if (new_cost < old_cost)
         {
-            program_and_annot.insert_or_assign(program_head, *delta_annotation);
+            program_and_annot.insert_or_assign(program_head.get_row(), *delta_annotation);
             return CostUpdate<GroundTag>(old_cost, new_cost);
         }
         if (new_cost == old_cost)
             if (const auto* witness = std::get_if<WitnessAnnotation<GroundTag>>(delta_annotation);
                 witness && witness_wins_tie<GroundTag>(*witness, old_annotation))
-                program_and_annot.insert_or_assign(program_head, *delta_annotation);
+                program_and_annot.insert_or_assign(program_head.get_row(), *delta_annotation);
         return CostUpdate<GroundTag>(old_cost, old_cost);
     }
 
-    program_and_annot.insert_or_assign(program_head, *delta_annotation);
+    program_and_annot.insert_or_assign(program_head.get_row(), *delta_annotation);
     return CostUpdate<GroundTag>(std::nullopt, new_cost);
 }
 
@@ -82,10 +82,10 @@ template<typename AggregationFunction>
 void AndAnnotationPolicy<GroundTag, AggregationFunction>::update_annotation(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> program_head,
                                                                             ::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> delta_head,
                                                                             const AndAnnotationContext<GroundTag>& context,
-                                                                            SelectedPredicateAnnotations<GroundTag>& delta_and_annot) const
+                                                                            DeltaPredicateAnnotations<GroundTag>& delta_and_annot) const
 {
-    const auto best_global_cost = fetch_annotation_cost<GroundTag>(program_head, context.program_and_annot);
-    const auto best_local_cost = fetch_annotation_cost<GroundTag>(delta_head, delta_and_annot);
+    const auto best_global_cost = fetch_annotation_cost<GroundTag>(program_head.get_row(), context.program_and_annot);
+    const auto best_local_cost = fetch_annotation_cost<GroundTag>(delta_head.get_row(), delta_and_annot);
     const auto best_cost = std::min(best_global_cost, best_local_cost);
     if (best_cost < context.current_cost)
         return;
@@ -94,10 +94,10 @@ void AndAnnotationPolicy<GroundTag, AggregationFunction>::update_annotation(::ty
     if (best_cost == context.current_cost
         && !witness_wins_tie<GroundTag>(
             witness,
-            select_incumbent<GroundTag>(program_head, delta_head, best_global_cost, best_local_cost, context.program_and_annot, delta_and_annot)))
+            select_incumbent<GroundTag>(program_head.get_row(), delta_head.get_row(), best_global_cost, best_local_cost, context.program_and_annot, delta_and_annot)))
         return;
 
-    delta_and_annot.insert_or_assign(delta_head, Annotation<GroundTag>(std::move(witness)));
+    delta_and_annot.insert_or_assign(delta_head.get_row(), Annotation<GroundTag>(std::move(witness)));
 }
 
 template<typename AggregationFunction>
@@ -106,7 +106,7 @@ void AndAnnotationPolicy<GroundTag, AggregationFunction>::update_annotation(
     ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> delta_head,
     ygg::ClosedInterval<ygg::float_t> interval,
     const AndAnnotationContext<GroundTag>& context,
-    SelectedFunctionAnnotations<GroundTag>& delta_numeric_and_annot) const
+    DeltaFunctionAnnotations<GroundTag>& delta_numeric_and_annot) const
 {
     delta_numeric_and_annot.insert(delta_head,
                                    interval,

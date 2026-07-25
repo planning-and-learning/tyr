@@ -173,8 +173,8 @@ struct RuleWorkspace<LiftedTag>
             RuleHeadIteration head;
 
             // Propositional annotations are keyed by heads in workspace_overlay_repository.
-            SelectedPredicateAnnotations<LiftedTag> and_annot;
-            SelectedFunctionAnnotations<LiftedTag> numeric_and_annot;
+            DeltaPredicateAnnotations<LiftedTag> and_annot;
+            DeltaFunctionAnnotations<LiftedTag> numeric_and_annot;
 
             /// KPKC
             kpkc::Workspace kpkc_workspace;
