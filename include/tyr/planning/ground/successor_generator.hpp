@@ -61,7 +61,7 @@ private:
     match_tree::MatchTreePtr<::tyr::formalism::planning::GroundAction> m_action_match_tree;
     ygg::UnorderedMap<::tyr::formalism::planning::ActionBindingView, ::tyr::formalism::planning::GroundActionView> m_action_binding_to_ground_action;
 
-    ygg::IndexList<::tyr::formalism::planning::GroundAction> m_applicable_actions;
+    ::tyr::formalism::planning::GroundActionViewList m_applicable_actions;
 
     StateRepositoryPtr<GroundTag> m_state_repository;
 

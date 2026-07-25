@@ -381,7 +381,7 @@ public:
 
     const Entries* find_entries(Relation relation, Key key) const noexcept
     {
-        const auto relation_index = ygg::uint_t(relation.get_index());
+        const auto relation_index = ygg::uint_t(relation);
         if (relation_index >= m_slots.size())
             return nullptr;
 
@@ -448,7 +448,7 @@ private:
 
     Entries& entries_for_write(Binding binding)
     {
-        const auto relation_index = ygg::uint_t(NumericIntervalBindingParts<Kind>::get_relation(binding).get_index());
+        const auto relation_index = ygg::uint_t(NumericIntervalBindingParts<Kind>::get_relation(binding));
         if (relation_index >= m_slots.size())
             m_slots.resize(relation_index + 1);
 

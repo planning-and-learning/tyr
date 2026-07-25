@@ -123,7 +123,7 @@ std::optional<Cost> try_pre_evaluate_metric_effect(fd::NumericEffectView<Op, f::
         auto builder = fd::Builder {};
         auto binding = ygg::IndexList<f::Object> {};
         auto grounder_context = fd::GrounderContext { builder, repository, binding };
-        const auto expression = ygg::make_view(fd::ground(effect.get_fexpr(), grounder_context), repository);
+        const auto expression = fd::ground(effect.get_fexpr(), grounder_context);
         const auto rhs = evaluate_static(expression, static_fact_sets);
         if (!rhs)
             return std::nullopt;

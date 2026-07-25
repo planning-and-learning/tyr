@@ -109,17 +109,17 @@ merge_d2d(MultiOperatorView<Add, ygg::Data<GroundFunctionExpression>> element, M
 template std::pair<MultiOperatorView<Mul, ygg::Data<GroundFunctionExpression>>, bool>
 merge_d2d(MultiOperatorView<Mul, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
 
-template ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>> merge_d2d(ArithmeticOperatorView<ygg::Data<FunctionExpression>> element,
+template ArithmeticOperatorView<ygg::Data<FunctionExpression>> merge_d2d(ArithmeticOperatorView<ygg::Data<FunctionExpression>> element,
+                                                                          MergeContext& context);
+template ArithmeticOperatorView<ygg::Data<GroundFunctionExpression>> merge_d2d(ArithmeticOperatorView<ygg::Data<GroundFunctionExpression>> element,
                                                                                 MergeContext& context);
-template ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>> merge_d2d(ArithmeticOperatorView<ygg::Data<GroundFunctionExpression>> element,
-                                                                                      MergeContext& context);
 
 template std::pair<NumericEffectView<Assign, FluentTag>, bool> merge_d2d(NumericEffectView<Assign, FluentTag> element, MergeContext& context);
 template std::pair<NumericEffectView<Increase, FluentTag>, bool> merge_d2d(NumericEffectView<Increase, FluentTag> element, MergeContext& context);
 template std::pair<NumericEffectView<Decrease, FluentTag>, bool> merge_d2d(NumericEffectView<Decrease, FluentTag> element, MergeContext& context);
 template std::pair<NumericEffectView<ScaleUp, FluentTag>, bool> merge_d2d(NumericEffectView<ScaleUp, FluentTag> element, MergeContext& context);
 template std::pair<NumericEffectView<ScaleDown, FluentTag>, bool> merge_d2d(NumericEffectView<ScaleDown, FluentTag> element, MergeContext& context);
-template ygg::Data<NumericEffectOperator<FluentTag>> merge_d2d(NumericEffectOperatorView<FluentTag> element, MergeContext& context);
+template NumericEffectOperatorView<FluentTag> merge_d2d(NumericEffectOperatorView<FluentTag> element, MergeContext& context);
 
 template std::pair<RuleView<PredicateTag>, bool> merge_d2d(RuleView<PredicateTag> element, MergeContext& context);
 template std::pair<RuleView<FunctionTag>, bool> merge_d2d(RuleView<FunctionTag> element, MergeContext& context);

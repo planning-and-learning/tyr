@@ -723,7 +723,7 @@ MatchTree<Tag>::MatchTree(ygg::IndexList<Tag> elements_, const ::tyr::formalism:
 
         if (stack.empty())
         {
-            m_root = std::move(produced.value());
+            m_root = ygg::make_view(produced.value(), *m_context);
             break;
         }
         else
@@ -746,83 +746,81 @@ MatchTreePtr<Tag> MatchTree<Tag>::create(ygg::IndexList<Tag> elements, const ::t
 }
 
 template<typename Tag>
-void MatchTree<Tag>::generate(const StateContext<GroundTag>& state, ygg::IndexList<Tag>& out_applicable_elements)
+void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
+                              std::vector<ygg::View<ygg::Index<Tag>, ::tyr::formalism::planning::Repository>>& out_applicable_elements)
 {
     out_applicable_elements.clear();
     m_evaluate_stack.clear();
 
     if (m_root)
-        m_evaluate_stack.push_back(m_root.value());
+        m_evaluate_stack.push_back(*m_root);
 
     while (!m_evaluate_stack.empty())
     {
         const auto node = m_evaluate_stack.back();
         m_evaluate_stack.pop_back();
 
-        std::visit(
+        visit(
             [&](auto&& arg)
             {
-                using Alternative = std::decay_t<decltype(arg)>;
+                using Handle = std::decay_t<decltype(arg.get_handle())>;
 
-                if constexpr (std::is_same_v<Alternative, ygg::Index<AtomSelectorNode<Tag>>>)
+                if constexpr (std::is_same_v<Handle, ygg::Index<AtomSelectorNode<Tag>>>)
                 {
-                    const auto& data = ygg::make_view(arg, *m_context).get_data();
-                    const auto holds = state.unpacked_state.test(data.atom);
+                    const auto holds = state.unpacked_state.test(arg.get_atom());
 
-                    if (holds && data.true_child)
-                        m_evaluate_stack.push_back(data.true_child.value());
-                    else if (!holds && data.false_child)
-                        m_evaluate_stack.push_back(data.false_child.value());
+                    if (const auto child = holds ? arg.get_true_child() : arg.get_false_child())
+                        m_evaluate_stack.push_back(*child);
 
-                    if (data.dontcare_child)
-                        m_evaluate_stack.push_back(data.dontcare_child.value());
+                    if (const auto child = arg.get_dontcare_child())
+                        m_evaluate_stack.push_back(*child);
                 }
-                else if constexpr (std::is_same_v<Alternative, ygg::Index<NumericConstraintSelectorNode<Tag>>>)
+                else if constexpr (std::is_same_v<Handle, ygg::Index<NumericConstraintSelectorNode<Tag>>>)
                 {
-                    const auto view = ygg::make_view(arg, *m_context);
-                    const auto& data = view.get_data();
-                    const auto holds = evaluate(view.get_constraint(), state);
+                    const auto holds = evaluate(arg.get_constraint(), state);
 
-                    if (holds && data.true_child)
-                        m_evaluate_stack.push_back(data.true_child.value());
+                    if (holds)
+                        if (const auto child = arg.get_true_child())
+                            m_evaluate_stack.push_back(*child);
 
-                    if (data.dontcare_child)
-                        m_evaluate_stack.push_back(data.dontcare_child.value());
+                    if (const auto child = arg.get_dontcare_child())
+                        m_evaluate_stack.push_back(*child);
                 }
-                else if constexpr (std::is_same_v<Alternative, ygg::Index<VariableSelectorNode<Tag>>>)
+                else if constexpr (std::is_same_v<Handle, ygg::Index<VariableSelectorNode<Tag>>>)
                 {
-                    const auto& data = ygg::make_view(arg, *m_context).get_data();
-                    const auto value = state.unpacked_state.get(data.variable);
-                    assert(ygg::uint_t(value) < data.domain_children.size());
+                    const auto value = state.unpacked_state.get(arg.get_variable());
+                    const auto children = arg.get_domain_children();
+                    assert(ygg::uint_t(value) < children.size());
 
-                    if (data.domain_children[ygg::uint_t(value)])
-                        m_evaluate_stack.push_back(data.domain_children[ygg::uint_t(value)].value());
+                    if (const auto child = children[ygg::uint_t(value)])
+                        m_evaluate_stack.push_back(*child);
 
-                    if (data.dontcare_child)
-                        m_evaluate_stack.push_back(data.dontcare_child.value());
+                    if (const auto child = arg.get_dontcare_child())
+                        m_evaluate_stack.push_back(*child);
                 }
-                else if constexpr (std::is_same_v<Alternative, ygg::Index<NegativeFactSelectorNode<Tag>>>)
+                else if constexpr (std::is_same_v<Handle, ygg::Index<NegativeFactSelectorNode<Tag>>>)
                 {
-                    const auto& data = ygg::make_view(arg, *m_context).get_data();
-                    const auto holds = state.unpacked_state.get(data.fact.variable) != data.fact.value;
+                    const auto fact = arg.get_fact();
+                    const auto holds = state.unpacked_state.get(fact.get_variable()) != fact.get_value();
 
-                    if (holds && data.true_child)
-                        m_evaluate_stack.push_back(data.true_child.value());
+                    if (holds)
+                        if (const auto child = arg.get_true_child())
+                            m_evaluate_stack.push_back(*child);
 
-                    if (data.dontcare_child)
-                        m_evaluate_stack.push_back(data.dontcare_child.value());
+                    if (const auto child = arg.get_dontcare_child())
+                        m_evaluate_stack.push_back(*child);
                 }
-                else if constexpr (std::is_same_v<Alternative, ygg::Index<ElementGeneratorNode<Tag>>>)
+                else if constexpr (std::is_same_v<Handle, ygg::Index<ElementGeneratorNode<Tag>>>)
                 {
-                    const auto& data = ygg::make_view(arg, *m_context).get_data();
-                    out_applicable_elements.insert(out_applicable_elements.end(), data.elements.begin(), data.elements.end());
+                    for (const auto element : arg.get_elements())
+                        out_applicable_elements.push_back(element);
                 }
                 else
                 {
-                    static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
+                    static_assert(ygg::dependent_false<Handle>::value, "Missing case");
                 }
             },
-            node.value);
+            node.get_variant());
     }
 
 }

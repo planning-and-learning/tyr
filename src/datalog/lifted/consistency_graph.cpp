@@ -1355,7 +1355,7 @@ std::pair<fd::GroundConjunctiveConditionView, bool> create_ground_nullary_conjun
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
         if (parameter_arity(numeric_constraint) == 0)
-            conj_cond.numeric_constraints.push_back(ground(numeric_constraint, grounder_context));
+            conj_cond.numeric_constraints.push_back(ground(numeric_constraint, grounder_context).get_data());
 
     canonicalize(conj_cond);
     return context.get_or_create(conj_cond);

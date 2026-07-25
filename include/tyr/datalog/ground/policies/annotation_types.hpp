@@ -49,10 +49,10 @@ template<>
 struct NumericIntervalBindingParts<GroundTag>
 {
     using Binding = NumericSupportKeyT<GroundTag>;
-    using Relation = ::tyr::formalism::datalog::FunctionView<::tyr::formalism::FluentTag>;
+    using Relation = ygg::Index<::tyr::formalism::Function<::tyr::formalism::FluentTag>>;
     using Key = ygg::Index<::tyr::formalism::datalog::GroundFunctionTerm<::tyr::formalism::FluentTag>>;
 
-    static Relation get_relation(Binding binding) noexcept { return binding.get_function(); }
+    static Relation get_relation(Binding binding) noexcept { return binding.get_function().get_index(); }
     static Key get_key(Binding binding) noexcept { return binding.get_index(); }
 };
 

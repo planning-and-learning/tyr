@@ -22,6 +22,8 @@
 #include "tyr/formalism/planning/fdr_variable_index.hpp"
 #include "tyr/formalism/planning/ground_atom_index.hpp"
 #include "tyr/formalism/planning/ground_function_term_index.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/state_storage.hpp"
 #include "tyr/planning/state_builder.hpp"
@@ -76,6 +78,7 @@ public:
     void set(ygg::Index<planning::State<planning::GroundTag>> index);
 
     ::tyr::formalism::planning::FDRValue get(ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const;
+    ::tyr::formalism::planning::FDRValue get(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const;
     void set(ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact);
 
     ygg::float_t get(ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>> index) const;
@@ -83,6 +86,8 @@ public:
 
     bool test(ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> index) const;
     void set(ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> index);
+    bool test(::tyr::formalism::planning::GroundAtomView<::tyr::formalism::DerivedTag> view) const;
+    void set(::tyr::formalism::planning::GroundAtomView<::tyr::formalism::DerivedTag> view);
 
     void clear();
     void clear_unextended_part();

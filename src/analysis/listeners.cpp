@@ -17,22 +17,22 @@
 
 #include "tyr/analysis/listeners.hpp"
 
-#include "tyr/analysis/stratification.hpp"                       // for RuleStrata
-#include "tyr/formalism/datalog/atom_view.hpp"                   // for ygg::View
-#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"  // for ygg::View
-#include "tyr/formalism/datalog/literal_index.hpp"               // for ygg::Index
-#include "tyr/formalism/datalog/literal_view.hpp"                // for ygg::View
-#include "tyr/formalism/datalog/repository.hpp"                  // for Repository
-#include "tyr/formalism/datalog/rule_view.hpp"                   // for ygg::View
-#include "tyr/formalism/predicate_view.hpp"                      // for ygg::View
+#include "tyr/analysis/stratification.hpp"
+#include "tyr/formalism/datalog/atom_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/literal_index.hpp"
+#include "tyr/formalism/datalog/literal_view.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/predicate_view.hpp"
 
-#include <cista/containers/vector.h>  // for basic_vector
-#include <gtl/phmap.hpp>              // for flat_hash_set
+#include <cista/containers/vector.h>
+#include <gtl/phmap.hpp>
 #include <type_traits>
-#include <utility>                          // for move
-#include <yggdrasil/containers/vector.hpp>  // for ygg::View
-#include <yggdrasil/core/types.hpp>         // for make_view
-#include <yggdrasil/ids/index_mixins.hpp>   // for operator!=
+#include <utility>
+#include <yggdrasil/containers/vector.hpp>
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/ids/index_mixins.hpp>
 
 namespace f = tyr::formalism;
 namespace fd = tyr::formalism::datalog;

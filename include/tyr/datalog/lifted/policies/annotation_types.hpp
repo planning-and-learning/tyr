@@ -56,10 +56,10 @@ template<>
 struct NumericIntervalBindingParts<LiftedTag>
 {
     using Binding = NumericSupportKeyT<LiftedTag>;
-    using Relation = ::tyr::formalism::datalog::FunctionView<::tyr::formalism::FluentTag>;
+    using Relation = ygg::Index<::tyr::formalism::Function<::tyr::formalism::FluentTag>>;
     using Key = ygg::Index<::tyr::formalism::Row>;
 
-    static Relation get_relation(Binding binding) noexcept { return binding.get_relation(); }
+    static Relation get_relation(Binding binding) noexcept { return binding.get_index().relation; }
     static Key get_key(Binding binding) noexcept { return binding.get_index().row; }
 };
 

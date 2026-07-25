@@ -200,7 +200,7 @@ create_ground_fdr_conjunctive_condition(fp::GroundConjunctiveConditionView eleme
     }
 
     for (const auto numeric_constraint : element.get_numeric_constraints())
-        fdr_conj_cond.numeric_constraints.push_back(merge_p2p(numeric_constraint, context));
+        fdr_conj_cond.numeric_constraints.push_back(merge_p2p(numeric_constraint, context).get_data());
 
     canonicalize(fdr_conj_cond);
     return context.destination.get_or_create(fdr_conj_cond).first;
@@ -260,7 +260,7 @@ std::optional<fp::GroundConjunctiveConditionView> ground_pruned(fp::ConjunctiveC
     }
 
     for (const auto numeric_constraint : element.get_numeric_constraints())
-        conj_cond.numeric_constraints.push_back(ground(numeric_constraint, context));
+        conj_cond.numeric_constraints.push_back(ground(numeric_constraint, context).get_data());
 
     canonicalize(conj_cond);
     return context.destination.get_or_create(conj_cond).first;
@@ -292,9 +292,9 @@ std::optional<fp::GroundConjunctiveEffectView> ground_pruned(fp::ConjunctiveEffe
             conj_eff.del_facts.push_back(*new_fact);
     }
     for (const auto numeric_effect : element.get_numeric_effects())
-        conj_eff.numeric_effects.push_back(ground(numeric_effect, context));
+        conj_eff.numeric_effects.push_back(ground(numeric_effect, context).get_data());
     if (element.get_auxiliary_numeric_effect().has_value())
-        conj_eff.auxiliary_numeric_effect = ground(element.get_auxiliary_numeric_effect().value(), context);
+        conj_eff.auxiliary_numeric_effect = ground(element.get_auxiliary_numeric_effect().value(), context).get_data();
 
     // Prune no-op effects
     if (conj_eff.add_facts.empty() && conj_eff.del_facts.empty() && conj_eff.numeric_effects.empty() && !conj_eff.auxiliary_numeric_effect)

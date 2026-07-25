@@ -126,8 +126,7 @@ std::optional<WitnessAnnotation<LiftedTag, R>> try_ground_witness(const AndAnnot
 
     for (const auto numeric_constraint : context.witness_condition.get_numeric_constraints())
     {
-        const auto ground_constraint_data = ::tyr::formalism::datalog::ground(numeric_constraint, context.iteration_context);
-        const auto ground_constraint = ygg::make_view(ground_constraint_data, context.iteration_context.destination);
+        const auto ground_constraint = ::tyr::formalism::datalog::ground(numeric_constraint, context.iteration_context);
         const auto constraint_cost =
             context.numeric_support_selector.get_constraint_cost(ground_constraint, context.numeric_support_selector_workspace, AggregationFunction {});
 

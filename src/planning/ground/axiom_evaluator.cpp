@@ -59,7 +59,7 @@ void AxiomEvaluator<GroundTag>::compute_extended_state(UnpackedState<GroundTag>&
 
             for (const auto axiom : m_applicable_axioms)
             {
-                const auto atom = ygg::make_view(axiom, *m_task->get_repository()).get_head().get_index();
+                const auto atom = axiom.get_head();
 
                 if (!unpacked_state.test(atom))
                     discovered_new_atom = true;

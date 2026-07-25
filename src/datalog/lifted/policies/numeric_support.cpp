@@ -38,7 +38,7 @@ ygg::ClosedInterval<ygg::float_t> NumericSupportSelector<LiftedTag>::current_int
 
 const NumericIntervalAnnotations<LiftedTag>::Entries* NumericSupportSelector<LiftedTag>::find_entries(Key key) const
 {
-    return m_annotations.find_entries(key.get_relation(), key.get_index().row);
+    return m_annotations.find_entries(key.get_index().relation, key.get_index().row);
 }
 
 }

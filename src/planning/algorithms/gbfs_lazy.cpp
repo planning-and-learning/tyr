@@ -262,7 +262,7 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
 
             assert(!std::isnan(succ_node.get_metric()));
 
-            const auto is_preferred = preferred_actions && preferred_actions->contains(labeled_succ_node.label.get_index());
+            const auto is_preferred = preferred_actions && preferred_actions->contains(labeled_succ_node.label);
             const auto is_new_successor_state = (successor_search_node.status == SearchNodeStatus::NEW);
 
             if (is_new_successor_state && search_nodes.size() >= options.max_num_states)

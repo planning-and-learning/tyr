@@ -416,7 +416,7 @@ public:
 
     ygg::float_t evaluate(const StateView<Kind>& state) override { NB_OVERRIDE_PURE(evaluate, state); }
 
-    const ygg::UnorderedSet<::tyr::formalism::planning::GroundActionView>& get_preferred_action_views() override { return Base::get_preferred_action_views(); }
+    const ygg::UnorderedSet<::tyr::formalism::planning::GroundActionView>& get_preferred_actions() override { return Base::get_preferred_actions(); }
 };
 
 template<TaskKind Kind>
@@ -432,9 +432,7 @@ void bind_heuristic(nb::module_& m, const std::string& name)
             [](T& self, const StateView<Kind>& state) { return self.evaluate(state); },
             "state"_a,
             nb::call_guard<nb::gil_scoped_release>())
-        .def("get_preferred_action_indices", &T::get_preferred_actions)
-        .def("get_preferred_action_views", &T::get_preferred_action_views)
-        .def("get_preferred_actions", &T::get_preferred_action_views);
+        .def("get_preferred_actions", &T::get_preferred_actions);
 }
 
 template<TaskKind Kind>

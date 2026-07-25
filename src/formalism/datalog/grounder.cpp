@@ -57,7 +57,7 @@ template std::pair<GroundNumericEffectView<Increase, FluentTag>, bool> ground(Nu
 template std::pair<GroundNumericEffectView<Decrease, FluentTag>, bool> ground(NumericEffectView<Decrease, FluentTag> element, GrounderContext& context);
 template std::pair<GroundNumericEffectView<ScaleUp, FluentTag>, bool> ground(NumericEffectView<ScaleUp, FluentTag> element, GrounderContext& context);
 template std::pair<GroundNumericEffectView<ScaleDown, FluentTag>, bool> ground(NumericEffectView<ScaleDown, FluentTag> element, GrounderContext& context);
-template ygg::Data<GroundNumericEffectOperator<FluentTag>> ground(NumericEffectOperatorView<FluentTag> element, GrounderContext& context);
+template GroundNumericEffectOperatorView<FluentTag> ground(NumericEffectOperatorView<FluentTag> element, GrounderContext& context);
 
 template std::pair<PredicateBindingView<StaticTag>, bool> ground_binding(AtomView<StaticTag> element, GrounderContext& context);
 template std::pair<PredicateBindingView<FluentTag>, bool> ground_binding(AtomView<FluentTag> element, GrounderContext& context);

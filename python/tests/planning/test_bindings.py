@@ -216,19 +216,15 @@ def test_nested_width_search_solvers_expose_expected_defaults():
         assert siw_solver.options is not None
 
 
-def test_heuristics_expose_preferred_action_indices_and_views():
+def test_heuristics_expose_preferred_actions():
     for task_module in (planning.ground, planning.lifted):
         heuristic = task_module.BlindHeuristic()
 
-        preferred_action_indices = heuristic.get_preferred_action_indices()
-        preferred_action_views = heuristic.get_preferred_action_views()
         preferred_actions = heuristic.get_preferred_actions()
 
         del heuristic
         gc.collect()
 
-        assert list(preferred_action_indices) == []
-        assert list(preferred_action_views) == []
         assert list(preferred_actions) == []
 
 

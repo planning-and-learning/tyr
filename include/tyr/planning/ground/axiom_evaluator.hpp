@@ -51,7 +51,7 @@ private:
     TaskPtr<GroundTag> m_task;
     std::vector<match_tree::MatchTreePtr<::tyr::formalism::planning::GroundAxiom>> m_axiom_match_tree_strata;
 
-    ygg::IndexList<::tyr::formalism::planning::GroundAxiom> m_applicable_axioms;
+    ::tyr::formalism::planning::GroundAxiomViewList m_applicable_axioms;
 };
 }
 

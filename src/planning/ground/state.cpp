@@ -40,6 +40,8 @@ fp::FDRValue UnpackedState<GroundTag>::get(ygg::Index<fp::FDRVariable<f::FluentT
     return fp::FDRValue(m_fact_storage.values[ygg::uint_t(index)]);
 }
 
+fp::FDRValue UnpackedState<GroundTag>::get(fp::FDRVariableView<f::FluentTag> view) const { return get(view.get_index()); }
+
 void UnpackedState<GroundTag>::set(ygg::Data<fp::FDRFact<f::FluentTag>> fact)
 {
     assert(ygg::uint_t(fact.variable) < m_fact_storage.values.size());
@@ -67,6 +69,10 @@ void UnpackedState<GroundTag>::set(ygg::Index<fp::GroundAtom<f::DerivedTag>> ind
     assert(ygg::uint_t(index) < m_atom_storage.indices.size());
     m_atom_storage.indices.set(ygg::uint_t(index));
 }
+
+bool UnpackedState<GroundTag>::test(fp::GroundAtomView<f::DerivedTag> view) const { return test(view.get_index()); }
+
+void UnpackedState<GroundTag>::set(fp::GroundAtomView<f::DerivedTag> view) { set(view.get_index()); }
 
 void UnpackedState<GroundTag>::clear()
 {

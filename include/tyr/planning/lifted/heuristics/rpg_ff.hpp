@@ -51,9 +51,7 @@ public:
 
     ygg::float_t extract_cost_and_set_preferred_actions_impl(const StateView<LiftedTag>& state);
 
-    const ygg::UnorderedSet<ygg::Index<::tyr::formalism::planning::GroundAction>>& get_preferred_actions() override;
-
-    const ygg::UnorderedSet<::tyr::formalism::planning::GroundActionView>& get_preferred_action_views() override;
+    const ygg::UnorderedSet<::tyr::formalism::planning::GroundActionView>& get_preferred_actions() override;
 
     bool mark_atom(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> atom);
     bool mark_function(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> function);
@@ -89,9 +87,7 @@ private:
     datalog::NumericSupportSelectorWorkspace<LiftedTag> m_numeric_support_selector_workspace;
 
     ygg::UnorderedSet<ygg::Index<::tyr::formalism::planning::GroundAction>> m_relaxed_plan;
-    ygg::UnorderedSet<ygg::Index<::tyr::formalism::planning::GroundAction>> m_preferred_actions;
-    ygg::UnorderedSet<::tyr::formalism::planning::GroundActionView> m_preferred_action_views;
-    bool m_preferred_action_views_dirty;
+    ygg::UnorderedSet<::tyr::formalism::planning::GroundActionView> m_preferred_actions;
 };
 
 }

@@ -53,9 +53,7 @@ FFRPGHeuristic<LiftedTag>::FFRPGHeuristic(TaskPtr<LiftedTag> task, ygg::Executio
     m_effect_families(),
     m_numeric_support_selector_workspace(),
     m_relaxed_plan(),
-    m_preferred_actions(),
-    m_preferred_action_views(),
-    m_preferred_action_views_dirty(true)
+    m_preferred_actions()
 {
 }
 
@@ -66,7 +64,6 @@ FFRPGHeuristicPtr<LiftedTag> FFRPGHeuristic<LiftedTag>::create(TaskPtr<LiftedTag
 
 ygg::float_t FFRPGHeuristic<LiftedTag>::extract_cost_and_set_preferred_actions_impl(const StateView<LiftedTag>& state)
 {
-    m_preferred_action_views_dirty = true;
     m_relaxed_plan.clear();
     m_preferred_actions.clear();
     m_numeric_support_selector_workspace.clear();
@@ -94,23 +91,9 @@ ygg::float_t FFRPGHeuristic<LiftedTag>::extract_cost_and_set_preferred_actions_i
     return m_relaxed_plan.size();
 }
 
-const ygg::UnorderedSet<ygg::Index<::tyr::formalism::planning::GroundAction>>& FFRPGHeuristic<LiftedTag>::get_preferred_actions()
+const ygg::UnorderedSet<::tyr::formalism::planning::GroundActionView>& FFRPGHeuristic<LiftedTag>::get_preferred_actions()
 {
     return m_preferred_actions;
-}
-
-const ygg::UnorderedSet<::tyr::formalism::planning::GroundActionView>& FFRPGHeuristic<LiftedTag>::get_preferred_action_views()
-{
-    if (m_preferred_action_views_dirty)
-    {
-        m_preferred_action_views_dirty = false;
-        m_preferred_action_views.clear();
-        const auto& repository = *this->m_task->get_repository();
-        for (const auto action_index : m_preferred_actions)
-            m_preferred_action_views.insert(ygg::make_view(action_index, repository));
-    }
-
-    return m_preferred_action_views;
 }
 
 bool FFRPGHeuristic<LiftedTag>::mark_atom(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> binding)
@@ -229,7 +212,7 @@ void FFRPGHeuristic<LiftedTag>::extract_relaxed_plan_and_preferred_actions(const
         m_relaxed_plan.insert(ground_action_index);
 
         if (is_applicable(ground_action, state_context, m_effect_families))
-            m_preferred_actions.insert(ground_action_index);
+            m_preferred_actions.insert(ground_action);
     }
 
     // Divide case: recursively call for preconditions.
@@ -259,8 +242,7 @@ void FFRPGHeuristic<LiftedTag>::extract_relaxed_plan_and_preferred_actions(const
         for (const auto object : row)
             datalog_grounder_context.binding.push_back(object.get_index());
 
-        const auto ground_constraint_data = ::tyr::formalism::datalog::ground(constraint, datalog_grounder_context);
-        const auto ground_constraint = ygg::make_view(ground_constraint_data, datalog_grounder_context.destination);
+        const auto ground_constraint = ::tyr::formalism::datalog::ground(constraint, datalog_grounder_context);
         extract_numeric_constraint_support(ground_constraint, state_context, grounder_context);
     }
 }

@@ -194,7 +194,7 @@ bool LMCutHeuristic<LiftedTag>::is_target_support(const datalog::NumericSupport<
 datalog::Cost LMCutHeuristic<LiftedTag>::get_expanded_numeric_support_cost(const datalog::NumericSupport<LiftedTag>& support) const
 {
     const auto binding = support.get_key();
-    const auto* entries = m_workspace.numeric_and_annot.find_entries(binding.get_relation(), binding.get_index().row);
+    const auto* entries = m_workspace.numeric_and_annot.find_entries(binding.get_index().relation, binding.get_index().row);
     if (!entries)
         return support.get_cost();
 
@@ -219,7 +219,7 @@ void LMCutHeuristic<LiftedTag>::append_expanded_numeric_support_preconditions(co
                                                                               std::vector<Precondition>& result) const
 {
     const auto binding = support.get_key();
-    const auto* entries = m_workspace.numeric_and_annot.find_entries(binding.get_relation(), binding.get_index().row);
+    const auto* entries = m_workspace.numeric_and_annot.find_entries(binding.get_index().relation, binding.get_index().row);
     if (!entries)
     {
         if (support.get_cost() == body_cost)

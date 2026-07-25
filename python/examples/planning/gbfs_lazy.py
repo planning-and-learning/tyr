@@ -143,7 +143,7 @@ def find_solution(
         search_node = search_nodes[state_index]
 
         state_h_value = heuristic.evaluate(state)
-        preferred_actions = heuristic.get_preferred_action_views()
+        preferred_actions = heuristic.get_preferred_actions()
 
         search_node.status = SearchNodeStatus.CLOSED
 

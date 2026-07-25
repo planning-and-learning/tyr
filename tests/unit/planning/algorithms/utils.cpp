@@ -65,7 +65,6 @@ TEST(PlanningAlgorithmUtilsTest, BlindHeuristicHasNoPreferredActionsByDefault)
     auto heuristic = p::BlindHeuristic<p::GroundTag> {};
 
     EXPECT_TRUE(heuristic.get_preferred_actions().empty());
-    EXPECT_TRUE(heuristic.get_preferred_action_views().empty());
 }
 
 TEST(PlanningAlgorithmUtilsTest, DefaultConstructedBasicSolverAdaptersRejectMissingRequiredMembers)

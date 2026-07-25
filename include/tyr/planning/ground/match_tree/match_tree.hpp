@@ -38,9 +38,9 @@ private:
 
     RepositoryPtr<Tag> m_context;
 
-    std::optional<ygg::Data<Node<Tag>>> m_root;
+    std::optional<ygg::View<ygg::Data<Node<Tag>>, Repository<Tag>>> m_root;
 
-    std::vector<ygg::Data<Node<Tag>>> m_evaluate_stack;  ///< temporary during evaluation.
+    std::vector<ygg::View<ygg::Data<Node<Tag>>, Repository<Tag>>> m_evaluate_stack;  ///< temporary during evaluation.
 
 public:
     MatchTree(ygg::IndexList<Tag> elements, const ::tyr::formalism::planning::Repository& context);
@@ -54,7 +54,8 @@ public:
     MatchTree(MatchTree&& other) = delete;
     MatchTree& operator=(MatchTree&& other) = delete;
 
-    void generate(const StateContext<GroundTag>& state, ygg::IndexList<Tag>& out_applicable_elements);
+    void generate(const StateContext<GroundTag>& state,
+                  std::vector<ygg::View<ygg::Index<Tag>, ::tyr::formalism::planning::Repository>>& out_applicable_elements);
 };
 
 }

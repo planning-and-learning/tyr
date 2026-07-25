@@ -174,8 +174,7 @@ static bool collect_expression_supports(fd::FunctionExpressionView expression,
                                         std::vector<NumericSupportSelectorWorkspace<LiftedTag>::SelectionEntry>& selection)
 {
     const auto ground_expression = fd::ground(expression, input.iteration_context);
-    const auto value =
-        input.numeric_support_selector.evaluate_effect_expression(ygg::make_view(ground_expression, input.iteration_context.destination), selection);
+    const auto value = input.numeric_support_selector.evaluate_effect_expression(ground_expression, selection);
     if (empty(value))
         return false;
 

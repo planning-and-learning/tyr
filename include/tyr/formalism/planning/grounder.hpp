@@ -45,7 +45,7 @@ std::pair<FunctionBindingView<T>, bool> ground(TermListView terms, FunctionView<
 template<FactKind T>
 std::pair<GroundFunctionTermView<T>, bool> ground(FunctionTermView<T> element, GrounderContext& context);
 
-ygg::Data<GroundFunctionExpression> ground(FunctionExpressionView element, GrounderContext& context);
+GroundFunctionExpressionView ground(FunctionExpressionView element, GrounderContext& context);
 
 template<OpKind O>
 std::pair<GroundUnaryOperatorView<O>, bool> ground(LiftedUnaryOperatorView<O> element, GrounderContext& context);
@@ -56,9 +56,9 @@ std::pair<GroundBinaryOperatorView<O>, bool> ground(LiftedBinaryOperatorView<O> 
 template<OpKind O>
 std::pair<GroundMultiOperatorView<O>, bool> ground(LiftedMultiOperatorView<O> element, GrounderContext& context);
 
-ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>> ground(LiftedBooleanOperatorView element, GrounderContext& context);
+GroundBooleanOperatorView ground(LiftedBooleanOperatorView element, GrounderContext& context);
 
-ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>> ground(LiftedArithmeticOperatorView element, GrounderContext& context);
+GroundArithmeticOperatorView ground(LiftedArithmeticOperatorView element, GrounderContext& context);
 
 template<FactKind T>
 std::pair<PredicateBindingView<T>, bool> ground(TermListView terms, PredicateView<T> predicate, GrounderContext& context);
@@ -79,7 +79,7 @@ template<NumericEffectOpKind Op, FactKind T>
 std::pair<GroundNumericEffectView<Op, T>, bool> ground(NumericEffectView<Op, T> element, GrounderContext& context);
 
 template<FactKind T>
-ygg::Data<GroundNumericEffectOperator<T>> ground(NumericEffectOperatorView<T> element, GrounderContext& context);
+GroundNumericEffectOperatorView<T> ground(NumericEffectOperatorView<T> element, GrounderContext& context);
 
 std::pair<GroundConjunctiveEffectView, bool> ground(ConjunctiveEffectView element, GrounderContext& context, FDRContext& fdr);
 
@@ -158,9 +158,9 @@ std::pair<GroundFunctionTermView<T>, bool> ground(FunctionTermView<T> element, G
     return context.destination.get_or_create(fterm);
 }
 
-inline ygg::Data<GroundFunctionExpression> ground(FunctionExpressionView element, GrounderContext& context)
+inline GroundFunctionExpressionView ground(FunctionExpressionView element, GrounderContext& context)
 {
-    return visit(
+    const auto data = visit(
         [&](auto&& arg)
         {
             using Alternative = std::decay_t<decltype(arg)>;
@@ -168,11 +168,12 @@ inline ygg::Data<GroundFunctionExpression> ground(FunctionExpressionView element
             if constexpr (std::is_same_v<Alternative, ygg::float_t>)
                 return ygg::Data<GroundFunctionExpression>(arg);
             else if constexpr (std::is_same_v<Alternative, LiftedArithmeticOperatorView>)
-                return ygg::Data<GroundFunctionExpression>(ground(arg, context));
+                return ygg::Data<GroundFunctionExpression>(ground(arg, context).get_data());
             else
                 return ygg::Data<GroundFunctionExpression>(ground(arg, context).first.get_index());
         },
         element.get_variant());
+    return ygg::make_view(data, context.destination);
 }
 
 template<OpKind O>
@@ -184,7 +185,7 @@ std::pair<GroundUnaryOperatorView<O>, bool> ground(LiftedUnaryOperatorView<O> el
     unary.clear();
 
     // Fill data
-    unary.arg = ground(element.get_arg(), context);
+    unary.arg = ground(element.get_arg(), context).get_data();
 
     // Canonicalize and Serialize
     canonicalize(unary);
@@ -200,8 +201,8 @@ std::pair<GroundBinaryOperatorView<O>, bool> ground(LiftedBinaryOperatorView<O> 
     binary.clear();
 
     // Fill data
-    binary.lhs = ground(element.get_lhs(), context);
-    binary.rhs = ground(element.get_rhs(), context);
+    binary.lhs = ground(element.get_lhs(), context).get_data();
+    binary.rhs = ground(element.get_rhs(), context).get_data();
 
     // Canonicalize and Serialize
     canonicalize(binary);
@@ -218,23 +219,27 @@ std::pair<GroundMultiOperatorView<O>, bool> ground(LiftedMultiOperatorView<O> el
 
     // Fill data
     for (const auto arg : element.get_args())
-        multi.args.push_back(ground(arg, context));
+        multi.args.push_back(ground(arg, context).get_data());
 
     // Canonicalize and Serialize
     canonicalize(multi);
     return context.destination.get_or_create(multi);
 }
 
-inline ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>> ground(LiftedBooleanOperatorView element, GrounderContext& context)
+inline GroundBooleanOperatorView ground(LiftedBooleanOperatorView element, GrounderContext& context)
 {
-    return visit([&](auto&& arg) { return ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>(ground(arg, context).first.get_index()); },
-                 element.get_variant());
+    const auto data =
+        visit([&](auto&& arg) { return ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>(ground(arg, context).first.get_index()); },
+              element.get_variant());
+    return ygg::make_view(data, context.destination);
 }
 
-inline ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>> ground(LiftedArithmeticOperatorView element, GrounderContext& context)
+inline GroundArithmeticOperatorView ground(LiftedArithmeticOperatorView element, GrounderContext& context)
 {
-    return visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>(ground(arg, context).first.get_index()); },
-                 element.get_variant());
+    const auto data =
+        visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>(ground(arg, context).first.get_index()); },
+              element.get_variant());
+    return ygg::make_view(data, context.destination);
 }
 
 template<FactKind T>
@@ -334,7 +339,7 @@ inline std::pair<GroundConjunctiveConditionView, bool> ground(ConjunctiveConditi
     for (const auto literal : element.template get_literals<DerivedTag>())
         conj_cond.derived_literals.push_back(ground(literal, context).first.get_index());
     for (const auto numeric_constraint : element.get_numeric_constraints())
-        conj_cond.numeric_constraints.push_back(ground(numeric_constraint, context));
+        conj_cond.numeric_constraints.push_back(ground(numeric_constraint, context).get_data());
 
     // Canonicalize and Serialize
     canonicalize(conj_cond);
@@ -351,7 +356,7 @@ std::pair<GroundNumericEffectView<Op, T>, bool> ground(NumericEffectView<Op, T> 
 
     // Fill data
     numeric_effect.fterm = ground(element.get_fterm(), context).first.get_index();
-    numeric_effect.fexpr = ground(element.get_fexpr(), context);
+    numeric_effect.fexpr = ground(element.get_fexpr(), context).get_data();
 
     // Canonicalize and Serialize
     canonicalize(numeric_effect);
@@ -359,9 +364,11 @@ std::pair<GroundNumericEffectView<Op, T>, bool> ground(NumericEffectView<Op, T> 
 }
 
 template<FactKind T>
-ygg::Data<GroundNumericEffectOperator<T>> ground(NumericEffectOperatorView<T> element, GrounderContext& context)
+GroundNumericEffectOperatorView<T> ground(NumericEffectOperatorView<T> element, GrounderContext& context)
 {
-    return visit([&](auto&& arg) { return ygg::Data<GroundNumericEffectOperator<T>>(ground(arg, context).first.get_index()); }, element.get_variant());
+    const auto data =
+        visit([&](auto&& arg) { return ygg::Data<GroundNumericEffectOperator<T>>(ground(arg, context).first.get_index()); }, element.get_variant());
+    return ygg::make_view(data, context.destination);
 }
 
 inline std::pair<GroundConjunctiveEffectView, bool> ground(ConjunctiveEffectView element, GrounderContext& context, FDRContext& fdr)
@@ -380,9 +387,9 @@ inline std::pair<GroundConjunctiveEffectView, bool> ground(ConjunctiveEffectView
             conj_eff.del_facts.push_back(new_fact);
     }
     for (const auto numeric_effect : element.get_numeric_effects())
-        conj_eff.numeric_effects.push_back(ground(numeric_effect, context));
+        conj_eff.numeric_effects.push_back(ground(numeric_effect, context).get_data());
     if (element.get_auxiliary_numeric_effect().has_value())
-        conj_eff.auxiliary_numeric_effect = ground(element.get_auxiliary_numeric_effect().value(), context);
+        conj_eff.auxiliary_numeric_effect = ground(element.get_auxiliary_numeric_effect().value(), context).get_data();
 
     // Canonicalize and Serialize
     canonicalize(conj_eff);
@@ -644,8 +651,8 @@ extern template std::pair<GroundNumericEffectView<ScaleDown, FluentTag>, bool> g
 extern template std::pair<GroundNumericEffectView<Increase, AuxiliaryTag>, bool> ground(NumericEffectView<Increase, AuxiliaryTag> element,
                                                                                         GrounderContext& context);
 
-extern template ygg::Data<GroundNumericEffectOperator<FluentTag>> ground(NumericEffectOperatorView<FluentTag> element, GrounderContext& context);
-extern template ygg::Data<GroundNumericEffectOperator<AuxiliaryTag>> ground(NumericEffectOperatorView<AuxiliaryTag> element, GrounderContext& context);
+extern template GroundNumericEffectOperatorView<FluentTag> ground(NumericEffectOperatorView<FluentTag> element, GrounderContext& context);
+extern template GroundNumericEffectOperatorView<AuxiliaryTag> ground(NumericEffectOperatorView<AuxiliaryTag> element, GrounderContext& context);
 
 extern template std::optional<GroundFunctionTermView<StaticTag>> try_ground(FunctionTermView<StaticTag> element, GrounderContext& context);
 extern template std::optional<GroundFunctionTermView<FluentTag>> try_ground(FunctionTermView<FluentTag> element, GrounderContext& context);

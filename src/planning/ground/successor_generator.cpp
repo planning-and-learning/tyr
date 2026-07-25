@@ -85,7 +85,7 @@ void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<Groun
 
     m_action_match_tree->generate(state_context, m_applicable_actions);
 
-    for (const auto ground_action : ygg::make_view(m_applicable_actions, *m_task->get_repository()))
+    for (const auto ground_action : m_applicable_actions)
     {
         if (m_executor.is_applicable(ground_action, state_context))
             out_nodes.emplace_back(ground_action, m_executor.apply_action(state_context, ground_action, *m_state_repository));

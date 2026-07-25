@@ -121,12 +121,12 @@ template std::pair<MultiOperatorView<Add, ygg::Data<GroundFunctionExpression>>, 
 template std::pair<MultiOperatorView<Mul, ygg::Data<GroundFunctionExpression>>, bool> merge_p2p(MultiOperatorView<Mul, ygg::Data<GroundFunctionExpression>> element,
                                                                                            MergeContext& context);
 
-template ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>> merge_p2p(ArithmeticOperatorView<ygg::Data<FunctionExpression>> element, MergeContext& context);
-template ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>> merge_p2p(ArithmeticOperatorView<ygg::Data<GroundFunctionExpression>> element,
-                                                                            MergeContext& context);
+template ArithmeticOperatorView<ygg::Data<FunctionExpression>> merge_p2p(ArithmeticOperatorView<ygg::Data<FunctionExpression>> element, MergeContext& context);
+template ArithmeticOperatorView<ygg::Data<GroundFunctionExpression>> merge_p2p(ArithmeticOperatorView<ygg::Data<GroundFunctionExpression>> element,
+                                                                                MergeContext& context);
 
-template ygg::Data<BooleanOperator<ygg::Data<FunctionExpression>>> merge_p2p(BooleanOperatorView<ygg::Data<FunctionExpression>> element, MergeContext& context);
-template ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>> merge_p2p(BooleanOperatorView<ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
+template BooleanOperatorView<ygg::Data<FunctionExpression>> merge_p2p(BooleanOperatorView<ygg::Data<FunctionExpression>> element, MergeContext& context);
+template BooleanOperatorView<ygg::Data<GroundFunctionExpression>> merge_p2p(BooleanOperatorView<ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
 
 template std::pair<NumericEffectView<Assign, FluentTag>, bool> merge_p2p(NumericEffectView<Assign, FluentTag> element, MergeContext& context);
 template std::pair<NumericEffectView<Increase, FluentTag>, bool> merge_p2p(NumericEffectView<Increase, FluentTag> element, MergeContext& context);
@@ -136,8 +136,8 @@ template std::pair<NumericEffectView<ScaleDown, FluentTag>, bool> merge_p2p(Nume
 
 template std::pair<NumericEffectView<Increase, AuxiliaryTag>, bool> merge_p2p(NumericEffectView<Increase, AuxiliaryTag> element, MergeContext& context);
 
-template ygg::Data<NumericEffectOperator<FluentTag>> merge_p2p(NumericEffectOperatorView<FluentTag> element, MergeContext& context);
-template ygg::Data<NumericEffectOperator<AuxiliaryTag>> merge_p2p(NumericEffectOperatorView<AuxiliaryTag> element, MergeContext& context);
+template NumericEffectOperatorView<FluentTag> merge_p2p(NumericEffectOperatorView<FluentTag> element, MergeContext& context);
+template NumericEffectOperatorView<AuxiliaryTag> merge_p2p(NumericEffectOperatorView<AuxiliaryTag> element, MergeContext& context);
 
 template std::pair<GroundNumericEffectView<Assign, FluentTag>, bool> merge_p2p(GroundNumericEffectView<Assign, FluentTag> element, MergeContext& context);
 template std::pair<GroundNumericEffectView<Increase, FluentTag>, bool> merge_p2p(GroundNumericEffectView<Increase, FluentTag> element, MergeContext& context);
@@ -148,8 +148,8 @@ template std::pair<GroundNumericEffectView<ScaleDown, FluentTag>, bool> merge_p2
 template std::pair<GroundNumericEffectView<Increase, AuxiliaryTag>, bool> merge_p2p(GroundNumericEffectView<Increase, AuxiliaryTag> element,
                                                                                     MergeContext& context);
 
-template ygg::Data<GroundNumericEffectOperator<FluentTag>> merge_p2p(GroundNumericEffectOperatorView<FluentTag> element, MergeContext& context);
-template ygg::Data<GroundNumericEffectOperator<AuxiliaryTag>> merge_p2p(GroundNumericEffectOperatorView<AuxiliaryTag> element, MergeContext& context);
+template GroundNumericEffectOperatorView<FluentTag> merge_p2p(GroundNumericEffectOperatorView<FluentTag> element, MergeContext& context);
+template GroundNumericEffectOperatorView<AuxiliaryTag> merge_p2p(GroundNumericEffectOperatorView<AuxiliaryTag> element, MergeContext& context);
 
 }
 

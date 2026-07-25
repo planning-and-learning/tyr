@@ -47,7 +47,7 @@ ygg::ClosedInterval<ygg::float_t> NumericSupportSelector<GroundTag>::current_int
 
 const NumericIntervalAnnotations<GroundTag>::Entries* NumericSupportSelector<GroundTag>::find_entries(Key key) const
 {
-    return m_annotations.find_entries(key.get_function(), key.get_index());
+    return m_annotations.find_entries(key.get_function().get_index(), key.get_index());
 }
 
 }

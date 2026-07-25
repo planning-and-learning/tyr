@@ -44,13 +44,7 @@ public:
 
     virtual ygg::float_t evaluate(const Node<Kind>& node) { return evaluate(node.get_state()); }
 
-    virtual const ygg::UnorderedSet<ygg::Index<::tyr::formalism::planning::GroundAction>>& get_preferred_actions()
-    {
-        static const auto actions = ygg::UnorderedSet<ygg::Index<::tyr::formalism::planning::GroundAction>> {};
-        return actions;
-    }
-
-    virtual const ygg::UnorderedSet<::tyr::formalism::planning::GroundActionView>& get_preferred_action_views()
+    virtual const ygg::UnorderedSet<::tyr::formalism::planning::GroundActionView>& get_preferred_actions()
     {
         static const auto actions = ygg::UnorderedSet<::tyr::formalism::planning::GroundActionView> {};
         return actions;
