@@ -86,6 +86,10 @@ std::pair<GroundRuleView, bool> ground(RuleView element, GrounderContext& contex
 template<FactKind T>
 std::pair<PredicateBindingView<T>, bool> ground_binding(AtomView<T> element, GrounderContext& context);
 
+/// Grounds the binding without interning the enclosing GroundFunctionTerm symbol.
+template<FactKind T>
+std::pair<FunctionBindingView<T>, bool> ground_binding(FunctionTermView<T> element, GrounderContext& context);
+
 std::pair<RuleBindingView, bool> ground_binding(RuleView element, GrounderContext& context);
 
 /**
@@ -395,6 +399,12 @@ std::pair<PredicateBindingView<T>, bool> ground_binding(AtomView<T> element, Gro
     return context.destination.get_or_create(binding);
 }
 
+template<FactKind T>
+std::pair<FunctionBindingView<T>, bool> ground_binding(FunctionTermView<T> element, GrounderContext& context)
+{
+    return ground(element.get_terms(), element.get_function(), context);
+}
+
 inline std::pair<RuleBindingView, bool> ground_binding(RuleView element, GrounderContext& context)
 {
     auto binding_ptr = context.builder.template get_builder<RelationBinding<Rule>>();
@@ -516,6 +526,9 @@ extern template ygg::Data<GroundNumericEffectOperator<FluentTag>> ground(Numeric
 
 extern template std::pair<PredicateBindingView<StaticTag>, bool> ground_binding(AtomView<StaticTag> element, GrounderContext& context);
 extern template std::pair<PredicateBindingView<FluentTag>, bool> ground_binding(AtomView<FluentTag> element, GrounderContext& context);
+
+extern template std::pair<FunctionBindingView<StaticTag>, bool> ground_binding(FunctionTermView<StaticTag> element, GrounderContext& context);
+extern template std::pair<FunctionBindingView<FluentTag>, bool> ground_binding(FunctionTermView<FluentTag> element, GrounderContext& context);
 
 extern template std::optional<FunctionBindingView<StaticTag>> try_ground_binding(::tyr::formalism::datalog::FunctionTermView<StaticTag> element,
                                                                                  ::tyr::formalism::datalog::GrounderContext& context);

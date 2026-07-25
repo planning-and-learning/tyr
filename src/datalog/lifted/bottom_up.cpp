@@ -211,7 +211,7 @@ static bool collect_metric_effect_supports(fd::NumericEffectView<Op, f::FluentTa
 
     if constexpr (!std::is_same_v<Op, f::Increase> && !std::is_same_v<Op, f::Decrease>)
     {
-        const auto binding = fd::ground(effect.get_fterm(), input.iteration_context).first.get_row();
+        const auto binding = fd::ground_binding(effect.get_fterm(), input.iteration_context).first;
         if (empty(input.numeric_support_selector.select_fluent_interval(binding, selection)))
             return false;
     }
@@ -318,8 +318,7 @@ static void insert_numeric_update(fd::NumericEffectOperatorView<f::FluentTag> he
     visit(
         [&](auto&& effect)
         {
-            const auto program_head = fd::ground(effect.get_fterm(), input.iteration_context).first.get_row();
-            const auto worker_head = fd::ground(effect.get_fterm(), input.solve_context).first;
+            const auto program_head = fd::ground_binding(effect.get_fterm(), input.iteration_context).first;
             const auto rule_binding = fd::ground_binding(input.rule, input.solve_context).first;
             const auto rem_rule_cost = metric_effect_cost(rule_binding, input);
             if (rem_rule_cost == std::numeric_limits<Cost>::max())
@@ -335,9 +334,9 @@ static void insert_numeric_update(fd::NumericEffectOperatorView<f::FluentTag> he
                 return;
             const auto context = input.make_annotation_context(rule_binding, cost, numeric_supports);
 
-            input.and_ap.update_annotation(program_head, worker_head.get_row(), effect_interval, context, numeric_and_annot);
+            input.and_ap.update_annotation(program_head, program_head, effect_interval, context, numeric_and_annot);
 
-            std::get<FunctionHeadIteration>(head_iteration).updates.emplace(worker_head.get_row().get_index().row, effect_interval, input.current_cost + cost);
+            std::get<FunctionHeadIteration>(head_iteration).updates.emplace(program_head.get_index().row, effect_interval, input.current_cost + cost);
         },
         head.get_variant());
 }
@@ -812,7 +811,7 @@ void merge_worker_results(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx)
                         {
                             const auto worker_head =
                                 ygg::make_view(ygg::Index<f::RelationBinding<f::Function<f::FluentTag>>> { head_iteration.relation, update.row },
-                                               worker.solve.program_overlay_repository);
+                                               worker.iteration.workspace_overlay_repository);
 
                             const auto program_head = fd::merge_d2d(worker_head, merge_context).first;
                             const auto* worker_annotation = worker.iteration.numeric_and_annot.find(worker_head, update.interval);
