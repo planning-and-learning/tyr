@@ -37,24 +37,22 @@ namespace ygg
 {
 using namespace ::tyr;
 
-template<>
-struct Data<::tyr::formalism::datalog::GroundRule>
+template<::tyr::formalism::RelationKind R>
+struct Data<::tyr::formalism::datalog::GroundRule<R>>
 {
-    using Head = ::cista::offset::variant<ygg::Index<::tyr::formalism::datalog::GroundAtom<::tyr::formalism::FluentTag>>,
-                                          ygg::Data<::tyr::formalism::datalog::GroundNumericEffectOperator<::tyr::formalism::FluentTag>>>;
+    using Head = ::tyr::formalism::datalog::GroundRuleHeadT<R>;
 
     template<typename C>
-    using HeadView = std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundAtom<::tyr::formalism::FluentTag>>, C>,
-                                  ::ygg::View<ygg::Data<::tyr::formalism::datalog::GroundNumericEffectOperator<::tyr::formalism::FluentTag>>, C>>;
+    using HeadView = ::ygg::View<Head, C>;
 
-    ygg::Index<::tyr::formalism::datalog::GroundRule> index;
-    ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::datalog::Rule>> binding;
+    ygg::Index<::tyr::formalism::datalog::GroundRule<R>> index;
+    ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::datalog::Rule<R>>> binding;
     ygg::Index<::tyr::formalism::datalog::GroundConjunctiveCondition> body;
     Head head;
     ygg::DataList<::tyr::formalism::datalog::GroundNumericEffectOperator<::tyr::formalism::FluentTag>> metric_effects;
 
     Data() = default;
-    Data(ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::datalog::Rule>> binding_,
+    Data(ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::datalog::Rule<R>>> binding_,
          ygg::Index<::tyr::formalism::datalog::GroundConjunctiveCondition> body_,
          Head head_,
          ygg::DataList<::tyr::formalism::datalog::GroundNumericEffectOperator<::tyr::formalism::FluentTag>> metric_effects_ = {}) :
@@ -66,7 +64,7 @@ struct Data<::tyr::formalism::datalog::GroundRule>
     {
     }
     template<typename C>
-    Data(::ygg::View<ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::datalog::Rule>>, C> binding_,
+    Data(::ygg::View<ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::datalog::Rule<R>>>, C> binding_,
          ::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundConjunctiveCondition>, C> body_,
          HeadView<C> head_,
          const std::vector<::ygg::View<ygg::Data<::tyr::formalism::datalog::GroundNumericEffectOperator<::tyr::formalism::FluentTag>>, C>>&
@@ -74,16 +72,13 @@ struct Data<::tyr::formalism::datalog::GroundRule>
         index(),
         binding(),
         body(),
-        head(std::visit(
-            [](const auto& view) -> Head
-            {
-                using Alternative = std::decay_t<decltype(view)>;
-                if constexpr (std::is_same_v<Alternative, ::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundAtom<::tyr::formalism::FluentTag>>, C>>)
-                    return Head(view.get_index());
-                else
-                    return Head(view.get_data());
-            },
-            head_)),
+        head([&]() -> Head
+             {
+                 if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
+                     return head_.get_index();
+                 else
+                     return head_.get_data();
+             }()),
         metric_effects()
     {
         set(binding_, binding);
@@ -108,8 +103,11 @@ struct Data<::tyr::formalism::datalog::GroundRule>
     auto identifying_members() const noexcept { return std::tie(binding); }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::GroundRule>);
+
 
 }
 
 #endif
+
+static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::GroundRule<::tyr::formalism::PredicateTag>>);
+static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::GroundRule<::tyr::formalism::FunctionTag>>);

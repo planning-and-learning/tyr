@@ -33,15 +33,15 @@
 namespace ygg
 {
 using namespace ::tyr;
-template<::tyr::formalism::datalog::Context C>
-class View<ygg::Index<::tyr::formalism::datalog::GroundRule>, C>
+template<::tyr::formalism::RelationKind R, ::tyr::formalism::datalog::Context C>
+class View<ygg::Index<::tyr::formalism::datalog::GroundRule<R>>, C>
 {
 private:
     const C* m_context;
-    ygg::Index<::tyr::formalism::datalog::GroundRule> m_handle;
+    ygg::Index<::tyr::formalism::datalog::GroundRule<R>> m_handle;
 
 public:
-    View(ygg::Index<::tyr::formalism::datalog::GroundRule> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+    View(ygg::Index<::tyr::formalism::datalog::GroundRule<R>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }

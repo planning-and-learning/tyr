@@ -83,6 +83,26 @@ using StaticFluentAuxiliaryTags = ygg::TypeList<StaticTag, FluentTag, AuxiliaryT
 using FluentDerivedTags = ygg::TypeList<FluentTag, DerivedTag>;
 
 /**
+ * Tags to dispatch on the relation a rule derives: a predicate binding or a function binding. Keeping
+ * them apart in the type system means a rule deriving an atom carries no numeric-effect head, so the
+ * numeric expression machinery is absent rather than skipped at runtime.
+ */
+
+struct PredicateTag
+{
+    static constexpr auto name = "Predicate";
+};
+struct FunctionTag
+{
+    static constexpr auto name = "Function";
+};
+
+template<typename T>
+concept RelationKind = std::same_as<T, PredicateTag> || std::same_as<T, FunctionTag>;
+
+using PredicateFunctionTags = ygg::TypeList<PredicateTag, FunctionTag>;
+
+/**
  * Tags to dispatch operators
  */
 

@@ -33,17 +33,15 @@ namespace ygg
 {
 using namespace ::tyr;
 
-template<>
-struct Data<::tyr::formalism::datalog::Rule>
+template<::tyr::formalism::RelationKind R>
+struct Data<::tyr::formalism::datalog::Rule<R>>
 {
-    using Head = ::cista::offset::variant<ygg::Index<::tyr::formalism::datalog::Atom<::tyr::formalism::FluentTag>>,
-                                          ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<::tyr::formalism::FluentTag>>>;
+    using Head = ::tyr::formalism::datalog::RuleHeadT<R>;
 
     template<typename C>
-    using HeadView = std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::Atom<::tyr::formalism::FluentTag>>, C>,
-                                  ::ygg::View<ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<::tyr::formalism::FluentTag>>, C>>;
+    using HeadView = ::ygg::View<Head, C>;
 
-    ygg::Index<::tyr::formalism::datalog::Rule> index;
+    ygg::Index<::tyr::formalism::datalog::Rule<R>> index;
     ygg::IndexList<::tyr::formalism::Variable> variables;
     ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition> body;
     Head head;
@@ -69,16 +67,13 @@ struct Data<::tyr::formalism::datalog::Rule>
         index(),
         variables(),
         body(),
-        head(std::visit(
-            [](const auto& view) -> Head
-            {
-                using Alternative = std::decay_t<decltype(view)>;
-                if constexpr (std::is_same_v<Alternative, ::ygg::View<ygg::Index<::tyr::formalism::datalog::Atom<::tyr::formalism::FluentTag>>, C>>)
-                    return Head(view.get_index());
-                else
-                    return Head(view.get_data());
-            },
-            head_)),
+        head([&]() -> Head
+             {
+                 if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
+                     return head_.get_index();
+                 else
+                     return head_.get_data();
+             }()),
         metric_effects()
     {
         set(variables_, variables);
@@ -103,7 +98,8 @@ struct Data<::tyr::formalism::datalog::Rule>
     auto identifying_members() const noexcept { return std::tie(variables, body, head, metric_effects); }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::Rule>);
+static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::Rule<::tyr::formalism::PredicateTag>>);
+static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::Rule<::tyr::formalism::FunctionTag>>);
 }
 
 #endif

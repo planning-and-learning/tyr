@@ -24,11 +24,11 @@
 
 namespace ygg
 {
-template<>
-struct Index<tyr::formalism::datalog::GroundRule> : ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::GroundRule>>
+template<tyr::formalism::RelationKind R>
+struct Index<tyr::formalism::datalog::GroundRule<R>> : ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::GroundRule<R>>>
 {
     // Inherit constructors
-    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::GroundRule>>;
+    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::GroundRule<R>>>;
     using Base::Base;
 };
 

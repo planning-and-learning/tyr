@@ -73,7 +73,11 @@ public:
     }
     auto get_goal() const noexcept { return ygg::make_view(get_data().goal, *m_context); }
     auto get_metric() const noexcept { return ygg::make_view(get_data().metric, *m_context); }
-    auto get_ground_rules() const noexcept { return ygg::make_view(get_data().ground_rules, *m_context); }
+    template<::tyr::formalism::RelationKind R>
+    auto get_ground_rules() const noexcept
+    {
+        return ygg::make_view(get_data().template get_ground_rules<R>(), *m_context);
+    }
 
     auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }
 };

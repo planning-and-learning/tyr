@@ -142,13 +142,44 @@ struct GroundConditionalEffect
 {
 };
 
+/// A rule derives either a predicate binding (its head is a fluent atom) or a function binding (its
+/// head is a numeric effect). Keeping the two apart in the type system means a predicate rule carries
+/// no numeric-effect head, so the numeric expression machinery is absent rather than skipped.
+template<RelationKind R>
 struct Rule
 {
 };
 
+template<RelationKind R>
 struct GroundRule
 {
 };
+
+/// The head type a rule of each relation kind derives: a predicate rule derives one fluent atom, a
+/// function rule applies one numeric effect. No variant, so a predicate rule never names the numeric
+/// effect types at all.
+template<RelationKind R>
+struct RuleHead;
+
+template<>
+struct RuleHead<::tyr::formalism::PredicateTag>
+{
+    using type = ygg::Index<Atom<::tyr::formalism::FluentTag>>;
+    using ground_type = ygg::Index<GroundAtom<::tyr::formalism::FluentTag>>;
+};
+
+template<>
+struct RuleHead<::tyr::formalism::FunctionTag>
+{
+    using type = ygg::Data<NumericEffectOperator<::tyr::formalism::FluentTag>>;
+    using ground_type = ygg::Data<GroundNumericEffectOperator<::tyr::formalism::FluentTag>>;
+};
+
+template<RelationKind R>
+using RuleHeadT = typename RuleHead<R>::type;
+
+template<RelationKind R>
+using GroundRuleHeadT = typename RuleHead<R>::ground_type;
 
 struct Metric
 {
@@ -214,17 +245,14 @@ using GroundBooleanExpressionTypes = ygg::MapTypeListT<GroundBinaryOperatorType,
 using ExpressionTypes =
     ygg::ConcatTypeListsT<LiftedArithmeticExpressionTypes, LiftedBooleanExpressionTypes, GroundArithmeticExpressionTypes, GroundBooleanExpressionTypes>;
 using EffectTypes = ygg::ConcatTypeListsT<NumericEffectTypes, GroundNumericEffectTypes>;
-using CompoundTypes = ygg::TypeList<ConjunctiveCondition,
-                                    ConjunctiveEffect,
-                                    ConditionalEffect,
-                                    Rule,
-                                    GroundConjunctiveCondition,
-                                    GroundConjunctiveEffect,
-                                    GroundConditionalEffect,
-                                    GroundRule,
-                                    Metric,
-                                    Program,
-                                    GroundProgram>;
+using RuleTypes = ygg::MapTypeListT<Rule, PredicateFunctionTags>;
+using GroundRuleTypes = ygg::MapTypeListT<GroundRule, PredicateFunctionTags>;
+
+using CompoundTypes = ygg::ConcatTypeListsT<ygg::TypeList<ConjunctiveCondition, ConjunctiveEffect, ConditionalEffect>,
+                                            RuleTypes,
+                                            ygg::TypeList<GroundConjunctiveCondition, GroundConjunctiveEffect, GroundConditionalEffect>,
+                                            GroundRuleTypes,
+                                            ygg::TypeList<Metric, Program, GroundProgram>>;
 
 using SymbolRepositoryTypes = ygg::ConcatTypeListsT<CoreTypes,
                                                     PredicateTypes,
@@ -240,7 +268,7 @@ using SymbolRepositoryTypes = ygg::ConcatTypeListsT<CoreTypes,
                                                     EffectTypes,
                                                     CompoundTypes>;
 
-using RelationRepositoryTypes = ygg::ConcatTypeListsT<PredicateTypes, FunctionTypes, ygg::TypeList<Rule>>;
+using RelationRepositoryTypes = ygg::ConcatTypeListsT<PredicateTypes, FunctionTypes, RuleTypes>;
 using BuilderTypes = ygg::ConcatTypeListsT<SymbolRepositoryTypes, ygg::MapTypeListT<RelationBinding, RelationRepositoryTypes>>;
 
 using SymbolRepository = ygg::ApplyTypeListT<::ygg::formalism::SymbolRepository, SymbolRepositoryTypes>;
@@ -297,7 +325,8 @@ template<FactKind T>
 using PredicateBindingView = ygg::View<ygg::Index<RelationBinding<Predicate<T>>>, Repository>;
 template<FactKind T>
 using FunctionBindingView = ygg::View<ygg::Index<RelationBinding<Function<T>>>, Repository>;
-using RuleBindingView = ygg::View<ygg::Index<RelationBinding<Rule>>, Repository>;
+template<RelationKind R>
+using RuleBindingView = ygg::View<ygg::Index<RelationBinding<Rule<R>>>, Repository>;
 
 template<typename T>
 using BooleanOperatorView = ygg::View<ygg::Data<BooleanOperator<T>>, Repository>;
@@ -401,10 +430,13 @@ using GroundNumericEffectOperatorListView = ygg::View<ygg::DataList<GroundNumeri
 template<::tyr::formalism::FactKind T>
 using GroundNumericEffectOperatorViewList = std::vector<GroundNumericEffectOperatorView<T>>;
 
-using GroundRuleView = ygg::View<ygg::Index<GroundRule>, Repository>;
+template<RelationKind R>
+using GroundRuleView = ygg::View<ygg::Index<GroundRule<R>>, Repository>;
 
-using GroundRuleListView = ygg::View<ygg::IndexList<GroundRule>, Repository>;
-using GroundRuleViewList = std::vector<GroundRuleView>;
+template<RelationKind R>
+using GroundRuleListView = ygg::View<ygg::IndexList<GroundRule<R>>, Repository>;
+template<RelationKind R>
+using GroundRuleViewList = std::vector<GroundRuleView<R>>;
 
 using GroundProgramView = ygg::View<ygg::Index<ProgramTag<::tyr::GroundTag>>, Repository>;
 
@@ -465,10 +497,13 @@ using ProgramView = ygg::View<ygg::Index<ProgramTag<Kind>>, Repository>;
 template<::tyr::TaskKind Kind>
 using ProgramListView = ygg::View<ygg::IndexList<ProgramTag<Kind>>, Repository>;
 
-using RuleView = ygg::View<ygg::Index<Rule>, Repository>;
+template<RelationKind R>
+using RuleView = ygg::View<ygg::Index<Rule<R>>, Repository>;
 
-using RuleListView = ygg::View<ygg::IndexList<Rule>, Repository>;
-using RuleViewList = std::vector<RuleView>;
+template<RelationKind R>
+using RuleListView = ygg::View<ygg::IndexList<Rule<R>>, Repository>;
+template<RelationKind R>
+using RuleViewList = std::vector<RuleView<R>>;
 
 using TermView = ygg::View<ygg::Data<Term>, Repository>;
 
