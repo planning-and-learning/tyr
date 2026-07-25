@@ -94,6 +94,8 @@ template<f::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCos
 struct RuleUpdateInput
 {
     fd::RuleView<R> rule;
+    Cost pre_evaluated_metric_cost;
+    std::span<const fd::NumericEffectOperatorView<f::FluentTag>> runtime_metric_effects;
     fd::ConjunctiveConditionView witness_condition;
     const NumericSupportSelector<LiftedTag>& numeric_support_selector;
     NumericSupportSelectorWorkspace<LiftedTag>& numeric_support_selector_workspace;
@@ -132,6 +134,8 @@ template<f::RelationKind R, typename In, typename Out>
 static auto make_rule_update_input(const In& in, Out& out, const NumericSupportSelector<LiftedTag>& numeric_support_selector)
 {
     return RuleUpdateInput<R, std::decay_t<decltype(in.and_ap())>, std::decay_t<decltype(in.cost_policy())>> { in.cws_rule().get_rule(),
+                                                                                                               in.cws_rule().get_pre_evaluated_metric_cost(),
+                                                                                                               in.cws_rule().get_runtime_metric_effects(),
                                                                                                                in.cws_rule().get_witness_rule().get_body(),
                                                                                                                numeric_support_selector,
                                                                                                                out.numeric_support_selector_workspace(),
@@ -148,7 +152,7 @@ static auto make_rule_update_input(const In& in, Out& out, const NumericSupportS
 }
 
 template<f::NumericEffectOpKind Op, f::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
-Cost metric_effect_delta(fd::NumericEffectView<Op, f::FluentTag> effect, const RuleUpdateInput<R, AndAP, CP>& input)
+std::optional<Cost> metric_effect_delta(fd::NumericEffectView<Op, f::FluentTag> effect, const RuleUpdateInput<R, AndAP, CP>& input)
 {
     return metric_effect_delta(
         Op {},
@@ -218,31 +222,32 @@ static bool collect_metric_effect_supports(fd::NumericEffectView<Op, f::FluentTa
 template<f::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
 static bool collect_metric_effect_supports(const RuleUpdateInput<R, AndAP, CP>& input, std::vector<NumericSupport<LiftedTag>>& supports)
 {
-    for (const auto metric_effect : input.rule.get_metric_effects())
+    for (const auto& metric_effect : input.runtime_metric_effects)
         if (!ygg::visit([&](auto&& effect) { return collect_metric_effect_supports(effect, input, supports); }, metric_effect.get_variant()))
             return false;
     return true;
 }
 
 template<f::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
-Cost metric_effect_delta(const RuleUpdateInput<R, AndAP, CP>& input)
+std::optional<Cost> metric_effect_delta(const RuleUpdateInput<R, AndAP, CP>& input)
 {
-    auto delta = Cost(0);
-    for (const auto metric_effect : input.rule.get_metric_effects())
+    auto delta = input.pre_evaluated_metric_cost;
+    for (const auto& metric_effect : input.runtime_metric_effects)
     {
         const auto effect_delta = ygg::visit([&](auto&& effect) { return metric_effect_delta(effect, input); }, metric_effect.get_variant());
-        if (effect_delta == std::numeric_limits<Cost>::max())
-            return effect_delta;
-        delta += effect_delta;
+        if (!effect_delta)
+            return std::nullopt;
+        delta += *effect_delta;
     }
 
     return delta;
 }
 
 template<f::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
-Cost metric_effect_cost(fd::RuleBindingView<R> rule_binding, const RuleUpdateInput<R, AndAP, CP>& input)
+std::optional<Cost> metric_effect_cost(fd::RuleBindingView<R> rule_binding, const RuleUpdateInput<R, AndAP, CP>& input)
 {
-    return reduce_cost(metric_effect_delta(input), input.cost_policy.get_cost(rule_binding));
+    const auto delta = metric_effect_delta(input);
+    return delta ? std::optional(reduce_cost(*delta, input.cost_policy.get_cost(rule_binding))) : std::nullopt;
 }
 
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
@@ -251,13 +256,13 @@ static void record_propositional_achiever(fd::PredicateBindingView<f::FluentTag>
 {
     const auto rule_binding = fd::ground_binding(input.rule, input.solve_context).first;
     const auto cost = metric_effect_cost(rule_binding, input);
-    if (cost == std::numeric_limits<Cost>::max())
+    if (!cost)
         return;
     auto& numeric_supports = input.numeric_support_scratch;
     numeric_supports.clear();
     if (!collect_metric_effect_supports(input, numeric_supports))
         return;
-    const auto context = input.make_annotation_context(rule_binding, cost, numeric_supports);
+    const auto context = input.make_annotation_context(rule_binding, *cost, numeric_supports);
 
     input.and_ap.record_achiever(program_head, context);
 }
@@ -269,7 +274,7 @@ static void insert_propositional_update(fd::PredicateBindingView<f::FluentTag> p
                                         DeltaPredicateAnnotations<LiftedTag>& and_annot)
 {
     auto rule_binding = std::optional<fd::RuleBindingView<f::PredicateTag>> {};
-    auto cost = Cost(0);
+    auto cost = std::optional<Cost> {};
     if constexpr (std::same_as<CP, RuleCostPolicy<LiftedTag>> && !AndAP::records_propositional_achievers)
     {
         cost = metric_effect_delta(input);
@@ -279,13 +284,13 @@ static void insert_propositional_update(fd::PredicateBindingView<f::FluentTag> p
         rule_binding = fd::ground_binding(input.rule, input.solve_context).first;
         cost = metric_effect_cost(*rule_binding, input);
     }
-    if (cost == std::numeric_limits<Cost>::max())
+    if (!cost)
         return;
     auto& numeric_supports = input.numeric_support_scratch;
     numeric_supports.clear();
     if (!collect_metric_effect_supports(input, numeric_supports))
         return;
-    const auto context = input.make_annotation_context(rule_binding, cost, numeric_supports);
+    const auto context = input.make_annotation_context(rule_binding, *cost, numeric_supports);
 
     input.and_ap.record_achiever(program_head, context);
 
@@ -311,13 +316,13 @@ static void insert_numeric_update(fd::NumericEffectOperatorView<f::FluentTag> he
             const auto program_head = fd::ground_binding(effect.get_fterm(), input.iteration_context).first;
             const auto rule_binding = fd::ground_binding(input.rule, input.solve_context).first;
             const auto rem_rule_cost = metric_effect_cost(rule_binding, input);
-            if (rem_rule_cost == std::numeric_limits<Cost>::max())
+            if (!rem_rule_cost)
                 return;
 
             const auto effect_interval =
-                rem_rule_cost == Cost(0) ? widen_free_growth(interval, fact_sets.get<f::FluentTag>().function[program_head]) : interval;
+                *rem_rule_cost == Cost(0) ? widen_free_growth(interval, fact_sets.get<f::FluentTag>().function[program_head]) : interval;
 
-            const auto cost = reduce_cost(rem_rule_cost, input.cost_policy.get_cost(rule_binding, program_head, effect_interval));
+            const auto cost = reduce_cost(*rem_rule_cost, input.cost_policy.get_cost(rule_binding, program_head, effect_interval));
             auto& numeric_supports = input.numeric_support_scratch;
             numeric_supports.clear();
             if (!collect_metric_effect_supports(input, numeric_supports) || !collect_numeric_head_supports(effect, program_head, input, numeric_supports))

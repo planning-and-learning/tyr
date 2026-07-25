@@ -59,6 +59,7 @@ void initialize_const_rule_workspaces(Program<LiftedTag>& program,
                                                           domains.at(rule.get_index()).payload,
                                                           program.get_program().get_objects().size(),
                                                           program.get_program().template get_predicates<::tyr::formalism::FluentTag>().size(),
+                                                          facts.fact_sets,
                                                           facts.assignment_sets);
 }
 }

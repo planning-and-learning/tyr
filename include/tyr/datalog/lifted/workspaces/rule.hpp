@@ -262,12 +262,15 @@ public:
     auto get_nullary_condition() const noexcept { return nullary_condition; }
     auto get_conflicting_overapproximation_rule() const noexcept { return conflicting_overapproximation_rule; }
     const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
+    Cost get_pre_evaluated_metric_cost() const noexcept { return pre_evaluated_metric_cost; }
+    const auto& get_runtime_metric_effects() const noexcept { return runtime_metric_effects; }
 
     ConstRuleWorkspace(::tyr::formalism::datalog::RuleView<R> rule,
                        ::tyr::formalism::datalog::Repository& repository,
                        const analysis::VariableDomainList& parameter_domains,
                        size_t num_objects,
                        size_t num_fluent_predicates,
+                       const TaggedFactSets<::tyr::formalism::StaticTag>& static_fact_sets,
                        const TaggedAssignmentSets<::tyr::formalism::StaticTag>& static_assignment_sets);
 
 private:
@@ -278,6 +281,9 @@ private:
     ::tyr::formalism::datalog::RuleView<R> binary_overapproximation_rule;
     ::tyr::formalism::datalog::RuleView<R> static_binary_overapproximation_rule;
     ::tyr::formalism::datalog::RuleView<R> conflicting_overapproximation_rule;
+
+    Cost pre_evaluated_metric_cost;
+    ::tyr::formalism::datalog::NumericEffectOperatorViewList<::tyr::formalism::FluentTag> runtime_metric_effects;
 
     StaticConsistencyGraph static_consistency_graph;
 };

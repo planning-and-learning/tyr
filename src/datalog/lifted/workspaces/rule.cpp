@@ -17,7 +17,9 @@
 
 #include "tyr/datalog/lifted/workspaces/rule.hpp"
 
+#include "tyr/datalog/lifted/applicability.hpp"
 #include "tyr/datalog/lifted/assignment_sets.hpp"
+#include "tyr/datalog/numeric_utils.hpp"
 #include "tyr/formalism/datalog/builder.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/expression_arity.hpp"
@@ -27,6 +29,8 @@
 #include "tyr/formalism/datalog/rule_view.hpp"
 
 #include <chrono>
+#include <iterator>
+#include <optional>
 #include <type_traits>
 #include <vector>
 
@@ -42,6 +46,115 @@ namespace tyr::datalog
 
 namespace
 {
+using Interval = ygg::ClosedInterval<ygg::float_t>;
+using OptionalInterval = std::optional<Interval>;
+
+OptionalInterval evaluate_static(ygg::float_t value, const TaggedFactSets<f::StaticTag>&) { return Interval(value, value); }
+
+OptionalInterval evaluate_static(fd::GroundFunctionTermView<f::StaticTag> term, const TaggedFactSets<f::StaticTag>& facts)
+{
+    return facts.function[term];
+}
+
+OptionalInterval evaluate_static(fd::GroundFunctionTermView<f::FluentTag>, const TaggedFactSets<f::StaticTag>&) { return std::nullopt; }
+
+OptionalInterval evaluate_static(fd::GroundFunctionTermView<f::AuxiliaryTag>, const TaggedFactSets<f::StaticTag>&) { return std::nullopt; }
+
+OptionalInterval evaluate_static(fd::GroundFunctionExpressionView expression, const TaggedFactSets<f::StaticTag>& facts);
+
+template<f::ArithmeticOpKind Op>
+OptionalInterval evaluate_static(fd::GroundUnaryOperatorView<Op> expression, const TaggedFactSets<f::StaticTag>& facts)
+{
+    const auto arg = evaluate_static(expression.get_arg(), facts);
+    return arg ? OptionalInterval(f::apply(Op {}, *arg)) : std::nullopt;
+}
+
+template<f::ArithmeticOpKind Op>
+OptionalInterval evaluate_static(fd::GroundBinaryOperatorView<Op> expression, const TaggedFactSets<f::StaticTag>& facts)
+{
+    const auto lhs = evaluate_static(expression.get_lhs(), facts);
+    const auto rhs = evaluate_static(expression.get_rhs(), facts);
+    return lhs && rhs ? OptionalInterval(f::apply(Op {}, *lhs, *rhs)) : std::nullopt;
+}
+
+template<f::ArithmeticOpKind Op>
+OptionalInterval evaluate_static(fd::GroundMultiOperatorView<Op> expression, const TaggedFactSets<f::StaticTag>& facts)
+{
+    auto args = expression.get_args();
+    auto result = evaluate_static(args.front(), facts);
+    if (!result)
+        return std::nullopt;
+    for (auto it = std::next(args.begin()); it != args.end(); ++it)
+    {
+        const auto arg = evaluate_static(*it, facts);
+        if (!arg)
+            return std::nullopt;
+        result = f::apply(Op {}, *result, *arg);
+    }
+    return result;
+}
+
+OptionalInterval evaluate_static(fd::GroundArithmeticOperatorView expression, const TaggedFactSets<f::StaticTag>& facts)
+{
+    return ygg::visit([&](auto&& arg) { return evaluate_static(arg, facts); }, expression.get_variant());
+}
+
+OptionalInterval evaluate_static(fd::GroundFunctionExpressionView expression, const TaggedFactSets<f::StaticTag>& facts)
+{
+    return ygg::visit([&](auto&& arg) { return evaluate_static(arg, facts); }, expression.get_variant());
+}
+
+template<f::NumericEffectOpKind Op>
+std::optional<Cost> try_pre_evaluate_metric_effect(fd::NumericEffectView<Op, f::FluentTag> effect,
+                                                   fd::Repository& repository,
+                                                   const TaggedFactSets<f::StaticTag>& static_fact_sets)
+{
+    if constexpr (!std::is_same_v<Op, f::Increase> && !std::is_same_v<Op, f::Decrease>)
+    {
+        return std::nullopt;
+    }
+    else
+    {
+        auto parameters = ygg::UnorderedSet<f::ParameterIndex> {};
+        fd::collect_parameters(effect.get_fexpr(), parameters);
+        if (fd::parameter_arity(effect.get_fterm()) != 0 || !parameters.empty())
+            return std::nullopt;
+
+        auto builder = fd::Builder {};
+        auto binding = ygg::IndexList<f::Object> {};
+        auto grounder_context = fd::GrounderContext { builder, repository, binding };
+        const auto expression = ygg::make_view(fd::ground(effect.get_fexpr(), grounder_context), repository);
+        const auto rhs = evaluate_static(expression, static_fact_sets);
+        if (!rhs)
+            return std::nullopt;
+
+        return metric_effect_delta(Op {}, [] { return Interval {}; }, [&] { return *rhs; });
+    }
+}
+
+struct MetricEffects
+{
+    Cost pre_evaluated_cost = Cost(0);
+    fd::NumericEffectOperatorViewList<f::FluentTag> runtime_effects;
+};
+
+template<f::RelationKind R>
+MetricEffects classify_metric_effects(fd::RuleView<R> rule, fd::Repository& repository, const TaggedFactSets<f::StaticTag>& static_fact_sets)
+{
+    auto result = MetricEffects {};
+    result.runtime_effects.reserve(rule.get_metric_effects().size());
+    for (const auto& metric_effect : rule.get_metric_effects())
+    {
+        const auto cost =
+            ygg::visit([&](auto&& effect) { return try_pre_evaluate_metric_effect(effect, repository, static_fact_sets); }, metric_effect.get_variant());
+        if (cost)
+            result.pre_evaluated_cost += *cost;
+        else
+            result.runtime_effects.push_back(metric_effect);
+    }
+    return result;
+}
+
 auto create_witness_conjunctive_condition(fd::ConjunctiveConditionView element, fd::Repository& context)
 {
     auto builder = fd::Builder {};
@@ -83,6 +196,7 @@ ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(fd::RuleView<R> rule,
                                                      const analysis::VariableDomainList& parameter_domains,
                                                      size_t num_objects,
                                                      size_t num_fluent_predicates,
+                                                     const TaggedFactSets<f::StaticTag>& static_fact_sets,
                                                      const TaggedAssignmentSets<::tyr::formalism::StaticTag>& static_assignment_sets) :
     rule(rule),
     witness_rule(create_witness_rule(get_rule(), repository).first),
@@ -91,6 +205,8 @@ ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(fd::RuleView<R> rule,
     binary_overapproximation_rule(create_overapproximation_rule(2, get_rule(), repository).first),
     static_binary_overapproximation_rule(create_static_overapproximation_rule(2, get_rule(), repository).first),
     conflicting_overapproximation_rule(create_overapproximation_conflicting_rule(get_rule().get_arity() == 1 ? 1 : 2, get_rule(), repository).first),
+    pre_evaluated_metric_cost(),
+    runtime_metric_effects(),
     static_consistency_graph(get_rule().get_body(),
                              unary_overapproximation_rule.get_body(),
                              binary_overapproximation_rule.get_body(),
@@ -102,6 +218,9 @@ ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(fd::RuleView<R> rule,
                              get_rule().get_arity(),
                              static_assignment_sets)
 {
+    auto metric_effects = classify_metric_effects(get_rule(), repository, static_fact_sets);
+    pre_evaluated_metric_cost = metric_effects.pre_evaluated_cost;
+    runtime_metric_effects = std::move(metric_effects.runtime_effects);
 }
 
 template struct ConstRuleWorkspace<LiftedTag, f::PredicateTag>;

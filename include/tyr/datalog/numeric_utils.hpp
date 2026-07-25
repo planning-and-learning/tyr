@@ -22,6 +22,7 @@
 #include "tyr/formalism/declarations.hpp"
 
 #include <limits>
+#include <optional>
 #include <type_traits>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
@@ -50,13 +51,13 @@ ygg::ClosedInterval<ygg::float_t> apply_numeric_effect(Op, ygg::ClosedInterval<y
 
 /// Nonnegative cost that a single application of a metric effect adds. Operands are evaluated lazily,
 /// so evaluation side effects (e.g., support selection) only occur for operands the operator needs.
-/// Returns max() when an operand is unsupported.
+/// Returns nullopt when an operand is unsupported.
 template<::tyr::formalism::NumericEffectOpKind Op, typename EvalLhs, typename EvalRhs>
-Cost metric_effect_delta(Op, EvalLhs&& eval_lhs, EvalRhs&& eval_rhs)
+std::optional<Cost> metric_effect_delta(Op, EvalLhs&& eval_lhs, EvalRhs&& eval_rhs)
 {
     const auto rhs = eval_rhs();
     if (empty(rhs))
-        return std::numeric_limits<Cost>::max();
+        return std::nullopt;
 
     if constexpr (std::is_same_v<Op, ::tyr::formalism::Increase>)
     {
@@ -70,10 +71,10 @@ Cost metric_effect_delta(Op, EvalLhs&& eval_lhs, EvalRhs&& eval_rhs)
     {
         const auto lhs = eval_lhs();
         if (empty(lhs))
-            return std::numeric_limits<Cost>::max();
+            return std::nullopt;
         const auto next = apply_numeric_effect(Op {}, lhs, rhs);
         if (empty(next))
-            return std::numeric_limits<Cost>::max();
+            return std::nullopt;
         return clamp_metric_delta(lower(next) - upper(lhs));
     }
 }

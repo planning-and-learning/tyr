@@ -200,9 +200,9 @@ Cost aggregate_selection_cost(Cost cost, const std::vector<NumericSelectionEntry
 }
 
 template<f::NumericEffectOpKind Op>
-Cost metric_effect_delta(fd::GroundNumericEffectView<Op, f::FluentTag> effect,
-                         const GroundNumericSupportSelector& selector,
-                         std::vector<NumericSelectionEntry>& selection)
+std::optional<Cost> metric_effect_delta(fd::GroundNumericEffectView<Op, f::FluentTag> effect,
+                                        const GroundNumericSupportSelector& selector,
+                                        std::vector<NumericSelectionEntry>& selection)
 {
     return tyr::datalog::metric_effect_delta(
         Op {},
@@ -221,12 +221,12 @@ Cost aggregate_metric_effect_cost(fd::GroundRuleView<R> rule, const GroundCtx<Or
     selection.clear();
 
     auto delta = Cost(0);
-    for (const auto metric_effect : rule.get_metric_effects())
+    for (const auto& metric_effect : rule.get_metric_effects())
     {
         const auto effect_delta = ygg::visit([&](auto&& effect) { return metric_effect_delta(effect, selector, selection); }, metric_effect.get_variant());
-        if (effect_delta == std::numeric_limits<Cost>::max())
-            return effect_delta;
-        delta += effect_delta;
+        if (!effect_delta)
+            return std::numeric_limits<Cost>::max();
+        delta += *effect_delta;
     }
 
     return reduce_cost(delta, ctx.out().cost_policy().get_cost(rule));
