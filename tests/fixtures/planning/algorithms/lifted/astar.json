@@ -5741,8 +5741,8 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 269,
-                "num_expanded": 105,
+                "num_generated": 331,
+                "num_expanded": 146,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5781,8 +5781,8 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 127,
-                "num_expanded": 39,
+                "num_generated": 157,
+                "num_expanded": 55,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5790,8 +5790,8 @@
                     "length": 7,
                     "actions": [
                         "(drive truck0 depot0 market4)",
-                        "(buy-all truck0 goods0 market4)",
                         "(buy-all truck0 goods1 market4)",
+                        "(buy-all truck0 goods0 market4)",
                         "(drive truck0 market4 market3)",
                         "(buy-allneeded truck0 goods1 market3)",
                         "(buy-allneeded truck0 goods0 market3)",
@@ -5819,8 +5819,8 @@
                 }
             },
             "hff_general": {
-                "num_generated": 495,
-                "num_expanded": 270,
+                "num_generated": 662,
+                "num_expanded": 368,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5859,8 +5859,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 120,
-                "num_expanded": 35,
+                "num_generated": 170,
+                "num_expanded": 56,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5870,8 +5870,8 @@
                         "(drive truck0 depot0 market1)",
                         "(buy-all truck0 goods0 market1)",
                         "(drive truck0 market1 market4)",
-                        "(buy-all truck0 goods0 market4)",
                         "(buy-all truck0 goods1 market4)",
+                        "(buy-all truck0 goods0 market4)",
                         "(drive truck0 market4 market3)",
                         "(buy-allneeded truck0 goods0 market3)",
                         "(buy-allneeded truck0 goods1 market3)",

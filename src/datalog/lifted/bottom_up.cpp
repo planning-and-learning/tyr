@@ -505,8 +505,7 @@ void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP, CP>& wrctx,
                 if (!dynamically_applicable())
                     return;
 
-                if (!is_valid_binding(in.cws_rule().get_rule().get_body(), in.fact_sets(), out.ground_context_iteration()))
-                    return;
+                assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context_iteration(), in.fact_sets()));
 
                 insert_numeric_update(head, in.fact_sets(), input, out.head(), out.numeric_and_annot());
             }

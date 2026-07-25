@@ -35,17 +35,21 @@ struct FloatCmp
 {
     static T tol(T a, T b) noexcept { return ygg::FloatTolerance<T>::tolerance(a, b); }
 
-    static bool eq(T a, T b) noexcept { return std::abs(a - b) <= tol(a, b); }
+    /// The relative tolerance is infinite for infinite operands, which would swallow every strict
+    /// comparison against a free-growth widened bound, e.g. gt(inf, 0) becomes inf > inf.
+    static bool exact(T a, T b) noexcept { return std::isinf(a) || std::isinf(b); }
+
+    static bool eq(T a, T b) noexcept { return exact(a, b) ? a == b : std::abs(a - b) <= tol(a, b); }
 
     static bool ne(T a, T b) noexcept { return !eq(a, b); }
 
-    static bool le(T a, T b) noexcept { return a <= b + tol(a, b); }
+    static bool le(T a, T b) noexcept { return exact(a, b) ? a <= b : a <= b + tol(a, b); }
 
-    static bool lt(T a, T b) noexcept { return a < b - tol(a, b); }
+    static bool lt(T a, T b) noexcept { return exact(a, b) ? a < b : a < b - tol(a, b); }
 
-    static bool ge(T a, T b) noexcept { return a + tol(a, b) >= b; }
+    static bool ge(T a, T b) noexcept { return exact(a, b) ? a >= b : a + tol(a, b) >= b; }
 
-    static bool gt(T a, T b) noexcept { return a > b + tol(a, b); }
+    static bool gt(T a, T b) noexcept { return exact(a, b) ? a > b : a > b + tol(a, b); }
 };
 
 namespace detail

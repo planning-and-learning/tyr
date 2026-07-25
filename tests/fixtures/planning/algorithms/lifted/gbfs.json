@@ -5992,18 +5992,17 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 87,
-                "num_expanded": 58,
+                "num_generated": 91,
+                "num_expanded": 57,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 1833,
-                    "length": 9,
+                    "cost": 2049,
+                    "length": 8,
                     "actions": [
                         "(drive truck0 depot0 market1)",
                         "(buy-all truck0 goods0 market1)",
                         "(drive truck0 market1 market4)",
-                        "(buy-all truck0 goods0 market4)",
                         "(buy-all truck0 goods1 market4)",
                         "(drive truck0 market4 market3)",
                         "(buy-allneeded truck0 goods1 market3)",
@@ -6034,22 +6033,21 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 39,
-                "num_expanded": 17,
+                "num_generated": 44,
+                "num_expanded": 15,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 2247.89,
-                    "length": 9,
+                    "cost": 2049,
+                    "length": 8,
                     "actions": [
                         "(drive truck0 depot0 market1)",
                         "(buy-all truck0 goods0 market1)",
-                        "(drive truck0 market1 market3)",
-                        "(buy-allneeded truck0 goods0 market3)",
-                        "(drive truck0 market3 market4)",
+                        "(drive truck0 market1 market4)",
                         "(buy-all truck0 goods1 market4)",
                         "(drive truck0 market4 market3)",
                         "(buy-allneeded truck0 goods1 market3)",
+                        "(buy-allneeded truck0 goods0 market3)",
                         "(drive truck0 market3 depot0)"
                     ]
                 }
@@ -6076,26 +6074,22 @@
                 }
             },
             "hff_general": {
-                "num_generated": 115,
-                "num_expanded": 45,
+                "num_generated": 82,
+                "num_expanded": 25,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 2469.5099999999998,
-                    "length": 12,
+                    "cost": 2226.96,
+                    "length": 8,
                     "actions": [
-                        "(drive truck0 depot0 market1)",
-                        "(buy-all truck0 goods0 market1)",
-                        "(drive truck0 market1 market3)",
-                        "(buy-all truck0 goods1 market3)",
+                        "(drive truck0 depot0 market4)",
+                        "(buy-all truck0 goods1 market4)",
+                        "(drive truck0 market4 market3)",
+                        "(buy-allneeded truck0 goods1 market3)",
+                        "(buy-all truck0 goods0 market3)",
                         "(drive truck0 market3 market4)",
-                        "(buy-allneeded truck0 goods1 market4)",
-                        "(buy-all truck0 goods0 market4)",
-                        "(drive truck0 market4 market5)",
-                        "(buy-all truck0 goods0 market5)",
-                        "(drive truck0 market5 market3)",
-                        "(buy-allneeded truck0 goods0 market3)",
-                        "(drive truck0 market3 depot0)"
+                        "(buy-allneeded truck0 goods0 market4)",
+                        "(drive truck0 market4 depot0)"
                     ]
                 }
             },
