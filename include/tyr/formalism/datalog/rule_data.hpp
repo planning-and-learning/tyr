@@ -25,7 +25,6 @@
 #include "tyr/formalism/datalog/rule_index.hpp"
 #include "tyr/formalism/variable_index.hpp"
 
-#include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -67,17 +66,12 @@ struct Data<::tyr::formalism::datalog::Rule<R>>
         index(),
         variables(),
         body(),
-        head([&]() -> Head
-             {
-                 if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
-                     return head_.get_index();
-                 else
-                     return head_.get_data();
-             }()),
+        head(),
         metric_effects()
     {
         set(variables_, variables);
         set(body_, body);
+        set(head_, head);
         set(metric_effects_, metric_effects);
     }
     Data(const Data& other) = delete;

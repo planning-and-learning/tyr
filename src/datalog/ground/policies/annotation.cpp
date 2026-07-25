@@ -74,14 +74,14 @@ void AndAnnotationPolicy<GroundTag, AggregationFunction>::clear_achievers() noex
 
 template<typename AggregationFunction>
 void AndAnnotationPolicy<GroundTag, AggregationFunction>::record_achiever(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag>,
-                                                                          const AndAnnotationContext<GroundTag>&) const noexcept
+                                                                          const AndAnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>&) const noexcept
 {
 }
 
 template<typename AggregationFunction>
 void AndAnnotationPolicy<GroundTag, AggregationFunction>::update_annotation(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> program_head,
                                                                             ::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> delta_head,
-                                                                            const AndAnnotationContext<GroundTag>& context,
+                                                                            const AndAnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context,
                                                                             DeltaPredicateAnnotations<GroundTag>& delta_and_annot) const
 {
     const auto best_global_cost = fetch_annotation_cost<GroundTag>(program_head.get_row(), context.program_and_annot);
@@ -92,9 +92,13 @@ void AndAnnotationPolicy<GroundTag, AggregationFunction>::update_annotation(::ty
 
     auto witness = WitnessAnnotation<GroundTag>(context.rule, context.metric, context.current_cost, context.numeric_supports);
     if (best_cost == context.current_cost
-        && !witness_wins_tie<GroundTag>(
-            witness,
-            select_incumbent<GroundTag>(program_head.get_row(), delta_head.get_row(), best_global_cost, best_local_cost, context.program_and_annot, delta_and_annot)))
+        && !witness_wins_tie<GroundTag>(witness,
+                                        select_incumbent<GroundTag>(program_head.get_row(),
+                                                                    delta_head.get_row(),
+                                                                    best_global_cost,
+                                                                    best_local_cost,
+                                                                    context.program_and_annot,
+                                                                    delta_and_annot)))
         return;
 
     delta_and_annot.insert_or_assign(delta_head.get_row(), Annotation<GroundTag>(std::move(witness)));
@@ -105,12 +109,13 @@ void AndAnnotationPolicy<GroundTag, AggregationFunction>::update_annotation(
     ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag>,
     ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> delta_head,
     ygg::ClosedInterval<ygg::float_t> interval,
-    const AndAnnotationContext<GroundTag>& context,
+    const AndAnnotationContext<GroundTag, ::tyr::formalism::FunctionTag>& context,
     DeltaFunctionAnnotations<GroundTag>& delta_numeric_and_annot) const
 {
-    delta_numeric_and_annot.insert(delta_head,
-                                   interval,
-                                   WitnessAnnotation<GroundTag>(context.rule, context.metric, context.current_cost, context.numeric_supports));
+    delta_numeric_and_annot.insert(
+        delta_head,
+        interval,
+        WitnessAnnotation<GroundTag, ::tyr::formalism::FunctionTag>(context.rule, context.metric, context.current_cost, context.numeric_supports));
 }
 
 template<typename AggregationFunction>
@@ -128,7 +133,9 @@ AchieverAndAnnotationPolicy<GroundTag, AggregationFunction>::find_achievers(Atom
 }
 
 template<typename AggregationFunction>
-void AchieverAndAnnotationPolicy<GroundTag, AggregationFunction>::record_achiever(Atom program_head, const AndAnnotationContext<GroundTag>& context) const
+void AchieverAndAnnotationPolicy<GroundTag, AggregationFunction>::record_achiever(
+    Atom program_head,
+    const AndAnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context) const
 {
     achievers[program_head.get_index()].emplace_back(context.rule, context.metric, context.current_cost, context.numeric_supports);
 }

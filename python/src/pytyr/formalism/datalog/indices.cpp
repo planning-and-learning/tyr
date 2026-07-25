@@ -42,7 +42,8 @@ void bind_relation_binding_index(nb::module_& m, const std::string& name)
 
 void bind_indices(nb::module_& m)
 {
-    bind_relation_binding_index<Rule>(m, "RuleBindingIndex");
+    bind_relation_binding_index<Rule<PredicateTag>>(m, "RuleBindingIndex");
+    bind_relation_binding_index<Rule<FunctionTag>>(m, "FunctionRuleBindingIndex");
 
     bind_index<ygg::Index<Atom<StaticTag>>>(m, "StaticAtomIndex");
     bind_index<ygg::Index<Atom<FluentTag>>>(m, "FluentAtomIndex");
@@ -85,7 +86,8 @@ void bind_indices(nb::module_& m)
     bind_index<ygg::Index<NumericEffect<ScaleDown, FluentTag>>>(m, "FluentNumericEffectScaleDownIndex");
     bind_index<ygg::Index<ConjunctiveEffect>>(m, "ConjunctiveEffectIndex");
     bind_index<ygg::Index<ConditionalEffect>>(m, "ConditionalEffectIndex");
-    bind_index<ygg::Index<Rule>>(m, "RuleIndex");
+    bind_index<ygg::Index<Rule<PredicateTag>>>(m, "RuleIndex");
+    bind_index<ygg::Index<Rule<FunctionTag>>>(m, "FunctionRuleIndex");
 
     bind_index<ygg::Index<UnaryOperator<Sub, ygg::Data<GroundFunctionExpression>>>>(m, "GroundUnaryOperatorSubIndex");
     bind_index<ygg::Index<BinaryOperator<Add, ygg::Data<GroundFunctionExpression>>>>(m, "GroundBinaryOperatorAddIndex");
@@ -109,7 +111,8 @@ void bind_indices(nb::module_& m)
     bind_index<ygg::Index<GroundNumericEffect<ScaleDown, FluentTag>>>(m, "FluentGroundNumericEffectScaleDownIndex");
     bind_index<ygg::Index<GroundConjunctiveEffect>>(m, "GroundConjunctiveEffectIndex");
     bind_index<ygg::Index<GroundConditionalEffect>>(m, "GroundConditionalEffectIndex");
-    bind_index<ygg::Index<GroundRule>>(m, "GroundRuleIndex");
+    bind_index<ygg::Index<GroundRule<PredicateTag>>>(m, "GroundRuleIndex");
+    bind_index<ygg::Index<GroundRule<FunctionTag>>>(m, "GroundFunctionRuleIndex");
     bind_index<ygg::Index<Metric>>(m, "MetricIndex");
     bind_index<ygg::Index<Program>>(m, "ProgramIndex");
     bind_index<ygg::Index<GroundProgram>>(m, "GroundProgramIndex");

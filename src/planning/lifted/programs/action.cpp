@@ -134,7 +134,7 @@ auto create_program(fp::TaskView task,
 
         program.fluent_predicates.push_back(applicability_predicate.get_index());
 
-        auto rule_ptr = builder.get_builder<fd::Rule>();
+        auto rule_ptr = builder.get_builder<fd::Rule<f::PredicateTag>>();
         auto& rule = *rule_ptr;
         rule.clear();
 
@@ -173,7 +173,7 @@ auto create_program(fp::TaskView task,
         canonicalize(rule);
         const auto new_rule = repository.get_or_create(rule).first.get_index();
 
-        program.rules.push_back(new_rule);
+        program.predicate_rules.push_back(new_rule);
     }
 
     canonicalize(program);

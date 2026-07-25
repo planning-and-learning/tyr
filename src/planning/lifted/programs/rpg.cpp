@@ -234,7 +234,7 @@ auto create_cond_effect_rule(fp::ActionView action,
                              TranslationContext<LiftedTag>& translation_context,
                              ::tyr::formalism::planning::MergeDatalogContext& context)
 {
-    auto rule_ptr = context.builder.get_builder<::tyr::formalism::datalog::Rule>();
+    auto rule_ptr = context.builder.get_builder<::tyr::formalism::datalog::Rule<f::PredicateTag>>();
     auto& rule = *rule_ptr;
     rule.clear();
 
@@ -263,7 +263,7 @@ auto create_cond_numeric_effect_rule(fp::ActionView action,
                                      TranslationContext<LiftedTag>& translation_context,
                                      ::tyr::formalism::planning::MergeDatalogContext& context)
 {
-    auto rule_ptr = context.builder.get_builder<::tyr::formalism::datalog::Rule>();
+    auto rule_ptr = context.builder.get_builder<::tyr::formalism::datalog::Rule<f::FunctionTag>>();
     auto& rule = *rule_ptr;
     rule.clear();
 
@@ -292,7 +292,7 @@ void translate_action_to_delete_free_rules(fp::ActionView action,
                                            const MetricFunctionSet& metric_functions,
                                            TranslationContext<LiftedTag>& translation_context,
                                            fp::MergeDatalogContext& context,
-                                           RPGProgram<LiftedTag>::RuleToActionMapping& rule_to_action)
+                                           RPGProgram<LiftedTag>::RuleToActionMappings& rule_to_action)
 {
     const auto metric_effects = create_metric_effects(action, cost_mode, unit_metric_effects, metric_functions, translation_context, context);
 
@@ -305,16 +305,16 @@ void translate_action_to_delete_free_rules(fp::ActionView action,
 
             const auto rule = create_cond_effect_rule(action, cond_eff, literal.get_atom(), metric_effects, translation_context, context).first;
 
-            program.rules.push_back(rule.get_index());
-            rule_to_action.emplace(rule, action);
+            program.predicate_rules.push_back(rule.get_index());
+            rule_to_action.predicate.emplace(rule, action);
         }
 
         for (const auto numeric_effect : cond_eff.get_effect().get_numeric_effects())
         {
             const auto rule = create_cond_numeric_effect_rule(action, cond_eff, numeric_effect, metric_effects, translation_context, context).first;
 
-            program.rules.push_back(rule.get_index());
-            rule_to_action.emplace(rule, action);
+            program.function_rules.push_back(rule.get_index());
+            rule_to_action.function.emplace(rule, action);
         }
     }
 }
@@ -322,7 +322,7 @@ void translate_action_to_delete_free_rules(fp::ActionView action,
 auto create_program(fp::TaskView task,
                     CostMode cost_mode,
                     TranslationContext<LiftedTag>& translation_context,
-                    RPGProgram<LiftedTag>::RuleToActionMapping& rule_to_action,
+                    RPGProgram<LiftedTag>::RuleToActionMappings& rule_to_action,
                     fd::Repository& destination)
 {
     auto builder = fd::Builder();
@@ -405,7 +405,7 @@ auto create_program(fp::TaskView task,
 auto create_datalog_program(fp::TaskView task,
                             CostMode cost_mode,
                             TranslationContext<LiftedTag>& translation_context,
-                            RPGProgram<LiftedTag>::RuleToActionMapping& rule_to_action)
+                            RPGProgram<LiftedTag>::RuleToActionMappings& rule_to_action)
 {
     auto factory = std::make_shared<fd::RepositoryFactory>();
     auto repository = factory->create_shared();
@@ -425,7 +425,17 @@ RPGProgram<LiftedTag>::RPGProgram(fp::TaskView task, CostMode cost_mode) :
 
 const TranslationContext<LiftedTag>& RPGProgram<LiftedTag>::get_translation_context() const noexcept { return m_translation_context; }
 
-const RPGProgram<LiftedTag>::RuleToActionMapping& RPGProgram<LiftedTag>::get_rule_to_action_mapping() const noexcept { return m_rule_to_action; }
+template<>
+const RPGProgram<LiftedTag>::RuleToActionMapping<f::PredicateTag>& RPGProgram<LiftedTag>::get_rule_to_action_mapping<f::PredicateTag>() const noexcept
+{
+    return m_rule_to_action.predicate;
+}
+
+template<>
+const RPGProgram<LiftedTag>::RuleToActionMapping<f::FunctionTag>& RPGProgram<LiftedTag>::get_rule_to_action_mapping<f::FunctionTag>() const noexcept
+{
+    return m_rule_to_action.function;
+}
 
 datalog::Program<LiftedTag>& RPGProgram<LiftedTag>::get_datalog_program() noexcept { return m_datalog_program; }
 

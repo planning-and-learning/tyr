@@ -65,20 +65,21 @@ public:
     using FunctionHead = FunctionAnnotationHeadT<LiftedTag>;
 
     static constexpr AggregationFunction agg = AggregationFunction {};
+    static constexpr bool records_propositional_achievers = false;
 
     void clear_achievers() noexcept {}
 
-    void record_achiever(PredicateHead program_head, const AndAnnotationContext<LiftedTag>& context) const noexcept {}
+    void record_achiever(PredicateHead program_head, const AndAnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context) const noexcept {}
 
     void update_annotation(PredicateHead program_head,
                            PredicateHead delta_head,
-                           const AndAnnotationContext<LiftedTag>& context,
+                           const AndAnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context,
                            DeltaPredicateAnnotations<LiftedTag>& delta_and_annot) const;
 
     void update_annotation(FunctionHead program_head,
                            FunctionHead delta_head,
                            ygg::ClosedInterval<ygg::float_t> interval,
-                           const AndAnnotationContext<LiftedTag>& context,
+                           const AndAnnotationContext<LiftedTag, ::tyr::formalism::FunctionTag>& context,
                            DeltaFunctionAnnotations<LiftedTag>& delta_numeric_and_annot) const;
 };
 
@@ -88,13 +89,15 @@ class AchieverAndAnnotationPolicy<LiftedTag, AggregationFunction> : public AndAn
 public:
     using PredicateBinding = PredicateAnnotationHeadT<LiftedTag>;
     using PredicateBindingIndex = ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>>;
-    using Achievers = std::vector<WitnessAnnotation<LiftedTag>>;
+    using Achievers = std::vector<WitnessAnnotation<LiftedTag, ::tyr::formalism::PredicateTag>>;
+
+    static constexpr bool records_propositional_achievers = true;
 
     void clear_achievers() noexcept;
 
     const Achievers* find_achievers(PredicateBinding program_head) const noexcept;
 
-    void record_achiever(PredicateBinding program_head, const AndAnnotationContext<LiftedTag>& context) const;
+    void record_achiever(PredicateBinding program_head, const AndAnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context) const;
 
 private:
     mutable ygg::UnorderedMap<PredicateBindingIndex, Achievers> m_achievers;

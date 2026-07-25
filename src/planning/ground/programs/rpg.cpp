@@ -66,7 +66,34 @@ struct GroundProgramBuildContext
     GroundProgramBuildContext(fd::Repository& repository) : builder(), merge_context(builder, repository), program() { program.clear(); }
 };
 
-fd::RuleBindingView create_rule_binding(GroundProgramBuildContext& context)
+ygg::Data<fd::NumericEffectOperator<f::FluentTag>> create_rule_binding_numeric_head(GroundProgramBuildContext& context)
+{
+    auto function_ptr = context.builder.get_builder<f::Function<f::FluentTag>>();
+    auto& function = *function_ptr;
+    function.clear();
+    function.name = "__tyr_ground_rule_binding";
+    function.arity = 0;
+    canonicalize(function);
+    const auto function_view = context.merge_context.destination.get_or_create(function).first;
+
+    auto term_ptr = context.builder.get_builder<fd::FunctionTerm<f::FluentTag>>();
+    auto& term = *term_ptr;
+    term.clear();
+    term.function = function_view.get_index();
+    canonicalize(term);
+    const auto term_view = context.merge_context.destination.get_or_create(term).first;
+
+    auto effect_ptr = context.builder.get_builder<fd::NumericEffect<f::Assign, f::FluentTag>>();
+    auto& effect = *effect_ptr;
+    effect.clear();
+    effect.fterm = term_view.get_index();
+    effect.fexpr = ygg::Data<fd::FunctionExpression>(ygg::float_t(0));
+    canonicalize(effect);
+    return ygg::Data<fd::NumericEffectOperator<f::FluentTag>>(context.merge_context.destination.get_or_create(effect).first.get_index());
+}
+
+template<f::RelationKind R, typename CreateHead>
+fd::RuleBindingView<R> create_rule_binding(GroundProgramBuildContext& context, CreateHead&& create_head)
 {
     auto predicate_ptr = context.builder.get_builder<f::Predicate<f::FluentTag>>();
     auto& predicate = *predicate_ptr;
@@ -84,21 +111,31 @@ fd::RuleBindingView create_rule_binding(GroundProgramBuildContext& context)
     canonicalize(atom);
     const auto new_atom = context.merge_context.destination.get_or_create(atom).first;
 
+    auto literal_ptr = context.builder.get_builder<fd::Literal<f::FluentTag>>();
+    auto& literal = *literal_ptr;
+    literal.clear();
+    literal.atom = new_atom.get_index();
+    literal.polarity = false;
+    canonicalize(literal);
+    const auto new_literal = context.merge_context.destination.get_or_create(literal).first;
+
     auto condition_ptr = context.builder.get_builder<fd::ConjunctiveCondition>();
     auto& condition = *condition_ptr;
     condition.clear();
+    // Keep synthetic function-rule keys distinct without adding a positive witness precondition.
+    condition.fluent_literals.push_back(new_literal.get_index());
     canonicalize(condition);
     const auto new_condition = context.merge_context.destination.get_or_create(condition).first;
 
-    auto rule_ptr = context.builder.get_builder<fd::Rule>();
+    auto rule_ptr = context.builder.get_builder<fd::Rule<R>>();
     auto& rule = *rule_ptr;
     rule.clear();
     rule.body = new_condition.get_index();
-    rule.head = new_atom.get_index();
+    rule.head = create_head(new_atom);
     canonicalize(rule);
     const auto new_rule = context.merge_context.destination.get_or_create(rule).first;
 
-    auto binding_ptr = context.builder.get_builder<f::RelationBinding<fd::Rule>>();
+    auto binding_ptr = context.builder.get_builder<f::RelationBinding<fd::Rule<R>>>();
     auto& binding = *binding_ptr;
     binding.clear();
     binding.relation = new_rule.get_index();
@@ -319,15 +356,15 @@ create_metric_effects(fp::GroundActionView action,
     return result;
 }
 
-fd::GroundRuleView create_ground_atom_rule(fd::GroundConjunctiveConditionView body,
-                                           fd::GroundAtomView<f::FluentTag> head,
-                                           GroundProgramBuildContext& context,
-                                           ygg::DataList<fd::GroundNumericEffectOperator<f::FluentTag>> metric_effects = {})
+fd::GroundRuleView<f::PredicateTag> create_ground_atom_rule(fd::GroundConjunctiveConditionView body,
+                                                            fd::GroundAtomView<f::FluentTag> head,
+                                                            GroundProgramBuildContext& context,
+                                                            ygg::DataList<fd::GroundNumericEffectOperator<f::FluentTag>> metric_effects = {})
 {
-    auto rule_ptr = context.builder.get_builder<fd::GroundRule>();
+    auto rule_ptr = context.builder.get_builder<fd::GroundRule<f::PredicateTag>>();
     auto& rule = *rule_ptr;
     rule.clear();
-    rule.binding = create_rule_binding(context).get_index();
+    rule.binding = create_rule_binding<f::PredicateTag>(context, [](auto atom) { return atom.get_index(); }).get_index();
     rule.body = body.get_index();
     rule.head = head.get_index();
     rule.metric_effects = std::move(metric_effects);
@@ -335,26 +372,27 @@ fd::GroundRuleView create_ground_atom_rule(fd::GroundConjunctiveConditionView bo
     return context.merge_context.destination.get_or_create(rule).first;
 }
 
-fd::GroundRuleView create_ground_numeric_effect_rule(fd::GroundConjunctiveConditionView body,
-                                                     fp::GroundNumericEffectOperatorView<f::FluentTag> head,
-                                                     GroundProgramBuildContext& context,
-                                                     ygg::DataList<fd::GroundNumericEffectOperator<f::FluentTag>> metric_effects = {})
+fd::GroundRuleView<f::FunctionTag> create_ground_numeric_effect_rule(fd::GroundConjunctiveConditionView body,
+                                                                     fp::GroundNumericEffectOperatorView<f::FluentTag> head,
+                                                                     GroundProgramBuildContext& context,
+                                                                     ygg::DataList<fd::GroundNumericEffectOperator<f::FluentTag>> metric_effects = {})
 {
-    auto rule_ptr = context.builder.get_builder<fd::GroundRule>();
+    const auto datalog_head = fp::merge_p2d(head, context.merge_context);
+    auto rule_ptr = context.builder.get_builder<fd::GroundRule<f::FunctionTag>>();
     auto& rule = *rule_ptr;
     rule.clear();
-    rule.binding = create_rule_binding(context).get_index();
+    rule.binding = create_rule_binding<f::FunctionTag>(context, [&](auto) { return create_rule_binding_numeric_head(context); }).get_index();
     rule.body = body.get_index();
-    rule.head = fp::merge_p2d(head, context.merge_context);
+    rule.head = datalog_head;
     rule.metric_effects = std::move(metric_effects);
     canonicalize(rule);
     return context.merge_context.destination.get_or_create(rule).first;
 }
 
-fd::GroundRuleView create_applicability_rule(fp::GroundActionView action,
-                                             fd::GroundAtomView<f::FluentTag> applicability_atom,
-                                             TranslationContext<GroundTag>& translation_context,
-                                             GroundProgramBuildContext& context)
+fd::GroundRuleView<f::PredicateTag> create_applicability_rule(fp::GroundActionView action,
+                                                              fd::GroundAtomView<f::FluentTag> applicability_atom,
+                                                              TranslationContext<GroundTag>& translation_context,
+                                                              GroundProgramBuildContext& context)
 {
     return create_ground_atom_rule(create_delete_free_condition(action.get_condition(), translation_context, context), applicability_atom, context);
 }
@@ -372,11 +410,11 @@ void translate_action_to_delete_free_rules(fp::GroundActionView action,
                                            const MetricGroundFunctionTermSet& metric_fterms,
                                            TranslationContext<GroundTag>& translation_context,
                                            GroundProgramBuildContext& context,
-                                           RPGProgram<GroundTag>::RuleToActionMapping& rule_to_action)
+                                           RPGProgram<GroundTag>::RuleToActionMappings& rule_to_action)
 {
     const auto applicability_atom = create_applicability_atom(action, context);
     const auto applicability_rule = create_applicability_rule(action, applicability_atom, translation_context, context);
-    program.ground_rules.push_back(applicability_rule.get_index());
+    program.predicate_ground_rules.push_back(applicability_rule.get_index());
     const auto metric_effects = create_metric_effects(action, cost_mode, unit_metric_effects, metric_fterms, context);
 
     for (const auto cond_eff : action.get_effects())
@@ -388,8 +426,8 @@ void translate_action_to_delete_free_rules(fp::GroundActionView action,
             if (const auto literal = fp::merge_p2d(fact, true, translation_context.p2d.fluent_to_fluent_atom, context.fluent_predicates, context.merge_context))
             {
                 const auto rule = create_ground_atom_rule(body, literal->get_atom(), context, metric_effects);
-                program.ground_rules.push_back(rule.get_index());
-                rule_to_action.emplace(rule, action);
+                program.predicate_ground_rules.push_back(rule.get_index());
+                rule_to_action.predicate.emplace(rule, action);
             }
         }
 
@@ -397,8 +435,8 @@ void translate_action_to_delete_free_rules(fp::GroundActionView action,
         for (const auto numeric_effect : cond_eff.get_effect().get_numeric_effects())
         {
             const auto rule = create_ground_numeric_effect_rule(numeric_body, numeric_effect, context, metric_effects);
-            program.ground_rules.push_back(rule.get_index());
-            rule_to_action.emplace(rule, action);
+            program.function_ground_rules.push_back(rule.get_index());
+            rule_to_action.function.emplace(rule, action);
         }
     }
 }
@@ -406,7 +444,7 @@ void translate_action_to_delete_free_rules(fp::GroundActionView action,
 fd::ProgramView<GroundTag> create_rpg_ground_program(fp::FDRTaskView task,
                                                      CostMode cost_mode,
                                                      TranslationContext<GroundTag>& translation_context,
-                                                     RPGProgram<GroundTag>::RuleToActionMapping& mapping,
+                                                     RPGProgram<GroundTag>::RuleToActionMappings& mapping,
                                                      fd::Repository& repository)
 {
     auto context = GroundProgramBuildContext(repository);
@@ -512,7 +550,7 @@ fd::ProgramView<GroundTag> create_rpg_ground_program(fp::FDRTaskView task,
 d::Program<GroundTag> create_rpg_datalog_program(fp::FDRTaskView task,
                                                  CostMode cost_mode,
                                                  TranslationContext<GroundTag>& translation_context,
-                                                 RPGProgram<GroundTag>::RuleToActionMapping& mapping)
+                                                 RPGProgram<GroundTag>::RuleToActionMappings& mapping)
 {
     auto factory = std::make_shared<fd::RepositoryFactory>();
     auto repository = factory->create_shared();
@@ -531,7 +569,17 @@ RPGProgram<GroundTag>::RPGProgram(fp::FDRTaskView task, CostMode cost_mode) :
 
 const TranslationContext<GroundTag>& RPGProgram<GroundTag>::get_translation_context() const noexcept { return m_translation_context; }
 
-const RPGProgram<GroundTag>::RuleToActionMapping& RPGProgram<GroundTag>::get_rule_to_action_mapping() const noexcept { return m_rule_to_action; }
+template<>
+const RPGProgram<GroundTag>::RuleToActionMapping<f::PredicateTag>& RPGProgram<GroundTag>::get_rule_to_action_mapping<f::PredicateTag>() const noexcept
+{
+    return m_rule_to_action.predicate;
+}
+
+template<>
+const RPGProgram<GroundTag>::RuleToActionMapping<f::FunctionTag>& RPGProgram<GroundTag>::get_rule_to_action_mapping<f::FunctionTag>() const noexcept
+{
+    return m_rule_to_action.function;
+}
 
 fd::ProgramView<GroundTag> RPGProgram<GroundTag>::get_program() const noexcept { return m_datalog_program.get_program(); }
 

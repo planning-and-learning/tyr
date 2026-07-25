@@ -74,6 +74,12 @@ template std::optional<PredicateBindingView<StaticTag>> try_ground_binding(::tyr
                                                                            ::tyr::formalism::datalog::GrounderContext& context);
 template std::optional<PredicateBindingView<FluentTag>> try_ground_binding(::tyr::formalism::datalog::AtomView<FluentTag> element,
                                                                            ::tyr::formalism::datalog::GrounderContext& context);
+
+template std::pair<GroundRuleView<PredicateTag>, bool> ground(RuleView<PredicateTag> element, GrounderContext& context);
+template std::pair<GroundRuleView<FunctionTag>, bool> ground(RuleView<FunctionTag> element, GrounderContext& context);
+
+template std::pair<RuleBindingView<PredicateTag>, bool> ground_binding(RuleView<PredicateTag> element, GrounderContext& context);
+template std::pair<RuleBindingView<FunctionTag>, bool> ground_binding(RuleView<FunctionTag> element, GrounderContext& context);
 }
 
 #endif

@@ -134,7 +134,7 @@ auto create_applicability_literal(fp::ActionView action, const TranslationContex
 
 auto create_applicability_rule(fp::ActionView action, const TranslationContext<LiftedTag>& translation_context, fp::MergeDatalogContext& context)
 {
-    auto rule_ptr = context.builder.get_builder<fd::Rule>();
+    auto rule_ptr = context.builder.get_builder<fd::Rule<f::PredicateTag>>();
     auto& rule = *rule_ptr;
     rule.clear();
 
@@ -172,7 +172,7 @@ auto create_applicability_literal(fp::AxiomView axiom, const TranslationContext<
 
 auto create_applicability_rule(fp::AxiomView axiom, const TranslationContext<LiftedTag>& translation_context, fp::MergeDatalogContext& context)
 {
-    auto rule_ptr = context.builder.get_builder<fd::Rule>();
+    auto rule_ptr = context.builder.get_builder<fd::Rule<f::PredicateTag>>();
     auto& rule = *rule_ptr;
     rule.clear();
 
@@ -201,7 +201,7 @@ auto create_cond_effect_rule(fp::ActionView action,
                              const TranslationContext<LiftedTag>& translation_context,
                              fp::MergeDatalogContext& context)
 {
-    auto rule_ptr = context.builder.get_builder<fd::Rule>();
+    auto rule_ptr = context.builder.get_builder<fd::Rule<f::PredicateTag>>();
     auto& rule = *rule_ptr;
     rule.clear();
 
@@ -235,7 +235,7 @@ auto create_effect_rule(fp::AxiomView axiom,
                         const TranslationContext<LiftedTag>& translation_context,
                         fp::MergeDatalogContext& context)
 {
-    auto rule_ptr = context.builder.get_builder<fd::Rule>();
+    auto rule_ptr = context.builder.get_builder<fd::Rule<f::PredicateTag>>();
     auto& rule = *rule_ptr;
     rule.clear();
 
@@ -275,7 +275,7 @@ void translate_action_to_delete_free_rules(fp::ActionView action,
 
     const auto applicability_rule = create_applicability_rule(action, translation_context, context).first.get_index();
 
-    program.rules.push_back(applicability_rule);
+    program.predicate_rules.push_back(applicability_rule);
 
     for (const auto cond_eff : action.get_effects())
     {
@@ -284,7 +284,7 @@ void translate_action_to_delete_free_rules(fp::ActionView action,
             if (!literal.get_polarity())
                 continue;  /// ignore delete effects
 
-            program.rules.push_back(
+            program.predicate_rules.push_back(
                 create_cond_effect_rule(action,
                                         cond_eff,
                                         fp::merge_p2d(literal.get_atom(), translation_context.p2d.fluent_to_fluent_predicate, context).first,
@@ -309,9 +309,9 @@ void translate_axiom_to_delete_free_axiom_rules(fp::AxiomView axiom,
 
     const auto applicability_rule = create_applicability_rule(axiom, translation_context, context).first.get_index();
 
-    program.rules.push_back(applicability_rule);
+    program.predicate_rules.push_back(applicability_rule);
 
-    program.rules.push_back(
+    program.predicate_rules.push_back(
         create_effect_rule(axiom,
                            fp::merge_p2d<f::DerivedTag, f::FluentTag>(axiom.get_head(), translation_context.p2d.derived_to_fluent_predicate, context).first,
                            translation_context,

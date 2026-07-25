@@ -49,57 +49,47 @@ namespace tyr::datalog
 
 struct PredicateHeadIteration
 {
-    ygg::Index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>> relation;
-    using Row = ygg::Index<::tyr::formalism::Row>;
+    using Binding = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
 
-    ygg::UnorderedSet<Row> rows;
-    std::vector<Row> sorted_rows;
-
-    PredicateHeadIteration() = default;
-    explicit PredicateHeadIteration(ygg::Index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>> relation) : relation(relation), rows(), sorted_rows()
-    {
-    }
+    ygg::UnorderedSet<Binding> bindings;
+    std::vector<Binding> sorted_bindings;
 
     void clear() noexcept
     {
-        rows.clear();
-        sorted_rows.clear();
+        bindings.clear();
+        sorted_bindings.clear();
     }
 
-    const std::vector<Row>& get_sorted_rows()
+    const std::vector<Binding>& get_sorted_bindings()
     {
-        sorted_rows.assign(rows.begin(), rows.end());
-        std::sort(sorted_rows.begin(), sorted_rows.end());
-        return sorted_rows;
+        sorted_bindings.assign(bindings.begin(), bindings.end());
+        std::sort(sorted_bindings.begin(), sorted_bindings.end());
+        return sorted_bindings;
     }
 };
 
 struct FunctionHeadUpdate : ygg::comparison::Mixin<FunctionHeadUpdate>
 {
-    ygg::Index<::tyr::formalism::Row> row;
+    ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding;
     ygg::ClosedInterval<ygg::float_t> interval;
     Cost cost;
 
-    FunctionHeadUpdate(ygg::Index<::tyr::formalism::Row> row, ygg::ClosedInterval<ygg::float_t> interval, Cost cost) : row(row), interval(interval), cost(cost)
+    FunctionHeadUpdate(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding,
+                       ygg::ClosedInterval<ygg::float_t> interval,
+                       Cost cost) :
+        binding(binding),
+        interval(interval),
+        cost(cost)
     {
     }
 
-    auto identifying_members() const noexcept { return std::tie(row, interval, cost); }
+    auto identifying_members() const noexcept { return std::tie(binding, interval, cost); }
 };
 
 struct FunctionHeadIteration
 {
-    ygg::Index<::tyr::formalism::Function<::tyr::formalism::FluentTag>> relation;
     ygg::UnorderedSet<FunctionHeadUpdate> updates;
     std::vector<FunctionHeadUpdate> sorted_updates;
-
-    FunctionHeadIteration() = default;
-    explicit FunctionHeadIteration(ygg::Index<::tyr::formalism::Function<::tyr::formalism::FluentTag>> relation) :
-        relation(relation),
-        updates(),
-        sorted_updates()
-    {
-    }
 
     void clear() noexcept
     {
@@ -115,7 +105,23 @@ struct FunctionHeadIteration
     }
 };
 
-using RuleHeadIteration = std::variant<PredicateHeadIteration, FunctionHeadIteration>;
+template<::tyr::formalism::RelationKind R>
+struct RuleHeadIteration;
+
+template<>
+struct RuleHeadIteration<::tyr::formalism::PredicateTag>
+{
+    using type = PredicateHeadIteration;
+};
+
+template<>
+struct RuleHeadIteration<::tyr::formalism::FunctionTag>
+{
+    using type = FunctionHeadIteration;
+};
+
+template<::tyr::formalism::RelationKind R>
+using RuleHeadIterationT = typename RuleHeadIteration<R>::type;
 
 struct ApplicabilityCache
 {
@@ -129,8 +135,8 @@ struct ApplicabilityCache
     }
 };
 
-template<>
-struct RuleWorkspace<LiftedTag>
+template<::tyr::formalism::RelationKind R>
+struct RuleWorkspace<LiftedTag, R>
 {
     template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
     struct Instance
@@ -162,7 +168,7 @@ struct RuleWorkspace<LiftedTag>
         /// - annotate witnesses
         struct Iteration
         {
-            explicit Iteration(::tyr::formalism::datalog::RepositoryFactory& factory, const ConstRuleWorkspace<LiftedTag>& cws, const Common& common);
+            explicit Iteration(::tyr::formalism::datalog::RepositoryFactory& factory, const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common);
 
             void clear() noexcept;
 
@@ -170,7 +176,7 @@ struct RuleWorkspace<LiftedTag>
             ::tyr::formalism::datalog::Repository workspace_overlay_repository;
 
             /// Heads
-            RuleHeadIteration head;
+            RuleHeadIterationT<R> head;
 
             // Propositional annotations are keyed by heads in workspace_overlay_repository.
             DeltaPredicateAnnotations<LiftedTag> and_annot;
@@ -197,10 +203,10 @@ struct RuleWorkspace<LiftedTag>
             /// In debug mode, we accumulate all bindings to verify the correctness of delta-kpkc
             ygg::UnorderedSet<ygg::IndexList<::tyr::formalism::Object>> seen_bindings_dbg;
 
-            ygg::UnorderedSet<::tyr::formalism::datalog::RuleBindingView> pending_rule_bindings;
-            std::vector<::tyr::formalism::datalog::RuleBindingView> pending_rule_binding_scratch;
+            ygg::UnorderedSet<::tyr::formalism::datalog::RuleBindingView<R>> pending_rule_bindings;
+            std::vector<::tyr::formalism::datalog::RuleBindingView<R>> pending_rule_binding_scratch;
 
-            const std::vector<::tyr::formalism::datalog::RuleBindingView>& get_sorted_pending_rule_bindings();
+            const std::vector<::tyr::formalism::datalog::RuleBindingView<R>>& get_sorted_pending_rule_bindings();
 
             NumericSupportSelectorWorkspace<LiftedTag> numeric_support_selector_workspace;
             std::vector<NumericSupport<LiftedTag>> numeric_support_scratch;
@@ -216,7 +222,7 @@ struct RuleWorkspace<LiftedTag>
             explicit Worker(::tyr::formalism::datalog::RepositoryFactory& factory,
                             const ::tyr::formalism::datalog::Repository& program_repository,
                             const ::tyr::formalism::datalog::Repository& workspace_repository,
-                            const ConstRuleWorkspace<LiftedTag>& cws,
+                            const ConstRuleWorkspace<LiftedTag, R>& cws,
                             const Common& common,
                             const AndAP& and_ap);
 
@@ -232,7 +238,7 @@ struct RuleWorkspace<LiftedTag>
         Instance(::tyr::formalism::datalog::RepositoryFactory& factory,
                  const ::tyr::formalism::datalog::Repository& program_repository,
                  const ::tyr::formalism::datalog::Repository& workspace_repository,
-                 const ConstRuleWorkspace<LiftedTag>& cws,
+                 const ConstRuleWorkspace<LiftedTag, R>& cws,
                  const AndAP& and_ap);
         Instance(const Instance& other) = delete;
         Instance& operator=(const Instance& other) = delete;
@@ -247,8 +253,8 @@ struct RuleWorkspace<LiftedTag>
     };
 };
 
-template<>
-struct ConstRuleWorkspace<LiftedTag>
+template<::tyr::formalism::RelationKind R>
+struct ConstRuleWorkspace<LiftedTag, R>
 {
 public:
     auto get_rule() const noexcept { return rule; }
@@ -257,7 +263,7 @@ public:
     auto get_conflicting_overapproximation_rule() const noexcept { return conflicting_overapproximation_rule; }
     const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
 
-    ConstRuleWorkspace(::tyr::formalism::datalog::RuleView rule,
+    ConstRuleWorkspace(::tyr::formalism::datalog::RuleView<R> rule,
                        ::tyr::formalism::datalog::Repository& repository,
                        const analysis::VariableDomainList& parameter_domains,
                        size_t num_objects,
@@ -265,13 +271,13 @@ public:
                        const TaggedAssignmentSets<::tyr::formalism::StaticTag>& static_assignment_sets);
 
 private:
-    ::tyr::formalism::datalog::RuleView rule;
-    ::tyr::formalism::datalog::RuleView witness_rule;
+    ::tyr::formalism::datalog::RuleView<R> rule;
+    ::tyr::formalism::datalog::RuleView<R> witness_rule;
     ::tyr::formalism::datalog::GroundConjunctiveConditionView nullary_condition;
-    ::tyr::formalism::datalog::RuleView unary_overapproximation_rule;
-    ::tyr::formalism::datalog::RuleView binary_overapproximation_rule;
-    ::tyr::formalism::datalog::RuleView static_binary_overapproximation_rule;
-    ::tyr::formalism::datalog::RuleView conflicting_overapproximation_rule;
+    ::tyr::formalism::datalog::RuleView<R> unary_overapproximation_rule;
+    ::tyr::formalism::datalog::RuleView<R> binary_overapproximation_rule;
+    ::tyr::formalism::datalog::RuleView<R> static_binary_overapproximation_rule;
+    ::tyr::formalism::datalog::RuleView<R> conflicting_overapproximation_rule;
 
     StaticConsistencyGraph static_consistency_graph;
 };
@@ -280,10 +286,18 @@ private:
  * Implementations
  */
 
+inline PredicateHeadIteration make_head_iteration(::tyr::formalism::datalog::AtomView<::tyr::formalism::FluentTag>) { return {}; }
+
+inline FunctionHeadIteration make_head_iteration(::tyr::formalism::datalog::NumericEffectOperatorView<::tyr::formalism::FluentTag>) { return {}; }
+
+inline bool supports_inner_parallelism(::tyr::formalism::datalog::AtomView<::tyr::formalism::FluentTag>) noexcept { return true; }
+inline bool supports_inner_parallelism(::tyr::formalism::datalog::NumericEffectOperatorView<::tyr::formalism::FluentTag>) noexcept { return false; }
+
+template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-RuleWorkspace<LiftedTag>::Instance<AndAP>::Common::Common(const ::tyr::formalism::datalog::Repository& program_repository,
-                                                          const ::tyr::formalism::datalog::Repository& workspace_repository,
-                                                          const StaticConsistencyGraph& static_consistency_graph) :
+RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Common::Common(const ::tyr::formalism::datalog::Repository& program_repository,
+                                                                      const ::tyr::formalism::datalog::Repository& workspace_repository,
+                                                                      const StaticConsistencyGraph& static_consistency_graph) :
     program_repository(program_repository),
     workspace_repository(workspace_repository),
     kpkc(static_consistency_graph),
@@ -291,60 +305,50 @@ RuleWorkspace<LiftedTag>::Instance<AndAP>::Common::Common(const ::tyr::formalism
 {
 }
 
+template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void RuleWorkspace<LiftedTag>::Instance<AndAP>::Common::clear() noexcept
+void RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Common::clear() noexcept
 {
     kpkc.reset();
 }
 
+template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void RuleWorkspace<LiftedTag>::Instance<AndAP>::Common::initialize_iteration(const StaticConsistencyGraph& static_consistency_graph,
-                                                                             const AssignmentSets& assignment_sets)
+void RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Common::initialize_iteration(const StaticConsistencyGraph& static_consistency_graph,
+                                                                                         const AssignmentSets& assignment_sets)
 {
     kpkc.set_next_assignment_sets(static_consistency_graph, assignment_sets);
 }
 
+template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-RuleWorkspace<LiftedTag>::Instance<AndAP>::Iteration::Iteration(::tyr::formalism::datalog::RepositoryFactory& factory,
-                                                                const ConstRuleWorkspace<LiftedTag>& cws,
-                                                                const Common& common) :
+RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Iteration::Iteration(::tyr::formalism::datalog::RepositoryFactory& factory,
+                                                                            const ConstRuleWorkspace<LiftedTag, R>& cws,
+                                                                            const Common& common) :
     workspace_overlay_repository(factory.create(&common.workspace_repository)),
-    head(visit(
-        [](auto&& head) -> RuleHeadIteration
-        {
-            using Head = std::decay_t<decltype(head)>;
-
-            if constexpr (std::is_same_v<Head, ::tyr::formalism::datalog::AtomView<::tyr::formalism::FluentTag>>)
-            {
-                return PredicateHeadIteration(head.get_predicate().get_index());
-            }
-            else
-            {
-                return visit([](auto&& effect) -> RuleHeadIteration { return FunctionHeadIteration(effect.get_fterm().get_function().get_index()); },
-                             head.get_variant());
-            }
-        },
-        cws.get_rule().get_head())),
+    head(make_head_iteration(cws.get_rule().get_head())),
     and_annot(),
     numeric_and_annot(),
     kpkc_workspace(common.kpkc.get_graph_layout())
 {
 }
 
+template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void RuleWorkspace<LiftedTag>::Instance<AndAP>::Iteration::clear() noexcept
+void RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Iteration::clear() noexcept
 {
     workspace_overlay_repository.clear();
-    std::visit([](auto& arg) { arg.clear(); }, head);
+    head.clear();
     and_annot.clear();
     numeric_and_annot.clear();
 }
 
+template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-RuleWorkspace<LiftedTag>::Instance<AndAP>::Solve::Solve(::tyr::formalism::datalog::RepositoryFactory& factory,
-                                                        const ::tyr::formalism::datalog::Repository& program_repository,
-                                                        const ::tyr::formalism::datalog::Repository& workspace_repository,
-                                                        const AndAP& and_ap) :
+RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Solve::Solve(::tyr::formalism::datalog::RepositoryFactory& factory,
+                                                                    const ::tyr::formalism::datalog::Repository& program_repository,
+                                                                    const ::tyr::formalism::datalog::Repository& workspace_repository,
+                                                                    const AndAP& and_ap) :
     and_ap(and_ap),
     program_overlay_repository(factory.create(&program_repository)),
     seen_bindings_dbg(),
@@ -358,8 +362,9 @@ RuleWorkspace<LiftedTag>::Instance<AndAP>::Solve::Solve(::tyr::formalism::datalo
 {
 }
 
+template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void RuleWorkspace<LiftedTag>::Instance<AndAP>::Solve::clear() noexcept
+void RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Solve::clear() noexcept
 {
     program_overlay_repository.clear();
     seen_bindings_dbg.clear();
@@ -372,8 +377,10 @@ void RuleWorkspace<LiftedTag>::Instance<AndAP>::Solve::clear() noexcept
     and_ap.clear_achievers();
 }
 
+template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-const std::vector<::tyr::formalism::datalog::RuleBindingView>& RuleWorkspace<LiftedTag>::Instance<AndAP>::Solve::get_sorted_pending_rule_bindings()
+const std::vector<::tyr::formalism::datalog::RuleBindingView<R>>&
+    RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Solve::get_sorted_pending_rule_bindings()
 {
     pending_rule_binding_scratch.assign(pending_rule_bindings.begin(), pending_rule_bindings.end());
     // DeltaKPKC emits canonical bindings within a worker. This sort only stabilizes unordered
@@ -382,13 +389,14 @@ const std::vector<::tyr::formalism::datalog::RuleBindingView>& RuleWorkspace<Lif
     return pending_rule_binding_scratch;
 }
 
+template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-RuleWorkspace<LiftedTag>::Instance<AndAP>::Worker::Worker(::tyr::formalism::datalog::RepositoryFactory& factory,
-                                                          const ::tyr::formalism::datalog::Repository& program_repository,
-                                                          const ::tyr::formalism::datalog::Repository& workspace_repository,
-                                                          const ConstRuleWorkspace<LiftedTag>& cws,
-                                                          const Common& common,
-                                                          const AndAP& and_ap) :
+RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Worker::Worker(::tyr::formalism::datalog::RepositoryFactory& factory,
+                                                                      const ::tyr::formalism::datalog::Repository& program_repository,
+                                                                      const ::tyr::formalism::datalog::Repository& workspace_repository,
+                                                                      const ConstRuleWorkspace<LiftedTag, R>& cws,
+                                                                      const Common& common,
+                                                                      const AndAP& and_ap) :
     builder(),
     binding(),
     iteration(factory, cws, common),
@@ -396,19 +404,21 @@ RuleWorkspace<LiftedTag>::Instance<AndAP>::Worker::Worker(::tyr::formalism::data
 {
 }
 
+template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void RuleWorkspace<LiftedTag>::Instance<AndAP>::Worker::clear() noexcept
+void RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Worker::clear() noexcept
 {
     iteration.clear();
     solve.clear();
 }
 
+template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-RuleWorkspace<LiftedTag>::Instance<AndAP>::Instance(::tyr::formalism::datalog::RepositoryFactory& factory_,
-                                                    const ::tyr::formalism::datalog::Repository& program_repository_,
-                                                    const ::tyr::formalism::datalog::Repository& workspace_repository_,
-                                                    const ConstRuleWorkspace<LiftedTag>& cws_,
-                                                    const AndAP& and_ap_) :
+RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Instance(::tyr::formalism::datalog::RepositoryFactory& factory_,
+                                                                const ::tyr::formalism::datalog::Repository& program_repository_,
+                                                                const ::tyr::formalism::datalog::Repository& workspace_repository_,
+                                                                const ConstRuleWorkspace<LiftedTag, R>& cws_,
+                                                                const AndAP& and_ap_) :
     common(program_repository_, workspace_repository_, cws_.get_static_consistency_graph()),
     worker()
 {
@@ -416,13 +426,14 @@ RuleWorkspace<LiftedTag>::Instance<AndAP>::Instance(::tyr::formalism::datalog::R
 
 #if defined(TYR_ENABLE_INNER_PARALLELISM) && defined(TYR_ENABLE_SEMI_NAIVE)
     // Only propositional heads use partitionable delta KPKC; numeric effects require full KPKC enumeration.
-    if (std::holds_alternative<PredicateHeadIteration>(worker.front().iteration.head) && cws_.get_rule().get_arity() > 2)
+    if (supports_inner_parallelism(cws_.get_rule().get_head()) && cws_.get_rule().get_arity() > 2)
         worker.emplace_back(factory_, program_repository_, workspace_repository_, cws_, common, and_ap_);
 #endif
 }
 
+template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void RuleWorkspace<LiftedTag>::Instance<AndAP>::clear() noexcept
+void RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::clear() noexcept
 {
     common.clear();
     for (auto& w : worker)

@@ -57,20 +57,21 @@ public:
     using FunctionHead = FunctionAnnotationHeadT<GroundTag>;
 
     static constexpr AggregationFunction agg = AggregationFunction {};
+    static constexpr bool records_propositional_achievers = false;
 
     void clear_achievers() noexcept;
 
-    void record_achiever(PredicateHead, const AndAnnotationContext<GroundTag>&) const noexcept;
+    void record_achiever(PredicateHead, const AndAnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>&) const noexcept;
 
     void update_annotation(PredicateHead program_head,
                            PredicateHead delta_head,
-                           const AndAnnotationContext<GroundTag>& context,
+                           const AndAnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context,
                            DeltaPredicateAnnotations<GroundTag>& delta_and_annot) const;
 
     void update_annotation(FunctionHead program_head,
                            FunctionHead delta_head,
                            ygg::ClosedInterval<ygg::float_t> interval,
-                           const AndAnnotationContext<GroundTag>& context,
+                           const AndAnnotationContext<GroundTag, ::tyr::formalism::FunctionTag>& context,
                            DeltaFunctionAnnotations<GroundTag>& delta_numeric_and_annot) const;
 };
 
@@ -80,13 +81,15 @@ class AchieverAndAnnotationPolicy<GroundTag, AggregationFunction> : public AndAn
 public:
     using Atom = PredicateAnnotationHeadT<GroundTag>;
     using AtomIndex = ygg::Index<::tyr::formalism::datalog::GroundAtom<::tyr::formalism::FluentTag>>;
-    using Achievers = std::vector<WitnessAnnotation<GroundTag>>;
+    using Achievers = std::vector<WitnessAnnotation<GroundTag, ::tyr::formalism::PredicateTag>>;
+
+    static constexpr bool records_propositional_achievers = true;
 
     void clear_achievers() noexcept;
 
     const Achievers* find_achievers(Atom program_head) const noexcept;
 
-    void record_achiever(Atom program_head, const AndAnnotationContext<GroundTag>& context) const;
+    void record_achiever(Atom program_head, const AndAnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context) const;
 
 private:
     mutable ygg::UnorderedMap<AtomIndex, Achievers> achievers;

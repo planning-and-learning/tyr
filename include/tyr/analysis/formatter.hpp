@@ -19,8 +19,6 @@
 #define TYR_ANALYSIS_FORMATTER_HPP_
 
 #include "tyr/analysis/declarations.hpp"
-#include <yggdrasil/formatting/cista_formatters.hpp>
-#include <yggdrasil/io/iostream.hpp>
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 
@@ -31,7 +29,8 @@
 #include <ostream>
 #include <sstream>
 #include <vector>
-
+#include <yggdrasil/formatting/cista_formatters.hpp>
+#include <yggdrasil/io/iostream.hpp>
 
 namespace fmt
 {
@@ -94,12 +93,12 @@ struct formatter<tyr::analysis::Scoped<tyr::formalism::planning::Axiom, Payload>
     }
 };
 
-template<typename Payload>
-struct formatter<tyr::analysis::Scoped<tyr::formalism::datalog::Rule, Payload>, char>
+template<tyr::formalism::RelationKind R, typename Payload>
+struct formatter<tyr::analysis::Scoped<tyr::formalism::datalog::Rule<R>, Payload>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::analysis::Scoped<tyr::formalism::datalog::Rule, Payload>& value, FormatContext& ctx) const
+    auto format(const tyr::analysis::Scoped<tyr::formalism::datalog::Rule<R>, Payload>& value, FormatContext& ctx) const
     {
         auto os = std::stringstream {};
         os << "RuleDomain(\n";
@@ -223,11 +222,16 @@ struct formatter<tyr::analysis::ProgramVariableDomains, char>
             os << ygg::print_indent;
             fmt::print(os, "{}{}\n", "fluent function domains = ", value.fluent_function_domains);
 
-            for (const auto& [rule, domain] : value.rule_domains)
+            const auto format_rules = [&]<tyr::formalism::RelationKind RK>()
             {
-                os << ygg::print_indent;
-                fmt::print(os, "rule {} domain = {}\n", rule, domain);
-            }
+                for (const auto& [rule, domain] : value.template get_rule_domains<RK>())
+                {
+                    os << ygg::print_indent;
+                    fmt::print(os, "rule {} domain = {}\n", rule, domain);
+                }
+            };
+            format_rules.template operator()<tyr::formalism::PredicateTag>();
+            format_rules.template operator()<tyr::formalism::FunctionTag>();
         }
         os << ygg::print_indent << ")";
         return fmt::format_to(ctx.out(), "{}", os.str());
@@ -408,12 +412,12 @@ struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Axiom, Payl
     }
 };
 
-template<typename Payload, typename C>
-struct formatter<tyr::analysis::ScopedView<tyr::formalism::datalog::Rule, Payload, C>, char>
+template<tyr::formalism::RelationKind R, typename Payload, typename C>
+struct formatter<tyr::analysis::ScopedView<tyr::formalism::datalog::Rule<R>, Payload, C>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::analysis::ScopedView<tyr::formalism::datalog::Rule, Payload, C>& value, FormatContext& ctx) const
+    auto format(const tyr::analysis::ScopedView<tyr::formalism::datalog::Rule<R>, Payload, C>& value, FormatContext& ctx) const
     {
         auto os = std::stringstream {};
         os << "RuleDomain(\n";
@@ -460,11 +464,16 @@ struct formatter<tyr::analysis::ProgramVariableDomainsView, char>
             os << ygg::print_indent;
             fmt::print(os, "{}{}\n", "fluent function domains = ", value.fluent_function_domains);
 
-            for (const auto& [rule, domain] : value.rule_domains)
+            const auto format_rules = [&]<tyr::formalism::RelationKind RK>()
             {
-                os << ygg::print_indent;
-                fmt::print(os, "{}\n", domain);
-            }
+                for (const auto& [rule, domain] : value.template get_rule_domains<RK>())
+                {
+                    os << ygg::print_indent;
+                    fmt::print(os, "{}\n", domain);
+                }
+            };
+            format_rules.template operator()<tyr::formalism::PredicateTag>();
+            format_rules.template operator()<tyr::formalism::FunctionTag>();
         }
         os << ygg::print_indent << ")";
         return fmt::format_to(ctx.out(), "{}", os.str());

@@ -89,7 +89,8 @@ void bind_module_definitions(nb::module_& m)
             .def("get_or_create", bind_get_or_create_relation<Function<StaticTag>>(), "data"_a, nb::keep_alive<0, 1>())
             .def("get_or_create", bind_get_or_create_relation<Function<FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
             .def("get_or_create", bind_get_or_create_relation<Function<AuxiliaryTag>>(), "data"_a, nb::keep_alive<0, 1>())
-            .def("get_or_create", bind_get_or_create_relation<Rule>(), "data"_a, nb::keep_alive<0, 1>())
+            .def("get_or_create", bind_get_or_create_relation<Rule<PredicateTag>>(), "data"_a, nb::keep_alive<0, 1>())
+            .def("get_or_create", bind_get_or_create_relation<Rule<FunctionTag>>(), "data"_a, nb::keep_alive<0, 1>())
 
             .def("get_or_create", bind_get_or_create_canonical<Predicate<StaticTag>>(), "data"_a, nb::keep_alive<0, 1>())
             .def("get_or_create", bind_get_or_create_canonical<Predicate<FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
@@ -136,7 +137,8 @@ void bind_module_definitions(nb::module_& m)
         .def("get_or_create", bind_get_or_create_canonical<ConjunctiveCondition>(), "data"_a, nb::keep_alive<0, 1>())
         .def("get_or_create", bind_get_or_create_canonical<ConjunctiveEffect>(), "data"_a, nb::keep_alive<0, 1>())
         .def("get_or_create", bind_get_or_create_canonical<ConditionalEffect>(), "data"_a, nb::keep_alive<0, 1>())
-        .def("get_or_create", bind_get_or_create_canonical<Rule>(), "data"_a, nb::keep_alive<0, 1>());
+        .def("get_or_create", bind_get_or_create_canonical<Rule<PredicateTag>>(), "data"_a, nb::keep_alive<0, 1>())
+        .def("get_or_create", bind_get_or_create_canonical<Rule<FunctionTag>>(), "data"_a, nb::keep_alive<0, 1>());
 
     bind_repository_type<UnaryOperator<Sub, ygg::Data<GroundFunctionExpression>>>(cls);
     bind_repository_type<BinaryOperator<Add, ygg::Data<GroundFunctionExpression>>>(cls);
@@ -160,7 +162,8 @@ void bind_module_definitions(nb::module_& m)
         .def("get_or_create", bind_get_or_create_canonical<GroundConjunctiveCondition>(), "data"_a, nb::keep_alive<0, 1>())
         .def("get_or_create", bind_get_or_create_canonical<GroundConjunctiveEffect>(), "data"_a, nb::keep_alive<0, 1>())
         .def("get_or_create", bind_get_or_create_canonical<GroundConditionalEffect>(), "data"_a, nb::keep_alive<0, 1>())
-        .def("get_or_create", bind_get_or_create_canonical<GroundRule>(), "data"_a, nb::keep_alive<0, 1>())
+        .def("get_or_create", bind_get_or_create_canonical<GroundRule<PredicateTag>>(), "data"_a, nb::keep_alive<0, 1>())
+        .def("get_or_create", bind_get_or_create_canonical<GroundRule<FunctionTag>>(), "data"_a, nb::keep_alive<0, 1>())
         .def("get_or_create", bind_get_or_create_canonical<Metric>(), "data"_a, nb::keep_alive<0, 1>())
         .def("get_or_create", bind_get_or_create_canonical<Program>(), "data"_a, nb::keep_alive<0, 1>())
         .def("get_or_create", bind_get_or_create_canonical<GroundProgram>(), "data"_a, nb::keep_alive<0, 1>());

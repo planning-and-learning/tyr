@@ -291,10 +291,11 @@ void bind_conditional_effect(nb::module_& m)
     add_value_semantics(cls);
 }
 
-void bind_rule(nb::module_& m)
+template<RelationKind R>
+void bind_rule(nb::module_& m, const std::string& name)
 {
-    using V = RuleView;
-    auto cls = nb::class_<V>(m, "Rule")  //
+    using V = RuleView<R>;
+    auto cls = nb::class_<V>(m, name.c_str())  //
                    .def("get_index", &V::get_index)
                    .def("get_arity", &V::get_arity)
                    .def("get_variables", &V::get_variables)
@@ -334,10 +335,11 @@ void bind_ground_conditional_effect(nb::module_& m)
     add_value_semantics(cls);
 }
 
-void bind_ground_rule(nb::module_& m)
+template<RelationKind R>
+void bind_ground_rule(nb::module_& m, const std::string& name)
 {
-    using V = GroundRuleView;
-    auto cls = nb::class_<V>(m, "GroundRule")  //
+    using V = GroundRuleView<R>;
+    auto cls = nb::class_<V>(m, name.c_str())  //
                    .def("get_index", &V::get_index)
                    .def("get_rule", &V::get_rule, nb::keep_alive<0, 1>())
                    .def("get_row", &V::get_row)
@@ -376,9 +378,15 @@ void bind_program(nb::module_& m, const std::string& name)
                    .def("get_goal", &V::get_goal, nb::keep_alive<0, 1>())
                    .def("get_metric", &V::get_metric);
     if constexpr (std::same_as<Kind, LiftedTag>)
-        cls.def("get_rules", &V::get_rules);
+    {
+        cls.def("get_rules", &V::template get_rules<PredicateTag>);
+        cls.def("get_function_rules", &V::template get_rules<FunctionTag>);
+    }
     else
-        cls.def("get_ground_rules", &V::get_ground_rules);
+    {
+        cls.def("get_ground_rules", &V::template get_ground_rules<PredicateTag>);
+        cls.def("get_ground_function_rules", &V::template get_ground_rules<FunctionTag>);
+    }
     add_value_semantics(cls);
 }
 }
@@ -393,7 +401,8 @@ void bind_views(nb::module_& m)
     bind_relation_binding<Function<StaticTag>>(m, "StaticFunctionBinding");
     bind_relation_binding<Function<FluentTag>>(m, "FluentFunctionBinding");
     bind_relation_binding<Function<AuxiliaryTag>>(m, "AuxiliaryFunctionBinding");
-    bind_relation_binding<Rule>(m, "RuleBinding");
+    bind_relation_binding<Rule<PredicateTag>>(m, "RuleBinding");
+    bind_relation_binding<Rule<FunctionTag>>(m, "FunctionRuleBinding");
 
     bind_predicate<StaticTag>(m, "StaticPredicate");
     bind_predicate<FluentTag>(m, "FluentPredicate");
@@ -445,7 +454,8 @@ void bind_views(nb::module_& m)
     bind_variant_view<NumericEffectOperatorView<FluentTag>>(m, "FluentNumericEffectOperator");
     bind_conjunctive_effect(m);
     bind_conditional_effect(m);
-    bind_rule(m);
+    bind_rule<PredicateTag>(m, "Rule");
+    bind_rule<FunctionTag>(m, "FunctionRule");
 
     bind_unary_operator<Sub, ygg::Data<GroundFunctionExpression>>(m, "GroundUnaryOperatorSub");
     bind_binary_operator<Add, ygg::Data<GroundFunctionExpression>>(m, "GroundBinaryOperatorAdd");
@@ -473,7 +483,8 @@ void bind_views(nb::module_& m)
     bind_variant_view<GroundNumericEffectOperatorView<FluentTag>>(m, "FluentGroundNumericEffectOperator");
     bind_ground_conjunctive_effect(m);
     bind_ground_conditional_effect(m);
-    bind_ground_rule(m);
+    bind_ground_rule<PredicateTag>(m, "GroundRule");
+    bind_ground_rule<FunctionTag>(m, "GroundFunctionRule");
     bind_metric(m);
     bind_program<LiftedTag>(m, "Program");
     bind_program<GroundTag>(m, "GroundProgram");

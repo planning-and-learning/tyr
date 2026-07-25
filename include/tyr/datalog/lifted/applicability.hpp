@@ -88,7 +88,8 @@ bool is_applicable(::tyr::formalism::datalog::GroundConjunctiveConditionView ele
 
 // GroundRule
 
-bool is_applicable(::tyr::formalism::datalog::GroundRuleView element, const FactSets& fact_sets);
+template<::tyr::formalism::RelationKind R>
+bool is_applicable(::tyr::formalism::datalog::GroundRuleView<R> element, const FactSets& fact_sets);
 
 /**
  * is_valid_binding
@@ -254,7 +255,11 @@ inline bool is_dynamically_applicable(::tyr::formalism::datalog::GroundConjuncti
 
 // GroundRule
 
-inline bool is_applicable(::tyr::formalism::datalog::GroundRuleView element, const FactSets& fact_sets) { return is_applicable(element.get_body(), fact_sets); }
+template<::tyr::formalism::RelationKind R>
+inline bool is_applicable(::tyr::formalism::datalog::GroundRuleView<R> element, const FactSets& fact_sets)
+{
+    return is_applicable(element.get_body(), fact_sets);
+}
 
 /**
  * is_valid_binding

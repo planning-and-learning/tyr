@@ -72,7 +72,8 @@ using TmpPredicateDomainMap = TmpSimpleScopedDomainMap<::tyr::formalism::Predica
 template<::tyr::formalism::FactKind T>
 using TmpFunctionDomainMap = TmpSimpleScopedDomainMap<::tyr::formalism::Function<T>>;
 
-using TmpRuleDomainMap = TmpSimpleScopedDomainMap<::tyr::formalism::datalog::Rule>;
+template<::tyr::formalism::RelationKind R>
+using TmpRuleDomainMap = TmpSimpleScopedDomainMap<::tyr::formalism::datalog::Rule<R>>;
 
 /**
  * Conversion helpers to public representation.
@@ -120,15 +121,16 @@ FunctionDomainMap<T> to_function_domain_map(const TmpFunctionDomainMap<T>& domai
     return result;
 }
 
-RuleDomainMap to_rule_domain_map(const TmpRuleDomainMap& domains)
+template<f::RelationKind R>
+RuleDomainMap<R> to_rule_domain_map(const TmpRuleDomainMap<R>& domains)
 {
-    auto result = RuleDomainMap {};
+    auto result = RuleDomainMap<R> {};
     result.reserve(domains.size());
 
     for (const auto& [rule, variable_domains] : domains)
     {
         result.emplace(rule,
-                       SimpleScopedDomain<::tyr::formalism::datalog::Rule> {
+                       SimpleScopedDomain<::tyr::formalism::datalog::Rule<R>> {
                            rule,
                            to_variable_domain_list(variable_domains),
                        });
@@ -486,65 +488,91 @@ ProgramVariableDomains compute_variable_domains(fd::ProgramView<LiftedTag> progr
             fluent_function_domain_sets,
         };
 
-        for (const auto rule : program.get_rules())
+        const auto insert_rule_constants = [&](auto kind)
         {
-            for (const auto literal : rule.get_body().get_literals<f::StaticTag>())
-                apply_policy(literal.get_atom(), insert_policy);
+            using R = decltype(kind);
 
-            for (const auto op : rule.get_body().get_numeric_constraints())
-                apply_policy(op, insert_policy);
+            for (const auto rule : program.get_rules<R>())
+            {
+                for (const auto literal : rule.get_body().template get_literals<f::StaticTag>())
+                    apply_policy(literal.get_atom(), insert_policy);
 
-            visit([&](auto&& head) { apply_policy(head, insert_policy); }, rule.get_head());
-        }
+                for (const auto op : rule.get_body().get_numeric_constraints())
+                    apply_policy(op, insert_policy);
+
+                apply_policy(rule.get_head(), insert_policy);
+            }
+        };
+
+        insert_rule_constants(f::PredicateTag {});
+        insert_rule_constants(f::FunctionTag {});
     }
 
     ///--- Step 3: Compute rule parameter domains as tightest bound from the previously computed domains of the static predicates.
 
-    auto rule_domain_sets = TmpRuleDomainMap {};
-    rule_domain_sets.reserve(program.get_rules().size());
+    auto predicate_rule_domain_sets = TmpRuleDomainMap<f::PredicateTag> {};
+    auto function_rule_domain_sets = TmpRuleDomainMap<f::FunctionTag> {};
 
-    for (const auto rule : program.get_rules())
+    const auto restrict_rule_domains = [&](auto kind, auto& domain_sets)
     {
-        auto variables = rule.get_body().get_variables();
-        auto parameter_domains = TmpVariableDomainList(variables.size());
+        using R = decltype(kind);
 
-        for (auto& domain : parameter_domains)
-            domain.objects = universe;
+        domain_sets.reserve(program.get_rules<R>().size());
 
-        auto restrict_policy = RestrictPolicy {
-            static_predicate_domain_sets, fluent_predicate_domain_sets, static_function_domain_sets, fluent_function_domain_sets, parameter_domains,
-        };
+        for (const auto rule : program.get_rules<R>())
+        {
+            auto variables = rule.get_body().get_variables();
+            auto parameter_domains = TmpVariableDomainList(variables.size());
 
-        for (const auto literal : rule.get_body().get_literals<f::StaticTag>())
-            apply_policy(literal, restrict_policy);
+            for (auto& domain : parameter_domains)
+                domain.objects = universe;
 
-        for (const auto op : rule.get_body().get_numeric_constraints())
-            apply_policy(op, restrict_policy);
+            auto restrict_policy = RestrictPolicy {
+                static_predicate_domain_sets, fluent_predicate_domain_sets, static_function_domain_sets, fluent_function_domain_sets, parameter_domains,
+            };
 
-        rule_domain_sets.emplace(rule.get_index(), std::move(parameter_domains));
-    }
+            for (const auto literal : rule.get_body().template get_literals<f::StaticTag>())
+                apply_policy(literal, restrict_policy);
+
+            for (const auto op : rule.get_body().get_numeric_constraints())
+                apply_policy(op, restrict_policy);
+
+            domain_sets.emplace(rule.get_index(), std::move(parameter_domains));
+        }
+    };
+
+    restrict_rule_domains(f::PredicateTag {}, predicate_rule_domain_sets);
+    restrict_rule_domains(f::FunctionTag {}, function_rule_domain_sets);
 
     ///--- Step 4: Lift the fluent predicate domains given the variable relationships in the rules.
 
-    for (const auto rule : program.get_rules())
+    const auto lift_rule_domains = [&](auto kind, const auto& domain_sets)
     {
-        const auto& parameter_domains = rule_domain_sets.at(rule.get_index());
+        using R = decltype(kind);
 
-        auto lift_policy = LiftPolicy {
-            static_predicate_domain_sets, fluent_predicate_domain_sets, static_function_domain_sets, fluent_function_domain_sets, parameter_domains,
-        };
+        for (const auto rule : program.get_rules<R>())
+        {
+            const auto& parameter_domains = domain_sets.at(rule.get_index());
 
-        for (const auto literal : rule.get_body().get_literals<f::StaticTag>())
-            apply_policy(literal, lift_policy);
+            auto lift_policy = LiftPolicy {
+                static_predicate_domain_sets, fluent_predicate_domain_sets, static_function_domain_sets, fluent_function_domain_sets, parameter_domains,
+            };
 
-        for (const auto literal : rule.get_body().get_literals<f::FluentTag>())
-            apply_policy(literal, lift_policy);
+            for (const auto literal : rule.get_body().template get_literals<f::StaticTag>())
+                apply_policy(literal, lift_policy);
 
-        for (const auto op : rule.get_body().get_numeric_constraints())
-            apply_policy(op, lift_policy);
+            for (const auto literal : rule.get_body().template get_literals<f::FluentTag>())
+                apply_policy(literal, lift_policy);
 
-        visit([&](auto&& head) { apply_policy(head, lift_policy); }, rule.get_head());
-    }
+            for (const auto op : rule.get_body().get_numeric_constraints())
+                apply_policy(op, lift_policy);
+
+            apply_policy(rule.get_head(), lift_policy);
+        }
+    };
+
+    lift_rule_domains(f::PredicateTag {}, predicate_rule_domain_sets);
+    lift_rule_domains(f::FunctionTag {}, function_rule_domain_sets);
 
     ///--- Step 5: Convert internal sets to public domain wrapper types.
 
@@ -552,14 +580,12 @@ ProgramVariableDomains compute_variable_domains(fd::ProgramView<LiftedTag> progr
     auto fluent_predicate_domains = to_predicate_domain_map(fluent_predicate_domain_sets);
     auto static_function_domains = to_function_domain_map(static_function_domain_sets);
     auto fluent_function_domains = to_function_domain_map(fluent_function_domain_sets);
-    auto rule_domains = to_rule_domain_map(rule_domain_sets);
+    auto predicate_rule_domains = to_rule_domain_map(predicate_rule_domain_sets);
+    auto function_rule_domains = to_rule_domain_map(function_rule_domain_sets);
 
     return ProgramVariableDomains {
-        std::move(static_predicate_domains),
-        std::move(fluent_predicate_domains),
-        std::move(static_function_domains),
-        std::move(fluent_function_domains),
-        std::move(rule_domains),
+        std::move(static_predicate_domains), std::move(fluent_predicate_domains), std::move(static_function_domains),
+        std::move(fluent_function_domains),  std::move(predicate_rule_domains),   std::move(function_rule_domains),
     };
 }
 

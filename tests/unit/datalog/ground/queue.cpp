@@ -16,6 +16,7 @@
  */
 
 #include "tyr/datalog/ground/queue.hpp"
+
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -41,7 +42,7 @@ struct GroundQueueFixture
     fd::Repository repository = factory.create();
     std::vector<ygg::Index<f::Predicate<f::FluentTag>>> fluent_predicates;
     std::vector<ygg::Index<fd::GroundAtom<f::FluentTag>>> initial_fluent_atoms;
-    std::vector<ygg::Index<fd::GroundRule>> ground_rules;
+    std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>> ground_rules;
     ygg::uint_t next_rule_id = 0;
 
     fd::GroundAtomView<f::FluentTag> fluent_atom(const std::string& name)
@@ -79,7 +80,7 @@ struct GroundQueueFixture
         return repository.get_or_create(condition_builder).first;
     }
 
-    fd::RuleBindingView fresh_rule_binding()
+    fd::RuleBindingView<f::PredicateTag> fresh_rule_binding()
     {
         auto predicate_builder = ygg::Data<f::Predicate<f::FluentTag>>("dummy_" + std::to_string(next_rule_id++), 0);
         canonicalize(predicate_builder);
@@ -94,21 +95,21 @@ struct GroundQueueFixture
         canonicalize(condition_builder);
         const auto lifted_condition = repository.get_or_create(condition_builder).first;
 
-        auto rule_builder = ygg::Data<fd::Rule>();
+        auto rule_builder = ygg::Data<fd::Rule<f::PredicateTag>>();
         rule_builder.body = lifted_condition.get_index();
         rule_builder.head = atom.get_index();
         canonicalize(rule_builder);
         const auto rule = repository.get_or_create(rule_builder).first;
 
-        auto binding_builder = ygg::Data<f::RelationBinding<fd::Rule>>();
+        auto binding_builder = ygg::Data<f::RelationBinding<fd::Rule<f::PredicateTag>>>();
         binding_builder.relation = rule.get_index();
         canonicalize(binding_builder);
         return repository.get_or_create(binding_builder).first;
     }
 
-    fd::GroundRuleView rule(fd::GroundConjunctiveConditionView body, fd::GroundAtomView<f::FluentTag> head)
+    fd::GroundRuleView<f::PredicateTag> rule(fd::GroundConjunctiveConditionView body, fd::GroundAtomView<f::FluentTag> head)
     {
-        auto rule_builder = ygg::Data<fd::GroundRule>();
+        auto rule_builder = ygg::Data<fd::GroundRule<f::PredicateTag>>();
         rule_builder.binding = fresh_rule_binding().get_index();
         rule_builder.body = body.get_index();
         rule_builder.head = head.get_index();
@@ -123,7 +124,7 @@ struct GroundQueueFixture
         auto program_builder = ygg::Data<fd::GroundProgram>();
         program_builder.fluent_predicates.insert(program_builder.fluent_predicates.end(), fluent_predicates.begin(), fluent_predicates.end());
         program_builder.fluent_atoms.insert(program_builder.fluent_atoms.end(), initial_fluent_atoms.begin(), initial_fluent_atoms.end());
-        program_builder.ground_rules.insert(program_builder.ground_rules.end(), ground_rules.begin(), ground_rules.end());
+        program_builder.predicate_ground_rules.insert(program_builder.predicate_ground_rules.end(), ground_rules.begin(), ground_rules.end());
         canonicalize(program_builder);
         return repository.get_or_create(program_builder).first;
     }
@@ -147,9 +148,9 @@ std::vector<ygg::uint_t> expected_indices(std::initializer_list<fd::GroundAtomVi
     return indices;
 }
 
-std::vector<ygg::Index<fd::GroundRule>> rule_indices(const std::vector<fd::GroundRuleView>& rules)
+std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>> rule_indices(const std::vector<fd::GroundRuleView<f::PredicateTag>>& rules)
 {
-    auto indices = std::vector<ygg::Index<fd::GroundRule>> {};
+    auto indices = std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>> {};
     for (const auto rule : rules)
         indices.push_back(rule.get_index());
     return indices;
@@ -190,8 +191,8 @@ TEST(TyrDatalogGroundQueueTest, GroundProgramStoresGroundRules)
 
     const auto program = fixture.program();
 
-    EXPECT_EQ(program.get_ground_rules().size(), 1);
-    EXPECT_EQ(program.get_ground_rules()[0].get_index(), fixture.ground_rules[0]);
+    EXPECT_EQ(program.get_ground_rules<f::PredicateTag>().size(), 1);
+    EXPECT_EQ(program.get_ground_rules<f::PredicateTag>()[0].get_index(), fixture.ground_rules[0]);
     EXPECT_NE(fmt::format("{}", program).find("GroundProgram"), std::string::npos);
 }
 
@@ -280,13 +281,14 @@ TEST(TyrDatalogGroundQueueTest, PositiveFluentPreconditionIndexMapsFactToWaiting
     fixture.rule(fixture.condition({ fixture.fluent_literal(d) }), c);
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
-    const auto a_it = const_workspace.fluent_precondition_to_rules.find(a);
-    const auto d_it = const_workspace.fluent_precondition_to_rules.find(d);
+    const auto& dependencies = const_workspace.get_dependencies<f::PredicateTag>();
+    const auto a_it = dependencies.fluent_precondition_to_rules.find(a);
+    const auto d_it = dependencies.fluent_precondition_to_rules.find(d);
 
-    ASSERT_NE(a_it, const_workspace.fluent_precondition_to_rules.end());
-    ASSERT_NE(d_it, const_workspace.fluent_precondition_to_rules.end());
-    EXPECT_EQ(rule_indices(a_it->second), std::vector<ygg::Index<fd::GroundRule>>({ fixture.ground_rules[0], fixture.ground_rules[1] }));
-    EXPECT_EQ(rule_indices(d_it->second), std::vector<ygg::Index<fd::GroundRule>>({ fixture.ground_rules[2] }));
+    ASSERT_NE(a_it, dependencies.fluent_precondition_to_rules.end());
+    ASSERT_NE(d_it, dependencies.fluent_precondition_to_rules.end());
+    EXPECT_EQ(rule_indices(a_it->second), std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>>({ fixture.ground_rules[0], fixture.ground_rules[1] }));
+    EXPECT_EQ(rule_indices(d_it->second), std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>>({ fixture.ground_rules[2] }));
 }
 
 TEST(TyrDatalogGroundQueueTest, InitialFluentFactsSatisfyDynamicUnsatisfiedCounts)
@@ -302,13 +304,14 @@ TEST(TyrDatalogGroundQueueTest, InitialFluentFactsSatisfyDynamicUnsatisfiedCount
     auto workspace = datalog::ProgramWorkspace<GroundTag>(const_workspace);
     auto queue_workspace = datalog::QueueWorkspace<GroundTag>(program);
     auto ctx = datalog::ProgramExecutionContext(workspace, queue_workspace);
-    const auto a_it = const_workspace.fluent_precondition_to_rules.find(a);
+    const auto& dependencies = const_workspace.get_dependencies<f::PredicateTag>();
+    const auto a_it = dependencies.fluent_precondition_to_rules.find(a);
 
-    ASSERT_NE(a_it, const_workspace.fluent_precondition_to_rules.end());
-    EXPECT_EQ(rule_indices(a_it->second), std::vector<ygg::Index<fd::GroundRule>>({ fixture.ground_rules[0] }));
+    ASSERT_NE(a_it, dependencies.fluent_precondition_to_rules.end());
+    EXPECT_EQ(rule_indices(a_it->second), std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>>({ fixture.ground_rules[0] }));
 
     ctx.initialize(initial_fluent_atoms(fixture));
-    EXPECT_EQ(ctx.out().rule_states()[fixture.ground_rules[0].get_value()].unsatisfied_count, 0);
+    EXPECT_EQ(ctx.out().rule_states<f::PredicateTag>()[fixture.ground_rules[0].get_value()].unsatisfied_count, 0);
 }
 
 TEST(TyrDatalogGroundQueueTest, ExplicitFluentStateDrivesDynamicUnsatisfiedCounts)
@@ -327,7 +330,7 @@ TEST(TyrDatalogGroundQueueTest, ExplicitFluentStateDrivesDynamicUnsatisfiedCount
 
     ctx.out().fluent_atoms().clear();
     ctx.initialize();
-    EXPECT_EQ(ctx.out().rule_states()[fixture.ground_rules[0].get_value()].unsatisfied_count, 1);
+    EXPECT_EQ(ctx.out().rule_states<f::PredicateTag>()[fixture.ground_rules[0].get_value()].unsatisfied_count, 1);
 }
 
 TEST(TyrDatalogGroundQueueTest, DerivedFactOnlyDecrementsRulesWaitingOnThatFact)
@@ -351,8 +354,8 @@ TEST(TyrDatalogGroundQueueTest, DerivedFactOnlyDecrementsRulesWaitingOnThatFact)
     dq::solve_ground_queue(ctx);
 
     EXPECT_EQ(atom_indices(ctx.out().fluent_atoms()), expected_indices({ a, b }));
-    EXPECT_EQ(ctx.out().rule_states()[fixture.ground_rules[1].get_value()].unsatisfied_count, 0);
-    EXPECT_EQ(ctx.out().rule_states()[fixture.ground_rules[2].get_value()].unsatisfied_count, 1);
+    EXPECT_EQ(ctx.out().rule_states<f::PredicateTag>()[fixture.ground_rules[1].get_value()].unsatisfied_count, 0);
+    EXPECT_EQ(ctx.out().rule_states<f::PredicateTag>()[fixture.ground_rules[2].get_value()].unsatisfied_count, 1);
 }
 
 TEST(TyrDatalogGroundQueueTest, DuplicateHeadsDeriveFactOnce)

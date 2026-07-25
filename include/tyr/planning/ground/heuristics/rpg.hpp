@@ -218,10 +218,14 @@ void RPGBase<GroundTag, Derived, OrAP, AndAP, TP, CP>::set_action_binding_cost(:
     if (action_it == m_action_binding_to_ground_action.end())
         return;
 
-    const auto& mapping = m_rpg_program.get_rule_to_action_mapping();
-    for (const auto& [rule, mapped_action] : mapping)
-        if (mapped_action.get_index() == action_it->second.get_index())
-            m_workspace.cost_policy.set_cost(rule, cost);
+    const auto set_costs = [&]<::tyr::formalism::RelationKind R>()
+    {
+        for (const auto& [rule, mapped_action] : m_rpg_program.template get_rule_to_action_mapping<R>())
+            if (mapped_action.get_index() == action_it->second.get_index())
+                m_workspace.cost_policy.set_cost(rule, cost);
+    };
+    set_costs.template operator()<::tyr::formalism::PredicateTag>();
+    set_costs.template operator()<::tyr::formalism::FunctionTag>();
 }
 
 template<typename Derived,

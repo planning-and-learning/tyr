@@ -59,39 +59,31 @@ auto create_witness_conjunctive_condition(fd::ConjunctiveConditionView element, 
     return context.get_or_create(conj_cond);
 }
 
-auto create_witness_rule(fd::RuleView element, fd::Repository& context)
+template<f::RelationKind R>
+auto create_witness_rule(fd::RuleView<R> element, fd::Repository& context)
 {
     auto builder = fd::Builder {};
     auto merge_context = fd::MergeContext { builder, context };
-    auto rule_ptr = builder.get_builder<fd::Rule>();
+    auto rule_ptr = builder.get_builder<fd::Rule<R>>();
     auto& rule = *rule_ptr;
     rule.clear();
 
     rule.variables = element.get_variables().get_data();
     rule.body = create_witness_conjunctive_condition(element.get_body(), context).first.get_index();
-    rule.head = visit(
-        [&](auto&& head) -> decltype(rule.head)
-        {
-            using Head = std::decay_t<decltype(head)>;
-
-            if constexpr (std::is_same_v<Head, fd::AtomView<f::FluentTag>>)
-                return merge_d2d(head, merge_context).first.get_index();
-            else
-                return merge_d2d(head, merge_context);
-        },
-        element.get_head());
+    rule.head = merge_rule_head(element.get_head(), merge_context);
 
     canonicalize(rule);
     return context.get_or_create(rule);
 }
 }
 
-ConstRuleWorkspace<LiftedTag>::ConstRuleWorkspace(fd::RuleView rule,
-                                                  fd::Repository& repository,
-                                                  const analysis::VariableDomainList& parameter_domains,
-                                                  size_t num_objects,
-                                                  size_t num_fluent_predicates,
-                                                  const TaggedAssignmentSets<::tyr::formalism::StaticTag>& static_assignment_sets) :
+template<f::RelationKind R>
+ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(fd::RuleView<R> rule,
+                                                     fd::Repository& repository,
+                                                     const analysis::VariableDomainList& parameter_domains,
+                                                     size_t num_objects,
+                                                     size_t num_fluent_predicates,
+                                                     const TaggedAssignmentSets<::tyr::formalism::StaticTag>& static_assignment_sets) :
     rule(rule),
     witness_rule(create_witness_rule(get_rule(), repository).first),
     nullary_condition(create_ground_nullary_conjunctive_condition(get_rule().get_body(), repository).first),
@@ -99,8 +91,7 @@ ConstRuleWorkspace<LiftedTag>::ConstRuleWorkspace(fd::RuleView rule,
     binary_overapproximation_rule(create_overapproximation_rule(2, get_rule(), repository).first),
     static_binary_overapproximation_rule(create_static_overapproximation_rule(2, get_rule(), repository).first),
     conflicting_overapproximation_rule(create_overapproximation_conflicting_rule(get_rule().get_arity() == 1 ? 1 : 2, get_rule(), repository).first),
-    static_consistency_graph(get_rule(),
-                             get_rule().get_body(),
+    static_consistency_graph(get_rule().get_body(),
                              unary_overapproximation_rule.get_body(),
                              binary_overapproximation_rule.get_body(),
                              static_binary_overapproximation_rule.get_body(),
@@ -112,5 +103,8 @@ ConstRuleWorkspace<LiftedTag>::ConstRuleWorkspace(fd::RuleView rule,
                              static_assignment_sets)
 {
 }
+
+template struct ConstRuleWorkspace<LiftedTag, f::PredicateTag>;
+template struct ConstRuleWorkspace<LiftedTag, f::FunctionTag>;
 
 }

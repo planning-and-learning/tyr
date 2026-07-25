@@ -33,8 +33,8 @@ namespace
 {
 struct RuleBindingFixture
 {
-    fd::RuleView rule;
-    fd::RuleBindingView binding;
+    fd::RuleView<f::PredicateTag> rule;
+    fd::RuleBindingView<f::PredicateTag> binding;
 };
 
 RuleBindingFixture make_nullary_rule_binding(fd::Repository& repository)
@@ -57,14 +57,14 @@ RuleBindingFixture make_nullary_rule_binding(fd::Repository& repository)
     const auto [condition, condition_success] = repository.get_or_create(condition_builder);
     EXPECT_TRUE(condition_success);
 
-    auto rule_builder = ygg::Data<fd::Rule>();
+    auto rule_builder = ygg::Data<fd::Rule<f::PredicateTag>>();
     rule_builder.body = condition.get_index();
     rule_builder.head = atom.get_index();
     canonicalize(rule_builder);
     const auto [rule, rule_success] = repository.get_or_create(rule_builder);
     EXPECT_TRUE(rule_success);
 
-    auto binding_builder = ygg::Data<f::RelationBinding<fd::Rule>>();
+    auto binding_builder = ygg::Data<f::RelationBinding<fd::Rule<f::PredicateTag>>>();
     binding_builder.relation = rule.get_index();
     canonicalize(binding_builder);
     const auto [binding, binding_success] = repository.get_or_create(binding_builder);
@@ -139,8 +139,8 @@ TEST(TyrDatalogCostPolicyTest, CanonicalRuleBindingOrderIgnoresRepositoryIdentit
     const auto first = make_nullary_rule_binding(first_repository).binding;
     const auto second = make_nullary_rule_binding(second_repository).binding;
 
-    EXPECT_FALSE(d::canonical_rule_binding_less(first, second));
-    EXPECT_FALSE(d::canonical_rule_binding_less(second, first));
+    EXPECT_FALSE(d::canonical_rule_binding_less<f::PredicateTag>(first, second));
+    EXPECT_FALSE(d::canonical_rule_binding_less<f::PredicateTag>(second, first));
 }
 
 TEST(TyrDatalogCostPolicyTest, WitnessTieUsesSuppliedOrdering)

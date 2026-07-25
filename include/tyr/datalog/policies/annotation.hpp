@@ -45,17 +45,17 @@ Cost fetch_annotation_cost(typename DeltaPredicateAnnotations<Kind>::Key key, co
     return std::numeric_limits<Cost>::max();
 }
 
-template<TaskKind Kind, typename Less>
-bool witness_wins_tie(const WitnessAnnotation<Kind>& witness, const Annotation<Kind>* incumbent, Less less)
+template<TaskKind Kind, ::tyr::formalism::RelationKind R, typename Less>
+bool witness_wins_tie(const WitnessAnnotation<Kind, R>& witness, const Annotation<Kind, R>* incumbent, Less less)
 {
     if (!incumbent)
         return true;
-    const auto* incumbent_witness = std::get_if<WitnessAnnotation<Kind>>(incumbent);
+    const auto* incumbent_witness = std::get_if<WitnessAnnotation<Kind, R>>(incumbent);
     return incumbent_witness && less(witness, *incumbent_witness);
 }
 
-template<TaskKind Kind>
-bool witness_wins_tie(const WitnessAnnotation<Kind>& witness, const Annotation<Kind>* incumbent)
+template<TaskKind Kind, ::tyr::formalism::RelationKind R>
+bool witness_wins_tie(const WitnessAnnotation<Kind, R>& witness, const Annotation<Kind, R>* incumbent)
 {
     return witness_wins_tie(witness, incumbent, ygg::Less<> {});
 }
@@ -81,8 +81,7 @@ public:
     void initialize_annotation(PredicateHead, SelectedPredicateAnnotations<Kind>&) const noexcept {}
     void initialize_annotation(FunctionHead, ygg::ClosedInterval<ygg::float_t>, SelectedFunctionAnnotations<Kind>&) const noexcept {}
 
-    CostUpdate<Kind>
-    update_annotation(PredicateHead, PredicateHead, const DeltaPredicateAnnotations<Kind>&, SelectedPredicateAnnotations<Kind>&) const noexcept
+    CostUpdate<Kind> update_annotation(PredicateHead, PredicateHead, const DeltaPredicateAnnotations<Kind>&, SelectedPredicateAnnotations<Kind>&) const noexcept
     {
         return {};
     }
@@ -95,16 +94,23 @@ public:
     using PredicateHead = PredicateAnnotationHeadT<Kind>;
     using FunctionHead = FunctionAnnotationHeadT<Kind>;
 
+    static constexpr bool records_propositional_achievers = false;
+
     void clear_achievers() noexcept {}
 
-    void record_achiever(PredicateHead, const AndAnnotationContext<Kind>&) const noexcept {}
+    void record_achiever(PredicateHead, const AndAnnotationContext<Kind, ::tyr::formalism::PredicateTag>&) const noexcept {}
 
-    void update_annotation(PredicateHead, PredicateHead, const AndAnnotationContext<Kind>&, DeltaPredicateAnnotations<Kind>&) const noexcept {}
+    void update_annotation(PredicateHead,
+                           PredicateHead,
+                           const AndAnnotationContext<Kind, ::tyr::formalism::PredicateTag>&,
+                           DeltaPredicateAnnotations<Kind>&) const noexcept
+    {
+    }
 
     void update_annotation(FunctionHead,
                            FunctionHead,
                            ygg::ClosedInterval<ygg::float_t>,
-                           const AndAnnotationContext<Kind>&,
+                           const AndAnnotationContext<Kind, ::tyr::formalism::FunctionTag>&,
                            DeltaFunctionAnnotations<Kind>&) const noexcept
     {
     }

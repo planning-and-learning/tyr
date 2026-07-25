@@ -18,9 +18,6 @@
 #include "tyr/analysis/listeners.hpp"
 
 #include "tyr/analysis/stratification.hpp"                       // for RuleStrata
-#include <yggdrasil/ids/index_mixins.hpp>                           // for operator!=
-#include <yggdrasil/core/types.hpp>                                  // for make_view
-#include <yggdrasil/containers/vector.hpp>                                 // for ygg::View
 #include "tyr/formalism/datalog/atom_view.hpp"                   // for ygg::View
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"  // for ygg::View
 #include "tyr/formalism/datalog/literal_index.hpp"               // for ygg::Index
@@ -32,7 +29,10 @@
 #include <cista/containers/vector.h>  // for basic_vector
 #include <gtl/phmap.hpp>              // for flat_hash_set
 #include <type_traits>
-#include <utility>  // for move
+#include <utility>                          // for move
+#include <yggdrasil/containers/vector.hpp>  // for ygg::View
+#include <yggdrasil/core/types.hpp>         // for make_view
+#include <yggdrasil/ids/index_mixins.hpp>   // for operator!=
 
 namespace f = tyr::formalism;
 namespace fd = tyr::formalism::datalog;
@@ -41,51 +41,59 @@ namespace tyr::analysis
 {
 namespace
 {
-void add_function_listeners(fd::FunctionExpressionView expression, ygg::Index<fd::Rule> rule, ListenerStratum& listeners);
+template<f::RelationKind R>
+void add_function_listeners(fd::FunctionExpressionView expression, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners);
 
-void add_function_listeners(ygg::float_t, ygg::Index<fd::Rule>, ListenerStratum&) {}
+template<f::RelationKind R>
+void add_function_listeners(ygg::float_t, ygg::Index<fd::Rule<R>>, TypedListenerStratum<R>&)
+{
+}
 
-template<f::OpKind O>
-void add_function_listeners(fd::LiftedUnaryOperatorView<O> expression, ygg::Index<fd::Rule> rule, ListenerStratum& listeners)
+template<f::OpKind O, f::RelationKind R>
+void add_function_listeners(fd::LiftedUnaryOperatorView<O> expression, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
 {
     add_function_listeners(expression.get_arg(), rule, listeners);
 }
 
-template<f::OpKind O>
-void add_function_listeners(fd::LiftedBinaryOperatorView<O> expression, ygg::Index<fd::Rule> rule, ListenerStratum& listeners)
+template<f::OpKind O, f::RelationKind R>
+void add_function_listeners(fd::LiftedBinaryOperatorView<O> expression, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
 {
     add_function_listeners(expression.get_lhs(), rule, listeners);
     add_function_listeners(expression.get_rhs(), rule, listeners);
 }
 
-template<f::OpKind O>
-void add_function_listeners(fd::LiftedMultiOperatorView<O> expression, ygg::Index<fd::Rule> rule, ListenerStratum& listeners)
+template<f::OpKind O, f::RelationKind R>
+void add_function_listeners(fd::LiftedMultiOperatorView<O> expression, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
 {
     for (const auto arg : expression.get_args())
         add_function_listeners(arg, rule, listeners);
 }
 
-template<f::FactKind T>
-void add_function_listeners(fd::FunctionTermView<T>, ygg::Index<fd::Rule>, ListenerStratum&)
+template<f::FactKind T, f::RelationKind R>
+void add_function_listeners(fd::FunctionTermView<T>, ygg::Index<fd::Rule<R>>, TypedListenerStratum<R>&)
 {
 }
 
-void add_function_listeners(fd::FunctionTermView<f::FluentTag> term, ygg::Index<fd::Rule> rule, ListenerStratum& listeners)
+template<f::RelationKind R>
+void add_function_listeners(fd::FunctionTermView<f::FluentTag> term, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
 {
     listeners.functions[term.get_function().get_index()].insert(rule);
 }
 
-void add_function_listeners(fd::LiftedArithmeticOperatorView expression, ygg::Index<fd::Rule> rule, ListenerStratum& listeners)
+template<f::RelationKind R>
+void add_function_listeners(fd::LiftedArithmeticOperatorView expression, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
 {
     visit([&](auto&& arg) { add_function_listeners(arg, rule, listeners); }, expression.get_variant());
 }
 
-void add_function_listeners(fd::FunctionExpressionView expression, ygg::Index<fd::Rule> rule, ListenerStratum& listeners)
+template<f::RelationKind R>
+void add_function_listeners(fd::FunctionExpressionView expression, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
 {
     visit([&](auto&& arg) { add_function_listeners(arg, rule, listeners); }, expression.get_variant());
 }
 
-void add_function_listeners(fd::LiftedBooleanOperatorView expression, ygg::Index<fd::Rule> rule, ListenerStratum& listeners)
+template<f::RelationKind R>
+void add_function_listeners(fd::LiftedBooleanOperatorView expression, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
 {
     visit(
         [&](auto&& arg)
@@ -96,13 +104,42 @@ void add_function_listeners(fd::LiftedBooleanOperatorView expression, ygg::Index
         expression.get_variant());
 }
 
-template<f::NumericEffectOpKind Op>
-void add_numeric_effect_head_listeners(fd::NumericEffectView<Op, f::FluentTag> effect, ygg::Index<fd::Rule> rule, ListenerStratum& listeners)
+template<f::NumericEffectOpKind Op, f::RelationKind R>
+void add_numeric_effect_head_listeners(fd::NumericEffectView<Op, f::FluentTag> effect, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
 {
     if constexpr (!std::is_same_v<Op, f::Assign>)
         add_function_listeners(effect.get_fterm(), rule, listeners);
 
     add_function_listeners(effect.get_fexpr(), rule, listeners);
+}
+
+template<f::RelationKind R>
+void add_head_listeners(fd::AtomView<f::FluentTag>, ygg::Index<fd::Rule<R>>, TypedListenerStratum<R>&)
+{
+}
+
+template<f::RelationKind R>
+void add_head_listeners(fd::NumericEffectOperatorView<f::FluentTag> head, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
+{
+    visit([&](auto&& effect) { add_numeric_effect_head_listeners(effect, rule, listeners); }, head.get_variant());
+}
+
+template<f::RelationKind R>
+void add_stratum_listeners(const TypedRuleStratum<R>& stratum, const fd::Repository& context, TypedListenerStratum<R>& listeners)
+{
+    for (const auto rule : stratum)
+    {
+        const auto rule_view = ygg::make_view(rule, context);
+
+        for (const auto literal : rule_view.get_body().template get_literals<f::FluentTag>())
+            if (literal.get_polarity())
+                listeners.predicates[literal.get_atom().get_predicate().get_index()].insert(rule);
+
+        for (const auto constraint : rule_view.get_body().get_numeric_constraints())
+            add_function_listeners(constraint, rule, listeners);
+
+        add_head_listeners(rule_view.get_head(), rule, listeners);
+    }
 }
 }
 
@@ -114,26 +151,8 @@ ListenerStrata compute_listeners(const RuleStrata& strata, const fd::Repository&
     {
         auto listeners_in_stratum = ListenerStratum {};
 
-        for (const auto rule : stratum)
-        {
-            const auto rule_view = ygg::make_view(rule, context);
-            for (const auto literal : ygg::make_view(rule, context).get_body().get_literals<f::FluentTag>())
-                if (literal.get_polarity())
-                    listeners_in_stratum.predicates[literal.get_atom().get_predicate().get_index()].insert(rule);
-
-            for (const auto constraint : rule_view.get_body().get_numeric_constraints())
-                add_function_listeners(constraint, rule, listeners_in_stratum);
-
-            visit(
-                [&](auto&& head)
-                {
-                    using Head = std::decay_t<decltype(head)>;
-
-                    if constexpr (std::is_same_v<Head, fd::NumericEffectOperatorView<f::FluentTag>>)
-                        visit([&](auto&& effect) { add_numeric_effect_head_listeners(effect, rule, listeners_in_stratum); }, head.get_variant());
-                },
-                rule_view.get_head());
-        }
+        add_stratum_listeners(stratum.template get<f::PredicateTag>(), context, listeners_in_stratum.template get<f::PredicateTag>());
+        add_stratum_listeners(stratum.template get<f::FunctionTag>(), context, listeners_in_stratum.template get<f::FunctionTag>());
 
         listeners.data.push_back(std::move(listeners_in_stratum));
     }

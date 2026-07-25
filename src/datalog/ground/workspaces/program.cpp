@@ -27,34 +27,40 @@ namespace fd = tyr::formalism::datalog;
 
 namespace tyr::datalog
 {
-
-ConstProgramWorkspace<GroundTag>::ConstProgramWorkspace(fd::ProgramView<GroundTag> program_) :
-    program(program_),
-    fluent_precondition_to_rules(),
-    fluent_function_term_to_rules()
+namespace
 {
-    for (const auto rule : program.get_ground_rules())
+void collect_head_terms(fd::GroundAtomView<f::FluentTag>, ygg::UnorderedSet<fd::GroundFunctionTermView<f::FluentTag>>&) {}
+
+void collect_head_terms(fd::GroundNumericEffectOperatorView<f::FluentTag> head, ygg::UnorderedSet<fd::GroundFunctionTermView<f::FluentTag>>& terms)
+{
+    fd::collect_fterms<f::FluentTag>(head, terms);
+}
+
+template<f::RelationKind R>
+void initialize_dependencies(fd::ProgramView<GroundTag> program, GroundRuleDependencies<R>& dependencies)
+{
+    for (const auto rule : program.template get_ground_rules<R>())
     {
         const auto body = rule.get_body();
         for (const auto literal : body.template get_literals<f::FluentTag>())
             if (literal.get_polarity())
-                fluent_precondition_to_rules[literal.get_atom()].push_back(rule);
+                dependencies.fluent_precondition_to_rules[literal.get_atom()].push_back(rule);
 
         auto fluent_terms = ygg::UnorderedSet<fd::GroundFunctionTermView<f::FluentTag>>();
         for (const auto numeric_constraint : body.get_numeric_constraints())
             fd::collect_fterms<f::FluentTag>(numeric_constraint, fluent_terms);
-        ygg::visit(
-            [&](auto&& head)
-            {
-                using Head = std::decay_t<decltype(head)>;
-                if constexpr (std::is_same_v<Head, fd::GroundNumericEffectOperatorView<f::FluentTag>>)
-                    fd::collect_fterms<f::FluentTag>(head, fluent_terms);
-            },
-            rule.get_head());
+        collect_head_terms(rule.get_head(), fluent_terms);
 
         for (const auto term : fluent_terms)
-            fluent_function_term_to_rules[term].push_back(rule);
+            dependencies.fluent_function_term_to_rules[term].push_back(rule);
     }
+}
+}
+
+ConstProgramWorkspace<GroundTag>::ConstProgramWorkspace(fd::ProgramView<GroundTag> program_) : program(program_), predicate_rules(), function_rules()
+{
+    initialize_dependencies(program, predicate_rules);
+    initialize_dependencies(program, function_rules);
 }
 
 }

@@ -137,13 +137,13 @@ void FFRPGHeuristic<GroundTag>::extract_relaxed_plan_and_preferred_actions(fd::G
 }
 
 void FFRPGHeuristic<GroundTag>::extract_relaxed_plan_and_preferred_actions(fd::GroundFunctionTermView<f::FluentTag> term,
-                                                                           const datalog::Annotation<GroundTag>& annotation,
+                                                                           const datalog::Annotation<GroundTag, f::FunctionTag>& annotation,
                                                                            const StateContext<GroundTag>& state_context)
 {
     if (mark_function(term))
         return;
 
-    const auto* witness = std::get_if<datalog::WitnessAnnotation<GroundTag>>(&annotation);
+    const auto* witness = std::get_if<datalog::WitnessAnnotation<GroundTag, f::FunctionTag>>(&annotation);
     if (!witness)
         return;
 
@@ -160,11 +160,12 @@ void FFRPGHeuristic<GroundTag>::extract_numeric_constraint_support(fd::GroundBoo
                                                          { extract_relaxed_plan_and_preferred_actions(term, annotation, state_context); });
 }
 
-void FFRPGHeuristic<GroundTag>::extract_relaxed_plan_and_preferred_actions(const datalog::WitnessAnnotation<GroundTag>& witness,
+template<f::RelationKind R>
+void FFRPGHeuristic<GroundTag>::extract_relaxed_plan_and_preferred_actions(const datalog::WitnessAnnotation<GroundTag, R>& witness,
                                                                            const StateContext<GroundTag>& state_context)
 {
     const auto rule = witness.get_rule_key();
-    const auto& mapping = this->m_rpg_program.get_rule_to_action_mapping();
+    const auto& mapping = this->m_rpg_program.template get_rule_to_action_mapping<R>();
     if (const auto it = mapping.find(rule); it != mapping.end())
     {
         const auto action = it->second;
@@ -174,7 +175,7 @@ void FFRPGHeuristic<GroundTag>::extract_relaxed_plan_and_preferred_actions(const
             m_preferred_actions.insert(action.get_index());
     }
 
-    for (const auto literal : rule.get_body().get_literals<f::FluentTag>())
+    for (const auto literal : rule.get_body().template get_literals<f::FluentTag>())
     {
         if (literal.get_polarity())
             extract_relaxed_plan_and_preferred_actions(literal.get_atom(), state_context);

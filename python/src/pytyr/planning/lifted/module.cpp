@@ -125,9 +125,10 @@ should not be used further.
             "get_rule_to_action_mapping",
             [](const RelaxedProgram& self)
             {
-                using Entry = std::pair<const ::tyr::formalism::datalog::RuleView*, const ::tyr::formalism::planning::ActionView*>;
+                using Entry =
+                    std::pair<const ::tyr::formalism::datalog::RuleView<::tyr::formalism::PredicateTag>*, const ::tyr::formalism::planning::ActionView*>;
                 auto result = std::vector<Entry> {};
-                for (const auto& [rule, action] : self.get_rule_to_action_mapping())
+                for (const auto& [rule, action] : self.get_rule_to_action_mapping<::tyr::formalism::PredicateTag>())
                     result.emplace_back(&rule, &action);
                 return result;
             },

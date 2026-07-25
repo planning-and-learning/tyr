@@ -25,10 +25,10 @@ struct BindingPublicView<f::Function<T>, fd::Repository>
     using type = fd::FunctionBindingView<T>;
 };
 
-template<>
-struct BindingPublicView<fd::Rule, fd::Repository>
+template<f::RelationKind R>
+struct BindingPublicView<fd::Rule<R>, fd::Repository>
 {
-    using type = fd::RuleBindingView;
+    using type = fd::RuleBindingView<R>;
 };
 
 template<f::FactKind T>

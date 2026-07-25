@@ -211,7 +211,25 @@ struct ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>
     TP tp;
     CP cost_policy;
 
-    std::vector<std::unique_ptr<RuleWorkspace<LiftedTag>::Instance<AndAP>>> rules;
+    std::vector<std::unique_ptr<typename RuleWorkspace<LiftedTag, ::tyr::formalism::PredicateTag>::template Instance<AndAP>>> predicate_rules;
+    std::vector<std::unique_ptr<typename RuleWorkspace<LiftedTag, ::tyr::formalism::FunctionTag>::template Instance<AndAP>>> function_rules;
+
+    auto& get_rules(::tyr::formalism::PredicateTag) noexcept { return predicate_rules; }
+    auto& get_rules(::tyr::formalism::FunctionTag) noexcept { return function_rules; }
+    const auto& get_rules(::tyr::formalism::PredicateTag) const noexcept { return predicate_rules; }
+    const auto& get_rules(::tyr::formalism::FunctionTag) const noexcept { return function_rules; }
+
+    template<::tyr::formalism::RelationKind R>
+    auto& get_rules() noexcept
+    {
+        return get_rules(R {});
+    }
+
+    template<::tyr::formalism::RelationKind R>
+    const auto& get_rules() const noexcept
+    {
+        return get_rules(R {});
+    }
 
     ::tyr::formalism::planning::Builder planning_builder;
     ::tyr::formalism::datalog::Builder datalog_builder;
@@ -234,7 +252,25 @@ struct ConstProgramWorkspace<LiftedTag>
 {
     ConstFactsWorkspace<LiftedTag> facts;
 
-    std::vector<std::optional<ConstRuleWorkspace<LiftedTag>>> rules;
+    std::vector<std::optional<ConstRuleWorkspace<LiftedTag, ::tyr::formalism::PredicateTag>>> predicate_rules;
+    std::vector<std::optional<ConstRuleWorkspace<LiftedTag, ::tyr::formalism::FunctionTag>>> function_rules;
+
+    auto& get_rules(::tyr::formalism::PredicateTag) noexcept { return predicate_rules; }
+    auto& get_rules(::tyr::formalism::FunctionTag) noexcept { return function_rules; }
+    const auto& get_rules(::tyr::formalism::PredicateTag) const noexcept { return predicate_rules; }
+    const auto& get_rules(::tyr::formalism::FunctionTag) const noexcept { return function_rules; }
+
+    template<::tyr::formalism::RelationKind R>
+    auto& get_rules() noexcept
+    {
+        return get_rules(R {});
+    }
+
+    template<::tyr::formalism::RelationKind R>
+    const auto& get_rules() const noexcept
+    {
+        return get_rules(R {});
+    }
 
     explicit ConstProgramWorkspace(Program<LiftedTag>& program);
 };

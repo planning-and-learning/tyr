@@ -627,12 +627,12 @@ struct formatter<tyr::formalism::datalog::ConditionalEffectView, char>
     }
 };
 
-template<>
-struct formatter<ygg::Data<tyr::formalism::datalog::Rule>, char>
+template<tyr::formalism::RelationKind R>
+struct formatter<ygg::Data<tyr::formalism::datalog::Rule<R>>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::datalog::Rule>& value, FormatContext& ctx) const
+    auto format(const ygg::Data<tyr::formalism::datalog::Rule<R>>& value, FormatContext& ctx) const
     {
         auto os = std::stringstream {};
         os << "Rule(\n";
@@ -654,12 +654,12 @@ struct formatter<ygg::Data<tyr::formalism::datalog::Rule>, char>
     }
 };
 
-template<>
-struct formatter<tyr::formalism::datalog::RuleView, char>
+template<tyr::formalism::RelationKind R>
+struct formatter<tyr::formalism::datalog::RuleView<R>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::datalog::RuleView& value, FormatContext& ctx) const
+    auto format(const tyr::formalism::datalog::RuleView<R>& value, FormatContext& ctx) const
     {
         auto os = std::stringstream {};
         os << "Rule(\n";
@@ -819,12 +819,12 @@ struct formatter<tyr::formalism::datalog::GroundConditionalEffectView, char>
     }
 };
 
-template<>
-struct formatter<ygg::Data<tyr::formalism::datalog::GroundRule>, char>
+template<tyr::formalism::RelationKind R>
+struct formatter<ygg::Data<tyr::formalism::datalog::GroundRule<R>>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::datalog::GroundRule>& value, FormatContext& ctx) const
+    auto format(const ygg::Data<tyr::formalism::datalog::GroundRule<R>>& value, FormatContext& ctx) const
     {
         auto os = std::stringstream {};
         os << "GroundRule(\n";
@@ -844,12 +844,12 @@ struct formatter<ygg::Data<tyr::formalism::datalog::GroundRule>, char>
     }
 };
 
-template<>
-struct formatter<tyr::formalism::datalog::GroundRuleView, char>
+template<tyr::formalism::RelationKind R>
+struct formatter<tyr::formalism::datalog::GroundRuleView<R>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::datalog::GroundRuleView& value, FormatContext& ctx) const
+    auto format(const tyr::formalism::datalog::GroundRuleView<R>& value, FormatContext& ctx) const
     {
         auto os = std::stringstream {};
         os << "GroundRule(\n";
@@ -903,7 +903,9 @@ struct formatter<ygg::Data<tyr::formalism::datalog::Program>, char>
             os << ygg::print_indent;
             fmt::print(os, "{}{}\n", "goal = ", value.goal);
             os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "rules = ", value.rules);
+            fmt::print(os, "{}{}\n", "rules = ", value.predicate_rules);
+            os << ygg::print_indent;
+            fmt::print(os, "{}{}\n", "numeric rules = ", value.function_rules);
         }
         os << ygg::print_indent << ")";
         return fmt::format_to(ctx.out(), "{}", os.str());
@@ -944,7 +946,9 @@ struct formatter<tyr::formalism::datalog::ProgramView<tyr::LiftedTag>, char>
             os << ygg::print_indent;
             fmt::print(os, "{}{}\n", "goal = ", value.get_goal());
             os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "rules = ", value.get_rules());
+            fmt::print(os, "{}{}\n", "rules = ", value.template get_rules<tyr::formalism::PredicateTag>());
+            os << ygg::print_indent;
+            fmt::print(os, "{}{}\n", "numeric rules = ", value.template get_rules<tyr::formalism::FunctionTag>());
         }
         os << ygg::print_indent << ")";
         return fmt::format_to(ctx.out(), "{}", os.str());
@@ -985,7 +989,9 @@ struct formatter<ygg::Data<tyr::formalism::datalog::GroundProgram>, char>
             os << ygg::print_indent;
             fmt::print(os, "{}{}\n", "goal = ", value.goal);
             os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "ground rules = ", value.ground_rules);
+            fmt::print(os, "{}{}\n", "ground rules = ", value.predicate_ground_rules);
+            os << ygg::print_indent;
+            fmt::print(os, "{}{}\n", "numeric ground rules = ", value.function_ground_rules);
         }
         os << ygg::print_indent << ")";
         return fmt::format_to(ctx.out(), "{}", os.str());
@@ -1026,7 +1032,9 @@ struct formatter<tyr::formalism::datalog::ProgramView<tyr::GroundTag>, char>
             os << ygg::print_indent;
             fmt::print(os, "{}{}\n", "goal = ", value.get_goal());
             os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "ground rules = ", value.get_ground_rules());
+            fmt::print(os, "{}{}\n", "ground rules = ", value.template get_ground_rules<tyr::formalism::PredicateTag>());
+            os << ygg::print_indent;
+            fmt::print(os, "{}{}\n", "numeric ground rules = ", value.template get_ground_rules<tyr::formalism::FunctionTag>());
         }
         os << ygg::print_indent << ")";
         return fmt::format_to(ctx.out(), "{}", os.str());

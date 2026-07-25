@@ -31,19 +31,15 @@
 namespace tyr::datalog
 {
 
-struct GroundQueueEntry : ygg::comparison::Mixin<GroundQueueEntry>
+template<::tyr::formalism::RelationKind R>
+struct GroundQueueEntry : ygg::comparison::Mixin<GroundQueueEntry<R>>
 {
     Cost cost;
     ygg::uint_t sequence;
-    ::tyr::formalism::datalog::GroundRuleView rule;
+    ::tyr::formalism::datalog::GroundRuleView<R> rule;
 
     GroundQueueEntry() = default;
-    GroundQueueEntry(Cost cost, ygg::uint_t sequence, ::tyr::formalism::datalog::GroundRuleView rule) :
-        cost(cost),
-        sequence(sequence),
-        rule(rule)
-    {
-    }
+    GroundQueueEntry(Cost cost, ygg::uint_t sequence, ::tyr::formalism::datalog::GroundRuleView<R> rule) : cost(cost), sequence(sequence), rule(rule) {}
 
     auto identifying_members() const noexcept { return std::make_tuple(cost, sequence); }
 };
@@ -88,21 +84,57 @@ struct GroundQueueScratch
 template<>
 struct QueueWorkspace<GroundTag>
 {
-    std::vector<GroundQueueEntry> storage;
+    std::vector<GroundQueueEntry<::tyr::formalism::PredicateTag>> predicate_storage;
+    std::vector<GroundQueueEntry<::tyr::formalism::FunctionTag>> function_storage;
     GroundQueueStatistics statistics;
     ygg::uint_t next_sequence = 0;
     GroundQueueScratch scratch;
 
-    explicit QueueWorkspace(::tyr::formalism::datalog::ProgramView<GroundTag> program) { storage.reserve(program.get_ground_rules().size()); }
+    explicit QueueWorkspace(::tyr::formalism::datalog::ProgramView<GroundTag> program)
+    {
+        predicate_storage.reserve(program.template get_ground_rules<::tyr::formalism::PredicateTag>().size());
+        function_storage.reserve(program.template get_ground_rules<::tyr::formalism::FunctionTag>().size());
+    }
+
+    template<::tyr::formalism::RelationKind R>
+    auto& get_storage() noexcept;
+
+    template<::tyr::formalism::RelationKind R>
+    const auto& get_storage() const noexcept;
 
     void clear()
     {
-        storage.clear();
+        predicate_storage.clear();
+        function_storage.clear();
         statistics = GroundQueueStatistics {};
         next_sequence = 0;
         scratch.clear();
     }
 };
+
+template<>
+inline auto& QueueWorkspace<GroundTag>::get_storage<::tyr::formalism::PredicateTag>() noexcept
+{
+    return predicate_storage;
+}
+
+template<>
+inline auto& QueueWorkspace<GroundTag>::get_storage<::tyr::formalism::FunctionTag>() noexcept
+{
+    return function_storage;
+}
+
+template<>
+inline const auto& QueueWorkspace<GroundTag>::get_storage<::tyr::formalism::PredicateTag>() const noexcept
+{
+    return predicate_storage;
+}
+
+template<>
+inline const auto& QueueWorkspace<GroundTag>::get_storage<::tyr::formalism::FunctionTag>() const noexcept
+{
+    return function_storage;
+}
 
 }
 

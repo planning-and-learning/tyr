@@ -81,12 +81,15 @@ struct ConstFactsWorkspace;
 struct P2DWorkspace;
 template<TaskKind Kind>
 struct ConstProgramWorkspace;
-template<TaskKind Kind>
+template<TaskKind Kind, ::tyr::formalism::RelationKind R>
 struct RuleWorkspace;
-template<TaskKind Kind>
+template<TaskKind Kind, ::tyr::formalism::RelationKind R>
 struct ConstRuleWorkspace;
 
-class RuleSchedulerStratum;
+template<::tyr::formalism::RelationKind R>
+class TypedRuleSchedulerStratum;
+struct RuleSchedulerStratum;
+struct RuleSchedulerStrata;
 
 struct ProgramStatistics;
 struct RuleStatistics;

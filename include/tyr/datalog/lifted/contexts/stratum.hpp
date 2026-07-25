@@ -70,7 +70,11 @@ struct StratumExecutionContext
      * Subcontext
      */
 
-    auto get_rule_execution_context(ygg::Index<::tyr::formalism::datalog::Rule> rule) { return RuleExecutionContext<OrAP, AndAP, TP, CP> { rule, *this }; }
+    template<::tyr::formalism::RelationKind R>
+    auto get_rule_execution_context(ygg::Index<::tyr::formalism::datalog::Rule<R>> rule)
+    {
+        return RuleExecutionContext<R, OrAP, AndAP, TP, CP> { rule, *this };
+    }
 
     const auto& in() const noexcept { return m_in; }
     auto& out() noexcept { return m_out; }

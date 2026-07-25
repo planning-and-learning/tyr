@@ -33,13 +33,17 @@ struct NumericSupportKey<LiftedTag>
     using type = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
 };
 
-template<>
-struct WitnessRuleKey<LiftedTag>
+template<::tyr::formalism::RelationKind R>
+struct WitnessRuleKey<LiftedTag, R>
 {
-    using type = ::tyr::formalism::datalog::RuleBindingView;
+    using type = ::tyr::formalism::datalog::RuleBindingView<R>;
 };
 
-inline bool canonical_rule_binding_less(WitnessRuleKeyT<LiftedTag> lhs, WitnessRuleKeyT<LiftedTag> rhs) { return ygg::Less<> {}(lhs.get_key(), rhs.get_key()); }
+template<::tyr::formalism::RelationKind R>
+inline bool canonical_rule_binding_less(WitnessRuleKeyT<LiftedTag, R> lhs, WitnessRuleKeyT<LiftedTag, R> rhs)
+{
+    return ygg::Less<> {}(lhs.get_key(), rhs.get_key());
+}
 
 template<>
 struct AnnotationPolicyTypes<LiftedTag>
@@ -59,14 +63,14 @@ struct NumericIntervalBindingParts<LiftedTag>
     static Key get_key(Binding binding) noexcept { return binding.get_index().row; }
 };
 
-template<>
-struct AndAnnotationContext<LiftedTag>
+template<::tyr::formalism::RelationKind R>
+struct AndAnnotationContext<LiftedTag, R>
 {
     Cost current_cost;
     std::span<const NumericSupport<LiftedTag>> numeric_supports;
     std::vector<NumericSupport<LiftedTag>>& witness_support_scratch;
-    ::tyr::formalism::datalog::RuleView rule;
-    std::optional<::tyr::formalism::datalog::RuleBindingView> rule_binding;
+    ::tyr::formalism::datalog::RuleView<R> rule;
+    std::optional<::tyr::formalism::datalog::RuleBindingView<R>> rule_binding;
     Cost metric_effect_cost;
     ::tyr::formalism::datalog::ConjunctiveConditionView witness_condition;
     const NumericSupportSelector<LiftedTag>& numeric_support_selector;

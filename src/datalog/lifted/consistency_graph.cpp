@@ -974,8 +974,7 @@ static auto compute_indexed_literals(fd::ConjunctiveConditionView element)
                                          compute_tagged_indexed_literals(element.get_literals<f::FluentTag>(), element.get_arity()) };
 }
 
-StaticConsistencyGraph::StaticConsistencyGraph(fd::RuleView rule,
-                                               fd::ConjunctiveConditionView condition,
+StaticConsistencyGraph::StaticConsistencyGraph(fd::ConjunctiveConditionView condition,
                                                fd::ConjunctiveConditionView unary_overapproximation_condition,
                                                fd::ConjunctiveConditionView binary_overapproximation_condition,
                                                fd::ConjunctiveConditionView static_binary_overapproximation_condition,
@@ -985,7 +984,6 @@ StaticConsistencyGraph::StaticConsistencyGraph(fd::RuleView rule,
                                                ygg::uint_t begin_parameter_index,
                                                ygg::uint_t end_parameter_index,
                                                const TaggedAssignmentSets<f::StaticTag>& static_assignment_sets) :
-    m_rule(rule),
     m_condition(condition),
     m_unary_overapproximation_condition(unary_overapproximation_condition),
     m_binary_overapproximation_condition(binary_overapproximation_condition),
@@ -1012,7 +1010,7 @@ StaticConsistencyGraph::StaticConsistencyGraph(fd::RuleView rule,
 
     m_matrix = compute_edges(m_binary_overapproximation_indexed_literals.static_indexed, static_assignment_sets, m_vertices, m_vertex_partitions);
 
-    // std::ofstream file("graph_" + std::to_string(ygg::uint_t(m_rule.get_index())) + ".dot");
+    // std::ofstream file("graph.dot");
     // file << fd::VariableDependencyGraph(m_condition) << std::endl;
 
     // std::cout << "adj matrix bitset bytes: " << m_matrix.bitset_data().size() * sizeof(uint64_t) << "\n";
@@ -1248,8 +1246,6 @@ const details::Vertex& StaticConsistencyGraph::get_vertex(ygg::uint_t index) con
 
 size_t StaticConsistencyGraph::get_num_vertices() const noexcept { return m_vertices.size(); }
 
-fd::RuleView StaticConsistencyGraph::get_rule() const noexcept { return m_rule; }
-
 fd::ConjunctiveConditionView StaticConsistencyGraph::get_condition() const noexcept { return m_condition; }
 
 const fd::VariableDependencyGraph& StaticConsistencyGraph::get_variable_dependeny_graph() const noexcept { return m_binary_overapproximation_vdg; }
@@ -1365,81 +1361,61 @@ std::pair<fd::GroundConjunctiveConditionView, bool> create_ground_nullary_conjun
     return context.get_or_create(conj_cond);
 }
 
-std::pair<fd::RuleView, bool> create_overapproximation_rule(size_t k, fd::RuleView element, fd::Repository& context)
+template<f::RelationKind R>
+std::pair<fd::RuleView<R>, bool> create_overapproximation_rule(size_t k, fd::RuleView<R> element, fd::Repository& context)
 {
     auto builder = fd::Builder {};
     auto merge_context = fd::MergeContext { builder, context };
-    auto rule_ptr = builder.get_builder<fd::Rule>();
+    auto rule_ptr = builder.get_builder<fd::Rule<R>>();
     auto& rule = *rule_ptr;
     rule.clear();
 
     rule.variables = element.get_variables().get_data();
     rule.body = create_overapproximation_conjunctive_condition(k, element.get_body(), context).first.get_index();
-    rule.head = visit(
-        [&](auto&& head) -> decltype(rule.head)
-        {
-            using Head = std::decay_t<decltype(head)>;
-
-            if constexpr (std::is_same_v<Head, fd::AtomView<f::FluentTag>>)
-                return merge_d2d(head, merge_context).first.get_index();
-            else
-                return merge_d2d(head, merge_context);
-        },
-        element.get_head());
+    rule.head = merge_rule_head(element.get_head(), merge_context);
 
     canonicalize(rule);
     return context.get_or_create(rule);
 }
 
-std::pair<fd::RuleView, bool> create_static_overapproximation_rule(size_t k, fd::RuleView element, fd::Repository& context)
+template<f::RelationKind R>
+std::pair<fd::RuleView<R>, bool> create_static_overapproximation_rule(size_t k, fd::RuleView<R> element, fd::Repository& context)
 {
     auto builder = fd::Builder {};
     auto merge_context = fd::MergeContext { builder, context };
-    auto rule_ptr = builder.get_builder<fd::Rule>();
+    auto rule_ptr = builder.get_builder<fd::Rule<R>>();
     auto& rule = *rule_ptr;
     rule.clear();
 
     rule.variables = element.get_variables().get_data();
     rule.body = create_static_overapproximation_conjunctive_condition(k, element.get_body(), context).first.get_index();
-    rule.head = visit(
-        [&](auto&& head) -> decltype(rule.head)
-        {
-            using Head = std::decay_t<decltype(head)>;
-
-            if constexpr (std::is_same_v<Head, fd::AtomView<f::FluentTag>>)
-                return merge_d2d(head, merge_context).first.get_index();
-            else
-                return merge_d2d(head, merge_context);
-        },
-        element.get_head());
+    rule.head = merge_rule_head(element.get_head(), merge_context);
 
     canonicalize(rule);
     return context.get_or_create(rule);
 }
 
-std::pair<fd::RuleView, bool> create_overapproximation_conflicting_rule(size_t k, fd::RuleView element, fd::Repository& context)
+template<f::RelationKind R>
+std::pair<fd::RuleView<R>, bool> create_overapproximation_conflicting_rule(size_t k, fd::RuleView<R> element, fd::Repository& context)
 {
     auto builder = fd::Builder {};
     auto merge_context = fd::MergeContext { builder, context };
-    auto rule_ptr = builder.get_builder<fd::Rule>();
+    auto rule_ptr = builder.get_builder<fd::Rule<R>>();
     auto& rule = *rule_ptr;
     rule.clear();
 
     rule.variables = element.get_variables().get_data();
     rule.body = create_overapproximation_conflicting_conjunctive_condition(k, element.get_body(), context).first.get_index();
-    rule.head = visit(
-        [&](auto&& head) -> decltype(rule.head)
-        {
-            using Head = std::decay_t<decltype(head)>;
-
-            if constexpr (std::is_same_v<Head, fd::AtomView<f::FluentTag>>)
-                return merge_d2d(head, merge_context).first.get_index();
-            else
-                return merge_d2d(head, merge_context);
-        },
-        element.get_head());
+    rule.head = merge_rule_head(element.get_head(), merge_context);
 
     canonicalize(rule);
     return context.get_or_create(rule);
 }
+
+template std::pair<fd::RuleView<f::PredicateTag>, bool> create_overapproximation_rule(size_t, fd::RuleView<f::PredicateTag>, fd::Repository&);
+template std::pair<fd::RuleView<f::FunctionTag>, bool> create_overapproximation_rule(size_t, fd::RuleView<f::FunctionTag>, fd::Repository&);
+template std::pair<fd::RuleView<f::PredicateTag>, bool> create_static_overapproximation_rule(size_t, fd::RuleView<f::PredicateTag>, fd::Repository&);
+template std::pair<fd::RuleView<f::FunctionTag>, bool> create_static_overapproximation_rule(size_t, fd::RuleView<f::FunctionTag>, fd::Repository&);
+template std::pair<fd::RuleView<f::PredicateTag>, bool> create_overapproximation_conflicting_rule(size_t, fd::RuleView<f::PredicateTag>, fd::Repository&);
+template std::pair<fd::RuleView<f::FunctionTag>, bool> create_overapproximation_conflicting_rule(size_t, fd::RuleView<f::FunctionTag>, fd::Repository&);
 }

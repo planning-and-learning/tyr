@@ -162,9 +162,17 @@ inline bool is_canonical(const ygg::Data<ConditionalEffect>& data) { return true
 
 inline bool is_canonical(const ygg::Data<GroundConditionalEffect>& data) { return true; }
 
-inline bool is_canonical(const ygg::Data<Rule>& data) { return true; }
+template<RelationKind R>
+bool is_canonical(const ygg::Data<Rule<R>>& data)
+{
+    return true;
+}
 
-inline bool is_canonical(const ygg::Data<GroundRule>& data) { return true; }
+template<RelationKind R>
+bool is_canonical(const ygg::Data<GroundRule<R>>& data)
+{
+    return true;
+}
 
 inline bool is_canonical(const ygg::Data<Metric>& data) { return true; }
 
@@ -173,7 +181,7 @@ inline bool is_canonical(const ygg::Data<Program>& data)
     return is_canonical(data.static_predicates) && is_canonical(data.fluent_predicates) && is_canonical(data.static_functions)
            && is_canonical(data.fluent_functions) && is_canonical(data.objects) && is_canonical(data.static_atoms) && is_canonical(data.fluent_atoms)
            && is_canonical(data.static_fterm_values) && is_canonical(data.fluent_fterm_values) && is_canonical(data.goal) && is_canonical(data.metric)
-           && is_canonical(data.rules);
+           && is_canonical(data.predicate_rules) && is_canonical(data.function_rules);
 }
 
 inline bool is_canonical(const ygg::Data<GroundProgram>& data)
@@ -181,7 +189,7 @@ inline bool is_canonical(const ygg::Data<GroundProgram>& data)
     return is_canonical(data.static_predicates) && is_canonical(data.fluent_predicates) && is_canonical(data.static_functions)
            && is_canonical(data.fluent_functions) && is_canonical(data.objects) && is_canonical(data.static_atoms) && is_canonical(data.fluent_atoms)
            && is_canonical(data.static_fterm_values) && is_canonical(data.fluent_fterm_values) && is_canonical(data.goal) && is_canonical(data.metric)
-           && is_canonical(data.ground_rules);
+           && is_canonical(data.predicate_ground_rules) && is_canonical(data.function_ground_rules);
 }
 
 /**
@@ -330,12 +338,14 @@ inline void canonicalize(ygg::Data<ConditionalEffect>& data) {}
 
 inline void canonicalize(ygg::Data<GroundConditionalEffect>& data) {}
 
-inline void canonicalize(ygg::Data<Rule>& data)
+template<RelationKind R>
+void canonicalize(ygg::Data<Rule<R>>& data)
 {
     // Trivially canonical
 }
 
-inline void canonicalize(ygg::Data<GroundRule>& data)
+template<RelationKind R>
+void canonicalize(ygg::Data<GroundRule<R>>& data)
 {
     // Trivially canonical
 }
@@ -358,7 +368,8 @@ inline void canonicalize(ygg::Data<Program>& data)
     canonicalize(data.fluent_fterm_values);
     canonicalize(data.goal);
     canonicalize(data.metric);
-    canonicalize(data.rules);
+    canonicalize(data.predicate_rules);
+    canonicalize(data.function_rules);
 }
 
 inline void canonicalize(ygg::Data<GroundProgram>& data)
@@ -374,7 +385,8 @@ inline void canonicalize(ygg::Data<GroundProgram>& data)
     canonicalize(data.fluent_fterm_values);
     canonicalize(data.goal);
     canonicalize(data.metric);
-    canonicalize(data.ground_rules);
+    canonicalize(data.predicate_ground_rules);
+    canonicalize(data.function_ground_rules);
 }
 
 }

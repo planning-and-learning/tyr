@@ -28,7 +28,6 @@
 #include "tyr/formalism/datalog/ground_rule_index.hpp"
 #include "tyr/formalism/datalog/rule_index.hpp"
 
-#include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
@@ -72,17 +71,12 @@ struct Data<::tyr::formalism::datalog::GroundRule<R>>
         index(),
         binding(),
         body(),
-        head([&]() -> Head
-             {
-                 if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
-                     return head_.get_index();
-                 else
-                     return head_.get_data();
-             }()),
+        head(),
         metric_effects()
     {
         set(binding_, binding);
         set(body_, body);
+        set(head_, head);
         set(metric_effects_, metric_effects);
     }
     Data(const Data& other) = default;
@@ -102,12 +96,9 @@ struct Data<::tyr::formalism::datalog::GroundRule<R>>
     auto cista_members() const noexcept { return std::tie(index, binding, body, head, metric_effects); }
     auto identifying_members() const noexcept { return std::tie(binding); }
 };
-
-
-
 }
-
-#endif
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::GroundRule<::tyr::formalism::PredicateTag>>);
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::GroundRule<::tyr::formalism::FunctionTag>>);
+
+#endif

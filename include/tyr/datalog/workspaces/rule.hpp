@@ -23,13 +23,13 @@
 namespace tyr::datalog
 {
 
-template<TaskKind Kind>
+template<TaskKind Kind, ::tyr::formalism::RelationKind R>
 struct RuleState;
 
-template<TaskKind Kind>
+template<TaskKind Kind, ::tyr::formalism::RelationKind R>
 struct RuleWorkspace;
 
-template<TaskKind Kind>
+template<TaskKind Kind, ::tyr::formalism::RelationKind R>
 struct ConstRuleWorkspace;
 
 }

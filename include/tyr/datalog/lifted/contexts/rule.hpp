@@ -40,13 +40,15 @@ template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
          RuleCostPolicyConcept<LiftedTag> CP>
 struct StratumExecutionContext;
 
-template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
+template<::tyr::formalism::RelationKind R,
+         OrAnnotationPolicyConcept<LiftedTag> OrAP,
          AndAnnotationPolicyConcept<LiftedTag> AndAP,
          TerminationPolicyConcept<LiftedTag> TP,
          RuleCostPolicyConcept<LiftedTag> CP>
 struct RuleExecutionContext;
 
-template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
+template<::tyr::formalism::RelationKind R,
+         OrAnnotationPolicyConcept<LiftedTag> OrAP,
          AndAnnotationPolicyConcept<LiftedTag> AndAP,
          TerminationPolicyConcept<LiftedTag> TP,
          RuleCostPolicyConcept<LiftedTag> CP>
@@ -56,7 +58,8 @@ public:
     class In
     {
     public:
-        explicit In(const RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx, const RuleWorkspace<LiftedTag>::Instance<AndAP>::Worker& ws_worker) :
+        explicit In(const RuleExecutionContext<R, OrAP, AndAP, TP, CP>& rctx,
+                    const typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Worker& ws_worker) :
             m_rctx(rctx),
             m_and_ap(ws_worker.solve.and_ap),
             m_ws_rule(rctx.out().ws_rule()),
@@ -88,11 +91,11 @@ public:
         const auto& fact_sets() const noexcept { return m_fact_sets; }
 
     private:
-        const RuleExecutionContext<OrAP, AndAP, TP, CP>& m_rctx;
+        const RuleExecutionContext<R, OrAP, AndAP, TP, CP>& m_rctx;
 
         const AndAP& m_and_ap;
-        const RuleWorkspace<LiftedTag>::Instance<AndAP>& m_ws_rule;
-        const ConstRuleWorkspace<LiftedTag>& m_cws_rule;
+        const typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>& m_ws_rule;
+        const ConstRuleWorkspace<LiftedTag, R>& m_cws_rule;
 
         const FactSets m_fact_sets;
     };
@@ -100,7 +103,7 @@ public:
     class Out
     {
     public:
-        Out(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx, RuleWorkspace<LiftedTag>::Instance<AndAP>::Worker& ws_worker) :
+        Out(RuleExecutionContext<R, OrAP, AndAP, TP, CP>& rctx, typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Worker& ws_worker) :
             m_ws_worker(ws_worker),
             m_ground_context_solve(ws_worker.builder, ws_worker.solve.program_overlay_repository, ws_worker.binding),
             m_ground_context_iteration(ws_worker.builder, ws_worker.iteration.workspace_overlay_repository, ws_worker.binding)
@@ -125,13 +128,14 @@ public:
         auto& ground_context_iteration() noexcept { return m_ground_context_iteration; }
 
     private:
-        RuleWorkspace<LiftedTag>::Instance<AndAP>::Worker& m_ws_worker;
+        typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Worker& m_ws_worker;
 
         ::tyr::formalism::datalog::GrounderContext m_ground_context_solve;
         ::tyr::formalism::datalog::GrounderContext m_ground_context_iteration;
     };
 
-    RuleWorkerExecutionContext(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx, RuleWorkspace<LiftedTag>::Instance<AndAP>::Worker& ws_worker) :
+    RuleWorkerExecutionContext(RuleExecutionContext<R, OrAP, AndAP, TP, CP>& rctx,
+                               typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Worker& ws_worker) :
         m_rctx(rctx),
         m_ws_worker(ws_worker),
         m_in(rctx, ws_worker),
@@ -162,14 +166,15 @@ public:
     const auto& out() const noexcept { return m_out; }
 
 private:
-    RuleExecutionContext<OrAP, AndAP, TP, CP>& m_rctx;
-    RuleWorkspace<LiftedTag>::Instance<AndAP>::Worker& m_ws_worker;
+    RuleExecutionContext<R, OrAP, AndAP, TP, CP>& m_rctx;
+    typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Worker& m_ws_worker;
 
     In m_in;
     Out m_out;
 };
 
-template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
+template<::tyr::formalism::RelationKind R,
+         OrAnnotationPolicyConcept<LiftedTag> OrAP,
          AndAnnotationPolicyConcept<LiftedTag> AndAP,
          TerminationPolicyConcept<LiftedTag> TP,
          RuleCostPolicyConcept<LiftedTag> CP>
@@ -178,20 +183,20 @@ struct RuleExecutionContext
     class In
     {
     public:
-        In(ygg::Index<::tyr::formalism::datalog::Rule> rule, const ConstRuleWorkspace<LiftedTag>& cws_rule) : m_rule(rule), m_cws_rule(cws_rule) {}
+        In(ygg::Index<::tyr::formalism::datalog::Rule<R>> rule, const ConstRuleWorkspace<LiftedTag, R>& cws_rule) : m_rule(rule), m_cws_rule(cws_rule) {}
 
         auto rule() const noexcept { return m_rule; }
         const auto& cws_rule() const noexcept { return m_cws_rule; }
 
     private:
-        ygg::Index<::tyr::formalism::datalog::Rule> m_rule;
-        const ConstRuleWorkspace<LiftedTag>& m_cws_rule;
+        ygg::Index<::tyr::formalism::datalog::Rule<R>> m_rule;
+        const ConstRuleWorkspace<LiftedTag, R>& m_cws_rule;
     };
 
     class Out
     {
     public:
-        explicit Out(RuleWorkspace<LiftedTag>::Instance<AndAP>& ws_rule) : m_ws_rule(ws_rule) {}
+        explicit Out(typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>& ws_rule) : m_ws_rule(ws_rule) {}
 
         auto& ws_rule() noexcept { return m_ws_rule; }
         const auto& ws_rule() const noexcept { return m_ws_rule; }
@@ -205,13 +210,13 @@ struct RuleExecutionContext
         const auto& workers() const noexcept { return m_ws_rule.worker; }
 
     private:
-        RuleWorkspace<LiftedTag>::Instance<AndAP>& m_ws_rule;
+        typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>& m_ws_rule;
     };
 
-    RuleExecutionContext(ygg::Index<::tyr::formalism::datalog::Rule> rule, StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx) :
+    RuleExecutionContext(ygg::Index<::tyr::formalism::datalog::Rule<R>> rule, StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx) :
         m_ctx(ctx),
-        m_in(rule, *ctx.in().program().rules()[ygg::uint_t(rule)]),
-        m_out(*ctx.out().program().rules()[ygg::uint_t(rule)])
+        m_in(rule, *ctx.in().program().template get_rules<R>()[ygg::uint_t(rule)]),
+        m_out(*ctx.out().program().template get_rules<R>()[ygg::uint_t(rule)])
     {
     }
 
@@ -255,7 +260,7 @@ struct RuleExecutionContext
 
     auto get_rule_worker_execution_context(std::size_t worker_index = 0)
     {
-        return RuleWorkerExecutionContext<OrAP, AndAP, TP, CP>(*this, out().workers()[worker_index]);
+        return RuleWorkerExecutionContext<R, OrAP, AndAP, TP, CP>(*this, out().workers()[worker_index]);
     }
 
     const auto& in() const noexcept { return m_in; }

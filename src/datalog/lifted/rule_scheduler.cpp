@@ -15,12 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <algorithm>
 #include "tyr/datalog/lifted/rule_scheduler.hpp"
 
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/views.hpp"  // for ygg::View
 
+#include <algorithm>
 #include <assert.h>       // for assert
 #include <gtl/phmap.hpp>  // for operator!=, flat_hash_set
 #include <type_traits>
@@ -41,23 +41,23 @@ void activate_relation(boost::dynamic_bitset<>& bitset, ygg::Index<Relation> rel
     bitset.set(ygg::uint_t(relation));
 }
 
-template<typename Relation>
+template<typename Relation, f::RelationKind R>
 void collect_active_rules(const boost::dynamic_bitset<>& bitset,
-                          const ygg::UnorderedMap<ygg::Index<Relation>, ygg::UnorderedSet<ygg::Index<fd::Rule>>>& listeners,
-                          ygg::UnorderedSet<ygg::Index<fd::Rule>>& active_rules)
+                          const ygg::UnorderedMap<ygg::Index<Relation>, analysis::RuleIndexSet<R>>& listeners,
+                          ygg::UnorderedSet<ygg::Index<fd::Rule<R>>>& active_rules)
 {
     for (auto i = bitset.find_first(); i != boost::dynamic_bitset<>::npos; i = bitset.find_next(i))
         if (const auto it = listeners.find(ygg::Index<Relation>(i)); it != listeners.end())
-            for (const auto rule : it->second)
-                active_rules.insert(rule);
+            active_rules.insert(it->second.begin(), it->second.end());
 }
 }
 
-RuleSchedulerStratum::RuleSchedulerStratum(const analysis::RuleStratum& rules,
-                                           const analysis::ListenerStratum& listeners,
-                                           const fd::Repository& context,
-                                           size_t num_fluent_predicates,
-                                           size_t num_fluent_functions) :
+template<f::RelationKind R>
+TypedRuleSchedulerStratum<R>::TypedRuleSchedulerStratum(const analysis::TypedRuleStratum<R>& rules,
+                                                        const analysis::TypedListenerStratum<R>& listeners,
+                                                        const fd::Repository& context,
+                                                        size_t num_fluent_predicates,
+                                                        size_t num_fluent_functions) :
     m_rules(rules),
     m_listeners(listeners),
     m_context(context),
@@ -67,7 +67,8 @@ RuleSchedulerStratum::RuleSchedulerStratum(const analysis::RuleStratum& rules,
 {
 }
 
-void RuleSchedulerStratum::activate_all()
+template<f::RelationKind R>
+void TypedRuleSchedulerStratum<R>::activate_all()
 {
     m_active_rules.clear();
     for (const auto rule : m_rules)
@@ -75,28 +76,79 @@ void RuleSchedulerStratum::activate_all()
     rebuild_sorted_active_rules();
 }
 
-void RuleSchedulerStratum::rebuild_sorted_active_rules()
+template<f::RelationKind R>
+void TypedRuleSchedulerStratum<R>::rebuild_sorted_active_rules()
 {
     m_sorted_active_rules.set(m_active_rules.begin(), m_active_rules.end());
     std::sort(m_sorted_active_rules.begin(), m_sorted_active_rules.end());
 }
 
-void RuleSchedulerStratum::on_start_iteration() noexcept
+template<f::RelationKind R>
+void TypedRuleSchedulerStratum<R>::on_start_iteration() noexcept
 {
     m_active_predicates.reset();
     m_active_functions.reset();
 }
 
-void RuleSchedulerStratum::on_generate(ygg::Index<f::Predicate<f::FluentTag>> predicate) { activate_relation(m_active_predicates, predicate); }
+template<f::RelationKind R>
+void TypedRuleSchedulerStratum<R>::on_generate(ygg::Index<f::Predicate<f::FluentTag>> predicate)
+{
+    activate_relation(m_active_predicates, predicate);
+}
 
-void RuleSchedulerStratum::on_generate(ygg::Index<f::Function<f::FluentTag>> function) { activate_relation(m_active_functions, function); }
+template<f::RelationKind R>
+void TypedRuleSchedulerStratum<R>::on_generate(ygg::Index<f::Function<f::FluentTag>> function)
+{
+    activate_relation(m_active_functions, function);
+}
 
-void RuleSchedulerStratum::on_finish_iteration()
+template<f::RelationKind R>
+void TypedRuleSchedulerStratum<R>::on_finish_iteration()
 {
     m_active_rules.clear();
     collect_active_rules(m_active_predicates, m_listeners.predicates, m_active_rules);
     collect_active_rules(m_active_functions, m_listeners.functions, m_active_rules);
     rebuild_sorted_active_rules();
+}
+
+RuleSchedulerStratum::RuleSchedulerStratum(const analysis::RuleStratum& rules,
+                                           const analysis::ListenerStratum& listeners,
+                                           const fd::Repository& context,
+                                           size_t num_fluent_predicates,
+                                           size_t num_fluent_functions) :
+    predicate_rules(rules.get<f::PredicateTag>(), listeners.get<f::PredicateTag>(), context, num_fluent_predicates, num_fluent_functions),
+    function_rules(rules.get<f::FunctionTag>(), listeners.get<f::FunctionTag>(), context, num_fluent_predicates, num_fluent_functions)
+{
+}
+
+void RuleSchedulerStratum::activate_all()
+{
+    predicate_rules.activate_all();
+    function_rules.activate_all();
+}
+
+void RuleSchedulerStratum::on_start_iteration() noexcept
+{
+    predicate_rules.on_start_iteration();
+    function_rules.on_start_iteration();
+}
+
+void RuleSchedulerStratum::on_generate(ygg::Index<f::Predicate<f::FluentTag>> predicate)
+{
+    predicate_rules.on_generate(predicate);
+    function_rules.on_generate(predicate);
+}
+
+void RuleSchedulerStratum::on_generate(ygg::Index<f::Function<f::FluentTag>> function)
+{
+    predicate_rules.on_generate(function);
+    function_rules.on_generate(function);
+}
+
+void RuleSchedulerStratum::on_finish_iteration()
+{
+    predicate_rules.on_finish_iteration();
+    function_rules.on_finish_iteration();
 }
 
 RuleSchedulerStrata create_schedulers(const analysis::RuleStrata& rules,
@@ -114,4 +166,6 @@ RuleSchedulerStrata create_schedulers(const analysis::RuleStrata& rules,
     return result;
 }
 
+template class TypedRuleSchedulerStratum<f::PredicateTag>;
+template class TypedRuleSchedulerStratum<f::FunctionTag>;
 }

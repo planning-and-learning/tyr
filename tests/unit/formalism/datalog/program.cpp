@@ -30,7 +30,8 @@ static_assert(std::constructible_from<Data,
                                       fd::GroundFunctionTermValueViewList<f::FluentTag>,
                                       std::optional<fd::GroundConjunctiveConditionView>,
                                       std::optional<fd::MetricView>,
-                                      fd::RuleViewList>);
+                                      fd::RuleViewList<f::PredicateTag>,
+                                      fd::RuleViewList<f::FunctionTag>>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.static_predicates;
@@ -44,7 +45,8 @@ static_assert(requires(Data& data, const View& view) {
     data.fluent_fterm_values;
     data.goal;
     data.metric;
-    data.rules;
+    data.predicate_rules;
+    data.function_rules;
     data.clear();
     data.template get_predicates<f::StaticTag>();
     data.template get_predicates<f::FluentTag>();
@@ -66,5 +68,6 @@ static_assert(requires(Data& data, const View& view) {
     view.template get_fterm_values<f::FluentTag>();
     view.get_goal();
     view.get_metric();
-    view.get_rules();
+    view.template get_rules<f::PredicateTag>();
+    view.template get_rules<f::FunctionTag>();
 });

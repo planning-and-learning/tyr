@@ -47,7 +47,11 @@ struct ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>
         explicit In(const ConstProgramWorkspace<LiftedTag>& cws) : m_cws(cws) {}
 
         const auto& facts() const noexcept { return m_cws.facts; }
-        const auto& rules() const noexcept { return m_cws.rules; }
+        template<::tyr::formalism::RelationKind R>
+        const auto& get_rules() const noexcept
+        {
+            return m_cws.template get_rules<R>();
+        }
 
     private:
         const ConstProgramWorkspace<LiftedTag>& m_cws;
@@ -79,8 +83,16 @@ struct ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>
         const auto& tp() const noexcept { return m_ws.tp; }
         auto& cost_policy() noexcept { return m_ws.cost_policy; }
         const auto& cost_policy() const noexcept { return m_ws.cost_policy; }
-        auto& rules() noexcept { return m_ws.rules; }
-        const auto& rules() const noexcept { return m_ws.rules; }
+        template<::tyr::formalism::RelationKind R>
+        auto& get_rules() noexcept
+        {
+            return m_ws.template get_rules<R>();
+        }
+        template<::tyr::formalism::RelationKind R>
+        const auto& get_rules() const noexcept
+        {
+            return m_ws.template get_rules<R>();
+        }
         auto& datalog_builder() noexcept { return m_ws.datalog_builder; }
         const auto& datalog_builder() const noexcept { return m_ws.datalog_builder; }
         auto& workspace_repository() noexcept { return m_ws.workspace_repository; }
@@ -102,9 +114,14 @@ struct ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>
     {
         auto& out = this->out();
 
-        for (auto& rule : out.rules())
-            if (rule)
-                rule->clear();
+        const auto clear_rules = [](auto& rules)
+        {
+            for (auto& rule : rules)
+                if (rule)
+                    rule->clear();
+        };
+        clear_rules(out.template get_rules<::tyr::formalism::PredicateTag>());
+        clear_rules(out.template get_rules<::tyr::formalism::FunctionTag>());
 
         out.and_annot().clear();
         out.numeric_and_annot().clear();

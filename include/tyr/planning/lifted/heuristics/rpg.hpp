@@ -125,38 +125,24 @@ protected:
     {
         const auto action = action_binding.get_relation();
         const auto objects = action_binding.get_data();
-        const auto& rule_to_action = m_rpg_program.get_rule_to_action_mapping();
-        for (const auto& [rule, mapped_action] : rule_to_action)
+        m_workspace.binding.clear();
+        for (const auto object : objects)
+            m_workspace.binding.push_back(object);
+        auto grounder_context =
+            ::tyr::formalism::datalog::GrounderContext { m_workspace.datalog_builder, m_workspace.workspace_repository, m_workspace.binding };
+        const auto binding = std::span<const ygg::Index<::tyr::formalism::Object>>(m_workspace.binding.data(), m_workspace.binding.size());
+        const auto set_costs = [&]<::tyr::formalism::RelationKind R>()
         {
-            if (mapped_action.get_index() != action.get_index())
-                continue;
-
-            if constexpr (requires(CP& cost_policy,
-                                   ::tyr::formalism::datalog::RuleView rule_view,
-                                   std::span<const ygg::Index<::tyr::formalism::Object>> prefix_objects,
-                                   datalog::Cost prefix_cost) { cost_policy.set_prefix_cost(rule_view, prefix_objects, prefix_cost); })
+            for (const auto& [rule, mapped_action] : m_rpg_program.template get_rule_to_action_mapping<R>())
             {
-                m_workspace.binding.clear();
-                for (const auto object : objects)
-                    m_workspace.binding.push_back(object);
-                m_workspace.cost_policy.set_prefix_cost(
-                    rule,
-                    std::span<const ygg::Index<::tyr::formalism::Object>>(m_workspace.binding.data(), m_workspace.binding.size()),
-                    cost);
-            }
-            else
-            {
-                assert(rule.get_arity() == objects.size());
+                if (mapped_action.get_index() != action.get_index())
+                    continue;
 
-                auto grounder_context =
-                    ::tyr::formalism::datalog::GrounderContext { m_workspace.datalog_builder, m_workspace.workspace_repository, m_workspace.binding };
-                m_workspace.binding.clear();
-                for (const auto object : objects)
-                    m_workspace.binding.push_back(object);
-                const auto rule_binding = ::tyr::formalism::datalog::ground_binding(rule, grounder_context).first;
-                m_workspace.cost_policy.set_cost(rule_binding, cost);
+                datalog::set_rule_cost(m_workspace.cost_policy, rule, binding, cost, grounder_context);
             }
-        }
+        };
+        set_costs.template operator()<::tyr::formalism::PredicateTag>();
+        set_costs.template operator()<::tyr::formalism::FunctionTag>();
     }
 
     datalog::Cost get_binding_cost(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> binding) const noexcept
@@ -173,11 +159,12 @@ protected:
                                              *m_workspace.numeric_support_selector);
     }
 
-    std::optional<::tyr::formalism::planning::ActionBindingView> get_action_binding(const datalog::WitnessAnnotation<LiftedTag>& witness)
+    template<::tyr::formalism::RelationKind R>
+    std::optional<::tyr::formalism::planning::ActionBindingView> get_action_binding(const datalog::WitnessAnnotation<LiftedTag, R>& witness)
     {
         const auto rule_binding = witness.get_rule_key();
-        const auto rule = ygg::make_view(rule_binding.get_relation().get_index(), m_rpg_program.get_datalog_program().get_program_repository());
-        const auto& mapping = m_rpg_program.get_rule_to_action_mapping();
+        const auto rule = rule_binding.get_relation();
+        const auto& mapping = m_rpg_program.template get_rule_to_action_mapping<R>();
         const auto it = mapping.find(rule);
         if (it == mapping.end())
             return std::nullopt;
@@ -189,13 +176,13 @@ protected:
         return ::tyr::formalism::planning::ground(it->second, grounder_context).first;
     }
 
-    template<typename Callback>
-    void for_each_witness_precondition(const datalog::WitnessAnnotation<LiftedTag>& witness, Callback&& callback)
+    template<::tyr::formalism::RelationKind R, typename Callback>
+    void for_each_witness_precondition(const datalog::WitnessAnnotation<LiftedTag, R>& witness, Callback&& callback)
     {
         const auto rule_binding = witness.get_rule_key();
-        const auto rule = ygg::make_view(rule_binding.get_relation().get_index(), m_rpg_program.get_datalog_program().get_program_repository());
         const auto row = rule_binding.get_objects();
-        const auto& const_rule_workspace = *m_rpg_program.get_const_program_workspace().rules[ygg::uint_t(rule.get_index())];
+        const auto& const_rule_workspace =
+            *m_rpg_program.get_const_program_workspace().template get_rules<R>()[ygg::uint_t(rule_binding.get_relation().get_index())];
         const auto witness_condition = const_rule_workspace.get_witness_rule().get_body();
         auto grounder_context =
             ::tyr::formalism::datalog::GrounderContext { m_workspace.datalog_builder, m_workspace.workspace_repository, m_workspace.binding };
@@ -215,11 +202,9 @@ protected:
 
     template<typename Callback>
     void for_each_achiever(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> binding, Callback&& callback)
-        requires requires(const AndAP& and_ap, ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head) {
-            and_ap.find_achievers(head);
-        }
+        requires AndAP::records_propositional_achievers
     {
-        for (const auto& rule : m_workspace.rules)
+        for (const auto& rule : m_workspace.template get_rules<::tyr::formalism::PredicateTag>())
         {
             for (const auto& worker : rule->worker)
             {
@@ -242,13 +227,23 @@ public:
         std::cout << "[RPGHeuristic] Summary" << std::endl;
         fmt::print(std::cout, "{}\n", m_workspace.statistics);
         auto rule_statistics = std::vector<datalog::RuleStatistics> {};
-        for (const auto& ws_rule : m_workspace.rules)
-            rule_statistics.push_back(ws_rule->common.statistics);
+        const auto collect_rule_statistics = [&]<::tyr::formalism::RelationKind R>()
+        {
+            for (const auto& ws_rule : m_workspace.template get_rules<R>())
+                rule_statistics.push_back(ws_rule->common.statistics);
+        };
+        collect_rule_statistics.template operator()<::tyr::formalism::PredicateTag>();
+        collect_rule_statistics.template operator()<::tyr::formalism::FunctionTag>();
         fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_statistics(rule_statistics));
         auto rule_worker_statistics = std::vector<datalog::RuleWorkerStatistics> {};
-        for (const auto& ws_rule : m_workspace.rules)
-            for (const auto& worker : ws_rule->worker)
-                rule_worker_statistics.push_back(worker.solve.statistics);
+        const auto collect_worker_statistics = [&]<::tyr::formalism::RelationKind R>()
+        {
+            for (const auto& ws_rule : m_workspace.template get_rules<R>())
+                for (const auto& worker : ws_rule->worker)
+                    rule_worker_statistics.push_back(worker.solve.statistics);
+        };
+        collect_worker_statistics.template operator()<::tyr::formalism::PredicateTag>();
+        collect_worker_statistics.template operator()<::tyr::formalism::FunctionTag>();
         fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_worker_statistics(rule_worker_statistics));
     }
 

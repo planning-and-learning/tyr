@@ -44,20 +44,12 @@ TEST(TyrDatalogLiftedDeltaKPKC, DeltaEdgesSupportRoundRobinAnchorReplay)
     auto& program = action_program.get_datalog_program();
     const auto program_view = program.get_program();
 
-    const d::ConstRuleWorkspace<LiftedTag>* pick_workspace = nullptr;
-    const auto& rules = program.get_const_program_workspace().rules;
-    for (ygg::uint_t i = 0; i < program_view.get_rules().size(); ++i)
+    const d::ConstRuleWorkspace<LiftedTag, f::PredicateTag>* pick_workspace = nullptr;
+    const auto& rules = program.get_const_program_workspace().get_rules<f::PredicateTag>();
+    for (ygg::uint_t i = 0; i < program_view.get_rules<f::PredicateTag>().size(); ++i)
     {
-        const auto is_pick = ygg::visit(
-            [&](auto&& head)
-            {
-                using Head = std::decay_t<decltype(head)>;
-                if constexpr (std::is_same_v<Head, fd::AtomView<f::FluentTag>>)
-                    return action_program.get_predicate_to_action_mapping().at(head.get_predicate()).get_name() == "pick";
-                else
-                    return false;
-            },
-            program_view.get_rules()[i].get_head());
+        const auto is_pick =
+            action_program.get_predicate_to_action_mapping().at(program_view.get_rules<f::PredicateTag>()[i].get_head().get_predicate()).get_name() == "pick";
 
         if (is_pick)
         {
@@ -161,7 +153,7 @@ TEST(TyrDatalogLiftedDeltaKPKC, InnerParallelismMatchesSequentialRPG)
 
     const auto used_inner_parallelism = [](const auto& workspace)
     {
-        return std::ranges::any_of(workspace.rules,
+        return std::ranges::any_of(workspace.get_rules<f::PredicateTag>(),
                                    [](const auto& rule) { return rule && rule->worker.size() == 2 && rule->worker[1].solve.statistics.num_executions > 0; });
     };
     EXPECT_FALSE(used_inner_parallelism(sequential->get_workspace()));

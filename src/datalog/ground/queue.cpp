@@ -67,8 +67,6 @@ template<OrAnnotationPolicyConcept<GroundTag> OrAP,
          RuleCostPolicyConcept<GroundTag> CP>
 using GroundCtx = ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>;
 
-bool has_atom_head(fd::GroundRuleView rule) noexcept;
-
 struct PendingNumericBuckets
 {
     using Term = fd::GroundFunctionTermView<f::FluentTag>;
@@ -165,10 +163,11 @@ Metric aggregate_numeric_selection_metric(Metric metric, const std::vector<Numer
 }
 
 template<AndAnnotationPolicyConcept<GroundTag> AndAP,
+         f::RelationKind R,
          OrAnnotationPolicyConcept<GroundTag> OrAP,
          TerminationPolicyConcept<GroundTag> TP,
          RuleCostPolicyConcept<GroundTag> CP>
-Metric aggregate_body_metric(fd::GroundRuleView rule, const GroundCtx<OrAP, AndAP, TP, CP>& ctx, std::vector<NumericSelectionEntry>& selection)
+Metric aggregate_body_metric(fd::GroundRuleView<R> rule, const GroundCtx<OrAP, AndAP, TP, CP>& ctx, std::vector<NumericSelectionEntry>& selection)
 {
     auto metric = Metric {};
     if constexpr (requires { AndAP::agg; })
@@ -211,11 +210,12 @@ Cost metric_effect_delta(fd::GroundNumericEffectView<Op, f::FluentTag> effect,
         [&] { return selector.evaluate_effect_expression(effect.get_fexpr(), selection); });
 }
 
-template<OrAnnotationPolicyConcept<GroundTag> OrAP,
+template<f::RelationKind R,
+         OrAnnotationPolicyConcept<GroundTag> OrAP,
          AndAnnotationPolicyConcept<GroundTag> AndAP,
          TerminationPolicyConcept<GroundTag> TP,
          RuleCostPolicyConcept<GroundTag> CP>
-Cost aggregate_metric_effect_cost(fd::GroundRuleView rule, const GroundCtx<OrAP, AndAP, TP, CP>& ctx, std::vector<NumericSelectionEntry>& selection)
+Cost aggregate_metric_effect_cost(fd::GroundRuleView<R> rule, const GroundCtx<OrAP, AndAP, TP, CP>& ctx, std::vector<NumericSelectionEntry>& selection)
 {
     auto selector = make_numeric_support_selector<AndAP>(ctx);
     selection.clear();
@@ -247,11 +247,12 @@ Metric add_metric_delta(Metric metric, Cost delta)
 }
 
 template<AndAnnotationPolicyConcept<GroundTag> AndAP,
+         f::RelationKind R,
          OrAnnotationPolicyConcept<GroundTag> OrAP,
          TerminationPolicyConcept<GroundTag> TP,
          RuleCostPolicyConcept<GroundTag> CP,
          typename EvaluateEffectExpression>
-Cost aggregate_numeric_effect_support_cost(fd::GroundRuleView rule,
+Cost aggregate_numeric_effect_support_cost(fd::GroundRuleView<R> rule,
                                            const GroundCtx<OrAP, AndAP, TP, CP>& ctx,
                                            std::vector<NumericSelectionEntry>& selection,
                                            std::vector<NumericSelectionEntry>& temporary_selection,
@@ -309,10 +310,11 @@ Cost aggregate_numeric_effect_support_cost(fd::GroundRuleView rule,
 }
 
 template<AndAnnotationPolicyConcept<GroundTag> AndAP,
+         f::RelationKind R,
          OrAnnotationPolicyConcept<GroundTag> OrAP,
          TerminationPolicyConcept<GroundTag> TP,
          RuleCostPolicyConcept<GroundTag> CP>
-Cost aggregate_body_cost(fd::GroundRuleView rule,
+Cost aggregate_body_cost(fd::GroundRuleView<R> rule,
                          const GroundCtx<OrAP, AndAP, TP, CP>& ctx,
                          std::vector<NumericSelectionEntry>& selection,
                          std::vector<NumericSelectionEntry>& temporary_selection)
@@ -320,12 +322,13 @@ Cost aggregate_body_cost(fd::GroundRuleView rule,
     return aggregate_numeric_effect_support_cost<AndAP>(rule, ctx, selection, temporary_selection, [](const auto&, auto&) { return true; });
 }
 
-template<OrAnnotationPolicyConcept<GroundTag> OrAP,
+template<f::RelationKind R,
+         OrAnnotationPolicyConcept<GroundTag> OrAP,
          AndAnnotationPolicyConcept<GroundTag> AndAP,
          TerminationPolicyConcept<GroundTag> TP,
          RuleCostPolicyConcept<GroundTag> CP,
          f::NumericEffectOpKind Op>
-Cost aggregate_numeric_effect_rule_cost(fd::GroundRuleView rule,
+Cost aggregate_numeric_effect_rule_cost(fd::GroundRuleView<R> rule,
                                         fd::GroundNumericEffectView<Op, f::FluentTag> effect,
                                         const GroundCtx<OrAP, AndAP, TP, CP>& ctx,
                                         std::vector<NumericSelectionEntry>& selection,
@@ -363,91 +366,91 @@ template<OrAnnotationPolicyConcept<GroundTag> OrAP,
          AndAnnotationPolicyConcept<GroundTag> AndAP,
          TerminationPolicyConcept<GroundTag> TP,
          RuleCostPolicyConcept<GroundTag> CP>
-Cost aggregate_rule_cost(fd::GroundRuleView rule, GroundCtx<OrAP, AndAP, TP, CP>& ctx)
+Cost aggregate_rule_cost(fd::GroundRuleView<f::PredicateTag> rule, GroundCtx<OrAP, AndAP, TP, CP>& ctx)
 {
     auto& scratch = ctx.out().queue().scratch;
-    return ygg::visit(
-        [&](auto&& head) -> Cost
-        {
-            using Head = std::decay_t<decltype(head)>;
-            if constexpr (std::is_same_v<Head, fd::GroundNumericEffectOperatorView<f::FluentTag>>)
-            {
-                auto best_cost = std::numeric_limits<Cost>::max();
-                ygg::visit(
-                    [&](auto&& effect)
-                    {
-                        best_cost = std::min(best_cost,
-                                             aggregate_numeric_effect_rule_cost(rule,
-                                                                                effect,
-                                                                                ctx,
-                                                                                scratch.support_selection,
-                                                                                scratch.auxiliary_selection,
-                                                                                scratch.metric_selection));
-                    },
-                    head.get_variant());
-                return best_cost;
-            }
-            else
-            {
-                if constexpr (requires { AndAP::agg; })
-                {
-                    const auto body_cost = aggregate_body_cost<AndAP>(rule, ctx, scratch.support_selection, scratch.auxiliary_selection);
-                    if (body_cost == std::numeric_limits<Cost>::max())
-                        return body_cost;
-                    const auto metric_cost = aggregate_metric_effect_cost(rule, ctx, scratch.metric_selection);
-                    if (metric_cost == std::numeric_limits<Cost>::max())
-                        return metric_cost;
-                    return aggregate_selection_cost(body_cost, scratch.metric_selection, AndAP::agg) + metric_cost;
-                }
-                else
-                {
-                    auto selector = make_numeric_support_selector<AndAP>(ctx);
-                    for (const auto numeric_constraint : rule.get_body().get_numeric_constraints())
-                        if (selector.get_constraint_cost(numeric_constraint, MaxAggregation {}) == std::numeric_limits<Cost>::max())
-                            return std::numeric_limits<Cost>::max();
-                    return Cost(0);
-                }
-            }
-        },
-        rule.get_head());
+    if constexpr (requires { AndAP::agg; })
+    {
+        const auto body_cost = aggregate_body_cost<AndAP>(rule, ctx, scratch.support_selection, scratch.auxiliary_selection);
+        if (body_cost == std::numeric_limits<Cost>::max())
+            return body_cost;
+        const auto metric_cost = aggregate_metric_effect_cost(rule, ctx, scratch.metric_selection);
+        if (metric_cost == std::numeric_limits<Cost>::max())
+            return metric_cost;
+        return aggregate_selection_cost(body_cost, scratch.metric_selection, AndAP::agg) + metric_cost;
+    }
+    else
+    {
+        auto selector = make_numeric_support_selector<AndAP>(ctx);
+        for (const auto numeric_constraint : rule.get_body().get_numeric_constraints())
+            if (selector.get_constraint_cost(numeric_constraint, MaxAggregation {}) == std::numeric_limits<Cost>::max())
+                return std::numeric_limits<Cost>::max();
+        return Cost(0);
+    }
 }
 
 template<OrAnnotationPolicyConcept<GroundTag> OrAP,
          AndAnnotationPolicyConcept<GroundTag> AndAP,
          TerminationPolicyConcept<GroundTag> TP,
          RuleCostPolicyConcept<GroundTag> CP>
-void push_rule(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundRuleView rule)
+Cost aggregate_rule_cost(fd::GroundRuleView<f::FunctionTag> rule, GroundCtx<OrAP, AndAP, TP, CP>& ctx)
+{
+    auto& scratch = ctx.out().queue().scratch;
+    auto best_cost = std::numeric_limits<Cost>::max();
+    ygg::visit(
+        [&](auto&& effect)
+        {
+            best_cost = std::min(
+                best_cost,
+                aggregate_numeric_effect_rule_cost(rule, effect, ctx, scratch.support_selection, scratch.auxiliary_selection, scratch.metric_selection));
+        },
+        rule.get_head().get_variant());
+    return best_cost;
+}
+
+template<f::RelationKind R,
+         OrAnnotationPolicyConcept<GroundTag> OrAP,
+         AndAnnotationPolicyConcept<GroundTag> AndAP,
+         TerminationPolicyConcept<GroundTag> TP,
+         RuleCostPolicyConcept<GroundTag> CP>
+void push_rule(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundRuleView<R> rule)
 {
     auto& out = ctx.out();
     const auto rule_index = rule.get_index();
-    if (at(out.rule_states(), rule_index).unsatisfied_count != 0 || at(out.rule_states(), rule_index).fired)
+    auto& states = out.template rule_states<R>();
+    if (at(states, rule_index).unsatisfied_count != 0 || at(states, rule_index).fired)
         return;
 
     const auto cost = aggregate_rule_cost(rule, ctx);
     if (cost == std::numeric_limits<Cost>::max())
         return;
 
-    auto& queued_cost = at(out.rule_states(), rule_index).queued_cost;
+    auto& queued_cost = at(states, rule_index).queued_cost;
     if (queued_cost && *queued_cost <= cost)
         return;
     queued_cost = cost;
 
-    out.queue_storage().push_back(GroundQueueEntry { cost, out.queue().next_sequence++, rule });
-    std::push_heap(out.queue_storage().begin(), out.queue_storage().end(), std::greater<> {});
+    auto& queue = out.template queue_storage<R>();
+    queue.push_back(GroundQueueEntry<R> { cost, out.queue().next_sequence++, rule });
+    std::push_heap(queue.begin(), queue.end(), std::greater<> {});
 
     ++out.statistics().num_queue_pushes;
-    out.statistics().max_queue_size = std::max(out.statistics().max_queue_size, static_cast<ygg::uint_t>(out.queue_storage().size()));
+    out.statistics().max_queue_size =
+        std::max(out.statistics().max_queue_size,
+                 static_cast<ygg::uint_t>(out.template queue_storage<f::PredicateTag>().size() + out.template queue_storage<f::FunctionTag>().size()));
 }
 
-template<OrAnnotationPolicyConcept<GroundTag> OrAP,
+template<f::RelationKind R,
+         OrAnnotationPolicyConcept<GroundTag> OrAP,
          AndAnnotationPolicyConcept<GroundTag> AndAP,
          TerminationPolicyConcept<GroundTag> TP,
          RuleCostPolicyConcept<GroundTag> CP>
-void update_numeric_constraint_satisfaction(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundRuleView rule)
+void update_numeric_constraint_satisfaction(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundRuleView<R> rule)
 {
     auto& out = ctx.out();
     const auto rule_index = rule.get_index();
-    auto& satisfied = at(out.rule_states(), rule_index).numeric_constraint_satisfied;
+    auto& states = out.template rule_states<R>();
+    auto& satisfied = at(states, rule_index).numeric_constraint_satisfied;
     const auto numeric_constraints = rule.get_body().get_numeric_constraints();
     if (satisfied.size() != numeric_constraints.size())
         satisfied.assign(numeric_constraints.size(), false);
@@ -462,10 +465,21 @@ void update_numeric_constraint_satisfaction(GroundCtx<OrAP, AndAP, TP, CP>& ctx,
             continue;
 
         satisfied[i] = true;
-        auto& unsatisfied_count = at(out.rule_states(), rule_index).unsatisfied_count;
+        auto& unsatisfied_count = at(states, rule_index).unsatisfied_count;
         assert(unsatisfied_count > 0);
         --unsatisfied_count;
     }
+}
+
+template<f::RelationKind R,
+         OrAnnotationPolicyConcept<GroundTag> OrAP,
+         AndAnnotationPolicyConcept<GroundTag> AndAP,
+         TerminationPolicyConcept<GroundTag> TP,
+         RuleCostPolicyConcept<GroundTag> CP>
+void initialize_numeric_constraint_satisfaction_for(GroundCtx<OrAP, AndAP, TP, CP>& ctx)
+{
+    for (const auto rule : ctx.in().program().template get_ground_rules<R>())
+        update_numeric_constraint_satisfaction(ctx, rule);
 }
 
 template<OrAnnotationPolicyConcept<GroundTag> OrAP,
@@ -474,8 +488,19 @@ template<OrAnnotationPolicyConcept<GroundTag> OrAP,
          RuleCostPolicyConcept<GroundTag> CP>
 void initialize_numeric_constraint_satisfaction(GroundCtx<OrAP, AndAP, TP, CP>& ctx)
 {
-    for (const auto rule : ctx.in().program().get_ground_rules())
-        update_numeric_constraint_satisfaction(ctx, rule);
+    initialize_numeric_constraint_satisfaction_for<f::PredicateTag>(ctx);
+    initialize_numeric_constraint_satisfaction_for<f::FunctionTag>(ctx);
+}
+
+template<f::RelationKind R,
+         OrAnnotationPolicyConcept<GroundTag> OrAP,
+         AndAnnotationPolicyConcept<GroundTag> AndAP,
+         TerminationPolicyConcept<GroundTag> TP,
+         RuleCostPolicyConcept<GroundTag> CP>
+void seed_queue_for(GroundCtx<OrAP, AndAP, TP, CP>& ctx)
+{
+    for (const auto rule : ctx.in().program().template get_ground_rules<R>())
+        push_rule(ctx, rule);
 }
 
 template<OrAnnotationPolicyConcept<GroundTag> OrAP,
@@ -484,53 +509,56 @@ template<OrAnnotationPolicyConcept<GroundTag> OrAP,
          RuleCostPolicyConcept<GroundTag> CP>
 void seed_queue(GroundCtx<OrAP, AndAP, TP, CP>& ctx)
 {
-    for (const auto rule : ctx.in().program().get_ground_rules())
-        push_rule(ctx, rule);
+    seed_queue_for<f::PredicateTag>(ctx);
+    seed_queue_for<f::FunctionTag>(ctx);
 }
 
-template<OrAnnotationPolicyConcept<GroundTag> OrAP,
+template<f::RelationKind R,
+         OrAnnotationPolicyConcept<GroundTag> OrAP,
          AndAnnotationPolicyConcept<GroundTag> AndAP,
          TerminationPolicyConcept<GroundTag> TP,
          RuleCostPolicyConcept<GroundTag> CP>
-std::optional<GroundQueueEntry> pop_next_entry(GroundCtx<OrAP, AndAP, TP, CP>& ctx)
+std::optional<GroundQueueEntry<R>> pop_next_entry(GroundCtx<OrAP, AndAP, TP, CP>& ctx)
 {
-    auto& out = ctx.out();
-    if (out.queue_storage().empty())
+    auto& queue = ctx.out().template queue_storage<R>();
+    if (queue.empty())
         return std::nullopt;
 
-    std::pop_heap(out.queue_storage().begin(), out.queue_storage().end(), std::greater<> {});
-    const auto entry = out.queue_storage().back();
-    out.queue_storage().pop_back();
-    ++out.statistics().num_queue_pops;
+    std::pop_heap(queue.begin(), queue.end(), std::greater<> {});
+    const auto entry = queue.back();
+    queue.pop_back();
+    ++ctx.out().statistics().num_queue_pops;
     return entry;
 }
 
-template<OrAnnotationPolicyConcept<GroundTag> OrAP,
+template<f::RelationKind R,
+         OrAnnotationPolicyConcept<GroundTag> OrAP,
          AndAnnotationPolicyConcept<GroundTag> AndAP,
          TerminationPolicyConcept<GroundTag> TP,
          RuleCostPolicyConcept<GroundTag> CP>
-bool is_stale_entry(const GroundCtx<OrAP, AndAP, TP, CP>& ctx, const GroundQueueEntry& entry) noexcept
+bool is_stale_entry(const GroundCtx<OrAP, AndAP, TP, CP>& ctx, const GroundQueueEntry<R>& entry) noexcept
 {
     const auto& out = ctx.out();
-    const auto rule_index = entry.rule.get_index();
-    return (has_atom_head(entry.rule) && at(out.rule_states(), rule_index).fired) || at(out.rule_states(), rule_index).unsatisfied_count != 0;
+    const auto& state = at(out.template rule_states<R>(), entry.rule.get_index());
+    return state.fired || state.unsatisfied_count != 0;
 }
 
-template<OrAnnotationPolicyConcept<GroundTag> OrAP,
+template<f::RelationKind R,
+         OrAnnotationPolicyConcept<GroundTag> OrAP,
          AndAnnotationPolicyConcept<GroundTag> AndAP,
          TerminationPolicyConcept<GroundTag> TP,
          RuleCostPolicyConcept<GroundTag> CP>
-void notify_fact_inserted(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundAtomView<f::FluentTag> fact)
+void notify_fact_inserted_for(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundAtomView<f::FluentTag> fact)
 {
     auto& out = ctx.out();
-    const auto& dependencies = ctx.in().fluent_precondition_to_rules();
+    const auto& dependencies = ctx.in().template dependencies<R>().fluent_precondition_to_rules;
     const auto dependency_it = dependencies.find(fact);
     if (dependency_it == dependencies.end())
         return;
 
     for (const auto dependent_rule : dependency_it->second)
     {
-        auto& unsatisfied_count = at(out.rule_states(), dependent_rule.get_index()).unsatisfied_count;
+        auto& unsatisfied_count = at(out.template rule_states<R>(), dependent_rule.get_index()).unsatisfied_count;
         if (unsatisfied_count == 0)
             continue;
 
@@ -543,17 +571,38 @@ template<OrAnnotationPolicyConcept<GroundTag> OrAP,
          AndAnnotationPolicyConcept<GroundTag> AndAP,
          TerminationPolicyConcept<GroundTag> TP,
          RuleCostPolicyConcept<GroundTag> CP>
-void notify_fact_annotation_improved(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundAtomView<f::FluentTag> fact)
+void notify_fact_inserted(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundAtomView<f::FluentTag> fact)
+{
+    notify_fact_inserted_for<f::PredicateTag>(ctx, fact);
+    notify_fact_inserted_for<f::FunctionTag>(ctx, fact);
+}
+
+template<f::RelationKind R,
+         OrAnnotationPolicyConcept<GroundTag> OrAP,
+         AndAnnotationPolicyConcept<GroundTag> AndAP,
+         TerminationPolicyConcept<GroundTag> TP,
+         RuleCostPolicyConcept<GroundTag> CP>
+void notify_fact_annotation_improved_for(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundAtomView<f::FluentTag> fact)
 {
     auto& out = ctx.out();
-    const auto& dependencies = ctx.in().fluent_precondition_to_rules();
+    const auto& dependencies = ctx.in().template dependencies<R>().fluent_precondition_to_rules;
     const auto dependency_it = dependencies.find(fact);
     if (dependency_it == dependencies.end())
         return;
 
     for (const auto dependent_rule : dependency_it->second)
-        if (at(out.rule_states(), dependent_rule.get_index()).unsatisfied_count == 0)
+        if (at(out.template rule_states<R>(), dependent_rule.get_index()).unsatisfied_count == 0)
             push_rule(ctx, dependent_rule);
+}
+
+template<OrAnnotationPolicyConcept<GroundTag> OrAP,
+         AndAnnotationPolicyConcept<GroundTag> AndAP,
+         TerminationPolicyConcept<GroundTag> TP,
+         RuleCostPolicyConcept<GroundTag> CP>
+void notify_fact_annotation_improved(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundAtomView<f::FluentTag> fact)
+{
+    notify_fact_annotation_improved_for<f::PredicateTag>(ctx, fact);
+    notify_fact_annotation_improved_for<f::FunctionTag>(ctx, fact);
 }
 
 template<OrAnnotationPolicyConcept<GroundTag> OrAP,
@@ -572,22 +621,34 @@ bool derive_fact(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundAtomView<f::Flue
     return inserted;
 }
 
+template<f::RelationKind R,
+         OrAnnotationPolicyConcept<GroundTag> OrAP,
+         AndAnnotationPolicyConcept<GroundTag> AndAP,
+         TerminationPolicyConcept<GroundTag> TP,
+         RuleCostPolicyConcept<GroundTag> CP>
+void notify_numeric_interval_changed_for(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundFunctionTermView<f::FluentTag> term)
+{
+    const auto& dependencies = ctx.in().template dependencies<R>().fluent_function_term_to_rules;
+    const auto dependency_it = dependencies.find(term);
+    if (dependency_it == dependencies.end())
+        return;
+
+    for (const auto dependent_rule : dependency_it->second)
+    {
+        update_numeric_constraint_satisfaction(ctx, dependent_rule);
+        if (at(ctx.out().template rule_states<R>(), dependent_rule.get_index()).unsatisfied_count == 0)
+            push_rule(ctx, dependent_rule);
+    }
+}
+
 template<OrAnnotationPolicyConcept<GroundTag> OrAP,
          AndAnnotationPolicyConcept<GroundTag> AndAP,
          TerminationPolicyConcept<GroundTag> TP,
          RuleCostPolicyConcept<GroundTag> CP>
 void notify_numeric_interval_changed(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundFunctionTermView<f::FluentTag> term)
 {
-    const auto dependency_it = ctx.in().fluent_function_term_to_rules().find(term);
-    if (dependency_it == ctx.in().fluent_function_term_to_rules().end())
-        return;
-
-    for (const auto dependent_rule : dependency_it->second)
-    {
-        update_numeric_constraint_satisfaction(ctx, dependent_rule);
-        if (at(ctx.out().rule_states(), dependent_rule.get_index()).unsatisfied_count == 0)
-            push_rule(ctx, dependent_rule);
-    }
+    notify_numeric_interval_changed_for<f::PredicateTag>(ctx, term);
+    notify_numeric_interval_changed_for<f::FunctionTag>(ctx, term);
 }
 
 template<OrAnnotationPolicyConcept<GroundTag> OrAP,
@@ -621,7 +682,7 @@ template<OrAnnotationPolicyConcept<GroundTag> OrAP,
          TerminationPolicyConcept<GroundTag> TP,
          RuleCostPolicyConcept<GroundTag> CP>
 void update_numeric_annotation(GroundCtx<OrAP, AndAP, TP, CP>& ctx,
-                               fd::GroundRuleView rule,
+                               fd::GroundRuleView<f::FunctionTag> rule,
                                fd::GroundFunctionTermView<f::FluentTag> term,
                                ygg::ClosedInterval<ygg::float_t> interval,
                                Cost cost,
@@ -639,8 +700,11 @@ void update_numeric_annotation(GroundCtx<OrAP, AndAP, TP, CP>& ctx,
         metric = aggregate_numeric_selection_metric(metric, scratch.metric_selection, ctx);
         append_numeric_supports(scratch.numeric_supports, selection, ctx);
         append_numeric_supports(scratch.numeric_supports, scratch.metric_selection, ctx);
-        const auto context =
-            AndAnnotationContext<GroundTag> { metric, cost, std::span<const NumericSupport<GroundTag>>(scratch.numeric_supports), rule, ctx.out().and_annot() };
+        const auto context = AndAnnotationContext<GroundTag, f::FunctionTag> { metric,
+                                                                               cost,
+                                                                               std::span<const NumericSupport<GroundTag>>(scratch.numeric_supports),
+                                                                               rule,
+                                                                               ctx.out().and_annot() };
         ctx.out().and_ap().update_annotation(term, term, interval, context, scratch.function_annotations);
 
         if (const auto* annotation = scratch.function_annotations.find(term, interval))
@@ -654,7 +718,7 @@ template<OrAnnotationPolicyConcept<GroundTag> OrAP,
          RuleCostPolicyConcept<GroundTag> CP,
          f::NumericEffectOpKind Op>
 bool enqueue_numeric_effect(GroundCtx<OrAP, AndAP, TP, CP>& ctx,
-                            fd::GroundRuleView rule,
+                            fd::GroundRuleView<f::FunctionTag> rule,
                             fd::GroundNumericEffectView<Op, f::FluentTag> effect,
                             PendingNumericBuckets& pending_numeric)
 {
@@ -705,23 +769,12 @@ bool enqueue_numeric_effect(GroundCtx<OrAP, AndAP, TP, CP>& ctx,
     return true;
 }
 
-template<typename Head>
-bool is_atom_head(const Head&) noexcept
-{
-    return std::is_same_v<Head, fd::GroundAtomView<f::FluentTag>>;
-}
-
-bool has_atom_head(fd::GroundRuleView rule) noexcept
-{
-    return ygg::visit([](auto&& head) { return is_atom_head(head); }, rule.get_head());
-}
-
 template<OrAnnotationPolicyConcept<GroundTag> OrAP,
          AndAnnotationPolicyConcept<GroundTag> AndAP,
          TerminationPolicyConcept<GroundTag> TP,
          RuleCostPolicyConcept<GroundTag> CP>
 std::optional<CostUpdate<GroundTag>>
-update_fact_annotation(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundRuleView rule, fd::GroundAtomView<f::FluentTag> fact, Cost cost)
+update_fact_annotation(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundRuleView<f::PredicateTag> rule, fd::GroundAtomView<f::FluentTag> fact, Cost cost)
 {
     auto& out = ctx.out();
     auto& scratch = out.queue().scratch;
@@ -745,8 +798,11 @@ update_fact_annotation(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundRuleView r
             append_numeric_supports(scratch.numeric_supports, scratch.metric_selection, ctx);
         }
     }
-    const auto context =
-        AndAnnotationContext<GroundTag> { metric, cost, std::span<const NumericSupport<GroundTag>>(scratch.numeric_supports), rule, out.and_annot() };
+    const auto context = AndAnnotationContext<GroundTag, f::PredicateTag> { metric,
+                                                                            cost,
+                                                                            std::span<const NumericSupport<GroundTag>>(scratch.numeric_supports),
+                                                                            rule,
+                                                                            out.and_annot() };
 
     out.and_ap().record_achiever(fact, context);
     out.and_ap().update_annotation(fact, fact, context, scratch.predicate_annotations);
@@ -766,36 +822,42 @@ template<OrAnnotationPolicyConcept<GroundTag> OrAP,
          AndAnnotationPolicyConcept<GroundTag> AndAP,
          TerminationPolicyConcept<GroundTag> TP,
          RuleCostPolicyConcept<GroundTag> CP>
-bool fire_rule(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundRuleView rule, Cost cost, PendingNumericBuckets& pending_numeric)
+bool fire_rule(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundRuleView<f::PredicateTag> rule, Cost cost, PendingNumericBuckets&)
 {
     auto& out = ctx.out();
-    const auto rule_index = rule.get_index();
-    if (has_atom_head(rule))
-        at(out.rule_states(), rule_index).fired = true;
+    at(out.template rule_states<f::PredicateTag>(), rule.get_index()).fired = true;
     ++out.statistics().num_rules_fired;
 
-    auto stop = false;
-    ygg::visit(
-        [&](auto&& head)
-        {
-            using Head = std::decay_t<decltype(head)>;
-            if constexpr (std::is_same_v<Head, fd::GroundAtomView<f::FluentTag>>)
-            {
-                const auto update = update_fact_annotation(ctx, rule, head, cost);
-                const auto inserted = derive_fact(ctx, head);
-                if (inserted)
-                    notify_fact_inserted(ctx, head);
-                if (is_annotation_improvement(update))
-                    notify_fact_annotation_improved(ctx, head);
-                stop = ctx.out().tp().check(FactSets { ctx.out().facts().static_fact_sets, ctx.out().facts().fluent_fact_sets });
-            }
-            else if constexpr (std::is_same_v<Head, fd::GroundNumericEffectOperatorView<f::FluentTag>>)
-            {
-                ygg::visit([&](auto&& effect) { enqueue_numeric_effect(ctx, rule, effect, pending_numeric); }, head.get_variant());
-            }
-        },
-        rule.get_head());
-    return stop;
+    const auto head = rule.get_head();
+    const auto update = update_fact_annotation(ctx, rule, head, cost);
+    const auto inserted = derive_fact(ctx, head);
+    if (inserted)
+        notify_fact_inserted(ctx, head);
+    if (is_annotation_improvement(update))
+        notify_fact_annotation_improved(ctx, head);
+    return ctx.out().tp().check(FactSets { ctx.out().facts().static_fact_sets, ctx.out().facts().fluent_fact_sets });
+}
+
+template<OrAnnotationPolicyConcept<GroundTag> OrAP,
+         AndAnnotationPolicyConcept<GroundTag> AndAP,
+         TerminationPolicyConcept<GroundTag> TP,
+         RuleCostPolicyConcept<GroundTag> CP>
+bool fire_rule(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundRuleView<f::FunctionTag> rule, Cost, PendingNumericBuckets& pending_numeric)
+{
+    ++ctx.out().statistics().num_rules_fired;
+    ygg::visit([&](auto&& effect) { enqueue_numeric_effect(ctx, rule, effect, pending_numeric); }, rule.get_head().get_variant());
+    return false;
+}
+
+template<f::RelationKind R,
+         OrAnnotationPolicyConcept<GroundTag> OrAP,
+         AndAnnotationPolicyConcept<GroundTag> AndAP,
+         TerminationPolicyConcept<GroundTag> TP,
+         RuleCostPolicyConcept<GroundTag> CP>
+Cost next_rule_cost_for(const GroundCtx<OrAP, AndAP, TP, CP>& ctx) noexcept
+{
+    const auto& queue = ctx.out().template queue_storage<R>();
+    return queue.empty() ? std::numeric_limits<Cost>::max() : queue.front().cost;
 }
 
 template<OrAnnotationPolicyConcept<GroundTag> OrAP,
@@ -804,7 +866,7 @@ template<OrAnnotationPolicyConcept<GroundTag> OrAP,
          RuleCostPolicyConcept<GroundTag> CP>
 Cost next_rule_cost(const GroundCtx<OrAP, AndAP, TP, CP>& ctx) noexcept
 {
-    return ctx.out().queue_storage().empty() ? std::numeric_limits<Cost>::max() : ctx.out().queue_storage().front().cost;
+    return std::min(next_rule_cost_for<f::PredicateTag>(ctx), next_rule_cost_for<f::FunctionTag>(ctx));
 }
 
 template<OrAnnotationPolicyConcept<GroundTag> OrAP,
@@ -831,6 +893,35 @@ bool commit_numeric_bucket(GroundCtx<OrAP, AndAP, TP, CP>& ctx, PendingNumericBu
     return !changed_terms.empty() && ctx.out().tp().check(FactSets { ctx.out().facts().static_fact_sets, ctx.out().facts().fluent_fact_sets });
 }
 
+template<f::RelationKind R,
+         OrAnnotationPolicyConcept<GroundTag> OrAP,
+         AndAnnotationPolicyConcept<GroundTag> AndAP,
+         TerminationPolicyConcept<GroundTag> TP,
+         RuleCostPolicyConcept<GroundTag> CP>
+bool process_next_rule(GroundCtx<OrAP, AndAP, TP, CP>& ctx, PendingNumericBuckets& pending_numeric)
+{
+    auto entry = pop_next_entry<R>(ctx);
+    assert(entry);
+
+    auto& out = ctx.out();
+    const auto rule_index = entry->rule.get_index();
+    auto& queued_cost = at(out.template rule_states<R>(), rule_index).queued_cost;
+    if (!queued_cost || *queued_cost != entry->cost)
+    {
+        ++out.statistics().num_stale_queue_pops;
+        return false;
+    }
+    queued_cost.reset();
+
+    if (is_stale_entry(ctx, *entry))
+    {
+        ++out.statistics().num_stale_queue_pops;
+        return false;
+    }
+
+    return fire_rule(ctx, entry->rule, entry->cost, pending_numeric);
+}
+
 template<OrAnnotationPolicyConcept<GroundTag> OrAP,
          AndAnnotationPolicyConcept<GroundTag> AndAP,
          TerminationPolicyConcept<GroundTag> TP,
@@ -839,29 +930,16 @@ bool process_rule_frontier(GroundCtx<OrAP, AndAP, TP, CP>& ctx, PendingNumericBu
 {
     while (next_rule_cost(ctx) == cost)
     {
-        auto entry = pop_next_entry(ctx);
-        assert(entry);
-
-        auto& out = ctx.out();
-        const auto rule_index = entry->rule.get_index();
-        auto& queued_cost = at(out.rule_states(), rule_index).queued_cost;
-        if (!queued_cost || *queued_cost != entry->cost)
-        {
-            ++out.statistics().num_stale_queue_pops;
-            continue;
-        }
-        queued_cost.reset();
-
-        if (is_stale_entry(ctx, *entry))
-        {
-            ++out.statistics().num_stale_queue_pops;
-            continue;
-        }
-
-        if (fire_rule(ctx, entry->rule, entry->cost, pending_numeric))
+        const auto& predicates = ctx.out().template queue_storage<f::PredicateTag>();
+        const auto& functions = ctx.out().template queue_storage<f::FunctionTag>();
+        const auto process_predicate =
+            functions.empty()
+            || (!predicates.empty()
+                && std::tie(predicates.front().cost, predicates.front().sequence) < std::tie(functions.front().cost, functions.front().sequence));
+        if ((process_predicate && process_next_rule<f::PredicateTag>(ctx, pending_numeric))
+            || (!process_predicate && process_next_rule<f::FunctionTag>(ctx, pending_numeric)))
             return true;
     }
-
     return false;
 }
 

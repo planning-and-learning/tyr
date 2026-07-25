@@ -233,10 +233,11 @@ void bind_conditional_effect_data(nb::module_& m)
     ygg::add_hash(cls);
 }
 
-void bind_rule_data(nb::module_& m)
+template<RelationKind R>
+void bind_rule_data(nb::module_& m, const std::string& name)
 {
-    using V = ygg::Data<Rule>;
-    auto cls = nb::class_<V>(m, "RuleData")  //
+    using V = ygg::Data<Rule<R>>;
+    auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<const VariableViewList&,
                                  ConjunctiveConditionView,
                                  typename V::template HeadView<Repository>,
@@ -283,11 +284,12 @@ void bind_ground_conditional_effect_data(nb::module_& m)
     ygg::add_hash(cls);
 }
 
-void bind_ground_rule_data(nb::module_& m)
+template<RelationKind R>
+void bind_ground_rule_data(nb::module_& m, const std::string& name)
 {
-    using V = ygg::Data<GroundRule>;
-    auto cls = nb::class_<V>(m, "GroundRuleData")  //
-                   .def(nb::init<RuleBindingView,
+    using V = ygg::Data<GroundRule<R>>;
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<RuleBindingView<R>,
                                  GroundConjunctiveConditionView,
                                  typename V::template HeadView<Repository>,
                                  const GroundNumericEffectOperatorViewList<FluentTag>&>(),
@@ -313,7 +315,8 @@ template<TaskKind Kind>
 void bind_program_data(nb::module_& m, const std::string& name)
 {
     using V = ygg::Data<ProgramTag<Kind>>;
-    using RuleViews = std::conditional_t<std::same_as<Kind, LiftedTag>, RuleViewList, GroundRuleViewList>;
+    using PredicateRuleViews = std::conditional_t<std::same_as<Kind, LiftedTag>, RuleViewList<PredicateTag>, GroundRuleViewList<PredicateTag>>;
+    using FunctionRuleViews = std::conditional_t<std::same_as<Kind, LiftedTag>, RuleViewList<FunctionTag>, GroundRuleViewList<FunctionTag>>;
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<const PredicateViewList<StaticTag>&,
                                  const PredicateViewList<FluentTag>&,
@@ -326,7 +329,8 @@ void bind_program_data(nb::module_& m, const std::string& name)
                                  const GroundFunctionTermValueViewList<FluentTag>&,
                                  const std::optional<GroundConjunctiveConditionView>&,
                                  const std::optional<MetricView>&,
-                                 const RuleViews&>(),
+                                 const PredicateRuleViews&,
+                                 const FunctionRuleViews&>(),
                         "static_predicates"_a,
                         "fluent_predicates"_a,
                         "static_functions"_a,
@@ -338,7 +342,8 @@ void bind_program_data(nb::module_& m, const std::string& name)
                         "fluent_fterm_values"_a,
                         "goal"_a,
                         "metric"_a,
-                        (std::same_as<Kind, LiftedTag> ? "rules"_a : "ground_rules"_a));
+                        (std::same_as<Kind, LiftedTag> ? "rules"_a : "ground_rules"_a),
+                        (std::same_as<Kind, LiftedTag> ? "function_rules"_a : "ground_function_rules"_a));
     ygg::add_print(cls);
     ygg::add_comparison(cls);
     ygg::add_hash(cls);
@@ -347,7 +352,8 @@ void bind_program_data(nb::module_& m, const std::string& name)
 
 void bind_datas(nb::module_& m)
 {
-    bind_relation_binding_data<Rule>(m, "RuleBindingData");
+    bind_relation_binding_data<Rule<PredicateTag>>(m, "RuleBindingData");
+    bind_relation_binding_data<Rule<FunctionTag>>(m, "FunctionRuleBindingData");
 
     bind_atom_data<StaticTag>(m, "StaticAtomData");
     bind_atom_data<FluentTag>(m, "FluentAtomData");
@@ -394,7 +400,8 @@ void bind_datas(nb::module_& m)
     bind_variant_data<ygg::Data<NumericEffectOperator<FluentTag>>>(m, "FluentNumericEffectOperatorData");
     bind_conjunctive_effect_data(m);
     bind_conditional_effect_data(m);
-    bind_rule_data(m);
+    bind_rule_data<PredicateTag>(m, "RuleData");
+    bind_rule_data<FunctionTag>(m, "FunctionRuleData");
 
     bind_unary_operator_data<Sub, ygg::Data<GroundFunctionExpression>>(m, "GroundUnaryOperatorSubData");
     bind_binary_operator_data<Add, ygg::Data<GroundFunctionExpression>>(m, "GroundBinaryOperatorAddData");
@@ -422,7 +429,8 @@ void bind_datas(nb::module_& m)
     bind_variant_data<ygg::Data<GroundNumericEffectOperator<FluentTag>>>(m, "FluentGroundNumericEffectOperatorData");
     bind_ground_conjunctive_effect_data(m);
     bind_ground_conditional_effect_data(m);
-    bind_ground_rule_data(m);
+    bind_ground_rule_data<PredicateTag>(m, "GroundRuleData");
+    bind_ground_rule_data<FunctionTag>(m, "GroundFunctionRuleData");
     bind_metric_data(m);
     bind_program_data<LiftedTag>(m, "ProgramData");
     bind_program_data<GroundTag>(m, "GroundProgramData");

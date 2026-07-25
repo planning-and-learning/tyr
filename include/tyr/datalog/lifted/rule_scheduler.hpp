@@ -24,7 +24,8 @@
 #include "tyr/formalism/datalog/rule_index.hpp"    // for ygg::Index
 
 #include <boost/dynamic_bitset/dynamic_bitset.hpp>  // for dynamic_bitset
-#include <vector>                                   // for vector
+#include <cassert>
+#include <vector>  // for vector
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/containers/vector.hpp>  // for ygg::View
 #include <yggdrasil/core/types.hpp>         // for ygg::IndexList
@@ -35,14 +36,15 @@
 namespace tyr::datalog
 {
 
-class RuleSchedulerStratum
+template<::tyr::formalism::RelationKind R>
+class TypedRuleSchedulerStratum
 {
 public:
-    RuleSchedulerStratum(const analysis::RuleStratum& rules,
-                         const analysis::ListenerStratum& listeners,
-                         const ::tyr::formalism::datalog::Repository& context,
-                         size_t num_fluent_predicates,
-                         size_t num_fluent_functions);
+    TypedRuleSchedulerStratum(const analysis::TypedRuleStratum<R>& rules,
+                              const analysis::TypedListenerStratum<R>& listeners,
+                              const ::tyr::formalism::datalog::Repository& context,
+                              size_t num_fluent_predicates,
+                              size_t num_fluent_functions);
 
     void activate_all();
 
@@ -54,24 +56,59 @@ public:
     void on_finish_iteration();
 
     const ::tyr::formalism::datalog::Repository& get_context() const noexcept { return m_context; }
-    const ygg::IndexList<::tyr::formalism::datalog::Rule>& get_rules() const noexcept { return m_rules; }
+    const ygg::IndexList<::tyr::formalism::datalog::Rule<R>>& get_rules() const noexcept { return m_rules; }
 
     /// Active rules in sorted index order: hash-set iteration order is platform-unspecified, but the
     /// rule processing order assigns program-repository rows (first-derivation order) that delta
     /// bitsets are indexed by, so it must be identical on every platform.
-    const ygg::IndexList<::tyr::formalism::datalog::Rule>& get_active_rules() const noexcept { return m_sorted_active_rules; }
+    const ygg::IndexList<::tyr::formalism::datalog::Rule<R>>& get_active_rules() const noexcept { return m_sorted_active_rules; }
 
 private:
     void rebuild_sorted_active_rules();
 
-    const analysis::RuleStratum& m_rules;
-    const analysis::ListenerStratum& m_listeners;
+    const analysis::TypedRuleStratum<R>& m_rules;
+    const analysis::TypedListenerStratum<R>& m_listeners;
     const ::tyr::formalism::datalog::Repository& m_context;
 
     boost::dynamic_bitset<> m_active_predicates;
     boost::dynamic_bitset<> m_active_functions;
-    ygg::UnorderedSet<ygg::Index<::tyr::formalism::datalog::Rule>> m_active_rules;
-    ygg::IndexList<::tyr::formalism::datalog::Rule> m_sorted_active_rules;
+    ygg::UnorderedSet<ygg::Index<::tyr::formalism::datalog::Rule<R>>> m_active_rules;
+    ygg::IndexList<::tyr::formalism::datalog::Rule<R>> m_sorted_active_rules;
+};
+
+struct RuleSchedulerStratum
+{
+    TypedRuleSchedulerStratum<::tyr::formalism::PredicateTag> predicate_rules;
+    TypedRuleSchedulerStratum<::tyr::formalism::FunctionTag> function_rules;
+
+    RuleSchedulerStratum(const analysis::RuleStratum& rules,
+                         const analysis::ListenerStratum& listeners,
+                         const ::tyr::formalism::datalog::Repository& context,
+                         size_t num_fluent_predicates,
+                         size_t num_fluent_functions);
+
+    auto& get(::tyr::formalism::PredicateTag) noexcept { return predicate_rules; }
+    auto& get(::tyr::formalism::FunctionTag) noexcept { return function_rules; }
+    const auto& get(::tyr::formalism::PredicateTag) const noexcept { return predicate_rules; }
+    const auto& get(::tyr::formalism::FunctionTag) const noexcept { return function_rules; }
+
+    template<::tyr::formalism::RelationKind R>
+    auto& get() noexcept
+    {
+        return get(R {});
+    }
+
+    template<::tyr::formalism::RelationKind R>
+    const auto& get() const noexcept
+    {
+        return get(R {});
+    }
+
+    void activate_all();
+    void on_start_iteration() noexcept;
+    void on_generate(ygg::Index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>> predicate);
+    void on_generate(ygg::Index<::tyr::formalism::Function<::tyr::formalism::FluentTag>> function);
+    void on_finish_iteration();
 };
 
 struct RuleSchedulerStrata
@@ -79,11 +116,11 @@ struct RuleSchedulerStrata
     std::vector<RuleSchedulerStratum> data;
 };
 
-extern RuleSchedulerStrata create_schedulers(const analysis::RuleStrata& rules,
-                                             const analysis::ListenerStrata& listeners,
-                                             const ::tyr::formalism::datalog::Repository& context,
-                                             size_t num_fluent_predicates,
-                                             size_t num_fluent_functions);
+RuleSchedulerStrata create_schedulers(const analysis::RuleStrata& rules,
+                                      const analysis::ListenerStrata& listeners,
+                                      const ::tyr::formalism::datalog::Repository& context,
+                                      size_t num_fluent_predicates,
+                                      size_t num_fluent_functions);
 
 }
 

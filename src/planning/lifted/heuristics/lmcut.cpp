@@ -31,24 +31,12 @@ namespace
 namespace f = ::tyr::formalism;
 namespace fd = ::tyr::formalism::datalog;
 
-template<typename Head>
-bool is_numeric_head(const Head&) noexcept
-{
-    return false;
-}
-
-bool is_numeric_head(fd::NumericEffectOperatorView<f::FluentTag>) noexcept { return true; }
-
 bool needs_expanded_lmcut(auto program)
 {
-    for (const auto rule : program.get_rules())
-    {
+    for (const auto rule : program.template get_rules<f::PredicateTag>())
         if (!rule.get_body().get_numeric_constraints().empty())
             return true;
-        if (ygg::visit([](auto&& head) { return is_numeric_head(head); }, rule.get_head()))
-            return true;
-    }
-    return false;
+    return !program.template get_rules<f::FunctionTag>().empty();
 }
 
 }
@@ -141,7 +129,7 @@ ygg::float_t LMCutHeuristic<LiftedTag>::evaluate(const StateView<LiftedTag>& sta
 
 ygg::float_t LMCutHeuristic<LiftedTag>::extract_cost_and_set_preferred_actions_impl(const StateView<LiftedTag>&) { return get_goal_cost(); }
 
-LMCutHeuristic<LiftedTag>::RuleEdge LMCutHeuristic<LiftedTag>::make_rule_edge(const datalog::WitnessAnnotation<LiftedTag>& witness) const
+LMCutHeuristic<LiftedTag>::RuleEdge LMCutHeuristic<LiftedTag>::make_rule_edge(const datalog::WitnessAnnotation<LiftedTag, f::PredicateTag>& witness) const
 {
     const auto rule_binding = witness.get_rule_key();
     auto objects = ygg::IndexList<f::Object> {};
@@ -150,7 +138,7 @@ LMCutHeuristic<LiftedTag>::RuleEdge LMCutHeuristic<LiftedTag>::make_rule_edge(co
     return RuleEdge { rule_binding.get_relation().get_index(), std::move(objects) };
 }
 
-LMCutHeuristic<LiftedTag>::NumericEdge LMCutHeuristic<LiftedTag>::make_numeric_edge(const datalog::WitnessAnnotation<LiftedTag>& witness,
+LMCutHeuristic<LiftedTag>::NumericEdge LMCutHeuristic<LiftedTag>::make_numeric_edge(const datalog::WitnessAnnotation<LiftedTag, f::FunctionTag>& witness,
                                                                                     NumericNode node) const
 {
     const auto rule_binding = witness.get_rule_key();
@@ -177,7 +165,8 @@ datalog::Cost LMCutHeuristic<LiftedTag>::get_residual_cost(ActionBinding action_
 
 void LMCutHeuristic<LiftedTag>::set_residual_cost(ActionBinding action_binding, datalog::Cost cost) { m_residual_costs.insert_or_assign(action_binding, cost); }
 
-datalog::Cost LMCutHeuristic<LiftedTag>::get_witness_body_cost(const datalog::WitnessAnnotation<LiftedTag>& witness)
+template<f::RelationKind R>
+datalog::Cost LMCutHeuristic<LiftedTag>::get_witness_body_cost(const datalog::WitnessAnnotation<LiftedTag, R>& witness)
 {
     auto body_cost = datalog::Cost(0);
     for_each_witness_precondition(witness, [&](const auto precondition) { body_cost = std::max(body_cost, get_binding_cost(precondition)); });
@@ -188,7 +177,8 @@ datalog::Cost LMCutHeuristic<LiftedTag>::get_witness_body_cost(const datalog::Wi
     return body_cost;
 }
 
-datalog::Cost LMCutHeuristic<LiftedTag>::get_witness_edge_residual_cost(const datalog::WitnessAnnotation<LiftedTag>& witness)
+template<f::RelationKind R>
+datalog::Cost LMCutHeuristic<LiftedTag>::get_witness_edge_residual_cost(const datalog::WitnessAnnotation<LiftedTag, R>& witness)
 {
     const auto body_cost = get_witness_body_cost(witness);
     return witness.get_cost() <= body_cost ? datalog::Cost(0) : witness.get_cost() - body_cost;
@@ -254,7 +244,7 @@ void LMCutHeuristic<LiftedTag>::append_expanded_numeric_support_preconditions(co
         result.emplace_back(NumericNode { binding, support.get_interval() });
 }
 
-datalog::Cost LMCutHeuristic<LiftedTag>::get_numeric_witness_body_cost(const datalog::WitnessAnnotation<LiftedTag>& witness, NumericNode node)
+datalog::Cost LMCutHeuristic<LiftedTag>::get_numeric_witness_body_cost(const datalog::WitnessAnnotation<LiftedTag, f::FunctionTag>& witness, NumericNode node)
 {
     auto body_cost = datalog::Cost(0);
     for_each_witness_precondition(witness, [&](const auto precondition) { body_cost = std::max(body_cost, get_binding_cost(precondition)); });
@@ -266,7 +256,8 @@ datalog::Cost LMCutHeuristic<LiftedTag>::get_numeric_witness_body_cost(const dat
     return body_cost;
 }
 
-datalog::Cost LMCutHeuristic<LiftedTag>::get_numeric_witness_edge_residual_cost(const datalog::WitnessAnnotation<LiftedTag>& witness, NumericNode node)
+datalog::Cost LMCutHeuristic<LiftedTag>::get_numeric_witness_edge_residual_cost(const datalog::WitnessAnnotation<LiftedTag, f::FunctionTag>& witness,
+                                                                                NumericNode node)
 {
     const auto body_cost = get_numeric_witness_body_cost(witness, node);
     return witness.get_cost() <= body_cost ? datalog::Cost(0) : witness.get_cost() - body_cost;
@@ -289,13 +280,13 @@ void LMCutHeuristic<LiftedTag>::apply_residual_costs()
     m_workspace.clear_costs();
     for (const auto& [action_binding, cost] : m_residual_costs)
         set_action_binding_cost(action_binding, datalog::Cost(1) - cost);
-    auto make_rule_binding = [&](const RuleEdge& edge)
+    auto make_rule_binding = [&]<f::RelationKind R>(ygg::Index<fd::Rule<R>> rule, const ygg::IndexList<f::Object>& objects)
     {
-        auto binding_ptr = m_workspace.datalog_builder.template get_builder<f::RelationBinding<fd::Rule>>();
+        auto binding_ptr = m_workspace.datalog_builder.template get_builder<f::RelationBinding<fd::Rule<R>>>();
         auto& binding = *binding_ptr;
         binding.clear();
-        binding.relation = edge.rule;
-        binding.objects = edge.objects;
+        binding.relation = rule;
+        binding.objects = objects;
         f::canonicalize(binding);
         return m_workspace.workspace_repository.get_or_create(binding).first;
     };
@@ -312,9 +303,9 @@ void LMCutHeuristic<LiftedTag>::apply_residual_costs()
     };
 
     for (const auto& [edge, used_cost] : m_rule_edge_used_costs)
-        m_workspace.cost_policy.set_cost(make_rule_binding(edge), used_cost);
+        m_workspace.cost_policy.set_cost(make_rule_binding(edge.rule, edge.objects), used_cost);
     for (const auto& [edge, used_cost] : m_numeric_edge_used_costs)
-        m_workspace.cost_policy.set_cost(make_rule_binding(RuleEdge { edge.rule, edge.rule_objects }), make_function_binding(edge), edge.interval, used_cost);
+        m_workspace.cost_policy.set_cost(make_rule_binding(edge.rule, edge.rule_objects), make_function_binding(edge), edge.interval, used_cost);
 }
 
 datalog::Cost LMCutHeuristic<LiftedTag>::get_numeric_cost(NumericNode node) const noexcept
@@ -323,14 +314,15 @@ datalog::Cost LMCutHeuristic<LiftedTag>::get_numeric_cost(NumericNode node) cons
     return annotation ? datalog::get_cost(*annotation) : datalog::Cost(0);
 }
 
-const datalog::WitnessAnnotation<LiftedTag>* LMCutHeuristic<LiftedTag>::get_numeric_witness(NumericNode node) const noexcept
+const datalog::WitnessAnnotation<LiftedTag, f::FunctionTag>* LMCutHeuristic<LiftedTag>::get_numeric_witness(NumericNode node) const noexcept
 {
     const auto* annotation = m_workspace.numeric_and_annot.find(node.binding, node.interval);
-    return annotation ? std::get_if<datalog::WitnessAnnotation<LiftedTag>>(annotation) : nullptr;
+    return annotation ? std::get_if<datalog::WitnessAnnotation<LiftedTag, f::FunctionTag>>(annotation) : nullptr;
 }
 
+template<f::RelationKind R>
 const std::vector<LMCutHeuristic<LiftedTag>::Precondition>&
-LMCutHeuristic<LiftedTag>::get_witness_max_preconditions(const datalog::WitnessAnnotation<LiftedTag>& witness, datalog::Cost edge_cost)
+LMCutHeuristic<LiftedTag>::get_witness_max_preconditions(const datalog::WitnessAnnotation<LiftedTag, R>& witness, datalog::Cost edge_cost)
 {
     if (m_max_precondition_depth == m_max_precondition_buffers.size())
         m_max_precondition_buffers.emplace_back();
@@ -357,7 +349,7 @@ LMCutHeuristic<LiftedTag>::get_witness_max_preconditions(const datalog::WitnessA
 }
 
 const std::vector<LMCutHeuristic<LiftedTag>::Precondition>&
-LMCutHeuristic<LiftedTag>::get_numeric_witness_max_preconditions(const datalog::WitnessAnnotation<LiftedTag>& witness,
+LMCutHeuristic<LiftedTag>::get_numeric_witness_max_preconditions(const datalog::WitnessAnnotation<LiftedTag, f::FunctionTag>& witness,
                                                                  NumericNode node,
                                                                  datalog::Cost edge_cost)
 {

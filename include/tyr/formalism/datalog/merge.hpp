@@ -18,9 +18,6 @@
 #ifndef TYR_FORMALISM_DATALOG_MERGE_HPP_
 #define TYR_FORMALISM_DATALOG_MERGE_HPP_
 
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
-#include <yggdrasil/containers/tuple.hpp>
 #include "tyr/formalism/datalog/builder.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/indices.hpp"
@@ -30,6 +27,10 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/indices.hpp"
 #include "tyr/formalism/views.hpp"
+
+#include <yggdrasil/containers/tuple.hpp>
+#include <yggdrasil/semantics/equal_to.hpp>
+#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::datalog
 {
@@ -108,7 +109,8 @@ std::pair<ConjunctiveConditionView, bool> merge_d2d(ConjunctiveConditionView ele
 
 std::pair<GroundConjunctiveConditionView, bool> merge_d2d(GroundConjunctiveConditionView element, MergeContext& context);
 
-std::pair<RuleView, bool> merge_d2d(RuleView element, MergeContext& context);
+template<RelationKind R>
+std::pair<RuleView<R>, bool> merge_d2d(RuleView<R> element, MergeContext& context);
 
 // Common
 
@@ -454,26 +456,21 @@ inline std::pair<GroundConjunctiveConditionView, bool> merge_d2d(GroundConjuncti
     return context.destination.get_or_create(conj_cond);
 }
 
-inline std::pair<RuleView, bool> merge_d2d(RuleView element, MergeContext& context)
+inline auto merge_rule_head(AtomView<FluentTag> head, MergeContext& context) { return merge_d2d(head, context).first.get_index(); }
+
+inline auto merge_rule_head(NumericEffectOperatorView<FluentTag> head, MergeContext& context) { return merge_d2d(head, context); }
+
+template<RelationKind R>
+std::pair<RuleView<R>, bool> merge_d2d(RuleView<R> element, MergeContext& context)
 {
-    auto rule_ptr = context.builder.template get_builder<Rule>();
+    auto rule_ptr = context.builder.template get_builder<Rule<R>>();
     auto& rule = *rule_ptr;
     rule.clear();
 
     for (const auto variable : element.get_variables())
         rule.variables.push_back(merge_d2d(variable, context).first.get_index());
     rule.body = merge_d2d(element.get_body(), context).first.get_index();
-    rule.head = visit(
-        [&](auto&& head) -> decltype(rule.head)
-        {
-            using Head = std::decay_t<decltype(head)>;
-
-            if constexpr (std::is_same_v<Head, AtomView<FluentTag>>)
-                return merge_d2d(head, context).first.get_index();
-            else
-                return merge_d2d(head, context);
-        },
-        element.get_head());
+    rule.head = merge_rule_head(element.get_head(), context);
     for (const auto metric_effect : element.get_metric_effects())
         rule.metric_effects.push_back(merge_d2d(metric_effect, context));
 
@@ -521,30 +518,30 @@ extern template std::pair<GroundFunctionTermValueView<StaticTag>, bool> merge_d2
 extern template std::pair<GroundFunctionTermValueView<FluentTag>, bool> merge_d2d(GroundFunctionTermValueView<FluentTag> element, MergeContext& context);
 
 extern template std::pair<UnaryOperatorView<Sub, ygg::Data<FunctionExpression>>, bool> merge_d2d(UnaryOperatorView<Sub, ygg::Data<FunctionExpression>> element,
-                                                                                            MergeContext& context);
+                                                                                                 MergeContext& context);
 extern template std::pair<UnaryOperatorView<Sub, ygg::Data<GroundFunctionExpression>>, bool>
 merge_d2d(UnaryOperatorView<Sub, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
 
 extern template std::pair<BinaryOperatorView<Eq, ygg::Data<FunctionExpression>>, bool> merge_d2d(BinaryOperatorView<Eq, ygg::Data<FunctionExpression>> element,
-                                                                                            MergeContext& context);
+                                                                                                 MergeContext& context);
 extern template std::pair<BinaryOperatorView<Ne, ygg::Data<FunctionExpression>>, bool> merge_d2d(BinaryOperatorView<Ne, ygg::Data<FunctionExpression>> element,
-                                                                                            MergeContext& context);
+                                                                                                 MergeContext& context);
 extern template std::pair<BinaryOperatorView<Ge, ygg::Data<FunctionExpression>>, bool> merge_d2d(BinaryOperatorView<Ge, ygg::Data<FunctionExpression>> element,
-                                                                                            MergeContext& context);
+                                                                                                 MergeContext& context);
 extern template std::pair<BinaryOperatorView<Gt, ygg::Data<FunctionExpression>>, bool> merge_d2d(BinaryOperatorView<Gt, ygg::Data<FunctionExpression>> element,
-                                                                                            MergeContext& context);
+                                                                                                 MergeContext& context);
 extern template std::pair<BinaryOperatorView<Le, ygg::Data<FunctionExpression>>, bool> merge_d2d(BinaryOperatorView<Le, ygg::Data<FunctionExpression>> element,
-                                                                                            MergeContext& context);
+                                                                                                 MergeContext& context);
 extern template std::pair<BinaryOperatorView<Lt, ygg::Data<FunctionExpression>>, bool> merge_d2d(BinaryOperatorView<Lt, ygg::Data<FunctionExpression>> element,
-                                                                                            MergeContext& context);
-extern template std::pair<BinaryOperatorView<Add, ygg::Data<FunctionExpression>>, bool> merge_d2d(BinaryOperatorView<Add, ygg::Data<FunctionExpression>> element,
-                                                                                             MergeContext& context);
-extern template std::pair<BinaryOperatorView<Sub, ygg::Data<FunctionExpression>>, bool> merge_d2d(BinaryOperatorView<Sub, ygg::Data<FunctionExpression>> element,
-                                                                                             MergeContext& context);
-extern template std::pair<BinaryOperatorView<Mul, ygg::Data<FunctionExpression>>, bool> merge_d2d(BinaryOperatorView<Mul, ygg::Data<FunctionExpression>> element,
-                                                                                             MergeContext& context);
-extern template std::pair<BinaryOperatorView<Div, ygg::Data<FunctionExpression>>, bool> merge_d2d(BinaryOperatorView<Div, ygg::Data<FunctionExpression>> element,
-                                                                                             MergeContext& context);
+                                                                                                 MergeContext& context);
+extern template std::pair<BinaryOperatorView<Add, ygg::Data<FunctionExpression>>, bool>
+merge_d2d(BinaryOperatorView<Add, ygg::Data<FunctionExpression>> element, MergeContext& context);
+extern template std::pair<BinaryOperatorView<Sub, ygg::Data<FunctionExpression>>, bool>
+merge_d2d(BinaryOperatorView<Sub, ygg::Data<FunctionExpression>> element, MergeContext& context);
+extern template std::pair<BinaryOperatorView<Mul, ygg::Data<FunctionExpression>>, bool>
+merge_d2d(BinaryOperatorView<Mul, ygg::Data<FunctionExpression>> element, MergeContext& context);
+extern template std::pair<BinaryOperatorView<Div, ygg::Data<FunctionExpression>>, bool>
+merge_d2d(BinaryOperatorView<Div, ygg::Data<FunctionExpression>> element, MergeContext& context);
 extern template std::pair<BinaryOperatorView<Eq, ygg::Data<GroundFunctionExpression>>, bool>
 merge_d2d(BinaryOperatorView<Eq, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
 extern template std::pair<BinaryOperatorView<Ne, ygg::Data<GroundFunctionExpression>>, bool>
@@ -567,17 +564,18 @@ extern template std::pair<BinaryOperatorView<Div, ygg::Data<GroundFunctionExpres
 merge_d2d(BinaryOperatorView<Div, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
 
 extern template std::pair<MultiOperatorView<Add, ygg::Data<FunctionExpression>>, bool> merge_d2d(MultiOperatorView<Add, ygg::Data<FunctionExpression>> element,
-                                                                                            MergeContext& context);
+                                                                                                 MergeContext& context);
 extern template std::pair<MultiOperatorView<Mul, ygg::Data<FunctionExpression>>, bool> merge_d2d(MultiOperatorView<Mul, ygg::Data<FunctionExpression>> element,
-                                                                                            MergeContext& context);
+                                                                                                 MergeContext& context);
 extern template std::pair<MultiOperatorView<Add, ygg::Data<GroundFunctionExpression>>, bool>
 merge_d2d(MultiOperatorView<Add, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
 extern template std::pair<MultiOperatorView<Mul, ygg::Data<GroundFunctionExpression>>, bool>
 merge_d2d(MultiOperatorView<Mul, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
 
-extern template ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>> merge_d2d(ArithmeticOperatorView<ygg::Data<FunctionExpression>> element, MergeContext& context);
-extern template ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>> merge_d2d(ArithmeticOperatorView<ygg::Data<GroundFunctionExpression>> element,
-                                                                                   MergeContext& context);
+extern template ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>> merge_d2d(ArithmeticOperatorView<ygg::Data<FunctionExpression>> element,
+                                                                                       MergeContext& context);
+extern template ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>
+merge_d2d(ArithmeticOperatorView<ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
 
 extern template std::pair<NumericEffectView<Assign, FluentTag>, bool> merge_d2d(NumericEffectView<Assign, FluentTag> element, MergeContext& context);
 extern template std::pair<NumericEffectView<Increase, FluentTag>, bool> merge_d2d(NumericEffectView<Increase, FluentTag> element, MergeContext& context);
@@ -585,6 +583,9 @@ extern template std::pair<NumericEffectView<Decrease, FluentTag>, bool> merge_d2
 extern template std::pair<NumericEffectView<ScaleUp, FluentTag>, bool> merge_d2d(NumericEffectView<ScaleUp, FluentTag> element, MergeContext& context);
 extern template std::pair<NumericEffectView<ScaleDown, FluentTag>, bool> merge_d2d(NumericEffectView<ScaleDown, FluentTag> element, MergeContext& context);
 extern template ygg::Data<NumericEffectOperator<FluentTag>> merge_d2d(NumericEffectOperatorView<FluentTag> element, MergeContext& context);
+
+extern template std::pair<RuleView<PredicateTag>, bool> merge_d2d(RuleView<PredicateTag> element, MergeContext& context);
+extern template std::pair<RuleView<FunctionTag>, bool> merge_d2d(RuleView<FunctionTag> element, MergeContext& context);
 }
 
 #endif

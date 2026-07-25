@@ -7,7 +7,7 @@
 
 namespace fd = tyr::formalism::datalog;
 
-using Entity = fd::Rule;
+using Entity = fd::Rule<tyr::formalism::PredicateTag>;
 using Index = ygg::Index<Entity>;
 using Data = ygg::Data<Entity>;
 using View = ygg::View<Index, fd::Repository>;
@@ -16,7 +16,7 @@ static_assert(std::constructible_from<Index, ygg::uint_t>);
 static_assert(std::totally_ordered<Index>);
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
-static_assert(std::same_as<View, fd::RuleView>);
+static_assert(std::same_as<View, fd::RuleView<tyr::formalism::PredicateTag>>);
 static_assert(std::constructible_from<Data,
                                       fd::VariableViewList,
                                       fd::ConjunctiveConditionView,

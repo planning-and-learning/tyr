@@ -61,10 +61,11 @@ private:
     void extract_relaxed_plan_and_preferred_actions(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term,
                                                     const StateContext<GroundTag>& state_context);
     void extract_relaxed_plan_and_preferred_actions(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term,
-                                                    const datalog::Annotation<GroundTag>& annotation,
+                                                    const datalog::Annotation<GroundTag, ::tyr::formalism::FunctionTag>& annotation,
                                                     const StateContext<GroundTag>& state_context);
     void extract_numeric_constraint_support(::tyr::formalism::datalog::GroundBooleanOperatorView constraint, const StateContext<GroundTag>& state_context);
-    void extract_relaxed_plan_and_preferred_actions(const datalog::WitnessAnnotation<GroundTag>& witness, const StateContext<GroundTag>& state_context);
+    template<::tyr::formalism::RelationKind R>
+    void extract_relaxed_plan_and_preferred_actions(const datalog::WitnessAnnotation<GroundTag, R>& witness, const StateContext<GroundTag>& state_context);
 
 private:
     std::vector<boost::dynamic_bitset<>> m_markings;

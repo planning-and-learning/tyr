@@ -22,8 +22,10 @@
 #include "tyr/datalog/lifted/policies/annotation_types.hpp"
 #include "tyr/datalog/policies/cost.hpp"
 #include "tyr/datalog/policies/cost_concept.hpp"
+#include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
+#include <cassert>
 #include <span>
 #include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
@@ -33,50 +35,97 @@ namespace tyr::datalog
 {
 
 template<>
-class RuleCostOverridePolicy<LiftedTag> : public RuleCostOverrideStorage<LiftedTag>
+class RuleCostOverridePolicy<LiftedTag>
 {
 public:
-    using Base = RuleCostOverrideStorage<LiftedTag>;
-    using RuleKey = Base::RuleKey;
-    using NumericKey = Base::NumericKey;
-    using CostMap = Base::CostMap;
-    using NumericTransitionCostMap = Base::NumericTransitionCostMap;
-
     RuleCostOverridePolicy() = default;
-    explicit RuleCostOverridePolicy(CostMap costs);
 
-    Cost get_cost(RuleKey rule_binding) const;
-    Cost get_cost(RuleKey rule_binding, NumericKey binding, ygg::ClosedInterval<ygg::float_t> interval) const;
+    template<::tyr::formalism::RelationKind R>
+    Cost get_cost(::tyr::formalism::datalog::RuleBindingView<R> rule_binding) const;
+
+    template<::tyr::formalism::RelationKind R>
+    Cost get_cost(::tyr::formalism::datalog::RuleBindingView<R> rule_binding,
+                  ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding,
+                  ygg::ClosedInterval<ygg::float_t> interval) const;
 
     void clear() noexcept;
 
-    using Base::set_cost;
-    void set_prefix_cost(::tyr::formalism::datalog::RuleView rule, std::span<const ygg::Index<::tyr::formalism::Object>> objects, Cost cost);
+    template<::tyr::formalism::RelationKind R>
+    void set_cost(::tyr::formalism::datalog::RuleBindingView<R> rule_binding, Cost cost)
+    {
+        storage(R {}).set_cost(rule_binding, cost);
+    }
 
-    using Base::get_costs;
-    using Base::get_numeric_transition_costs;
+    template<::tyr::formalism::RelationKind R>
+    void set_cost(::tyr::formalism::datalog::RuleBindingView<R> rule_binding,
+                  ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding,
+                  ygg::ClosedInterval<ygg::float_t> interval,
+                  Cost cost)
+    {
+        storage(R {}).set_cost(rule_binding, binding, interval, cost);
+    }
 
-    size_t get_num_prefix_costs() const noexcept { return m_prefix_costs.size(); }
+    template<::tyr::formalism::RelationKind R>
+    void set_prefix_cost(::tyr::formalism::datalog::RuleView<R> rule, std::span<const ygg::Index<::tyr::formalism::Object>> objects, Cost cost);
+
+    size_t get_num_prefix_costs() const noexcept { return m_predicate_prefix_costs.size() + m_function_prefix_costs.size(); }
 
 private:
+    template<::tyr::formalism::RelationKind R>
     struct PrefixCost
     {
-        ::tyr::formalism::datalog::RuleView rule;
+        ::tyr::formalism::datalog::RuleView<R> rule;
         ygg::IndexList<::tyr::formalism::Object> objects;
         Cost cost;
     };
 
-    CostMap::const_iterator find_override(::tyr::formalism::datalog::RuleBindingView rule_binding) const;
+    auto& storage(::tyr::formalism::PredicateTag) noexcept { return m_predicate_storage; }
+    auto& storage(::tyr::formalism::FunctionTag) noexcept { return m_function_storage; }
+    const auto& storage(::tyr::formalism::PredicateTag) const noexcept { return m_predicate_storage; }
+    const auto& storage(::tyr::formalism::FunctionTag) const noexcept { return m_function_storage; }
 
-    NumericTransitionCostMap::const_iterator
-    find_numeric_transition_override(::tyr::formalism::datalog::RuleBindingView rule_binding,
-                                     ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding,
-                                     ygg::ClosedInterval<ygg::float_t> interval) const;
+    auto& prefix_costs(::tyr::formalism::PredicateTag) noexcept { return m_predicate_prefix_costs; }
+    auto& prefix_costs(::tyr::formalism::FunctionTag) noexcept { return m_function_prefix_costs; }
+    const auto& prefix_costs(::tyr::formalism::PredicateTag) const noexcept { return m_predicate_prefix_costs; }
+    const auto& prefix_costs(::tyr::formalism::FunctionTag) const noexcept { return m_function_prefix_costs; }
 
-    const Cost* find_prefix_override(::tyr::formalism::datalog::RuleBindingView rule_binding) const;
+    template<::tyr::formalism::RelationKind R>
+    auto find_override(::tyr::formalism::datalog::RuleBindingView<R> rule_binding) const;
 
-    std::vector<PrefixCost> m_prefix_costs;
+    template<::tyr::formalism::RelationKind R>
+    auto find_numeric_transition_override(::tyr::formalism::datalog::RuleBindingView<R> rule_binding,
+                                          ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding,
+                                          ygg::ClosedInterval<ygg::float_t> interval) const;
+
+    template<::tyr::formalism::RelationKind R>
+    const Cost* find_prefix_override(::tyr::formalism::datalog::RuleBindingView<R> rule_binding) const;
+
+    RuleCostOverrideStorage<LiftedTag, ::tyr::formalism::PredicateTag> m_predicate_storage;
+    RuleCostOverrideStorage<LiftedTag, ::tyr::formalism::FunctionTag> m_function_storage;
+    std::vector<PrefixCost<::tyr::formalism::PredicateTag>> m_predicate_prefix_costs;
+    std::vector<PrefixCost<::tyr::formalism::FunctionTag>> m_function_prefix_costs;
 };
+
+template<::tyr::formalism::RelationKind R>
+void set_rule_cost(RuleCostPolicy<LiftedTag>& policy,
+                   ::tyr::formalism::datalog::RuleView<R> rule,
+                   std::span<const ygg::Index<::tyr::formalism::Object>> objects,
+                   Cost cost,
+                   ::tyr::formalism::datalog::GrounderContext& grounder_context)
+{
+    assert(rule.get_arity() == objects.size());
+    policy.set_cost(::tyr::formalism::datalog::ground_binding(rule, grounder_context).first, cost);
+}
+
+template<::tyr::formalism::RelationKind R>
+void set_rule_cost(RuleCostOverridePolicy<LiftedTag>& policy,
+                   ::tyr::formalism::datalog::RuleView<R> rule,
+                   std::span<const ygg::Index<::tyr::formalism::Object>> objects,
+                   Cost cost,
+                   ::tyr::formalism::datalog::GrounderContext&)
+{
+    policy.set_prefix_cost(rule, objects, cost);
+}
 
 static_assert(RuleCostPolicyConcept<RuleCostPolicy<LiftedTag>, LiftedTag>);
 static_assert(RuleCostPolicyConcept<RuleCostOverridePolicy<LiftedTag>, LiftedTag>);

@@ -31,15 +31,15 @@
 namespace tyr::datalog
 {
 
-template<TaskKind Kind>
-struct NumericTransitionCostKey : ygg::comparison::Mixin<NumericTransitionCostKey<Kind>>
+template<TaskKind Kind, ::tyr::formalism::RelationKind R>
+struct NumericTransitionCostKey : ygg::comparison::Mixin<NumericTransitionCostKey<Kind, R>>
 {
-    WitnessRuleKeyT<Kind> rule_key;
+    WitnessRuleKeyT<Kind, R> rule_key;
     NumericSupportKeyT<Kind> numeric_key;
     ygg::ClosedInterval<ygg::float_t> interval;
 
     NumericTransitionCostKey() = default;
-    NumericTransitionCostKey(WitnessRuleKeyT<Kind> rule_key, NumericSupportKeyT<Kind> numeric_key, ygg::ClosedInterval<ygg::float_t> interval) :
+    NumericTransitionCostKey(WitnessRuleKeyT<Kind, R> rule_key, NumericSupportKeyT<Kind> numeric_key, ygg::ClosedInterval<ygg::float_t> interval) :
         rule_key(rule_key),
         numeric_key(numeric_key),
         interval(interval)
@@ -53,22 +53,36 @@ template<TaskKind Kind>
 class RuleCostPolicy
 {
 public:
-    Cost get_cost(WitnessRuleKeyT<Kind>) const noexcept { return Cost(0); }
-    Cost get_cost(WitnessRuleKeyT<Kind>, NumericSupportKeyT<Kind>, ygg::ClosedInterval<ygg::float_t>) const noexcept { return Cost(0); }
+    template<typename RuleKey>
+    Cost get_cost(RuleKey) const noexcept
+    {
+        return Cost(0);
+    }
+    template<typename RuleKey>
+    Cost get_cost(RuleKey, NumericSupportKeyT<Kind>, ygg::ClosedInterval<ygg::float_t>) const noexcept
+    {
+        return Cost(0);
+    }
 
     void clear() noexcept {}
-    void set_cost(WitnessRuleKeyT<Kind>, Cost) noexcept {}
-    void set_cost(WitnessRuleKeyT<Kind>, NumericSupportKeyT<Kind>, ygg::ClosedInterval<ygg::float_t>, Cost) noexcept {}
+    template<typename RuleKey>
+    void set_cost(RuleKey, Cost) noexcept
+    {
+    }
+    template<typename RuleKey>
+    void set_cost(RuleKey, NumericSupportKeyT<Kind>, ygg::ClosedInterval<ygg::float_t>, Cost) noexcept
+    {
+    }
 };
 
-template<TaskKind Kind>
+template<TaskKind Kind, ::tyr::formalism::RelationKind R>
 class RuleCostOverrideStorage
 {
 public:
-    using RuleKey = WitnessRuleKeyT<Kind>;
+    using RuleKey = WitnessRuleKeyT<Kind, R>;
     using NumericKey = NumericSupportKeyT<Kind>;
     using CostMap = ygg::UnorderedMap<RuleKey, Cost>;
-    using NumericTransitionCostMap = ygg::UnorderedMap<NumericTransitionCostKey<Kind>, Cost>;
+    using NumericTransitionCostMap = ygg::UnorderedMap<NumericTransitionCostKey<Kind, R>, Cost>;
 
     RuleCostOverrideStorage() = default;
     explicit RuleCostOverrideStorage(CostMap costs) : m_costs(std::move(costs)), m_numeric_transition_costs() {}
@@ -82,7 +96,7 @@ public:
 
     Cost get_cost(RuleKey rule_key, NumericKey numeric_key, ygg::ClosedInterval<ygg::float_t> interval) const
     {
-        if (const auto it = m_numeric_transition_costs.find(NumericTransitionCostKey<Kind> { rule_key, numeric_key, interval });
+        if (const auto it = m_numeric_transition_costs.find(NumericTransitionCostKey<Kind, R> { rule_key, numeric_key, interval });
             it != m_numeric_transition_costs.end())
             return it->second;
         return Cost(0);
@@ -98,7 +112,7 @@ public:
 
     void set_cost(RuleKey rule_key, NumericKey numeric_key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost)
     {
-        m_numeric_transition_costs.insert_or_assign(NumericTransitionCostKey<Kind> { rule_key, numeric_key, interval }, cost);
+        m_numeric_transition_costs.insert_or_assign(NumericTransitionCostKey<Kind, R> { rule_key, numeric_key, interval }, cost);
     }
 
     const CostMap& get_costs() const noexcept { return m_costs; }
@@ -111,10 +125,52 @@ protected:
 };
 
 template<TaskKind Kind>
-class RuleCostOverridePolicy : public RuleCostOverrideStorage<Kind>
+class RuleCostOverridePolicy
 {
 public:
-    using RuleCostOverrideStorage<Kind>::RuleCostOverrideStorage;
+    template<typename RuleKey>
+    Cost get_cost(RuleKey rule_key) const
+    {
+        return storage_for(rule_key).get_cost(rule_key);
+    }
+
+    template<typename RuleKey>
+    Cost get_cost(RuleKey rule_key, NumericSupportKeyT<Kind> numeric_key, ygg::ClosedInterval<ygg::float_t> interval) const
+    {
+        return storage_for(rule_key).get_cost(rule_key, numeric_key, interval);
+    }
+
+    void clear() noexcept
+    {
+        predicate_storage.clear();
+        function_storage.clear();
+    }
+
+    template<typename RuleKey>
+    void set_cost(RuleKey rule_key, Cost cost)
+    {
+        storage_for(rule_key).set_cost(rule_key, cost);
+    }
+
+    template<typename RuleKey>
+    void set_cost(RuleKey rule_key, NumericSupportKeyT<Kind> numeric_key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost)
+    {
+        storage_for(rule_key).set_cost(rule_key, numeric_key, interval, cost);
+    }
+
+protected:
+    auto& storage(::tyr::formalism::PredicateTag) noexcept { return predicate_storage; }
+    auto& storage(::tyr::formalism::FunctionTag) noexcept { return function_storage; }
+    const auto& storage(::tyr::formalism::PredicateTag) const noexcept { return predicate_storage; }
+    const auto& storage(::tyr::formalism::FunctionTag) const noexcept { return function_storage; }
+
+    auto& storage_for(WitnessRuleKeyT<Kind, ::tyr::formalism::PredicateTag>) noexcept { return predicate_storage; }
+    auto& storage_for(WitnessRuleKeyT<Kind, ::tyr::formalism::FunctionTag>) noexcept { return function_storage; }
+    const auto& storage_for(WitnessRuleKeyT<Kind, ::tyr::formalism::PredicateTag>) const noexcept { return predicate_storage; }
+    const auto& storage_for(WitnessRuleKeyT<Kind, ::tyr::formalism::FunctionTag>) const noexcept { return function_storage; }
+
+    RuleCostOverrideStorage<Kind, ::tyr::formalism::PredicateTag> predicate_storage;
+    RuleCostOverrideStorage<Kind, ::tyr::formalism::FunctionTag> function_storage;
 };
 
 }

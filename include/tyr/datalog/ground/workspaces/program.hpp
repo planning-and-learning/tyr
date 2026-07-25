@@ -38,15 +38,24 @@
 namespace tyr::datalog
 {
 
+template<::tyr::formalism::RelationKind R>
+struct GroundRuleDependencies
+{
+    ygg::UnorderedMap<::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag>, std::vector<::tyr::formalism::datalog::GroundRuleView<R>>>
+        fluent_precondition_to_rules;
+    ygg::UnorderedMap<::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag>, std::vector<::tyr::formalism::datalog::GroundRuleView<R>>>
+        fluent_function_term_to_rules;
+};
+
 template<>
 struct ConstProgramWorkspace<GroundTag>
 {
     ::tyr::formalism::datalog::ProgramView<GroundTag> program;
+    GroundRuleDependencies<::tyr::formalism::PredicateTag> predicate_rules;
+    GroundRuleDependencies<::tyr::formalism::FunctionTag> function_rules;
 
-    ygg::UnorderedMap<::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag>, std::vector<::tyr::formalism::datalog::GroundRuleView>>
-        fluent_precondition_to_rules;
-    ygg::UnorderedMap<::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag>, std::vector<::tyr::formalism::datalog::GroundRuleView>>
-        fluent_function_term_to_rules;
+    template<::tyr::formalism::RelationKind R>
+    const auto& get_dependencies() const noexcept;
 
     explicit ConstProgramWorkspace(::tyr::formalism::datalog::ProgramView<GroundTag> program);
 };
@@ -65,7 +74,8 @@ struct ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>
     SelectedFunctionAnnotations<GroundTag> numeric_and_annot;
     TP tp;
     CP cost_policy;
-    RuleWorkspace<GroundTag> rules;
+    RuleWorkspace<GroundTag, ::tyr::formalism::PredicateTag> predicate_rules;
+    RuleWorkspace<GroundTag, ::tyr::formalism::FunctionTag> function_rules;
 
     explicit ProgramWorkspace(const ConstProgramWorkspace<GroundTag>& cws,
                               OrAP or_ap_ = OrAP(),
@@ -80,7 +90,8 @@ struct ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>
         numeric_and_annot(),
         tp(std::move(tp_)),
         cost_policy(std::move(cost_policy_)),
-        rules(cws.program)
+        predicate_rules(cws.program),
+        function_rules(cws.program)
     {
         facts.fluent_atoms.reserve(cws.program.template get_atoms<::tyr::formalism::FluentTag>().size());
     }
@@ -89,6 +100,18 @@ struct ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>
 
     void clear_costs() { cost_policy.clear(); }
 };
+
+template<>
+inline const auto& ConstProgramWorkspace<GroundTag>::get_dependencies<::tyr::formalism::PredicateTag>() const noexcept
+{
+    return predicate_rules;
+}
+
+template<>
+inline const auto& ConstProgramWorkspace<GroundTag>::get_dependencies<::tyr::formalism::FunctionTag>() const noexcept
+{
+    return function_rules;
+}
 
 }
 

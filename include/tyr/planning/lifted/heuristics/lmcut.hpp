@@ -43,9 +43,7 @@ struct LiftedLMCutNumericNode : ygg::comparison::Mixin<LiftedLMCutNumericNode>
     ygg::ClosedInterval<ygg::float_t> interval;
 
     LiftedLMCutNumericNode() = default;
-    LiftedLMCutNumericNode(
-        ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding,
-        ygg::ClosedInterval<ygg::float_t> interval) :
+    LiftedLMCutNumericNode(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding, ygg::ClosedInterval<ygg::float_t> interval) :
         binding(binding),
         interval(interval)
     {
@@ -56,11 +54,11 @@ struct LiftedLMCutNumericNode : ygg::comparison::Mixin<LiftedLMCutNumericNode>
 
 struct LiftedLMCutRuleEdge : ygg::comparison::Mixin<LiftedLMCutRuleEdge>
 {
-    ygg::Index<::tyr::formalism::datalog::Rule> rule;
+    ygg::Index<::tyr::formalism::datalog::Rule<::tyr::formalism::PredicateTag>> rule;
     ygg::IndexList<::tyr::formalism::Object> objects;
 
     LiftedLMCutRuleEdge() = default;
-    LiftedLMCutRuleEdge(ygg::Index<::tyr::formalism::datalog::Rule> rule, ygg::IndexList<::tyr::formalism::Object> objects) :
+    LiftedLMCutRuleEdge(ygg::Index<::tyr::formalism::datalog::Rule<::tyr::formalism::PredicateTag>> rule, ygg::IndexList<::tyr::formalism::Object> objects) :
         rule(rule),
         objects(std::move(objects))
     {
@@ -71,14 +69,14 @@ struct LiftedLMCutRuleEdge : ygg::comparison::Mixin<LiftedLMCutRuleEdge>
 
 struct LiftedLMCutNumericEdge : ygg::comparison::Mixin<LiftedLMCutNumericEdge>
 {
-    ygg::Index<::tyr::formalism::datalog::Rule> rule;
+    ygg::Index<::tyr::formalism::datalog::Rule<::tyr::formalism::FunctionTag>> rule;
     ygg::IndexList<::tyr::formalism::Object> rule_objects;
     ygg::Index<::tyr::formalism::Function<::tyr::formalism::FluentTag>> function;
     ygg::IndexList<::tyr::formalism::Object> function_objects;
     ygg::ClosedInterval<ygg::float_t> interval;
 
     LiftedLMCutNumericEdge() = default;
-    LiftedLMCutNumericEdge(ygg::Index<::tyr::formalism::datalog::Rule> rule,
+    LiftedLMCutNumericEdge(ygg::Index<::tyr::formalism::datalog::Rule<::tyr::formalism::FunctionTag>> rule,
                            ygg::IndexList<::tyr::formalism::Object> rule_objects,
                            ygg::Index<::tyr::formalism::Function<::tyr::formalism::FluentTag>> function,
                            ygg::IndexList<::tyr::formalism::Object> function_objects,
@@ -128,27 +126,31 @@ private:
     using NumericEdge = LiftedLMCutNumericEdge;
     using Precondition = std::variant<PredicateBinding, NumericNode>;
 
-    RuleEdge make_rule_edge(const datalog::WitnessAnnotation<LiftedTag>& witness) const;
-    NumericEdge make_numeric_edge(const datalog::WitnessAnnotation<LiftedTag>& witness, NumericNode node) const;
+    RuleEdge make_rule_edge(const datalog::WitnessAnnotation<LiftedTag, ::tyr::formalism::PredicateTag>& witness) const;
+    NumericEdge make_numeric_edge(const datalog::WitnessAnnotation<LiftedTag, ::tyr::formalism::FunctionTag>& witness, NumericNode node) const;
     datalog::Cost get_residual_cost(ActionBinding action_binding) const;
-    datalog::Cost get_witness_body_cost(const datalog::WitnessAnnotation<LiftedTag>& witness);
-    datalog::Cost get_witness_edge_residual_cost(const datalog::WitnessAnnotation<LiftedTag>& witness);
+    template<::tyr::formalism::RelationKind R>
+    datalog::Cost get_witness_body_cost(const datalog::WitnessAnnotation<LiftedTag, R>& witness);
+    template<::tyr::formalism::RelationKind R>
+    datalog::Cost get_witness_edge_residual_cost(const datalog::WitnessAnnotation<LiftedTag, R>& witness);
     bool is_target_support(const datalog::NumericSupport<LiftedTag>& support, NumericNode node) const noexcept;
     datalog::Cost get_expanded_numeric_support_cost(const datalog::NumericSupport<LiftedTag>& support) const;
     void append_expanded_numeric_support_preconditions(const datalog::NumericSupport<LiftedTag>& support,
                                                        datalog::Cost body_cost,
                                                        std::vector<Precondition>& result) const;
-    datalog::Cost get_numeric_witness_body_cost(const datalog::WitnessAnnotation<LiftedTag>& witness, NumericNode node);
-    datalog::Cost get_numeric_witness_edge_residual_cost(const datalog::WitnessAnnotation<LiftedTag>& witness, NumericNode node);
+    datalog::Cost get_numeric_witness_body_cost(const datalog::WitnessAnnotation<LiftedTag, ::tyr::formalism::FunctionTag>& witness, NumericNode node);
+    datalog::Cost get_numeric_witness_edge_residual_cost(const datalog::WitnessAnnotation<LiftedTag, ::tyr::formalism::FunctionTag>& witness, NumericNode node);
     void set_residual_cost(ActionBinding action_binding, datalog::Cost cost);
     void use_rule_edge_cost(RuleEdge edge, datalog::Cost cost);
     void use_numeric_edge_cost(NumericEdge edge, datalog::Cost cost);
     void apply_residual_costs();
     datalog::Cost get_numeric_cost(NumericNode node) const noexcept;
-    const datalog::WitnessAnnotation<LiftedTag>* get_numeric_witness(NumericNode node) const noexcept;
-    const std::vector<Precondition>& get_witness_max_preconditions(const datalog::WitnessAnnotation<LiftedTag>& witness, datalog::Cost edge_cost);
-    const std::vector<Precondition>&
-    get_numeric_witness_max_preconditions(const datalog::WitnessAnnotation<LiftedTag>& witness, NumericNode node, datalog::Cost edge_cost);
+    const datalog::WitnessAnnotation<LiftedTag, ::tyr::formalism::FunctionTag>* get_numeric_witness(NumericNode node) const noexcept;
+    template<::tyr::formalism::RelationKind R>
+    const std::vector<Precondition>& get_witness_max_preconditions(const datalog::WitnessAnnotation<LiftedTag, R>& witness, datalog::Cost edge_cost);
+    const std::vector<Precondition>& get_numeric_witness_max_preconditions(const datalog::WitnessAnnotation<LiftedTag, ::tyr::formalism::FunctionTag>& witness,
+                                                                           NumericNode node,
+                                                                           datalog::Cost edge_cost);
     void release_witness_max_preconditions();
     void mark_goal_zone(PredicateBinding binding);
     void mark_goal_zone(NumericNode node);

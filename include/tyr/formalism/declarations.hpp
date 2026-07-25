@@ -18,17 +18,16 @@
 #ifndef TYR_FORMALISM_DECLARATIONS_HPP_
 #define TYR_FORMALISM_DECLARATIONS_HPP_
 
-#include <yggdrasil/core/config.hpp>
-#include <yggdrasil/core/type_list.hpp>
+#include <tuple>
 #include <yggdrasil/containers/optional.hpp>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/containers/vector.hpp>
+#include <yggdrasil/core/config.hpp>
+#include <yggdrasil/core/type_list.hpp>
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
 #include <yggdrasil/formalism/declarations.hpp>
 #include <yggdrasil/semantics/comparison.hpp>
-
-#include <tuple>
 
 namespace ygg::formalism
 {
@@ -51,7 +50,6 @@ namespace tyr
 
 namespace tyr::formalism
 {
-
 
 /**
  * Tags to distinguish predicates and downstream types
@@ -275,6 +273,28 @@ template<FactKind T>
 struct Function
 {
 };
+
+/**
+ * The relation a rule of kind R derives, for a given fact kind.
+ */
+
+template<RelationKind R, FactKind T>
+struct Relation;
+
+template<FactKind T>
+struct Relation<PredicateTag, T>
+{
+    using type = Predicate<T>;
+};
+
+template<FactKind T>
+struct Relation<FunctionTag, T>
+{
+    using type = Function<T>;
+};
+
+template<RelationKind R, FactKind T>
+using RelationT = typename Relation<R, T>::type;
 
 struct PositiveTag
 {

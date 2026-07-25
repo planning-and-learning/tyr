@@ -42,9 +42,7 @@ struct GroundLMCutNumericNode : ygg::comparison::Mixin<GroundLMCutNumericNode>
     ygg::ClosedInterval<ygg::float_t> interval;
 
     GroundLMCutNumericNode() = default;
-    GroundLMCutNumericNode(
-        ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term,
-        ygg::ClosedInterval<ygg::float_t> interval) :
+    GroundLMCutNumericNode(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term, ygg::ClosedInterval<ygg::float_t> interval) :
         term(term),
         interval(interval)
     {
@@ -55,22 +53,22 @@ struct GroundLMCutNumericNode : ygg::comparison::Mixin<GroundLMCutNumericNode>
 
 struct GroundLMCutRuleEdge : ygg::comparison::Mixin<GroundLMCutRuleEdge>
 {
-    ::tyr::formalism::datalog::GroundRuleView rule;
+    ::tyr::formalism::datalog::GroundRuleView<::tyr::formalism::PredicateTag> rule;
 
     GroundLMCutRuleEdge() = default;
-    explicit GroundLMCutRuleEdge(::tyr::formalism::datalog::GroundRuleView rule) : rule(rule) {}
+    explicit GroundLMCutRuleEdge(::tyr::formalism::datalog::GroundRuleView<::tyr::formalism::PredicateTag> rule) : rule(rule) {}
 
     auto identifying_members() const noexcept { return std::tie(rule); }
 };
 
 struct GroundLMCutNumericEdge : ygg::comparison::Mixin<GroundLMCutNumericEdge>
 {
-    ::tyr::formalism::datalog::GroundRuleView rule;
+    ::tyr::formalism::datalog::GroundRuleView<::tyr::formalism::FunctionTag> rule;
     ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term;
     ygg::ClosedInterval<ygg::float_t> interval;
 
     GroundLMCutNumericEdge() = default;
-    GroundLMCutNumericEdge(::tyr::formalism::datalog::GroundRuleView rule,
+    GroundLMCutNumericEdge(::tyr::formalism::datalog::GroundRuleView<::tyr::formalism::FunctionTag> rule,
                            ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term,
                            ygg::ClosedInterval<ygg::float_t> interval) :
         rule(rule),
@@ -108,7 +106,7 @@ public:
     ygg::float_t extract_cost_and_set_preferred_actions_impl(const StateView<GroundTag>& state);
 
 private:
-    using Rule = ::tyr::formalism::datalog::GroundRuleView;
+    using Rule = ::tyr::formalism::datalog::GroundRuleView<::tyr::formalism::PredicateTag>;
     using CostKey = ::tyr::formalism::planning::ActionBindingView;
     using Atom = ::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag>;
 
@@ -118,18 +116,23 @@ private:
     using Precondition = std::variant<Atom, NumericNode>;
 
     datalog::Cost get_residual_cost(CostKey action_binding) const;
-    datalog::Cost get_residual_cost(Rule rule) const;
-    datalog::Cost get_witness_body_cost(const datalog::WitnessAnnotation<GroundTag>& witness) const;
-    datalog::Cost get_witness_edge_residual_cost(const datalog::WitnessAnnotation<GroundTag>& witness) const;
+    template<::tyr::formalism::RelationKind R>
+    datalog::Cost get_residual_cost(::tyr::formalism::datalog::GroundRuleView<R> rule) const;
+    template<::tyr::formalism::RelationKind R>
+    datalog::Cost get_witness_body_cost(const datalog::WitnessAnnotation<GroundTag, R>& witness) const;
+    template<::tyr::formalism::RelationKind R>
+    datalog::Cost get_witness_edge_residual_cost(const datalog::WitnessAnnotation<GroundTag, R>& witness) const;
     void set_residual_cost(CostKey action_binding, datalog::Cost cost);
-    void set_residual_cost(Rule rule, datalog::Cost cost);
+    template<::tyr::formalism::RelationKind R>
+    void set_residual_cost(::tyr::formalism::datalog::GroundRuleView<R> rule, datalog::Cost cost);
     void use_rule_edge_cost(Rule rule, datalog::Cost cost);
     void use_numeric_edge_cost(NumericEdge edge, datalog::Cost cost);
     ygg::float_t evaluate_impl(const StateView<GroundTag>& state);
     void apply_residual_costs();
     datalog::Cost get_numeric_cost(NumericNode node) const noexcept;
-    const datalog::WitnessAnnotation<GroundTag>* get_numeric_witness(NumericNode node) const noexcept;
-    const std::vector<Precondition>& get_witness_max_preconditions(const datalog::WitnessAnnotation<GroundTag>& witness, datalog::Cost edge_cost);
+    const datalog::WitnessAnnotation<GroundTag, ::tyr::formalism::FunctionTag>* get_numeric_witness(NumericNode node) const noexcept;
+    template<::tyr::formalism::RelationKind R>
+    const std::vector<Precondition>& get_witness_max_preconditions(const datalog::WitnessAnnotation<GroundTag, R>& witness, datalog::Cost edge_cost);
     void release_witness_max_preconditions();
     void mark_goal_zone(Atom atom);
     void mark_goal_zone(NumericNode node);

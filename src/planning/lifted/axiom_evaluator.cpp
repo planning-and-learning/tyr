@@ -112,11 +112,11 @@ void AxiomEvaluator<LiftedTag>::print_summary(size_t verbosity) const
     std::cout << "[Axiom evaluator] Summary" << std::endl;
     fmt::print(std::cout, "{}\n", m_workspace.statistics);
     auto axiom_evaluator_rule_statistics = std::vector<datalog::RuleStatistics> {};
-    for (const auto& ws_rule : m_workspace.rules)
+    for (const auto& ws_rule : m_workspace.template get_rules<f::PredicateTag>())
         axiom_evaluator_rule_statistics.push_back(ws_rule->common.statistics);
     fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_statistics(axiom_evaluator_rule_statistics));
     auto axiom_evaluator_rule_worker_statistics = std::vector<datalog::RuleWorkerStatistics> {};
-    for (const auto& ws_rule : m_workspace.rules)
+    for (const auto& ws_rule : m_workspace.template get_rules<f::PredicateTag>())
         for (const auto& worker : ws_rule->worker)
             axiom_evaluator_rule_worker_statistics.push_back(worker.solve.statistics);
     fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_worker_statistics(axiom_evaluator_rule_worker_statistics));

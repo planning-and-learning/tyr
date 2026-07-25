@@ -29,15 +29,18 @@ template<typename T, typename Kind>
 concept RuleCostPolicyConcept = TaskKind<Kind>
                                 && requires(T& policy,
                                             const T& const_policy,
-                                            WitnessRuleKeyT<Kind> rule_key,
+                                            WitnessRuleKeyT<Kind, ::tyr::formalism::PredicateTag> predicate_rule_key,
+                                            WitnessRuleKeyT<Kind, ::tyr::formalism::FunctionTag> function_rule_key,
                                             NumericSupportKeyT<Kind> numeric_key,
                                             ygg::ClosedInterval<ygg::float_t> interval,
                                             Cost cost) {
-                                       { const_policy.get_cost(rule_key) } -> std::same_as<Cost>;
-                                       { const_policy.get_cost(rule_key, numeric_key, interval) } -> std::same_as<Cost>;
+                                       { const_policy.get_cost(predicate_rule_key) } -> std::same_as<Cost>;
+                                       { const_policy.get_cost(function_rule_key) } -> std::same_as<Cost>;
+                                       { const_policy.get_cost(function_rule_key, numeric_key, interval) } -> std::same_as<Cost>;
                                        { policy.clear() } -> std::same_as<void>;
-                                       { policy.set_cost(rule_key, cost) } -> std::same_as<void>;
-                                       { policy.set_cost(rule_key, numeric_key, interval, cost) } -> std::same_as<void>;
+                                       { policy.set_cost(predicate_rule_key, cost) } -> std::same_as<void>;
+                                       { policy.set_cost(function_rule_key, cost) } -> std::same_as<void>;
+                                       { policy.set_cost(function_rule_key, numeric_key, interval, cost) } -> std::same_as<void>;
                                    };
 
 template<typename T, typename Kind>

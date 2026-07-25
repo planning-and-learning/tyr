@@ -33,24 +33,12 @@ namespace tyr::planning
 namespace
 {
 
-template<typename Head>
-bool is_numeric_head(const Head&) noexcept
-{
-    return false;
-}
-
-bool is_numeric_head(fd::GroundNumericEffectOperatorView<f::FluentTag>) noexcept { return true; }
-
 bool needs_expanded_lmcut(auto program)
 {
-    for (const auto rule : program.get_ground_rules())
-    {
+    for (const auto rule : program.template get_ground_rules<f::PredicateTag>())
         if (!rule.get_body().get_numeric_constraints().empty())
             return true;
-        if (ygg::visit([](auto&& head) { return is_numeric_head(head); }, rule.get_head()))
-            return true;
-    }
-    return false;
+    return !program.template get_ground_rules<f::FunctionTag>().empty();
 }
 
 }
@@ -152,16 +140,19 @@ datalog::Cost LMCutHeuristic<GroundTag>::get_residual_cost(CostKey action_bindin
     return used >= datalog::Cost(1) ? datalog::Cost(0) : datalog::Cost(1) - used;
 }
 
-datalog::Cost LMCutHeuristic<GroundTag>::get_residual_cost(Rule rule) const
+template<f::RelationKind R>
+datalog::Cost LMCutHeuristic<GroundTag>::get_residual_cost(fd::GroundRuleView<R> rule) const
 {
-    const auto action_it = m_rpg_program.get_rule_to_action_mapping().find(rule);
-    return action_it == m_rpg_program.get_rule_to_action_mapping().end() ? datalog::Cost(0) : get_residual_cost(action_it->second.get_row());
+    const auto& mapping = m_rpg_program.template get_rule_to_action_mapping<R>();
+    const auto action_it = mapping.find(rule);
+    return action_it == mapping.end() ? datalog::Cost(0) : get_residual_cost(action_it->second.get_row());
 }
 
-datalog::Cost LMCutHeuristic<GroundTag>::get_witness_body_cost(const datalog::WitnessAnnotation<GroundTag>& witness) const
+template<f::RelationKind R>
+datalog::Cost LMCutHeuristic<GroundTag>::get_witness_body_cost(const datalog::WitnessAnnotation<GroundTag, R>& witness) const
 {
     auto body_cost = datalog::Cost(0);
-    for (const auto literal : witness.get_rule_key().get_body().get_literals<f::FluentTag>())
+    for (const auto literal : witness.get_rule_key().get_body().template get_literals<f::FluentTag>())
         if (literal.get_polarity())
             body_cost = std::max(body_cost, get_atom_cost(literal.get_atom()));
 
@@ -171,7 +162,8 @@ datalog::Cost LMCutHeuristic<GroundTag>::get_witness_body_cost(const datalog::Wi
     return body_cost;
 }
 
-datalog::Cost LMCutHeuristic<GroundTag>::get_witness_edge_residual_cost(const datalog::WitnessAnnotation<GroundTag>& witness) const
+template<f::RelationKind R>
+datalog::Cost LMCutHeuristic<GroundTag>::get_witness_edge_residual_cost(const datalog::WitnessAnnotation<GroundTag, R>& witness) const
 {
     const auto body_cost = get_witness_body_cost(witness);
     return witness.get_cost() <= body_cost ? datalog::Cost(0) : witness.get_cost() - body_cost;
@@ -182,10 +174,12 @@ void LMCutHeuristic<GroundTag>::set_residual_cost(CostKey action_binding, datalo
     m_residual_costs.insert_or_assign(action_binding, datalog::Cost(1) - cost);
 }
 
-void LMCutHeuristic<GroundTag>::set_residual_cost(Rule rule, datalog::Cost cost)
+template<f::RelationKind R>
+void LMCutHeuristic<GroundTag>::set_residual_cost(fd::GroundRuleView<R> rule, datalog::Cost cost)
 {
-    const auto action_it = m_rpg_program.get_rule_to_action_mapping().find(rule);
-    if (action_it != m_rpg_program.get_rule_to_action_mapping().end())
+    const auto& mapping = m_rpg_program.template get_rule_to_action_mapping<R>();
+    const auto action_it = mapping.find(rule);
+    if (action_it != mapping.end())
         set_residual_cost(action_it->second.get_row(), cost);
 }
 
@@ -218,14 +212,15 @@ datalog::Cost LMCutHeuristic<GroundTag>::get_numeric_cost(NumericNode node) cons
     return annotation ? datalog::get_cost(*annotation) : datalog::Cost(0);
 }
 
-const datalog::WitnessAnnotation<GroundTag>* LMCutHeuristic<GroundTag>::get_numeric_witness(NumericNode node) const noexcept
+const datalog::WitnessAnnotation<GroundTag, f::FunctionTag>* LMCutHeuristic<GroundTag>::get_numeric_witness(NumericNode node) const noexcept
 {
     const auto* annotation = m_workspace.numeric_and_annot.find(node.term, node.interval);
-    return annotation ? std::get_if<datalog::WitnessAnnotation<GroundTag>>(annotation) : nullptr;
+    return annotation ? std::get_if<datalog::WitnessAnnotation<GroundTag, f::FunctionTag>>(annotation) : nullptr;
 }
 
+template<f::RelationKind R>
 const std::vector<LMCutHeuristic<GroundTag>::Precondition>&
-LMCutHeuristic<GroundTag>::get_witness_max_preconditions(const datalog::WitnessAnnotation<GroundTag>& witness, datalog::Cost edge_cost)
+LMCutHeuristic<GroundTag>::get_witness_max_preconditions(const datalog::WitnessAnnotation<GroundTag, R>& witness, datalog::Cost edge_cost)
 {
     if (m_max_precondition_depth == m_max_precondition_buffers.size())
         m_max_precondition_buffers.emplace_back();
@@ -237,7 +232,7 @@ LMCutHeuristic<GroundTag>::get_witness_max_preconditions(const datalog::WitnessA
         return result;
 
     const auto body_cost = witness.get_cost() - edge_cost;
-    for (const auto literal : rule.get_body().get_literals<f::FluentTag>())
+    for (const auto literal : rule.get_body().template get_literals<f::FluentTag>())
         if (literal.get_polarity() && get_atom_cost(literal.get_atom()) == body_cost)
             result.emplace_back(literal.get_atom());
 
@@ -272,7 +267,7 @@ void LMCutHeuristic<GroundTag>::mark_goal_zone(Atom atom)
             if (witness.get_cost() != atom_cost)
                 continue;
 
-            const auto& mapping = m_rpg_program.get_rule_to_action_mapping();
+            const auto& mapping = m_rpg_program.get_rule_to_action_mapping<f::PredicateTag>();
             const auto action_it = mapping.find(witness.get_rule_key());
             const auto residual = m_use_expanded_edges ? (action_it != mapping.end() ? get_witness_edge_residual_cost(witness) : datalog::Cost(0)) :
                                                          get_residual_cost(witness.get_rule_key());
@@ -297,11 +292,11 @@ void LMCutHeuristic<GroundTag>::mark_goal_zone(NumericNode node)
     if (!witness || witness->get_cost() != numeric_cost)
         return;
 
-    const auto action_it = m_rpg_program.get_rule_to_action_mapping().find(witness->get_rule_key());
-    const auto residual = m_use_expanded_edges ?
-                              (action_it != m_rpg_program.get_rule_to_action_mapping().end() ? get_witness_edge_residual_cost(*witness) : datalog::Cost(0)) :
-                              get_residual_cost(witness->get_rule_key());
-    if (action_it != m_rpg_program.get_rule_to_action_mapping().end() && residual > 0)
+    const auto& mapping = m_rpg_program.get_rule_to_action_mapping<f::FunctionTag>();
+    const auto action_it = mapping.find(witness->get_rule_key());
+    const auto residual = m_use_expanded_edges ? (action_it != mapping.end() ? get_witness_edge_residual_cost(*witness) : datalog::Cost(0)) :
+                                                 get_residual_cost(witness->get_rule_key());
+    if (action_it != mapping.end() && residual > 0)
         return;
 
     const auto& preconditions = get_witness_max_preconditions(*witness, residual);
@@ -337,11 +332,10 @@ bool LMCutHeuristic<GroundTag>::is_before_goal_zone(Atom atom)
                 continue;
 
             has_optimal_achiever = true;
-            const auto action_it = m_rpg_program.get_rule_to_action_mapping().find(witness.get_rule_key());
-            const auto residual =
-                m_use_expanded_edges ?
-                    (action_it != m_rpg_program.get_rule_to_action_mapping().end() ? get_witness_edge_residual_cost(witness) : datalog::Cost(0)) :
-                    get_residual_cost(witness.get_rule_key());
+            const auto& mapping = m_rpg_program.get_rule_to_action_mapping<f::PredicateTag>();
+            const auto action_it = mapping.find(witness.get_rule_key());
+            const auto residual = m_use_expanded_edges ? (action_it != mapping.end() ? get_witness_edge_residual_cost(witness) : datalog::Cost(0)) :
+                                                         get_residual_cost(witness.get_rule_key());
             const auto& preconditions = get_witness_max_preconditions(witness, residual);
             before = preconditions.empty() || std::ranges::any_of(preconditions, [&](const auto precondition) { return is_before_goal_zone(precondition); });
             release_witness_max_preconditions();
@@ -376,9 +370,9 @@ bool LMCutHeuristic<GroundTag>::is_before_goal_zone(NumericNode node)
     const auto* witness = get_numeric_witness(node);
     if (witness && witness->get_cost() == get_numeric_cost(node))
     {
-        const auto action_it = m_rpg_program.get_rule_to_action_mapping().find(witness->get_rule_key());
-        const auto residual = m_use_expanded_edges ? (action_it != m_rpg_program.get_rule_to_action_mapping().end() ? get_witness_edge_residual_cost(*witness) :
-                                                                                                                      datalog::Cost(0)) :
+        const auto& mapping = m_rpg_program.get_rule_to_action_mapping<f::FunctionTag>();
+        const auto action_it = mapping.find(witness->get_rule_key());
+        const auto residual = m_use_expanded_edges ? (action_it != mapping.end() ? get_witness_edge_residual_cost(*witness) : datalog::Cost(0)) :
                                                      get_residual_cost(witness->get_rule_key());
         const auto& preconditions = get_witness_max_preconditions(*witness, residual);
         before = preconditions.empty() || std::ranges::any_of(preconditions, [&](const auto precondition) { return is_before_goal_zone(precondition); });
@@ -435,8 +429,10 @@ void LMCutHeuristic<GroundTag>::extract_cut()
 
     auto inspect_witness = [&](const auto& witness)
     {
-        const auto action_it = m_rpg_program.get_rule_to_action_mapping().find(witness.get_rule_key());
-        if (action_it == m_rpg_program.get_rule_to_action_mapping().end() || get_residual_cost(action_it->second.get_row()) == 0)
+        using R = typename std::decay_t<decltype(witness)>::Relation;
+        const auto& mapping = m_rpg_program.get_rule_to_action_mapping<R>();
+        const auto action_it = mapping.find(witness.get_rule_key());
+        if (action_it == mapping.end() || get_residual_cost(action_it->second.get_row()) == 0)
             return;
 
         const auto& preconditions = get_witness_max_preconditions(witness, get_residual_cost(witness.get_rule_key()));
@@ -498,7 +494,9 @@ void LMCutHeuristic<GroundTag>::extract_expanded_cut()
 
     auto inspect_rule_witness = [&](const auto& witness)
     {
-        if (m_rpg_program.get_rule_to_action_mapping().find(witness.get_rule_key()) == m_rpg_program.get_rule_to_action_mapping().end())
+        using R = typename std::decay_t<decltype(witness)>::Relation;
+        const auto& mapping = m_rpg_program.get_rule_to_action_mapping<R>();
+        if (mapping.find(witness.get_rule_key()) == mapping.end())
             return;
         const auto residual = get_witness_edge_residual_cost(witness);
         if (residual == datalog::Cost(0))
@@ -519,7 +517,9 @@ void LMCutHeuristic<GroundTag>::extract_expanded_cut()
 
     auto inspect_numeric_witness = [&](const NumericNode node, const auto& witness)
     {
-        if (m_rpg_program.get_rule_to_action_mapping().find(witness.get_rule_key()) == m_rpg_program.get_rule_to_action_mapping().end())
+        using R = typename std::decay_t<decltype(witness)>::Relation;
+        const auto& mapping = m_rpg_program.get_rule_to_action_mapping<R>();
+        if (mapping.find(witness.get_rule_key()) == mapping.end())
             return;
         const auto edge = NumericEdge { witness.get_rule_key(), node.term, node.interval };
         const auto residual = get_witness_edge_residual_cost(witness);

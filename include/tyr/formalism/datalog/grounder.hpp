@@ -77,7 +77,8 @@ ygg::Data<GroundNumericEffectOperator<T>> ground(NumericEffectOperatorView<T> el
 
 std::pair<GroundConjunctiveConditionView, bool> ground(ConjunctiveConditionView element, GrounderContext& context);
 
-std::pair<GroundRuleView, bool> ground(RuleView element, GrounderContext& context);
+template<RelationKind R>
+std::pair<GroundRuleView<R>, bool> ground(RuleView<R> element, GrounderContext& context);
 
 /**
  * ground_binding
@@ -90,7 +91,8 @@ std::pair<PredicateBindingView<T>, bool> ground_binding(AtomView<T> element, Gro
 template<FactKind T>
 std::pair<FunctionBindingView<T>, bool> ground_binding(FunctionTermView<T> element, GrounderContext& context);
 
-std::pair<RuleBindingView, bool> ground_binding(RuleView element, GrounderContext& context);
+template<RelationKind R>
+std::pair<RuleBindingView<R>, bool> ground_binding(RuleView<R> element, GrounderContext& context);
 
 /**
  * try_ground
@@ -334,29 +336,21 @@ inline std::pair<GroundConjunctiveConditionView, bool> ground(ConjunctiveConditi
     return context.destination.get_or_create(conj_cond);
 }
 
-inline std::pair<GroundRuleView, bool> ground(RuleView element, GrounderContext& context)
+template<RelationKind R>
+std::pair<GroundRuleView<R>, bool> ground(RuleView<R> element, GrounderContext& context)
 {
     // Fetch and clear
-    auto rule_ptr = context.builder.template get_builder<GroundRule>();
+    auto rule_ptr = context.builder.template get_builder<GroundRule<R>>();
     auto& rule = *rule_ptr;
     rule.clear();
 
     // Fill data
     rule.binding = ground_binding(element, context).first.get_index();
     rule.body = ground(element.get_body(), context).first.get_index();
-    rule.head = visit(
-        [&](auto&& arg) -> decltype(rule.head)
-        {
-            using Alternative = std::decay_t<decltype(arg)>;
-
-            if constexpr (std::is_same_v<Alternative, AtomView<FluentTag>>)
-                return ground(arg, context).first.get_index();
-            else if constexpr (std::is_same_v<Alternative, NumericEffectOperatorView<FluentTag>>)
-                return ground(arg, context);
-            else
-                static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
-        },
-        element.get_head());
+    if constexpr (std::same_as<R, PredicateTag>)
+        rule.head = ground(element.get_head(), context).first.get_index();
+    else
+        rule.head = ground(element.get_head(), context);
     for (const auto metric_effect : element.get_metric_effects())
         rule.metric_effects.push_back(ground(metric_effect, context));
 
@@ -405,9 +399,10 @@ std::pair<FunctionBindingView<T>, bool> ground_binding(FunctionTermView<T> eleme
     return ground(element.get_terms(), element.get_function(), context);
 }
 
-inline std::pair<RuleBindingView, bool> ground_binding(RuleView element, GrounderContext& context)
+template<RelationKind R>
+std::pair<RuleBindingView<R>, bool> ground_binding(RuleView<R> element, GrounderContext& context)
 {
-    auto binding_ptr = context.builder.template get_builder<RelationBinding<Rule>>();
+    auto binding_ptr = context.builder.template get_builder<RelationBinding<Rule<R>>>();
     auto& binding = *binding_ptr;
     binding.clear();
 
@@ -539,6 +534,12 @@ extern template std::optional<PredicateBindingView<StaticTag>> try_ground_bindin
                                                                                   ::tyr::formalism::datalog::GrounderContext& context);
 extern template std::optional<PredicateBindingView<FluentTag>> try_ground_binding(::tyr::formalism::datalog::AtomView<FluentTag> element,
                                                                                   ::tyr::formalism::datalog::GrounderContext& context);
+
+extern template std::pair<GroundRuleView<PredicateTag>, bool> ground(RuleView<PredicateTag> element, GrounderContext& context);
+extern template std::pair<GroundRuleView<FunctionTag>, bool> ground(RuleView<FunctionTag> element, GrounderContext& context);
+
+extern template std::pair<RuleBindingView<PredicateTag>, bool> ground_binding(RuleView<PredicateTag> element, GrounderContext& context);
+extern template std::pair<RuleBindingView<FunctionTag>, bool> ground_binding(RuleView<FunctionTag> element, GrounderContext& context);
 }
 
 #endif

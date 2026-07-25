@@ -32,10 +32,10 @@ struct NumericSupportKey<GroundTag>
     using type = ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag>;
 };
 
-template<>
-struct WitnessRuleKey<GroundTag>
+template<::tyr::formalism::RelationKind R>
+struct WitnessRuleKey<GroundTag, R>
 {
-    using type = ::tyr::formalism::datalog::GroundRuleView;
+    using type = ::tyr::formalism::datalog::GroundRuleView<R>;
 };
 
 template<>
@@ -56,13 +56,13 @@ struct NumericIntervalBindingParts<GroundTag>
     static Key get_key(Binding binding) noexcept { return binding.get_index(); }
 };
 
-template<>
-struct AndAnnotationContext<GroundTag>
+template<::tyr::formalism::RelationKind R>
+struct AndAnnotationContext<GroundTag, R>
 {
     ygg::ClosedInterval<ygg::float_t> metric;
     Cost current_cost;
     std::span<const NumericSupport<GroundTag>> numeric_supports;
-    ::tyr::formalism::datalog::GroundRuleView rule;
+    ::tyr::formalism::datalog::GroundRuleView<R> rule;
     const SelectedPredicateAnnotations<GroundTag>& program_and_annot;
 };
 

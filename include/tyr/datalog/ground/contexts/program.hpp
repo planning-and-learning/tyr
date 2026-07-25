@@ -52,8 +52,11 @@ struct ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>
         explicit In(const ConstProgramWorkspace<GroundTag>& cws) : m_cws(cws) {}
 
         auto program() const noexcept { return m_cws.program; }
-        const auto& fluent_precondition_to_rules() const noexcept { return m_cws.fluent_precondition_to_rules; }
-        const auto& fluent_function_term_to_rules() const noexcept { return m_cws.fluent_function_term_to_rules; }
+        template<::tyr::formalism::RelationKind R>
+        const auto& dependencies() const noexcept
+        {
+            return m_cws.template get_dependencies<R>();
+        }
 
     private:
         const ConstProgramWorkspace<GroundTag>& m_cws;
@@ -78,12 +81,26 @@ struct ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>
         const auto& tp() const noexcept { return m_ws.tp; }
         auto& cost_policy() noexcept { return m_ws.cost_policy; }
         const auto& cost_policy() const noexcept { return m_ws.cost_policy; }
-        auto& rules() noexcept { return m_ws.rules; }
-        const auto& rules() const noexcept { return m_ws.rules; }
-        auto& rule_states() noexcept { return m_ws.rules.states; }
-        const auto& rule_states() const noexcept { return m_ws.rules.states; }
-        auto& queue_storage() noexcept { return m_queue_ws.storage; }
-        const auto& queue_storage() const noexcept { return m_queue_ws.storage; }
+        template<::tyr::formalism::RelationKind R>
+        auto& rule_states() noexcept
+        {
+            return rules<R>().states;
+        }
+        template<::tyr::formalism::RelationKind R>
+        const auto& rule_states() const noexcept
+        {
+            return rules<R>().states;
+        }
+        template<::tyr::formalism::RelationKind R>
+        auto& queue_storage() noexcept
+        {
+            return m_queue_ws.template get_storage<R>();
+        }
+        template<::tyr::formalism::RelationKind R>
+        const auto& queue_storage() const noexcept
+        {
+            return m_queue_ws.template get_storage<R>();
+        }
         auto& fluent_fact_sets() noexcept { return m_ws.facts.fluent_fact_sets; }
         const auto& fluent_fact_sets() const noexcept { return m_ws.facts.fluent_fact_sets; }
         auto& fluent_atoms() noexcept { return m_ws.facts.fluent_atoms; }
@@ -98,6 +115,23 @@ struct ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>
         const auto& queue() const noexcept { return m_queue_ws; }
 
     private:
+        template<::tyr::formalism::RelationKind R>
+        auto& rules() noexcept
+        {
+            if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
+                return m_ws.predicate_rules;
+            else
+                return m_ws.function_rules;
+        }
+        template<::tyr::formalism::RelationKind R>
+        const auto& rules() const noexcept
+        {
+            if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
+                return m_ws.predicate_rules;
+            else
+                return m_ws.function_rules;
+        }
+
         ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>& m_ws;
         QueueWorkspace<GroundTag>& m_queue_ws;
     };
@@ -179,15 +213,24 @@ private:
     void reset_from_current_facts()
     {
         initialize_annotations();
-        m_out.rules().clear();
+        m_out.template rule_states<::tyr::formalism::PredicateTag>().clear();
+        m_out.template rule_states<::tyr::formalism::FunctionTag>().clear();
         m_out.queue().clear();
-        for (const auto rule : m_in.program().get_ground_rules())
+        initialize_rule_states<::tyr::formalism::PredicateTag>();
+        initialize_rule_states<::tyr::formalism::FunctionTag>();
+    }
+
+    template<::tyr::formalism::RelationKind R>
+    void initialize_rule_states()
+    {
+        auto& states = m_out.template rule_states<R>();
+        for (const auto rule : m_in.program().template get_ground_rules<R>())
         {
             const auto rule_index = rule.get_index();
-            if (position(rule_index) >= m_out.rule_states().size())
-                m_out.rule_states().resize(position(rule_index) + 1);
+            if (position(rule_index) >= states.size())
+                states.resize(position(rule_index) + 1);
 
-            auto& state = at(m_out.rule_states(), rule_index);
+            auto& state = at(states, rule_index);
 
             auto unsatisfied_count = ygg::uint_t(0);
             for (const auto literal : rule.get_body().template get_literals<::tyr::formalism::FluentTag>())

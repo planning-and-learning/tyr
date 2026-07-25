@@ -205,8 +205,7 @@ private:
                                                     const std::vector<std::vector<ygg::uint_t>>& vertex_partitions);
 
 public:
-    StaticConsistencyGraph(::tyr::formalism::datalog::RuleView rule,
-                           ::tyr::formalism::datalog::ConjunctiveConditionView condition,
+    StaticConsistencyGraph(::tyr::formalism::datalog::ConjunctiveConditionView condition,
                            ::tyr::formalism::datalog::ConjunctiveConditionView unary_overapproximation_condition,
                            ::tyr::formalism::datalog::ConjunctiveConditionView binary_overapproximation_condition,
                            ::tyr::formalism::datalog::ConjunctiveConditionView static_binary_overapproximation_condition,
@@ -228,7 +227,6 @@ public:
 
     size_t get_num_vertices() const noexcept;
 
-    ::tyr::formalism::datalog::RuleView get_rule() const noexcept;
     ::tyr::formalism::datalog::ConjunctiveConditionView get_condition() const noexcept;
     const ::tyr::formalism::datalog::VariableDependencyGraph& get_variable_dependeny_graph() const noexcept;
     const std::vector<std::vector<ygg::uint_t>>& get_vertex_partitions() const noexcept;
@@ -236,7 +234,6 @@ public:
     const kpkc::DeduplicatedAdjacencyMatrix& get_adjacency_matrix() const noexcept;
 
 private:
-    ::tyr::formalism::datalog::RuleView m_rule;
     ::tyr::formalism::datalog::ConjunctiveConditionView m_condition;
     ::tyr::formalism::datalog::ConjunctiveConditionView m_unary_overapproximation_condition;
     ::tyr::formalism::datalog::ConjunctiveConditionView m_binary_overapproximation_condition;
@@ -264,14 +261,30 @@ private:
 extern std::pair<::tyr::formalism::datalog::GroundConjunctiveConditionView, bool>
 create_ground_nullary_conjunctive_condition(::tyr::formalism::datalog::ConjunctiveConditionView condition, ::tyr::formalism::datalog::Repository& context);
 
-extern std::pair<::tyr::formalism::datalog::RuleView, bool>
-create_overapproximation_rule(size_t k, ::tyr::formalism::datalog::RuleView element, ::tyr::formalism::datalog::Repository& context);
+template<::tyr::formalism::RelationKind R>
+std::pair<::tyr::formalism::datalog::RuleView<R>, bool>
+create_overapproximation_rule(size_t k, ::tyr::formalism::datalog::RuleView<R> element, ::tyr::formalism::datalog::Repository& context);
 
-extern std::pair<::tyr::formalism::datalog::RuleView, bool>
-create_static_overapproximation_rule(size_t k, ::tyr::formalism::datalog::RuleView element, ::tyr::formalism::datalog::Repository& context);
+template<::tyr::formalism::RelationKind R>
+std::pair<::tyr::formalism::datalog::RuleView<R>, bool>
+create_static_overapproximation_rule(size_t k, ::tyr::formalism::datalog::RuleView<R> element, ::tyr::formalism::datalog::Repository& context);
 
-extern std::pair<::tyr::formalism::datalog::RuleView, bool>
-create_overapproximation_conflicting_rule(size_t k, ::tyr::formalism::datalog::RuleView element, ::tyr::formalism::datalog::Repository& context);
+template<::tyr::formalism::RelationKind R>
+std::pair<::tyr::formalism::datalog::RuleView<R>, bool>
+create_overapproximation_conflicting_rule(size_t k, ::tyr::formalism::datalog::RuleView<R> element, ::tyr::formalism::datalog::Repository& context);
+
+extern template std::pair<::tyr::formalism::datalog::RuleView<::tyr::formalism::PredicateTag>, bool>
+create_overapproximation_rule(size_t, ::tyr::formalism::datalog::RuleView<::tyr::formalism::PredicateTag>, ::tyr::formalism::datalog::Repository&);
+extern template std::pair<::tyr::formalism::datalog::RuleView<::tyr::formalism::FunctionTag>, bool>
+create_overapproximation_rule(size_t, ::tyr::formalism::datalog::RuleView<::tyr::formalism::FunctionTag>, ::tyr::formalism::datalog::Repository&);
+extern template std::pair<::tyr::formalism::datalog::RuleView<::tyr::formalism::PredicateTag>, bool>
+create_static_overapproximation_rule(size_t, ::tyr::formalism::datalog::RuleView<::tyr::formalism::PredicateTag>, ::tyr::formalism::datalog::Repository&);
+extern template std::pair<::tyr::formalism::datalog::RuleView<::tyr::formalism::FunctionTag>, bool>
+create_static_overapproximation_rule(size_t, ::tyr::formalism::datalog::RuleView<::tyr::formalism::FunctionTag>, ::tyr::formalism::datalog::Repository&);
+extern template std::pair<::tyr::formalism::datalog::RuleView<::tyr::formalism::PredicateTag>, bool>
+create_overapproximation_conflicting_rule(size_t, ::tyr::formalism::datalog::RuleView<::tyr::formalism::PredicateTag>, ::tyr::formalism::datalog::Repository&);
+extern template std::pair<::tyr::formalism::datalog::RuleView<::tyr::formalism::FunctionTag>, bool>
+create_overapproximation_conflicting_rule(size_t, ::tyr::formalism::datalog::RuleView<::tyr::formalism::FunctionTag>, ::tyr::formalism::datalog::Repository&);
 
 }
 

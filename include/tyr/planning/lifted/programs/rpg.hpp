@@ -35,12 +35,19 @@ template<>
 class RPGProgram<LiftedTag>
 {
 public:
-    using RuleToActionMapping = ygg::UnorderedMap<::tyr::formalism::datalog::RuleView, ::tyr::formalism::planning::ActionView>;
+    template<::tyr::formalism::RelationKind R>
+    using RuleToActionMapping = ygg::UnorderedMap<::tyr::formalism::datalog::RuleView<R>, ::tyr::formalism::planning::ActionView>;
+    struct RuleToActionMappings
+    {
+        RuleToActionMapping<::tyr::formalism::PredicateTag> predicate;
+        RuleToActionMapping<::tyr::formalism::FunctionTag> function;
+    };
 
     explicit RPGProgram(::tyr::formalism::planning::TaskView task, CostMode cost_mode = CostMode::GENERAL);
 
     const TranslationContext<LiftedTag>& get_translation_context() const noexcept;
-    const RuleToActionMapping& get_rule_to_action_mapping() const noexcept;
+    template<::tyr::formalism::RelationKind R>
+    const RuleToActionMapping<R>& get_rule_to_action_mapping() const noexcept;
     datalog::Program<LiftedTag>& get_datalog_program() noexcept;
     const datalog::Program<LiftedTag>& get_datalog_program() const noexcept;
     const datalog::ConstProgramWorkspace<LiftedTag>& get_const_program_workspace() const noexcept;
@@ -48,7 +55,7 @@ public:
 
 private:
     TranslationContext<LiftedTag> m_translation_context;
-    RuleToActionMapping m_rule_to_action;
+    RuleToActionMappings m_rule_to_action;
     datalog::Program<LiftedTag> m_datalog_program;
 };
 

@@ -136,12 +136,14 @@ void bind_annotations(nb::module_& m)
 {
     using NumericSupportT = NumericSupport<Kind>;
     using BaseAnnotationT = BaseAnnotation<Kind>;
-    using WitnessAnnotationT = WitnessAnnotation<Kind>;
+    using WitnessAnnotationT = WitnessAnnotation<Kind, ::tyr::formalism::PredicateTag>;
+    using FunctionWitnessAnnotationT = WitnessAnnotation<Kind, ::tyr::formalism::FunctionTag>;
     using PredicateAnnotations = SelectedPredicateAnnotations<Kind>;
     using FunctionAnnotations = SelectedFunctionAnnotations<Kind>;
-    using RuleKey = WitnessRuleKeyT<Kind>;
+    using RuleKey = WitnessRuleKeyT<Kind, ::tyr::formalism::PredicateTag>;
+    using FunctionRuleKey = WitnessRuleKeyT<Kind, ::tyr::formalism::FunctionTag>;
     using NumericKey = NumericSupportKeyT<Kind>;
-    using PredicateKey = PredicateAnnotationKeyT<Kind>;
+    using PredicateKey = typename PredicateAnnotations::Key;
 
     auto numeric_support_cls = nb::class_<NumericSupportT>(m, "NumericSupport")
                                    .def(nb::init<NumericKey, Interval, Cost>(), "key"_a, "interval"_a, "cost"_a)
@@ -169,6 +171,17 @@ void bind_annotations(nb::module_& m)
             .def("get_numeric_supports", &WitnessAnnotationT::get_numeric_supports, nb::rv_policy::copy);
     ygg::add_comparison(witness_annotation_cls);
 
+    auto function_witness_annotation_cls =
+        nb::class_<FunctionWitnessAnnotationT>(m, "FunctionWitnessAnnotation")
+            .def(nb::init<FunctionRuleKey, Cost>(), "rule_key"_a, "cost"_a)
+            .def(nb::init<FunctionRuleKey, Interval, Cost>(), "rule_key"_a, "metric"_a, "cost"_a)
+            .def(nb::init<FunctionRuleKey, Interval, Cost, std::vector<NumericSupportT>>(), "rule_key"_a, "metric"_a, "cost"_a, "numeric_supports"_a)
+            .def("get_rule_key", &FunctionWitnessAnnotationT::get_rule_key, nb::keep_alive<0, 1>())
+            .def("get_metric", &FunctionWitnessAnnotationT::get_metric)
+            .def("get_cost", &FunctionWitnessAnnotationT::get_cost)
+            .def("get_numeric_supports", &FunctionWitnessAnnotationT::get_numeric_supports, nb::rv_policy::copy);
+    ygg::add_comparison(function_witness_annotation_cls);
+
     nb::class_<PredicateAnnotations>(m, "SelectedPredicateAnnotations")
         .def(nb::init<>())
         .def("clear", &PredicateAnnotations::clear)
@@ -187,18 +200,18 @@ void bind_annotations(nb::module_& m)
         .def("size", &FunctionAnnotations::size)
         .def(
             "find",
-            [](const FunctionAnnotations& self, NumericKey key) -> std::optional<Annotation<Kind>>
+            [](const FunctionAnnotations& self, NumericKey key) -> std::optional<Annotation<Kind, ::tyr::formalism::FunctionTag>>
             {
                 const auto* annotation = self.find(key);
-                return annotation ? std::optional<Annotation<Kind>>(*annotation) : std::nullopt;
+                return annotation ? std::optional<Annotation<Kind, ::tyr::formalism::FunctionTag>>(*annotation) : std::nullopt;
             },
             "binding"_a)
         .def(
             "find",
-            [](const FunctionAnnotations& self, NumericKey key, const Interval& interval) -> std::optional<Annotation<Kind>>
+            [](const FunctionAnnotations& self, NumericKey key, const Interval& interval) -> std::optional<Annotation<Kind, ::tyr::formalism::FunctionTag>>
             {
                 const auto* annotation = self.find(key, interval);
-                return annotation ? std::optional<Annotation<Kind>>(*annotation) : std::nullopt;
+                return annotation ? std::optional<Annotation<Kind, ::tyr::formalism::FunctionTag>>(*annotation) : std::nullopt;
             },
             "binding"_a,
             "interval"_a);
@@ -207,44 +220,53 @@ void bind_annotations(nb::module_& m)
 template<TaskKind Kind, typename CostPolicy>
 void bind_cost_policy(nb::module_& m, const char* name)
 {
-    using RuleKey = WitnessRuleKeyT<Kind>;
     using NumericKey = NumericSupportKeyT<Kind>;
 
-    auto cls = nb::class_<CostPolicy>(m, name)
-                   .def(nb::init<>())
-                   .def("clear", &CostPolicy::clear)
-                   .def(
-                       "get_cost",
-                       [](const CostPolicy& self, RuleKey rule) { return self.get_cost(rule); },
-                       "rule"_a)
-                   .def(
-                       "get_cost",
-                       [](const CostPolicy& self, RuleKey rule, NumericKey key, const Interval& interval) { return self.get_cost(rule, key, interval); },
-                       "rule"_a,
-                       "binding"_a,
-                       "interval"_a)
-                   .def(
-                       "set_cost",
-                       [](CostPolicy& self, RuleKey rule, Cost cost) { self.set_cost(rule, cost); },
-                       "rule"_a,
-                       "cost"_a)
-                   .def(
-                       "set_cost",
-                       [](CostPolicy& self, RuleKey rule, NumericKey key, const Interval& interval, Cost cost) { self.set_cost(rule, key, interval, cost); },
-                       "rule"_a,
-                       "binding"_a,
-                       "interval"_a,
-                       "cost"_a);
+    auto cls = nb::class_<CostPolicy>(m, name).def(nb::init<>()).def("clear", &CostPolicy::clear);
+
+    const auto bind_rule_costs = [&]<::tyr::formalism::RelationKind R>()
+    {
+        using RuleKey = WitnessRuleKeyT<Kind, R>;
+        cls.def(
+               "get_cost",
+               [](const CostPolicy& self, RuleKey rule) { return self.get_cost(rule); },
+               "rule"_a)
+            .def(
+                "get_cost",
+                [](const CostPolicy& self, RuleKey rule, NumericKey key, const Interval& interval) { return self.get_cost(rule, key, interval); },
+                "rule"_a,
+                "binding"_a,
+                "interval"_a)
+            .def(
+                "set_cost",
+                [](CostPolicy& self, RuleKey rule, Cost cost) { self.set_cost(rule, cost); },
+                "rule"_a,
+                "cost"_a)
+            .def(
+                "set_cost",
+                [](CostPolicy& self, RuleKey rule, NumericKey key, const Interval& interval, Cost cost) { self.set_cost(rule, key, interval, cost); },
+                "rule"_a,
+                "binding"_a,
+                "interval"_a,
+                "cost"_a);
+    };
+    bind_rule_costs.template operator()<::tyr::formalism::PredicateTag>();
+    bind_rule_costs.template operator()<::tyr::formalism::FunctionTag>();
 
     if constexpr (std::same_as<Kind, LiftedTag> && std::same_as<CostPolicy, RuleCostOverridePolicy<LiftedTag>>)
     {
-        cls.def(
-            "set_prefix_cost",
-            [](CostPolicy& self, ::tyr::formalism::datalog::RuleView rule, const std::vector<ygg::Index<::tyr::formalism::Object>>& objects, Cost cost)
-            { self.set_prefix_cost(rule, objects, cost); },
-            "rule"_a,
-            "objects"_a,
-            "cost"_a);
+        const auto bind_prefix_cost = [&]<::tyr::formalism::RelationKind R>()
+        {
+            cls.def(
+                "set_prefix_cost",
+                [](CostPolicy& self, ::tyr::formalism::datalog::RuleView<R> rule, const std::vector<ygg::Index<::tyr::formalism::Object>>& objects, Cost cost)
+                { self.set_prefix_cost(rule, objects, cost); },
+                "rule"_a,
+                "objects"_a,
+                "cost"_a);
+        };
+        bind_prefix_cost.template operator()<::tyr::formalism::PredicateTag>();
+        bind_prefix_cost.template operator()<::tyr::formalism::FunctionTag>();
     }
 }
 
@@ -358,11 +380,11 @@ void bind_workspace(nb::module_& m, const std::string& name)
                [](Workspace& self) -> auto& { return self.and_ap; },
                nb::rv_policy::reference_internal)
             .def("clear_fluent_facts",
-                [](Workspace& self)
-                {
-                    self.facts.fluent_atoms.clear();
-                    self.facts.fluent_fterm_intervals.clear();
-                })
+                 [](Workspace& self)
+                 {
+                     self.facts.fluent_atoms.clear();
+                     self.facts.fluent_fterm_intervals.clear();
+                 })
             .def(
                 "insert_fluent_atom",
                 [](Workspace& self, Atom atom) { return self.facts.fluent_atoms.insert(atom).second; },

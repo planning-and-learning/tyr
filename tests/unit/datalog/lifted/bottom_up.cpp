@@ -374,7 +374,7 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindi
     goal_atom_data.predicate = goal.get_index();
     const auto goal_atom = intern(std::move(goal_atom_data));
 
-    auto rule_data = ygg::Data<fd::Rule>();
+    auto rule_data = ygg::Data<fd::Rule<f::PredicateTag>>();
     rule_data.variables.push_back(variable.get_index());
     rule_data.body = body.get_index();
     rule_data.head = goal_atom.get_index();
@@ -383,7 +383,7 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindi
     auto program_data = ygg::Data<fd::Program>();
     program_data.fluent_predicates.push_back(source.get_index());
     program_data.fluent_predicates.push_back(goal.get_index());
-    program_data.rules.push_back(rule.get_index());
+    program_data.predicate_rules.push_back(rule.get_index());
     for (const auto* name : { "a", "b", "c", "d" })
     {
         const auto object = intern(ygg::Data<f::Object>(std::string(name)));
@@ -405,7 +405,7 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindi
     auto context = d::ProgramExecutionContext(workspace);
     d::solve_bottom_up(context);
 
-    const auto& rule_repository = workspace.rules.front()->worker.front().solve.program_overlay_repository;
+    const auto& rule_repository = workspace.get_rules<f::PredicateTag>().front()->worker.front().solve.program_overlay_repository;
     EXPECT_EQ(rule_repository.size(rule.get_index()), 1);
     EXPECT_EQ(rule_repository.size(goal.get_index()), 0);
 }

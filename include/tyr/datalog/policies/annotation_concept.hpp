@@ -43,23 +43,23 @@ concept OrAnnotationPolicyConcept = TaskKind<Kind>
                                        };
 
 template<typename T, typename Kind>
-concept AndAnnotationPolicyConcept = TaskKind<Kind>
-                                     && requires(T& policy,
-                                                 const T& const_policy,
-                                                 PredicateAnnotationHeadT<Kind> program_head,
-                                                 PredicateAnnotationHeadT<Kind> delta_head,
-                                                 FunctionAnnotationHeadT<Kind> function_head,
-                                                 ygg::ClosedInterval<ygg::float_t> interval,
-                                                 const AndAnnotationContext<Kind>& context,
-                                                 DeltaPredicateAnnotations<Kind>& delta_and_annot,
-                                                 DeltaFunctionAnnotations<Kind>& delta_numeric_and_annot) {
-                                            { policy.clear_achievers() } -> std::same_as<void>;
-                                            { const_policy.record_achiever(program_head, context) } -> std::same_as<void>;
-                                            { const_policy.update_annotation(program_head, delta_head, context, delta_and_annot) } -> std::same_as<void>;
-                                            {
-                                                const_policy.update_annotation(function_head, function_head, interval, context, delta_numeric_and_annot)
-                                            } -> std::same_as<void>;
-                                        };
+concept AndAnnotationPolicyConcept =
+    TaskKind<Kind>
+    && requires(T& policy,
+                const T& const_policy,
+                PredicateAnnotationHeadT<Kind> program_head,
+                PredicateAnnotationHeadT<Kind> delta_head,
+                FunctionAnnotationHeadT<Kind> function_head,
+                ygg::ClosedInterval<ygg::float_t> interval,
+                const AndAnnotationContext<Kind, ::tyr::formalism::PredicateTag>& predicate_context,
+                const AndAnnotationContext<Kind, ::tyr::formalism::FunctionTag>& function_context,
+                DeltaPredicateAnnotations<Kind>& delta_and_annot,
+                DeltaFunctionAnnotations<Kind>& delta_numeric_and_annot) {
+           { policy.clear_achievers() } -> std::same_as<void>;
+           { const_policy.record_achiever(program_head, predicate_context) } -> std::same_as<void>;
+           { const_policy.update_annotation(program_head, delta_head, predicate_context, delta_and_annot) } -> std::same_as<void>;
+           { const_policy.update_annotation(function_head, function_head, interval, function_context, delta_numeric_and_annot) } -> std::same_as<void>;
+       };
 
 }
 

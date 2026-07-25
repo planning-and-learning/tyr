@@ -31,6 +31,8 @@
 #include <boost/dynamic_bitset.hpp>
 #include <cassert>
 
+namespace f = tyr::formalism;
+
 namespace tyr::planning
 {
 FFRPGHeuristic<LiftedTag>::FFRPGHeuristic(TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
@@ -167,7 +169,7 @@ void FFRPGHeuristic<LiftedTag>::extract_relaxed_plan_and_preferred_actions(::tyr
 }
 
 void FFRPGHeuristic<LiftedTag>::extract_relaxed_plan_and_preferred_actions(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding,
-                                                                           const datalog::Annotation<LiftedTag>& annotation,
+                                                                           const datalog::Annotation<LiftedTag, f::FunctionTag>& annotation,
                                                                            const StateContext<LiftedTag>& state_context,
                                                                            ::tyr::formalism::planning::GrounderContext& grounder_context)
 {
@@ -176,7 +178,7 @@ void FFRPGHeuristic<LiftedTag>::extract_relaxed_plan_and_preferred_actions(::tyr
         return;
 
     // Base case 2: function binding is initially assigned, i.e., has no witness => do not recurse again
-    const auto* witness = std::get_if<datalog::WitnessAnnotation<LiftedTag>>(&annotation);
+    const auto* witness = std::get_if<datalog::WitnessAnnotation<LiftedTag, f::FunctionTag>>(&annotation);
     if (!witness)
         return;
 
@@ -195,14 +197,15 @@ void FFRPGHeuristic<LiftedTag>::extract_numeric_constraint_support(::tyr::formal
         { extract_relaxed_plan_and_preferred_actions(binding, annotation, state_context, grounder_context); });
 }
 
-void FFRPGHeuristic<LiftedTag>::extract_relaxed_plan_and_preferred_actions(const datalog::WitnessAnnotation<LiftedTag>& witness,
+template<f::RelationKind R>
+void FFRPGHeuristic<LiftedTag>::extract_relaxed_plan_and_preferred_actions(const datalog::WitnessAnnotation<LiftedTag, R>& witness,
                                                                            const StateContext<LiftedTag>& state_context,
                                                                            ::tyr::formalism::planning::GrounderContext& grounder_context)
 {
-    const auto& mapping = this->m_rpg_program.get_rule_to_action_mapping();
+    const auto& mapping = this->m_rpg_program.template get_rule_to_action_mapping<R>();
 
     const auto rule_row = witness.get_rule_key();
-    const auto rule = ygg::make_view(rule_row.get_relation().get_index(), this->m_rpg_program.get_datalog_program().get_program_repository());
+    const auto rule = rule_row.get_relation();
     const auto row = rule_row.get_objects();
 
     if (const auto it = mapping.find(rule); it != mapping.end())
@@ -233,11 +236,11 @@ void FFRPGHeuristic<LiftedTag>::extract_relaxed_plan_and_preferred_actions(const
 
     auto datalog_grounder_context =
         ::tyr::formalism::datalog::GrounderContext { m_workspace.datalog_builder, m_workspace.workspace_repository, m_workspace.binding };
-    const auto& const_rule_workspace = *m_rpg_program.get_const_program_workspace().rules[ygg::uint_t(rule.get_index())];
+    const auto& const_rule_workspace = *m_rpg_program.get_const_program_workspace().template get_rules<R>()[ygg::uint_t(rule.get_index())];
 
     const auto witness_condition = const_rule_workspace.get_witness_rule().get_body();
 
-    for (const auto literal : witness_condition.get_literals<::tyr::formalism::FluentTag>())
+    for (const auto literal : witness_condition.template get_literals<::tyr::formalism::FluentTag>())
     {
         // Cannot do this before the loop because of overwrites during recursion; we could binding from a builder and place it into the grounder context.
         datalog_grounder_context.binding.clear();

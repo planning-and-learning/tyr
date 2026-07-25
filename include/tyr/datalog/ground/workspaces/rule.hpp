@@ -28,8 +28,8 @@
 namespace tyr::datalog
 {
 
-template<>
-struct RuleState<GroundTag>
+template<::tyr::formalism::RelationKind R>
+struct RuleState<GroundTag, R>
 {
     ygg::uint_t unsatisfied_count = 0;
     bool fired = false;
@@ -37,10 +37,10 @@ struct RuleState<GroundTag>
     std::vector<bool> numeric_constraint_satisfied;
 };
 
-template<>
-struct RuleWorkspace<GroundTag>
+template<::tyr::formalism::RelationKind R>
+struct RuleWorkspace<GroundTag, R>
 {
-    std::vector<RuleState<GroundTag>> states;
+    std::vector<RuleState<GroundTag, R>> states;
 
     explicit RuleWorkspace(::tyr::formalism::datalog::ProgramView<GroundTag>) {}
 

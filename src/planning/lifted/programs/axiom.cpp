@@ -56,7 +56,7 @@ void process_axiom_body(fp::ConjunctiveConditionView axiom_body,
 
 auto create_axiom_rule(fp::AxiomView axiom, const TranslationContext<LiftedTag>& translation_context, fp::MergeDatalogContext& context)
 {
-    auto rule_ptr = context.builder.get_builder<fd::Rule>();
+    auto rule_ptr = context.builder.get_builder<fd::Rule<f::PredicateTag>>();
     auto& rule = *rule_ptr;
     rule.clear();
 
@@ -141,9 +141,9 @@ auto create_program(fp::TaskView task, TranslationContext<LiftedTag>& translatio
         program.fluent_fterm_values.push_back(fp::merge_p2d(fterm_value, context).first.get_index());
 
     for (const auto axiom : task.get_domain().get_axioms())
-        program.rules.push_back(create_axiom_rule(axiom, translation_context, context).first.get_index());
+        program.predicate_rules.push_back(create_axiom_rule(axiom, translation_context, context).first.get_index());
     for (const auto axiom : task.get_axioms())
-        program.rules.push_back(create_axiom_rule(axiom, translation_context, context).first.get_index());
+        program.predicate_rules.push_back(create_axiom_rule(axiom, translation_context, context).first.get_index());
 
     canonicalize(program);
     return repository.get_or_create(program).first;

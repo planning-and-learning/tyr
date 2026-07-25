@@ -45,11 +45,11 @@ struct NumericSupportKey;
 template<TaskKind Kind>
 using NumericSupportKeyT = typename NumericSupportKey<Kind>::type;
 
-template<TaskKind Kind>
+template<TaskKind Kind, ::tyr::formalism::RelationKind R>
 struct WitnessRuleKey;
 
-template<TaskKind Kind>
-using WitnessRuleKeyT = typename WitnessRuleKey<Kind>::type;
+template<TaskKind Kind, ::tyr::formalism::RelationKind R>
+using WitnessRuleKeyT = typename WitnessRuleKey<Kind, R>::type;
 
 template<TaskKind Kind>
 struct AnnotationPolicyTypes;
@@ -77,16 +77,17 @@ struct NumericSupport : ygg::comparison::Mixin<NumericSupport<Kind>>
     auto identifying_members() const noexcept { return std::tie(key, interval, cost); }
 };
 
-template<TaskKind Kind>
-struct WitnessAnnotation : ygg::comparison::Mixin<WitnessAnnotation<Kind>>
+template<TaskKind Kind, ::tyr::formalism::RelationKind R = ::tyr::formalism::PredicateTag>
+struct WitnessAnnotation : ygg::comparison::Mixin<WitnessAnnotation<Kind, R>>
 {
+    using Relation = R;
     using Metric = ygg::ClosedInterval<ygg::float_t>;
     using NumericSupports = std::vector<NumericSupport<Kind>>;
 
-    WitnessAnnotation(WitnessRuleKeyT<Kind> rule_key, Cost cost);
-    WitnessAnnotation(WitnessRuleKeyT<Kind> rule_key, Metric metric, Cost cost);
-    WitnessAnnotation(WitnessRuleKeyT<Kind> rule_key, Metric metric, Cost cost, NumericSupports numeric_supports);
-    WitnessAnnotation(WitnessRuleKeyT<Kind> rule_key, Metric metric, Cost cost, std::span<const NumericSupport<Kind>> numeric_supports);
+    WitnessAnnotation(WitnessRuleKeyT<Kind, R> rule_key, Cost cost);
+    WitnessAnnotation(WitnessRuleKeyT<Kind, R> rule_key, Metric metric, Cost cost);
+    WitnessAnnotation(WitnessRuleKeyT<Kind, R> rule_key, Metric metric, Cost cost, NumericSupports numeric_supports);
+    WitnessAnnotation(WitnessRuleKeyT<Kind, R> rule_key, Metric metric, Cost cost, std::span<const NumericSupport<Kind>> numeric_supports);
 
     auto get_rule_key() const noexcept { return rule_key; }
     auto get_metric() const noexcept { return metric; }
@@ -96,7 +97,7 @@ struct WitnessAnnotation : ygg::comparison::Mixin<WitnessAnnotation<Kind>>
     auto identifying_members() const noexcept { return std::tie(rule_key, metric, cost, numeric_supports); }
 
 private:
-    WitnessRuleKeyT<Kind> rule_key;
+    WitnessRuleKeyT<Kind, R> rule_key;
     Metric metric;
     Cost cost;
     NumericSupports numeric_supports;
@@ -122,17 +123,17 @@ private:
     Cost m_cost;
 };
 
-template<TaskKind Kind>
-using Annotation = std::variant<BaseAnnotation<Kind>, WitnessAnnotation<Kind>>;
+template<TaskKind Kind, ::tyr::formalism::RelationKind R = ::tyr::formalism::PredicateTag>
+using Annotation = std::variant<BaseAnnotation<Kind>, WitnessAnnotation<Kind, R>>;
 
-template<TaskKind Kind>
-inline auto get_metric(const Annotation<Kind>& annotation) noexcept
+template<TaskKind Kind, ::tyr::formalism::RelationKind R>
+inline auto get_metric(const Annotation<Kind, R>& annotation) noexcept
 {
     return std::visit([](const auto& value) { return value.get_metric(); }, annotation);
 }
 
-template<TaskKind Kind>
-inline Cost get_cost(const Annotation<Kind>& annotation) noexcept
+template<TaskKind Kind, ::tyr::formalism::RelationKind R>
+inline Cost get_cost(const Annotation<Kind, R>& annotation) noexcept
 {
     return std::visit([](const auto& value) { return value.get_cost(); }, annotation);
 }
@@ -244,10 +245,12 @@ template<TaskKind Kind>
 struct NumericIntervalAnnotation : ygg::comparison::Mixin<NumericIntervalAnnotation<Kind>>
 {
     ygg::ClosedInterval<ygg::float_t> interval;
-    Annotation<Kind> annotation;
+    Annotation<Kind, ::tyr::formalism::FunctionTag> annotation;
 
     NumericIntervalAnnotation() = default;
-    NumericIntervalAnnotation(ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind> annotation) : interval(interval), annotation(std::move(annotation))
+    NumericIntervalAnnotation(ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind, ::tyr::formalism::FunctionTag> annotation) :
+        interval(interval),
+        annotation(std::move(annotation))
     {
     }
 
@@ -291,19 +294,19 @@ public:
         return key_it == relation_it->second.end() ? nullptr : &key_it->second;
     }
 
-    const Annotation<Kind>* find(Binding binding) const noexcept
+    const Annotation<Kind, ::tyr::formalism::FunctionTag>* find(Binding binding) const noexcept
     {
         const auto* entries = find_entries(binding);
         return (!entries || entries->empty()) ? nullptr : &entries->back().annotation;
     }
 
-    Annotation<Kind>* find(Binding binding) noexcept
+    Annotation<Kind, ::tyr::formalism::FunctionTag>* find(Binding binding) noexcept
     {
         auto* entries = find_entries(binding);
         return (!entries || entries->empty()) ? nullptr : &entries->back().annotation;
     }
 
-    const Annotation<Kind>* find(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
+    const Annotation<Kind, ::tyr::formalism::FunctionTag>* find(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
     {
         const auto* entries = find_entries(binding);
         if (!entries)
@@ -316,7 +319,7 @@ public:
         return nullptr;
     }
 
-    void insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind> annotation)
+    void insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind, ::tyr::formalism::FunctionTag> annotation)
     {
         if (empty(interval))
             return;
@@ -391,19 +394,19 @@ public:
         return slot.generation == m_generation ? &slot.entries : nullptr;
     }
 
-    const Annotation<Kind>* find(Binding binding) const noexcept
+    const Annotation<Kind, ::tyr::formalism::FunctionTag>* find(Binding binding) const noexcept
     {
         const auto* entries = find_entries(binding);
         return (!entries || entries->empty()) ? nullptr : &entries->back().annotation;
     }
 
-    Annotation<Kind>* find(Binding binding) noexcept
+    Annotation<Kind, ::tyr::formalism::FunctionTag>* find(Binding binding) noexcept
     {
         auto* entries = const_cast<Entries*>(find_entries(binding));
         return (!entries || entries->empty()) ? nullptr : &entries->back().annotation;
     }
 
-    const Annotation<Kind>* find(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
+    const Annotation<Kind, ::tyr::formalism::FunctionTag>* find(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
     {
         const auto* entries = find_entries(binding);
         if (!entries)
@@ -416,7 +419,7 @@ public:
         return nullptr;
     }
 
-    void insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind> annotation)
+    void insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind, ::tyr::formalism::FunctionTag> annotation)
     {
         if (empty(interval))
             return;
@@ -476,7 +479,7 @@ using SelectedFunctionAnnotations = NumericIntervalAnnotations<Kind>;
 template<TaskKind Kind>
 using DeltaFunctionAnnotations = DeltaNumericIntervalAnnotations<Kind>;
 
-template<TaskKind Kind>
+template<TaskKind Kind, ::tyr::formalism::RelationKind R>
 struct AndAnnotationContext;
 
 inline ygg::ClosedInterval<ygg::float_t> aggregate_metric_support(ygg::ClosedInterval<ygg::float_t> lhs, ygg::ClosedInterval<ygg::float_t> rhs) noexcept
