@@ -2,8 +2,8 @@
 
 Tyr consumes native third-party dependencies from Python packages:
 
-- `pyyggdrasil>=0.0.25,<0.1` provides shared libraries, headers, and CMake packages for common native dependencies.
-- `pypddl>=1.0.25,<1.1` provides Loki's PDDL parser library, headers, and CMake package.
+- `pyyggdrasil>=0.0.26,<0.1` provides shared libraries, headers, and CMake packages for common native dependencies.
+- `pypddl>=1.0.26,<1.1` provides Loki's PDDL parser library, headers, and CMake package.
 - `pypddl-datasets>=0.0.9,<0.1` provides the PDDL benchmark data used by the C++ test and profiling fixtures (resolved from its cache at CMake configure time).
 
 ## Requirements
@@ -18,7 +18,7 @@ Create a virtual environment and install the native dependency providers:
 
 ```console
 uv venv
-uv pip install 'pyyggdrasil>=0.0.25,<0.1' 'pypddl>=1.0.25,<1.1' 'pypddl-datasets>=0.0.9,<0.1'
+uv pip install 'pyyggdrasil>=0.0.26,<0.1' 'pypddl>=1.0.26,<1.1' 'pypddl-datasets>=0.0.9,<0.1'
 ```
 
 For plain `pip`, use:
@@ -26,7 +26,7 @@ For plain `pip`, use:
 ```console
 python -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install 'pyyggdrasil>=0.0.25,<0.1' 'pypddl>=1.0.25,<1.1' 'pypddl-datasets>=0.0.9,<0.1'
+.venv/bin/python -m pip install 'pyyggdrasil>=0.0.26,<0.1' 'pypddl>=1.0.26,<1.1' 'pypddl-datasets>=0.0.9,<0.1'
 ```
 
 ## C++ Build
