@@ -76,9 +76,9 @@ GroundAxiomStrata compute_ground_axiom_stratification(fp::FDRTaskView task)
     for (auto s : comp_stratum)
         max_s = std::max(max_s, s);
 
-    auto buckets = std::vector<ygg::IndexList<fp::GroundAxiom>>(max_s + 1);
+    auto buckets = std::vector<GroundAxiomStratum>(max_s + 1);
     for (const auto axiom : task.get_ground_axioms())
-        buckets[atom_stratum[ygg::uint_t(axiom.get_head().get_index())]].push_back(axiom.get_index());
+        buckets[atom_stratum[ygg::uint_t(axiom.get_head().get_index())]].push_back(axiom);
 
     auto out = GroundAxiomStrata {};
     out.data.reserve(buckets.size());

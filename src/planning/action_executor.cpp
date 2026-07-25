@@ -108,9 +108,9 @@ inline void process_effects(fp::ActionView action,
 
                     for (const auto literal : effect.get_literals())
                         if (literal.get_polarity())
-                            tmp_add_effects.push_back(fdr_context.get_fact(ground(literal.get_atom(), grounder_context).first));
+                            tmp_add_effects.push_back(fdr_context.get_fact(ground(literal.get_atom(), grounder_context).first).get_data());
                         else
-                            tmp_del_effects.push_back(fdr_context.get_fact(ground(literal.get_atom(), grounder_context).first));
+                            tmp_del_effects.push_back(fdr_context.get_fact(ground(literal.get_atom(), grounder_context).first).get_data());
 
                     for (const auto numeric_effect : effect.get_numeric_effects())
                         visit(

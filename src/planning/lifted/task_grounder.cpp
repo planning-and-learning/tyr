@@ -87,7 +87,7 @@ RemapStatus classify_literal(fp::GroundLiteralView<T> literal, const ygg::Unorde
 struct RemappedFDRFact
 {
     RemapStatus status;
-    std::optional<ygg::Data<fp::FDRFact<f::FluentTag>>> fact;
+    std::optional<fp::FDRFactView<f::FluentTag>> fact;
 };
 
 RemappedFDRFact remap_fdr_fact(fp::FDRFactView<f::FluentTag> fact,
@@ -183,7 +183,7 @@ create_ground_fdr_conjunctive_condition(fp::GroundConjunctiveConditionView eleme
         if (remapped_fdr_fact.status == RemapStatus::tautology)
             continue;
 
-        fdr_conj_cond.positive_facts.push_back(*remapped_fdr_fact.fact);
+        fdr_conj_cond.positive_facts.push_back(remapped_fdr_fact.fact->get_data());
     }
 
     for (const auto fact : element.get_facts<f::NegativeTag>())
@@ -196,7 +196,7 @@ create_ground_fdr_conjunctive_condition(fp::GroundConjunctiveConditionView eleme
         if (remapped_fdr_fact.status == RemapStatus::tautology)
             continue;
 
-        fdr_conj_cond.negative_facts.push_back(*remapped_fdr_fact.fact);
+        fdr_conj_cond.negative_facts.push_back(remapped_fdr_fact.fact->get_data());
     }
 
     for (const auto numeric_constraint : element.get_numeric_constraints())
@@ -240,9 +240,9 @@ std::optional<fp::GroundConjunctiveConditionView> ground_pruned(fp::ConjunctiveC
             return std::nullopt;
 
         if (literal.get_polarity())
-            conj_cond.positive_facts.push_back(*new_fact);
+            conj_cond.positive_facts.push_back(new_fact->get_data());
         else
-            conj_cond.negative_facts.push_back(*new_fact);
+            conj_cond.negative_facts.push_back(new_fact->get_data());
     }
 
     for (const auto literal : element.template get_literals<f::DerivedTag>())
@@ -287,9 +287,9 @@ std::optional<fp::GroundConjunctiveEffectView> ground_pruned(fp::ConjunctiveEffe
             return std::nullopt;
 
         if (literal.get_polarity())
-            conj_eff.add_facts.push_back(*new_fact);
+            conj_eff.add_facts.push_back(new_fact->get_data());
         else
-            conj_eff.del_facts.push_back(*new_fact);
+            conj_eff.del_facts.push_back(new_fact->get_data());
     }
     for (const auto numeric_effect : element.get_numeric_effects())
         conj_eff.numeric_effects.push_back(ground(numeric_effect, context).get_data());
@@ -566,8 +566,8 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
     /// --- Create FDR fluent facts
     for (const auto atom : task.get_atoms<f::FluentTag>())
-        if (const auto fact = std::as_const(*fdr_context).get_fact(merge_p2p(atom, merge_context).first.get_index()))
-            fdr_task.fluent_facts.push_back(*fact);
+        if (const auto fact = std::as_const(*fdr_context).get_fact(merge_p2p(atom, merge_context).first))
+            fdr_task.fluent_facts.push_back(fact->get_data());
 
     auto static_atoms_bitset = boost::dynamic_bitset<>();
     for (const auto atom : task.get_atoms<f::StaticTag>())

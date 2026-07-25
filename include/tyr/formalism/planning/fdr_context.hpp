@@ -48,21 +48,17 @@ public:
     // Copy the FDRContext.
     FDRContext(const FDRContext& other, Builder& builder, RepositoryPtr context);
 
-    ygg::Data<FDRFact<FluentTag>> get_fact(ygg::Index<GroundAtom<FluentTag>> atom);
-    ygg::Data<FDRFact<FluentTag>> get_fact(GroundAtomView<FluentTag> atom);
-    FDRFactView<FluentTag> get_fact_view(GroundAtomView<FluentTag> atom);
+    FDRFactView<FluentTag> get_fact(GroundAtomView<FluentTag> atom);
 
-    std::optional<ygg::Data<FDRFact<FluentTag>>> get_fact(ygg::Index<GroundAtom<FluentTag>> atom) const;
-    std::optional<ygg::Data<FDRFact<FluentTag>>> get_fact(GroundAtomView<FluentTag> atom) const;
-    std::optional<FDRFactView<FluentTag>> get_fact_view(GroundAtomView<FluentTag> atom) const;
+    std::optional<FDRFactView<FluentTag>> get_fact(GroundAtomView<FluentTag> atom) const;
 
-    FDRVariableListView<FluentTag> get_variables() const;
+    const FDRVariableViewList<FluentTag>& get_variables() const noexcept;
 
 private:
     RepositoryPtr m_context;
     ygg::Data<FDRVariable<FluentTag>> m_builder;
-    ygg::IndexList<FDRVariable<FluentTag>> m_variables;
-    ygg::UnorderedMap<ygg::Index<GroundAtom<FluentTag>>, ygg::Data<FDRFact<FluentTag>>> m_mapping;
+    FDRVariableViewList<FluentTag> m_variables;
+    ygg::UnorderedMap<GroundAtomView<FluentTag>, FDRFactView<FluentTag>> m_mapping;
 };
 
 }

@@ -22,6 +22,7 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
+#include "tyr/planning/ground/match_tree/repository.hpp"
 
 #include <optional>
 #include <vector>
@@ -34,8 +35,6 @@ template<typename Tag>
 class MatchTree
 {
 private:
-    ygg::IndexList<Tag> m_elements;
-
     RepositoryPtr<Tag> m_context;
 
     std::optional<ygg::View<ygg::Data<Node<Tag>>, Repository<Tag>>> m_root;
@@ -43,12 +42,13 @@ private:
     std::vector<ygg::View<ygg::Data<Node<Tag>>, Repository<Tag>>> m_evaluate_stack;  ///< temporary during evaluation.
 
 public:
-    MatchTree(ygg::IndexList<Tag> elements, const ::tyr::formalism::planning::Repository& context);
+    MatchTree(std::vector<ygg::View<ygg::Index<Tag>, ::tyr::formalism::planning::Repository>> elements,
+              const ::tyr::formalism::planning::Repository& context);
     ~MatchTree();
 
-    static MatchTreePtr<Tag> create(ygg::IndexList<Tag> elements, const ::tyr::formalism::planning::Repository& context);
+    static MatchTreePtr<Tag> create(std::vector<ygg::View<ygg::Index<Tag>, ::tyr::formalism::planning::Repository>> elements,
+                                    const ::tyr::formalism::planning::Repository& context);
 
-    // Uncopieable and unmoveable to prohibit invalidating spans on m_elements.
     MatchTree(const MatchTree& other) = delete;
     MatchTree& operator=(const MatchTree& other) = delete;
     MatchTree(MatchTree&& other) = delete;

@@ -339,7 +339,7 @@ inline bool is_applicable(::tyr::formalism::planning::LiteralView<::tyr::formali
         return !element.get_polarity();
 
     const auto& fact = *fact_or_nullopt;
-    return (context.state.unpacked_state.get(fact.variable) == fact.value) == element.get_polarity();
+    return (context.state.unpacked_state.get(fact.get_variable()) == fact.get_value()) == element.get_polarity();
 }
 
 inline bool is_applicable(::tyr::formalism::planning::LiteralView<::tyr::formalism::DerivedTag> element, const ApplicabilityContext& context)

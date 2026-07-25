@@ -55,7 +55,7 @@ StateView<LiftedTag> StateRepository<LiftedTag>::get_initial_state()
     auto unpacked_state = get_unregistered_state();
 
     for (const auto atom : m_task->get_task().get_atoms<f::FluentTag>())
-        unpacked_state->set(m_task->get_fdr_context()->get_fact(atom.get_index()));
+        unpacked_state->set(m_task->get_fdr_context()->get_fact(atom).get_data());
 
     for (const auto fterm_value : m_task->get_task().get_fterm_values<f::FluentTag>())
         unpacked_state->set(fterm_value.get_fterm().get_index(), fterm_value.get_value());

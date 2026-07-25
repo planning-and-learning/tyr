@@ -26,7 +26,7 @@
 namespace tyr::planning
 {
 
-using GroundAxiomStratum = ygg::IndexList<::tyr::formalism::planning::GroundAxiom>;
+using GroundAxiomStratum = ::tyr::formalism::planning::GroundAxiomViewList;
 
 struct GroundAxiomStrata
 {

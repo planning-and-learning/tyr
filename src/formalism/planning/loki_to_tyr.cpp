@@ -1080,7 +1080,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::AtomView element, Build
             if constexpr (std::is_same_v<T, GroundAtomView<StaticTag>>)
                 return arg;
             else if constexpr (std::is_same_v<T, GroundAtomView<FluentTag>>)
-                return fdr_context.get_fact_view(arg);
+                return fdr_context.get_fact(arg);
             else if constexpr (std::is_same_v<T, GroundAtomView<DerivedTag>>)
                 return arg;
             else
@@ -1134,7 +1134,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::LiteralView element, Bu
             if constexpr (std::is_same_v<T, GroundLiteralView<StaticTag>>)
                 return arg;
             else if constexpr (std::is_same_v<T, GroundLiteralView<FluentTag>>)
-                return std::make_pair(fdr_context.get_fact_view(arg.get_atom()), arg.get_polarity());
+                return std::make_pair(fdr_context.get_fact(arg.get_atom()), arg.get_polarity());
             else if constexpr (std::is_same_v<T, GroundLiteralView<DerivedTag>>)
                 return arg;
             else

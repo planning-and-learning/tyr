@@ -54,9 +54,10 @@ std::pair<FDRVariableView<FluentTag>, bool> merge_p2p(FDRVariableView<FluentTag>
     return context.destination.get_or_create(variable);
 }
 
-ygg::Data<FDRFact<FluentTag>> merge_p2p(FDRFactView<FluentTag> element, MergeContext& context)
+FDRFactView<FluentTag> merge_p2p(FDRFactView<FluentTag> element, MergeContext& context)
 {
-    return ygg::Data<FDRFact<FluentTag>>(merge_p2p(element.get_variable(), context).first.get_index(), element.get_value());
+    const auto variable = merge_p2p(element.get_variable(), context).first;
+    return ygg::make_view(ygg::Data<FDRFact<FluentTag>>(variable.get_index(), element.get_value()), context.destination);
 }
 }
 
@@ -76,11 +77,12 @@ FDRContext::FDRContext(const std::vector<GroundAtomViewList<FluentTag>>& mutexes
         for (const auto& atom : group)
             variable.atoms.push_back(atom.get_index());
         canonicalize(variable);
-        const auto var_index = m_context->get_or_create(variable).first.get_index();
-        m_variables.push_back(var_index);
+        const auto variable_view = m_context->get_or_create(variable).first;
+        m_variables.push_back(variable_view);
         for (ygg::uint_t i = 0; i < group.size(); ++i)
         {
-            [[maybe_unused]] const auto [it, inserted] = m_mapping.emplace(group[i].get_index(), ygg::Data<FDRFact<FluentTag>>(var_index, FDRValue { i + 1 }));
+            const auto fact = ygg::make_view(ygg::Data<FDRFact<FluentTag>>(variable_view.get_index(), FDRValue { i + 1 }), *m_context);
+            [[maybe_unused]] const auto [it, inserted] = m_mapping.emplace(group[i], fact);
             assert(inserted && "Assumes non overlapping mutex groups");
         }
     }
@@ -99,9 +101,9 @@ FDRContext::FDRContext(const GroundAtomViewList<FluentTag>& all_atoms, Repositor
         variable.clear();
         variable.atoms.push_back(atom.get_index());
         canonicalize(variable);
-        const auto var_index = m_context->get_or_create(variable).first.get_index();
-        m_variables.push_back(var_index);
-        m_mapping.emplace(atom.get_index(), ygg::Data<FDRFact<FluentTag>>(var_index, FDRValue { 1 }));
+        const auto variable_view = m_context->get_or_create(variable).first;
+        m_variables.push_back(variable_view);
+        m_mapping.emplace(atom, ygg::make_view(ygg::Data<FDRFact<FluentTag>>(variable_view.get_index(), FDRValue { 1 }), *m_context));
     }
 }
 
@@ -113,15 +115,14 @@ FDRContext::FDRContext(const FDRContext& other, Builder& builder, RepositoryPtr 
 {
     auto merge_context = MergeContext { builder, *m_context };
 
-    for (const auto variable : ygg::make_view(other.m_variables, *other.m_context))
-        m_variables.push_back(merge_p2p(variable, merge_context).first.get_index());
+    for (const auto variable : other.m_variables)
+        m_variables.push_back(merge_p2p(variable, merge_context).first);
 
-    for (const auto [atom_index, fact_data] : other.m_mapping)
-        m_mapping.emplace(merge_p2p(ygg::make_view(atom_index, *other.m_context), merge_context).first.get_index(),
-                          merge_p2p(ygg::make_view(fact_data, *other.m_context), merge_context));
+    for (const auto [atom, fact] : other.m_mapping)
+        m_mapping.emplace(merge_p2p(atom, merge_context).first, merge_p2p(fact, merge_context));
 }
 
-ygg::Data<FDRFact<FluentTag>> FDRContext::get_fact(ygg::Index<GroundAtom<FluentTag>> atom)
+FDRFactView<FluentTag> FDRContext::get_fact(GroundAtomView<FluentTag> atom)
 {
     // Find explicit ground mutex group assignment
     if (auto it = m_mapping.find(atom); it != m_mapping.end())
@@ -129,22 +130,18 @@ ygg::Data<FDRFact<FluentTag>> FDRContext::get_fact(ygg::Index<GroundAtom<FluentT
 
     // Construct a new binary FDR variable
     m_builder.clear();
-    m_builder.atoms.push_back(atom);
+    m_builder.atoms.push_back(atom.get_index());
     canonicalize(m_builder);
-    const auto var_index = m_context->get_or_create(m_builder).first.get_index();
+    const auto variable = m_context->get_or_create(m_builder).first;
 
-    m_variables.push_back(var_index);
-    const auto fact = ygg::Data<FDRFact<FluentTag>>(var_index, FDRValue { 1 });
+    m_variables.push_back(variable);
+    const auto fact = ygg::make_view(ygg::Data<FDRFact<FluentTag>>(variable.get_index(), FDRValue { 1 }), *m_context);
     m_mapping.emplace(atom, fact);
 
     return fact;
 }
 
-ygg::Data<FDRFact<FluentTag>> FDRContext::get_fact(GroundAtomView<FluentTag> atom) { return get_fact(atom.get_index()); }
-
-FDRFactView<FluentTag> FDRContext::get_fact_view(GroundAtomView<FluentTag> atom) { return ygg::make_view(get_fact(atom), *m_context); }
-
-std::optional<ygg::Data<FDRFact<FluentTag>>> FDRContext::get_fact(ygg::Index<GroundAtom<FluentTag>> atom) const
+std::optional<FDRFactView<FluentTag>> FDRContext::get_fact(GroundAtomView<FluentTag> atom) const
 {
     if (auto it = m_mapping.find(atom); it != m_mapping.end())
         return it->second;
@@ -152,15 +149,5 @@ std::optional<ygg::Data<FDRFact<FluentTag>>> FDRContext::get_fact(ygg::Index<Gro
     return std::nullopt;
 }
 
-std::optional<ygg::Data<FDRFact<FluentTag>>> FDRContext::get_fact(GroundAtomView<FluentTag> atom) const { return get_fact(atom.get_index()); }
-
-std::optional<FDRFactView<FluentTag>> FDRContext::get_fact_view(GroundAtomView<FluentTag> atom) const
-{
-    if (auto fact = get_fact(atom); fact)
-        return ygg::make_view(*fact, *m_context);
-
-    return std::nullopt;
-}
-
-FDRVariableListView<FluentTag> FDRContext::get_variables() const { return ygg::make_view(m_variables, *m_context); }
+const FDRVariableViewList<FluentTag>& FDRContext::get_variables() const noexcept { return m_variables; }
 }

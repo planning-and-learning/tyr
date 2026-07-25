@@ -290,7 +290,7 @@ std::pair<GroundAtomView<T>, bool> ground(AtomView<T> element, GrounderContext& 
 
 inline ygg::Data<FDRFact<FluentTag>> ground(AtomView<FluentTag> element, GrounderContext& context, FDRContext& fdr)
 {
-    return fdr.get_fact(ground(element, context).first.get_index());
+    return fdr.get_fact(ground(element, context).first).get_data();
 }
 
 template<FactKind T>
