@@ -44,7 +44,8 @@ public:
     using SelectionEntry = NumericSupportSelectorWorkspace<GroundTag>::SelectionEntry;
     using Core = NumericSupportSelectorCore<NumericSupportSelector<GroundTag>, Key, SelectionEntry>;
 
-    NumericSupportSelector(const FactsWorkspace<GroundTag>& facts,
+    NumericSupportSelector(const ConstFactsWorkspace<GroundTag>& static_facts,
+                           const FactsWorkspace<GroundTag>& fluent_facts,
                            const NumericIntervalAnnotations<GroundTag>& annotations,
                            bool initial_intervals_cost_zero = false);
 
@@ -93,7 +94,8 @@ public:
     }
 
 private:
-    const FactsWorkspace<GroundTag>& m_facts;
+    const ConstFactsWorkspace<GroundTag>& m_static_facts;
+    const FactsWorkspace<GroundTag>& m_fluent_facts;
     const NumericIntervalAnnotations<GroundTag>& m_annotations;
     bool m_initial_intervals_cost_zero;
     mutable std::vector<SelectionEntry> m_selection;

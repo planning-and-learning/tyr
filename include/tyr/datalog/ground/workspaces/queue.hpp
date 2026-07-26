@@ -35,13 +35,12 @@ template<::tyr::formalism::RelationKind R>
 struct GroundQueueEntry : ygg::comparison::Mixin<GroundQueueEntry<R>>
 {
     Cost cost;
-    ygg::uint_t sequence;
     ::tyr::formalism::datalog::GroundRuleView<R> rule;
 
-    GroundQueueEntry() = default;
-    GroundQueueEntry(Cost cost, ygg::uint_t sequence, ::tyr::formalism::datalog::GroundRuleView<R> rule) : cost(cost), sequence(sequence), rule(rule) {}
+    GroundQueueEntry() = delete;
+    GroundQueueEntry(Cost cost, ::tyr::formalism::datalog::GroundRuleView<R> rule) : cost(cost), rule(rule) {}
 
-    auto identifying_members() const noexcept { return std::make_tuple(cost, sequence); }
+    auto identifying_members() const noexcept { return std::make_tuple(cost, rule); }
 };
 
 struct GroundQueueStatistics
@@ -87,7 +86,6 @@ struct QueueWorkspace<GroundTag>
     std::vector<GroundQueueEntry<::tyr::formalism::PredicateTag>> predicate_storage;
     std::vector<GroundQueueEntry<::tyr::formalism::FunctionTag>> function_storage;
     GroundQueueStatistics statistics;
-    ygg::uint_t next_sequence = 0;
     GroundQueueScratch scratch;
 
     explicit QueueWorkspace(::tyr::formalism::datalog::ProgramView<GroundTag> program)
@@ -107,7 +105,6 @@ struct QueueWorkspace<GroundTag>
         predicate_storage.clear();
         function_storage.clear();
         statistics = GroundQueueStatistics {};
-        next_sequence = 0;
         scratch.clear();
     }
 };

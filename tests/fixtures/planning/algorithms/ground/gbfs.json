@@ -4876,8 +4876,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 58,
-                "num_expanded": 26,
+                "num_generated": 35,
+                "num_expanded": 14,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -8146,19 +8146,20 @@
                 }
             },
             "hff_general": {
-                "num_generated": 126,
-                "num_expanded": 6,
+                "num_generated": 223,
+                "num_expanded": 14,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 5,
-                    "length": 5,
+                    "cost": 6,
+                    "length": 6,
                     "actions": [
-                        "(feast expectation tuna pistachio)",
-                        "(feast rest pistachio wurst)",
-                        "(overcome depression rest wurst)",
-                        "(feast rest wurst chicken)",
-                        "(succumb depression rest chicken)"
+                        "(drink tuna chicken)",
+                        "(feast expectation tuna wurst)",
+                        "(overcome depression expectation wurst)",
+                        "(feast expectation wurst pistachio)",
+                        "(feast expectation pistachio chicken)",
+                        "(succumb depression expectation chicken)"
                     ]
                 }
             },

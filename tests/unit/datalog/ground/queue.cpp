@@ -35,12 +35,33 @@ namespace tyr::tests
 {
 namespace
 {
+using GroundAtomViews = std::vector<fd::GroundAtomView<f::FluentTag>>;
+using PredicateBindingViews = std::vector<fd::PredicateBindingView<f::FluentTag>>;
+
+template<typename Context>
+PredicateBindingViews binding_views(const Context& ctx)
+{
+    auto result = PredicateBindingViews {};
+    for (const auto& set : ctx.out().fact_sets().predicate.get_sets())
+        for (const auto binding : set.get_bindings())
+            result.push_back(binding);
+    return result;
+}
+
+PredicateBindingViews binding_views(std::initializer_list<fd::GroundAtomView<f::FluentTag>> atoms)
+{
+    auto result = PredicateBindingViews {};
+    for (const auto atom : atoms)
+        result.push_back(atom.get_row());
+    return result;
+}
+
 struct GroundQueueFixture
 {
     fd::RepositoryFactory factory;
     fd::Repository repository = factory.create();
     std::vector<ygg::Index<f::Predicate<f::FluentTag>>> fluent_predicates;
-    ygg::UnorderedSet<fd::GroundAtomView<f::FluentTag>> initial_fluent_atoms;
+    GroundAtomViews initial_fluent_atoms;
     std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>> ground_rules;
     ygg::uint_t next_rule_id = 0;
 
@@ -130,10 +151,6 @@ struct GroundQueueFixture
     }
 };
 
-using GroundAtomViews = std::vector<fd::GroundAtomView<f::FluentTag>>;
-
-GroundAtomViews atom_views(const ygg::UnorderedSet<fd::GroundAtomView<f::FluentTag>>& atoms) { return { atoms.begin(), atoms.end() }; }
-
 std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>> rule_indices(const std::vector<fd::GroundRuleView<f::PredicateTag>>& rules)
 {
     auto indices = std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>> {};
@@ -144,7 +161,7 @@ std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>> rule_indices(const std:
 
 struct SolvedGroundQueue
 {
-    GroundAtomViews fluent_atoms;
+    PredicateBindingViews fluent_bindings;
     datalog::GroundQueueStatistics statistics;
 };
 
@@ -157,7 +174,7 @@ SolvedGroundQueue solve_default_state(GroundQueueFixture& fixture)
     auto ctx = datalog::ProgramExecutionContext(workspace, queue_workspace);
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::solve_ground_queue(ctx);
-    return { atom_views(ctx.out().fluent_atoms()), ctx.out().statistics() };
+    return { binding_views(ctx), ctx.out().statistics() };
 }
 }
 
@@ -182,7 +199,7 @@ TEST(TyrDatalogGroundQueueTest, EmptyBodyRuleFires)
 
     const auto result = solve_default_state(fixture);
 
-    EXPECT_EQ(result.fluent_atoms, GroundAtomViews({ atom }));
+    EXPECT_EQ(result.fluent_bindings, binding_views({ atom }));
     EXPECT_EQ(result.statistics.num_rules_fired, 1);
     EXPECT_EQ(result.statistics.num_facts_derived, 1);
 }
@@ -199,7 +216,7 @@ TEST(TyrDatalogGroundQueueTest, ChainedRulesDeriveFixpoint)
 
     const auto result = solve_default_state(fixture);
 
-    EXPECT_EQ(result.fluent_atoms, GroundAtomViews({ a, b, c }));
+    EXPECT_EQ(result.fluent_bindings, binding_views({ a, b, c }));
     EXPECT_EQ(result.statistics.num_facts_derived, 3);
 }
 
@@ -220,13 +237,13 @@ TEST(TyrDatalogGroundQueueTest, ReusesGroundProgramExecutionContext)
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::solve_ground_queue(ctx);
     const auto first_statistics = ctx.out().statistics();
-    EXPECT_EQ(atom_views(ctx.out().fluent_atoms()), GroundAtomViews({ a, b }));
+    EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
     EXPECT_EQ(first_statistics.num_facts_derived, 2);
 
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::solve_ground_queue(ctx);
     const auto second_statistics = ctx.out().statistics();
-    EXPECT_EQ(atom_views(ctx.out().fluent_atoms()), GroundAtomViews({ a, b }));
+    EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
     EXPECT_EQ(second_statistics.num_facts_derived, 2);
     EXPECT_EQ(second_statistics.num_rules_fired, first_statistics.num_rules_fired);
 }
@@ -237,13 +254,13 @@ TEST(TyrDatalogGroundQueueTest, MultiPreconditionRuleWaitsForAllFacts)
     const auto a = fixture.fluent_atom("a");
     const auto b = fixture.fluent_atom("b");
     const auto c = fixture.fluent_atom("c");
-    fixture.initial_fluent_atoms.insert(a);
+    fixture.initial_fluent_atoms.push_back(a);
     fixture.rule(fixture.condition(), b);
     fixture.rule(fixture.condition({ fixture.fluent_literal(a), fixture.fluent_literal(b) }), c);
 
     const auto result = solve_default_state(fixture);
 
-    EXPECT_EQ(result.fluent_atoms, GroundAtomViews({ a, b, c }));
+    EXPECT_EQ(result.fluent_bindings, binding_views({ a, b, c }));
     EXPECT_EQ(result.statistics.num_facts_derived, 2);
 }
 
@@ -274,7 +291,7 @@ TEST(TyrDatalogGroundQueueTest, InitialFluentFactsSatisfyDynamicUnsatisfiedCount
     auto fixture = GroundQueueFixture();
     const auto a = fixture.fluent_atom("a");
     const auto b = fixture.fluent_atom("b");
-    fixture.initial_fluent_atoms.insert(a);
+    fixture.initial_fluent_atoms.push_back(a);
     fixture.rule(fixture.condition({ fixture.fluent_literal(a) }), b);
 
     const auto program = fixture.program();
@@ -297,7 +314,7 @@ TEST(TyrDatalogGroundQueueTest, ExplicitFluentStateDrivesDynamicUnsatisfiedCount
     auto fixture = GroundQueueFixture();
     const auto a = fixture.fluent_atom("a");
     const auto b = fixture.fluent_atom("b");
-    fixture.initial_fluent_atoms.insert(a);
+    fixture.initial_fluent_atoms.push_back(a);
     fixture.rule(fixture.condition({ fixture.fluent_literal(a) }), b);
 
     const auto program = fixture.program();
@@ -306,7 +323,7 @@ TEST(TyrDatalogGroundQueueTest, ExplicitFluentStateDrivesDynamicUnsatisfiedCount
     auto queue_workspace = datalog::QueueWorkspace<GroundTag>(program);
     auto ctx = datalog::ProgramExecutionContext(workspace, queue_workspace);
 
-    ctx.out().fluent_atoms().clear();
+    ctx.out().facts().reset();
     ctx.initialize();
     EXPECT_EQ(ctx.out().rule_states<f::PredicateTag>()[fixture.ground_rules[0].get_value()].unsatisfied_count, 1);
 }
@@ -331,7 +348,7 @@ TEST(TyrDatalogGroundQueueTest, DerivedFactOnlyDecrementsRulesWaitingOnThatFact)
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::solve_ground_queue(ctx);
 
-    EXPECT_EQ(atom_views(ctx.out().fluent_atoms()), GroundAtomViews({ a, b }));
+    EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
     EXPECT_EQ(ctx.out().rule_states<f::PredicateTag>()[fixture.ground_rules[1].get_value()].unsatisfied_count, 0);
     EXPECT_EQ(ctx.out().rule_states<f::PredicateTag>()[fixture.ground_rules[2].get_value()].unsatisfied_count, 1);
 }
@@ -345,7 +362,7 @@ TEST(TyrDatalogGroundQueueTest, DuplicateHeadsDeriveFactOnce)
 
     const auto result = solve_default_state(fixture);
 
-    EXPECT_EQ(result.fluent_atoms, GroundAtomViews({ a }));
+    EXPECT_EQ(result.fluent_bindings, binding_views({ a }));
     EXPECT_EQ(result.statistics.num_rules_fired, 2);
     EXPECT_EQ(result.statistics.num_facts_derived, 1);
 }
@@ -378,7 +395,7 @@ TEST(TyrDatalogGroundQueueTest, GroundUsedCostOverrideDoesNotCreateMetricEffectC
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::solve_ground_queue(ctx);
 
-    EXPECT_EQ(atom_views(ctx.out().fluent_atoms()), GroundAtomViews({ a, b }));
+    EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
     const auto* annotation = ctx.out().and_annot().find(a.get_row());
     ASSERT_NE(annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*annotation), 0);
@@ -411,9 +428,9 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationStopsAfterGoalDerived)
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::solve_ground_queue(ctx);
 
-    EXPECT_EQ(atom_views(ctx.out().fluent_atoms()), GroundAtomViews({ a }));
+    EXPECT_EQ(binding_views(ctx), binding_views({ a }));
     EXPECT_EQ(ctx.out().statistics().num_rules_fired, 1);
-    EXPECT_TRUE(ctx.out().tp().check(datalog::FactSets { ctx.out().facts().static_fact_sets, ctx.out().facts().fluent_fact_sets }));
+    EXPECT_TRUE(ctx.out().tp().check(datalog::FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }));
 }
 
 TEST(TyrDatalogGroundQueueTest, AchieverPolicyGroundRecordsFiredRule)
@@ -440,7 +457,7 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyGroundRecordsFiredRule)
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::solve_ground_queue(ctx);
 
-    EXPECT_EQ(atom_views(ctx.out().fluent_atoms()), GroundAtomViews({ a, b }));
+    EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
     const auto* achievers = ctx.out().and_ap().find_achievers(b);
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
@@ -456,7 +473,7 @@ TEST(TyrDatalogGroundQueueTest, UnfilteredNegativeFluentLiteralDoesNotFire)
 
     const auto result = solve_default_state(fixture);
 
-    EXPECT_TRUE(result.fluent_atoms.empty());
+    EXPECT_TRUE(result.fluent_bindings.empty());
 }
 
 }

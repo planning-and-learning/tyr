@@ -32,26 +32,27 @@ namespace tyr::datalog
 template<>
 struct FactsWorkspace<GroundTag>
 {
-    TaggedFactSets<::tyr::formalism::StaticTag> static_fact_sets;
-    TaggedFactSets<::tyr::formalism::FluentTag> fluent_fact_sets;
-    ygg::UnorderedSet<::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag>> fluent_atoms;
-    ygg::UnorderedMap<::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::StaticTag>, ygg::ClosedInterval<ygg::float_t>> static_fterm_intervals;
-    ygg::UnorderedMap<::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag>, ygg::ClosedInterval<ygg::float_t>> fluent_fterm_intervals;
+    TaggedFactSets<::tyr::formalism::FluentTag> fact_sets;
 
-    explicit FactsWorkspace(::tyr::formalism::datalog::ProgramView<GroundTag> program) :
-        static_fact_sets(program.template get_predicates<::tyr::formalism::StaticTag>(),
-                         program.template get_functions<::tyr::formalism::StaticTag>(),
-                         program.template get_atoms<::tyr::formalism::StaticTag>(),
-                         program.template get_fterm_values<::tyr::formalism::StaticTag>(),
-                         program.get_context()),
-        fluent_fact_sets(program.template get_predicates<::tyr::formalism::FluentTag>(),
-                         program.template get_functions<::tyr::formalism::FluentTag>(),
-                         program.get_context()),
-        fluent_atoms(),
-        static_fterm_intervals(),
-        fluent_fterm_intervals()
-    {
-    }
+    explicit FactsWorkspace(::tyr::formalism::datalog::PredicateListView<::tyr::formalism::FluentTag> predicates,
+                            ::tyr::formalism::datalog::FunctionListView<::tyr::formalism::FluentTag> functions,
+                            ::tyr::formalism::datalog::GroundAtomListView<::tyr::formalism::FluentTag> atoms,
+                            ::tyr::formalism::datalog::GroundFunctionTermValueListView<::tyr::formalism::FluentTag> fterm_values,
+                            const ::tyr::formalism::datalog::Repository& workspace_repository);
+
+    void reset();
+};
+
+template<>
+struct ConstFactsWorkspace<GroundTag>
+{
+    const TaggedFactSets<::tyr::formalism::StaticTag> fact_sets;
+
+    explicit ConstFactsWorkspace(::tyr::formalism::datalog::PredicateListView<::tyr::formalism::StaticTag> predicates,
+                                 ::tyr::formalism::datalog::FunctionListView<::tyr::formalism::StaticTag> functions,
+                                 ::tyr::formalism::datalog::GroundAtomListView<::tyr::formalism::StaticTag> atoms,
+                                 ::tyr::formalism::datalog::GroundFunctionTermValueListView<::tyr::formalism::StaticTag> fterm_values,
+                                 const ::tyr::formalism::datalog::Repository& program_repository);
 };
 
 }

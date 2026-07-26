@@ -41,7 +41,7 @@ struct GroundLMCutNumericNode : ygg::comparison::Mixin<GroundLMCutNumericNode>
     ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term;
     ygg::ClosedInterval<ygg::float_t> interval;
 
-    GroundLMCutNumericNode() = default;
+    GroundLMCutNumericNode() = delete;
     GroundLMCutNumericNode(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term, ygg::ClosedInterval<ygg::float_t> interval) :
         term(term),
         interval(interval)
@@ -55,7 +55,7 @@ struct GroundLMCutRuleEdge : ygg::comparison::Mixin<GroundLMCutRuleEdge>
 {
     ::tyr::formalism::datalog::GroundRuleView<::tyr::formalism::PredicateTag> rule;
 
-    GroundLMCutRuleEdge() = default;
+    GroundLMCutRuleEdge() = delete;
     explicit GroundLMCutRuleEdge(::tyr::formalism::datalog::GroundRuleView<::tyr::formalism::PredicateTag> rule) : rule(rule) {}
 
     auto identifying_members() const noexcept { return std::tie(rule); }
@@ -67,7 +67,7 @@ struct GroundLMCutNumericEdge : ygg::comparison::Mixin<GroundLMCutNumericEdge>
     ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term;
     ygg::ClosedInterval<ygg::float_t> interval;
 
-    GroundLMCutNumericEdge() = default;
+    GroundLMCutNumericEdge() = delete;
     GroundLMCutNumericEdge(::tyr::formalism::datalog::GroundRuleView<::tyr::formalism::FunctionTag> rule,
                            ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term,
                            ygg::ClosedInterval<ygg::float_t> interval) :

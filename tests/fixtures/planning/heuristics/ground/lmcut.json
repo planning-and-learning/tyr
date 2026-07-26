@@ -370,7 +370,7 @@
             "task_file": "classical/tests/transport/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 3
+                    "h": 4
                 },
                 "general": {
                     "h": 52

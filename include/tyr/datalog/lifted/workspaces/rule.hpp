@@ -301,7 +301,7 @@ inline bool supports_inner_parallelism(::tyr::formalism::datalog::NumericEffectO
 
 template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Common::Common(const ::tyr::formalism::datalog::Repository& program_repository,
+RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Common::Common(const ::tyr::formalism::datalog::Repository& program_repository,
                                                                       const ::tyr::formalism::datalog::Repository& workspace_repository,
                                                                       const StaticConsistencyGraph& static_consistency_graph) :
     program_repository(program_repository),
@@ -313,14 +313,14 @@ RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Common::Common(const ::ty
 
 template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Common::clear() noexcept
+void RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Common::clear() noexcept
 {
     kpkc.reset();
 }
 
 template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Common::initialize_iteration(const StaticConsistencyGraph& static_consistency_graph,
+void RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Common::initialize_iteration(const StaticConsistencyGraph& static_consistency_graph,
                                                                                          const AssignmentSets& assignment_sets)
 {
     kpkc.set_next_assignment_sets(static_consistency_graph, assignment_sets);
@@ -328,7 +328,7 @@ void RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Common::initialize_i
 
 template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Iteration::Iteration(::tyr::formalism::datalog::RepositoryFactory& factory,
+RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Iteration::Iteration(::tyr::formalism::datalog::RepositoryFactory& factory,
                                                                             const ConstRuleWorkspace<LiftedTag, R>& cws,
                                                                             const Common& common) :
     workspace_overlay_repository(factory.create(&common.workspace_repository)),
@@ -341,7 +341,7 @@ RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Iteration::Iteration(::ty
 
 template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Iteration::clear() noexcept
+void RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Iteration::clear() noexcept
 {
     workspace_overlay_repository.clear();
     head.clear();
@@ -351,7 +351,7 @@ void RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Iteration::clear() n
 
 template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Solve::Solve(::tyr::formalism::datalog::RepositoryFactory& factory,
+RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Solve::Solve(::tyr::formalism::datalog::RepositoryFactory& factory,
                                                                     const ::tyr::formalism::datalog::Repository& program_repository,
                                                                     const ::tyr::formalism::datalog::Repository& workspace_repository,
                                                                     const AndAP& and_ap) :
@@ -370,7 +370,7 @@ RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Solve::Solve(::tyr::forma
 
 template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Solve::clear() noexcept
+void RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Solve::clear() noexcept
 {
     program_overlay_repository.clear();
     seen_bindings_dbg.clear();
@@ -386,7 +386,7 @@ void RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Solve::clear() noexc
 template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
 const std::vector<::tyr::formalism::datalog::RuleBindingView<R>>&
-    RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Solve::get_sorted_pending_rule_bindings()
+    RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Solve::get_sorted_pending_rule_bindings()
 {
     pending_rule_binding_scratch.assign(pending_rule_bindings.begin(), pending_rule_bindings.end());
     // DeltaKPKC emits canonical bindings within a worker. This sort only stabilizes unordered
@@ -397,7 +397,7 @@ const std::vector<::tyr::formalism::datalog::RuleBindingView<R>>&
 
 template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Worker::Worker(::tyr::formalism::datalog::RepositoryFactory& factory,
+RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Worker::Worker(::tyr::formalism::datalog::RepositoryFactory& factory,
                                                                       const ::tyr::formalism::datalog::Repository& program_repository,
                                                                       const ::tyr::formalism::datalog::Repository& workspace_repository,
                                                                       const ConstRuleWorkspace<LiftedTag, R>& cws,
@@ -412,7 +412,7 @@ RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Worker::Worker(::tyr::for
 
 template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Worker::clear() noexcept
+void RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Worker::clear() noexcept
 {
     iteration.clear();
     solve.clear();
@@ -420,7 +420,7 @@ void RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Worker::clear() noex
 
 template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Instance(::tyr::formalism::datalog::RepositoryFactory& factory_,
+RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Instance(::tyr::formalism::datalog::RepositoryFactory& factory_,
                                                                 const ::tyr::formalism::datalog::Repository& program_repository_,
                                                                 const ::tyr::formalism::datalog::Repository& workspace_repository_,
                                                                 const ConstRuleWorkspace<LiftedTag, R>& cws_,
@@ -439,7 +439,7 @@ RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Instance(::tyr::formalism
 
 template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::clear() noexcept
+void RuleWorkspace<LiftedTag, R>::Instance<AndAP>::clear() noexcept
 {
     common.clear();
     for (auto& w : worker)

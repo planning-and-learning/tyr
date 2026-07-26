@@ -220,7 +220,7 @@ template<typename Workspace>
 AtomsByPredicate collect_atoms_by_predicate(const Workspace& workspace)
 {
     auto result = AtomsByPredicate {};
-    append_atoms_by_predicate(workspace.facts.fluent_fact_sets, workspace.and_annot, result);
+    append_atoms_by_predicate(workspace.facts.fact_sets, workspace.and_annot, result);
     return result;
 }
 

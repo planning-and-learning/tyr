@@ -331,22 +331,12 @@ void bind_workspace(nb::module_& m, const std::string& name)
                    .def(
                        "get_static_fact_sets",
                        [](const Workspace& self) -> const TaggedFactSets<::tyr::formalism::StaticTag>&
-                       {
-                           if constexpr (std::same_as<Kind, GroundTag>)
-                               return self.facts.static_fact_sets;
-                           else
-                               return self.const_workspace.facts.fact_sets;
-                       },
+                       { return self.const_workspace.facts.fact_sets; },
                        nb::rv_policy::reference_internal)
                    .def(
                        "get_fluent_fact_sets",
                        [](const Workspace& self) -> const TaggedFactSets<::tyr::formalism::FluentTag>&
-                       {
-                           if constexpr (std::same_as<Kind, GroundTag>)
-                               return self.facts.fluent_fact_sets;
-                           else
-                               return self.facts.fact_sets;
-                       },
+                       { return self.facts.fact_sets; },
                        nb::rv_policy::reference_internal)
                    .def(
                        "get_predicate_annotations",
@@ -380,18 +370,14 @@ void bind_workspace(nb::module_& m, const std::string& name)
                [](Workspace& self) -> auto& { return self.and_ap; },
                nb::rv_policy::reference_internal)
             .def("clear_fluent_facts",
-                 [](Workspace& self)
-                 {
-                     self.facts.fluent_atoms.clear();
-                     self.facts.fluent_fterm_intervals.clear();
-                 })
+                 [](Workspace& self) { self.facts.reset(); })
             .def(
                 "insert_fluent_atom",
-                [](Workspace& self, Atom atom) { return self.facts.fluent_atoms.insert(atom).second; },
+                [](Workspace& self, Atom atom) { return self.facts.fact_sets.predicate.insert(atom); },
                 "atom"_a)
             .def(
                 "set_fluent_function",
-                [](Workspace& self, FunctionTerm term, const Interval& interval) { self.facts.fluent_fterm_intervals.insert_or_assign(term, interval); },
+                [](Workspace& self, FunctionTerm term, const Interval& interval) { return self.facts.fact_sets.function.insert(term, interval); },
                 "function_term"_a,
                 "interval"_a);
     }

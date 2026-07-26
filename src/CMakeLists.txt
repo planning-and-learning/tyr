@@ -94,6 +94,7 @@ add_library(
     datalog/lifted/delta_kpkc.cpp
     datalog/fact_set.cpp
     datalog/ground/programs/program.cpp
+    datalog/ground/workspaces/facts.cpp
     datalog/ground/workspaces/program.cpp
     datalog/ground/queue.cpp
     datalog/lifted/rule_scheduler.cpp

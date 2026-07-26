@@ -57,7 +57,15 @@ void initialize_dependencies(fd::ProgramView<GroundTag> program, GroundRuleDepen
 }
 }
 
-ConstProgramWorkspace<GroundTag>::ConstProgramWorkspace(fd::ProgramView<GroundTag> program_) : program(program_), predicate_rules(), function_rules()
+ConstProgramWorkspace<GroundTag>::ConstProgramWorkspace(fd::ProgramView<GroundTag> program_) :
+    program(program_),
+    facts(program.template get_predicates<f::StaticTag>(),
+          program.template get_functions<f::StaticTag>(),
+          program.template get_atoms<f::StaticTag>(),
+          program.template get_fterm_values<f::StaticTag>(),
+          program.get_context()),
+    predicate_rules(),
+    function_rules()
 {
     initialize_dependencies(program, predicate_rules);
     initialize_dependencies(program, function_rules);

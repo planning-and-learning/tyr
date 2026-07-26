@@ -415,7 +415,7 @@ void LMCutHeuristic<GroundTag>::extract_cut()
             }
         }
 
-        auto selector = datalog::GroundNumericSupportSelector(m_workspace.facts, m_workspace.numeric_and_annot);
+        auto selector = datalog::GroundNumericSupportSelector(m_workspace.const_workspace.facts, m_workspace.facts, m_workspace.numeric_and_annot);
         for (const auto numeric_constraint : goal->get_numeric_constraints())
         {
             if (selector.get_constraint_cost(numeric_constraint, m_numeric_support_selector_workspace, datalog::MaxAggregation {}) != goal_cost)
@@ -480,7 +480,7 @@ void LMCutHeuristic<GroundTag>::extract_expanded_cut()
             }
         }
 
-        auto selector = datalog::GroundNumericSupportSelector(m_workspace.facts, m_workspace.numeric_and_annot);
+        auto selector = datalog::GroundNumericSupportSelector(m_workspace.const_workspace.facts, m_workspace.facts, m_workspace.numeric_and_annot);
         for (const auto numeric_constraint : goal->get_numeric_constraints())
         {
             if (selector.get_constraint_cost(numeric_constraint, m_numeric_support_selector_workspace, datalog::MaxAggregation {}) != goal_cost)

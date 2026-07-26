@@ -38,8 +38,13 @@ public:
     using FunctionHead = FunctionAnnotationHeadT<GroundTag>;
 
     void initialize_annotation(PredicateHead program_head, SelectedPredicateAnnotations<GroundTag>& program_and_annot) const;
+    void initialize_annotation(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> program_head,
+                               SelectedPredicateAnnotations<GroundTag>& program_and_annot) const;
 
     void initialize_annotation(FunctionHead program_head,
+                               ygg::ClosedInterval<ygg::float_t> interval,
+                               SelectedFunctionAnnotations<GroundTag>& program_numeric_and_annot) const;
+    void initialize_annotation(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> program_head,
                                ygg::ClosedInterval<ygg::float_t> interval,
                                SelectedFunctionAnnotations<GroundTag>& program_numeric_and_annot) const;
 

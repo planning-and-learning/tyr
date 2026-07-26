@@ -51,6 +51,7 @@ template<>
 struct ConstProgramWorkspace<GroundTag>
 {
     ::tyr::formalism::datalog::ProgramView<GroundTag> program;
+    ConstFactsWorkspace<GroundTag> facts;
     GroundRuleDependencies<::tyr::formalism::PredicateTag> predicate_rules;
     GroundRuleDependencies<::tyr::formalism::FunctionTag> function_rules;
 
@@ -83,7 +84,11 @@ struct ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>
                               TP tp_ = TP(),
                               CP cost_policy_ = CP()) :
         const_workspace(cws),
-        facts(cws.program),
+        facts(cws.program.template get_predicates<::tyr::formalism::FluentTag>(),
+              cws.program.template get_functions<::tyr::formalism::FluentTag>(),
+              cws.program.template get_atoms<::tyr::formalism::FluentTag>(),
+              cws.program.template get_fterm_values<::tyr::formalism::FluentTag>(),
+              cws.program.get_context()),
         or_ap(std::move(or_ap_)),
         and_ap(std::move(and_ap_)),
         and_annot(),
@@ -93,7 +98,6 @@ struct ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>
         predicate_rules(cws.program),
         function_rules(cws.program)
     {
-        facts.fluent_atoms.reserve(cws.program.template get_atoms<::tyr::formalism::FluentTag>().size());
     }
 
     explicit ProgramWorkspace(Program<GroundTag>& program, OrAP or_ap_ = OrAP(), AndAP and_ap_ = AndAP(), TP tp_ = TP(), CP cost_policy_ = CP());

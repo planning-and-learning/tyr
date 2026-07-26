@@ -52,6 +52,7 @@ struct ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>
         explicit In(const ConstProgramWorkspace<GroundTag>& cws) : m_cws(cws) {}
 
         auto program() const noexcept { return m_cws.program; }
+        const auto& facts() const noexcept { return m_cws.facts; }
         template<::tyr::formalism::RelationKind R>
         const auto& dependencies() const noexcept
         {
@@ -101,14 +102,8 @@ struct ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>
         {
             return m_queue_ws.template get_storage<R>();
         }
-        auto& fluent_fact_sets() noexcept { return m_ws.facts.fluent_fact_sets; }
-        const auto& fluent_fact_sets() const noexcept { return m_ws.facts.fluent_fact_sets; }
-        auto& fluent_atoms() noexcept { return m_ws.facts.fluent_atoms; }
-        const auto& fluent_atoms() const noexcept { return m_ws.facts.fluent_atoms; }
-        auto& static_fterm_intervals() noexcept { return m_ws.facts.static_fterm_intervals; }
-        const auto& static_fterm_intervals() const noexcept { return m_ws.facts.static_fterm_intervals; }
-        auto& fluent_fterm_intervals() noexcept { return m_ws.facts.fluent_fterm_intervals; }
-        const auto& fluent_fterm_intervals() const noexcept { return m_ws.facts.fluent_fterm_intervals; }
+        auto& fact_sets() noexcept { return m_ws.facts.fact_sets; }
+        const auto& fact_sets() const noexcept { return m_ws.facts.fact_sets; }
         auto& statistics() noexcept { return m_queue_ws.statistics; }
         const auto& statistics() const noexcept { return m_queue_ws.statistics; }
         auto& queue() noexcept { return m_queue_ws; }
@@ -149,9 +144,9 @@ struct ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>
     template<typename Range>
     void initialize(const Range& fluent_atoms)
     {
-        m_out.fluent_atoms().clear();
+        m_out.facts().reset();
         for (const auto atom : fluent_atoms)
-            m_out.fluent_atoms().insert(atom);
+            m_out.fact_sets().predicate.insert(atom);
         initialize();
     }
 
@@ -180,7 +175,7 @@ private:
 
     bool is_fluent_fact_true(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> fact) const noexcept
     {
-        return m_out.fluent_atoms().contains(fact);
+        return m_out.fact_sets().predicate.contains(fact.get_row());
     }
 
     void initialize_annotations()
@@ -190,24 +185,13 @@ private:
         m_out.and_ap().clear_achievers();
         m_out.tp().reset();
 
-        m_out.static_fterm_intervals().clear();
-        for (const auto fterm_value : m_in.program().template get_fterm_values<::tyr::formalism::StaticTag>())
-            m_out.static_fterm_intervals().insert_or_assign(fterm_value.get_fterm(),
-                                                            ygg::ClosedInterval<ygg::float_t>(fterm_value.get_value(), fterm_value.get_value()));
+        for (const auto& set : m_out.fact_sets().predicate.get_sets())
+            for (const auto binding : set.get_bindings())
+                m_out.or_ap().initialize_annotation(binding, m_out.and_annot());
 
-        m_out.fluent_fact_sets().reset();
-
-        for (const auto fact : m_out.fluent_atoms())
-        {
-            m_out.fluent_fact_sets().predicate.insert(fact);
-            m_out.or_ap().initialize_annotation(fact, m_out.and_annot());
-        }
-
-        for (const auto& [fterm, interval] : m_out.fluent_fterm_intervals())
-        {
-            m_out.fluent_fact_sets().function.insert(fterm, interval);
-            m_out.or_ap().initialize_annotation(fterm, interval, m_out.numeric_and_annot());
-        }
+        for (const auto& set : m_out.fact_sets().function.get_sets())
+            for (const auto [binding, interval] : set.get_binding_values())
+                m_out.or_ap().initialize_annotation(binding, interval, m_out.numeric_and_annot());
     }
 
     void reset_from_current_facts()

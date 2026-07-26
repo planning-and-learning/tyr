@@ -421,11 +421,19 @@ public:
 
     void insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind, ::tyr::formalism::FunctionTag> annotation)
     {
+        insert(NumericIntervalBindingParts<Kind>::get_relation(binding),
+               NumericIntervalBindingParts<Kind>::get_key(binding),
+               interval,
+               std::move(annotation));
+    }
+
+    void insert(Relation relation, Key key, ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind, ::tyr::formalism::FunctionTag> annotation)
+    {
         if (empty(interval))
             return;
 
         auto entry = Entry { interval, std::move(annotation) };
-        auto& entries = entries_for_write(binding);
+        auto& entries = entries_for_write(relation, key);
         const auto pos = std::upper_bound(entries.begin(), entries.end(), entry);
         if (pos != entries.begin() && *(pos - 1) == entry)
             return;
@@ -446,14 +454,14 @@ private:
         return find_entries(NumericIntervalBindingParts<Kind>::get_relation(binding), NumericIntervalBindingParts<Kind>::get_key(binding));
     }
 
-    Entries& entries_for_write(Binding binding)
+    Entries& entries_for_write(Relation relation, Key key)
     {
-        const auto relation_index = ygg::uint_t(NumericIntervalBindingParts<Kind>::get_relation(binding));
+        const auto relation_index = ygg::uint_t(relation);
         if (relation_index >= m_slots.size())
             m_slots.resize(relation_index + 1);
 
         auto& key_slots = m_slots[relation_index];
-        const auto key_index = ygg::uint_t(NumericIntervalBindingParts<Kind>::get_key(binding));
+        const auto key_index = ygg::uint_t(key);
         if (key_index >= key_slots.size())
             key_slots.resize(key_index + 1);
 

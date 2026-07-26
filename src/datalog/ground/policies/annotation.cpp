@@ -31,11 +31,27 @@ void OrAnnotationPolicy<GroundTag>::initialize_annotation(::tyr::formalism::data
     program_and_annot.insert_or_assign(program_head.get_row(), BaseAnnotation<GroundTag>(Cost(0)));
 }
 
+void OrAnnotationPolicy<GroundTag>::initialize_annotation(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> program_head,
+                                                          SelectedPredicateAnnotations<GroundTag>& program_and_annot) const
+{
+    program_and_annot.insert_or_assign(program_head, BaseAnnotation<GroundTag>(Cost(0)));
+}
+
 void OrAnnotationPolicy<GroundTag>::initialize_annotation(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> program_head,
                                                           ygg::ClosedInterval<ygg::float_t> interval,
                                                           SelectedFunctionAnnotations<GroundTag>& program_numeric_and_annot) const
 {
     program_numeric_and_annot.insert(program_head, interval, BaseAnnotation<GroundTag>(Cost(0)));
+}
+
+void OrAnnotationPolicy<GroundTag>::initialize_annotation(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> program_head,
+                                                          ygg::ClosedInterval<ygg::float_t> interval,
+                                                          SelectedFunctionAnnotations<GroundTag>& program_numeric_and_annot) const
+{
+    program_numeric_and_annot.insert(program_head.get_relation().get_index(),
+                                     program_head.get_index().row,
+                                     interval,
+                                     BaseAnnotation<GroundTag>(Cost(0)));
 }
 
 CostUpdate<GroundTag> OrAnnotationPolicy<GroundTag>::update_annotation(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> program_head,

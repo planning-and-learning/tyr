@@ -23,10 +23,12 @@ namespace f = tyr::formalism;
 namespace tyr::datalog
 {
 
-NumericSupportSelector<GroundTag>::NumericSupportSelector(const FactsWorkspace<GroundTag>& facts,
+NumericSupportSelector<GroundTag>::NumericSupportSelector(const ConstFactsWorkspace<GroundTag>& static_facts,
+                                                          const FactsWorkspace<GroundTag>& fluent_facts,
                                                           const NumericIntervalAnnotations<GroundTag>& annotations,
                                                           bool initial_intervals_cost_zero) :
-    m_facts(facts),
+    m_static_facts(static_facts),
+    m_fluent_facts(fluent_facts),
     m_annotations(annotations),
     m_initial_intervals_cost_zero(initial_intervals_cost_zero),
     m_selection()
@@ -35,19 +37,17 @@ NumericSupportSelector<GroundTag>::NumericSupportSelector(const FactsWorkspace<G
 
 ygg::ClosedInterval<ygg::float_t> NumericSupportSelector<GroundTag>::lookup_static(fd::GroundFunctionTermView<f::StaticTag> term) const
 {
-    const auto it = m_facts.static_fterm_intervals.find(term);
-    return it == m_facts.static_fterm_intervals.end() ? ygg::ClosedInterval<ygg::float_t>() : it->second;
+    return m_static_facts.fact_sets.function[term];
 }
 
 ygg::ClosedInterval<ygg::float_t> NumericSupportSelector<GroundTag>::current_interval(Key key) const
 {
-    const auto it = m_facts.fluent_fterm_intervals.find(key);
-    return it == m_facts.fluent_fterm_intervals.end() ? ygg::ClosedInterval<ygg::float_t>() : it->second;
+    return m_fluent_facts.fact_sets.function[key];
 }
 
 const NumericIntervalAnnotations<GroundTag>::Entries* NumericSupportSelector<GroundTag>::find_entries(Key key) const
 {
-    return m_annotations.find_entries(key.get_function().get_index(), key.get_index());
+    return m_annotations.find_entries(key.get_function().get_index(), key.get_row().get_index().row);
 }
 
 }

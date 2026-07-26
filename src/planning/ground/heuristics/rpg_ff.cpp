@@ -136,7 +136,8 @@ void FFRPGHeuristic<GroundTag>::extract_relaxed_plan_and_preferred_actions(fd::G
 
 void FFRPGHeuristic<GroundTag>::extract_numeric_constraint_support(fd::GroundBooleanOperatorView constraint, const StateContext<GroundTag>& state_context)
 {
-    const auto numeric_support_selector = datalog::GroundNumericSupportSelector(this->m_workspace.facts, this->m_workspace.numeric_and_annot);
+    const auto numeric_support_selector =
+        datalog::GroundNumericSupportSelector(this->m_workspace.const_workspace.facts, this->m_workspace.facts, this->m_workspace.numeric_and_annot);
     numeric_support_selector.for_each_constraint_support(constraint,
                                                          m_numeric_support_selector_workspace,
                                                          datalog::SumAggregation {},

@@ -176,23 +176,22 @@ ygg::float_t RPGBase<GroundTag, Derived, OrAP, AndAP, TP, CP>::evaluate_impl(con
 {
     if (initialize_costs)
         initialize_rule_costs(state);
-    m_workspace.facts.fluent_atoms.clear();
-    m_workspace.facts.fluent_fterm_intervals.clear();
+    m_workspace.facts.reset();
     const auto& p2d = m_rpg_program.get_translation_context().p2d;
     for (const auto fact : state.get_fluent_facts_view())
         if (const auto atom = fact.get_atom())
-            m_workspace.facts.fluent_atoms.insert(p2d.fluent_to_fluent_atom.at(*atom));
+            m_workspace.facts.fact_sets.predicate.insert(p2d.fluent_to_fluent_atom.at(*atom));
 
     for (const auto& [fterm, value] : state.get_fluent_fterm_values_view())
         if (const auto it = p2d.fluent_to_fluent_fterm.find(fterm); it != p2d.fluent_to_fluent_fterm.end())
-            m_workspace.facts.fluent_fterm_intervals.insert_or_assign(it->second, ygg::ClosedInterval<ygg::float_t>(value, value));
+            m_workspace.facts.fact_sets.function.insert(it->second, value);
 
     auto ctx = datalog::ProgramExecutionContext(m_workspace, m_queue_workspace);
     ctx.initialize();
 
     m_execution_context->arena().execute([&] { datalog::solve_ground_queue(ctx); });
 
-    return m_workspace.tp.check(datalog::FactSets { m_workspace.facts.static_fact_sets, m_workspace.facts.fluent_fact_sets }) ?
+    return m_workspace.tp.check(datalog::FactSets { m_workspace.const_workspace.facts.fact_sets, m_workspace.facts.fact_sets }) ?
                self().extract_cost_and_set_preferred_actions_impl(state) :
                std::numeric_limits<ygg::float_t>::infinity();
 }
@@ -247,8 +246,9 @@ template<typename Derived,
          datalog::RuleCostPolicyConcept<GroundTag> CP>
 datalog::Cost RPGBase<GroundTag, Derived, OrAP, AndAP, TP, CP>::get_goal_cost() const noexcept
 {
-    const auto numeric_support_selector = datalog::GroundNumericSupportSelector(m_workspace.facts, m_workspace.numeric_and_annot);
-    return m_workspace.tp.get_total_cost(datalog::FactSets { m_workspace.facts.static_fact_sets, m_workspace.facts.fluent_fact_sets },
+    const auto numeric_support_selector =
+        datalog::GroundNumericSupportSelector(m_workspace.const_workspace.facts, m_workspace.facts, m_workspace.numeric_and_annot);
+    return m_workspace.tp.get_total_cost(datalog::FactSets { m_workspace.const_workspace.facts.fact_sets, m_workspace.facts.fact_sets },
                                          m_workspace.and_annot,
                                          m_workspace.numeric_and_annot,
                                          numeric_support_selector);

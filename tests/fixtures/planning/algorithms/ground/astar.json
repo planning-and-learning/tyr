@@ -4420,8 +4420,8 @@
             "domain_file": "classical/tests/sokoban/domain.pddl",
             "task_file": "classical/tests/sokoban/test-1.pddl",
             "hff_unit": {
-                "num_generated": 1331,
-                "num_expanded": 610,
+                "num_generated": 1229,
+                "num_expanded": 541,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4441,6 +4441,14 @@
                         "(push loc_3_6 loc_4_6 loc_5_6 down box2)",
                         "(push loc_4_6 loc_5_6 loc_6_6 down box2)",
                         "(push loc_5_6 loc_6_6 loc_7_6 down box2)",
+                        "(move loc_6_6 loc_6_5 left)",
+                        "(move loc_6_5 loc_6_4 left)",
+                        "(move loc_6_4 loc_6_3 left)",
+                        "(move loc_6_3 loc_5_3 up)",
+                        "(push loc_5_3 loc_5_4 loc_5_5 right box3)",
+                        "(push loc_5_4 loc_5_5 loc_5_6 right box3)",
+                        "(move loc_5_5 loc_6_5 down)",
+                        "(move loc_6_5 loc_6_6 right)",
                         "(push loc_6_6 loc_7_6 loc_8_6 down box2)",
                         "(push loc_7_6 loc_8_6 loc_9_6 down box2)",
                         "(move loc_8_6 loc_8_7 right)",
@@ -4451,14 +4459,6 @@
                         "(push loc_8_7 loc_7_7 loc_6_7 up box1)",
                         "(push loc_7_7 loc_6_7 loc_5_7 up box1)",
                         "(move loc_6_7 loc_6_6 left)",
-                        "(move loc_6_6 loc_6_5 left)",
-                        "(move loc_6_5 loc_6_4 left)",
-                        "(move loc_6_4 loc_6_3 left)",
-                        "(move loc_6_3 loc_5_3 up)",
-                        "(push loc_5_3 loc_5_4 loc_5_5 right box3)",
-                        "(push loc_5_4 loc_5_5 loc_5_6 right box3)",
-                        "(move loc_5_5 loc_6_5 down)",
-                        "(move loc_6_5 loc_6_6 right)",
                         "(push loc_6_6 loc_5_6 loc_4_6 up box3)",
                         "(move loc_5_6 loc_6_6 down)",
                         "(move loc_6_6 loc_6_7 right)",
@@ -4472,8 +4472,8 @@
                 }
             },
             "hff_general": {
-                "num_generated": 1331,
-                "num_expanded": 610,
+                "num_generated": 1229,
+                "num_expanded": 541,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4493,6 +4493,14 @@
                         "(push loc_3_6 loc_4_6 loc_5_6 down box2)",
                         "(push loc_4_6 loc_5_6 loc_6_6 down box2)",
                         "(push loc_5_6 loc_6_6 loc_7_6 down box2)",
+                        "(move loc_6_6 loc_6_5 left)",
+                        "(move loc_6_5 loc_6_4 left)",
+                        "(move loc_6_4 loc_6_3 left)",
+                        "(move loc_6_3 loc_5_3 up)",
+                        "(push loc_5_3 loc_5_4 loc_5_5 right box3)",
+                        "(push loc_5_4 loc_5_5 loc_5_6 right box3)",
+                        "(move loc_5_5 loc_6_5 down)",
+                        "(move loc_6_5 loc_6_6 right)",
                         "(push loc_6_6 loc_7_6 loc_8_6 down box2)",
                         "(push loc_7_6 loc_8_6 loc_9_6 down box2)",
                         "(move loc_8_6 loc_8_7 right)",
@@ -4503,14 +4511,6 @@
                         "(push loc_8_7 loc_7_7 loc_6_7 up box1)",
                         "(push loc_7_7 loc_6_7 loc_5_7 up box1)",
                         "(move loc_6_7 loc_6_6 left)",
-                        "(move loc_6_6 loc_6_5 left)",
-                        "(move loc_6_5 loc_6_4 left)",
-                        "(move loc_6_4 loc_6_3 left)",
-                        "(move loc_6_3 loc_5_3 up)",
-                        "(push loc_5_3 loc_5_4 loc_5_5 right box3)",
-                        "(push loc_5_4 loc_5_5 loc_5_6 right box3)",
-                        "(move loc_5_5 loc_6_5 down)",
-                        "(move loc_6_5 loc_6_6 right)",
                         "(push loc_6_6 loc_5_6 loc_4_6 up box3)",
                         "(move loc_5_6 loc_6_6 down)",
                         "(move loc_6_6 loc_6_7 right)",
@@ -4840,8 +4840,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 37,
-                "num_expanded": 13,
+                "num_generated": 31,
+                "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5158,27 +5158,6 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated": 3159,
-                "num_expanded": 1488,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 170,
-                    "length": 9,
-                    "actions": [
-                        "(do-saw-medium b0 p0 saw0 beech rough s3 s2 s1)",
-                        "(do-plane p2 planer0 verysmooth natural colourfragments)",
-                        "(do-spray-varnish p2 spray-varnisher0 mauve smooth)",
-                        "(do-plane p0 planer0 rough natural untreated)",
-                        "(do-saw-medium b1 p1 saw0 cherry rough s3 s2 s1)",
-                        "(do-grind p0 grinder0 smooth natural untreated untreated)",
-                        "(do-immersion-varnish p0 immersion-varnisher0 mauve verysmooth)",
-                        "(do-plane p1 planer0 rough natural untreated)",
-                        "(do-glaze p1 glazer0 green)"
-                    ]
-                }
-            },
             "hadd_unit": {
                 "num_generated": 506,
                 "num_expanded": 115,
@@ -5244,27 +5223,6 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated": 4542,
-                "num_expanded": 2900,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 170,
-                    "length": 9,
-                    "actions": [
-                        "(do-plane p2 planer0 verysmooth natural colourfragments)",
-                        "(do-spray-varnish p2 spray-varnisher0 mauve smooth)",
-                        "(do-saw-medium b0 p0 saw0 beech rough s3 s2 s1)",
-                        "(do-plane p0 planer0 rough natural untreated)",
-                        "(do-grind p0 grinder0 smooth natural untreated untreated)",
-                        "(do-immersion-varnish p0 immersion-varnisher0 mauve verysmooth)",
-                        "(do-saw-medium b1 p1 saw0 cherry rough s3 s2 s1)",
-                        "(do-plane p1 planer0 rough natural untreated)",
-                        "(do-glaze p1 glazer0 green)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
                 "num_generated": 769,
                 "num_expanded": 129,
@@ -5287,6 +5245,8 @@
                 }
             },
             "skipped": {
+                "hmax_general": "status OUT_OF_TIME within 1.0s/1000000 states",
+                "hff_general": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hlmcut_general": "status OUT_OF_TIME within 1.0s/1000000 states"
             }
         },
@@ -6028,8 +5988,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 268,
-                "num_expanded": 102,
+                "num_generated": 264,
+                "num_expanded": 101,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -6811,8 +6771,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 60,
-                "num_expanded": 4,
+                "num_generated": 99,
+                "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -8023,8 +7983,8 @@
                 }
             },
             "hff_general": {
-                "num_generated": 86,
-                "num_expanded": 4,
+                "num_generated": 228,
+                "num_expanded": 22,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -8776,8 +8736,8 @@
                 }
             },
             "hff_general": {
-                "num_generated": 562,
-                "num_expanded": 85,
+                "num_generated": 565,
+                "num_expanded": 87,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {

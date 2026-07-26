@@ -114,8 +114,7 @@ struct PendingNumericBuckets
 template<typename Facts>
 ygg::ClosedInterval<ygg::float_t> find_interval(const Facts& facts, fd::GroundFunctionTermView<f::FluentTag> term) noexcept
 {
-    const auto it = facts.fluent_fterm_intervals.find(term);
-    return it == facts.fluent_fterm_intervals.end() ? ygg::ClosedInterval<ygg::float_t>() : it->second;
+    return facts.fact_sets.function[term];
 }
 
 using Metric = ygg::ClosedInterval<ygg::float_t>;
@@ -127,7 +126,7 @@ template<AndAnnotationPolicyConcept<GroundTag> AndAP,
          RuleCostPolicyConcept<GroundTag> CP>
 GroundNumericSupportSelector make_numeric_support_selector(const GroundCtx<OrAP, AndAP, TP, CP>& ctx)
 {
-    return GroundNumericSupportSelector(ctx.out().facts(), ctx.out().numeric_and_annot(), !requires { AndAP::agg; });
+    return GroundNumericSupportSelector(ctx.in().facts(), ctx.out().facts(), ctx.out().numeric_and_annot(), !requires { AndAP::agg; });
 }
 
 template<OrAnnotationPolicyConcept<GroundTag> OrAP,
@@ -431,7 +430,7 @@ void push_rule(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundRuleView<R> rule)
     queued_cost = cost;
 
     auto& queue = out.template queue_storage<R>();
-    queue.push_back(GroundQueueEntry<R> { cost, out.queue().next_sequence++, rule });
+    queue.push_back(GroundQueueEntry<R> { cost, rule });
     std::push_heap(queue.begin(), queue.end(), std::greater<> {});
 
     ++out.statistics().num_queue_pushes;
@@ -612,10 +611,9 @@ template<OrAnnotationPolicyConcept<GroundTag> OrAP,
 bool derive_fact(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundAtomView<f::FluentTag> fact)
 {
     auto& out = ctx.out();
-    const auto inserted = out.fluent_atoms().insert(fact).second;
+    const auto inserted = out.fact_sets().predicate.insert(fact);
     if (inserted)
     {
-        out.fluent_fact_sets().predicate.insert(fact);
         ++out.statistics().num_facts_derived;
     }
     return inserted;
@@ -660,21 +658,7 @@ bool derive_interval(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundFunctionTerm
     if (empty(interval))
         return false;
 
-    auto& intervals = ctx.out().fluent_fterm_intervals();
-    const auto it = intervals.find(term);
-    if (it == intervals.end())
-    {
-        intervals.emplace(term, interval);
-        ctx.out().fluent_fact_sets().function.insert(term, interval);
-        return true;
-    }
-
-    const auto old_interval = it->second;
-    it->second = hull(old_interval, interval);
-    const auto changed = old_interval != it->second;
-    if (changed)
-        ctx.out().fluent_fact_sets().function.insert(term, interval);
-    return changed;
+    return ctx.out().fact_sets().function.insert(term, interval);
 }
 
 template<OrAnnotationPolicyConcept<GroundTag> OrAP,
@@ -835,7 +819,7 @@ bool fire_rule(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundRuleView<f::Predic
         notify_fact_inserted(ctx, head);
     if (is_annotation_improvement(update))
         notify_fact_annotation_improved(ctx, head);
-    return ctx.out().tp().check(FactSets { ctx.out().facts().static_fact_sets, ctx.out().facts().fluent_fact_sets });
+    return ctx.out().tp().check(FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets });
 }
 
 template<OrAnnotationPolicyConcept<GroundTag> OrAP,
@@ -890,7 +874,7 @@ bool commit_numeric_bucket(GroundCtx<OrAP, AndAP, TP, CP>& ctx, PendingNumericBu
     for (const auto term : changed_terms)
         notify_numeric_interval_changed(ctx, term);
 
-    return !changed_terms.empty() && ctx.out().tp().check(FactSets { ctx.out().facts().static_fact_sets, ctx.out().facts().fluent_fact_sets });
+    return !changed_terms.empty() && ctx.out().tp().check(FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets });
 }
 
 template<f::RelationKind R,
@@ -932,10 +916,8 @@ bool process_rule_frontier(GroundCtx<OrAP, AndAP, TP, CP>& ctx, PendingNumericBu
     {
         const auto& predicates = ctx.out().template queue_storage<f::PredicateTag>();
         const auto& functions = ctx.out().template queue_storage<f::FunctionTag>();
-        const auto process_predicate =
-            functions.empty()
-            || (!predicates.empty()
-                && std::tie(predicates.front().cost, predicates.front().sequence) < std::tie(functions.front().cost, functions.front().sequence));
+        // Queue entries are ordered by (cost, relation kind, rule index), with predicates before functions.
+        const auto process_predicate = functions.empty() || (!predicates.empty() && predicates.front().cost <= functions.front().cost);
         if ((process_predicate && process_next_rule<f::PredicateTag>(ctx, pending_numeric))
             || (!process_predicate && process_next_rule<f::FunctionTag>(ctx, pending_numeric)))
             return true;

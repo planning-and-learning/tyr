@@ -80,6 +80,14 @@ public:
 
     void initialize_annotation(PredicateHead, SelectedPredicateAnnotations<Kind>&) const noexcept {}
     void initialize_annotation(FunctionHead, ygg::ClosedInterval<ygg::float_t>, SelectedFunctionAnnotations<Kind>&) const noexcept {}
+    template<typename Head>
+    void initialize_annotation(Head, SelectedPredicateAnnotations<Kind>&) const noexcept
+    {
+    }
+    template<typename Head>
+    void initialize_annotation(Head, ygg::ClosedInterval<ygg::float_t>, SelectedFunctionAnnotations<Kind>&) const noexcept
+    {
+    }
 
     CostUpdate<Kind> update_annotation(PredicateHead, PredicateHead, const DeltaPredicateAnnotations<Kind>&, SelectedPredicateAnnotations<Kind>&) const noexcept
     {

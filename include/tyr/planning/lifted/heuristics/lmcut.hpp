@@ -42,7 +42,7 @@ struct LiftedLMCutNumericNode : ygg::comparison::Mixin<LiftedLMCutNumericNode>
     ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding;
     ygg::ClosedInterval<ygg::float_t> interval;
 
-    LiftedLMCutNumericNode() = default;
+    LiftedLMCutNumericNode() = delete;
     LiftedLMCutNumericNode(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding, ygg::ClosedInterval<ygg::float_t> interval) :
         binding(binding),
         interval(interval)
