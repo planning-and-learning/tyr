@@ -4,22 +4,20 @@ import matplotlib.pyplot as plt
 import json
 
 from collections import defaultdict
+from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 
-MAX_MEMORY_MB = 20_000_000_000
-MAX_AVG_NUM_STATE_VARIABLES = 200_000_000
-
 def main():
-    with open("results-combined/2026-1-8-gbfs_lazy-htg-tyr-pl-fd-eval/properties", 'r') as file:
-    # with open("results-combined/2026-1-8-gbfs_lazy-tyr-pl-fd-eval/properties", 'r') as file:
-    # with open("data/2026-1-8-gbfs_lazy-profiling-classical-1-eval/properties", 'r') as file:
+    directory = Path(__file__).resolve().parent
+    properties = directory / "results_raw/2026-1-8-gbfs_lazy-delta-kckp-1-eval/properties"
+    with properties.open() as file:
         data = json.load(file)
 
         task_to_runs = defaultdict(list)
-        for task, run in data.items():
-            task_to_runs[tuple(run["id"][1:])].append(run)
+        for run in data.values():
+            if run["domain"].startswith("classical-htg-domains-") and not run["problem"].endswith("-positional.pddl"):
+                task_to_runs[tuple(run["id"][1:])].append(run)
 
         sum_runs = 0
         sum_total = 0
@@ -76,7 +74,7 @@ def main():
             for run in runs:
                 if run["coverage"] == 0:
                     continue
-                if run["algorithm"] != "gbfs-lazy-hff-pref-ff-1":
+                if run["algorithm"] != "gbfs-lazy-delta-kckp-hff-pref-ff-1":
                     continue         
 
                 total_time_ms = run["total_time_ns"] / 1_000_000
@@ -222,7 +220,7 @@ def main():
         plt.xlabel("Parallelizable fraction p")
         plt.ylabel("Number of runs")
         plt.title("Distribution of parallelization potential")
-        plt.savefig("parallel_fraction_histogram.png", dpi=300, bbox_inches="tight")
+        plt.savefig(directory / "parallel_fraction_histogram.png", dpi=300, bbox_inches="tight")
   
         print("DF:")
         for x in dfs:

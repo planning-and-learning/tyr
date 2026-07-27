@@ -1,70 +1,45 @@
 #! /usr/bin/env python
 
-import matplotlib.pyplot as plt
 import json
 
 from collections import defaultdict
+from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+HTG_PREFIX = "classical-htg-domains-"
 
-MAX_MEMORY_MB = 20_000_000_000
-MAX_AVG_NUM_STATE_VARIABLES = 200_000_000
+def load_htg_runs(path):
+    with path.open() as file:
+        runs = json.load(file).values()
+    return {(run["domain"], run["problem"]): run for run in runs if run["domain"].startswith(HTG_PREFIX)}
+
 
 def main():
-    with open("results-combined/2026-1-8-gbfs_lazy-htg-tyr-pl-fd-eval/properties", 'r') as file:
-    # with open("results-combined/2026-1-8-gbfs_lazy-tyr-pl-fd-eval/properties", 'r') as file:
-    # with open("data/2026-1-8-gbfs_lazy-profiling-classical-1-eval/properties", 'r') as file:
-        data = json.load(file)
+    results = Path(__file__).resolve().parent / "results_raw"
+    runs_1 = load_htg_runs(results / "2026-1-8-gbfs_lazy-delta-kckp-1-eval/properties")
+    runs_8 = load_htg_runs(results / "2026-1-8-gbfs_lazy-delta-kckp-8-eval/properties")
+    per_domain_items = defaultdict(set)
 
-        task_to_runs = defaultdict(list)
-        for task, run in data.items():
-            task_to_runs[tuple(run["id"][1:])].append(run)
+    for task in runs_1.keys() & runs_8.keys():
+        run_1 = runs_1[task]
+        run_8 = runs_8[task]
+        if not run_1["coverage"] or not run_8["coverage"] or run_1["total_time_s"] < 6:
+            continue
 
-        dfs = []
+        total_time_ms = run_1["total_time_ns"] / 1_000_000
+        datalog_fraction = (run_1["succgen_prog_t_tot_ms"] + run_1["ff_prog_t_tot_ms"]) / total_time_ms
+        if datalog_fraction < 0.5:
+            continue
 
-        per_domain_items = defaultdict(set)
+        speedup = run_1["total_time_ns"] / run_8["total_time_ns"]
+        per_domain_items[task[0]].add((run_8["ff_rule_skew_tot"], speedup))
 
-        for task, runs in task_to_runs.items():
-            domain = task[0]
-
-            run_1 = None
-            run_8 = None
-            for run in runs:
-                if run["algorithm"] == "gbfs-lazy-hff-pref-ff-1":
-                    if run["coverage"] == 0:
-                        continue
-                    if run["total_time_s"] < 6:
-                        continue
-
-                    total_time_ms = run["total_time_ns"] / 1_000_000
-                    # axiom_prog_t_tot_ms = run["axiom_prog_t_tot_ms"]
-                    succgen_prog_t_tot_ms = run["succgen_prog_t_tot_ms"]
-                    ff_prog_t_tot_ms = run["ff_prog_t_tot_ms"]
-
-                    # df = (axiom_prog_t_tot_ms + succgen_prog_t_tot_ms + ff_prog_t_tot_ms) / total_time_ms
-                    df = (succgen_prog_t_tot_ms + ff_prog_t_tot_ms) / total_time_ms
-                    if df < 0.5:
-                        continue
-                    run_1 = run
-                if run["algorithm"] == "gbfs-lazy-hff-pref-ff-8":
-                    run_8 = run
-
-            if run_1 is None or run_1["coverage"] == 0 or run_8["coverage"] == 0:
-                continue
-
-
-            speedup = run_1["total_time_ns"] / run_8["total_time_ns"]
-
-            per_domain_items[task[0]].add((run_8["ff_rule_skew_tot"], speedup))
-
-        for domain, items in per_domain_items.items():
-            print(domain)
-            for item in items:
-                print(f"({item[0]}, {item[1]})", end=" ")
-            print()
-
-
+    for domain, items in per_domain_items.items():
+        print()
+        print(domain)
+        print(len(items))
+        for skew, speedup in items:
+            print(f"({skew}, {speedup})", end=" ")
+        print()
 
 
 

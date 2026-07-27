@@ -3,145 +3,76 @@
 import json
 from pathlib import Path
 
-from lab.experiment import Experiment
 from downward.reports.scatter import ScatterPlotReport
+from lab.experiment import Experiment
 from lab.reports import Attribute
 
-### All data points
-exp = Experiment("plot-search-time-ms-per-expanded")
-exp.add_fetcher("results-combined/2026-1-8-gbfs_lazy-tyr-pl-fd-eval", name="fetch")
-exp.add_report(
-    ScatterPlotReport(
-        attributes=[Attribute("search_time_ms_per_expanded", digits=3)],
-        filter_algorithm=["powerlifted-gbfs-lazy-hff-pref-ff", "gbfs-lazy-hff-pref-ff-1"],
-        format="png",  # Use "tex" for pgfplots output.
-    ),
-    name="scatterplot-search-time-ms-per-expanded-png",
-)
-exp.add_report(
-    ScatterPlotReport(
-        attributes=[Attribute("search_time_ms_per_expanded", digits=3)],
-        filter_algorithm=["powerlifted-gbfs-lazy-hff-pref-ff", "gbfs-lazy-hff-pref-ff-1"],
-        format="tex",  # Use "tex" for pgfplots output.
-    ),
-    name="scatterplot-search-time-ms-per-expanded-tex",
-)
-exp.run_steps()
 
-
-TYR_DIR = "results_raw/tyr-2026-1-8-gbfs_lazy-combined-eval"
-PL_DIR  = "results_raw/pl-2026-1-9-lazy-gbfs-ff-pref-ff-eval"
-COMBINED_DIR  = "results-combined/2026-1-8-gbfs_lazy-tyr-pl-fd-eval"
-TYR_ALGO = "gbfs-lazy-hff-pref-ff-1"
+DIR = Path(__file__).resolve().parent
+RESULTS_RAW = DIR / "results_raw"
+TYR_DIR = RESULTS_RAW / "2026-1-8-gbfs_lazy-delta-kckp-1-eval"
+PL_DIR = RESULTS_RAW / "pl-2026-1-9-lazy-gbfs-ff-pref-ff-eval"
+TYR_ALGO = "gbfs-lazy-delta-kckp-hff-pref-ff-1"
 PL_ALGO = "powerlifted-gbfs-lazy-hff-pref-ff"
+ATTRIBUTE = Attribute("search_time_ms_per_expanded", digits=3)
 
-def df(run) -> float:
-    total_ms = run["total_time_ns"] / 1_000_000.0
-    if total_ms <= 0:
-        return 0.0
-    ax = float(run.get("axiom_prog_t_tot_ms", 0.0))
-    sg = float(run.get("succgen_prog_t_tot_ms", 0.0))
-    ff = float(run.get("ff_prog_t_tot_ms", 0.0))
-    return (ax + sg + ff) / total_ms
 
 def task_key(run):
-    # assumes id = [algorithm, domain, problem, ...]
-    return tuple(run["id"][1:])
+    return run["domain"], run["problem"]
+
+
+def is_htg(run):
+    return run["domain"].startswith("classical-htg-domains-") and not run["problem"].endswith("-positional.pddl")
+
+
+def datalog_fraction(run):
+    total_ms = run["total_time_ns"] / 1_000_000
+    return sum(run.get(name, 0) for name in ("axiom_prog_t_tot_ms", "succgen_prog_t_tot_ms", "ff_prog_t_tot_ms")) / total_ms
+
+
+def load_runs(path):
+    with (path / "properties").open() as file:
+        runs = json.load(file).values()
+    return {task_key(run): run for run in runs if is_htg(run)}
+
 
 def build_buckets():
-    props = json.load(open(Path(COMBINED_DIR) / "properties"))
+    tyr_runs = load_runs(TYR_DIR)
+    pl_runs = load_runs(PL_DIR)
+    buckets = set(), set()
 
-    by_task = {}
-    for run in props.values():
-        algo = run.get("algorithm")
-        if algo not in {TYR_ALGO, PL_ALGO}:
-            continue
-        t = task_key(run)
-        by_task.setdefault(t, {})[algo] = run
+    for task in tyr_runs.keys() & pl_runs.keys():
+        tyr_run = tyr_runs[task]
+        if tyr_run["coverage"] and pl_runs[task]["coverage"]:
+            buckets[datalog_fraction(tyr_run) >= 0.5].add(task)
 
-    allowed_lt_05 = set()
-    allowed_ge_05 = set()
+    return buckets
 
-    for t, runs in by_task.items():
-        # only keep tasks that can actually contribute a scatter point
-        if TYR_ALGO not in runs or PL_ALGO not in runs:
-            continue
 
-        tyr_run = runs[TYR_ALGO]
-        pl_run = runs[PL_ALGO]
+def add_scatter_experiment(name, allowed=None):
+    exp = Experiment(str(DIR / name))
 
-        # if TYR is uncovered, there will be no scatter point; skip it
-        if tyr_run["coverage"] == 0:
-            continue
-        if pl_run["coverage"] == 0:
-            continue
+    def task_filter(run):
+        return is_htg(run) and (allowed is None or task_key(run) in allowed)
 
-        if df(tyr_run) < 0.5:
-            allowed_lt_05.add(t)
-        else:
-            allowed_ge_05.add(t)
+    exp.add_fetcher(str(TYR_DIR), name="fetch-tyr", merge=False, filter=task_filter)
+    exp.add_fetcher(str(PL_DIR), name="fetch-powerlifted", merge=True, filter=task_filter)
 
-    return allowed_lt_05, allowed_ge_05
+    for output_format in ("png", "tex"):
+        exp.add_report(
+            ScatterPlotReport(
+                attributes=[ATTRIBUTE],
+                filter_algorithm=[PL_ALGO, TYR_ALGO],
+                format=output_format,
+            ),
+            name=f"scatterplot-{output_format}",
+        )
 
-# ---- choose one bucket here ----
+    exp.run_steps()
+
+
+add_scatter_experiment("plot-search-time-ms-per-expanded")
+
 allowed_lt_05, allowed_ge_05 = build_buckets()
-
-def make_task_filter(allowed):
-    def _f(run):
-        return task_key(run) in allowed
-    return _f
-
-
-### df < 0.5
-allowed = allowed_lt_05
-
-exp = Experiment("plot-search-time-ms-per-expanded-df-lt-0-5")
-task_filter = make_task_filter(allowed)
-
-exp.add_fetcher(COMBINED_DIR, name="fetch-combined", filter=task_filter)
-
-exp.add_report(
-    ScatterPlotReport(
-        attributes=[Attribute("search_time_ms_per_expanded", digits=3)],
-        filter_algorithm=["powerlifted-gbfs-lazy-hff-pref-ff", "gbfs-lazy-hff-pref-ff-1"],
-        format="png",
-    ),
-    name="scatterplot-png",
-)
-exp.add_report(
-    ScatterPlotReport(
-        attributes=[Attribute("search_time_ms_per_expanded", digits=3)],
-        filter_algorithm=["powerlifted-gbfs-lazy-hff-pref-ff", "gbfs-lazy-hff-pref-ff-1"],
-        format="tex",
-    ),
-    name="scatterplot-tex",
-)
-
-exp.run_steps()
-
-### df >= 0.5
-allowed = allowed_ge_05
-
-exp = Experiment("plot-search-time-ms-per-expanded-df-ge-0-5")
-task_filter = make_task_filter(allowed)
-
-exp.add_fetcher(COMBINED_DIR, name="fetch-combined", filter=task_filter)
-
-exp.add_report(
-    ScatterPlotReport(
-        attributes=[Attribute("search_time_ms_per_expanded", digits=3)],
-        filter_algorithm=["powerlifted-gbfs-lazy-hff-pref-ff", "gbfs-lazy-hff-pref-ff-1"],
-        format="png",
-    ),
-    name="scatterplot-png",
-)
-exp.add_report(
-    ScatterPlotReport(
-        attributes=[Attribute("search_time_ms_per_expanded", digits=3)],
-        filter_algorithm=["powerlifted-gbfs-lazy-hff-pref-ff", "gbfs-lazy-hff-pref-ff-1"],
-        format="tex",
-    ),
-    name="scatterplot-tex",
-)
-
-exp.run_steps()
+add_scatter_experiment("plot-search-time-ms-per-expanded-df-lt-0-5", allowed_lt_05)
+add_scatter_experiment("plot-search-time-ms-per-expanded-df-ge-0-5", allowed_ge_05)
