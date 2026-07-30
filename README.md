@@ -66,7 +66,7 @@ successor_generator = successor_generator_factory.create(task, execution_context
 # Get the initial node (state + metric value)
 initial_node = successor_generator.get_initial_node()
 
-# Get the labeled successor nodes (sequence of ground action + node)
+# Get the labeled successor nodes (sequence of action binding + node)
 labeled_successor_nodes = successor_generator.get_labeled_successor_nodes(initial_node)
 ```
 
@@ -102,7 +102,7 @@ auto successor_generator = successor_generator_factory.create(task, execution_co
 // Get the initial node (state + metric value).
 auto initial_node = successor_generator->get_initial_node();
 
-// Get the labeled successor nodes (sequence of ground action + node).
+// Get the labeled successor nodes (sequence of action binding + node).
 auto labeled_successor_nodes = successor_generator->get_labeled_successor_nodes(initial_node);
 
 ```

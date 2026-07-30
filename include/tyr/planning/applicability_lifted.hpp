@@ -266,6 +266,10 @@ inline bool is_applicable_if_fires(::tyr::formalism::planning::ConditionalEffect
                                    const analysis::ConditionalEffectDomain& effect_domains,
                                    size_t action_arity)
 {
+    const auto effect = element.get_effect();
+    if (effect.get_numeric_effects().empty() && !effect.get_auxiliary_numeric_effect().has_value())
+        return true;
+
     const auto& parameter_domains = effect_domains.payload.effect_domain.payload;
     const auto binding_size = context.grounder.binding.size();
 
@@ -277,10 +281,13 @@ inline bool is_applicable_if_fires(::tyr::formalism::planning::ConditionalEffect
         cartesian_workspace,
         [&](auto&& binding_cond)
         {
+            if (!applicable)
+                return;
+
             context.grounder.binding.resize(binding_size);
             context.grounder.binding.insert(context.grounder.binding.end(), binding_cond.begin(), binding_cond.end());
 
-            if (is_applicable(element.get_condition(), context) && !is_applicable(element.get_effect(), context, ref_fluent_effect_families))
+            if (is_applicable(element.get_condition(), context) && !is_applicable(effect, context, ref_fluent_effect_families))
             {
                 applicable = false;
                 return;
@@ -372,8 +379,18 @@ bool is_applicable(::tyr::formalism::planning::NumericEffectView<Op, ::tyr::form
                    const ApplicabilityContext& context,
                    ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families)
 {
-    const auto fterm_index = element.get_fterm().get_index();
-    ref_fluent_effect_families.resize(fterm_index.get_value() + 1, ::tyr::formalism::EffectFamily::NONE);
+    auto fterm = ::tyr::formalism::planning::try_ground(element.get_fterm(), context.grounder);
+    if (!fterm.has_value())
+    {
+        if constexpr (std::is_same_v<Op, ::tyr::formalism::Assign>)
+            fterm = ::tyr::formalism::planning::ground(element.get_fterm(), context.grounder).first;
+        else
+            return false;
+    }
+
+    const auto fterm_index = fterm->get_index();
+    if (ref_fluent_effect_families.size() <= fterm_index.get_value())
+        ref_fluent_effect_families.resize(fterm_index.get_value() + 1, ::tyr::formalism::EffectFamily::NONE);
 
     // Check non-conflicting effects
     if (!::tyr::formalism::planning::is_compatible_effect_family(Op::family, ref_fluent_effect_families[fterm_index.get_value()]))
@@ -384,7 +401,7 @@ bool is_applicable(::tyr::formalism::planning::NumericEffectView<Op, ::tyr::form
     // Check fterm is well-defined in context
     if constexpr (!std::is_same_v<Op, ::tyr::formalism::Assign>)
     {
-        if (std::isnan(evaluate(element.get_fterm(), context)))
+        if (std::isnan(context.state.unpacked_state.get(fterm_index)))
             return false;  /// target function is undefined and operator is not assign
     }
 

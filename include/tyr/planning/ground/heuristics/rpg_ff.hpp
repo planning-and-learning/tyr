@@ -48,7 +48,7 @@ public:
 
     ygg::float_t extract_cost_and_set_preferred_actions_impl(const StateView<GroundTag>& state);
 
-    const ygg::UnorderedSet<::tyr::formalism::planning::GroundActionView>& get_preferred_actions() override;
+    const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>& get_preferred_actions() override;
 
     bool mark_atom(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> atom);
     bool mark_function(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term);
@@ -71,7 +71,7 @@ private:
     datalog::GroundNumericSupportSelectorWorkspace m_numeric_support_selector_workspace;
     ::tyr::formalism::planning::EffectFamilyList m_effect_families;
     ygg::UnorderedSet<ygg::Index<::tyr::formalism::planning::GroundAction>> m_relaxed_plan;
-    ygg::UnorderedSet<::tyr::formalism::planning::GroundActionView> m_preferred_actions;
+    ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView> m_preferred_actions;
 };
 
 }

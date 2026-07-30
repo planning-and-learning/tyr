@@ -110,6 +110,7 @@ add_gtest(
     "planning/state.cpp"
 )
 
+add_gtest(planning_applicability "planning/applicability.cpp")
 add_gtest(formalism_planning_invariants_synthesis "formalism/planning/invariants/synthesis.cpp")
 target_link_libraries(formalism_planning_invariants_synthesis PRIVATE Boost::json)
 add_gtest(formalism_unification "formalism/unification.cpp")

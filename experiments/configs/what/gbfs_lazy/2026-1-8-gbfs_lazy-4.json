@@ -1,0 +1,29 @@
+{
+  "name": "2026-1-8-gbfs_lazy-4",
+  "planner": "gbfs_lazy",
+  "suite_sets": {
+    "local": [
+      "ipc-satisficing-strips-test",
+      "ipc-satisficing-adl-test",
+      "autoscale-agile-strips-test"
+    ],
+    "tetralith": [
+      "autoscale-agile-strips",
+      "htg"
+    ]
+  },
+  "configurations": [
+    {
+      "name": "gbfs-lazy-hff-pref-ff-4",
+      "task_kind": "lifted",
+      "heuristic": "rpg_ff",
+      "threads": 4,
+      "seed": 0,
+      "args": []
+    }
+  ],
+  "parsers": [
+    "search",
+    "datalog"
+  ]
+}

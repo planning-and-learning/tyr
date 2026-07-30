@@ -19,7 +19,6 @@
 #define TYR_PLANNING_NODE_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/ground_action_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/planning/state_index.hpp"
 #include "tyr/planning/state_view.hpp"
@@ -41,7 +40,7 @@ using NodeList = std::vector<Node<Kind>>;
 template<TaskKind Kind>
 struct LabeledNode
 {
-    ::tyr::formalism::planning::GroundActionView label;
+    ::tyr::formalism::planning::ActionBindingView label;
     Node<Kind> node;
 };
 
@@ -54,6 +53,7 @@ concept NodeConcept = requires(const T& cn) {
     { cn.get_state() } -> std::same_as<const StateView<Kind>&>;
     { cn.get_metric() } -> std::same_as<ygg::float_t>;
 };
+
 }
 
 #endif

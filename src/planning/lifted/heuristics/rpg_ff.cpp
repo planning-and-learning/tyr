@@ -48,9 +48,7 @@ FFRPGHeuristic<LiftedTag>::FFRPGHeuristic(TaskPtr<LiftedTag> task, ygg::Executio
     m_markings(m_rpg_program.get_datalog_program().get_program().get_predicates<::tyr::formalism::FluentTag>().size()),
     m_function_markings(m_rpg_program.get_datalog_program().get_program().get_functions<::tyr::formalism::FluentTag>().size()),
     m_binding(),
-    m_iter_workspace(),
-    m_grounder_cache(),
-    m_effect_families(),
+    m_executor(),
     m_numeric_support_selector_workspace(),
     m_relaxed_plan(),
     m_preferred_actions()
@@ -91,10 +89,7 @@ ygg::float_t FFRPGHeuristic<LiftedTag>::extract_cost_and_set_preferred_actions_i
     return m_relaxed_plan.size();
 }
 
-const ygg::UnorderedSet<::tyr::formalism::planning::GroundActionView>& FFRPGHeuristic<LiftedTag>::get_preferred_actions()
-{
-    return m_preferred_actions;
-}
+const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>& FFRPGHeuristic<LiftedTag>::get_preferred_actions() { return m_preferred_actions; }
 
 bool FFRPGHeuristic<LiftedTag>::mark_atom(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> binding)
 {
@@ -185,34 +180,20 @@ void FFRPGHeuristic<LiftedTag>::extract_relaxed_plan_and_preferred_actions(const
                                                                            const StateContext<LiftedTag>& state_context,
                                                                            ::tyr::formalism::planning::GrounderContext& grounder_context)
 {
-    const auto& mapping = this->m_rpg_program.template get_rule_to_action_mapping<R>();
-
     const auto rule_row = witness.get_rule_key();
     const auto rule = rule_row.get_relation();
     const auto row = rule_row.get_objects();
 
-    if (const auto it = mapping.find(rule); it != mapping.end())
+    if (const auto action_binding = this->get_action_binding(witness))
     {
-        const auto action = it->second;
-
         grounder_context.binding.clear();
-        for (const auto object : row)
-            grounder_context.binding.push_back(object.get_index());
+        for (const auto object : action_binding->get_data())
+            grounder_context.binding.push_back(object);
 
-        const auto ground_action = ::tyr::formalism::planning::ground(action,
-                                                                      grounder_context,
-                                                                      m_grounder_cache,
-                                                                      m_task->get_formalism_task().get_variable_domains().action_domains.at(action.get_index()),
-                                                                      m_iter_workspace,
-                                                                      *m_task->get_fdr_context())
-                                       .first;
+        m_relaxed_plan.insert(*action_binding);
 
-        const auto ground_action_index = ground_action.get_index();
-
-        m_relaxed_plan.insert(ground_action_index);
-
-        if (is_applicable(ground_action, state_context, m_effect_families))
-            m_preferred_actions.insert(ground_action);
+        if (m_executor.is_applicable(action_binding->get_relation(), state_context, grounder_context, *m_task->get_fdr_context()))
+            m_preferred_actions.insert(*action_binding);
     }
 
     // Divide case: recursively call for preconditions.

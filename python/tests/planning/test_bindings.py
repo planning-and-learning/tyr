@@ -611,14 +611,16 @@ def test_lifted_successor_generator_exposes_action_binding_api():
     assert bindings
 
     binding = bindings[0]
-    ground_action = successor_generator.get_ground_action(binding)
+    ground_action = successor_generator.ground_action(binding)
     binding_successor = successor_generator.get_successor_node(start_node, binding)
     ground_action_successor = successor_generator.get_successor_node(start_node, ground_action)
 
+    assert isinstance(binding, formalism_planning.ActionBinding)
+    assert successor_generator.ground_action(binding) == ground_action
     assert ground_action.get_action().get_arity() == len(list(ground_action.get_objects()))
     assert binding_successor == ground_action_successor
     assert any(
-        labeled_successor.label == ground_action and labeled_successor.node == binding_successor
+        labeled_successor.label == binding and labeled_successor.node == binding_successor
         for labeled_successor in labeled_successor_nodes
     )
 
@@ -636,10 +638,17 @@ def test_labeled_node_is_constructible_for_plan_construction():
         labeled_successor_nodes = successor_generator.get_labeled_successor_nodes(start_node)
 
         assert labeled_successor_nodes
+        first_labeled_successor = labeled_successor_nodes[0]
+        assert isinstance(first_labeled_successor.label, formalism_planning.ActionBinding)
+        assert successor_generator.get_successor_node(start_node, first_labeled_successor.label) == first_labeled_successor.node
+        assert (
+            successor_generator.get_successor_node(start_node, successor_generator.ground_action(first_labeled_successor.label))
+            == first_labeled_successor.node
+        )
 
         labeled_node = task_module.LabeledNode(
-            labeled_successor_nodes[0].label,
-            labeled_successor_nodes[0].node,
+            first_labeled_successor.label,
+            first_labeled_successor.node,
         )
         plan = task_module.Plan(start_node, [labeled_node])
 

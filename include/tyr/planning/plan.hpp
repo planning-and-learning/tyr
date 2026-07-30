@@ -18,7 +18,6 @@
 #ifndef TYR_PLANNING_PLAN_HPP_
 #define TYR_PLANNING_PLAN_HPP_
 
-#include "tyr/formalism/planning/ground_action_index.hpp"
 #include "tyr/planning/node.hpp"
 
 #include <yggdrasil/core/config.hpp>

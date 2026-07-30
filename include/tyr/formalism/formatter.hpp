@@ -18,8 +18,6 @@
 #ifndef TYR_FORMALISM_FORMATTER_HPP_
 #define TYR_FORMALISM_FORMATTER_HPP_
 
-#include <yggdrasil/formatting/cista_formatters.hpp>
-#include <yggdrasil/io/iostream.hpp>
 #include "tyr/formalism/datas.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/views.hpp"
@@ -28,7 +26,8 @@
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
 #include <ostream>
-
+#include <yggdrasil/formatting/cista_formatters.hpp>
+#include <yggdrasil/io/iostream.hpp>
 
 namespace fmt
 {
@@ -290,6 +289,13 @@ struct formatter<ygg::View<ygg::Index<tyr::formalism::RelationBinding<Tag>>, C>,
     template<typename FormatContext>
     auto format(const ygg::View<ygg::Index<tyr::formalism::RelationBinding<Tag>>, C>& value, FormatContext& ctx) const
     {
+        if constexpr (requires { value.get_relation().get_name(); })
+        {
+            auto out = fmt::format_to(ctx.out(), "({}", value.get_relation().get_name());
+            for (const auto object : value.get_objects())
+                out = fmt::format_to(out, " {}", object);
+            return fmt::format_to(out, ")");
+        }
         return fmt::format_to(ctx.out(), "({})", fmt::join(ygg::to_strings(value.get_objects()), " "));
     }
 };

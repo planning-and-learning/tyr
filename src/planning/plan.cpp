@@ -17,7 +17,6 @@
 
 #include "tyr/planning/plan.hpp"
 
-#include "tyr/formalism/planning/ground_action_index.hpp"
 #include "tyr/planning/ground/node.hpp"
 #include "tyr/planning/lifted/node.hpp"
 #include "tyr/planning/node.hpp"

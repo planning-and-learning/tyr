@@ -19,7 +19,6 @@
 #define TYR_PLANNING_HEURISTIC_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/ground_action_index.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/node.hpp"
 #include "tyr/planning/ground/state_view.hpp"
@@ -44,9 +43,9 @@ public:
 
     virtual ygg::float_t evaluate(const Node<Kind>& node) { return evaluate(node.get_state()); }
 
-    virtual const ygg::UnorderedSet<::tyr::formalism::planning::GroundActionView>& get_preferred_actions()
+    virtual const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>& get_preferred_actions()
     {
-        static const auto actions = ygg::UnorderedSet<::tyr::formalism::planning::GroundActionView> {};
+        static const auto actions = ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView> {};
         return actions;
     }
 

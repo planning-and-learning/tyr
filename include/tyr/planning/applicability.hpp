@@ -327,11 +327,15 @@ bool is_applicable_if_fires(::tyr::formalism::planning::GroundConditionalEffectV
                             const StateContext<Kind>& context,
                             ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families)
 {
+    const auto effect = element.get_effect();
+    if (effect.get_numeric_effects().empty() && !effect.get_auxiliary_numeric_effect().has_value())
+        return true;
+
     if (!is_applicable(element.get_condition(), context))
         return true;
 
     // Important: only modify effect families if condition is satisfied
-    return is_applicable(element.get_effect(), context, ref_fluent_effect_families);
+    return is_applicable(effect, context, ref_fluent_effect_families);
 }
 
 template<TaskKind Kind>
@@ -407,7 +411,8 @@ bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<Op, ::tyr
                    ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families)
 {
     const auto fterm_index = element.get_fterm().get_index();
-    ref_fluent_effect_families.resize(fterm_index.get_value() + 1, ::tyr::formalism::EffectFamily::NONE);
+    if (ref_fluent_effect_families.size() <= fterm_index.get_value())
+        ref_fluent_effect_families.resize(fterm_index.get_value() + 1, ::tyr::formalism::EffectFamily::NONE);
 
     // Check non-conflicting effects
     if (!::tyr::formalism::planning::is_compatible_effect_family(Op::family, ref_fluent_effect_families[fterm_index.get_value()]))

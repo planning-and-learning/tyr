@@ -1,0 +1,10 @@
+{
+  "name": "local-build-debug-2500m-5s",
+  "environment": "local",
+  "build_dir": "build-debug",
+  "output_root": "experiments/data",
+  "memory_limit_mib": 2500,
+  "cpu_time_limit_s": null,
+  "wall_time_limit_s": 5,
+  "local_processes": 6
+}

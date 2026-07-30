@@ -82,7 +82,7 @@ SuccessorGenerator<LiftedTag>::SuccessorGenerator(ygg::uint_t index,
     m_task(std::move(task)),
     m_execution_context(std::move(execution_context)),
     m_action_program(m_task->get_task()),
-    m_grounder_cache(),
+    m_action_binding_to_ground_action(),
     m_workspace(m_action_program.get_datalog_program()),
     m_state_repository(std::move(state_repository)),
     m_executor()
@@ -114,22 +114,27 @@ void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<Lifte
     auto grounder_context = fp::GrounderContext { m_workspace.planning_builder, *m_task->get_repository(), m_workspace.binding };
     const auto state_context = StateContext<LiftedTag>(*m_task, node.get_state().get_unpacked_state(), node.get_metric());
 
-    for_each_action_binding(m_workspace,
-                            m_action_program,
-                            m_workspace.binding,
-                            [&](const auto& action, const auto&)
-                            {
-                                const auto ground_action = fp::ground(action,
-                                                                      grounder_context,
-                                                                      m_grounder_cache,
-                                                                      m_task->get_formalism_task().get_variable_domains().action_domains.at(action.get_index()),
-                                                                      m_cartesian_workspace,
-                                                                      *m_task->get_fdr_context())
-                                                               .first;
+    for_each_action_binding(
+        m_workspace,
+        m_action_program,
+        m_workspace.binding,
+        [&](const auto& action, const auto& binding)
+        {
+            m_scratch_action_binding.relation = action.get_index();
+            m_scratch_action_binding.objects = binding;
 
-                                if (m_executor.is_applicable(ground_action, state_context))
-                                    out_nodes.emplace_back(ground_action, m_executor.apply_action(state_context, ground_action, *m_state_repository));
-                            });
+            assert(is_applicable(action.get_condition(), ApplicabilityContext { state_context, grounder_context, *m_task->get_fdr_context() })
+                   && "ApplicableActionProgram emitted an action binding whose condition is not satisfied.");
+
+            // Datalog certifies the action condition, not whether its grounded numeric effects are valid and mutually compatible.
+            if (!m_executor.is_applicable_if_fires(action, state_context, grounder_context, *m_task->get_fdr_context()))
+                return;
+
+            assert(m_executor.is_applicable(action, state_context, grounder_context, *m_task->get_fdr_context()));
+            const auto action_binding = m_task->get_repository()->get_or_create(m_scratch_action_binding).first;
+            out_nodes.emplace_back(action_binding,
+                                   m_executor.apply_action(state_context, action, grounder_context, *m_task->get_fdr_context(), *m_state_repository));
+        });
 }
 
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag>& node, fp::GroundActionView action)
@@ -139,21 +144,25 @@ Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<Lif
     return m_executor.apply_action(state_context, action, *m_state_repository);
 }
 
-fp::GroundActionView SuccessorGenerator<LiftedTag>::get_ground_action(fp::ActionBindingView binding)
+fp::GroundActionView SuccessorGenerator<LiftedTag>::ground_action(fp::ActionBindingView binding)
 {
+    if (const auto it = m_action_binding_to_ground_action.find(binding); it != m_action_binding_to_ground_action.end())
+        return it->second;
+
     m_workspace.binding.clear();
     for (const auto object : binding.get_data())
         m_workspace.binding.push_back(object);
 
     auto grounder_context = fp::GrounderContext { m_workspace.planning_builder, *m_task->get_repository(), m_workspace.binding };
     const auto action = binding.get_relation();
-    return fp::ground(action,
-                      grounder_context,
-                      m_grounder_cache,
-                      m_task->get_formalism_task().get_variable_domains().action_domains.at(action.get_index()),
-                      m_cartesian_workspace,
-                      *m_task->get_fdr_context())
-        .first;
+    const auto ground_action = fp::ground(action,
+                                          grounder_context,
+                                          m_task->get_formalism_task().get_variable_domains().action_domains.at(action.get_index()),
+                                          m_cartesian_workspace,
+                                          *m_task->get_fdr_context())
+                                   .first;
+    m_action_binding_to_ground_action.emplace(binding, ground_action);
+    return ground_action;
 }
 
 // Action binding API (interning)
@@ -192,8 +201,16 @@ void SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<Li
                                 m_scratch_action_binding.relation = action.get_index();
                                 m_scratch_action_binding.objects = binding;
 
-                                if (m_executor.is_applicable(action, state_context, grounder_context, *m_task->get_fdr_context()))
-                                    out_bindings.emplace_back(m_task->get_repository()->get_or_create(m_scratch_action_binding).first);
+                                assert(
+                                    is_applicable(action.get_condition(), ApplicabilityContext { state_context, grounder_context, *m_task->get_fdr_context() })
+                                    && "ApplicableActionProgram emitted an action binding whose condition is not satisfied.");
+
+                                // Datalog certifies the action condition, not whether its grounded numeric effects are valid and mutually compatible.
+                                if (!m_executor.is_applicable_if_fires(action, state_context, grounder_context, *m_task->get_fdr_context()))
+                                    return;
+
+                                assert(m_executor.is_applicable(action, state_context, grounder_context, *m_task->get_fdr_context()));
+                                out_bindings.emplace_back(m_task->get_repository()->get_or_create(m_scratch_action_binding).first);
                             });
 }
 
@@ -238,8 +255,15 @@ void SuccessorGenerator<LiftedTag>::for_each_applicable_action_binding_impl(
             for (const auto object : binding.get_objects())
                 scratch_binding.objects.push_back(object.get_index());
 
-            if (m_executor.is_applicable(it->second, state_context, grounder_context, *m_task->get_fdr_context()))
-                callback(scratch_binding, callback_data);
+            assert(is_applicable(it->second.get_condition(), ApplicabilityContext { state_context, grounder_context, *m_task->get_fdr_context() })
+                   && "ApplicableActionProgram emitted an action binding whose condition is not satisfied.");
+
+            // Datalog certifies the action condition, not whether its grounded numeric effects are valid and mutually compatible.
+            if (!m_executor.is_applicable_if_fires(it->second, state_context, grounder_context, *m_task->get_fdr_context()))
+                continue;
+
+            assert(m_executor.is_applicable(it->second, state_context, grounder_context, *m_task->get_fdr_context()));
+            callback(scratch_binding, callback_data);
         }
     }
 }

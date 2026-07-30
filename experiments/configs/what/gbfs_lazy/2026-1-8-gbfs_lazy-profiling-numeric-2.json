@@ -1,0 +1,28 @@
+{
+  "name": "2026-1-8-gbfs_lazy-profiling-numeric-2",
+  "planner": "gbfs_lazy",
+  "suite_sets": {
+    "local": [
+      "ipc2023-numeric-test",
+      "mine-pddl-numeric-test"
+    ],
+    "tetralith": [
+      "ipc2023-numeric",
+      "mine-pddl-numeric"
+    ]
+  },
+  "configurations": [
+    {
+      "name": "gbfs-lazy-hff-pref-ff-2",
+      "task_kind": "lifted",
+      "heuristic": "rpg_ff",
+      "threads": 2,
+      "seed": 0,
+      "args": []
+    }
+  ],
+  "parsers": [
+    "search",
+    "datalog"
+  ]
+}

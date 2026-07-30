@@ -1,0 +1,34 @@
+{
+  "name": "2026-4-3-blind",
+  "planner": "astar_eager",
+  "suite_sets": {
+    "local": [
+      "ipc-optimal-strips-test"
+    ],
+    "tetralith": [
+      "ipc-optimal-strips"
+    ]
+  },
+  "configurations": [
+    {
+      "name": "astar-blind-lifted-1",
+      "task_kind": "lifted",
+      "heuristic": "blind",
+      "threads": 1,
+      "seed": 0,
+      "args": []
+    },
+    {
+      "name": "astar-blind-grounded-1",
+      "task_kind": "ground",
+      "heuristic": "blind",
+      "threads": 1,
+      "seed": 0,
+      "args": []
+    }
+  ],
+  "parsers": [
+    "search",
+    "datalog"
+  ]
+}

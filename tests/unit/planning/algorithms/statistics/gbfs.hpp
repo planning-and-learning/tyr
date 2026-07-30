@@ -26,6 +26,8 @@ namespace
 void check_statistics(const SearchStatistics& expected, const SearchCase& test_case, const std::string& heuristic_name, p::CostMode cost_mode)
 {
     auto context = create_search_context<StatisticsTaskKind>(test_case.domain_file, test_case.task_file);
+    const auto num_ground_actions_before =
+        context.task->get_repository()->template size<::tyr::formalism::planning::GroundAction>();
     auto heuristic = create_search_heuristic<StatisticsTaskKind>(heuristic_name, context, cost_mode);
     auto event_handler = p::gbfs_lazy::DefaultEventHandler<StatisticsTaskKind>::create();
 
@@ -35,6 +37,10 @@ void check_statistics(const SearchStatistics& expected, const SearchCase& test_c
     const auto result = p::gbfs_lazy::find_solution(*context.task, *context.successor_generator, *heuristic, options);
 
     expect_statistics(expected, event_handler->get_statistics(), result);
+    if constexpr (std::is_same_v<StatisticsTaskKind, p::LiftedTag>)
+    {
+        EXPECT_EQ(context.task->get_repository()->template size<::tyr::formalism::planning::GroundAction>(), num_ground_actions_before);
+    }
 }
 }
 

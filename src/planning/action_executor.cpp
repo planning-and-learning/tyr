@@ -176,11 +176,20 @@ Node<Kind> apply_action_impl(const StateContext<Kind>& state_context,
 template<TaskKind Kind>
 bool ActionExecutor::is_applicable(fp::GroundActionView action, const StateContext<Kind>& state)
 {
-    return tyr::planning::is_applicable(action.get_condition(), state) && tyr::planning::is_applicable_if_fires(action.get_effects(), state, m_effect_families);
+    return tyr::planning::is_applicable(action.get_condition(), state) && is_applicable_if_fires(action, state);
 }
 
 template bool ActionExecutor::is_applicable(fp::GroundActionView action, const StateContext<LiftedTag>& state);
 template bool ActionExecutor::is_applicable(fp::GroundActionView action, const StateContext<GroundTag>& state);
+
+template<TaskKind Kind>
+bool ActionExecutor::is_applicable_if_fires(fp::GroundActionView action, const StateContext<Kind>& state)
+{
+    return tyr::planning::is_applicable_if_fires(action.get_effects(), state, m_effect_families);
+}
+
+template bool ActionExecutor::is_applicable_if_fires(fp::GroundActionView action, const StateContext<LiftedTag>& state);
+template bool ActionExecutor::is_applicable_if_fires(fp::GroundActionView action, const StateContext<GroundTag>& state);
 
 template<TaskKind Kind>
 Node<Kind> ActionExecutor::apply_action(const StateContext<Kind>& state_context, fp::GroundActionView action, StateRepository<Kind>& state_repository)
@@ -207,12 +216,21 @@ bool ActionExecutor::is_applicable(fp::ActionView action,
 {
     auto applicability_context = ApplicabilityContext { state_context, grounder, fdr };
 
-    return tyr::planning::is_applicable(action.get_condition(), applicability_context)
-           && tyr::planning::is_applicable_if_fires(action.get_effects(),
-                                                    applicability_context,
-                                                    m_effect_families,
-                                                    m_cartesian_workspace,
-                                                    state_context.task.get_formalism_task().get_variable_domains().action_domains.at(action.get_index()));
+    return tyr::planning::is_applicable(action.get_condition(), applicability_context) && is_applicable_if_fires(action, state_context, grounder, fdr);
+}
+
+bool ActionExecutor::is_applicable_if_fires(fp::ActionView action,
+                                            const StateContext<LiftedTag>& state_context,
+                                            fp::GrounderContext& grounder,
+                                            const fp::FDRContext& fdr)
+{
+    auto applicability_context = ApplicabilityContext { state_context, grounder, fdr };
+
+    return tyr::planning::is_applicable_if_fires(action.get_effects(),
+                                                 applicability_context,
+                                                 m_effect_families,
+                                                 m_cartesian_workspace,
+                                                 state_context.task.get_formalism_task().get_variable_domains().action_domains.at(action.get_index()));
 }
 
 Node<LiftedTag> ActionExecutor::apply_action(const StateContext<LiftedTag>& state_context,

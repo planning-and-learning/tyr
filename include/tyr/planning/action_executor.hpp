@@ -39,6 +39,9 @@ public:
     bool is_applicable(::tyr::formalism::planning::GroundActionView action, const StateContext<Kind>& state);
 
     template<TaskKind Kind>
+    bool is_applicable_if_fires(::tyr::formalism::planning::GroundActionView action, const StateContext<Kind>& state);
+
+    template<TaskKind Kind>
     Node<Kind>
     apply_action(const StateContext<Kind>& state_context, ::tyr::formalism::planning::GroundActionView action, StateRepository<Kind>& state_repository);
 
@@ -48,6 +51,11 @@ public:
                        const StateContext<LiftedTag>& state_context,
                        ::tyr::formalism::planning::GrounderContext& grounder,
                        const ::tyr::formalism::planning::FDRContext& fdr);
+
+    bool is_applicable_if_fires(::tyr::formalism::planning::ActionView action,
+                                const StateContext<LiftedTag>& state_context,
+                                ::tyr::formalism::planning::GrounderContext& grounder,
+                                const ::tyr::formalism::planning::FDRContext& fdr);
 
     Node<LiftedTag> apply_action(const StateContext<LiftedTag>& state_context,
                                  ::tyr::formalism::planning::ActionView action,

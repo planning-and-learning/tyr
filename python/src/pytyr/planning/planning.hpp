@@ -189,7 +189,7 @@ void bind_labeled_node(nb::module_& m, const std::string& name)
     using T = LabeledNode<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def(nb::init<fp::GroundActionView, Node<Kind>>(), "label"_a, "node"_a)
+                   .def(nb::init<fp::ActionBindingView, Node<Kind>>(), "label"_a, "node"_a)
                    .def_ro("label", &T::label, nb::rv_policy::copy)
                    .def_ro("node", &T::node, nb::rv_policy::copy);
     ygg::add_print(cls);
@@ -265,19 +265,20 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
                         nb::rv_policy::move,
                         "node"_a,
                         nb::call_guard<nb::gil_scoped_release>())
-                   .def("get_successor_node", nb::overload_cast<const Node<Kind>&, fp::GroundActionView>(&T::get_successor_node), "node"_a, "action"_a)
+                   .def("ground_action", &T::ground_action, "binding"_a)
                    .def("get_node", &T::get_node, nb::rv_policy::move, "state_index"_a)
                    .def("get_state_repository", &T::get_state_repository, nb::rv_policy::copy);
 
+    cls.def("get_successor_node", nb::overload_cast<const Node<Kind>&, fp::ActionBindingView>(&T::get_successor_node), "node"_a, "binding"_a)
+        .def("get_successor_node", nb::overload_cast<const Node<Kind>&, fp::GroundActionView>(&T::get_successor_node), "node"_a, "action"_a);
+
     if constexpr (std::is_same_v<Kind, LiftedTag>)
     {
-        cls.def("get_ground_action", &T::get_ground_action, "binding"_a)
-            .def("get_successor_node", nb::overload_cast<const Node<Kind>&, fp::ActionBindingView>(&T::get_successor_node), "node"_a, "binding"_a)
-            .def("get_applicable_action_bindings",
-                 nb::overload_cast<const Node<Kind>&>(&T::get_applicable_action_bindings),
-                 nb::rv_policy::move,
-                 "node"_a,
-                 nb::call_guard<nb::gil_scoped_release>())
+        cls.def("get_applicable_action_bindings",
+                nb::overload_cast<const Node<Kind>&>(&T::get_applicable_action_bindings),
+                nb::rv_policy::move,
+                "node"_a,
+                nb::call_guard<nb::gil_scoped_release>())
             .def("get_action_program", &T::get_action_program, nb::rv_policy::reference_internal)
             .def("get_workspace", &T::get_workspace, nb::rv_policy::reference_internal);
     }
@@ -416,7 +417,7 @@ public:
 
     ygg::float_t evaluate(const StateView<Kind>& state) override { NB_OVERRIDE_PURE(evaluate, state); }
 
-    const ygg::UnorderedSet<::tyr::formalism::planning::GroundActionView>& get_preferred_actions() override { return Base::get_preferred_actions(); }
+    const ygg::UnorderedSet<fp::ActionBindingView>& get_preferred_actions() override { return Base::get_preferred_actions(); }
 };
 
 template<TaskKind Kind>

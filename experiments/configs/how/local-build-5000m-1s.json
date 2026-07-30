@@ -1,0 +1,10 @@
+{
+  "name": "local-build-5000m-1s",
+  "environment": "local",
+  "build_dir": "build",
+  "output_root": "experiments/data",
+  "memory_limit_mib": 5000,
+  "cpu_time_limit_s": null,
+  "wall_time_limit_s": 1,
+  "local_processes": 6
+}

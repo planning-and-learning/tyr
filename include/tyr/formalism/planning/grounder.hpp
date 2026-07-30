@@ -89,7 +89,6 @@ std::pair<ActionBindingView, bool> ground(ActionView action, GrounderContext& co
 
 std::pair<GroundActionView, bool> ground(ActionView element,
                                          GrounderContext& context,
-                                         GrounderCacheEntry<Action>& cache,
                                          const analysis::ActionDomain& action_domains,
                                          ygg::itertools::cartesian_set::Workspace<ygg::Index<::tyr::formalism::Object>>& iter_workspace,
                                          FDRContext& fdr);
@@ -429,16 +428,11 @@ inline std::pair<ActionBindingView, bool> ground(ActionView action, GrounderCont
 
 inline std::pair<GroundActionView, bool> ground(ActionView element,
                                                 GrounderContext& context,
-                                                GrounderCacheEntry<Action>& cache,
                                                 const analysis::ActionDomain& action_domains,
                                                 ygg::itertools::cartesian_set::Workspace<ygg::Index<::tyr::formalism::Object>>& iter_workspace,
                                                 FDRContext& fdr)
 {
     const auto binding = ground(element, context).first.get_index();
-
-    auto& action_cache = cache.container;
-    if (auto it = action_cache.find(binding); it != action_cache.end())
-        return { ygg::make_view(it->second, context.destination), false };
 
     auto action_ptr = context.builder.template get_builder<GroundAction>();
     auto& action = *action_ptr;
@@ -471,11 +465,7 @@ inline std::pair<GroundActionView, bool> ground(ActionView element,
     context.binding.resize(binding_size);
 
     canonicalize(action);
-    const auto result = context.destination.get_or_create(action);
-
-    action_cache.emplace(binding, result.first.get_index());
-
-    return result;
+    return context.destination.get_or_create(action);
 }
 
 inline std::pair<AxiomBindingView, bool> ground(AxiomView axiom, GrounderContext& context)

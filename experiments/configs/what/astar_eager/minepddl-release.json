@@ -1,0 +1,33 @@
+{
+  "name": "minepddl-release",
+  "planner": "astar_eager",
+  "suite_sets": {
+    "local": [
+      "mine-pddl-numeric-test"
+    ],
+    "tetralith": [
+      "mine-pddl-numeric"
+    ]
+  },
+  "configurations": [
+    {
+      "name": "astar-eager-lifted-blind-1",
+      "task_kind": "lifted",
+      "heuristic": "blind",
+      "threads": 1,
+      "seed": 0,
+      "args": []
+    },
+    {
+      "name": "astar-eager-ground-blind-1",
+      "task_kind": "ground",
+      "heuristic": "blind",
+      "threads": 1,
+      "seed": 0,
+      "args": []
+    }
+  ],
+  "parsers": [
+    "search"
+  ]
+}

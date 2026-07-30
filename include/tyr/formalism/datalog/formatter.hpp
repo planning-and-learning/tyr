@@ -210,7 +210,7 @@ struct formatter<tyr::formalism::datalog::GroundAtomView<T>, char>
     template<typename FormatContext>
     auto format(const tyr::formalism::datalog::GroundAtomView<T>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {})", value.get_predicate().get_name(), fmt::join(ygg::to_strings(value.get_objects()), " "));
+        return fmt::format_to(ctx.out(), "{}", value.get_row());
     }
 };
 
@@ -280,7 +280,7 @@ struct formatter<tyr::formalism::datalog::GroundFunctionTermView<T>, char>
     template<typename FormatContext>
     auto format(const tyr::formalism::datalog::GroundFunctionTermView<T>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {})", value.get_function().get_name(), fmt::join(ygg::to_strings(value.get_objects()), " "));
+        return fmt::format_to(ctx.out(), "{}", value.get_row());
     }
 };
 

@@ -47,8 +47,9 @@ public:
     std::vector<LabeledNode<GroundTag>> get_labeled_successor_nodes(const Node<GroundTag>& node);
     void get_labeled_successor_nodes(const Node<GroundTag>& node, std::vector<LabeledNode<GroundTag>>& out_nodes);
 
+    Node<GroundTag> get_successor_node(const Node<GroundTag>& node, ::tyr::formalism::planning::ActionBindingView binding);
     Node<GroundTag> get_successor_node(const Node<GroundTag>& node, ::tyr::formalism::planning::GroundActionView action);
-    ::tyr::formalism::planning::GroundActionView get_ground_action(::tyr::formalism::planning::ActionBindingView binding) const;
+    ::tyr::formalism::planning::GroundActionView ground_action(::tyr::formalism::planning::ActionBindingView binding) const;
 
     Node<GroundTag> get_node(ygg::Index<State<GroundTag>> state_index);
 
@@ -67,6 +68,8 @@ private:
 
     ActionExecutor m_executor;
 };
+
+static_assert(SuccessorGeneratorConcept<SuccessorGenerator<GroundTag>, GroundTag>);
 
 }
 

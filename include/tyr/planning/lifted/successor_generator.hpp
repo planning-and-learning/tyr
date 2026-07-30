@@ -22,7 +22,6 @@
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/formalism/planning/ground_action_view.hpp"
-#include "tyr/formalism/planning/grounder_decl.hpp"
 #include "tyr/planning/action_executor.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
@@ -36,6 +35,7 @@
 
 #include <type_traits>
 #include <utility>
+#include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/core/itertools.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 
@@ -53,13 +53,13 @@ private:
 public:
     Node<LiftedTag> get_initial_node();
 
-    // Ground action API (interning)
+    // Transition label API
     std::vector<LabeledNode<LiftedTag>> get_labeled_successor_nodes(const Node<LiftedTag>& node);
 
     void get_labeled_successor_nodes(const Node<LiftedTag>& node, std::vector<LabeledNode<LiftedTag>>& out_nodes);
 
     Node<LiftedTag> get_successor_node(const Node<LiftedTag>& node, ::tyr::formalism::planning::GroundActionView action);
-    ::tyr::formalism::planning::GroundActionView get_ground_action(::tyr::formalism::planning::ActionBindingView binding);
+    ::tyr::formalism::planning::GroundActionView ground_action(::tyr::formalism::planning::ActionBindingView binding);
 
     // Action binding API (interning)
     Node<LiftedTag> get_successor_node(const Node<LiftedTag>& node, ::tyr::formalism::planning::ActionBindingView binding);
@@ -105,17 +105,19 @@ private:
     ygg::uint_t m_index;
     TaskPtr<LiftedTag> m_task;
     ygg::ExecutionContextPtr m_execution_context;
-    ygg::itertools::cartesian_set::Workspace<ygg::Index<::tyr::formalism::Object>> m_cartesian_workspace;
     ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action>> m_scratch_action_binding;
     ApplicableActionProgram<LiftedTag> m_action_program;
-    ::tyr::formalism::planning::GrounderCacheEntry<::tyr::formalism::planning::Action> m_grounder_cache;
+    ygg::UnorderedMap<::tyr::formalism::planning::ActionBindingView, ::tyr::formalism::planning::GroundActionView> m_action_binding_to_ground_action;
 
     datalog::ProgramWorkspace<LiftedTag> m_workspace;
+    ygg::itertools::cartesian_set::Workspace<ygg::Index<::tyr::formalism::Object>> m_cartesian_workspace;
 
     StateRepositoryPtr<LiftedTag> m_state_repository;
 
     ActionExecutor m_executor;
 };
+
+static_assert(SuccessorGeneratorConcept<SuccessorGenerator<LiftedTag>, LiftedTag>);
 
 /**
  * Implementations

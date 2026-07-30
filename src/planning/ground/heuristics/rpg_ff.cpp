@@ -76,10 +76,7 @@ ygg::float_t FFRPGHeuristic<GroundTag>::extract_cost_and_set_preferred_actions_i
     return ygg::float_t(m_relaxed_plan.size());
 }
 
-const ygg::UnorderedSet<::tyr::formalism::planning::GroundActionView>& FFRPGHeuristic<GroundTag>::get_preferred_actions()
-{
-    return m_preferred_actions;
-}
+const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>& FFRPGHeuristic<GroundTag>::get_preferred_actions() { return m_preferred_actions; }
 
 bool FFRPGHeuristic<GroundTag>::mark_atom(fd::GroundAtomView<f::FluentTag> atom)
 {
@@ -157,7 +154,7 @@ void FFRPGHeuristic<GroundTag>::extract_relaxed_plan_and_preferred_actions(const
         m_relaxed_plan.insert(action.get_index());
         m_effect_families.clear();
         if (is_applicable(action, state_context, m_effect_families))
-            m_preferred_actions.insert(action);
+            m_preferred_actions.insert(action.get_row());
     }
 
     for (const auto literal : rule.get_body().template get_literals<f::FluentTag>())

@@ -24,9 +24,8 @@
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
-#include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
-#include "tyr/planning/applicability.hpp"
+#include "tyr/planning/action_executor.hpp"
 #include "tyr/planning/heuristics/rpg_ff.hpp"
 #include "tyr/planning/lifted/heuristics/rpg.hpp"
 
@@ -51,7 +50,7 @@ public:
 
     ygg::float_t extract_cost_and_set_preferred_actions_impl(const StateView<LiftedTag>& state);
 
-    const ygg::UnorderedSet<::tyr::formalism::planning::GroundActionView>& get_preferred_actions() override;
+    const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>& get_preferred_actions() override;
 
     bool mark_atom(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> atom);
     bool mark_function(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> function);
@@ -79,15 +78,12 @@ private:
     std::vector<boost::dynamic_bitset<>> m_markings;
     std::vector<boost::dynamic_bitset<>> m_function_markings;
 
-    /// For grounding actions
     ygg::IndexList<::tyr::formalism::Object> m_binding;
-    ygg::itertools::cartesian_set::Workspace<ygg::Index<::tyr::formalism::Object>> m_iter_workspace;
-    ::tyr::formalism::planning::GrounderCacheEntry<::tyr::formalism::planning::Action> m_grounder_cache;
-    ::tyr::formalism::planning::EffectFamilyList m_effect_families;
+    ActionExecutor m_executor;
     datalog::NumericSupportSelectorWorkspace<LiftedTag> m_numeric_support_selector_workspace;
 
-    ygg::UnorderedSet<ygg::Index<::tyr::formalism::planning::GroundAction>> m_relaxed_plan;
-    ygg::UnorderedSet<::tyr::formalism::planning::GroundActionView> m_preferred_actions;
+    ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView> m_relaxed_plan;
+    ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView> m_preferred_actions;
 };
 
 }

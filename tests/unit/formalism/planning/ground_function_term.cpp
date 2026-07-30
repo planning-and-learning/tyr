@@ -1,4 +1,5 @@
 #include "tyr/formalism/planning/canonicalization.hpp"
+#include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/ground_function_term_data.hpp"
 #include "tyr/formalism/planning/ground_function_term_index.hpp"
 #include "tyr/formalism/planning/ground_function_term_view.hpp"
@@ -65,4 +66,6 @@ TEST(TyrFormalismPlanningGroundFunctionTerm, ExposesRepositoryView)
     const auto objects = ground_function_term.get_objects();
     ASSERT_EQ(objects.size(), 1);
     EXPECT_EQ(objects[0].get_index(), object.get_index());
+    EXPECT_EQ(fmt::format("{}", binding), "(fuel truck)");
+    EXPECT_EQ(fmt::format("{}", ground_function_term), "(fuel truck)");
 }

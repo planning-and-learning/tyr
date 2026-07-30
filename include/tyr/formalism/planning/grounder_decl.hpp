@@ -38,14 +38,6 @@ template<typename T>
 struct GrounderCacheEntry;
 
 template<>
-struct GrounderCacheEntry<Action>
-{
-    using container_type = ygg::UnorderedMap<ygg::Index<RelationBinding<Action>>, ygg::Index<GroundAction>>;
-
-    container_type container;
-};
-
-template<>
 struct GrounderCacheEntry<Axiom>
 {
     using container_type = ygg::UnorderedMap<ygg::Index<RelationBinding<Axiom>>, ygg::Index<GroundAxiom>>;

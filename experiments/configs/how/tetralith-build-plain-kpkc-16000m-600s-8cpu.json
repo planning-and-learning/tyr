@@ -1,0 +1,16 @@
+{
+  "name": "tetralith-build-plain-kpkc-16000m-600s-8cpu",
+  "environment": "tetralith",
+  "build_dir": "build-plain-kpkc",
+  "output_root": "experiments/data",
+  "memory_limit_mib": 16000,
+  "cpu_time_limit_s": null,
+  "wall_time_limit_s": 600,
+  "account": "naiss2025-5-382",
+  "partition": "tetralith",
+  "qos": "normal",
+  "cpus_per_task": 8,
+  "memory_per_cpu_mib": 2840,
+  "scheduler_time_limit": "24:00:00",
+  "max_tasks": null
+}

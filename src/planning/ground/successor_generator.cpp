@@ -89,9 +89,19 @@ void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<Groun
 
     for (const auto ground_action : m_applicable_actions)
     {
-        if (m_executor.is_applicable(ground_action, state_context))
-            out_nodes.emplace_back(ground_action, m_executor.apply_action(state_context, ground_action, *m_state_repository));
+        assert(is_applicable(ground_action.get_condition(), state_context));
+
+        if (!m_executor.is_applicable_if_fires(ground_action, state_context))
+            continue;
+
+        assert(m_executor.is_applicable(ground_action, state_context));
+        out_nodes.emplace_back(ground_action.get_row(), m_executor.apply_action(state_context, ground_action, *m_state_repository));
     }
+}
+
+Node<GroundTag> SuccessorGenerator<GroundTag>::get_successor_node(const Node<GroundTag>& node, fp::ActionBindingView binding)
+{
+    return get_successor_node(node, ground_action(binding));
 }
 
 Node<GroundTag> SuccessorGenerator<GroundTag>::get_successor_node(const Node<GroundTag>& node, fp::GroundActionView action)
@@ -102,7 +112,7 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::get_successor_node(const Node<Gro
     return m_executor.apply_action(state_context, action, *m_state_repository);
 }
 
-fp::GroundActionView SuccessorGenerator<GroundTag>::get_ground_action(fp::ActionBindingView binding) const
+fp::GroundActionView SuccessorGenerator<GroundTag>::ground_action(fp::ActionBindingView binding) const
 {
     const auto it = m_action_binding_to_ground_action.find(binding);
     assert(it != m_action_binding_to_ground_action.end() && "Ground action binding not found.");

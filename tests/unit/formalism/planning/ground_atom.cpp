@@ -1,4 +1,5 @@
 #include "tyr/formalism/planning/canonicalization.hpp"
+#include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/ground_atom_data.hpp"
 #include "tyr/formalism/planning/ground_atom_index.hpp"
 #include "tyr/formalism/planning/ground_atom_view.hpp"
@@ -67,4 +68,6 @@ TEST(TyrFormalismPlanningGroundAtom, ExposesRepositoryView)
     ASSERT_EQ(objects.size(), 2);
     EXPECT_EQ(objects[0].get_index(), object.get_index());
     EXPECT_EQ(objects[1].get_index(), object.get_index());
+    EXPECT_EQ(fmt::format("{}", binding), "(at truck truck)");
+    EXPECT_EQ(fmt::format("{}", ground_atom), "(at truck truck)");
 }

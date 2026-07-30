@@ -65,8 +65,7 @@ def backtrack_plan(
     successor_generator: SuccessorGenerator,
 ) -> Plan:
     """
-    Backtracks from the goal search node to compute the plan inducing state trajectory,
-    followed by computing the ground actions connecting subsequent state in the trajectory.
+    Backtracks from the goal search node to compute the labeled state trajectory.
     """
     cur_state_index = goal_node.get_state().get_index()
     backward_state_trajectory: list[StateIndex] = []

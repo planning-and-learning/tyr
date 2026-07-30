@@ -40,7 +40,6 @@ struct PlanFormatting
 };
 }  // namespace tyr::formalism::planning
 
-
 namespace fmt
 {
 
@@ -49,9 +48,6 @@ struct formatter<tyr::formalism::planning::ConjunctiveEffectView, char>;
 
 template<>
 struct formatter<tyr::formalism::planning::GroundConjunctiveEffectView, char>;
-
-template<>
-struct formatter<tyr::formalism::planning::ActionBindingView, char>;
 
 template<>
 struct formatter<tyr::formalism::planning::AxiomBindingView, char>;
@@ -823,7 +819,7 @@ struct formatter<tyr::formalism::planning::GroundAtomView<T>, char>
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::GroundAtomView<T>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {})", value.get_predicate().get_name(), fmt::join(ygg::to_strings(value.get_objects()), " "));
+        return fmt::format_to(ctx.out(), "{}", value.get_row());
     }
 };
 
@@ -860,7 +856,7 @@ struct formatter<tyr::formalism::planning::GroundFunctionTermView<T>, char>
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::GroundFunctionTermView<T>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {})", value.get_function().get_name(), fmt::join(ygg::to_strings(value.get_objects()), " "));
+        return fmt::format_to(ctx.out(), "{}", value.get_row());
     }
 };
 
@@ -1149,17 +1145,6 @@ struct formatter<tyr::formalism::planning::ActionView, char>
 };
 
 template<>
-struct formatter<tyr::formalism::planning::ActionBindingView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::ActionBindingView& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", fmt::join(ygg::to_strings(value.get_objects()), " "));
-    }
-};
-
-template<>
 struct formatter<tyr::formalism::planning::AxiomBindingView, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
@@ -1198,18 +1183,29 @@ struct formatter<tyr::formalism::planning::GroundActionView, char>
 };
 
 template<>
+struct formatter<std::pair<tyr::formalism::planning::ActionBindingView, tyr::formalism::planning::PlanFormatting>, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+    template<typename FormatContext>
+    auto format(const std::pair<tyr::formalism::planning::ActionBindingView, tyr::formalism::planning::PlanFormatting>& value, FormatContext& ctx) const
+    {
+        auto out = fmt::format_to(ctx.out(), "({}", value.first.get_relation().get_original_name());
+        for (size_t i = 0; i < value.first.get_relation().get_original_arity(); ++i)
+        {
+            out = fmt::format_to(out, " {}", value.first.get_objects()[i]);
+        }
+        return fmt::format_to(out, ")");
+    }
+};
+
+template<>
 struct formatter<std::pair<tyr::formalism::planning::GroundActionView, tyr::formalism::planning::PlanFormatting>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(const std::pair<tyr::formalism::planning::GroundActionView, tyr::formalism::planning::PlanFormatting>& value, FormatContext& ctx) const
     {
-        auto out = fmt::format_to(ctx.out(), "({}", value.first.get_action().get_original_name());
-        for (size_t i = 0; i < value.first.get_action().get_original_arity(); ++i)
-        {
-            out = fmt::format_to(out, " {}", value.first.get_objects()[i]);
-        }
-        return fmt::format_to(out, ")");
+        return fmt::format_to(ctx.out(), "{}", std::make_pair(value.first.get_row(), value.second));
     }
 };
 
