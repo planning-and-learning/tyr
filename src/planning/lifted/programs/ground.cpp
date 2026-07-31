@@ -397,7 +397,7 @@ static auto create_datalog_program(fp::TaskView task,
                                    GroundTaskProgram::AppPredicateToAxiomMapping& predicate_to_axioms)
 {
     auto factory = std::make_shared<fd::RepositoryFactory>();
-    auto repository = factory->create_shared();
+    auto repository = factory->create_shared(task.get_domain().get_constants().size() + task.get_objects().size());
     auto program = create_program(task, translation_context, predicate_to_actions, predicate_to_axioms, *repository);
     return datalog::Program<LiftedTag>(program, std::move(repository), std::move(factory));
 }

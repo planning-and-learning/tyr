@@ -111,7 +111,7 @@ auto labeled_successor_nodes = successor_generator->get_labeled_successor_nodes(
 
 Tyr consumes native dependencies from Python packages:
 
-- `pyyggdrasil >= 0.0.26, < 0.1` for shared third-party native dependencies.
+- `pyyggdrasil >= 0.0.27, < 0.1` for shared third-party native dependencies.
 - `pypddl >= 1.0.26, < 1.1` for Loki's PDDL parser library, headers, and CMake package.
 - `pypddl-datasets >= 0.0.9, < 0.1` for the PDDL benchmark data used by the C++ test and profiling fixtures (resolved from its cache at CMake configure time).
 
@@ -126,7 +126,7 @@ Install Tyr's native dependency providers into the active Python environment,
 then configure CMake with their native prefixes:
 
 ```console
-python -m pip install 'pyyggdrasil>=0.0.26,<0.1' 'pypddl>=1.0.26,<1.1' 'pypddl-datasets>=0.0.9,<0.1'
+python -m pip install 'pyyggdrasil>=0.0.27,<0.1' 'pypddl>=1.0.26,<1.1' 'pypddl-datasets>=0.0.9,<0.1'
 
 cmake -S . -B build \
   -DPython_EXECUTABLE="$(python -c 'import sys; print(sys.executable)')"
@@ -159,6 +159,9 @@ CMake options:
 | `TYR_USE_LLD` | `ON` | Use LLVM `lld` with Clang when available. |
 | `TYR_ENABLE_LTO` | `ON` | Enable link-time optimization for Release builds. |
 | `TYR_STATE_STORAGE_POLICY` | `Tree` | State storage backend; accepted values are `Tree` and `Hashset`. |
+| `TYR_RELATION_STORAGE_POLICY` | `Word` | Relation storage backend; accepted values are `Word` and `Bit`. Bit packing uses `num_objects` supplied when creating repositories. |
+
+`RepositoryFactory.create_repository(parent_repository=None, num_objects=None)` accepts the total object count for the repository. `None` keeps the full object-index width; child counts include the parent object universe.
 
 Single-config CMake builds default to Release. On GCC and Clang, Debug builds
 use `-Og` with debug symbols, RelWithDebInfo keeps frame pointers and disables

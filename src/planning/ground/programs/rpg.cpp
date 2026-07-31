@@ -557,7 +557,7 @@ d::Program<GroundTag> create_rpg_datalog_program(fp::FDRTaskView task,
                                                  RPGProgram<GroundTag>::RuleToActionMappings& mapping)
 {
     auto factory = std::make_shared<fd::RepositoryFactory>();
-    auto repository = factory->create_shared();
+    auto repository = factory->create_shared(task.get_domain().get_constants().size() + task.get_objects().size());
     auto program = create_rpg_ground_program(task, cost_mode, translation_context, mapping, *repository);
     return d::Program<GroundTag>(program, std::move(repository), std::move(factory));
 }

@@ -12,8 +12,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: ["3.13"]
+        include:
+          - os: ubuntu-latest
+            python-version: "3.13"
+            relation_storage_policy: Bit
+          - os: macos-latest
+            python-version: "3.13"
+            relation_storage_policy: Word
 
     steps:
       - name: Checkout repository
@@ -47,6 +52,7 @@ jobs:
           PYPDDL_JOBS: 2
           TYR_HEADER_INSTANTIATION: OFF
           TYR_ENABLE_LTO: OFF
+          TYR_RELATION_STORAGE_POLICY: ${{ matrix.relation_storage_policy }}
 
       - name: Test
         run: pytest python/tests

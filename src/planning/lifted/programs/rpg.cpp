@@ -408,7 +408,7 @@ auto create_datalog_program(fp::TaskView task,
                             RPGProgram<LiftedTag>::RuleToActionMappings& rule_to_action)
 {
     auto factory = std::make_shared<fd::RepositoryFactory>();
-    auto repository = factory->create_shared();
+    auto repository = factory->create_shared(task.get_domain().get_constants().size() + task.get_objects().size());
     auto program = create_program(task, cost_mode, translation_context, rule_to_action, *repository);
     return datalog::Program<LiftedTag>(program, std::move(repository), std::move(factory));
 }

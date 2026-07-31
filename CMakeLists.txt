@@ -25,6 +25,8 @@ option(
 option(TYR_ENABLE_INNER_PARALLELISM "Enable inner parallelism for expensive lifted rule evaluation." OFF)
 option(TYR_ENABLE_SEMI_NAIVE "Enable semi-naive lifted Datalog evaluation." ON)
 set(TYR_STATE_STORAGE_POLICY "Tree" CACHE STRING "Policy used for storing states.")
+set(TYR_RELATION_STORAGE_POLICY "Word" CACHE STRING "Policy used for storing relation bindings.")
+set_property(CACHE TYR_RELATION_STORAGE_POLICY PROPERTY STRINGS Word Bit)
 option(TYR_BUILD_PYTYR "Build pytyr Python bindings." OFF)
 option(TYR_BUILD_TESTS "Build Tyr tests." OFF)
 option(TYR_BUILD_EXECUTABLES "Build Tyr executables." OFF)
@@ -51,6 +53,10 @@ elseif("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Hashset")
     add_compile_definitions(TYR_STATE_STORAGE_HASHSET)
 else()
     message(FATAL_ERROR "TYR_STATE_STORAGE_POLICY must be Tree or Hashset")
+endif()
+
+if(NOT TYR_RELATION_STORAGE_POLICY STREQUAL "Word" AND NOT TYR_RELATION_STORAGE_POLICY STREQUAL "Bit")
+    message(FATAL_ERROR "TYR_RELATION_STORAGE_POLICY must be Word or Bit")
 endif()
 
 if(MSVC)
@@ -115,7 +121,7 @@ add_definitions(-DROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Dependencies
 
-set(TYR_YGGDRASIL_REQUIRED_VERSION 0.0.26)
+set(TYR_YGGDRASIL_REQUIRED_VERSION 0.0.27)
 set(TYR_LOKI_REQUIRED_VERSION 1.0.26)
 
 include("${PROJECT_SOURCE_DIR}/cmake/bootstrap_pyyggdrasil.cmake")

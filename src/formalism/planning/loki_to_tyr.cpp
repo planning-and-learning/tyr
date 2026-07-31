@@ -1474,7 +1474,7 @@ PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView&
 {
     auto builder = Builder();
     auto factory = std::make_shared<RepositoryFactory>();
-    auto context = factory->create_shared();
+    auto context = factory->create_shared(element.get_constants().size());
 
     /* Perform static type analysis */
     prepare(element);
@@ -1570,7 +1570,8 @@ PlanningTask LokiToTyrTranslator::translate(const loki::formalism::TaskView& ele
     task.clear();
 
     const auto& factory = domain.get_repository_factory();
-    auto task_context = factory->create_shared(domain.get_repository().get());
+    auto task_context =
+        factory->create_shared(domain.get_domain().get_constants().size() + element.get_objects().size(), domain.get_repository().get());
 
     auto fdr_context = std::make_shared<FDRContext>(task_context);
 

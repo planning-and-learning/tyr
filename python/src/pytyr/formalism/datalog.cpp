@@ -18,7 +18,10 @@
 #include "datalog/bindings.hpp"
 #include "datalog/module.hpp"
 
+#include <cstddef>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/shared_ptr.h>
+#include <optional>
 #include <tyr/formalism/datalog/repository.hpp>
 
 namespace tyr::formalism::datalog
@@ -31,8 +34,12 @@ void bind_module_definitions(nb::module_& m)
     nb::class_<RepositoryFactory>(m, "RepositoryFactory")  //
         .def(nb::new_([]() { return std::make_shared<RepositoryFactory>(); }))
         .def("create_repository",
-             nb::overload_cast<const Repository*>(&RepositoryFactory::create_shared),
+             [](RepositoryFactory& factory, const Repository* parent_repository, std::optional<std::size_t> num_objects)
+             {
+                 return num_objects ? factory.create_shared(*num_objects, parent_repository) : factory.create_shared(parent_repository);
+             },
              "parent_repository"_a = nullptr,
+             "num_objects"_a = nb::none(),
              nb::keep_alive<0, 2>());
 }
 

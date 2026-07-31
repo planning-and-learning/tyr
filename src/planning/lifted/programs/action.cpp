@@ -183,7 +183,7 @@ auto create_datalog_program(fp::TaskView task,
                             ApplicableActionProgram<LiftedTag>::AppPredicateToActionMapping& mapping)
 {
     auto factory = std::make_shared<fd::RepositoryFactory>();
-    auto repository = factory->create_shared();
+    auto repository = factory->create_shared(task.get_domain().get_constants().size() + task.get_objects().size());
     auto program = create_program(task, translation_context, mapping, *repository);
     return datalog::Program<LiftedTag>(program, std::move(repository), std::move(factory));
 }

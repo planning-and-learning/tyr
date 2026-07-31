@@ -37,6 +37,13 @@ class SymbolRepository;
 template<typename ObjectTag, typename... Ts>
 class RelationRepository;
 
+struct BlockArraySetStorage;
+
+struct BitPackedArraySetStorage;
+
+template<typename ObjectTag>
+struct RelationRepositoryTraits;
+
 template<typename SymbolRepo, typename RelationRepo>
 class Repository;
 
@@ -179,6 +186,25 @@ struct NegativeTag
 
 template<typename T>
 concept PolarityKind = std::same_as<T, PositiveTag> || std::same_as<T, NegativeTag>;
+
+}
+
+#if defined(TYR_RELATION_STORAGE_WORD) == defined(TYR_RELATION_STORAGE_BIT)
+#error "Exactly one of TYR_RELATION_STORAGE_WORD or TYR_RELATION_STORAGE_BIT must be defined"
+#endif
+
+namespace ygg::formalism
+{
+
+template<>
+struct RelationRepositoryTraits<::tyr::formalism::ObjectTag>
+{
+#if defined(TYR_RELATION_STORAGE_WORD)
+    using storage_type = BlockArraySetStorage;
+#else
+    using storage_type = BitPackedArraySetStorage;
+#endif
+};
 
 }
 

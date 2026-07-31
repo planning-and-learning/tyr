@@ -40,6 +40,7 @@ void initialize_rule_workspaces(Program<LiftedTag>& program,
         workspaces.emplace_back(workspace ? std::make_unique<typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>>(program.get_repository_factory(),
                                                                                                                              program_repository,
                                                                                                                              workspace_repository,
+                                                                                                                             program.get_program().get_objects().size(),
                                                                                                                              *workspace,
                                                                                                                              and_ap) :
                                             nullptr);

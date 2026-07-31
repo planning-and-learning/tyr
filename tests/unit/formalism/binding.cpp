@@ -85,3 +85,11 @@ static_assert(binding_contracts<fp::Repository>(fp::RelationRepositoryTypes {}))
 
 using Binding = f::RelationBinding<f::Predicate<f::StaticTag>>;
 static_assert(std::same_as<Binding, ygg::formalism::RelationBinding<f::Predicate<f::StaticTag>, f::ObjectTag>>);
+
+#if defined(TYR_RELATION_STORAGE_WORD)
+static_assert(std::same_as<typename ygg::formalism::RelationRepositoryTraits<f::ObjectTag>::storage_type,
+                           ygg::formalism::BlockArraySetStorage>);
+#else
+static_assert(std::same_as<typename ygg::formalism::RelationRepositoryTraits<f::ObjectTag>::storage_type,
+                           ygg::formalism::BitPackedArraySetStorage>);
+#endif

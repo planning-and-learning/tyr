@@ -179,6 +179,12 @@ elseif("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Tree")
     target_compile_definitions(core PUBLIC TYR_STATE_STORAGE_TREE)
 endif()
 
+if("${TYR_RELATION_STORAGE_POLICY}" STREQUAL "Word")
+    target_compile_definitions(core PUBLIC TYR_RELATION_STORAGE_WORD)
+elseif("${TYR_RELATION_STORAGE_POLICY}" STREQUAL "Bit")
+    target_compile_definitions(core PUBLIC TYR_RELATION_STORAGE_BIT)
+endif()
+
 target_include_directories(
     core
     PUBLIC
