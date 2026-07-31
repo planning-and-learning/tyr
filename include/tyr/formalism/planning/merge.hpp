@@ -435,14 +435,16 @@ std::pair<MultiOperatorView<T>, bool> merge_p2p(MultiOperatorView<T> element, Me
 template<typename T>
 ArithmeticOperatorView<T> merge_p2p(ArithmeticOperatorView<T> element, MergeContext& context)
 {
-    const auto data = visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<T>>(merge_p2p(arg, context).first.get_index()); }, element.get_variant());
+    const auto data = visit(
+        [&](auto&& arg) { return ygg::Data<ArithmeticOperator<T>>(arg.get_operator(), merge_p2p(arg, context).first.get_index()); }, element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
 template<typename T>
 BooleanOperatorView<T> merge_p2p(BooleanOperatorView<T> element, MergeContext& context)
 {
-    const auto data = visit([&](auto&& arg) { return ygg::Data<BooleanOperator<T>>(merge_p2p(arg, context).first.get_index()); }, element.get_variant());
+    const auto data = visit(
+        [&](auto&& arg) { return ygg::Data<BooleanOperator<T>>(arg.get_operator(), merge_p2p(arg, context).first.get_index()); }, element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
@@ -464,7 +466,8 @@ std::pair<NumericEffectView<T>, bool> merge_p2p(NumericEffectView<T> element, Me
 template<FactKind T>
 NumericEffectOperatorView<T> merge_p2p(NumericEffectOperatorView<T> element, MergeContext& context)
 {
-    const auto data = visit([&](auto&& arg) { return ygg::Data<NumericEffectOperator<T>>(merge_p2p(arg, context).first.get_index()); }, element.get_variant());
+    const auto data = visit(
+        [&](auto&& arg) { return ygg::Data<NumericEffectOperator<T>>(arg.get_operator(), merge_p2p(arg, context).first.get_index()); }, element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
@@ -487,7 +490,8 @@ template<FactKind T>
 GroundNumericEffectOperatorView<T> merge_p2p(GroundNumericEffectOperatorView<T> element, MergeContext& context)
 {
     const auto data =
-        visit([&](auto&& arg) { return ygg::Data<GroundNumericEffectOperator<T>>(merge_p2p(arg, context).first.get_index()); }, element.get_variant());
+        visit([&](auto&& arg) { return ygg::Data<GroundNumericEffectOperator<T>>(arg.get_operator(), merge_p2p(arg, context).first.get_index()); },
+              element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 

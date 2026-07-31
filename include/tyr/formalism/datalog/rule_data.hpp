@@ -30,7 +30,6 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 
 template<::tyr::formalism::RelationKind R>
 struct Data<::tyr::formalism::datalog::Rule<R>>

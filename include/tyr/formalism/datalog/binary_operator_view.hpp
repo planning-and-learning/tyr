@@ -26,7 +26,6 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 template<::tyr::formalism::BinaryOperatorKind Operator, typename T, ::tyr::formalism::datalog::Context C>
 class View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<Operator, T>>, C>
 {

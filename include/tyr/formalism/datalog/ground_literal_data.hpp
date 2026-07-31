@@ -27,7 +27,6 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 
 template<::tyr::formalism::FactKind T>
 struct Data<::tyr::formalism::datalog::GroundLiteral<T>>

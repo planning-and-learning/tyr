@@ -29,7 +29,6 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 
 template<typename T>
 struct Data<::tyr::formalism::planning::UnaryOperator<T>>

@@ -24,7 +24,6 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 template<::tyr::formalism::FactKind T, typename C>
 class View<ygg::Index<::tyr::formalism::Function<T>>, C>
 {

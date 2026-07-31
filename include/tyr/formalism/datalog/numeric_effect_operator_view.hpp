@@ -27,7 +27,6 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 template<::tyr::formalism::FactKind T, ::tyr::formalism::datalog::Context C>
 class View<ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T>>, C>
 {

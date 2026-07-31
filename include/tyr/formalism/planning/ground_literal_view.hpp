@@ -25,7 +25,6 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 template<::tyr::formalism::FactKind T, ::tyr::formalism::planning::Context C>
 class View<ygg::Index<::tyr::formalism::planning::GroundLiteral<T>>, C>
 {

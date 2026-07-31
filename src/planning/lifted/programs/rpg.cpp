@@ -145,7 +145,8 @@ ygg::Data<fd::NumericEffectOperator<f::FluentTag>> create_unit_metric_effect(fd:
     effect.fterm = term.get_index();
     effect.fexpr = ygg::Data<fd::FunctionExpression>(ygg::float_t(1));
     canonicalize(effect);
-    return ygg::Data<fd::NumericEffectOperator<f::FluentTag>>(context.destination.get_or_create(effect).first.get_index());
+    return ygg::Data<fd::NumericEffectOperator<f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
+                                                              context.destination.get_or_create(effect).first.get_index());
 }
 
 ygg::DataList<fd::NumericEffectOperator<f::FluentTag>> create_unit_metric(ygg::Data<fd::Program>& program, fp::MergeDatalogContext& context)

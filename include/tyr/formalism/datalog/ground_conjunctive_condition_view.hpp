@@ -27,7 +27,6 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 template<::tyr::formalism::datalog::Context C>
 class View<ygg::Index<::tyr::formalism::datalog::GroundConjunctiveCondition>, C>
 {

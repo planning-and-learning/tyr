@@ -29,7 +29,6 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 
 template<>
 struct Data<::tyr::formalism::planning::GroundConjunctiveCondition>

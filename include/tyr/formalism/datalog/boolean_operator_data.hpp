@@ -21,35 +21,47 @@
 #include "tyr/formalism/datalog/binary_operator_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 
+#include <stdexcept>
 #include <variant>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
 namespace ygg
 {
-using namespace ::tyr;
 
 template<typename T>
 struct Data<::tyr::formalism::datalog::BooleanOperator<T>>
 {
+    using OperatorType = ::tyr::formalism::BooleanOperatorKind;
     using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::BooleanOperatorKind, T>>>;
 
+    OperatorType operator_kind = OperatorType::Eq;
     Variant value;
 
     template<typename C>
     using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::BooleanOperatorKind, T>>, C>>;
 
     Data() = default;
-    Data(Variant value_) : value(value_) {}
+    Data(OperatorType operator_kind_, Variant value_) : operator_kind(operator_kind_), value(value_)
+    {
+        if (!value.valid())
+            throw std::invalid_argument("BooleanOperator requires a valid value");
+    }
     template<typename C>
-    Data(ViewVariant<C> value_) : value(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, value_))
+    Data(ViewVariant<C> value_) :
+        operator_kind(std::visit([](const auto& view) { return view.get_operator(); }, value_)),
+        value(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, value_))
     {
     }
 
-    void clear() noexcept { ygg::clear(value); }
+    void clear() noexcept
+    {
+        operator_kind = OperatorType::Eq;
+        ygg::clear(value);
+    }
 
-    auto cista_members() const noexcept { return std::tie(value); }
-    auto identifying_members() const noexcept { return std::tie(value); }
+    auto cista_members() const noexcept { return std::tie(operator_kind, value); }
+    auto identifying_members() const noexcept { return std::tie(operator_kind, value); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::BooleanOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression>>>);

@@ -399,14 +399,16 @@ std::pair<MultiOperatorView<T>, bool> merge_d2d(MultiOperatorView<T> element, Me
 template<typename T>
 ArithmeticOperatorView<T> merge_d2d(ArithmeticOperatorView<T> element, MergeContext& context)
 {
-    const auto data = visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<T>>(merge_d2d(arg, context).first.get_index()); }, element.get_variant());
+    const auto data = visit(
+        [&](auto&& arg) { return ygg::Data<ArithmeticOperator<T>>(arg.get_operator(), merge_d2d(arg, context).first.get_index()); }, element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
 template<typename T>
 BooleanOperatorView<T> merge_d2d(BooleanOperatorView<T> element, MergeContext& context)
 {
-    const auto data = visit([&](auto&& arg) { return ygg::Data<BooleanOperator<T>>(merge_d2d(arg, context).first.get_index()); }, element.get_variant());
+    const auto data = visit(
+        [&](auto&& arg) { return ygg::Data<BooleanOperator<T>>(arg.get_operator(), merge_d2d(arg, context).first.get_index()); }, element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
@@ -428,7 +430,8 @@ std::pair<NumericEffectView<T>, bool> merge_d2d(NumericEffectView<T> element, Me
 template<FactKind T>
 NumericEffectOperatorView<T> merge_d2d(NumericEffectOperatorView<T> element, MergeContext& context)
 {
-    const auto data = visit([&](auto&& arg) { return ygg::Data<NumericEffectOperator<T>>(merge_d2d(arg, context).first.get_index()); }, element.get_variant());
+    const auto data = visit(
+        [&](auto&& arg) { return ygg::Data<NumericEffectOperator<T>>(arg.get_operator(), merge_d2d(arg, context).first.get_index()); }, element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 

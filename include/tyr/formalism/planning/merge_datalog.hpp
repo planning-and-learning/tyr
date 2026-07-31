@@ -578,7 +578,8 @@ ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T_DST>> merge_p2d(Num
 {
     using OperatorData = ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T_DST>>;
 
-    return visit([&](auto&& arg) { return OperatorData(typename OperatorData::Variant(merge_p2d<T_SRC, T_DST>(arg, context).first.get_index())); },
+    return visit([&](auto&& arg)
+                 { return OperatorData(arg.get_operator(), typename OperatorData::Variant(merge_p2d<T_SRC, T_DST>(arg, context).first.get_index())); },
                  element.get_variant());
 }
 
@@ -603,7 +604,8 @@ ygg::Data<::tyr::formalism::datalog::GroundNumericEffectOperator<T_DST>> merge_p
 {
     using OperatorData = ygg::Data<::tyr::formalism::datalog::GroundNumericEffectOperator<T_DST>>;
 
-    return visit([&](auto&& arg) { return OperatorData(typename OperatorData::Variant(merge_p2d<T_SRC, T_DST>(arg, context).first.get_index())); },
+    return visit([&](auto&& arg)
+                 { return OperatorData(arg.get_operator(), typename OperatorData::Variant(merge_p2d<T_SRC, T_DST>(arg, context).first.get_index())); },
                  element.get_variant());
 }
 
@@ -701,7 +703,11 @@ ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<to_datalog_payload_t<T>>
 {
     using T_DST = to_datalog_payload_t<T>;
 
-    return visit([&](auto&& arg) { return ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<T_DST>>(merge_p2d(arg, context).first.get_index()); },
+    return visit([&](auto&& arg)
+                 {
+                     return ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<T_DST>>(arg.get_operator(),
+                                                                                           merge_p2d(arg, context).first.get_index());
+                 },
                  element.get_variant());
 }
 
@@ -710,7 +716,11 @@ ygg::Data<::tyr::formalism::datalog::BooleanOperator<to_datalog_payload_t<T>>> m
 {
     using T_DST = to_datalog_payload_t<T>;
 
-    return visit([&](auto&& arg) { return ygg::Data<::tyr::formalism::datalog::BooleanOperator<T_DST>>(merge_p2d(arg, context).first.get_index()); },
+    return visit([&](auto&& arg)
+                 {
+                     return ygg::Data<::tyr::formalism::datalog::BooleanOperator<T_DST>>(arg.get_operator(),
+                                                                                        merge_p2d(arg, context).first.get_index());
+                 },
                  element.get_variant());
 }
 

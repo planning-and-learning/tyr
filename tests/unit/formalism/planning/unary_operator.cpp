@@ -41,5 +41,5 @@ static_assert(std::constructible_from<ygg::Data<Ground>, f::ArithmeticOperatorKi
 
 TEST(TyrFormalismPlanningUnaryOperator, RejectsNonUnaryOperator)
 {
-    EXPECT_THROW((ygg::Data<Lifted>(f::ArithmeticOperatorKind::Add, ygg::Data<fp::FunctionExpression> {})), std::invalid_argument);
+    EXPECT_THROW((ygg::Data<Lifted>(f::ArithmeticOperatorKind::Add, ygg::Data<fp::FunctionExpression>(ygg::float_t(0)))), std::invalid_argument);
 }

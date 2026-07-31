@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_DATALOG_DECLARATIONS_HPP_
 
 #include "tyr/declarations.hpp"
+#include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/declarations.hpp"
 
 #include <memory>
@@ -309,6 +310,11 @@ template<FactKind T>
 using FunctionBindingView = ygg::View<ygg::Index<RelationBinding<Function<T>>>, Repository>;
 template<RelationKind R>
 using RuleBindingView = ygg::View<ygg::Index<RelationBinding<Rule<R>>>, Repository>;
+
+template<FactKind T>
+using PredicateBindingForwardRangeView = ygg::View<RelationBindingsForwardRange<Predicate<T>, std::vector<ygg::Index<Row>>>, Repository>;
+template<FactKind T>
+using FunctionBindingRandomAccessRangeView = ygg::View<RelationBindingsRandomAccessRange<Function<T>, std::vector<ygg::Index<Row>>>, Repository>;
 
 template<typename T>
 using BooleanOperatorView = ygg::View<ygg::Data<BooleanOperator<T>>, Repository>;

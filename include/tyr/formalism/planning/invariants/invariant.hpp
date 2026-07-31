@@ -28,7 +28,6 @@
 #include <utility>
 #include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/containers/block_array_comparators.hpp>
 #include <yggdrasil/semantics/comparison.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 

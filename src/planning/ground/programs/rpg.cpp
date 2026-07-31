@@ -90,7 +90,8 @@ ygg::Data<fd::NumericEffectOperator<f::FluentTag>> create_rule_binding_numeric_h
     effect.fterm = term_view.get_index();
     effect.fexpr = ygg::Data<fd::FunctionExpression>(ygg::float_t(0));
     canonicalize(effect);
-    return ygg::Data<fd::NumericEffectOperator<f::FluentTag>>(context.merge_context.destination.get_or_create(effect).first.get_index());
+    return ygg::Data<fd::NumericEffectOperator<f::FluentTag>>(f::NumericEffectOperatorKind::Assign,
+                                                              context.merge_context.destination.get_or_create(effect).first.get_index());
 }
 
 template<f::RelationKind R, typename CreateHead>
@@ -281,7 +282,8 @@ ygg::Data<fd::GroundNumericEffectOperator<f::FluentTag>> create_unit_metric_effe
     effect.fterm = term.get_index();
     effect.fexpr = ygg::Data<fd::GroundFunctionExpression>(ygg::float_t(1));
     canonicalize(effect);
-    return ygg::Data<fd::GroundNumericEffectOperator<f::FluentTag>>(context.merge_context.destination.get_or_create(effect).first.get_index());
+    return ygg::Data<fd::GroundNumericEffectOperator<f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
+                                                                    context.merge_context.destination.get_or_create(effect).first.get_index());
 }
 
 ygg::DataList<fd::GroundNumericEffectOperator<f::FluentTag>> create_unit_metric(GroundProgramBuildContext& context)

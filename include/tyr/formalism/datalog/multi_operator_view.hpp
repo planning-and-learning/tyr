@@ -27,7 +27,6 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 template<typename T, ::tyr::formalism::datalog::Context C>
 class View<ygg::Index<::tyr::formalism::datalog::MultiOperator<T>>, C>
 {

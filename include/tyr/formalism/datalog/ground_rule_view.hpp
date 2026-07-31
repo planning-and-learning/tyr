@@ -32,7 +32,6 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 template<::tyr::formalism::RelationKind R, ::tyr::formalism::datalog::Context C>
 class View<ygg::Index<::tyr::formalism::datalog::GroundRule<R>>, C>
 {

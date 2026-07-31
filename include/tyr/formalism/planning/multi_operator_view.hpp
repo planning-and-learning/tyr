@@ -27,7 +27,6 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 template<typename T, ::tyr::formalism::planning::Context C>
 class View<ygg::Index<::tyr::formalism::planning::MultiOperator<T>>, C>
 {

@@ -226,7 +226,9 @@ inline std::pair<GroundMultiOperatorView, bool> ground(LiftedMultiOperatorView e
 
 inline GroundBooleanOperatorView ground(LiftedBooleanOperatorView element, GrounderContext& context)
 {
-    const auto data = visit([&](auto&& arg) { return ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>(ground(arg, context).first.get_index()); },
+    const auto data = visit([&](auto&& arg)
+                            { return ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>(arg.get_operator(),
+                                                                                                    ground(arg, context).first.get_index()); },
                             element.get_variant());
     return ygg::make_view(data, context.destination);
 }
@@ -234,7 +236,8 @@ inline GroundBooleanOperatorView ground(LiftedBooleanOperatorView element, Groun
 inline GroundArithmeticOperatorView ground(LiftedArithmeticOperatorView element, GrounderContext& context)
 {
     const auto data =
-        visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>(ground(arg, context).first.get_index()); },
+        visit([&](auto&& arg)
+              { return ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>(arg.get_operator(), ground(arg, context).first.get_index()); },
               element.get_variant());
     return ygg::make_view(data, context.destination);
 }
@@ -365,7 +368,8 @@ template<FactKind T>
 GroundNumericEffectOperatorView<T> ground(NumericEffectOperatorView<T> element, GrounderContext& context)
 {
     const auto data =
-        visit([&](auto&& arg) { return ygg::Data<GroundNumericEffectOperator<T>>(ground(arg, context).first.get_index()); }, element.get_variant());
+        visit([&](auto&& arg) { return ygg::Data<GroundNumericEffectOperator<T>>(arg.get_operator(), ground(arg, context).first.get_index()); },
+              element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 

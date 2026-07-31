@@ -24,7 +24,6 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 template<typename C>
 class View<ygg::Data<::tyr::formalism::Term>, C>
 {
@@ -39,13 +38,13 @@ public:
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_handle() const noexcept { return m_handle; }
 
-    auto get_variant() const noexcept { return ygg::make_view(m_handle.value, *m_context); }
+    ygg::View<ygg::Data<::tyr::formalism::Term>::Variant, C> get_variant() const noexcept { return ygg::make_view(m_handle.value, *m_context); }
 
     auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }
 };
 
 template<typename C>
-auto make_view(const ygg::Data<::tyr::formalism::Term>& element, const C& context) noexcept
+ygg::View<ygg::Data<::tyr::formalism::Term>, C> make_view(const ygg::Data<::tyr::formalism::Term>& element, const C& context) noexcept
 {
     return ygg::View<ygg::Data<::tyr::formalism::Term>, C>(element,
                                           std::visit(

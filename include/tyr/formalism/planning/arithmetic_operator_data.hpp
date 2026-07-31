@@ -23,21 +23,23 @@
 #include "tyr/formalism/planning/multi_operator_index.hpp"
 #include "tyr/formalism/planning/unary_operator_index.hpp"
 
+#include <stdexcept>
 #include <variant>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
 namespace ygg
 {
-using namespace ::tyr;
 
 template<typename T>
 struct Data<::tyr::formalism::planning::ArithmeticOperator<T>>
 {
+    using OperatorType = ::tyr::formalism::ArithmeticOperatorKind;
     using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::planning::UnaryOperator<T>>,
                                              ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::ArithmeticOperatorKind, T>>,
                                              ygg::Index<::tyr::formalism::planning::MultiOperator<T>>>;
 
+    OperatorType operator_kind = OperatorType::Sub;
     Variant value;
 
     template<typename C>
@@ -46,17 +48,31 @@ struct Data<::tyr::formalism::planning::ArithmeticOperator<T>>
                                      ::ygg::View<ygg::Index<::tyr::formalism::planning::MultiOperator<T>>, C>>;
 
     Data() = default;
-    Data(Variant value_) : value(value_) {}
+    Data(OperatorType operator_kind_, Variant value_) : operator_kind(operator_kind_), value(value_)
+    {
+        if (!value.valid() || (value.index() == 0 && !::tyr::formalism::is_unary(operator_kind))
+            || (value.index() == 2 && !::tyr::formalism::is_multi(operator_kind)))
+            throw std::invalid_argument("ArithmeticOperator kind does not match operator form");
+    }
     // Python constructor
     template<typename C>
-    Data(ViewVariant<C> value_) : value(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, value_))
+    Data(ViewVariant<C> value_) :
+        operator_kind(std::visit([](const auto& view) { return view.get_operator(); }, value_)),
+        value(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, value_))
     {
     }
 
-    void clear() noexcept { ygg::clear(value); }
+    void clear() noexcept
+    {
+        operator_kind = OperatorType::Sub;
+        ygg::clear(value);
+    }
 
-    auto cista_members() const noexcept { return std::tie(value); }
-    auto identifying_members() const noexcept { return std::tie(value); }
+    auto cista_members() const noexcept { return std::tie(operator_kind, value); }
+    auto identifying_members() const noexcept
+    {
+        return std::tuple<std::size_t, const OperatorType&, const Variant&>(value.index(), operator_kind, value);
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::ArithmeticOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression>>>);

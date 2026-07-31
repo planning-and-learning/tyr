@@ -446,7 +446,9 @@ ygg::Data<ArithmeticOperator<to_planning_payload_t<T>>> merge_d2p(::tyr::formali
 {
     using T_DST = to_planning_payload_t<T>;
 
-    return visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<T_DST>>(merge_d2p(arg, context).first.get_index()); }, element.get_variant());
+    return visit([&](auto&& arg)
+                 { return ygg::Data<ArithmeticOperator<T_DST>>(arg.get_operator(), merge_d2p(arg, context).first.get_index()); },
+                 element.get_variant());
 }
 
 template<typename T>
@@ -454,7 +456,9 @@ ygg::Data<BooleanOperator<to_planning_payload_t<T>>> merge_d2p(::tyr::formalism:
 {
     using T_DST = to_planning_payload_t<T>;
 
-    return visit([&](auto&& arg) { return ygg::Data<BooleanOperator<T_DST>>(merge_d2p(arg, context).first.get_index()); }, element.get_variant());
+    return visit([&](auto&& arg)
+                 { return ygg::Data<BooleanOperator<T_DST>>(arg.get_operator(), merge_d2p(arg, context).first.get_index()); },
+                 element.get_variant());
 }
 
 }

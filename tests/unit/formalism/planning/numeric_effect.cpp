@@ -45,6 +45,8 @@ static_assert(f::effect_family(f::NumericEffectOperatorKind::Decrease) == f::Eff
 TEST(TyrFormalismPlanningNumericEffect, RejectsNonIncreaseAuxiliaryEffect)
 {
     using FunctionTermIndex = ygg::Index<fp::FunctionTerm<f::AuxiliaryTag>>;
-    EXPECT_THROW((ygg::Data<Auxiliary>(f::NumericEffectOperatorKind::Assign, FunctionTermIndex {}, ygg::Data<fp::FunctionExpression> {})),
+    EXPECT_THROW((ygg::Data<Auxiliary>(f::NumericEffectOperatorKind::Assign,
+                                      FunctionTermIndex {},
+                                      ygg::Data<fp::FunctionExpression>(ygg::float_t(0)))),
                  std::invalid_argument);
 }

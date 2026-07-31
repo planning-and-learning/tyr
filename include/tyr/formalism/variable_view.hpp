@@ -24,7 +24,6 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 template<typename C>
 class View<ygg::Index<::tyr::formalism::Variable>, C>
 {

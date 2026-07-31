@@ -28,7 +28,6 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 
 template<::tyr::formalism::BinaryOperatorKind Operator, typename T>
 struct Data<::tyr::formalism::planning::BinaryOperator<Operator, T>>

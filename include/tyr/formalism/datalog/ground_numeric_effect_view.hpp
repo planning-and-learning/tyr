@@ -27,7 +27,6 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 template<::tyr::formalism::FactKind T, ::tyr::formalism::datalog::Context C>
 class View<ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<T>>, C>
 {

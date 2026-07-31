@@ -28,7 +28,6 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 template<typename T, ::tyr::formalism::planning::Context C>
 class View<ygg::Data<::tyr::formalism::planning::BooleanOperator<T>>, C>
 {

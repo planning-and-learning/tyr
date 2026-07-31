@@ -27,11 +27,10 @@
 #include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/containers/dynamic_bitset.hpp>
-#include <yggdrasil/containers/dynamic_bitset_comparators.hpp>
-#include <yggdrasil/containers/dynamic_bitset_equal_to.hpp>
-#include <yggdrasil/containers/dynamic_bitset_hash.hpp>
 #include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
+#include <yggdrasil/semantics/containers/dynamic_bitset_equal_to.hpp>
+#include <yggdrasil/semantics/containers/dynamic_bitset_hash.hpp>
 #include <yggdrasil/semantics/equal_to.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 

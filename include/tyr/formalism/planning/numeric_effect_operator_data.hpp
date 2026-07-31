@@ -21,6 +21,7 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/numeric_effect_index.hpp"
 
+#include <stdexcept>
 #include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
@@ -30,58 +31,78 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 
 template<>
 struct Data<::tyr::formalism::planning::NumericEffectOperator<::tyr::formalism::FluentTag>>
 {
+    using OperatorType = ::tyr::formalism::NumericEffectOperatorKind;
     using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::planning::NumericEffect<::tyr::formalism::FluentTag>>>;
 
+    OperatorType operator_kind = OperatorType::Assign;
     Variant value;
 
     template<typename C>
     using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::planning::NumericEffect<::tyr::formalism::FluentTag>>, C>>;
 
     Data() = default;
-    Data(Variant value_) : value(value_) {}
+    Data(OperatorType operator_kind_, Variant value_) : operator_kind(operator_kind_), value(value_)
+    {
+        if (!value.valid())
+            throw std::invalid_argument("NumericEffectOperator requires a valid value");
+    }
     // Python constructor
     template<typename C>
-    Data(ViewVariant<C> value_) : value(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, value_))
+    Data(ViewVariant<C> value_) :
+        operator_kind(std::visit([](const auto& view) { return view.get_operator(); }, value_)),
+        value(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, value_))
     {
     }
 
-    void clear() noexcept { ygg::clear(value); }
+    void clear() noexcept
+    {
+        operator_kind = OperatorType::Assign;
+        ygg::clear(value);
+    }
 
-    auto cista_members() const noexcept { return std::tie(value); }
-    auto identifying_members() const noexcept { return std::tie(value); }
+    auto cista_members() const noexcept { return std::tie(operator_kind, value); }
+    auto identifying_members() const noexcept { return std::tie(operator_kind, value); }
 };
 
 template<>
 struct Data<::tyr::formalism::planning::NumericEffectOperator<::tyr::formalism::AuxiliaryTag>>
 {
+    using OperatorType = ::tyr::formalism::NumericEffectOperatorKind;
     using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::planning::NumericEffect<::tyr::formalism::AuxiliaryTag>>>;
 
+    OperatorType operator_kind = OperatorType::Increase;
     Variant value;
 
     template<typename C>
     using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::planning::NumericEffect<::tyr::formalism::AuxiliaryTag>>, C>>;
 
     Data() = default;
-    Data(Variant value_) : value(value_) {}
+    Data(OperatorType operator_kind_, Variant value_) : operator_kind(operator_kind_), value(value_)
+    {
+        if (!value.valid() || operator_kind != OperatorType::Increase)
+            throw std::invalid_argument("Auxiliary NumericEffectOperator requires Increase");
+    }
     // Python constructor
     template<typename C>
-    Data(ViewVariant<C> value_) : value(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, value_))
+    Data(ViewVariant<C> value_) :
+        operator_kind(std::visit([](const auto& view) { return view.get_operator(); }, value_)),
+        value(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, value_))
     {
     }
 
     void clear() noexcept
     {
+        operator_kind = OperatorType::Increase;
         value.destruct();
         new (&value) Variant {};
     }
 
-    auto cista_members() const noexcept { return std::tie(value); }
-    auto identifying_members() const noexcept { return std::tie(value); }
+    auto cista_members() const noexcept { return std::tie(operator_kind, value); }
+    auto identifying_members() const noexcept { return std::tie(operator_kind, value); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::NumericEffectOperator<::tyr::formalism::FluentTag>>);

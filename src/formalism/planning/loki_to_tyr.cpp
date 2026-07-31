@@ -395,7 +395,8 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::BinaryFunctionExpressionV
         binary.lhs = translate_lifted(element.get_left(), builder, context);
         binary.rhs = translate_lifted(element.get_right(), builder, context);
         canonicalize(binary);
-        return ygg::Data<FunctionExpression>(ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>(context.get_or_create(binary).first.get_index()));
+        return ygg::Data<FunctionExpression>(
+            ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>(operator_kind, context.get_or_create(binary).first.get_index()));
     };
 
     switch (element.get_operator())
@@ -423,7 +424,8 @@ ygg::Data<FunctionExpression> LokiToTyrTranslator::translate_lifted(loki::formal
         multi.operator_kind = operator_kind;
         multi.args = translate_lifted(element.get_expressions(), builder, context);
         canonicalize(multi);
-        return ygg::Data<FunctionExpression>(ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>(context.get_or_create(multi).first.get_index()));
+        return ygg::Data<FunctionExpression>(
+            ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>(operator_kind, context.get_or_create(multi).first.get_index()));
     };
 
     switch (element.get_operator())
@@ -445,7 +447,9 @@ ygg::Data<FunctionExpression> LokiToTyrTranslator::translate_lifted(loki::formal
     minus.operator_kind = ArithmeticOperatorKind::Sub;
     minus.arg = translate_lifted(element.get_expression(), builder, context);
     canonicalize(minus);
-    return ygg::Data<FunctionExpression>(ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>(context.get_or_create(minus).first.get_index()));
+    return ygg::Data<FunctionExpression>(ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>(
+        ArithmeticOperatorKind::Sub,
+        context.get_or_create(minus).first.get_index()));
 }
 
 ygg::Data<FunctionExpression> LokiToTyrTranslator::translate_lifted(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context)
@@ -522,7 +526,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionNumericConstrain
         binary.lhs = translate_lifted(element.get_left(), builder, context);
         binary.rhs = translate_lifted(element.get_right(), builder, context);
         canonicalize(binary);
-        return ygg::Data<BooleanOperator<ygg::Data<FunctionExpression>>>(context.get_or_create(binary).first.get_index());
+        return ygg::Data<BooleanOperator<ygg::Data<FunctionExpression>>>(operator_kind, context.get_or_create(binary).first.get_index());
     };
 
     switch (element.get_comparator())
@@ -848,11 +852,13 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element, const
                                 using SubSubEffectT = std::decay_t<decltype(subsubeffect)>;
 
                                 if constexpr (std::is_same_v<SubSubEffectT, NumericEffectView<FluentTag>>)
-                                    data_fluent_numeric_effects.push_back(ygg::Data<NumericEffectOperator<FluentTag>>(subsubeffect.get_index()));
+                                    data_fluent_numeric_effects.push_back(
+                                        ygg::Data<NumericEffectOperator<FluentTag>>(subsubeffect.get_operator(), subsubeffect.get_index()));
                                 else if constexpr (std::is_same_v<SubSubEffectT, NumericEffectView<AuxiliaryTag>>)
                                 {
                                     assert(!data_auxiliary_numeric_effect);
-                                    data_auxiliary_numeric_effect = ygg::Data<NumericEffectOperator<AuxiliaryTag>>(subsubeffect.get_index());
+                                    data_auxiliary_numeric_effect =
+                                        ygg::Data<NumericEffectOperator<AuxiliaryTag>>(subsubeffect.get_operator(), subsubeffect.get_index());
                                 }
                                 else
                                     static_assert(ygg::dependent_false<SubSubEffectT>::value, "Unexpected case.");
@@ -1151,7 +1157,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::BinaryFunctionExpressio
         binary.rhs = translate_grounded(element.get_right(), builder, context);
         canonicalize(binary);
         return ygg::Data<GroundFunctionExpression>(
-            ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>(context.get_or_create(binary).first.get_index()));
+            ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>(operator_kind, context.get_or_create(binary).first.get_index()));
     };
 
     switch (element.get_operator())
@@ -1181,7 +1187,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::MultiFunctionExpression
         multi.args = translate_grounded(element.get_expressions(), builder, context);
         canonicalize(multi);
         return ygg::Data<GroundFunctionExpression>(
-            ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>(context.get_or_create(multi).first.get_index()));
+            ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>(operator_kind, context.get_or_create(multi).first.get_index()));
     };
 
     switch (element.get_operator())
@@ -1205,7 +1211,8 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::UnaryFunctionExpression
     minus.arg = translate_grounded(element.get_expression(), builder, context);
     canonicalize(minus);
     return ygg::Data<GroundFunctionExpression>(
-        ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>(context.get_or_create(minus).first.get_index()));
+        ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>(ArithmeticOperatorKind::Sub,
+                                                                           context.get_or_create(minus).first.get_index()));
 }
 
 ygg::Data<GroundFunctionExpression>
@@ -1316,7 +1323,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionNumericConstra
         binary.lhs = translate_grounded(element.get_left(), builder, context);
         binary.rhs = translate_grounded(element.get_right(), builder, context);
         canonicalize(binary);
-        return ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>(context.get_or_create(binary).first.get_index());
+        return ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>(operator_kind, context.get_or_create(binary).first.get_index());
     };
 
     switch (element.get_comparator())

@@ -33,7 +33,6 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 
 
 template<>

@@ -31,7 +31,6 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
-#include <vector>
 #include <yggdrasil/buffer/declarations.hpp>
 #include <yggdrasil/buffer/indexed_hash_set.hpp>
 #include <yggdrasil/buffer/segmented_buffer.hpp>
@@ -42,13 +41,5 @@
 #include <yggdrasil/formalism/symbol_repository.hpp>
 #include <yggdrasil/semantics/equal_to.hpp>
 #include <yggdrasil/semantics/hash.hpp>
-
-namespace tyr::formalism::datalog
-{
-template<FactKind T>
-using PredicateBindingForwardRangeView = ygg::View<RelationBindingsForwardRange<Predicate<T>, std::vector<ygg::Index<Row>>>, Repository>;
-template<FactKind T>
-using FunctionBindingRandomAccessRangeView = ygg::View<RelationBindingsRandomAccessRange<Function<T>, std::vector<ygg::Index<Row>>>, Repository>;
-}
 
 #endif

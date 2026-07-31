@@ -45,6 +45,8 @@ static_assert(
 TEST(TyrFormalismPlanningGroundNumericEffect, RejectsNonIncreaseAuxiliaryEffect)
 {
     using FunctionTermIndex = ygg::Index<fp::GroundFunctionTerm<f::AuxiliaryTag>>;
-    EXPECT_THROW((ygg::Data<Auxiliary>(f::NumericEffectOperatorKind::Assign, FunctionTermIndex {}, ygg::Data<fp::GroundFunctionExpression> {})),
+    EXPECT_THROW((ygg::Data<Auxiliary>(f::NumericEffectOperatorKind::Assign,
+                                      FunctionTermIndex {},
+                                      ygg::Data<fp::GroundFunctionExpression>(ygg::float_t(0)))),
                  std::invalid_argument);
 }

@@ -30,7 +30,6 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 
 template<::tyr::formalism::planning::Context C>
 class View<ygg::Index<::tyr::formalism::planning::GroundAxiom>, C>
