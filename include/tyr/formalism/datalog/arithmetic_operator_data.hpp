@@ -34,24 +34,16 @@ using namespace ::tyr;
 template<typename T>
 struct Data<::tyr::formalism::datalog::ArithmeticOperator<T>>
 {
-    using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::datalog::UnaryOperator<::tyr::formalism::Sub, T>>,
-                                             ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Add, T>>,
-                                             ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Sub, T>>,
-                                             ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Mul, T>>,
-                                             ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Div, T>>,
-                                             ygg::Index<::tyr::formalism::datalog::MultiOperator<::tyr::formalism::Add, T>>,
-                                             ygg::Index<::tyr::formalism::datalog::MultiOperator<::tyr::formalism::Mul, T>>>;
+    using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::datalog::UnaryOperator<T>>,
+                                             ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::ArithmeticOperatorKind, T>>,
+                                             ygg::Index<::tyr::formalism::datalog::MultiOperator<T>>>;
 
     Variant value;
 
     template<typename C>
-    using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::UnaryOperator<::tyr::formalism::Sub, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Add, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Sub, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Mul, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Div, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::MultiOperator<::tyr::formalism::Add, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::MultiOperator<::tyr::formalism::Mul, T>>, C>>;
+    using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::UnaryOperator<T>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::ArithmeticOperatorKind, T>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::MultiOperator<T>>, C>>;
 
     Data() = default;
     Data(Variant value_) : value(value_) {}

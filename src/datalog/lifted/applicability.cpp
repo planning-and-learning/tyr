@@ -22,34 +22,6 @@
 namespace tyr::datalog
 {
 
-/**
- * evaluate
- */
-
-template ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundUnaryOperatorView<::tyr::formalism::Sub> element,
-                                                    const FactSets& fact_sets);
-
-template ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundBinaryOperatorView<::tyr::formalism::Add> element,
-                                                    const FactSets& fact_sets);
-template ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundBinaryOperatorView<::tyr::formalism::Sub> element,
-                                                    const FactSets& fact_sets);
-template ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundBinaryOperatorView<::tyr::formalism::Mul> element,
-                                                    const FactSets& fact_sets);
-template ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundBinaryOperatorView<::tyr::formalism::Div> element,
-                                                    const FactSets& fact_sets);
-
-template bool evaluate(::tyr::formalism::datalog::GroundBinaryOperatorView<::tyr::formalism::Eq> element, const FactSets& fact_sets);
-template bool evaluate(::tyr::formalism::datalog::GroundBinaryOperatorView<::tyr::formalism::Ne> element, const FactSets& fact_sets);
-template bool evaluate(::tyr::formalism::datalog::GroundBinaryOperatorView<::tyr::formalism::Ge> element, const FactSets& fact_sets);
-template bool evaluate(::tyr::formalism::datalog::GroundBinaryOperatorView<::tyr::formalism::Gt> element, const FactSets& fact_sets);
-template bool evaluate(::tyr::formalism::datalog::GroundBinaryOperatorView<::tyr::formalism::Le> element, const FactSets& fact_sets);
-template bool evaluate(::tyr::formalism::datalog::GroundBinaryOperatorView<::tyr::formalism::Lt> element, const FactSets& fact_sets);
-
-template ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundMultiOperatorView<::tyr::formalism::Add> element,
-                                                    const FactSets& fact_sets);
-template ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundMultiOperatorView<::tyr::formalism::Mul> element,
-                                                    const FactSets& fact_sets);
-
 template ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::StaticTag> element,
                                                     const FactSets& fact_sets);
 template ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> element,
@@ -87,26 +59,9 @@ template bool is_valid_binding(::tyr::formalism::datalog::LiteralListView<::tyr:
                                const FactSets& fact_sets,
                                ::tyr::formalism::datalog::GrounderContext& context);
 
-template ygg::ClosedInterval<ygg::float_t>
-is_valid_binding(::tyr::formalism::datalog::NumericEffectView<::tyr::formalism::Assign, ::tyr::formalism::FluentTag> element,
-                 const FactSets& fact_sets,
-                 ::tyr::formalism::datalog::GrounderContext& context);
-template ygg::ClosedInterval<ygg::float_t>
-is_valid_binding(::tyr::formalism::datalog::NumericEffectView<::tyr::formalism::Increase, ::tyr::formalism::FluentTag> element,
-                 const FactSets& fact_sets,
-                 ::tyr::formalism::datalog::GrounderContext& context);
-template ygg::ClosedInterval<ygg::float_t>
-is_valid_binding(::tyr::formalism::datalog::NumericEffectView<::tyr::formalism::Decrease, ::tyr::formalism::FluentTag> element,
-                 const FactSets& fact_sets,
-                 ::tyr::formalism::datalog::GrounderContext& context);
-template ygg::ClosedInterval<ygg::float_t>
-is_valid_binding(::tyr::formalism::datalog::NumericEffectView<::tyr::formalism::ScaleUp, ::tyr::formalism::FluentTag> element,
-                 const FactSets& fact_sets,
-                 ::tyr::formalism::datalog::GrounderContext& context);
-template ygg::ClosedInterval<ygg::float_t>
-is_valid_binding(::tyr::formalism::datalog::NumericEffectView<::tyr::formalism::ScaleDown, ::tyr::formalism::FluentTag> element,
-                 const FactSets& fact_sets,
-                 ::tyr::formalism::datalog::GrounderContext& context);
+template ygg::ClosedInterval<ygg::float_t> is_valid_binding(::tyr::formalism::datalog::NumericEffectView<::tyr::formalism::FluentTag> element,
+                                                            const FactSets& fact_sets,
+                                                            ::tyr::formalism::datalog::GrounderContext& context);
 template ygg::ClosedInterval<ygg::float_t> is_valid_binding(::tyr::formalism::datalog::NumericEffectOperatorView<::tyr::formalism::FluentTag> element,
                                                             const FactSets& fact_sets,
                                                             ::tyr::formalism::datalog::GrounderContext& context);

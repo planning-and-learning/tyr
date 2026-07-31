@@ -18,31 +18,40 @@
 #ifndef TYR_FORMALISM_PLANNING_UNARY_OPERATOR_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_UNARY_OPERATOR_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/function_expression_data.hpp"
 #include "tyr/formalism/planning/ground_function_expression_data.hpp"
 #include "tyr/formalism/planning/unary_operator_index.hpp"
 
+#include <stdexcept>
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
+
 namespace ygg
 {
 using namespace ::tyr;
 
-template<::tyr::formalism::OpKind Op, typename T>
-struct Data<::tyr::formalism::planning::UnaryOperator<Op, T>>
+template<typename T>
+struct Data<::tyr::formalism::planning::UnaryOperator<T>>
 {
-    using OpType = Op;
+    using OperatorType = ::tyr::formalism::ArithmeticOperatorKind;
 
-    ygg::Index<::tyr::formalism::planning::UnaryOperator<Op, T>> index;
+    ygg::Index<::tyr::formalism::planning::UnaryOperator<T>> index;
+    OperatorType operator_kind = OperatorType::Sub;
     T arg;
 
     Data() = default;
-    Data(T arg_) : index(), arg(arg_) {}
+    Data(OperatorType operator_kind_, T arg_) : index(), operator_kind(operator_kind_), arg(arg_)
+    {
+        if (!is_unary(operator_kind))
+            throw std::invalid_argument("unary operator must be Sub");
+    }
     // Python constructor
     template<typename C>
-    Data(::ygg::View<T, C> arg_) : index(), arg()
+    Data(OperatorType operator_kind_, ::ygg::View<T, C> arg_) : index(), operator_kind(operator_kind_), arg()
     {
+        if (!is_unary(operator_kind))
+            throw std::invalid_argument("unary operator must be Sub");
         set(arg_, arg);
     }
     Data(const Data& other) = default;
@@ -53,14 +62,15 @@ struct Data<::tyr::formalism::planning::UnaryOperator<Op, T>>
     void clear() noexcept
     {
         ygg::clear(index);
+        operator_kind = OperatorType::Sub;
         ygg::clear(arg);
     }
 
-    auto cista_members() const noexcept { return std::tie(index, arg); }
-    auto identifying_members() const noexcept { return std::tie(Op::kind, arg); }
+    auto cista_members() const noexcept { return std::tie(index, operator_kind, arg); }
+    auto identifying_members() const noexcept { return std::tie(operator_kind, arg); }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::UnaryOperator<::tyr::formalism::Add, ygg::Data<::tyr::formalism::planning::FunctionExpression>>>);
+static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::UnaryOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression>>>);
 
 }
 

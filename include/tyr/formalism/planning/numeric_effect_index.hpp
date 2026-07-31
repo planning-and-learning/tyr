@@ -18,20 +18,20 @@
 #ifndef TYR_FORMALISM_PLANNING_NUMERIC_EFFECT_INDEX_HPP_
 #define TYR_FORMALISM_PLANNING_NUMERIC_EFFECT_INDEX_HPP_
 
-#include <yggdrasil/ids/index_mixins.hpp>
-#include <yggdrasil/core/types.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
+
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/ids/index_mixins.hpp>
 
 namespace ygg
 {
-template<tyr::formalism::NumericEffectOpKind Op, tyr::formalism::FactKind T>
-struct Index<tyr::formalism::planning::NumericEffect<Op, T>> : ygg::IndexMixin<ygg::Index<tyr::formalism::planning::NumericEffect<Op, T>>>
+template<tyr::formalism::FactKind T>
+struct Index<tyr::formalism::planning::NumericEffect<T>> : ygg::IndexMixin<ygg::Index<tyr::formalism::planning::NumericEffect<T>>>
 {
-    static_assert(std::same_as<T, tyr::formalism::FluentTag> || (std::same_as<T, tyr::formalism::AuxiliaryTag> && std::same_as<Op, tyr::formalism::Increase>),
-                  "Unsupported NumericEffect<Op, T> combination.");
+    static_assert(std::same_as<T, tyr::formalism::FluentTag> || std::same_as<T, tyr::formalism::AuxiliaryTag>, "Unsupported NumericEffect<T> specialization.");
 
     // Inherit constructors
-    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::planning::NumericEffect<Op, T>>>;
+    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::planning::NumericEffect<T>>>;
     using Base::Base;
 };
 

@@ -95,14 +95,15 @@ ygg::ClosedInterval<ygg::float_t> evaluate(fd::GroundFunctionExpressionView expr
 template<typename Selector>
 ygg::ClosedInterval<ygg::float_t> evaluate(fd::GroundArithmeticOperatorView expression, const Selector& selector, Selection<Selector>& selection);
 
-template<f::ArithmeticOpKind O, typename Selector>
-ygg::ClosedInterval<ygg::float_t> evaluate(fd::GroundUnaryOperatorView<O> expression, const Selector& selector, Selection<Selector>& selection)
+template<typename Selector>
+ygg::ClosedInterval<ygg::float_t> evaluate(fd::GroundUnaryOperatorView expression, const Selector& selector, Selection<Selector>& selection)
 {
-    return f::apply(O {}, evaluate(expression.get_arg(), selector, selection));
+    return f::apply(expression.get_operator(), evaluate(expression.get_arg(), selector, selection));
 }
 
-template<f::ArithmeticOpKind O, typename Selector>
-ygg::ClosedInterval<ygg::float_t> evaluate(fd::GroundBinaryOperatorView<O> expression, const Selector& selector, Selection<Selector>& selection)
+template<typename Selector>
+ygg::ClosedInterval<ygg::float_t>
+evaluate(fd::GroundBinaryOperatorView<f::ArithmeticOperatorKind> expression, const Selector& selector, Selection<Selector>& selection)
 {
     // Sequence the operand evaluations: they append to selection, and function argument evaluation
     // order is unspecified (gcc and clang disagree), which would make the support selection order
@@ -110,11 +111,11 @@ ygg::ClosedInterval<ygg::float_t> evaluate(fd::GroundBinaryOperatorView<O> expre
     // fixtures were generated with (and the higher lmcut estimate on the observed instances).
     const auto rhs = evaluate(expression.get_rhs(), selector, selection);
     const auto lhs = evaluate(expression.get_lhs(), selector, selection);
-    return f::apply(O {}, lhs, rhs);
+    return f::apply(expression.get_operator(), lhs, rhs);
 }
 
-template<f::ArithmeticOpKind O, typename Selector>
-ygg::ClosedInterval<ygg::float_t> evaluate(fd::GroundMultiOperatorView<O> expression, const Selector& selector, Selection<Selector>& selection)
+template<typename Selector>
+ygg::ClosedInterval<ygg::float_t> evaluate(fd::GroundMultiOperatorView expression, const Selector& selector, Selection<Selector>& selection)
 {
     const auto args = expression.get_args();
     if (args.empty())
@@ -122,16 +123,16 @@ ygg::ClosedInterval<ygg::float_t> evaluate(fd::GroundMultiOperatorView<O> expres
     return std::accumulate(std::next(args.begin()),
                            args.end(),
                            evaluate(args.front(), selector, selection),
-                           [&](const auto& value, const auto& arg) { return f::apply(O {}, value, evaluate(arg, selector, selection)); });
+                           [&](const auto& value, const auto& arg) { return f::apply(expression.get_operator(), value, evaluate(arg, selector, selection)); });
 }
 
-template<f::BooleanOpKind O, typename Selector>
-bool evaluate(fd::GroundBinaryOperatorView<O> expression, const Selector& selector, Selection<Selector>& selection)
+template<typename Selector>
+bool evaluate(fd::GroundBinaryOperatorView<f::BooleanOperatorKind> expression, const Selector& selector, Selection<Selector>& selection)
 {
     // Sequenced for the same reason as the arithmetic binary operator above.
     const auto rhs = evaluate(expression.get_rhs(), selector, selection);
     const auto lhs = evaluate(expression.get_lhs(), selector, selection);
-    return f::apply_existential(O {}, lhs, rhs);
+    return f::apply_existential(expression.get_operator(), lhs, rhs);
 }
 
 template<typename Selector>

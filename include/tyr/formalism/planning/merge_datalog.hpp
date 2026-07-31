@@ -144,9 +144,9 @@ template<FactKind T_SRC, FactKind T_DST = T_SRC>
 std::pair<::tyr::formalism::datalog::GroundFunctionTermValueView<T_DST>, bool> merge_p2d(GroundFunctionTermValueView<T_SRC> element,
                                                                                          MergeDatalogContext& context);
 
-template<NumericEffectOpKind Op, FactKind T_SRC, FactKind T_DST = T_SRC>
+template<FactKind T_SRC, FactKind T_DST = T_SRC>
     requires((std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>)
-std::pair<::tyr::formalism::datalog::NumericEffectView<Op, T_DST>, bool> merge_p2d(NumericEffectView<Op, T_SRC> element, MergeDatalogContext& context);
+std::pair<::tyr::formalism::datalog::NumericEffectView<T_DST>, bool> merge_p2d(NumericEffectView<T_SRC> element, MergeDatalogContext& context);
 
 template<FactKind T_SRC,
          FactKind T_DST = T_SRC,
@@ -157,10 +157,9 @@ ygg::Data<::tyr::formalism::datalog::FunctionExpression> merge_p2d(FunctionExpre
 
 ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression> merge_p2d(GroundFunctionExpressionView element, MergeDatalogContext& context);
 
-template<NumericEffectOpKind Op, FactKind T_SRC, FactKind T_DST = T_SRC>
+template<FactKind T_SRC, FactKind T_DST = T_SRC>
     requires((std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>)
-std::pair<::tyr::formalism::datalog::GroundNumericEffectView<Op, T_DST>, bool> merge_p2d(GroundNumericEffectView<Op, T_SRC> element,
-                                                                                         MergeDatalogContext& context);
+std::pair<::tyr::formalism::datalog::GroundNumericEffectView<T_DST>, bool> merge_p2d(GroundNumericEffectView<T_SRC> element, MergeDatalogContext& context);
 
 template<FactKind T_SRC,
          FactKind T_DST = T_SRC,
@@ -168,17 +167,15 @@ template<FactKind T_SRC,
 ygg::Data<::tyr::formalism::datalog::GroundNumericEffectOperator<T_DST>> merge_p2d(GroundNumericEffectOperatorView<T_SRC> element,
                                                                                    MergeDatalogContext& context);
 
-template<OpKind O, typename T>
-std::pair<::tyr::formalism::datalog::UnaryOperatorView<O, to_datalog_payload_t<T>>, bool> merge_p2d(UnaryOperatorView<O, T> element,
-                                                                                                    MergeDatalogContext& context);
+template<typename T>
+std::pair<::tyr::formalism::datalog::UnaryOperatorView<to_datalog_payload_t<T>>, bool> merge_p2d(UnaryOperatorView<T> element, MergeDatalogContext& context);
 
-template<OpKind O, typename T>
+template<BinaryOperatorKind O, typename T>
 std::pair<::tyr::formalism::datalog::BinaryOperatorView<O, to_datalog_payload_t<T>>, bool> merge_p2d(BinaryOperatorView<O, T> element,
                                                                                                      MergeDatalogContext& context);
 
-template<OpKind O, typename T>
-std::pair<::tyr::formalism::datalog::MultiOperatorView<O, to_datalog_payload_t<T>>, bool> merge_p2d(MultiOperatorView<O, T> element,
-                                                                                                    MergeDatalogContext& context);
+template<typename T>
+std::pair<::tyr::formalism::datalog::MultiOperatorView<to_datalog_payload_t<T>>, bool> merge_p2d(MultiOperatorView<T> element, MergeDatalogContext& context);
 
 template<typename T>
 ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<to_datalog_payload_t<T>>> merge_p2d(ArithmeticOperatorView<T> element, MergeDatalogContext& context);
@@ -560,27 +557,20 @@ std::pair<::tyr::formalism::datalog::GroundFunctionTermValueView<T_DST>, bool> m
     return context.destination.get_or_create(fterm_value);
 }
 
-template<::tyr::formalism::NumericEffectOpKind DOp, NumericEffectOpKind Op, FactKind T_SRC, FactKind T_DST>
+template<FactKind T_SRC, FactKind T_DST>
     requires((std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>)
-std::pair<::tyr::formalism::datalog::NumericEffectView<DOp, T_DST>, bool> merge_numeric_effect_as(NumericEffectView<Op, T_SRC> element,
-                                                                                                  MergeDatalogContext& context)
+std::pair<::tyr::formalism::datalog::NumericEffectView<T_DST>, bool> merge_p2d(NumericEffectView<T_SRC> element, MergeDatalogContext& context)
 {
-    auto numeric_effect_ptr = context.builder.template get_builder<::tyr::formalism::datalog::NumericEffect<DOp, T_DST>>();
+    auto numeric_effect_ptr = context.builder.template get_builder<::tyr::formalism::datalog::NumericEffect<T_DST>>();
     auto& numeric_effect = *numeric_effect_ptr;
     numeric_effect.clear();
 
+    numeric_effect.operator_kind = element.get_operator();
     numeric_effect.fterm = merge_p2d<T_SRC, T_DST>(element.get_fterm(), context).first.get_index();
     numeric_effect.fexpr = merge_p2d(element.get_fexpr(), context);
 
     canonicalize(numeric_effect);
     return context.destination.get_or_create(numeric_effect);
-}
-
-template<NumericEffectOpKind Op, FactKind T_SRC, FactKind T_DST>
-    requires((std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>)
-std::pair<::tyr::formalism::datalog::NumericEffectView<Op, T_DST>, bool> merge_p2d(NumericEffectView<Op, T_SRC> element, MergeDatalogContext& context)
-{
-    return merge_numeric_effect_as<Op, Op, T_SRC, T_DST>(element, context);
 }
 
 template<FactKind T_SRC, FactKind T_DST, typename>
@@ -588,37 +578,19 @@ ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T_DST>> merge_p2d(Num
 {
     using OperatorData = ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T_DST>>;
 
-    return visit(
-        [&](auto&& arg) -> OperatorData
-        {
-            using Alternative = std::decay_t<decltype(arg)>;
-            if constexpr (std::same_as<T_SRC, AuxiliaryTag>)
-                return OperatorData(typename OperatorData::Variant(merge_p2d<Increase, T_SRC, T_DST>(arg, context).first.get_index()));
-            else if constexpr (std::is_same_v<Alternative, NumericEffectView<Assign, T_SRC>>)
-                return OperatorData(typename OperatorData::Variant(merge_p2d<Assign, T_SRC, T_DST>(arg, context).first.get_index()));
-            else if constexpr (std::is_same_v<Alternative, NumericEffectView<Increase, T_SRC>>)
-                return OperatorData(typename OperatorData::Variant(merge_p2d<Increase, T_SRC, T_DST>(arg, context).first.get_index()));
-            else if constexpr (std::is_same_v<Alternative, NumericEffectView<Decrease, T_SRC>>)
-                return OperatorData(typename OperatorData::Variant(merge_p2d<Decrease, T_SRC, T_DST>(arg, context).first.get_index()));
-            else if constexpr (std::is_same_v<Alternative, NumericEffectView<ScaleUp, T_SRC>>)
-                return OperatorData(typename OperatorData::Variant(merge_p2d<ScaleUp, T_SRC, T_DST>(arg, context).first.get_index()));
-            else if constexpr (std::is_same_v<Alternative, NumericEffectView<ScaleDown, T_SRC>>)
-                return OperatorData(typename OperatorData::Variant(merge_p2d<ScaleDown, T_SRC, T_DST>(arg, context).first.get_index()));
-            else
-                static_assert(ygg::dependent_false<Alternative>::value, "Missing numeric effect case.");
-        },
-        element.get_variant());
+    return visit([&](auto&& arg) { return OperatorData(typename OperatorData::Variant(merge_p2d<T_SRC, T_DST>(arg, context).first.get_index())); },
+                 element.get_variant());
 }
 
-template<::tyr::formalism::NumericEffectOpKind DOp, NumericEffectOpKind Op, FactKind T_SRC, FactKind T_DST>
+template<FactKind T_SRC, FactKind T_DST>
     requires((std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>)
-std::pair<::tyr::formalism::datalog::GroundNumericEffectView<DOp, T_DST>, bool> merge_ground_numeric_effect_as(GroundNumericEffectView<Op, T_SRC> element,
-                                                                                                               MergeDatalogContext& context)
+std::pair<::tyr::formalism::datalog::GroundNumericEffectView<T_DST>, bool> merge_p2d(GroundNumericEffectView<T_SRC> element, MergeDatalogContext& context)
 {
-    auto numeric_effect_ptr = context.builder.template get_builder<::tyr::formalism::datalog::GroundNumericEffect<DOp, T_DST>>();
+    auto numeric_effect_ptr = context.builder.template get_builder<::tyr::formalism::datalog::GroundNumericEffect<T_DST>>();
     auto& numeric_effect = *numeric_effect_ptr;
     numeric_effect.clear();
 
+    numeric_effect.operator_kind = element.get_operator();
     numeric_effect.fterm = merge_p2d<T_SRC, T_DST>(element.get_fterm(), context).first.get_index();
     numeric_effect.fexpr = merge_p2d(element.get_fexpr(), context);
 
@@ -626,39 +598,13 @@ std::pair<::tyr::formalism::datalog::GroundNumericEffectView<DOp, T_DST>, bool> 
     return context.destination.get_or_create(numeric_effect);
 }
 
-template<NumericEffectOpKind Op, FactKind T_SRC, FactKind T_DST>
-    requires((std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>)
-std::pair<::tyr::formalism::datalog::GroundNumericEffectView<Op, T_DST>, bool> merge_p2d(GroundNumericEffectView<Op, T_SRC> element,
-                                                                                         MergeDatalogContext& context)
-{
-    return merge_ground_numeric_effect_as<Op, Op, T_SRC, T_DST>(element, context);
-}
-
 template<FactKind T_SRC, FactKind T_DST, typename>
 ygg::Data<::tyr::formalism::datalog::GroundNumericEffectOperator<T_DST>> merge_p2d(GroundNumericEffectOperatorView<T_SRC> element, MergeDatalogContext& context)
 {
     using OperatorData = ygg::Data<::tyr::formalism::datalog::GroundNumericEffectOperator<T_DST>>;
 
-    return visit(
-        [&](auto&& arg) -> OperatorData
-        {
-            using Alternative = std::decay_t<decltype(arg)>;
-            if constexpr (std::same_as<T_SRC, AuxiliaryTag>)
-                return OperatorData(typename OperatorData::Variant(merge_p2d<Increase, T_SRC, T_DST>(arg, context).first.get_index()));
-            else if constexpr (std::is_same_v<Alternative, GroundNumericEffectView<Assign, T_SRC>>)
-                return OperatorData(typename OperatorData::Variant(merge_p2d<Assign, T_SRC, T_DST>(arg, context).first.get_index()));
-            else if constexpr (std::is_same_v<Alternative, GroundNumericEffectView<Increase, T_SRC>>)
-                return OperatorData(typename OperatorData::Variant(merge_p2d<Increase, T_SRC, T_DST>(arg, context).first.get_index()));
-            else if constexpr (std::is_same_v<Alternative, GroundNumericEffectView<Decrease, T_SRC>>)
-                return OperatorData(typename OperatorData::Variant(merge_p2d<Decrease, T_SRC, T_DST>(arg, context).first.get_index()));
-            else if constexpr (std::is_same_v<Alternative, GroundNumericEffectView<ScaleUp, T_SRC>>)
-                return OperatorData(typename OperatorData::Variant(merge_p2d<ScaleUp, T_SRC, T_DST>(arg, context).first.get_index()));
-            else if constexpr (std::is_same_v<Alternative, GroundNumericEffectView<ScaleDown, T_SRC>>)
-                return OperatorData(typename OperatorData::Variant(merge_p2d<ScaleDown, T_SRC, T_DST>(arg, context).first.get_index()));
-            else
-                static_assert(ygg::dependent_false<Alternative>::value, "Missing ground numeric effect case.");
-        },
-        element.get_variant());
+    return visit([&](auto&& arg) { return OperatorData(typename OperatorData::Variant(merge_p2d<T_SRC, T_DST>(arg, context).first.get_index())); },
+                 element.get_variant());
 }
 
 inline ygg::Data<::tyr::formalism::datalog::FunctionExpression> merge_p2d(FunctionExpressionView element, MergeDatalogContext& context)
@@ -699,23 +645,23 @@ inline ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression> merge_p2d(
         element.get_variant());
 }
 
-template<OpKind O, typename T>
-std::pair<::tyr::formalism::datalog::UnaryOperatorView<O, to_datalog_payload_t<T>>, bool> merge_p2d(UnaryOperatorView<O, T> element,
-                                                                                                    MergeDatalogContext& context)
+template<typename T>
+std::pair<::tyr::formalism::datalog::UnaryOperatorView<to_datalog_payload_t<T>>, bool> merge_p2d(UnaryOperatorView<T> element, MergeDatalogContext& context)
 {
     using T_DST = to_datalog_payload_t<T>;
 
-    auto unary_ptr = context.builder.template get_builder<::tyr::formalism::datalog::UnaryOperator<O, T_DST>>();
+    auto unary_ptr = context.builder.template get_builder<::tyr::formalism::datalog::UnaryOperator<T_DST>>();
     auto& unary = *unary_ptr;
     unary.clear();
 
+    unary.operator_kind = element.get_operator();
     unary.arg = merge_p2d(element.get_arg(), context);
 
     canonicalize(unary);
     return context.destination.get_or_create(unary);
 }
 
-template<OpKind O, typename T>
+template<BinaryOperatorKind O, typename T>
 std::pair<::tyr::formalism::datalog::BinaryOperatorView<O, to_datalog_payload_t<T>>, bool> merge_p2d(BinaryOperatorView<O, T> element,
                                                                                                      MergeDatalogContext& context)
 {
@@ -725,6 +671,7 @@ std::pair<::tyr::formalism::datalog::BinaryOperatorView<O, to_datalog_payload_t<
     auto& binary = *binary_ptr;
     binary.clear();
 
+    binary.operator_kind = element.get_operator();
     binary.lhs = merge_p2d(element.get_lhs(), context);
     binary.rhs = merge_p2d(element.get_rhs(), context);
 
@@ -732,16 +679,16 @@ std::pair<::tyr::formalism::datalog::BinaryOperatorView<O, to_datalog_payload_t<
     return context.destination.get_or_create(binary);
 }
 
-template<OpKind O, typename T>
-std::pair<::tyr::formalism::datalog::MultiOperatorView<O, to_datalog_payload_t<T>>, bool> merge_p2d(MultiOperatorView<O, T> element,
-                                                                                                    MergeDatalogContext& context)
+template<typename T>
+std::pair<::tyr::formalism::datalog::MultiOperatorView<to_datalog_payload_t<T>>, bool> merge_p2d(MultiOperatorView<T> element, MergeDatalogContext& context)
 {
     using T_DST = to_datalog_payload_t<T>;
 
-    auto multi_ptr = context.builder.template get_builder<::tyr::formalism::datalog::MultiOperator<O, T_DST>>();
+    auto multi_ptr = context.builder.template get_builder<::tyr::formalism::datalog::MultiOperator<T_DST>>();
     auto& multi = *multi_ptr;
     multi.clear();
 
+    multi.operator_kind = element.get_operator();
     for (const auto arg : element.get_args())
         multi.args.push_back(merge_p2d(arg, context));
 
@@ -909,94 +856,44 @@ merge_p2d<AuxiliaryTag, FluentTag>(GroundFunctionTermView<AuxiliaryTag> element,
 extern template std::pair<::tyr::formalism::datalog::GroundFunctionTermValueView<FluentTag>, bool>
 merge_p2d<AuxiliaryTag, FluentTag>(GroundFunctionTermValueView<AuxiliaryTag> element, MergeDatalogContext& context);
 
-extern template std::pair<::tyr::formalism::datalog::NumericEffectView<Assign, FluentTag>, bool>
-merge_p2d<Assign, FluentTag, FluentTag>(NumericEffectView<Assign, FluentTag> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::NumericEffectView<Increase, FluentTag>, bool>
-merge_p2d<Increase, FluentTag, FluentTag>(NumericEffectView<Increase, FluentTag> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::NumericEffectView<Decrease, FluentTag>, bool>
-merge_p2d<Decrease, FluentTag, FluentTag>(NumericEffectView<Decrease, FluentTag> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::NumericEffectView<ScaleUp, FluentTag>, bool>
-merge_p2d<ScaleUp, FluentTag, FluentTag>(NumericEffectView<ScaleUp, FluentTag> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::NumericEffectView<ScaleDown, FluentTag>, bool>
-merge_p2d<ScaleDown, FluentTag, FluentTag>(NumericEffectView<ScaleDown, FluentTag> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::NumericEffectView<Increase, FluentTag>, bool>
-merge_p2d<Increase, AuxiliaryTag, FluentTag>(NumericEffectView<Increase, AuxiliaryTag> element, MergeDatalogContext& context);
+extern template std::pair<::tyr::formalism::datalog::NumericEffectView<FluentTag>, bool> merge_p2d<FluentTag, FluentTag>(NumericEffectView<FluentTag> element,
+                                                                                                                         MergeDatalogContext& context);
+extern template std::pair<::tyr::formalism::datalog::NumericEffectView<FluentTag>, bool>
+merge_p2d<AuxiliaryTag, FluentTag>(NumericEffectView<AuxiliaryTag> element, MergeDatalogContext& context);
 extern template ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<FluentTag>>
 merge_p2d<FluentTag, FluentTag>(NumericEffectOperatorView<FluentTag> element, MergeDatalogContext& context);
 extern template ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<FluentTag>>
 merge_p2d<AuxiliaryTag, FluentTag>(NumericEffectOperatorView<AuxiliaryTag> element, MergeDatalogContext& context);
 
-extern template std::pair<::tyr::formalism::datalog::GroundNumericEffectView<Assign, FluentTag>, bool>
-merge_p2d<Assign, FluentTag, FluentTag>(GroundNumericEffectView<Assign, FluentTag> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::GroundNumericEffectView<Increase, FluentTag>, bool>
-merge_p2d<Increase, FluentTag, FluentTag>(GroundNumericEffectView<Increase, FluentTag> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::GroundNumericEffectView<Decrease, FluentTag>, bool>
-merge_p2d<Decrease, FluentTag, FluentTag>(GroundNumericEffectView<Decrease, FluentTag> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::GroundNumericEffectView<ScaleUp, FluentTag>, bool>
-merge_p2d<ScaleUp, FluentTag, FluentTag>(GroundNumericEffectView<ScaleUp, FluentTag> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::GroundNumericEffectView<ScaleDown, FluentTag>, bool>
-merge_p2d<ScaleDown, FluentTag, FluentTag>(GroundNumericEffectView<ScaleDown, FluentTag> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::GroundNumericEffectView<Increase, FluentTag>, bool>
-merge_p2d<Increase, AuxiliaryTag, FluentTag>(GroundNumericEffectView<Increase, AuxiliaryTag> element, MergeDatalogContext& context);
+extern template std::pair<::tyr::formalism::datalog::GroundNumericEffectView<FluentTag>, bool>
+merge_p2d<FluentTag, FluentTag>(GroundNumericEffectView<FluentTag> element, MergeDatalogContext& context);
+extern template std::pair<::tyr::formalism::datalog::GroundNumericEffectView<FluentTag>, bool>
+merge_p2d<AuxiliaryTag, FluentTag>(GroundNumericEffectView<AuxiliaryTag> element, MergeDatalogContext& context);
 extern template ygg::Data<::tyr::formalism::datalog::GroundNumericEffectOperator<FluentTag>>
 merge_p2d<FluentTag, FluentTag>(GroundNumericEffectOperatorView<FluentTag> element, MergeDatalogContext& context);
 extern template ygg::Data<::tyr::formalism::datalog::GroundNumericEffectOperator<FluentTag>>
 merge_p2d<AuxiliaryTag, FluentTag>(GroundNumericEffectOperatorView<AuxiliaryTag> element, MergeDatalogContext& context);
 
-extern template std::pair<::tyr::formalism::datalog::UnaryOperatorView<Sub, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>, bool>
-merge_p2d(UnaryOperatorView<Sub, ygg::Data<FunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::UnaryOperatorView<Sub, ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>>, bool>
-merge_p2d(UnaryOperatorView<Sub, ygg::Data<GroundFunctionExpression>> element, MergeDatalogContext& context);
+extern template std::pair<::tyr::formalism::datalog::UnaryOperatorView<ygg::Data<::tyr::formalism::datalog::FunctionExpression>>, bool>
+merge_p2d(UnaryOperatorView<ygg::Data<FunctionExpression>> element, MergeDatalogContext& context);
+extern template std::pair<::tyr::formalism::datalog::UnaryOperatorView<ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>>, bool>
+merge_p2d(UnaryOperatorView<ygg::Data<GroundFunctionExpression>> element, MergeDatalogContext& context);
 
-extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<Eq, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>, bool>
-merge_p2d(BinaryOperatorView<Eq, ygg::Data<FunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<Ne, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>, bool>
-merge_p2d(BinaryOperatorView<Ne, ygg::Data<FunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<Ge, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>, bool>
-merge_p2d(BinaryOperatorView<Ge, ygg::Data<FunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<Gt, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>, bool>
-merge_p2d(BinaryOperatorView<Gt, ygg::Data<FunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<Le, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>, bool>
-merge_p2d(BinaryOperatorView<Le, ygg::Data<FunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<Lt, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>, bool>
-merge_p2d(BinaryOperatorView<Lt, ygg::Data<FunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<Add, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>, bool>
-merge_p2d(BinaryOperatorView<Add, ygg::Data<FunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<Sub, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>, bool>
-merge_p2d(BinaryOperatorView<Sub, ygg::Data<FunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<Mul, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>, bool>
-merge_p2d(BinaryOperatorView<Mul, ygg::Data<FunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<Div, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>, bool>
-merge_p2d(BinaryOperatorView<Div, ygg::Data<FunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<Eq, ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>>, bool>
-merge_p2d(BinaryOperatorView<Eq, ygg::Data<GroundFunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<Ne, ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>>, bool>
-merge_p2d(BinaryOperatorView<Ne, ygg::Data<GroundFunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<Ge, ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>>, bool>
-merge_p2d(BinaryOperatorView<Ge, ygg::Data<GroundFunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<Gt, ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>>, bool>
-merge_p2d(BinaryOperatorView<Gt, ygg::Data<GroundFunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<Le, ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>>, bool>
-merge_p2d(BinaryOperatorView<Le, ygg::Data<GroundFunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<Lt, ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>>, bool>
-merge_p2d(BinaryOperatorView<Lt, ygg::Data<GroundFunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<Add, ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>>, bool>
-merge_p2d(BinaryOperatorView<Add, ygg::Data<GroundFunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<Sub, ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>>, bool>
-merge_p2d(BinaryOperatorView<Sub, ygg::Data<GroundFunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<Mul, ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>>, bool>
-merge_p2d(BinaryOperatorView<Mul, ygg::Data<GroundFunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<Div, ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>>, bool>
-merge_p2d(BinaryOperatorView<Div, ygg::Data<GroundFunctionExpression>> element, MergeDatalogContext& context);
+extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<BooleanOperatorKind, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>, bool>
+merge_p2d(BinaryOperatorView<BooleanOperatorKind, ygg::Data<FunctionExpression>> element, MergeDatalogContext& context);
+extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>, bool>
+merge_p2d(BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<FunctionExpression>> element, MergeDatalogContext& context);
+extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<BooleanOperatorKind, ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>>,
+                          bool>
+merge_p2d(BinaryOperatorView<BooleanOperatorKind, ygg::Data<GroundFunctionExpression>> element, MergeDatalogContext& context);
+extern template std::pair<::tyr::formalism::datalog::BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>>,
+                          bool>
+merge_p2d(BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<GroundFunctionExpression>> element, MergeDatalogContext& context);
 
-extern template std::pair<::tyr::formalism::datalog::MultiOperatorView<Add, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>, bool>
-merge_p2d(MultiOperatorView<Add, ygg::Data<FunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::MultiOperatorView<Mul, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>, bool>
-merge_p2d(MultiOperatorView<Mul, ygg::Data<FunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::MultiOperatorView<Add, ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>>, bool>
-merge_p2d(MultiOperatorView<Add, ygg::Data<GroundFunctionExpression>> element, MergeDatalogContext& context);
-extern template std::pair<::tyr::formalism::datalog::MultiOperatorView<Mul, ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>>, bool>
-merge_p2d(MultiOperatorView<Mul, ygg::Data<GroundFunctionExpression>> element, MergeDatalogContext& context);
+extern template std::pair<::tyr::formalism::datalog::MultiOperatorView<ygg::Data<::tyr::formalism::datalog::FunctionExpression>>, bool>
+merge_p2d(MultiOperatorView<ygg::Data<FunctionExpression>> element, MergeDatalogContext& context);
+extern template std::pair<::tyr::formalism::datalog::MultiOperatorView<ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>>, bool>
+merge_p2d(MultiOperatorView<ygg::Data<GroundFunctionExpression>> element, MergeDatalogContext& context);
 
 extern template ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression>>>
 merge_p2d(ArithmeticOperatorView<ygg::Data<FunctionExpression>> element, MergeDatalogContext& context);

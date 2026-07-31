@@ -18,14 +18,14 @@
 #ifndef TYR_FORMALISM_PLANNING_ARITHMETIC_OPERATOR_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_ARITHMETIC_OPERATOR_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/planning/binary_operator_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/multi_operator_index.hpp"
 #include "tyr/formalism/planning/unary_operator_index.hpp"
 
 #include <variant>
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
 
 namespace ygg
 {
@@ -34,24 +34,16 @@ using namespace ::tyr;
 template<typename T>
 struct Data<::tyr::formalism::planning::ArithmeticOperator<T>>
 {
-    using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::planning::UnaryOperator<::tyr::formalism::Sub, T>>,
-                                             ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Add, T>>,
-                                             ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Sub, T>>,
-                                             ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Mul, T>>,
-                                             ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Div, T>>,
-                                             ygg::Index<::tyr::formalism::planning::MultiOperator<::tyr::formalism::Add, T>>,
-                                             ygg::Index<::tyr::formalism::planning::MultiOperator<::tyr::formalism::Mul, T>>>;
+    using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::planning::UnaryOperator<T>>,
+                                             ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::ArithmeticOperatorKind, T>>,
+                                             ygg::Index<::tyr::formalism::planning::MultiOperator<T>>>;
 
     Variant value;
 
     template<typename C>
-    using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::planning::UnaryOperator<::tyr::formalism::Sub, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Add, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Sub, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Mul, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Div, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::MultiOperator<::tyr::formalism::Add, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::MultiOperator<::tyr::formalism::Mul, T>>, C>>;
+    using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::planning::UnaryOperator<T>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::ArithmeticOperatorKind, T>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::MultiOperator<T>>, C>>;
 
     Data() = default;
     Data(Variant value_) : value(value_) {}

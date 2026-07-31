@@ -18,31 +18,33 @@
 #ifndef TYR_FORMALISM_PLANNING_BINARY_OPERATOR_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_BINARY_OPERATOR_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/planning/binary_operator_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/function_expression_data.hpp"
 #include "tyr/formalism/planning/ground_function_expression_data.hpp"
 
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
+
 namespace ygg
 {
 using namespace ::tyr;
 
-template<::tyr::formalism::OpKind Op, typename T>
-struct Data<::tyr::formalism::planning::BinaryOperator<Op, T>>
+template<::tyr::formalism::BinaryOperatorKind Operator, typename T>
+struct Data<::tyr::formalism::planning::BinaryOperator<Operator, T>>
 {
-    using OpType = Op;
+    using OperatorType = Operator;
 
-    ygg::Index<::tyr::formalism::planning::BinaryOperator<Op, T>> index;
+    ygg::Index<::tyr::formalism::planning::BinaryOperator<Operator, T>> index;
+    OperatorType operator_kind {};
     T lhs;
     T rhs;
 
     Data() = default;
-    Data(T lhs_, T rhs_) : index(), lhs(lhs_), rhs(rhs_) {}
+    Data(OperatorType operator_kind_, T lhs_, T rhs_) : index(), operator_kind(operator_kind_), lhs(lhs_), rhs(rhs_) {}
     // Python constructor
     template<typename C>
-    Data(::ygg::View<T, C> lhs_, ::ygg::View<T, C> rhs_) : index(), lhs(), rhs()
+    Data(OperatorType operator_kind_, ::ygg::View<T, C> lhs_, ::ygg::View<T, C> rhs_) : index(), operator_kind(operator_kind_), lhs(), rhs()
     {
         set(lhs_, lhs);
         set(rhs_, rhs);
@@ -55,15 +57,17 @@ struct Data<::tyr::formalism::planning::BinaryOperator<Op, T>>
     void clear() noexcept
     {
         ygg::clear(index);
+        operator_kind = {};
         ygg::clear(lhs);
         ygg::clear(rhs);
     }
 
-    auto cista_members() const noexcept { return std::tie(index, lhs, rhs); }
-    auto identifying_members() const noexcept { return std::tie(Op::kind, lhs, rhs); }
+    auto cista_members() const noexcept { return std::tie(index, operator_kind, lhs, rhs); }
+    auto identifying_members() const noexcept { return std::tie(operator_kind, lhs, rhs); }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Add, ygg::Data<::tyr::formalism::planning::FunctionExpression>>>);
+static_assert(!ygg::uses_trivial_storage_v<
+              ::tyr::formalism::planning::BinaryOperator<::tyr::formalism::ArithmeticOperatorKind, ygg::Data<::tyr::formalism::planning::FunctionExpression>>>);
 
 }
 

@@ -47,14 +47,12 @@ std::pair<GroundFunctionTermView<T>, bool> ground(FunctionTermView<T> element, G
 
 GroundFunctionExpressionView ground(FunctionExpressionView element, GrounderContext& context);
 
-template<OpKind O>
-std::pair<GroundUnaryOperatorView<O>, bool> ground(LiftedUnaryOperatorView<O> element, GrounderContext& context);
+std::pair<GroundUnaryOperatorView, bool> ground(LiftedUnaryOperatorView element, GrounderContext& context);
 
-template<OpKind O>
+template<BinaryOperatorKind O>
 std::pair<GroundBinaryOperatorView<O>, bool> ground(LiftedBinaryOperatorView<O> element, GrounderContext& context);
 
-template<OpKind O>
-std::pair<GroundMultiOperatorView<O>, bool> ground(LiftedMultiOperatorView<O> element, GrounderContext& context);
+std::pair<GroundMultiOperatorView, bool> ground(LiftedMultiOperatorView element, GrounderContext& context);
 
 GroundBooleanOperatorView ground(LiftedBooleanOperatorView element, GrounderContext& context);
 
@@ -69,8 +67,8 @@ std::pair<GroundAtomView<T>, bool> ground(AtomView<T> element, GrounderContext& 
 template<FactKind T>
 std::pair<GroundLiteralView<T>, bool> ground(LiteralView<T> element, GrounderContext& context);
 
-template<NumericEffectOpKind Op, FactKind T>
-std::pair<GroundNumericEffectView<Op, T>, bool> ground(NumericEffectView<Op, T> element, GrounderContext& context);
+template<FactKind T>
+std::pair<GroundNumericEffectView<T>, bool> ground(NumericEffectView<T> element, GrounderContext& context);
 
 template<FactKind T>
 GroundNumericEffectOperatorView<T> ground(NumericEffectOperatorView<T> element, GrounderContext& context);
@@ -172,15 +170,15 @@ inline GroundFunctionExpressionView ground(FunctionExpressionView element, Groun
     return ygg::make_view(data, context.destination);
 }
 
-template<OpKind O>
-std::pair<GroundUnaryOperatorView<O>, bool> ground(LiftedUnaryOperatorView<O> element, GrounderContext& context)
+inline std::pair<GroundUnaryOperatorView, bool> ground(LiftedUnaryOperatorView element, GrounderContext& context)
 {
     // Fetch and clear
-    auto unary_ptr = context.builder.template get_builder<UnaryOperator<O, ygg::Data<GroundFunctionExpression>>>();
+    auto unary_ptr = context.builder.template get_builder<UnaryOperator<ygg::Data<GroundFunctionExpression>>>();
     auto& unary = *unary_ptr;
     unary.clear();
 
     // Fill data
+    unary.operator_kind = element.get_operator();
     unary.arg = ground(element.get_arg(), context).get_data();
 
     // Canonicalize and Serialize
@@ -188,7 +186,7 @@ std::pair<GroundUnaryOperatorView<O>, bool> ground(LiftedUnaryOperatorView<O> el
     return context.destination.get_or_create(unary);
 }
 
-template<OpKind O>
+template<BinaryOperatorKind O>
 std::pair<GroundBinaryOperatorView<O>, bool> ground(LiftedBinaryOperatorView<O> element, GrounderContext& context)
 {
     // Fetch and clear
@@ -197,6 +195,7 @@ std::pair<GroundBinaryOperatorView<O>, bool> ground(LiftedBinaryOperatorView<O> 
     binary.clear();
 
     // Fill data
+    binary.operator_kind = element.get_operator();
     binary.lhs = ground(element.get_lhs(), context).get_data();
     binary.rhs = ground(element.get_rhs(), context).get_data();
 
@@ -205,15 +204,15 @@ std::pair<GroundBinaryOperatorView<O>, bool> ground(LiftedBinaryOperatorView<O> 
     return context.destination.get_or_create(binary);
 }
 
-template<OpKind O>
-std::pair<GroundMultiOperatorView<O>, bool> ground(LiftedMultiOperatorView<O> element, GrounderContext& context)
+inline std::pair<GroundMultiOperatorView, bool> ground(LiftedMultiOperatorView element, GrounderContext& context)
 {
     // Fetch and clear
-    auto multi_ptr = context.builder.template get_builder<MultiOperator<O, ygg::Data<GroundFunctionExpression>>>();
+    auto multi_ptr = context.builder.template get_builder<MultiOperator<ygg::Data<GroundFunctionExpression>>>();
     auto& multi = *multi_ptr;
     multi.clear();
 
     // Fill data
+    multi.operator_kind = element.get_operator();
     for (const auto arg : element.get_args())
         multi.args.push_back(ground(arg, context).get_data());
 
@@ -224,9 +223,8 @@ std::pair<GroundMultiOperatorView<O>, bool> ground(LiftedMultiOperatorView<O> el
 
 inline GroundBooleanOperatorView ground(LiftedBooleanOperatorView element, GrounderContext& context)
 {
-    const auto data =
-        visit([&](auto&& arg) { return ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>(ground(arg, context).first.get_index()); },
-              element.get_variant());
+    const auto data = visit([&](auto&& arg) { return ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>(ground(arg, context).first.get_index()); },
+                            element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
@@ -301,13 +299,14 @@ std::pair<GroundLiteralView<T>, bool> ground(LiteralView<T> element, GrounderCon
     return context.destination.get_or_create(ground_literal);
 }
 
-template<NumericEffectOpKind Op, FactKind T>
-std::pair<GroundNumericEffectView<Op, T>, bool> ground(NumericEffectView<Op, T> element, GrounderContext& context)
+template<FactKind T>
+std::pair<GroundNumericEffectView<T>, bool> ground(NumericEffectView<T> element, GrounderContext& context)
 {
-    auto numeric_effect_ptr = context.builder.template get_builder<GroundNumericEffect<Op, T>>();
+    auto numeric_effect_ptr = context.builder.template get_builder<GroundNumericEffect<T>>();
     auto& numeric_effect = *numeric_effect_ptr;
     numeric_effect.clear();
 
+    numeric_effect.operator_kind = element.get_operator();
     numeric_effect.fterm = ground(element.get_fterm(), context).first.get_index();
     numeric_effect.fexpr = ground(element.get_fexpr(), context).get_data();
 
@@ -493,21 +492,10 @@ extern template std::pair<FunctionBindingView<FluentTag>, bool> ground(TermListV
 extern template std::pair<GroundFunctionTermView<StaticTag>, bool> ground(FunctionTermView<StaticTag> element, GrounderContext& context);
 extern template std::pair<GroundFunctionTermView<FluentTag>, bool> ground(FunctionTermView<FluentTag> element, GrounderContext& context);
 
-extern template std::pair<GroundUnaryOperatorView<Sub>, bool> ground(LiftedUnaryOperatorView<Sub> element, GrounderContext& context);
-
-extern template std::pair<GroundBinaryOperatorView<Eq>, bool> ground(LiftedBinaryOperatorView<Eq> element, GrounderContext& context);
-extern template std::pair<GroundBinaryOperatorView<Ne>, bool> ground(LiftedBinaryOperatorView<Ne> element, GrounderContext& context);
-extern template std::pair<GroundBinaryOperatorView<Ge>, bool> ground(LiftedBinaryOperatorView<Ge> element, GrounderContext& context);
-extern template std::pair<GroundBinaryOperatorView<Gt>, bool> ground(LiftedBinaryOperatorView<Gt> element, GrounderContext& context);
-extern template std::pair<GroundBinaryOperatorView<Le>, bool> ground(LiftedBinaryOperatorView<Le> element, GrounderContext& context);
-extern template std::pair<GroundBinaryOperatorView<Lt>, bool> ground(LiftedBinaryOperatorView<Lt> element, GrounderContext& context);
-extern template std::pair<GroundBinaryOperatorView<Add>, bool> ground(LiftedBinaryOperatorView<Add> element, GrounderContext& context);
-extern template std::pair<GroundBinaryOperatorView<Sub>, bool> ground(LiftedBinaryOperatorView<Sub> element, GrounderContext& context);
-extern template std::pair<GroundBinaryOperatorView<Mul>, bool> ground(LiftedBinaryOperatorView<Mul> element, GrounderContext& context);
-extern template std::pair<GroundBinaryOperatorView<Div>, bool> ground(LiftedBinaryOperatorView<Div> element, GrounderContext& context);
-
-extern template std::pair<GroundMultiOperatorView<Add>, bool> ground(LiftedMultiOperatorView<Add> element, GrounderContext& context);
-extern template std::pair<GroundMultiOperatorView<Mul>, bool> ground(LiftedMultiOperatorView<Mul> element, GrounderContext& context);
+extern template std::pair<GroundBinaryOperatorView<ArithmeticOperatorKind>, bool> ground(LiftedBinaryOperatorView<ArithmeticOperatorKind> element,
+                                                                                         GrounderContext& context);
+extern template std::pair<GroundBinaryOperatorView<BooleanOperatorKind>, bool> ground(LiftedBinaryOperatorView<BooleanOperatorKind> element,
+                                                                                      GrounderContext& context);
 
 extern template std::pair<PredicateBindingView<StaticTag>, bool> ground(TermListView terms, PredicateView<StaticTag> predicate, GrounderContext& context);
 extern template std::pair<PredicateBindingView<FluentTag>, bool> ground(TermListView terms, PredicateView<FluentTag> predicate, GrounderContext& context);
@@ -518,12 +506,7 @@ extern template std::pair<GroundAtomView<FluentTag>, bool> ground(AtomView<Fluen
 extern template std::pair<GroundLiteralView<StaticTag>, bool> ground(LiteralView<StaticTag> element, GrounderContext& context);
 extern template std::pair<GroundLiteralView<FluentTag>, bool> ground(LiteralView<FluentTag> element, GrounderContext& context);
 
-extern template std::pair<GroundNumericEffectView<Assign, FluentTag>, bool> ground(NumericEffectView<Assign, FluentTag> element, GrounderContext& context);
-extern template std::pair<GroundNumericEffectView<Increase, FluentTag>, bool> ground(NumericEffectView<Increase, FluentTag> element, GrounderContext& context);
-extern template std::pair<GroundNumericEffectView<Decrease, FluentTag>, bool> ground(NumericEffectView<Decrease, FluentTag> element, GrounderContext& context);
-extern template std::pair<GroundNumericEffectView<ScaleUp, FluentTag>, bool> ground(NumericEffectView<ScaleUp, FluentTag> element, GrounderContext& context);
-extern template std::pair<GroundNumericEffectView<ScaleDown, FluentTag>, bool> ground(NumericEffectView<ScaleDown, FluentTag> element,
-                                                                                      GrounderContext& context);
+extern template std::pair<GroundNumericEffectView<FluentTag>, bool> ground(NumericEffectView<FluentTag> element, GrounderContext& context);
 extern template GroundNumericEffectOperatorView<FluentTag> ground(NumericEffectOperatorView<FluentTag> element, GrounderContext& context);
 
 extern template std::pair<PredicateBindingView<StaticTag>, bool> ground_binding(AtomView<StaticTag> element, GrounderContext& context);

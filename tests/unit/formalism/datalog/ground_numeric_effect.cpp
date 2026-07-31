@@ -4,33 +4,30 @@
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <concepts>
+#include <tuple>
+#include <utility>
 
+namespace f = tyr::formalism;
 namespace fd = tyr::formalism::datalog;
 
 template<typename Entity>
-struct GroundNumericEffectPublicView;
+concept GroundNumericEffectContract =
+    std::constructible_from<ygg::Index<Entity>, ygg::uint_t> && std::totally_ordered<ygg::Index<Entity>> && std::totally_ordered<ygg::Data<Entity>>
+    && std::totally_ordered<ygg::View<ygg::Index<Entity>, fd::Repository>>
+    && std::same_as<std::tuple_element_t<0, decltype(std::declval<const ygg::Data<Entity>&>().identifying_members())>, const f::NumericEffectOperatorKind&>
+    && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Index<Entity>, fd::Repository>& view) {
+           data.index;
+           { data.operator_kind } -> std::same_as<f::NumericEffectOperatorKind&>;
+           data.clear();
+           view.get_index();
+           { view.get_operator() } -> std::same_as<f::NumericEffectOperatorKind>;
+           view.get_fterm();
+           view.get_fexpr();
+       };
 
-template<tyr::formalism::NumericEffectOpKind Op, tyr::formalism::FactKind T>
-struct GroundNumericEffectPublicView<fd::GroundNumericEffect<Op, T>>
-{
-    using type = fd::GroundNumericEffectView<Op, T>;
-};
+using Fluent = fd::GroundNumericEffect<f::FluentTag>;
 
-template<typename Entity>
-concept GroundNumericEffectContract = std::constructible_from<ygg::Index<Entity>, ygg::uint_t> && std::totally_ordered<ygg::Index<Entity>>
-                                      && std::totally_ordered<ygg::Data<Entity>> && std::totally_ordered<ygg::View<ygg::Index<Entity>, fd::Repository>>
-                                      && std::same_as<ygg::View<ygg::Index<Entity>, fd::Repository>, typename GroundNumericEffectPublicView<Entity>::type>
-                                      && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Index<Entity>, fd::Repository>& view) {
-                                             data.index;
-                                             data.fterm;
-                                             data.fexpr;
-                                             data.clear();
-                                             view.get_index();
-                                             view.get_fterm();
-                                             view.get_fexpr();
-                                         };
-
-static_assert([]<typename... Entities>(ygg::TypeList<Entities...>) { return (GroundNumericEffectContract<Entities> && ...); }(fd::GroundNumericEffectTypes {}));
-static_assert(std::constructible_from<ygg::Data<fd::GroundNumericEffect<tyr::formalism::Assign, tyr::formalism::FluentTag>>,
-                                      fd::GroundFunctionTermView<tyr::formalism::FluentTag>,
-                                      fd::GroundFunctionExpressionView>);
+static_assert(GroundNumericEffectContract<Fluent>);
+static_assert(std::same_as<ygg::View<ygg::Index<Fluent>, fd::Repository>, fd::GroundNumericEffectView<f::FluentTag>>);
+static_assert(
+    std::constructible_from<ygg::Data<Fluent>, f::NumericEffectOperatorKind, fd::GroundFunctionTermView<f::FluentTag>, fd::GroundFunctionExpressionView>);

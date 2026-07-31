@@ -32,44 +32,22 @@ namespace tyr::formalism::datalog
  * Datalog
  */
 
-template<OpKind Op, typename T>
-bool is_canonical(const ygg::Data<UnaryOperator<Op, T>>& data)
+template<typename T>
+bool is_canonical(const ygg::Data<UnaryOperator<T>>& data)
 {
     return true;
 }
 
-template<OpKind Op, typename T>
-bool is_canonical(const ygg::Data<BinaryOperator<Op, T>>& data)
+template<BinaryOperatorKind Operator, typename T>
+bool is_canonical(const ygg::Data<BinaryOperator<Operator, T>>& data)
 {
+    if constexpr (std::same_as<Operator, ArithmeticOperatorKind>)
+        return (data.operator_kind != ArithmeticOperatorKind::Add && data.operator_kind != ArithmeticOperatorKind::Mul) || data.lhs <= data.rhs;
     return true;
 }
 
 template<typename T>
-bool is_canonical(const ygg::Data<BinaryOperator<Add, T>>& data)
-{
-    return data.lhs <= data.rhs;
-}
-
-template<typename T>
-bool is_canonical(const ygg::Data<BinaryOperator<Mul, T>>& data)
-{
-    return data.lhs <= data.rhs;
-}
-
-template<OpKind Op, typename T>
-bool is_canonical(const ygg::Data<MultiOperator<Op, T>>& data)
-{
-    return true;
-}
-
-template<typename T>
-bool is_canonical(const ygg::Data<MultiOperator<Add, T>>& data)
-{
-    return is_canonical(data.args);
-}
-
-template<typename T>
-bool is_canonical(const ygg::Data<MultiOperator<Mul, T>>& data)
+bool is_canonical(const ygg::Data<MultiOperator<T>>& data)
 {
     return is_canonical(data.args);
 }
@@ -132,14 +110,14 @@ bool is_canonical(const ygg::Data<GroundFunctionTermValue<T>>& data)
     return true;
 }
 
-template<NumericEffectOpKind Op, FactKind T>
-bool is_canonical(const ygg::Data<NumericEffect<Op, T>>& data)
+template<FactKind T>
+bool is_canonical(const ygg::Data<NumericEffect<T>>& data)
 {
     return true;
 }
 
-template<NumericEffectOpKind Op, FactKind T>
-bool is_canonical(const ygg::Data<GroundNumericEffect<Op, T>>& data)
+template<FactKind T>
+bool is_canonical(const ygg::Data<GroundNumericEffect<T>>& data)
 {
     return true;
 }
@@ -196,46 +174,24 @@ inline bool is_canonical(const ygg::Data<GroundProgram>& data)
  * Datalog
  */
 
-template<OpKind Op, typename T>
-void canonicalize(ygg::Data<UnaryOperator<Op, T>>& data)
+template<typename T>
+void canonicalize(ygg::Data<UnaryOperator<T>>& data)
 {
     // Trivially canonical
 }
 
-template<OpKind Op, typename T>
-void canonicalize(ygg::Data<BinaryOperator<Op, T>>& data)
+template<BinaryOperatorKind Operator, typename T>
+void canonicalize(ygg::Data<BinaryOperator<Operator, T>>& data)
 {
-    // Canonicalization for commutative operator in specializations
+    if constexpr (std::same_as<Operator, ArithmeticOperatorKind>)
+    {
+        if ((data.operator_kind == ArithmeticOperatorKind::Add || data.operator_kind == ArithmeticOperatorKind::Mul) && data.lhs > data.rhs)
+            std::swap(data.lhs, data.rhs);
+    }
 }
 
 template<typename T>
-void canonicalize(ygg::Data<BinaryOperator<Add, T>>& data)
-{
-    if (data.lhs > data.rhs)
-        std::swap(data.lhs, data.rhs);
-}
-
-template<typename T>
-void canonicalize(ygg::Data<BinaryOperator<Mul, T>>& data)
-{
-    if (data.lhs > data.rhs)
-        std::swap(data.lhs, data.rhs);
-}
-
-template<OpKind Op, typename T>
-void canonicalize(ygg::Data<MultiOperator<Op, T>>& data)
-{
-    // Canonicalization for commutative operator in specializations
-}
-
-template<typename T>
-void canonicalize(ygg::Data<MultiOperator<Add, T>>& data)
-{
-    canonicalize(data.args);
-}
-
-template<typename T>
-void canonicalize(ygg::Data<MultiOperator<Mul, T>>& data)
+void canonicalize(ygg::Data<MultiOperator<T>>& data)
 {
     canonicalize(data.args);
 }
@@ -304,14 +260,14 @@ void canonicalize(ygg::Data<GroundFunctionTermValue<T>>& data)
     // Trivially canonical
 }
 
-template<NumericEffectOpKind Op, FactKind T>
-void canonicalize(ygg::Data<NumericEffect<Op, T>>& data)
+template<FactKind T>
+void canonicalize(ygg::Data<NumericEffect<T>>& data)
 {
     // Trivially canonical
 }
 
-template<NumericEffectOpKind Op, FactKind T>
-void canonicalize(ygg::Data<GroundNumericEffect<Op, T>>& data)
+template<FactKind T>
+void canonicalize(ygg::Data<GroundNumericEffect<T>>& data)
 {
     // Trivially canonical
 }

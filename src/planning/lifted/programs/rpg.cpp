@@ -138,9 +138,10 @@ bool is_real_conditional_effect(fp::ConditionalEffectView cond_eff)
 
 ygg::Data<fd::NumericEffectOperator<f::FluentTag>> create_unit_metric_effect(fd::FunctionTermView<f::FluentTag> term, fp::MergeDatalogContext& context)
 {
-    auto effect_ptr = context.builder.get_builder<fd::NumericEffect<f::Increase, f::FluentTag>>();
+    auto effect_ptr = context.builder.get_builder<fd::NumericEffect<f::FluentTag>>();
     auto& effect = *effect_ptr;
     effect.clear();
+    effect.operator_kind = f::NumericEffectOperatorKind::Increase;
     effect.fterm = term.get_index();
     effect.fexpr = ygg::Data<fd::FunctionExpression>(ygg::float_t(1));
     canonicalize(effect);

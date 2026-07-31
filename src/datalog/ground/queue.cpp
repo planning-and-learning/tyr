@@ -198,13 +198,12 @@ Cost aggregate_selection_cost(Cost cost, const std::vector<NumericSelectionEntry
     return cost;
 }
 
-template<f::NumericEffectOpKind Op>
-std::optional<Cost> metric_effect_delta(fd::GroundNumericEffectView<Op, f::FluentTag> effect,
+std::optional<Cost> metric_effect_delta(fd::GroundNumericEffectView<f::FluentTag> effect,
                                         const GroundNumericSupportSelector& selector,
                                         std::vector<NumericSelectionEntry>& selection)
 {
     return tyr::datalog::metric_effect_delta(
-        Op {},
+        effect.get_operator(),
         [&] { return selector.select_fluent_interval(effect.get_fterm(), selection); },
         [&] { return selector.evaluate_effect_expression(effect.get_fexpr(), selection); });
 }
@@ -325,10 +324,9 @@ template<f::RelationKind R,
          OrAnnotationPolicyConcept<GroundTag> OrAP,
          AndAnnotationPolicyConcept<GroundTag> AndAP,
          TerminationPolicyConcept<GroundTag> TP,
-         RuleCostPolicyConcept<GroundTag> CP,
-         f::NumericEffectOpKind Op>
+         RuleCostPolicyConcept<GroundTag> CP>
 Cost aggregate_numeric_effect_rule_cost(fd::GroundRuleView<R> rule,
-                                        fd::GroundNumericEffectView<Op, f::FluentTag> effect,
+                                        fd::GroundNumericEffectView<f::FluentTag> effect,
                                         const GroundCtx<OrAP, AndAP, TP, CP>& ctx,
                                         std::vector<NumericSelectionEntry>& selection,
                                         std::vector<NumericSelectionEntry>& temporary_selection,
@@ -340,7 +338,7 @@ Cost aggregate_numeric_effect_rule_cost(fd::GroundRuleView<R> rule,
                                                                            temporary_selection,
                                                                            [&](const auto& selector, auto& selected)
                                                                            {
-                                                                               if constexpr (!std::is_same_v<Op, f::Assign>)
+                                                                               if (effect.get_operator() != f::NumericEffectOperatorKind::Assign)
                                                                                    if (empty(selector.select_fluent_interval(effect.get_fterm(), selected)))
                                                                                        return false;
                                                                                if (empty(selector.evaluate_effect_expression(effect.get_fexpr(), selected)))
@@ -699,11 +697,10 @@ void update_numeric_annotation(GroundCtx<OrAP, AndAP, TP, CP>& ctx,
 template<OrAnnotationPolicyConcept<GroundTag> OrAP,
          AndAnnotationPolicyConcept<GroundTag> AndAP,
          TerminationPolicyConcept<GroundTag> TP,
-         RuleCostPolicyConcept<GroundTag> CP,
-         f::NumericEffectOpKind Op>
+         RuleCostPolicyConcept<GroundTag> CP>
 bool enqueue_numeric_effect(GroundCtx<OrAP, AndAP, TP, CP>& ctx,
                             fd::GroundRuleView<f::FunctionTag> rule,
-                            fd::GroundNumericEffectView<Op, f::FluentTag> effect,
+                            fd::GroundNumericEffectView<f::FluentTag> effect,
                             PendingNumericBuckets& pending_numeric)
 {
     auto& scratch = ctx.out().queue().scratch;
@@ -711,12 +708,12 @@ bool enqueue_numeric_effect(GroundCtx<OrAP, AndAP, TP, CP>& ctx,
     scratch.evaluation_selection.clear();
     const auto lhs = [&]
     {
-        if constexpr (std::is_same_v<Op, f::Assign>)
+        if (effect.get_operator() == f::NumericEffectOperatorKind::Assign)
             return ygg::ClosedInterval<ygg::float_t>();
         else
             return selector.select_fluent_interval(effect.get_fterm(), scratch.evaluation_selection);
     }();
-    if constexpr (!std::is_same_v<Op, f::Assign>)
+    if (effect.get_operator() != f::NumericEffectOperatorKind::Assign)
         if (empty(lhs))
             return false;
 
@@ -724,7 +721,7 @@ bool enqueue_numeric_effect(GroundCtx<OrAP, AndAP, TP, CP>& ctx,
     if (empty(rhs))
         return false;
 
-    auto interval = apply_numeric_effect(Op {}, lhs, rhs);
+    auto interval = apply_numeric_effect(effect.get_operator(), lhs, rhs);
     if (empty(interval))
         return false;
 

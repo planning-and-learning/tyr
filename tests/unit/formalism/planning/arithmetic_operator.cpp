@@ -26,8 +26,8 @@ static_assert(std::same_as<ygg::View<ygg::Data<LiftedArithmeticOperator>, fp::Re
 static_assert(ArithmeticOperatorContract<GroundArithmeticOperator>);
 static_assert(std::same_as<ygg::View<ygg::Data<GroundArithmeticOperator>, fp::Repository>, fp::GroundArithmeticOperatorView>);
 
-static_assert(f::Add {} == f::Add {});
-static_assert(f::Add {} <= f::Add {});
-static_assert(!(f::Add {} < f::Add {}));
-static_assert(f::Add {} >= f::Add {});
-static_assert(!(f::Add {} > f::Add {}));
+static_assert(f::ArithmeticOperatorKind::Add == f::ArithmeticOperatorKind::Add);
+static_assert(f::ArithmeticOperatorKind::Add < f::ArithmeticOperatorKind::Sub);
+static_assert(f::to_string(f::ArithmeticOperatorKind::Mul) == "*");
+static_assert(f::is_unary(f::ArithmeticOperatorKind::Sub));
+static_assert(f::is_multi(f::ArithmeticOperatorKind::Add));

@@ -18,31 +18,38 @@
 #ifndef TYR_FORMALISM_PLANNING_METRIC_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_METRIC_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/ground_function_expression_data.hpp"
 #include "tyr/formalism/planning/metric_index.hpp"
+
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
 
 namespace ygg
 {
 using namespace ::tyr;
 
-
 template<>
 struct Data<::tyr::formalism::planning::Metric>
 {
-    using ObjectiveVariant = ::cista::offset::variant<::tyr::formalism::planning::Minimize, ::tyr::formalism::planning::Maximize>;
-
     ygg::Index<::tyr::formalism::planning::Metric> index;
-    ObjectiveVariant objective;
+    ::tyr::formalism::OptimizationDirection optimization_direction = ::tyr::formalism::OptimizationDirection::Minimize;
     ygg::Data<::tyr::formalism::planning::GroundFunctionExpression> fexpr;
 
     Data() = default;
-    Data(ObjectiveVariant objective_, ygg::Data<::tyr::formalism::planning::GroundFunctionExpression> fexpr_) : index(), objective(objective_), fexpr(fexpr_) {}
+    Data(::tyr::formalism::OptimizationDirection optimization_direction_, ygg::Data<::tyr::formalism::planning::GroundFunctionExpression> fexpr_) :
+        index(),
+        optimization_direction(optimization_direction_),
+        fexpr(fexpr_)
+    {
+    }
     // Python constructor
     template<typename C>
-    Data(ObjectiveVariant objective_, ::ygg::View<ygg::Data<::tyr::formalism::planning::GroundFunctionExpression>, C> fexpr_) : index(), objective(objective_), fexpr()
+    Data(::tyr::formalism::OptimizationDirection optimization_direction_,
+         ::ygg::View<ygg::Data<::tyr::formalism::planning::GroundFunctionExpression>, C> fexpr_) :
+        index(),
+        optimization_direction(optimization_direction_),
+        fexpr()
     {
         ygg::set(fexpr_, fexpr);
     }
@@ -54,12 +61,12 @@ struct Data<::tyr::formalism::planning::Metric>
     void clear() noexcept
     {
         ygg::clear(index);
-        ygg::clear(objective);
+        optimization_direction = ::tyr::formalism::OptimizationDirection::Minimize;
         ygg::clear(fexpr);
     }
 
-    auto cista_members() const noexcept { return std::tie(index, objective, fexpr); }
-    auto identifying_members() const noexcept { return std::tie(objective, fexpr); }
+    auto cista_members() const noexcept { return std::tie(index, optimization_direction, fexpr); }
+    auto identifying_members() const noexcept { return std::tie(optimization_direction, fexpr); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::Metric>);

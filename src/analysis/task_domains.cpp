@@ -402,21 +402,21 @@ void apply_policy(ygg::float_t, Policy&)
 {
 }
 
-template<f::OpKind O, typename Policy>
-void apply_policy(fp::LiftedUnaryOperatorView<O> element, Policy& policy)
+template<typename Policy>
+void apply_policy(fp::LiftedUnaryOperatorView element, Policy& policy)
 {
     apply_policy(element.get_arg(), policy);
 }
 
-template<f::OpKind O, typename Policy>
+template<f::BinaryOperatorKind O, typename Policy>
 void apply_policy(fp::LiftedBinaryOperatorView<O> element, Policy& policy)
 {
     apply_policy(element.get_lhs(), policy);
     apply_policy(element.get_rhs(), policy);
 }
 
-template<f::OpKind O, typename Policy>
-void apply_policy(fp::LiftedMultiOperatorView<O> element, Policy& policy)
+template<typename Policy>
+void apply_policy(fp::LiftedMultiOperatorView element, Policy& policy)
 {
     for (const auto arg : element.get_args())
         apply_policy(arg, policy);
@@ -489,8 +489,8 @@ void apply_policy(fp::FunctionTermView<T> element, Policy& policy)
         element.get_terms());
 }
 
-template<f::NumericEffectOpKind Op, f::FactKind T, typename Policy>
-void apply_policy(fp::NumericEffectView<Op, T> element, Policy& policy)
+template<f::FactKind T, typename Policy>
+void apply_policy(fp::NumericEffectView<T> element, Policy& policy)
 {
     apply_policy(element.get_fterm(), policy);
     apply_policy(element.get_fexpr(), policy);

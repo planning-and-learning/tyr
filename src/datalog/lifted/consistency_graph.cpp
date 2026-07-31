@@ -145,20 +145,20 @@ template<f::FactKind T>
 ygg::ClosedInterval<ygg::float_t>
 consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, const FunctionAssignmentSets<T>& function_assignment_sets) noexcept;
 
-template<f::ArithmeticOpKind O, typename GraphStructure>
-ygg::ClosedInterval<ygg::float_t> consistent_interval(fd::LiftedUnaryOperatorView<O> element,
+template<typename GraphStructure>
+ygg::ClosedInterval<ygg::float_t> consistent_interval(fd::LiftedUnaryOperatorView element,
                                                       const GraphStructure& structure,
                                                       const RuleToConstraintInfo& constraint_info,
                                                       const AssignmentSets& assignment_sets) noexcept;
 
-template<f::ArithmeticOpKind O, typename GraphStructure>
-ygg::ClosedInterval<ygg::float_t> consistent_interval(fd::LiftedBinaryOperatorView<O> element,
+template<typename GraphStructure>
+ygg::ClosedInterval<ygg::float_t> consistent_interval(fd::LiftedBinaryOperatorView<f::ArithmeticOperatorKind> element,
                                                       const GraphStructure& structure,
                                                       const RuleToConstraintInfo& constraint_info,
                                                       const AssignmentSets& assignment_sets) noexcept;
 
-template<f::ArithmeticOpKind O, typename GraphStructure>
-ygg::ClosedInterval<ygg::float_t> consistent_interval(fd::LiftedMultiOperatorView<O> element,
+template<typename GraphStructure>
+ygg::ClosedInterval<ygg::float_t> consistent_interval(fd::LiftedMultiOperatorView element,
                                                       const GraphStructure& structure,
                                                       const RuleToConstraintInfo& constraint_info,
                                                       const AssignmentSets& assignment_sets) noexcept;
@@ -410,28 +410,28 @@ consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, con
     return bounds;
 }
 
-template<f::ArithmeticOpKind O, typename GraphStructure>
-inline ygg::ClosedInterval<ygg::float_t> consistent_interval(fd::LiftedUnaryOperatorView<O> element,
+template<typename GraphStructure>
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(fd::LiftedUnaryOperatorView element,
                                                              const GraphStructure& structure,
                                                              const RuleToConstraintInfo& constraint_info,
                                                              const AssignmentSets& assignment_sets) noexcept
 {
-    return apply(O {}, consistent_interval(element.get_arg(), structure, constraint_info, assignment_sets));
+    return apply(element.get_operator(), consistent_interval(element.get_arg(), structure, constraint_info, assignment_sets));
 }
 
-template<f::ArithmeticOpKind O, typename GraphStructure>
-inline ygg::ClosedInterval<ygg::float_t> consistent_interval(fd::LiftedBinaryOperatorView<O> element,
+template<typename GraphStructure>
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(fd::LiftedBinaryOperatorView<f::ArithmeticOperatorKind> element,
                                                              const GraphStructure& structure,
                                                              const RuleToConstraintInfo& constraint_info,
                                                              const AssignmentSets& assignment_sets) noexcept
 {
-    return apply(O {},
+    return apply(element.get_operator(),
                  consistent_interval(element.get_lhs(), structure, constraint_info, assignment_sets),
                  consistent_interval(element.get_rhs(), structure, constraint_info, assignment_sets));
 }
 
-template<f::ArithmeticOpKind O, typename GraphStructure>
-inline ygg::ClosedInterval<ygg::float_t> consistent_interval(fd::LiftedMultiOperatorView<O> element,
+template<typename GraphStructure>
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(fd::LiftedMultiOperatorView element,
                                                              const GraphStructure& structure,
                                                              const RuleToConstraintInfo& constraint_info,
                                                              const AssignmentSets& assignment_sets) noexcept
@@ -442,7 +442,7 @@ inline ygg::ClosedInterval<ygg::float_t> consistent_interval(fd::LiftedMultiOper
                            child_fexprs.end(),
                            consistent_interval(child_fexprs.front(), structure, constraint_info, assignment_sets),
                            [&](const auto& value, const auto& child_expr)
-                           { return apply(O {}, value, consistent_interval(child_expr, structure, constraint_info, assignment_sets)); });
+                           { return apply(element.get_operator(), value, consistent_interval(child_expr, structure, constraint_info, assignment_sets)); });
 }
 
 template<typename GraphStructure>
@@ -488,9 +488,7 @@ inline bool consistent_numeric_constraint(fd::LiftedBooleanOperatorView element,
     return visit(
         [&](auto&& arg) -> bool
         {
-            using Alternative = std::decay_t<decltype(arg)>;
-
-            return apply_existential(typename Alternative::OpType {},
+            return apply_existential(arg.get_operator(),
                                      consistent_interval(arg.get_lhs(), structure, constraint_info, assignment_sets),
                                      consistent_interval(arg.get_rhs(), structure, constraint_info, assignment_sets));
         },

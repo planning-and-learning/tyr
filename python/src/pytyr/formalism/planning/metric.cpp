@@ -29,7 +29,7 @@ void bind_metric(nb::module_& m, RepositoryBinding& repository)
         using V = ygg::Data<Metric>;
 
         auto cls = nb::class_<V>(m, "MetricData")  //
-                       .def(nb::init<typename V::ObjectiveVariant, GroundFunctionExpressionView>(), "objective_kind"_a, "fexpr"_a);
+                       .def(nb::init<OptimizationDirection, GroundFunctionExpressionView>(), "optimization_direction"_a, "fexpr"_a);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);
@@ -40,7 +40,7 @@ void bind_metric(nb::module_& m, RepositoryBinding& repository)
 
         auto cls = nb::class_<V>(m, "Metric")  //
                        .def("get_index", &V::get_index)
-                       .def("get_objective", &V::get_objective)
+                       .def("get_optimization_direction", &V::get_optimization_direction)
                        .def("get_fexpr", &V::get_fexpr, nb::keep_alive<0, 1>());
         ygg::add_print(cls);
         ygg::add_comparison(cls);

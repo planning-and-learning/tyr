@@ -4,35 +4,32 @@
 #include "tyr/formalism/datalog/unary_operator_view.hpp"
 
 #include <concepts>
+#include <tuple>
+#include <utility>
 
 namespace f = tyr::formalism;
 namespace fd = tyr::formalism::datalog;
 
 template<typename Entity>
-struct UnaryOperatorPublicView;
-
-template<f::OpKind Op, typename T>
-struct UnaryOperatorPublicView<fd::UnaryOperator<Op, T>>
-{
-    using type = fd::UnaryOperatorView<Op, T>;
-};
-
-template<typename Entity>
 concept UnaryOperatorContract = std::constructible_from<ygg::Index<Entity>, ygg::uint_t> && std::totally_ordered<ygg::Index<Entity>>
                                 && std::totally_ordered<ygg::Data<Entity>> && std::totally_ordered<ygg::View<ygg::Index<Entity>, fd::Repository>>
-                                && std::same_as<ygg::View<ygg::Index<Entity>, fd::Repository>, typename UnaryOperatorPublicView<Entity>::type>
+                                && std::same_as<std::tuple_element_t<0, decltype(std::declval<const ygg::Data<Entity>&>().identifying_members())>,
+                                                const typename ygg::Data<Entity>::OperatorType&>
                                 && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Index<Entity>, fd::Repository>& view) {
                                        data.index;
-                                       data.arg;
+                                       { data.operator_kind } -> std::same_as<typename ygg::Data<Entity>::OperatorType&>;
                                        data.clear();
                                        view.get_index();
+                                       { view.get_operator() } -> std::same_as<typename ygg::Data<Entity>::OperatorType>;
                                        view.get_arg();
                                    };
 
-using LiftedTypes = ygg::MapTypeListT<fd::LiftedUnaryOperatorType, f::UnaryArithmeticOpKinds>;
-using GroundTypes = ygg::MapTypeListT<fd::GroundUnaryOperatorType, f::UnaryArithmeticOpKinds>;
-using Types = ygg::ConcatTypeListsT<LiftedTypes, GroundTypes>;
+using Lifted = fd::LiftedUnaryOperatorType;
+using Ground = fd::GroundUnaryOperatorType;
 
-static_assert([]<typename... Entities>(ygg::TypeList<Entities...>) { return (UnaryOperatorContract<Entities> && ...); }(Types {}));
-static_assert(std::constructible_from<ygg::Data<fd::LiftedUnaryOperatorType<f::Sub>>, fd::FunctionExpressionView>);
-static_assert(std::constructible_from<ygg::Data<fd::GroundUnaryOperatorType<f::Sub>>, fd::GroundFunctionExpressionView>);
+static_assert(UnaryOperatorContract<Lifted>);
+static_assert(UnaryOperatorContract<Ground>);
+static_assert(std::same_as<ygg::View<ygg::Index<Lifted>, fd::Repository>, fd::LiftedUnaryOperatorView>);
+static_assert(std::same_as<ygg::View<ygg::Index<Ground>, fd::Repository>, fd::GroundUnaryOperatorView>);
+static_assert(std::constructible_from<ygg::Data<Lifted>, f::ArithmeticOperatorKind, fd::FunctionExpressionView>);
+static_assert(std::constructible_from<ygg::Data<Ground>, f::ArithmeticOperatorKind, fd::GroundFunctionExpressionView>);

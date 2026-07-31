@@ -18,22 +18,19 @@ static_assert(std::totally_ordered<MetricView>);
 static_assert(std::same_as<MetricView, fp::MetricView>);
 static_assert(requires(MetricData& data) {
     data.index;
-    data.objective;
+    data.optimization_direction;
     data.fexpr;
     data.clear();
     { data == data } -> std::same_as<bool>;
 });
 static_assert(requires(const MetricView& view) {
     view.get_index();
-    view.get_objective();
+    view.get_optimization_direction();
     view.get_fexpr();
     { view == view } -> std::same_as<bool>;
     { view < view } -> std::same_as<bool>;
 });
 
-static_assert(std::totally_ordered<fp::Minimize>);
-static_assert(std::totally_ordered<fp::Maximize>);
-static_assert(fp::Minimize {} == fp::Minimize {});
-static_assert(fp::Maximize {} == fp::Maximize {});
-static_assert(!(fp::Minimize {} < fp::Minimize {}));
-static_assert(!(fp::Maximize {} < fp::Maximize {}));
+static_assert(std::totally_ordered<tyr::formalism::OptimizationDirection>);
+static_assert(tyr::formalism::OptimizationDirection::Minimize < tyr::formalism::OptimizationDirection::Maximize);
+static_assert(tyr::formalism::to_string(tyr::formalism::OptimizationDirection::Minimize) == "minimize");

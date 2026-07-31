@@ -1,6 +1,9 @@
 # Import all classes for better IDE support
 
 from .._pytyr.formalism import (
+    BooleanOperatorKind,
+    ArithmeticOperatorKind,
+    NumericEffectOperatorKind,
     ParameterIndex,
     RowIndex,
     ObjectIndex,

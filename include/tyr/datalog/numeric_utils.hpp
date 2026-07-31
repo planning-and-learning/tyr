@@ -23,7 +23,6 @@
 
 #include <limits>
 #include <optional>
-#include <type_traits>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/core/types.hpp>
@@ -32,51 +31,48 @@ namespace tyr::datalog
 {
 
 /// Interval semantics of applying a numeric effect operator.
-template<::tyr::formalism::NumericEffectOpKind Op>
-ygg::ClosedInterval<ygg::float_t> apply_numeric_effect(Op, ygg::ClosedInterval<ygg::float_t> lhs, ygg::ClosedInterval<ygg::float_t> rhs)
+inline ygg::ClosedInterval<ygg::float_t>
+apply_numeric_effect(::tyr::formalism::NumericEffectOperatorKind op, ygg::ClosedInterval<ygg::float_t> lhs, ygg::ClosedInterval<ygg::float_t> rhs)
 {
-    if constexpr (std::is_same_v<Op, ::tyr::formalism::Assign>)
-        return rhs;
-    else if constexpr (std::is_same_v<Op, ::tyr::formalism::Increase>)
-        return lhs + rhs;
-    else if constexpr (std::is_same_v<Op, ::tyr::formalism::Decrease>)
-        return lhs - rhs;
-    else if constexpr (std::is_same_v<Op, ::tyr::formalism::ScaleUp>)
-        return lhs * rhs;
-    else if constexpr (std::is_same_v<Op, ::tyr::formalism::ScaleDown>)
-        return lhs / rhs;
-    else
-        static_assert(ygg::dependent_false<Op>::value, "Missing case");
+    using enum ::tyr::formalism::NumericEffectOperatorKind;
+    switch (op)
+    {
+        case Assign:
+            return rhs;
+        case Increase:
+            return lhs + rhs;
+        case Decrease:
+            return lhs - rhs;
+        case ScaleUp:
+            return lhs * rhs;
+        case ScaleDown:
+            return lhs / rhs;
+    }
+    throw std::invalid_argument("invalid NumericEffectOperatorKind");
 }
 
 /// Nonnegative cost that a single application of a metric effect adds. Operands are evaluated lazily,
 /// so evaluation side effects (e.g., support selection) only occur for operands the operator needs.
 /// Returns nullopt when an operand is unsupported.
-template<::tyr::formalism::NumericEffectOpKind Op, typename EvalLhs, typename EvalRhs>
-std::optional<Cost> metric_effect_delta(Op, EvalLhs&& eval_lhs, EvalRhs&& eval_rhs)
+template<typename EvalLhs, typename EvalRhs>
+std::optional<Cost> metric_effect_delta(::tyr::formalism::NumericEffectOperatorKind op, EvalLhs&& eval_lhs, EvalRhs&& eval_rhs)
 {
     const auto rhs = eval_rhs();
     if (empty(rhs))
         return std::nullopt;
 
-    if constexpr (std::is_same_v<Op, ::tyr::formalism::Increase>)
-    {
+    if (op == ::tyr::formalism::NumericEffectOperatorKind::Increase)
         return clamp_metric_delta(lower(rhs));
-    }
-    else if constexpr (std::is_same_v<Op, ::tyr::formalism::Decrease>)
-    {
+    if (op == ::tyr::formalism::NumericEffectOperatorKind::Decrease)
         return Cost(0);
-    }
-    else
-    {
-        const auto lhs = eval_lhs();
-        if (empty(lhs))
-            return std::nullopt;
-        const auto next = apply_numeric_effect(Op {}, lhs, rhs);
-        if (empty(next))
-            return std::nullopt;
-        return clamp_metric_delta(lower(next) - upper(lhs));
-    }
+
+    const auto lhs = eval_lhs();
+    if (empty(lhs))
+        return std::nullopt;
+    const auto next = apply_numeric_effect(op, lhs, rhs);
+    if (empty(next))
+        return std::nullopt;
+    return clamp_metric_delta(lower(next) - upper(lhs));
 }
 
 /// Closure of repeated free growth: a zero-cost rule that strictly grows a bound beyond `current` can be

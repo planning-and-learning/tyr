@@ -18,8 +18,9 @@
 #ifndef TYR_FORMALISM_ARITHMETIC_OPERATOR_UTILS_HPP_
 #define TYR_FORMALISM_ARITHMETIC_OPERATOR_UTILS_HPP_
 
-#include <yggdrasil/core/closed_interval.hpp>
 #include "tyr/formalism/declarations.hpp"
+
+#include <yggdrasil/core/closed_interval.hpp>
 
 namespace tyr::formalism
 {
@@ -28,33 +29,28 @@ namespace tyr::formalism
  */
 
 template<typename T>
-inline T apply(Sub, T el)
+inline T apply(ArithmeticOperatorKind op, T el)
 {
+    if (op != ArithmeticOperatorKind::Sub)
+        throw std::invalid_argument("arithmetic operator is not unary");
     return -el;
 }
 
 template<typename T>
-inline T apply(Add, T lhs, T rhs)
+inline T apply(ArithmeticOperatorKind op, T lhs, T rhs)
 {
-    return lhs + rhs;
-}
-
-template<typename T>
-inline T apply(Sub, T lhs, T rhs)
-{
-    return lhs - rhs;
-}
-
-template<typename T>
-inline T apply(Mul, T lhs, T rhs)
-{
-    return lhs * rhs;
-}
-
-template<typename T>
-inline T apply(Div, T lhs, T rhs)
-{
-    return lhs / rhs;
+    switch (op)
+    {
+        case ArithmeticOperatorKind::Add:
+            return lhs + rhs;
+        case ArithmeticOperatorKind::Sub:
+            return lhs - rhs;
+        case ArithmeticOperatorKind::Mul:
+            return lhs * rhs;
+        case ArithmeticOperatorKind::Div:
+            return lhs / rhs;
+    }
+    throw std::invalid_argument("invalid ArithmeticOperatorKind");
 }
 
 }

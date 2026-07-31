@@ -83,9 +83,10 @@ ygg::Data<fd::NumericEffectOperator<f::FluentTag>> create_rule_binding_numeric_h
     canonicalize(term);
     const auto term_view = context.merge_context.destination.get_or_create(term).first;
 
-    auto effect_ptr = context.builder.get_builder<fd::NumericEffect<f::Assign, f::FluentTag>>();
+    auto effect_ptr = context.builder.get_builder<fd::NumericEffect<f::FluentTag>>();
     auto& effect = *effect_ptr;
     effect.clear();
+    effect.operator_kind = f::NumericEffectOperatorKind::Assign;
     effect.fterm = term_view.get_index();
     effect.fexpr = ygg::Data<fd::FunctionExpression>(ygg::float_t(0));
     canonicalize(effect);
@@ -273,9 +274,10 @@ bool is_real_conditional_effect(fp::GroundConditionalEffectView cond_eff)
 ygg::Data<fd::GroundNumericEffectOperator<f::FluentTag>> create_unit_metric_effect(fd::GroundFunctionTermView<f::FluentTag> term,
                                                                                    GroundProgramBuildContext& context)
 {
-    auto effect_ptr = context.builder.get_builder<fd::GroundNumericEffect<f::Increase, f::FluentTag>>();
+    auto effect_ptr = context.builder.get_builder<fd::GroundNumericEffect<f::FluentTag>>();
     auto& effect = *effect_ptr;
     effect.clear();
+    effect.operator_kind = f::NumericEffectOperatorKind::Increase;
     effect.fterm = term.get_index();
     effect.fexpr = ygg::Data<fd::GroundFunctionExpression>(ygg::float_t(1));
     canonicalize(effect);

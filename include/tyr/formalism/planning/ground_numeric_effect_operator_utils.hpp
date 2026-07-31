@@ -27,33 +27,22 @@ namespace tyr::formalism::planning
  */
 
 template<typename T>
-inline T apply(Assign, T lhs, T rhs)
+inline T apply(NumericEffectOperatorKind op, T lhs, T rhs)
 {
-    return rhs;
-}
-
-template<typename T>
-inline T apply(Increase, T lhs, T rhs)
-{
-    return lhs + rhs;
-}
-
-template<typename T>
-inline T apply(Decrease, T lhs, T rhs)
-{
-    return lhs - rhs;
-}
-
-template<typename T>
-inline T apply(ScaleUp, T lhs, T rhs)
-{
-    return lhs * rhs;
-}
-
-template<typename T>
-inline T apply(ScaleDown, T lhs, T rhs)
-{
-    return lhs / rhs;
+    switch (op)
+    {
+        case NumericEffectOperatorKind::Assign:
+            return rhs;
+        case NumericEffectOperatorKind::Increase:
+            return lhs + rhs;
+        case NumericEffectOperatorKind::Decrease:
+            return lhs - rhs;
+        case NumericEffectOperatorKind::ScaleUp:
+            return lhs * rhs;
+        case NumericEffectOperatorKind::ScaleDown:
+            return lhs / rhs;
+    }
+    throw std::invalid_argument("invalid NumericEffectOperatorKind");
 }
 }
 

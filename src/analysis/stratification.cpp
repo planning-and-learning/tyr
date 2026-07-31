@@ -47,8 +47,7 @@ void add_function_dependencies(fd::FunctionExpressionView expression,
 
 void add_function_dependencies(ygg::float_t, ygg::uint_t, const RelationVertexMap&, stratification::DepGraph&) {}
 
-template<f::OpKind O>
-void add_function_dependencies(fd::LiftedUnaryOperatorView<O> expression,
+void add_function_dependencies(fd::LiftedUnaryOperatorView expression,
                                ygg::uint_t head_vertex,
                                const RelationVertexMap& vertices,
                                stratification::DepGraph& graph)
@@ -56,7 +55,7 @@ void add_function_dependencies(fd::LiftedUnaryOperatorView<O> expression,
     add_function_dependencies(expression.get_arg(), head_vertex, vertices, graph);
 }
 
-template<f::OpKind O>
+template<f::BinaryOperatorKind O>
 void add_function_dependencies(fd::LiftedBinaryOperatorView<O> expression,
                                ygg::uint_t head_vertex,
                                const RelationVertexMap& vertices,
@@ -66,8 +65,7 @@ void add_function_dependencies(fd::LiftedBinaryOperatorView<O> expression,
     add_function_dependencies(expression.get_rhs(), head_vertex, vertices, graph);
 }
 
-template<f::OpKind O>
-void add_function_dependencies(fd::LiftedMultiOperatorView<O> expression,
+void add_function_dependencies(fd::LiftedMultiOperatorView expression,
                                ygg::uint_t head_vertex,
                                const RelationVertexMap& vertices,
                                stratification::DepGraph& graph)
@@ -121,13 +119,12 @@ void add_function_dependencies(fd::LiftedBooleanOperatorView expression,
         expression.get_variant());
 }
 
-template<f::NumericEffectOpKind Op>
-void add_numeric_effect_head_dependencies(fd::NumericEffectView<Op, f::FluentTag> effect,
+void add_numeric_effect_head_dependencies(fd::NumericEffectView<f::FluentTag> effect,
                                           ygg::uint_t head_vertex,
                                           const RelationVertexMap& vertices,
                                           stratification::DepGraph& graph)
 {
-    if constexpr (!std::is_same_v<Op, f::Assign>)
+    if (effect.get_operator() != f::NumericEffectOperatorKind::Assign)
         add_function_dependencies(effect.get_fterm(), head_vertex, vertices, graph);
 
     add_function_dependencies(effect.get_fexpr(), head_vertex, vertices, graph);

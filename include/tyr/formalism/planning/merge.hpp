@@ -18,15 +18,16 @@
 #ifndef TYR_FORMALISM_PLANNING_MERGE_HPP_
 #define TYR_FORMALISM_PLANNING_MERGE_HPP_
 
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
-#include <yggdrasil/containers/tuple.hpp>
 #include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
 #include "tyr/formalism/planning/merge_decl.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+
+#include <yggdrasil/containers/tuple.hpp>
+#include <yggdrasil/semantics/equal_to.hpp>
+#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -84,14 +85,14 @@ FunctionExpressionView merge_p2p(FunctionExpressionView element, MergeContext& c
 
 GroundFunctionExpressionView merge_p2p(GroundFunctionExpressionView element, MergeContext& context);
 
-template<OpKind O, typename T>
-std::pair<UnaryOperatorView<O, T>, bool> merge_p2p(UnaryOperatorView<O, T> element, MergeContext& context);
+template<typename T>
+std::pair<UnaryOperatorView<T>, bool> merge_p2p(UnaryOperatorView<T> element, MergeContext& context);
 
-template<OpKind O, typename T>
+template<BinaryOperatorKind O, typename T>
 std::pair<BinaryOperatorView<O, T>, bool> merge_p2p(BinaryOperatorView<O, T> element, MergeContext& context);
 
-template<OpKind O, typename T>
-std::pair<MultiOperatorView<O, T>, bool> merge_p2p(MultiOperatorView<O, T> element, MergeContext& context);
+template<typename T>
+std::pair<MultiOperatorView<T>, bool> merge_p2p(MultiOperatorView<T> element, MergeContext& context);
 
 template<typename T>
 ArithmeticOperatorView<T> merge_p2p(ArithmeticOperatorView<T> element, MergeContext& context);
@@ -99,14 +100,14 @@ ArithmeticOperatorView<T> merge_p2p(ArithmeticOperatorView<T> element, MergeCont
 template<typename T>
 BooleanOperatorView<T> merge_p2p(BooleanOperatorView<T> element, MergeContext& context);
 
-template<NumericEffectOpKind O, FactKind T>
-std::pair<NumericEffectView<O, T>, bool> merge_p2p(NumericEffectView<O, T> element, MergeContext& context);
+template<FactKind T>
+std::pair<NumericEffectView<T>, bool> merge_p2p(NumericEffectView<T> element, MergeContext& context);
 
 template<FactKind T>
 NumericEffectOperatorView<T> merge_p2p(NumericEffectOperatorView<T> element, MergeContext& context);
 
-template<NumericEffectOpKind O, FactKind T>
-std::pair<GroundNumericEffectView<O, T>, bool> merge_p2p(GroundNumericEffectView<O, T> element, MergeContext& context);
+template<FactKind T>
+std::pair<GroundNumericEffectView<T>, bool> merge_p2p(GroundNumericEffectView<T> element, MergeContext& context);
 
 template<FactKind T>
 GroundNumericEffectOperatorView<T> merge_p2p(GroundNumericEffectOperatorView<T> element, MergeContext& context);
@@ -387,26 +388,28 @@ inline GroundFunctionExpressionView merge_p2p(GroundFunctionExpressionView eleme
     return ygg::make_view(data, context.destination);
 }
 
-template<OpKind O, typename T>
-std::pair<UnaryOperatorView<O, T>, bool> merge_p2p(UnaryOperatorView<O, T> element, MergeContext& context)
+template<typename T>
+std::pair<UnaryOperatorView<T>, bool> merge_p2p(UnaryOperatorView<T> element, MergeContext& context)
 {
-    auto unary_ptr = context.builder.template get_builder<UnaryOperator<O, T>>();
+    auto unary_ptr = context.builder.template get_builder<UnaryOperator<T>>();
     auto& unary = *unary_ptr;
     unary.clear();
 
+    unary.operator_kind = element.get_operator();
     unary.arg = merge_p2p(element.get_arg(), context).get_data();
 
     canonicalize(unary);
     return context.destination.get_or_create(unary);
 }
 
-template<OpKind O, typename T>
+template<BinaryOperatorKind O, typename T>
 std::pair<BinaryOperatorView<O, T>, bool> merge_p2p(BinaryOperatorView<O, T> element, MergeContext& context)
 {
     auto binary_ptr = context.builder.template get_builder<BinaryOperator<O, T>>();
     auto& binary = *binary_ptr;
     binary.clear();
 
+    binary.operator_kind = element.get_operator();
     binary.lhs = merge_p2p(element.get_lhs(), context).get_data();
     binary.rhs = merge_p2p(element.get_rhs(), context).get_data();
 
@@ -414,13 +417,14 @@ std::pair<BinaryOperatorView<O, T>, bool> merge_p2p(BinaryOperatorView<O, T> ele
     return context.destination.get_or_create(binary);
 }
 
-template<OpKind O, typename T>
-std::pair<MultiOperatorView<O, T>, bool> merge_p2p(MultiOperatorView<O, T> element, MergeContext& context)
+template<typename T>
+std::pair<MultiOperatorView<T>, bool> merge_p2p(MultiOperatorView<T> element, MergeContext& context)
 {
-    auto multi_ptr = context.builder.template get_builder<MultiOperator<O, T>>();
+    auto multi_ptr = context.builder.template get_builder<MultiOperator<T>>();
     auto& multi = *multi_ptr;
     multi.clear();
 
+    multi.operator_kind = element.get_operator();
     for (const auto arg : element.get_args())
         multi.args.push_back(merge_p2p(arg, context).get_data());
 
@@ -431,8 +435,7 @@ std::pair<MultiOperatorView<O, T>, bool> merge_p2p(MultiOperatorView<O, T> eleme
 template<typename T>
 ArithmeticOperatorView<T> merge_p2p(ArithmeticOperatorView<T> element, MergeContext& context)
 {
-    const auto data =
-        visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<T>>(merge_p2p(arg, context).first.get_index()); }, element.get_variant());
+    const auto data = visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<T>>(merge_p2p(arg, context).first.get_index()); }, element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
@@ -443,13 +446,14 @@ BooleanOperatorView<T> merge_p2p(BooleanOperatorView<T> element, MergeContext& c
     return ygg::make_view(data, context.destination);
 }
 
-template<NumericEffectOpKind O, FactKind T>
-std::pair<NumericEffectView<O, T>, bool> merge_p2p(NumericEffectView<O, T> element, MergeContext& context)
+template<FactKind T>
+std::pair<NumericEffectView<T>, bool> merge_p2p(NumericEffectView<T> element, MergeContext& context)
 {
-    auto numeric_effect_ptr = context.builder.template get_builder<NumericEffect<O, T>>();
+    auto numeric_effect_ptr = context.builder.template get_builder<NumericEffect<T>>();
     auto& numeric_effect = *numeric_effect_ptr;
     numeric_effect.clear();
 
+    numeric_effect.operator_kind = element.get_operator();
     numeric_effect.fterm = merge_p2p(element.get_fterm(), context).first.get_index();
     numeric_effect.fexpr = merge_p2p(element.get_fexpr(), context).get_data();
 
@@ -460,18 +464,18 @@ std::pair<NumericEffectView<O, T>, bool> merge_p2p(NumericEffectView<O, T> eleme
 template<FactKind T>
 NumericEffectOperatorView<T> merge_p2p(NumericEffectOperatorView<T> element, MergeContext& context)
 {
-    const auto data =
-        visit([&](auto&& arg) { return ygg::Data<NumericEffectOperator<T>>(merge_p2p(arg, context).first.get_index()); }, element.get_variant());
+    const auto data = visit([&](auto&& arg) { return ygg::Data<NumericEffectOperator<T>>(merge_p2p(arg, context).first.get_index()); }, element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
-template<NumericEffectOpKind O, FactKind T>
-std::pair<GroundNumericEffectView<O, T>, bool> merge_p2p(GroundNumericEffectView<O, T> element, MergeContext& context)
+template<FactKind T>
+std::pair<GroundNumericEffectView<T>, bool> merge_p2p(GroundNumericEffectView<T> element, MergeContext& context)
 {
-    auto numeric_effect_ptr = context.builder.template get_builder<GroundNumericEffect<O, T>>();
+    auto numeric_effect_ptr = context.builder.template get_builder<GroundNumericEffect<T>>();
     auto& numeric_effect = *numeric_effect_ptr;
     numeric_effect.clear();
 
+    numeric_effect.operator_kind = element.get_operator();
     numeric_effect.fterm = merge_p2p(element.get_fterm(), context).first.get_index();
     numeric_effect.fexpr = merge_p2p(element.get_fexpr(), context).get_data();
 
@@ -531,7 +535,7 @@ inline std::pair<MetricView, bool> merge_p2p(MetricView element, MergeContext& c
     auto& metric = *metric_ptr;
     metric.clear();
 
-    metric.objective = element.get_objective();
+    metric.optimization_direction = element.get_optimization_direction();
     metric.fexpr = merge_p2p(element.get_fexpr(), context).get_data();
 
     canonicalize(metric);
@@ -588,93 +592,44 @@ extern template std::pair<GroundFunctionTermValueView<StaticTag>, bool> merge_p2
 extern template std::pair<GroundFunctionTermValueView<FluentTag>, bool> merge_p2p(GroundFunctionTermValueView<FluentTag> element, MergeContext& context);
 extern template std::pair<GroundFunctionTermValueView<AuxiliaryTag>, bool> merge_p2p(GroundFunctionTermValueView<AuxiliaryTag> element, MergeContext& context);
 
-extern template std::pair<UnaryOperatorView<Sub, ygg::Data<FunctionExpression>>, bool> merge_p2p(UnaryOperatorView<Sub, ygg::Data<FunctionExpression>> element,
+extern template std::pair<UnaryOperatorView<ygg::Data<FunctionExpression>>, bool> merge_p2p(UnaryOperatorView<ygg::Data<FunctionExpression>> element,
                                                                                             MergeContext& context);
-extern template std::pair<UnaryOperatorView<Sub, ygg::Data<GroundFunctionExpression>>, bool>
-merge_p2p(UnaryOperatorView<Sub, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
+extern template std::pair<UnaryOperatorView<ygg::Data<GroundFunctionExpression>>, bool>
+merge_p2p(UnaryOperatorView<ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
 
-extern template std::pair<BinaryOperatorView<Eq, ygg::Data<FunctionExpression>>, bool> merge_p2p(BinaryOperatorView<Eq, ygg::Data<FunctionExpression>> element,
-                                                                                            MergeContext& context);
-extern template std::pair<BinaryOperatorView<Ne, ygg::Data<FunctionExpression>>, bool> merge_p2p(BinaryOperatorView<Ne, ygg::Data<FunctionExpression>> element,
-                                                                                            MergeContext& context);
-extern template std::pair<BinaryOperatorView<Ge, ygg::Data<FunctionExpression>>, bool> merge_p2p(BinaryOperatorView<Ge, ygg::Data<FunctionExpression>> element,
-                                                                                            MergeContext& context);
-extern template std::pair<BinaryOperatorView<Gt, ygg::Data<FunctionExpression>>, bool> merge_p2p(BinaryOperatorView<Gt, ygg::Data<FunctionExpression>> element,
-                                                                                            MergeContext& context);
-extern template std::pair<BinaryOperatorView<Le, ygg::Data<FunctionExpression>>, bool> merge_p2p(BinaryOperatorView<Le, ygg::Data<FunctionExpression>> element,
-                                                                                            MergeContext& context);
-extern template std::pair<BinaryOperatorView<Lt, ygg::Data<FunctionExpression>>, bool> merge_p2p(BinaryOperatorView<Lt, ygg::Data<FunctionExpression>> element,
-                                                                                            MergeContext& context);
-extern template std::pair<BinaryOperatorView<Add, ygg::Data<FunctionExpression>>, bool> merge_p2p(BinaryOperatorView<Add, ygg::Data<FunctionExpression>> element,
-                                                                                             MergeContext& context);
-extern template std::pair<BinaryOperatorView<Sub, ygg::Data<FunctionExpression>>, bool> merge_p2p(BinaryOperatorView<Sub, ygg::Data<FunctionExpression>> element,
-                                                                                             MergeContext& context);
-extern template std::pair<BinaryOperatorView<Mul, ygg::Data<FunctionExpression>>, bool> merge_p2p(BinaryOperatorView<Mul, ygg::Data<FunctionExpression>> element,
-                                                                                             MergeContext& context);
-extern template std::pair<BinaryOperatorView<Div, ygg::Data<FunctionExpression>>, bool> merge_p2p(BinaryOperatorView<Div, ygg::Data<FunctionExpression>> element,
-                                                                                             MergeContext& context);
-extern template std::pair<BinaryOperatorView<Eq, ygg::Data<GroundFunctionExpression>>, bool>
-merge_p2p(BinaryOperatorView<Eq, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
-extern template std::pair<BinaryOperatorView<Ne, ygg::Data<GroundFunctionExpression>>, bool>
-merge_p2p(BinaryOperatorView<Ne, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
-extern template std::pair<BinaryOperatorView<Ge, ygg::Data<GroundFunctionExpression>>, bool>
-merge_p2p(BinaryOperatorView<Ge, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
-extern template std::pair<BinaryOperatorView<Gt, ygg::Data<GroundFunctionExpression>>, bool>
-merge_p2p(BinaryOperatorView<Gt, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
-extern template std::pair<BinaryOperatorView<Le, ygg::Data<GroundFunctionExpression>>, bool>
-merge_p2p(BinaryOperatorView<Le, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
-extern template std::pair<BinaryOperatorView<Lt, ygg::Data<GroundFunctionExpression>>, bool>
-merge_p2p(BinaryOperatorView<Lt, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
-extern template std::pair<BinaryOperatorView<Add, ygg::Data<GroundFunctionExpression>>, bool>
-merge_p2p(BinaryOperatorView<Add, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
-extern template std::pair<BinaryOperatorView<Sub, ygg::Data<GroundFunctionExpression>>, bool>
-merge_p2p(BinaryOperatorView<Sub, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
-extern template std::pair<BinaryOperatorView<Mul, ygg::Data<GroundFunctionExpression>>, bool>
-merge_p2p(BinaryOperatorView<Mul, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
-extern template std::pair<BinaryOperatorView<Div, ygg::Data<GroundFunctionExpression>>, bool>
-merge_p2p(BinaryOperatorView<Div, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
+extern template std::pair<BinaryOperatorView<BooleanOperatorKind, ygg::Data<FunctionExpression>>, bool>
+merge_p2p(BinaryOperatorView<BooleanOperatorKind, ygg::Data<FunctionExpression>> element, MergeContext& context);
+extern template std::pair<BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<FunctionExpression>>, bool>
+merge_p2p(BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<FunctionExpression>> element, MergeContext& context);
+extern template std::pair<BinaryOperatorView<BooleanOperatorKind, ygg::Data<GroundFunctionExpression>>, bool>
+merge_p2p(BinaryOperatorView<BooleanOperatorKind, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
+extern template std::pair<BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<GroundFunctionExpression>>, bool>
+merge_p2p(BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
 
-extern template std::pair<MultiOperatorView<Add, ygg::Data<FunctionExpression>>, bool> merge_p2p(MultiOperatorView<Add, ygg::Data<FunctionExpression>> element,
+extern template std::pair<MultiOperatorView<ygg::Data<FunctionExpression>>, bool> merge_p2p(MultiOperatorView<ygg::Data<FunctionExpression>> element,
                                                                                             MergeContext& context);
-extern template std::pair<MultiOperatorView<Mul, ygg::Data<FunctionExpression>>, bool> merge_p2p(MultiOperatorView<Mul, ygg::Data<FunctionExpression>> element,
-                                                                                            MergeContext& context);
-extern template std::pair<MultiOperatorView<Add, ygg::Data<GroundFunctionExpression>>, bool>
-merge_p2p(MultiOperatorView<Add, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
-extern template std::pair<MultiOperatorView<Mul, ygg::Data<GroundFunctionExpression>>, bool>
-merge_p2p(MultiOperatorView<Mul, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
+extern template std::pair<MultiOperatorView<ygg::Data<GroundFunctionExpression>>, bool>
+merge_p2p(MultiOperatorView<ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
 
-extern template ArithmeticOperatorView<ygg::Data<FunctionExpression>> merge_p2p(ArithmeticOperatorView<ygg::Data<FunctionExpression>> element, MergeContext& context);
+extern template ArithmeticOperatorView<ygg::Data<FunctionExpression>> merge_p2p(ArithmeticOperatorView<ygg::Data<FunctionExpression>> element,
+                                                                                MergeContext& context);
 extern template ArithmeticOperatorView<ygg::Data<GroundFunctionExpression>> merge_p2p(ArithmeticOperatorView<ygg::Data<GroundFunctionExpression>> element,
-                                                                                       MergeContext& context);
+                                                                                      MergeContext& context);
 
 extern template BooleanOperatorView<ygg::Data<FunctionExpression>> merge_p2p(BooleanOperatorView<ygg::Data<FunctionExpression>> element, MergeContext& context);
 extern template BooleanOperatorView<ygg::Data<GroundFunctionExpression>> merge_p2p(BooleanOperatorView<ygg::Data<GroundFunctionExpression>> element,
-                                                                                    MergeContext& context);
+                                                                                   MergeContext& context);
 
-extern template std::pair<NumericEffectView<Assign, FluentTag>, bool> merge_p2p(NumericEffectView<Assign, FluentTag> element, MergeContext& context);
-extern template std::pair<NumericEffectView<Increase, FluentTag>, bool> merge_p2p(NumericEffectView<Increase, FluentTag> element, MergeContext& context);
-extern template std::pair<NumericEffectView<Decrease, FluentTag>, bool> merge_p2p(NumericEffectView<Decrease, FluentTag> element, MergeContext& context);
-extern template std::pair<NumericEffectView<ScaleUp, FluentTag>, bool> merge_p2p(NumericEffectView<ScaleUp, FluentTag> element, MergeContext& context);
-extern template std::pair<NumericEffectView<ScaleDown, FluentTag>, bool> merge_p2p(NumericEffectView<ScaleDown, FluentTag> element, MergeContext& context);
+extern template std::pair<NumericEffectView<FluentTag>, bool> merge_p2p(NumericEffectView<FluentTag> element, MergeContext& context);
 
-extern template std::pair<NumericEffectView<Increase, AuxiliaryTag>, bool> merge_p2p(NumericEffectView<Increase, AuxiliaryTag> element, MergeContext& context);
+extern template std::pair<NumericEffectView<AuxiliaryTag>, bool> merge_p2p(NumericEffectView<AuxiliaryTag> element, MergeContext& context);
 
 extern template NumericEffectOperatorView<FluentTag> merge_p2p(NumericEffectOperatorView<FluentTag> element, MergeContext& context);
 extern template NumericEffectOperatorView<AuxiliaryTag> merge_p2p(NumericEffectOperatorView<AuxiliaryTag> element, MergeContext& context);
 
-extern template std::pair<GroundNumericEffectView<Assign, FluentTag>, bool> merge_p2p(GroundNumericEffectView<Assign, FluentTag> element,
-                                                                                      MergeContext& context);
-extern template std::pair<GroundNumericEffectView<Increase, FluentTag>, bool> merge_p2p(GroundNumericEffectView<Increase, FluentTag> element,
-                                                                                        MergeContext& context);
-extern template std::pair<GroundNumericEffectView<Decrease, FluentTag>, bool> merge_p2p(GroundNumericEffectView<Decrease, FluentTag> element,
-                                                                                        MergeContext& context);
-extern template std::pair<GroundNumericEffectView<ScaleUp, FluentTag>, bool> merge_p2p(GroundNumericEffectView<ScaleUp, FluentTag> element,
-                                                                                       MergeContext& context);
-extern template std::pair<GroundNumericEffectView<ScaleDown, FluentTag>, bool> merge_p2p(GroundNumericEffectView<ScaleDown, FluentTag> element,
-                                                                                         MergeContext& context);
+extern template std::pair<GroundNumericEffectView<FluentTag>, bool> merge_p2p(GroundNumericEffectView<FluentTag> element, MergeContext& context);
 
-extern template std::pair<GroundNumericEffectView<Increase, AuxiliaryTag>, bool> merge_p2p(GroundNumericEffectView<Increase, AuxiliaryTag> element,
-                                                                                           MergeContext& context);
+extern template std::pair<GroundNumericEffectView<AuxiliaryTag>, bool> merge_p2p(GroundNumericEffectView<AuxiliaryTag> element, MergeContext& context);
 
 extern template GroundNumericEffectOperatorView<FluentTag> merge_p2p(GroundNumericEffectOperatorView<FluentTag> element, MergeContext& context);
 extern template GroundNumericEffectOperatorView<AuxiliaryTag> merge_p2p(GroundNumericEffectOperatorView<AuxiliaryTag> element, MergeContext& context);

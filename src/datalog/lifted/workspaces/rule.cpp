@@ -51,10 +51,7 @@ using OptionalInterval = std::optional<Interval>;
 
 OptionalInterval evaluate_static(ygg::float_t value, const TaggedFactSets<f::StaticTag>&) { return Interval(value, value); }
 
-OptionalInterval evaluate_static(fd::GroundFunctionTermView<f::StaticTag> term, const TaggedFactSets<f::StaticTag>& facts)
-{
-    return facts.function[term];
-}
+OptionalInterval evaluate_static(fd::GroundFunctionTermView<f::StaticTag> term, const TaggedFactSets<f::StaticTag>& facts) { return facts.function[term]; }
 
 OptionalInterval evaluate_static(fd::GroundFunctionTermView<f::FluentTag>, const TaggedFactSets<f::StaticTag>&) { return std::nullopt; }
 
@@ -62,23 +59,20 @@ OptionalInterval evaluate_static(fd::GroundFunctionTermView<f::AuxiliaryTag>, co
 
 OptionalInterval evaluate_static(fd::GroundFunctionExpressionView expression, const TaggedFactSets<f::StaticTag>& facts);
 
-template<f::ArithmeticOpKind Op>
-OptionalInterval evaluate_static(fd::GroundUnaryOperatorView<Op> expression, const TaggedFactSets<f::StaticTag>& facts)
+OptionalInterval evaluate_static(fd::GroundUnaryOperatorView expression, const TaggedFactSets<f::StaticTag>& facts)
 {
     const auto arg = evaluate_static(expression.get_arg(), facts);
-    return arg ? OptionalInterval(f::apply(Op {}, *arg)) : std::nullopt;
+    return arg ? OptionalInterval(f::apply(expression.get_operator(), *arg)) : std::nullopt;
 }
 
-template<f::ArithmeticOpKind Op>
-OptionalInterval evaluate_static(fd::GroundBinaryOperatorView<Op> expression, const TaggedFactSets<f::StaticTag>& facts)
+OptionalInterval evaluate_static(fd::GroundBinaryOperatorView<f::ArithmeticOperatorKind> expression, const TaggedFactSets<f::StaticTag>& facts)
 {
     const auto lhs = evaluate_static(expression.get_lhs(), facts);
     const auto rhs = evaluate_static(expression.get_rhs(), facts);
-    return lhs && rhs ? OptionalInterval(f::apply(Op {}, *lhs, *rhs)) : std::nullopt;
+    return lhs && rhs ? OptionalInterval(f::apply(expression.get_operator(), *lhs, *rhs)) : std::nullopt;
 }
 
-template<f::ArithmeticOpKind Op>
-OptionalInterval evaluate_static(fd::GroundMultiOperatorView<Op> expression, const TaggedFactSets<f::StaticTag>& facts)
+OptionalInterval evaluate_static(fd::GroundMultiOperatorView expression, const TaggedFactSets<f::StaticTag>& facts)
 {
     auto args = expression.get_args();
     auto result = evaluate_static(args.front(), facts);
@@ -89,7 +83,7 @@ OptionalInterval evaluate_static(fd::GroundMultiOperatorView<Op> expression, con
         const auto arg = evaluate_static(*it, facts);
         if (!arg)
             return std::nullopt;
-        result = f::apply(Op {}, *result, *arg);
+        result = f::apply(expression.get_operator(), *result, *arg);
     }
     return result;
 }
@@ -104,32 +98,26 @@ OptionalInterval evaluate_static(fd::GroundFunctionExpressionView expression, co
     return ygg::visit([&](auto&& arg) { return evaluate_static(arg, facts); }, expression.get_variant());
 }
 
-template<f::NumericEffectOpKind Op>
-std::optional<Cost> try_pre_evaluate_metric_effect(fd::NumericEffectView<Op, f::FluentTag> effect,
-                                                   fd::Repository& repository,
-                                                   const TaggedFactSets<f::StaticTag>& static_fact_sets)
+std::optional<Cost>
+try_pre_evaluate_metric_effect(fd::NumericEffectView<f::FluentTag> effect, fd::Repository& repository, const TaggedFactSets<f::StaticTag>& static_fact_sets)
 {
-    if constexpr (!std::is_same_v<Op, f::Increase> && !std::is_same_v<Op, f::Decrease>)
-    {
+    if (effect.get_operator() != f::NumericEffectOperatorKind::Increase && effect.get_operator() != f::NumericEffectOperatorKind::Decrease)
         return std::nullopt;
-    }
-    else
-    {
-        auto parameters = ygg::UnorderedSet<f::ParameterIndex> {};
-        fd::collect_parameters(effect.get_fexpr(), parameters);
-        if (fd::parameter_arity(effect.get_fterm()) != 0 || !parameters.empty())
-            return std::nullopt;
 
-        auto builder = fd::Builder {};
-        auto binding = ygg::IndexList<f::Object> {};
-        auto grounder_context = fd::GrounderContext { builder, repository, binding };
-        const auto expression = fd::ground(effect.get_fexpr(), grounder_context);
-        const auto rhs = evaluate_static(expression, static_fact_sets);
-        if (!rhs)
-            return std::nullopt;
+    auto parameters = ygg::UnorderedSet<f::ParameterIndex> {};
+    fd::collect_parameters(effect.get_fexpr(), parameters);
+    if (fd::parameter_arity(effect.get_fterm()) != 0 || !parameters.empty())
+        return std::nullopt;
 
-        return metric_effect_delta(Op {}, [] { return Interval {}; }, [&] { return *rhs; });
-    }
+    auto builder = fd::Builder {};
+    auto binding = ygg::IndexList<f::Object> {};
+    auto grounder_context = fd::GrounderContext { builder, repository, binding };
+    const auto expression = fd::ground(effect.get_fexpr(), grounder_context);
+    const auto rhs = evaluate_static(expression, static_fact_sets);
+    if (!rhs)
+        return std::nullopt;
+
+    return metric_effect_delta(effect.get_operator(), [] { return Interval {}; }, [&] { return *rhs; });
 }
 
 struct MetricEffects

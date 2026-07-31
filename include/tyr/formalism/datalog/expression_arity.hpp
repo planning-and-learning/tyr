@@ -18,14 +18,14 @@
 #ifndef TYR_FORMALISM_DATALOG_EXPRESSION_ARITY_HPP_
 #define TYR_FORMALISM_DATALOG_EXPRESSION_ARITY_HPP_
 
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 
 #include <numeric>
+#include <yggdrasil/containers/associative_containers.hpp>
+#include <yggdrasil/semantics/equal_to.hpp>
+#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::datalog
 {
@@ -49,14 +49,12 @@ void collect_parameters(FunctionTermView<T> element, ygg::UnorderedSet<Parameter
 
 void collect_parameters(FunctionExpressionView element, ygg::UnorderedSet<ParameterIndex>& result);
 
-template<ArithmeticOpKind O>
-void collect_parameters(LiftedUnaryOperatorView<O> element, ygg::UnorderedSet<ParameterIndex>& result);
+void collect_parameters(LiftedUnaryOperatorView element, ygg::UnorderedSet<ParameterIndex>& result);
 
-template<OpKind O>
+template<BinaryOperatorKind O>
 void collect_parameters(LiftedBinaryOperatorView<O> element, ygg::UnorderedSet<ParameterIndex>& result);
 
-template<ArithmeticOpKind O>
-void collect_parameters(LiftedMultiOperatorView<O> element, ygg::UnorderedSet<ParameterIndex>& result);
+void collect_parameters(LiftedMultiOperatorView element, ygg::UnorderedSet<ParameterIndex>& result);
 
 void collect_parameters(LiftedArithmeticOperatorView element, ygg::UnorderedSet<ParameterIndex>& result);
 
@@ -111,21 +109,16 @@ inline void collect_parameters(FunctionExpressionView element, ygg::UnorderedSet
     visit([&](auto&& arg) { collect_parameters(arg, result); }, element.get_variant());
 }
 
-template<ArithmeticOpKind O>
-inline void collect_parameters(LiftedUnaryOperatorView<O> element, ygg::UnorderedSet<ParameterIndex>& result)
-{
-    collect_parameters(element.get_arg(), result);
-}
+inline void collect_parameters(LiftedUnaryOperatorView element, ygg::UnorderedSet<ParameterIndex>& result) { collect_parameters(element.get_arg(), result); }
 
-template<OpKind O>
+template<BinaryOperatorKind O>
 inline void collect_parameters(LiftedBinaryOperatorView<O> element, ygg::UnorderedSet<ParameterIndex>& result)
 {
     collect_parameters(element.get_lhs(), result);
     collect_parameters(element.get_rhs(), result);
 }
 
-template<ArithmeticOpKind O>
-inline void collect_parameters(LiftedMultiOperatorView<O> element, ygg::UnorderedSet<ParameterIndex>& result)
+inline void collect_parameters(LiftedMultiOperatorView element, ygg::UnorderedSet<ParameterIndex>& result)
 {
     for (const auto arg : element.get_args())
         collect_parameters(arg, result);
@@ -183,14 +176,12 @@ size_t max_fterm_arity(FunctionTermView<T> element);
 
 size_t max_fterm_arity(FunctionExpressionView element);
 
-template<ArithmeticOpKind O>
-size_t max_fterm_arity(LiftedUnaryOperatorView<O> element);
+size_t max_fterm_arity(LiftedUnaryOperatorView element);
 
-template<OpKind O>
+template<BinaryOperatorKind O>
 size_t max_fterm_arity(LiftedBinaryOperatorView<O> element);
 
-template<ArithmeticOpKind O>
-size_t max_fterm_arity(LiftedMultiOperatorView<O> element);
+size_t max_fterm_arity(LiftedMultiOperatorView element);
 
 size_t max_fterm_arity(LiftedArithmeticOperatorView element);
 
@@ -213,20 +204,15 @@ inline size_t max_fterm_arity(FunctionExpressionView element)
     return visit([&](auto&& arg) { return max_fterm_arity(arg); }, element.get_variant());
 }
 
-template<ArithmeticOpKind O>
-inline size_t max_fterm_arity(LiftedUnaryOperatorView<O> element)
-{
-    return max_fterm_arity(element.get_arg());
-}
+inline size_t max_fterm_arity(LiftedUnaryOperatorView element) { return max_fterm_arity(element.get_arg()); }
 
-template<OpKind O>
+template<BinaryOperatorKind O>
 inline size_t max_fterm_arity(LiftedBinaryOperatorView<O> element)
 {
     return std::max(max_fterm_arity(element.get_lhs()), max_fterm_arity(element.get_rhs()));
 }
 
-template<ArithmeticOpKind O>
-inline size_t max_fterm_arity(LiftedMultiOperatorView<O> element)
+inline size_t max_fterm_arity(LiftedMultiOperatorView element)
 {
     const auto child_fexprs = element.get_args();
 

@@ -24,36 +24,22 @@
 namespace tyr::formalism::datalog
 {
 
-namespace
-{
-template<FactKind T>
-void bind_ground_numeric_effect_operator_data(nb::module_& m, const char* name)
-{
-    using Tag = GroundNumericEffectOperator<T>;
-
-    using V = ygg::Data<Tag>;
-    auto cls = nb::class_<V>(m, name).def(nb::init<typename V::template ViewVariant<Repository>>(), "value"_a);
-    ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
-}
-
-template<FactKind T>
-void bind_ground_numeric_effect_operator_view(nb::module_& m, const char* name)
-{
-    using V = GroundNumericEffectOperatorView<T>;
-    auto cls = nb::class_<V>(m, name).def("get_variant", &V::get_variant);
-    ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
-}
-}  // namespace
-
 void bind_ground_numeric_effect_operator(nb::module_& m, RepositoryBinding& repository)
 {
-    bind_ground_numeric_effect_operator_data<FluentTag>(m, "FluentGroundNumericEffectOperatorData");
-
-    bind_ground_numeric_effect_operator_view<FluentTag>(m, "FluentGroundNumericEffectOperator");
+    {
+        using V = ygg::Data<GroundNumericEffectOperator<FluentTag>>;
+        auto cls = nb::class_<V>(m, "FluentGroundNumericEffectOperatorData").def(nb::init<V::ViewVariant<Repository>>(), "value"_a);
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+    {
+        using V = GroundNumericEffectOperatorView<FluentTag>;
+        auto cls = nb::class_<V>(m, "FluentGroundNumericEffectOperator").def("get_variant", &V::get_variant);
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
 
     repository.def("create", &create_data<GroundNumericEffectOperator<FluentTag>>, "data"_a, nb::keep_alive<0, 1>(), nb::keep_alive<0, 2>());
 }

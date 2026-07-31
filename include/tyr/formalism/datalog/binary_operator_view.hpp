@@ -18,31 +18,33 @@
 #ifndef TYR_FORMALISM_DATALOG_BINARY_OPERATOR_VIEW_HPP_
 #define TYR_FORMALISM_DATALOG_BINARY_OPERATOR_VIEW_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/containers/variant.hpp>
 #include "tyr/formalism/datalog/binary_operator_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
+
+#include <yggdrasil/containers/variant.hpp>
+#include <yggdrasil/core/types.hpp>
 
 namespace ygg
 {
 using namespace ::tyr;
-template<::tyr::formalism::OpKind Op, typename T, ::tyr::formalism::datalog::Context C>
-class View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<Op, T>>, C>
+template<::tyr::formalism::BinaryOperatorKind Operator, typename T, ::tyr::formalism::datalog::Context C>
+class View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<Operator, T>>, C>
 {
 private:
     const C* m_context;
-    ygg::Index<::tyr::formalism::datalog::BinaryOperator<Op, T>> m_handle;
+    ygg::Index<::tyr::formalism::datalog::BinaryOperator<Operator, T>> m_handle;
 
 public:
-    using OpType = Op;
+    using OperatorType = Operator;
 
-    View(ygg::Index<::tyr::formalism::datalog::BinaryOperator<Op, T>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+    View(ygg::Index<::tyr::formalism::datalog::BinaryOperator<Operator, T>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_handle() const noexcept { return m_handle; }
 
     auto get_index() const noexcept { return m_handle; }
+    auto get_operator() const noexcept { return get_data().operator_kind; }
     auto get_lhs() const noexcept
     {
         if constexpr (ygg::ViewConcept<T, C>)

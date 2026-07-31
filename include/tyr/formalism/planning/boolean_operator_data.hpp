@@ -18,12 +18,12 @@
 #ifndef TYR_FORMALISM_PLANNING_BOOLEAN_OPERATOR_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_BOOLEAN_OPERATOR_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/planning/binary_operator_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
 #include <variant>
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
 
 namespace ygg
 {
@@ -32,22 +32,12 @@ using namespace ::tyr;
 template<typename T>
 struct Data<::tyr::formalism::planning::BooleanOperator<T>>
 {
-    using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Eq, T>>,
-                                             ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Ne, T>>,
-                                             ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Le, T>>,
-                                             ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Lt, T>>,
-                                             ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Ge, T>>,
-                                             ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Gt, T>>>;
+    using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::BooleanOperatorKind, T>>>;
 
     Variant value;
 
     template<typename C>
-    using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Eq, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Ne, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Le, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Lt, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Ge, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::Gt, T>>, C>>;
+    using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::BooleanOperatorKind, T>>, C>>;
 
     Data() = default;
     Data(Variant value_) : value(value_) {}

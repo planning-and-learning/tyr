@@ -49,21 +49,21 @@ void add_function_listeners(ygg::float_t, ygg::Index<fd::Rule<R>>, TypedListener
 {
 }
 
-template<f::OpKind O, f::RelationKind R>
-void add_function_listeners(fd::LiftedUnaryOperatorView<O> expression, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
+template<f::RelationKind R>
+void add_function_listeners(fd::LiftedUnaryOperatorView expression, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
 {
     add_function_listeners(expression.get_arg(), rule, listeners);
 }
 
-template<f::OpKind O, f::RelationKind R>
+template<f::BinaryOperatorKind O, f::RelationKind R>
 void add_function_listeners(fd::LiftedBinaryOperatorView<O> expression, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
 {
     add_function_listeners(expression.get_lhs(), rule, listeners);
     add_function_listeners(expression.get_rhs(), rule, listeners);
 }
 
-template<f::OpKind O, f::RelationKind R>
-void add_function_listeners(fd::LiftedMultiOperatorView<O> expression, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
+template<f::RelationKind R>
+void add_function_listeners(fd::LiftedMultiOperatorView expression, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
 {
     for (const auto arg : expression.get_args())
         add_function_listeners(arg, rule, listeners);
@@ -104,10 +104,10 @@ void add_function_listeners(fd::LiftedBooleanOperatorView expression, ygg::Index
         expression.get_variant());
 }
 
-template<f::NumericEffectOpKind Op, f::RelationKind R>
-void add_numeric_effect_head_listeners(fd::NumericEffectView<Op, f::FluentTag> effect, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
+template<f::RelationKind R>
+void add_numeric_effect_head_listeners(fd::NumericEffectView<f::FluentTag> effect, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
 {
-    if constexpr (!std::is_same_v<Op, f::Assign>)
+    if (effect.get_operator() != f::NumericEffectOperatorKind::Assign)
         add_function_listeners(effect.get_fterm(), rule, listeners);
 
     add_function_listeners(effect.get_fexpr(), rule, listeners);

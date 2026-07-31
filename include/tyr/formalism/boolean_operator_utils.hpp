@@ -18,14 +18,14 @@
 #ifndef TYR_FORMALISM_BOOLEAN_OPERATOR_UTILS_HPP_
 #define TYR_FORMALISM_BOOLEAN_OPERATOR_UTILS_HPP_
 
-#include <yggdrasil/core/closed_interval.hpp>
-#include <yggdrasil/core/types.hpp>
 #include "tyr/formalism/declarations.hpp"
 
 #include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <type_traits>
+#include <yggdrasil/core/closed_interval.hpp>
+#include <yggdrasil/core/types.hpp>
 
 namespace tyr::formalism
 {
@@ -114,39 +114,24 @@ bool lt_scalar(T lhs, T rhs) noexcept
  */
 
 template<typename T>
-bool apply(Eq, T lhs, T rhs) noexcept
+bool apply(BooleanOperatorKind op, T lhs, T rhs)
 {
-    return detail::eq_scalar(lhs, rhs);
-}
-
-template<typename T>
-bool apply(Ne, T lhs, T rhs) noexcept
-{
-    return detail::ne_scalar(lhs, rhs);
-}
-
-template<typename T>
-bool apply(Ge, T lhs, T rhs) noexcept
-{
-    return detail::ge_scalar(lhs, rhs);
-}
-
-template<typename T>
-bool apply(Gt, T lhs, T rhs) noexcept
-{
-    return detail::gt_scalar(lhs, rhs);
-}
-
-template<typename T>
-bool apply(Le, T lhs, T rhs) noexcept
-{
-    return detail::le_scalar(lhs, rhs);
-}
-
-template<typename T>
-bool apply(Lt, T lhs, T rhs) noexcept
-{
-    return detail::lt_scalar(lhs, rhs);
+    switch (op)
+    {
+        case BooleanOperatorKind::Eq:
+            return detail::eq_scalar(lhs, rhs);
+        case BooleanOperatorKind::Ne:
+            return detail::ne_scalar(lhs, rhs);
+        case BooleanOperatorKind::Le:
+            return detail::le_scalar(lhs, rhs);
+        case BooleanOperatorKind::Lt:
+            return detail::lt_scalar(lhs, rhs);
+        case BooleanOperatorKind::Ge:
+            return detail::ge_scalar(lhs, rhs);
+        case BooleanOperatorKind::Gt:
+            return detail::gt_scalar(lhs, rhs);
+    }
+    throw std::invalid_argument("invalid BooleanOperatorKind");
 }
 
 /**
@@ -154,63 +139,31 @@ bool apply(Lt, T lhs, T rhs) noexcept
  */
 
 template<std::floating_point A>
-bool apply_existential(Eq, const ygg::ClosedInterval<A>& lhs, const ygg::ClosedInterval<A>& rhs)
+bool apply_existential(BooleanOperatorKind op, const ygg::ClosedInterval<A>& lhs, const ygg::ClosedInterval<A>& rhs)
 {
     if (empty(lhs) || empty(rhs))
         return false;
 
-    return detail::le_scalar(lower(lhs), upper(rhs)) && detail::ge_scalar(upper(lhs), lower(rhs));
-}
-
-template<std::floating_point A>
-bool apply_existential(Ne, const ygg::ClosedInterval<A>& lhs, const ygg::ClosedInterval<A>& rhs)
-{
-    if (empty(lhs) || empty(rhs))
-        return false;
-
-    const bool lhs_is_point = detail::eq_scalar(lower(lhs), upper(lhs));
-    const bool rhs_is_point = detail::eq_scalar(lower(rhs), upper(rhs));
-
-    if (lhs_is_point && rhs_is_point)
-        return detail::ne_scalar(lower(lhs), lower(rhs));
-
-    return true;
-}
-
-template<std::floating_point A>
-bool apply_existential(Ge, const ygg::ClosedInterval<A>& lhs, const ygg::ClosedInterval<A>& rhs)
-{
-    if (empty(lhs) || empty(rhs))
-        return false;
-
-    return detail::ge_scalar(upper(lhs), lower(rhs));
-}
-
-template<std::floating_point A>
-bool apply_existential(Gt, const ygg::ClosedInterval<A>& lhs, const ygg::ClosedInterval<A>& rhs)
-{
-    if (empty(lhs) || empty(rhs))
-        return false;
-
-    return detail::gt_scalar(upper(lhs), lower(rhs));
-}
-
-template<std::floating_point A>
-bool apply_existential(Le, const ygg::ClosedInterval<A>& lhs, const ygg::ClosedInterval<A>& rhs)
-{
-    if (empty(lhs) || empty(rhs))
-        return false;
-
-    return detail::le_scalar(lower(lhs), upper(rhs));
-}
-
-template<std::floating_point A>
-bool apply_existential(Lt, const ygg::ClosedInterval<A>& lhs, const ygg::ClosedInterval<A>& rhs)
-{
-    if (empty(lhs) || empty(rhs))
-        return false;
-
-    return detail::lt_scalar(lower(lhs), upper(rhs));
+    switch (op)
+    {
+        case BooleanOperatorKind::Eq:
+            return detail::le_scalar(lower(lhs), upper(rhs)) && detail::ge_scalar(upper(lhs), lower(rhs));
+        case BooleanOperatorKind::Ne:
+        {
+            const bool lhs_is_point = detail::eq_scalar(lower(lhs), upper(lhs));
+            const bool rhs_is_point = detail::eq_scalar(lower(rhs), upper(rhs));
+            return !lhs_is_point || !rhs_is_point || detail::ne_scalar(lower(lhs), lower(rhs));
+        }
+        case BooleanOperatorKind::Le:
+            return detail::le_scalar(lower(lhs), upper(rhs));
+        case BooleanOperatorKind::Lt:
+            return detail::lt_scalar(lower(lhs), upper(rhs));
+        case BooleanOperatorKind::Ge:
+            return detail::ge_scalar(upper(lhs), lower(rhs));
+        case BooleanOperatorKind::Gt:
+            return detail::gt_scalar(upper(lhs), lower(rhs));
+    }
+    throw std::invalid_argument("invalid BooleanOperatorKind");
 }
 
 }

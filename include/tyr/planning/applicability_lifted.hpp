@@ -56,17 +56,14 @@ namespace tyr::planning
 
 ygg::float_t evaluate(ygg::float_t element, const ApplicabilityContext& context);
 
-template<::tyr::formalism::ArithmeticOpKind O>
-ygg::float_t evaluate(::tyr::formalism::planning::LiftedUnaryOperatorView<O> element, const ApplicabilityContext& context);
+ygg::float_t evaluate(::tyr::formalism::planning::LiftedUnaryOperatorView element, const ApplicabilityContext& context);
 
-template<::tyr::formalism::ArithmeticOpKind O>
-ygg::float_t evaluate(::tyr::formalism::planning::LiftedBinaryOperatorView<O> element, const ApplicabilityContext& context);
+ygg::float_t evaluate(::tyr::formalism::planning::LiftedBinaryOperatorView<::tyr::formalism::ArithmeticOperatorKind> element,
+                      const ApplicabilityContext& context);
 
-template<::tyr::formalism::BooleanOpKind O>
-bool evaluate(::tyr::formalism::planning::LiftedBinaryOperatorView<O> element, const ApplicabilityContext& context);
+bool evaluate(::tyr::formalism::planning::LiftedBinaryOperatorView<::tyr::formalism::BooleanOperatorKind> element, const ApplicabilityContext& context);
 
-template<::tyr::formalism::ArithmeticOpKind O>
-ygg::float_t evaluate(::tyr::formalism::planning::LiftedMultiOperatorView<O> element, const ApplicabilityContext& context);
+ygg::float_t evaluate(::tyr::formalism::planning::LiftedMultiOperatorView element, const ApplicabilityContext& context);
 
 ygg::float_t evaluate(::tyr::formalism::planning::FunctionTermView<::tyr::formalism::StaticTag> element, const ApplicabilityContext& context);
 
@@ -80,8 +77,8 @@ ygg::float_t evaluate(::tyr::formalism::planning::LiftedArithmeticOperatorView e
 
 bool evaluate(::tyr::formalism::planning::LiftedBooleanOperatorView element, const ApplicabilityContext& context);
 
-template<::tyr::formalism::NumericEffectOpKind Op, ::tyr::formalism::FactKind T>
-ygg::float_t evaluate(::tyr::formalism::planning::NumericEffectView<Op, T> element, const ApplicabilityContext& context);
+template<::tyr::formalism::FactKind T>
+ygg::float_t evaluate(::tyr::formalism::planning::NumericEffectView<T> element, const ApplicabilityContext& context);
 
 template<::tyr::formalism::FactKind T>
 ygg::float_t evaluate(::tyr::formalism::planning::NumericEffectOperatorView<T> element, const ApplicabilityContext& context);
@@ -119,8 +116,7 @@ bool is_applicable(::tyr::formalism::planning::LiftedBooleanOperatorView element
 
 bool is_applicable(::tyr::formalism::planning::LiftedBooleanOperatorListView elements, const ApplicabilityContext& context);
 
-template<::tyr::formalism::NumericEffectOpKind Op>
-bool is_applicable(::tyr::formalism::planning::NumericEffectView<Op, ::tyr::formalism::FluentTag> element,
+bool is_applicable(::tyr::formalism::planning::NumericEffectView<::tyr::formalism::FluentTag> element,
                    const ApplicabilityContext& context,
                    ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families);
 
@@ -132,8 +128,7 @@ bool is_applicable(::tyr::formalism::planning::NumericEffectOperatorListView<::t
                    const ApplicabilityContext& context,
                    ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families);
 
-bool is_applicable(::tyr::formalism::planning::NumericEffectView<::tyr::formalism::Increase, ::tyr::formalism::AuxiliaryTag> element,
-                   const ApplicabilityContext& context);
+bool is_applicable(::tyr::formalism::planning::NumericEffectView<::tyr::formalism::AuxiliaryTag> element, const ApplicabilityContext& context);
 
 bool is_applicable(::tyr::formalism::planning::NumericEffectOperatorView<::tyr::formalism::AuxiliaryTag> element, const ApplicabilityContext& context);
 
@@ -165,41 +160,39 @@ bool is_applicable(::tyr::formalism::planning::AxiomView element, const Applicab
 
 inline ygg::float_t evaluate(ygg::float_t element, const ApplicabilityContext& context) { return element; }
 
-template<::tyr::formalism::ArithmeticOpKind O>
-ygg::float_t evaluate(::tyr::formalism::planning::LiftedUnaryOperatorView<O> element, const ApplicabilityContext& context)
+inline ygg::float_t evaluate(::tyr::formalism::planning::LiftedUnaryOperatorView element, const ApplicabilityContext& context)
 {
-    return ::tyr::formalism::apply(O {}, evaluate(element.get_arg(), context));
+    return ::tyr::formalism::apply(element.get_operator(), evaluate(element.get_arg(), context));
 }
 
-template<::tyr::formalism::ArithmeticOpKind O>
-ygg::float_t evaluate(::tyr::formalism::planning::LiftedBinaryOperatorView<O> element, const ApplicabilityContext& context)
-{
-    // Sequenced: evaluation grounds subterms (mutating the context), and argument evaluation order
-    // is unspecified (gcc and clang disagree). rhs-first preserves the historical gcc order.
-    const auto rhs = evaluate(element.get_rhs(), context);
-    const auto lhs = evaluate(element.get_lhs(), context);
-    return ::tyr::formalism::apply(O {}, lhs, rhs);
-}
-
-template<::tyr::formalism::BooleanOpKind O>
-bool evaluate(::tyr::formalism::planning::LiftedBinaryOperatorView<O> element, const ApplicabilityContext& context)
+inline ygg::float_t evaluate(::tyr::formalism::planning::LiftedBinaryOperatorView<::tyr::formalism::ArithmeticOperatorKind> element,
+                             const ApplicabilityContext& context)
 {
     // Sequenced: evaluation grounds subterms (mutating the context), and argument evaluation order
     // is unspecified (gcc and clang disagree). rhs-first preserves the historical gcc order.
     const auto rhs = evaluate(element.get_rhs(), context);
     const auto lhs = evaluate(element.get_lhs(), context);
-    return ::tyr::formalism::apply(O {}, lhs, rhs);
+    return ::tyr::formalism::apply(element.get_operator(), lhs, rhs);
 }
 
-template<::tyr::formalism::ArithmeticOpKind O>
-ygg::float_t evaluate(::tyr::formalism::planning::LiftedMultiOperatorView<O> element, const ApplicabilityContext& context)
+inline bool evaluate(::tyr::formalism::planning::LiftedBinaryOperatorView<::tyr::formalism::BooleanOperatorKind> element, const ApplicabilityContext& context)
+{
+    // Sequenced: evaluation grounds subterms (mutating the context), and argument evaluation order
+    // is unspecified (gcc and clang disagree). rhs-first preserves the historical gcc order.
+    const auto rhs = evaluate(element.get_rhs(), context);
+    const auto lhs = evaluate(element.get_lhs(), context);
+    return ::tyr::formalism::apply(element.get_operator(), lhs, rhs);
+}
+
+inline ygg::float_t evaluate(::tyr::formalism::planning::LiftedMultiOperatorView element, const ApplicabilityContext& context)
 {
     const auto child_fexprs = element.get_args();
 
     return std::accumulate(std::next(child_fexprs.begin()),  // Start from the second expression
                            child_fexprs.end(),
                            evaluate(child_fexprs.front(), context),
-                           [&](const auto& value, const auto& child_expr) { return ::tyr::formalism::apply(O {}, value, evaluate(child_expr, context)); });
+                           [&](const auto& value, const auto& child_expr)
+                           { return ::tyr::formalism::apply(element.get_operator(), value, evaluate(child_expr, context)); });
 }
 
 inline ygg::float_t evaluate(::tyr::formalism::planning::FunctionTermView<::tyr::formalism::StaticTag> element, const ApplicabilityContext& context)
@@ -240,13 +233,13 @@ inline bool evaluate(::tyr::formalism::planning::LiftedBooleanOperatorView eleme
     return visit([&](auto&& arg) { return evaluate(arg, context); }, element.get_variant());
 }
 
-template<::tyr::formalism::NumericEffectOpKind Op, ::tyr::formalism::FactKind T>
-ygg::float_t evaluate(::tyr::formalism::planning::NumericEffectView<Op, T> element, const ApplicabilityContext& context)
+template<::tyr::formalism::FactKind T>
+ygg::float_t evaluate(::tyr::formalism::planning::NumericEffectView<T> element, const ApplicabilityContext& context)
 {
     // Sequenced for the same reason as the arithmetic binary operator above.
     const auto fexpr_value = evaluate(element.get_fexpr(), context);
     const auto fterm_value = evaluate(element.get_fterm(), context);
-    return ::tyr::formalism::planning::apply(Op {}, fterm_value, fexpr_value);
+    return ::tyr::formalism::planning::apply(element.get_operator(), fterm_value, fexpr_value);
 }
 
 template<::tyr::formalism::FactKind T>
@@ -374,15 +367,14 @@ inline bool is_applicable(::tyr::formalism::planning::LiftedBooleanOperatorListV
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, context); });
 }
 
-template<::tyr::formalism::NumericEffectOpKind Op>
-bool is_applicable(::tyr::formalism::planning::NumericEffectView<Op, ::tyr::formalism::FluentTag> element,
-                   const ApplicabilityContext& context,
-                   ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families)
+inline bool is_applicable(::tyr::formalism::planning::NumericEffectView<::tyr::formalism::FluentTag> element,
+                          const ApplicabilityContext& context,
+                          ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families)
 {
     auto fterm = ::tyr::formalism::planning::try_ground(element.get_fterm(), context.grounder);
     if (!fterm.has_value())
     {
-        if constexpr (std::is_same_v<Op, ::tyr::formalism::Assign>)
+        if (element.get_operator() == ::tyr::formalism::NumericEffectOperatorKind::Assign)
             fterm = ::tyr::formalism::planning::ground(element.get_fterm(), context.grounder).first;
         else
             return false;
@@ -390,16 +382,17 @@ bool is_applicable(::tyr::formalism::planning::NumericEffectView<Op, ::tyr::form
 
     const auto fterm_index = fterm->get_index();
     if (ref_fluent_effect_families.size() <= fterm_index.get_value())
-        ref_fluent_effect_families.resize(fterm_index.get_value() + 1, ::tyr::formalism::EffectFamily::NONE);
+        ref_fluent_effect_families.resize(fterm_index.get_value() + 1, ::tyr::formalism::EffectFamily::None);
 
     // Check non-conflicting effects
-    if (!::tyr::formalism::planning::is_compatible_effect_family(Op::family, ref_fluent_effect_families[fterm_index.get_value()]))
+    const auto family = ::tyr::formalism::effect_family(element.get_operator());
+    if (!::tyr::formalism::planning::is_compatible_effect_family(family, ref_fluent_effect_families[fterm_index.get_value()]))
         return false;  /// incompatible effects
 
-    ref_fluent_effect_families[fterm_index.get_value()] = Op::family;
+    ref_fluent_effect_families[fterm_index.get_value()] = family;
 
     // Check fterm is well-defined in context
-    if constexpr (!std::is_same_v<Op, ::tyr::formalism::Assign>)
+    if (element.get_operator() != ::tyr::formalism::NumericEffectOperatorKind::Assign)
     {
         if (std::isnan(context.state.unpacked_state.get(fterm_index)))
             return false;  /// target function is undefined and operator is not assign
@@ -423,8 +416,7 @@ inline bool is_applicable(::tyr::formalism::planning::NumericEffectOperatorListV
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, context, ref_fluent_effect_families); });
 }
 
-inline bool is_applicable(::tyr::formalism::planning::NumericEffectView<::tyr::formalism::Increase, ::tyr::formalism::AuxiliaryTag> element,
-                          const ApplicabilityContext& context)
+inline bool is_applicable(::tyr::formalism::planning::NumericEffectView<::tyr::formalism::AuxiliaryTag> element, const ApplicabilityContext& context)
 {
     // Check fexpr is well-defined in context
     return !std::isnan(evaluate(element.get_fexpr(), context));
@@ -480,49 +472,10 @@ inline bool is_applicable(::tyr::formalism::planning::AxiomView element, const A
 
 namespace tyr::planning
 {
-/**
- * evaluate
- */
-
-// LiftedUnaryOperatorView
-
-extern template ygg::float_t evaluate(::tyr::formalism::planning::LiftedUnaryOperatorView<::tyr::formalism::Sub> element, const ApplicabilityContext& context);
-
-// LiftedBinaryOperatorView arithmetic
-
-extern template ygg::float_t evaluate(::tyr::formalism::planning::LiftedBinaryOperatorView<::tyr::formalism::Add> element, const ApplicabilityContext& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::LiftedBinaryOperatorView<::tyr::formalism::Sub> element, const ApplicabilityContext& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::LiftedBinaryOperatorView<::tyr::formalism::Mul> element, const ApplicabilityContext& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::LiftedBinaryOperatorView<::tyr::formalism::Div> element, const ApplicabilityContext& context);
-
-// LiftedBinaryOperatorView boolean
-
-extern template bool evaluate(::tyr::formalism::planning::LiftedBinaryOperatorView<::tyr::formalism::Eq> element, const ApplicabilityContext& context);
-extern template bool evaluate(::tyr::formalism::planning::LiftedBinaryOperatorView<::tyr::formalism::Ne> element, const ApplicabilityContext& context);
-extern template bool evaluate(::tyr::formalism::planning::LiftedBinaryOperatorView<::tyr::formalism::Ge> element, const ApplicabilityContext& context);
-extern template bool evaluate(::tyr::formalism::planning::LiftedBinaryOperatorView<::tyr::formalism::Gt> element, const ApplicabilityContext& context);
-extern template bool evaluate(::tyr::formalism::planning::LiftedBinaryOperatorView<::tyr::formalism::Le> element, const ApplicabilityContext& context);
-extern template bool evaluate(::tyr::formalism::planning::LiftedBinaryOperatorView<::tyr::formalism::Lt> element, const ApplicabilityContext& context);
-
-// LiftedMultiOperatorView
-
-extern template ygg::float_t evaluate(::tyr::formalism::planning::LiftedMultiOperatorView<::tyr::formalism::Add> element, const ApplicabilityContext& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::LiftedMultiOperatorView<::tyr::formalism::Mul> element, const ApplicabilityContext& context);
-
 // NumericEffectView
 
-extern template ygg::float_t evaluate(::tyr::formalism::planning::NumericEffectView<::tyr::formalism::Assign, ::tyr::formalism::FluentTag> element,
-                                      const ApplicabilityContext& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::NumericEffectView<::tyr::formalism::Increase, ::tyr::formalism::FluentTag> element,
-                                      const ApplicabilityContext& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::NumericEffectView<::tyr::formalism::Decrease, ::tyr::formalism::FluentTag> element,
-                                      const ApplicabilityContext& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::NumericEffectView<::tyr::formalism::ScaleUp, ::tyr::formalism::FluentTag> element,
-                                      const ApplicabilityContext& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::NumericEffectView<::tyr::formalism::ScaleDown, ::tyr::formalism::FluentTag> element,
-                                      const ApplicabilityContext& context);
-
-extern template ygg::float_t evaluate(::tyr::formalism::planning::NumericEffectView<::tyr::formalism::Increase, ::tyr::formalism::AuxiliaryTag> element,
+extern template ygg::float_t evaluate(::tyr::formalism::planning::NumericEffectView<::tyr::formalism::FluentTag> element, const ApplicabilityContext& context);
+extern template ygg::float_t evaluate(::tyr::formalism::planning::NumericEffectView<::tyr::formalism::AuxiliaryTag> element,
                                       const ApplicabilityContext& context);
 
 // NumericEffectOperatorView
@@ -542,23 +495,6 @@ extern template bool is_applicable(::tyr::formalism::planning::LiteralListView<:
 extern template bool is_applicable(::tyr::formalism::planning::LiteralListView<::tyr::formalism::FluentTag> elements, const ApplicabilityContext& context);
 extern template bool is_applicable(::tyr::formalism::planning::LiteralListView<::tyr::formalism::DerivedTag> elements, const ApplicabilityContext& context);
 
-// NumericEffectView over fluent function terms
-
-extern template bool is_applicable(::tyr::formalism::planning::NumericEffectView<::tyr::formalism::Assign, ::tyr::formalism::FluentTag> element,
-                                   const ApplicabilityContext& context,
-                                   ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families);
-extern template bool is_applicable(::tyr::formalism::planning::NumericEffectView<::tyr::formalism::Increase, ::tyr::formalism::FluentTag> element,
-                                   const ApplicabilityContext& context,
-                                   ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families);
-extern template bool is_applicable(::tyr::formalism::planning::NumericEffectView<::tyr::formalism::Decrease, ::tyr::formalism::FluentTag> element,
-                                   const ApplicabilityContext& context,
-                                   ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families);
-extern template bool is_applicable(::tyr::formalism::planning::NumericEffectView<::tyr::formalism::ScaleUp, ::tyr::formalism::FluentTag> element,
-                                   const ApplicabilityContext& context,
-                                   ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families);
-extern template bool is_applicable(::tyr::formalism::planning::NumericEffectView<::tyr::formalism::ScaleDown, ::tyr::formalism::FluentTag> element,
-                                   const ApplicabilityContext& context,
-                                   ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families);
 }
 
 #endif

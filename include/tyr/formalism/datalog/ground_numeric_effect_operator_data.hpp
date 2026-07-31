@@ -33,22 +33,12 @@ using namespace ::tyr;
 template<>
 struct Data<::tyr::formalism::datalog::GroundNumericEffectOperator<::tyr::formalism::FluentTag>>
 {
-    using Variant =
-        ::cista::offset::variant<ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<::tyr::formalism::Assign, ::tyr::formalism::FluentTag>>,
-                                 ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<::tyr::formalism::Increase, ::tyr::formalism::FluentTag>>,
-                                 ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<::tyr::formalism::Decrease, ::tyr::formalism::FluentTag>>,
-                                 ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<::tyr::formalism::ScaleUp, ::tyr::formalism::FluentTag>>,
-                                 ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<::tyr::formalism::ScaleDown, ::tyr::formalism::FluentTag>>>;
+    using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<::tyr::formalism::FluentTag>>>;
 
     Variant value;
 
     template<typename C>
-    using ViewVariant =
-        std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<::tyr::formalism::Assign, ::tyr::formalism::FluentTag>>, C>,
-                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<::tyr::formalism::Increase, ::tyr::formalism::FluentTag>>, C>,
-                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<::tyr::formalism::Decrease, ::tyr::formalism::FluentTag>>, C>,
-                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<::tyr::formalism::ScaleUp, ::tyr::formalism::FluentTag>>, C>,
-                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<::tyr::formalism::ScaleDown, ::tyr::formalism::FluentTag>>, C>>;
+    using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<::tyr::formalism::FluentTag>>, C>>;
 
     Data() = default;
     Data(Variant value_) : value(value_) {}

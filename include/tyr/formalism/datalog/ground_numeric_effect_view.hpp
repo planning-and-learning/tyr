@@ -18,30 +18,32 @@
 #ifndef TYR_FORMALISM_DATALOG_GROUND_NUMERIC_EFFECT_VIEW_HPP_
 #define TYR_FORMALISM_DATALOG_GROUND_NUMERIC_EFFECT_VIEW_HPP_
 
-#include <yggdrasil/core/types.hpp>
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/ground_function_expression_view.hpp"
 #include "tyr/formalism/datalog/ground_function_term_view.hpp"
 #include "tyr/formalism/datalog/ground_numeric_effect_index.hpp"
 
+#include <yggdrasil/core/types.hpp>
+
 namespace ygg
 {
 using namespace ::tyr;
-template<::tyr::formalism::NumericEffectOpKind Op, ::tyr::formalism::FactKind T, ::tyr::formalism::datalog::Context C>
-class View<ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<Op, T>>, C>
+template<::tyr::formalism::FactKind T, ::tyr::formalism::datalog::Context C>
+class View<ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<T>>, C>
 {
 private:
     const C* m_context;
-    ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<Op, T>> m_handle;
+    ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<T>> m_handle;
 
 public:
-    View(ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<Op, T>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+    View(ygg::Index<::tyr::formalism::datalog::GroundNumericEffect<T>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_handle() const noexcept { return m_handle; }
 
     auto get_index() const noexcept { return m_handle; }
+    auto get_operator() const noexcept { return get_data().operator_kind; }
     auto get_fterm() const noexcept { return ygg::make_view(get_data().fterm, *m_context); }
     auto get_fexpr() const noexcept { return ygg::make_view(get_data().fexpr, *m_context); }
 

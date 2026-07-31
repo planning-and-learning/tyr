@@ -30,19 +30,20 @@ namespace ygg
 {
 using namespace ::tyr;
 
-template<::tyr::formalism::OpKind Op, typename T>
-struct Data<::tyr::formalism::datalog::BinaryOperator<Op, T>>
+template<::tyr::formalism::BinaryOperatorKind Operator, typename T>
+struct Data<::tyr::formalism::datalog::BinaryOperator<Operator, T>>
 {
-    using OpType = Op;
+    using OperatorType = Operator;
 
-    ygg::Index<::tyr::formalism::datalog::BinaryOperator<Op, T>> index;
+    ygg::Index<::tyr::formalism::datalog::BinaryOperator<Operator, T>> index;
+    OperatorType operator_kind {};
     T lhs;
     T rhs;
 
     Data() = default;
-    Data(T lhs_, T rhs_) : index(), lhs(lhs_), rhs(rhs_) {}
+    Data(OperatorType operator_kind_, T lhs_, T rhs_) : index(), operator_kind(operator_kind_), lhs(lhs_), rhs(rhs_) {}
     template<typename C>
-    Data(::ygg::View<T, C> lhs_, ::ygg::View<T, C> rhs_) : index(), lhs(), rhs()
+    Data(OperatorType operator_kind_, ::ygg::View<T, C> lhs_, ::ygg::View<T, C> rhs_) : index(), operator_kind(operator_kind_), lhs(), rhs()
     {
         set(lhs_, lhs);
         set(rhs_, rhs);
@@ -55,16 +56,17 @@ struct Data<::tyr::formalism::datalog::BinaryOperator<Op, T>>
     void clear() noexcept
     {
         ygg::clear(index);
+        operator_kind = {};
         ygg::clear(lhs);
         ygg::clear(rhs);
     }
 
-    auto cista_members() const noexcept { return std::tie(index, lhs, rhs); }
-    auto identifying_members() const noexcept { return std::tie(Op::kind, lhs, rhs); }
+    auto cista_members() const noexcept { return std::tie(index, operator_kind, lhs, rhs); }
+    auto identifying_members() const noexcept { return std::tie(operator_kind, lhs, rhs); }
 };
 
-static_assert(
-    !ygg::uses_trivial_storage_v<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Add, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>>);
+static_assert(!ygg::uses_trivial_storage_v<
+              ::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::ArithmeticOperatorKind, ygg::Data<::tyr::formalism::datalog::FunctionExpression>>>);
 
 }
 

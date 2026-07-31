@@ -4,6 +4,11 @@
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <concepts>
+#include <gtest/gtest.h>
+#include <stdexcept>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;
@@ -11,26 +16,32 @@ namespace fp = tyr::formalism::planning;
 template<typename Entity>
 concept MultiOperatorContract = std::constructible_from<ygg::Index<Entity>, ygg::uint_t> && std::totally_ordered<ygg::Index<Entity>>
                                 && std::totally_ordered<ygg::Data<Entity>> && std::totally_ordered<ygg::View<ygg::Index<Entity>, fp::Repository>>
+                                && std::same_as<std::tuple_element_t<0, decltype(std::declval<const ygg::Data<Entity>&>().identifying_members())>,
+                                                const typename ygg::Data<Entity>::OperatorType&>
                                 && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Index<Entity>, fp::Repository>& view) {
                                        data.index;
-                                       data.args;
+                                       { data.operator_kind } -> std::same_as<typename ygg::Data<Entity>::OperatorType&>;
                                        data.clear();
                                        { data == data } -> std::same_as<bool>;
                                        view.get_index();
+                                       { view.get_operator() } -> std::same_as<typename ygg::Data<Entity>::OperatorType>;
                                        view.get_args();
                                        { view == view } -> std::same_as<bool>;
                                        { view < view } -> std::same_as<bool>;
                                    };
 
-static_assert(MultiOperatorContract<fp::MultiOperator<f::Add, ygg::Data<fp::FunctionExpression>>>);
-static_assert(
-    std::same_as<ygg::View<ygg::Index<fp::MultiOperator<f::Add, ygg::Data<fp::FunctionExpression>>>, fp::Repository>, fp::LiftedMultiOperatorView<f::Add>>);
-static_assert(MultiOperatorContract<fp::MultiOperator<f::Mul, ygg::Data<fp::FunctionExpression>>>);
-static_assert(
-    std::same_as<ygg::View<ygg::Index<fp::MultiOperator<f::Mul, ygg::Data<fp::FunctionExpression>>>, fp::Repository>, fp::LiftedMultiOperatorView<f::Mul>>);
-static_assert(MultiOperatorContract<fp::MultiOperator<f::Add, ygg::Data<fp::GroundFunctionExpression>>>);
-static_assert(std::same_as<ygg::View<ygg::Index<fp::MultiOperator<f::Add, ygg::Data<fp::GroundFunctionExpression>>>, fp::Repository>,
-                           fp::GroundMultiOperatorView<f::Add>>);
-static_assert(MultiOperatorContract<fp::MultiOperator<f::Mul, ygg::Data<fp::GroundFunctionExpression>>>);
-static_assert(std::same_as<ygg::View<ygg::Index<fp::MultiOperator<f::Mul, ygg::Data<fp::GroundFunctionExpression>>>, fp::Repository>,
-                           fp::GroundMultiOperatorView<f::Mul>>);
+using Lifted = fp::LiftedMultiOperatorType;
+using Ground = fp::GroundMultiOperatorType;
+
+static_assert(MultiOperatorContract<Lifted>);
+static_assert(MultiOperatorContract<Ground>);
+static_assert(std::same_as<ygg::View<ygg::Index<Lifted>, fp::Repository>, fp::LiftedMultiOperatorView>);
+static_assert(std::same_as<ygg::View<ygg::Index<Ground>, fp::Repository>, fp::GroundMultiOperatorView>);
+static_assert(std::constructible_from<ygg::Data<Lifted>, f::ArithmeticOperatorKind, std::vector<fp::FunctionExpressionView>>);
+static_assert(std::constructible_from<ygg::Data<Ground>, f::ArithmeticOperatorKind, std::vector<fp::GroundFunctionExpressionView>>);
+
+TEST(TyrFormalismPlanningMultiOperator, RejectsNonMultiOperator)
+{
+    using Args = ::cista::offset::vector<ygg::Data<fp::FunctionExpression>>;
+    EXPECT_THROW((ygg::Data<Lifted>(f::ArithmeticOperatorKind::Sub, Args {})), std::invalid_argument);
+}

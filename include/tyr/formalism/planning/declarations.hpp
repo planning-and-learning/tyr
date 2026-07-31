@@ -18,13 +18,13 @@
 #ifndef TYR_FORMALISM_PLANNING_DECLARATIONS_HPP_
 #define TYR_FORMALISM_PLANNING_DECLARATIONS_HPP_
 
-#include <yggdrasil/core/config.hpp>
-#include <yggdrasil/core/types.hpp>
 #include "tyr/formalism/declarations.hpp"
 
 #include <memory>
 #include <utility>
 #include <vector>
+#include <yggdrasil/core/config.hpp>
+#include <yggdrasil/core/types.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -33,17 +33,17 @@ namespace tyr::formalism::planning
  * Formalism tag
  */
 
-template<OpKind Op, typename T>
+template<typename T>
 struct UnaryOperator
 {
 };
 
-template<OpKind Op, typename T>
+template<BinaryOperatorKind Operator, typename T>
 struct BinaryOperator
 {
 };
 
-template<OpKind Op, typename T>
+template<typename T>
 struct MultiOperator
 {
 };
@@ -104,20 +104,20 @@ using EffectFamilyList = std::vector<EffectFamily>;
 
 inline bool is_compatible_effect_family(EffectFamily lhs, EffectFamily rhs)
 {
-    if (lhs == EffectFamily::NONE || rhs == EffectFamily::NONE)
+    if (lhs == EffectFamily::None || rhs == EffectFamily::None)
         return true;  ///< first effect
 
     if (lhs == rhs)
-        return lhs != EffectFamily::ASSIGN;  ///< disallow double assignment.
+        return lhs != EffectFamily::Assign;  ///< disallow double assignment.
 
     return false;  ///< disallow mixing assign, additive, or multiplicative
 }
 
-template<NumericEffectOpKind Op, FactKind T>
+template<FactKind T>
 struct NumericEffect
 {
 };
-template<NumericEffectOpKind Op, FactKind T>
+template<FactKind T>
 struct GroundNumericEffect
 {
 };
@@ -158,22 +158,6 @@ struct Axiom
 struct GroundAxiom
 {
 };
-
-struct Minimize : ygg::comparison::Mixin<Minimize>
-{
-    static constexpr int kind = 0;
-    constexpr auto identifying_members() const noexcept { return std::tie(kind); }
-    constexpr auto cista_members() const noexcept { return std::tie(); }
-};
-struct Maximize : ygg::comparison::Mixin<Maximize>
-{
-    static constexpr int kind = 1;
-    constexpr auto identifying_members() const noexcept { return std::tie(kind); }
-    constexpr auto cista_members() const noexcept { return std::tie(); }
-};
-
-template<typename T>
-concept ObjectiveKind = std::same_as<T, Minimize> || std::same_as<T, Maximize>;
 
 struct Metric
 {
@@ -230,78 +214,55 @@ using GroundFunctionTermValueTypes = ygg::MapTypeListT<GroundFunctionTermValue, 
 using FDRVariableTypes = ygg::MapTypeListT<FDRVariable, ygg::TypeList<FluentTag>>;
 using FDRFactTypes = ygg::MapTypeListT<FDRFact, ygg::TypeList<FluentTag>>;
 
-template<typename Op>
-using LiftedUnaryOperatorType = UnaryOperator<Op, ygg::Data<FunctionExpression>>;
+using LiftedUnaryOperatorType = UnaryOperator<ygg::Data<FunctionExpression>>;
+template<BinaryOperatorKind Operator>
+using LiftedBinaryOperatorType = BinaryOperator<Operator, ygg::Data<FunctionExpression>>;
+using LiftedMultiOperatorType = MultiOperator<ygg::Data<FunctionExpression>>;
 
-template<typename Op>
-using LiftedBinaryOperatorType = BinaryOperator<Op, ygg::Data<FunctionExpression>>;
+using GroundUnaryOperatorType = UnaryOperator<ygg::Data<GroundFunctionExpression>>;
+template<BinaryOperatorKind Operator>
+using GroundBinaryOperatorType = BinaryOperator<Operator, ygg::Data<GroundFunctionExpression>>;
+using GroundMultiOperatorType = MultiOperator<ygg::Data<GroundFunctionExpression>>;
 
-template<typename Op>
-using LiftedMultiOperatorType = MultiOperator<Op, ygg::Data<FunctionExpression>>;
+using LiftedArithmeticExpressionTypes = ygg::TypeList<LiftedUnaryOperatorType, LiftedBinaryOperatorType<ArithmeticOperatorKind>, LiftedMultiOperatorType>;
+using LiftedBooleanExpressionTypes = ygg::TypeList<LiftedBinaryOperatorType<BooleanOperatorKind>>;
 
-template<typename Op>
-using GroundUnaryOperatorType = UnaryOperator<Op, ygg::Data<GroundFunctionExpression>>;
-
-template<typename Op>
-using GroundBinaryOperatorType = BinaryOperator<Op, ygg::Data<GroundFunctionExpression>>;
-
-template<typename Op>
-using GroundMultiOperatorType = MultiOperator<Op, ygg::Data<GroundFunctionExpression>>;
-
-using LiftedArithmeticExpressionTypes = ygg::ConcatTypeListsT<ygg::MapTypeListT<LiftedUnaryOperatorType, UnaryArithmeticOpKinds>,
-                                                         ygg::MapTypeListT<LiftedBinaryOperatorType, BinaryArithmeticOpKinds>,
-                                                         ygg::MapTypeListT<LiftedMultiOperatorType, MultiArithmeticOpKinds>>;
-
-using LiftedBooleanExpressionTypes = ygg::MapTypeListT<LiftedBinaryOperatorType, BooleanOpKinds>;
-
-using GroundArithmeticExpressionTypes = ygg::ConcatTypeListsT<ygg::MapTypeListT<GroundUnaryOperatorType, UnaryArithmeticOpKinds>,
-                                                         ygg::MapTypeListT<GroundBinaryOperatorType, BinaryArithmeticOpKinds>,
-                                                         ygg::MapTypeListT<GroundMultiOperatorType, MultiArithmeticOpKinds>>;
-
-using GroundBooleanExpressionTypes = ygg::MapTypeListT<GroundBinaryOperatorType, BooleanOpKinds>;
+using GroundArithmeticExpressionTypes = ygg::TypeList<GroundUnaryOperatorType, GroundBinaryOperatorType<ArithmeticOperatorKind>, GroundMultiOperatorType>;
+using GroundBooleanExpressionTypes = ygg::TypeList<GroundBinaryOperatorType<BooleanOperatorKind>>;
 
 using ExpressionTypes =
     ygg::ConcatTypeListsT<LiftedArithmeticExpressionTypes, LiftedBooleanExpressionTypes, GroundArithmeticExpressionTypes, GroundBooleanExpressionTypes>;
 
-using NumericEffectTypes = ygg::TypeList<NumericEffect<Assign, FluentTag>,
-                                    NumericEffect<Increase, FluentTag>,
-                                    NumericEffect<Decrease, FluentTag>,
-                                    NumericEffect<ScaleUp, FluentTag>,
-                                    NumericEffect<ScaleDown, FluentTag>,
-                                    NumericEffect<Increase, AuxiliaryTag>>;
+using NumericEffectTypes = ygg::TypeList<NumericEffect<FluentTag>, NumericEffect<AuxiliaryTag>>;
 
-using GroundNumericEffectTypes = ygg::TypeList<GroundNumericEffect<Assign, FluentTag>,
-                                          GroundNumericEffect<Increase, FluentTag>,
-                                          GroundNumericEffect<Decrease, FluentTag>,
-                                          GroundNumericEffect<ScaleUp, FluentTag>,
-                                          GroundNumericEffect<ScaleDown, FluentTag>,
-                                          GroundNumericEffect<Increase, AuxiliaryTag>>;
+using GroundNumericEffectTypes = ygg::TypeList<GroundNumericEffect<FluentTag>, GroundNumericEffect<AuxiliaryTag>>;
 
 using NumericEffectOperatorTypes = ygg::TypeList<NumericEffectOperator<FluentTag>, NumericEffectOperator<AuxiliaryTag>>;
 using GroundNumericEffectOperatorTypes = ygg::TypeList<GroundNumericEffectOperator<FluentTag>, GroundNumericEffectOperator<AuxiliaryTag>>;
 using EffectTypes = ygg::ConcatTypeListsT<NumericEffectTypes, GroundNumericEffectTypes, NumericEffectOperatorTypes, GroundNumericEffectOperatorTypes>;
 using OperatorEffectTypes = ygg::ConcatTypeListsT<NumericEffectTypes, GroundNumericEffectTypes>;
-using ControlTypes = ygg::TypeList<ConditionalEffect, GroundConditionalEffect, ConjunctiveEffect, GroundConjunctiveEffect, Action, GroundAction, Axiom, GroundAxiom>;
+using ControlTypes =
+    ygg::TypeList<ConditionalEffect, GroundConditionalEffect, ConjunctiveEffect, GroundConjunctiveEffect, Action, GroundAction, Axiom, GroundAxiom>;
 using StructureTypes = ygg::TypeList<Action, Axiom>;
 using ProblemTypes = ygg::TypeList<Metric, Domain, Task, FDRTask>;
 using ConditionTypes = ygg::TypeList<ConjunctiveCondition, GroundConjunctiveCondition>;
 
 using SymbolRepositoryTypes = ygg::ConcatTypeListsT<CoreTypes,
-                                               PredicateTypes,
-                                               AtomTypes,
-                                               GroundAtomTypes,
-                                               LiteralTypes,
-                                               GroundLiteralTypes,
-                                               FunctionTypes,
-                                               FunctionTermTypes,
-                                               GroundFunctionTermTypes,
-                                               GroundFunctionTermValueTypes,
-                                               ExpressionTypes,
-                                               OperatorEffectTypes,
-                                               ControlTypes,
-                                               ProblemTypes,
-                                               FDRVariableTypes,
-                                               ConditionTypes>;
+                                                    PredicateTypes,
+                                                    AtomTypes,
+                                                    GroundAtomTypes,
+                                                    LiteralTypes,
+                                                    GroundLiteralTypes,
+                                                    FunctionTypes,
+                                                    FunctionTermTypes,
+                                                    GroundFunctionTermTypes,
+                                                    GroundFunctionTermValueTypes,
+                                                    ExpressionTypes,
+                                                    OperatorEffectTypes,
+                                                    ControlTypes,
+                                                    ProblemTypes,
+                                                    FDRVariableTypes,
+                                                    ConditionTypes>;
 
 using RelationRepositoryTypes = ygg::ConcatTypeListsT<PredicateTypes, FunctionTypes, StructureTypes>;
 using BuilderTypes = ygg::ConcatTypeListsT<SymbolRepositoryTypes, ygg::MapTypeListT<RelationBinding, RelationRepositoryTypes>>;
@@ -349,19 +310,19 @@ using AxiomView = ygg::View<ygg::Index<Axiom>, Repository>;
 using AxiomListView = ygg::View<ygg::IndexList<Axiom>, Repository>;
 using AxiomViewList = std::vector<AxiomView>;
 
-template<OpKind Op, typename T>
-using BinaryOperatorView = ygg::View<ygg::Index<BinaryOperator<Op, T>>, Repository>;
-template<OpKind Op>
-using LiftedBinaryOperatorView = ygg::View<ygg::Index<BinaryOperator<Op, ygg::Data<FunctionExpression>>>, Repository>;
-template<OpKind Op>
-using GroundBinaryOperatorView = ygg::View<ygg::Index<BinaryOperator<Op, ygg::Data<GroundFunctionExpression>>>, Repository>;
+template<BinaryOperatorKind Operator, typename T>
+using BinaryOperatorView = ygg::View<ygg::Index<BinaryOperator<Operator, T>>, Repository>;
+template<BinaryOperatorKind Operator>
+using LiftedBinaryOperatorView = ygg::View<ygg::Index<BinaryOperator<Operator, ygg::Data<FunctionExpression>>>, Repository>;
+template<BinaryOperatorKind Operator>
+using GroundBinaryOperatorView = ygg::View<ygg::Index<BinaryOperator<Operator, ygg::Data<GroundFunctionExpression>>>, Repository>;
 
-template<OpKind Op, typename T>
-using BinaryOperatorListView = ygg::View<ygg::IndexList<BinaryOperator<Op, T>>, Repository>;
-template<OpKind Op>
-using LiftedBinaryOperatorListView = ygg::View<ygg::IndexList<BinaryOperator<Op, ygg::Data<FunctionExpression>>>, Repository>;
-template<OpKind Op>
-using GroundBinaryOperatorListView = ygg::View<ygg::IndexList<BinaryOperator<Op, ygg::Data<GroundFunctionExpression>>>, Repository>;
+template<BinaryOperatorKind Operator, typename T>
+using BinaryOperatorListView = ygg::View<ygg::IndexList<BinaryOperator<Operator, T>>, Repository>;
+template<BinaryOperatorKind Operator>
+using LiftedBinaryOperatorListView = ygg::View<ygg::IndexList<BinaryOperator<Operator, ygg::Data<FunctionExpression>>>, Repository>;
+template<BinaryOperatorKind Operator>
+using GroundBinaryOperatorListView = ygg::View<ygg::IndexList<BinaryOperator<Operator, ygg::Data<GroundFunctionExpression>>>, Repository>;
 
 template<FactKind T>
 using PredicateBindingView = ygg::View<ygg::Index<RelationBinding<Predicate<T>>>, Repository>;
@@ -488,10 +449,10 @@ using GroundNumericEffectOperatorListView = ygg::View<ygg::DataList<GroundNumeri
 template<FactKind T>
 using GroundNumericEffectOperatorViewList = std::vector<GroundNumericEffectOperatorView<T>>;
 
-template<NumericEffectOpKind Op, FactKind T>
-using GroundNumericEffectView = ygg::View<ygg::Index<GroundNumericEffect<Op, T>>, Repository>;
-template<NumericEffectOpKind Op, FactKind T>
-using GroundNumericEffectListView = ygg::View<ygg::IndexList<GroundNumericEffect<Op, T>>, Repository>;
+template<FactKind T>
+using GroundNumericEffectView = ygg::View<ygg::Index<GroundNumericEffect<T>>, Repository>;
+template<FactKind T>
+using GroundNumericEffectListView = ygg::View<ygg::IndexList<GroundNumericEffect<T>>, Repository>;
 
 template<FactKind T>
 using LiteralView = ygg::View<ygg::Index<Literal<T>>, Repository>;
@@ -503,19 +464,15 @@ using LiteralViewList = std::vector<LiteralView<T>>;
 using MetricView = ygg::View<ygg::Index<Metric>, Repository>;
 using MetricListView = ygg::View<ygg::IndexList<Metric>, Repository>;
 
-template<OpKind Op, typename T>
-using MultiOperatorView = ygg::View<ygg::Index<MultiOperator<Op, T>>, Repository>;
-template<OpKind Op>
-using LiftedMultiOperatorView = ygg::View<ygg::Index<MultiOperator<Op, ygg::Data<FunctionExpression>>>, Repository>;
-template<OpKind Op>
-using GroundMultiOperatorView = ygg::View<ygg::Index<MultiOperator<Op, ygg::Data<GroundFunctionExpression>>>, Repository>;
+template<typename T>
+using MultiOperatorView = ygg::View<ygg::Index<MultiOperator<T>>, Repository>;
+using LiftedMultiOperatorView = ygg::View<ygg::Index<MultiOperator<ygg::Data<FunctionExpression>>>, Repository>;
+using GroundMultiOperatorView = ygg::View<ygg::Index<MultiOperator<ygg::Data<GroundFunctionExpression>>>, Repository>;
 
-template<OpKind Op, typename T>
-using MultiOperatorListView = ygg::View<ygg::IndexList<MultiOperator<Op, T>>, Repository>;
-template<OpKind Op>
-using LiftedMultiOperatorListView = ygg::View<ygg::IndexList<MultiOperator<Op, ygg::Data<FunctionExpression>>>, Repository>;
-template<OpKind Op>
-using GroundMultiOperatorListView = ygg::View<ygg::IndexList<MultiOperator<Op, ygg::Data<GroundFunctionExpression>>>, Repository>;
+template<typename T>
+using MultiOperatorListView = ygg::View<ygg::IndexList<MultiOperator<T>>, Repository>;
+using LiftedMultiOperatorListView = ygg::View<ygg::IndexList<MultiOperator<ygg::Data<FunctionExpression>>>, Repository>;
+using GroundMultiOperatorListView = ygg::View<ygg::IndexList<MultiOperator<ygg::Data<GroundFunctionExpression>>>, Repository>;
 
 template<FactKind T>
 using NumericEffectOperatorView = ygg::View<ygg::Data<NumericEffectOperator<T>>, Repository>;
@@ -524,10 +481,10 @@ using NumericEffectOperatorListView = ygg::View<ygg::DataList<NumericEffectOpera
 template<FactKind T>
 using NumericEffectOperatorViewList = std::vector<NumericEffectOperatorView<T>>;
 
-template<NumericEffectOpKind Op, FactKind T>
-using NumericEffectView = ygg::View<ygg::Index<NumericEffect<Op, T>>, Repository>;
-template<NumericEffectOpKind Op, FactKind T>
-using NumericEffectListView = ygg::View<ygg::IndexList<NumericEffect<Op, T>>, Repository>;
+template<FactKind T>
+using NumericEffectView = ygg::View<ygg::Index<NumericEffect<T>>, Repository>;
+template<FactKind T>
+using NumericEffectListView = ygg::View<ygg::IndexList<NumericEffect<T>>, Repository>;
 
 using ObjectView = ygg::View<ygg::Index<Object>, Repository>;
 using ObjectListView = ygg::View<ygg::IndexList<Object>, Repository>;
@@ -547,24 +504,19 @@ using TermView = ygg::View<ygg::Data<Term>, Repository>;
 using TermListView = ygg::View<ygg::DataList<Term>, Repository>;
 using TermViewList = std::vector<TermView>;
 
-template<OpKind Op, typename T>
-using UnaryOperatorView = ygg::View<ygg::Index<UnaryOperator<Op, T>>, Repository>;
-template<OpKind Op>
-using LiftedUnaryOperatorView = ygg::View<ygg::Index<UnaryOperator<Op, ygg::Data<FunctionExpression>>>, Repository>;
-template<OpKind Op>
-using GroundUnaryOperatorView = ygg::View<ygg::Index<UnaryOperator<Op, ygg::Data<GroundFunctionExpression>>>, Repository>;
+template<typename T>
+using UnaryOperatorView = ygg::View<ygg::Index<UnaryOperator<T>>, Repository>;
+using LiftedUnaryOperatorView = ygg::View<ygg::Index<UnaryOperator<ygg::Data<FunctionExpression>>>, Repository>;
+using GroundUnaryOperatorView = ygg::View<ygg::Index<UnaryOperator<ygg::Data<GroundFunctionExpression>>>, Repository>;
 
-template<OpKind Op, typename T>
-using UnaryOperatorListView = ygg::View<ygg::IndexList<UnaryOperator<Op, T>>, Repository>;
-template<OpKind Op>
-using LiftedUnaryOperatorListView = ygg::View<ygg::IndexList<UnaryOperator<Op, ygg::Data<FunctionExpression>>>, Repository>;
-template<OpKind Op>
-using GroundUnaryOperatorListView = ygg::View<ygg::IndexList<UnaryOperator<Op, ygg::Data<GroundFunctionExpression>>>, Repository>;
+template<typename T>
+using UnaryOperatorListView = ygg::View<ygg::IndexList<UnaryOperator<T>>, Repository>;
+using LiftedUnaryOperatorListView = ygg::View<ygg::IndexList<UnaryOperator<ygg::Data<FunctionExpression>>>, Repository>;
+using GroundUnaryOperatorListView = ygg::View<ygg::IndexList<UnaryOperator<ygg::Data<GroundFunctionExpression>>>, Repository>;
 
 using VariableView = ygg::View<ygg::Index<Variable>, Repository>;
 using VariableListView = ygg::View<ygg::IndexList<Variable>, Repository>;
 using VariableViewList = std::vector<VariableView>;
-
 
 /**
  * Context

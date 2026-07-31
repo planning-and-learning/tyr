@@ -45,167 +45,35 @@ struct formatter<tyr::formalism::ParameterIndex, char>
 };
 
 template<>
-struct formatter<tyr::formalism::Eq, char>
+struct formatter<tyr::formalism::BooleanOperatorKind, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(tyr::formalism::Eq, FormatContext& ctx) const
+    auto format(tyr::formalism::BooleanOperatorKind value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "=");
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value));
     }
 };
 
 template<>
-struct formatter<tyr::formalism::Ne, char>
+struct formatter<tyr::formalism::ArithmeticOperatorKind, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(tyr::formalism::Ne, FormatContext& ctx) const
+    auto format(tyr::formalism::ArithmeticOperatorKind value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "!=");
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value));
     }
 };
 
 template<>
-struct formatter<tyr::formalism::Le, char>
+struct formatter<tyr::formalism::NumericEffectOperatorKind, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(tyr::formalism::Le, FormatContext& ctx) const
+    auto format(tyr::formalism::NumericEffectOperatorKind value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "<=");
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::Lt, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(tyr::formalism::Lt, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "<");
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::Ge, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(tyr::formalism::Ge, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), ">=");
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::Gt, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(tyr::formalism::Gt, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), ">");
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::Add, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(tyr::formalism::Add, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "+");
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::Sub, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(tyr::formalism::Sub, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "-");
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::Mul, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(tyr::formalism::Mul, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "*");
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::Div, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(tyr::formalism::Div, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "/");
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::Assign, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(tyr::formalism::Assign, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "assign");
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::Increase, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(tyr::formalism::Increase, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "increase");
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::Decrease, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(tyr::formalism::Decrease, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "decrease");
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::ScaleUp, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(tyr::formalism::ScaleUp, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "scale-up");
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::ScaleDown, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(tyr::formalism::ScaleDown, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "scale-down");
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value));
     }
 };
 

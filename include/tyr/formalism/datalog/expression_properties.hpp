@@ -49,23 +49,23 @@ void collect_fterms(FunctionExpressionView element, ygg::UnorderedSet<FunctionTe
 template<FactKind T>
 void collect_fterms(GroundFunctionExpressionView element, ygg::UnorderedSet<GroundFunctionTermView<T>>& result);
 
-template<FactKind T, ArithmeticOpKind O>
-void collect_fterms(LiftedUnaryOperatorView<O> element, ygg::UnorderedSet<FunctionTermView<T>>& result);
+template<FactKind T>
+void collect_fterms(LiftedUnaryOperatorView element, ygg::UnorderedSet<FunctionTermView<T>>& result);
 
-template<FactKind T, ArithmeticOpKind O>
-void collect_fterms(GroundUnaryOperatorView<O> element, ygg::UnorderedSet<GroundFunctionTermView<T>>& result);
+template<FactKind T>
+void collect_fterms(GroundUnaryOperatorView element, ygg::UnorderedSet<GroundFunctionTermView<T>>& result);
 
-template<FactKind T, OpKind O>
+template<FactKind T, BinaryOperatorKind O>
 void collect_fterms(LiftedBinaryOperatorView<O> element, ygg::UnorderedSet<FunctionTermView<T>>& result);
 
-template<FactKind T, OpKind O>
+template<FactKind T, BinaryOperatorKind O>
 void collect_fterms(GroundBinaryOperatorView<O> element, ygg::UnorderedSet<GroundFunctionTermView<T>>& result);
 
-template<FactKind T, ArithmeticOpKind O>
-void collect_fterms(LiftedMultiOperatorView<O> element, ygg::UnorderedSet<FunctionTermView<T>>& result);
+template<FactKind T>
+void collect_fterms(LiftedMultiOperatorView element, ygg::UnorderedSet<FunctionTermView<T>>& result);
 
-template<FactKind T, ArithmeticOpKind O>
-void collect_fterms(GroundMultiOperatorView<O> element, ygg::UnorderedSet<GroundFunctionTermView<T>>& result);
+template<FactKind T>
+void collect_fterms(GroundMultiOperatorView element, ygg::UnorderedSet<GroundFunctionTermView<T>>& result);
 
 template<FactKind T>
 void collect_fterms(LiftedArithmeticOperatorView element, ygg::UnorderedSet<FunctionTermView<T>>& result);
@@ -79,11 +79,11 @@ void collect_fterms(LiftedBooleanOperatorView element, ygg::UnorderedSet<Functio
 template<FactKind T>
 void collect_fterms(GroundBooleanOperatorView element, ygg::UnorderedSet<GroundFunctionTermView<T>>& result);
 
-template<FactKind T1, NumericEffectOpKind Op, FactKind T2>
-void collect_fterms(NumericEffectView<Op, T1> element, ygg::UnorderedSet<FunctionTermView<T2>>& result);
+template<FactKind T1, FactKind T2>
+void collect_fterms(NumericEffectView<T1> element, ygg::UnorderedSet<FunctionTermView<T2>>& result);
 
-template<FactKind T1, NumericEffectOpKind Op, FactKind T2>
-void collect_fterms(GroundNumericEffectView<Op, T1> element, ygg::UnorderedSet<GroundFunctionTermView<T2>>& result);
+template<FactKind T1, FactKind T2>
+void collect_fterms(GroundNumericEffectView<T1> element, ygg::UnorderedSet<GroundFunctionTermView<T2>>& result);
 
 template<FactKind T1, FactKind T2>
 void collect_fterms(NumericEffectOperatorView<T1> element, ygg::UnorderedSet<FunctionTermView<T2>>& result);
@@ -131,41 +131,41 @@ inline void collect_fterms(GroundFunctionExpressionView element, ygg::UnorderedS
     visit([&](auto&& arg) { collect_fterms(arg, result); }, element.get_variant());
 }
 
-template<FactKind T, ArithmeticOpKind O>
-inline void collect_fterms(LiftedUnaryOperatorView<O> element, ygg::UnorderedSet<FunctionTermView<T>>& result)
+template<FactKind T>
+inline void collect_fterms(LiftedUnaryOperatorView element, ygg::UnorderedSet<FunctionTermView<T>>& result)
 {
     collect_fterms(element.get_arg(), result);
 }
 
-template<FactKind T, ArithmeticOpKind O>
-inline void collect_fterms(GroundUnaryOperatorView<O> element, ygg::UnorderedSet<GroundFunctionTermView<T>>& result)
+template<FactKind T>
+inline void collect_fterms(GroundUnaryOperatorView element, ygg::UnorderedSet<GroundFunctionTermView<T>>& result)
 {
     collect_fterms(element.get_arg(), result);
 }
 
-template<FactKind T, OpKind O>
+template<FactKind T, BinaryOperatorKind O>
 inline void collect_fterms(LiftedBinaryOperatorView<O> element, ygg::UnorderedSet<FunctionTermView<T>>& result)
 {
     collect_fterms(element.get_lhs(), result);
     collect_fterms(element.get_rhs(), result);
 }
 
-template<FactKind T, OpKind O>
+template<FactKind T, BinaryOperatorKind O>
 inline void collect_fterms(GroundBinaryOperatorView<O> element, ygg::UnorderedSet<GroundFunctionTermView<T>>& result)
 {
     collect_fterms(element.get_lhs(), result);
     collect_fterms(element.get_rhs(), result);
 }
 
-template<FactKind T, ArithmeticOpKind O>
-inline void collect_fterms(LiftedMultiOperatorView<O> element, ygg::UnorderedSet<FunctionTermView<T>>& result)
+template<FactKind T>
+inline void collect_fterms(LiftedMultiOperatorView element, ygg::UnorderedSet<FunctionTermView<T>>& result)
 {
     for (const auto& arg : element.get_args())
         collect_fterms(arg, result);
 }
 
-template<FactKind T, ArithmeticOpKind O>
-inline void collect_fterms(GroundMultiOperatorView<O> element, ygg::UnorderedSet<GroundFunctionTermView<T>>& result)
+template<FactKind T>
+inline void collect_fterms(GroundMultiOperatorView element, ygg::UnorderedSet<GroundFunctionTermView<T>>& result)
 {
     for (const auto& arg : element.get_args())
         collect_fterms(arg, result);
@@ -195,15 +195,15 @@ inline void collect_fterms(GroundBooleanOperatorView element, ygg::UnorderedSet<
     visit([&](auto&& arg) { collect_fterms(arg, result); }, element.get_variant());
 }
 
-template<FactKind T1, NumericEffectOpKind Op, FactKind T2>
-inline void collect_fterms(NumericEffectView<Op, T1> element, ygg::UnorderedSet<FunctionTermView<T2>>& result)
+template<FactKind T1, FactKind T2>
+inline void collect_fterms(NumericEffectView<T1> element, ygg::UnorderedSet<FunctionTermView<T2>>& result)
 {
     collect_fterms(element.get_fterm(), result);
     collect_fterms(element.get_fexpr(), result);
 }
 
-template<FactKind T1, NumericEffectOpKind Op, FactKind T2>
-inline void collect_fterms(GroundNumericEffectView<Op, T1> element, ygg::UnorderedSet<GroundFunctionTermView<T2>>& result)
+template<FactKind T1, FactKind T2>
+inline void collect_fterms(GroundNumericEffectView<T1> element, ygg::UnorderedSet<GroundFunctionTermView<T2>>& result)
 {
     collect_fterms(element.get_fterm(), result);
     collect_fterms(element.get_fexpr(), result);

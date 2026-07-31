@@ -23,6 +23,7 @@
 #include "tyr/formalism/planning/ground_function_expression_data.hpp"
 #include "tyr/formalism/planning/multi_operator_index.hpp"
 
+#include <stdexcept>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -30,20 +31,27 @@ namespace ygg
 {
 using namespace ::tyr;
 
-template<::tyr::formalism::OpKind Op, typename T>
-struct Data<::tyr::formalism::planning::MultiOperator<Op, T>>
+template<typename T>
+struct Data<::tyr::formalism::planning::MultiOperator<T>>
 {
-    using OpType = Op;
+    using OperatorType = ::tyr::formalism::ArithmeticOperatorKind;
 
-    ygg::Index<::tyr::formalism::planning::MultiOperator<Op, T>> index;
+    ygg::Index<::tyr::formalism::planning::MultiOperator<T>> index;
+    OperatorType operator_kind = OperatorType::Add;
     ::cista::offset::vector<T> args;
 
     Data() = default;
-    Data(::cista::offset::vector<T> args_) : index(), args(std::move(args_)) {}
+    Data(OperatorType operator_kind_, ::cista::offset::vector<T> args_) : index(), operator_kind(operator_kind_), args(std::move(args_))
+    {
+        if (!is_multi(operator_kind))
+            throw std::invalid_argument("multi operator must be Add or Mul");
+    }
     // Python constructor
     template<typename C>
-    Data(const std::vector<::ygg::View<T, C>>& args_) : index(), args()
+    Data(OperatorType operator_kind_, const std::vector<::ygg::View<T, C>>& args_) : index(), operator_kind(operator_kind_), args()
     {
+        if (!is_multi(operator_kind))
+            throw std::invalid_argument("multi operator must be Add or Mul");
         set(args_, args);
     }
     Data(const Data& other) = delete;
@@ -54,15 +62,15 @@ struct Data<::tyr::formalism::planning::MultiOperator<Op, T>>
     void clear() noexcept
     {
         ygg::clear(index);
+        operator_kind = OperatorType::Add;
         ygg::clear(args);
     }
 
-    auto cista_members() const noexcept { return std::tie(index, args); }
-    auto identifying_members() const noexcept { return std::tie(Op::kind, args); }
+    auto cista_members() const noexcept { return std::tie(index, operator_kind, args); }
+    auto identifying_members() const noexcept { return std::tie(operator_kind, args); }
 };
 
-static_assert(
-    !ygg::uses_trivial_storage_v<::tyr::formalism::planning::MultiOperator<::tyr::formalism::Add, ygg::Data<::tyr::formalism::planning::FunctionExpression>>>);
+static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::MultiOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression>>>);
 
 }
 

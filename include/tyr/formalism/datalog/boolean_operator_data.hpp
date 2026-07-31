@@ -32,22 +32,12 @@ using namespace ::tyr;
 template<typename T>
 struct Data<::tyr::formalism::datalog::BooleanOperator<T>>
 {
-    using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Eq, T>>,
-                                             ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Ne, T>>,
-                                             ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Le, T>>,
-                                             ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Lt, T>>,
-                                             ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Ge, T>>,
-                                             ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Gt, T>>>;
+    using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::BooleanOperatorKind, T>>>;
 
     Variant value;
 
     template<typename C>
-    using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Eq, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Ne, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Le, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Lt, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Ge, T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::Gt, T>>, C>>;
+    using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::BooleanOperatorKind, T>>, C>>;
 
     Data() = default;
     Data(Variant value_) : value(value_) {}

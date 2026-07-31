@@ -19,11 +19,10 @@
 
 #include "tyr/planning/lifted/task.hpp"
 
-#include <loki/formalism/repository.hpp>
-#include <loki/formalism/views.hpp>
-
 #include <algorithm>
 #include <functional>
+#include <loki/formalism/repository.hpp>
+#include <loki/formalism/views.hpp>
 #include <unordered_set>
 #include <variant>
 #include <vector>
@@ -387,13 +386,12 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::FunctionExpressionNumberV
 ygg::Data<FunctionExpression>
 LokiToTyrTranslator::translate_lifted(loki::formalism::BinaryFunctionExpressionView element, Builder& builder, Repository& context)
 {
-    auto build_binary_op = [&](auto op_tag) -> ygg::Data<FunctionExpression>
+    auto build_binary_op = [&](ArithmeticOperatorKind operator_kind) -> ygg::Data<FunctionExpression>
     {
-        using Tag = std::decay_t<decltype(op_tag)>;
-
-        auto binary_ptr = builder.template get_builder<BinaryOperator<Tag, ygg::Data<FunctionExpression>>>();
+        auto binary_ptr = builder.template get_builder<BinaryOperator<ArithmeticOperatorKind, ygg::Data<FunctionExpression>>>();
         auto& binary = *binary_ptr;
         binary.clear();
+        binary.operator_kind = operator_kind;
         binary.lhs = translate_lifted(element.get_left(), builder, context);
         binary.rhs = translate_lifted(element.get_right(), builder, context);
         canonicalize(binary);
@@ -403,13 +401,13 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::BinaryFunctionExpressionV
     switch (element.get_operator())
     {
         case loki::formalism::BinaryArithmeticOperator::Add:
-            return build_binary_op(Add {});
-        case loki::formalism::BinaryArithmeticOperator::Subtract:
-            return build_binary_op(Sub {});
-        case loki::formalism::BinaryArithmeticOperator::Multiply:
-            return build_binary_op(Mul {});
-        case loki::formalism::BinaryArithmeticOperator::Divide:
-            return build_binary_op(Div {});
+            return build_binary_op(ArithmeticOperatorKind::Add);
+        case loki::formalism::BinaryArithmeticOperator::Sub:
+            return build_binary_op(ArithmeticOperatorKind::Sub);
+        case loki::formalism::BinaryArithmeticOperator::Mul:
+            return build_binary_op(ArithmeticOperatorKind::Mul);
+        case loki::formalism::BinaryArithmeticOperator::Div:
+            return build_binary_op(ArithmeticOperatorKind::Div);
         default:
             throw std::runtime_error("Unexpected case");
     }
@@ -417,13 +415,12 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::BinaryFunctionExpressionV
 
 ygg::Data<FunctionExpression> LokiToTyrTranslator::translate_lifted(loki::formalism::MultiFunctionExpressionView element, Builder& builder, Repository& context)
 {
-    auto build_multi_op = [&](auto op_tag) -> ygg::Data<FunctionExpression>
+    auto build_multi_op = [&](ArithmeticOperatorKind operator_kind) -> ygg::Data<FunctionExpression>
     {
-        using Tag = std::decay_t<decltype(op_tag)>;
-
-        auto multi_ptr = builder.template get_builder<MultiOperator<Tag, ygg::Data<FunctionExpression>>>();
+        auto multi_ptr = builder.template get_builder<MultiOperator<ygg::Data<FunctionExpression>>>();
         auto& multi = *multi_ptr;
         multi.clear();
+        multi.operator_kind = operator_kind;
         multi.args = translate_lifted(element.get_expressions(), builder, context);
         canonicalize(multi);
         return ygg::Data<FunctionExpression>(ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>(context.get_or_create(multi).first.get_index()));
@@ -432,9 +429,9 @@ ygg::Data<FunctionExpression> LokiToTyrTranslator::translate_lifted(loki::formal
     switch (element.get_operator())
     {
         case loki::formalism::MultiArithmeticOperator::Add:
-            return build_multi_op(Add {});
-        case loki::formalism::MultiArithmeticOperator::Multiply:
-            return build_multi_op(Mul {});
+            return build_multi_op(ArithmeticOperatorKind::Add);
+        case loki::formalism::MultiArithmeticOperator::Mul:
+            return build_multi_op(ArithmeticOperatorKind::Mul);
         default:
             throw std::runtime_error("Unexpected case");
     }
@@ -442,9 +439,10 @@ ygg::Data<FunctionExpression> LokiToTyrTranslator::translate_lifted(loki::formal
 
 ygg::Data<FunctionExpression> LokiToTyrTranslator::translate_lifted(loki::formalism::UnaryFunctionExpressionView element, Builder& builder, Repository& context)
 {
-    auto minus_ptr = builder.template get_builder<UnaryOperator<Sub, ygg::Data<FunctionExpression>>>();
+    auto minus_ptr = builder.template get_builder<UnaryOperator<ygg::Data<FunctionExpression>>>();
     auto& minus = *minus_ptr;
     minus.clear();
+    minus.operator_kind = ArithmeticOperatorKind::Sub;
     minus.arg = translate_lifted(element.get_expression(), builder, context);
     canonicalize(minus);
     return ygg::Data<FunctionExpression>(ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>(context.get_or_create(minus).first.get_index()));
@@ -515,13 +513,12 @@ FunctionTermViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::F
 ygg::Data<BooleanOperator<ygg::Data<FunctionExpression>>>
 LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionNumericConstraintView element, Builder& builder, Repository& context)
 {
-    auto build_binary_op = [&](auto op_tag) -> ygg::Data<BooleanOperator<ygg::Data<FunctionExpression>>>
+    auto build_binary_op = [&](BooleanOperatorKind operator_kind) -> ygg::Data<BooleanOperator<ygg::Data<FunctionExpression>>>
     {
-        using Tag = std::decay_t<decltype(op_tag)>;
-
-        auto binary_ptr = builder.template get_builder<BinaryOperator<Tag, ygg::Data<FunctionExpression>>>();
+        auto binary_ptr = builder.template get_builder<BinaryOperator<BooleanOperatorKind, ygg::Data<FunctionExpression>>>();
         auto& binary = *binary_ptr;
         binary.clear();
+        binary.operator_kind = operator_kind;
         binary.lhs = translate_lifted(element.get_left(), builder, context);
         binary.rhs = translate_lifted(element.get_right(), builder, context);
         canonicalize(binary);
@@ -530,18 +527,18 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionNumericConstrain
 
     switch (element.get_comparator())
     {
-        case loki::formalism::BinaryComparator::Equal:
-            return build_binary_op(Eq {});
-        case loki::formalism::BinaryComparator::NotEqual:
-            return build_binary_op(Ne {});
-        case loki::formalism::BinaryComparator::LessEqual:
-            return build_binary_op(Le {});
-        case loki::formalism::BinaryComparator::Less:
-            return build_binary_op(Lt {});
-        case loki::formalism::BinaryComparator::GreaterEqual:
-            return build_binary_op(Ge {});
-        case loki::formalism::BinaryComparator::Greater:
-            return build_binary_op(Gt {});
+        case loki::formalism::BinaryComparator::Eq:
+            return build_binary_op(BooleanOperatorKind::Eq);
+        case loki::formalism::BinaryComparator::Ne:
+            return build_binary_op(BooleanOperatorKind::Ne);
+        case loki::formalism::BinaryComparator::Le:
+            return build_binary_op(BooleanOperatorKind::Le);
+        case loki::formalism::BinaryComparator::Lt:
+            return build_binary_op(BooleanOperatorKind::Lt);
+        case loki::formalism::BinaryComparator::Ge:
+            return build_binary_op(BooleanOperatorKind::Ge);
+        case loki::formalism::BinaryComparator::Gt:
+            return build_binary_op(BooleanOperatorKind::Gt);
         default:
             throw std::runtime_error("Unexpected case");
     }
@@ -678,15 +675,15 @@ NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::
         },
         function_view_variant);
 
-    auto build_numeric_effect_term_helper = [&](auto fact_tag, auto op_tag, auto fterm) -> NumericEffectViewVariant
+    auto build_numeric_effect_term_helper = [&](auto fact_tag, NumericEffectOperatorKind operator_kind, auto fterm) -> NumericEffectViewVariant
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
-        using Op = std::decay_t<decltype(op_tag)>;
 
-        auto numeric_effect_ptr = builder.template get_builder<NumericEffect<Op, Tag>>();
+        auto numeric_effect_ptr = builder.template get_builder<NumericEffect<Tag>>();
         auto& numeric_effect = *numeric_effect_ptr;
         numeric_effect.clear();
 
+        numeric_effect.operator_kind = operator_kind;
         numeric_effect.fterm = fterm.get_index();
         numeric_effect.fexpr = this->translate_lifted(element.get_expression(), builder, context);
         canonicalize(numeric_effect);
@@ -702,22 +699,22 @@ NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::
             if (element.get_operator() != loki::formalism::NumericEffectOperator::Increase)
                 throw std::runtime_error("Auxiliary numeric effect must use INCREASE operator.");
 
-            return build_numeric_effect_term_helper(Tag {}, Increase {}, fterm);
+            return build_numeric_effect_term_helper(Tag {}, NumericEffectOperatorKind::Increase, fterm);
         }
         else
         {
             switch (element.get_operator())
             {
                 case loki::formalism::NumericEffectOperator::Assign:
-                    return build_numeric_effect_term_helper(Tag {}, Assign {}, fterm);
+                    return build_numeric_effect_term_helper(Tag {}, NumericEffectOperatorKind::Assign, fterm);
                 case loki::formalism::NumericEffectOperator::Increase:
-                    return build_numeric_effect_term_helper(Tag {}, Increase {}, fterm);
+                    return build_numeric_effect_term_helper(Tag {}, NumericEffectOperatorKind::Increase, fterm);
                 case loki::formalism::NumericEffectOperator::Decrease:
-                    return build_numeric_effect_term_helper(Tag {}, Decrease {}, fterm);
+                    return build_numeric_effect_term_helper(Tag {}, NumericEffectOperatorKind::Decrease, fterm);
                 case loki::formalism::NumericEffectOperator::ScaleUp:
-                    return build_numeric_effect_term_helper(Tag {}, ScaleUp {}, fterm);
+                    return build_numeric_effect_term_helper(Tag {}, NumericEffectOperatorKind::ScaleUp, fterm);
                 case loki::formalism::NumericEffectOperator::ScaleDown:
-                    return build_numeric_effect_term_helper(Tag {}, ScaleDown {}, fterm);
+                    return build_numeric_effect_term_helper(Tag {}, NumericEffectOperatorKind::ScaleDown, fterm);
                 default:
                     throw std::runtime_error("Unexpected case.");
             }
@@ -745,10 +742,10 @@ ygg::IndexList<ConditionalEffect>
 LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element, const ygg::IndexList<Variable>& parameters, Builder& builder, Repository& context)
 {
     using ConditionalEffectData = ygg::Map<ygg::Index<ConjunctiveCondition>,
-                                             std::tuple<ygg::IndexList<Variable>,
-                                                        ygg::IndexList<Literal<FluentTag>>,
-                                                        ygg::DataList<NumericEffectOperator<FluentTag>>,
-                                                        ::cista::optional<ygg::Data<NumericEffectOperator<AuxiliaryTag>>>>>;
+                                           std::tuple<ygg::IndexList<Variable>,
+                                                      ygg::IndexList<Literal<FluentTag>>,
+                                                      ygg::DataList<NumericEffectOperator<FluentTag>>,
+                                                      ::cista::optional<ygg::Data<NumericEffectOperator<AuxiliaryTag>>>>>;
 
     const auto translate_effect_func = [&](loki::formalism::EffectView effect, ConditionalEffectData& ref_conditional_effect_data)
     {
@@ -850,17 +847,9 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element, const
                             {
                                 using SubSubEffectT = std::decay_t<decltype(subsubeffect)>;
 
-                                if constexpr (std::is_same_v<SubSubEffectT, NumericEffectView<Assign, FluentTag>>)
+                                if constexpr (std::is_same_v<SubSubEffectT, NumericEffectView<FluentTag>>)
                                     data_fluent_numeric_effects.push_back(ygg::Data<NumericEffectOperator<FluentTag>>(subsubeffect.get_index()));
-                                else if constexpr (std::is_same_v<SubSubEffectT, NumericEffectView<Increase, FluentTag>>)
-                                    data_fluent_numeric_effects.push_back(ygg::Data<NumericEffectOperator<FluentTag>>(subsubeffect.get_index()));
-                                else if constexpr (std::is_same_v<SubSubEffectT, NumericEffectView<Decrease, FluentTag>>)
-                                    data_fluent_numeric_effects.push_back(ygg::Data<NumericEffectOperator<FluentTag>>(subsubeffect.get_index()));
-                                else if constexpr (std::is_same_v<SubSubEffectT, NumericEffectView<ScaleUp, FluentTag>>)
-                                    data_fluent_numeric_effects.push_back(ygg::Data<NumericEffectOperator<FluentTag>>(subsubeffect.get_index()));
-                                else if constexpr (std::is_same_v<SubSubEffectT, NumericEffectView<ScaleDown, FluentTag>>)
-                                    data_fluent_numeric_effects.push_back(ygg::Data<NumericEffectOperator<FluentTag>>(subsubeffect.get_index()));
-                                else if constexpr (std::is_same_v<SubSubEffectT, NumericEffectView<Increase, AuxiliaryTag>>)
+                                else if constexpr (std::is_same_v<SubSubEffectT, NumericEffectView<AuxiliaryTag>>)
                                 {
                                     assert(!data_auxiliary_numeric_effect);
                                     data_auxiliary_numeric_effect = ygg::Data<NumericEffectOperator<AuxiliaryTag>>(subsubeffect.get_index());
@@ -1152,13 +1141,12 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::FunctionExpressionNumbe
 ygg::Data<GroundFunctionExpression>
 LokiToTyrTranslator::translate_grounded(loki::formalism::BinaryFunctionExpressionView element, Builder& builder, Repository& context)
 {
-    auto build_binary_op = [&](auto op_tag) -> ygg::Data<GroundFunctionExpression>
+    auto build_binary_op = [&](ArithmeticOperatorKind operator_kind) -> ygg::Data<GroundFunctionExpression>
     {
-        using Tag = std::decay_t<decltype(op_tag)>;
-
-        auto binary_ptr = builder.template get_builder<BinaryOperator<Tag, ygg::Data<GroundFunctionExpression>>>();
+        auto binary_ptr = builder.template get_builder<BinaryOperator<ArithmeticOperatorKind, ygg::Data<GroundFunctionExpression>>>();
         auto& binary = *binary_ptr;
         binary.clear();
+        binary.operator_kind = operator_kind;
         binary.lhs = translate_grounded(element.get_left(), builder, context);
         binary.rhs = translate_grounded(element.get_right(), builder, context);
         canonicalize(binary);
@@ -1169,13 +1157,13 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::BinaryFunctionExpressio
     switch (element.get_operator())
     {
         case loki::formalism::BinaryArithmeticOperator::Add:
-            return build_binary_op(Add {});
-        case loki::formalism::BinaryArithmeticOperator::Subtract:
-            return build_binary_op(Sub {});
-        case loki::formalism::BinaryArithmeticOperator::Multiply:
-            return build_binary_op(Mul {});
-        case loki::formalism::BinaryArithmeticOperator::Divide:
-            return build_binary_op(Div {});
+            return build_binary_op(ArithmeticOperatorKind::Add);
+        case loki::formalism::BinaryArithmeticOperator::Sub:
+            return build_binary_op(ArithmeticOperatorKind::Sub);
+        case loki::formalism::BinaryArithmeticOperator::Mul:
+            return build_binary_op(ArithmeticOperatorKind::Mul);
+        case loki::formalism::BinaryArithmeticOperator::Div:
+            return build_binary_op(ArithmeticOperatorKind::Div);
         default:
             throw std::runtime_error("Unexpected case");
     }
@@ -1184,13 +1172,12 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::BinaryFunctionExpressio
 ygg::Data<GroundFunctionExpression>
 LokiToTyrTranslator::translate_grounded(loki::formalism::MultiFunctionExpressionView element, Builder& builder, Repository& context)
 {
-    auto build_multi_op = [&](auto op_tag) -> ygg::Data<GroundFunctionExpression>
+    auto build_multi_op = [&](ArithmeticOperatorKind operator_kind) -> ygg::Data<GroundFunctionExpression>
     {
-        using Tag = std::decay_t<decltype(op_tag)>;
-
-        auto multi_ptr = builder.template get_builder<MultiOperator<Tag, ygg::Data<GroundFunctionExpression>>>();
+        auto multi_ptr = builder.template get_builder<MultiOperator<ygg::Data<GroundFunctionExpression>>>();
         auto& multi = *multi_ptr;
         multi.clear();
+        multi.operator_kind = operator_kind;
         multi.args = translate_grounded(element.get_expressions(), builder, context);
         canonicalize(multi);
         return ygg::Data<GroundFunctionExpression>(
@@ -1200,9 +1187,9 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::MultiFunctionExpression
     switch (element.get_operator())
     {
         case loki::formalism::MultiArithmeticOperator::Add:
-            return build_multi_op(Add {});
-        case loki::formalism::MultiArithmeticOperator::Multiply:
-            return build_multi_op(Mul {});
+            return build_multi_op(ArithmeticOperatorKind::Add);
+        case loki::formalism::MultiArithmeticOperator::Mul:
+            return build_multi_op(ArithmeticOperatorKind::Mul);
         default:
             throw std::runtime_error("Unexpected case");
     }
@@ -1211,9 +1198,10 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::MultiFunctionExpression
 ygg::Data<GroundFunctionExpression>
 LokiToTyrTranslator::translate_grounded(loki::formalism::UnaryFunctionExpressionView element, Builder& builder, Repository& context)
 {
-    auto minus_ptr = builder.template get_builder<UnaryOperator<Sub, ygg::Data<GroundFunctionExpression>>>();
+    auto minus_ptr = builder.template get_builder<UnaryOperator<ygg::Data<GroundFunctionExpression>>>();
     auto& minus = *minus_ptr;
     minus.clear();
+    minus.operator_kind = ArithmeticOperatorKind::Sub;
     minus.arg = translate_grounded(element.get_expression(), builder, context);
     canonicalize(minus);
     return ygg::Data<GroundFunctionExpression>(
@@ -1319,13 +1307,12 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::InitialFunctionValueVie
 ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>
 LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionNumericConstraintView element, Builder& builder, Repository& context)
 {
-    auto build_binary_op = [&](auto op_tag) -> ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>
+    auto build_binary_op = [&](BooleanOperatorKind operator_kind) -> ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>
     {
-        using Tag = std::decay_t<decltype(op_tag)>;
-
-        auto binary_ptr = builder.template get_builder<BinaryOperator<Tag, ygg::Data<GroundFunctionExpression>>>();
+        auto binary_ptr = builder.template get_builder<BinaryOperator<BooleanOperatorKind, ygg::Data<GroundFunctionExpression>>>();
         auto& binary = *binary_ptr;
         binary.clear();
+        binary.operator_kind = operator_kind;
         binary.lhs = translate_grounded(element.get_left(), builder, context);
         binary.rhs = translate_grounded(element.get_right(), builder, context);
         canonicalize(binary);
@@ -1334,16 +1321,18 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionNumericConstra
 
     switch (element.get_comparator())
     {
-        case loki::formalism::BinaryComparator::Equal:
-            return build_binary_op(Eq {});
-        case loki::formalism::BinaryComparator::LessEqual:
-            return build_binary_op(Le {});
-        case loki::formalism::BinaryComparator::Less:
-            return build_binary_op(Lt {});
-        case loki::formalism::BinaryComparator::GreaterEqual:
-            return build_binary_op(Ge {});
-        case loki::formalism::BinaryComparator::Greater:
-            return build_binary_op(Gt {});
+        case loki::formalism::BinaryComparator::Eq:
+            return build_binary_op(BooleanOperatorKind::Eq);
+        case loki::formalism::BinaryComparator::Ne:
+            return build_binary_op(BooleanOperatorKind::Ne);
+        case loki::formalism::BinaryComparator::Le:
+            return build_binary_op(BooleanOperatorKind::Le);
+        case loki::formalism::BinaryComparator::Lt:
+            return build_binary_op(BooleanOperatorKind::Lt);
+        case loki::formalism::BinaryComparator::Ge:
+            return build_binary_op(BooleanOperatorKind::Ge);
+        case loki::formalism::BinaryComparator::Gt:
+            return build_binary_op(BooleanOperatorKind::Gt);
         default:
             throw std::runtime_error("Unexpected case");
     }
@@ -1464,10 +1453,8 @@ ygg::Index<Metric> LokiToTyrTranslator::translate_grounded(loki::formalism::Metr
     metric.clear();
 
     metric.fexpr = translate_grounded(element.get_expression(), builder, context);
-    if (element.is_minimize())
-        metric.objective = Minimize {};
-    else
-        metric.objective = Maximize {};
+    metric.optimization_direction = element.get_optimization_direction() == loki::formalism::OptimizationDirection::Minimize ? OptimizationDirection::Minimize :
+                                                                                                                               OptimizationDirection::Maximize;
 
     canonicalize(metric);
     return context.get_or_create(metric).first.get_index();

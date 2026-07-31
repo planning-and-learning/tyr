@@ -68,57 +68,46 @@ struct formatter<tyr::formalism::planning::FDRValue, char>
 };
 
 template<>
-struct formatter<tyr::formalism::planning::Minimize, char>
+struct formatter<tyr::formalism::OptimizationDirection, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::planning::Minimize&, FormatContext& ctx) const
+    auto format(tyr::formalism::OptimizationDirection value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "minimize");
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value));
     }
 };
 
-template<>
-struct formatter<tyr::formalism::planning::Maximize, char>
+template<typename T>
+struct formatter<ygg::Data<tyr::formalism::planning::UnaryOperator<T>>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::planning::Maximize&, FormatContext& ctx) const
+    auto format(const ygg::Data<tyr::formalism::planning::UnaryOperator<T>>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "maximize");
+        return fmt::format_to(ctx.out(), "({} {})", value.operator_kind, value.arg);
     }
 };
 
-template<tyr::formalism::OpKind Op, typename T>
-struct formatter<ygg::Data<tyr::formalism::planning::UnaryOperator<Op, T>>, char>
+template<tyr::formalism::BinaryOperatorKind Operator, typename T>
+struct formatter<ygg::Data<tyr::formalism::planning::BinaryOperator<Operator, T>>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::UnaryOperator<Op, T>>& value, FormatContext& ctx) const
+    auto format(const ygg::Data<tyr::formalism::planning::BinaryOperator<Operator, T>>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {})", Op {}, value.arg);
+        return fmt::format_to(ctx.out(), "({} {} {})", value.operator_kind, value.lhs, value.rhs);
     }
 };
 
-template<tyr::formalism::OpKind Op, typename T>
-struct formatter<ygg::Data<tyr::formalism::planning::BinaryOperator<Op, T>>, char>
+template<typename T>
+struct formatter<ygg::Data<tyr::formalism::planning::MultiOperator<T>>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::BinaryOperator<Op, T>>& value, FormatContext& ctx) const
+    auto format(const ygg::Data<tyr::formalism::planning::MultiOperator<T>>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {} {})", Op {}, value.lhs, value.rhs);
-    }
-};
-
-template<tyr::formalism::OpKind Op, typename T>
-struct formatter<ygg::Data<tyr::formalism::planning::MultiOperator<Op, T>>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::MultiOperator<Op, T>>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "({} {})", Op {}, fmt::join(ygg::to_strings(value.args), " "));
+        return fmt::format_to(ctx.out(), "({} {})", value.operator_kind, fmt::join(ygg::to_strings(value.args), " "));
     }
 };
 
@@ -229,25 +218,25 @@ struct formatter<ygg::Data<tyr::formalism::planning::GroundFunctionTermValue<T>>
     }
 };
 
-template<tyr::formalism::NumericEffectOpKind Op, tyr::formalism::FactKind T>
-struct formatter<ygg::Data<tyr::formalism::planning::NumericEffect<Op, T>>, char>
+template<tyr::formalism::FactKind T>
+struct formatter<ygg::Data<tyr::formalism::planning::NumericEffect<T>>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::NumericEffect<Op, T>>& value, FormatContext& ctx) const
+    auto format(const ygg::Data<tyr::formalism::planning::NumericEffect<T>>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {} {})", Op {}, value.fterm, value.fexpr);
+        return fmt::format_to(ctx.out(), "({} {} {})", value.operator_kind, value.fterm, value.fexpr);
     }
 };
 
-template<tyr::formalism::NumericEffectOpKind Op, tyr::formalism::FactKind T>
-struct formatter<ygg::Data<tyr::formalism::planning::GroundNumericEffect<Op, T>>, char>
+template<tyr::formalism::FactKind T>
+struct formatter<ygg::Data<tyr::formalism::planning::GroundNumericEffect<T>>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::GroundNumericEffect<Op, T>>& value, FormatContext& ctx) const
+    auto format(const ygg::Data<tyr::formalism::planning::GroundNumericEffect<T>>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {} {})", Op {}, value.fterm, value.fexpr);
+        return fmt::format_to(ctx.out(), "({} {} {})", value.operator_kind, value.fterm, value.fexpr);
     }
 };
 
@@ -594,7 +583,7 @@ struct formatter<ygg::Data<tyr::formalism::planning::Metric>, char>
     template<typename FormatContext>
     auto format(const ygg::Data<tyr::formalism::planning::Metric>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {})", value.objective, value.fexpr);
+        return fmt::format_to(ctx.out(), "({} {})", value.optimization_direction, value.fexpr);
     }
 };
 
@@ -731,36 +720,36 @@ struct formatter<ygg::Data<tyr::formalism::planning::FDRTask>, char>
     }
 };
 
-template<tyr::formalism::OpKind Op, typename T>
-struct formatter<tyr::formalism::planning::UnaryOperatorView<Op, T>, char>
+template<typename T>
+struct formatter<tyr::formalism::planning::UnaryOperatorView<T>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::planning::UnaryOperatorView<Op, T>& value, FormatContext& ctx) const
+    auto format(const tyr::formalism::planning::UnaryOperatorView<T>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {})", Op {}, value.get_arg());
+        return fmt::format_to(ctx.out(), "({} {})", value.get_operator(), value.get_arg());
     }
 };
 
-template<tyr::formalism::OpKind Op, typename T>
-struct formatter<tyr::formalism::planning::BinaryOperatorView<Op, T>, char>
+template<tyr::formalism::BinaryOperatorKind Operator, typename T>
+struct formatter<tyr::formalism::planning::BinaryOperatorView<Operator, T>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::planning::BinaryOperatorView<Op, T>& value, FormatContext& ctx) const
+    auto format(const tyr::formalism::planning::BinaryOperatorView<Operator, T>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {} {})", Op {}, value.get_lhs(), value.get_rhs());
+        return fmt::format_to(ctx.out(), "({} {} {})", value.get_operator(), value.get_lhs(), value.get_rhs());
     }
 };
 
-template<tyr::formalism::OpKind Op, typename T>
-struct formatter<tyr::formalism::planning::MultiOperatorView<Op, T>, char>
+template<typename T>
+struct formatter<tyr::formalism::planning::MultiOperatorView<T>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::planning::MultiOperatorView<Op, T>& value, FormatContext& ctx) const
+    auto format(const tyr::formalism::planning::MultiOperatorView<T>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {})", Op {}, fmt::join(ygg::to_strings(value.get_args()), " "));
+        return fmt::format_to(ctx.out(), "({} {})", value.get_operator(), fmt::join(ygg::to_strings(value.get_args()), " "));
     }
 };
 
@@ -893,25 +882,25 @@ struct formatter<tyr::formalism::planning::GroundFunctionExpressionView, char>
     }
 };
 
-template<tyr::formalism::NumericEffectOpKind Op, tyr::formalism::FactKind T>
-struct formatter<tyr::formalism::planning::NumericEffectView<Op, T>, char>
+template<tyr::formalism::FactKind T>
+struct formatter<tyr::formalism::planning::NumericEffectView<T>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::planning::NumericEffectView<Op, T>& value, FormatContext& ctx) const
+    auto format(const tyr::formalism::planning::NumericEffectView<T>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {} {})", Op {}, value.get_fterm(), value.get_fexpr());
+        return fmt::format_to(ctx.out(), "({} {} {})", value.get_operator(), value.get_fterm(), value.get_fexpr());
     }
 };
 
-template<tyr::formalism::NumericEffectOpKind Op, tyr::formalism::FactKind T>
-struct formatter<tyr::formalism::planning::GroundNumericEffectView<Op, T>, char>
+template<tyr::formalism::FactKind T>
+struct formatter<tyr::formalism::planning::GroundNumericEffectView<T>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::planning::GroundNumericEffectView<Op, T>& value, FormatContext& ctx) const
+    auto format(const tyr::formalism::planning::GroundNumericEffectView<T>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {} {})", Op {}, value.get_fterm(), value.get_fexpr());
+        return fmt::format_to(ctx.out(), "({} {} {})", value.get_operator(), value.get_fterm(), value.get_fexpr());
     }
 };
 
@@ -1268,7 +1257,7 @@ struct formatter<tyr::formalism::planning::MetricView, char>
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::MetricView& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {})", value.get_objective(), value.get_fexpr());
+        return fmt::format_to(ctx.out(), "({} {})", value.get_optimization_direction(), value.get_fexpr());
     }
 };
 

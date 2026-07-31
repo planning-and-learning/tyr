@@ -22,3 +22,4 @@ static_assert(BooleanOperatorContract<fp::BooleanOperator<ygg::Data<fp::Function
 static_assert(std::same_as<ygg::View<ygg::Data<fp::BooleanOperator<ygg::Data<fp::FunctionExpression>>>, fp::Repository>, fp::LiftedBooleanOperatorView>);
 static_assert(BooleanOperatorContract<fp::BooleanOperator<ygg::Data<fp::GroundFunctionExpression>>>);
 static_assert(std::same_as<ygg::View<ygg::Data<fp::BooleanOperator<ygg::Data<fp::GroundFunctionExpression>>>, fp::Repository>, fp::GroundBooleanOperatorView>);
+static_assert(f::to_string(f::BooleanOperatorKind::Ne) == "!=");

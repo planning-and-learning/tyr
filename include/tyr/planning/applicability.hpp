@@ -55,17 +55,18 @@ namespace tyr::planning
 template<TaskKind Kind>
 ygg::float_t evaluate(ygg::float_t element, const StateContext<Kind>& context);
 
-template<TaskKind Kind, ::tyr::formalism::ArithmeticOpKind O>
-ygg::float_t evaluate(::tyr::formalism::planning::GroundUnaryOperatorView<O> element, const StateContext<Kind>& context);
+template<TaskKind Kind>
+ygg::float_t evaluate(::tyr::formalism::planning::GroundUnaryOperatorView element, const StateContext<Kind>& context);
 
-template<TaskKind Kind, ::tyr::formalism::ArithmeticOpKind O>
-ygg::float_t evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<O> element, const StateContext<Kind>& context);
+template<TaskKind Kind>
+ygg::float_t evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::ArithmeticOperatorKind> element,
+                      const StateContext<Kind>& context);
 
-template<TaskKind Kind, ::tyr::formalism::BooleanOpKind O>
-bool evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<O> element, const StateContext<Kind>& context);
+template<TaskKind Kind>
+bool evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::BooleanOperatorKind> element, const StateContext<Kind>& context);
 
-template<TaskKind Kind, ::tyr::formalism::ArithmeticOpKind O>
-ygg::float_t evaluate(::tyr::formalism::planning::GroundMultiOperatorView<O> element, const StateContext<Kind>& context);
+template<TaskKind Kind>
+ygg::float_t evaluate(::tyr::formalism::planning::GroundMultiOperatorView element, const StateContext<Kind>& context);
 
 template<TaskKind Kind>
 ygg::float_t evaluate(::tyr::formalism::planning::GroundFunctionTermView<::tyr::formalism::StaticTag> element, const StateContext<Kind>& context);
@@ -85,8 +86,8 @@ ygg::float_t evaluate(::tyr::formalism::planning::GroundArithmeticOperatorView e
 template<TaskKind Kind>
 bool evaluate(::tyr::formalism::planning::GroundBooleanOperatorView element, const StateContext<Kind>& context);
 
-template<TaskKind Kind, ::tyr::formalism::NumericEffectOpKind Op, ::tyr::formalism::FactKind T>
-ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectView<Op, T> element, const StateContext<Kind>& context);
+template<TaskKind Kind, ::tyr::formalism::FactKind T>
+ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectView<T> element, const StateContext<Kind>& context);
 
 template<TaskKind Kind, ::tyr::formalism::FactKind T>
 ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectOperatorView<T> element, const StateContext<Kind>& context);
@@ -130,8 +131,8 @@ bool is_applicable(::tyr::formalism::planning::GroundBooleanOperatorView element
 template<TaskKind Kind>
 bool is_applicable(::tyr::formalism::planning::GroundBooleanOperatorListView elements, const StateContext<Kind>& context);
 
-template<TaskKind Kind, ::tyr::formalism::NumericEffectOpKind Op>
-bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<Op, ::tyr::formalism::FluentTag> element,
+template<TaskKind Kind>
+bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::FluentTag> element,
                    const StateContext<Kind>& context,
                    ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families);
 
@@ -146,8 +147,7 @@ bool is_applicable(::tyr::formalism::planning::GroundNumericEffectOperatorListVi
                    ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families);
 
 template<TaskKind Kind>
-bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::Increase, ::tyr::formalism::AuxiliaryTag> element,
-                   const StateContext<Kind>& context);
+bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::AuxiliaryTag> element, const StateContext<Kind>& context);
 
 template<TaskKind Kind>
 bool is_applicable(::tyr::formalism::planning::GroundNumericEffectOperatorView<::tyr::formalism::AuxiliaryTag> element, const StateContext<Kind>& context);
@@ -241,33 +241,34 @@ ygg::float_t evaluate(ygg::float_t element, const StateContext<Kind>& context)
     return element;
 }
 
-template<TaskKind Kind, ::tyr::formalism::ArithmeticOpKind O>
-ygg::float_t evaluate(::tyr::formalism::planning::GroundUnaryOperatorView<O> element, const StateContext<Kind>& context)
+template<TaskKind Kind>
+ygg::float_t evaluate(::tyr::formalism::planning::GroundUnaryOperatorView element, const StateContext<Kind>& context)
 {
-    return ::tyr::formalism::apply(O {}, evaluate(element.get_arg(), context));
+    return ::tyr::formalism::apply(element.get_operator(), evaluate(element.get_arg(), context));
 }
 
-template<TaskKind Kind, ::tyr::formalism::ArithmeticOpKind O>
-ygg::float_t evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<O> element, const StateContext<Kind>& context)
+template<TaskKind Kind>
+ygg::float_t evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::ArithmeticOperatorKind> element, const StateContext<Kind>& context)
 {
-    return ::tyr::formalism::apply(O {}, evaluate(element.get_lhs(), context), evaluate(element.get_rhs(), context));
+    return ::tyr::formalism::apply(element.get_operator(), evaluate(element.get_lhs(), context), evaluate(element.get_rhs(), context));
 }
 
-template<TaskKind Kind, ::tyr::formalism::BooleanOpKind O>
-bool evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<O> element, const StateContext<Kind>& context)
+template<TaskKind Kind>
+bool evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::BooleanOperatorKind> element, const StateContext<Kind>& context)
 {
-    return ::tyr::formalism::apply(O {}, evaluate(element.get_lhs(), context), evaluate(element.get_rhs(), context));
+    return ::tyr::formalism::apply(element.get_operator(), evaluate(element.get_lhs(), context), evaluate(element.get_rhs(), context));
 }
 
-template<TaskKind Kind, ::tyr::formalism::ArithmeticOpKind O>
-ygg::float_t evaluate(::tyr::formalism::planning::GroundMultiOperatorView<O> element, const StateContext<Kind>& context)
+template<TaskKind Kind>
+ygg::float_t evaluate(::tyr::formalism::planning::GroundMultiOperatorView element, const StateContext<Kind>& context)
 {
     const auto child_fexprs = element.get_args();
 
     return std::accumulate(std::next(child_fexprs.begin()),  // Start from the second expression
                            child_fexprs.end(),
                            evaluate(child_fexprs.front(), context),
-                           [&](const auto& value, const auto& child_expr) { return ::tyr::formalism::apply(O {}, value, evaluate(child_expr, context)); });
+                           [&](const auto& value, const auto& child_expr)
+                           { return ::tyr::formalism::apply(element.get_operator(), value, evaluate(child_expr, context)); });
 }
 
 template<TaskKind Kind>
@@ -306,10 +307,10 @@ bool evaluate(::tyr::formalism::planning::GroundBooleanOperatorView element, con
     return visit([&](auto&& arg) { return evaluate(arg, context); }, element.get_variant());
 }
 
-template<TaskKind Kind, ::tyr::formalism::NumericEffectOpKind Op, ::tyr::formalism::FactKind T>
-ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectView<Op, T> element, const StateContext<Kind>& context)
+template<TaskKind Kind, ::tyr::formalism::FactKind T>
+ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectView<T> element, const StateContext<Kind>& context)
 {
-    return ::tyr::formalism::planning::apply(Op {}, evaluate(element.get_fterm(), context), evaluate(element.get_fexpr(), context));
+    return ::tyr::formalism::planning::apply(element.get_operator(), evaluate(element.get_fterm(), context), evaluate(element.get_fexpr(), context));
 }
 
 template<TaskKind Kind, ::tyr::formalism::FactKind T>
@@ -405,23 +406,24 @@ bool is_applicable(::tyr::formalism::planning::GroundBooleanOperatorListView ele
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, context); });
 }
 
-template<TaskKind Kind, ::tyr::formalism::NumericEffectOpKind Op>
-bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<Op, ::tyr::formalism::FluentTag> element,
+template<TaskKind Kind>
+bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::FluentTag> element,
                    const StateContext<Kind>& context,
                    ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families)
 {
     const auto fterm_index = element.get_fterm().get_index();
     if (ref_fluent_effect_families.size() <= fterm_index.get_value())
-        ref_fluent_effect_families.resize(fterm_index.get_value() + 1, ::tyr::formalism::EffectFamily::NONE);
+        ref_fluent_effect_families.resize(fterm_index.get_value() + 1, ::tyr::formalism::EffectFamily::None);
 
     // Check non-conflicting effects
-    if (!::tyr::formalism::planning::is_compatible_effect_family(Op::family, ref_fluent_effect_families[fterm_index.get_value()]))
+    const auto family = ::tyr::formalism::effect_family(element.get_operator());
+    if (!::tyr::formalism::planning::is_compatible_effect_family(family, ref_fluent_effect_families[fterm_index.get_value()]))
         return false;  /// incompatible effects
 
-    ref_fluent_effect_families[fterm_index.get_value()] = Op::family;
+    ref_fluent_effect_families[fterm_index.get_value()] = family;
 
     // Check fterm is well-defined in context
-    if constexpr (!std::is_same_v<Op, ::tyr::formalism::Assign>)
+    if (element.get_operator() != ::tyr::formalism::NumericEffectOperatorKind::Assign)
     {
         if (std::isnan(context.unpacked_state.get(fterm_index)))
             return false;  /// target function is undefined and operator is not assign
@@ -448,8 +450,7 @@ bool is_applicable(::tyr::formalism::planning::GroundNumericEffectOperatorListVi
 }
 
 template<TaskKind Kind>
-bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::Increase, ::tyr::formalism::AuxiliaryTag> element,
-                   const StateContext<Kind>& context)
+bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::AuxiliaryTag> element, const StateContext<Kind>& context)
 {
     // Check fexpr is well-defined in context
     return !std::isnan(evaluate(element.get_fexpr(), context));
@@ -645,49 +646,21 @@ namespace tyr::planning
 extern template ygg::float_t evaluate(ygg::float_t element, const StateContext<LiftedTag>& context);
 extern template ygg::float_t evaluate(ygg::float_t element, const StateContext<GroundTag>& context);
 
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundUnaryOperatorView<::tyr::formalism::Sub> element,
+extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundUnaryOperatorView element, const StateContext<LiftedTag>& context);
+extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundUnaryOperatorView element, const StateContext<GroundTag>& context);
+
+extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::ArithmeticOperatorKind> element,
                                       const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundUnaryOperatorView<::tyr::formalism::Sub> element,
+extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::ArithmeticOperatorKind> element,
                                       const StateContext<GroundTag>& context);
 
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::Add> element,
-                                      const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::Sub> element,
-                                      const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::Mul> element,
-                                      const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::Div> element,
-                                      const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::Add> element,
-                                      const StateContext<GroundTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::Sub> element,
-                                      const StateContext<GroundTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::Mul> element,
-                                      const StateContext<GroundTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::Div> element,
-                                      const StateContext<GroundTag>& context);
+extern template bool evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::BooleanOperatorKind> element,
+                              const StateContext<LiftedTag>& context);
+extern template bool evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::BooleanOperatorKind> element,
+                              const StateContext<GroundTag>& context);
 
-extern template bool evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::Eq> element, const StateContext<LiftedTag>& context);
-extern template bool evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::Ne> element, const StateContext<LiftedTag>& context);
-extern template bool evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::Ge> element, const StateContext<LiftedTag>& context);
-extern template bool evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::Gt> element, const StateContext<LiftedTag>& context);
-extern template bool evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::Le> element, const StateContext<LiftedTag>& context);
-extern template bool evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::Lt> element, const StateContext<LiftedTag>& context);
-extern template bool evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::Eq> element, const StateContext<GroundTag>& context);
-extern template bool evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::Ne> element, const StateContext<GroundTag>& context);
-extern template bool evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::Ge> element, const StateContext<GroundTag>& context);
-extern template bool evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::Gt> element, const StateContext<GroundTag>& context);
-extern template bool evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::Le> element, const StateContext<GroundTag>& context);
-extern template bool evaluate(::tyr::formalism::planning::GroundBinaryOperatorView<::tyr::formalism::Lt> element, const StateContext<GroundTag>& context);
-
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundMultiOperatorView<::tyr::formalism::Add> element,
-                                      const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundMultiOperatorView<::tyr::formalism::Mul> element,
-                                      const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundMultiOperatorView<::tyr::formalism::Add> element,
-                                      const StateContext<GroundTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundMultiOperatorView<::tyr::formalism::Mul> element,
-                                      const StateContext<GroundTag>& context);
+extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundMultiOperatorView element, const StateContext<LiftedTag>& context);
+extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundMultiOperatorView element, const StateContext<GroundTag>& context);
 
 extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundFunctionTermView<::tyr::formalism::StaticTag> element,
                                       const StateContext<LiftedTag>& context);
@@ -716,29 +689,13 @@ extern template bool is_applicable(::tyr::formalism::planning::GroundBooleanOper
 extern template bool evaluate(::tyr::formalism::planning::GroundBooleanOperatorView element, const StateContext<LiftedTag>& context);
 extern template bool evaluate(::tyr::formalism::planning::GroundBooleanOperatorView element, const StateContext<GroundTag>& context);
 
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::Assign, ::tyr::formalism::FluentTag> element,
+extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::FluentTag> element,
                                       const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::Increase, ::tyr::formalism::FluentTag> element,
+extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::AuxiliaryTag> element,
                                       const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::Decrease, ::tyr::formalism::FluentTag> element,
-                                      const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::ScaleUp, ::tyr::formalism::FluentTag> element,
-                                      const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::ScaleDown, ::tyr::formalism::FluentTag> element,
-                                      const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::Increase, ::tyr::formalism::AuxiliaryTag> element,
-                                      const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::Assign, ::tyr::formalism::FluentTag> element,
+extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::FluentTag> element,
                                       const StateContext<GroundTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::Increase, ::tyr::formalism::FluentTag> element,
-                                      const StateContext<GroundTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::Decrease, ::tyr::formalism::FluentTag> element,
-                                      const StateContext<GroundTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::ScaleUp, ::tyr::formalism::FluentTag> element,
-                                      const StateContext<GroundTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::ScaleDown, ::tyr::formalism::FluentTag> element,
-                                      const StateContext<GroundTag>& context);
-extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::Increase, ::tyr::formalism::AuxiliaryTag> element,
+extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::AuxiliaryTag> element,
                                       const StateContext<GroundTag>& context);
 
 extern template ygg::float_t evaluate(::tyr::formalism::planning::GroundNumericEffectOperatorView<::tyr::formalism::FluentTag> element,
@@ -808,34 +765,10 @@ extern template bool is_applicable<::tyr::formalism::NegativeTag>(::tyr::formali
 extern template bool is_applicable(::tyr::formalism::planning::GroundBooleanOperatorListView elements, const StateContext<LiftedTag>& context);
 extern template bool is_applicable(::tyr::formalism::planning::GroundBooleanOperatorListView elements, const StateContext<GroundTag>& context);
 
-extern template bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::Assign, ::tyr::formalism::FluentTag> element,
+extern template bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::FluentTag> element,
                                    const StateContext<LiftedTag>& context,
                                    ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families);
-extern template bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::Increase, ::tyr::formalism::FluentTag> element,
-                                   const StateContext<LiftedTag>& context,
-                                   ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families);
-extern template bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::Decrease, ::tyr::formalism::FluentTag> element,
-                                   const StateContext<LiftedTag>& context,
-                                   ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families);
-extern template bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::ScaleUp, ::tyr::formalism::FluentTag> element,
-                                   const StateContext<LiftedTag>& context,
-                                   ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families);
-extern template bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::ScaleDown, ::tyr::formalism::FluentTag> element,
-                                   const StateContext<LiftedTag>& context,
-                                   ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families);
-extern template bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::Assign, ::tyr::formalism::FluentTag> element,
-                                   const StateContext<GroundTag>& context,
-                                   ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families);
-extern template bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::Increase, ::tyr::formalism::FluentTag> element,
-                                   const StateContext<GroundTag>& context,
-                                   ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families);
-extern template bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::Decrease, ::tyr::formalism::FluentTag> element,
-                                   const StateContext<GroundTag>& context,
-                                   ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families);
-extern template bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::ScaleUp, ::tyr::formalism::FluentTag> element,
-                                   const StateContext<GroundTag>& context,
-                                   ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families);
-extern template bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::ScaleDown, ::tyr::formalism::FluentTag> element,
+extern template bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::FluentTag> element,
                                    const StateContext<GroundTag>& context,
                                    ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families);
 
@@ -853,9 +786,9 @@ extern template bool is_applicable(::tyr::formalism::planning::GroundNumericEffe
                                    const StateContext<GroundTag>& context,
                                    ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families);
 
-extern template bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::Increase, ::tyr::formalism::AuxiliaryTag> element,
+extern template bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::AuxiliaryTag> element,
                                    const StateContext<LiftedTag>& context);
-extern template bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::Increase, ::tyr::formalism::AuxiliaryTag> element,
+extern template bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::formalism::AuxiliaryTag> element,
                                    const StateContext<GroundTag>& context);
 
 extern template bool is_applicable(::tyr::formalism::planning::GroundNumericEffectOperatorView<::tyr::formalism::AuxiliaryTag> element,

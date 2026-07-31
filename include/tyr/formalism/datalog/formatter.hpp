@@ -35,69 +35,69 @@
 namespace fmt
 {
 
-template<tyr::formalism::OpKind Op, typename T>
-struct formatter<ygg::Data<tyr::formalism::datalog::UnaryOperator<Op, T>>, char>
+template<typename T>
+struct formatter<ygg::Data<tyr::formalism::datalog::UnaryOperator<T>>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::datalog::UnaryOperator<Op, T>>& value, FormatContext& ctx) const
+    auto format(const ygg::Data<tyr::formalism::datalog::UnaryOperator<T>>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {})", Op {}, value.arg);
+        return fmt::format_to(ctx.out(), "({} {})", value.operator_kind, value.arg);
     }
 };
 
-template<tyr::formalism::OpKind Op, typename T>
-struct formatter<tyr::formalism::datalog::UnaryOperatorView<Op, T>, char>
+template<typename T>
+struct formatter<tyr::formalism::datalog::UnaryOperatorView<T>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::datalog::UnaryOperatorView<Op, T>& value, FormatContext& ctx) const
+    auto format(const tyr::formalism::datalog::UnaryOperatorView<T>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {})", Op {}, value.get_arg());
+        return fmt::format_to(ctx.out(), "({} {})", value.get_operator(), value.get_arg());
     }
 };
 
-template<tyr::formalism::OpKind Op, typename T>
-struct formatter<ygg::Data<tyr::formalism::datalog::BinaryOperator<Op, T>>, char>
+template<tyr::formalism::BinaryOperatorKind Operator, typename T>
+struct formatter<ygg::Data<tyr::formalism::datalog::BinaryOperator<Operator, T>>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::datalog::BinaryOperator<Op, T>>& value, FormatContext& ctx) const
+    auto format(const ygg::Data<tyr::formalism::datalog::BinaryOperator<Operator, T>>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {} {})", Op {}, value.lhs, value.rhs);
+        return fmt::format_to(ctx.out(), "({} {} {})", value.operator_kind, value.lhs, value.rhs);
     }
 };
 
-template<tyr::formalism::OpKind Op, typename T>
-struct formatter<tyr::formalism::datalog::BinaryOperatorView<Op, T>, char>
+template<tyr::formalism::BinaryOperatorKind Operator, typename T>
+struct formatter<tyr::formalism::datalog::BinaryOperatorView<Operator, T>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::datalog::BinaryOperatorView<Op, T>& value, FormatContext& ctx) const
+    auto format(const tyr::formalism::datalog::BinaryOperatorView<Operator, T>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {} {})", Op {}, value.get_lhs(), value.get_rhs());
+        return fmt::format_to(ctx.out(), "({} {} {})", value.get_operator(), value.get_lhs(), value.get_rhs());
     }
 };
 
-template<tyr::formalism::OpKind Op, typename T>
-struct formatter<ygg::Data<tyr::formalism::datalog::MultiOperator<Op, T>>, char>
+template<typename T>
+struct formatter<ygg::Data<tyr::formalism::datalog::MultiOperator<T>>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::datalog::MultiOperator<Op, T>>& value, FormatContext& ctx) const
+    auto format(const ygg::Data<tyr::formalism::datalog::MultiOperator<T>>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {})", Op {}, fmt::join(ygg::to_strings(value.args), " "));
+        return fmt::format_to(ctx.out(), "({} {})", value.operator_kind, fmt::join(ygg::to_strings(value.args), " "));
     }
 };
 
-template<tyr::formalism::OpKind Op, typename T>
-struct formatter<tyr::formalism::datalog::MultiOperatorView<Op, T>, char>
+template<typename T>
+struct formatter<tyr::formalism::datalog::MultiOperatorView<T>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::datalog::MultiOperatorView<Op, T>& value, FormatContext& ctx) const
+    auto format(const tyr::formalism::datalog::MultiOperatorView<T>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {})", Op {}, fmt::join(ygg::to_strings(value.get_args()), " "));
+        return fmt::format_to(ctx.out(), "({} {})", value.get_operator(), fmt::join(ygg::to_strings(value.get_args()), " "));
     }
 };
 
@@ -307,25 +307,25 @@ struct formatter<tyr::formalism::datalog::GroundFunctionTermValueView<T>, char>
     }
 };
 
-template<tyr::formalism::NumericEffectOpKind Op, tyr::formalism::FactKind T>
-struct formatter<ygg::Data<tyr::formalism::datalog::NumericEffect<Op, T>>, char>
+template<tyr::formalism::FactKind T>
+struct formatter<ygg::Data<tyr::formalism::datalog::NumericEffect<T>>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::datalog::NumericEffect<Op, T>>& value, FormatContext& ctx) const
+    auto format(const ygg::Data<tyr::formalism::datalog::NumericEffect<T>>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {} {})", Op::kind, value.fterm, value.fexpr);
+        return fmt::format_to(ctx.out(), "({} {} {})", value.operator_kind, value.fterm, value.fexpr);
     }
 };
 
-template<tyr::formalism::NumericEffectOpKind Op, tyr::formalism::FactKind T>
-struct formatter<tyr::formalism::datalog::NumericEffectView<Op, T>, char>
+template<tyr::formalism::FactKind T>
+struct formatter<tyr::formalism::datalog::NumericEffectView<T>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::datalog::NumericEffectView<Op, T>& value, FormatContext& ctx) const
+    auto format(const tyr::formalism::datalog::NumericEffectView<T>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {} {})", Op::kind, value.get_fterm(), value.get_fexpr());
+        return fmt::format_to(ctx.out(), "({} {} {})", value.get_operator(), value.get_fterm(), value.get_fexpr());
     }
 };
 
@@ -351,25 +351,25 @@ struct formatter<tyr::formalism::datalog::NumericEffectOperatorView<T>, char>
     }
 };
 
-template<tyr::formalism::NumericEffectOpKind Op, tyr::formalism::FactKind T>
-struct formatter<ygg::Data<tyr::formalism::datalog::GroundNumericEffect<Op, T>>, char>
+template<tyr::formalism::FactKind T>
+struct formatter<ygg::Data<tyr::formalism::datalog::GroundNumericEffect<T>>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::datalog::GroundNumericEffect<Op, T>>& value, FormatContext& ctx) const
+    auto format(const ygg::Data<tyr::formalism::datalog::GroundNumericEffect<T>>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {} {})", Op::kind, value.fterm, value.fexpr);
+        return fmt::format_to(ctx.out(), "({} {} {})", value.operator_kind, value.fterm, value.fexpr);
     }
 };
 
-template<tyr::formalism::NumericEffectOpKind Op, tyr::formalism::FactKind T>
-struct formatter<tyr::formalism::datalog::GroundNumericEffectView<Op, T>, char>
+template<tyr::formalism::FactKind T>
+struct formatter<tyr::formalism::datalog::GroundNumericEffectView<T>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::datalog::GroundNumericEffectView<Op, T>& value, FormatContext& ctx) const
+    auto format(const tyr::formalism::datalog::GroundNumericEffectView<T>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {} {})", Op::kind, value.get_fterm(), value.get_fexpr());
+        return fmt::format_to(ctx.out(), "({} {} {})", value.get_operator(), value.get_fterm(), value.get_fexpr());
     }
 };
 

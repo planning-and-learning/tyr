@@ -151,11 +151,11 @@ static auto make_rule_update_input(const In& in, Out& out, const NumericSupportS
                                                                                                                out.ground_context_iteration() };
 }
 
-template<f::NumericEffectOpKind Op, f::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
-std::optional<Cost> metric_effect_delta(fd::NumericEffectView<Op, f::FluentTag> effect, const RuleUpdateInput<R, AndAP, CP>& input)
+template<f::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
+std::optional<Cost> metric_effect_delta(fd::NumericEffectView<f::FluentTag> effect, const RuleUpdateInput<R, AndAP, CP>& input)
 {
     return metric_effect_delta(
-        Op {},
+        effect.get_operator(),
         [&] { return is_valid_binding(effect.get_fterm(), input.fact_sets, input.solve_context); },
         [&] { return is_valid_binding(effect.get_fexpr(), input.fact_sets, input.solve_context); });
 }
@@ -182,8 +182,8 @@ static bool collect_expression_supports(fd::FunctionExpressionView expression,
     return true;
 }
 
-template<f::NumericEffectOpKind Op, f::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
-static bool collect_numeric_head_supports(fd::NumericEffectView<Op, f::FluentTag> effect,
+template<f::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
+static bool collect_numeric_head_supports(fd::NumericEffectView<f::FluentTag> effect,
                                           fd::FunctionBindingView<f::FluentTag> program_head,
                                           const RuleUpdateInput<R, AndAP, CP>& input,
                                           std::vector<NumericSupport<LiftedTag>>& supports)
@@ -191,7 +191,7 @@ static bool collect_numeric_head_supports(fd::NumericEffectView<Op, f::FluentTag
     auto& selection = input.numeric_support_selector_workspace.selection;
     selection.clear();
 
-    if constexpr (!std::is_same_v<Op, f::Assign>)
+    if (effect.get_operator() != f::NumericEffectOperatorKind::Assign)
     {
         if (empty(input.numeric_support_selector.select_fluent_interval(program_head, selection)))
             return false;
@@ -200,15 +200,15 @@ static bool collect_numeric_head_supports(fd::NumericEffectView<Op, f::FluentTag
     return collect_expression_supports(effect.get_fexpr(), input, supports, selection);
 }
 
-template<f::NumericEffectOpKind Op, f::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
-static bool collect_metric_effect_supports(fd::NumericEffectView<Op, f::FluentTag> effect,
+template<f::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
+static bool collect_metric_effect_supports(fd::NumericEffectView<f::FluentTag> effect,
                                            const RuleUpdateInput<R, AndAP, CP>& input,
                                            std::vector<NumericSupport<LiftedTag>>& supports)
 {
     auto& selection = input.numeric_support_selector_workspace.selection;
     selection.clear();
 
-    if constexpr (!std::is_same_v<Op, f::Increase> && !std::is_same_v<Op, f::Decrease>)
+    if (effect.get_operator() != f::NumericEffectOperatorKind::Increase && effect.get_operator() != f::NumericEffectOperatorKind::Decrease)
     {
         const auto binding = fd::ground_binding(effect.get_fterm(), input.iteration_context).first;
         if (empty(input.numeric_support_selector.select_fluent_interval(binding, selection)))

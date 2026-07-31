@@ -29,6 +29,9 @@ void alias_shared_types(nb::module_& source, nb::module_& target)
 {
     for (const auto* name : { "ParameterIndex",
                               "RowIndex",
+                              "BooleanOperatorKind",
+                              "ArithmeticOperatorKind",
+                              "NumericEffectOperatorKind",
                               "ObjectIndex",
                               "ObjectData",
                               "VariableIndex",
