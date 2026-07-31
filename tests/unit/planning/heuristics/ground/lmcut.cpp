@@ -19,8 +19,8 @@
 
 namespace tyr::tests
 {
-using HeuristicTaskKind = ::tyr::planning::GroundTag;
-template<::tyr::planning::TaskKind Kind>
+using HeuristicTaskKind = GroundTag;
+template<TaskKind Kind>
 using TestedHeuristic = ::tyr::planning::LMCutHeuristic<Kind>;
 inline constexpr const char* kHeuristicFixture = "tests/fixtures/planning/heuristics/ground/lmcut.json";
 }

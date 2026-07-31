@@ -61,7 +61,7 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::get_initial_node()
 {
     auto initial_state = m_state_repository->get_initial_state();
 
-    const auto state_context = StateContext<GroundTag>(*m_task, initial_state.get_unpacked_state(), 0);
+    const auto state_context = StateContext<GroundTag>(*m_task, initial_state.get_state_builder(), 0);
 
     const auto state_metric = evaluate_metric(m_task->get_task().get_metric(), m_task->get_task().get_auxiliary_fterm_value(), state_context);
 
@@ -83,7 +83,7 @@ void SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<GroundTag>& n
 
     const auto state = node.get_state();
 
-    const auto state_context = StateContext<GroundTag>(*m_task, state.get_unpacked_state(), node.get_metric());
+    const auto state_context = StateContext<GroundTag>(*m_task, state.get_state_builder(), node.get_metric());
 
     m_action_match_tree->generate(state_context, m_applicable_actions);
 
@@ -114,7 +114,7 @@ void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<Groun
 
     const auto state = node.get_state();
 
-    const auto state_context = StateContext<GroundTag>(*m_task, state.get_unpacked_state(), node.get_metric());
+    const auto state_context = StateContext<GroundTag>(*m_task, state.get_state_builder(), node.get_metric());
 
     m_action_match_tree->generate(state_context, m_applicable_actions);
 
@@ -138,7 +138,7 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::get_successor_node(const Node<Gro
 Node<GroundTag> SuccessorGenerator<GroundTag>::get_successor_node(const Node<GroundTag>& node, fp::GroundActionView action)
 {
     const auto& state = node.get_state();
-    const auto state_context = StateContext<GroundTag>(*m_task, state.get_unpacked_state(), node.get_metric());
+    const auto state_context = StateContext<GroundTag>(*m_task, state.get_state_builder(), node.get_metric());
 
     return m_executor.apply_action(state_context, action, *m_state_repository);
 }
@@ -153,7 +153,7 @@ fp::GroundActionView SuccessorGenerator<GroundTag>::ground_action(fp::ActionBind
 Node<GroundTag> SuccessorGenerator<GroundTag>::get_node(ygg::Index<State<GroundTag>> state_index)
 {
     auto state = m_state_repository->get_registered_state(state_index);
-    const auto state_context = StateContext<GroundTag>(*m_task, state.get_unpacked_state(), 0);
+    const auto state_context = StateContext<GroundTag>(*m_task, state.get_state_builder(), 0);
     const auto state_metric = evaluate_metric(m_task->get_task().get_metric(), m_task->get_task().get_auxiliary_fterm_value(), state_context);
 
     return Node<GroundTag>(std::move(state), state_metric);

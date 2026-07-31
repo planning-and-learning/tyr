@@ -19,8 +19,8 @@
 
 namespace tyr::tests
 {
-using HeuristicTaskKind = ::tyr::planning::LiftedTag;
-template<::tyr::planning::TaskKind Kind>
+using HeuristicTaskKind = LiftedTag;
+template<TaskKind Kind>
 using TestedHeuristic = ::tyr::planning::AddRPGHeuristic<Kind>;
 inline constexpr const char* kHeuristicFixture = "tests/fixtures/planning/heuristics/lifted/rpg_add.json";
 }

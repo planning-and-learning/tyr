@@ -25,7 +25,7 @@
 
 namespace ygg
 {
-template<tyr::planning::TaskKind Kind>
+template<::tyr::TaskKind Kind>
 struct Index<tyr::planning::State<Kind>> : ygg::IndexMixin<ygg::Index<tyr::planning::State<Kind>>>
 {
     // Inherit constructors

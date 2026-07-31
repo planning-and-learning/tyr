@@ -42,7 +42,7 @@ public:
     AxiomEvaluator(const AxiomEvaluator&) = delete;
     AxiomEvaluator& operator=(const AxiomEvaluator&) = delete;
 
-    void compute_extended_state(UnpackedState<GroundTag>& unpacked_state);
+    void compute_extended_state(ygg::Builder<State<GroundTag>>& state_builder);
 
     auto get_index() const noexcept { return m_index; }
 

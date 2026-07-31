@@ -46,7 +46,7 @@ namespace tyr::planning
 
 template<TaskKind Kind>
 void process_effects(fp::GroundActionView action,
-                     UnpackedState<Kind>& succ_unpacked_state,
+                     ygg::Builder<State<Kind>>& successor_state_builder,
                      StateContext<Kind>& state_context,
                      ygg::DataList<fp::FDRFact<f::FluentTag>>& tmp_del_effects,
                      ygg::DataList<fp::FDRFact<f::FluentTag>>& tmp_add_effects)
@@ -64,7 +64,7 @@ void process_effects(fp::GroundActionView action,
                 tmp_add_effects.push_back(fact.get_data());
 
             for (const auto numeric_effect : effect.get_numeric_effects())
-                visit([&](auto&& arg) { succ_unpacked_state.set(arg.get_fterm().get_index(), evaluate(numeric_effect, state_context)); },
+                visit([&](auto&& arg) { successor_state_builder.set(arg.get_fterm().get_index(), evaluate(numeric_effect, state_context)); },
                       numeric_effect.get_variant());
 
             /// Collect the increment (total-cost) in the state_context
@@ -76,7 +76,7 @@ void process_effects(fp::GroundActionView action,
 
 inline void process_effects(fp::ActionView action,
                             const analysis::ActionDomain& action_domain,
-                            UnpackedState<LiftedTag>& succ_unpacked_state,
+                            ygg::Builder<State<LiftedTag>>& successor_state_builder,
                             StateContext<LiftedTag>& state_context,
                             fp::GrounderContext& grounder_context,
                             fp::FDRContext& fdr_context,
@@ -119,7 +119,7 @@ inline void process_effects(fp::ActionView action,
                                 // evaluation order is unspecified (gcc and clang disagree). Evaluating first preserves
                                 // the historical gcc (right-to-left) index assignment order.
                                 const auto value = evaluate(numeric_effect, applicability_context);
-                                succ_unpacked_state.set(ground(arg.get_fterm(), grounder_context).first.get_index(), value);
+                                successor_state_builder.set(ground(arg.get_fterm(), grounder_context).first.get_index(), value);
                             },
                             numeric_effect.get_variant());
 
@@ -146,22 +146,22 @@ Node<Kind> apply_action_impl(const StateContext<Kind>& state_context,
     auto tmp_state_context = state_context;
     auto& task = tmp_state_context.task;
 
-    auto succ_unpacked_state_ptr = state_repository.get_unregistered_state();
-    auto& succ_unpacked_state = *succ_unpacked_state_ptr;
-    succ_unpacked_state.assign_unextended_part(tmp_state_context.unpacked_state);
+    auto successor_state_builder_ptr = state_repository.get_state_builder();
+    auto& successor_state_builder = *successor_state_builder_ptr;
+    successor_state_builder.assign_unextended_part(tmp_state_context.state_builder);
 
-    process_effects(succ_unpacked_state, tmp_state_context, del_effects, add_effects);
+    process_effects(successor_state_builder, tmp_state_context, del_effects, add_effects);
 
     for (const auto fact : del_effects)
-        if (succ_unpacked_state.get(fact.variable) == fact.value)
-            succ_unpacked_state.set(ygg::Data<fp::FDRFact<f::FluentTag>> { fact.variable, fp::FDRValue::none() });
+        if (successor_state_builder.get(fact.variable) == fact.value)
+            successor_state_builder.set(ygg::Data<fp::FDRFact<f::FluentTag>> { fact.variable, fp::FDRValue::none() });
 
     for (const auto fact : add_effects)
-        succ_unpacked_state.set(fact);
+        successor_state_builder.set(fact);
 
-    auto succ_state = state_repository.register_state(succ_unpacked_state_ptr);
+    auto succ_state = state_repository.register_state(successor_state_builder_ptr);
 
-    auto succ_state_context = StateContext { task, succ_unpacked_state, tmp_state_context.auxiliary_value };
+    auto succ_state_context = StateContext { task, successor_state_builder, tmp_state_context.auxiliary_value };
     if (task.get_task().get_metric())
         succ_state_context.auxiliary_value = evaluate(task.get_task().get_metric().value().get_fexpr(), succ_state_context);
     else
@@ -197,8 +197,8 @@ Node<Kind> ActionExecutor::apply_action(const StateContext<Kind>& state_context,
                              state_repository,
                              m_del_effects,
                              m_add_effects,
-                             [&](auto& succ_unpacked_state, auto& tmp_state_context, auto& del_effects, auto& add_effects)
-                             { process_effects(action, succ_unpacked_state, tmp_state_context, del_effects, add_effects); });
+                             [&](auto& successor_state_builder, auto& tmp_state_context, auto& del_effects, auto& add_effects)
+                             { process_effects(action, successor_state_builder, tmp_state_context, del_effects, add_effects); });
 }
 
 template Node<LiftedTag>
@@ -242,11 +242,11 @@ Node<LiftedTag> ActionExecutor::apply_action(const StateContext<LiftedTag>& stat
                              state_repository,
                              m_del_effects,
                              m_add_effects,
-                             [&](auto& succ_unpacked_state, auto& tmp_state_context, auto& del_effects, auto& add_effects)
+                             [&](auto& successor_state_builder, auto& tmp_state_context, auto& del_effects, auto& add_effects)
                              {
                                  process_effects(action,
                                                  state_context.task.get_formalism_task().get_variable_domains().action_domains.at(action.get_index()),
-                                                 succ_unpacked_state,
+                                                 successor_state_builder,
                                                  tmp_state_context,
                                                  grounder,
                                                  fdr,

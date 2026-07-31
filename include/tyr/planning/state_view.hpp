@@ -31,9 +31,9 @@
 
 namespace ygg
 {
-using namespace ::tyr;
+namespace planning = ::tyr::planning;
 
-template<planning::TaskKind Kind, typename C>
+template<::tyr::TaskKind Kind, typename C>
 class View<ygg::Index<planning::State<Kind>>, C>
 {
     static_assert(ygg::dependent_false<Kind>::value, "State is not defined for type Kind.");

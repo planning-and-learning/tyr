@@ -101,12 +101,12 @@ public:
 
         auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { m_workspace.datalog_builder, m_workspace.workspace_repository };
 
-        insert_fluent_atoms_to_fact_set(state.get_unpacked_state(),
+        insert_fluent_atoms_to_fact_set(state.get_state_builder(),
                                         *m_task->get_repository(),
                                         m_rpg_program.get_translation_context().p2d.fluent_to_fluent_predicate,
                                         merge_context,
                                         m_workspace.facts.fact_sets);
-        insert_numeric_variables_to_fact_set(state.get_unpacked_state(), *m_task->get_repository(), merge_context, m_workspace.facts.fact_sets);
+        insert_numeric_variables_to_fact_set(state.get_state_builder(), *m_task->get_repository(), merge_context, m_workspace.facts.fact_sets);
 
         auto ctx = datalog::ProgramExecutionContext(m_workspace);
 

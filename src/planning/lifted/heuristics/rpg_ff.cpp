@@ -67,7 +67,7 @@ ygg::float_t FFRPGHeuristic<LiftedTag>::extract_cost_and_set_preferred_actions_i
     for (auto& bitset : m_function_markings)
         bitset.reset();
 
-    auto state_context = StateContext<LiftedTag>(*this->m_task, state.get_unpacked_state(), ygg::float_t(0));
+    auto state_context = StateContext<LiftedTag>(*this->m_task, state.get_state_builder(), ygg::float_t(0));
     auto grounder_context = ::tyr::formalism::planning::GrounderContext { this->m_workspace.planning_builder, *this->m_task->get_repository(), m_binding };
 
     if (const auto& goal = m_workspace.tp.get_goal())

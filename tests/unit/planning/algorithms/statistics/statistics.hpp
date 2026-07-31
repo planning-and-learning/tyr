@@ -98,7 +98,7 @@ inline std::optional<SearchStatistics> parse_optional_statistics(const boost::js
     return SearchStatistics { *parse_optional_counters(stats), parse_optional_plan(stats) };
 }
 
-template<planning::TaskKind Kind>
+template<TaskKind Kind>
 std::vector<std::string> plan_actions(const planning::Plan<Kind>& plan)
 {
     auto result = std::vector<std::string> {};
@@ -107,7 +107,7 @@ std::vector<std::string> plan_actions(const planning::Plan<Kind>& plan)
     return result;
 }
 
-template<planning::TaskKind Kind>
+template<TaskKind Kind>
 void expect_plan(const PlanStatistics& expected, const planning::Plan<Kind>& actual)
 {
     EXPECT_EQ(actual.get_length(), expected.length);
@@ -115,7 +115,7 @@ void expect_plan(const PlanStatistics& expected, const planning::Plan<Kind>& act
     EXPECT_EQ(plan_actions(actual), expected.actions);
 }
 
-template<planning::TaskKind Kind>
+template<TaskKind Kind>
 void expect_statistics(const SearchStatistics& expected, const planning::Statistics& actual, const planning::SearchResult<Kind>& result)
 {
     expect_counters(expected.statistics, actual);
@@ -184,7 +184,7 @@ inline std::vector<SearchCase> load_search_cases(const std::filesystem::path& fi
     return result;
 }
 
-template<planning::TaskKind Kind>
+template<TaskKind Kind>
 struct SearchContext
 {
     std::shared_ptr<ygg::ExecutionContext> execution_context;
@@ -192,14 +192,14 @@ struct SearchContext
     planning::SuccessorGeneratorPtr<Kind> successor_generator;
 };
 
-template<planning::TaskKind Kind>
+template<TaskKind Kind>
 SearchContext<Kind> create_search_context(const std::filesystem::path& domain_file, const std::filesystem::path& task_file)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto lifted_task = planning::Task<planning::LiftedTag>::create(make_test_parser(domain_file).parse_task(task_file));
+    auto lifted_task = planning::Task<LiftedTag>::create(make_test_parser(domain_file).parse_task(task_file));
 
     auto task = planning::TaskPtr<Kind> {};
-    if constexpr (std::is_same_v<Kind, planning::LiftedTag>)
+    if constexpr (std::is_same_v<Kind, LiftedTag>)
         task = std::move(lifted_task);
     else
         task = lifted_task->instantiate_ground_task(*execution_context).task;
@@ -211,7 +211,7 @@ SearchContext<Kind> create_search_context(const std::filesystem::path& domain_fi
     return SearchContext<Kind> { std::move(execution_context), std::move(task), std::move(successor_generator) };
 }
 
-inline std::pair<std::string, planning::CostMode> parse_costed_heuristic_key(const std::string& key)
+inline std::pair<std::string, CostMode> parse_costed_heuristic_key(const std::string& key)
 {
     const auto pos = key.rfind('_');
     if (pos == std::string::npos)
@@ -219,15 +219,15 @@ inline std::pair<std::string, planning::CostMode> parse_costed_heuristic_key(con
 
     const auto suffix = key.substr(pos + 1);
     if (suffix == "unit")
-        return { key.substr(0, pos), planning::CostMode::UNIT };
+        return { key.substr(0, pos), CostMode::UNIT };
     if (suffix == "general")
-        return { key.substr(0, pos), planning::CostMode::GENERAL };
+        return { key.substr(0, pos), CostMode::GENERAL };
 
     throw std::invalid_argument("parse_costed_heuristic_key(...): unknown cost suffix in key: " + key);
 }
 
-template<planning::TaskKind Kind>
-planning::HeuristicPtr<Kind> create_search_heuristic(const std::string& name, const SearchContext<Kind>& context, planning::CostMode cost_mode)
+template<TaskKind Kind>
+planning::HeuristicPtr<Kind> create_search_heuristic(const std::string& name, const SearchContext<Kind>& context, CostMode cost_mode)
 {
     if (name == "blind")
         return planning::BlindHeuristic<Kind>::create();

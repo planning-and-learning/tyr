@@ -26,7 +26,7 @@
 #include "tyr/formalism/planning/merge_planning.hpp"  // for MergeContext
 #include "tyr/formalism/planning/repository.hpp"      // for Repository
 #include "tyr/formalism/planning/views.hpp"
-#include "tyr/planning/lifted/state_builder.hpp"  // for UnpackedState
+#include "tyr/planning/lifted/state_builder.hpp"
 #include "tyr/planning/lifted/task.hpp"           // for LiftedTag
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/task_utils.hpp"  // for insert_fact_s...
@@ -51,7 +51,7 @@ namespace tyr::planning
 namespace
 {
 void read_derived_atoms_from_datalog_program(const AxiomEvaluatorProgram<LiftedTag>& axiom_program,
-                                             UnpackedState<LiftedTag>& unpacked_state,
+                                             ygg::Builder<State<LiftedTag>>& state_builder,
                                              fp::MergePlanningContext& merge_context,
                                              d::TaggedFactSets<f::FluentTag>& fact_sets)
 {
@@ -67,7 +67,7 @@ void read_derived_atoms_from_datalog_program(const AxiomEvaluatorProgram<LiftedT
                                                                     merge_context)
                         .first.get_index();
 
-                unpacked_state.set(ground_atom);
+                state_builder.set(ground_atom);
             }
         }
     }
@@ -83,12 +83,12 @@ AxiomEvaluator<LiftedTag>::AxiomEvaluator(ygg::uint_t index, TaskPtr<LiftedTag> 
 {
 }
 
-void AxiomEvaluator<LiftedTag>::compute_extended_state(UnpackedState<LiftedTag>& unpacked_state)
+void AxiomEvaluator<LiftedTag>::compute_extended_state(ygg::Builder<State<LiftedTag>>& state_builder)
 {
     auto merge_datalog_context = fp::MergeDatalogContext { m_workspace.datalog_builder, m_workspace.workspace_repository };
     const auto& program = m_axiom_program;
 
-    insert_unextended_state(unpacked_state,
+    insert_unextended_state(state_builder,
                             *m_task->get_repository(),
                             program.get_translation_context().p2d,
                             merge_datalog_context,
@@ -101,7 +101,7 @@ void AxiomEvaluator<LiftedTag>::compute_extended_state(UnpackedState<LiftedTag>&
 
     auto merge_planning_context = fp::MergePlanningContext { m_workspace.planning_builder, *m_task->get_repository() };
 
-    read_derived_atoms_from_datalog_program(program, unpacked_state, merge_planning_context, m_workspace.facts.fact_sets);
+    read_derived_atoms_from_datalog_program(program, state_builder, merge_planning_context, m_workspace.facts.fact_sets);
 }
 
 void AxiomEvaluator<LiftedTag>::print_summary(size_t verbosity) const

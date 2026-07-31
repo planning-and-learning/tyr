@@ -19,7 +19,6 @@
 #define TYR_TESTS_PLANNING_HEURISTICS_HEURISTIC_HPP_
 
 #include "planning/parser.hpp"
-
 #include "tyr/formalism/formalism.hpp"
 #include "tyr/planning/planning.hpp"
 
@@ -43,7 +42,7 @@ namespace tyr::tests
 
 struct HeuristicExpectation
 {
-    p::CostMode cost_mode;
+    ::tyr::CostMode cost_mode;
     std::optional<ygg::float_t> h;
 };
 
@@ -65,12 +64,12 @@ inline std::optional<ygg::float_t> parse_optional_float(const boost::json::objec
     return boost::json::value_to<ygg::float_t>(*value);
 }
 
-inline p::CostMode parse_cost_mode(const std::string& key)
+inline ::tyr::CostMode parse_cost_mode(const std::string& key)
 {
     if (key == "unit")
-        return p::CostMode::UNIT;
+        return ::tyr::CostMode::UNIT;
     if (key == "general")
-        return p::CostMode::GENERAL;
+        return ::tyr::CostMode::GENERAL;
     throw std::runtime_error("parse_cost_mode(...): unknown cost mode: " + key);
 }
 
@@ -101,7 +100,7 @@ inline std::vector<HeuristicCase> load_cases()
     return result;
 }
 
-template<p::TaskKind Kind>
+template<::tyr::TaskKind Kind>
 struct HeuristicContext
 {
     std::shared_ptr<ygg::ExecutionContext> execution_context;
@@ -109,14 +108,14 @@ struct HeuristicContext
     p::SuccessorGeneratorPtr<Kind> successor_generator;
 };
 
-template<p::TaskKind Kind>
+template<::tyr::TaskKind Kind>
 HeuristicContext<Kind> create_heuristic_context(const std::filesystem::path& domain_file, const std::filesystem::path& task_file)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto lifted_task = p::Task<p::LiftedTag>::create(make_test_parser(domain_file).parse_task(task_file));
+    auto lifted_task = p::Task<::tyr::LiftedTag>::create(make_test_parser(domain_file).parse_task(task_file));
 
     auto task = p::TaskPtr<Kind> {};
-    if constexpr (std::is_same_v<Kind, p::LiftedTag>)
+    if constexpr (std::is_same_v<Kind, ::tyr::LiftedTag>)
         task = std::move(lifted_task);
     else
         task = lifted_task->instantiate_ground_task(*execution_context).task;
@@ -128,10 +127,7 @@ HeuristicContext<Kind> create_heuristic_context(const std::filesystem::path& dom
     return HeuristicContext<Kind> { std::move(execution_context), std::move(task), std::move(successor_generator) };
 }
 
-inline bool should_check(const HeuristicExpectation& expectation)
-{
-    return expectation.h.has_value();
-}
+inline bool should_check(const HeuristicExpectation& expectation) { return expectation.h.has_value(); }
 
 inline void expect_optional_eq(ygg::float_t actual, std::optional<ygg::float_t> expected)
 {
@@ -162,7 +158,6 @@ TEST_P(HeuristicFixtureTest, InitialStateMatchesFixture)
 
         ASSERT_NE(value, std::numeric_limits<ygg::float_t>::infinity());
         expect_optional_eq(value, expectation.h);
-
     }
 }
 

@@ -29,9 +29,9 @@
 
 namespace ygg
 {
-using namespace ::tyr;
+namespace planning = ::tyr::planning;
 
-template<planning::TaskKind Kind>
+template<::tyr::TaskKind Kind>
 struct Data<planning::State<Kind>>
 {
     static_assert(ygg::dependent_false<Kind>::value, "ygg::Data<State<Kind>> is not defined for type T.");

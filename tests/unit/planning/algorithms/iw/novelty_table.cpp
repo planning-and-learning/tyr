@@ -199,10 +199,10 @@ TEST(TyrTests, TyrPlanningIwForEachTupleWithAddedAtomsRespectsRuntimeArity)
 
 TEST(TyrTests, TyrPlanningIwNoveltyPruningStrategyChecksRuntimeArity)
 {
-    auto pruning_strategy = planning::iw::NoveltyPruningStrategy<planning::GroundTag>(2);
+    auto pruning_strategy = planning::iw::NoveltyPruningStrategy<GroundTag>(2);
     EXPECT_EQ(pruning_strategy.get_max_arity(), 2);
 
-    EXPECT_THROW((planning::iw::NoveltyPruningStrategy<planning::GroundTag>(planning::iw::MaxArity + 1)), std::invalid_argument);
+    EXPECT_THROW((planning::iw::NoveltyPruningStrategy<GroundTag>(planning::iw::MaxArity + 1)), std::invalid_argument);
 }
 
 }

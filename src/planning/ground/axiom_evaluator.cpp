@@ -44,9 +44,9 @@ AxiomEvaluator<GroundTag>::AxiomEvaluator(ygg::uint_t index, TaskPtr<GroundTag> 
         m_axiom_match_tree_strata.emplace_back(match_tree::MatchTree<fp::GroundAxiom>::create(stratum, m_task->get_task().get_context()));
 }
 
-void AxiomEvaluator<GroundTag>::compute_extended_state(UnpackedState<GroundTag>& unpacked_state)
+void AxiomEvaluator<GroundTag>::compute_extended_state(ygg::Builder<State<GroundTag>>& state_builder)
 {
-    auto state_context = StateContext<GroundTag> { *m_task, unpacked_state, ygg::float_t(0) };
+    auto state_context = StateContext<GroundTag> { *m_task, state_builder, ygg::float_t(0) };
 
     for (const auto& match_tree : m_axiom_match_tree_strata)
     {
@@ -61,10 +61,10 @@ void AxiomEvaluator<GroundTag>::compute_extended_state(UnpackedState<GroundTag>&
             {
                 const auto atom = axiom.get_head();
 
-                if (!unpacked_state.test(atom))
+                if (!state_builder.test(atom))
                     discovered_new_atom = true;
 
-                unpacked_state.set(atom);
+                state_builder.set(atom);
             }
 
             if (!discovered_new_atom)

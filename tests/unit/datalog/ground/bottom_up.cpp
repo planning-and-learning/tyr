@@ -224,12 +224,12 @@ AtomsByPredicate collect_atoms_by_predicate(const Workspace& workspace)
     return result;
 }
 
-p::CostMode parse_cost_mode(std::string_view config)
+::tyr::CostMode parse_cost_mode(std::string_view config)
 {
     if (config.ends_with("_unit"))
-        return p::CostMode::UNIT;
+        return ::tyr::CostMode::UNIT;
     if (config.ends_with("_general"))
-        return p::CostMode::GENERAL;
+        return ::tyr::CostMode::GENERAL;
     throw std::runtime_error("parse_cost_mode(...): configuration has no cost mode: " + std::string(config));
 }
 
@@ -244,14 +244,14 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchAtOneAndMaximumThreads)
     for (const auto num_threads : { ygg::ExecutionContext::uint_t(1), ygg::ExecutionContext::get_max_num_threads() })
     {
         auto execution_context = ygg::ExecutionContext::create(num_threads);
-        auto lifted_task = p::Task<p::LiftedTag>::create(make_test_parser(test_case.domain_file).parse_task(test_case.task_file));
+        auto lifted_task = p::Task<::tyr::LiftedTag>::create(make_test_parser(test_case.domain_file).parse_task(test_case.task_file));
         auto instantiation = lifted_task->instantiate_ground_task(*execution_context);
         ASSERT_EQ(instantiation.status, p::GroundTaskInstantiationStatus::SUCCESS);
         ASSERT_NE(instantiation.task, nullptr);
         auto task = std::move(instantiation.task);
-        auto axiom_evaluator = p::AxiomEvaluatorFactory<p::GroundTag>().create(task, execution_context);
-        auto state_repository = p::StateRepositoryFactory<p::GroundTag>().create(task, axiom_evaluator);
-        auto successor_generator = p::SuccessorGeneratorFactory<p::GroundTag>().create(task, execution_context, state_repository);
+        auto axiom_evaluator = p::AxiomEvaluatorFactory<::tyr::GroundTag>().create(task, execution_context);
+        auto state_repository = p::StateRepositoryFactory<::tyr::GroundTag>().create(task, axiom_evaluator);
+        auto successor_generator = p::SuccessorGeneratorFactory<::tyr::GroundTag>().create(task, execution_context, state_repository);
         const auto initial_node = successor_generator->get_initial_node();
 
         for (size_t config_index = 0; config_index < kConfigNames.size(); ++config_index)
@@ -264,21 +264,21 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchAtOneAndMaximumThreads)
             {
                 if (config.starts_with("rpg_sum_override_"))
                 {
-                    auto heuristic = p::AddRPGHeuristic<p::GroundTag>::create(task, execution_context, parse_cost_mode(config));
+                    auto heuristic = p::AddRPGHeuristic<::tyr::GroundTag>::create(task, execution_context, parse_cost_mode(config));
                     heuristic->evaluate(initial_node.get_state());
                     return collect_atoms_by_predicate(heuristic->get_workspace());
                 }
 
                 if (config.starts_with("rpg_max_override_"))
                 {
-                    auto heuristic = p::MaxRPGHeuristic<p::GroundTag>::create(task, execution_context, parse_cost_mode(config));
+                    auto heuristic = p::MaxRPGHeuristic<::tyr::GroundTag>::create(task, execution_context, parse_cost_mode(config));
                     heuristic->evaluate(initial_node.get_state());
                     return collect_atoms_by_predicate(heuristic->get_workspace());
                 }
 
                 if (config.starts_with("rpg_achiever_max_override_"))
                 {
-                    auto heuristic = p::LMCutHeuristic<p::GroundTag>::create(task, execution_context, parse_cost_mode(config));
+                    auto heuristic = p::LMCutHeuristic<::tyr::GroundTag>::create(task, execution_context, parse_cost_mode(config));
                     heuristic->evaluate(initial_node.get_state());
                     return collect_atoms_by_predicate(heuristic->get_workspace());
                 }

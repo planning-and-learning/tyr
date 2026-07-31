@@ -19,7 +19,7 @@
 
 namespace tyr::tests
 {
-using StatisticsTaskKind = ::tyr::planning::GroundTag;
+using StatisticsTaskKind = GroundTag;
 inline constexpr const char* kStatisticsFixture = "tests/fixtures/planning/algorithms/ground/siw.json";
 }
 

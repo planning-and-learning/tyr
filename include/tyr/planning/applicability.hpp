@@ -280,7 +280,7 @@ ygg::float_t evaluate(::tyr::formalism::planning::GroundFunctionTermView<::tyr::
 template<TaskKind Kind>
 ygg::float_t evaluate(::tyr::formalism::planning::GroundFunctionTermView<::tyr::formalism::FluentTag> element, const StateContext<Kind>& context)
 {
-    return context.unpacked_state.get(element.get_index());
+    return context.state_builder.get(element.get_index());
 }
 
 template<TaskKind Kind>
@@ -364,7 +364,7 @@ bool is_applicable(::tyr::formalism::planning::GroundLiteralView<::tyr::formalis
 template<TaskKind Kind>
 bool is_applicable(::tyr::formalism::planning::GroundLiteralView<::tyr::formalism::DerivedTag> element, const StateContext<Kind>& context)
 {
-    return context.unpacked_state.test(element.get_atom().get_index()) == element.get_polarity();
+    return context.state_builder.test(element.get_atom().get_index()) == element.get_polarity();
 }
 
 template<TaskKind Kind, ::tyr::formalism::FactKind T>
@@ -378,7 +378,7 @@ bool is_applicable(::tyr::formalism::planning::FDRFactView<::tyr::formalism::Flu
 {
     assert(element.has_value());
 
-    const auto value = context.unpacked_state.get(element.get_variable().get_index());
+    const auto value = context.state_builder.get(element.get_variable().get_index());
 
     if constexpr (std::same_as<P, ::tyr::formalism::PositiveTag>)
         return value == element.get_value();
@@ -425,7 +425,7 @@ bool is_applicable(::tyr::formalism::planning::GroundNumericEffectView<::tyr::fo
     // Check fterm is well-defined in context
     if (element.get_operator() != ::tyr::formalism::NumericEffectOperatorKind::Assign)
     {
-        if (std::isnan(context.unpacked_state.get(fterm_index)))
+        if (std::isnan(context.state_builder.get(fterm_index)))
             return false;  /// target function is undefined and operator is not assign
     }
 

@@ -84,16 +84,16 @@ namespace tp = tyr::planning;
 // Parse and translate a task over a domain.
 auto parser = tfp::Parser("domain.pddl");
 // Instantiate a lifted task.
-auto task = tp::Task<tp::LiftedTag>::create(parser.parse_task("problem.pddl"));
+auto task = tp::Task<tyr::LiftedTag>::create(parser.parse_task("problem.pddl"));
 
 // Instantiate a single-threaded execution environment
 auto execution_context = ygg::ExecutionContext::create(1);
 
 // Instantiate the planning objects. Factories assign unique context indices so
 // state views from different state repositories hash and compare correctly.
-auto axiom_evaluator_factory = tp::AxiomEvaluatorFactory<tp::LiftedTag>();
-auto state_repository_factory = tp::StateRepositoryFactory<tp::LiftedTag>();
-auto successor_generator_factory = tp::SuccessorGeneratorFactory<tp::LiftedTag>();
+auto axiom_evaluator_factory = tp::AxiomEvaluatorFactory<tyr::LiftedTag>();
+auto state_repository_factory = tp::StateRepositoryFactory<tyr::LiftedTag>();
+auto successor_generator_factory = tp::SuccessorGeneratorFactory<tyr::LiftedTag>();
 
 auto axiom_evaluator = axiom_evaluator_factory.create(task, execution_context);
 auto state_repository = state_repository_factory.create(task, axiom_evaluator);

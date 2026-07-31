@@ -32,23 +32,22 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 namespace planning = ::tyr::planning;
 template<>
-struct View<ygg::Index<planning::State<planning::LiftedTag>>, std::shared_ptr<planning::StateRepository<planning::LiftedTag>>>
+struct View<ygg::Index<planning::State<::tyr::LiftedTag>>, std::shared_ptr<planning::StateRepository<::tyr::LiftedTag>>>
 {
 public:
-    using TaskType = planning::Task<planning::LiftedTag>;
+    using TaskType = planning::Task<::tyr::LiftedTag>;
 
-    View(std::shared_ptr<planning::StateRepository<planning::LiftedTag>> owner,
-         ygg::SharedObjectPoolPtr<planning::UnpackedState<planning::LiftedTag>> unpacked) noexcept;
+    View(std::shared_ptr<planning::StateRepository<::tyr::LiftedTag>> owner,
+         ygg::SharedObjectPoolPtr<Builder<planning::State<::tyr::LiftedTag>>> state_builder) noexcept;
     View(const View&);
     View(View&&) noexcept;
     View& operator=(const View&);
     View& operator=(View&&) noexcept;
     ~View();
 
-    ygg::Index<planning::State<planning::LiftedTag>> get_index() const;
+    ygg::Index<planning::State<::tyr::LiftedTag>> get_index() const;
 
     /**
      * IndexableStateConcept
@@ -75,7 +74,7 @@ public:
      */
 
     planning::AtomRange<::tyr::formalism::StaticTag> get_static_atoms() const noexcept;
-    planning::FDRFactRange<planning::LiftedTag, ::tyr::formalism::FluentTag> get_fluent_facts() const noexcept;
+    planning::FDRFactRange<::tyr::LiftedTag, ::tyr::formalism::FluentTag> get_fluent_facts() const noexcept;
     planning::AtomRange<::tyr::formalism::DerivedTag> get_derived_atoms() const noexcept;
     planning::FunctionTermValueRange<::tyr::formalism::StaticTag> get_static_fterm_values() const noexcept;
     planning::FunctionTermValueRange<::tyr::formalism::FluentTag> get_fluent_fterm_values() const noexcept;
@@ -95,10 +94,10 @@ public:
      */
 
     const std::shared_ptr<::tyr::formalism::planning::Repository>& get_repository() const noexcept;
-    const std::shared_ptr<planning::StateRepository<planning::LiftedTag>>& get_state_repository() const noexcept;
-    const planning::UnpackedState<planning::LiftedTag>& get_unpacked_state() const noexcept;
+    const std::shared_ptr<planning::StateRepository<::tyr::LiftedTag>>& get_state_repository() const noexcept;
+    const Builder<planning::State<::tyr::LiftedTag>>& get_state_builder() const noexcept;
 
-    std::tuple<ygg::Index<planning::State<planning::LiftedTag>>, ygg::uint_t> identifying_members() const noexcept;
+    std::tuple<ygg::Index<planning::State<::tyr::LiftedTag>>, ygg::uint_t> identifying_members() const noexcept;
 
 private:
     template<::tyr::formalism::FactKind T>
@@ -107,11 +106,11 @@ private:
     template<::tyr::formalism::FactKind T>
     const std::vector<ygg::float_t>& get_numeric_variables() const noexcept;
 
-    std::shared_ptr<planning::StateRepository<planning::LiftedTag>> m_state_repository;
-    ygg::SharedObjectPoolPtr<planning::UnpackedState<planning::LiftedTag>> m_unpacked;
+    std::shared_ptr<planning::StateRepository<::tyr::LiftedTag>> m_state_repository;
+    ygg::SharedObjectPoolPtr<Builder<planning::State<::tyr::LiftedTag>>> m_state_builder;
 };
 
-using LiftedStateView = ygg::View<ygg::Index<planning::State<planning::LiftedTag>>, std::shared_ptr<planning::StateRepository<planning::LiftedTag>>>;
+using LiftedStateView = ygg::View<ygg::Index<planning::State<::tyr::LiftedTag>>, std::shared_ptr<planning::StateRepository<::tyr::LiftedTag>>>;
 
 inline auto LiftedStateView::get_static_atoms_view() const noexcept
 {

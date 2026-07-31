@@ -59,23 +59,24 @@ using GroundUnpackedAtomStorage = typename GroundUnpackedAtomStorageType<T>::typ
 
 }
 
-namespace tyr
+namespace ygg
 {
 
 template<>
-struct Builder<planning::State<planning::GroundTag>>
+struct Builder<::tyr::planning::State<::tyr::GroundTag>>
 {
 public:
-    using TaskType = planning::Task<planning::GroundTag>;
+    using StateType = ::tyr::planning::State<::tyr::GroundTag>;
+    using TaskType = ::tyr::planning::Task<::tyr::GroundTag>;
 
     Builder() = default;
 
     /**
-     * UnpackedStateConcept
+     * StateBuilderConcept
      */
 
-    ygg::Index<planning::State<planning::GroundTag>> get_index() const;
-    void set(ygg::Index<planning::State<planning::GroundTag>> index);
+    ygg::Index<StateType> get_index() const;
+    void set(ygg::Index<StateType> index);
 
     ::tyr::formalism::planning::FDRValue get(ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const;
     ::tyr::formalism::planning::FDRValue get(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const;
@@ -92,7 +93,7 @@ public:
     void clear();
     void clear_unextended_part();
     void clear_extended_part();
-    void assign_unextended_part(const planning::UnpackedState<planning::GroundTag>& other);
+    void assign_unextended_part(const Builder& other);
 
     /**
      * For GroundTag
@@ -102,22 +103,22 @@ public:
     void resize_derived_atoms(size_t num_derived_atoms);
 
     template<::tyr::formalism::FactKind T>
-    planning::GroundUnpackedAtomStorage<T>& get_atoms() noexcept;
+    ::tyr::planning::GroundUnpackedAtomStorage<T>& get_atoms() noexcept;
     template<::tyr::formalism::FactKind T>
-    const planning::GroundUnpackedAtomStorage<T>& get_atoms() const noexcept;
+    const ::tyr::planning::GroundUnpackedAtomStorage<T>& get_atoms() const noexcept;
 
-    planning::NumericUnpackedStorage<planning::GroundTag>& get_numeric_variables() noexcept;
-    const planning::NumericUnpackedStorage<planning::GroundTag>& get_numeric_variables() const noexcept;
+    ::tyr::planning::NumericUnpackedStorage<::tyr::GroundTag>& get_numeric_variables() noexcept;
+    const ::tyr::planning::NumericUnpackedStorage<::tyr::GroundTag>& get_numeric_variables() const noexcept;
 
 private:
-    ygg::Index<planning::State<planning::GroundTag>> m_index;
+    ygg::Index<StateType> m_index;
 
-    planning::FactUnpackedStorage<planning::GroundTag> m_fact_storage;
-    planning::AtomUnpackedStorage<planning::GroundTag> m_atom_storage;
-    planning::NumericUnpackedStorage<planning::GroundTag> m_numeric_storage;
+    ::tyr::planning::FactUnpackedStorage<::tyr::GroundTag> m_fact_storage;
+    ::tyr::planning::AtomUnpackedStorage<::tyr::GroundTag> m_atom_storage;
+    ::tyr::planning::NumericUnpackedStorage<::tyr::GroundTag> m_numeric_storage;
 };
 
-static_assert(planning::UnpackedStateConcept<planning::UnpackedState<planning::GroundTag>, planning::GroundTag>);
+static_assert(::tyr::planning::StateBuilderConcept<Builder<::tyr::planning::State<::tyr::GroundTag>>, ::tyr::GroundTag>);
 
 }
 

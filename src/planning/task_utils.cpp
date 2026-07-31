@@ -37,7 +37,7 @@ namespace fp = tyr::formalism::planning;
 namespace tyr::planning
 {
 
-void insert_fluent_atoms_to_fact_set(const UnpackedState<LiftedTag>& state,
+void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
                                      const ::tyr::formalism::planning::Repository& repository,
                                      const ygg::UnorderedMap<::tyr::formalism::planning::PredicateView<::tyr::formalism::FluentTag>,
                                                              ::tyr::formalism::datalog::PredicateView<::tyr::formalism::FluentTag>>& fluent_to_fluent_predicate,
@@ -49,7 +49,7 @@ void insert_fluent_atoms_to_fact_set(const UnpackedState<LiftedTag>& state,
 }
 
 void insert_derived_atoms_to_fact_set(
-    const UnpackedState<LiftedTag>& state,
+    const ygg::Builder<State<LiftedTag>>& state,
     const ::tyr::formalism::planning::Repository& repository,
     const ygg::UnorderedMap<::tyr::formalism::planning::PredicateView<::tyr::formalism::DerivedTag>,
                             ::tyr::formalism::datalog::PredicateView<::tyr::formalism::FluentTag>>& derived_to_fluent_predicate,
@@ -60,7 +60,7 @@ void insert_derived_atoms_to_fact_set(
         fact_sets.predicate.insert(fp::merge_p2d<f::DerivedTag, f::FluentTag>(atom, derived_to_fluent_predicate, merge_context).first);
 }
 
-void insert_numeric_variables_to_fact_set(const UnpackedState<LiftedTag>& state,
+void insert_numeric_variables_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
                                           const ::tyr::formalism::planning::Repository& repository,
                                           fp::MergeDatalogContext& merge_context,
                                           datalog::TaggedFactSets<f::FluentTag>& fact_sets)
@@ -69,7 +69,7 @@ void insert_numeric_variables_to_fact_set(const UnpackedState<LiftedTag>& state,
         fact_sets.function.insert(fp::merge_p2d(fterm, merge_context).first, value);
 }
 
-void insert_extended_state(const UnpackedState<LiftedTag>& unpacked_state,
+void insert_extended_state(const ygg::Builder<State<LiftedTag>>& state_builder,
                            const fp::Repository& atoms_context,
                            const P2DTranslationContext<LiftedTag>& translation_context,
                            fp::MergeDatalogContext& merge_context,
@@ -79,14 +79,14 @@ void insert_extended_state(const UnpackedState<LiftedTag>& unpacked_state,
     fact_sets.reset();
     assignment_sets.reset();
 
-    insert_fluent_atoms_to_fact_set(unpacked_state, atoms_context, translation_context.fluent_to_fluent_predicate, merge_context, fact_sets);
-    insert_derived_atoms_to_fact_set(unpacked_state, atoms_context, translation_context.derived_to_fluent_predicate, merge_context, fact_sets);
-    insert_numeric_variables_to_fact_set(unpacked_state, atoms_context, merge_context, fact_sets);
+    insert_fluent_atoms_to_fact_set(state_builder, atoms_context, translation_context.fluent_to_fluent_predicate, merge_context, fact_sets);
+    insert_derived_atoms_to_fact_set(state_builder, atoms_context, translation_context.derived_to_fluent_predicate, merge_context, fact_sets);
+    insert_numeric_variables_to_fact_set(state_builder, atoms_context, merge_context, fact_sets);
 
     assignment_sets.insert(fact_sets);
 }
 
-void insert_unextended_state(const UnpackedState<LiftedTag>& unpacked_state,
+void insert_unextended_state(const ygg::Builder<State<LiftedTag>>& state_builder,
                              const fp::Repository& atoms_context,
                              const P2DTranslationContext<LiftedTag>& translation_context,
                              fp::MergeDatalogContext& merge_context,
@@ -96,8 +96,8 @@ void insert_unextended_state(const UnpackedState<LiftedTag>& unpacked_state,
     fact_sets.reset();
     assignment_sets.reset();
 
-    insert_fluent_atoms_to_fact_set(unpacked_state, atoms_context, translation_context.fluent_to_fluent_predicate, merge_context, fact_sets);
-    insert_numeric_variables_to_fact_set(unpacked_state, atoms_context, merge_context, fact_sets);
+    insert_fluent_atoms_to_fact_set(state_builder, atoms_context, translation_context.fluent_to_fluent_predicate, merge_context, fact_sets);
+    insert_numeric_variables_to_fact_set(state_builder, atoms_context, merge_context, fact_sets);
 
     assignment_sets.insert(fact_sets);
 }

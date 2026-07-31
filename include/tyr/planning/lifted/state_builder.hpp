@@ -57,27 +57,28 @@ using LiftedUnpackedAtomStorage = typename LiftedUnpackedAtomStorageType<T>::typ
 
 }
 
-namespace tyr
+namespace ygg
 {
 
 template<>
-struct Builder<planning::State<planning::LiftedTag>>
+struct Builder<::tyr::planning::State<::tyr::LiftedTag>>
 {
 public:
-    using TaskType = planning::Task<planning::LiftedTag>;
+    using StateType = ::tyr::planning::State<::tyr::LiftedTag>;
+    using TaskType = ::tyr::planning::Task<::tyr::LiftedTag>;
 
     Builder() = default;
 
-    ygg::Index<planning::State<planning::LiftedTag>> get_index() const;
-    void set(ygg::Index<planning::State<planning::LiftedTag>> index);
+    ygg::Index<StateType> get_index() const;
+    void set(ygg::Index<StateType> index);
 
     void clear();
     void clear_unextended_part();
     void clear_extended_part();
-    void assign_unextended_part(const planning::UnpackedState<planning::LiftedTag>& other);
+    void assign_unextended_part(const Builder& other);
 
     /**
-     * UnpackedStateConcept
+     * StateBuilderConcept
      */
 
     ::tyr::formalism::planning::FDRValue get(ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const;
@@ -94,44 +95,44 @@ public:
     bool test(::tyr::formalism::planning::GroundAtomView<::tyr::formalism::DerivedTag> view) const;
     void set(::tyr::formalism::planning::GroundAtomView<::tyr::formalism::DerivedTag> view);
 
-    planning::FDRFactRange<planning::LiftedTag, ::tyr::formalism::FluentTag> get_fluent_facts() const noexcept;
-    planning::AtomRange<::tyr::formalism::DerivedTag> get_derived_atoms() const noexcept;
-    planning::FunctionTermValueRange<::tyr::formalism::FluentTag> get_fluent_fterm_values() const noexcept;
+    ::tyr::planning::FDRFactRange<::tyr::LiftedTag, ::tyr::formalism::FluentTag> get_fluent_facts() const noexcept;
+    ::tyr::planning::AtomRange<::tyr::formalism::DerivedTag> get_derived_atoms() const noexcept;
+    ::tyr::planning::FunctionTermValueRange<::tyr::formalism::FluentTag> get_fluent_fterm_values() const noexcept;
 
     auto get_fluent_facts_view(const ::tyr::formalism::planning::Repository& repository) const noexcept;
     auto get_derived_atoms_view(const ::tyr::formalism::planning::Repository& repository) const noexcept;
     auto get_fluent_fterm_values_view(const ::tyr::formalism::planning::Repository& repository) const noexcept;
 
     template<::tyr::formalism::FactKind T>
-    planning::LiftedUnpackedAtomStorage<T>& get_atoms() noexcept;
+    ::tyr::planning::LiftedUnpackedAtomStorage<T>& get_atoms() noexcept;
     template<::tyr::formalism::FactKind T>
-    const planning::LiftedUnpackedAtomStorage<T>& get_atoms() const noexcept;
+    const ::tyr::planning::LiftedUnpackedAtomStorage<T>& get_atoms() const noexcept;
 
-    planning::NumericUnpackedStorage<planning::LiftedTag>& get_numeric_variables() noexcept;
-    const planning::NumericUnpackedStorage<planning::LiftedTag>& get_numeric_variables() const noexcept;
+    ::tyr::planning::NumericUnpackedStorage<::tyr::LiftedTag>& get_numeric_variables() noexcept;
+    const ::tyr::planning::NumericUnpackedStorage<::tyr::LiftedTag>& get_numeric_variables() const noexcept;
 
 private:
-    ygg::Index<planning::State<planning::LiftedTag>> m_index;
+    ygg::Index<StateType> m_index;
 
-    planning::FactUnpackedStorage<planning::LiftedTag> m_fact_storage;
-    planning::AtomUnpackedStorage<planning::LiftedTag> m_atom_storage;
-    planning::NumericUnpackedStorage<planning::LiftedTag> m_numeric_storage;
+    ::tyr::planning::FactUnpackedStorage<::tyr::LiftedTag> m_fact_storage;
+    ::tyr::planning::AtomUnpackedStorage<::tyr::LiftedTag> m_atom_storage;
+    ::tyr::planning::NumericUnpackedStorage<::tyr::LiftedTag> m_numeric_storage;
 };
 
-static_assert(planning::UnpackedStateConcept<planning::UnpackedState<planning::LiftedTag>, planning::LiftedTag>);
+static_assert(::tyr::planning::StateBuilderConcept<Builder<::tyr::planning::State<::tyr::LiftedTag>>, ::tyr::LiftedTag>);
 
-inline auto Builder<planning::State<planning::LiftedTag>>::get_fluent_facts_view(const ::tyr::formalism::planning::Repository& repository_) const noexcept
+inline auto Builder<::tyr::planning::State<::tyr::LiftedTag>>::get_fluent_facts_view(const ::tyr::formalism::planning::Repository& repository_) const noexcept
 {
     return get_fluent_facts() | std::views::transform([repository = &repository_](auto id) { return ygg::make_view(id, *repository); });
 }
 
-inline auto Builder<planning::State<planning::LiftedTag>>::get_derived_atoms_view(const ::tyr::formalism::planning::Repository& repository_) const noexcept
+inline auto Builder<::tyr::planning::State<::tyr::LiftedTag>>::get_derived_atoms_view(const ::tyr::formalism::planning::Repository& repository_) const noexcept
 {
     return get_derived_atoms() | std::views::transform([repository = &repository_](auto id) { return ygg::make_view(id, *repository); });
 }
 
 inline auto
-Builder<planning::State<planning::LiftedTag>>::get_fluent_fterm_values_view(const ::tyr::formalism::planning::Repository& repository_) const noexcept
+Builder<::tyr::planning::State<::tyr::LiftedTag>>::get_fluent_fterm_values_view(const ::tyr::formalism::planning::Repository& repository_) const noexcept
 {
     return get_fluent_fterm_values()
            | std::views::transform([repository = &repository_](auto&& pair) { return std::make_pair(ygg::make_view(pair.first, *repository), pair.second); });

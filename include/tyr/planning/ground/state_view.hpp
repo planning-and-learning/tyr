@@ -33,23 +33,22 @@
 
 namespace ygg
 {
-using namespace ::tyr;
 namespace planning = ::tyr::planning;
 template<>
-struct View<ygg::Index<planning::State<planning::GroundTag>>, std::shared_ptr<planning::StateRepository<planning::GroundTag>>>
+struct View<ygg::Index<planning::State<::tyr::GroundTag>>, std::shared_ptr<planning::StateRepository<::tyr::GroundTag>>>
 {
 public:
-    using TaskType = planning::Task<planning::GroundTag>;
+    using TaskType = planning::Task<::tyr::GroundTag>;
 
-    View(std::shared_ptr<planning::StateRepository<planning::GroundTag>> owner,
-         ygg::SharedObjectPoolPtr<planning::UnpackedState<planning::GroundTag>> unpacked) noexcept;
+    View(std::shared_ptr<planning::StateRepository<::tyr::GroundTag>> owner,
+         ygg::SharedObjectPoolPtr<Builder<planning::State<::tyr::GroundTag>>> state_builder) noexcept;
     View(const View&);
     View(View&&) noexcept;
     View& operator=(const View&);
     View& operator=(View&&) noexcept;
     ~View();
 
-    ygg::Index<planning::State<planning::GroundTag>> get_index() const;
+    ygg::Index<planning::State<::tyr::GroundTag>> get_index() const;
 
     /**
      * IndexableStateConcept
@@ -76,7 +75,7 @@ public:
      */
 
     planning::AtomRange<::tyr::formalism::StaticTag> get_static_atoms() const noexcept;
-    planning::FDRFactRange<planning::GroundTag, ::tyr::formalism::FluentTag> get_fluent_facts() const noexcept;
+    planning::FDRFactRange<::tyr::GroundTag, ::tyr::formalism::FluentTag> get_fluent_facts() const noexcept;
     planning::AtomRange<::tyr::formalism::DerivedTag> get_derived_atoms() const noexcept;
     planning::FunctionTermValueRange<::tyr::formalism::StaticTag> get_static_fterm_values() const noexcept;
     planning::FunctionTermValueRange<::tyr::formalism::FluentTag> get_fluent_fterm_values() const noexcept;
@@ -96,10 +95,10 @@ public:
      */
 
     const std::shared_ptr<::tyr::formalism::planning::Repository>& get_repository() const noexcept;
-    const std::shared_ptr<planning::StateRepository<planning::GroundTag>>& get_state_repository() const noexcept;
-    const planning::UnpackedState<planning::GroundTag>& get_unpacked_state() const noexcept;
+    const std::shared_ptr<planning::StateRepository<::tyr::GroundTag>>& get_state_repository() const noexcept;
+    const Builder<planning::State<::tyr::GroundTag>>& get_state_builder() const noexcept;
 
-    std::tuple<ygg::Index<planning::State<planning::GroundTag>>, ygg::uint_t> identifying_members() const noexcept;
+    std::tuple<ygg::Index<planning::State<::tyr::GroundTag>>, ygg::uint_t> identifying_members() const noexcept;
 
     template<::tyr::formalism::FactKind T>
     const boost::dynamic_bitset<>& get_atoms() const noexcept;
@@ -110,11 +109,11 @@ public:
     const std::vector<ygg::float_t>& get_numeric_variables() const noexcept;
 
 private:
-    std::shared_ptr<planning::StateRepository<planning::GroundTag>> m_state_repository;
-    ygg::SharedObjectPoolPtr<planning::UnpackedState<planning::GroundTag>> m_unpacked;
+    std::shared_ptr<planning::StateRepository<::tyr::GroundTag>> m_state_repository;
+    ygg::SharedObjectPoolPtr<Builder<planning::State<::tyr::GroundTag>>> m_state_builder;
 };
 
-using GroundStateView = ygg::View<ygg::Index<planning::State<planning::GroundTag>>, std::shared_ptr<planning::StateRepository<planning::GroundTag>>>;
+using GroundStateView = ygg::View<ygg::Index<planning::State<::tyr::GroundTag>>, std::shared_ptr<planning::StateRepository<::tyr::GroundTag>>>;
 
 inline auto GroundStateView::get_static_atoms_view() const noexcept
 {

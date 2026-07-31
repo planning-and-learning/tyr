@@ -29,7 +29,7 @@ template<TaskKind Kind>
 struct StateContext
 {
     const Task<Kind>& task;
-    const UnpackedState<Kind>& unpacked_state;
+    const ygg::Builder<State<Kind>>& state_builder;
     ygg::float_t auxiliary_value;
 };
 

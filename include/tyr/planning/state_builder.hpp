@@ -30,7 +30,7 @@ namespace tyr::planning
 {
 
 template<typename T, typename Kind>
-concept UnpackedStateConcept = requires(T& s,
+concept StateBuilderConcept = requires(T& s,
                                         const T& cs,
                                         ygg::Index<State<Kind>> index,
                                         ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> variable,

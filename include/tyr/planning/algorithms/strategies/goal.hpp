@@ -58,7 +58,7 @@ public:
     bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state) override
     {
         static_cast<void>(seed_state);
-        const auto state_context = StateContext { *state.get_state_repository()->get_task(), state.get_unpacked_state(), ygg::float_t { 0 } };
+        const auto state_context = StateContext { *state.get_state_repository()->get_task(), state.get_state_builder(), ygg::float_t { 0 } };
         return is_dynamically_applicable(m_goal, state_context);
     }
 
@@ -91,7 +91,7 @@ public:
 private:
     ygg::uint_t count_satisfied_goals(const StateView<Kind>& state) const
     {
-        const auto state_context = StateContext { *state.get_state_repository()->get_task(), state.get_unpacked_state(), ygg::float_t { 0 } };
+        const auto state_context = StateContext { *state.get_state_repository()->get_task(), state.get_state_builder(), ygg::float_t { 0 } };
         auto result = ygg::uint_t { 0 };
 
         for (auto literal : m_goal.template get_literals<::tyr::formalism::StaticTag>())

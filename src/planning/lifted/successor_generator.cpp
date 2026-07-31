@@ -93,7 +93,7 @@ SuccessorGenerator<LiftedTag>::SuccessorGenerator(ygg::uint_t index,
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_initial_node()
 {
     auto initial_state = m_state_repository->get_initial_state();
-    const auto state_context = StateContext<LiftedTag>(*m_task, initial_state.get_unpacked_state(), 0);
+    const auto state_context = StateContext<LiftedTag>(*m_task, initial_state.get_state_builder(), 0);
     const auto state_metric = evaluate_metric(m_task->get_task().get_metric(), m_task->get_task().get_auxiliary_fterm_value(), state_context);
     return Node<LiftedTag>(std::move(initial_state), state_metric);
 }
@@ -126,7 +126,7 @@ void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<Lifte
     compute_action_facts(node);
 
     auto grounder_context = fp::GrounderContext { m_workspace.planning_builder, *m_task->get_repository(), m_workspace.binding };
-    const auto state_context = StateContext<LiftedTag>(*m_task, node.get_state().get_unpacked_state(), node.get_metric());
+    const auto state_context = StateContext<LiftedTag>(*m_task, node.get_state().get_state_builder(), node.get_metric());
 
     for_each_action_binding(
         m_workspace,
@@ -154,7 +154,7 @@ void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<Lifte
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag>& node, fp::GroundActionView action)
 {
     const auto& state = node.get_state();
-    const auto state_context = StateContext<LiftedTag>(*m_task, state.get_unpacked_state(), node.get_metric());
+    const auto state_context = StateContext<LiftedTag>(*m_task, state.get_state_builder(), node.get_metric());
     return m_executor.apply_action(state_context, action, *m_state_repository);
 }
 
@@ -204,7 +204,7 @@ void SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<Li
 
     compute_action_facts(node);
 
-    const auto state_context = StateContext<LiftedTag>(*m_task, node.get_state().get_unpacked_state(), node.get_metric());
+    const auto state_context = StateContext<LiftedTag>(*m_task, node.get_state().get_state_builder(), node.get_metric());
     auto grounder_context = fp::GrounderContext { m_workspace.planning_builder, *m_task->get_repository(), m_workspace.binding };
 
     for_each_action_binding(m_workspace,
@@ -238,7 +238,7 @@ SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag>& node,
         m_workspace.binding.push_back(object);
 
     auto grounder_context = fp::GrounderContext { m_workspace.planning_builder, *m_task->get_repository(), m_workspace.binding };
-    const auto state_context = StateContext<LiftedTag>(*m_task, node.get_state().get_unpacked_state(), node.get_metric());
+    const auto state_context = StateContext<LiftedTag>(*m_task, node.get_state().get_state_builder(), node.get_metric());
     const auto action = ygg::make_view(binding.relation, *m_task->get_repository());
 
     return m_executor.apply_action(state_context, action, grounder_context, *m_task->get_fdr_context(), *m_state_repository);
@@ -252,7 +252,7 @@ void SuccessorGenerator<LiftedTag>::for_each_applicable_action_binding_impl(
 {
     compute_action_facts(node);
 
-    const auto state_context = StateContext<LiftedTag>(*m_task, node.get_state().get_unpacked_state(), node.get_metric());
+    const auto state_context = StateContext<LiftedTag>(*m_task, node.get_state().get_state_builder(), node.get_metric());
     auto grounder_context = fp::GrounderContext { m_workspace.planning_builder, *m_task->get_repository(), scratch_binding.objects };
     const auto& mapping = m_action_program.get_predicate_to_action_mapping();
 
@@ -286,7 +286,7 @@ void SuccessorGenerator<LiftedTag>::for_each_applicable_action_binding_impl(
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_node(ygg::Index<State<LiftedTag>> state_index)
 {
     auto state = m_state_repository->get_registered_state(state_index);
-    const auto state_context = StateContext<LiftedTag>(*m_task, state.get_unpacked_state(), 0);
+    const auto state_context = StateContext<LiftedTag>(*m_task, state.get_state_builder(), 0);
     const auto state_metric = evaluate_metric(m_task->get_task().get_metric(), m_task->get_task().get_auxiliary_fterm_value(), state_context);
     return Node<LiftedTag>(std::move(state), state_metric);
 }
@@ -316,7 +316,7 @@ void SuccessorGenerator<LiftedTag>::compute_action_facts(const Node<LiftedTag>& 
     auto merge_context = fp::MergeDatalogContext { m_workspace.datalog_builder, m_workspace.workspace_repository };
     const auto& program = m_action_program;
 
-    insert_extended_state(state.get_unpacked_state(),
+    insert_extended_state(state.get_state_builder(),
                           *m_task->get_repository(),
                           program.get_translation_context().p2d,
                           merge_context,

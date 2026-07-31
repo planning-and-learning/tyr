@@ -39,7 +39,7 @@ static_assert(requires(const Data& data, const View& view) {
     view.get_fluent_fterm_values_view();
     view.get_repository();
     view.get_state_repository();
-    view.get_unpacked_state();
+    view.get_state_builder();
     view.template get_atoms<f::FluentTag>();
     view.template get_atoms<f::DerivedTag>();
     view.get_fluent_values();

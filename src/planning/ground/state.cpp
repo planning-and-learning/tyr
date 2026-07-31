@@ -26,84 +26,85 @@
 namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;
 
-namespace tyr
+namespace ygg
 {
-using namespace planning;
+namespace planning = ::tyr::planning;
+using GroundStateBuilder = Builder<planning::State<::tyr::GroundTag>>;
 
-ygg::Index<State<GroundTag>> UnpackedState<GroundTag>::get_index() const { return m_index; }
+ygg::Index<planning::State<::tyr::GroundTag>> GroundStateBuilder::get_index() const { return m_index; }
 
-void UnpackedState<GroundTag>::set(ygg::Index<State<GroundTag>> index) { m_index = index; }
+void GroundStateBuilder::set(ygg::Index<planning::State<::tyr::GroundTag>> index) { m_index = index; }
 
-fp::FDRValue UnpackedState<GroundTag>::get(ygg::Index<fp::FDRVariable<f::FluentTag>> index) const
+fp::FDRValue GroundStateBuilder::get(ygg::Index<fp::FDRVariable<f::FluentTag>> index) const
 {
     assert(ygg::uint_t(index) < m_fact_storage.values.size());
     return fp::FDRValue(m_fact_storage.values[ygg::uint_t(index)]);
 }
 
-fp::FDRValue UnpackedState<GroundTag>::get(fp::FDRVariableView<f::FluentTag> view) const { return get(view.get_index()); }
+fp::FDRValue GroundStateBuilder::get(fp::FDRVariableView<f::FluentTag> view) const { return get(view.get_index()); }
 
-void UnpackedState<GroundTag>::set(ygg::Data<fp::FDRFact<f::FluentTag>> fact)
+void GroundStateBuilder::set(ygg::Data<fp::FDRFact<f::FluentTag>> fact)
 {
     assert(ygg::uint_t(fact.variable) < m_fact_storage.values.size());
     m_fact_storage.values[ygg::uint_t(fact.variable)] = ygg::uint_t(fact.value);
 }
 
-ygg::float_t UnpackedState<GroundTag>::get(ygg::Index<fp::GroundFunctionTerm<f::FluentTag>> index) const
+ygg::float_t GroundStateBuilder::get(ygg::Index<fp::GroundFunctionTerm<f::FluentTag>> index) const
 {
     return ygg::get(ygg::uint_t(index), m_numeric_storage.values, std::numeric_limits<ygg::float_t>::quiet_NaN());
 }
 
-void UnpackedState<GroundTag>::set(ygg::Index<fp::GroundFunctionTerm<f::FluentTag>> index, ygg::float_t value)
+void GroundStateBuilder::set(ygg::Index<fp::GroundFunctionTerm<f::FluentTag>> index, ygg::float_t value)
 {
     ygg::set(ygg::uint_t(index), value, m_numeric_storage.values, std::numeric_limits<ygg::float_t>::quiet_NaN());
 }
 
-bool UnpackedState<GroundTag>::test(ygg::Index<fp::GroundAtom<f::DerivedTag>> index) const
+bool GroundStateBuilder::test(ygg::Index<fp::GroundAtom<f::DerivedTag>> index) const
 {
     assert(ygg::uint_t(index) < m_atom_storage.indices.size());
     return m_atom_storage.indices.test(ygg::uint_t(index));
 }
 
-void UnpackedState<GroundTag>::set(ygg::Index<fp::GroundAtom<f::DerivedTag>> index)
+void GroundStateBuilder::set(ygg::Index<fp::GroundAtom<f::DerivedTag>> index)
 {
     assert(ygg::uint_t(index) < m_atom_storage.indices.size());
     m_atom_storage.indices.set(ygg::uint_t(index));
 }
 
-bool UnpackedState<GroundTag>::test(fp::GroundAtomView<f::DerivedTag> view) const { return test(view.get_index()); }
+bool GroundStateBuilder::test(fp::GroundAtomView<f::DerivedTag> view) const { return test(view.get_index()); }
 
-void UnpackedState<GroundTag>::set(fp::GroundAtomView<f::DerivedTag> view) { set(view.get_index()); }
+void GroundStateBuilder::set(fp::GroundAtomView<f::DerivedTag> view) { set(view.get_index()); }
 
-void UnpackedState<GroundTag>::clear()
+void GroundStateBuilder::clear()
 {
     clear_unextended_part();
     clear_extended_part();
 }
 
-void UnpackedState<GroundTag>::clear_unextended_part()
+void GroundStateBuilder::clear_unextended_part()
 {
     m_fact_storage.values.clear();
     m_numeric_storage.values.clear();
 }
 
-void UnpackedState<GroundTag>::clear_extended_part() { m_atom_storage.indices.clear(); }
+void GroundStateBuilder::clear_extended_part() { m_atom_storage.indices.clear(); }
 
-void UnpackedState<GroundTag>::assign_unextended_part(const UnpackedState<GroundTag>& other)
+void GroundStateBuilder::assign_unextended_part(const GroundStateBuilder& other)
 {
     m_fact_storage = other.m_fact_storage;
     m_numeric_storage = other.m_numeric_storage;
 }
 
-void UnpackedState<GroundTag>::resize_fluent_facts(size_t num_fluent_facts) { m_fact_storage.values.resize(num_fluent_facts, 0); }
+void GroundStateBuilder::resize_fluent_facts(size_t num_fluent_facts) { m_fact_storage.values.resize(num_fluent_facts, 0); }
 
-void UnpackedState<GroundTag>::resize_derived_atoms(size_t num_derived_atoms) { m_atom_storage.indices.resize(num_derived_atoms, false); }
+void GroundStateBuilder::resize_derived_atoms(size_t num_derived_atoms) { m_atom_storage.indices.resize(num_derived_atoms, false); }
 
-NumericUnpackedStorage<GroundTag>& UnpackedState<GroundTag>::get_numeric_variables() noexcept { return m_numeric_storage; }
+planning::NumericUnpackedStorage<::tyr::GroundTag>& GroundStateBuilder::get_numeric_variables() noexcept { return m_numeric_storage; }
 
-const NumericUnpackedStorage<GroundTag>& UnpackedState<GroundTag>::get_numeric_variables() const noexcept { return m_numeric_storage; }
+const planning::NumericUnpackedStorage<::tyr::GroundTag>& GroundStateBuilder::get_numeric_variables() const noexcept { return m_numeric_storage; }
 
 template<f::FactKind T>
-GroundUnpackedAtomStorage<T>& UnpackedState<GroundTag>::get_atoms() noexcept
+planning::GroundUnpackedAtomStorage<T>& GroundStateBuilder::get_atoms() noexcept
 {
     if constexpr (std::same_as<T, f::FluentTag>)
         return m_fact_storage;
@@ -112,7 +113,7 @@ GroundUnpackedAtomStorage<T>& UnpackedState<GroundTag>::get_atoms() noexcept
 }
 
 template<f::FactKind T>
-const GroundUnpackedAtomStorage<T>& UnpackedState<GroundTag>::get_atoms() const noexcept
+const planning::GroundUnpackedAtomStorage<T>& GroundStateBuilder::get_atoms() const noexcept
 {
     if constexpr (std::same_as<T, f::FluentTag>)
         return m_fact_storage;
@@ -120,22 +121,21 @@ const GroundUnpackedAtomStorage<T>& UnpackedState<GroundTag>::get_atoms() const 
         return m_atom_storage;
 }
 
-template FactUnpackedStorage<GroundTag>& UnpackedState<GroundTag>::get_atoms<f::FluentTag>() noexcept;
-template AtomUnpackedStorage<GroundTag>& UnpackedState<GroundTag>::get_atoms<f::DerivedTag>() noexcept;
-template const FactUnpackedStorage<GroundTag>& UnpackedState<GroundTag>::get_atoms<f::FluentTag>() const noexcept;
-template const AtomUnpackedStorage<GroundTag>& UnpackedState<GroundTag>::get_atoms<f::DerivedTag>() const noexcept;
+template planning::FactUnpackedStorage<::tyr::GroundTag>& GroundStateBuilder::get_atoms<f::FluentTag>() noexcept;
+template planning::AtomUnpackedStorage<::tyr::GroundTag>& GroundStateBuilder::get_atoms<f::DerivedTag>() noexcept;
+template const planning::FactUnpackedStorage<::tyr::GroundTag>& GroundStateBuilder::get_atoms<f::FluentTag>() const noexcept;
+template const planning::AtomUnpackedStorage<::tyr::GroundTag>& GroundStateBuilder::get_atoms<f::DerivedTag>() const noexcept;
 
 }
 
 namespace ygg
 {
-using namespace ::tyr;
 namespace planning = ::tyr::planning;
 
-GroundStateView::View(std::shared_ptr<planning::StateRepository<planning::GroundTag>> owner,
-                      ygg::SharedObjectPoolPtr<planning::UnpackedState<planning::GroundTag>> unpacked) noexcept :
+GroundStateView::View(std::shared_ptr<planning::StateRepository<::tyr::GroundTag>> owner,
+                      ygg::SharedObjectPoolPtr<Builder<planning::State<::tyr::GroundTag>>> state_builder) noexcept :
     m_state_repository(std::move(owner)),
-    m_unpacked(std::move(unpacked))
+    m_state_builder(std::move(state_builder))
 {
 }
 
@@ -149,30 +149,30 @@ GroundStateView& GroundStateView::operator=(const View&) = default;
 
 GroundStateView& GroundStateView::operator=(View&&) noexcept = default;
 
-ygg::Index<planning::State<planning::GroundTag>> GroundStateView::get_index() const { return m_unpacked->get_index(); }
+ygg::Index<planning::State<::tyr::GroundTag>> GroundStateView::get_index() const { return m_state_builder->get_index(); }
 
-std::tuple<ygg::Index<planning::State<planning::GroundTag>>, ygg::uint_t> GroundStateView::identifying_members() const noexcept
+std::tuple<ygg::Index<planning::State<::tyr::GroundTag>>, ygg::uint_t> GroundStateView::identifying_members() const noexcept
 {
     return std::make_tuple(get_index(), m_state_repository->get_index());
 }
 
 ::tyr::formalism::planning::FDRValue GroundStateView::get(ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const
 {
-    return m_unpacked->get(index);
+    return m_state_builder->get(index);
 }
 
 ygg::float_t GroundStateView::get(ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>> index) const
 {
-    return m_unpacked->get(index);
+    return m_state_builder->get(index);
 }
 
-bool GroundStateView::test(ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> index) const { return m_unpacked->test(index); }
+bool GroundStateView::test(ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> index) const { return m_state_builder->test(index); }
 
-const std::shared_ptr<planning::StateRepository<planning::GroundTag>>& GroundStateView::get_state_repository() const noexcept { return m_state_repository; }
+const std::shared_ptr<planning::StateRepository<::tyr::GroundTag>>& GroundStateView::get_state_repository() const noexcept { return m_state_repository; }
 
-const planning::UnpackedState<planning::GroundTag>& GroundStateView::get_unpacked_state() const noexcept { return *m_unpacked; }
+const Builder<planning::State<::tyr::GroundTag>>& GroundStateView::get_state_builder() const noexcept { return *m_state_builder; }
 
-const std::vector<ygg::uint_t>& GroundStateView::get_fluent_values() const noexcept { return m_unpacked->get_atoms<::tyr::formalism::FluentTag>().values; }
+const std::vector<ygg::uint_t>& GroundStateView::get_fluent_values() const noexcept { return m_state_builder->get_atoms<::tyr::formalism::FluentTag>().values; }
 
 bool GroundStateView::test(::tyr::formalism::planning::GroundAtomView<::tyr::formalism::StaticTag> view) const { return test(view.get_index()); }
 
@@ -197,7 +197,7 @@ const boost::dynamic_bitset<>& GroundStateView::get_atoms() const noexcept
     if constexpr (std::is_same_v<T, f::StaticTag>)
         return m_state_repository->get_task()->get_static_atoms_bitset();
     else if constexpr (std::is_same_v<T, f::DerivedTag>)
-        return m_unpacked->template get_atoms<f::DerivedTag>().indices;
+        return m_state_builder->template get_atoms<f::DerivedTag>().indices;
     else
         static_assert(ygg::dependent_false<T>::value, "Missing case");
 }
@@ -211,7 +211,7 @@ const std::vector<ygg::float_t>& GroundStateView::get_numeric_variables() const 
     if constexpr (std::is_same_v<T, f::StaticTag>)
         return m_state_repository->get_task()->get_static_numeric_variables();
     else if constexpr (std::is_same_v<T, f::FluentTag>)
-        return m_unpacked->get_numeric_variables().values;
+        return m_state_builder->get_numeric_variables().values;
     else
         static_assert(ygg::dependent_false<T>::value, "Missing case");
 }
@@ -224,9 +224,9 @@ planning::AtomRange<::tyr::formalism::StaticTag> GroundStateView::get_static_ato
     return planning::AtomRange<::tyr::formalism::StaticTag>(m_state_repository->get_task()->get_static_atoms_bitset());
 }
 
-planning::FDRFactRange<planning::GroundTag, ::tyr::formalism::FluentTag> GroundStateView::get_fluent_facts() const noexcept
+planning::FDRFactRange<::tyr::GroundTag, ::tyr::formalism::FluentTag> GroundStateView::get_fluent_facts() const noexcept
 {
-    return planning::FDRFactRange<planning::GroundTag, ::tyr::formalism::FluentTag>(get_fluent_values());
+    return planning::FDRFactRange<::tyr::GroundTag, ::tyr::formalism::FluentTag>(get_fluent_values());
 }
 
 planning::AtomRange<::tyr::formalism::DerivedTag> GroundStateView::get_derived_atoms() const noexcept
@@ -251,6 +251,6 @@ const std::shared_ptr<::tyr::formalism::planning::Repository>& GroundStateView::
 
 static_assert(planning::IterableStateConcept<GroundStateView>);
 static_assert(planning::IterableViewStateConcept<GroundStateView>);
-static_assert(planning::IndexableStateConcept<GroundStateView, planning::GroundTag>);
-static_assert(planning::IndexableViewStateConcept<GroundStateView, planning::GroundTag>);
+static_assert(planning::IndexableStateConcept<GroundStateView, ::tyr::GroundTag>);
+static_assert(planning::IndexableViewStateConcept<GroundStateView, ::tyr::GroundTag>);
 }

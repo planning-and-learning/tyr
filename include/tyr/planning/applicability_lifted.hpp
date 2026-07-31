@@ -210,7 +210,7 @@ inline ygg::float_t evaluate(::tyr::formalism::planning::FunctionTermView<::tyr:
     if (!fterm_or_nullopt.has_value())
         return std::numeric_limits<ygg::float_t>::quiet_NaN();
 
-    return context.state.unpacked_state.get(fterm_or_nullopt->get_index());
+    return context.state.state_builder.get(fterm_or_nullopt->get_index());
 }
 
 inline ygg::float_t evaluate(::tyr::formalism::planning::FunctionTermView<::tyr::formalism::AuxiliaryTag> element, const ApplicabilityContext& context)
@@ -339,7 +339,7 @@ inline bool is_applicable(::tyr::formalism::planning::LiteralView<::tyr::formali
         return !element.get_polarity();
 
     const auto& fact = *fact_or_nullopt;
-    return (context.state.unpacked_state.get(fact.get_variable()) == fact.get_value()) == element.get_polarity();
+    return (context.state.state_builder.get(fact.get_variable()) == fact.get_value()) == element.get_polarity();
 }
 
 inline bool is_applicable(::tyr::formalism::planning::LiteralView<::tyr::formalism::DerivedTag> element, const ApplicabilityContext& context)
@@ -348,7 +348,7 @@ inline bool is_applicable(::tyr::formalism::planning::LiteralView<::tyr::formali
     if (!atom_or_nullopt.has_value())
         return !element.get_polarity();
 
-    return context.state.unpacked_state.test(atom_or_nullopt->get_index()) == element.get_polarity();
+    return context.state.state_builder.test(atom_or_nullopt->get_index()) == element.get_polarity();
 }
 
 template<::tyr::formalism::FactKind T>
@@ -394,7 +394,7 @@ inline bool is_applicable(::tyr::formalism::planning::NumericEffectView<::tyr::f
     // Check fterm is well-defined in context
     if (element.get_operator() != ::tyr::formalism::NumericEffectOperatorKind::Assign)
     {
-        if (std::isnan(context.state.unpacked_state.get(fterm_index)))
+        if (std::isnan(context.state.state_builder.get(fterm_index)))
             return false;  /// target function is undefined and operator is not assign
     }
 

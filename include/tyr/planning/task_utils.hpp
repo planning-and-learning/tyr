@@ -33,7 +33,7 @@ namespace tyr::planning
 {
 
 extern void
-insert_fluent_atoms_to_fact_set(const UnpackedState<LiftedTag>& state,
+insert_fluent_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
                                 const ::tyr::formalism::planning::Repository& repository,
                                 const ygg::UnorderedMap<::tyr::formalism::planning::PredicateView<::tyr::formalism::FluentTag>,
                                                         ::tyr::formalism::datalog::PredicateView<::tyr::formalism::FluentTag>>& fluent_to_fluent_predicate,
@@ -41,26 +41,26 @@ insert_fluent_atoms_to_fact_set(const UnpackedState<LiftedTag>& state,
                                 datalog::TaggedFactSets<::tyr::formalism::FluentTag>& fact_sets);
 
 void insert_derived_atoms_to_fact_set(
-    const UnpackedState<LiftedTag>& state,
+    const ygg::Builder<State<LiftedTag>>& state,
     const ::tyr::formalism::planning::Repository& repository,
     const ygg::UnorderedMap<::tyr::formalism::planning::PredicateView<::tyr::formalism::DerivedTag>,
                             ::tyr::formalism::datalog::PredicateView<::tyr::formalism::FluentTag>>& derived_to_fluent_predicate,
     ::tyr::formalism::planning::MergeDatalogContext& merge_context,
     datalog::TaggedFactSets<::tyr::formalism::FluentTag>& fact_sets);
 
-void insert_numeric_variables_to_fact_set(const UnpackedState<LiftedTag>& state,
+void insert_numeric_variables_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
                                           const ::tyr::formalism::planning::Repository& repository,
                                           ::tyr::formalism::planning::MergeDatalogContext& merge_context,
                                           datalog::TaggedFactSets<::tyr::formalism::FluentTag>& fact_sets);
 
-void insert_extended_state(const UnpackedState<LiftedTag>& unpacked_state,
+void insert_extended_state(const ygg::Builder<State<LiftedTag>>& state_builder,
                            const ::tyr::formalism::planning::Repository& atoms_context,
                            const P2DTranslationContext<LiftedTag>& translation_context,
                            ::tyr::formalism::planning::MergeDatalogContext& merge_context,
                            datalog::TaggedFactSets<::tyr::formalism::FluentTag>& fact_sets,
                            datalog::TaggedAssignmentSets<::tyr::formalism::FluentTag>& assignment_sets);
 
-void insert_unextended_state(const UnpackedState<LiftedTag>& unpacked_state,
+void insert_unextended_state(const ygg::Builder<State<LiftedTag>>& state_builder,
                              const ::tyr::formalism::planning::Repository& atoms_context,
                              const P2DTranslationContext<LiftedTag>& translation_context,
                              ::tyr::formalism::planning::MergeDatalogContext& merge_context,

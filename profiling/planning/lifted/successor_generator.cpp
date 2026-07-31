@@ -20,8 +20,8 @@
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/factory.hpp"
-#include "tyr/planning/node.hpp"
 #include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/node.hpp"
 
 #include <benchmark/benchmark.h>
 #include <filesystem>
@@ -71,17 +71,17 @@ std::vector<BenchmarkCase> load_cases()
     return result;
 }
 
-p::TaskPtr<p::LiftedTag> create_task(const BenchmarkCase& benchmark_case)
+p::TaskPtr<::tyr::LiftedTag> create_task(const BenchmarkCase& benchmark_case)
 {
-    return p::Task<p::LiftedTag>::create(fp::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
+    return p::Task<::tyr::LiftedTag>::create(fp::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
 }
 
-p::SuccessorGeneratorPtr<p::LiftedTag> create_successor_generator(p::TaskPtr<p::LiftedTag> task)
+p::SuccessorGeneratorPtr<::tyr::LiftedTag> create_successor_generator(p::TaskPtr<::tyr::LiftedTag> task)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = p::AxiomEvaluatorFactory<p::LiftedTag>().create(task, execution_context);
-    auto state_repository = p::StateRepositoryFactory<p::LiftedTag>().create(task, axiom_evaluator);
-    return p::SuccessorGeneratorFactory<p::LiftedTag>().create(task, execution_context, state_repository);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<::tyr::LiftedTag>().create(task, execution_context);
+    auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(task, axiom_evaluator);
+    return p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, execution_context, state_repository);
 }
 
 void benchmark_initial_successors(benchmark::State& state, const BenchmarkCase& benchmark_case)
@@ -89,7 +89,7 @@ void benchmark_initial_successors(benchmark::State& state, const BenchmarkCase& 
     auto task = create_task(benchmark_case);
     auto successor_generator = create_successor_generator(task);
     const auto initial_node = successor_generator->get_initial_node();
-    auto successors = std::vector<p::LabeledNode<p::LiftedTag>>();
+    auto successors = std::vector<p::LabeledNode<::tyr::LiftedTag>>();
 
     for (auto _ : state)
     {

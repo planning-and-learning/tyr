@@ -62,7 +62,7 @@ ygg::float_t FFRPGHeuristic<GroundTag>::extract_cost_and_set_preferred_actions_i
     for (auto& bitset : m_markings)
         bitset.reset();
 
-    const auto state_context = StateContext<GroundTag>(*this->m_task, state.get_unpacked_state(), ygg::float_t(0));
+    const auto state_context = StateContext<GroundTag>(*this->m_task, state.get_state_builder(), ygg::float_t(0));
     if (const auto& goal = this->m_workspace.tp.get_goal())
     {
         for (const auto literal : goal->get_literals<f::FluentTag>())

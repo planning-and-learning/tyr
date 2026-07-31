@@ -40,7 +40,7 @@ TEST(TyrDatalogLiftedDeltaKPKC, DeltaEdgesSupportRoundRobinAnchorReplay)
 {
     const auto root = std::filesystem::path(BENCHMARKS_DIR);
     auto task = make_test_parser(root / "classical/tests/gripper/domain.pddl").parse_task(root / "classical/tests/gripper/test-1.pddl");
-    auto action_program = p::ApplicableActionProgram<p::LiftedTag>(task.get_task());
+    auto action_program = p::ApplicableActionProgram<::tyr::LiftedTag>(task.get_task());
     auto& program = action_program.get_datalog_program();
     const auto program_view = program.get_program();
 
@@ -133,18 +133,18 @@ TEST(TyrDatalogLiftedDeltaKPKC, DeltaEdgesSupportRoundRobinAnchorReplay)
 TEST(TyrDatalogLiftedDeltaKPKC, InnerParallelismMatchesSequentialRPG)
 {
     const auto root = std::filesystem::path(BENCHMARKS_DIR);
-    auto task = p::Task<p::LiftedTag>::create(make_test_parser(root / "classical/profiling/rovers-large-simple/domain.pddl")
-                                                  .parse_task(root / "classical/profiling/rovers-large-simple/p-r1-w1000-o1-1-g2.pddl"));
+    auto task = p::Task<::tyr::LiftedTag>::create(make_test_parser(root / "classical/profiling/rovers-large-simple/domain.pddl")
+                                                      .parse_task(root / "classical/profiling/rovers-large-simple/p-r1-w1000-o1-1-g2.pddl"));
 
     auto sequential_context = ygg::ExecutionContext::create(1);
     auto parallel_context = ygg::ExecutionContext::create(ygg::ExecutionContext::get_max_num_threads());
-    auto axiom_evaluator = p::AxiomEvaluatorFactory<p::LiftedTag>().create(task, sequential_context);
-    auto state_repository = p::StateRepositoryFactory<p::LiftedTag>().create(task, axiom_evaluator);
-    auto successor_generator = p::SuccessorGeneratorFactory<p::LiftedTag>().create(task, sequential_context, state_repository);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<::tyr::LiftedTag>().create(task, sequential_context);
+    auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(task, axiom_evaluator);
+    auto successor_generator = p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, sequential_context, state_repository);
     const auto initial_state = successor_generator->get_initial_node().get_state();
 
-    auto sequential = p::FFRPGHeuristic<p::LiftedTag>::create(task, sequential_context);
-    auto parallel = p::FFRPGHeuristic<p::LiftedTag>::create(task, parallel_context);
+    auto sequential = p::FFRPGHeuristic<::tyr::LiftedTag>::create(task, sequential_context);
+    auto parallel = p::FFRPGHeuristic<::tyr::LiftedTag>::create(task, parallel_context);
     const auto sequential_value = sequential->evaluate(initial_state);
     const auto parallel_value = parallel->evaluate(initial_state);
 

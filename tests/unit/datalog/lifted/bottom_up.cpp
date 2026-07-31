@@ -240,12 +240,12 @@ AtomsByPredicate collect_atoms_by_predicate(const Workspace& workspace)
     return result;
 }
 
-p::CostMode parse_cost_mode(std::string_view config)
+::tyr::CostMode parse_cost_mode(std::string_view config)
 {
     if (config.ends_with("_unit"))
-        return p::CostMode::UNIT;
+        return ::tyr::CostMode::UNIT;
     if (config.ends_with("_general"))
-        return p::CostMode::GENERAL;
+        return ::tyr::CostMode::GENERAL;
     throw std::runtime_error("parse_cost_mode(...): configuration has no cost mode: " + std::string(config));
 }
 
@@ -260,10 +260,10 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchAtOneAndMaximumThreads)
     for (const auto num_threads : { ygg::ExecutionContext::uint_t(1), ygg::ExecutionContext::get_max_num_threads() })
     {
         auto execution_context = ygg::ExecutionContext::create(num_threads);
-        auto task = p::Task<p::LiftedTag>::create(make_test_parser(test_case.domain_file).parse_task(test_case.task_file));
-        auto axiom_evaluator = p::AxiomEvaluatorFactory<p::LiftedTag>().create(task, execution_context);
-        auto state_repository = p::StateRepositoryFactory<p::LiftedTag>().create(task, axiom_evaluator);
-        auto successor_generator = p::SuccessorGeneratorFactory<p::LiftedTag>().create(task, execution_context, state_repository);
+        auto task = p::Task<::tyr::LiftedTag>::create(make_test_parser(test_case.domain_file).parse_task(test_case.task_file));
+        auto axiom_evaluator = p::AxiomEvaluatorFactory<::tyr::LiftedTag>().create(task, execution_context);
+        auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(task, axiom_evaluator);
+        auto successor_generator = p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, execution_context, state_repository);
         const auto initial_node = successor_generator->get_initial_node();
 
         for (size_t config_index = 0; config_index < kConfigNames.size(); ++config_index)
@@ -289,7 +289,7 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchAtOneAndMaximumThreads)
                 if (config == "ground_task")
                 {
                     auto program = p::GroundTaskProgram(task->get_task());
-                    auto workspace = d::ProgramWorkspace<p::LiftedTag>(program.get_datalog_program());
+                    auto workspace = d::ProgramWorkspace<::tyr::LiftedTag>(program.get_datalog_program());
                     auto context = d::ProgramExecutionContext(workspace);
                     execution_context->arena().execute([&] { d::solve_bottom_up(context); });
                     return collect_atoms_by_predicate(workspace);
@@ -297,21 +297,21 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchAtOneAndMaximumThreads)
 
                 if (config.starts_with("rpg_sum_"))
                 {
-                    auto heuristic = p::AddRPGHeuristic<p::LiftedTag>::create(task, execution_context, parse_cost_mode(config));
+                    auto heuristic = p::AddRPGHeuristic<::tyr::LiftedTag>::create(task, execution_context, parse_cost_mode(config));
                     heuristic->evaluate(initial_node.get_state());
                     return collect_atoms_by_predicate(heuristic->get_workspace());
                 }
 
                 if (config.starts_with("rpg_max_"))
                 {
-                    auto heuristic = p::MaxRPGHeuristic<p::LiftedTag>::create(task, execution_context, parse_cost_mode(config));
+                    auto heuristic = p::MaxRPGHeuristic<::tyr::LiftedTag>::create(task, execution_context, parse_cost_mode(config));
                     heuristic->evaluate(initial_node.get_state());
                     return collect_atoms_by_predicate(heuristic->get_workspace());
                 }
 
                 if (config.starts_with("rpg_achiever_max_override_"))
                 {
-                    auto heuristic = p::LMCutHeuristic<p::LiftedTag>::create(task, execution_context, parse_cost_mode(config));
+                    auto heuristic = p::LMCutHeuristic<::tyr::LiftedTag>::create(task, execution_context, parse_cost_mode(config));
                     heuristic->evaluate(initial_node.get_state());
                     return collect_atoms_by_predicate(heuristic->get_workspace());
                 }

@@ -46,19 +46,19 @@
 
 namespace ygg
 {
-using namespace ::tyr;
+namespace planning = ::tyr::planning;
 
 template<>
-struct Data<planning::State<planning::GroundTag>>
+struct Data<planning::State<::tyr::GroundTag>>
 {
 public:
-    using TaskType = planning::Task<planning::GroundTag>;
+    using TaskType = planning::Task<::tyr::GroundTag>;
 
     Data() noexcept = default;
-    Data(ygg::Index<planning::State<planning::GroundTag>> index,
-         planning::FactPackedStorage<planning::GroundTag, planning::StateStoragePolicyTag> fact_storage,
-         planning::AtomPackedStorage<planning::GroundTag, planning::StateStoragePolicyTag> atom_storage,
-         planning::NumericPackedStorage<planning::GroundTag, planning::StateStoragePolicyTag> numeric_storage) noexcept :
+    Data(ygg::Index<planning::State<::tyr::GroundTag>> index,
+         planning::FactPackedStorage<::tyr::GroundTag, planning::StateStoragePolicyTag> fact_storage,
+         planning::AtomPackedStorage<::tyr::GroundTag, planning::StateStoragePolicyTag> atom_storage,
+         planning::NumericPackedStorage<::tyr::GroundTag, planning::StateStoragePolicyTag> numeric_storage) noexcept :
         m_index(index),
         m_fact_storage(fact_storage),
         m_atom_storage(atom_storage),
@@ -66,7 +66,7 @@ public:
     {
     }
 
-    ygg::Index<planning::State<planning::GroundTag>> get_index() const noexcept { return m_index; }
+    ygg::Index<planning::State<::tyr::GroundTag>> get_index() const noexcept { return m_index; }
 
     template<::tyr::formalism::FactKind T>
     const auto get_atoms() const noexcept
@@ -84,16 +84,16 @@ public:
     auto identifying_members() const noexcept { return std::tie(m_fact_storage, m_atom_storage, m_numeric_storage); }
 
 private:
-    ygg::Index<planning::State<planning::GroundTag>> m_index;
+    ygg::Index<planning::State<::tyr::GroundTag>> m_index;
 
-    planning::FactPackedStorage<planning::GroundTag, planning::StateStoragePolicyTag> m_fact_storage;
-    planning::AtomPackedStorage<planning::GroundTag, planning::StateStoragePolicyTag> m_atom_storage;
-    planning::NumericPackedStorage<planning::GroundTag, planning::StateStoragePolicyTag> m_numeric_storage;
+    planning::FactPackedStorage<::tyr::GroundTag, planning::StateStoragePolicyTag> m_fact_storage;
+    planning::AtomPackedStorage<::tyr::GroundTag, planning::StateStoragePolicyTag> m_atom_storage;
+    planning::NumericPackedStorage<::tyr::GroundTag, planning::StateStoragePolicyTag> m_numeric_storage;
 };
 
-inline bool is_canonical(const ygg::Data<planning::State<planning::GroundTag>>&) { return true; }
+inline bool is_canonical(const ygg::Data<planning::State<::tyr::GroundTag>>&) { return true; }
 
-inline void canonicalize(ygg::Data<planning::State<planning::GroundTag>>&) {}
+inline void canonicalize(ygg::Data<planning::State<::tyr::GroundTag>>&) {}
 }
 
 #endif

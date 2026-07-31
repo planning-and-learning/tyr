@@ -22,7 +22,7 @@
 
 #include <memory>
 
-namespace tyr
+namespace ygg
 {
 template<typename T>
 struct Builder;
@@ -30,11 +30,6 @@ struct Builder;
 
 namespace tyr::planning
 {
-
-using ::tyr::CostMode;
-using ::tyr::GroundTag;
-using ::tyr::LiftedTag;
-using ::tyr::TaskKind;
 
 template<TaskKind Kind>
 class Task;
@@ -48,8 +43,6 @@ struct LabeledNode;
 
 template<TaskKind Kind>
 class State;
-template<TaskKind Kind>
-using UnpackedState = ::tyr::Builder<State<Kind>>;
 
 template<TaskKind Kind>
 struct StateContext;

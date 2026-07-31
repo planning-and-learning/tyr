@@ -781,7 +781,7 @@ void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
 
                 if constexpr (std::is_same_v<Handle, ygg::Index<AtomSelectorNode<Tag>>>)
                 {
-                    const auto holds = state.unpacked_state.test(arg.get_atom());
+                    const auto holds = state.state_builder.test(arg.get_atom());
 
                     if (const auto child = holds ? arg.get_true_child() : arg.get_false_child())
                         m_evaluate_stack.push_back(*child);
@@ -802,7 +802,7 @@ void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
                 }
                 else if constexpr (std::is_same_v<Handle, ygg::Index<VariableSelectorNode<Tag>>>)
                 {
-                    const auto value = state.unpacked_state.get(arg.get_variable());
+                    const auto value = state.state_builder.get(arg.get_variable());
                     const auto children = arg.get_domain_children();
                     assert(ygg::uint_t(value) < children.size());
 
@@ -815,7 +815,7 @@ void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
                 else if constexpr (std::is_same_v<Handle, ygg::Index<NegativeFactSelectorNode<Tag>>>)
                 {
                     const auto fact = arg.get_fact();
-                    const auto holds = state.unpacked_state.get(fact.get_variable()) != fact.get_value();
+                    const auto holds = state.state_builder.get(fact.get_variable()) != fact.get_value();
 
                     if (holds)
                         if (const auto child = arg.get_true_child())

@@ -33,9 +33,9 @@ template<TaskKind Kind>
 class AxiomEvaluator;
 
 template<typename T, typename Kind>
-concept AxiomEvaluatorConcept = requires(T& r, UnpackedState<Kind>& unpacked_state) {
+concept AxiomEvaluatorConcept = requires(T& r, ygg::Builder<State<Kind>>& state_builder) {
     requires TaskKind<Kind>;
-    { r.compute_extended_state(unpacked_state) } -> std::same_as<void>;
+    { r.compute_extended_state(state_builder) } -> std::same_as<void>;
     { r.get_index() } -> std::same_as<ygg::uint_t>;
 };
 

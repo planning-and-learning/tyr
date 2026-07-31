@@ -69,9 +69,9 @@ public:
     create_state(const std::vector<::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag>>& fluent_facts,
                  const std::vector<::tyr::formalism::planning::GroundFunctionTermViewValuePair<::tyr::formalism::FluentTag>>& fterm_values);
 
-    ygg::SharedObjectPoolPtr<UnpackedState<GroundTag>> get_unregistered_state();
+    ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>> get_state_builder();
 
-    StateView<GroundTag> register_state(ygg::SharedObjectPoolPtr<UnpackedState<GroundTag>> state);
+    StateView<GroundTag> register_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>> state);
 
     size_t memory_usage() const noexcept;
 
@@ -91,7 +91,7 @@ private:
     NumericStorageBackend<GroundTag, StateStoragePolicyTag> m_numeric_backend;
 
     ygg::IndexedHashSet<State<GroundTag>> m_packed_states;
-    ygg::SharedObjectPool<UnpackedState<GroundTag>> m_unpacked_state_pool;
+    ygg::SharedObjectPool<ygg::Builder<State<GroundTag>>> m_state_builder_pool;
 
     AxiomEvaluatorPtr<GroundTag> m_axiom_evaluator;
 };

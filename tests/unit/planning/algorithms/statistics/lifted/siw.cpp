@@ -19,7 +19,7 @@
 
 namespace tyr::tests
 {
-using StatisticsTaskKind = ::tyr::planning::LiftedTag;
+using StatisticsTaskKind = LiftedTag;
 inline constexpr const char* kStatisticsFixture = "tests/fixtures/planning/algorithms/lifted/siw.json";
 }
 

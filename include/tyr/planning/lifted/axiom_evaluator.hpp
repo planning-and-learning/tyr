@@ -42,7 +42,7 @@ private:
     AxiomEvaluator(ygg::uint_t index, TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context);
 
 public:
-    void compute_extended_state(UnpackedState<LiftedTag>& unpacked_state);
+    void compute_extended_state(ygg::Builder<State<LiftedTag>>& state_builder);
 
     const auto& get_axiom_program() const noexcept { return m_axiom_program; }
     const auto& get_workspace() const noexcept { return m_workspace; }
