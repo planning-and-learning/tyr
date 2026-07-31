@@ -15,8 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "domains.hpp"
-
+#include "bindings.hpp"
 #include "tyr/analysis/formatter.hpp"
 
 #include <nanobind/stl/pair.h>

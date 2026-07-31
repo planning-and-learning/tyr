@@ -17,9 +17,8 @@
 
 #include "module.hpp"
 
+#include "bindings.hpp"
 #include "datalog/module.hpp"
-#include "datas.hpp"
-#include "indices.hpp"
 #include "planning/module.hpp"
 
 namespace tyr::formalism
@@ -63,8 +62,7 @@ void alias_shared_types(nb::module_& source, nb::module_& target)
 
 void bind_module_definitions(nb::module_& m)
 {
-    bind_indices(m);
-    bind_datas(m);
+    bind_formalism(m);
 
     auto planning_module = m.def_submodule("planning");
     planning::bind_module_definitions(planning_module);

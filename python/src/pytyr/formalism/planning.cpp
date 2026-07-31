@@ -15,13 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "planning/datas.hpp"
-#include "planning/domains.hpp"
-#include "planning/indices.hpp"
-#include "planning/invariants.hpp"
+#include "planning/bindings.hpp"
 #include "planning/module.hpp"
-#include "planning/mutable.hpp"
-#include "planning/views.hpp"
 
 #include <nanobind/stl/chrono.h>
 #include <nanobind/stl/filesystem.h>
@@ -37,31 +32,6 @@
 namespace tyr::formalism::planning
 {
 using ygg::bind_fixed_uint;
-
-namespace
-{
-template<typename T>
-auto bind_get_or_create_canonical()
-{
-    return [](Repository& self, ygg::Data<T>& data)
-    {
-        canonicalize(data);
-        return self.template get_or_create<T>(data).first;
-    };
-}
-
-template<typename T>
-auto bind_get_or_create_relation()
-{
-    return [](Repository& self, const ygg::Data<RelationBinding<T>>& data) { return self.template get_or_create<T>(data).first; };
-}
-
-template<typename T>
-auto bind_create()
-{
-    return [](Repository& self, const ygg::Data<T>& data) { return make_view(data, self); };
-}
-}
 
 /**
  * bind_module_definitions
@@ -118,162 +88,11 @@ void bind_module_definitions(nb::module_& m)
 
     bind_variable_domains(m);
 
-    /**
-     * ygg::Index
-     */
-
-    bind_indices(m);
-
-    /**
-     * ygg::Data
-     */
-
-    bind_datas(m);
-
-    /**
-     * Views
-     */
-
-    bind_views(m);
-
-    /**
-     * RepositoryFactory
-     */
+    bind_formalism(m);
 
     nb::class_<RepositoryFactory>(m, "RepositoryFactory")  //
         .def(nb::new_([]() { return std::make_shared<RepositoryFactory>(); }))
         .def("create_repository", &RepositoryFactory::create_shared, "parent_repository"_a = nullptr, nb::keep_alive<0, 2>());
-
-    /**
-     * Repository
-     */
-
-    {
-        auto cls =
-            nb::class_<Repository>(m, "Repository")  //
-                .def("create", bind_create<Term>(), "data"_a, nb::keep_alive<0, 1>(), nb::keep_alive<0, 2>())
-                .def("create", bind_create<FunctionExpression>(), "data"_a, nb::keep_alive<0, 1>(), nb::keep_alive<0, 2>())
-                .def("create", bind_create<GroundFunctionExpression>(), "data"_a, nb::keep_alive<0, 1>(), nb::keep_alive<0, 2>())
-                .def("create", bind_create<BooleanOperator<ygg::Data<FunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>(), nb::keep_alive<0, 2>())
-                .def("create", bind_create<BooleanOperator<ygg::Data<GroundFunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>(), nb::keep_alive<0, 2>())
-                .def("create", bind_create<ArithmeticOperator<ygg::Data<FunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>(), nb::keep_alive<0, 2>())
-                .def("create", bind_create<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>(), nb::keep_alive<0, 2>())
-                .def("create", bind_create<NumericEffectOperator<FluentTag>>(), "data"_a, nb::keep_alive<0, 1>(), nb::keep_alive<0, 2>())
-                .def("create", bind_create<NumericEffectOperator<AuxiliaryTag>>(), "data"_a, nb::keep_alive<0, 1>(), nb::keep_alive<0, 2>())
-                .def("create", bind_create<GroundNumericEffectOperator<FluentTag>>(), "data"_a, nb::keep_alive<0, 1>(), nb::keep_alive<0, 2>())
-                .def("create", bind_create<GroundNumericEffectOperator<AuxiliaryTag>>(), "data"_a, nb::keep_alive<0, 1>(), nb::keep_alive<0, 2>())
-
-                .def("get_or_create", bind_get_or_create_canonical<Object>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<Variable>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_relation<Predicate<StaticTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_relation<Predicate<FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_relation<Predicate<DerivedTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_relation<Function<StaticTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_relation<Function<FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_relation<Function<AuxiliaryTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_relation<Action>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_relation<Axiom>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<Predicate<StaticTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<Predicate<FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<Predicate<DerivedTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<Atom<StaticTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<Atom<FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<Atom<DerivedTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<GroundAtom<StaticTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<GroundAtom<FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<GroundAtom<DerivedTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<Literal<StaticTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<Literal<FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<Literal<DerivedTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<GroundLiteral<StaticTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<GroundLiteral<FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<GroundLiteral<DerivedTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<FDRVariable<FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<Function<StaticTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<Function<FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<Function<AuxiliaryTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<FunctionTerm<StaticTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<FunctionTerm<FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<FunctionTerm<AuxiliaryTag>>(), "data"_a, nb::keep_alive<0, 1>())
-
-                .def("get_or_create", bind_get_or_create_canonical<GroundFunctionTerm<StaticTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<GroundFunctionTerm<FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<GroundFunctionTerm<AuxiliaryTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<GroundFunctionTermValue<StaticTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<GroundFunctionTermValue<FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<GroundFunctionTermValue<AuxiliaryTag>>(), "data"_a, nb::keep_alive<0, 1>())
-
-                .def("get_or_create", bind_get_or_create_canonical<UnaryOperator<Sub, ygg::Data<FunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<BinaryOperator<Add, ygg::Data<FunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<BinaryOperator<Sub, ygg::Data<FunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<BinaryOperator<Mul, ygg::Data<FunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<BinaryOperator<Div, ygg::Data<FunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<BinaryOperator<Eq, ygg::Data<FunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<BinaryOperator<Ne, ygg::Data<FunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<BinaryOperator<Ge, ygg::Data<FunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<BinaryOperator<Gt, ygg::Data<FunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<BinaryOperator<Le, ygg::Data<FunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<BinaryOperator<Lt, ygg::Data<FunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<MultiOperator<Add, ygg::Data<FunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<MultiOperator<Mul, ygg::Data<FunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-
-                .def("get_or_create", bind_get_or_create_canonical<NumericEffect<Assign, FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<NumericEffect<Increase, FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<NumericEffect<Decrease, FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<NumericEffect<ScaleUp, FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<NumericEffect<ScaleDown, FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<NumericEffect<Increase, AuxiliaryTag>>(), "data"_a, nb::keep_alive<0, 1>())
-
-                .def("get_or_create", bind_get_or_create_canonical<ConjunctiveCondition>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<ConjunctiveEffect>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<ConditionalEffect>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<Action>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<Axiom>(), "data"_a, nb::keep_alive<0, 1>())
-
-                .def("get_or_create", bind_get_or_create_canonical<UnaryOperator<Sub, ygg::Data<GroundFunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create",
-                     bind_get_or_create_canonical<BinaryOperator<Add, ygg::Data<GroundFunctionExpression>>>(),
-                     "data"_a,
-                     nb::keep_alive<0, 1>())
-                .def("get_or_create",
-                     bind_get_or_create_canonical<BinaryOperator<Sub, ygg::Data<GroundFunctionExpression>>>(),
-                     "data"_a,
-                     nb::keep_alive<0, 1>())
-                .def("get_or_create",
-                     bind_get_or_create_canonical<BinaryOperator<Mul, ygg::Data<GroundFunctionExpression>>>(),
-                     "data"_a,
-                     nb::keep_alive<0, 1>())
-                .def("get_or_create",
-                     bind_get_or_create_canonical<BinaryOperator<Div, ygg::Data<GroundFunctionExpression>>>(),
-                     "data"_a,
-                     nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<BinaryOperator<Eq, ygg::Data<GroundFunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<BinaryOperator<Ne, ygg::Data<GroundFunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<BinaryOperator<Ge, ygg::Data<GroundFunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<BinaryOperator<Gt, ygg::Data<GroundFunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<BinaryOperator<Le, ygg::Data<GroundFunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<BinaryOperator<Lt, ygg::Data<GroundFunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<MultiOperator<Add, ygg::Data<GroundFunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<MultiOperator<Mul, ygg::Data<GroundFunctionExpression>>>(), "data"_a, nb::keep_alive<0, 1>())
-
-                .def("get_or_create", bind_get_or_create_canonical<GroundNumericEffect<Assign, FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<GroundNumericEffect<Increase, FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<GroundNumericEffect<Decrease, FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<GroundNumericEffect<ScaleUp, FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<GroundNumericEffect<ScaleDown, FluentTag>>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<GroundNumericEffect<Increase, AuxiliaryTag>>(), "data"_a, nb::keep_alive<0, 1>())
-
-                .def("get_or_create", bind_get_or_create_canonical<GroundConjunctiveCondition>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<GroundConjunctiveEffect>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<GroundConditionalEffect>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<GroundAction>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<GroundAxiom>(), "data"_a, nb::keep_alive<0, 1>())
-
-                .def("get_or_create", bind_get_or_create_canonical<Metric>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<Domain>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<Task>(), "data"_a, nb::keep_alive<0, 1>())
-                .def("get_or_create", bind_get_or_create_canonical<FDRTask>(), "data"_a, nb::keep_alive<0, 1>());
-    }
 
     /**
      * FDRContext

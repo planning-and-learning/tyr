@@ -15,22 +15,25 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "datalog/bindings.hpp"
-#include "datalog/module.hpp"
+#ifndef TYR_PYTHON_FORMALISM_BINDINGS_HPP_
+#define TYR_PYTHON_FORMALISM_BINDINGS_HPP_
 
-#include <nanobind/stl/shared_ptr.h>
-#include <tyr/formalism/datalog/repository.hpp>
+#include "module.hpp"
 
-namespace tyr::formalism::datalog
+namespace tyr::formalism
 {
 
-void bind_module_definitions(nb::module_& m)
-{
-    bind_formalism(m);
+void bind_formalism(nb::module_& m);
 
-    nb::class_<RepositoryFactory>(m, "RepositoryFactory")  //
-        .def(nb::new_([]() { return std::make_shared<RepositoryFactory>(); }))
-        .def("create_repository", &RepositoryFactory::create_shared, "parent_repository"_a = nullptr, nb::keep_alive<0, 2>());
-}
+void bind_parameter(nb::module_& m);
+void bind_row(nb::module_& m);
+void bind_object(nb::module_& m);
+void bind_variable(nb::module_& m);
+void bind_binding(nb::module_& m);
+void bind_predicate(nb::module_& m);
+void bind_function(nb::module_& m);
+void bind_term(nb::module_& m);
 
-}  // namespace tyr::formalism::datalog
+}  // namespace tyr::formalism
+
+#endif

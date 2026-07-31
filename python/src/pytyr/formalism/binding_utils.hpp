@@ -15,22 +15,22 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "datalog/bindings.hpp"
-#include "datalog/module.hpp"
+#ifndef PYTHON_SRC_PYTYR_FORMALISM_BINDING_UTILS_HPP_
+#define PYTHON_SRC_PYTYR_FORMALISM_BINDING_UTILS_HPP_
 
-#include <nanobind/stl/shared_ptr.h>
-#include <tyr/formalism/datalog/repository.hpp>
+#include "bindings.hpp"
 
-namespace tyr::formalism::datalog
-{
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/variant.h>
+#include <nanobind/stl/vector.h>
+#include <tyr/formalism/datalog/declarations.hpp>
+#include <tyr/formalism/datas.hpp>
+#include <tyr/formalism/formatter.hpp>
+#include <tyr/formalism/indices.hpp>
+#include <tyr/formalism/planning/declarations.hpp>
+#include <tyr/formalism/views.hpp>
+#include <yggdrasil/python/bindings.hpp>
+#include <yggdrasil/python/type_casters.hpp>
+#include <yggdrasil/serialization/cista_hash.hpp>
 
-void bind_module_definitions(nb::module_& m)
-{
-    bind_formalism(m);
-
-    nb::class_<RepositoryFactory>(m, "RepositoryFactory")  //
-        .def(nb::new_([]() { return std::make_shared<RepositoryFactory>(); }))
-        .def("create_repository", &RepositoryFactory::create_shared, "parent_repository"_a = nullptr, nb::keep_alive<0, 2>());
-}
-
-}  // namespace tyr::formalism::datalog
+#endif

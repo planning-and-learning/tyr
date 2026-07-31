@@ -15,22 +15,30 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "datalog/bindings.hpp"
-#include "datalog/module.hpp"
-
-#include <nanobind/stl/shared_ptr.h>
-#include <tyr/formalism/datalog/repository.hpp>
+#include "binding_utils.hpp"
+#include "bindings.hpp"
 
 namespace tyr::formalism::datalog
 {
 
-void bind_module_definitions(nb::module_& m)
+void bind_function_expression(nb::module_& m, RepositoryBinding& repository)
 {
-    bind_formalism(m);
+    {
+        using V = ygg::Data<FunctionExpression>;
+        auto cls = nb::class_<V>(m, "FunctionExpressionData").def(nb::init<typename V::template ViewVariant<Repository>>(), "value"_a);
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
 
-    nb::class_<RepositoryFactory>(m, "RepositoryFactory")  //
-        .def(nb::new_([]() { return std::make_shared<RepositoryFactory>(); }))
-        .def("create_repository", &RepositoryFactory::create_shared, "parent_repository"_a = nullptr, nb::keep_alive<0, 2>());
+    {
+        auto cls = nb::class_<FunctionExpressionView>(m, "FunctionExpression").def("get_variant", &FunctionExpressionView::get_variant);
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+
+    repository.def("create", &create_data<FunctionExpression>, "data"_a, nb::keep_alive<0, 1>(), nb::keep_alive<0, 2>());
 }
 
 }  // namespace tyr::formalism::datalog

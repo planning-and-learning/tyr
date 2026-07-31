@@ -9,24 +9,17 @@ message(STATUS "Found nanobind: ${nanobind_DIR} (found version ${nanobind_VERSIO
 
 yggdrasil_python_package_init(PYTYR pytyr)
 
+file(
+    GLOB_RECURSE PYTYR_FORMALISM_SOURCES
+    CONFIGURE_DEPENDS
+    "pytyr/formalism/*.cpp"
+)
+
 nanobind_add_module(
     _pytyr NB_SHARED
     module.cpp
     pytyr/module.cpp
-    pytyr/formalism/module.cpp
-    pytyr/formalism/datas.cpp
-    pytyr/formalism/indices.cpp
-    pytyr/formalism/planning.cpp
-    pytyr/formalism/planning/datas.cpp
-    pytyr/formalism/planning/domains.cpp
-    pytyr/formalism/planning/indices.cpp
-    pytyr/formalism/planning/invariants.cpp
-    pytyr/formalism/planning/mutable.cpp
-    pytyr/formalism/planning/views.cpp
-    pytyr/formalism/datalog.cpp
-    pytyr/formalism/datalog/datas.cpp
-    pytyr/formalism/datalog/indices.cpp
-    pytyr/formalism/datalog/views.cpp
+    ${PYTYR_FORMALISM_SOURCES}
     pytyr/datalog/module.cpp
     pytyr/datalog/ground/module.cpp
     pytyr/datalog/lifted/module.cpp

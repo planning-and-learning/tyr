@@ -15,22 +15,23 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "datalog/bindings.hpp"
-#include "datalog/module.hpp"
-
-#include <nanobind/stl/shared_ptr.h>
-#include <tyr/formalism/datalog/repository.hpp>
+#include "binding_utils.hpp"
+#include "bindings.hpp"
 
 namespace tyr::formalism::datalog
 {
 
-void bind_module_definitions(nb::module_& m)
+void bind_term(nb::module_& m, RepositoryBinding& repository)
 {
-    bind_formalism(m);
+    {
+        using V = TermView;
+        auto cls = nb::class_<V>(m, "Term").def("get_variant", &V::get_variant);
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
 
-    nb::class_<RepositoryFactory>(m, "RepositoryFactory")  //
-        .def(nb::new_([]() { return std::make_shared<RepositoryFactory>(); }))
-        .def("create_repository", &RepositoryFactory::create_shared, "parent_repository"_a = nullptr, nb::keep_alive<0, 2>());
+    repository.def("create", &create_data<Term>, "data"_a, nb::keep_alive<0, 1>(), nb::keep_alive<0, 2>());
 }
 
 }  // namespace tyr::formalism::datalog

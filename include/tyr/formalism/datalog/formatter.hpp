@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_DATALOG_FORMATTER_HPP_
 
 #include "tyr/formalism/datalog/datas.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/variable_dependency_graph.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/formatter.hpp"

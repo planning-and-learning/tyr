@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "invariants.hpp"
+#include "bindings.hpp"
 
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
