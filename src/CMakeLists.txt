@@ -48,7 +48,9 @@ add_library(
     analysis/task_domains.cpp
     analysis/domains_translation.cpp
 
+    formalism/formatter.cpp
     formalism/datalog/builder.cpp
+    formalism/datalog/formatter.cpp
     formalism/datalog/grounder.cpp
     formalism/datalog/merge.cpp
     formalism/datalog/repository.cpp
@@ -64,6 +66,7 @@ add_library(
     formalism/planning/invariants/refinement.cpp
     formalism/planning/invariants/synthesis.cpp
     formalism/planning/builder.cpp
+    formalism/planning/formatter.cpp
     formalism/planning/fdr_context.cpp
     formalism/planning/grounder.cpp
     formalism/planning/merge_datalog.cpp

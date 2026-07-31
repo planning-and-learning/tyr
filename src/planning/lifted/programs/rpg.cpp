@@ -19,10 +19,8 @@
 
 #include "../../programs/common.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
-#include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
-#include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"

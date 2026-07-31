@@ -28,12 +28,15 @@
 #include "tyr/planning/plan.hpp"
 #include "tyr/planning/state_view.hpp"
 
+#include <fmt/ostream.h>
+#include <fmt/ranges.h>
 #include <ostream>
 #include <sstream>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/chrono.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
+#include <yggdrasil/io/iostream.hpp>
 
 namespace fmt
 {

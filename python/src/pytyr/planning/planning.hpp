@@ -28,7 +28,7 @@
 #include <nanobind/stl/vector.h>
 #include <ranges>
 #include <type_traits>
-#include <tyr/tyr.hpp>
+#include <tyr/planning/planning.hpp>
 #include <yggdrasil/python/bindings.hpp>
 #include <yggdrasil/python/type_casters.hpp>
 

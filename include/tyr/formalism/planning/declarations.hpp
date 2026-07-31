@@ -551,6 +551,10 @@ concept Context = requires(const T& a) {
 
 class FDRContext;
 using FDRContextPtr = std::shared_ptr<FDRContext>;
+struct GrounderContext;
+class PlanningDomain;
+class PlanningFDRTask;
+class PlanningTask;
 
 }
 

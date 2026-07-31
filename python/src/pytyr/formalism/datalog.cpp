@@ -30,7 +30,10 @@ void bind_module_definitions(nb::module_& m)
 
     nb::class_<RepositoryFactory>(m, "RepositoryFactory")  //
         .def(nb::new_([]() { return std::make_shared<RepositoryFactory>(); }))
-        .def("create_repository", &RepositoryFactory::create_shared, "parent_repository"_a = nullptr, nb::keep_alive<0, 2>());
+        .def("create_repository",
+             nb::overload_cast<const Repository*>(&RepositoryFactory::create_shared),
+             "parent_repository"_a = nullptr,
+             nb::keep_alive<0, 2>());
 }
 
 }  // namespace tyr::formalism::datalog

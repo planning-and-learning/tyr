@@ -542,6 +542,7 @@ concept Context = requires(const T& a) {
 
 struct GrounderContext;
 struct MergeContext;
+class VariableDependencyGraph;
 
 }
 

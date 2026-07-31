@@ -17,7 +17,12 @@
 
 #include "loki_to_tyr.hpp"
 
-#include "tyr/planning/lifted/task.hpp"
+#include "tyr/formalism/planning/canonicalization.hpp"
+#include "tyr/formalism/planning/fdr_context.hpp"
+#include "tyr/formalism/planning/planning_domain.hpp"
+#include "tyr/formalism/planning/planning_task.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/views.hpp"
 
 #include <algorithm>
 #include <functional>
@@ -447,9 +452,8 @@ ygg::Data<FunctionExpression> LokiToTyrTranslator::translate_lifted(loki::formal
     minus.operator_kind = ArithmeticOperatorKind::Sub;
     minus.arg = translate_lifted(element.get_expression(), builder, context);
     canonicalize(minus);
-    return ygg::Data<FunctionExpression>(ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>(
-        ArithmeticOperatorKind::Sub,
-        context.get_or_create(minus).first.get_index()));
+    return ygg::Data<FunctionExpression>(
+        ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>(ArithmeticOperatorKind::Sub, context.get_or_create(minus).first.get_index()));
 }
 
 ygg::Data<FunctionExpression> LokiToTyrTranslator::translate_lifted(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context)
@@ -1211,8 +1215,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::UnaryFunctionExpression
     minus.arg = translate_grounded(element.get_expression(), builder, context);
     canonicalize(minus);
     return ygg::Data<GroundFunctionExpression>(
-        ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>(ArithmeticOperatorKind::Sub,
-                                                                           context.get_or_create(minus).first.get_index()));
+        ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>(ArithmeticOperatorKind::Sub, context.get_or_create(minus).first.get_index()));
 }
 
 ygg::Data<GroundFunctionExpression>

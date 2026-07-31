@@ -19,6 +19,8 @@
 
 #include "ground/module.hpp"
 #include "lifted/module.hpp"
+#include "tyr/planning/algorithms/utils.hpp"
+#include "tyr/planning/formatter.hpp"
 
 #include <cstdint>
 #include <nanobind/stl/chrono.h>
@@ -26,7 +28,6 @@
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
-#include <tyr/tyr.hpp>
 #include <yggdrasil/python/bindings.hpp>
 
 namespace tyr::planning

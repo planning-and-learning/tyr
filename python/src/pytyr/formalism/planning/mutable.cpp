@@ -16,10 +16,10 @@
  */
 
 #include "bindings.hpp"
+#include "tyr/formalism/planning/mutable/formatter.hpp"
 
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
-#include <tyr/tyr.hpp>
 #include <yggdrasil/python/bindings.hpp>
 #include <yggdrasil/python/type_casters.hpp>
 

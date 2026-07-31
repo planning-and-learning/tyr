@@ -19,20 +19,18 @@
 #define TYR_SRC_FORMALISM_PLANNING_LOKI_TO_TYR_HPP_
 
 #include "tyr/formalism/planning/builder.hpp"
-#include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/fdr_context.hpp"
-#include "tyr/formalism/planning/grounder.hpp"
-#include "tyr/formalism/planning/planning_domain.hpp"
-#include "tyr/formalism/planning/planning_task.hpp"
-#include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/planning/views.hpp"
 
+#include <algorithm>
+#include <iterator>
 #include <loki/formalism/declarations.hpp>
-#include <tuple>
-#include <unordered_map>
+#include <optional>
+#include <ranges>
+#include <string>
 #include <unordered_set>
+#include <utility>
 #include <variant>
+#include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/containers/optional.hpp>
 #include <yggdrasil/semantics/equal_to.hpp>
 #include <yggdrasil/semantics/hash.hpp>

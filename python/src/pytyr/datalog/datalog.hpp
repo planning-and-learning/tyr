@@ -28,9 +28,13 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
+#include <tyr/datalog/datalog.hpp>
 #include <tyr/datalog/ground/queue.hpp>
 #include <tyr/datalog/lifted/bottom_up.hpp>
-#include <tyr/tyr.hpp>
+#include <tyr/datalog/lifted/policies/annotation.hpp>
+#include <tyr/datalog/policies/annotation.hpp>
+#include <tyr/datalog/policies/cost.hpp>
+#include <tyr/datalog/policies/termination.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/python/bindings.hpp>
 #include <yggdrasil/python/type_casters.hpp>
@@ -330,13 +334,11 @@ void bind_workspace(nb::module_& m, const std::string& name)
                    .def(nb::init<Program<Kind>&>(), "program"_a, nb::keep_alive<1, 2>())
                    .def(
                        "get_static_fact_sets",
-                       [](const Workspace& self) -> const TaggedFactSets<::tyr::formalism::StaticTag>&
-                       { return self.const_workspace.facts.fact_sets; },
+                       [](const Workspace& self) -> const TaggedFactSets<::tyr::formalism::StaticTag>& { return self.const_workspace.facts.fact_sets; },
                        nb::rv_policy::reference_internal)
                    .def(
                        "get_fluent_fact_sets",
-                       [](const Workspace& self) -> const TaggedFactSets<::tyr::formalism::FluentTag>&
-                       { return self.facts.fact_sets; },
+                       [](const Workspace& self) -> const TaggedFactSets<::tyr::formalism::FluentTag>& { return self.facts.fact_sets; },
                        nb::rv_policy::reference_internal)
                    .def(
                        "get_predicate_annotations",
@@ -369,8 +371,7 @@ void bind_workspace(nb::module_& m, const std::string& name)
                "get_and_annotation_policy",
                [](Workspace& self) -> auto& { return self.and_ap; },
                nb::rv_policy::reference_internal)
-            .def("clear_fluent_facts",
-                 [](Workspace& self) { self.facts.reset(); })
+            .def("clear_fluent_facts", [](Workspace& self) { self.facts.reset(); })
             .def(
                 "insert_fluent_atom",
                 [](Workspace& self, Atom atom) { return self.facts.fact_sets.predicate.insert(atom); },

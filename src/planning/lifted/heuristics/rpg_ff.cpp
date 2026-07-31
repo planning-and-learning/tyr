@@ -20,11 +20,8 @@
 #include "tyr/datalog/lifted/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
-#include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
-#include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
-#include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/lifted/heuristics/rpg.hpp"
 

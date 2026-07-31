@@ -17,15 +17,12 @@
 
 #include "planning/bindings.hpp"
 #include "planning/module.hpp"
+#include "tyr/formalism/planning/fdr_value.hpp"
+#include "tyr/formalism/planning/planning_fdr_task.hpp"
+#include "tyr/formalism/planning/planning_task.hpp"
 
-#include <nanobind/stl/chrono.h>
-#include <nanobind/stl/filesystem.h>
-#include <nanobind/stl/optional.h>
-#include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
-#include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
-#include <tyr/tyr.hpp>
 #include <yggdrasil/python/bindings.hpp>
 #include <yggdrasil/python/type_casters.hpp>
 
@@ -39,18 +36,7 @@ using ygg::bind_fixed_uint;
 
 void bind_module_definitions(nb::module_& m)
 {
-    {
-        nb::class_<Parser>(m, "Parser")
-            .def(nb::init<const fs::path&, const loki::ParserOptions&>(), "domain_filepath"_a, "parser_options"_a)
-            .def(nb::init<const std::string&, const fs::path&, const loki::ParserOptions&>(), "domain_description"_a, "domain_filepath"_a, "parser_options"_a)
-            .def("parse_task", nb::overload_cast<const fs::path&, const loki::ParserOptions&>(&Parser::parse_task), "task_filepath"_a, "parser_options"_a)
-            .def("parse_task",
-                 nb::overload_cast<const std::string&, const fs::path&, const loki::ParserOptions&>(&Parser::parse_task),
-                 "task_description"_a,
-                 "task_filepath"_a,
-                 "parser_options"_a)
-            .def("get_domain", &Parser::get_domain);
-    }
+    bind_parser(m);
 
     nb::enum_<OptimizationDirection>(m, "OptimizationDirection")
         .value("Minimize", OptimizationDirection::Minimize)
@@ -84,7 +70,10 @@ void bind_module_definitions(nb::module_& m)
 
     nb::class_<RepositoryFactory>(m, "RepositoryFactory")  //
         .def(nb::new_([]() { return std::make_shared<RepositoryFactory>(); }))
-        .def("create_repository", &RepositoryFactory::create_shared, "parent_repository"_a = nullptr, nb::keep_alive<0, 2>());
+        .def("create_repository",
+             nb::overload_cast<const Repository*>(&RepositoryFactory::create_shared),
+             "parent_repository"_a = nullptr,
+             nb::keep_alive<0, 2>());
 
     /**
      * FDRContext

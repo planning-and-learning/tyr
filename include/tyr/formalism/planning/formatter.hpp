@@ -20,40 +20,203 @@
 
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/planning_domain.hpp"
-#include "tyr/formalism/planning/planning_fdr_task.hpp"
-#include "tyr/formalism/planning/planning_task.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/fdr_value.hpp"
 
-#include <fmt/core.h>
-#include <fmt/ostream.h>
-#include <fmt/ranges.h>
-#include <ostream>
-#include <sstream>
-#include <yggdrasil/formatting/cista_formatters.hpp>
-#include <yggdrasil/io/iostream.hpp>
+#include <fmt/format.h>
+#include <string>
+#include <utility>
 
 namespace tyr::formalism::planning
 {
 struct PlanFormatting
 {
 };
+
+inline namespace format
+{
+
+std::string to_string(const ygg::Data<LiftedUnaryOperatorType>& value);
+std::string to_string(const ygg::Data<GroundUnaryOperatorType>& value);
+std::string to_string(const ygg::Data<LiftedBinaryOperatorType<ArithmeticOperatorKind>>& value);
+std::string to_string(const ygg::Data<LiftedBinaryOperatorType<BooleanOperatorKind>>& value);
+std::string to_string(const ygg::Data<GroundBinaryOperatorType<ArithmeticOperatorKind>>& value);
+std::string to_string(const ygg::Data<GroundBinaryOperatorType<BooleanOperatorKind>>& value);
+std::string to_string(const ygg::Data<LiftedMultiOperatorType>& value);
+std::string to_string(const ygg::Data<GroundMultiOperatorType>& value);
+std::string to_string(const ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>& value);
+std::string to_string(const ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>& value);
+std::string to_string(const ygg::Data<BooleanOperator<ygg::Data<FunctionExpression>>>& value);
+std::string to_string(const ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>& value);
+
+std::string to_string(const ygg::Data<Atom<StaticTag>>& value);
+std::string to_string(const ygg::Data<Atom<FluentTag>>& value);
+std::string to_string(const ygg::Data<Atom<DerivedTag>>& value);
+std::string to_string(const ygg::Data<Literal<StaticTag>>& value);
+std::string to_string(const ygg::Data<Literal<FluentTag>>& value);
+std::string to_string(const ygg::Data<Literal<DerivedTag>>& value);
+std::string to_string(const ygg::Data<GroundAtom<StaticTag>>& value);
+std::string to_string(const ygg::Data<GroundAtom<FluentTag>>& value);
+std::string to_string(const ygg::Data<GroundAtom<DerivedTag>>& value);
+std::string to_string(const ygg::Data<GroundLiteral<StaticTag>>& value);
+std::string to_string(const ygg::Data<GroundLiteral<FluentTag>>& value);
+std::string to_string(const ygg::Data<GroundLiteral<DerivedTag>>& value);
+std::string to_string(const ygg::Data<FunctionTerm<StaticTag>>& value);
+std::string to_string(const ygg::Data<FunctionTerm<FluentTag>>& value);
+std::string to_string(const ygg::Data<FunctionTerm<AuxiliaryTag>>& value);
+std::string to_string(const ygg::Data<GroundFunctionTerm<StaticTag>>& value);
+std::string to_string(const ygg::Data<GroundFunctionTerm<FluentTag>>& value);
+std::string to_string(const ygg::Data<GroundFunctionTerm<AuxiliaryTag>>& value);
+std::string to_string(const ygg::Data<GroundFunctionTermValue<StaticTag>>& value);
+std::string to_string(const ygg::Data<GroundFunctionTermValue<FluentTag>>& value);
+std::string to_string(const ygg::Data<GroundFunctionTermValue<AuxiliaryTag>>& value);
+std::string to_string(const ygg::Data<NumericEffect<FluentTag>>& value);
+std::string to_string(const ygg::Data<NumericEffect<AuxiliaryTag>>& value);
+std::string to_string(const ygg::Data<GroundNumericEffect<FluentTag>>& value);
+std::string to_string(const ygg::Data<GroundNumericEffect<AuxiliaryTag>>& value);
+std::string to_string(const ygg::Data<NumericEffectOperator<FluentTag>>& value);
+std::string to_string(const ygg::Data<NumericEffectOperator<AuxiliaryTag>>& value);
+std::string to_string(const ygg::Data<GroundNumericEffectOperator<FluentTag>>& value);
+std::string to_string(const ygg::Data<GroundNumericEffectOperator<AuxiliaryTag>>& value);
+std::string to_string(const ygg::Data<FDRVariable<FluentTag>>& value);
+std::string to_string(const ygg::Data<FDRFact<FluentTag>>& value);
+
+std::string to_string(const ygg::Data<FunctionExpression>& value);
+std::string to_string(const ygg::Data<GroundFunctionExpression>& value);
+std::string to_string(const ygg::Data<ConjunctiveCondition>& value);
+std::string to_string(const ygg::Data<GroundConjunctiveCondition>& value);
+std::string to_string(const ygg::Data<ConditionalEffect>& value);
+std::string to_string(const ygg::Data<GroundConditionalEffect>& value);
+std::string to_string(const ygg::Data<ConjunctiveEffect>& value);
+std::string to_string(const ygg::Data<GroundConjunctiveEffect>& value);
+std::string to_string(const ygg::Data<Action>& value);
+std::string to_string(const ygg::Data<GroundAction>& value);
+std::string to_string(const ygg::Data<Axiom>& value);
+std::string to_string(const ygg::Data<GroundAxiom>& value);
+std::string to_string(const ygg::Data<Metric>& value);
+std::string to_string(const ygg::Data<Task>& value);
+std::string to_string(const ygg::Data<Domain>& value);
+std::string to_string(const ygg::Data<FDRTask>& value);
+std::string to_string(const ygg::Data<RelationBinding<Action>>& value);
+std::string to_string(const ygg::Data<RelationBinding<Axiom>>& value);
+
+std::string to_string(VariableView value);
+std::string to_string(ObjectView value);
+std::string to_string(TermView value);
+std::string to_string(PredicateView<StaticTag> value);
+std::string to_string(PredicateView<FluentTag> value);
+std::string to_string(PredicateView<DerivedTag> value);
+std::string to_string(FunctionView<StaticTag> value);
+std::string to_string(FunctionView<FluentTag> value);
+std::string to_string(FunctionView<AuxiliaryTag> value);
+std::string to_string(PredicateBindingView<StaticTag> value);
+std::string to_string(PredicateBindingView<FluentTag> value);
+std::string to_string(PredicateBindingView<DerivedTag> value);
+std::string to_string(FunctionBindingView<StaticTag> value);
+std::string to_string(FunctionBindingView<FluentTag> value);
+std::string to_string(FunctionBindingView<AuxiliaryTag> value);
+std::string to_string(ActionBindingView value);
+std::string to_string(AxiomBindingView value);
+
+std::string to_string(LiftedUnaryOperatorView value);
+std::string to_string(GroundUnaryOperatorView value);
+std::string to_string(LiftedBinaryOperatorView<ArithmeticOperatorKind> value);
+std::string to_string(LiftedBinaryOperatorView<BooleanOperatorKind> value);
+std::string to_string(GroundBinaryOperatorView<ArithmeticOperatorKind> value);
+std::string to_string(GroundBinaryOperatorView<BooleanOperatorKind> value);
+std::string to_string(LiftedMultiOperatorView value);
+std::string to_string(GroundMultiOperatorView value);
+std::string to_string(LiftedArithmeticOperatorView value);
+std::string to_string(GroundArithmeticOperatorView value);
+std::string to_string(LiftedBooleanOperatorView value);
+std::string to_string(GroundBooleanOperatorView value);
+
+std::string to_string(AtomView<StaticTag> value);
+std::string to_string(AtomView<FluentTag> value);
+std::string to_string(AtomView<DerivedTag> value);
+std::string to_string(LiteralView<StaticTag> value);
+std::string to_string(LiteralView<FluentTag> value);
+std::string to_string(LiteralView<DerivedTag> value);
+std::string to_string(GroundAtomView<StaticTag> value);
+std::string to_string(GroundAtomView<FluentTag> value);
+std::string to_string(GroundAtomView<DerivedTag> value);
+std::string to_string(GroundLiteralView<StaticTag> value);
+std::string to_string(GroundLiteralView<FluentTag> value);
+std::string to_string(GroundLiteralView<DerivedTag> value);
+std::string to_string(FunctionTermView<StaticTag> value);
+std::string to_string(FunctionTermView<FluentTag> value);
+std::string to_string(FunctionTermView<AuxiliaryTag> value);
+std::string to_string(GroundFunctionTermView<StaticTag> value);
+std::string to_string(GroundFunctionTermView<FluentTag> value);
+std::string to_string(GroundFunctionTermView<AuxiliaryTag> value);
+std::string to_string(GroundFunctionTermValueView<StaticTag> value);
+std::string to_string(GroundFunctionTermValueView<FluentTag> value);
+std::string to_string(GroundFunctionTermValueView<AuxiliaryTag> value);
+std::string to_string(NumericEffectView<FluentTag> value);
+std::string to_string(NumericEffectView<AuxiliaryTag> value);
+std::string to_string(GroundNumericEffectView<FluentTag> value);
+std::string to_string(GroundNumericEffectView<AuxiliaryTag> value);
+std::string to_string(NumericEffectOperatorView<FluentTag> value);
+std::string to_string(NumericEffectOperatorView<AuxiliaryTag> value);
+std::string to_string(GroundNumericEffectOperatorView<FluentTag> value);
+std::string to_string(GroundNumericEffectOperatorView<AuxiliaryTag> value);
+std::string to_string(FDRVariableView<FluentTag> value);
+std::string to_string(FDRFactView<FluentTag> value);
+
+std::string to_string(FunctionExpressionView value);
+std::string to_string(GroundFunctionExpressionView value);
+std::string to_string(ConjunctiveConditionView value);
+std::string to_string(GroundConjunctiveConditionView value);
+std::string to_string(ConditionalEffectView value);
+std::string to_string(GroundConditionalEffectView value);
+std::string to_string(ConjunctiveEffectView value);
+std::string to_string(GroundConjunctiveEffectView value);
+std::string to_string(ActionView value);
+std::string to_string(GroundActionView value);
+std::string to_string(AxiomView value);
+std::string to_string(GroundAxiomView value);
+std::string to_string(MetricView value);
+std::string to_string(TaskView value);
+std::string to_string(DomainView value);
+std::string to_string(FDRTaskView value);
+
+std::string to_string(const PlanningDomain& value);
+std::string to_string(const PlanningTask& value);
+std::string to_string(const PlanningFDRTask& value);
+
+}  // namespace format
+
 }  // namespace tyr::formalism::planning
 
 namespace fmt
 {
 
-template<>
-struct formatter<tyr::formalism::planning::ConjunctiveEffectView, char>;
+template<typename T>
+struct formatter<ygg::View<ygg::Index<T>, tyr::formalism::planning::Repository>, char>
+{
+    using View = ygg::View<ygg::Index<T>, tyr::formalism::planning::Repository>;
 
-template<>
-struct formatter<tyr::formalism::planning::GroundConjunctiveEffectView, char>;
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
 
-template<>
-struct formatter<tyr::formalism::planning::AxiomBindingView, char>;
+    template<typename FormatContext>
+    auto format(const View& value, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::format::to_string(value));
+    }
+};
 
-template<tyr::formalism::FactKind T>
-struct formatter<tyr::formalism::planning::FDRFactView<T>, char>;
+template<typename T>
+struct formatter<ygg::View<ygg::Data<T>, tyr::formalism::planning::Repository>, char>
+{
+    using View = ygg::View<ygg::Data<T>, tyr::formalism::planning::Repository>;
+
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const View& value, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::format::to_string(value));
+    }
+};
 
 template<>
 struct formatter<tyr::formalism::planning::FDRValue, char>
@@ -71,1347 +234,11 @@ template<>
 struct formatter<tyr::formalism::OptimizationDirection, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(tyr::formalism::OptimizationDirection value, FormatContext& ctx) const
     {
         return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value));
-    }
-};
-
-template<typename T>
-struct formatter<ygg::Data<tyr::formalism::planning::UnaryOperator<T>>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::UnaryOperator<T>>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "({} {})", value.operator_kind, value.arg);
-    }
-};
-
-template<tyr::formalism::BinaryOperatorKind Operator, typename T>
-struct formatter<ygg::Data<tyr::formalism::planning::BinaryOperator<Operator, T>>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::BinaryOperator<Operator, T>>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "({} {} {})", value.operator_kind, value.lhs, value.rhs);
-    }
-};
-
-template<typename T>
-struct formatter<ygg::Data<tyr::formalism::planning::MultiOperator<T>>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::MultiOperator<T>>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "({} {})", value.operator_kind, fmt::join(ygg::to_strings(value.args), " "));
-    }
-};
-
-template<typename T>
-struct formatter<ygg::Data<tyr::formalism::planning::ArithmeticOperator<T>>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::ArithmeticOperator<T>>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.value);
-    }
-};
-
-template<typename T>
-struct formatter<ygg::Data<tyr::formalism::planning::BooleanOperator<T>>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::BooleanOperator<T>>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.value);
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<ygg::Data<tyr::formalism::planning::Atom<T>>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::Atom<T>>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "({} {})", value.predicate, fmt::join(ygg::to_strings(value.terms), " "));
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<ygg::Data<tyr::formalism::planning::Literal<T>>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::Literal<T>>& value, FormatContext& ctx) const
-    {
-        if (value.polarity)
-        {
-            return fmt::format_to(ctx.out(), "{}", value.atom);
-        }
-        return fmt::format_to(ctx.out(), "(not {})", value.atom);
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<ygg::Data<tyr::formalism::planning::GroundAtom<T>>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::GroundAtom<T>>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "({})", value.binding);
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<ygg::Data<tyr::formalism::planning::GroundLiteral<T>>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::GroundLiteral<T>>& value, FormatContext& ctx) const
-    {
-        if (value.polarity)
-        {
-            return fmt::format_to(ctx.out(), "{}", value.atom);
-        }
-        return fmt::format_to(ctx.out(), "(not {})", value.atom);
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<ygg::Data<tyr::formalism::planning::FunctionTerm<T>>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::FunctionTerm<T>>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "({} {})", value.function, fmt::join(ygg::to_strings(value.terms), " "));
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<ygg::Data<tyr::formalism::planning::GroundFunctionTerm<T>>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::GroundFunctionTerm<T>>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "({})", value.binding);
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<ygg::Data<tyr::formalism::planning::GroundFunctionTermValue<T>>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::GroundFunctionTermValue<T>>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "(= {} {})", value.fterm, value.value);
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<ygg::Data<tyr::formalism::planning::NumericEffect<T>>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::NumericEffect<T>>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "({} {} {})", value.operator_kind, value.fterm, value.fexpr);
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<ygg::Data<tyr::formalism::planning::GroundNumericEffect<T>>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::GroundNumericEffect<T>>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "({} {} {})", value.operator_kind, value.fterm, value.fexpr);
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<ygg::Data<tyr::formalism::planning::NumericEffectOperator<T>>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::NumericEffectOperator<T>>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.value);
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<ygg::Data<tyr::formalism::planning::GroundNumericEffectOperator<T>>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::GroundNumericEffectOperator<T>>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.value);
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<ygg::Data<tyr::formalism::planning::FDRVariable<T>>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::FDRVariable<T>>& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "FDRVariable(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.index);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "atoms = ", value.atoms);
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<ygg::Data<tyr::formalism::planning::FDRFact<T>>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::FDRFact<T>>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "<{},{}>", value.variable, value.value);
-    }
-};
-
-template<>
-struct formatter<ygg::Data<tyr::formalism::planning::FunctionExpression>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::FunctionExpression>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.value);
-    }
-};
-
-template<>
-struct formatter<ygg::Data<tyr::formalism::planning::GroundFunctionExpression>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::GroundFunctionExpression>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.value);
-    }
-};
-
-template<>
-struct formatter<ygg::Data<tyr::formalism::planning::ConjunctiveCondition>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::ConjunctiveCondition>& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "ConjunctiveCondition(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.index);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "variables = ", value.variables);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "static literals = ", value.static_literals);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent literals = ", value.fluent_literals);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "derived literals = ", value.derived_literals);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "numeric constraints = ", value.numeric_constraints);
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<ygg::Data<tyr::formalism::planning::GroundConjunctiveCondition>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::GroundConjunctiveCondition>& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "GroundConjunctiveCondition(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.index);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "static literals = ", value.static_literals);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "derived literals = ", value.derived_literals);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "positive facts = ", value.positive_facts);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "negative facts = ", value.negative_facts);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "numeric constraints = ", value.numeric_constraints);
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<ygg::Data<tyr::formalism::planning::ConditionalEffect>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::ConditionalEffect>& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "ConditionalEffect(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.index);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "variables = ", value.variables);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "condition = ", value.condition);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "effect = ", value.effect);
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<ygg::Data<tyr::formalism::planning::GroundConditionalEffect>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::GroundConditionalEffect>& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "GroundConditionalEffect(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.index);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "condition = ", value.condition);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "effect = ", value.effect);
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<ygg::Data<tyr::formalism::planning::ConjunctiveEffect>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::ConjunctiveEffect>& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "ConjunctiveEffect(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.index);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent literals = ", value.literals);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent numeric effects = ", value.numeric_effects);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "auxiliary numeric effect = ", value.auxiliary_numeric_effect);
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<ygg::Data<tyr::formalism::planning::GroundConjunctiveEffect>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::GroundConjunctiveEffect>& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "GroundConjunctiveEffect(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.index);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "add facts = ", value.add_facts);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "del facts = ", value.del_facts);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent numeric effects = ", value.numeric_effects);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "auxiliary numeric effect = ", value.auxiliary_numeric_effect);
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<ygg::Data<tyr::formalism::planning::Action>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::Action>& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "Action(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.index);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "name = ", value.name);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "variables = ", value.variables);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "condition = ", value.condition);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "effects = ", value.effects);
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<ygg::Data<tyr::formalism::planning::GroundAction>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::GroundAction>& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "GroundAction(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.index);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "binding = ", value.binding);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "condition = ", value.condition);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "effects = ", value.effects);
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<ygg::Data<tyr::formalism::planning::Axiom>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::Axiom>& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "Axiom(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.index);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "variables = ", value.variables);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "body = ", value.body);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "head = ", value.head);
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<ygg::Data<tyr::formalism::planning::GroundAxiom>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::GroundAxiom>& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "GroundAxiom(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.index);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "binding = ", value.binding);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "body = ", value.body);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "head = ", value.head);
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<ygg::Data<tyr::formalism::planning::Metric>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::Metric>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "({} {})", value.optimization_direction, value.fexpr);
-    }
-};
-
-template<>
-struct formatter<ygg::Data<tyr::formalism::planning::Task>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::Task>& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "Task(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.index);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "name = ", value.name);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "derived predicates = ", value.derived_predicates);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "objects = ", value.objects);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "static atoms = ", value.static_atoms);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent atoms = ", value.fluent_atoms);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "static numeric variables = ", value.static_fterm_values);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent numeric variables = ", value.fluent_fterm_values);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "auxiliary numeric variable = ", value.auxiliary_fterm_value);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "goal = ", value.goal);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "metric = ", value.metric);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "axioms = ", value.axioms);
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<ygg::Data<tyr::formalism::planning::Domain>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::Domain>& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "Domain(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.index);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "name = ", value.name);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "static predicates = ", value.static_predicates);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent predicates = ", value.fluent_predicates);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "derived predicates = ", value.derived_predicates);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "static functions = ", value.static_functions);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent functions = ", value.fluent_functions);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "auxiliary function = ", value.auxiliary_function);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "constants = ", value.constants);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "actions = ", value.actions);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "axioms = ", value.axioms);
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<ygg::Data<tyr::formalism::planning::FDRTask>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const ygg::Data<tyr::formalism::planning::FDRTask>& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "FDRTask(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.index);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "name = ", value.name);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "derived predicates = ", value.derived_predicates);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "objects = ", value.objects);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "static atoms = ", value.static_atoms);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent atoms = ", value.fluent_atoms);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "derived atoms = ", value.derived_atoms);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "static numeric variables = ", value.static_fterm_values);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent numeric variables = ", value.fluent_fterm_values);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "auxiliary numeric variable = ", value.auxiliary_fterm_value);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "goal = ", value.goal);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "metric = ", value.metric);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "axioms = ", value.axioms);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent variables = ", value.fluent_variables);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent facts = ", value.fluent_facts);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "goal = ", value.goal);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "ground actions = ", value.ground_actions);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "ground axioms = ", value.ground_axioms);
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<typename T>
-struct formatter<tyr::formalism::planning::UnaryOperatorView<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::UnaryOperatorView<T>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "({} {})", value.get_operator(), value.get_arg());
-    }
-};
-
-template<tyr::formalism::BinaryOperatorKind Operator, typename T>
-struct formatter<tyr::formalism::planning::BinaryOperatorView<Operator, T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::BinaryOperatorView<Operator, T>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "({} {} {})", value.get_operator(), value.get_lhs(), value.get_rhs());
-    }
-};
-
-template<typename T>
-struct formatter<tyr::formalism::planning::MultiOperatorView<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::MultiOperatorView<T>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "({} {})", value.get_operator(), fmt::join(ygg::to_strings(value.get_args()), " "));
-    }
-};
-
-template<typename T>
-struct formatter<tyr::formalism::planning::ArithmeticOperatorView<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::ArithmeticOperatorView<T>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.get_variant());
-    }
-};
-
-template<typename T>
-struct formatter<tyr::formalism::planning::BooleanOperatorView<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::BooleanOperatorView<T>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.get_variant());
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<tyr::formalism::planning::AtomView<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::AtomView<T>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "({} {})", value.get_predicate().get_name(), fmt::join(ygg::to_strings(value.get_terms()), " "));
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<tyr::formalism::planning::LiteralView<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::LiteralView<T>& value, FormatContext& ctx) const
-    {
-        if (value.get_polarity())
-        {
-            return fmt::format_to(ctx.out(), "{}", value.get_atom());
-        }
-        return fmt::format_to(ctx.out(), "(not {})", value.get_atom());
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<tyr::formalism::planning::GroundAtomView<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::GroundAtomView<T>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.get_row());
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<tyr::formalism::planning::GroundLiteralView<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::GroundLiteralView<T>& value, FormatContext& ctx) const
-    {
-        if (value.get_polarity())
-        {
-            return fmt::format_to(ctx.out(), "{}", value.get_atom());
-        }
-        return fmt::format_to(ctx.out(), "(not {})", value.get_atom());
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<tyr::formalism::planning::FunctionTermView<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::FunctionTermView<T>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "({} {})", value.get_function().get_name(), fmt::join(ygg::to_strings(value.get_terms()), " "));
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<tyr::formalism::planning::GroundFunctionTermView<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::GroundFunctionTermView<T>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.get_row());
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<tyr::formalism::planning::GroundFunctionTermValueView<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::GroundFunctionTermValueView<T>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "(= {} {})", value.get_fterm(), value.get_value());
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::FunctionExpressionView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::FunctionExpressionView& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.get_variant());
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::GroundFunctionExpressionView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::GroundFunctionExpressionView& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.get_variant());
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<tyr::formalism::planning::NumericEffectView<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::NumericEffectView<T>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "({} {} {})", value.get_operator(), value.get_fterm(), value.get_fexpr());
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<tyr::formalism::planning::GroundNumericEffectView<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::GroundNumericEffectView<T>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "({} {} {})", value.get_operator(), value.get_fterm(), value.get_fexpr());
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<tyr::formalism::planning::NumericEffectOperatorView<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::NumericEffectOperatorView<T>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.get_variant());
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<tyr::formalism::planning::GroundNumericEffectOperatorView<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::GroundNumericEffectOperatorView<T>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.get_variant());
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::ConjunctiveConditionView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::ConjunctiveConditionView& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "ConjunctiveCondition(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.get_index());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "variables = ", value.get_variables());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "static literals = ", value.template get_literals<tyr::formalism::StaticTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent literals = ", value.template get_literals<tyr::formalism::FluentTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "derived literals = ", value.template get_literals<tyr::formalism::DerivedTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "numeric constraints = ", value.get_numeric_constraints());
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<tyr::formalism::planning::FDRFactView<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::FDRFactView<T>& value, FormatContext& ctx) const
-    {
-        const auto atom = value.get_atom();
-        if (!atom.has_value())
-        {
-            return fmt::format_to(ctx.out(),
-                                  "<{},{}>: (none-of {})",
-                                  value.get_variable().get_index(),
-                                  value.get_value(),
-                                  fmt::join(ygg::to_strings(value.get_variable().get_atoms()), " "));
-        }
-        return fmt::format_to(ctx.out(), "<{},{}>: {}", value.get_variable().get_index(), value.get_value(), atom.value());
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::GroundConjunctiveConditionView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::GroundConjunctiveConditionView& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "GroundConjunctiveCondition(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.get_index());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "static literals = ", value.template get_literals<tyr::formalism::StaticTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "derived literals = ", value.template get_literals<tyr::formalism::DerivedTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "positive facts = ", value.template get_facts<tyr::formalism::PositiveTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "negative facts = ", value.template get_facts<tyr::formalism::NegativeTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "numeric constraints = ", value.get_numeric_constraints());
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::ConjunctiveEffectView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::ConjunctiveEffectView& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "ConjunctiveEffect(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.get_index());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent literals = ", value.get_literals());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent numeric effects = ", value.get_numeric_effects());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "auxiliary numeric effect = ", value.get_auxiliary_numeric_effect());
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::GroundConjunctiveEffectView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::GroundConjunctiveEffectView& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "GroundConjunctiveEffect(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.get_index());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "add facts = ", value.template get_facts<tyr::formalism::PositiveTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "del facts = ", value.template get_facts<tyr::formalism::NegativeTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent numeric effects = ", value.get_numeric_effects());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "auxiliary numeric effect = ", value.get_auxiliary_numeric_effect());
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::ConditionalEffectView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::ConditionalEffectView& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "ConditionalEffect(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.get_index());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "variables = ", value.get_variables());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "condition = ", value.get_condition());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "effect = ", value.get_effect());
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::GroundConditionalEffectView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::GroundConditionalEffectView& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "GroundConditionalEffect(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.get_index());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "condition = ", value.get_condition());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "effect = ", value.get_effect());
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::ActionView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::ActionView& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "Action(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.get_index());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "name = ", value.get_name());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "original name = ", value.get_original_name());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "variables = ", value.get_variables());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "condition = ", value.get_condition());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "effects = ", value.get_effects());
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::AxiomBindingView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::AxiomBindingView& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", fmt::join(ygg::to_strings(value.get_objects()), " "));
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::GroundActionView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::GroundActionView& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "GroundAction(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.get_index());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "binding = ", value.get_row());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "action index = ", value.get_action().get_index());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "condition = ", value.get_condition());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "effects = ", value.get_effects());
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<std::pair<tyr::formalism::planning::ActionBindingView, tyr::formalism::planning::PlanFormatting>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const std::pair<tyr::formalism::planning::ActionBindingView, tyr::formalism::planning::PlanFormatting>& value, FormatContext& ctx) const
-    {
-        auto out = fmt::format_to(ctx.out(), "({}", value.first.get_relation().get_original_name());
-        for (size_t i = 0; i < value.first.get_relation().get_original_arity(); ++i)
-        {
-            out = fmt::format_to(out, " {}", value.first.get_objects()[i]);
-        }
-        return fmt::format_to(out, ")");
-    }
-};
-
-template<>
-struct formatter<std::pair<tyr::formalism::planning::GroundActionView, tyr::formalism::planning::PlanFormatting>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const std::pair<tyr::formalism::planning::GroundActionView, tyr::formalism::planning::PlanFormatting>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", std::make_pair(value.first.get_row(), value.second));
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::AxiomView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::AxiomView& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "Axiom(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.get_index());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "variables = ", value.get_variables());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "body = ", value.get_body());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "head = ", value.get_head());
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::GroundAxiomView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::GroundAxiomView& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "GroundAxiom(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.get_index());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "binding = ", value.get_row());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "axiom index = ", value.get_axiom().get_index());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "body = ", value.get_body());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "head = ", value.get_head());
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::MetricView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::MetricView& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "({} {})", value.get_optimization_direction(), value.get_fexpr());
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::TaskView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::TaskView& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "Task(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.get_index());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "name = ", value.get_name());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "derived predicates = ", value.get_derived_predicates());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "objects = ", value.get_objects());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "static atoms = ", value.template get_atoms<tyr::formalism::StaticTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent atoms = ", value.template get_atoms<tyr::formalism::FluentTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "static numeric variables = ", value.template get_fterm_values<tyr::formalism::StaticTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent numeric variables = ", value.template get_fterm_values<tyr::formalism::FluentTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "auxiliary numeric variable = ", value.get_auxiliary_fterm_value());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "goal = ", value.get_goal());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "metric = ", value.get_metric());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "axioms = ", value.get_axioms());
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::DomainView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::DomainView& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "Domain(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.get_index());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "name = ", value.get_name());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "static predicates = ", value.template get_predicates<tyr::formalism::StaticTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent predicates = ", value.template get_predicates<tyr::formalism::FluentTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "derived predicates = ", value.template get_predicates<tyr::formalism::DerivedTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "static functions = ", value.template get_functions<tyr::formalism::StaticTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent functions = ", value.template get_functions<tyr::formalism::FluentTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "auxiliary function = ", value.get_auxiliary_function());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "constants = ", value.get_constants());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "actions = ", value.get_actions());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "axioms = ", value.get_axioms());
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<tyr::formalism::planning::FDRVariableView<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::FDRVariableView<T>& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "FDRVariable(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.get_index());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "atoms = ", value.get_atoms());
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::FDRTaskView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::FDRTaskView& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "FDRTask(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.get_index());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "name = ", value.get_name());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "derived predicates = ", value.get_derived_predicates());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "objects = ", value.get_objects());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "static atoms = ", value.template get_atoms<tyr::formalism::StaticTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent atoms = ", value.template get_atoms<tyr::formalism::FluentTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "derived atoms = ", value.template get_atoms<tyr::formalism::DerivedTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "static numeric variables = ", value.template get_fterm_values<tyr::formalism::StaticTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent numeric variables = ", value.template get_fterm_values<tyr::formalism::FluentTag>());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "auxiliary numeric variable = ", value.get_auxiliary_fterm_value());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "goal = ", value.get_goal());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "metric = ", value.get_metric());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "axioms = ", value.get_axioms());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent variables = ", value.get_fluent_variables());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent facts = ", value.get_fluent_facts());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "goal = ", value.get_goal());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "ground actions = ", value.get_ground_actions());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "ground axioms = ", value.get_ground_axioms());
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
     }
 };
 
@@ -1423,7 +250,8 @@ struct formatter<tyr::formalism::planning::PlanningDomain, char>
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::PlanningDomain& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "{}", value.get_domain());
+        using ToString = std::string (*)(const tyr::formalism::planning::PlanningDomain&);
+        return fmt::format_to(ctx.out(), "{}", static_cast<ToString>(&tyr::formalism::planning::format::to_string)(value));
     }
 };
 
@@ -1435,7 +263,8 @@ struct formatter<tyr::formalism::planning::PlanningTask, char>
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::PlanningTask& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "{}", value.get_task());
+        using ToString = std::string (*)(const tyr::formalism::planning::PlanningTask&);
+        return fmt::format_to(ctx.out(), "{}", static_cast<ToString>(&tyr::formalism::planning::format::to_string)(value));
     }
 };
 
@@ -1447,10 +276,38 @@ struct formatter<tyr::formalism::planning::PlanningFDRTask, char>
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::PlanningFDRTask& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "{}", value.get_task());
+        using ToString = std::string (*)(const tyr::formalism::planning::PlanningFDRTask&);
+        return fmt::format_to(ctx.out(), "{}", static_cast<ToString>(&tyr::formalism::planning::format::to_string)(value));
     }
 };
 
-}
+}  // namespace fmt
+
+namespace tyr::formalism::planning::format
+{
+
+std::string to_string(const std::pair<ActionBindingView, PlanFormatting>& value);
+std::string to_string(const std::pair<GroundActionView, PlanFormatting>& value);
+
+}  // namespace tyr::formalism::planning::format
+
+namespace fmt
+{
+
+template<typename View>
+struct formatter<std::pair<View, tyr::formalism::planning::PlanFormatting>, char>
+{
+    using Value = std::pair<View, tyr::formalism::planning::PlanFormatting>;
+
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const Value& value, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::format::to_string(value));
+    }
+};
+
+}  // namespace fmt
 
 #endif
