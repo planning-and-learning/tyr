@@ -16,7 +16,10 @@
       "heuristic": "rpg_ff",
       "threads": 1,
       "seed": 0,
-      "args": []
+      "args": [
+        "--heuristic-cost-type",
+        "unit"
+      ]
     }
   ],
   "parsers": [

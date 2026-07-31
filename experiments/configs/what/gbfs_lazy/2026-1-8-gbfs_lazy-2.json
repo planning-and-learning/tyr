@@ -19,7 +19,10 @@
       "heuristic": "rpg_ff",
       "threads": 2,
       "seed": 0,
-      "args": []
+      "args": [
+        "--heuristic-cost-type",
+        "unit"
+      ]
     }
   ],
   "parsers": [

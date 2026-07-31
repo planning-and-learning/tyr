@@ -47,7 +47,7 @@ def add_out_of_time(content, props):
 
 class SearchParser(Parser):
     """
-    Num objects: 4
+    [Total] Number of objects: 4
     [GBFS] Search started.
     [GBFS] Start node h_value: 3
     [GBFS] New best h_value: 2 with num expanded states 3 and num generated states 5 (0 ms)
@@ -89,13 +89,17 @@ class SearchParser(Parser):
         self.add_pattern("num_fluent_atoms", r"\[Total\] Number of fluent atoms: (\d+)", type=int)
         self.add_pattern("num_derived_atoms", r"\[Total\] Number of derived atoms: (\d+)", type=int)
         self.add_pattern("num_fluent_fterms", r"\[Total\] Number of fluent fterms: (\d+)", type=int)
+        self.add_pattern("action_bindings_memory_usage_bytes", r"\[Total\] Action bindings memory usage: (\d+) bytes", type=int)
+        self.add_pattern("predicate_bindings_memory_usage_bytes", r"\[Total\] Predicate bindings memory usage: (\d+) bytes", type=int)
+        self.add_pattern("axiom_bindings_memory_usage_bytes", r"\[Total\] Axiom bindings memory usage: (\d+) bytes", type=int)
+        self.add_pattern("function_bindings_memory_usage_bytes", r"\[Total\] Function bindings memory usage: (\d+) bytes", type=int)
         self.add_pattern("states_memory_usage_bytes", r"\[Total\] States memory usage: (\d+) bytes", type=int)
         self.add_pattern("peak_memory_usage_bytes", r"\[Total\] Peak memory usage: (\d+) bytes", type=int)
 
         self.add_pattern("unsolvable", r"(Task is unsolvable!)", type=str)
         self.add_pattern("invalid", r"(Plan invalid)", type=str)
 
-        self.add_pattern("num_objects", r"Num objects: (\d+)", type=int)
+        self.add_pattern("num_objects", r"\[Total\] Number of objects: (\d+)", type=int)
         
         self.add_function(process_invalid)
         self.add_function(process_unsolvable)
@@ -131,6 +135,11 @@ class SearchParser(Parser):
             "num_fluent_atoms",
             "num_derived_atoms",
             "num_fluent_fterms",
+            "num_objects",
+            Attribute("action_bindings_memory_usage_bytes", function=geometric_mean),
+            Attribute("predicate_bindings_memory_usage_bytes", function=geometric_mean),
+            Attribute("axiom_bindings_memory_usage_bytes", function=geometric_mean),
+            Attribute("function_bindings_memory_usage_bytes", function=geometric_mean),
             Attribute("states_memory_usage_bytes", function=geometric_mean),
             Attribute("peak_memory_usage_bytes", function=geometric_mean),
             Attribute("memory_mb", function=geometric_mean),

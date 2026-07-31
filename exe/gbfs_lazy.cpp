@@ -25,6 +25,31 @@
 
 using namespace tyr;
 
+namespace
+{
+void print_summary(const formalism::planning::Repository& repository)
+{
+    std::cout << "[Total] Number of objects: " << repository.template size<formalism::Object>() << std::endl;
+    std::cout << "[Total] Number of fluent atoms: " << repository.template size<formalism::planning::GroundAtom<formalism::FluentTag>>() << std::endl;
+    std::cout << "[Total] Number of derived atoms: " << repository.template size<formalism::planning::GroundAtom<formalism::DerivedTag>>() << std::endl;
+    std::cout << "[Total] Number of fluent fterms: " << repository.template size<formalism::planning::GroundFunctionTerm<formalism::FluentTag>>() << std::endl;
+    std::cout << "[Total] Action bindings memory usage: " << repository.template memory_usage<formalism::RelationBinding<formalism::planning::Action>>()
+              << " bytes" << std::endl;
+    std::cout << "[Total] Predicate bindings memory usage: "
+              << repository.template memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::StaticTag>>>()
+                     + repository.template memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>()
+                     + repository.template memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::DerivedTag>>>()
+              << " bytes" << std::endl;
+    std::cout << "[Total] Axiom bindings memory usage: " << repository.template memory_usage<formalism::RelationBinding<formalism::planning::Axiom>>()
+              << " bytes" << std::endl;
+    std::cout << "[Total] Function bindings memory usage: "
+              << repository.template memory_usage<formalism::RelationBinding<formalism::Function<formalism::StaticTag>>>()
+                     + repository.template memory_usage<formalism::RelationBinding<formalism::Function<formalism::FluentTag>>>()
+                     + repository.template memory_usage<formalism::RelationBinding<formalism::Function<formalism::AuxiliaryTag>>>()
+              << " bytes" << std::endl;
+}
+}
+
 int main(int argc, char** argv)
 {
     auto program = argparse::ArgumentParser("Lazy GBFS search.");
@@ -150,12 +175,7 @@ int main(int argc, char** argv)
                 successor_generator->get_state_repository()->get_axiom_evaluator()->print_summary(1);
             heuristic->print_summary(1);
 
-            std::cout << "[Total] Number of fluent atoms: "
-                      << lifted_task->get_repository()->template size<formalism::planning::GroundAtom<formalism::FluentTag>>() << std::endl;
-            std::cout << "[Total] Number of derived atoms: "
-                      << lifted_task->get_repository()->template size<formalism::planning::GroundAtom<formalism::DerivedTag>>() << std::endl;
-            std::cout << "[Total] Number of fluent fterms: "
-                      << lifted_task->get_repository()->template size<formalism::planning::GroundFunctionTerm<formalism::FluentTag>>() << std::endl;
+            print_summary(*lifted_task->get_repository());
             std::cout << "[Total] States memory usage: " << successor_generator->get_state_repository()->memory_usage() << " bytes" << std::endl;
         }
         else
@@ -215,12 +235,7 @@ int main(int argc, char** argv)
                     plan_file.close();
                 }
 
-                std::cout << "[Total] Number of fluent atoms: "
-                          << ground_task->get_repository()->template size<formalism::planning::GroundAtom<formalism::FluentTag>>() << std::endl;
-                std::cout << "[Total] Number of derived atoms: "
-                          << ground_task->get_repository()->template size<formalism::planning::GroundAtom<formalism::DerivedTag>>() << std::endl;
-                std::cout << "[Total] Number of fluent fterms: "
-                          << ground_task->get_repository()->template size<formalism::planning::GroundFunctionTerm<formalism::FluentTag>>() << std::endl;
+                print_summary(*ground_task->get_repository());
                 std::cout << "[Total] States memory usage: " << successor_generator->get_state_repository()->memory_usage() << " bytes" << std::endl;
             }
         }

@@ -16,7 +16,10 @@
       "heuristic": "rpg_ff",
       "threads": 1,
       "seed": 0,
-      "args": []
+      "args": [
+        "--heuristic-cost-type",
+        "unit"
+      ]
     },
     {
       "name": "gbfs-lazy-lifted-rpg_add-1",
@@ -24,7 +27,10 @@
       "heuristic": "rpg_add",
       "threads": 1,
       "seed": 0,
-      "args": []
+      "args": [
+        "--heuristic-cost-type",
+        "unit"
+      ]
     },
     {
       "name": "gbfs-lazy-lifted-blind-1",
