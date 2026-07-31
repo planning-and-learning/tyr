@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_GROUND_SUCCESSOR_GENERATOR_HPP_
 #define TYR_PLANNING_GROUND_SUCCESSOR_GENERATOR_HPP_
 
-#include "tyr/planning/ground/node.hpp"        // for Node
+#include "tyr/planning/node.hpp"               // for Node
 #include "tyr/planning/ground/state_view.hpp"  // for State
 //
 #include "tyr/formalism/planning/ground_action_index.hpp"  // for ygg::Index
@@ -44,8 +44,13 @@ private:
 public:
     Node<GroundTag> get_initial_node();
 
-    std::vector<LabeledNode<GroundTag>> get_labeled_successor_nodes(const Node<GroundTag>& node);
-    void get_labeled_successor_nodes(const Node<GroundTag>& node, std::vector<LabeledNode<GroundTag>>& out_nodes);
+    // Unlabeled successor API.
+    NodeList<GroundTag> get_successor_nodes(const Node<GroundTag>& node);
+    void get_successor_nodes(const Node<GroundTag>& node, NodeList<GroundTag>& out_nodes);
+
+    // Labeled successor API.
+    LabeledNodeList<GroundTag> get_labeled_successor_nodes(const Node<GroundTag>& node);
+    void get_labeled_successor_nodes(const Node<GroundTag>& node, LabeledNodeList<GroundTag>& out_nodes);
 
     Node<GroundTag> get_successor_node(const Node<GroundTag>& node, ::tyr::formalism::planning::ActionBindingView binding);
     Node<GroundTag> get_successor_node(const Node<GroundTag>& node, ::tyr::formalism::planning::GroundActionView action);

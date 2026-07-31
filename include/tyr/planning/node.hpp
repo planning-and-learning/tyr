@@ -26,13 +26,31 @@
 
 #include <concepts>
 #include <ranges>
+#include <tuple>
+#include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning
 {
 template<TaskKind Kind>
-class Node;
+class Node : public ygg::comparison::Mixin<Node<Kind>>
+{
+public:
+    using TaskType = Task<Kind>;
+
+    Node(StateView<Kind> state, ygg::float_t metric) noexcept : m_state(std::move(state)), m_metric(metric) {}
+
+    const StateView<Kind>& get_state() const noexcept { return m_state; }
+    ygg::float_t get_metric() const noexcept { return m_metric; }
+
+    auto identifying_members() const noexcept { return std::tie(m_state, m_metric); }
+
+private:
+    StateView<Kind> m_state;
+    ygg::float_t m_metric;
+};
 
 template<TaskKind Kind>
 using NodeList = std::vector<Node<Kind>>;

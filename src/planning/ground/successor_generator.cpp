@@ -23,11 +23,11 @@
 #include "tyr/planning/applicability.hpp"    // for StateC...
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/match_tree/match_tree.hpp"
-#include "tyr/planning/ground/node.hpp"
 #include "tyr/planning/ground/state_builder.hpp"
 #include "tyr/planning/ground/state_repository.hpp"
 #include "tyr/planning/ground/state_view.hpp"
 #include "tyr/planning/ground/task.hpp"
+#include "tyr/planning/node.hpp"
 #include "tyr/planning/state_index.hpp"
 #include "tyr/planning/task_utils.hpp"
 
@@ -68,16 +68,47 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::get_initial_node()
     return Node<GroundTag>(std::move(initial_state), state_metric);
 }
 
-std::vector<LabeledNode<GroundTag>> SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<GroundTag>& node)
+NodeList<GroundTag> SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<GroundTag>& node)
 {
-    auto result = std::vector<LabeledNode<GroundTag>> {};
+    auto result = NodeList<GroundTag> {};
+
+    get_successor_nodes(node, result);
+
+    return result;
+}
+
+void SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<GroundTag>& node, NodeList<GroundTag>& out_nodes)
+{
+    out_nodes.clear();
+
+    const auto state = node.get_state();
+
+    const auto state_context = StateContext<GroundTag>(*m_task, state.get_unpacked_state(), node.get_metric());
+
+    m_action_match_tree->generate(state_context, m_applicable_actions);
+
+    for (const auto ground_action : m_applicable_actions)
+    {
+        assert(is_applicable(ground_action.get_condition(), state_context));
+
+        if (!m_executor.is_applicable_if_fires(ground_action, state_context))
+            continue;
+
+        assert(m_executor.is_applicable(ground_action, state_context));
+        out_nodes.emplace_back(m_executor.apply_action(state_context, ground_action, *m_state_repository));
+    }
+}
+
+LabeledNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<GroundTag>& node)
+{
+    auto result = LabeledNodeList<GroundTag> {};
 
     get_labeled_successor_nodes(node, result);
 
     return result;
 }
 
-void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<GroundTag>& node, std::vector<LabeledNode<GroundTag>>& out_nodes)
+void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<GroundTag>& node, LabeledNodeList<GroundTag>& out_nodes)
 {
     out_nodes.clear();
 

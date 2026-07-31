@@ -17,8 +17,8 @@
 
 #include "tyr/planning/plan.hpp"
 
-#include "tyr/planning/ground/node.hpp"
-#include "tyr/planning/lifted/node.hpp"
+#include "tyr/planning/ground/state_view.hpp"
+#include "tyr/planning/lifted/state_view.hpp"
 #include "tyr/planning/node.hpp"
 
 #include <yggdrasil/core/config.hpp>

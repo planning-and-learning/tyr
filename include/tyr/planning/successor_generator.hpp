@@ -38,11 +38,14 @@ template<typename T, typename Kind>
 concept SuccessorGeneratorConcept = requires(T& r,
                                              ygg::Index<State<Kind>> state_index,
                                              const Node<Kind>& node,
-                                             std::vector<LabeledNode<Kind>>& labeled_successor_nodes,
+                                             NodeList<Kind>& successor_nodes,
+                                             LabeledNodeList<Kind>& labeled_successor_nodes,
                                              ::tyr::formalism::planning::ActionBindingView binding) {
     requires TaskKind<Kind>;
     { r.get_initial_node() } -> std::same_as<Node<Kind>>;
-    { r.get_labeled_successor_nodes(node) } -> std::same_as<std::vector<LabeledNode<Kind>>>;
+    { r.get_successor_nodes(node) } -> std::same_as<NodeList<Kind>>;
+    { r.get_successor_nodes(node, successor_nodes) } -> std::same_as<void>;
+    { r.get_labeled_successor_nodes(node) } -> std::same_as<LabeledNodeList<Kind>>;
     { r.get_labeled_successor_nodes(node, labeled_successor_nodes) } -> std::same_as<void>;
     { r.get_successor_node(node, binding) } -> std::same_as<Node<Kind>>;
     { r.get_node(state_index) } -> std::same_as<Node<Kind>>;

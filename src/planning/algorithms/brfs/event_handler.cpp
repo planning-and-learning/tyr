@@ -19,10 +19,11 @@
 
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/planning/formatter.hpp"
-#include "tyr/planning/ground/node.hpp"
+#include "tyr/planning/ground/state_view.hpp"
 #include "tyr/planning/ground/task.hpp"
-#include "tyr/planning/lifted/node.hpp"
+#include "tyr/planning/lifted/state_view.hpp"
 #include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/node.hpp"
 #include "tyr/planning/plan.hpp"
 
 #include <fmt/ostream.h>

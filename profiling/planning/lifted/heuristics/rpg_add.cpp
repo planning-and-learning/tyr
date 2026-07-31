@@ -21,7 +21,7 @@
 #include "tyr/planning/algorithms/gbfs_lazy.hpp"
 #include "tyr/planning/algorithms/gbfs_lazy/event_handler.hpp"
 #include "tyr/planning/factory.hpp"
-#include "tyr/planning/lifted/node.hpp"
+#include "tyr/planning/node.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
 

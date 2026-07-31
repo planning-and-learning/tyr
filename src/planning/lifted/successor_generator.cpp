@@ -27,12 +27,12 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/match_tree/match_tree.hpp"
 #include "tyr/planning/lifted/axiom_evaluator.hpp"
-#include "tyr/planning/lifted/node.hpp"
 #include "tyr/planning/lifted/programs/action.hpp"
 #include "tyr/planning/lifted/state_builder.hpp"
 #include "tyr/planning/lifted/state_repository.hpp"
 #include "tyr/planning/lifted/state_view.hpp"
 #include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/node.hpp"
 #include "tyr/planning/successor_generator.hpp"
 #include "tyr/planning/task_utils.hpp"
 
@@ -98,14 +98,28 @@ Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_initial_node()
     return Node<LiftedTag>(std::move(initial_state), state_metric);
 }
 
-std::vector<LabeledNode<LiftedTag>> SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<LiftedTag>& node)
+NodeList<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<LiftedTag>& node)
 {
-    auto result = std::vector<LabeledNode<LiftedTag>> {};
+    auto result = NodeList<LiftedTag> {};
+    get_successor_nodes(node, result);
+    return result;
+}
+
+void SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<LiftedTag>& node, NodeList<LiftedTag>& out_nodes)
+{
+    out_nodes.clear();
+
+    for_each_applicable_action_binding(node, m_scratch_action_binding, [&](const auto& binding) { out_nodes.emplace_back(get_successor_node(node, binding)); });
+}
+
+LabeledNodeList<LiftedTag> SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<LiftedTag>& node)
+{
+    auto result = LabeledNodeList<LiftedTag> {};
     get_labeled_successor_nodes(node, result);
     return result;
 }
 
-void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<LiftedTag>& node, std::vector<LabeledNode<LiftedTag>>& out_nodes)
+void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<LiftedTag>& node, LabeledNodeList<LiftedTag>& out_nodes)
 {
     out_nodes.clear();
 

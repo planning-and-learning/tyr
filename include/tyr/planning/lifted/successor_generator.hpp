@@ -26,11 +26,11 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/lifted/axiom_evaluator.hpp"
-#include "tyr/planning/lifted/node.hpp"
 #include "tyr/planning/lifted/programs/action.hpp"
 #include "tyr/planning/lifted/state_repository.hpp"
 #include "tyr/planning/lifted/state_view.hpp"
 #include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/node.hpp"
 #include "tyr/planning/successor_generator.hpp"
 
 #include <type_traits>
@@ -53,10 +53,13 @@ private:
 public:
     Node<LiftedTag> get_initial_node();
 
-    // Transition label API
-    std::vector<LabeledNode<LiftedTag>> get_labeled_successor_nodes(const Node<LiftedTag>& node);
+    // Unlabeled successor API. Does not intern action bindings.
+    NodeList<LiftedTag> get_successor_nodes(const Node<LiftedTag>& node);
+    void get_successor_nodes(const Node<LiftedTag>& node, NodeList<LiftedTag>& out_nodes);
 
-    void get_labeled_successor_nodes(const Node<LiftedTag>& node, std::vector<LabeledNode<LiftedTag>>& out_nodes);
+    // Labeled successor API. Interns action bindings.
+    LabeledNodeList<LiftedTag> get_labeled_successor_nodes(const Node<LiftedTag>& node);
+    void get_labeled_successor_nodes(const Node<LiftedTag>& node, LabeledNodeList<LiftedTag>& out_nodes);
 
     Node<LiftedTag> get_successor_node(const Node<LiftedTag>& node, ::tyr::formalism::planning::GroundActionView action);
     ::tyr::formalism::planning::GroundActionView ground_action(::tyr::formalism::planning::ActionBindingView binding);

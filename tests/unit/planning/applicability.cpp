@@ -70,7 +70,24 @@ void expect_effect_validity_successors(const p::TaskPtr<Kind>& task)
     auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
     auto state_repository = p::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
     auto successor_generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context, state_repository);
-    const auto successors = successor_generator->get_labeled_successor_nodes(successor_generator->get_initial_node());
+    const auto initial_node = successor_generator->get_initial_node();
+    const auto count_action_bindings = [&]
+    {
+        auto result = size_t { 0 };
+        for (const auto action : task->get_domain().get_domain().get_actions())
+            result += task->get_repository()->size(action.get_index());
+        return result;
+    };
+    const auto num_action_bindings = count_action_bindings();
+    const auto successor_nodes = successor_generator->get_successor_nodes(initial_node);
+
+    EXPECT_EQ(count_action_bindings(), num_action_bindings);
+
+    const auto successors = successor_generator->get_labeled_successor_nodes(initial_node);
+
+    ASSERT_EQ(successor_nodes.size(), successors.size());
+    for (size_t i = 0; i < successors.size(); ++i)
+        EXPECT_EQ(successor_nodes[i], successors[i].node);
 
     auto action_names = std::vector<std::string> {};
     for (const auto& successor : successors)

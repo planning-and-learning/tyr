@@ -20,10 +20,9 @@
 
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground/node.hpp"
 #include "tyr/planning/ground/state_view.hpp"
-#include "tyr/planning/lifted/node.hpp"
 #include "tyr/planning/lifted/state_view.hpp"
+#include "tyr/planning/node.hpp"
 
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/core/config.hpp>

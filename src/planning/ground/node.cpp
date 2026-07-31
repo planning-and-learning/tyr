@@ -15,9 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/ground/node.hpp"
-
 #include "tyr/planning/ground/state_view.hpp"
+#include "tyr/planning/node.hpp"
 //
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/state_index.hpp"
