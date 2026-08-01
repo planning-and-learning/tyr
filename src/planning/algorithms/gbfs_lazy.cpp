@@ -89,21 +89,20 @@ static SearchNode<Kind>& get_or_create_search_node(ygg::Index<State<Kind>> state
 template<TaskKind Kind>
 struct QueueEntry
 {
-    using KeyType = std::tuple<ygg::float_t, ygg::float_t, ygg::uint_t, SearchNodeStatus>;
+    using KeyType = std::tuple<ygg::float_t, ygg::float_t, ygg::uint_t>;
     using ItemType = ygg::Index<State<Kind>>;
 
     ygg::float_t g_value;
     ygg::float_t h_value;
     ygg::Index<State<Kind>> state;
     ygg::uint_t step;
-    SearchNodeStatus status;
 
-    KeyType get_key() const { return std::make_tuple(h_value, g_value, step, status); }
+    KeyType get_key() const { return std::make_tuple(h_value, g_value, step); }
     ItemType get_item() const { return state; }
 };
 
-static_assert(sizeof(QueueEntry<LiftedTag>) == 32);
-static_assert(sizeof(QueueEntry<GroundTag>) == 32);
+static_assert(sizeof(QueueEntry<LiftedTag>) == 24);
+static_assert(sizeof(QueueEntry<GroundTag>) == 24);
 
 template<TaskKind Kind>
 using Queue = PriorityQueue<QueueEntry<Kind>>;
@@ -187,7 +186,7 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
 
     auto labeled_succ_nodes = std::vector<LabeledNode<Kind>> {};
 
-    standard_openlist.insert(QueueEntry { start_g_value, start_h_value, start_state_index, step++, start_search_node.status });
+    standard_openlist.insert(QueueEntry { start_g_value, start_h_value, start_state_index, step++ });
 
     auto stopwatch = options.max_time ? std::optional<ygg::CountdownWatch>(options.max_time.value()) : std::nullopt;
 
@@ -321,9 +320,9 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
             /* Exploration strategy */
 
             if (is_preferred)
-                preferred_openlist.insert(QueueEntry { successor_g_value, state_h_value, succ_state_index, step++, successor_search_node.status });
+                preferred_openlist.insert(QueueEntry { successor_g_value, state_h_value, succ_state_index, step++ });
             else
-                standard_openlist.insert(QueueEntry { successor_g_value, state_h_value, succ_state_index, step++, successor_search_node.status });
+                standard_openlist.insert(QueueEntry { successor_g_value, state_h_value, succ_state_index, step++ });
         }
     }
 
