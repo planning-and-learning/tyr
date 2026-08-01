@@ -18,14 +18,22 @@
 #include "tyr/datalog/lifted/delta_kpkc.hpp"
 
 #include "planning/parser.hpp"
+#include "tyr/datalog/lifted/bottom_up.hpp"
+#include "tyr/datalog/lifted/policies/annotation.hpp"
+#include "tyr/datalog/policies/termination.hpp"
+#include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/planning/factory.hpp"
 #include "tyr/planning/lifted/heuristics/rpg_ff.hpp"
 #include "tyr/planning/lifted/programs/action.hpp"
+#include "tyr/planning/lifted/programs/rpg.hpp"
 #include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/task_utils.hpp"
 
 #include <algorithm>
 #include <filesystem>
 #include <gtest/gtest.h>
+#include <optional>
+#include <tuple>
 #include <type_traits>
 #include <vector>
 
@@ -143,21 +151,74 @@ TEST(TyrDatalogLiftedDeltaKPKC, InnerParallelismMatchesSequentialRPG)
     auto successor_generator = p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, sequential_context, state_repository);
     const auto initial_state = successor_generator->get_initial_node().get_state();
 
-    auto sequential = p::FFRPGHeuristic<::tyr::LiftedTag>::create(task, sequential_context);
-    auto parallel = p::FFRPGHeuristic<::tyr::LiftedTag>::create(task, parallel_context);
-    const auto sequential_value = sequential->evaluate(initial_state);
-    const auto parallel_value = parallel->evaluate(initial_state);
-
+    auto sequential_heuristic = p::FFRPGHeuristic<::tyr::LiftedTag>::create(task, sequential_context);
+    auto parallel_heuristic = p::FFRPGHeuristic<::tyr::LiftedTag>::create(task, parallel_context);
+    const auto sequential_value = sequential_heuristic->evaluate(initial_state);
+    const auto parallel_value = parallel_heuristic->evaluate(initial_state);
     EXPECT_EQ(parallel_value, sequential_value);
-    EXPECT_EQ(parallel->get_preferred_actions(), sequential->get_preferred_actions());
+    EXPECT_EQ(parallel_heuristic->get_preferred_actions(), sequential_heuristic->get_preferred_actions());
+
+    using OrPolicy = d::OrAnnotationPolicy<LiftedTag>;
+    using AndPolicy = d::AndAnnotationPolicy<LiftedTag, d::SumAggregation>;
+    using Termination = d::TerminationPolicy<LiftedTag, d::SumAggregation>;
+    using Workspace = d::ProgramWorkspace<LiftedTag, OrPolicy, AndPolicy, Termination>;
+
+    auto program = p::RPGProgram<LiftedTag>(task->get_task());
+    auto sequential = Workspace(program.get_datalog_program(), OrPolicy {}, AndPolicy {}, Termination {});
+    auto parallel = Workspace(program.get_datalog_program(), OrPolicy {}, AndPolicy {}, Termination {});
+
+    const auto solve = [&](Workspace& workspace, const ygg::ExecutionContextPtr& execution_context)
+    {
+        workspace.facts.reset();
+        workspace.tp.set_goals(program.get_goal());
+        auto merge_context = f::planning::MergeDatalogContext { workspace.datalog_builder, workspace.workspace_repository };
+        p::insert_fluent_atoms_to_fact_set(initial_state.get_state_builder(),
+                                           *task->get_repository(),
+                                           program.get_translation_context().p2d.fluent_to_fluent_predicate,
+                                           merge_context,
+                                           workspace.facts.fact_sets);
+        p::insert_numeric_variables_to_fact_set(initial_state.get_state_builder(), *task->get_repository(), merge_context, workspace.facts.fact_sets);
+
+        auto context = d::ProgramExecutionContext(workspace);
+        execution_context->arena().execute([&] { d::solve_bottom_up(context); });
+    };
+    solve(sequential, sequential_context);
+    solve(parallel, parallel_context);
+
+    using NormalizedFact = std::tuple<ygg::uint_t, std::vector<ygg::uint_t>, std::optional<d::Cost>>;
+    const auto normalize = [](const Workspace& workspace)
+    {
+        auto result = std::vector<NormalizedFact> {};
+        for (const auto& set : workspace.facts.fact_sets.predicate.get_sets())
+        {
+            for (const auto binding : set.get_bindings())
+            {
+                auto objects = std::vector<ygg::uint_t> {};
+                for (const auto object : binding.get_objects())
+                    objects.push_back(ygg::uint_t(object.get_index()));
+
+                const auto* annotation = workspace.and_annot.find(binding);
+                result.emplace_back(ygg::uint_t(binding.get_relation().get_index()),
+                                    std::move(objects),
+                                    annotation ? std::optional<d::Cost>(d::get_cost(*annotation)) : std::nullopt);
+            }
+        }
+        std::ranges::sort(result);
+        return result;
+    };
+
+    const auto sequential_facts = normalize(sequential);
+    const auto parallel_facts = normalize(parallel);
+    ASSERT_FALSE(sequential_facts.empty());
+    EXPECT_EQ(parallel_facts, sequential_facts);
 
     const auto used_inner_parallelism = [](const auto& workspace)
     {
-        return std::ranges::any_of(workspace.get_rules<f::PredicateTag>(),
+        return std::ranges::any_of(workspace.template get_rules<f::PredicateTag>(),
                                    [](const auto& rule) { return rule && rule->worker.size() == 2 && rule->worker[1].solve.statistics.num_executions > 0; });
     };
-    EXPECT_FALSE(used_inner_parallelism(sequential->get_workspace()));
-    EXPECT_TRUE(used_inner_parallelism(parallel->get_workspace()));
+    EXPECT_FALSE(used_inner_parallelism(sequential));
+    EXPECT_TRUE(used_inner_parallelism(parallel));
 }
 #endif
 }

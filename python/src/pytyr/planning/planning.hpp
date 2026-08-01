@@ -461,18 +461,13 @@ void bind_rpg_max_heuristic(nb::module_& m, const std::string& name)
 {
     using T = MaxRPGHeuristic<Kind>;
 
-    auto cls = nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
-                   .def(nb::new_([](TaskPtr<Kind> task, std::shared_ptr<ygg::ExecutionContext> execution_context, CostMode cost_mode)
-                                 { return std::make_shared<T>(std::move(task), std::move(execution_context), cost_mode); }),
-                        "task"_a,
-                        "execution_context"_a,
-                        "cost_mode"_a = CostMode::GENERAL)
-                   .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::GENERAL);
-
-    cls.def("get_workspace", &T::get_workspace, nb::rv_policy::reference_internal);
-
-    if constexpr (std::same_as<Kind, LiftedTag>)
-        cls.def("get_rpg_program", &T::get_rpg_program, nb::rv_policy::reference_internal);
+    nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
+        .def(nb::new_([](TaskPtr<Kind> task, std::shared_ptr<ygg::ExecutionContext> execution_context, CostMode cost_mode)
+                      { return std::make_shared<T>(std::move(task), std::move(execution_context), cost_mode); }),
+             "task"_a,
+             "execution_context"_a,
+             "cost_mode"_a = CostMode::GENERAL)
+        .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::GENERAL);
 }
 
 template<TaskKind Kind>
@@ -480,18 +475,13 @@ void bind_rpg_add_heuristic(nb::module_& m, const std::string& name)
 {
     using T = AddRPGHeuristic<Kind>;
 
-    auto cls = nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
-                   .def(nb::new_([](TaskPtr<Kind> task, std::shared_ptr<ygg::ExecutionContext> execution_context, CostMode cost_mode)
-                                 { return std::make_shared<T>(std::move(task), std::move(execution_context), cost_mode); }),
-                        "task"_a,
-                        "execution_context"_a,
-                        "cost_mode"_a = CostMode::GENERAL)
-                   .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::GENERAL);
-
-    cls.def("get_workspace", &T::get_workspace, nb::rv_policy::reference_internal);
-
-    if constexpr (std::same_as<Kind, LiftedTag>)
-        cls.def("get_rpg_program", &T::get_rpg_program, nb::rv_policy::reference_internal);
+    nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
+        .def(nb::new_([](TaskPtr<Kind> task, std::shared_ptr<ygg::ExecutionContext> execution_context, CostMode cost_mode)
+                      { return std::make_shared<T>(std::move(task), std::move(execution_context), cost_mode); }),
+             "task"_a,
+             "execution_context"_a,
+             "cost_mode"_a = CostMode::GENERAL)
+        .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::GENERAL);
 }
 
 template<TaskKind Kind>
@@ -499,18 +489,13 @@ void bind_rpg_ff_heuristic(nb::module_& m, const std::string& name)
 {
     using T = FFRPGHeuristic<Kind>;
 
-    auto cls = nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
-                   .def(nb::new_([](TaskPtr<Kind> task, std::shared_ptr<ygg::ExecutionContext> execution_context, CostMode cost_mode)
-                                 { return std::make_shared<T>(std::move(task), std::move(execution_context), cost_mode); }),
-                        "task"_a,
-                        "execution_context"_a,
-                        "cost_mode"_a = CostMode::GENERAL)
-                   .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::GENERAL);
-
-    cls.def("get_workspace", &T::get_workspace, nb::rv_policy::reference_internal);
-
-    if constexpr (std::same_as<Kind, LiftedTag>)
-        cls.def("get_rpg_program", &T::get_rpg_program, nb::rv_policy::reference_internal);
+    nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
+        .def(nb::new_([](TaskPtr<Kind> task, std::shared_ptr<ygg::ExecutionContext> execution_context, CostMode cost_mode)
+                      { return std::make_shared<T>(std::move(task), std::move(execution_context), cost_mode); }),
+             "task"_a,
+             "execution_context"_a,
+             "cost_mode"_a = CostMode::GENERAL)
+        .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::GENERAL);
 }
 
 template<TaskKind Kind>
@@ -518,18 +503,13 @@ void bind_lmcut_heuristic(nb::module_& m, const std::string& name)
 {
     using T = LMCutHeuristic<Kind>;
 
-    auto cls = nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
-                   .def(nb::new_([](TaskPtr<Kind> task, std::shared_ptr<ygg::ExecutionContext> execution_context, CostMode cost_mode)
-                                 { return std::make_shared<T>(std::move(task), std::move(execution_context), cost_mode); }),
-                        "task"_a,
-                        "execution_context"_a,
-                        "cost_mode"_a = CostMode::GENERAL)
-                   .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::GENERAL);
-
-    cls.def("get_workspace", &T::get_workspace, nb::rv_policy::reference_internal);
-
-    if constexpr (std::same_as<Kind, LiftedTag>)
-        cls.def("get_rpg_program", &T::get_rpg_program, nb::rv_policy::reference_internal);
+    nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
+        .def(nb::new_([](TaskPtr<Kind> task, std::shared_ptr<ygg::ExecutionContext> execution_context, CostMode cost_mode)
+                      { return std::make_shared<T>(std::move(task), std::move(execution_context), cost_mode); }),
+             "task"_a,
+             "execution_context"_a,
+             "cost_mode"_a = CostMode::GENERAL)
+        .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::GENERAL);
 }
 
 }  // namespace tyr::planning

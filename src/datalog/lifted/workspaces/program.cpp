@@ -27,7 +27,7 @@ namespace tyr::datalog
 namespace
 {
 template<::tyr::formalism::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void initialize_rule_workspaces(Program<LiftedTag>& program,
+void initialize_rule_workspaces(const Program<LiftedTag>& program,
                                 const ConstProgramWorkspace<LiftedTag>& const_workspace,
                                 const ::tyr::formalism::datalog::Repository& program_repository,
                                 ::tyr::formalism::datalog::Repository& workspace_repository,
@@ -37,17 +37,19 @@ void initialize_rule_workspaces(Program<LiftedTag>& program,
     const auto& const_workspaces = const_workspace.template get_rules<R>();
     workspaces.reserve(const_workspaces.size());
     for (const auto& workspace : const_workspaces)
-        workspaces.emplace_back(workspace ? std::make_unique<typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>>(program.get_repository_factory(),
-                                                                                                                             program_repository,
-                                                                                                                             workspace_repository,
-                                                                                                                             program.get_program().get_objects().size(),
-                                                                                                                             *workspace,
-                                                                                                                             and_ap) :
-                                            nullptr);
+        workspaces.emplace_back(workspace ?
+                                    std::make_unique<typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>>(program.get_repository_factory(),
+                                                                                                                     program_repository,
+                                                                                                                     workspace_repository,
+                                                                                                                     program.get_program().get_objects().size(),
+                                                                                                                     *workspace,
+                                                                                                                     and_ap) :
+                                    nullptr);
 }
 
 template<::tyr::formalism::RelationKind R>
 void initialize_const_rule_workspaces(Program<LiftedTag>& program,
+                                      ::tyr::formalism::datalog::Repository& program_repository,
                                       const ConstFactsWorkspace<LiftedTag>& facts,
                                       std::vector<std::optional<ConstRuleWorkspace<LiftedTag, R>>>& workspaces)
 {
@@ -56,7 +58,7 @@ void initialize_const_rule_workspaces(Program<LiftedTag>& program,
     workspaces.resize(rules.size());
     for (const auto rule : rules)
         workspaces[ygg::uint_t(rule.get_index())].emplace(rule,
-                                                          program.get_workspace_repository(),
+                                                          program_repository,
                                                           domains.at(rule.get_index()).payload,
                                                           program.get_program().get_objects().size(),
                                                           program.get_program().template get_predicates<::tyr::formalism::FluentTag>().size(),
@@ -69,10 +71,11 @@ template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
          AndAnnotationPolicyConcept<LiftedTag> AndAP,
          TerminationPolicyConcept<LiftedTag> TP,
          RuleCostPolicyConcept<LiftedTag> CP>
-ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>::ProgramWorkspace(Program<LiftedTag>& program, OrAP or_ap, AndAP and_ap, TP tp, CP cost_policy) :
+ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>::ProgramWorkspace(const Program<LiftedTag>& program, OrAP or_ap, AndAP and_ap, TP tp, CP cost_policy) :
     const_workspace(program.get_const_program_workspace()),
     program_repository(program.get_program_repository()),
-    workspace_repository(program.get_workspace_repository()),
+    m_workspace_repository(program.get_repository_factory().create_shared(program.get_program().get_objects().size(), &program_repository)),
+    workspace_repository(*m_workspace_repository),
     facts(program.get_program().get_predicates<::tyr::formalism::FluentTag>(),
           program.get_program().get_functions<::tyr::formalism::FluentTag>(),
           program.get_domains().fluent_predicate_domains,
@@ -80,7 +83,7 @@ ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>::ProgramWorkspace(Program<Lifte
           program.get_program().get_objects().size(),
           program.get_program().get_atoms<::tyr::formalism::FluentTag>(),
           program.get_program().get_fterm_values<::tyr::formalism::FluentTag>(),
-          program.get_workspace_repository()),
+          workspace_repository),
     or_ap(or_ap),
     and_annot(),
     numeric_and_annot(),
@@ -153,12 +156,12 @@ ConstProgramWorkspace<LiftedTag>::ConstProgramWorkspace(Program<LiftedTag>& prog
           program.get_program().get_objects().size(),
           program.get_program().get_atoms<::tyr::formalism::StaticTag>(),
           program.get_program().get_fterm_values<::tyr::formalism::StaticTag>(),
-          program.get_program_repository()),
+          *program.m_program_repository),
     predicate_rules(),
     function_rules()
 {
-    initialize_const_rule_workspaces<::tyr::formalism::PredicateTag>(program, facts, predicate_rules);
-    initialize_const_rule_workspaces<::tyr::formalism::FunctionTag>(program, facts, function_rules);
+    initialize_const_rule_workspaces<::tyr::formalism::PredicateTag>(program, *program.m_program_repository, facts, predicate_rules);
+    initialize_const_rule_workspaces<::tyr::formalism::FunctionTag>(program, *program.m_program_repository, facts, function_rules);
 }
 
 }

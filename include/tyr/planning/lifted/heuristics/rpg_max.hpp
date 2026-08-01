@@ -18,29 +18,34 @@
 #ifndef TYR_PLANNING_LIFTED_HEURISTICS_RPG_MAX_HPP_
 #define TYR_PLANNING_LIFTED_HEURISTICS_RPG_MAX_HPP_
 
-#include "tyr/datalog/lifted/policies/annotation.hpp"
-#include "tyr/datalog/policies/termination.hpp"
-#include "tyr/formalism/planning/merge_datalog.hpp"
+#include "tyr/planning/heuristic.hpp"
 #include "tyr/planning/heuristics/rpg_max.hpp"
-#include "tyr/planning/lifted/heuristics/rpg.hpp"
+
+#include <memory>
 
 namespace tyr::planning
 {
-
 template<>
-class MaxRPGHeuristic<LiftedTag> :
-    public RPGBase<LiftedTag,
-                   MaxRPGHeuristic<LiftedTag>,
-                   datalog::OrAnnotationPolicy<LiftedTag>,
-                   datalog::AndAnnotationPolicy<LiftedTag, datalog::MaxAggregation>,
-                   datalog::TerminationPolicy<LiftedTag, datalog::MaxAggregation>>
+class MaxRPGHeuristic<LiftedTag> : public Heuristic<LiftedTag>
 {
 public:
     MaxRPGHeuristic(TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
+    ~MaxRPGHeuristic() override;
+
+    MaxRPGHeuristic(MaxRPGHeuristic&&) noexcept;
+    MaxRPGHeuristic& operator=(MaxRPGHeuristic&&) noexcept;
+    MaxRPGHeuristic(const MaxRPGHeuristic&) = delete;
+    MaxRPGHeuristic& operator=(const MaxRPGHeuristic&) = delete;
 
     static MaxRPGHeuristicPtr<LiftedTag> create(TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
 
-    ygg::float_t extract_cost_and_set_preferred_actions_impl(const StateView<LiftedTag>& state);
+    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override;
+    ygg::float_t evaluate(const StateView<LiftedTag>& state) override;
+    void print_summary(size_t verbosity) const override;
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 }

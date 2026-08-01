@@ -1,8 +1,9 @@
+import gc
 from typing import override
 
 from pypddl.formalism import ParserOptions
 from pypddl_datasets import fetch_task
-from pytyr import planning
+from pytyr import datalog, planning
 from pytyr.formalism import planning as formalism_planning
 from pytyr.formalism.planning import Parser
 from pyyggdrasil.execution import ExecutionContext
@@ -22,6 +23,22 @@ def _lifted_task() -> planning.lifted.Task:
     parser = Parser(str(GRIPPER.domain_path), options)
     formalism_task = parser.parse_task(str(GRIPPER.task_path), options)
     return planning.lifted.Task(formalism_task)
+
+
+def test_lifted_datalog_workspaces_own_independent_repositories() -> None:
+    task = _lifted_task()
+    translated_program = planning.lifted.GroundTaskProgram(task.get_task())
+    program = translated_program.get_datalog_program()
+    first = datalog.lifted.UnannotatedProgramWorkspace(program)
+    second = datalog.lifted.UnannotatedProgramWorkspace(program)
+
+    assert first.get_workspace_repository() is not second.get_workspace_repository()
+
+    del program, translated_program
+    gc.collect()
+
+    assert first.get_static_fact_sets() is not None
+    assert second.get_static_fact_sets() is not None
 
 
 def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None:

@@ -15,27 +15,21 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_HEURISTICS_RPG_HPP_
-#define TYR_PLANNING_HEURISTICS_RPG_HPP_
+#include "tyr/planning/heuristic.hpp"
 
-#include "tyr/datalog/ground/policies/cost.hpp"
-#include "tyr/datalog/lifted/policies/cost.hpp"
-#include "tyr/datalog/policies/annotation_concept.hpp"
-#include "tyr/datalog/policies/cost_concept.hpp"
-#include "tyr/datalog/policies/termination_concept.hpp"
-#include "tyr/planning/declarations.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 
 namespace tyr::planning
 {
 
-template<TaskKind Kind,
-         typename Derived,
-         datalog::OrAnnotationPolicyConcept<Kind> OrAP,
-         datalog::AndAnnotationPolicyConcept<Kind> AndAP,
-         datalog::TerminationPolicyConcept<Kind> TP,
-         datalog::RuleCostPolicyConcept<Kind> CP = datalog::RuleCostPolicy<Kind>>
-class RPGBase;
-
+template<TaskKind Kind>
+const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>& Heuristic<Kind>::get_preferred_actions()
+{
+    static const auto actions = ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView> {};
+    return actions;
 }
 
-#endif
+template class Heuristic<GroundTag>;
+template class Heuristic<LiftedTag>;
+
+}

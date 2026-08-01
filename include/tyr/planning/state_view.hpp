@@ -42,9 +42,6 @@ class View<ygg::Index<planning::State<Kind>>, C>
 
 namespace tyr::planning
 {
-template<TaskKind Kind>
-using StateView = ygg::View<ygg::Index<State<Kind>>, std::shared_ptr<StateRepository<Kind>>>;
-
 /**
  * IterableStateConcept
  */

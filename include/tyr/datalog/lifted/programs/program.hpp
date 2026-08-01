@@ -47,18 +47,18 @@ public:
     auto get_program() const noexcept { return m_program; }
     const auto& get_program_repository() const noexcept { return *m_program_repository; }
     auto& get_repository_factory() noexcept { return *m_repository_factory; }
-    auto& get_workspace_repository() noexcept { return *m_workspace_repository; }
-    const auto& get_workspace_repository() const noexcept { return *m_workspace_repository; }
+    auto& get_repository_factory() const noexcept { return *m_repository_factory; }
     const auto& get_domains() const noexcept { return m_domains; }
     const auto& get_strata() const noexcept { return m_strata; }
     const auto& get_listeners() const noexcept { return m_listeners; }
     const auto& get_const_program_workspace() const noexcept { return m_const_program_workspace; }
 
 private:
+    friend struct ConstProgramWorkspace<LiftedTag>;
+
     ::tyr::formalism::datalog::ProgramView<LiftedTag> m_program;
     ::tyr::formalism::datalog::RepositoryPtr m_program_repository;
     ::tyr::formalism::datalog::RepositoryFactoryPtr m_repository_factory;
-    ::tyr::formalism::datalog::RepositoryPtr m_workspace_repository;
     analysis::ProgramVariableDomains m_domains;
     analysis::RuleStrata m_strata;
     analysis::ListenerStrata m_listeners;

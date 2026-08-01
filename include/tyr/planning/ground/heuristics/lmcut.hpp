@@ -18,147 +18,34 @@
 #ifndef TYR_PLANNING_GROUND_HEURISTICS_LMCUT_HPP_
 #define TYR_PLANNING_GROUND_HEURISTICS_LMCUT_HPP_
 
-#include "tyr/datalog/ground/policies/annotation.hpp"
-#include "tyr/datalog/ground/policies/cost.hpp"
-#include "tyr/datalog/ground/policies/numeric_support.hpp"
-#include "tyr/datalog/policies/termination.hpp"
-#include "tyr/planning/ground/heuristics/rpg.hpp"
+#include "tyr/planning/heuristic.hpp"
 #include "tyr/planning/heuristics/lmcut.hpp"
 
-#include <deque>
-#include <tuple>
-#include <variant>
-#include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
-#include <yggdrasil/semantics/hash.hpp>
+#include <memory>
 
 namespace tyr::planning
 {
 
-struct GroundLMCutNumericNode : ygg::comparison::Mixin<GroundLMCutNumericNode>
-{
-    ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term;
-    ygg::ClosedInterval<ygg::float_t> interval;
-
-    GroundLMCutNumericNode() = delete;
-    GroundLMCutNumericNode(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term, ygg::ClosedInterval<ygg::float_t> interval) :
-        term(term),
-        interval(interval)
-    {
-    }
-
-    auto identifying_members() const noexcept { return std::make_tuple(term, lower(interval), upper(interval)); }
-};
-
-struct GroundLMCutRuleEdge : ygg::comparison::Mixin<GroundLMCutRuleEdge>
-{
-    ::tyr::formalism::datalog::GroundRuleView<::tyr::formalism::PredicateTag> rule;
-
-    GroundLMCutRuleEdge() = delete;
-    explicit GroundLMCutRuleEdge(::tyr::formalism::datalog::GroundRuleView<::tyr::formalism::PredicateTag> rule) : rule(rule) {}
-
-    auto identifying_members() const noexcept { return std::tie(rule); }
-};
-
-struct GroundLMCutNumericEdge : ygg::comparison::Mixin<GroundLMCutNumericEdge>
-{
-    ::tyr::formalism::datalog::GroundRuleView<::tyr::formalism::FunctionTag> rule;
-    ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term;
-    ygg::ClosedInterval<ygg::float_t> interval;
-
-    GroundLMCutNumericEdge() = delete;
-    GroundLMCutNumericEdge(::tyr::formalism::datalog::GroundRuleView<::tyr::formalism::FunctionTag> rule,
-                           ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term,
-                           ygg::ClosedInterval<ygg::float_t> interval) :
-        rule(rule),
-        term(term),
-        interval(interval)
-    {
-    }
-
-    auto identifying_members() const noexcept { return std::make_tuple(rule, term, lower(interval), upper(interval)); }
-};
-
 template<>
-class LMCutHeuristic<GroundTag> :
-    public RPGBase<GroundTag,
-                   LMCutHeuristic<GroundTag>,
-                   datalog::OrAnnotationPolicy<GroundTag>,
-                   datalog::AchieverAndAnnotationPolicy<GroundTag, datalog::MaxAggregation>,
-                   datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>,
-                   datalog::RuleCostOverridePolicy<GroundTag>>
+class LMCutHeuristic<GroundTag> : public Heuristic<GroundTag>
 {
 public:
-    using Base = RPGBase<GroundTag,
-                         LMCutHeuristic<GroundTag>,
-                         datalog::OrAnnotationPolicy<GroundTag>,
-                         datalog::AchieverAndAnnotationPolicy<GroundTag, datalog::MaxAggregation>,
-                         datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>,
-                         datalog::RuleCostOverridePolicy<GroundTag>>;
-
     LMCutHeuristic(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
+    ~LMCutHeuristic() override;
+
+    LMCutHeuristic(const LMCutHeuristic&) = delete;
+    LMCutHeuristic& operator=(const LMCutHeuristic&) = delete;
+    LMCutHeuristic(LMCutHeuristic&&) noexcept;
+    LMCutHeuristic& operator=(LMCutHeuristic&&) noexcept;
 
     static LMCutHeuristicPtr<GroundTag> create(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
 
+    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override;
     ygg::float_t evaluate(const StateView<GroundTag>& state) override;
 
-    ygg::float_t extract_cost_and_set_preferred_actions_impl(const StateView<GroundTag>& state);
-
 private:
-    using Rule = ::tyr::formalism::datalog::GroundRuleView<::tyr::formalism::PredicateTag>;
-    using CostKey = ::tyr::formalism::planning::ActionBindingView;
-    using Atom = ::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag>;
-
-    using NumericNode = GroundLMCutNumericNode;
-    using RuleEdge = GroundLMCutRuleEdge;
-    using NumericEdge = GroundLMCutNumericEdge;
-    using Precondition = std::variant<Atom, NumericNode>;
-
-    datalog::Cost get_residual_cost(CostKey action_binding) const;
-    template<::tyr::formalism::RelationKind R>
-    datalog::Cost get_residual_cost(::tyr::formalism::datalog::GroundRuleView<R> rule) const;
-    template<::tyr::formalism::RelationKind R>
-    datalog::Cost get_witness_body_cost(const datalog::WitnessAnnotation<GroundTag, R>& witness) const;
-    template<::tyr::formalism::RelationKind R>
-    datalog::Cost get_witness_edge_residual_cost(const datalog::WitnessAnnotation<GroundTag, R>& witness) const;
-    void set_residual_cost(CostKey action_binding, datalog::Cost cost);
-    template<::tyr::formalism::RelationKind R>
-    void set_residual_cost(::tyr::formalism::datalog::GroundRuleView<R> rule, datalog::Cost cost);
-    void use_rule_edge_cost(Rule rule, datalog::Cost cost);
-    void use_numeric_edge_cost(NumericEdge edge, datalog::Cost cost);
-    ygg::float_t evaluate_impl(const StateView<GroundTag>& state);
-    void apply_residual_costs();
-    datalog::Cost get_numeric_cost(NumericNode node) const noexcept;
-    const datalog::WitnessAnnotation<GroundTag, ::tyr::formalism::FunctionTag>* get_numeric_witness(NumericNode node) const noexcept;
-    template<::tyr::formalism::RelationKind R>
-    const std::vector<Precondition>& get_witness_max_preconditions(const datalog::WitnessAnnotation<GroundTag, R>& witness, datalog::Cost edge_cost);
-    void release_witness_max_preconditions();
-    void mark_goal_zone(Atom atom);
-    void mark_goal_zone(NumericNode node);
-    void mark_goal_zone(Precondition precondition);
-    bool is_before_goal_zone(Atom atom);
-    bool is_before_goal_zone(NumericNode node);
-    bool is_before_goal_zone(Precondition precondition);
-    void extract_cut();
-    void extract_expanded_cut();
-
-    ygg::UnorderedMap<CostKey, datalog::Cost> m_residual_costs;
-    ygg::UnorderedMap<RuleEdge, datalog::Cost> m_rule_edge_used_costs;
-    ygg::UnorderedMap<NumericEdge, datalog::Cost> m_numeric_edge_used_costs;
-    ygg::UnorderedSet<Atom> m_goal_zone;
-    ygg::UnorderedSet<NumericNode> m_numeric_goal_zone;
-    ygg::UnorderedSet<Atom> m_before_goal_zone;
-    ygg::UnorderedSet<NumericNode> m_numeric_before_goal_zone;
-    ygg::UnorderedSet<Atom> m_not_before_goal_zone;
-    ygg::UnorderedSet<NumericNode> m_numeric_not_before_goal_zone;
-    ygg::UnorderedSet<CostKey> m_cut;
-    ygg::UnorderedMap<RuleEdge, datalog::Cost> m_rule_cut;
-    ygg::UnorderedMap<NumericEdge, datalog::Cost> m_numeric_cut;
-    std::deque<std::vector<Precondition>> m_max_precondition_buffers;
-    datalog::GroundNumericSupportSelectorWorkspace m_numeric_support_selector_workspace;
-    size_t m_max_precondition_depth;
-    bool m_use_expanded_edges;
+    struct Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 }

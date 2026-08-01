@@ -17,28 +17,55 @@
 
 #include "tyr/planning/ground/heuristics/rpg_max.hpp"
 
+#include "rpg.hpp"
+#include "tyr/datalog/ground/policies/annotation.hpp"
+#include "tyr/datalog/ground/policies/cost.hpp"
+#include "tyr/datalog/policies/termination.hpp"
+
+#include <utility>
+
 namespace tyr::planning
 {
 
+struct MaxRPGHeuristic<GroundTag>::Impl :
+    detail::GroundRPGEvaluator<Impl,
+                               datalog::OrAnnotationPolicy<GroundTag>,
+                               datalog::AndAnnotationPolicy<GroundTag, datalog::MaxAggregation>,
+                               datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>,
+                               datalog::RuleCostOverridePolicy<GroundTag>>
+{
+    using Base = detail::GroundRPGEvaluator<Impl,
+                                            datalog::OrAnnotationPolicy<GroundTag>,
+                                            datalog::AndAnnotationPolicy<GroundTag, datalog::MaxAggregation>,
+                                            datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>,
+                                            datalog::RuleCostOverridePolicy<GroundTag>>;
+
+    Impl(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
+        Base(std::move(task),
+             std::move(execution_context),
+             datalog::OrAnnotationPolicy<GroundTag>(),
+             datalog::AndAnnotationPolicy<GroundTag, datalog::MaxAggregation>(),
+             cost_mode)
+    {
+    }
+};
+
 MaxRPGHeuristic<GroundTag>::MaxRPGHeuristic(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
-    RPGBase<GroundTag,
-            MaxRPGHeuristic<GroundTag>,
-            datalog::OrAnnotationPolicy<GroundTag>,
-            datalog::AndAnnotationPolicy<GroundTag, datalog::MaxAggregation>,
-            datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>,
-            datalog::RuleCostOverridePolicy<GroundTag>>(std::move(task),
-                                                        std::move(execution_context),
-                                                        datalog::OrAnnotationPolicy<GroundTag>(),
-                                                        datalog::AndAnnotationPolicy<GroundTag, datalog::MaxAggregation>(),
-                                                        cost_mode)
+    m_impl(std::make_unique<Impl>(std::move(task), std::move(execution_context), cost_mode))
 {
 }
+
+MaxRPGHeuristic<GroundTag>::~MaxRPGHeuristic() = default;
+MaxRPGHeuristic<GroundTag>::MaxRPGHeuristic(MaxRPGHeuristic&&) noexcept = default;
+MaxRPGHeuristic<GroundTag>& MaxRPGHeuristic<GroundTag>::operator=(MaxRPGHeuristic&&) noexcept = default;
 
 MaxRPGHeuristicPtr<GroundTag> MaxRPGHeuristic<GroundTag>::create(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
 {
     return std::make_shared<MaxRPGHeuristic<GroundTag>>(std::move(task), std::move(execution_context), cost_mode);
 }
 
-ygg::float_t MaxRPGHeuristic<GroundTag>::extract_cost_and_set_preferred_actions_impl(const StateView<GroundTag>&) { return get_goal_cost(); }
+void MaxRPGHeuristic<GroundTag>::set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) { m_impl->set_goal(goal); }
+
+ygg::float_t MaxRPGHeuristic<GroundTag>::evaluate(const StateView<GroundTag>& state) { return m_impl->evaluate(state); }
 
 }

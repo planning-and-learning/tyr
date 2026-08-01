@@ -126,7 +126,7 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
     auto standard_openlist = Queue<Kind>();
     auto openlist = AlternatingOpenList<Queue<Kind>, Queue<Kind>>(preferred_openlist, standard_openlist, std::array<size_t, 2> { 1, 1 });
     const auto start_g_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(start_node.get_metric());
-    const auto start_h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(heuristic.evaluate(start_node));
+    const auto start_h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(heuristic.evaluate(start_state));
     auto best_h_value = start_h_value;
     const auto start_preferred = false;
     auto& start_search_node = get_or_create_search_node(start_state_index, search_nodes);
@@ -222,7 +222,7 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
 
         event_handler->on_expand_node(node);
 
-        const auto state_h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(heuristic.evaluate(node));
+        const auto state_h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(heuristic.evaluate(state));
         if (state_h_value == std::numeric_limits<ygg::float_t>::infinity())
         {
             search_node.status = SearchNodeStatus::DEAD_END;

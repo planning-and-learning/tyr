@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_LIFTED_HEURISTICS_RPG_HPP_
-#define TYR_PLANNING_LIFTED_HEURISTICS_RPG_HPP_
+#ifndef TYR_SRC_PLANNING_LIFTED_HEURISTICS_RPG_HPP_
+#define TYR_SRC_PLANNING_LIFTED_HEURISTICS_RPG_HPP_
 
 #include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/bottom_up.hpp"
@@ -29,9 +29,6 @@
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
-#include "tyr/planning/declarations.hpp"
-#include "tyr/planning/heuristic.hpp"
-#include "tyr/planning/heuristics/rpg.hpp"
 #include "tyr/planning/lifted/programs/rpg.hpp"
 #include "tyr/planning/lifted/state_builder.hpp"
 #include "tyr/planning/lifted/state_data.hpp"
@@ -42,40 +39,83 @@
 #include <cassert>
 #include <concepts>
 #include <fmt/ostream.h>
+#include <limits>
+#include <memory>
 #include <optional>
+#include <span>
+#include <utility>
+#include <vector>
 #include <yggdrasil/execution/onetbb.hpp>
 
-namespace tyr::planning
+namespace tyr::planning::detail
 {
+
+inline bool needs_expanded_lmcut(const ::tyr::formalism::datalog::ProgramView<LiftedTag> program)
+{
+    for (const auto rule : program.template get_rules<::tyr::formalism::PredicateTag>())
+        if (!rule.get_body().get_numeric_constraints().empty())
+            return true;
+    return !program.template get_rules<::tyr::formalism::FunctionTag>().empty();
+}
+
+struct LiftedRPGDefinition
+{
+    TaskPtr<LiftedTag> task;
+    RPGProgram<LiftedTag> rpg_program;
+    CostMode cost_mode;
+    bool use_expanded_lmcut;
+
+    LiftedRPGDefinition(TaskPtr<LiftedTag> task, CostMode cost_mode, bool compute_expanded_lmcut) :
+        task(std::move(task)),
+        rpg_program(this->task->get_task(), cost_mode),
+        cost_mode(cost_mode),
+        use_expanded_lmcut(compute_expanded_lmcut && needs_expanded_lmcut(rpg_program.get_datalog_program().get_program()))
+    {
+    }
+};
 
 template<typename Derived,
          datalog::OrAnnotationPolicyConcept<LiftedTag> OrAP,
          datalog::AndAnnotationPolicyConcept<LiftedTag> AndAP,
          datalog::TerminationPolicyConcept<LiftedTag> TP,
-         datalog::RuleCostPolicyConcept<LiftedTag> CP>
-class RPGBase<LiftedTag, Derived, OrAP, AndAP, TP, CP> : public Heuristic<LiftedTag>
+         datalog::RuleCostPolicyConcept<LiftedTag> CP = datalog::RuleCostPolicy<LiftedTag>>
+class LiftedRPGBase
 {
 private:
-    /// @brief Helper to cast to Derived.
     constexpr const auto& self() const { return static_cast<const Derived&>(*this); }
     constexpr auto& self() { return static_cast<Derived&>(*this); }
 
 public:
-    explicit RPGBase(TaskPtr<LiftedTag> task,
-                     ygg::ExecutionContextPtr execution_context,
-                     const OrAP& or_ap,
-                     const AndAP& and_ap,
-                     CostMode cost_mode = CostMode::GENERAL) :
-        m_task(std::move(task)),
-        m_execution_context(std::move(execution_context)),
-        m_rpg_program(m_task->get_task(), cost_mode),
-        m_workspace(m_rpg_program.get_datalog_program(), or_ap, and_ap, TP()),
-        m_cost_mode(cost_mode)
+    explicit LiftedRPGBase(TaskPtr<LiftedTag> task,
+                           ygg::ExecutionContextPtr execution_context,
+                           const OrAP& or_ap,
+                           const AndAP& and_ap,
+                           CostMode cost_mode = CostMode::GENERAL,
+                           bool compute_expanded_lmcut = false) :
+        LiftedRPGBase(std::make_shared<const LiftedRPGDefinition>(task, cost_mode, compute_expanded_lmcut),
+                      task,
+                      execution_context,
+                      or_ap,
+                      and_ap,
+                      task->get_task().get_goal())
     {
-        m_workspace.tp.set_goals(m_rpg_program.get_goal());
     }
 
-    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override
+    LiftedRPGBase(std::shared_ptr<const LiftedRPGDefinition> definition,
+                  TaskPtr<LiftedTag> task,
+                  ygg::ExecutionContextPtr execution_context,
+                  const OrAP& or_ap,
+                  const AndAP& and_ap,
+                  ::tyr::formalism::planning::GroundConjunctiveConditionView source_goal) :
+        m_definition(std::move(definition)),
+        m_task(std::move(task)),
+        m_execution_context(std::move(execution_context)),
+        m_workspace(m_definition->rpg_program.get_datalog_program(), or_ap, and_ap, TP())
+    {
+        set_goal(source_goal);
+    }
+
+    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal)
     {
         namespace fd = ::tyr::formalism::datalog;
         auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { m_workspace.datalog_builder, m_workspace.workspace_repository };
@@ -83,7 +123,7 @@ public:
         auto& condition = *condition_ptr;
         condition.clear();
 
-        const auto& p2d = m_rpg_program.get_translation_context().p2d;
+        const auto& p2d = m_definition->rpg_program.get_translation_context().p2d;
         for (const auto fact : goal.template get_facts<::tyr::formalism::PositiveTag>())
             if (const auto literal = ::tyr::formalism::planning::merge_p2d(fact, true, p2d.fluent_to_fluent_predicate, merge_context))
                 condition.fluent_literals.push_back(literal->get_index());
@@ -95,7 +135,7 @@ public:
         m_workspace.tp.set_goals(m_workspace.workspace_repository.get_or_create(condition).first);
     }
 
-    ygg::float_t evaluate(const StateView<LiftedTag>& state) override
+    ygg::float_t evaluate(const StateView<LiftedTag>& state)
     {
         m_workspace.facts.reset();
 
@@ -103,24 +143,20 @@ public:
 
         insert_fluent_atoms_to_fact_set(state.get_state_builder(),
                                         *m_task->get_repository(),
-                                        m_rpg_program.get_translation_context().p2d.fluent_to_fluent_predicate,
+                                        m_definition->rpg_program.get_translation_context().p2d.fluent_to_fluent_predicate,
                                         merge_context,
                                         m_workspace.facts.fact_sets);
         insert_numeric_variables_to_fact_set(state.get_state_builder(), *m_task->get_repository(), merge_context, m_workspace.facts.fact_sets);
 
         auto ctx = datalog::ProgramExecutionContext(m_workspace);
-
         m_execution_context->arena().execute([&] { datalog::solve_bottom_up(ctx); });
 
-        return (m_workspace.tp.check(datalog::FactSets { m_rpg_program.get_const_program_workspace().facts.fact_sets, m_workspace.facts.fact_sets })) ?
-                   self().extract_cost_and_set_preferred_actions_impl(state) :
+        return m_workspace.tp.check(
+                   datalog::FactSets { m_definition->rpg_program.get_const_program_workspace().facts.fact_sets, m_workspace.facts.fact_sets }) ?
+                   self().compute_result(state) :
                    std::numeric_limits<ygg::float_t>::infinity();
     }
 
-    const auto& get_workspace() const noexcept { return m_workspace; }
-    const auto& get_rpg_program() const noexcept { return m_rpg_program; }
-
-protected:
     void set_action_binding_cost(::tyr::formalism::planning::ActionBindingView action_binding, datalog::Cost cost)
     {
         const auto action = action_binding.get_relation();
@@ -133,7 +169,7 @@ protected:
         const auto binding = std::span<const ygg::Index<::tyr::formalism::Object>>(m_workspace.binding.data(), m_workspace.binding.size());
         const auto set_costs = [&]<::tyr::formalism::RelationKind R>()
         {
-            for (const auto& [rule, mapped_action] : m_rpg_program.template get_rule_to_action_mapping<R>())
+            for (const auto& [rule, mapped_action] : m_definition->rpg_program.template get_rule_to_action_mapping<R>())
             {
                 if (mapped_action.get_index() != action.get_index())
                     continue;
@@ -153,10 +189,11 @@ protected:
 
     datalog::Cost get_goal_cost() const noexcept
     {
-        return m_workspace.tp.get_total_cost(datalog::FactSets { m_rpg_program.get_const_program_workspace().facts.fact_sets, m_workspace.facts.fact_sets },
-                                             m_workspace.and_annot,
-                                             m_workspace.numeric_and_annot,
-                                             *m_workspace.numeric_support_selector);
+        return m_workspace.tp.get_total_cost(
+            datalog::FactSets { m_definition->rpg_program.get_const_program_workspace().facts.fact_sets, m_workspace.facts.fact_sets },
+            m_workspace.and_annot,
+            m_workspace.numeric_and_annot,
+            *m_workspace.numeric_support_selector);
     }
 
     template<::tyr::formalism::RelationKind R>
@@ -164,7 +201,7 @@ protected:
     {
         const auto rule_binding = witness.get_rule_key();
         const auto rule = rule_binding.get_relation();
-        const auto& mapping = m_rpg_program.template get_rule_to_action_mapping<R>();
+        const auto& mapping = m_definition->rpg_program.template get_rule_to_action_mapping<R>();
         const auto it = mapping.find(rule);
         if (it == mapping.end())
             return std::nullopt;
@@ -182,7 +219,7 @@ protected:
         const auto rule_binding = witness.get_rule_key();
         const auto row = rule_binding.get_objects();
         const auto& const_rule_workspace =
-            *m_rpg_program.get_const_program_workspace().template get_rules<R>()[ygg::uint_t(rule_binding.get_relation().get_index())];
+            *m_definition->rpg_program.get_const_program_workspace().template get_rules<R>()[ygg::uint_t(rule_binding.get_relation().get_index())];
         const auto witness_condition = const_rule_workspace.get_witness_rule().get_body();
         auto grounder_context =
             ::tyr::formalism::datalog::GrounderContext { m_workspace.datalog_builder, m_workspace.workspace_repository, m_workspace.binding };
@@ -218,8 +255,7 @@ protected:
         }
     }
 
-public:
-    void print_summary(size_t verbosity) const override
+    void print_summary(size_t verbosity) const
     {
         if (verbosity < 1)
             return;
@@ -248,12 +284,12 @@ public:
     }
 
 protected:
+    ygg::float_t compute_result(const StateView<LiftedTag>&) const noexcept { return get_goal_cost(); }
+
+    std::shared_ptr<const LiftedRPGDefinition> m_definition;
     TaskPtr<LiftedTag> m_task;
     ygg::ExecutionContextPtr m_execution_context;
-    RPGProgram<LiftedTag> m_rpg_program;
-
     datalog::ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP> m_workspace;
-    CostMode m_cost_mode;
 };
 
 }

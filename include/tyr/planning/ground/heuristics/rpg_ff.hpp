@@ -18,60 +18,36 @@
 #ifndef TYR_PLANNING_GROUND_HEURISTICS_RPG_FF_HPP_
 #define TYR_PLANNING_GROUND_HEURISTICS_RPG_FF_HPP_
 
-#include "tyr/datalog/ground/policies/annotation.hpp"
-#include "tyr/datalog/ground/policies/cost.hpp"
-#include "tyr/datalog/ground/policies/numeric_support.hpp"
-#include "tyr/datalog/policies/termination.hpp"
-#include "tyr/planning/ground/heuristics/rpg.hpp"
+#include "tyr/planning/heuristic.hpp"
 #include "tyr/planning/heuristics/rpg_ff.hpp"
 
-#include <boost/dynamic_bitset.hpp>
-#include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
+#include <memory>
 
 namespace tyr::planning
 {
 
 template<>
-class FFRPGHeuristic<GroundTag> :
-    public RPGBase<GroundTag,
-                   FFRPGHeuristic<GroundTag>,
-                   datalog::OrAnnotationPolicy<GroundTag>,
-                   datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>,
-                   datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>,
-                   datalog::RuleCostOverridePolicy<GroundTag>>
+class FFRPGHeuristic<GroundTag> : public Heuristic<GroundTag>
 {
 public:
     FFRPGHeuristic(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
+    ~FFRPGHeuristic() override;
+
+    FFRPGHeuristic(const FFRPGHeuristic&) = delete;
+    FFRPGHeuristic& operator=(const FFRPGHeuristic&) = delete;
+    FFRPGHeuristic(FFRPGHeuristic&&) noexcept;
+    FFRPGHeuristic& operator=(FFRPGHeuristic&&) noexcept;
 
     static FFRPGHeuristicPtr<GroundTag> create(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
 
-    ygg::float_t extract_cost_and_set_preferred_actions_impl(const StateView<GroundTag>& state);
+    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override;
+    ygg::float_t evaluate(const StateView<GroundTag>& state) override;
 
     const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>& get_preferred_actions() override;
 
-    bool mark_atom(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> atom);
-    bool mark_function(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term);
-
 private:
-    void extract_relaxed_plan_and_preferred_actions(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> atom,
-                                                    const StateContext<GroundTag>& state_context);
-    void extract_relaxed_plan_and_preferred_actions(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term,
-                                                    const StateContext<GroundTag>& state_context);
-    void extract_relaxed_plan_and_preferred_actions(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term,
-                                                    const datalog::Annotation<GroundTag, ::tyr::formalism::FunctionTag>& annotation,
-                                                    const StateContext<GroundTag>& state_context);
-    void extract_numeric_constraint_support(::tyr::formalism::datalog::GroundBooleanOperatorView constraint, const StateContext<GroundTag>& state_context);
-    template<::tyr::formalism::RelationKind R>
-    void extract_relaxed_plan_and_preferred_actions(const datalog::WitnessAnnotation<GroundTag, R>& witness, const StateContext<GroundTag>& state_context);
-
-private:
-    std::vector<boost::dynamic_bitset<>> m_markings;
-    ygg::UnorderedSet<::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag>> m_function_markings;
-    datalog::GroundNumericSupportSelectorWorkspace m_numeric_support_selector_workspace;
-    ::tyr::formalism::planning::EffectFamilyList m_effect_families;
-    ygg::UnorderedSet<ygg::Index<::tyr::formalism::planning::GroundAction>> m_relaxed_plan;
-    ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView> m_preferred_actions;
+    struct Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 }

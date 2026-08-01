@@ -388,7 +388,11 @@ void bind_workspace(nb::module_& m, const std::string& name)
         using PredicateBinding = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
         using FunctionBinding = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
 
-        cls.def("reset_facts", [](Workspace& self) { self.facts.reset(); })
+        cls.def(
+               "get_workspace_repository",
+               [](Workspace& self) -> auto& { return self.workspace_repository; },
+               nb::rv_policy::reference_internal)
+            .def("reset_facts", [](Workspace& self) { self.facts.reset(); })
             .def(
                 "insert_fluent_atom",
                 [](Workspace& self, Atom atom) { return self.facts.fact_sets.predicate.insert(atom); },

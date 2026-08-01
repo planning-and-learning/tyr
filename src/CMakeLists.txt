@@ -104,6 +104,7 @@ add_library(
 
     ${TYR_STATE_STORAGE_SRC_FILES}
 
+    planning/heuristic.cpp
     planning/heuristics/goal_count.cpp
 
     planning/ground/axiom_evaluator.cpp

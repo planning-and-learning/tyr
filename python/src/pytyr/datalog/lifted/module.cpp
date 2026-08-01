@@ -44,8 +44,7 @@ void bind_lifted_module_definitions(nb::module_& m)
              "repository"_a,
              "repository_factory"_a)
         .def("get_program", &ProgramT::get_program, nb::keep_alive<0, 1>())
-        .def("get_program_repository", &ProgramT::get_program_repository, nb::rv_policy::reference_internal)
-        .def("get_workspace_repository", nb::overload_cast<>(&ProgramT::get_workspace_repository), nb::rv_policy::reference_internal)
+        .def("get_program_repository", nb::overload_cast<>(&ProgramT::get_program_repository, nb::const_), nb::rv_policy::reference_internal)
         .def("get_const_program_workspace", &ProgramT::get_const_program_workspace, nb::rv_policy::reference_internal);
 
     bind_common_configurations<LiftedTag>(m);

@@ -21,11 +21,12 @@
 #include "tyr/declarations.hpp"
 
 #include <memory>
+#include <yggdrasil/core/types.hpp>
 
 namespace ygg
 {
-template<typename T>
-struct Builder;
+struct ExecutionContext;
+using ExecutionContextPtr = std::shared_ptr<ExecutionContext>;
 }
 
 namespace tyr::planning
@@ -58,6 +59,9 @@ template<TaskKind Kind>
 class StateRepository;
 template<TaskKind Kind>
 using StateRepositoryPtr = std::shared_ptr<StateRepository<Kind>>;
+
+template<TaskKind Kind>
+using StateView = ygg::View<ygg::Index<State<Kind>>, StateRepositoryPtr<Kind>>;
 template<TaskKind Kind>
 class StateRepositoryFactory;
 

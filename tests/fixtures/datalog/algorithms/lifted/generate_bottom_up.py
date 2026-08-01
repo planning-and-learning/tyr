@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate lifted bottom-up binding and cost fixtures for the initial state.
+"""Regenerate lifted bottom-up binding fixtures for the initial state.
 
 Usage:
     .venv/bin/python -m tests.fixtures.datalog.algorithms.lifted.generate_bottom_up [CASE ...]
@@ -12,13 +12,12 @@ import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, TypedDict, Union, cast
+from typing import Literal, TypedDict, cast
 
 import pypddl_datasets
 from pypddl.formalism import ParserOptions
 from pytyr import datalog
 from pytyr.formalism.planning import Parser, PlanningTask
-from pytyr.planning import CostMode
 from pytyr.planning import lifted as planning
 from pyyggdrasil.execution import ExecutionContext
 
@@ -31,12 +30,6 @@ ConfigName = Literal[
     "applicable_action",
     "axiom_evaluator",
     "ground_task",
-    "rpg_sum_unit",
-    "rpg_sum_general",
-    "rpg_max_unit",
-    "rpg_max_general",
-    "rpg_achiever_max_override_unit",
-    "rpg_achiever_max_override_general",
 ]
 FixtureCase = dict[str, object]
 
@@ -44,29 +37,11 @@ CONFIGS: tuple[ConfigName, ...] = (
     "applicable_action",
     "axiom_evaluator",
     "ground_task",
-    "rpg_sum_unit",
-    "rpg_sum_general",
-    "rpg_max_unit",
-    "rpg_max_general",
-    "rpg_achiever_max_override_unit",
-    "rpg_achiever_max_override_general",
-)
-KNOWN_GENERAL_COST_SKIP = (
-    "GENERAL action costs with :conditional-effects are unsupported; "
-    "compile conditional effects away first."
-)
-GENERAL_RPG_CONFIGS: frozenset[ConfigName] = frozenset(
-    {
-        "rpg_sum_general",
-        "rpg_max_general",
-        "rpg_achiever_max_override_general",
-    }
 )
 
 
 class AtomBinding(TypedDict):
     objects: str
-    cost: float | None
 
 
 class PredicateAtoms(TypedDict):
@@ -75,19 +50,14 @@ class PredicateAtoms(TypedDict):
     bindings: list[AtomBinding]
 
 
-Workspace = Union[
-    datalog.lifted.UnannotatedProgramWorkspace,
-    datalog.lifted.SumGoalProgramWorkspace,
-    datalog.lifted.MaxGoalProgramWorkspace,
-    datalog.lifted.MaxAchieverGoalOverrideProgramWorkspace,
-]
+Workspace = datalog.lifted.UnannotatedProgramWorkspace
 
 
 @dataclass(frozen=True)
 class Context:
     execution_context: ExecutionContext
     task: planning.Task
-    axiom_evaluator: planning.AxiomEvaluator
+    axiom_evaluator: planning.AxiomEvaluator | None
     successor_generator: planning.SuccessorGenerator
     initial_node: planning.Node
 
@@ -111,17 +81,10 @@ def make_context(domain_file: Path, task_file: Path) -> Context:
 
 def atoms_by_predicate(workspace: Workspace) -> list[PredicateAtoms]:
     result: list[PredicateAtoms] = []
-    annotations = workspace.get_predicate_annotations()
     for fact_set in workspace.get_fluent_fact_sets().get_predicate_sets():
         bindings: list[AtomBinding] = []
         for binding in fact_set.get_bindings():
-            annotation = annotations.find(binding)
-            bindings.append(
-                {
-                    "objects": str(binding.get_objects()),
-                    "cost": annotation.get_cost() if annotation is not None else None,
-                }
-            )
+            bindings.append({"objects": str(binding.get_objects())})
 
         predicate = fact_set.get_predicate()
         result.append(
@@ -134,12 +97,10 @@ def atoms_by_predicate(workspace: Workspace) -> list[PredicateAtoms]:
     return result
 
 
-def cost_mode(config: ConfigName) -> CostMode:
-    return CostMode.UNIT if config.endswith("_unit") else CostMode.GENERAL
-
-
 def run_config(context: Context, config: ConfigName) -> list[PredicateAtoms]:
     if config == "axiom_evaluator":
+        if context.axiom_evaluator is None:
+            return []
         return atoms_by_predicate(context.axiom_evaluator.get_workspace())
 
     if config == "applicable_action":
@@ -153,44 +114,19 @@ def run_config(context: Context, config: ConfigName) -> list[PredicateAtoms]:
         datalog.lifted.solve(execution, context.execution_context)
         return atoms_by_predicate(workspace)
 
-    mode = cost_mode(config)
-    if config.startswith("rpg_sum_"):
-        heuristic = planning.AddRPGHeuristic(context.task, context.execution_context, mode)
-    elif config.startswith("rpg_max_"):
-        heuristic = planning.MaxRPGHeuristic(context.task, context.execution_context, mode)
-    elif config.startswith("rpg_achiever_max_override_"):
-        heuristic = planning.LMCutHeuristic(context.task, context.execution_context, mode)
-    else:
-        raise RuntimeError(f"unknown bottom-up fixture configuration: {config}")
-
-    heuristic.evaluate(context.initial_node.get_state())
-    return atoms_by_predicate(heuristic.get_workspace())
+    raise RuntimeError(f"unknown bottom-up fixture configuration: {config}")
 
 
 def generate_case(case: FixtureCase) -> FixtureCase:
     domain_file = BENCHMARKS_ROOT / str(case["domain_file"])
     task_file = BENCHMARKS_ROOT / str(case["task_file"])
     context = make_context(domain_file, task_file)
-    configs: dict[str, object] = {}
-    skipped: dict[str, str] = {}
-
-    for config in CONFIGS:
-        try:
-            configs[config] = {"atoms": run_config(context, config)}
-        except ValueError as error:
-            if config not in GENERAL_RPG_CONFIGS or str(error) != KNOWN_GENERAL_COST_SKIP:
-                raise
-            skipped[config] = str(error)
-
-    result: FixtureCase = {
+    return {
         "name": case["name"],
         "domain_file": case["domain_file"],
         "task_file": case["task_file"],
-        "configs": configs,
+        "configs": {config: {"atoms": run_config(context, config)} for config in CONFIGS},
     }
-    if skipped:
-        result["skipped"] = skipped
-    return result
 
 
 def main() -> None:

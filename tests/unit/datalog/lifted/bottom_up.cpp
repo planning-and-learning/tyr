@@ -36,7 +36,6 @@
 #include <fstream>
 #include <gtest/gtest.h>
 #include <memory>
-#include <optional>
 #include <ostream>
 #include <ranges>
 #include <sstream>
@@ -60,22 +59,11 @@ namespace
 {
 inline constexpr const char* kBottomUpFixture = "tests/fixtures/datalog/algorithms/lifted/bottom_up.json.gz";
 inline constexpr const char* kBenchmarksFixture = "tests/fixtures/planning/benchmarks.json";
-inline constexpr std::string_view kKnownGeneralCostSkip =
-    "GENERAL action costs with :conditional-effects are unsupported; compile conditional effects away first.";
-inline constexpr auto kConfigNames = std::array<std::string_view, 9> { "applicable_action",
-                                                                       "axiom_evaluator",
-                                                                       "ground_task",
-                                                                       "rpg_sum_unit",
-                                                                       "rpg_sum_general",
-                                                                       "rpg_max_unit",
-                                                                       "rpg_max_general",
-                                                                       "rpg_achiever_max_override_unit",
-                                                                       "rpg_achiever_max_override_general" };
+inline constexpr auto kConfigNames = std::array<std::string_view, 3> { "applicable_action", "axiom_evaluator", "ground_task" };
 
 struct AtomBinding
 {
     std::string objects;
-    std::optional<d::Cost> cost;
 
     friend bool operator==(const AtomBinding&, const AtomBinding&) = default;
 };
@@ -96,17 +84,12 @@ struct BottomUpCase
     std::string name;
     std::filesystem::path domain_file;
     std::filesystem::path task_file;
-    std::array<std::optional<AtomsByPredicate>, kConfigNames.size()> configs;
+    std::array<AtomsByPredicate, kConfigNames.size()> configs;
 };
 
 void PrintTo(const BottomUpCase& test_case, std::ostream* os) { *os << test_case.name << " (" << test_case.task_file << ')'; }
 
-AtomBinding parse_atom_binding(const boost::json::object& object)
-{
-    const auto& cost = object.at("cost");
-    return AtomBinding { ygg::common::as_string(object, "objects", "atom binding"),
-                         cost.is_null() ? std::nullopt : std::optional(boost::json::value_to<d::Cost>(cost)) };
-}
+AtomBinding parse_atom_binding(const boost::json::object& object) { return AtomBinding { ygg::common::as_string(object, "objects", "atom binding") }; }
 
 PredicateAtoms parse_predicate_atoms(const boost::json::object& object)
 {
@@ -156,22 +139,8 @@ BottomUpCase parse_case(const boost::json::object& object)
             result.configs[index] = parse_atoms_by_predicate(value.as_object());
         }
 
-    if (const auto* skipped = object.if_contains("skipped"))
-    {
-        for (const auto& [name, value] : skipped->as_object())
-        {
-            const auto config = std::string(name);
-            const auto index = get_config_index(config);
-            if (seen[index])
-                throw std::runtime_error("bottom-up configuration is both recorded and skipped in " + result.name + ": " + config);
-            seen[index] = true;
-            if (!config.ends_with("_general") || value.as_string() != kKnownGeneralCostSkip)
-                throw std::runtime_error("unknown bottom-up skip in " + result.name + ": " + config);
-        }
-    }
-
     if (!std::ranges::all_of(seen, [](bool value) { return value; }))
-        throw std::runtime_error("bottom-up configurations do not match the nine-config matrix in " + result.name);
+        throw std::runtime_error("bottom-up configurations do not match the three-config matrix in " + result.name);
 
     return result;
 }
@@ -211,20 +180,13 @@ std::vector<BottomUpCase> load_cases()
     return result;
 }
 
-void append_atoms_by_predicate(const d::TaggedFactSets<f::FluentTag>& fact_sets,
-                               const d::SelectedPredicateAnnotations<LiftedTag>& annotations,
-                               AtomsByPredicate& result)
+void append_atoms_by_predicate(const d::TaggedFactSets<f::FluentTag>& fact_sets, AtomsByPredicate& result)
 {
     for (const auto& set : fact_sets.predicate.get_sets())
     {
         auto bindings = std::vector<AtomBinding> {};
         for (const auto binding : set.get_bindings())
-        {
-            auto cost = std::optional<d::Cost> {};
-            if (const auto* annotation = annotations.find(binding))
-                cost = d::get_cost(*annotation);
-            bindings.push_back(AtomBinding { ygg::to_string(binding.get_objects()), cost });
-        }
+            bindings.push_back(AtomBinding { ygg::to_string(binding.get_objects()) });
         std::ranges::sort(bindings, {}, &AtomBinding::objects);
 
         const auto predicate = set.get_predicate();
@@ -236,17 +198,8 @@ template<typename Workspace>
 AtomsByPredicate collect_atoms_by_predicate(const Workspace& workspace)
 {
     auto result = AtomsByPredicate {};
-    append_atoms_by_predicate(workspace.facts.fact_sets, workspace.and_annot, result);
+    append_atoms_by_predicate(workspace.facts.fact_sets, result);
     return result;
-}
-
-::tyr::CostMode parse_cost_mode(std::string_view config)
-{
-    if (config.ends_with("_unit"))
-        return ::tyr::CostMode::UNIT;
-    if (config.ends_with("_general"))
-        return ::tyr::CostMode::GENERAL;
-    throw std::runtime_error("parse_cost_mode(...): configuration has no cost mode: " + std::string(config));
 }
 
 class BottomUpFixtureTest : public ::testing::TestWithParam<BottomUpCase>
@@ -273,7 +226,10 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchAtOneAndMaximumThreads)
             SCOPED_TRACE("threads=" + std::to_string(num_threads) + ", config=" + std::string(config));
 
             if (config == "axiom_evaluator" && !axiom_evaluator)
+            {
+                EXPECT_TRUE(expected.empty());
                 continue;
+            }
 
             const auto run_config = [&]() -> AtomsByPredicate
             {
@@ -295,49 +251,10 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchAtOneAndMaximumThreads)
                     return collect_atoms_by_predicate(workspace);
                 }
 
-                if (config.starts_with("rpg_sum_"))
-                {
-                    auto heuristic = p::AddRPGHeuristic<::tyr::LiftedTag>::create(task, execution_context, parse_cost_mode(config));
-                    heuristic->evaluate(initial_node.get_state());
-                    return collect_atoms_by_predicate(heuristic->get_workspace());
-                }
-
-                if (config.starts_with("rpg_max_"))
-                {
-                    auto heuristic = p::MaxRPGHeuristic<::tyr::LiftedTag>::create(task, execution_context, parse_cost_mode(config));
-                    heuristic->evaluate(initial_node.get_state());
-                    return collect_atoms_by_predicate(heuristic->get_workspace());
-                }
-
-                if (config.starts_with("rpg_achiever_max_override_"))
-                {
-                    auto heuristic = p::LMCutHeuristic<::tyr::LiftedTag>::create(task, execution_context, parse_cost_mode(config));
-                    heuristic->evaluate(initial_node.get_state());
-                    return collect_atoms_by_predicate(heuristic->get_workspace());
-                }
-
                 throw std::runtime_error("unknown bottom-up fixture configuration: " + std::string(config));
             };
 
-            if (!expected)
-            {
-                try
-                {
-                    static_cast<void>(run_config());
-                    ADD_FAILURE() << "Expected bottom-up configuration to be skipped: " << config;
-                }
-                catch (const std::invalid_argument& error)
-                {
-                    EXPECT_EQ(std::string_view(error.what()), kKnownGeneralCostSkip);
-                }
-                catch (...)
-                {
-                    ADD_FAILURE() << "Bottom-up configuration threw the wrong exception type: " << config;
-                }
-                continue;
-            }
-
-            EXPECT_EQ(run_config(), *expected);
+            EXPECT_EQ(run_config(), expected);
         }
     }
 }
@@ -398,6 +315,9 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindi
     const auto program_view = intern(std::move(program_data));
 
     auto program = d::Program<LiftedTag>(program_view, repository, factory);
+    const auto& const_rule_workspace = program.get_const_program_workspace().get_rules<f::PredicateTag>().front().value();
+    EXPECT_EQ(&const_rule_workspace.get_nullary_condition().get_context(), &program.get_program_repository());
+
     using OrPolicy = d::OrAnnotationPolicy<LiftedTag>;
     using AndPolicy = d::AndAnnotationPolicy<LiftedTag, d::SumAggregation>;
     using Termination = d::NoTerminationPolicy<LiftedTag>;
@@ -408,6 +328,27 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindi
     const auto& rule_repository = workspace.get_rules<f::PredicateTag>().front()->worker.front().solve.program_overlay_repository;
     EXPECT_EQ(rule_repository.size(rule.get_index()), 1);
     EXPECT_EQ(rule_repository.size(goal.get_index()), 0);
+}
+
+TEST(TyrDatalogLiftedBottomUpTest, ProgramWorkspacesOwnIndependentRepositories)
+{
+    auto factory = std::make_shared<fd::RepositoryFactory>();
+    auto repository = factory->create_shared();
+    auto program_data = ygg::Data<fd::Program> {};
+    fd::canonicalize(program_data);
+    const auto program_view = repository->get_or_create(program_data).first;
+    const auto program = d::Program<LiftedTag>(program_view, repository, factory);
+
+    auto first = d::ProgramWorkspace<LiftedTag>(program);
+    auto second = d::ProgramWorkspace<LiftedTag>(program);
+
+    EXPECT_NE(&first.workspace_repository, &second.workspace_repository);
+    EXPECT_EQ(&first.workspace_repository.get_root(), &program.get_program_repository());
+    EXPECT_EQ(&second.workspace_repository.get_root(), &program.get_program_repository());
+
+    auto variable = ygg::Data<f::Variable>(std::string("workspace-only"));
+    EXPECT_TRUE(first.workspace_repository.get_or_create(variable).second);
+    EXPECT_FALSE(second.workspace_repository.find(variable).has_value());
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, PredicateAnnotationsUseRelationAndRowIndices)

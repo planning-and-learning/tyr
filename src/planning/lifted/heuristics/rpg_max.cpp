@@ -17,38 +17,46 @@
 
 #include "tyr/planning/lifted/heuristics/rpg_max.hpp"
 
+#include "rpg.hpp"
 #include "tyr/datalog/lifted/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
-#include "tyr/formalism/planning/merge_datalog.hpp"
-#include "tyr/planning/lifted/heuristics/rpg.hpp"
 
 namespace tyr::planning
 {
 
+struct MaxRPGHeuristic<LiftedTag>::Impl :
+    detail::LiftedRPGBase<Impl,
+                          datalog::OrAnnotationPolicy<LiftedTag>,
+                          datalog::AndAnnotationPolicy<LiftedTag, datalog::MaxAggregation>,
+                          datalog::TerminationPolicy<LiftedTag, datalog::MaxAggregation>>
+{
+    using Base = detail::LiftedRPGBase<Impl,
+                                       datalog::OrAnnotationPolicy<LiftedTag>,
+                                       datalog::AndAnnotationPolicy<LiftedTag, datalog::MaxAggregation>,
+                                       datalog::TerminationPolicy<LiftedTag, datalog::MaxAggregation>>;
+    using Base::Base;
+};
+
 MaxRPGHeuristic<LiftedTag>::MaxRPGHeuristic(TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
-    RPGBase<LiftedTag,
-            MaxRPGHeuristic<LiftedTag>,
-            datalog::OrAnnotationPolicy<LiftedTag>,
-            datalog::AndAnnotationPolicy<LiftedTag, datalog::MaxAggregation>,
-            datalog::TerminationPolicy<LiftedTag, datalog::MaxAggregation>>(task,
-                                                                            std::move(execution_context),
-                                                                            datalog::OrAnnotationPolicy<LiftedTag>(),
-                                                                            datalog::AndAnnotationPolicy<LiftedTag, datalog::MaxAggregation>(),
-                                                                            cost_mode)
+    m_impl(std::make_unique<Impl>(std::move(task),
+                                  std::move(execution_context),
+                                  datalog::OrAnnotationPolicy<LiftedTag> {},
+                                  datalog::AndAnnotationPolicy<LiftedTag, datalog::MaxAggregation> {},
+                                  cost_mode))
 {
 }
+
+MaxRPGHeuristic<LiftedTag>::~MaxRPGHeuristic() = default;
+MaxRPGHeuristic<LiftedTag>::MaxRPGHeuristic(MaxRPGHeuristic&&) noexcept = default;
+MaxRPGHeuristic<LiftedTag>& MaxRPGHeuristic<LiftedTag>::operator=(MaxRPGHeuristic&&) noexcept = default;
 
 MaxRPGHeuristicPtr<LiftedTag> MaxRPGHeuristic<LiftedTag>::create(TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
 {
     return std::make_shared<MaxRPGHeuristic<LiftedTag>>(std::move(task), std::move(execution_context), cost_mode);
 }
 
-ygg::float_t MaxRPGHeuristic<LiftedTag>::extract_cost_and_set_preferred_actions_impl(const StateView<LiftedTag>& state)
-{
-    return m_workspace.tp.get_total_cost(datalog::FactSets { m_rpg_program.get_const_program_workspace().facts.fact_sets, m_workspace.facts.fact_sets },
-                                         this->m_workspace.and_annot,
-                                         this->m_workspace.numeric_and_annot,
-                                         *this->m_workspace.numeric_support_selector);
-}
+void MaxRPGHeuristic<LiftedTag>::set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) { m_impl->set_goal(goal); }
+ygg::float_t MaxRPGHeuristic<LiftedTag>::evaluate(const StateView<LiftedTag>& state) { return m_impl->evaluate(state); }
+void MaxRPGHeuristic<LiftedTag>::print_summary(size_t verbosity) const { m_impl->print_summary(verbosity); }
 
 }

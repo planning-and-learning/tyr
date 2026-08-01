@@ -30,7 +30,6 @@
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/state_builder.hpp"
 #include "tyr/planning/lifted/task.hpp"
-#include "tyr/planning/node.hpp"
 
 #include <algorithm>
 #include <boost/dynamic_bitset.hpp>

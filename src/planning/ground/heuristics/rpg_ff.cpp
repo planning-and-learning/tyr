@@ -17,9 +17,16 @@
 
 #include "tyr/planning/ground/heuristics/rpg_ff.hpp"
 
+#include "rpg.hpp"
+#include "tyr/datalog/ground/policies/annotation.hpp"
+#include "tyr/datalog/ground/policies/cost.hpp"
+#include "tyr/datalog/ground/policies/numeric_support.hpp"
+#include "tyr/datalog/policies/termination.hpp"
 #include "tyr/planning/applicability.hpp"
 
+#include <boost/dynamic_bitset.hpp>
 #include <utility>
+#include <vector>
 
 namespace f = tyr::formalism;
 namespace fd = tyr::formalism::datalog;
@@ -27,43 +34,98 @@ namespace fd = tyr::formalism::datalog;
 namespace tyr::planning
 {
 
-FFRPGHeuristic<GroundTag>::FFRPGHeuristic(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
-    RPGBase<GroundTag,
-            FFRPGHeuristic<GroundTag>,
-            datalog::OrAnnotationPolicy<GroundTag>,
-            datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>,
-            datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>,
-            datalog::RuleCostOverridePolicy<GroundTag>>(task,
-                                                        std::move(execution_context),
-                                                        datalog::OrAnnotationPolicy<GroundTag>(),
-                                                        datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>(),
-                                                        cost_mode),
-    m_markings(1),
-    m_function_markings(),
-    m_numeric_support_selector_workspace(),
-    m_effect_families(),
-    m_relaxed_plan(),
-    m_preferred_actions()
+struct FFRPGHeuristic<GroundTag>::Impl :
+    detail::GroundRPGEvaluator<Impl,
+                               datalog::OrAnnotationPolicy<GroundTag>,
+                               datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>,
+                               datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>,
+                               datalog::RuleCostOverridePolicy<GroundTag>>
 {
-    m_markings.front().resize(m_rpg_program.get_datalog_program().get_program().get_atoms<f::FluentTag>().size());
+    using Base = detail::GroundRPGEvaluator<Impl,
+                                            datalog::OrAnnotationPolicy<GroundTag>,
+                                            datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>,
+                                            datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>,
+                                            datalog::RuleCostOverridePolicy<GroundTag>>;
+
+    Impl(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
+        Base(std::move(task),
+             std::move(execution_context),
+             datalog::OrAnnotationPolicy<GroundTag>(),
+             datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>(),
+             cost_mode),
+        m_markings(1),
+        m_function_markings(),
+        m_numeric_support_selector_workspace(),
+        m_effect_families(),
+        m_relaxed_plan(),
+        m_preferred_actions()
+    {
+        m_markings.front().resize(get_program().get_datalog_program().get_program().get_atoms<f::FluentTag>().size());
+    }
+
+    void set_goal(f::planning::GroundConjunctiveConditionView goal)
+    {
+        Base::set_goal(goal);
+        m_relaxed_plan.clear();
+        m_preferred_actions.clear();
+    }
+
+    ygg::float_t evaluate(const StateView<GroundTag>& state)
+    {
+        m_relaxed_plan.clear();
+        m_preferred_actions.clear();
+        return Base::evaluate(state);
+    }
+
+    ygg::float_t compute_result(const StateView<GroundTag>& state);
+    bool mark_atom(fd::GroundAtomView<f::FluentTag> atom);
+    bool mark_function(fd::GroundFunctionTermView<f::FluentTag> term);
+    void extract_relaxed_plan_and_preferred_actions(fd::GroundAtomView<f::FluentTag> atom, const StateContext<GroundTag>& state_context);
+    void extract_relaxed_plan_and_preferred_actions(fd::GroundFunctionTermView<f::FluentTag> term, const StateContext<GroundTag>& state_context);
+    void extract_relaxed_plan_and_preferred_actions(fd::GroundFunctionTermView<f::FluentTag> term,
+                                                    const datalog::Annotation<GroundTag, f::FunctionTag>& annotation,
+                                                    const StateContext<GroundTag>& state_context);
+    void extract_numeric_constraint_support(fd::GroundBooleanOperatorView constraint, const StateContext<GroundTag>& state_context);
+    template<f::RelationKind R>
+    void extract_relaxed_plan_and_preferred_actions(const datalog::WitnessAnnotation<GroundTag, R>& witness, const StateContext<GroundTag>& state_context);
+
+    std::vector<boost::dynamic_bitset<>> m_markings;
+    ygg::UnorderedSet<fd::GroundFunctionTermView<f::FluentTag>> m_function_markings;
+    datalog::GroundNumericSupportSelectorWorkspace m_numeric_support_selector_workspace;
+    f::planning::EffectFamilyList m_effect_families;
+    ygg::UnorderedSet<ygg::Index<f::planning::GroundAction>> m_relaxed_plan;
+    ygg::UnorderedSet<f::planning::ActionBindingView> m_preferred_actions;
+};
+
+FFRPGHeuristic<GroundTag>::FFRPGHeuristic(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
+    m_impl(std::make_unique<Impl>(std::move(task), std::move(execution_context), cost_mode))
+{
 }
+
+FFRPGHeuristic<GroundTag>::~FFRPGHeuristic() = default;
+FFRPGHeuristic<GroundTag>::FFRPGHeuristic(FFRPGHeuristic&&) noexcept = default;
+FFRPGHeuristic<GroundTag>& FFRPGHeuristic<GroundTag>::operator=(FFRPGHeuristic&&) noexcept = default;
 
 FFRPGHeuristicPtr<GroundTag> FFRPGHeuristic<GroundTag>::create(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
 {
     return std::make_shared<FFRPGHeuristic<GroundTag>>(std::move(task), std::move(execution_context), cost_mode);
 }
 
-ygg::float_t FFRPGHeuristic<GroundTag>::extract_cost_and_set_preferred_actions_impl(const StateView<GroundTag>& state)
+void FFRPGHeuristic<GroundTag>::set_goal(f::planning::GroundConjunctiveConditionView goal) { m_impl->set_goal(goal); }
+
+ygg::float_t FFRPGHeuristic<GroundTag>::evaluate(const StateView<GroundTag>& state) { return m_impl->evaluate(state); }
+
+const ygg::UnorderedSet<f::planning::ActionBindingView>& FFRPGHeuristic<GroundTag>::get_preferred_actions() { return m_impl->m_preferred_actions; }
+
+ygg::float_t FFRPGHeuristic<GroundTag>::Impl::compute_result(const StateView<GroundTag>& state)
 {
-    m_relaxed_plan.clear();
-    m_preferred_actions.clear();
     m_function_markings.clear();
     m_numeric_support_selector_workspace.clear();
     for (auto& bitset : m_markings)
         bitset.reset();
 
-    const auto state_context = StateContext<GroundTag>(*this->m_task, state.get_state_builder(), ygg::float_t(0));
-    if (const auto& goal = this->m_workspace.tp.get_goal())
+    const auto state_context = StateContext<GroundTag>(get_task(), state.get_state_builder(), ygg::float_t(0));
+    if (const auto& goal = m_workspace.tp.get_goal())
     {
         for (const auto literal : goal->get_literals<f::FluentTag>())
             if (literal.get_polarity())
@@ -76,9 +138,7 @@ ygg::float_t FFRPGHeuristic<GroundTag>::extract_cost_and_set_preferred_actions_i
     return ygg::float_t(m_relaxed_plan.size());
 }
 
-const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>& FFRPGHeuristic<GroundTag>::get_preferred_actions() { return m_preferred_actions; }
-
-bool FFRPGHeuristic<GroundTag>::mark_atom(fd::GroundAtomView<f::FluentTag> atom)
+bool FFRPGHeuristic<GroundTag>::Impl::mark_atom(fd::GroundAtomView<f::FluentTag> atom)
 {
     const auto i = ygg::uint_t(atom.get_index());
     if (m_markings.front().size() <= i)
@@ -89,9 +149,10 @@ bool FFRPGHeuristic<GroundTag>::mark_atom(fd::GroundAtomView<f::FluentTag> atom)
     return false;
 }
 
-bool FFRPGHeuristic<GroundTag>::mark_function(fd::GroundFunctionTermView<f::FluentTag> term) { return !m_function_markings.insert(term).second; }
+bool FFRPGHeuristic<GroundTag>::Impl::mark_function(fd::GroundFunctionTermView<f::FluentTag> term) { return !m_function_markings.insert(term).second; }
 
-void FFRPGHeuristic<GroundTag>::extract_relaxed_plan_and_preferred_actions(fd::GroundAtomView<f::FluentTag> atom, const StateContext<GroundTag>& state_context)
+void FFRPGHeuristic<GroundTag>::Impl::extract_relaxed_plan_and_preferred_actions(fd::GroundAtomView<f::FluentTag> atom,
+                                                                                 const StateContext<GroundTag>& state_context)
 {
     if (mark_atom(atom))
         return;
@@ -107,8 +168,8 @@ void FFRPGHeuristic<GroundTag>::extract_relaxed_plan_and_preferred_actions(fd::G
     extract_relaxed_plan_and_preferred_actions(*witness, state_context);
 }
 
-void FFRPGHeuristic<GroundTag>::extract_relaxed_plan_and_preferred_actions(fd::GroundFunctionTermView<f::FluentTag> term,
-                                                                           const StateContext<GroundTag>& state_context)
+void FFRPGHeuristic<GroundTag>::Impl::extract_relaxed_plan_and_preferred_actions(fd::GroundFunctionTermView<f::FluentTag> term,
+                                                                                 const StateContext<GroundTag>& state_context)
 {
     const auto* annotation = this->m_workspace.numeric_and_annot.find(term);
     if (!annotation)
@@ -117,9 +178,9 @@ void FFRPGHeuristic<GroundTag>::extract_relaxed_plan_and_preferred_actions(fd::G
     extract_relaxed_plan_and_preferred_actions(term, *annotation, state_context);
 }
 
-void FFRPGHeuristic<GroundTag>::extract_relaxed_plan_and_preferred_actions(fd::GroundFunctionTermView<f::FluentTag> term,
-                                                                           const datalog::Annotation<GroundTag, f::FunctionTag>& annotation,
-                                                                           const StateContext<GroundTag>& state_context)
+void FFRPGHeuristic<GroundTag>::Impl::extract_relaxed_plan_and_preferred_actions(fd::GroundFunctionTermView<f::FluentTag> term,
+                                                                                 const datalog::Annotation<GroundTag, f::FunctionTag>& annotation,
+                                                                                 const StateContext<GroundTag>& state_context)
 {
     if (mark_function(term))
         return;
@@ -131,7 +192,7 @@ void FFRPGHeuristic<GroundTag>::extract_relaxed_plan_and_preferred_actions(fd::G
     extract_relaxed_plan_and_preferred_actions(*witness, state_context);
 }
 
-void FFRPGHeuristic<GroundTag>::extract_numeric_constraint_support(fd::GroundBooleanOperatorView constraint, const StateContext<GroundTag>& state_context)
+void FFRPGHeuristic<GroundTag>::Impl::extract_numeric_constraint_support(fd::GroundBooleanOperatorView constraint, const StateContext<GroundTag>& state_context)
 {
     const auto numeric_support_selector =
         datalog::GroundNumericSupportSelector(this->m_workspace.const_workspace.facts, this->m_workspace.facts, this->m_workspace.numeric_and_annot);
@@ -143,11 +204,11 @@ void FFRPGHeuristic<GroundTag>::extract_numeric_constraint_support(fd::GroundBoo
 }
 
 template<f::RelationKind R>
-void FFRPGHeuristic<GroundTag>::extract_relaxed_plan_and_preferred_actions(const datalog::WitnessAnnotation<GroundTag, R>& witness,
-                                                                           const StateContext<GroundTag>& state_context)
+void FFRPGHeuristic<GroundTag>::Impl::extract_relaxed_plan_and_preferred_actions(const datalog::WitnessAnnotation<GroundTag, R>& witness,
+                                                                                 const StateContext<GroundTag>& state_context)
 {
     const auto rule = witness.get_rule_key();
-    const auto& mapping = this->m_rpg_program.template get_rule_to_action_mapping<R>();
+    const auto& mapping = get_program().template get_rule_to_action_mapping<R>();
     if (const auto it = mapping.find(rule); it != mapping.end())
     {
         const auto action = it->second;

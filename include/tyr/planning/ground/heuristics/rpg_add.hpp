@@ -18,30 +18,34 @@
 #ifndef TYR_PLANNING_GROUND_HEURISTICS_RPG_ADD_HPP_
 #define TYR_PLANNING_GROUND_HEURISTICS_RPG_ADD_HPP_
 
-#include "tyr/datalog/ground/policies/annotation.hpp"
-#include "tyr/datalog/ground/policies/cost.hpp"
-#include "tyr/datalog/policies/termination.hpp"
-#include "tyr/planning/ground/heuristics/rpg.hpp"
+#include "tyr/planning/heuristic.hpp"
 #include "tyr/planning/heuristics/rpg_add.hpp"
+
+#include <memory>
 
 namespace tyr::planning
 {
 
 template<>
-class AddRPGHeuristic<GroundTag> :
-    public RPGBase<GroundTag,
-                   AddRPGHeuristic<GroundTag>,
-                   datalog::OrAnnotationPolicy<GroundTag>,
-                   datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>,
-                   datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>,
-                   datalog::RuleCostOverridePolicy<GroundTag>>
+class AddRPGHeuristic<GroundTag> : public Heuristic<GroundTag>
 {
 public:
     AddRPGHeuristic(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
+    ~AddRPGHeuristic() override;
+
+    AddRPGHeuristic(const AddRPGHeuristic&) = delete;
+    AddRPGHeuristic& operator=(const AddRPGHeuristic&) = delete;
+    AddRPGHeuristic(AddRPGHeuristic&&) noexcept;
+    AddRPGHeuristic& operator=(AddRPGHeuristic&&) noexcept;
 
     static AddRPGHeuristicPtr<GroundTag> create(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
 
-    ygg::float_t extract_cost_and_set_preferred_actions_impl(const StateView<GroundTag>& state);
+    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override;
+    ygg::float_t evaluate(const StateView<GroundTag>& state) override;
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 }

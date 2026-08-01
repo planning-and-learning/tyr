@@ -17,28 +17,55 @@
 
 #include "tyr/planning/ground/heuristics/rpg_add.hpp"
 
+#include "rpg.hpp"
+#include "tyr/datalog/ground/policies/annotation.hpp"
+#include "tyr/datalog/ground/policies/cost.hpp"
+#include "tyr/datalog/policies/termination.hpp"
+
+#include <utility>
+
 namespace tyr::planning
 {
 
+struct AddRPGHeuristic<GroundTag>::Impl :
+    detail::GroundRPGEvaluator<Impl,
+                               datalog::OrAnnotationPolicy<GroundTag>,
+                               datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>,
+                               datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>,
+                               datalog::RuleCostOverridePolicy<GroundTag>>
+{
+    using Base = detail::GroundRPGEvaluator<Impl,
+                                            datalog::OrAnnotationPolicy<GroundTag>,
+                                            datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>,
+                                            datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>,
+                                            datalog::RuleCostOverridePolicy<GroundTag>>;
+
+    Impl(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
+        Base(std::move(task),
+             std::move(execution_context),
+             datalog::OrAnnotationPolicy<GroundTag>(),
+             datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>(),
+             cost_mode)
+    {
+    }
+};
+
 AddRPGHeuristic<GroundTag>::AddRPGHeuristic(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
-    RPGBase<GroundTag,
-            AddRPGHeuristic<GroundTag>,
-            datalog::OrAnnotationPolicy<GroundTag>,
-            datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>,
-            datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>,
-            datalog::RuleCostOverridePolicy<GroundTag>>(std::move(task),
-                                                        std::move(execution_context),
-                                                        datalog::OrAnnotationPolicy<GroundTag>(),
-                                                        datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>(),
-                                                        cost_mode)
+    m_impl(std::make_unique<Impl>(std::move(task), std::move(execution_context), cost_mode))
 {
 }
+
+AddRPGHeuristic<GroundTag>::~AddRPGHeuristic() = default;
+AddRPGHeuristic<GroundTag>::AddRPGHeuristic(AddRPGHeuristic&&) noexcept = default;
+AddRPGHeuristic<GroundTag>& AddRPGHeuristic<GroundTag>::operator=(AddRPGHeuristic&&) noexcept = default;
 
 AddRPGHeuristicPtr<GroundTag> AddRPGHeuristic<GroundTag>::create(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
 {
     return std::make_shared<AddRPGHeuristic<GroundTag>>(std::move(task), std::move(execution_context), cost_mode);
 }
 
-ygg::float_t AddRPGHeuristic<GroundTag>::extract_cost_and_set_preferred_actions_impl(const StateView<GroundTag>&) { return get_goal_cost(); }
+void AddRPGHeuristic<GroundTag>::set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) { m_impl->set_goal(goal); }
+
+ygg::float_t AddRPGHeuristic<GroundTag>::evaluate(const StateView<GroundTag>& state) { return m_impl->evaluate(state); }
 
 }

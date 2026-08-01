@@ -20,16 +20,24 @@
 
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground/state_view.hpp"
-#include "tyr/planning/lifted/state_view.hpp"
-#include "tyr/planning/node.hpp"
 
+#include <cstddef>
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
 
+/**
+ * A heuristic instance is a mutable evaluator owned by one search worker. Evaluation may reuse scratch storage, update statistics, and replace preferred
+ * actions, so evaluate() is intentionally non-const and must not be called concurrently on the same instance. Preferred actions describe the latest
+ * evaluation and must not be retained across another evaluation or reconfiguration.
+ *
+ * Heavy built-in heuristics hide a task-derived definition and a worker-local evaluator behind their private implementation. Definitions are frozen before
+ * being shared between workers, while evaluators own all mutable workspaces. This avoids repeating task translation without exposing those implementation
+ * details through the search API. set_goal() is configuration and must run before workers are materialized, or after they have been discarded. Custom
+ * heuristics need not use the same internal representation.
+ */
 template<TaskKind Kind>
 class Heuristic
 {
@@ -40,13 +48,7 @@ public:
 
     virtual ygg::float_t evaluate(const StateView<Kind>& state) = 0;
 
-    virtual ygg::float_t evaluate(const Node<Kind>& node) { return evaluate(node.get_state()); }
-
-    virtual const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>& get_preferred_actions()
-    {
-        static const auto actions = ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView> {};
-        return actions;
-    }
+    virtual const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>& get_preferred_actions();
 
     virtual void print_summary([[maybe_unused]] size_t verbosity) const {}
 };

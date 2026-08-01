@@ -123,7 +123,7 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
     auto search_nodes = SearchNodeVector<Kind>();
     auto openlist = Queue<Kind>();
     const auto start_g_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(start_node.get_metric());
-    const auto start_h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(heuristic.evaluate(start_node));
+    const auto start_h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(heuristic.evaluate(start_state));
     const auto start_f_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(start_g_value + start_h_value);
     auto& start_search_node = get_or_create_search_node(start_state_index, search_nodes);
     start_search_node.status = (start_h_value == std::numeric_limits<ygg::float_t>::infinity()) ? SearchNodeStatus::DEAD_END : SearchNodeStatus::OPEN;
@@ -304,7 +304,7 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
                 successor_search_node.parent_state = state_index;
                 successor_search_node.g_value = successor_g_value;
 
-                const auto successor_h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(heuristic.evaluate(normalized_succ_node));
+                const auto successor_h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(heuristic.evaluate(succ_state));
 
                 if (successor_h_value == std::numeric_limits<ygg::float_t>::infinity())
                 {

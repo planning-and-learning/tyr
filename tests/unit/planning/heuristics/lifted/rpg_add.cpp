@@ -26,3 +26,8 @@ inline constexpr const char* kHeuristicFixture = "tests/fixtures/planning/heuris
 }
 
 #include "../heuristic.hpp"
+
+namespace tyr::tests
+{
+TEST(TyrPlanningLiftedAddRPGHeuristicTest, SetGoalReconfiguresEvaluator) { expect_builtin_set_goal_reconfigures_evaluator<LiftedTag>(); }
+}

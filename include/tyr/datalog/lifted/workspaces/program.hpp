@@ -199,6 +199,11 @@ struct ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>
 {
     const ConstProgramWorkspace<LiftedTag>& const_workspace;
     const ::tyr::formalism::datalog::Repository& program_repository;
+
+private:
+    ::tyr::formalism::datalog::RepositoryPtr m_workspace_repository;
+
+public:
     ::tyr::formalism::datalog::Repository& workspace_repository;
 
     FactsWorkspace<LiftedTag> facts;
@@ -242,7 +247,9 @@ struct ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>
 
     ProgramStatistics statistics;
 
-    explicit ProgramWorkspace(Program<LiftedTag>& program, OrAP or_ap = OrAP(), AndAP and_ap = AndAP(), TP tp = TP(), CP cost_policy = CP());
+    // RepositoryFactory is intentionally unsynchronized; materialize worker workspaces before starting worker threads.
+    explicit ProgramWorkspace(const Program<LiftedTag>& program, OrAP or_ap = OrAP(), AndAP and_ap = AndAP(), TP tp = TP(), CP cost_policy = CP());
+    ProgramWorkspace(Program<LiftedTag>&&, OrAP = OrAP(), AndAP = AndAP(), TP = TP(), CP = CP()) = delete;
 
     void clear_costs() { cost_policy.clear(); }
 };

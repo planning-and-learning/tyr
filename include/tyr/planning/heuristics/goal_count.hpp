@@ -18,8 +18,11 @@
 #ifndef TYR_PLANNING_HEURISTICS_GOAL_COUNT_HPP_
 #define TYR_PLANNING_HEURISTICS_GOAL_COUNT_HPP_
 
+#include "tyr/formalism/planning/ground_conjunctive_condition_view.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/ground/state_view.hpp"
 #include "tyr/planning/heuristic.hpp"
+#include "tyr/planning/lifted/state_view.hpp"
 
 #include <memory>
 

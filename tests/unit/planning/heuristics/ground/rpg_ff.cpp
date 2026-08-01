@@ -26,3 +26,8 @@ inline constexpr const char* kHeuristicFixture = "tests/fixtures/planning/heuris
 }
 
 #include "../heuristic.hpp"
+
+namespace tyr::tests
+{
+TEST(TyrPlanningGroundFFRPGHeuristicTest, PreferredActionsDescribeLatestEvaluation) { expect_preferred_actions_reset_after_dead_end<GroundTag>(); }
+}
