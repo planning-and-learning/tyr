@@ -687,7 +687,7 @@ void update_numeric_annotation(GroundCtx<OrAP, AndAP, TP, CP>& ctx,
                                                                                std::span<const NumericSupport<GroundTag>>(scratch.numeric_supports),
                                                                                rule,
                                                                                ctx.out().and_annot() };
-        ctx.out().and_ap().update_annotation(term, term, interval, context, scratch.function_annotations);
+        ctx.out().and_ap().update_annotation(term, interval, context, scratch.function_annotations);
 
         if (const auto* annotation = scratch.function_annotations.find(term, interval))
             ctx.out().numeric_and_annot().insert(term, interval, *annotation);
@@ -786,10 +786,10 @@ update_fact_annotation(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundRuleView<f
                                                                             out.and_annot() };
 
     out.and_ap().record_achiever(fact, context);
-    out.and_ap().update_annotation(fact, fact, context, scratch.predicate_annotations);
+    out.and_ap().update_annotation(fact, context, scratch.predicate_annotations);
 
     if (scratch.predicate_annotations.find(fact.get_row()))
-        return out.or_ap().update_annotation(fact, fact, scratch.predicate_annotations, out.and_annot());
+        return out.or_ap().update_annotation(fact, scratch.predicate_annotations, out.and_annot());
 
     return std::nullopt;
 }

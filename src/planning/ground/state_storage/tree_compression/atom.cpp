@@ -53,7 +53,7 @@ void AtomStorageBackend<GroundTag, TreeCompression>::unpack(const typename AtomS
         indices.resize(m_num_bits);
 
     for (ygg::uint_t i = 0; i < m_num_bits; ++i)
-        indices[i] = bool(ygg::bit::bit_reference(data, i));
+        indices[i] = bool(ygg::bit::bit_reference(data.data(), i));
 }
 
 }

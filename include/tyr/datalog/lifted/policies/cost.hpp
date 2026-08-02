@@ -90,14 +90,6 @@ private:
     const auto& prefix_costs(::tyr::formalism::FunctionTag) const noexcept { return m_function_prefix_costs; }
 
     template<::tyr::formalism::RelationKind R>
-    auto find_override(::tyr::formalism::datalog::RuleBindingView<R> rule_binding) const;
-
-    template<::tyr::formalism::RelationKind R>
-    auto find_numeric_transition_override(::tyr::formalism::datalog::RuleBindingView<R> rule_binding,
-                                          ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding,
-                                          ygg::ClosedInterval<ygg::float_t> interval) const;
-
-    template<::tyr::formalism::RelationKind R>
     const Cost* find_prefix_override(::tyr::formalism::datalog::RuleBindingView<R> rule_binding) const;
 
     RuleCostOverrideStorage<LiftedTag, ::tyr::formalism::PredicateTag> m_predicate_storage;

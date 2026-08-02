@@ -258,6 +258,32 @@ struct NumericIntervalAnnotation : ygg::comparison::Mixin<NumericIntervalAnnotat
 };
 
 template<TaskKind Kind>
+bool numeric_interval_key_less(const NumericIntervalAnnotation<Kind>& lhs, const NumericIntervalAnnotation<Kind>& rhs)
+{
+    if constexpr (std::same_as<Kind, LiftedTag>)
+        return ygg::Less<> {}(std::tuple(get_cost(lhs.annotation), lower(lhs.interval), upper(lhs.interval)),
+                              std::tuple(get_cost(rhs.annotation), lower(rhs.interval), upper(rhs.interval)));
+    else
+        return lhs < rhs;
+}
+
+template<TaskKind Kind>
+auto numeric_interval_insertion_position(std::vector<NumericIntervalAnnotation<Kind>>& entries, const NumericIntervalAnnotation<Kind>& entry)
+{
+    if constexpr (std::same_as<Kind, LiftedTag>)
+    {
+        const auto first = std::lower_bound(entries.begin(), entries.end(), entry, numeric_interval_key_less<Kind>);
+        const auto pos = std::upper_bound(first, entries.end(), entry, numeric_interval_key_less<Kind>);
+        return std::pair(pos, std::find(first, pos, entry) == pos);
+    }
+    else
+    {
+        const auto pos = std::upper_bound(entries.begin(), entries.end(), entry);
+        return std::pair(pos, pos == entries.begin() || *(pos - 1) != entry);
+    }
+}
+
+template<TaskKind Kind>
 struct NumericIntervalBindingParts;
 
 template<TaskKind Kind>
@@ -326,8 +352,8 @@ public:
 
         auto entry = Entry { interval, std::move(annotation) };
         auto& entries = m_partitions[NumericIntervalBindingParts<Kind>::get_relation(binding)][NumericIntervalBindingParts<Kind>::get_key(binding)];
-        const auto pos = std::upper_bound(entries.begin(), entries.end(), entry);
-        if (pos != entries.begin() && *(pos - 1) == entry)
+        const auto [pos, inserted] = numeric_interval_insertion_position(entries, entry);
+        if (!inserted)
             return;
         entries.insert(pos, std::move(entry));
         ++m_size;
@@ -421,10 +447,7 @@ public:
 
     void insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind, ::tyr::formalism::FunctionTag> annotation)
     {
-        insert(NumericIntervalBindingParts<Kind>::get_relation(binding),
-               NumericIntervalBindingParts<Kind>::get_key(binding),
-               interval,
-               std::move(annotation));
+        insert(NumericIntervalBindingParts<Kind>::get_relation(binding), NumericIntervalBindingParts<Kind>::get_key(binding), interval, std::move(annotation));
     }
 
     void insert(Relation relation, Key key, ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind, ::tyr::formalism::FunctionTag> annotation)
@@ -434,8 +457,8 @@ public:
 
         auto entry = Entry { interval, std::move(annotation) };
         auto& entries = entries_for_write(relation, key);
-        const auto pos = std::upper_bound(entries.begin(), entries.end(), entry);
-        if (pos != entries.begin() && *(pos - 1) == entry)
+        const auto [pos, inserted] = numeric_interval_insertion_position(entries, entry);
+        if (!inserted)
             return;
         entries.insert(pos, std::move(entry));
         ++m_size;

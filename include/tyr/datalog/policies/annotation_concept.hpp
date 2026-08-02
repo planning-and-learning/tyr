@@ -28,17 +28,16 @@ namespace tyr::datalog
 template<typename T, typename Kind>
 concept OrAnnotationPolicyConcept = TaskKind<Kind>
                                     && requires(const T& policy,
-                                                PredicateAnnotationHeadT<Kind> program_head,
-                                                PredicateAnnotationHeadT<Kind> delta_head,
+                                                PredicateAnnotationHeadT<Kind> head,
                                                 FunctionAnnotationHeadT<Kind> function_head,
                                                 ygg::ClosedInterval<ygg::float_t> interval,
                                                 const DeltaPredicateAnnotations<Kind>& delta_and_annot,
                                                 SelectedPredicateAnnotations<Kind>& program_and_annot,
                                                 SelectedFunctionAnnotations<Kind>& program_numeric_and_annot) {
-                                           { policy.initialize_annotation(program_head, program_and_annot) } -> std::same_as<void>;
+                                           { policy.initialize_annotation(head, program_and_annot) } -> std::same_as<void>;
                                            { policy.initialize_annotation(function_head, interval, program_numeric_and_annot) } -> std::same_as<void>;
                                            {
-                                               policy.update_annotation(program_head, delta_head, delta_and_annot, program_and_annot)
+                                               policy.update_annotation(head, delta_and_annot, program_and_annot)
                                            } -> std::same_as<CostUpdate<Kind>>;
                                        };
 
@@ -47,8 +46,7 @@ concept AndAnnotationPolicyConcept =
     TaskKind<Kind>
     && requires(T& policy,
                 const T& const_policy,
-                PredicateAnnotationHeadT<Kind> program_head,
-                PredicateAnnotationHeadT<Kind> delta_head,
+                PredicateAnnotationHeadT<Kind> head,
                 FunctionAnnotationHeadT<Kind> function_head,
                 ygg::ClosedInterval<ygg::float_t> interval,
                 const AndAnnotationContext<Kind, ::tyr::formalism::PredicateTag>& predicate_context,
@@ -56,9 +54,9 @@ concept AndAnnotationPolicyConcept =
                 DeltaPredicateAnnotations<Kind>& delta_and_annot,
                 DeltaFunctionAnnotations<Kind>& delta_numeric_and_annot) {
            { policy.clear_achievers() } -> std::same_as<void>;
-           { const_policy.record_achiever(program_head, predicate_context) } -> std::same_as<void>;
-           { const_policy.update_annotation(program_head, delta_head, predicate_context, delta_and_annot) } -> std::same_as<void>;
-           { const_policy.update_annotation(function_head, function_head, interval, function_context, delta_numeric_and_annot) } -> std::same_as<void>;
+           { const_policy.record_achiever(head, predicate_context) } -> std::same_as<void>;
+           { const_policy.update_annotation(head, predicate_context, delta_and_annot) } -> std::same_as<void>;
+           { const_policy.update_annotation(function_head, interval, function_context, delta_numeric_and_annot) } -> std::same_as<void>;
        };
 
 }

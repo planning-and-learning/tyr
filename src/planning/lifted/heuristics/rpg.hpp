@@ -110,51 +110,17 @@ public:
         m_definition(std::move(definition)),
         m_task(std::move(task)),
         m_execution_context(std::move(execution_context)),
+        m_source_goal(source_goal),
         m_workspace(m_definition->rpg_program.get_datalog_program(), or_ap, and_ap, TP())
     {
-        set_goal(source_goal);
     }
 
-    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal)
-    {
-        namespace fd = ::tyr::formalism::datalog;
-        auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { m_workspace.datalog_builder, m_workspace.workspace_repository };
-        auto condition_ptr = m_workspace.datalog_builder.template get_builder<fd::GroundConjunctiveCondition>();
-        auto& condition = *condition_ptr;
-        condition.clear();
-
-        const auto& p2d = m_definition->rpg_program.get_translation_context().p2d;
-        for (const auto fact : goal.template get_facts<::tyr::formalism::PositiveTag>())
-            if (const auto literal = ::tyr::formalism::planning::merge_p2d(fact, true, p2d.fluent_to_fluent_predicate, merge_context))
-                condition.fluent_literals.push_back(literal->get_index());
-
-        for (const auto numeric_constraint : goal.get_numeric_constraints())
-            condition.numeric_constraints.push_back(::tyr::formalism::planning::merge_p2d(numeric_constraint, merge_context));
-
-        fd::canonicalize(condition);
-        m_workspace.tp.set_goals(m_workspace.workspace_repository.get_or_create(condition).first);
-    }
+    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) { m_source_goal = goal; }
 
     ygg::float_t evaluate(const StateView<LiftedTag>& state)
     {
-        m_workspace.facts.reset();
-
-        auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { m_workspace.datalog_builder, m_workspace.workspace_repository };
-
-        insert_fluent_atoms_to_fact_set(state.get_state_builder(),
-                                        *m_task->get_repository(),
-                                        m_definition->rpg_program.get_translation_context().p2d.fluent_to_fluent_predicate,
-                                        merge_context,
-                                        m_workspace.facts.fact_sets);
-        insert_numeric_variables_to_fact_set(state.get_state_builder(), *m_task->get_repository(), merge_context, m_workspace.facts.fact_sets);
-
-        auto ctx = datalog::ProgramExecutionContext(m_workspace);
-        m_execution_context->arena().execute([&] { datalog::solve_bottom_up(ctx); });
-
-        return m_workspace.tp.check(
-                   datalog::FactSets { m_definition->rpg_program.get_const_program_workspace().facts.fact_sets, m_workspace.facts.fact_sets }) ?
-                   self().compute_result(state) :
-                   std::numeric_limits<ygg::float_t>::infinity();
+        begin_state_evaluation();
+        return evaluate_current_state(state);
     }
 
     void set_action_binding_cost(::tyr::formalism::planning::ActionBindingView action_binding, datalog::Cost cost)
@@ -284,12 +250,62 @@ public:
     }
 
 protected:
+    void begin_state_evaluation()
+    {
+        m_workspace.reset_evaluation();
+        materialize_goal();
+    }
+
+    ygg::float_t evaluate_current_state(const StateView<LiftedTag>& state)
+    {
+        m_workspace.facts.reset();
+
+        auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { m_workspace.datalog_builder, m_workspace.workspace_repository };
+
+        insert_fluent_atoms_to_fact_set(state.get_state_builder(),
+                                        *m_task->get_repository(),
+                                        m_definition->rpg_program.get_translation_context().p2d.fluent_to_fluent_predicate,
+                                        merge_context,
+                                        m_workspace.facts.fact_sets);
+        insert_numeric_variables_to_fact_set(state.get_state_builder(), *m_task->get_repository(), merge_context, m_workspace.facts.fact_sets);
+
+        auto ctx = datalog::ProgramExecutionContext(m_workspace);
+        m_execution_context->arena().execute([&] { datalog::solve_bottom_up(ctx); });
+
+        return m_workspace.tp.check(
+                   datalog::FactSets { m_definition->rpg_program.get_const_program_workspace().facts.fact_sets, m_workspace.facts.fact_sets }) ?
+                   self().compute_result(state) :
+                   std::numeric_limits<ygg::float_t>::infinity();
+    }
+
     ygg::float_t compute_result(const StateView<LiftedTag>&) const noexcept { return get_goal_cost(); }
 
     std::shared_ptr<const LiftedRPGDefinition> m_definition;
     TaskPtr<LiftedTag> m_task;
     ygg::ExecutionContextPtr m_execution_context;
+    ::tyr::formalism::planning::GroundConjunctiveConditionView m_source_goal;
     datalog::ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP> m_workspace;
+
+private:
+    void materialize_goal()
+    {
+        namespace fd = ::tyr::formalism::datalog;
+        auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { m_workspace.datalog_builder, m_workspace.workspace_repository };
+        auto condition_ptr = m_workspace.datalog_builder.template get_builder<fd::GroundConjunctiveCondition>();
+        auto& condition = *condition_ptr;
+        condition.clear();
+
+        const auto& p2d = m_definition->rpg_program.get_translation_context().p2d;
+        for (const auto fact : m_source_goal.template get_facts<::tyr::formalism::PositiveTag>())
+            if (const auto literal = ::tyr::formalism::planning::merge_p2d(fact, true, p2d.fluent_to_fluent_predicate, merge_context))
+                condition.fluent_literals.push_back(literal->get_index());
+
+        for (const auto numeric_constraint : m_source_goal.get_numeric_constraints())
+            condition.numeric_constraints.push_back(::tyr::formalism::planning::merge_p2d(numeric_constraint, merge_context));
+
+        fd::canonicalize(condition);
+        m_workspace.tp.set_goals(m_workspace.workspace_repository.get_or_create(condition).first);
+    }
 };
 
 }

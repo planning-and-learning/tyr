@@ -62,7 +62,7 @@ void FactStorageBackend<GroundTag, TreeCompression>::unpack(const typename FactS
     {
         const auto& info = m_infos[i];
 
-        values[i] = ygg::uint_t(ygg::bit::int_reference<ygg::uint_t>(data + info.begin, info.offset, info.length));
+        values[i] = ygg::bit::read_int(data.data() + info.begin, info.offset, info.length);
     }
 }
 

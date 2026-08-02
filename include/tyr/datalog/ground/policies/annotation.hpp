@@ -37,19 +37,18 @@ public:
     using PredicateHead = PredicateAnnotationHeadT<GroundTag>;
     using FunctionHead = FunctionAnnotationHeadT<GroundTag>;
 
-    void initialize_annotation(PredicateHead program_head, SelectedPredicateAnnotations<GroundTag>& program_and_annot) const;
-    void initialize_annotation(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> program_head,
+    void initialize_annotation(PredicateHead head, SelectedPredicateAnnotations<GroundTag>& program_and_annot) const;
+    void initialize_annotation(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
                                SelectedPredicateAnnotations<GroundTag>& program_and_annot) const;
 
-    void initialize_annotation(FunctionHead program_head,
+    void initialize_annotation(FunctionHead head,
                                ygg::ClosedInterval<ygg::float_t> interval,
                                SelectedFunctionAnnotations<GroundTag>& program_numeric_and_annot) const;
-    void initialize_annotation(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> program_head,
+    void initialize_annotation(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> head,
                                ygg::ClosedInterval<ygg::float_t> interval,
                                SelectedFunctionAnnotations<GroundTag>& program_numeric_and_annot) const;
 
-    CostUpdate<GroundTag> update_annotation(PredicateHead program_head,
-                                            PredicateHead delta_head,
+    CostUpdate<GroundTag> update_annotation(PredicateHead head,
                                             const DeltaPredicateAnnotations<GroundTag>& delta_and_annot,
                                             SelectedPredicateAnnotations<GroundTag>& program_and_annot) const;
 };
@@ -68,13 +67,11 @@ public:
 
     void record_achiever(PredicateHead, const AndAnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>&) const noexcept;
 
-    void update_annotation(PredicateHead program_head,
-                           PredicateHead delta_head,
+    void update_annotation(PredicateHead head,
                            const AndAnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context,
                            DeltaPredicateAnnotations<GroundTag>& delta_and_annot) const;
 
-    void update_annotation(FunctionHead program_head,
-                           FunctionHead delta_head,
+    void update_annotation(FunctionHead head,
                            ygg::ClosedInterval<ygg::float_t> interval,
                            const AndAnnotationContext<GroundTag, ::tyr::formalism::FunctionTag>& context,
                            DeltaFunctionAnnotations<GroundTag>& delta_numeric_and_annot) const;
@@ -92,9 +89,9 @@ public:
 
     void clear_achievers() noexcept;
 
-    const Achievers* find_achievers(Atom program_head) const noexcept;
+    const Achievers* find_achievers(Atom head) const noexcept;
 
-    void record_achiever(Atom program_head, const AndAnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context) const;
+    void record_achiever(Atom head, const AndAnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context) const;
 
 private:
     mutable ygg::UnorderedMap<AtomIndex, Achievers> achievers;

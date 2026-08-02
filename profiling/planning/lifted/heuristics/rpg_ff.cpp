@@ -94,10 +94,10 @@ p::TaskPtr<::tyr::LiftedTag> create_task(const BenchmarkCase& benchmark_case)
     return p::Task<::tyr::LiftedTag>::create(fp::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
 }
 
-void benchmark_gbfs_lazy_rpg_ff(benchmark::State& state, const BenchmarkCase& benchmark_case)
+void benchmark_gbfs_lazy_rpg_ff(benchmark::State& state, const BenchmarkCase& benchmark_case, ygg::ExecutionContext::uint_t num_threads)
 {
     auto task = create_task(benchmark_case);
-    auto execution_context = ygg::ExecutionContext::create(1);
+    auto execution_context = ygg::ExecutionContext::create(num_threads);
     auto initial_h_value = ygg::float_t(0);
     auto cost = ygg::float_t(0);
     auto length = std::size_t(0);
@@ -154,8 +154,10 @@ int main(int argc, char** argv)
 
     for (const auto& benchmark_case : load_cases())
     {
-        benchmark::RegisterBenchmark((benchmark_case.name + "/gbfs_lazy").c_str(),
-                                     [benchmark_case](benchmark::State& state) { benchmark_gbfs_lazy_rpg_ff(state, benchmark_case); });
+        for (const auto num_threads : { ygg::ExecutionContext::uint_t(1), ygg::ExecutionContext::uint_t(8) })
+            benchmark::RegisterBenchmark((benchmark_case.name + "/gbfs_lazy/threads:" + std::to_string(num_threads)).c_str(),
+                                         [benchmark_case, num_threads](benchmark::State& state)
+                                         { benchmark_gbfs_lazy_rpg_ff(state, benchmark_case, num_threads); });
     }
 
     benchmark::RunSpecifiedBenchmarks();

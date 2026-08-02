@@ -49,6 +49,7 @@ struct FFRPGHeuristic<LiftedTag>::Impl :
     void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal);
     ygg::float_t evaluate(const StateView<LiftedTag>& state)
     {
+        m_numeric_support_selector_workspace.clear();
         m_relaxed_plan.clear();
         m_preferred_actions.clear();
         return Base::evaluate(state);
@@ -111,7 +112,6 @@ void FFRPGHeuristic<LiftedTag>::Impl::set_goal(::tyr::formalism::planning::Groun
 
 ygg::float_t FFRPGHeuristic<LiftedTag>::Impl::compute_result(const StateView<LiftedTag>& state)
 {
-    m_numeric_support_selector_workspace.clear();
     for (auto& bitset : m_markings)
         bitset.reset();
     for (auto& bitset : m_function_markings)

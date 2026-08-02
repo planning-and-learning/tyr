@@ -147,6 +147,8 @@ private:
     bool is_before_goal_zone(PredicateBinding binding);
     bool is_before_goal_zone(NumericNode node);
     bool is_before_goal_zone(Precondition precondition);
+    void clear_zones() noexcept;
+    void clear_repository_views() noexcept;
     void extract_cut();
     void extract_expanded_cut();
 
@@ -197,14 +199,17 @@ LMCutHeuristic<LiftedTag>::Impl::Impl(TaskPtr<LiftedTag> task, ygg::ExecutionCon
 ygg::float_t LMCutHeuristic<LiftedTag>::Impl::evaluate(const StateView<LiftedTag>& state)
 {
     auto value = datalog::Cost(0);
+    clear_repository_views();
     m_residual_costs.clear();
     m_rule_edge_used_costs.clear();
     m_numeric_edge_used_costs.clear();
+    begin_state_evaluation();
 
     while (true)
     {
         apply_residual_costs();
-        const auto hmax = Base::evaluate(state);
+        m_numeric_support_selector_workspace.clear();
+        const auto hmax = evaluate_current_state(state);
         if (hmax == std::numeric_limits<ygg::float_t>::infinity())
             return hmax;
 
@@ -656,7 +661,7 @@ bool LMCutHeuristic<LiftedTag>::Impl::is_before_goal_zone(NumericNode node)
     return false;
 }
 
-void LMCutHeuristic<LiftedTag>::Impl::extract_cut()
+void LMCutHeuristic<LiftedTag>::Impl::clear_zones() noexcept
 {
     m_goal_zone.clear();
     m_numeric_goal_zone.clear();
@@ -664,6 +669,20 @@ void LMCutHeuristic<LiftedTag>::Impl::extract_cut()
     m_numeric_before_goal_zone.clear();
     m_not_before_goal_zone.clear();
     m_numeric_not_before_goal_zone.clear();
+}
+
+void LMCutHeuristic<LiftedTag>::Impl::clear_repository_views() noexcept
+{
+    clear_zones();
+    for (auto& buffer : m_max_precondition_buffers)
+        buffer.clear();
+    m_numeric_support_selector_workspace.clear();
+    m_max_precondition_depth = 0;
+}
+
+void LMCutHeuristic<LiftedTag>::Impl::extract_cut()
+{
+    clear_zones();
     m_cut.clear();
 
     const auto goal_cost = get_goal_cost();
@@ -722,12 +741,7 @@ void LMCutHeuristic<LiftedTag>::Impl::extract_cut()
 
 void LMCutHeuristic<LiftedTag>::Impl::extract_expanded_cut()
 {
-    m_goal_zone.clear();
-    m_numeric_goal_zone.clear();
-    m_before_goal_zone.clear();
-    m_numeric_before_goal_zone.clear();
-    m_not_before_goal_zone.clear();
-    m_numeric_not_before_goal_zone.clear();
+    clear_zones();
     m_rule_cut.clear();
     m_numeric_cut.clear();
 

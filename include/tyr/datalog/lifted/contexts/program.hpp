@@ -79,6 +79,7 @@ struct ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>
         {
             m_ws.numeric_support_selector.emplace(FactSets { static_fact_sets, m_ws.facts.fact_sets }, m_ws.numeric_and_annot);
         }
+        void reset_numeric_support_selector() noexcept { m_ws.numeric_support_selector.reset(); }
         auto& tp() noexcept { return m_ws.tp; }
         const auto& tp() const noexcept { return m_ws.tp; }
         auto& cost_policy() noexcept { return m_ws.cost_policy; }
@@ -123,9 +124,10 @@ struct ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>
         clear_rules(out.template get_rules<::tyr::formalism::PredicateTag>());
         clear_rules(out.template get_rules<::tyr::formalism::FunctionTag>());
 
+        out.tp().reset();
+        out.reset_numeric_support_selector();
         out.and_annot().clear();
         out.numeric_and_annot().clear();
-        out.tp().reset();
 
         for (const auto& set : out.facts().fact_sets.predicate.get_sets())
         {

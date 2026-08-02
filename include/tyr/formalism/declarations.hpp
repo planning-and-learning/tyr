@@ -34,8 +34,14 @@ namespace ygg::formalism
 template<typename... Ts>
 class SymbolRepository;
 
+template<typename... Ts>
+class ConcurrentSymbolRepository;
+
 template<typename ObjectTag, typename... Ts>
 class RelationRepository;
+
+template<typename ObjectTag, typename... Ts>
+class ConcurrentRelationRepository;
 
 struct BlockArraySetStorage;
 

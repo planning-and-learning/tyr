@@ -34,6 +34,8 @@ def test_lifted_datalog_workspaces_own_independent_repositories() -> None:
 
     assert first.get_workspace_repository() is not second.get_workspace_repository()
 
+    first.reset_evaluation()
+
     del program, translated_program
     gc.collect()
 

@@ -437,6 +437,12 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
     execution_context.arena().execute([&] { d::solve_bottom_up(ctx); });
 
+    auto predicate_bindings = std::vector<fd::PredicateBindingView<f::FluentTag>> {};
+    for (const auto& set : workspace.facts.fact_sets.predicate.get_sets())
+        for (const auto binding : set.get_bindings())
+            predicate_bindings.push_back(binding);
+    std::sort(predicate_bindings.begin(), predicate_bindings.end(), d::canonical_binding_less<fd::PredicateBindingView<f::FluentTag>>);
+
     /**
      * Create basic structures of task
      */
@@ -472,9 +478,8 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
     const auto for_each_predicate_binding = [&](auto&& f)
     {
-        for (const auto& set : workspace.facts.fact_sets.predicate.get_sets())
-            for (const auto binding : set.get_bindings())
-                f(binding);
+        for (const auto binding : predicate_bindings)
+            f(binding);
     };
 
     auto fluent_atoms = fp::GroundAtomViewList<f::FluentTag> {};

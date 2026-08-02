@@ -55,6 +55,8 @@ namespace p = tyr::planning;
 
 namespace tyr::tests
 {
+static_assert(fd::Repository::thread_safe);
+
 namespace
 {
 inline constexpr const char* kBottomUpFixture = "tests/fixtures/datalog/algorithms/lifted/bottom_up.json.gz";
@@ -325,16 +327,25 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindi
     auto context = d::ProgramExecutionContext(workspace);
     d::solve_bottom_up(context);
 
-    const auto& rule_repository = workspace.get_rules<f::PredicateTag>().front()->worker.front().solve.program_overlay_repository;
-    EXPECT_EQ(rule_repository.size(rule.get_index()), 1);
-    EXPECT_EQ(rule_repository.size(goal.get_index()), 0);
+    EXPECT_EQ(workspace.workspace_repository.size(rule.get_index()), 4);
+    EXPECT_EQ(workspace.workspace_repository.size(goal.get_index()), 1);
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, ProgramWorkspacesOwnIndependentRepositories)
 {
     auto factory = std::make_shared<fd::RepositoryFactory>();
     auto repository = factory->create_shared();
+    const auto intern = [&]<typename T>(ygg::Data<T> data)
+    {
+        f::canonicalize(data);
+        return repository->get_or_create(data).first;
+    };
+
+    const auto predicate = intern(ygg::Data<f::Predicate<f::FluentTag>>(std::string("workspace-predicate"), 1));
+    const auto object = intern(ygg::Data<f::Object>(std::string("workspace-object")));
     auto program_data = ygg::Data<fd::Program> {};
+    program_data.fluent_predicates.push_back(predicate.get_index());
+    program_data.objects.push_back(object.get_index());
     fd::canonicalize(program_data);
     const auto program_view = repository->get_or_create(program_data).first;
     const auto program = d::Program<LiftedTag>(program_view, repository, factory);
@@ -349,6 +360,29 @@ TEST(TyrDatalogLiftedBottomUpTest, ProgramWorkspacesOwnIndependentRepositories)
     auto variable = ygg::Data<f::Variable>(std::string("workspace-only"));
     EXPECT_TRUE(first.workspace_repository.get_or_create(variable).second);
     EXPECT_FALSE(second.workspace_repository.find(variable).has_value());
+
+    auto second_variable = ygg::Data<f::Variable>(std::string("second-workspace-only"));
+    EXPECT_TRUE(second.workspace_repository.get_or_create(second_variable).second);
+
+    auto binding_data = ygg::Data<f::RelationBinding<f::Predicate<f::FluentTag>>>();
+    binding_data.relation = predicate.get_index();
+    binding_data.objects.push_back(object.get_index());
+    const auto binding = first.workspace_repository.get_or_create(binding_data).first;
+    const auto binding_index = binding.get_index();
+    first.and_annot.insert_or_assign(binding, d::BaseAnnotation<LiftedTag>(3));
+
+    first.reset_evaluation();
+
+    EXPECT_FALSE(first.workspace_repository.find(ygg::Data<f::Variable>(std::string("workspace-only"))).has_value());
+    EXPECT_TRUE(second.workspace_repository.find(ygg::Data<f::Variable>(std::string("second-workspace-only"))).has_value());
+    EXPECT_EQ(&first.workspace_repository.get_root(), &program.get_program_repository());
+
+    auto reused_binding_data = ygg::Data<f::RelationBinding<f::Predicate<f::FluentTag>>>();
+    reused_binding_data.relation = predicate.get_index();
+    reused_binding_data.objects.push_back(object.get_index());
+    const auto reused_binding = first.workspace_repository.get_or_create(reused_binding_data).first;
+    EXPECT_EQ(reused_binding.get_index(), binding_index);
+    EXPECT_EQ(first.and_annot.find(reused_binding), nullptr);
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, PredicateAnnotationsUseRelationAndRowIndices)

@@ -90,13 +90,14 @@ Cost TerminationPolicy<Kind, AggregationFunction>::get_total_cost(const FactSets
 template<TaskKind Kind, typename AggregationFunction>
 void TerminationPolicy<Kind, AggregationFunction>::reset() noexcept
 {
+    numeric_support_selector_workspace.clear();
 }
 
 template<TaskKind Kind, typename AggregationFunction>
 void TerminationPolicy<Kind, AggregationFunction>::clear() noexcept
 {
     goals = std::nullopt;
-    numeric_support_selector_workspace.clear();
+    reset();
 }
 
 template class TerminationPolicy<GroundTag, SumAggregation>;

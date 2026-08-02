@@ -22,25 +22,11 @@
 
 namespace tyr::datalog
 {
-namespace
-{
-
-// Overrides are interned in the program workspace repository, while lifted rule workers query
-// bindings from overlay repositories. View equality includes repository identity, so compare
-// relation and object values when the exact lookup misses.
-template<typename Binding>
-bool equivalent_binding(Binding lhs, Binding rhs) noexcept
-{
-    return lhs.get_relation().get_index() == rhs.get_relation().get_index() && lhs.get_data() == rhs.get_data();
-}
-
-}
-
 template<::tyr::formalism::RelationKind R>
 Cost RuleCostOverridePolicy<LiftedTag>::get_cost(::tyr::formalism::datalog::RuleBindingView<R> rule_binding) const
 {
     const auto& rule_storage = storage(R {});
-    if (const auto it = find_override(rule_binding); it != rule_storage.get_costs().end())
+    if (const auto it = rule_storage.get_costs().find(rule_binding); it != rule_storage.get_costs().end())
         return it->second;
     if (const auto* cost = find_prefix_override(rule_binding))
         return *cost;
@@ -53,7 +39,8 @@ Cost RuleCostOverridePolicy<LiftedTag>::get_cost(::tyr::formalism::datalog::Rule
                                                  ygg::ClosedInterval<ygg::float_t> interval) const
 {
     const auto& rule_storage = storage(R {});
-    if (const auto it = find_numeric_transition_override(rule_binding, binding, interval); it != rule_storage.get_numeric_transition_costs().end())
+    const auto key = NumericTransitionCostKey<LiftedTag, R> { rule_binding, binding, interval };
+    if (const auto it = rule_storage.get_numeric_transition_costs().find(key); it != rule_storage.get_numeric_transition_costs().end())
         return it->second;
     return Cost(0);
 }
@@ -82,40 +69,6 @@ void RuleCostOverridePolicy<LiftedTag>::set_prefix_cost(::tyr::formalism::datalo
         }
     }
     costs.push_back(std::move(prefix_cost));
-}
-
-template<::tyr::formalism::RelationKind R>
-auto RuleCostOverridePolicy<LiftedTag>::find_override(::tyr::formalism::datalog::RuleBindingView<R> rule_binding) const
-{
-    const auto& costs = storage(R {}).get_costs();
-    if (const auto it = costs.find(rule_binding); it != costs.end())
-        return it;
-
-    for (auto it = costs.begin(); it != costs.end(); ++it)
-        if (equivalent_binding(it->first, rule_binding))
-            return it;
-
-    return costs.end();
-}
-
-template<::tyr::formalism::RelationKind R>
-auto RuleCostOverridePolicy<LiftedTag>::find_numeric_transition_override(::tyr::formalism::datalog::RuleBindingView<R> rule_binding,
-                                                                         ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding,
-                                                                         ygg::ClosedInterval<ygg::float_t> interval) const
-{
-    const auto& costs = storage(R {}).get_numeric_transition_costs();
-    const auto key = NumericTransitionCostKey<LiftedTag, R> { rule_binding, binding, interval };
-    if (const auto it = costs.find(key); it != costs.end())
-        return it;
-
-    for (auto it = costs.begin(); it != costs.end(); ++it)
-    {
-        const auto& candidate = it->first;
-        if (candidate.interval == interval && equivalent_binding(candidate.rule_key, rule_binding) && equivalent_binding(candidate.numeric_key, binding))
-            return it;
-    }
-
-    return costs.end();
 }
 
 template<::tyr::formalism::RelationKind R>

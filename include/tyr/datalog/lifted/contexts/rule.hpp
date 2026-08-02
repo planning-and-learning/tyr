@@ -85,8 +85,6 @@ public:
         const auto& cost_buckets() const noexcept { return m_rctx.stratum_out().program().cost_buckets(); }
         const auto& cost_policy() noexcept { return m_rctx.stratum_out().program().cost_policy(); }
         const auto& cost_policy() const noexcept { return m_rctx.stratum_out().program().cost_policy(); }
-        const auto& program_repository() noexcept { return m_rctx.out().common().program_repository; }
-        const auto& program_repository() const noexcept { return m_rctx.out().common().program_repository; }
         const auto& fact_sets() noexcept { return m_fact_sets; }
         const auto& fact_sets() const noexcept { return m_fact_sets; }
 
@@ -105,8 +103,7 @@ public:
     public:
         Out(RuleExecutionContext<R, OrAP, AndAP, TP, CP>& rctx, typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Worker& ws_worker) :
             m_ws_worker(ws_worker),
-            m_ground_context_solve(ws_worker.builder, ws_worker.solve.program_overlay_repository, ws_worker.binding),
-            m_ground_context_iteration(ws_worker.builder, ws_worker.iteration.workspace_overlay_repository, ws_worker.binding)
+            m_ground_context(ws_worker.builder, rctx.stratum_out().program().workspace_repository(), ws_worker.binding)
         {
         }
 
@@ -124,14 +121,12 @@ public:
         auto& applicability_cache() noexcept { return m_ws_worker.solve.applicability_cache; }
         auto& statistics() noexcept { return m_ws_worker.solve.statistics; }
 
-        auto& ground_context_solve() noexcept { return m_ground_context_solve; }
-        auto& ground_context_iteration() noexcept { return m_ground_context_iteration; }
+        auto& ground_context() noexcept { return m_ground_context; }
 
     private:
         typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Worker& m_ws_worker;
 
-        ::tyr::formalism::datalog::GrounderContext m_ground_context_solve;
-        ::tyr::formalism::datalog::GrounderContext m_ground_context_iteration;
+        ::tyr::formalism::datalog::GrounderContext m_ground_context;
     };
 
     RuleWorkerExecutionContext(RuleExecutionContext<R, OrAP, AndAP, TP, CP>& rctx,

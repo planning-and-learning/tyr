@@ -392,6 +392,7 @@ void bind_workspace(nb::module_& m, const std::string& name)
                "get_workspace_repository",
                [](Workspace& self) -> auto& { return self.workspace_repository; },
                nb::rv_policy::reference_internal)
+            .def("reset_evaluation", &Workspace::reset_evaluation)
             .def("reset_facts", [](Workspace& self) { self.facts.reset(); })
             .def(
                 "insert_fluent_atom",

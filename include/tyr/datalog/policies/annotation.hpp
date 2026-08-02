@@ -61,14 +61,13 @@ bool witness_wins_tie(const WitnessAnnotation<Kind, R>& witness, const Annotatio
 }
 
 template<TaskKind Kind>
-const Annotation<Kind>* select_incumbent(typename SelectedPredicateAnnotations<Kind>::Key program_head,
-                                         typename SelectedPredicateAnnotations<Kind>::Key delta_head,
+const Annotation<Kind>* select_incumbent(typename SelectedPredicateAnnotations<Kind>::Key head,
                                          Cost best_global_cost,
                                          Cost best_local_cost,
                                          const SelectedPredicateAnnotations<Kind>& program_and_annot,
                                          const DeltaPredicateAnnotations<Kind>& delta_and_annot)
 {
-    return best_local_cost <= best_global_cost ? delta_and_annot.find(delta_head) : program_and_annot.find(program_head);
+    return best_local_cost <= best_global_cost ? delta_and_annot.find(head) : program_and_annot.find(head);
 }
 
 template<TaskKind Kind>
@@ -89,7 +88,7 @@ public:
     {
     }
 
-    CostUpdate<Kind> update_annotation(PredicateHead, PredicateHead, const DeltaPredicateAnnotations<Kind>&, SelectedPredicateAnnotations<Kind>&) const noexcept
+    CostUpdate<Kind> update_annotation(PredicateHead, const DeltaPredicateAnnotations<Kind>&, SelectedPredicateAnnotations<Kind>&) const noexcept
     {
         return {};
     }
@@ -109,14 +108,12 @@ public:
     void record_achiever(PredicateHead, const AndAnnotationContext<Kind, ::tyr::formalism::PredicateTag>&) const noexcept {}
 
     void update_annotation(PredicateHead,
-                           PredicateHead,
                            const AndAnnotationContext<Kind, ::tyr::formalism::PredicateTag>&,
                            DeltaPredicateAnnotations<Kind>&) const noexcept
     {
     }
 
     void update_annotation(FunctionHead,
-                           FunctionHead,
                            ygg::ClosedInterval<ygg::float_t>,
                            const AndAnnotationContext<Kind, ::tyr::formalism::FunctionTag>&,
                            DeltaFunctionAnnotations<Kind>&) const noexcept

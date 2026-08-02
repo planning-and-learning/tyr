@@ -27,10 +27,11 @@
 #include "tyr/formalism/planning/repository.hpp"      // for Repository
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/lifted/state_builder.hpp"
-#include "tyr/planning/lifted/task.hpp"           // for LiftedTag
+#include "tyr/planning/lifted/task.hpp"  // for LiftedTag
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/task_utils.hpp"  // for insert_fact_s...
 
+#include <algorithm>
 #include <cista/containers/hash_storage.h>  // for operator!=
 #include <fmt/ostream.h>
 #include <gtl/phmap.hpp>                    // for operator!=
@@ -53,23 +54,23 @@ namespace
 void read_derived_atoms_from_datalog_program(const AxiomEvaluatorProgram<LiftedTag>& axiom_program,
                                              ygg::Builder<State<LiftedTag>>& state_builder,
                                              fp::MergePlanningContext& merge_context,
-                                             d::TaggedFactSets<f::FluentTag>& fact_sets)
+                                             d::TaggedFactSets<f::FluentTag>& fact_sets,
+                                             std::vector<fd::PredicateBindingView<f::FluentTag>>& derived_bindings)
 {
     for (const auto& set : fact_sets.predicate.get_sets())
-    {
         for (const auto& binding : set.get_bindings())
-        {
             if (axiom_program.get_translation_context().d2p.fluent_to_derived_predicate.contains(binding.get_relation()))
-            {
-                const auto ground_atom =
-                    fp::merge_atom_d2p<f::FluentTag, f::DerivedTag>(binding,
-                                                                    axiom_program.get_translation_context().d2p.fluent_to_derived_predicate,
-                                                                    merge_context)
-                        .first.get_index();
+                derived_bindings.push_back(binding);
 
-                state_builder.set(ground_atom);
-            }
-        }
+    std::sort(derived_bindings.begin(), derived_bindings.end(), d::canonical_binding_less<fd::PredicateBindingView<f::FluentTag>>);
+
+    for (const auto binding : derived_bindings)
+    {
+        const auto ground_atom =
+            fp::merge_atom_d2p<f::FluentTag, f::DerivedTag>(binding, axiom_program.get_translation_context().d2p.fluent_to_derived_predicate, merge_context)
+                .first.get_index();
+
+        state_builder.set(ground_atom);
     }
 }
 }
@@ -85,6 +86,9 @@ AxiomEvaluator<LiftedTag>::AxiomEvaluator(ygg::uint_t index, TaskPtr<LiftedTag> 
 
 void AxiomEvaluator<LiftedTag>::compute_extended_state(ygg::Builder<State<LiftedTag>>& state_builder)
 {
+    m_derived_bindings.clear();
+    m_workspace.reset_evaluation();
+
     auto merge_datalog_context = fp::MergeDatalogContext { m_workspace.datalog_builder, m_workspace.workspace_repository };
     const auto& program = m_axiom_program;
 
@@ -101,7 +105,7 @@ void AxiomEvaluator<LiftedTag>::compute_extended_state(ygg::Builder<State<Lifted
 
     auto merge_planning_context = fp::MergePlanningContext { m_workspace.planning_builder, *m_task->get_repository() };
 
-    read_derived_atoms_from_datalog_program(program, state_builder, merge_planning_context, m_workspace.facts.fact_sets);
+    read_derived_atoms_from_datalog_program(program, state_builder, merge_planning_context, m_workspace.facts.fact_sets, m_derived_bindings);
 }
 
 void AxiomEvaluator<LiftedTag>::print_summary(size_t verbosity) const

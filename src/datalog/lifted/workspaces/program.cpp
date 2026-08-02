@@ -27,24 +27,14 @@ namespace tyr::datalog
 namespace
 {
 template<::tyr::formalism::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void initialize_rule_workspaces(const Program<LiftedTag>& program,
-                                const ConstProgramWorkspace<LiftedTag>& const_workspace,
-                                const ::tyr::formalism::datalog::Repository& program_repository,
-                                ::tyr::formalism::datalog::Repository& workspace_repository,
+void initialize_rule_workspaces(const ConstProgramWorkspace<LiftedTag>& const_workspace,
                                 const AndAP& and_ap,
                                 std::vector<std::unique_ptr<typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>>>& workspaces)
 {
     const auto& const_workspaces = const_workspace.template get_rules<R>();
     workspaces.reserve(const_workspaces.size());
     for (const auto& workspace : const_workspaces)
-        workspaces.emplace_back(workspace ?
-                                    std::make_unique<typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>>(program.get_repository_factory(),
-                                                                                                                     program_repository,
-                                                                                                                     workspace_repository,
-                                                                                                                     program.get_program().get_objects().size(),
-                                                                                                                     *workspace,
-                                                                                                                     and_ap) :
-                                    nullptr);
+        workspaces.emplace_back(workspace ? std::make_unique<typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>>(*workspace, and_ap) : nullptr);
 }
 
 template<::tyr::formalism::RelationKind R>
@@ -102,8 +92,33 @@ ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>::ProgramWorkspace(const Program
     cost_buckets(),
     statistics()
 {
-    initialize_rule_workspaces<::tyr::formalism::PredicateTag>(program, const_workspace, program_repository, workspace_repository, and_ap, predicate_rules);
-    initialize_rule_workspaces<::tyr::formalism::FunctionTag>(program, const_workspace, program_repository, workspace_repository, and_ap, function_rules);
+    initialize_rule_workspaces<::tyr::formalism::PredicateTag>(const_workspace, and_ap, predicate_rules);
+    initialize_rule_workspaces<::tyr::formalism::FunctionTag>(const_workspace, and_ap, function_rules);
+}
+
+template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
+         AndAnnotationPolicyConcept<LiftedTag> AndAP,
+         TerminationPolicyConcept<LiftedTag> TP,
+         RuleCostPolicyConcept<LiftedTag> CP>
+void ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>::reset_evaluation()
+{
+    const auto clear_rules = [](auto& rules)
+    {
+        for (auto& rule : rules)
+            if (rule)
+                rule->clear();
+    };
+    clear_rules(predicate_rules);
+    clear_rules(function_rules);
+
+    tp.clear();
+    cost_policy.clear();
+    cost_buckets.clear();
+    numeric_support_selector.reset();
+    and_annot.clear();
+    numeric_and_annot.clear();
+    facts.reset();
+    workspace_repository.clear();
 }
 
 template struct ProgramWorkspace<LiftedTag, NoOrAnnotationPolicy<LiftedTag>, NoAndAnnotationPolicy<LiftedTag>, NoTerminationPolicy<LiftedTag>>;

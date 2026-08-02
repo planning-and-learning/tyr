@@ -45,14 +45,13 @@ public:
     using PredicateHead = PredicateAnnotationHeadT<LiftedTag>;
     using FunctionHead = FunctionAnnotationHeadT<LiftedTag>;
 
-    void initialize_annotation(PredicateHead program_head, SelectedPredicateAnnotations<LiftedTag>& program_and_annot) const;
+    void initialize_annotation(PredicateHead head, SelectedPredicateAnnotations<LiftedTag>& program_and_annot) const;
 
-    void initialize_annotation(FunctionHead program_head,
+    void initialize_annotation(FunctionHead head,
                                ygg::ClosedInterval<ygg::float_t> interval,
                                SelectedFunctionAnnotations<LiftedTag>& program_numeric_and_annot) const;
 
-    CostUpdate<LiftedTag> update_annotation(PredicateHead program_head,
-                                            PredicateHead delta_head,
+    CostUpdate<LiftedTag> update_annotation(PredicateHead head,
                                             const DeltaPredicateAnnotations<LiftedTag>& delta_and_annot,
                                             SelectedPredicateAnnotations<LiftedTag>& program_and_annot) const;
 };
@@ -69,15 +68,13 @@ public:
 
     void clear_achievers() noexcept {}
 
-    void record_achiever(PredicateHead program_head, const AndAnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context) const noexcept {}
+    void record_achiever(PredicateHead head, const AndAnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context) const noexcept {}
 
-    void update_annotation(PredicateHead program_head,
-                           PredicateHead delta_head,
+    void update_annotation(PredicateHead head,
                            const AndAnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context,
                            DeltaPredicateAnnotations<LiftedTag>& delta_and_annot) const;
 
-    void update_annotation(FunctionHead program_head,
-                           FunctionHead delta_head,
+    void update_annotation(FunctionHead head,
                            ygg::ClosedInterval<ygg::float_t> interval,
                            const AndAnnotationContext<LiftedTag, ::tyr::formalism::FunctionTag>& context,
                            DeltaFunctionAnnotations<LiftedTag>& delta_numeric_and_annot) const;
@@ -95,9 +92,9 @@ public:
 
     void clear_achievers() noexcept;
 
-    const Achievers* find_achievers(PredicateBinding program_head) const noexcept;
+    const Achievers* find_achievers(PredicateBinding head) const noexcept;
 
-    void record_achiever(PredicateBinding program_head, const AndAnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context) const;
+    void record_achiever(PredicateBinding head, const AndAnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context) const;
 
 private:
     mutable ygg::UnorderedMap<PredicateBindingIndex, Achievers> m_achievers;

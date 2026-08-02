@@ -26,3 +26,13 @@ inline constexpr const char* kHeuristicFixture = "tests/fixtures/planning/heuris
 }
 
 #include "../heuristic.hpp"
+
+TEST(TyrPlanningLiftedLMCutHeuristicTest, RepeatedEvaluationReusesResetWorkspace)
+{
+    auto context = tyr::tests::create_preferred_action_reset_context<tyr::LiftedTag>();
+    auto heuristic = tyr::planning::LMCutHeuristic<tyr::LiftedTag>::create(context.task, context.execution_context);
+    const auto state = context.successor_generator->get_initial_node().get_state();
+
+    const auto first = heuristic->evaluate(state);
+    EXPECT_EQ(heuristic->evaluate(state), first);
+}

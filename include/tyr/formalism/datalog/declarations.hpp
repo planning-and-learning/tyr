@@ -254,10 +254,10 @@ using SymbolRepositoryTypes = ygg::ConcatTypeListsT<CoreTypes,
 using RelationRepositoryTypes = ygg::ConcatTypeListsT<PredicateTypes, FunctionTypes, RuleTypes>;
 using BuilderTypes = ygg::ConcatTypeListsT<SymbolRepositoryTypes, ygg::MapTypeListT<RelationBinding, RelationRepositoryTypes>>;
 
-using SymbolRepository = ygg::ApplyTypeListT<::ygg::formalism::SymbolRepository, SymbolRepositoryTypes>;
+using SymbolRepository = ygg::ApplyTypeListT<::ygg::formalism::ConcurrentSymbolRepository, SymbolRepositoryTypes>;
 
 template<typename... Ts>
-using TaggedRelationRepository = ::ygg::formalism::RelationRepository<ObjectTag, Ts...>;
+using TaggedRelationRepository = ::ygg::formalism::ConcurrentRelationRepository<ObjectTag, Ts...>;
 
 using RelationRepository = ygg::ApplyTypeListT<TaggedRelationRepository, RelationRepositoryTypes>;
 

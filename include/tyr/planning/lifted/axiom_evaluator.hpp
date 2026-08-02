@@ -23,11 +23,13 @@
 #include "tyr/datalog/lifted/policies/annotation.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/policies/termination.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/lifted/programs/axiom.hpp"
 
 #include <memory>
+#include <vector>
 #include <yggdrasil/execution/onetbb.hpp>
 
 namespace tyr::planning
@@ -58,6 +60,7 @@ private:
     AxiomEvaluatorProgram<LiftedTag> m_axiom_program;
 
     datalog::ProgramWorkspace<LiftedTag> m_workspace;
+    std::vector<::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>> m_derived_bindings;
 };
 
 }

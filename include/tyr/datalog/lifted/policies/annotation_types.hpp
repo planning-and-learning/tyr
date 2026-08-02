@@ -39,8 +39,8 @@ struct WitnessRuleKey<LiftedTag, R>
     using type = ::tyr::formalism::datalog::RuleBindingView<R>;
 };
 
-template<::tyr::formalism::RelationKind R>
-inline bool canonical_rule_binding_less(WitnessRuleKeyT<LiftedTag, R> lhs, WitnessRuleKeyT<LiftedTag, R> rhs)
+template<typename Binding>
+inline bool canonical_binding_less(Binding lhs, Binding rhs) noexcept
 {
     return ygg::Less<> {}(lhs.get_key(), rhs.get_key());
 }
@@ -77,8 +77,7 @@ struct AndAnnotationContext<LiftedTag, R>
     NumericSupportSelectorWorkspace<LiftedTag>& numeric_support_selector_workspace;
     const SelectedPredicateAnnotations<LiftedTag>& program_and_annot;
     const SelectedFunctionAnnotations<LiftedTag>& program_numeric_and_annot;
-    ::tyr::formalism::datalog::GrounderContext& delta_context;
-    ::tyr::formalism::datalog::GrounderContext& iteration_context;
+    ::tyr::formalism::datalog::GrounderContext& ground_context;
 };
 
 }

@@ -35,14 +35,10 @@
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/planning/builder.hpp"
 
-#include <algorithm>
 #include <map>
 #include <optional>
-#include <tuple>
-#include <utility>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
-#include <yggdrasil/semantics/comparators.hpp>
 #include <yggdrasil/semantics/equal_to.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 
@@ -56,7 +52,6 @@ public:
     using FunctionViewType = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
     using PredicateBucket = ygg::UnorderedSet<PredicateViewType>;
     using FunctionBucket = ygg::UnorderedMap<FunctionViewType, ygg::ClosedInterval<ygg::float_t>>;
-    using FunctionBucketEntry = std::pair<FunctionViewType, ygg::ClosedInterval<ygg::float_t>>;
     using Cost = datalog::Cost;
 
     struct Bucket
@@ -164,31 +159,10 @@ public:
         return it == m_buckets.end() ? kEmpty : it->second.functions;
     }
 
-    const std::vector<PredicateViewType>& get_current_bucket_sorted()
-    {
-        const auto& bucket = get_current_bucket();
-        m_predicate_bucket_scratch.assign(bucket.begin(), bucket.end());
-        std::sort(m_predicate_bucket_scratch.begin(), m_predicate_bucket_scratch.end());
-        return m_predicate_bucket_scratch;
-    }
-
-    const std::vector<FunctionBucketEntry>& get_current_function_bucket_sorted()
-    {
-        const auto& bucket = get_current_function_bucket();
-        m_function_bucket_scratch.clear();
-        m_function_bucket_scratch.reserve(bucket.size());
-        for (const auto& [head, interval] : bucket)
-            m_function_bucket_scratch.emplace_back(head, interval);
-        std::sort(m_function_bucket_scratch.begin(), m_function_bucket_scratch.end());
-        return m_function_bucket_scratch;
-    }
-
 private:
     std::map<Cost, Bucket> m_buckets;
     Cost m_current = Cost(0);
     size_t m_total_size = 0;
-    std::vector<PredicateViewType> m_predicate_bucket_scratch;
-    std::vector<FunctionBucketEntry> m_function_bucket_scratch;
 };
 
 template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
@@ -247,9 +221,12 @@ public:
 
     ProgramStatistics statistics;
 
-    // RepositoryFactory is intentionally unsynchronized; materialize worker workspaces before starting worker threads.
     explicit ProgramWorkspace(const Program<LiftedTag>& program, OrAP or_ap = OrAP(), AndAP and_ap = AndAP(), TP tp = TP(), CP cost_policy = CP());
     ProgramWorkspace(Program<LiftedTag>&&, OrAP = OrAP(), AndAP = AndAP(), TP = TP(), CP = CP()) = delete;
+
+    /// Discards all evaluation-local views before clearing their repository. Call only while no
+    /// evaluation is active.
+    void reset_evaluation();
 
     void clear_costs() { cost_policy.clear(); }
 };

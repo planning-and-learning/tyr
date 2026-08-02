@@ -63,7 +63,7 @@ struct PredicateHeadIteration
     const std::vector<Binding>& get_sorted_bindings()
     {
         sorted_bindings.assign(bindings.begin(), bindings.end());
-        std::sort(sorted_bindings.begin(), sorted_bindings.end());
+        std::sort(sorted_bindings.begin(), sorted_bindings.end(), canonical_binding_less<Binding>);
         return sorted_bindings;
     }
 };
@@ -100,7 +100,17 @@ struct FunctionHeadIteration
     const std::vector<FunctionHeadUpdate>& get_sorted_updates()
     {
         sorted_updates.assign(updates.begin(), updates.end());
-        std::sort(sorted_updates.begin(), sorted_updates.end());
+        std::sort(sorted_updates.begin(),
+                  sorted_updates.end(),
+                  [](const auto& lhs, const auto& rhs)
+                  {
+                      if (canonical_binding_less(lhs.binding, rhs.binding))
+                          return true;
+                      if (canonical_binding_less(rhs.binding, lhs.binding))
+                          return false;
+                      return ygg::Less<> {}(std::tuple(lower(lhs.interval), upper(lhs.interval), lhs.cost),
+                                            std::tuple(lower(rhs.interval), upper(rhs.interval), rhs.cost));
+                  });
         return sorted_updates;
     }
 };
@@ -143,19 +153,11 @@ struct RuleWorkspace<LiftedTag, R>
     {
         struct Common
         {
-            explicit Common(const ::tyr::formalism::datalog::Repository& program_repository,
-                            const ::tyr::formalism::datalog::Repository& workspace_repository,
-                            size_t num_objects,
-                            const StaticConsistencyGraph& static_consistency_graph);
+            explicit Common(const StaticConsistencyGraph& static_consistency_graph);
 
             void initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSets& assignment_sets);
 
             void clear() noexcept;
-
-            /// Program repository to ground witnesses for which ground entities must already exist and we can simply call find.
-            const ::tyr::formalism::datalog::Repository& program_repository;
-            const ::tyr::formalism::datalog::Repository& workspace_repository;
-            const size_t num_objects;
 
             /// KPKC
             kpkc::DeltaKPKC kpkc;
@@ -170,17 +172,14 @@ struct RuleWorkspace<LiftedTag, R>
         /// - annotate witnesses
         struct Iteration
         {
-            explicit Iteration(::tyr::formalism::datalog::RepositoryFactory& factory, const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common);
+            explicit Iteration(const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common);
 
             void clear() noexcept;
-
-            /// Merge stage into rule execution context
-            ::tyr::formalism::datalog::Repository workspace_overlay_repository;
 
             /// Heads
             RuleHeadIterationT<R> head;
 
-            // Propositional annotations are keyed by heads in workspace_overlay_repository.
+            // Annotations are worker-local, while their heads are interned in the shared workspace repository.
             DeltaPredicateAnnotations<LiftedTag> and_annot;
             DeltaFunctionAnnotations<LiftedTag> numeric_and_annot;
 
@@ -190,14 +189,11 @@ struct RuleWorkspace<LiftedTag, R>
 
         struct Solve
         {
-            explicit Solve(::tyr::formalism::datalog::RepositoryFactory& factory, const Common& common, const AndAP& and_ap);
+            explicit Solve(const AndAP& and_ap);
 
             void clear() noexcept;
 
             AndAP and_ap;
-
-            /// Persistent memory
-            ::tyr::formalism::datalog::Repository program_overlay_repository;
 
             /// In debug mode, we accumulate all bindings to verify the correctness of delta-kpkc
             ygg::UnorderedSet<ygg::IndexList<::tyr::formalism::Object>> seen_bindings_dbg;
@@ -218,10 +214,7 @@ struct RuleWorkspace<LiftedTag, R>
 
         struct Worker
         {
-            explicit Worker(::tyr::formalism::datalog::RepositoryFactory& factory,
-                            const ConstRuleWorkspace<LiftedTag, R>& cws,
-                            const Common& common,
-                            const AndAP& and_ap);
+            explicit Worker(const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common, const AndAP& and_ap);
 
             void clear() noexcept;
 
@@ -232,12 +225,7 @@ struct RuleWorkspace<LiftedTag, R>
             Solve solve;
         };
 
-        Instance(::tyr::formalism::datalog::RepositoryFactory& factory,
-                 const ::tyr::formalism::datalog::Repository& program_repository,
-                 const ::tyr::formalism::datalog::Repository& workspace_repository,
-                 size_t num_objects,
-                 const ConstRuleWorkspace<LiftedTag, R>& cws,
-                 const AndAP& and_ap);
+        Instance(const ConstRuleWorkspace<LiftedTag, R>& cws, const AndAP& and_ap);
         Instance(const Instance& other) = delete;
         Instance& operator=(const Instance& other) = delete;
         Instance(Instance&& other) = delete;
@@ -299,13 +287,7 @@ inline bool supports_inner_parallelism(::tyr::formalism::datalog::NumericEffectO
 
 template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Common::Common(const ::tyr::formalism::datalog::Repository& program_repository,
-                                                                      const ::tyr::formalism::datalog::Repository& workspace_repository,
-                                                                      size_t num_objects,
-                                                                      const StaticConsistencyGraph& static_consistency_graph) :
-    program_repository(program_repository),
-    workspace_repository(workspace_repository),
-    num_objects(num_objects),
+RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Common::Common(const StaticConsistencyGraph& static_consistency_graph) :
     kpkc(static_consistency_graph),
     statistics()
 {
@@ -321,17 +303,14 @@ void RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Common::clear() noexcept
 template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
 void RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Common::initialize_iteration(const StaticConsistencyGraph& static_consistency_graph,
-                                                                                         const AssignmentSets& assignment_sets)
+                                                                                const AssignmentSets& assignment_sets)
 {
     kpkc.set_next_assignment_sets(static_consistency_graph, assignment_sets);
 }
 
 template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Iteration::Iteration(::tyr::formalism::datalog::RepositoryFactory& factory,
-                                                                            const ConstRuleWorkspace<LiftedTag, R>& cws,
-                                                                            const Common& common) :
-    workspace_overlay_repository(factory.create(common.num_objects, &common.workspace_repository)),
+RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Iteration::Iteration(const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common) :
     head(make_head_iteration(cws.get_rule().get_head())),
     and_annot(),
     numeric_and_annot(),
@@ -343,7 +322,6 @@ template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
 void RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Iteration::clear() noexcept
 {
-    workspace_overlay_repository.clear();
     head.clear();
     and_annot.clear();
     numeric_and_annot.clear();
@@ -351,11 +329,8 @@ void RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Iteration::clear() noexcept
 
 template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Solve::Solve(::tyr::formalism::datalog::RepositoryFactory& factory,
-                                                                    const Common& common,
-                                                                    const AndAP& and_ap) :
+RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Solve::Solve(const AndAP& and_ap) :
     and_ap(and_ap),
-    program_overlay_repository(factory.create(common.num_objects, &common.program_repository)),
     seen_bindings_dbg(),
     pending_rule_bindings(),
     pending_rule_binding_scratch(),
@@ -371,7 +346,6 @@ template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
 void RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Solve::clear() noexcept
 {
-    program_overlay_repository.clear();
     seen_bindings_dbg.clear();
     pending_rule_bindings.clear();
     pending_rule_binding_scratch.clear();
@@ -384,26 +358,20 @@ void RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Solve::clear() noexcept
 
 template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-const std::vector<::tyr::formalism::datalog::RuleBindingView<R>>&
-    RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Solve::get_sorted_pending_rule_bindings()
+const std::vector<::tyr::formalism::datalog::RuleBindingView<R>>& RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Solve::get_sorted_pending_rule_bindings()
 {
     pending_rule_binding_scratch.assign(pending_rule_bindings.begin(), pending_rule_bindings.end());
-    // DeltaKPKC emits canonical bindings within a worker. This sort only stabilizes unordered
-    // worker-merge traversal, so RuleBindingView identity is sufficient and avoids object lookup.
-    std::sort(pending_rule_binding_scratch.begin(), pending_rule_binding_scratch.end());
+    std::sort(pending_rule_binding_scratch.begin(), pending_rule_binding_scratch.end(), canonical_binding_less<::tyr::formalism::datalog::RuleBindingView<R>>);
     return pending_rule_binding_scratch;
 }
 
 template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Worker::Worker(::tyr::formalism::datalog::RepositoryFactory& factory,
-                                                                      const ConstRuleWorkspace<LiftedTag, R>& cws,
-                                                                      const Common& common,
-                                                                      const AndAP& and_ap) :
+RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Worker::Worker(const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common, const AndAP& and_ap) :
     builder(),
     binding(),
-    iteration(factory, cws, common),
-    solve(factory, common, and_ap)
+    iteration(cws, common),
+    solve(and_ap)
 {
 }
 
@@ -417,21 +385,16 @@ void RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Worker::clear() noexcept
 
 template<::tyr::formalism::RelationKind R>
 template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Instance(::tyr::formalism::datalog::RepositoryFactory& factory_,
-                                                                const ::tyr::formalism::datalog::Repository& program_repository_,
-                                                                const ::tyr::formalism::datalog::Repository& workspace_repository_,
-                                                                size_t num_objects_,
-                                                                const ConstRuleWorkspace<LiftedTag, R>& cws_,
-                                                                const AndAP& and_ap_) :
-    common(program_repository_, workspace_repository_, num_objects_, cws_.get_static_consistency_graph()),
+RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Instance(const ConstRuleWorkspace<LiftedTag, R>& cws_, const AndAP& and_ap_) :
+    common(cws_.get_static_consistency_graph()),
     worker()
 {
-    worker.emplace_back(factory_, cws_, common, and_ap_);
+    worker.emplace_back(cws_, common, and_ap_);
 
 #if defined(TYR_ENABLE_INNER_PARALLELISM) && defined(TYR_ENABLE_SEMI_NAIVE)
     // Only propositional heads use partitionable delta KPKC; numeric effects require full KPKC enumeration.
     if (supports_inner_parallelism(cws_.get_rule().get_head()) && cws_.get_rule().get_arity() > 2)
-        worker.emplace_back(factory_, cws_, common, and_ap_);
+        worker.emplace_back(cws_, common, and_ap_);
 #endif
 }
 

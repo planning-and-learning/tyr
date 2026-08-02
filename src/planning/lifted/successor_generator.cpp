@@ -36,8 +36,10 @@
 #include "tyr/planning/successor_generator.hpp"
 #include "tyr/planning/task_utils.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <fmt/ostream.h>
+#include <yggdrasil/semantics/comparators.hpp>
 
 namespace d = tyr::datalog;
 namespace f = tyr::formalism;
@@ -48,13 +50,14 @@ namespace tyr::planning
 {
 namespace
 {
-template<typename Callback>
-void for_each_action_binding(const d::ProgramWorkspace<LiftedTag>& workspace,
-                             const ApplicableActionProgram<LiftedTag>& program,
-                             ygg::IndexList<f::Object>& binding_scratch,
-                             Callback&& callback)
+using ActionBindingData = ygg::Data<f::RelationBinding<fp::Action>>;
+
+size_t collect_action_bindings(const d::ProgramWorkspace<LiftedTag>& workspace,
+                               const ApplicableActionProgram<LiftedTag>& program,
+                               std::vector<ActionBindingData>& candidates)
 {
     const auto& mapping = program.get_predicate_to_action_mapping();
+    size_t size = 0;
 
     for (const auto& set : workspace.facts.fact_sets.predicate.get_sets())
     {
@@ -62,15 +65,30 @@ void for_each_action_binding(const d::ProgramWorkspace<LiftedTag>& workspace,
         {
             if (const auto it = mapping.find(binding.get_relation()); it != mapping.end())
             {
-                binding_scratch.clear();
+                if (size == candidates.size())
+                    candidates.emplace_back();
+
+                auto& candidate = candidates[size++];
+                candidate.relation = it->second.get_index();
+                candidate.objects.clear();
 
                 for (const auto object : binding.get_objects())
-                    binding_scratch.push_back(object.get_index());
-
-                callback(it->second, binding_scratch);
+                    candidate.objects.push_back(object.get_index());
             }
         }
     }
+
+    std::sort(candidates.begin(),
+              candidates.begin() + size,
+              [](const auto& lhs, const auto& rhs)
+              {
+                  if (ygg::Less<> {}(lhs.relation, rhs.relation))
+                      return true;
+                  if (ygg::Less<> {}(rhs.relation, lhs.relation))
+                      return false;
+                  return ygg::Less<> {}(lhs.objects, rhs.objects);
+              });
+    return size;
 }
 }
 
@@ -123,32 +141,13 @@ void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<Lifte
 {
     out_nodes.clear();
 
-    compute_action_facts(node);
-
-    auto grounder_context = fp::GrounderContext { m_workspace.planning_builder, *m_task->get_repository(), m_workspace.binding };
-    const auto state_context = StateContext<LiftedTag>(*m_task, node.get_state().get_state_builder(), node.get_metric());
-
-    for_each_action_binding(
-        m_workspace,
-        m_action_program,
-        m_workspace.binding,
-        [&](const auto& action, const auto& binding)
-        {
-            m_scratch_action_binding.relation = action.get_index();
-            m_scratch_action_binding.objects = binding;
-
-            assert(is_applicable(action.get_condition(), ApplicabilityContext { state_context, grounder_context, *m_task->get_fdr_context() })
-                   && "ApplicableActionProgram emitted an action binding whose condition is not satisfied.");
-
-            // Datalog certifies the action condition, not whether its grounded numeric effects are valid and mutually compatible.
-            if (!m_executor.is_applicable_if_fires(action, state_context, grounder_context, *m_task->get_fdr_context()))
-                return;
-
-            assert(m_executor.is_applicable(action, state_context, grounder_context, *m_task->get_fdr_context()));
-            const auto action_binding = m_task->get_repository()->get_or_create(m_scratch_action_binding).first;
-            out_nodes.emplace_back(action_binding,
-                                   m_executor.apply_action(state_context, action, grounder_context, *m_task->get_fdr_context(), *m_state_repository));
-        });
+    for_each_applicable_action_binding(node,
+                                       m_scratch_action_binding,
+                                       [&](const auto& binding)
+                                       {
+                                           const auto action_binding = m_task->get_repository()->get_or_create(binding).first;
+                                           out_nodes.emplace_back(action_binding, get_successor_node(node, binding));
+                                       });
 }
 
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag>& node, fp::GroundActionView action)
@@ -202,30 +201,9 @@ void SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<Li
 {
     out_bindings.clear();
 
-    compute_action_facts(node);
-
-    const auto state_context = StateContext<LiftedTag>(*m_task, node.get_state().get_state_builder(), node.get_metric());
-    auto grounder_context = fp::GrounderContext { m_workspace.planning_builder, *m_task->get_repository(), m_workspace.binding };
-
-    for_each_action_binding(m_workspace,
-                            m_action_program,
-                            m_workspace.binding,
-                            [&](const auto& action, const auto& binding)
-                            {
-                                m_scratch_action_binding.relation = action.get_index();
-                                m_scratch_action_binding.objects = binding;
-
-                                assert(
-                                    is_applicable(action.get_condition(), ApplicabilityContext { state_context, grounder_context, *m_task->get_fdr_context() })
-                                    && "ApplicableActionProgram emitted an action binding whose condition is not satisfied.");
-
-                                // Datalog certifies the action condition, not whether its grounded numeric effects are valid and mutually compatible.
-                                if (!m_executor.is_applicable_if_fires(action, state_context, grounder_context, *m_task->get_fdr_context()))
-                                    return;
-
-                                assert(m_executor.is_applicable(action, state_context, grounder_context, *m_task->get_fdr_context()));
-                                out_bindings.emplace_back(m_task->get_repository()->get_or_create(m_scratch_action_binding).first);
-                            });
+    for_each_applicable_action_binding(node,
+                                       m_scratch_action_binding,
+                                       [&](const auto& binding) { out_bindings.emplace_back(m_task->get_repository()->get_or_create(binding).first); });
 }
 
 // Action binding API (no interning)
@@ -254,31 +232,24 @@ void SuccessorGenerator<LiftedTag>::for_each_applicable_action_binding_impl(
 
     const auto state_context = StateContext<LiftedTag>(*m_task, node.get_state().get_state_builder(), node.get_metric());
     auto grounder_context = fp::GrounderContext { m_workspace.planning_builder, *m_task->get_repository(), scratch_binding.objects };
-    const auto& mapping = m_action_program.get_predicate_to_action_mapping();
+    const auto num_candidates = collect_action_bindings(m_workspace, m_action_program, m_action_candidates);
 
-    for (const auto& set : m_workspace.facts.fact_sets.predicate.get_sets())
+    for (size_t i = 0; i < num_candidates; ++i)
     {
-        for (const auto& binding : set.get_bindings())
-        {
-            const auto it = mapping.find(binding.get_relation());
-            if (it == mapping.end())
-                continue;
+        const auto& candidate = m_action_candidates[i];
+        scratch_binding.relation = candidate.relation;
+        scratch_binding.objects = candidate.objects;
+        const auto action = ygg::make_view(candidate.relation, *m_task->get_repository());
 
-            scratch_binding.relation = it->second.get_index();
-            scratch_binding.objects.clear();
-            for (const auto object : binding.get_objects())
-                scratch_binding.objects.push_back(object.get_index());
+        assert(is_applicable(action.get_condition(), ApplicabilityContext { state_context, grounder_context, *m_task->get_fdr_context() })
+               && "ApplicableActionProgram emitted an action binding whose condition is not satisfied.");
 
-            assert(is_applicable(it->second.get_condition(), ApplicabilityContext { state_context, grounder_context, *m_task->get_fdr_context() })
-                   && "ApplicableActionProgram emitted an action binding whose condition is not satisfied.");
+        // Datalog certifies the action condition, not whether its grounded numeric effects are valid and mutually compatible.
+        if (!m_executor.is_applicable_if_fires(action, state_context, grounder_context, *m_task->get_fdr_context()))
+            continue;
 
-            // Datalog certifies the action condition, not whether its grounded numeric effects are valid and mutually compatible.
-            if (!m_executor.is_applicable_if_fires(it->second, state_context, grounder_context, *m_task->get_fdr_context()))
-                continue;
-
-            assert(m_executor.is_applicable(it->second, state_context, grounder_context, *m_task->get_fdr_context()));
-            callback(scratch_binding, callback_data);
-        }
+        assert(m_executor.is_applicable(action, state_context, grounder_context, *m_task->get_fdr_context()));
+        callback(scratch_binding, callback_data);
     }
 }
 
@@ -312,6 +283,8 @@ void SuccessorGenerator<LiftedTag>::print_summary(size_t verbosity) const
 
 void SuccessorGenerator<LiftedTag>::compute_action_facts(const Node<LiftedTag>& node)
 {
+    m_workspace.reset_evaluation();
+
     const auto state = node.get_state();
     auto merge_context = fp::MergeDatalogContext { m_workspace.datalog_builder, m_workspace.workspace_repository };
     const auto& program = m_action_program;
