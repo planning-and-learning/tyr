@@ -64,12 +64,18 @@ struct ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>
 
         auto& facts() noexcept { return m_ws.facts; }
         const auto& facts() const noexcept { return m_ws.facts; }
+        auto& and_ap() noexcept { return m_ws.and_ap; }
+        const auto& and_ap() const noexcept { return m_ws.and_ap; }
         auto& or_ap() noexcept { return m_ws.or_ap; }
         const auto& or_ap() const noexcept { return m_ws.or_ap; }
         auto& and_annot() noexcept { return m_ws.and_annot; }
         const auto& and_annot() const noexcept { return m_ws.and_annot; }
         auto& numeric_and_annot() noexcept { return m_ws.numeric_and_annot; }
         const auto& numeric_and_annot() const noexcept { return m_ws.numeric_and_annot; }
+        auto& delta_and_annot() noexcept { return m_ws.delta_and_annot; }
+        const auto& delta_and_annot() const noexcept { return m_ws.delta_and_annot; }
+        auto& delta_numeric_and_annot() noexcept { return m_ws.delta_numeric_and_annot; }
+        const auto& delta_numeric_and_annot() const noexcept { return m_ws.delta_numeric_and_annot; }
         const auto& numeric_support_selector() const noexcept
         {
             assert(m_ws.numeric_support_selector.has_value());
@@ -128,6 +134,9 @@ struct ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>
         out.reset_numeric_support_selector();
         out.and_annot().clear();
         out.numeric_and_annot().clear();
+        out.delta_and_annot().clear();
+        out.delta_numeric_and_annot().clear();
+        out.and_ap().clear_achievers();
 
         for (const auto& set : out.facts().fact_sets.predicate.get_sets())
         {

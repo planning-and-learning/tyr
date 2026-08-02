@@ -42,26 +42,23 @@ template<>
 class OrAnnotationPolicy<LiftedTag>
 {
 public:
-    using PredicateHead = PredicateAnnotationHeadT<LiftedTag>;
-    using FunctionHead = FunctionAnnotationHeadT<LiftedTag>;
+    using PredicateHead = PredicateAnnotationHead<LiftedTag>;
+    using FunctionHead = FunctionAnnotationHead<LiftedTag>;
 
-    void initialize_annotation(PredicateHead head, SelectedPredicateAnnotations<LiftedTag>& program_and_annot) const;
+    void initialize_annotation(PredicateHead head, PredicateAnnotations<LiftedTag>& and_annot) const;
 
-    void initialize_annotation(FunctionHead head,
-                               ygg::ClosedInterval<ygg::float_t> interval,
-                               SelectedFunctionAnnotations<LiftedTag>& program_numeric_and_annot) const;
+    void initialize_annotation(FunctionHead head, ygg::ClosedInterval<ygg::float_t> interval, FunctionAnnotations<LiftedTag>& numeric_and_annot) const;
 
-    CostUpdate<LiftedTag> update_annotation(PredicateHead head,
-                                            const DeltaPredicateAnnotations<LiftedTag>& delta_and_annot,
-                                            SelectedPredicateAnnotations<LiftedTag>& program_and_annot) const;
+    CostUpdate<LiftedTag>
+    update_annotation(PredicateHead head, const DeltaPredicateAnnotations<LiftedTag>& delta_and_annot, PredicateAnnotations<LiftedTag>& and_annot) const;
 };
 
 template<typename AggregationFunction>
 class AndAnnotationPolicy<LiftedTag, AggregationFunction>
 {
 public:
-    using PredicateHead = PredicateAnnotationHeadT<LiftedTag>;
-    using FunctionHead = FunctionAnnotationHeadT<LiftedTag>;
+    using PredicateHead = PredicateAnnotationHead<LiftedTag>;
+    using FunctionHead = FunctionAnnotationHead<LiftedTag>;
 
     static constexpr AggregationFunction agg = AggregationFunction {};
     static constexpr bool records_propositional_achievers = false;
@@ -84,20 +81,21 @@ template<typename AggregationFunction>
 class AchieverAndAnnotationPolicy<LiftedTag, AggregationFunction> : public AndAnnotationPolicy<LiftedTag, AggregationFunction>
 {
 public:
-    using PredicateBinding = PredicateAnnotationHeadT<LiftedTag>;
-    using PredicateBindingIndex = ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>>;
+    using PredicateBinding = PredicateAnnotationHead<LiftedTag>;
     using Achievers = std::vector<WitnessAnnotation<LiftedTag, ::tyr::formalism::PredicateTag>>;
 
     static constexpr bool records_propositional_achievers = true;
+
+    void initialize(size_t num_predicates) { m_achievers.initialize(num_predicates); }
 
     void clear_achievers() noexcept;
 
     const Achievers* find_achievers(PredicateBinding head) const noexcept;
 
-    void record_achiever(PredicateBinding head, const AndAnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context) const;
+    void record_achiever(PredicateBinding head, const AndAnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context);
 
 private:
-    mutable ygg::UnorderedMap<PredicateBindingIndex, Achievers> m_achievers;
+    ConcurrentRelationMap<::tyr::formalism::PredicateTag, Achievers> m_achievers;
 };
 
 static_assert(OrAnnotationPolicyConcept<NoOrAnnotationPolicy<LiftedTag>, LiftedTag>);

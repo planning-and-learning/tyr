@@ -58,10 +58,8 @@ public:
     class In
     {
     public:
-        explicit In(const RuleExecutionContext<R, OrAP, AndAP, TP, CP>& rctx,
-                    const typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Worker& ws_worker) :
+        explicit In(RuleExecutionContext<R, OrAP, AndAP, TP, CP>& rctx) :
             m_rctx(rctx),
-            m_and_ap(ws_worker.solve.and_ap),
             m_ws_rule(rctx.out().ws_rule()),
             m_cws_rule(rctx.in().cws_rule()),
             m_fact_sets(rctx.stratum_in().program().facts().fact_sets, rctx.stratum_out().program().facts().fact_sets)
@@ -73,8 +71,8 @@ public:
         const auto& cws_rule() noexcept { return m_cws_rule; }
         const auto& cws_rule() const noexcept { return m_cws_rule; }
 
-        const auto& and_ap() noexcept { return m_and_ap; }
-        const auto& and_ap() const noexcept { return m_and_ap; }
+        auto& and_ap() noexcept { return m_rctx.stratum_out().program().and_ap(); }
+        const auto& and_ap() const noexcept { return m_rctx.stratum_out().program().and_ap(); }
         const auto& and_annot() noexcept { return m_rctx.stratum_out().program().and_annot(); }
         const auto& and_annot() const noexcept { return m_rctx.stratum_out().program().and_annot(); }
         const auto& numeric_and_annot() noexcept { return m_rctx.stratum_out().program().numeric_and_annot(); }
@@ -89,10 +87,9 @@ public:
         const auto& fact_sets() const noexcept { return m_fact_sets; }
 
     private:
-        const RuleExecutionContext<R, OrAP, AndAP, TP, CP>& m_rctx;
+        RuleExecutionContext<R, OrAP, AndAP, TP, CP>& m_rctx;
 
-        const AndAP& m_and_ap;
-        const typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>& m_ws_rule;
+        const RuleWorkspace<LiftedTag, R>& m_ws_rule;
         const ConstRuleWorkspace<LiftedTag, R>& m_cws_rule;
 
         const FactSets m_fact_sets;
@@ -101,22 +98,23 @@ public:
     class Out
     {
     public:
-        Out(RuleExecutionContext<R, OrAP, AndAP, TP, CP>& rctx, typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Worker& ws_worker) :
+        Out(RuleExecutionContext<R, OrAP, AndAP, TP, CP>& rctx, typename RuleWorkspace<LiftedTag, R>::Worker& ws_worker) :
+            m_rctx(rctx),
             m_ws_worker(ws_worker),
             m_ground_context(ws_worker.builder, rctx.stratum_out().program().workspace_repository(), ws_worker.binding)
         {
         }
 
         auto& kpkc_workspace() noexcept { return m_ws_worker.iteration.kpkc_workspace; }
-        auto& and_annot() noexcept { return m_ws_worker.iteration.and_annot; }
-        auto& numeric_and_annot() noexcept { return m_ws_worker.iteration.numeric_and_annot; }
-        auto& head() noexcept { return m_ws_worker.iteration.head; }
+        auto& delta_and_annot() noexcept { return m_rctx.stratum_out().program().delta_and_annot(); }
+        auto& delta_numeric_and_annot() noexcept { return m_rctx.stratum_out().program().delta_numeric_and_annot(); }
+        auto& head_updates() noexcept { return m_ws_worker.iteration.head_updates; }
 
         auto& seen_bindings_dbg() noexcept { return m_ws_worker.solve.seen_bindings_dbg; }
         auto& pending_rule_bindings() noexcept { return m_ws_worker.solve.pending_rule_bindings; }
         const auto& sorted_pending_rule_bindings() { return m_ws_worker.solve.get_sorted_pending_rule_bindings(); }
         auto& numeric_support_selector_workspace() noexcept { return m_ws_worker.solve.numeric_support_selector_workspace; }
-        auto& numeric_support_scratch() noexcept { return m_ws_worker.solve.numeric_support_scratch; }
+        auto& effect_support_scratch() noexcept { return m_ws_worker.solve.effect_support_scratch; }
         auto& witness_support_scratch() noexcept { return m_ws_worker.solve.witness_support_scratch; }
         auto& applicability_cache() noexcept { return m_ws_worker.solve.applicability_cache; }
         auto& statistics() noexcept { return m_ws_worker.solve.statistics; }
@@ -124,16 +122,16 @@ public:
         auto& ground_context() noexcept { return m_ground_context; }
 
     private:
-        typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Worker& m_ws_worker;
+        RuleExecutionContext<R, OrAP, AndAP, TP, CP>& m_rctx;
+        typename RuleWorkspace<LiftedTag, R>::Worker& m_ws_worker;
 
         ::tyr::formalism::datalog::GrounderContext m_ground_context;
     };
 
-    RuleWorkerExecutionContext(RuleExecutionContext<R, OrAP, AndAP, TP, CP>& rctx,
-                               typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Worker& ws_worker) :
+    RuleWorkerExecutionContext(RuleExecutionContext<R, OrAP, AndAP, TP, CP>& rctx, typename RuleWorkspace<LiftedTag, R>::Worker& ws_worker) :
         m_rctx(rctx),
         m_ws_worker(ws_worker),
-        m_in(rctx, ws_worker),
+        m_in(rctx),
         m_out(rctx, ws_worker)
     {
     }
@@ -162,7 +160,7 @@ public:
 
 private:
     RuleExecutionContext<R, OrAP, AndAP, TP, CP>& m_rctx;
-    typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>::Worker& m_ws_worker;
+    typename RuleWorkspace<LiftedTag, R>::Worker& m_ws_worker;
 
     In m_in;
     Out m_out;
@@ -191,7 +189,7 @@ struct RuleExecutionContext
     class Out
     {
     public:
-        explicit Out(typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>& ws_rule) : m_ws_rule(ws_rule) {}
+        explicit Out(RuleWorkspace<LiftedTag, R>& ws_rule) : m_ws_rule(ws_rule) {}
 
         auto& ws_rule() noexcept { return m_ws_rule; }
         const auto& ws_rule() const noexcept { return m_ws_rule; }
@@ -205,7 +203,7 @@ struct RuleExecutionContext
         const auto& workers() const noexcept { return m_ws_rule.worker; }
 
     private:
-        typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>& m_ws_rule;
+        RuleWorkspace<LiftedTag, R>& m_ws_rule;
     };
 
     RuleExecutionContext(ygg::Index<::tyr::formalism::datalog::Rule<R>> rule, StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx) :

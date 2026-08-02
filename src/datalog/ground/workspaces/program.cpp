@@ -44,7 +44,7 @@ void initialize_dependencies(fd::ProgramView<GroundTag> program, GroundRuleDepen
         const auto body = rule.get_body();
         for (const auto literal : body.template get_literals<f::FluentTag>())
             if (literal.get_polarity())
-                dependencies.fluent_precondition_to_rules[literal.get_atom()].push_back(rule);
+                dependencies.fluent_precondition_to_rules.update(literal.get_atom().get_row(), [&](auto& rules, bool) { rules.push_back(rule); });
 
         auto fluent_terms = ygg::UnorderedSet<fd::GroundFunctionTermView<f::FluentTag>>();
         for (const auto numeric_constraint : body.get_numeric_constraints())
@@ -52,7 +52,7 @@ void initialize_dependencies(fd::ProgramView<GroundTag> program, GroundRuleDepen
         collect_head_terms(rule.get_head(), fluent_terms);
 
         for (const auto term : fluent_terms)
-            dependencies.fluent_function_term_to_rules[term].push_back(rule);
+            dependencies.fluent_function_term_to_rules.update(term.get_row(), [&](auto& rules, bool) { rules.push_back(rule); });
     }
 }
 }
@@ -64,8 +64,8 @@ ConstProgramWorkspace<GroundTag>::ConstProgramWorkspace(fd::ProgramView<GroundTa
           program.template get_atoms<f::StaticTag>(),
           program.template get_fterm_values<f::StaticTag>(),
           program.get_context()),
-    predicate_rules(),
-    function_rules()
+    predicate_rules(program.template get_predicates<f::FluentTag>().size(), program.template get_functions<f::FluentTag>().size()),
+    function_rules(program.template get_predicates<f::FluentTag>().size(), program.template get_functions<f::FluentTag>().size())
 {
     initialize_dependencies(program, predicate_rules);
     initialize_dependencies(program, function_rules);

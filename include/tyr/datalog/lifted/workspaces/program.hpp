@@ -18,6 +18,7 @@
 #ifndef TYR_DATALOG_LIFTED_WORKSPACES_PROGRAM_HPP_
 #define TYR_DATALOG_LIFTED_WORKSPACES_PROGRAM_HPP_
 
+#include "tyr/datalog/lifted/policies/annotation_types.hpp"
 #include "tyr/datalog/lifted/policies/cost.hpp"
 #include "tyr/datalog/lifted/policies/numeric_support.hpp"
 #include "tyr/datalog/lifted/rule_scheduler.hpp"
@@ -182,16 +183,19 @@ public:
 
     FactsWorkspace<LiftedTag> facts;
 
+    AndAP and_ap;
     OrAP or_ap;
-    SelectedPredicateAnnotations<LiftedTag> and_annot;
-    SelectedFunctionAnnotations<LiftedTag> numeric_and_annot;
+    PredicateAnnotations<LiftedTag> and_annot;
+    FunctionAnnotations<LiftedTag> numeric_and_annot;
+    DeltaPredicateAnnotations<LiftedTag> delta_and_annot;
+    DeltaFunctionAnnotations<LiftedTag> delta_numeric_and_annot;
     std::optional<NumericSupportSelector<LiftedTag>> numeric_support_selector;
 
     TP tp;
     CP cost_policy;
 
-    std::vector<std::unique_ptr<typename RuleWorkspace<LiftedTag, ::tyr::formalism::PredicateTag>::template Instance<AndAP>>> predicate_rules;
-    std::vector<std::unique_ptr<typename RuleWorkspace<LiftedTag, ::tyr::formalism::FunctionTag>::template Instance<AndAP>>> function_rules;
+    std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, ::tyr::formalism::PredicateTag>>> predicate_rules;
+    std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, ::tyr::formalism::FunctionTag>>> function_rules;
 
     auto& get_rules(::tyr::formalism::PredicateTag) noexcept { return predicate_rules; }
     auto& get_rules(::tyr::formalism::FunctionTag) noexcept { return function_rules; }

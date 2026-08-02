@@ -89,14 +89,14 @@ public:
     explicit LiftedRPGBase(TaskPtr<LiftedTag> task,
                            ygg::ExecutionContextPtr execution_context,
                            const OrAP& or_ap,
-                           const AndAP& and_ap,
+                           AndAP and_ap,
                            CostMode cost_mode = CostMode::GENERAL,
                            bool compute_expanded_lmcut = false) :
         LiftedRPGBase(std::make_shared<const LiftedRPGDefinition>(task, cost_mode, compute_expanded_lmcut),
                       task,
                       execution_context,
                       or_ap,
-                      and_ap,
+                      std::move(and_ap),
                       task->get_task().get_goal())
     {
     }
@@ -105,13 +105,13 @@ public:
                   TaskPtr<LiftedTag> task,
                   ygg::ExecutionContextPtr execution_context,
                   const OrAP& or_ap,
-                  const AndAP& and_ap,
+                  AndAP and_ap,
                   ::tyr::formalism::planning::GroundConjunctiveConditionView source_goal) :
         m_definition(std::move(definition)),
         m_task(std::move(task)),
         m_execution_context(std::move(execution_context)),
         m_source_goal(source_goal),
-        m_workspace(m_definition->rpg_program.get_datalog_program(), or_ap, and_ap, TP())
+        m_workspace(m_definition->rpg_program.get_datalog_program(), or_ap, std::move(and_ap), TP())
     {
     }
 
@@ -207,18 +207,12 @@ public:
     void for_each_achiever(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> binding, Callback&& callback)
         requires AndAP::records_propositional_achievers
     {
-        for (const auto& rule : m_workspace.template get_rules<::tyr::formalism::PredicateTag>())
-        {
-            for (const auto& worker : rule->worker)
-            {
-                const auto* achievers = worker.solve.and_ap.find_achievers(binding);
-                if (!achievers)
-                    continue;
+        const auto* achievers = m_workspace.and_ap.find_achievers(binding);
+        if (!achievers)
+            return;
 
-                for (const auto& achiever : *achievers)
-                    callback(achiever);
-            }
-        }
+        for (const auto& achiever : *achievers)
+            callback(achiever);
     }
 
     void print_summary(size_t verbosity) const

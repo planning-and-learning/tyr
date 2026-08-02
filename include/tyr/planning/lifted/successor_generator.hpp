@@ -110,7 +110,6 @@ private:
     TaskPtr<LiftedTag> m_task;
     ygg::ExecutionContextPtr m_execution_context;
     ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action>> m_scratch_action_binding;
-    std::vector<ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action>>> m_action_candidates;
     ApplicableActionProgram<LiftedTag> m_action_program;
     ygg::UnorderedMap<::tyr::formalism::planning::ActionBindingView, ::tyr::formalism::planning::GroundActionView> m_action_binding_to_ground_action;
 

@@ -277,13 +277,13 @@ TEST(TyrDatalogGroundQueueTest, PositiveFluentPreconditionIndexMapsFactToWaiting
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
     const auto& dependencies = const_workspace.get_dependencies<f::PredicateTag>();
-    const auto a_it = dependencies.fluent_precondition_to_rules.find(a);
-    const auto d_it = dependencies.fluent_precondition_to_rules.find(d);
+    const auto* a_rules = dependencies.fluent_precondition_to_rules.find(a.get_row());
+    const auto* d_rules = dependencies.fluent_precondition_to_rules.find(d.get_row());
 
-    ASSERT_NE(a_it, dependencies.fluent_precondition_to_rules.end());
-    ASSERT_NE(d_it, dependencies.fluent_precondition_to_rules.end());
-    EXPECT_EQ(rule_indices(a_it->second), std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>>({ fixture.ground_rules[0], fixture.ground_rules[1] }));
-    EXPECT_EQ(rule_indices(d_it->second), std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>>({ fixture.ground_rules[2] }));
+    ASSERT_NE(a_rules, nullptr);
+    ASSERT_NE(d_rules, nullptr);
+    EXPECT_EQ(rule_indices(*a_rules), std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>>({ fixture.ground_rules[0], fixture.ground_rules[1] }));
+    EXPECT_EQ(rule_indices(*d_rules), std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>>({ fixture.ground_rules[2] }));
 }
 
 TEST(TyrDatalogGroundQueueTest, InitialFluentFactsSatisfyDynamicUnsatisfiedCounts)
@@ -300,10 +300,10 @@ TEST(TyrDatalogGroundQueueTest, InitialFluentFactsSatisfyDynamicUnsatisfiedCount
     auto queue_workspace = datalog::QueueWorkspace<GroundTag>(program);
     auto ctx = datalog::ProgramExecutionContext(workspace, queue_workspace);
     const auto& dependencies = const_workspace.get_dependencies<f::PredicateTag>();
-    const auto a_it = dependencies.fluent_precondition_to_rules.find(a);
+    const auto* a_rules = dependencies.fluent_precondition_to_rules.find(a.get_row());
 
-    ASSERT_NE(a_it, dependencies.fluent_precondition_to_rules.end());
-    EXPECT_EQ(rule_indices(a_it->second), std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>>({ fixture.ground_rules[0] }));
+    ASSERT_NE(a_rules, nullptr);
+    EXPECT_EQ(rule_indices(*a_rules), std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>>({ fixture.ground_rules[0] }));
 
     ctx.initialize(fixture.initial_fluent_atoms);
     EXPECT_EQ(ctx.out().rule_states<f::PredicateTag>()[fixture.ground_rules[0].get_value()].unsatisfied_count, 0);

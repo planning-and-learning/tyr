@@ -21,7 +21,6 @@
 #include "tyr/datalog/lifted/consistency_graph.hpp"
 #include "tyr/datalog/lifted/delta_kpkc.hpp"
 #include "tyr/datalog/lifted/policies/numeric_support.hpp"
-#include "tyr/datalog/policies/annotation_concept.hpp"
 #include "tyr/datalog/statistics/rule.hpp"
 #include "tyr/datalog/workspaces/rule.hpp"
 #include "tyr/formalism/binding_index.hpp"
@@ -148,95 +147,85 @@ struct ApplicabilityCache
 template<::tyr::formalism::RelationKind R>
 struct RuleWorkspace<LiftedTag, R>
 {
-    template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-    struct Instance
+    struct Common
     {
-        struct Common
-        {
-            explicit Common(const StaticConsistencyGraph& static_consistency_graph);
+        explicit Common(const StaticConsistencyGraph& static_consistency_graph);
 
-            void initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSets& assignment_sets);
-
-            void clear() noexcept;
-
-            /// KPKC
-            kpkc::DeltaKPKC kpkc;
-
-            /// Statistics
-            RuleStatistics statistics;
-        };
-
-        /// @brief Each iteration consists of
-        /// - generate all k-cliques
-        /// - ground witnesses
-        /// - annotate witnesses
-        struct Iteration
-        {
-            explicit Iteration(const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common);
-
-            void clear() noexcept;
-
-            /// Heads
-            RuleHeadIterationT<R> head;
-
-            // Annotations are worker-local, while their heads are interned in the shared workspace repository.
-            DeltaPredicateAnnotations<LiftedTag> and_annot;
-            DeltaFunctionAnnotations<LiftedTag> numeric_and_annot;
-
-            /// KPKC
-            kpkc::Workspace kpkc_workspace;
-        };
-
-        struct Solve
-        {
-            explicit Solve(const AndAP& and_ap);
-
-            void clear() noexcept;
-
-            AndAP and_ap;
-
-            /// In debug mode, we accumulate all bindings to verify the correctness of delta-kpkc
-            ygg::UnorderedSet<ygg::IndexList<::tyr::formalism::Object>> seen_bindings_dbg;
-
-            ygg::UnorderedSet<::tyr::formalism::datalog::RuleBindingView<R>> pending_rule_bindings;
-            std::vector<::tyr::formalism::datalog::RuleBindingView<R>> pending_rule_binding_scratch;
-
-            const std::vector<::tyr::formalism::datalog::RuleBindingView<R>>& get_sorted_pending_rule_bindings();
-
-            NumericSupportSelectorWorkspace<LiftedTag> numeric_support_selector_workspace;
-            std::vector<NumericSupport<LiftedTag>> numeric_support_scratch;
-            std::vector<NumericSupport<LiftedTag>> witness_support_scratch;
-            ApplicabilityCache applicability_cache;
-
-            /// Statistics
-            RuleWorkerStatistics statistics;
-        };
-
-        struct Worker
-        {
-            explicit Worker(const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common, const AndAP& and_ap);
-
-            void clear() noexcept;
-
-            ::tyr::formalism::datalog::Builder builder;
-            ygg::IndexList<::tyr::formalism::Object> binding;
-
-            Iteration iteration;
-            Solve solve;
-        };
-
-        Instance(const ConstRuleWorkspace<LiftedTag, R>& cws, const AndAP& and_ap);
-        Instance(const Instance& other) = delete;
-        Instance& operator=(const Instance& other) = delete;
-        Instance(Instance&& other) = delete;
-        Instance& operator=(Instance&& other) = delete;
+        void initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSets& assignment_sets);
 
         void clear() noexcept;
 
-        Common common;
+        /// KPKC
+        kpkc::DeltaKPKC kpkc;
 
-        std::deque<Worker> worker;
+        /// Statistics
+        RuleStatistics statistics;
     };
+
+    /// @brief Each iteration consists of
+    /// - generate all k-cliques
+    /// - ground witnesses
+    /// - annotate witnesses
+    struct Iteration
+    {
+        explicit Iteration(const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common);
+
+        void clear() noexcept;
+
+        /// Head updates
+        RuleHeadIterationT<R> head_updates;
+
+        /// KPKC
+        kpkc::Workspace kpkc_workspace;
+    };
+
+    struct Solve
+    {
+        Solve();
+
+        void clear() noexcept;
+
+        /// In debug mode, we accumulate all bindings to verify the correctness of delta-kpkc
+        ygg::UnorderedSet<ygg::IndexList<::tyr::formalism::Object>> seen_bindings_dbg;
+
+        ygg::UnorderedSet<::tyr::formalism::datalog::RuleBindingView<R>> pending_rule_bindings;
+        std::vector<::tyr::formalism::datalog::RuleBindingView<R>> pending_rule_binding_scratch;
+
+        const std::vector<::tyr::formalism::datalog::RuleBindingView<R>>& get_sorted_pending_rule_bindings();
+
+        NumericSupportSelectorWorkspace<LiftedTag> numeric_support_selector_workspace;
+        std::vector<NumericSupport<LiftedTag>> effect_support_scratch;
+        std::vector<NumericSupport<LiftedTag>> witness_support_scratch;
+        ApplicabilityCache applicability_cache;
+
+        /// Statistics
+        RuleWorkerStatistics statistics;
+    };
+
+    struct Worker
+    {
+        explicit Worker(const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common);
+
+        void clear() noexcept;
+
+        ::tyr::formalism::datalog::Builder builder;
+        ygg::IndexList<::tyr::formalism::Object> binding;
+
+        Iteration iteration;
+        Solve solve;
+    };
+
+    explicit RuleWorkspace(const ConstRuleWorkspace<LiftedTag, R>& cws);
+    RuleWorkspace(const RuleWorkspace& other) = delete;
+    RuleWorkspace& operator=(const RuleWorkspace& other) = delete;
+    RuleWorkspace(RuleWorkspace&& other) = delete;
+    RuleWorkspace& operator=(RuleWorkspace&& other) = delete;
+
+    void clear() noexcept;
+
+    Common common;
+
+    std::deque<Worker> worker;
 };
 
 template<::tyr::formalism::RelationKind R>
@@ -286,56 +275,42 @@ inline bool supports_inner_parallelism(::tyr::formalism::datalog::AtomView<::tyr
 inline bool supports_inner_parallelism(::tyr::formalism::datalog::NumericEffectOperatorView<::tyr::formalism::FluentTag>) noexcept { return false; }
 
 template<::tyr::formalism::RelationKind R>
-template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Common::Common(const StaticConsistencyGraph& static_consistency_graph) :
-    kpkc(static_consistency_graph),
-    statistics()
+RuleWorkspace<LiftedTag, R>::Common::Common(const StaticConsistencyGraph& static_consistency_graph) : kpkc(static_consistency_graph), statistics()
 {
 }
 
 template<::tyr::formalism::RelationKind R>
-template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Common::clear() noexcept
+void RuleWorkspace<LiftedTag, R>::Common::clear() noexcept
 {
     kpkc.reset();
 }
 
 template<::tyr::formalism::RelationKind R>
-template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Common::initialize_iteration(const StaticConsistencyGraph& static_consistency_graph,
-                                                                                const AssignmentSets& assignment_sets)
+void RuleWorkspace<LiftedTag, R>::Common::initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSets& assignment_sets)
 {
     kpkc.set_next_assignment_sets(static_consistency_graph, assignment_sets);
 }
 
 template<::tyr::formalism::RelationKind R>
-template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Iteration::Iteration(const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common) :
-    head(make_head_iteration(cws.get_rule().get_head())),
-    and_annot(),
-    numeric_and_annot(),
+RuleWorkspace<LiftedTag, R>::Iteration::Iteration(const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common) :
+    head_updates(make_head_iteration(cws.get_rule().get_head())),
     kpkc_workspace(common.kpkc.get_graph_layout())
 {
 }
 
 template<::tyr::formalism::RelationKind R>
-template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Iteration::clear() noexcept
+void RuleWorkspace<LiftedTag, R>::Iteration::clear() noexcept
 {
-    head.clear();
-    and_annot.clear();
-    numeric_and_annot.clear();
+    head_updates.clear();
 }
 
 template<::tyr::formalism::RelationKind R>
-template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Solve::Solve(const AndAP& and_ap) :
-    and_ap(and_ap),
+RuleWorkspace<LiftedTag, R>::Solve::Solve() :
     seen_bindings_dbg(),
     pending_rule_bindings(),
     pending_rule_binding_scratch(),
     numeric_support_selector_workspace(),
-    numeric_support_scratch(),
+    effect_support_scratch(),
     witness_support_scratch(),
     applicability_cache(),
     statistics()
@@ -343,22 +318,19 @@ RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Solve::Solve(const AndAP& and_ap) 
 }
 
 template<::tyr::formalism::RelationKind R>
-template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Solve::clear() noexcept
+void RuleWorkspace<LiftedTag, R>::Solve::clear() noexcept
 {
     seen_bindings_dbg.clear();
     pending_rule_bindings.clear();
     pending_rule_binding_scratch.clear();
     numeric_support_selector_workspace.clear();
-    numeric_support_scratch.clear();
+    effect_support_scratch.clear();
     witness_support_scratch.clear();
     applicability_cache.clear();
-    and_ap.clear_achievers();
 }
 
 template<::tyr::formalism::RelationKind R>
-template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-const std::vector<::tyr::formalism::datalog::RuleBindingView<R>>& RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Solve::get_sorted_pending_rule_bindings()
+const std::vector<::tyr::formalism::datalog::RuleBindingView<R>>& RuleWorkspace<LiftedTag, R>::Solve::get_sorted_pending_rule_bindings()
 {
     pending_rule_binding_scratch.assign(pending_rule_bindings.begin(), pending_rule_bindings.end());
     std::sort(pending_rule_binding_scratch.begin(), pending_rule_binding_scratch.end(), canonical_binding_less<::tyr::formalism::datalog::RuleBindingView<R>>);
@@ -366,41 +338,35 @@ const std::vector<::tyr::formalism::datalog::RuleBindingView<R>>& RuleWorkspace<
 }
 
 template<::tyr::formalism::RelationKind R>
-template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Worker::Worker(const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common, const AndAP& and_ap) :
+RuleWorkspace<LiftedTag, R>::Worker::Worker(const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common) :
     builder(),
     binding(),
     iteration(cws, common),
-    solve(and_ap)
+    solve()
 {
 }
 
 template<::tyr::formalism::RelationKind R>
-template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Worker::clear() noexcept
+void RuleWorkspace<LiftedTag, R>::Worker::clear() noexcept
 {
     iteration.clear();
     solve.clear();
 }
 
 template<::tyr::formalism::RelationKind R>
-template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-RuleWorkspace<LiftedTag, R>::Instance<AndAP>::Instance(const ConstRuleWorkspace<LiftedTag, R>& cws_, const AndAP& and_ap_) :
-    common(cws_.get_static_consistency_graph()),
-    worker()
+RuleWorkspace<LiftedTag, R>::RuleWorkspace(const ConstRuleWorkspace<LiftedTag, R>& cws_) : common(cws_.get_static_consistency_graph()), worker()
 {
-    worker.emplace_back(cws_, common, and_ap_);
+    worker.emplace_back(cws_, common);
 
 #if defined(TYR_ENABLE_INNER_PARALLELISM) && defined(TYR_ENABLE_SEMI_NAIVE)
     // Only propositional heads use partitionable delta KPKC; numeric effects require full KPKC enumeration.
     if (supports_inner_parallelism(cws_.get_rule().get_head()) && cws_.get_rule().get_arity() > 2)
-        worker.emplace_back(cws_, common, and_ap_);
+        worker.emplace_back(cws_, common);
 #endif
 }
 
 template<::tyr::formalism::RelationKind R>
-template<AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void RuleWorkspace<LiftedTag, R>::Instance<AndAP>::clear() noexcept
+void RuleWorkspace<LiftedTag, R>::clear() noexcept
 {
     common.clear();
     for (auto& w : worker)

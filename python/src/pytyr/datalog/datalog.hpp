@@ -142,12 +142,12 @@ void bind_annotations(nb::module_& m)
     using BaseAnnotationT = BaseAnnotation<Kind>;
     using WitnessAnnotationT = WitnessAnnotation<Kind, ::tyr::formalism::PredicateTag>;
     using FunctionWitnessAnnotationT = WitnessAnnotation<Kind, ::tyr::formalism::FunctionTag>;
-    using PredicateAnnotations = SelectedPredicateAnnotations<Kind>;
-    using FunctionAnnotations = SelectedFunctionAnnotations<Kind>;
+    using PredicateAnnotationStore = PredicateAnnotations<Kind>;
+    using FunctionAnnotationStore = FunctionAnnotations<Kind>;
     using RuleKey = WitnessRuleKeyT<Kind, ::tyr::formalism::PredicateTag>;
     using FunctionRuleKey = WitnessRuleKeyT<Kind, ::tyr::formalism::FunctionTag>;
     using NumericKey = NumericSupportKeyT<Kind>;
-    using PredicateKey = typename PredicateAnnotations::Key;
+    using PredicateKey = typename PredicateAnnotationStore::Key;
 
     auto numeric_support_cls = nb::class_<NumericSupportT>(m, "NumericSupport")
                                    .def(nb::init<NumericKey, Interval, Cost>(), "key"_a, "interval"_a, "cost"_a)
@@ -186,25 +186,25 @@ void bind_annotations(nb::module_& m)
             .def("get_numeric_supports", &FunctionWitnessAnnotationT::get_numeric_supports, nb::rv_policy::copy);
     ygg::add_comparison(function_witness_annotation_cls);
 
-    nb::class_<PredicateAnnotations>(m, "SelectedPredicateAnnotations")
+    nb::class_<PredicateAnnotationStore>(m, "PredicateAnnotations")
         .def(nb::init<>())
-        .def("clear", &PredicateAnnotations::clear)
+        .def("clear", &PredicateAnnotationStore::clear)
         .def(
             "find",
-            [](const PredicateAnnotations& self, PredicateKey key) -> std::optional<Annotation<Kind>>
+            [](const PredicateAnnotationStore& self, PredicateKey key) -> std::optional<Annotation<Kind>>
             {
                 const auto* annotation = self.find(key);
                 return annotation ? std::optional<Annotation<Kind>>(*annotation) : std::nullopt;
             },
             "binding"_a);
 
-    nb::class_<FunctionAnnotations>(m, "SelectedFunctionAnnotations")
+    nb::class_<FunctionAnnotationStore>(m, "FunctionAnnotations")
         .def(nb::init<>())
-        .def("clear", &FunctionAnnotations::clear)
-        .def("size", &FunctionAnnotations::size)
+        .def("clear", &FunctionAnnotationStore::clear)
+        .def("size", &FunctionAnnotationStore::size)
         .def(
             "find",
-            [](const FunctionAnnotations& self, NumericKey key) -> std::optional<Annotation<Kind, ::tyr::formalism::FunctionTag>>
+            [](const FunctionAnnotationStore& self, NumericKey key) -> std::optional<Annotation<Kind, ::tyr::formalism::FunctionTag>>
             {
                 const auto* annotation = self.find(key);
                 return annotation ? std::optional<Annotation<Kind, ::tyr::formalism::FunctionTag>>(*annotation) : std::nullopt;
@@ -212,7 +212,7 @@ void bind_annotations(nb::module_& m)
             "binding"_a)
         .def(
             "find",
-            [](const FunctionAnnotations& self, NumericKey key, const Interval& interval) -> std::optional<Annotation<Kind, ::tyr::formalism::FunctionTag>>
+            [](const FunctionAnnotationStore& self, NumericKey key, const Interval& interval) -> std::optional<Annotation<Kind, ::tyr::formalism::FunctionTag>>
             {
                 const auto* annotation = self.find(key, interval);
                 return annotation ? std::optional<Annotation<Kind, ::tyr::formalism::FunctionTag>>(*annotation) : std::nullopt;
@@ -308,7 +308,7 @@ void bind_policies(nb::module_& m)
         .def("clear_achievers", &AchieverAnd::clear_achievers)
         .def(
             "find_achievers",
-            [](const AchieverAnd& self, PredicateAnnotationHeadT<Kind> binding) -> std::optional<typename AchieverAnd::Achievers>
+            [](const AchieverAnd& self, PredicateAnnotationHead<Kind> binding) -> std::optional<typename AchieverAnd::Achievers>
             {
                 const auto* achievers = self.find_achievers(binding);
                 return achievers ? std::optional<typename AchieverAnd::Achievers>(*achievers) : std::nullopt;
@@ -341,11 +341,11 @@ void bind_workspace(nb::module_& m, const std::string& name)
                        [](const Workspace& self) -> const TaggedFactSets<::tyr::formalism::FluentTag>& { return self.facts.fact_sets; },
                        nb::rv_policy::reference_internal)
                    .def(
-                       "get_predicate_annotations",
+                       "get_and_annot",
                        [](Workspace& self) -> auto& { return self.and_annot; },
                        nb::rv_policy::reference_internal)
                    .def(
-                       "get_function_annotations",
+                       "get_numeric_and_annot",
                        [](Workspace& self) -> auto& { return self.numeric_and_annot; },
                        nb::rv_policy::reference_internal)
                    .def(

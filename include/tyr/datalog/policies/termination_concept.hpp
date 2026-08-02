@@ -34,8 +34,8 @@ concept TerminationPolicyConcept = TaskKind<Kind>
                                                const T& cp,
                                                ::tyr::formalism::datalog::GroundConjunctiveConditionView goals,
                                                const FactSets& fact_sets,
-                                               const SelectedPredicateAnnotations<Kind>& and_annot,
-                                               const SelectedFunctionAnnotations<Kind>& numeric_and_annot,
+                                               const PredicateAnnotations<Kind>& and_annot,
+                                               const FunctionAnnotations<Kind>& numeric_and_annot,
                                                const NumericSupportSelector<Kind>& numeric_support_selector) {
                                           { p.set_goals(goals) } -> std::same_as<void>;
                                           { cp.check(fact_sets) } -> std::same_as<bool>;

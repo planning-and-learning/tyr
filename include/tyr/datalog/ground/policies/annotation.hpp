@@ -25,7 +25,6 @@
 #include "tyr/datalog/policies/annotation_concept.hpp"
 
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
 
 namespace tyr::datalog
 {
@@ -34,31 +33,28 @@ template<>
 class OrAnnotationPolicy<GroundTag>
 {
 public:
-    using PredicateHead = PredicateAnnotationHeadT<GroundTag>;
-    using FunctionHead = FunctionAnnotationHeadT<GroundTag>;
+    using PredicateHead = PredicateAnnotationHead<GroundTag>;
+    using FunctionHead = FunctionAnnotationHead<GroundTag>;
 
-    void initialize_annotation(PredicateHead head, SelectedPredicateAnnotations<GroundTag>& program_and_annot) const;
+    void initialize_annotation(PredicateHead head, PredicateAnnotations<GroundTag>& and_annot) const;
     void initialize_annotation(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
-                               SelectedPredicateAnnotations<GroundTag>& program_and_annot) const;
+                               PredicateAnnotations<GroundTag>& and_annot) const;
 
-    void initialize_annotation(FunctionHead head,
-                               ygg::ClosedInterval<ygg::float_t> interval,
-                               SelectedFunctionAnnotations<GroundTag>& program_numeric_and_annot) const;
+    void initialize_annotation(FunctionHead head, ygg::ClosedInterval<ygg::float_t> interval, FunctionAnnotations<GroundTag>& numeric_and_annot) const;
     void initialize_annotation(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> head,
                                ygg::ClosedInterval<ygg::float_t> interval,
-                               SelectedFunctionAnnotations<GroundTag>& program_numeric_and_annot) const;
+                               FunctionAnnotations<GroundTag>& numeric_and_annot) const;
 
-    CostUpdate<GroundTag> update_annotation(PredicateHead head,
-                                            const DeltaPredicateAnnotations<GroundTag>& delta_and_annot,
-                                            SelectedPredicateAnnotations<GroundTag>& program_and_annot) const;
+    CostUpdate<GroundTag>
+    update_annotation(PredicateHead head, const DeltaPredicateAnnotations<GroundTag>& delta_and_annot, PredicateAnnotations<GroundTag>& and_annot) const;
 };
 
 template<typename AggregationFunction>
 class AndAnnotationPolicy<GroundTag, AggregationFunction>
 {
 public:
-    using PredicateHead = PredicateAnnotationHeadT<GroundTag>;
-    using FunctionHead = FunctionAnnotationHeadT<GroundTag>;
+    using PredicateHead = PredicateAnnotationHead<GroundTag>;
+    using FunctionHead = FunctionAnnotationHead<GroundTag>;
 
     static constexpr AggregationFunction agg = AggregationFunction {};
     static constexpr bool records_propositional_achievers = false;
@@ -81,20 +77,21 @@ template<typename AggregationFunction>
 class AchieverAndAnnotationPolicy<GroundTag, AggregationFunction> : public AndAnnotationPolicy<GroundTag, AggregationFunction>
 {
 public:
-    using Atom = PredicateAnnotationHeadT<GroundTag>;
-    using AtomIndex = ygg::Index<::tyr::formalism::datalog::GroundAtom<::tyr::formalism::FluentTag>>;
+    using Atom = PredicateAnnotationHead<GroundTag>;
     using Achievers = std::vector<WitnessAnnotation<GroundTag, ::tyr::formalism::PredicateTag>>;
 
     static constexpr bool records_propositional_achievers = true;
+
+    void initialize(size_t num_predicates) { m_achievers.initialize(num_predicates); }
 
     void clear_achievers() noexcept;
 
     const Achievers* find_achievers(Atom head) const noexcept;
 
-    void record_achiever(Atom head, const AndAnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context) const;
+    void record_achiever(Atom head, const AndAnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context);
 
 private:
-    mutable ygg::UnorderedMap<AtomIndex, Achievers> achievers;
+    DenseRelationMap<::tyr::formalism::PredicateTag, Achievers> m_achievers;
 };
 
 static_assert(OrAnnotationPolicyConcept<NoOrAnnotationPolicy<GroundTag>, GroundTag>);

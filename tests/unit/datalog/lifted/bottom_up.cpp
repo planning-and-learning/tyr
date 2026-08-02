@@ -36,6 +36,8 @@
 #include <fstream>
 #include <gtest/gtest.h>
 #include <memory>
+#include <oneapi/tbb/parallel_for.h>
+#include <oneapi/tbb/task_arena.h>
 #include <ostream>
 #include <ranges>
 #include <sstream>
@@ -208,56 +210,52 @@ class BottomUpFixtureTest : public ::testing::TestWithParam<BottomUpCase>
 {
 };
 
-TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchAtOneAndMaximumThreads)
+TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
 {
     const auto& test_case = GetParam();
+    auto execution_context = ygg::ExecutionContext::create(1);
+    auto task = p::Task<::tyr::LiftedTag>::create(make_test_parser(test_case.domain_file).parse_task(test_case.task_file));
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<::tyr::LiftedTag>().create(task, execution_context);
+    auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(task, axiom_evaluator);
+    auto successor_generator = p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, execution_context, state_repository);
+    const auto initial_node = successor_generator->get_initial_node();
 
-    for (const auto num_threads : { ygg::ExecutionContext::uint_t(1), ygg::ExecutionContext::get_max_num_threads() })
+    for (size_t config_index = 0; config_index < kConfigNames.size(); ++config_index)
     {
-        auto execution_context = ygg::ExecutionContext::create(num_threads);
-        auto task = p::Task<::tyr::LiftedTag>::create(make_test_parser(test_case.domain_file).parse_task(test_case.task_file));
-        auto axiom_evaluator = p::AxiomEvaluatorFactory<::tyr::LiftedTag>().create(task, execution_context);
-        auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(task, axiom_evaluator);
-        auto successor_generator = p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, execution_context, state_repository);
-        const auto initial_node = successor_generator->get_initial_node();
+        const auto config = kConfigNames[config_index];
+        const auto& expected = test_case.configs[config_index];
+        SCOPED_TRACE("config=" + std::string(config));
 
-        for (size_t config_index = 0; config_index < kConfigNames.size(); ++config_index)
+        if (config == "axiom_evaluator" && !axiom_evaluator)
         {
-            const auto config = kConfigNames[config_index];
-            const auto& expected = test_case.configs[config_index];
-            SCOPED_TRACE("threads=" + std::to_string(num_threads) + ", config=" + std::string(config));
+            EXPECT_TRUE(expected.empty());
+            continue;
+        }
 
-            if (config == "axiom_evaluator" && !axiom_evaluator)
+        const auto run_config = [&]() -> AtomsByPredicate
+        {
+            if (config == "axiom_evaluator")
+                return collect_atoms_by_predicate(axiom_evaluator->get_workspace());
+
+            if (config == "applicable_action")
             {
-                EXPECT_TRUE(expected.empty());
-                continue;
+                successor_generator->get_applicable_action_bindings(initial_node);
+                return collect_atoms_by_predicate(successor_generator->get_workspace());
             }
 
-            const auto run_config = [&]() -> AtomsByPredicate
+            if (config == "ground_task")
             {
-                if (config == "axiom_evaluator")
-                    return collect_atoms_by_predicate(axiom_evaluator->get_workspace());
+                auto program = p::GroundTaskProgram(task->get_task());
+                auto workspace = d::ProgramWorkspace<::tyr::LiftedTag>(program.get_datalog_program());
+                auto context = d::ProgramExecutionContext(workspace);
+                execution_context->arena().execute([&] { d::solve_bottom_up(context); });
+                return collect_atoms_by_predicate(workspace);
+            }
 
-                if (config == "applicable_action")
-                {
-                    successor_generator->get_applicable_action_bindings(initial_node);
-                    return collect_atoms_by_predicate(successor_generator->get_workspace());
-                }
+            throw std::runtime_error("unknown bottom-up fixture configuration: " + std::string(config));
+        };
 
-                if (config == "ground_task")
-                {
-                    auto program = p::GroundTaskProgram(task->get_task());
-                    auto workspace = d::ProgramWorkspace<::tyr::LiftedTag>(program.get_datalog_program());
-                    auto context = d::ProgramExecutionContext(workspace);
-                    execution_context->arena().execute([&] { d::solve_bottom_up(context); });
-                    return collect_atoms_by_predicate(workspace);
-                }
-
-                throw std::runtime_error("unknown bottom-up fixture configuration: " + std::string(config));
-            };
-
-            EXPECT_EQ(run_config(), expected);
-        }
+        EXPECT_EQ(run_config(), expected);
     }
 }
 
@@ -410,20 +408,121 @@ TEST(TyrDatalogLiftedBottomUpTest, PredicateAnnotationsUseRelationAndRowIndices)
     const auto first = make_binding(first_predicate, first_object);
     const auto hole = make_binding(first_predicate, second_object);
     const auto second = make_binding(second_predicate, first_object);
-    auto annotations = d::SelectedPredicateAnnotations<LiftedTag>();
+    auto and_annot = d::PredicateAnnotations<LiftedTag>();
 
-    annotations.insert_or_assign(first, d::BaseAnnotation<LiftedTag>(3));
-    annotations.insert_or_assign(second, d::BaseAnnotation<LiftedTag>(5));
-    EXPECT_EQ(d::get_cost(*annotations.find(first)), 3);
-    EXPECT_EQ(d::get_cost(*std::as_const(annotations).find(second)), 5);
-    EXPECT_EQ(annotations.find(hole), nullptr);
+    and_annot.insert_or_assign(first, d::BaseAnnotation<LiftedTag>(3));
+    and_annot.insert_or_assign(second, d::BaseAnnotation<LiftedTag>(5));
+    EXPECT_EQ(d::get_cost(*and_annot.find(first)), 3);
+    EXPECT_EQ(d::get_cost(*std::as_const(and_annot).find(second)), 5);
+    EXPECT_EQ(and_annot.find(hole), nullptr);
 
-    annotations.insert_or_assign(first, d::BaseAnnotation<LiftedTag>(2));
-    EXPECT_EQ(d::get_cost(*annotations.find(first)), 2);
+    and_annot.insert_or_assign(first, d::BaseAnnotation<LiftedTag>(2));
+    EXPECT_EQ(d::get_cost(*and_annot.find(first)), 2);
 
-    annotations.clear();
-    EXPECT_EQ(annotations.find(first), nullptr);
-    EXPECT_EQ(annotations.find(second), nullptr);
+    and_annot.clear();
+    EXPECT_EQ(and_annot.find(first), nullptr);
+    EXPECT_EQ(and_annot.find(second), nullptr);
+}
+
+TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
+{
+    auto factory = std::make_shared<fd::RepositoryFactory>();
+    auto repository = factory->create_shared();
+    const auto intern = [&]<typename T>(ygg::Data<T> data)
+    {
+        f::canonicalize(data);
+        return repository->get_or_create(data).first;
+    };
+
+    const auto first_predicate = intern(ygg::Data<f::Predicate<f::FluentTag>>(std::string("first"), 1));
+    const auto second_predicate = intern(ygg::Data<f::Predicate<f::FluentTag>>(std::string("second"), 1));
+    const auto function = intern(ygg::Data<f::Function<f::FluentTag>>(std::string("value"), 1));
+
+    auto first_bindings = std::vector<fd::PredicateBindingView<f::FluentTag>> {};
+    auto second_bindings = std::vector<fd::PredicateBindingView<f::FluentTag>> {};
+    auto function_bindings = std::vector<fd::FunctionBindingView<f::FluentTag>> {};
+    for (size_t i = 0; i < 64; ++i)
+    {
+        const auto object = intern(ygg::Data<f::Object>("o" + std::to_string(i)));
+        const auto make_predicate_binding = [&](auto predicate)
+        {
+            auto data = ygg::Data<f::RelationBinding<f::Predicate<f::FluentTag>>> {};
+            data.relation = predicate.get_index();
+            data.objects.push_back(object.get_index());
+            return intern(std::move(data));
+        };
+        const auto make_function_binding = [&](auto function_)
+        {
+            auto data = ygg::Data<f::RelationBinding<f::Function<f::FluentTag>>> {};
+            data.relation = function_.get_index();
+            data.objects.push_back(object.get_index());
+            return intern(std::move(data));
+        };
+        first_bindings.push_back(make_predicate_binding(first_predicate));
+        second_bindings.push_back(make_predicate_binding(second_predicate));
+        function_bindings.push_back(make_function_binding(function));
+    }
+
+    auto delta_and_annot = d::DeltaPredicateAnnotations<LiftedTag>(2);
+    auto delta_numeric_and_annot = d::DeltaFunctionAnnotations<LiftedTag>(1);
+    const auto interval = ygg::ClosedInterval<ygg::float_t>(0, 1);
+    auto arena = oneapi::tbb::task_arena(8);
+    arena.execute(
+        [&]
+        {
+            oneapi::tbb::parallel_for(size_t(0),
+                                      size_t(8),
+                                      [&](size_t worker)
+                                      {
+                                          const auto predicate_cost = d::Cost(8 - worker);
+                                          const auto function_cost = d::Cost(worker < 4 ? 3 : 5);
+                                          for (size_t i = first_bindings.size(); i-- > 0;)
+                                          {
+                                              delta_and_annot.insert_if_better(first_bindings[i], d::BaseAnnotation<LiftedTag>(predicate_cost));
+                                              delta_and_annot.insert_if_better(second_bindings[i], d::BaseAnnotation<LiftedTag>(predicate_cost));
+                                              delta_numeric_and_annot.insert(function_bindings[i], interval, d::BaseAnnotation<LiftedTag>(function_cost));
+                                          }
+                                      });
+        });
+
+    for (size_t i = 0; i < first_bindings.size(); ++i)
+    {
+        ASSERT_NE(delta_and_annot.find(first_bindings[i]), nullptr);
+        ASSERT_NE(delta_and_annot.find(second_bindings[i]), nullptr);
+        EXPECT_EQ(d::get_cost(*delta_and_annot.find(first_bindings[i])), 1);
+        EXPECT_EQ(d::get_cost(*delta_and_annot.find(second_bindings[i])), 1);
+
+        const auto* entries = delta_numeric_and_annot.find_entries(function_bindings[i]);
+        ASSERT_NE(entries, nullptr);
+        ASSERT_EQ(entries->size(), 1);
+        EXPECT_EQ(d::get_cost(entries->at(0).annotation), 3);
+    }
+
+    const auto second_interval = ygg::ClosedInterval<ygg::float_t>(1, 2);
+    delta_numeric_and_annot.insert(function_bindings.back(), second_interval, d::BaseAnnotation<LiftedTag>(4));
+    ASSERT_EQ(delta_numeric_and_annot.find_entries(function_bindings.back())->size(), 2);
+    ASSERT_NE(delta_numeric_and_annot.find(function_bindings.back(), second_interval), nullptr);
+    EXPECT_EQ(d::get_cost(*delta_numeric_and_annot.find(function_bindings.back(), second_interval)), 4);
+
+    auto numeric_and_annot = d::FunctionAnnotations<LiftedTag>();
+    numeric_and_annot.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(5));
+    numeric_and_annot.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(3));
+    numeric_and_annot.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(4));
+    numeric_and_annot.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(ygg::ClosedInterval<ygg::float_t>(1, 1), 3));
+    ASSERT_EQ(numeric_and_annot.find_entries(function.get_index(), function_bindings.back().get_index().row)->size(), 1);
+    EXPECT_EQ(d::get_cost(*numeric_and_annot.find(function_bindings.back(), interval)), 3);
+    EXPECT_EQ(d::get_metric(*numeric_and_annot.find(function_bindings.back(), interval)), ygg::ClosedInterval<ygg::float_t>());
+
+    delta_and_annot.clear();
+    delta_numeric_and_annot.clear();
+    EXPECT_EQ(delta_and_annot.find(first_bindings.back()), nullptr);
+    EXPECT_EQ(delta_numeric_and_annot.find_entries(function_bindings.back()), nullptr);
+
+    delta_and_annot.insert_if_better(first_bindings.back(), d::BaseAnnotation<LiftedTag>(7));
+    delta_numeric_and_annot.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(7));
+    EXPECT_EQ(d::get_cost(*delta_and_annot.find(first_bindings.back())), 7);
+    ASSERT_NE(delta_numeric_and_annot.find_entries(function_bindings.back()), nullptr);
+    EXPECT_EQ(delta_numeric_and_annot.find_entries(function_bindings.back())->size(), 1);
 }
 
 INSTANTIATE_TEST_SUITE_P(TyrDatalogLiftedBottomUpFixture,

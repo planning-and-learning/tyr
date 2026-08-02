@@ -32,7 +32,6 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/core/types.hpp>
 
 namespace tyr::datalog
@@ -41,10 +40,16 @@ namespace tyr::datalog
 template<::tyr::formalism::RelationKind R>
 struct GroundRuleDependencies
 {
-    ygg::UnorderedMap<::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag>, std::vector<::tyr::formalism::datalog::GroundRuleView<R>>>
-        fluent_precondition_to_rules;
-    ygg::UnorderedMap<::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag>, std::vector<::tyr::formalism::datalog::GroundRuleView<R>>>
-        fluent_function_term_to_rules;
+    using Rules = std::vector<::tyr::formalism::datalog::GroundRuleView<R>>;
+
+    DenseRelationMap<::tyr::formalism::PredicateTag, Rules> fluent_precondition_to_rules;
+    DenseRelationMap<::tyr::formalism::FunctionTag, Rules> fluent_function_term_to_rules;
+
+    GroundRuleDependencies(size_t num_predicates, size_t num_functions) :
+        fluent_precondition_to_rules(num_predicates),
+        fluent_function_term_to_rules(num_functions)
+    {
+    }
 };
 
 template<>
@@ -71,8 +76,8 @@ struct ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>
     FactsWorkspace<GroundTag> facts;
     OrAP or_ap;
     AndAP and_ap;
-    SelectedPredicateAnnotations<GroundTag> and_annot;
-    SelectedFunctionAnnotations<GroundTag> numeric_and_annot;
+    PredicateAnnotations<GroundTag> and_annot;
+    FunctionAnnotations<GroundTag> numeric_and_annot;
     TP tp;
     CP cost_policy;
     RuleWorkspace<GroundTag, ::tyr::formalism::PredicateTag> predicate_rules;
@@ -91,13 +96,15 @@ struct ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>
               cws.program.get_context()),
         or_ap(std::move(or_ap_)),
         and_ap(std::move(and_ap_)),
-        and_annot(),
-        numeric_and_annot(),
+        and_annot(cws.program.template get_predicates<::tyr::formalism::FluentTag>().size()),
+        numeric_and_annot(cws.program.template get_functions<::tyr::formalism::FluentTag>().size()),
         tp(std::move(tp_)),
         cost_policy(std::move(cost_policy_)),
         predicate_rules(cws.program),
         function_rules(cws.program)
     {
+        if constexpr (AndAP::records_propositional_achievers)
+            and_ap.initialize(cws.program.template get_predicates<::tyr::formalism::FluentTag>().size());
     }
 
     explicit ProgramWorkspace(Program<GroundTag>& program, OrAP or_ap_ = OrAP(), AndAP and_ap_ = AndAP(), TP tp_ = TP(), CP cost_policy_ = CP());

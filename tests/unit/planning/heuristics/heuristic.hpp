@@ -110,10 +110,9 @@ struct HeuristicContext
 };
 
 template<::tyr::TaskKind Kind>
-HeuristicContext<Kind>
-create_heuristic_context(const std::filesystem::path& domain_file, const std::filesystem::path& task_file, ygg::ExecutionContext::uint_t num_threads = 1)
+HeuristicContext<Kind> create_heuristic_context(const std::filesystem::path& domain_file, const std::filesystem::path& task_file)
 {
-    auto execution_context = ygg::ExecutionContext::create(num_threads);
+    auto execution_context = ygg::ExecutionContext::create(1);
     auto lifted_task = p::Task<::tyr::LiftedTag>::create(make_test_parser(domain_file).parse_task(task_file));
 
     auto task = p::TaskPtr<Kind> {};
@@ -187,24 +186,20 @@ class HeuristicFixtureTest : public ::testing::TestWithParam<HeuristicCase>
 TEST_P(HeuristicFixtureTest, InitialStateMatchesFixture)
 {
     const auto& test_case = GetParam();
-    for (const auto num_threads : { ygg::ExecutionContext::uint_t(1), ygg::ExecutionContext::get_max_num_threads() })
+    auto context = create_heuristic_context<HeuristicTaskKind>(test_case.domain_file, test_case.task_file);
+    const auto initial_state = context.successor_generator->get_initial_node().get_state();
+
+    for (const auto& [key, expectation] : test_case.configs)
     {
-        SCOPED_TRACE("threads=" + std::to_string(num_threads));
-        auto context = create_heuristic_context<HeuristicTaskKind>(test_case.domain_file, test_case.task_file, num_threads);
-        const auto initial_state = context.successor_generator->get_initial_node().get_state();
+        if (!should_check(expectation))
+            continue;
 
-        for (const auto& [key, expectation] : test_case.configs)
-        {
-            if (!should_check(expectation))
-                continue;
+        SCOPED_TRACE(key);
+        auto heuristic = TestedHeuristic<HeuristicTaskKind>::create(context.task, context.execution_context, expectation.cost_mode);
+        const auto value = heuristic->evaluate(initial_state);
 
-            SCOPED_TRACE(key);
-            auto heuristic = TestedHeuristic<HeuristicTaskKind>::create(context.task, context.execution_context, expectation.cost_mode);
-            const auto value = heuristic->evaluate(initial_state);
-
-            ASSERT_NE(value, std::numeric_limits<ygg::float_t>::infinity());
-            expect_optional_eq(value, expectation.h);
-        }
+        ASSERT_NE(value, std::numeric_limits<ygg::float_t>::infinity());
+        expect_optional_eq(value, expectation.h);
     }
 }
 

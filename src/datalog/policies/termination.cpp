@@ -52,8 +52,8 @@ bool TerminationPolicy<Kind, AggregationFunction>::check(const FactSets& fact_se
 
 template<TaskKind Kind, typename AggregationFunction>
 Cost TerminationPolicy<Kind, AggregationFunction>::get_total_cost(const FactSets&,
-                                                                  const SelectedPredicateAnnotations<Kind>& and_annot,
-                                                                  const SelectedFunctionAnnotations<Kind>&,
+                                                                  const PredicateAnnotations<Kind>& and_annot,
+                                                                  const FunctionAnnotations<Kind>&,
                                                                   const NumericSupportSelector<Kind>& numeric_support_selector) const noexcept
 {
     if (!goals)

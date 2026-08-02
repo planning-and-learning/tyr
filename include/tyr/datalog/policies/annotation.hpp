@@ -30,17 +30,17 @@ namespace tyr::datalog
 /// Two overloads rather than one container template: solve-level annotations are dense, rule-level
 /// delta annotations are sparse, and the head type follows from the tag.
 template<TaskKind Kind>
-Cost fetch_annotation_cost(typename SelectedPredicateAnnotations<Kind>::Key key, const SelectedPredicateAnnotations<Kind>& annotations)
+Cost fetch_annotation_cost(typename PredicateAnnotations<Kind>::Key key, const PredicateAnnotations<Kind>& and_annot)
 {
-    if (const auto* annotation = annotations.find(key))
+    if (const auto* annotation = and_annot.find(key))
         return get_cost(*annotation);
     return std::numeric_limits<Cost>::max();
 }
 
 template<TaskKind Kind>
-Cost fetch_annotation_cost(typename DeltaPredicateAnnotations<Kind>::Key key, const DeltaPredicateAnnotations<Kind>& annotations)
+Cost fetch_annotation_cost(typename DeltaPredicateAnnotations<Kind>::Key key, const DeltaPredicateAnnotations<Kind>& delta_and_annot)
 {
-    if (const auto* annotation = annotations.find(key))
+    if (const auto* annotation = delta_and_annot.find(key))
         return get_cost(*annotation);
     return std::numeric_limits<Cost>::max();
 }
@@ -61,45 +61,42 @@ bool witness_wins_tie(const WitnessAnnotation<Kind, R>& witness, const Annotatio
 }
 
 template<TaskKind Kind>
-const Annotation<Kind>* select_incumbent(typename SelectedPredicateAnnotations<Kind>::Key head,
+const Annotation<Kind>* select_incumbent(typename PredicateAnnotations<Kind>::Key head,
                                          Cost best_global_cost,
                                          Cost best_local_cost,
-                                         const SelectedPredicateAnnotations<Kind>& program_and_annot,
+                                         const PredicateAnnotations<Kind>& and_annot,
                                          const DeltaPredicateAnnotations<Kind>& delta_and_annot)
 {
-    return best_local_cost <= best_global_cost ? delta_and_annot.find(head) : program_and_annot.find(head);
+    return best_local_cost <= best_global_cost ? delta_and_annot.find(head) : and_annot.find(head);
 }
 
 template<TaskKind Kind>
 class NoOrAnnotationPolicy
 {
 public:
-    using PredicateHead = PredicateAnnotationHeadT<Kind>;
-    using FunctionHead = FunctionAnnotationHeadT<Kind>;
+    using PredicateHead = PredicateAnnotationHead<Kind>;
+    using FunctionHead = FunctionAnnotationHead<Kind>;
 
-    void initialize_annotation(PredicateHead, SelectedPredicateAnnotations<Kind>&) const noexcept {}
-    void initialize_annotation(FunctionHead, ygg::ClosedInterval<ygg::float_t>, SelectedFunctionAnnotations<Kind>&) const noexcept {}
+    void initialize_annotation(PredicateHead, PredicateAnnotations<Kind>&) const noexcept {}
+    void initialize_annotation(FunctionHead, ygg::ClosedInterval<ygg::float_t>, FunctionAnnotations<Kind>&) const noexcept {}
     template<typename Head>
-    void initialize_annotation(Head, SelectedPredicateAnnotations<Kind>&) const noexcept
+    void initialize_annotation(Head, PredicateAnnotations<Kind>&) const noexcept
     {
     }
     template<typename Head>
-    void initialize_annotation(Head, ygg::ClosedInterval<ygg::float_t>, SelectedFunctionAnnotations<Kind>&) const noexcept
+    void initialize_annotation(Head, ygg::ClosedInterval<ygg::float_t>, FunctionAnnotations<Kind>&) const noexcept
     {
     }
 
-    CostUpdate<Kind> update_annotation(PredicateHead, const DeltaPredicateAnnotations<Kind>&, SelectedPredicateAnnotations<Kind>&) const noexcept
-    {
-        return {};
-    }
+    CostUpdate<Kind> update_annotation(PredicateHead, const DeltaPredicateAnnotations<Kind>&, PredicateAnnotations<Kind>&) const noexcept { return {}; }
 };
 
 template<TaskKind Kind>
 class NoAndAnnotationPolicy
 {
 public:
-    using PredicateHead = PredicateAnnotationHeadT<Kind>;
-    using FunctionHead = FunctionAnnotationHeadT<Kind>;
+    using PredicateHead = PredicateAnnotationHead<Kind>;
+    using FunctionHead = FunctionAnnotationHead<Kind>;
 
     static constexpr bool records_propositional_achievers = false;
 
@@ -107,11 +104,7 @@ public:
 
     void record_achiever(PredicateHead, const AndAnnotationContext<Kind, ::tyr::formalism::PredicateTag>&) const noexcept {}
 
-    void update_annotation(PredicateHead,
-                           const AndAnnotationContext<Kind, ::tyr::formalism::PredicateTag>&,
-                           DeltaPredicateAnnotations<Kind>&) const noexcept
-    {
-    }
+    void update_annotation(PredicateHead, const AndAnnotationContext<Kind, ::tyr::formalism::PredicateTag>&, DeltaPredicateAnnotations<Kind>&) const noexcept {}
 
     void update_annotation(FunctionHead,
                            ygg::ClosedInterval<ygg::float_t>,

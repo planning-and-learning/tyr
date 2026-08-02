@@ -26,15 +26,13 @@ namespace tyr::datalog
 {
 namespace
 {
-template<::tyr::formalism::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP>
-void initialize_rule_workspaces(const ConstProgramWorkspace<LiftedTag>& const_workspace,
-                                const AndAP& and_ap,
-                                std::vector<std::unique_ptr<typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>>>& workspaces)
+template<::tyr::formalism::RelationKind R>
+void initialize_rule_workspaces(const ConstProgramWorkspace<LiftedTag>& const_workspace, std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, R>>>& workspaces)
 {
     const auto& const_workspaces = const_workspace.template get_rules<R>();
     workspaces.reserve(const_workspaces.size());
     for (const auto& workspace : const_workspaces)
-        workspaces.emplace_back(workspace ? std::make_unique<typename RuleWorkspace<LiftedTag, R>::template Instance<AndAP>>(*workspace, and_ap) : nullptr);
+        workspaces.emplace_back(workspace ? std::make_unique<RuleWorkspace<LiftedTag, R>>(*workspace) : nullptr);
 }
 
 template<::tyr::formalism::RelationKind R>
@@ -74,9 +72,12 @@ ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>::ProgramWorkspace(const Program
           program.get_program().get_atoms<::tyr::formalism::FluentTag>(),
           program.get_program().get_fterm_values<::tyr::formalism::FluentTag>(),
           workspace_repository),
-    or_ap(or_ap),
-    and_annot(),
-    numeric_and_annot(),
+    and_ap(std::move(and_ap)),
+    or_ap(std::move(or_ap)),
+    and_annot(program.get_program().get_predicates<::tyr::formalism::FluentTag>().size()),
+    numeric_and_annot(program.get_program().get_functions<::tyr::formalism::FluentTag>().size()),
+    delta_and_annot(program.get_program().get_predicates<::tyr::formalism::FluentTag>().size()),
+    delta_numeric_and_annot(program.get_program().get_functions<::tyr::formalism::FluentTag>().size()),
     numeric_support_selector(),
     tp(tp),
     cost_policy(std::move(cost_policy)),
@@ -92,8 +93,11 @@ ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>::ProgramWorkspace(const Program
     cost_buckets(),
     statistics()
 {
-    initialize_rule_workspaces<::tyr::formalism::PredicateTag>(const_workspace, and_ap, predicate_rules);
-    initialize_rule_workspaces<::tyr::formalism::FunctionTag>(const_workspace, and_ap, function_rules);
+    if constexpr (AndAP::records_propositional_achievers)
+        this->and_ap.initialize(program.get_program().get_predicates<::tyr::formalism::FluentTag>().size());
+
+    initialize_rule_workspaces<::tyr::formalism::PredicateTag>(const_workspace, predicate_rules);
+    initialize_rule_workspaces<::tyr::formalism::FunctionTag>(const_workspace, function_rules);
 }
 
 template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
@@ -117,6 +121,9 @@ void ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>::reset_evaluation()
     numeric_support_selector.reset();
     and_annot.clear();
     numeric_and_annot.clear();
+    delta_and_annot.clear();
+    delta_numeric_and_annot.clear();
+    and_ap.clear_achievers();
     facts.reset();
     workspace_repository.clear();
 }
