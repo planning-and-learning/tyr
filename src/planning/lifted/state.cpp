@@ -41,7 +41,17 @@ void LiftedStateBuilder::set(ygg::Index<planning::State<::tyr::LiftedTag>> index
 void LiftedStateBuilder::set(ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact)
 {
     assert(ygg::uint_t(fact.value) < 2);  // can only handle binary using bitsets
-    ygg::set(ygg::uint_t(fact.variable), bool(ygg::uint_t(fact.value)), m_fact_storage.indices);
+    const auto index = ygg::uint_t(fact.variable);
+    if (fact.value != ::tyr::formalism::planning::FDRValue::none())
+    {
+        ygg::set(index, true, m_fact_storage.indices);
+    }
+    else if (index < m_fact_storage.indices.size())
+    {
+        m_fact_storage.indices.reset(index);
+        if (index + 1 == m_fact_storage.indices.size())
+            ygg::trim_trailing_zeros(m_fact_storage.indices);
+    }
 }
 
 ygg::float_t LiftedStateBuilder::get(ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>> index) const
@@ -51,7 +61,10 @@ ygg::float_t LiftedStateBuilder::get(ygg::Index<::tyr::formalism::planning::Grou
 
 void LiftedStateBuilder::set(ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>> index, ygg::float_t value)
 {
-    ygg::set(ygg::uint_t(index), value, m_numeric_storage.values, std::numeric_limits<ygg::float_t>::quiet_NaN());
+    ygg::set(ygg::uint_t(index),
+             ygg::FloatTolerance<ygg::float_t>::canonicalize(value),
+             m_numeric_storage.values,
+             std::numeric_limits<ygg::float_t>::quiet_NaN());
 }
 
 bool LiftedStateBuilder::test(ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> index) const

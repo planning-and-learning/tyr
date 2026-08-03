@@ -23,6 +23,7 @@
 #include "tyr/planning/state_storage/tags.hpp"
 
 #include <boost/dynamic_bitset.hpp>
+#include <tuple>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
@@ -32,12 +33,16 @@ template<>
 struct AtomUnpackedStorage<GroundTag>
 {
     boost::dynamic_bitset<> indices;
+
+    auto identifying_members() const noexcept { return std::tie(indices); }
 };
 
 template<>
 struct FactUnpackedStorage<GroundTag>
 {
     std::vector<ygg::uint_t> values;
+
+    auto identifying_members() const noexcept { return std::tie(values); }
 };
 
 }

@@ -19,6 +19,7 @@
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/planning.hpp"
 
+#include <concepts>
 #include <filesystem>
 #include <future>
 #include <gtest/gtest.h>
@@ -87,9 +88,23 @@ void expect_state_routing(const p::TaskPtr<Kind>& task)
     second_numeric->set(numeric_index, second_value);
     EXPECT_EQ(dist_hash.hash(*first_numeric), dist_hash.hash(*second_numeric));
     EXPECT_EQ(first_numeric->get(numeric_index), first_value);
-    EXPECT_EQ(second_numeric->get(numeric_index), second_value);
+    EXPECT_EQ(second_numeric->get(numeric_index), ygg::FloatTolerance<ygg::float_t>::canonicalize(second_value));
     second_numeric->set(numeric_index, ygg::float_t { 2 });
     EXPECT_NE(dist_hash.hash(*first_numeric), dist_hash.hash(*second_numeric));
+
+    if constexpr (std::same_as<Kind, ::tyr::LiftedTag>)
+    {
+        auto canonical_facts = repository->get_state_builder();
+        auto trailing_zero_facts = repository->get_state_builder();
+        const auto low_variable = ygg::Index<fp::FDRVariable<f::FluentTag>>(0);
+        const auto high_variable = ygg::Index<fp::FDRVariable<f::FluentTag>>(1000);
+        canonical_facts->set(ygg::Data<fp::FDRFact<f::FluentTag>>(low_variable, fp::FDRValue { 1 }));
+        trailing_zero_facts->set(ygg::Data<fp::FDRFact<f::FluentTag>>(low_variable, fp::FDRValue { 1 }));
+        trailing_zero_facts->set(ygg::Data<fp::FDRFact<f::FluentTag>>(high_variable, fp::FDRValue { 1 }));
+        trailing_zero_facts->set(ygg::Data<fp::FDRFact<f::FluentTag>>(high_variable, fp::FDRValue::none()));
+        EXPECT_EQ(trailing_zero_facts->get(low_variable), fp::FDRValue { 1 });
+        EXPECT_EQ(dist_hash.hash(*canonical_facts), dist_hash.hash(*trailing_zero_facts));
+    }
 
     const auto bindings = generator->get_applicable_action_bindings(initial);
     ASSERT_FALSE(bindings.empty());

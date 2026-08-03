@@ -27,17 +27,15 @@
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/successor_generator.hpp"
 
-#include <boost/dynamic_bitset.hpp>
 #include <cassert>
-#include <cmath>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <type_traits>
 #include <utility>
-#include <vector>
 #include <yggdrasil/containers/unique_object_pool.hpp>
+#include <yggdrasil/semantics/containers/dynamic_bitset_hash.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::planning
@@ -54,57 +52,6 @@ struct ZobristDistHashTag
 template<typename T>
 concept DistHashKind = std::same_as<T, RandomDistHashTag> || std::same_as<T, ZobristDistHashTag>;
 
-namespace detail
-{
-
-inline ygg::hash_t hash_numeric_state(const std::vector<ygg::float_t>& values) noexcept
-{
-    auto hash = ygg::hash_t { 0 };
-    for (size_t index = 0; index < values.size(); ++index)
-    {
-        if (std::isnan(values[index]))
-            continue;
-
-        ygg::hash_combine(hash, index);
-        ygg::hash_combine(hash, ygg::FloatTolerance<ygg::float_t>::canonicalize(values[index]));
-    }
-    return hash;
-}
-
-template<TaskKind Kind>
-struct LogicalStateHash;
-
-template<>
-struct LogicalStateHash<GroundTag>
-{
-    ygg::hash_t operator()(const ygg::Builder<State<GroundTag>>& state) const noexcept
-    {
-        auto hash = ygg::hash_t { 0x5d4f3b2a17c9e861ULL };
-        ygg::hash_combine(hash, ygg::hash_range(state.template get_atoms<::tyr::formalism::FluentTag>().values));
-        ygg::hash_combine(hash, hash_numeric_state(state.get_numeric_variables().values));
-        return hash;
-    }
-};
-
-template<>
-struct LogicalStateHash<LiftedTag>
-{
-    ygg::hash_t operator()(const ygg::Builder<State<LiftedTag>>& state) const noexcept
-    {
-        const auto& facts = state.template get_atoms<::tyr::formalism::FluentTag>().indices;
-        auto fluent_hash = static_cast<ygg::hash_t>(facts.count());
-        for (auto index = facts.find_first(); index != boost::dynamic_bitset<>::npos; index = facts.find_next(index))
-            ygg::hash_combine(fluent_hash, index);
-
-        auto hash = ygg::hash_t { 0x5d4f3b2a17c9e861ULL };
-        ygg::hash_combine(hash, fluent_hash);
-        ygg::hash_combine(hash, hash_numeric_state(state.get_numeric_variables().values));
-        return hash;
-    }
-};
-
-}
-
 template<TaskKind Kind, DistHashKind HashKind>
 class DistHash;
 
@@ -117,7 +64,8 @@ public:
     ygg::hash_t hash(const ygg::Builder<State<Kind>>& state) const noexcept
     {
         auto result = static_cast<ygg::hash_t>(m_seed);
-        ygg::hash_combine(result, detail::LogicalStateHash<Kind> {}(state));
+        ygg::hash_combine(result, state.template get_atoms<::tyr::formalism::FluentTag>());
+        ygg::hash_combine(result, state.get_numeric_variables());
         return result;
     }
 

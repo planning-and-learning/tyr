@@ -21,6 +21,7 @@
 #include "tyr/planning/task.hpp"
 
 #include <concepts>
+#include <tuple>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
 
@@ -74,6 +75,8 @@ template<TaskKind Kind>
 struct NumericUnpackedStorage
 {
     std::vector<ygg::float_t> values;
+
+    auto identifying_members() const noexcept { return std::tie(values); }
 };
 
 }

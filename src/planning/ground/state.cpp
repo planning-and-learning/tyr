@@ -57,7 +57,10 @@ ygg::float_t GroundStateBuilder::get(ygg::Index<fp::GroundFunctionTerm<f::Fluent
 
 void GroundStateBuilder::set(ygg::Index<fp::GroundFunctionTerm<f::FluentTag>> index, ygg::float_t value)
 {
-    ygg::set(ygg::uint_t(index), value, m_numeric_storage.values, std::numeric_limits<ygg::float_t>::quiet_NaN());
+    ygg::set(ygg::uint_t(index),
+             ygg::FloatTolerance<ygg::float_t>::canonicalize(value),
+             m_numeric_storage.values,
+             std::numeric_limits<ygg::float_t>::quiet_NaN());
 }
 
 bool GroundStateBuilder::test(ygg::Index<fp::GroundAtom<f::DerivedTag>> index) const
