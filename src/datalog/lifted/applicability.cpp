@@ -41,31 +41,6 @@ template bool is_applicable(::tyr::formalism::datalog::GroundLiteralListView<::t
 
 // GroundRule
 
-/**
- * is_valid_binding
- */
-
-template bool is_valid_binding(::tyr::formalism::datalog::LiteralView<::tyr::formalism::StaticTag> element,
-                               const FactSets& fact_sets,
-                               ::tyr::formalism::datalog::GrounderContext& context);
-template bool is_valid_binding(::tyr::formalism::datalog::LiteralView<::tyr::formalism::FluentTag> element,
-                               const FactSets& fact_sets,
-                               ::tyr::formalism::datalog::GrounderContext& context);
-
-template bool is_valid_binding(::tyr::formalism::datalog::LiteralListView<::tyr::formalism::StaticTag> elements,
-                               const FactSets& fact_sets,
-                               ::tyr::formalism::datalog::GrounderContext& context);
-template bool is_valid_binding(::tyr::formalism::datalog::LiteralListView<::tyr::formalism::FluentTag> elements,
-                               const FactSets& fact_sets,
-                               ::tyr::formalism::datalog::GrounderContext& context);
-
-template ygg::ClosedInterval<ygg::float_t> is_valid_binding(::tyr::formalism::datalog::NumericEffectView<::tyr::formalism::FluentTag> element,
-                                                            const FactSets& fact_sets,
-                                                            ::tyr::formalism::datalog::GrounderContext& context);
-template ygg::ClosedInterval<ygg::float_t> is_valid_binding(::tyr::formalism::datalog::NumericEffectOperatorView<::tyr::formalism::FluentTag> element,
-                                                            const FactSets& fact_sets,
-                                                            ::tyr::formalism::datalog::GrounderContext& context);
-
 }
 
 #endif

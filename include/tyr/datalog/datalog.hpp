@@ -24,6 +24,7 @@
 #include "tyr/datalog/ground/programs/program.hpp"
 #include "tyr/datalog/ground/queue.hpp"
 #include "tyr/datalog/lifted/applicability.hpp"
+#include "tyr/datalog/lifted/applicability_lifted.hpp"
 #include "tyr/datalog/lifted/assignment.hpp"
 #include "tyr/datalog/lifted/assignment_sets.hpp"
 #include "tyr/datalog/lifted/consistency_graph.hpp"

@@ -21,6 +21,7 @@
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/applicability.hpp"
+#include "tyr/datalog/lifted/applicability_lifted.hpp"
 #include "tyr/datalog/lifted/assignment_sets.hpp"
 #include "tyr/datalog/lifted/consistency_graph.hpp"
 #include "tyr/datalog/lifted/delta_kpkc.hpp"
@@ -43,8 +44,6 @@
 
 #include <algorithm>
 #include <assert.h>
-#include <fmt/ostream.h>
-#include <iostream>
 #include <memory>
 #include <oneapi/tbb/parallel_for.h>
 #include <oneapi/tbb/parallel_for_each.h>
@@ -150,10 +149,11 @@ static auto make_rule_update_input(In& in, Out& out)
 template<f::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
 std::optional<Cost> metric_effect_delta(fd::NumericEffectView<f::FluentTag> effect, const RuleUpdateInput<R, AndAP, CP>& input)
 {
+    const auto context = ApplicabilityContext { input.fact_sets, input.ground_context };
     return metric_effect_delta(
         effect.get_operator(),
-        [&] { return is_valid_binding(effect.get_fterm(), input.fact_sets, input.ground_context); },
-        [&] { return is_valid_binding(effect.get_fexpr(), input.fact_sets, input.ground_context); });
+        [&] { return evaluate(effect.get_fterm(), context); },
+        [&] { return evaluate(effect.get_fexpr(), context); });
 }
 
 static void append_numeric_supports(const std::vector<NumericSupportSelectorWorkspace<LiftedTag>::SelectionEntry>& selection,
@@ -301,7 +301,7 @@ static void insert_numeric_update(fd::NumericEffectOperatorView<f::FluentTag> he
                                   FunctionHeadIteration& head_iteration,
                                   DeltaFunctionAnnotations<LiftedTag>& delta_numeric_and_annot)
 {
-    const auto interval = is_valid_binding(head, fact_sets, input.ground_context);
+    const auto interval = evaluate(head, ApplicabilityContext { fact_sets, input.ground_context });
     if (empty(interval))
         return;
 
@@ -330,9 +330,6 @@ static void insert_numeric_update(fd::NumericEffectOperatorView<f::FluentTag> he
         head.get_variant());
 }
 
-template<f::RelationKind R>
-[[maybe_unused]] static bool ensure_applicability(fd::RuleView<R> rule, fd::GrounderContext& context, const FactSets& fact_sets);
-
 template<typename In, typename Out, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
 void insert_nullary_update(fd::AtomView<f::FluentTag> head_atom, const RuleUpdateInput<f::PredicateTag, AndAP, CP>& input, const In&, Out& out)
 {
@@ -343,7 +340,7 @@ void insert_nullary_update(fd::AtomView<f::FluentTag> head_atom, const RuleUpdat
 template<typename In, typename Out, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
 void insert_nullary_update(fd::NumericEffectOperatorView<f::FluentTag> head, const RuleUpdateInput<f::FunctionTag, AndAP, CP>& input, const In& in, Out& out)
 {
-    assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context(), in.fact_sets()));
+    assert(is_applicable(in.cws_rule().get_rule(), ApplicabilityContext { in.fact_sets(), out.ground_context() }));
     insert_numeric_update(head, in.fact_sets(), input, out.head_updates(), out.delta_numeric_and_annot());
 }
 
@@ -366,18 +363,16 @@ void generate_nullary_case(RuleExecutionContext<R, OrAP, AndAP, TP, CP>& rctx)
 
     const auto nullary_condition = in.cws_rule().get_nullary_condition();
     const auto conflicting_condition = in.cws_rule().get_rule().get_body();
+    const auto applicability_context = ApplicabilityContext { in.fact_sets(), out.ground_context() };
     auto& applicability_cache = out.applicability_cache();
 
     const auto statically_applicable = [&]()
-    {
-        return applicability_cache.static_nullary
-               && is_valid_binding(conflicting_condition.template get_literals<f::StaticTag>(), in.fact_sets(), out.ground_context());
-    };
+    { return applicability_cache.static_nullary && is_applicable(conflicting_condition.template get_literals<f::StaticTag>(), applicability_context); };
     const auto dynamically_applicable = [&]()
     {
         if (!applicability_cache.dynamic_nullary)
             applicability_cache.dynamic_nullary = is_dynamically_applicable(nullary_condition, in.fact_sets());
-        return applicability_cache.dynamic_nullary && is_valid_binding(conflicting_condition, in.fact_sets(), out.ground_context());
+        return applicability_cache.dynamic_nullary && is_applicable(conflicting_condition, applicability_context);
     };
 
     // Note: we never go through the consistency graph, and hence, have to check validity on the entire rule body.
@@ -385,33 +380,9 @@ void generate_nullary_case(RuleExecutionContext<R, OrAP, AndAP, TP, CP>& rctx)
         insert_nullary_update(in.cws_rule().get_rule().get_head(), input, in, out);
 }
 
-template<f::RelationKind R>
-[[maybe_unused]] static bool ensure_applicability(fd::RuleView<R> rule, fd::GrounderContext& context, const FactSets& fact_sets)
-{
-    const auto ground_rule = ground(rule, context).first;
-
-    const auto applicable = is_applicable(ground_rule, fact_sets);
-
-    if (!applicable)
-    {
-        std::cout << "Delta-KPKC generated false positive." << std::endl;
-        fmt::print(std::cout, "{}\n", rule);
-        fmt::print(std::cout, "{}\n", ground_rule);
-    }
-
-    return applicable;
-}
-
 [[maybe_unused]] static bool ensure_novel_binding(const ygg::IndexList<f::Object>& binding, ygg::UnorderedSet<ygg::IndexList<f::Object>>& set)
 {
-    const auto inserted = set.insert(binding).second;
-
-    if (!inserted)
-    {
-        std::cout << "Delta-KPKC generated duplicate binding." << std::endl;
-    }
-
-    return inserted;
+    return set.insert(binding).second;
 }
 
 template<typename Callback>
@@ -526,7 +497,7 @@ void process_clique_head(fd::AtomView<f::FluentTag> head_atom,
 
     if (!head)
         head = fd::ground_binding(head_atom, out.ground_context()).first;
-    assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context(), in.fact_sets()));
+    assert(is_applicable(in.cws_rule().get_rule(), ApplicabilityContext { in.fact_sets(), out.ground_context() }));
     insert_propositional_update(*head, input, out.head_updates(), out.delta_and_annot());
 }
 
@@ -545,7 +516,7 @@ void process_clique_head(fd::NumericEffectOperatorView<f::FluentTag> head,
     if (!dynamically_applicable())
         return;
 
-    assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context(), in.fact_sets()));
+    assert(is_applicable(in.cws_rule().get_rule(), ApplicabilityContext { in.fact_sets(), out.ground_context() }));
     insert_numeric_update(head, in.fact_sets(), input, out.head_updates(), out.delta_numeric_and_annot());
 }
 
@@ -562,24 +533,22 @@ void process_clique(RuleWorkerExecutionContext<R, OrAP, AndAP, TP, CP>& wrctx, s
 
     create_general_binding(clique, in.cws_rule().get_static_consistency_graph(), out.ground_context().binding);
 
-    assert(!require_novel_binding || ensure_novel_binding(out.ground_context().binding, out.seen_bindings()));
+    assert(!require_novel_binding || ensure_novel_binding(out.ground_context().binding, out.seen_bindings()) && "Delta-KPKC generated duplicate binding.");
 
     ++out.statistics().num_generated_rules;
 
     const auto nullary_condition = in.cws_rule().get_nullary_condition();
     const auto conflicting_condition = in.cws_rule().get_conflicting_overapproximation_rule().get_body();
+    const auto applicability_context = ApplicabilityContext { in.fact_sets(), out.ground_context() };
     auto& applicability_cache = out.applicability_cache();
 
     const auto statically_applicable = [&]()
-    {
-        return applicability_cache.static_nullary
-               && is_valid_binding(conflicting_condition.template get_literals<f::StaticTag>(), in.fact_sets(), out.ground_context());
-    };
+    { return applicability_cache.static_nullary && is_applicable(conflicting_condition.template get_literals<f::StaticTag>(), applicability_context); };
     const auto dynamically_applicable = [&]()
     {
         if (!applicability_cache.dynamic_nullary)
             applicability_cache.dynamic_nullary = is_dynamically_applicable(nullary_condition, in.fact_sets());
-        return applicability_cache.dynamic_nullary && is_valid_binding(conflicting_condition, in.fact_sets(), out.ground_context());
+        return applicability_cache.dynamic_nullary && is_applicable(conflicting_condition, applicability_context);
     };
 
     if (!statically_applicable())
@@ -639,12 +608,13 @@ void process_pending_rule_bindings(RuleExecutionContext<f::PredicateTag, OrAP, A
         const auto input = make_rule_update_input<f::PredicateTag>(in, out);
         const auto nullary_condition = in.cws_rule().get_nullary_condition();
         const auto conflicting_condition = in.cws_rule().get_conflicting_overapproximation_rule().get_body();
+        const auto applicability_context = ApplicabilityContext { in.fact_sets(), out.ground_context() };
         auto& applicability_cache = out.applicability_cache();
         const auto dynamically_applicable = [&]()
         {
             if (!applicability_cache.dynamic_nullary)
                 applicability_cache.dynamic_nullary = is_dynamically_applicable(nullary_condition, in.fact_sets());
-            return applicability_cache.dynamic_nullary && is_valid_binding(conflicting_condition, in.fact_sets(), out.ground_context());
+            return applicability_cache.dynamic_nullary && is_applicable(conflicting_condition, applicability_context);
         };
 
         auto& pending = out.pending_rule_bindings();
@@ -656,7 +626,7 @@ void process_pending_rule_bindings(RuleExecutionContext<f::PredicateTag, OrAP, A
                           for (const auto object : pending_binding.get_objects())
                               out.ground_context().binding.push_back(object.get_index());
 
-                          assert(is_valid_binding(conflicting_condition.template get_literals<f::StaticTag>(), in.fact_sets(), out.ground_context()));
+                          assert(is_applicable(conflicting_condition.template get_literals<f::StaticTag>(), applicability_context));
 
                           auto head = fd::try_ground_binding(in.cws_rule().get_rule().get_head(), out.ground_context());
                           if (head && in.fact_sets().template get<f::FluentTag>().predicate.contains(*head))
@@ -666,7 +636,7 @@ void process_pending_rule_bindings(RuleExecutionContext<f::PredicateTag, OrAP, A
                                   if (!dynamically_applicable())
                                       return false;
 
-                                  assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context(), in.fact_sets()));
+                                  assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
                                   record_propositional_achiever(*head, input);
                               }
                               return true;
@@ -677,7 +647,7 @@ void process_pending_rule_bindings(RuleExecutionContext<f::PredicateTag, OrAP, A
 
                           if (!head)
                               head = fd::ground_binding(in.cws_rule().get_rule().get_head(), out.ground_context()).first;
-                          assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context(), in.fact_sets()));
+                          assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
                           insert_propositional_update(*head, input, out.head_updates(), out.delta_and_annot());
                           return true;
                       });

@@ -19,25 +19,16 @@
 #define TYR_DATALOG_APPLICABILITY_HPP_
 
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/datalog/numeric_utils.hpp"
 #include "tyr/formalism/arithmetic_operator_utils.hpp"
 #include "tyr/formalism/boolean_operator_utils.hpp"
-#include "tyr/formalism/datalog/builder.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/grounder.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/declarations.hpp"
 
 #include <algorithm>
-#include <concepts>
 #include <iterator>
-#include <limits>
 #include <numeric>
 #include <stdexcept>
-#include <type_traits>
-#include <vector>
-#include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 
 namespace tyr::datalog
@@ -87,64 +78,6 @@ bool is_applicable(::tyr::formalism::datalog::GroundConjunctiveConditionView ele
 
 template<::tyr::formalism::RelationKind R>
 bool is_applicable(::tyr::formalism::datalog::GroundRuleView<R> element, const FactSets& fact_sets);
-
-/**
- * is_valid_binding
- */
-
-ygg::ClosedInterval<ygg::float_t> is_valid_binding(ygg::float_t element, const FactSets&, ::tyr::formalism::datalog::GrounderContext&);
-
-ygg::ClosedInterval<ygg::float_t>
-is_valid_binding(::tyr::formalism::datalog::LiftedUnaryOperatorView element, const FactSets& fact_sets, ::tyr::formalism::datalog::GrounderContext& context);
-
-ygg::ClosedInterval<ygg::float_t> is_valid_binding(::tyr::formalism::datalog::LiftedBinaryOperatorView<::tyr::formalism::ArithmeticOperatorKind> element,
-                                                   const FactSets& fact_sets,
-                                                   ::tyr::formalism::datalog::GrounderContext& context);
-
-bool is_valid_binding(::tyr::formalism::datalog::LiftedBinaryOperatorView<::tyr::formalism::BooleanOperatorKind> element,
-                      const FactSets& fact_sets,
-                      ::tyr::formalism::datalog::GrounderContext& context);
-
-ygg::ClosedInterval<ygg::float_t>
-is_valid_binding(::tyr::formalism::datalog::LiftedMultiOperatorView element, const FactSets& fact_sets, ::tyr::formalism::datalog::GrounderContext& context);
-
-template<::tyr::formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t>
-is_valid_binding(::tyr::formalism::datalog::FunctionTermView<T> element, const FactSets& fact_sets, ::tyr::formalism::datalog::GrounderContext& context);
-
-ygg::ClosedInterval<ygg::float_t>
-is_valid_binding(::tyr::formalism::datalog::FunctionExpressionView element, const FactSets& fact_sets, ::tyr::formalism::datalog::GrounderContext& context);
-
-ygg::ClosedInterval<ygg::float_t> is_valid_binding(::tyr::formalism::datalog::LiftedArithmeticOperatorView element,
-                                                   const FactSets& fact_sets,
-                                                   ::tyr::formalism::datalog::GrounderContext& context);
-
-bool is_valid_binding(::tyr::formalism::datalog::LiftedBooleanOperatorView element,
-                      const FactSets& fact_sets,
-                      ::tyr::formalism::datalog::GrounderContext& context);
-
-template<::tyr::formalism::FactKind T>
-bool is_valid_binding(::tyr::formalism::datalog::LiteralView<T> element, const FactSets& fact_sets, ::tyr::formalism::datalog::GrounderContext& context);
-
-template<::tyr::formalism::FactKind T>
-bool is_valid_binding(::tyr::formalism::datalog::LiteralListView<T> elements, const FactSets& fact_sets, ::tyr::formalism::datalog::GrounderContext& context);
-
-bool is_valid_binding(::tyr::formalism::datalog::LiftedBooleanOperatorListView elements,
-                      const FactSets& fact_sets,
-                      ::tyr::formalism::datalog::GrounderContext& context);
-
-bool is_valid_binding(::tyr::formalism::datalog::ConjunctiveConditionView element,
-                      const FactSets& fact_sets,
-                      ::tyr::formalism::datalog::GrounderContext& context);
-
-template<::tyr::formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t>
-is_valid_binding(::tyr::formalism::datalog::NumericEffectView<T> element, const FactSets& fact_sets, ::tyr::formalism::datalog::GrounderContext& context);
-
-template<::tyr::formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t> is_valid_binding(::tyr::formalism::datalog::NumericEffectOperatorView<T> element,
-                                                   const FactSets& fact_sets,
-                                                   ::tyr::formalism::datalog::GrounderContext& context);
 
 /**
  * evaluate
@@ -252,143 +185,6 @@ inline bool is_applicable(::tyr::formalism::datalog::GroundRuleView<R> element, 
     return is_applicable(element.get_body(), fact_sets);
 }
 
-/**
- * is_valid_binding
- */
-
-inline ygg::ClosedInterval<ygg::float_t> is_valid_binding(ygg::float_t element, const FactSets&, ::tyr::formalism::datalog::GrounderContext&)
-{
-    return ygg::ClosedInterval<ygg::float_t>(element, element);
-}
-
-inline ygg::ClosedInterval<ygg::float_t>
-is_valid_binding(::tyr::formalism::datalog::LiftedUnaryOperatorView element, const FactSets& fact_sets, ::tyr::formalism::datalog::GrounderContext& context)
-{
-    return ::tyr::formalism::apply(element.get_operator(), is_valid_binding(element.get_arg(), fact_sets, context));
-}
-
-inline ygg::ClosedInterval<ygg::float_t> is_valid_binding(::tyr::formalism::datalog::LiftedBinaryOperatorView<::tyr::formalism::ArithmeticOperatorKind> element,
-                                                          const FactSets& fact_sets,
-                                                          ::tyr::formalism::datalog::GrounderContext& context)
-{
-    // Sequence the operand evaluations: grounding mutates the context, and function argument
-    // evaluation order is unspecified (gcc and clang disagree), which would make repository index
-    // assignment compiler-dependent. rhs-first preserves the historical order the fixtures were
-    // generated with.
-    const auto rhs = is_valid_binding(element.get_rhs(), fact_sets, context);
-    const auto lhs = is_valid_binding(element.get_lhs(), fact_sets, context);
-    return ::tyr::formalism::apply(element.get_operator(), lhs, rhs);
-}
-
-inline bool is_valid_binding(::tyr::formalism::datalog::LiftedBinaryOperatorView<::tyr::formalism::BooleanOperatorKind> element,
-                             const FactSets& fact_sets,
-                             ::tyr::formalism::datalog::GrounderContext& context)
-{
-    // Sequenced for the same reason as the arithmetic binary operator above.
-    const auto rhs = is_valid_binding(element.get_rhs(), fact_sets, context);
-    const auto lhs = is_valid_binding(element.get_lhs(), fact_sets, context);
-    return ::tyr::formalism::apply_existential(element.get_operator(), lhs, rhs);
-}
-
-inline ygg::ClosedInterval<ygg::float_t>
-is_valid_binding(::tyr::formalism::datalog::LiftedMultiOperatorView element, const FactSets& fact_sets, ::tyr::formalism::datalog::GrounderContext& context)
-{
-    const auto child_fexprs = element.get_args();
-
-    return std::accumulate(std::next(child_fexprs.begin()),  // Start from the second expression
-                           child_fexprs.end(),
-                           is_valid_binding(child_fexprs.front(), fact_sets, context),
-                           [&](const auto& value, const auto& child_expr)
-                           { return ::tyr::formalism::apply(element.get_operator(), value, is_valid_binding(child_expr, fact_sets, context)); });
-}
-
-template<::tyr::formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t>
-is_valid_binding(::tyr::formalism::datalog::FunctionTermView<T> element, const FactSets& fact_sets, ::tyr::formalism::datalog::GrounderContext& context)
-{
-    auto binding_or_nullopt = try_ground_binding(element, context);
-    if (!binding_or_nullopt)
-        return {};
-
-    return fact_sets.template get<T>().function[*binding_or_nullopt];
-}
-
-inline ygg::ClosedInterval<ygg::float_t>
-is_valid_binding(::tyr::formalism::datalog::FunctionExpressionView element, const FactSets& fact_sets, ::tyr::formalism::datalog::GrounderContext& context)
-{
-    return visit([&](auto&& arg) { return is_valid_binding(arg, fact_sets, context); }, element.get_variant());
-}
-
-inline ygg::ClosedInterval<ygg::float_t> is_valid_binding(::tyr::formalism::datalog::LiftedArithmeticOperatorView element,
-                                                          const FactSets& fact_sets,
-                                                          ::tyr::formalism::datalog::GrounderContext& context)
-{
-    return visit([&](auto&& arg) { return is_valid_binding(arg, fact_sets, context); }, element.get_variant());
-}
-
-inline bool
-is_valid_binding(::tyr::formalism::datalog::LiftedBooleanOperatorView element, const FactSets& fact_sets, ::tyr::formalism::datalog::GrounderContext& context)
-{
-    return visit([&](auto&& arg) { return is_valid_binding(arg, fact_sets, context); }, element.get_variant());
-}
-
-template<::tyr::formalism::FactKind T>
-bool is_valid_binding(::tyr::formalism::datalog::LiteralView<T> element, const FactSets& fact_sets, ::tyr::formalism::datalog::GrounderContext& context)
-{
-    auto binding_or_nullopt = try_ground_binding(element.get_atom(), context);
-    if (!binding_or_nullopt)
-        return element.get_polarity() == false;
-
-    return fact_sets.template get<T>().predicate.contains(*binding_or_nullopt) == element.get_polarity();
-}
-
-template<::tyr::formalism::FactKind T>
-bool is_valid_binding(::tyr::formalism::datalog::LiteralListView<T> elements, const FactSets& fact_sets, ::tyr::formalism::datalog::GrounderContext& context)
-{
-    return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_valid_binding(arg, fact_sets, context); });
-}
-
-inline bool is_valid_binding(::tyr::formalism::datalog::LiftedBooleanOperatorListView elements,
-                             const FactSets& fact_sets,
-                             ::tyr::formalism::datalog::GrounderContext& context)
-{
-    return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_valid_binding(arg, fact_sets, context); });
-}
-
-inline bool
-is_valid_binding(::tyr::formalism::datalog::ConjunctiveConditionView element, const FactSets& fact_sets, ::tyr::formalism::datalog::GrounderContext& context)
-{
-    return is_valid_binding(element.template get_literals<::tyr::formalism::StaticTag>(), fact_sets, context)     //
-           && is_valid_binding(element.template get_literals<::tyr::formalism::FluentTag>(), fact_sets, context)  //
-           && is_valid_binding(element.get_numeric_constraints(), fact_sets, context);
-}
-
-template<::tyr::formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t>
-is_valid_binding(::tyr::formalism::datalog::NumericEffectView<T> element, const FactSets& fact_sets, ::tyr::formalism::datalog::GrounderContext& context)
-{
-    const auto rhs = is_valid_binding(element.get_fexpr(), fact_sets, context);
-    if (empty(rhs))
-        return {};
-
-    if (element.get_operator() == ::tyr::formalism::NumericEffectOperatorKind::Assign)
-        return rhs;
-
-    const auto lhs = is_valid_binding(element.get_fterm(), fact_sets, context);
-    if (empty(lhs))
-        return {};
-
-    return apply_numeric_effect(element.get_operator(), lhs, rhs);
-}
-
-template<::tyr::formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t> is_valid_binding(::tyr::formalism::datalog::NumericEffectOperatorView<T> element,
-                                                   const FactSets& fact_sets,
-                                                   ::tyr::formalism::datalog::GrounderContext& context)
-{
-    return visit([&](auto&& arg) { return is_valid_binding(arg, fact_sets, context); }, element.get_variant());
-}
-
 }
 
 #ifndef TYR_HEADER_INSTANTIATION
@@ -414,30 +210,6 @@ extern template bool is_applicable(::tyr::formalism::datalog::GroundLiteralListV
 
 // GroundRule
 
-/**
- * is_valid_binding
- */
-
-extern template bool is_valid_binding(::tyr::formalism::datalog::LiteralView<::tyr::formalism::StaticTag> element,
-                                      const FactSets& fact_sets,
-                                      ::tyr::formalism::datalog::GrounderContext& context);
-extern template bool is_valid_binding(::tyr::formalism::datalog::LiteralView<::tyr::formalism::FluentTag> element,
-                                      const FactSets& fact_sets,
-                                      ::tyr::formalism::datalog::GrounderContext& context);
-
-extern template bool is_valid_binding(::tyr::formalism::datalog::LiteralListView<::tyr::formalism::StaticTag> elements,
-                                      const FactSets& fact_sets,
-                                      ::tyr::formalism::datalog::GrounderContext& context);
-extern template bool is_valid_binding(::tyr::formalism::datalog::LiteralListView<::tyr::formalism::FluentTag> elements,
-                                      const FactSets& fact_sets,
-                                      ::tyr::formalism::datalog::GrounderContext& context);
-
-extern template ygg::ClosedInterval<ygg::float_t> is_valid_binding(::tyr::formalism::datalog::NumericEffectView<::tyr::formalism::FluentTag> element,
-                                                                   const FactSets& fact_sets,
-                                                                   ::tyr::formalism::datalog::GrounderContext& context);
-extern template ygg::ClosedInterval<ygg::float_t> is_valid_binding(::tyr::formalism::datalog::NumericEffectOperatorView<::tyr::formalism::FluentTag> element,
-                                                                   const FactSets& fact_sets,
-                                                                   ::tyr::formalism::datalog::GrounderContext& context);
 }
 
 #endif

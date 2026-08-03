@@ -90,6 +90,7 @@ add_library(
     datalog/lifted/workspaces/program.cpp
     datalog/lifted/workspaces/rule.cpp
     datalog/lifted/applicability.cpp
+    datalog/lifted/applicability_lifted.cpp
     datalog/lifted/assignment_sets.cpp
     datalog/lifted/bottom_up.cpp
     datalog/lifted/consistency_graph.cpp

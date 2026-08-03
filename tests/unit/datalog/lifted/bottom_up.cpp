@@ -325,7 +325,7 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindi
     auto context = d::ProgramExecutionContext(workspace);
     d::solve_bottom_up(context);
 
-    EXPECT_EQ(workspace.workspace_repository.size(rule.get_index()), 4);
+    EXPECT_EQ(workspace.workspace_repository.size(rule.get_index()), 1);
     EXPECT_EQ(workspace.workspace_repository.size(goal.get_index()), 1);
 }
 
