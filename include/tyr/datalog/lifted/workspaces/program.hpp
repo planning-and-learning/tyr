@@ -197,21 +197,26 @@ public:
     std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, ::tyr::formalism::PredicateTag>>> predicate_rules;
     std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, ::tyr::formalism::FunctionTag>>> function_rules;
 
-    auto& get_rules(::tyr::formalism::PredicateTag) noexcept { return predicate_rules; }
-    auto& get_rules(::tyr::formalism::FunctionTag) noexcept { return function_rules; }
-    const auto& get_rules(::tyr::formalism::PredicateTag) const noexcept { return predicate_rules; }
-    const auto& get_rules(::tyr::formalism::FunctionTag) const noexcept { return function_rules; }
-
     template<::tyr::formalism::RelationKind R>
     auto& get_rules() noexcept
     {
-        return get_rules(R {});
+        if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
+            return predicate_rules;
+        else if constexpr (std::same_as<R, ::tyr::formalism::FunctionTag>)
+            return function_rules;
+        else
+            static_assert(ygg::dependent_false<R>::value, "Missing case");
     }
 
     template<::tyr::formalism::RelationKind R>
     const auto& get_rules() const noexcept
     {
-        return get_rules(R {});
+        if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
+            return predicate_rules;
+        else if constexpr (std::same_as<R, ::tyr::formalism::FunctionTag>)
+            return function_rules;
+        else
+            static_assert(ygg::dependent_false<R>::value, "Missing case");
     }
 
     ::tyr::formalism::planning::Builder planning_builder;
@@ -243,21 +248,26 @@ struct ConstProgramWorkspace<LiftedTag>
     std::vector<std::optional<ConstRuleWorkspace<LiftedTag, ::tyr::formalism::PredicateTag>>> predicate_rules;
     std::vector<std::optional<ConstRuleWorkspace<LiftedTag, ::tyr::formalism::FunctionTag>>> function_rules;
 
-    auto& get_rules(::tyr::formalism::PredicateTag) noexcept { return predicate_rules; }
-    auto& get_rules(::tyr::formalism::FunctionTag) noexcept { return function_rules; }
-    const auto& get_rules(::tyr::formalism::PredicateTag) const noexcept { return predicate_rules; }
-    const auto& get_rules(::tyr::formalism::FunctionTag) const noexcept { return function_rules; }
-
     template<::tyr::formalism::RelationKind R>
     auto& get_rules() noexcept
     {
-        return get_rules(R {});
+        if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
+            return predicate_rules;
+        else if constexpr (std::same_as<R, ::tyr::formalism::FunctionTag>)
+            return function_rules;
+        else
+            static_assert(ygg::dependent_false<R>::value, "Missing case");
     }
 
     template<::tyr::formalism::RelationKind R>
     const auto& get_rules() const noexcept
     {
-        return get_rules(R {});
+        if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
+            return predicate_rules;
+        else if constexpr (std::same_as<R, ::tyr::formalism::FunctionTag>)
+            return function_rules;
+        else
+            static_assert(ygg::dependent_false<R>::value, "Missing case");
     }
 
     explicit ConstProgramWorkspace(Program<LiftedTag>& program);
