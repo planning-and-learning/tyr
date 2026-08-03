@@ -441,8 +441,6 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     for (const auto& set : workspace.facts.fact_sets.predicate.get_sets())
         for (const auto binding : set.get_bindings())
             predicate_bindings.push_back(binding);
-    std::sort(predicate_bindings.begin(), predicate_bindings.end(), d::canonical_binding_less<fd::PredicateBindingView<f::FluentTag>>);
-
     /**
      * Create basic structures of task
      */

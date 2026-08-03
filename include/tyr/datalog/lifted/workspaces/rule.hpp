@@ -30,7 +30,6 @@
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/object_index.hpp"
 
-#include <algorithm>
 #include <cassert>
 #include <deque>
 #include <tuple>
@@ -50,20 +49,19 @@ struct PredicateHeadIteration
 {
     using Binding = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
 
-    ygg::UnorderedSet<Binding> bindings;
-    std::vector<Binding> sorted_bindings;
+    ygg::UnorderedSet<Binding> seen_bindings;
+    std::vector<Binding> bindings;
 
     void clear() noexcept
     {
+        seen_bindings.clear();
         bindings.clear();
-        sorted_bindings.clear();
     }
 
-    const std::vector<Binding>& get_sorted_bindings()
+    void insert(Binding binding)
     {
-        sorted_bindings.assign(bindings.begin(), bindings.end());
-        std::sort(sorted_bindings.begin(), sorted_bindings.end(), canonical_binding_less<Binding>);
-        return sorted_bindings;
+        if (seen_bindings.emplace(binding).second)
+            bindings.push_back(binding);
     }
 };
 
@@ -87,30 +85,19 @@ struct FunctionHeadUpdate : ygg::comparison::Mixin<FunctionHeadUpdate>
 
 struct FunctionHeadIteration
 {
-    ygg::UnorderedSet<FunctionHeadUpdate> updates;
-    std::vector<FunctionHeadUpdate> sorted_updates;
+    ygg::UnorderedSet<FunctionHeadUpdate> seen_updates;
+    std::vector<FunctionHeadUpdate> updates;
 
     void clear() noexcept
     {
+        seen_updates.clear();
         updates.clear();
-        sorted_updates.clear();
     }
 
-    const std::vector<FunctionHeadUpdate>& get_sorted_updates()
+    void insert(FunctionHeadUpdate update)
     {
-        sorted_updates.assign(updates.begin(), updates.end());
-        std::sort(sorted_updates.begin(),
-                  sorted_updates.end(),
-                  [](const auto& lhs, const auto& rhs)
-                  {
-                      if (canonical_binding_less(lhs.binding, rhs.binding))
-                          return true;
-                      if (canonical_binding_less(rhs.binding, lhs.binding))
-                          return false;
-                      return ygg::Less<> {}(std::tuple(lower(lhs.interval), upper(lhs.interval), lhs.cost),
-                                            std::tuple(lower(rhs.interval), upper(rhs.interval), rhs.cost));
-                  });
-        return sorted_updates;
+        if (seen_updates.emplace(update).second)
+            updates.push_back(std::move(update));
     }
 };
 
@@ -185,13 +172,15 @@ struct RuleWorkspace<LiftedTag, R>
 
         void clear() noexcept;
 
+#ifndef NDEBUG
         /// In debug mode, we accumulate all bindings to verify the correctness of delta-kpkc
-        ygg::UnorderedSet<ygg::IndexList<::tyr::formalism::Object>> seen_bindings_dbg;
+        ygg::UnorderedSet<ygg::IndexList<::tyr::formalism::Object>> seen_bindings;
+#endif
 
-        ygg::UnorderedSet<::tyr::formalism::datalog::RuleBindingView<R>> pending_rule_bindings;
-        std::vector<::tyr::formalism::datalog::RuleBindingView<R>> pending_rule_binding_scratch;
-
-        const std::vector<::tyr::formalism::datalog::RuleBindingView<R>>& get_sorted_pending_rule_bindings();
+#ifndef TYR_ENABLE_SEMI_NAIVE
+        ygg::UnorderedSet<::tyr::formalism::datalog::RuleBindingView<R>> seen_pending_rule_bindings;
+#endif
+        std::vector<::tyr::formalism::datalog::RuleBindingView<R>> pending_rule_bindings;
 
         NumericSupportSelectorWorkspace<LiftedTag> numeric_support_selector_workspace;
         std::vector<NumericSupport<LiftedTag>> effect_support_scratch;
@@ -306,9 +295,13 @@ void RuleWorkspace<LiftedTag, R>::Iteration::clear() noexcept
 
 template<::tyr::formalism::RelationKind R>
 RuleWorkspace<LiftedTag, R>::Solve::Solve() :
-    seen_bindings_dbg(),
+#ifndef NDEBUG
+    seen_bindings(),
+#endif
+#ifndef TYR_ENABLE_SEMI_NAIVE
+    seen_pending_rule_bindings(),
+#endif
     pending_rule_bindings(),
-    pending_rule_binding_scratch(),
     numeric_support_selector_workspace(),
     effect_support_scratch(),
     witness_support_scratch(),
@@ -320,21 +313,17 @@ RuleWorkspace<LiftedTag, R>::Solve::Solve() :
 template<::tyr::formalism::RelationKind R>
 void RuleWorkspace<LiftedTag, R>::Solve::clear() noexcept
 {
-    seen_bindings_dbg.clear();
+#ifndef NDEBUG
+    seen_bindings.clear();
+#endif
+#ifndef TYR_ENABLE_SEMI_NAIVE
+    seen_pending_rule_bindings.clear();
+#endif
     pending_rule_bindings.clear();
-    pending_rule_binding_scratch.clear();
     numeric_support_selector_workspace.clear();
     effect_support_scratch.clear();
     witness_support_scratch.clear();
     applicability_cache.clear();
-}
-
-template<::tyr::formalism::RelationKind R>
-const std::vector<::tyr::formalism::datalog::RuleBindingView<R>>& RuleWorkspace<LiftedTag, R>::Solve::get_sorted_pending_rule_bindings()
-{
-    pending_rule_binding_scratch.assign(pending_rule_bindings.begin(), pending_rule_bindings.end());
-    std::sort(pending_rule_binding_scratch.begin(), pending_rule_binding_scratch.end(), canonical_binding_less<::tyr::formalism::datalog::RuleBindingView<R>>);
-    return pending_rule_binding_scratch;
 }
 
 template<::tyr::formalism::RelationKind R>

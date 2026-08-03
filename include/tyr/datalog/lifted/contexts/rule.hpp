@@ -110,9 +110,13 @@ public:
         auto& delta_numeric_and_annot() noexcept { return m_rctx.stratum_out().program().delta_numeric_and_annot(); }
         auto& head_updates() noexcept { return m_ws_worker.iteration.head_updates; }
 
-        auto& seen_bindings_dbg() noexcept { return m_ws_worker.solve.seen_bindings_dbg; }
+#ifndef NDEBUG
+        auto& seen_bindings() noexcept { return m_ws_worker.solve.seen_bindings; }
+#endif
+#ifndef TYR_ENABLE_SEMI_NAIVE
+        auto& seen_pending_rule_bindings() noexcept { return m_ws_worker.solve.seen_pending_rule_bindings; }
+#endif
         auto& pending_rule_bindings() noexcept { return m_ws_worker.solve.pending_rule_bindings; }
-        const auto& sorted_pending_rule_bindings() { return m_ws_worker.solve.get_sorted_pending_rule_bindings(); }
         auto& numeric_support_selector_workspace() noexcept { return m_ws_worker.solve.numeric_support_selector_workspace; }
         auto& effect_support_scratch() noexcept { return m_ws_worker.solve.effect_support_scratch; }
         auto& witness_support_scratch() noexcept { return m_ws_worker.solve.witness_support_scratch; }

@@ -289,7 +289,7 @@ static void insert_propositional_update(fd::PredicateBindingView<f::FluentTag> h
 
     input.and_ap.record_achiever(head, context);
 
-    head_iteration.bindings.insert(head);
+    head_iteration.insert(head);
 
     input.and_ap.update_annotation(head, context, delta_and_annot);
 }
@@ -325,7 +325,7 @@ static void insert_numeric_update(fd::NumericEffectOperatorView<f::FluentTag> he
 
             input.and_ap.update_annotation(head, effect_interval, context, delta_numeric_and_annot);
 
-            head_iteration.updates.emplace(head, effect_interval, input.current_cost + cost);
+            head_iteration.insert(FunctionHeadUpdate(head, effect_interval, input.current_cost + cost));
         },
         head.get_variant());
 }
@@ -513,10 +513,13 @@ void process_clique_head(fd::AtomView<f::FluentTag> head_atom,
 
     if (!dynamically_applicable())
     {
-#ifdef TYR_ENABLE_SEMI_NAIVE
         ++out.statistics().num_pending_rules;
         const auto rule_binding = fd::ground_binding(in.cws_rule().get_conflicting_overapproximation_rule(), out.ground_context()).first;
-        out.pending_rule_bindings().emplace(rule_binding);
+#ifdef TYR_ENABLE_SEMI_NAIVE
+        out.pending_rule_bindings().push_back(rule_binding);
+#else
+        if (out.seen_pending_rule_bindings().emplace(rule_binding).second)
+            out.pending_rule_bindings().push_back(rule_binding);
 #endif
         return;
     }
@@ -559,7 +562,7 @@ void process_clique(RuleWorkerExecutionContext<R, OrAP, AndAP, TP, CP>& wrctx, s
 
     create_general_binding(clique, in.cws_rule().get_static_consistency_graph(), out.ground_context().binding);
 
-    assert(!require_novel_binding || ensure_novel_binding(out.ground_context().binding, out.seen_bindings_dbg()));
+    assert(!require_novel_binding || ensure_novel_binding(out.ground_context().binding, out.seen_bindings()));
 
     ++out.statistics().num_generated_rules;
 
@@ -646,45 +649,38 @@ void process_pending_rule_bindings(RuleExecutionContext<f::PredicateTag, OrAP, A
 
         auto& pending = out.pending_rule_bindings();
         assert(pending.empty() || applicability_cache.static_nullary);
-        for (const auto pending_binding : out.sorted_pending_rule_bindings())
-        {
-            out.ground_context().binding.clear();
-            for (const auto object : pending_binding.get_objects())
-                out.ground_context().binding.push_back(object.get_index());
+        std::erase_if(pending,
+                      [&](const auto pending_binding)
+                      {
+                          out.ground_context().binding.clear();
+                          for (const auto object : pending_binding.get_objects())
+                              out.ground_context().binding.push_back(object.get_index());
 
-            assert(is_valid_binding(conflicting_condition.template get_literals<f::StaticTag>(), in.fact_sets(), out.ground_context()));
+                          assert(is_valid_binding(conflicting_condition.template get_literals<f::StaticTag>(), in.fact_sets(), out.ground_context()));
 
-            auto erase_pending = false;
-            auto head = fd::try_ground_binding(in.cws_rule().get_rule().get_head(), out.ground_context());
+                          auto head = fd::try_ground_binding(in.cws_rule().get_rule().get_head(), out.ground_context());
+                          if (head && in.fact_sets().template get<f::FluentTag>().predicate.contains(*head))
+                          {
+                              if constexpr (AndAP::records_propositional_achievers)
+                              {
+                                  if (!dynamically_applicable())
+                                      return false;
 
-            if (head && in.fact_sets().template get<f::FluentTag>().predicate.contains(*head))
-            {
-                if constexpr (AndAP::records_propositional_achievers)
-                {
-                    if (dynamically_applicable())
-                    {
-                        assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context(), in.fact_sets()));
-                        record_propositional_achiever(*head, input);
-                        erase_pending = true;
-                    }
-                }
-                else
-                {
-                    erase_pending = true;
-                }
-            }
-            else if (dynamically_applicable())
-            {
-                if (!head)
-                    head = fd::ground_binding(in.cws_rule().get_rule().get_head(), out.ground_context()).first;
-                assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context(), in.fact_sets()));
-                insert_propositional_update(*head, input, out.head_updates(), out.delta_and_annot());
-                erase_pending = true;
-            }
+                                  assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context(), in.fact_sets()));
+                                  record_propositional_achiever(*head, input);
+                              }
+                              return true;
+                          }
 
-            if (erase_pending)
-                pending.erase(pending_binding);
-        }
+                          if (!dynamically_applicable())
+                              return false;
+
+                          if (!head)
+                              head = fd::ground_binding(in.cws_rule().get_rule().get_head(), out.ground_context()).first;
+                          assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context(), in.fact_sets()));
+                          insert_propositional_update(*head, input, out.head_updates(), out.delta_and_annot());
+                          return true;
+                      });
     }
 }
 
@@ -731,13 +727,11 @@ void run_active_rules(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx)
                 worker.solve.applicability_cache.static_nullary = static_nullary;
         }
 
-#ifdef TYR_ENABLE_SEMI_NAIVE
         {
             const auto process_pending_time = ygg::StopwatchScope(rule_out.statistics().process_pending_time);
 
             process_pending_rule_bindings(rctx);
         }
-#endif
 
         {
             const auto process_generate_time = ygg::StopwatchScope(rule_out.statistics().process_generate_time);
@@ -762,7 +756,7 @@ void run_active_rules(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx)
 template<typename ProgramOut>
 void reduce_worker_heads(PredicateHeadIteration& head_iteration, ProgramOut& program_out, CostBuckets& cost_buckets)
 {
-    for (const auto head : head_iteration.get_sorted_bindings())
+    for (const auto head : head_iteration.bindings)
     {
         const auto cost_update = program_out.or_ap().update_annotation(head, program_out.delta_and_annot(), program_out.and_annot());
         cost_buckets.update(cost_update, head);
@@ -772,7 +766,7 @@ void reduce_worker_heads(PredicateHeadIteration& head_iteration, ProgramOut& pro
 template<typename ProgramOut>
 void reduce_worker_heads(FunctionHeadIteration& head_iteration, ProgramOut& program_out, CostBuckets& cost_buckets)
 {
-    for (const auto& update : head_iteration.get_sorted_updates())
+    for (const auto& update : head_iteration.updates)
     {
         if (const auto* annotation = program_out.delta_numeric_and_annot().find(update.binding, update.interval))
             program_out.numeric_and_annot().insert(update.binding, update.interval, *annotation);

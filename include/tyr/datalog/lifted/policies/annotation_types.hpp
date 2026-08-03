@@ -49,12 +49,6 @@ struct WitnessRuleKey<LiftedTag, R>
     using type = ::tyr::formalism::datalog::RuleBindingView<R>;
 };
 
-template<typename Binding>
-inline bool canonical_binding_less(Binding lhs, Binding rhs) noexcept
-{
-    return ygg::Less<> {}(lhs.get_key(), rhs.get_key());
-}
-
 template<>
 struct NumericIntervalBindingParts<LiftedTag>
 {

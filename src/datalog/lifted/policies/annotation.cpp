@@ -182,7 +182,7 @@ void AndAnnotationPolicy<LiftedTag, AggregationFunction>::update_annotation(::ty
     /// Which witness that is depends on the clique enumeration order, hence changing that order (or the
     /// rule schedule) changes the recorded witness and moves the search-statistics fixtures. That is
     /// expected, not a defect. Determinism at one worker rests on run_active_rules pinning the sorted
-    /// rule order plus the sorted consumers (get_sorted_rows/updates/pending_rule_bindings). Under
+    /// rule order while worker-local updates retain their production order. Under
     /// inner parallelism it would need deterministic key ownership per stripe, not a tie-break.
     if (best_cost <= cur_cost_lower_bound)
         return;  ///< No local or global improvement

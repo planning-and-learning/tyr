@@ -62,8 +62,6 @@ void read_derived_atoms_from_datalog_program(const AxiomEvaluatorProgram<LiftedT
             if (axiom_program.get_translation_context().d2p.fluent_to_derived_predicate.contains(binding.get_relation()))
                 derived_bindings.push_back(binding);
 
-    std::sort(derived_bindings.begin(), derived_bindings.end(), d::canonical_binding_less<fd::PredicateBindingView<f::FluentTag>>);
-
     for (const auto binding : derived_bindings)
     {
         const auto ground_atom =
