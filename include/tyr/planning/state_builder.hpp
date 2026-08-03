@@ -31,19 +31,20 @@ namespace tyr::planning
 
 template<typename T, typename Kind>
 concept StateBuilderConcept = requires(T& s,
-                                        const T& cs,
-                                        ygg::Index<State<Kind>> index,
-                                        ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> variable,
-                                        ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact,
-                                        ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>> fterm,
-                                        ygg::float_t value,
-                                        ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> atom) {
+                                       const T& cs,
+                                       ygg::Index<State<Kind>> index,
+                                       ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> variable,
+                                       ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact,
+                                       ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>> fterm,
+                                       ygg::float_t value,
+                                       ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> atom) {
     requires TaskKind<Kind>;
     typename T::TaskType;
     { s.clear() };
     { s.clear_unextended_part() };
     { s.clear_extended_part() };
     { s.assign_unextended_part(cs) };
+    { s.swap(s) } noexcept;
     { cs.get_index() } -> std::same_as<ygg::Index<State<Kind>>>;
     { s.set(index) };
     { cs.get(variable) } -> std::same_as<::tyr::formalism::planning::FDRValue>;

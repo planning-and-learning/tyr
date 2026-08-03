@@ -107,6 +107,9 @@ struct SuccessorGenerator<LiftedTag>::Impl
     template<typename Callback>
     void for_each_applicable_action_binding(const Node<LiftedTag>& node, ygg::Data<f::RelationBinding<fp::Action>>& scratch_binding, Callback&& callback);
 
+    ygg::float_t
+    generate_successor_state(const Node<LiftedTag>& node, const ygg::Data<f::RelationBinding<fp::Action>>& binding, ygg::Builder<State<LiftedTag>>& out_state);
+
     ygg::uint_t index;
     std::shared_ptr<std::atomic<ygg::uint_t>> next_index;
     std::shared_ptr<const Definition> definition;
@@ -183,6 +186,21 @@ void SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
             callback(scratch_binding);
         }
     }
+}
+
+ygg::float_t SuccessorGenerator<LiftedTag>::Impl::generate_successor_state(const Node<LiftedTag>& node,
+                                                                           const ygg::Data<f::RelationBinding<fp::Action>>& binding,
+                                                                           ygg::Builder<State<LiftedTag>>& out_state)
+{
+    evaluator.workspace.binding.clear();
+    for (const auto object : binding.objects)
+        evaluator.workspace.binding.push_back(object);
+
+    auto grounder_context = fp::GrounderContext { evaluator.workspace.planning_builder, *definition->task->get_repository(), evaluator.workspace.binding };
+    const auto state_context = StateContext<LiftedTag>(*definition->task, node.get_state().get_state_builder(), node.get_metric());
+    const auto action = ygg::make_view(binding.relation, *definition->task->get_repository());
+
+    return evaluator.executor.apply_action_unregistered(state_context, action, grounder_context, *definition->task->get_fdr_context(), out_state);
 }
 
 SuccessorGenerator<LiftedTag>::SuccessorGenerator(ygg::uint_t index,
@@ -314,25 +332,31 @@ void SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<Li
                                                { out_bindings.emplace_back(m_impl->definition->task->get_repository()->get_or_create(binding).first); });
 }
 
+PendingActionResult
+SuccessorGenerator<LiftedTag>::generate_successor_state(const Node<LiftedTag>& node, fp::ActionBindingView binding, ygg::Builder<State<LiftedTag>>& out_state)
+{
+    m_impl->evaluator.scratch_action_binding.relation = binding.get_relation().get_index();
+    m_impl->evaluator.scratch_action_binding.objects.clear();
+    for (const auto object : binding.get_data())
+        m_impl->evaluator.scratch_action_binding.objects.push_back(object);
+
+    return PendingActionResult { m_impl->generate_successor_state(node, m_impl->evaluator.scratch_action_binding, out_state) };
+}
+
+Node<LiftedTag> SuccessorGenerator<LiftedTag>::finalize_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>> state,
+                                                                        PendingActionResult result)
+{
+    return m_impl->evaluator.executor.finalize_action(*m_impl->evaluator.state_repository, std::move(state), result.auxiliary_value);
+}
+
 // Action binding API (no interning)
 Node<LiftedTag>
 SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag>& node,
                                                   const ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action>>& binding)
 {
-    m_impl->evaluator.workspace.binding.clear();
-    for (const auto object : binding.objects)
-        m_impl->evaluator.workspace.binding.push_back(object);
-
-    auto grounder_context =
-        fp::GrounderContext { m_impl->evaluator.workspace.planning_builder, *m_impl->definition->task->get_repository(), m_impl->evaluator.workspace.binding };
-    const auto state_context = StateContext<LiftedTag>(*m_impl->definition->task, node.get_state().get_state_builder(), node.get_metric());
-    const auto action = ygg::make_view(binding.relation, *m_impl->definition->task->get_repository());
-
-    return m_impl->evaluator.executor.apply_action(state_context,
-                                                   action,
-                                                   grounder_context,
-                                                   *m_impl->definition->task->get_fdr_context(),
-                                                   *m_impl->evaluator.state_repository);
+    auto state = m_impl->evaluator.state_repository->get_state_builder();
+    const auto result = PendingActionResult { m_impl->generate_successor_state(node, binding, *state) };
+    return finalize_successor_state(std::move(state), result);
 }
 
 // Lookup

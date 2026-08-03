@@ -22,6 +22,7 @@
 
 #include <cassert>
 #include <limits>
+#include <utility>
 
 namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;
@@ -95,6 +96,15 @@ void GroundStateBuilder::assign_unextended_part(const GroundStateBuilder& other)
     m_numeric_storage = other.m_numeric_storage;
 }
 
+void GroundStateBuilder::swap(GroundStateBuilder& other) noexcept
+{
+    using std::swap;
+    swap(m_index, other.m_index);
+    m_fact_storage.values.swap(other.m_fact_storage.values);
+    m_atom_storage.indices.swap(other.m_atom_storage.indices);
+    m_numeric_storage.values.swap(other.m_numeric_storage.values);
+}
+
 void GroundStateBuilder::resize_fluent_facts(size_t num_fluent_facts) { m_fact_storage.values.resize(num_fluent_facts, 0); }
 
 void GroundStateBuilder::resize_derived_atoms(size_t num_derived_atoms) { m_atom_storage.indices.resize(num_derived_atoms, false); }
@@ -166,7 +176,10 @@ ygg::float_t GroundStateView::get(ygg::Index<::tyr::formalism::planning::GroundF
     return m_state_builder->get(index);
 }
 
-bool GroundStateView::test(ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> index) const { return m_state_builder->test(index); }
+bool GroundStateView::test(ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> index) const
+{
+    return m_state_builder->test(index);
+}
 
 const std::shared_ptr<planning::StateRepository<::tyr::GroundTag>>& GroundStateView::get_state_repository() const noexcept { return m_state_repository; }
 

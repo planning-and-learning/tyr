@@ -25,6 +25,7 @@
 
 #include <atomic>
 #include <memory>
+#include <vector>
 
 namespace tyr::planning
 {
@@ -66,6 +67,13 @@ public:
     Node<GroundTag> get_successor_node(const Node<GroundTag>& node, ::tyr::formalism::planning::ActionBindingView binding);
     Node<GroundTag> get_successor_node(const Node<GroundTag>& node, ::tyr::formalism::planning::GroundActionView action);
     ::tyr::formalism::planning::GroundActionView ground_action(::tyr::formalism::planning::ActionBindingView binding) const;
+
+    std::vector<::tyr::formalism::planning::ActionBindingView> get_applicable_action_bindings(const Node<GroundTag>& node);
+    void get_applicable_action_bindings(const Node<GroundTag>& node, std::vector<::tyr::formalism::planning::ActionBindingView>& out_bindings);
+
+    PendingActionResult
+    generate_successor_state(const Node<GroundTag>& node, ::tyr::formalism::planning::ActionBindingView binding, ygg::Builder<State<GroundTag>>& out_state);
+    Node<GroundTag> finalize_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>> state, PendingActionResult result);
 
     Node<GroundTag> get_node(ygg::Index<State<GroundTag>> state_index);
     [[nodiscard]] SuccessorGeneratorPtr<GroundTag> make_worker(ygg::ExecutionContextPtr execution_context) const;

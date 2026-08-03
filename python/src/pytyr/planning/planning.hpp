@@ -269,17 +269,15 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
                    .def("get_state_repository", &T::get_state_repository, nb::rv_policy::copy);
 
     cls.def("get_successor_node", nb::overload_cast<const Node<Kind>&, fp::ActionBindingView>(&T::get_successor_node), "node"_a, "binding"_a)
-        .def("get_successor_node", nb::overload_cast<const Node<Kind>&, fp::GroundActionView>(&T::get_successor_node), "node"_a, "action"_a);
+        .def("get_successor_node", nb::overload_cast<const Node<Kind>&, fp::GroundActionView>(&T::get_successor_node), "node"_a, "action"_a)
+        .def("get_applicable_action_bindings",
+             nb::overload_cast<const Node<Kind>&>(&T::get_applicable_action_bindings),
+             nb::rv_policy::move,
+             "node"_a,
+             nb::call_guard<nb::gil_scoped_release>());
 
     if constexpr (std::is_same_v<Kind, LiftedTag>)
-    {
-        cls.def("get_applicable_action_bindings",
-                nb::overload_cast<const Node<Kind>&>(&T::get_applicable_action_bindings),
-                nb::rv_policy::move,
-                "node"_a,
-                nb::call_guard<nb::gil_scoped_release>())
-            .def("get_action_program", &T::get_action_program, nb::rv_policy::reference_internal);
-    }
+        cls.def("get_action_program", &T::get_action_program, nb::rv_policy::reference_internal);
 }
 
 template<TaskKind Kind>

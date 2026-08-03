@@ -75,6 +75,10 @@ public:
 
     void get_applicable_action_bindings(const Node<LiftedTag>& node, std::vector<::tyr::formalism::planning::ActionBindingView>& out_bindings);
 
+    PendingActionResult
+    generate_successor_state(const Node<LiftedTag>& node, ::tyr::formalism::planning::ActionBindingView binding, ygg::Builder<State<LiftedTag>>& out_state);
+    Node<LiftedTag> finalize_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>> state, PendingActionResult result);
+
     // Action binding API (no interning)
     Node<LiftedTag> get_successor_node(const Node<LiftedTag>& node,
                                        const ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action>>& binding);

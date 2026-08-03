@@ -23,7 +23,9 @@
 #include "tyr/planning/state_index.hpp"
 
 #include <concepts>
+#include <utility>
 #include <vector>
+#include <yggdrasil/containers/shared_object_pool.hpp>
 #include <yggdrasil/core/concepts.hpp>
 #include <yggdrasil/core/config.hpp>
 
@@ -33,6 +35,11 @@ namespace tyr::planning
 template<TaskKind Kind>
 class SuccessorGenerator;
 
+struct PendingActionResult
+{
+    ygg::float_t auxiliary_value;
+};
+
 template<typename T, typename Kind>
 concept SuccessorGeneratorConcept = requires(T& r,
                                              const T& const_r,
@@ -40,7 +47,11 @@ concept SuccessorGeneratorConcept = requires(T& r,
                                              const Node<Kind>& node,
                                              NodeList<Kind>& successor_nodes,
                                              LabeledNodeList<Kind>& labeled_successor_nodes,
+                                             std::vector<::tyr::formalism::planning::ActionBindingView>& action_bindings,
                                              ::tyr::formalism::planning::ActionBindingView binding,
+                                             ygg::Builder<State<Kind>>& state_builder,
+                                             ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>> state_builder_ptr,
+                                             PendingActionResult pending_result,
                                              ygg::ExecutionContextPtr execution_context) {
     requires TaskKind<Kind>;
     { r.get_initial_node() } -> std::same_as<Node<Kind>>;
@@ -48,7 +59,11 @@ concept SuccessorGeneratorConcept = requires(T& r,
     { r.get_successor_nodes(node, successor_nodes) } -> std::same_as<void>;
     { r.get_labeled_successor_nodes(node) } -> std::same_as<LabeledNodeList<Kind>>;
     { r.get_labeled_successor_nodes(node, labeled_successor_nodes) } -> std::same_as<void>;
+    { r.get_applicable_action_bindings(node) } -> std::same_as<std::vector<::tyr::formalism::planning::ActionBindingView>>;
+    { r.get_applicable_action_bindings(node, action_bindings) } -> std::same_as<void>;
     { r.get_successor_node(node, binding) } -> std::same_as<Node<Kind>>;
+    { r.generate_successor_state(node, binding, state_builder) } -> std::same_as<PendingActionResult>;
+    { r.finalize_successor_state(std::move(state_builder_ptr), pending_result) } -> std::same_as<Node<Kind>>;
     { r.get_node(state_index) } -> std::same_as<Node<Kind>>;
     { const_r.make_worker(execution_context) } -> std::same_as<SuccessorGeneratorPtr<Kind>>;
     { r.get_index() } -> std::same_as<ygg::uint_t>;

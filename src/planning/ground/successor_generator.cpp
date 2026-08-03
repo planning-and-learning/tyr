@@ -221,6 +221,45 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::get_successor_node(const Node<Gro
     return m_impl->evaluator.executor.apply_action(state_context, action, *m_impl->evaluator.state_repository);
 }
 
+std::vector<fp::ActionBindingView> SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<GroundTag>& node)
+{
+    auto result = std::vector<fp::ActionBindingView> {};
+    get_applicable_action_bindings(node, result);
+    return result;
+}
+
+void SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<GroundTag>& node, std::vector<fp::ActionBindingView>& out_bindings)
+{
+    out_bindings.clear();
+
+    const auto state_context = StateContext<GroundTag>(*m_impl->definition->task, node.get_state().get_state_builder(), node.get_metric());
+    m_impl->evaluator.action_match_tree->generate(state_context, m_impl->evaluator.applicable_actions);
+
+    for (const auto action : m_impl->evaluator.applicable_actions)
+    {
+        assert(is_applicable(action.get_condition(), state_context));
+
+        if (!m_impl->evaluator.executor.is_applicable_if_fires(action, state_context))
+            continue;
+
+        assert(m_impl->evaluator.executor.is_applicable(action, state_context));
+        out_bindings.push_back(action.get_row());
+    }
+}
+
+PendingActionResult
+SuccessorGenerator<GroundTag>::generate_successor_state(const Node<GroundTag>& node, fp::ActionBindingView binding, ygg::Builder<State<GroundTag>>& out_state)
+{
+    const auto state_context = StateContext<GroundTag>(*m_impl->definition->task, node.get_state().get_state_builder(), node.get_metric());
+    return PendingActionResult { m_impl->evaluator.executor.apply_action_unregistered(state_context, ground_action(binding), out_state) };
+}
+
+Node<GroundTag> SuccessorGenerator<GroundTag>::finalize_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>> state,
+                                                                        PendingActionResult result)
+{
+    return m_impl->evaluator.executor.finalize_action(*m_impl->evaluator.state_repository, std::move(state), result.auxiliary_value);
+}
+
 fp::GroundActionView SuccessorGenerator<GroundTag>::ground_action(fp::ActionBindingView binding) const
 {
     const auto it = m_impl->definition->action_binding_to_ground_action.find(binding);

@@ -22,6 +22,7 @@
 
 #include <cassert>
 #include <limits>
+#include <utility>
 
 namespace ygg
 {
@@ -102,6 +103,15 @@ void LiftedStateBuilder::assign_unextended_part(const LiftedStateBuilder& other)
 {
     m_fact_storage = other.m_fact_storage;
     m_numeric_storage = other.m_numeric_storage;
+}
+
+void LiftedStateBuilder::swap(LiftedStateBuilder& other) noexcept
+{
+    using std::swap;
+    swap(m_index, other.m_index);
+    m_fact_storage.indices.swap(other.m_fact_storage.indices);
+    m_atom_storage.indices.swap(other.m_atom_storage.indices);
+    m_numeric_storage.values.swap(other.m_numeric_storage.values);
 }
 
 planning::FDRFactRange<::tyr::LiftedTag, ::tyr::formalism::FluentTag> LiftedStateBuilder::get_fluent_facts() const noexcept
@@ -186,7 +196,10 @@ ygg::float_t LiftedStateView::get(ygg::Index<::tyr::formalism::planning::GroundF
     return m_state_builder->get(index);
 }
 
-bool LiftedStateView::test(ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> index) const { return m_state_builder->test(index); }
+bool LiftedStateView::test(ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> index) const
+{
+    return m_state_builder->test(index);
+}
 
 const std::shared_ptr<planning::StateRepository<::tyr::LiftedTag>>& LiftedStateView::get_state_repository() const noexcept { return m_state_repository; }
 

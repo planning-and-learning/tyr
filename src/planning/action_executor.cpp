@@ -26,7 +26,6 @@
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/applicability_lifted.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/node.hpp"
 #include "tyr/planning/ground/state_builder.hpp"
 #include "tyr/planning/ground/state_repository.hpp"
 #include "tyr/planning/ground/state_view.hpp"
@@ -35,6 +34,7 @@
 #include "tyr/planning/lifted/state_repository.hpp"
 #include "tyr/planning/lifted/state_view.hpp"
 #include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/node.hpp"
 
 #include <yggdrasil/core/types.hpp>
 
@@ -134,20 +134,17 @@ inline void process_effects(fp::ActionView action,
 }
 
 template<TaskKind Kind, typename ProcessEffects>
-Node<Kind> apply_action_impl(const StateContext<Kind>& state_context,
-                             StateRepository<Kind>& state_repository,
-                             ygg::DataList<fp::FDRFact<f::FluentTag>>& del_effects,
-                             ygg::DataList<fp::FDRFact<f::FluentTag>>& add_effects,
-                             ProcessEffects&& process_effects)
+ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_context,
+                                            ygg::Builder<State<Kind>>& successor_state_builder,
+                                            ygg::DataList<fp::FDRFact<f::FluentTag>>& del_effects,
+                                            ygg::DataList<fp::FDRFact<f::FluentTag>>& add_effects,
+                                            ProcessEffects&& process_effects)
 {
     del_effects.clear();
     add_effects.clear();
 
     auto tmp_state_context = state_context;
-    auto& task = tmp_state_context.task;
 
-    auto successor_state_builder_ptr = state_repository.get_state_builder();
-    auto& successor_state_builder = *successor_state_builder_ptr;
     successor_state_builder.assign_unextended_part(tmp_state_context.state_builder);
 
     process_effects(successor_state_builder, tmp_state_context, del_effects, add_effects);
@@ -159,15 +156,7 @@ Node<Kind> apply_action_impl(const StateContext<Kind>& state_context,
     for (const auto fact : add_effects)
         successor_state_builder.set(fact);
 
-    auto succ_state = state_repository.register_state(successor_state_builder_ptr);
-
-    auto succ_state_context = StateContext { task, successor_state_builder, tmp_state_context.auxiliary_value };
-    if (task.get_task().get_metric())
-        succ_state_context.auxiliary_value = evaluate(task.get_task().get_metric().value().get_fexpr(), succ_state_context);
-    else
-        ++succ_state_context.auxiliary_value;  // Assume unit cost if no metric is given
-
-    return Node<Kind>(succ_state, ygg::FloatTolerance<ygg::float_t>::canonicalize(succ_state_context.auxiliary_value));
+    return tmp_state_context.auxiliary_value;
 }
 
 // Ground action API
@@ -193,18 +182,35 @@ template bool ActionExecutor::is_applicable_if_fires(fp::GroundActionView action
 template<TaskKind Kind>
 Node<Kind> ActionExecutor::apply_action(const StateContext<Kind>& state_context, fp::GroundActionView action, StateRepository<Kind>& state_repository)
 {
-    return apply_action_impl(state_context,
-                             state_repository,
-                             m_del_effects,
-                             m_add_effects,
-                             [&](auto& successor_state_builder, auto& tmp_state_context, auto& del_effects, auto& add_effects)
-                             { process_effects(action, successor_state_builder, tmp_state_context, del_effects, add_effects); });
+    auto successor_state_builder = state_repository.get_state_builder();
+    const auto auxiliary_value = apply_action_unregistered(state_context, action, *successor_state_builder);
+    return finalize_action(state_repository, std::move(successor_state_builder), auxiliary_value);
 }
 
 template Node<LiftedTag>
 ActionExecutor::apply_action(const StateContext<LiftedTag>& state_context, fp::GroundActionView action, StateRepository<LiftedTag>& state_repository);
 template Node<GroundTag>
 ActionExecutor::apply_action(const StateContext<GroundTag>& state_context, fp::GroundActionView action, StateRepository<GroundTag>& state_repository);
+
+template<TaskKind Kind>
+ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Kind>& state_context,
+                                                       fp::GroundActionView action,
+                                                       ygg::Builder<State<Kind>>& successor_state_builder)
+{
+    return apply_action_unregistered_impl(state_context,
+                                          successor_state_builder,
+                                          m_del_effects,
+                                          m_add_effects,
+                                          [&](auto& out_state, auto& tmp_state_context, auto& del_effects, auto& add_effects)
+                                          { process_effects(action, out_state, tmp_state_context, del_effects, add_effects); });
+}
+
+template ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<LiftedTag>& state_context,
+                                                                fp::GroundActionView action,
+                                                                ygg::Builder<State<LiftedTag>>& successor_state_builder);
+template ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<GroundTag>& state_context,
+                                                                fp::GroundActionView action,
+                                                                ygg::Builder<State<GroundTag>>& successor_state_builder);
 
 // Action binding API
 
@@ -238,22 +244,57 @@ Node<LiftedTag> ActionExecutor::apply_action(const StateContext<LiftedTag>& stat
                                              fp::FDRContext& fdr,
                                              StateRepository<LiftedTag>& state_repository)
 {
-    return apply_action_impl(state_context,
-                             state_repository,
-                             m_del_effects,
-                             m_add_effects,
-                             [&](auto& successor_state_builder, auto& tmp_state_context, auto& del_effects, auto& add_effects)
-                             {
-                                 process_effects(action,
-                                                 state_context.task.get_formalism_task().get_variable_domains().action_domains.at(action.get_index()),
-                                                 successor_state_builder,
-                                                 tmp_state_context,
-                                                 grounder,
-                                                 fdr,
-                                                 m_cartesian_workspace,
-                                                 m_effect_families,
-                                                 del_effects,
-                                                 add_effects);
-                             });
+    auto successor_state_builder = state_repository.get_state_builder();
+    const auto auxiliary_value = apply_action_unregistered(state_context, action, grounder, fdr, *successor_state_builder);
+    return finalize_action(state_repository, std::move(successor_state_builder), auxiliary_value);
 }
+
+ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<LiftedTag>& state_context,
+                                                       fp::ActionView action,
+                                                       fp::GrounderContext& grounder,
+                                                       fp::FDRContext& fdr,
+                                                       ygg::Builder<State<LiftedTag>>& successor_state_builder)
+{
+    return apply_action_unregistered_impl(state_context,
+                                          successor_state_builder,
+                                          m_del_effects,
+                                          m_add_effects,
+                                          [&](auto& out_state, auto& tmp_state_context, auto& del_effects, auto& add_effects)
+                                          {
+                                              process_effects(
+                                                  action,
+                                                  state_context.task.get_formalism_task().get_variable_domains().action_domains.at(action.get_index()),
+                                                  out_state,
+                                                  tmp_state_context,
+                                                  grounder,
+                                                  fdr,
+                                                  m_cartesian_workspace,
+                                                  m_effect_families,
+                                                  del_effects,
+                                                  add_effects);
+                                          });
+}
+
+template<TaskKind Kind>
+Node<Kind> ActionExecutor::finalize_action(StateRepository<Kind>& state_repository,
+                                           ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>> successor_state_builder,
+                                           ygg::float_t auxiliary_value)
+{
+    auto successor_state = state_repository.register_state(std::move(successor_state_builder));
+    auto successor_state_context = StateContext { *state_repository.get_task(), successor_state.get_state_builder(), auxiliary_value };
+
+    if (successor_state_context.task.get_task().get_metric())
+        successor_state_context.auxiliary_value = evaluate(successor_state_context.task.get_task().get_metric().value().get_fexpr(), successor_state_context);
+    else
+        ++successor_state_context.auxiliary_value;  // Assume unit cost if no metric is given
+
+    return Node<Kind>(std::move(successor_state), ygg::FloatTolerance<ygg::float_t>::canonicalize(successor_state_context.auxiliary_value));
+}
+
+template Node<LiftedTag> ActionExecutor::finalize_action(StateRepository<LiftedTag>& state_repository,
+                                                         ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>> successor_state_builder,
+                                                         ygg::float_t auxiliary_value);
+template Node<GroundTag> ActionExecutor::finalize_action(StateRepository<GroundTag>& state_repository,
+                                                         ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>> successor_state_builder,
+                                                         ygg::float_t auxiliary_value);
 }

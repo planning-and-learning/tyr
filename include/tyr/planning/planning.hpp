@@ -33,6 +33,7 @@
 #include "tyr/planning/algorithms/siw.hpp"
 #include "tyr/planning/algorithms/siw/event_handler.hpp"
 #include "tyr/planning/algorithms/siw/statistics.hpp"
+#include "tyr/planning/algorithms/state_routing.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"

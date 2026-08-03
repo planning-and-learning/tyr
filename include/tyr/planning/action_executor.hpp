@@ -22,6 +22,7 @@
 #include "tyr/planning/applicability_lifted_decl.hpp"
 #include "tyr/planning/declarations.hpp"
 
+#include <yggdrasil/containers/shared_object_pool.hpp>
 #include <yggdrasil/core/itertools.hpp>
 #include <yggdrasil/core/types.hpp>
 
@@ -45,6 +46,11 @@ public:
     Node<Kind>
     apply_action(const StateContext<Kind>& state_context, ::tyr::formalism::planning::GroundActionView action, StateRepository<Kind>& state_repository);
 
+    template<TaskKind Kind>
+    ygg::float_t apply_action_unregistered(const StateContext<Kind>& state_context,
+                                           ::tyr::formalism::planning::GroundActionView action,
+                                           ygg::Builder<State<Kind>>& successor_state_builder);
+
     // Lifted action API
 
     bool is_applicable(::tyr::formalism::planning::ActionView action,
@@ -62,6 +68,17 @@ public:
                                  ::tyr::formalism::planning::GrounderContext& grounder,
                                  ::tyr::formalism::planning::FDRContext& fdr,
                                  StateRepository<LiftedTag>& state_repository);
+
+    ygg::float_t apply_action_unregistered(const StateContext<LiftedTag>& state_context,
+                                           ::tyr::formalism::planning::ActionView action,
+                                           ::tyr::formalism::planning::GrounderContext& grounder,
+                                           ::tyr::formalism::planning::FDRContext& fdr,
+                                           ygg::Builder<State<LiftedTag>>& successor_state_builder);
+
+    template<TaskKind Kind>
+    Node<Kind> finalize_action(StateRepository<Kind>& state_repository,
+                               ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>> successor_state_builder,
+                               ygg::float_t auxiliary_value);
 
 private:
     ygg::DataList<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> m_del_effects;

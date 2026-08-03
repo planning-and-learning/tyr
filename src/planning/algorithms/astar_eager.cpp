@@ -23,11 +23,11 @@
 #include "tyr/planning/algorithms/concepts.hpp"
 #include "tyr/planning/algorithms/openlists/alternating.hpp"
 #include "tyr/planning/algorithms/portable_shuffle.hpp"
+#include "tyr/planning/algorithms/state_routing.hpp"
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/applicability.hpp"
-#include "tyr/planning/node.hpp"
 #include "tyr/planning/ground/state_builder.hpp"
 #include "tyr/planning/ground/state_repository.hpp"
 #include "tyr/planning/ground/state_view.hpp"
@@ -39,6 +39,7 @@
 #include "tyr/planning/lifted/state_view.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/node.hpp"
 #include "tyr/planning/search_node.hpp"
 #include "tyr/planning/search_space.hpp"
 #include "tyr/planning/state_index.hpp"
@@ -68,6 +69,13 @@ static_assert(sizeof(SearchNode<GroundTag>) == 16);
 
 template<TaskKind Kind>
 using SearchNodeVector = ygg::SegmentedVector<SearchNode<Kind>>;
+
+template<TaskKind Kind>
+struct SuccessorMetadata
+{
+    InternalStateID<Kind> parent;
+    ygg::float_t source_g_value;
+};
 
 template<TaskKind Kind>
 static SearchNode<Kind>& get_or_create_search_node(ygg::Index<State<Kind>> state_index, SearchNodeVector<Kind>& search_nodes)
@@ -179,7 +187,9 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
         return result;
     }
 
-    auto labeled_succ_nodes = std::vector<LabeledNode<Kind>> {};
+    auto applicable_actions = std::vector<::tyr::formalism::planning::ActionBindingView> {};
+    auto routed_successors = std::vector<RoutedSuccessor<Kind, SuccessorMetadata<Kind>>> {};
+    auto state_router = SingleWorkerStateRouter<Kind, RandomDistHashTag, SuccessorMetadata<Kind>>(options.random_seed);
     auto f_value = start_f_value;
     const auto start_entry = QueueEntry<Kind> { start_f_value, start_state_index, start_search_node.status, step++ };
     openlist.insert(start_entry);
@@ -244,7 +254,19 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
 
         search_node.status = SearchNodeStatus::CLOSED;
 
-        successor_generator.get_labeled_successor_nodes(node, labeled_succ_nodes);
+        successor_generator.get_applicable_action_bindings(node, applicable_actions);
+        routed_successors.clear();
+        routed_successors.reserve(applicable_actions.size());
+        for (const auto action : applicable_actions)
+        {
+            auto successor_state = state_repository.get_state_builder();
+            const auto action_result = successor_generator.generate_successor_state(node, action, *successor_state);
+            state_router.send(std::move(successor_state),
+                              action_result,
+                              action,
+                              SuccessorMetadata<Kind> { InternalStateID<Kind> { 0, state_index }, search_node.g_value });
+            routed_successors.push_back(state_router.receive(successor_generator));
+        }
 
         if (stopwatch && stopwatch->has_finished())
         {
@@ -254,9 +276,9 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
         }
 
         if (options.shuffle_labeled_succ_nodes)
-            portable_shuffle(labeled_succ_nodes.begin(), labeled_succ_nodes.end(), rng);
+            portable_shuffle(routed_successors.begin(), routed_successors.end(), rng);
 
-        for (const auto& labeled_succ_node : labeled_succ_nodes)
+        for (const auto& routed_successor : routed_successors)
         {
             if (stopwatch && stopwatch->has_finished())
             {
@@ -265,6 +287,7 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
                 return result;
             }
 
+            const auto& labeled_succ_node = routed_successor.labeled_node;
             const auto& succ_node = labeled_succ_node.node;
             const auto& succ_state = succ_node.get_state();
             const auto succ_state_index = succ_state.get_index();
@@ -293,7 +316,7 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
 
             /* Check whether state must be reopened or not. */
 
-            const auto successor_g_value = compute_successor_g_value(search_node.g_value, succ_node.get_metric(), options.cost_mode);
+            const auto successor_g_value = compute_successor_g_value(routed_successor.metadata.source_g_value, succ_node.get_metric(), options.cost_mode);
             const auto normalized_succ_node = Node<Kind>(succ_state, successor_g_value);
             const auto normalized_labeled_succ_node = LabeledNode<Kind> { labeled_succ_node.label, normalized_succ_node };
 
@@ -301,7 +324,7 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
             {
                 event_handler->on_generate_node(node, normalized_labeled_succ_node);
 
-                successor_search_node.parent_state = state_index;
+                successor_search_node.parent_state = routed_successor.metadata.parent.state;
                 successor_search_node.g_value = successor_g_value;
 
                 const auto successor_h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(heuristic.evaluate(succ_state));

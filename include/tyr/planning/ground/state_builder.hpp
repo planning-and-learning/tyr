@@ -94,6 +94,9 @@ public:
     void clear_unextended_part();
     void clear_extended_part();
     void assign_unextended_part(const Builder& other);
+    void swap(Builder& other) noexcept;
+
+    friend void swap(Builder& lhs, Builder& rhs) noexcept { lhs.swap(rhs); }
 
     /**
      * For GroundTag
