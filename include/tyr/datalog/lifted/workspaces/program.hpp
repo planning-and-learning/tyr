@@ -36,10 +36,12 @@
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/planning/builder.hpp"
 
+#include <concepts>
 #include <map>
 #include <optional>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
+#include <yggdrasil/core/dependent_false.hpp>
 #include <yggdrasil/semantics/equal_to.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 
