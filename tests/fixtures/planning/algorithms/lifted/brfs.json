@@ -84,8 +84,8 @@
             "domain_file": "classical/tests/blocks_3/domain.pddl",
             "task_file": "classical/tests/blocks_3/test-1.pddl",
             "default": {
-                "num_generated": 22,
-                "num_expanded": 17,
+                "num_generated": 24,
+                "num_expanded": 20,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -416,8 +416,8 @@
             "domain_file": "classical/tests/philosophers/domain.pddl",
             "task_file": "classical/tests/philosophers/test-1.pddl",
             "default": {
-                "num_generated": 125,
-                "num_expanded": 116,
+                "num_generated": 127,
+                "num_expanded": 118,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {

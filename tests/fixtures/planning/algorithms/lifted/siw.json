@@ -18,12 +18,12 @@
                         "(ag__finish_round_renew round1)",
                         "(ag__advance_round_normal round1 round2 act_sheep)",
                         "(take_food worker2 worker1 worker2 round2 num3 num4)",
-                        "(collect_resource worker1 noworker worker2 round2 act_reed reed)",
+                        "(collect_resource worker1 noworker worker2 round2 act_clay clay)",
                         "(ag__finish_round_backhome round2 worker2)",
                         "(ag__finish_round_renew round2)",
                         "(ag__advance_round_normal round2 round3 act_sow)",
                         "(take_food worker2 worker1 worker2 round3 num4 num5)",
-                        "(collect_resource worker1 noworker worker2 round3 act_reed reed)",
+                        "(collect_resource worker1 noworker worker2 round3 act_clay clay)",
                         "(ag__finish_round_backhome round3 worker2)",
                         "(ag__finish_round_renew round3)",
                         "(ag__advance_round_normal round3 round4 act_fences)",
@@ -67,10 +67,10 @@
                         "(ag__harvest_breed_end round9 stage3)"
                     ]
                 },
-                "num_generated": 551,
-                "num_expanded": 550,
+                "num_generated": 459,
+                "num_expanded": 459,
                 "num_deadends": 0,
-                "num_pruned": 1596
+                "num_pruned": 1203
             }
         },
         {
@@ -162,8 +162,8 @@
                         "(stack b2 b3)"
                     ]
                 },
-                "num_generated": 14,
-                "num_expanded": 12,
+                "num_generated": 16,
+                "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 9
             }
@@ -457,10 +457,10 @@
                         "(dummy-action-1)"
                     ]
                 },
-                "num_generated": 727,
+                "num_generated": 725,
                 "num_expanded": 605,
                 "num_deadends": 0,
-                "num_pruned": 4431
+                "num_pruned": 4433
             }
         },
         {
@@ -494,8 +494,8 @@
                         "(activate-trans philosopher-1 philosopher forks-__-pidp1__2_-rfork state-3 state-4)"
                     ]
                 },
-                "num_generated": 92,
-                "num_expanded": 86,
+                "num_generated": 93,
+                "num_expanded": 88,
                 "num_deadends": 0,
                 "num_pruned": 21
             }
@@ -672,10 +672,10 @@
                         "(push loc_7_5 loc_8_5 loc_9_5 down box2)"
                     ]
                 },
-                "num_generated": 7820,
-                "num_expanded": 6479,
+                "num_generated": 7887,
+                "num_expanded": 6564,
                 "num_deadends": 0,
-                "num_pruned": 2425
+                "num_pruned": 2470
             }
         },
         {
@@ -715,16 +715,16 @@
                         "(pick-up truck-1 city-loc-3 package-1 capacity-3 capacity-4)",
                         "(drive truck-1 city-loc-3 city-loc-2)",
                         "(drop truck-1 city-loc-2 package-1 capacity-3 capacity-4)",
-                        "(drive truck-2 city-loc-1 city-loc-3)",
-                        "(pick-up truck-2 city-loc-3 package-2 capacity-2 capacity-3)",
-                        "(drive truck-2 city-loc-3 city-loc-2)",
-                        "(drop truck-2 city-loc-2 package-2 capacity-2 capacity-3)"
+                        "(drive truck-1 city-loc-2 city-loc-3)",
+                        "(pick-up truck-1 city-loc-3 package-2 capacity-3 capacity-4)",
+                        "(drive truck-1 city-loc-3 city-loc-2)",
+                        "(drop truck-1 city-loc-2 package-2 capacity-3 capacity-4)"
                     ]
                 },
-                "num_generated": 92,
-                "num_expanded": 64,
+                "num_generated": 91,
+                "num_expanded": 62,
                 "num_deadends": 0,
-                "num_pruned": 74
+                "num_pruned": 72
             }
         },
         {
@@ -763,10 +763,10 @@
             "default": {
                 "status": "EXHAUSTED",
                 "maximum_effective_width": 2,
-                "num_generated": 279,
-                "num_expanded": 213,
+                "num_generated": 267,
+                "num_expanded": 207,
                 "num_deadends": 0,
-                "num_pruned": 686
+                "num_pruned": 675
             }
         },
         {

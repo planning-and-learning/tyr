@@ -17,12 +17,12 @@
                         "(ag__finish_round_renew round1)",
                         "(ag__advance_round_normal round1 round2 act_sheep)",
                         "(take_food worker2 worker1 worker2 round2 num3 num4)",
-                        "(collect_resource worker1 noworker worker2 round2 act_reed reed)",
+                        "(collect_resource worker1 noworker worker2 round2 act_clay clay)",
                         "(ag__finish_round_backhome round2 worker2)",
                         "(ag__finish_round_renew round2)",
                         "(ag__advance_round_normal round2 round3 act_sow)",
                         "(take_food worker2 worker1 worker2 round3 num4 num5)",
-                        "(collect_resource worker1 noworker worker2 round3 act_reed reed)",
+                        "(collect_resource worker1 noworker worker2 round3 act_clay clay)",
                         "(ag__finish_round_backhome round3 worker2)",
                         "(ag__finish_round_renew round3)",
                         "(ag__advance_round_normal round3 round4 act_fences)",
@@ -67,10 +67,10 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 551,
-                "num_expanded": 550,
+                "num_generated": 459,
+                "num_expanded": 459,
                 "num_deadends": 0,
-                "num_pruned": 1596
+                "num_pruned": 1203
             }
         },
         {
@@ -149,8 +149,8 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 30,
-                "num_expanded": 28,
+                "num_generated": 32,
+                "num_expanded": 30,
                 "num_deadends": 0,
                 "num_pruned": 11
             }
@@ -435,10 +435,10 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 727,
+                "num_generated": 725,
                 "num_expanded": 605,
                 "num_deadends": 0,
-                "num_pruned": 4431
+                "num_pruned": 4433
             }
         },
         {
@@ -576,10 +576,10 @@
             "task_file": "classical/tests/sokoban/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 9158,
-                "num_expanded": 9161,
+                "num_generated": 9163,
+                "num_expanded": 9166,
                 "num_deadends": 0,
-                "num_pruned": 5859
+                "num_pruned": 5871
             }
         },
         {

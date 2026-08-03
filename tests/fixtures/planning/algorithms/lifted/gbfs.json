@@ -729,8 +729,8 @@
             "domain_file": "classical/tests/blocks_3/domain.pddl",
             "task_file": "classical/tests/blocks_3/test-1.pddl",
             "blind_unit": {
-                "num_generated": 21,
-                "num_expanded": 17,
+                "num_generated": 23,
+                "num_expanded": 20,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -745,8 +745,8 @@
                 }
             },
             "blind_general": {
-                "num_generated": 21,
-                "num_expanded": 17,
+                "num_generated": 23,
+                "num_expanded": 20,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -761,8 +761,8 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 14,
-                "num_expanded": 7,
+                "num_generated": 18,
+                "num_expanded": 10,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -777,8 +777,8 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 14,
-                "num_expanded": 7,
+                "num_generated": 18,
+                "num_expanded": 10,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -793,8 +793,8 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 14,
-                "num_expanded": 7,
+                "num_generated": 18,
+                "num_expanded": 10,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -809,8 +809,8 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 14,
-                "num_expanded": 7,
+                "num_generated": 18,
+                "num_expanded": 10,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -825,8 +825,8 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 14,
-                "num_expanded": 7,
+                "num_generated": 16,
+                "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -841,8 +841,8 @@
                 }
             },
             "hff_general": {
-                "num_generated": 14,
-                "num_expanded": 7,
+                "num_generated": 16,
+                "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -857,8 +857,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 14,
-                "num_expanded": 7,
+                "num_generated": 18,
+                "num_expanded": 10,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -873,8 +873,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 14,
-                "num_expanded": 7,
+                "num_generated": 18,
+                "num_expanded": 10,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -2596,8 +2596,8 @@
                         "(board f0 p0)",
                         "(board f0 p1)",
                         "(up f0 f1)",
-                        "(depart f1 p1)",
-                        "(depart f1 p0)"
+                        "(depart f1 p0)",
+                        "(depart f1 p1)"
                     ]
                 }
             },
@@ -2613,8 +2613,8 @@
                         "(board f0 p0)",
                         "(board f0 p1)",
                         "(up f0 f1)",
-                        "(depart f1 p1)",
-                        "(depart f1 p0)"
+                        "(depart f1 p0)",
+                        "(depart f1 p1)"
                     ]
                 }
             }
@@ -3395,8 +3395,8 @@
             "domain_file": "classical/tests/philosophers/domain.pddl",
             "task_file": "classical/tests/philosophers/test-1.pddl",
             "blind_unit": {
-                "num_generated": 124,
-                "num_expanded": 116,
+                "num_generated": 126,
+                "num_expanded": 118,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3425,8 +3425,8 @@
                 }
             },
             "blind_general": {
-                "num_generated": 124,
-                "num_expanded": 116,
+                "num_generated": 126,
+                "num_expanded": 118,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3455,8 +3455,8 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 124,
-                "num_expanded": 116,
+                "num_generated": 126,
+                "num_expanded": 118,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3485,8 +3485,8 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 124,
-                "num_expanded": 116,
+                "num_generated": 126,
+                "num_expanded": 118,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3515,8 +3515,8 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 124,
-                "num_expanded": 116,
+                "num_generated": 126,
+                "num_expanded": 118,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3545,8 +3545,8 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 124,
-                "num_expanded": 116,
+                "num_generated": 126,
+                "num_expanded": 118,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3575,8 +3575,8 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 124,
-                "num_expanded": 116,
+                "num_generated": 126,
+                "num_expanded": 118,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3605,8 +3605,8 @@
                 }
             },
             "hff_general": {
-                "num_generated": 124,
-                "num_expanded": 116,
+                "num_generated": 126,
+                "num_expanded": 118,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3635,8 +3635,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 124,
-                "num_expanded": 116,
+                "num_generated": 126,
+                "num_expanded": 118,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3665,8 +3665,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 124,
-                "num_expanded": 116,
+                "num_generated": 126,
+                "num_expanded": 118,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5170,8 +5170,8 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 1122,
-                "num_expanded": 317,
+                "num_generated": 1140,
+                "num_expanded": 320,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5183,8 +5183,8 @@
                         "(do-grind p2 grinder0 verysmooth natural colourfragments untreated)",
                         "(do-saw-medium b1 p1 saw0 cherry rough s3 s2 s1)",
                         "(do-plane p1 planer0 rough natural untreated)",
-                        "(do-glaze p2 glazer0 mauve)",
                         "(do-glaze p1 glazer0 green)",
+                        "(do-glaze p2 glazer0 mauve)",
                         "(do-grind p0 grinder0 smooth natural untreated untreated)",
                         "(do-immersion-varnish p0 immersion-varnisher0 mauve verysmooth)"
                     ]
@@ -5212,8 +5212,8 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 170,
-                "num_expanded": 29,
+                "num_generated": 157,
+                "num_expanded": 27,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5235,8 +5235,8 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 546,
-                "num_expanded": 135,
+                "num_generated": 549,
+                "num_expanded": 136,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5308,8 +5308,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 170,
-                "num_expanded": 29,
+                "num_generated": 157,
+                "num_expanded": 27,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -6074,22 +6074,26 @@
                 }
             },
             "hff_general": {
-                "num_generated": 82,
-                "num_expanded": 25,
+                "num_generated": 203,
+                "num_expanded": 83,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 2226.96,
-                    "length": 8,
+                    "cost": 2469.5099999999998,
+                    "length": 12,
                     "actions": [
-                        "(drive truck0 depot0 market4)",
-                        "(buy-all truck0 goods1 market4)",
-                        "(drive truck0 market4 market3)",
-                        "(buy-allneeded truck0 goods1 market3)",
-                        "(buy-all truck0 goods0 market3)",
+                        "(drive truck0 depot0 market1)",
+                        "(buy-all truck0 goods0 market1)",
+                        "(drive truck0 market1 market3)",
+                        "(buy-all truck0 goods1 market3)",
                         "(drive truck0 market3 market4)",
-                        "(buy-allneeded truck0 goods0 market4)",
-                        "(drive truck0 market4 depot0)"
+                        "(buy-allneeded truck0 goods1 market4)",
+                        "(buy-all truck0 goods0 market4)",
+                        "(drive truck0 market4 market5)",
+                        "(buy-all truck0 goods0 market5)",
+                        "(drive truck0 market5 market3)",
+                        "(buy-allneeded truck0 goods0 market3)",
+                        "(drive truck0 market3 depot0)"
                     ]
                 }
             },
@@ -6115,19 +6119,19 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 35,
-                "num_expanded": 18,
+                "num_generated": 51,
+                "num_expanded": 24,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 2247.89,
+                    "cost": 2368.41,
                     "length": 9,
                     "actions": [
-                        "(drive truck0 depot0 market1)",
-                        "(buy-all truck0 goods0 market1)",
-                        "(drive truck0 market1 market3)",
-                        "(buy-allneeded truck0 goods0 market3)",
-                        "(drive truck0 market3 market4)",
+                        "(drive truck0 depot0 market3)",
+                        "(buy-all truck0 goods0 market3)",
+                        "(drive truck0 market3 market1)",
+                        "(buy-allneeded truck0 goods0 market1)",
+                        "(drive truck0 market1 market4)",
                         "(buy-all truck0 goods1 market4)",
                         "(drive truck0 market4 market3)",
                         "(buy-allneeded truck0 goods1 market3)",
@@ -6248,8 +6252,8 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 194,
-                "num_expanded": 72,
+                "num_generated": 189,
+                "num_expanded": 71,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -7028,18 +7032,18 @@
                 }
             },
             "hff_general": {
-                "num_generated": 86,
-                "num_expanded": 47,
+                "num_generated": 78,
+                "num_expanded": 45,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 4,
                     "length": 4,
                     "actions": [
+                        "(visit x0y0z0)",
                         "(increase_z)",
                         "(visit x0y0z1)",
-                        "(decrease_z)",
-                        "(visit x0y0z0)"
+                        "(decrease_z)"
                     ]
                 }
             },
@@ -8070,8 +8074,8 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 883,
-                "num_expanded": 106,
+                "num_generated": 880,
+                "num_expanded": 103,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -8167,8 +8171,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 883,
-                "num_expanded": 106,
+                "num_generated": 880,
+                "num_expanded": 103,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
