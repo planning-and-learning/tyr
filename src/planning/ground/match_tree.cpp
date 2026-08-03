@@ -626,10 +626,12 @@ static std::optional<StackEntry<Tag>> try_create_stack_entry(BaseEntry<Tag> base
 template<typename Tag>
 MatchTree<Tag>::MatchTree(std::vector<ygg::View<ygg::Index<Tag>, ::tyr::formalism::planning::Repository>> elements_,
                           const ::tyr::formalism::planning::Repository& context_) :
-    m_context(std::make_unique<Repository<Tag>>(ygg::uint_t(0), context_)),  // we use constant index 0 since we dont compare node views anyway.
-    m_root(),
-    m_evaluate_stack()
+    m_definition(),
+    m_evaluator()
 {
+    auto definition = std::make_shared<Definition>(context_);
+    m_definition = definition;
+
     auto occurrences = PreconditionOccurrences<Tag> {};
     auto details = PreconditionDetails<Tag> {};
 
@@ -718,7 +720,7 @@ MatchTree<Tag>::MatchTree(std::vector<ygg::View<ygg::Index<Tag>, ::tyr::formalis
                 }
                 else
                 {
-                    produced = store_result(frame, *m_context);
+                    produced = store_result(frame, definition->repository);
                 }
             },
             entry);
@@ -736,7 +738,7 @@ MatchTree<Tag>::MatchTree(std::vector<ygg::View<ygg::Index<Tag>, ::tyr::formalis
 
         if (stack.empty())
         {
-            m_root = *produced;
+            definition->root = *produced;
             break;
         }
         else
@@ -753,6 +755,11 @@ template<typename Tag>
 MatchTree<Tag>::~MatchTree() = default;
 
 template<typename Tag>
+MatchTree<Tag>::MatchTree(std::shared_ptr<const Definition> definition) : m_definition(std::move(definition)), m_evaluator()
+{
+}
+
+template<typename Tag>
 MatchTreePtr<Tag> MatchTree<Tag>::create(std::vector<ygg::View<ygg::Index<Tag>, ::tyr::formalism::planning::Repository>> elements,
                                          const ::tyr::formalism::planning::Repository& context)
 {
@@ -760,19 +767,26 @@ MatchTreePtr<Tag> MatchTree<Tag>::create(std::vector<ygg::View<ygg::Index<Tag>, 
 }
 
 template<typename Tag>
+MatchTreePtr<Tag> MatchTree<Tag>::make_worker() const
+{
+    return MatchTreePtr<Tag>(new MatchTree<Tag>(m_definition));
+}
+
+template<typename Tag>
 void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
                               std::vector<ygg::View<ygg::Index<Tag>, ::tyr::formalism::planning::Repository>>& out_applicable_elements)
 {
     out_applicable_elements.clear();
-    m_evaluate_stack.clear();
+    auto& stack = m_evaluator.stack;
+    stack.clear();
 
-    if (m_root)
-        m_evaluate_stack.push_back(*m_root);
+    if (m_definition->root)
+        stack.push_back(*m_definition->root);
 
-    while (!m_evaluate_stack.empty())
+    while (!stack.empty())
     {
-        const auto node = m_evaluate_stack.back();
-        m_evaluate_stack.pop_back();
+        const auto node = stack.back();
+        stack.pop_back();
 
         visit(
             [&](auto&& arg)
@@ -784,10 +798,10 @@ void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
                     const auto holds = state.state_builder.test(arg.get_atom());
 
                     if (const auto child = holds ? arg.get_true_child() : arg.get_false_child())
-                        m_evaluate_stack.push_back(*child);
+                        stack.push_back(*child);
 
                     if (const auto child = arg.get_dontcare_child())
-                        m_evaluate_stack.push_back(*child);
+                        stack.push_back(*child);
                 }
                 else if constexpr (std::is_same_v<Handle, ygg::Index<NumericConstraintSelectorNode<Tag>>>)
                 {
@@ -795,10 +809,10 @@ void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
 
                     if (holds)
                         if (const auto child = arg.get_true_child())
-                            m_evaluate_stack.push_back(*child);
+                            stack.push_back(*child);
 
                     if (const auto child = arg.get_dontcare_child())
-                        m_evaluate_stack.push_back(*child);
+                        stack.push_back(*child);
                 }
                 else if constexpr (std::is_same_v<Handle, ygg::Index<VariableSelectorNode<Tag>>>)
                 {
@@ -807,10 +821,10 @@ void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
                     assert(ygg::uint_t(value) < children.size());
 
                     if (const auto child = children[ygg::uint_t(value)])
-                        m_evaluate_stack.push_back(*child);
+                        stack.push_back(*child);
 
                     if (const auto child = arg.get_dontcare_child())
-                        m_evaluate_stack.push_back(*child);
+                        stack.push_back(*child);
                 }
                 else if constexpr (std::is_same_v<Handle, ygg::Index<NegativeFactSelectorNode<Tag>>>)
                 {
@@ -819,10 +833,10 @@ void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
 
                     if (holds)
                         if (const auto child = arg.get_true_child())
-                            m_evaluate_stack.push_back(*child);
+                            stack.push_back(*child);
 
                     if (const auto child = arg.get_dontcare_child())
-                        m_evaluate_stack.push_back(*child);
+                        stack.push_back(*child);
                 }
                 else if constexpr (std::is_same_v<Handle, ygg::Index<ElementGeneratorNode<Tag>>>)
                 {

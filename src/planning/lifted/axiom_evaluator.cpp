@@ -21,22 +21,30 @@
 #include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/bottom_up.hpp"  // for solve_bottom_up
 #include "tyr/datalog/lifted/contexts/program.hpp"
+#include "tyr/datalog/lifted/policies/annotation.hpp"
+#include "tyr/datalog/lifted/workspaces/program.hpp"
+#include "tyr/datalog/policies/termination.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"   // for MergeContext
 #include "tyr/formalism/planning/merge_planning.hpp"  // for MergeContext
 #include "tyr/formalism/planning/repository.hpp"      // for Repository
 #include "tyr/formalism/planning/views.hpp"
+#include "tyr/planning/lifted/programs/axiom.hpp"
 #include "tyr/planning/lifted/state_builder.hpp"
 #include "tyr/planning/lifted/task.hpp"  // for LiftedTag
-#include "tyr/planning/lifted/task.hpp"
-#include "tyr/planning/task_utils.hpp"  // for insert_fact_s...
+#include "tyr/planning/task_utils.hpp"   // for insert_fact_s...
 
 #include <algorithm>
+#include <atomic>
 #include <cista/containers/hash_storage.h>  // for operator!=
 #include <fmt/ostream.h>
-#include <gtl/phmap.hpp>                    // for operator!=
-#include <utility>                          // for pair
+#include <gtl/phmap.hpp>  // for operator!=
+#include <iostream>
+#include <memory>
+#include <utility>  // for pair
+#include <vector>
 #include <yggdrasil/containers/vector.hpp>  // for ygg::View
+#include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/formatting/formatter.hpp>
 #include <yggdrasil/semantics/comparators.hpp>  // for operator!=
 #include <yggdrasil/semantics/equal_to.hpp>     // for EqualTo
@@ -73,37 +81,100 @@ void read_derived_atoms_from_datalog_program(const AxiomEvaluatorProgram<LiftedT
 }
 }
 
-AxiomEvaluator<LiftedTag>::AxiomEvaluator(ygg::uint_t index, TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context) :
-    m_index(index),
-    m_task(std::move(task)),
-    m_execution_context(std::move(execution_context)),
-    m_axiom_program(m_task->get_task()),
-    m_workspace(m_axiom_program.get_datalog_program())
+struct AxiomEvaluator<LiftedTag>::Impl
 {
+    using Program = AxiomEvaluatorProgram<LiftedTag>;
+
+    struct Definition
+    {
+        explicit Definition(TaskPtr<LiftedTag> task_) : task(std::move(task_)), program(task->get_task()) {}
+
+        TaskPtr<LiftedTag> task;
+        Program program;
+    };
+
+    struct Evaluator
+    {
+        Evaluator(const Definition& definition, ygg::ExecutionContextPtr execution_context_) :
+            execution_context(std::move(execution_context_)),
+            workspace(definition.program.get_datalog_program()),
+            derived_bindings()
+        {
+        }
+
+        ygg::ExecutionContextPtr execution_context;
+        datalog::ProgramWorkspace<LiftedTag> workspace;
+        std::vector<::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>> derived_bindings;
+    };
+
+    Impl(ygg::uint_t index_, TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
+        index(index_),
+        next_index(std::move(next_index_)),
+        definition(std::make_shared<Definition>(std::move(task))),
+        evaluator(*definition, std::move(execution_context))
+    {
+    }
+
+    Impl(ygg::uint_t index_,
+         std::shared_ptr<const Definition> definition_,
+         ygg::ExecutionContextPtr execution_context,
+         std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
+        index(index_),
+        next_index(std::move(next_index_)),
+        definition(std::move(definition_)),
+        evaluator(*definition, std::move(execution_context))
+    {
+    }
+
+    ygg::uint_t index;
+    std::shared_ptr<std::atomic<ygg::uint_t>> next_index;
+    std::shared_ptr<const Definition> definition;
+    Evaluator evaluator;
+};
+
+AxiomEvaluator<LiftedTag>::~AxiomEvaluator() = default;
+
+AxiomEvaluator<LiftedTag>::AxiomEvaluator(ygg::uint_t index,
+                                          TaskPtr<LiftedTag> task,
+                                          ygg::ExecutionContextPtr execution_context,
+                                          std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
+    m_impl(std::make_unique<Impl>(index, std::move(task), std::move(execution_context), std::move(next_index)))
+{
+}
+
+AxiomEvaluator<LiftedTag>::AxiomEvaluator(std::unique_ptr<Impl> impl) : m_impl(std::move(impl)) {}
+
+AxiomEvaluatorPtr<LiftedTag> AxiomEvaluator<LiftedTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
+{
+    return AxiomEvaluatorPtr<LiftedTag>(new AxiomEvaluator<LiftedTag>(std::make_unique<Impl>(m_impl->next_index->fetch_add(1, std::memory_order_relaxed),
+                                                                                             m_impl->definition,
+                                                                                             std::move(execution_context),
+                                                                                             m_impl->next_index)));
 }
 
 void AxiomEvaluator<LiftedTag>::compute_extended_state(ygg::Builder<State<LiftedTag>>& state_builder)
 {
-    m_derived_bindings.clear();
-    m_workspace.reset_evaluation();
+    auto& evaluator = m_impl->evaluator;
+    evaluator.derived_bindings.clear();
+    evaluator.workspace.reset_evaluation();
 
-    auto merge_datalog_context = fp::MergeDatalogContext { m_workspace.datalog_builder, m_workspace.workspace_repository };
-    const auto& program = m_axiom_program;
+    auto merge_datalog_context = fp::MergeDatalogContext { evaluator.workspace.datalog_builder, evaluator.workspace.workspace_repository };
+    const auto& program = m_impl->definition->program;
 
     insert_unextended_state(state_builder,
-                            *m_task->get_repository(),
+                            *m_impl->definition->task->get_repository(),
                             program.get_translation_context().p2d,
                             merge_datalog_context,
-                            m_workspace.facts.fact_sets,
-                            m_workspace.facts.assignment_sets);
+                            evaluator.workspace.facts.fact_sets,
+                            evaluator.workspace.facts.assignment_sets);
 
-    auto ctx = d::ProgramExecutionContext(m_workspace);
+    auto ctx = d::ProgramExecutionContext(evaluator.workspace);
 
-    m_execution_context->arena().execute([&] { d::solve_bottom_up(ctx); });
+    evaluator.execution_context->arena().execute([&] { d::solve_bottom_up(ctx); });
 
-    auto merge_planning_context = fp::MergePlanningContext { m_workspace.planning_builder, *m_task->get_repository() };
+    auto merge_planning_context = fp::MergePlanningContext { evaluator.workspace.planning_builder, *m_impl->definition->task->get_repository() };
 
-    read_derived_atoms_from_datalog_program(program, state_builder, merge_planning_context, m_workspace.facts.fact_sets, m_derived_bindings);
+    read_derived_atoms_from_datalog_program(program, state_builder, merge_planning_context, evaluator.workspace.facts.fact_sets, evaluator.derived_bindings);
 }
 
 void AxiomEvaluator<LiftedTag>::print_summary(size_t verbosity) const
@@ -112,17 +183,23 @@ void AxiomEvaluator<LiftedTag>::print_summary(size_t verbosity) const
         return;
 
     std::cout << "[Axiom evaluator] Summary" << std::endl;
-    fmt::print(std::cout, "{}\n", m_workspace.statistics);
+    fmt::print(std::cout, "{}\n", m_impl->evaluator.workspace.statistics);
     auto axiom_evaluator_rule_statistics = std::vector<datalog::RuleStatistics> {};
-    for (const auto& ws_rule : m_workspace.template get_rules<f::PredicateTag>())
+    for (const auto& ws_rule : m_impl->evaluator.workspace.template get_rules<f::PredicateTag>())
         axiom_evaluator_rule_statistics.push_back(ws_rule->common.statistics);
     fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_statistics(axiom_evaluator_rule_statistics));
     auto axiom_evaluator_rule_worker_statistics = std::vector<datalog::RuleWorkerStatistics> {};
-    for (const auto& ws_rule : m_workspace.template get_rules<f::PredicateTag>())
+    for (const auto& ws_rule : m_impl->evaluator.workspace.template get_rules<f::PredicateTag>())
         for (const auto& worker : ws_rule->worker)
             axiom_evaluator_rule_worker_statistics.push_back(worker.solve.statistics);
     fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_worker_statistics(axiom_evaluator_rule_worker_statistics));
 }
+
+const AxiomEvaluatorProgram<LiftedTag>& AxiomEvaluator<LiftedTag>::get_axiom_program() const noexcept { return m_impl->definition->program; }
+
+const ygg::ExecutionContextPtr& AxiomEvaluator<LiftedTag>::get_execution_context() const noexcept { return m_impl->evaluator.execution_context; }
+
+ygg::uint_t AxiomEvaluator<LiftedTag>::get_index() const noexcept { return m_impl->index; }
 
 static_assert(AxiomEvaluatorConcept<AxiomEvaluator<LiftedTag>, LiftedTag>);
 

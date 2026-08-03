@@ -30,4 +30,5 @@ inline constexpr const char* kHeuristicFixture = "tests/fixtures/planning/heuris
 namespace tyr::tests
 {
 TEST(TyrPlanningLiftedFFRPGHeuristicTest, PreferredActionsDescribeLatestEvaluation) { expect_preferred_actions_reset_after_dead_end<LiftedTag>(); }
+TEST(TyrPlanningLiftedFFRPGHeuristicTest, WorkerPreferredActionsAreIndependent) { expect_worker_has_independent_preferred_actions<LiftedTag>(); }
 }

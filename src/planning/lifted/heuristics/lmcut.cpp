@@ -113,6 +113,7 @@ struct LMCutHeuristic<LiftedTag>::Impl :
     using Precondition = std::variant<PredicateBinding, NumericNode>;
 
     Impl(TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode);
+    Impl(const Impl& source, ygg::ExecutionContextPtr execution_context);
     ygg::float_t evaluate(const StateView<LiftedTag>& state);
 
 private:
@@ -191,6 +192,18 @@ LMCutHeuristic<LiftedTag>::Impl::Impl(TaskPtr<LiftedTag> task, ygg::ExecutionCon
     m_numeric_cut(),
     m_max_precondition_buffers(),
     m_numeric_support_selector_workspace(),
+    m_max_precondition_depth(0),
+    m_use_expanded_edges(m_definition->use_expanded_lmcut)
+{
+}
+
+LMCutHeuristic<LiftedTag>::Impl::Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) :
+    Base(source.m_definition,
+         source.m_task,
+         std::move(execution_context),
+         datalog::OrAnnotationPolicy<LiftedTag> {},
+         datalog::AchieverAndAnnotationPolicy<LiftedTag, datalog::MaxAggregation> {},
+         source.m_source_goal),
     m_max_precondition_depth(0),
     m_use_expanded_edges(m_definition->use_expanded_lmcut)
 {
@@ -837,6 +850,8 @@ LMCutHeuristic<LiftedTag>::LMCutHeuristic(TaskPtr<LiftedTag> task, ygg::Executio
 {
 }
 
+LMCutHeuristic<LiftedTag>::LMCutHeuristic(std::unique_ptr<Impl> impl) : m_impl(std::move(impl)) {}
+
 LMCutHeuristic<LiftedTag>::~LMCutHeuristic() = default;
 LMCutHeuristic<LiftedTag>::LMCutHeuristic(LMCutHeuristic&&) noexcept = default;
 LMCutHeuristic<LiftedTag>& LMCutHeuristic<LiftedTag>::operator=(LMCutHeuristic&&) noexcept = default;
@@ -848,6 +863,10 @@ LMCutHeuristicPtr<LiftedTag> LMCutHeuristic<LiftedTag>::create(TaskPtr<LiftedTag
 
 void LMCutHeuristic<LiftedTag>::set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) { m_impl->set_goal(goal); }
 ygg::float_t LMCutHeuristic<LiftedTag>::evaluate(const StateView<LiftedTag>& state) { return m_impl->evaluate(state); }
+HeuristicPtr<LiftedTag> LMCutHeuristic<LiftedTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
+{
+    return HeuristicPtr<LiftedTag>(new LMCutHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context))));
+}
 void LMCutHeuristic<LiftedTag>::print_summary(size_t verbosity) const { m_impl->print_summary(verbosity); }
 
 }

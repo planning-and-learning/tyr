@@ -35,6 +35,16 @@ struct AddRPGHeuristic<LiftedTag>::Impl :
                                        datalog::AndAnnotationPolicy<LiftedTag, datalog::SumAggregation>,
                                        datalog::TerminationPolicy<LiftedTag, datalog::SumAggregation>>;
     using Base::Base;
+
+    Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) :
+        Base(source.m_definition,
+             source.m_task,
+             std::move(execution_context),
+             datalog::OrAnnotationPolicy<LiftedTag> {},
+             datalog::AndAnnotationPolicy<LiftedTag, datalog::SumAggregation> {},
+             source.m_source_goal)
+    {
+    }
 };
 
 AddRPGHeuristic<LiftedTag>::AddRPGHeuristic(TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
@@ -45,6 +55,8 @@ AddRPGHeuristic<LiftedTag>::AddRPGHeuristic(TaskPtr<LiftedTag> task, ygg::Execut
                                   cost_mode))
 {
 }
+
+AddRPGHeuristic<LiftedTag>::AddRPGHeuristic(std::unique_ptr<Impl> impl) : m_impl(std::move(impl)) {}
 
 AddRPGHeuristic<LiftedTag>::~AddRPGHeuristic() = default;
 AddRPGHeuristic<LiftedTag>::AddRPGHeuristic(AddRPGHeuristic&&) noexcept = default;
@@ -57,6 +69,10 @@ AddRPGHeuristicPtr<LiftedTag> AddRPGHeuristic<LiftedTag>::create(TaskPtr<LiftedT
 
 void AddRPGHeuristic<LiftedTag>::set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) { m_impl->set_goal(goal); }
 ygg::float_t AddRPGHeuristic<LiftedTag>::evaluate(const StateView<LiftedTag>& state) { return m_impl->evaluate(state); }
+HeuristicPtr<LiftedTag> AddRPGHeuristic<LiftedTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
+{
+    return HeuristicPtr<LiftedTag>(new AddRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context))));
+}
 void AddRPGHeuristic<LiftedTag>::print_summary(size_t verbosity) const { m_impl->print_summary(verbosity); }
 
 }

@@ -18,30 +18,17 @@
 #ifndef TYR_PLANNING_LIFTED_STATE_REPOSITORY_HPP_
 #define TYR_PLANNING_LIFTED_STATE_REPOSITORY_HPP_
 
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/lifted/state_builder.hpp"
-#include "tyr/planning/lifted/state_data.hpp"
 #include "tyr/planning/lifted/state_view.hpp"
 #include "tyr/planning/state_index.hpp"
-#include "tyr/planning/state_storage/config.hpp"
 
-#include <yggdrasil/containers/indexed_hash_set.hpp>
-#include <yggdrasil/containers/shared_object_pool.hpp>
-#include <yggdrasil/core/config.hpp>
-#include <yggdrasil/execution/onetbb.hpp>
-
-#if defined(TYR_STATE_STORAGE_HASHSET)
-#include "tyr/planning/lifted/state_storage/hash_set/atom.hpp"
-#include "tyr/planning/lifted/state_storage/hash_set/fact.hpp"
-#include "tyr/planning/state_storage/hash_set/numeric.hpp"
-#elif defined(TYR_STATE_STORAGE_TREE)
-#include "tyr/planning/lifted/state_storage/tree_compression/atom.hpp"
-#include "tyr/planning/lifted/state_storage/tree_compression/fact.hpp"
-#include "tyr/planning/state_storage/tree_compression/numeric.hpp"
-#endif
-
+#include <atomic>
 #include <memory>
-#include <valla/valla.hpp>
+#include <utility>
 #include <vector>
+#include <yggdrasil/containers/shared_object_pool.hpp>
 
 namespace tyr::planning
 {
@@ -52,9 +39,17 @@ class StateRepository<LiftedTag> : public std::enable_shared_from_this<StateRepo
     friend class StateRepositoryFactory<LiftedTag>;
 
 private:
-    StateRepository(ygg::uint_t index, TaskPtr<LiftedTag> task, AxiomEvaluatorPtr<LiftedTag> axiom_evaluator);
+    struct Impl;
+
+    StateRepository(ygg::uint_t index,
+                    TaskPtr<LiftedTag> task,
+                    AxiomEvaluatorPtr<LiftedTag> axiom_evaluator,
+                    std::shared_ptr<std::atomic<ygg::uint_t>> next_index);
+    explicit StateRepository(std::unique_ptr<Impl> impl);
 
 public:
+    ~StateRepository();
+
     StateView<LiftedTag> get_initial_state();
 
     StateView<LiftedTag> get_registered_state(ygg::Index<State<LiftedTag>> state_index);
@@ -70,30 +65,18 @@ public:
     ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>> get_state_builder();
 
     StateView<LiftedTag> register_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>> state);
+    [[nodiscard]] StateRepositoryPtr<LiftedTag> make_worker(ygg::ExecutionContextPtr execution_context) const;
 
     size_t memory_usage() const noexcept;
 
-    const auto& get_task() const noexcept { return m_task; }
-    const auto& get_axiom_evaluator() const noexcept { return m_axiom_evaluator; }
-    const auto& get_execution_context() const noexcept { return m_execution_context; }
-    auto get_index() const noexcept { return m_index; }
-
-    size_t num_states() const noexcept { return m_packed_states.size(); }
+    const TaskPtr<LiftedTag>& get_task() const noexcept;
+    const AxiomEvaluatorPtr<LiftedTag>& get_axiom_evaluator() const noexcept;
+    const ygg::ExecutionContextPtr& get_execution_context() const noexcept;
+    ygg::uint_t get_index() const noexcept;
+    size_t num_states() const noexcept;
 
 private:
-    ygg::uint_t m_index;
-    TaskPtr<LiftedTag> m_task;
-    ygg::ExecutionContextPtr m_execution_context;
-
-    StateStorageContext<LiftedTag, StateStoragePolicyTag> m_context;
-    FactStorageBackend<LiftedTag, StateStoragePolicyTag> m_fluent_backend;
-    AtomStorageBackend<LiftedTag, StateStoragePolicyTag> m_derived_backend;
-    NumericStorageBackend<LiftedTag, StateStoragePolicyTag> m_numeric_backend;
-
-    ygg::IndexedHashSet<State<LiftedTag>> m_packed_states;
-    ygg::SharedObjectPool<ygg::Builder<State<LiftedTag>>> m_state_builder_pool;
-
-    AxiomEvaluatorPtr<LiftedTag> m_axiom_evaluator;
+    std::unique_ptr<Impl> m_impl;
 };
 
 }

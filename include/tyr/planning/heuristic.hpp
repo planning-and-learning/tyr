@@ -36,7 +36,7 @@ namespace tyr::planning
  * Heavy built-in heuristics hide a task-derived definition and a worker-local evaluator behind their private implementation. Definitions are frozen before
  * being shared between workers, while evaluators own all mutable workspaces. This avoids repeating task translation without exposing those implementation
  * details through the search API. set_goal() is configuration and must run before workers are materialized, or after they have been discarded. Custom
- * heuristics need not use the same internal representation.
+ * heuristics need not use the same internal representation, but must return an independently mutable evaluator from make_worker().
  */
 template<TaskKind Kind>
 class Heuristic
@@ -47,6 +47,8 @@ public:
     virtual void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) = 0;
 
     virtual ygg::float_t evaluate(const StateView<Kind>& state) = 0;
+
+    [[nodiscard]] virtual HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const = 0;
 
     virtual const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>& get_preferred_actions();
 

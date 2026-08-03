@@ -41,6 +41,8 @@ public:
 
     ygg::float_t evaluate(const StateView<Kind>& state) override;
 
+    [[nodiscard]] HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override;
+
 protected:
     std::shared_ptr<const Task<Kind>> m_task;
 

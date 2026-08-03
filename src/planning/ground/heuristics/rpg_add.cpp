@@ -48,12 +48,22 @@ struct AddRPGHeuristic<GroundTag>::Impl :
              cost_mode)
     {
     }
+
+    Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) :
+        Base(source.m_definition,
+             std::move(execution_context),
+             datalog::OrAnnotationPolicy<GroundTag>(),
+             datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>())
+    {
+    }
 };
 
 AddRPGHeuristic<GroundTag>::AddRPGHeuristic(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
     m_impl(std::make_unique<Impl>(std::move(task), std::move(execution_context), cost_mode))
 {
 }
+
+AddRPGHeuristic<GroundTag>::AddRPGHeuristic(std::unique_ptr<Impl> impl) : m_impl(std::move(impl)) {}
 
 AddRPGHeuristic<GroundTag>::~AddRPGHeuristic() = default;
 AddRPGHeuristic<GroundTag>::AddRPGHeuristic(AddRPGHeuristic&&) noexcept = default;
@@ -67,5 +77,10 @@ AddRPGHeuristicPtr<GroundTag> AddRPGHeuristic<GroundTag>::create(TaskPtr<GroundT
 void AddRPGHeuristic<GroundTag>::set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) { m_impl->set_goal(goal); }
 
 ygg::float_t AddRPGHeuristic<GroundTag>::evaluate(const StateView<GroundTag>& state) { return m_impl->evaluate(state); }
+
+HeuristicPtr<GroundTag> AddRPGHeuristic<GroundTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
+{
+    return HeuristicPtr<GroundTag>(new AddRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context))));
+}
 
 }

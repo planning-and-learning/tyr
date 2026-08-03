@@ -48,12 +48,22 @@ struct MaxRPGHeuristic<GroundTag>::Impl :
              cost_mode)
     {
     }
+
+    Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) :
+        Base(source.m_definition,
+             std::move(execution_context),
+             datalog::OrAnnotationPolicy<GroundTag>(),
+             datalog::AndAnnotationPolicy<GroundTag, datalog::MaxAggregation>())
+    {
+    }
 };
 
 MaxRPGHeuristic<GroundTag>::MaxRPGHeuristic(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
     m_impl(std::make_unique<Impl>(std::move(task), std::move(execution_context), cost_mode))
 {
 }
+
+MaxRPGHeuristic<GroundTag>::MaxRPGHeuristic(std::unique_ptr<Impl> impl) : m_impl(std::move(impl)) {}
 
 MaxRPGHeuristic<GroundTag>::~MaxRPGHeuristic() = default;
 MaxRPGHeuristic<GroundTag>::MaxRPGHeuristic(MaxRPGHeuristic&&) noexcept = default;
@@ -67,5 +77,10 @@ MaxRPGHeuristicPtr<GroundTag> MaxRPGHeuristic<GroundTag>::create(TaskPtr<GroundT
 void MaxRPGHeuristic<GroundTag>::set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) { m_impl->set_goal(goal); }
 
 ygg::float_t MaxRPGHeuristic<GroundTag>::evaluate(const StateView<GroundTag>& state) { return m_impl->evaluate(state); }
+
+HeuristicPtr<GroundTag> MaxRPGHeuristic<GroundTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
+{
+    return HeuristicPtr<GroundTag>(new MaxRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context))));
+}
 
 }

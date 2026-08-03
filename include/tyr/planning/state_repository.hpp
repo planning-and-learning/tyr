@@ -27,7 +27,6 @@
 
 #include <concepts>
 #include <yggdrasil/containers/shared_object_pool.hpp>
-#include <yggdrasil/execution/onetbb.hpp>
 
 namespace tyr::planning
 {
@@ -38,12 +37,14 @@ class StateRepository;
 template<typename T, typename Kind>
 concept StateRepositoryConcept =
     requires(T& r,
+             const T& const_r,
              ygg::Index<State<Kind>> index,
              ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>> state_builder,
              const std::vector<ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>& fluent_facts,
              const std::vector<std::pair<ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>>, ygg::float_t>>& fterm_values,
              const std::vector<::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag>>& fluent_fact_views,
-             const std::vector<::tyr::formalism::planning::GroundFunctionTermViewValuePair<::tyr::formalism::FluentTag>>& fterm_value_views) {
+             const std::vector<::tyr::formalism::planning::GroundFunctionTermViewValuePair<::tyr::formalism::FluentTag>>& fterm_value_views,
+             ygg::ExecutionContextPtr execution_context) {
         requires TaskKind<Kind>;
         { r.get_initial_state() } -> std::same_as<StateView<Kind>>;
         { r.get_registered_state(index) } -> std::same_as<StateView<Kind>>;
@@ -51,6 +52,7 @@ concept StateRepositoryConcept =
         { r.create_state(fluent_fact_views, fterm_value_views) } -> std::same_as<StateView<Kind>>;
         { r.get_state_builder() } -> std::same_as<ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>>>;
         { r.register_state(state_builder) } -> std::same_as<StateView<Kind>>;
+        { const_r.make_worker(execution_context) } -> std::same_as<StateRepositoryPtr<Kind>>;
         { r.get_task() } -> std::same_as<const TaskPtr<Kind>&>;
         { r.get_index() } -> std::same_as<ygg::uint_t>;
     };

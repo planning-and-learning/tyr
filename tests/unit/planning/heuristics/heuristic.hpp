@@ -171,6 +171,45 @@ void expect_builtin_set_goal_reconfigures_evaluator()
     EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 0);
 }
 
+template<::tyr::TaskKind Kind>
+void expect_worker_snapshots_configured_goal()
+{
+    auto context = create_preferred_action_reset_context<Kind>();
+    auto heuristic = TestedHeuristic<Kind>::create(context.task, context.execution_context);
+    const auto initial_node = context.successor_generator->get_initial_node();
+    const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node);
+    const auto achieve = std::ranges::find_if(successors, [](const auto& successor) { return successor.label.get_relation().get_name().str() == "achieve"; });
+    ASSERT_NE(achieve, successors.end());
+
+    heuristic->set_goal(context.successor_generator->ground_action(achieve->label).get_condition());
+    auto worker = heuristic->make_worker(ygg::ExecutionContext::create(2));
+
+    ASSERT_NE(worker.get(), heuristic.get());
+    EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 0);
+    EXPECT_EQ(worker->evaluate(initial_node.get_state()), 0);
+}
+
+template<::tyr::TaskKind Kind>
+void expect_worker_has_independent_preferred_actions()
+{
+    auto context = create_preferred_action_reset_context<Kind>();
+    auto heuristic = p::FFRPGHeuristic<Kind>::create(context.task, context.execution_context);
+    const auto initial_node = context.successor_generator->get_initial_node();
+
+    EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 1);
+    ASSERT_FALSE(heuristic->get_preferred_actions().empty());
+
+    auto worker = heuristic->make_worker(ygg::ExecutionContext::create(2));
+    EXPECT_TRUE(worker->get_preferred_actions().empty());
+
+    const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node);
+    const auto dead_end = std::ranges::find_if(successors, [](const auto& successor) { return successor.label.get_relation().get_name().str() == "consume"; });
+    ASSERT_NE(dead_end, successors.end());
+    EXPECT_EQ(worker->evaluate(dead_end->node.get_state()), std::numeric_limits<ygg::float_t>::infinity());
+    EXPECT_TRUE(worker->get_preferred_actions().empty());
+    EXPECT_FALSE(heuristic->get_preferred_actions().empty());
+}
+
 inline void expect_optional_eq(ygg::float_t actual, std::optional<ygg::float_t> expected)
 {
     if (expected)
@@ -182,6 +221,8 @@ inline void expect_optional_eq(ygg::float_t actual, std::optional<ygg::float_t> 
 class HeuristicFixtureTest : public ::testing::TestWithParam<HeuristicCase>
 {
 };
+
+TEST(TyrPlanningHeuristicWorkerTest, SnapshotsConfiguredGoal) { expect_worker_snapshots_configured_goal<HeuristicTaskKind>(); }
 
 TEST_P(HeuristicFixtureTest, InitialStateMatchesFixture)
 {

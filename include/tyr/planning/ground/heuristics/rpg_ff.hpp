@@ -42,11 +42,13 @@ public:
 
     void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override;
     ygg::float_t evaluate(const StateView<GroundTag>& state) override;
+    [[nodiscard]] HeuristicPtr<GroundTag> make_worker(ygg::ExecutionContextPtr execution_context) const override;
 
     const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>& get_preferred_actions() override;
 
 private:
     struct Impl;
+    explicit FFRPGHeuristic(std::unique_ptr<Impl> impl);
     std::unique_ptr<Impl> m_impl;
 };
 

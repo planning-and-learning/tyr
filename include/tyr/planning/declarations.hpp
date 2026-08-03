@@ -22,12 +22,7 @@
 
 #include <memory>
 #include <yggdrasil/core/types.hpp>
-
-namespace ygg
-{
-struct ExecutionContext;
-using ExecutionContextPtr = std::shared_ptr<ExecutionContext>;
-}
+#include <yggdrasil/execution/declarations.hpp>
 
 namespace tyr::planning
 {

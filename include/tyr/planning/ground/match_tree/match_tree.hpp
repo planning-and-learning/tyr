@@ -24,6 +24,7 @@
 #include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
 #include "tyr/planning/ground/match_tree/repository.hpp"
 
+#include <memory>
 #include <optional>
 #include <vector>
 #include <yggdrasil/core/types.hpp>
@@ -35,19 +36,34 @@ template<typename Tag>
 class MatchTree
 {
 private:
-    RepositoryPtr<Tag> m_context;
+    using NodeView = ygg::View<ygg::Data<Node<Tag>>, Repository<Tag>>;
 
-    std::optional<ygg::View<ygg::Data<Node<Tag>>, Repository<Tag>>> m_root;
+    struct Definition
+    {
+        explicit Definition(const ::tyr::formalism::planning::Repository& context) : repository(ygg::uint_t(0), context) {}
 
-    std::vector<ygg::View<ygg::Data<Node<Tag>>, Repository<Tag>>> m_evaluate_stack;  ///< temporary during evaluation.
+        Repository<Tag> repository;  // Constant index 0 is sufficient because match-tree node views are never compared.
+        std::optional<NodeView> root;
+    };
+
+    struct Evaluator
+    {
+        std::vector<NodeView> stack;
+    };
+
+    explicit MatchTree(std::shared_ptr<const Definition> definition);
+
+    std::shared_ptr<const Definition> m_definition;
+    Evaluator m_evaluator;
 
 public:
-    MatchTree(std::vector<ygg::View<ygg::Index<Tag>, ::tyr::formalism::planning::Repository>> elements,
-              const ::tyr::formalism::planning::Repository& context);
+    MatchTree(std::vector<ygg::View<ygg::Index<Tag>, ::tyr::formalism::planning::Repository>> elements, const ::tyr::formalism::planning::Repository& context);
     ~MatchTree();
 
     static MatchTreePtr<Tag> create(std::vector<ygg::View<ygg::Index<Tag>, ::tyr::formalism::planning::Repository>> elements,
                                     const ::tyr::formalism::planning::Repository& context);
+
+    [[nodiscard]] MatchTreePtr<Tag> make_worker() const;
 
     MatchTree(const MatchTree& other) = delete;
     MatchTree& operator=(const MatchTree& other) = delete;

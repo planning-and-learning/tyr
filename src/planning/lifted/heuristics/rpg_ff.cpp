@@ -45,6 +45,7 @@ struct FFRPGHeuristic<LiftedTag>::Impl :
                                        datalog::TerminationPolicy<LiftedTag, datalog::SumAggregation>>;
 
     Impl(TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode);
+    Impl(const Impl& source, ygg::ExecutionContextPtr execution_context);
 
     void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal);
     ygg::float_t evaluate(const StateView<LiftedTag>& state)
@@ -100,6 +101,18 @@ FFRPGHeuristic<LiftedTag>::Impl::Impl(TaskPtr<LiftedTag> task, ygg::ExecutionCon
     m_numeric_support_selector_workspace(),
     m_relaxed_plan(),
     m_preferred_actions()
+{
+}
+
+FFRPGHeuristic<LiftedTag>::Impl::Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) :
+    Base(source.m_definition,
+         source.m_task,
+         std::move(execution_context),
+         datalog::OrAnnotationPolicy<LiftedTag> {},
+         datalog::AndAnnotationPolicy<LiftedTag, datalog::SumAggregation> {},
+         source.m_source_goal),
+    m_markings(m_definition->rpg_program.get_datalog_program().get_program().get_predicates<::tyr::formalism::FluentTag>().size()),
+    m_function_markings(m_definition->rpg_program.get_datalog_program().get_program().get_functions<::tyr::formalism::FluentTag>().size())
 {
 }
 
@@ -286,6 +299,8 @@ FFRPGHeuristic<LiftedTag>::FFRPGHeuristic(TaskPtr<LiftedTag> task, ygg::Executio
 {
 }
 
+FFRPGHeuristic<LiftedTag>::FFRPGHeuristic(std::unique_ptr<Impl> impl) : m_impl(std::move(impl)) {}
+
 FFRPGHeuristic<LiftedTag>::~FFRPGHeuristic() = default;
 FFRPGHeuristic<LiftedTag>::FFRPGHeuristic(FFRPGHeuristic&&) noexcept = default;
 FFRPGHeuristic<LiftedTag>& FFRPGHeuristic<LiftedTag>::operator=(FFRPGHeuristic&&) noexcept = default;
@@ -297,6 +312,10 @@ FFRPGHeuristicPtr<LiftedTag> FFRPGHeuristic<LiftedTag>::create(TaskPtr<LiftedTag
 
 void FFRPGHeuristic<LiftedTag>::set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) { m_impl->set_goal(goal); }
 ygg::float_t FFRPGHeuristic<LiftedTag>::evaluate(const StateView<LiftedTag>& state) { return m_impl->evaluate(state); }
+HeuristicPtr<LiftedTag> FFRPGHeuristic<LiftedTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
+{
+    return HeuristicPtr<LiftedTag>(new FFRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context))));
+}
 const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>& FFRPGHeuristic<LiftedTag>::get_preferred_actions()
 {
     return m_impl->get_preferred_actions();

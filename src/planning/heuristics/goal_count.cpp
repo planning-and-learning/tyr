@@ -75,6 +75,14 @@ ygg::float_t GoalCountHeuristic<Kind>::evaluate(const StateView<Kind>& state)
     return unsat_counter;
 }
 
+template<TaskKind Kind>
+HeuristicPtr<Kind> GoalCountHeuristic<Kind>::make_worker([[maybe_unused]] ygg::ExecutionContextPtr execution_context) const
+{
+    auto worker = create(m_task);
+    worker->m_goal = m_goal;
+    return worker;
+}
+
 template class GoalCountHeuristic<LiftedTag>;
 template class GoalCountHeuristic<GroundTag>;
 

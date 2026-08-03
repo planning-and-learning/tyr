@@ -18,17 +18,13 @@
 #ifndef TYR_PLANNING_GROUND_SUCCESSOR_GENERATOR_HPP_
 #define TYR_PLANNING_GROUND_SUCCESSOR_GENERATOR_HPP_
 
-#include "tyr/planning/node.hpp"               // for Node
-#include "tyr/planning/ground/state_view.hpp"  // for State
-//
-#include "tyr/formalism/planning/ground_action_index.hpp"  // for ygg::Index
-#include "tyr/formalism/planning/ground_action_view.hpp"
-#include "tyr/planning/action_executor.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground/match_tree/match_tree.hpp"
+#include "tyr/planning/ground/state_view.hpp"
 #include "tyr/planning/successor_generator.hpp"
 
-#include <yggdrasil/containers/associative_containers.hpp>
+#include <atomic>
+#include <memory>
 
 namespace tyr::planning
 {
@@ -39,9 +35,24 @@ class SuccessorGenerator<GroundTag>
     friend class SuccessorGeneratorFactory<GroundTag>;
 
 private:
-    SuccessorGenerator(ygg::uint_t index, TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, StateRepositoryPtr<GroundTag> state_repository);
+    struct Impl;
+
+    SuccessorGenerator(ygg::uint_t index,
+                       TaskPtr<GroundTag> task,
+                       ygg::ExecutionContextPtr execution_context,
+                       StateRepositoryPtr<GroundTag> state_repository,
+                       std::shared_ptr<std::atomic<ygg::uint_t>> next_index);
+
+    explicit SuccessorGenerator(std::unique_ptr<Impl> impl) noexcept;
 
 public:
+    ~SuccessorGenerator();
+
+    SuccessorGenerator(const SuccessorGenerator&) = delete;
+    SuccessorGenerator& operator=(const SuccessorGenerator&) = delete;
+    SuccessorGenerator(SuccessorGenerator&&) noexcept;
+    SuccessorGenerator& operator=(SuccessorGenerator&&) noexcept;
+
     Node<GroundTag> get_initial_node();
 
     // Unlabeled successor API.
@@ -57,21 +68,13 @@ public:
     ::tyr::formalism::planning::GroundActionView ground_action(::tyr::formalism::planning::ActionBindingView binding) const;
 
     Node<GroundTag> get_node(ygg::Index<State<GroundTag>> state_index);
+    [[nodiscard]] SuccessorGeneratorPtr<GroundTag> make_worker(ygg::ExecutionContextPtr execution_context) const;
 
-    const auto& get_state_repository() const noexcept { return m_state_repository; }
-    auto get_index() const noexcept { return m_index; }
+    const StateRepositoryPtr<GroundTag>& get_state_repository() const noexcept;
+    ygg::uint_t get_index() const noexcept;
 
 private:
-    ygg::uint_t m_index;
-    TaskPtr<GroundTag> m_task;
-    match_tree::MatchTreePtr<::tyr::formalism::planning::GroundAction> m_action_match_tree;
-    ygg::UnorderedMap<::tyr::formalism::planning::ActionBindingView, ::tyr::formalism::planning::GroundActionView> m_action_binding_to_ground_action;
-
-    ::tyr::formalism::planning::GroundActionViewList m_applicable_actions;
-
-    StateRepositoryPtr<GroundTag> m_state_repository;
-
-    ActionExecutor m_executor;
+    std::unique_ptr<Impl> m_impl;
 };
 
 static_assert(SuccessorGeneratorConcept<SuccessorGenerator<GroundTag>, GroundTag>);

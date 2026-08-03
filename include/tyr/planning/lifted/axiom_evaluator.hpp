@@ -18,19 +18,11 @@
 #ifndef TYR_PLANNING_LIFTED_AXIOM_EVALUATOR_HPP_
 #define TYR_PLANNING_LIFTED_AXIOM_EVALUATOR_HPP_
 
-#include "tyr/planning/lifted/state_builder.hpp"
-//
-#include "tyr/datalog/lifted/policies/annotation.hpp"
-#include "tyr/datalog/lifted/workspaces/program.hpp"
-#include "tyr/datalog/policies/termination.hpp"
-#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
-#include "tyr/planning/declarations.hpp"
-#include "tyr/planning/lifted/programs/axiom.hpp"
+#include "tyr/planning/programs/axiom.hpp"
 
+#include <atomic>
 #include <memory>
-#include <vector>
-#include <yggdrasil/execution/onetbb.hpp>
 
 namespace tyr::planning
 {
@@ -41,26 +33,28 @@ class AxiomEvaluator<LiftedTag>
     friend class AxiomEvaluatorFactory<LiftedTag>;
 
 private:
-    AxiomEvaluator(ygg::uint_t index, TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context);
+    struct Impl;
+
+    AxiomEvaluator(ygg::uint_t index,
+                   TaskPtr<LiftedTag> task,
+                   ygg::ExecutionContextPtr execution_context,
+                   std::shared_ptr<std::atomic<ygg::uint_t>> next_index);
+    explicit AxiomEvaluator(std::unique_ptr<Impl> impl);
 
 public:
-    void compute_extended_state(ygg::Builder<State<LiftedTag>>& state_builder);
+    ~AxiomEvaluator();
 
-    const auto& get_axiom_program() const noexcept { return m_axiom_program; }
-    const auto& get_workspace() const noexcept { return m_workspace; }
-    const auto& get_execution_context() const noexcept { return m_execution_context; }
-    auto get_index() const noexcept { return m_index; }
+    void compute_extended_state(ygg::Builder<State<LiftedTag>>& state_builder);
+    [[nodiscard]] AxiomEvaluatorPtr<LiftedTag> make_worker(ygg::ExecutionContextPtr execution_context) const;
+
+    const AxiomEvaluatorProgram<LiftedTag>& get_axiom_program() const noexcept;
+    const ygg::ExecutionContextPtr& get_execution_context() const noexcept;
+    ygg::uint_t get_index() const noexcept;
 
     void print_summary(size_t verbosity) const;
 
 private:
-    ygg::uint_t m_index;
-    TaskPtr<LiftedTag> m_task;
-    ygg::ExecutionContextPtr m_execution_context;
-    AxiomEvaluatorProgram<LiftedTag> m_axiom_program;
-
-    datalog::ProgramWorkspace<LiftedTag> m_workspace;
-    std::vector<::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>> m_derived_bindings;
+    std::unique_ptr<Impl> m_impl;
 };
 
 }

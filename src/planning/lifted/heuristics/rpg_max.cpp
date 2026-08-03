@@ -35,6 +35,16 @@ struct MaxRPGHeuristic<LiftedTag>::Impl :
                                        datalog::AndAnnotationPolicy<LiftedTag, datalog::MaxAggregation>,
                                        datalog::TerminationPolicy<LiftedTag, datalog::MaxAggregation>>;
     using Base::Base;
+
+    Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) :
+        Base(source.m_definition,
+             source.m_task,
+             std::move(execution_context),
+             datalog::OrAnnotationPolicy<LiftedTag> {},
+             datalog::AndAnnotationPolicy<LiftedTag, datalog::MaxAggregation> {},
+             source.m_source_goal)
+    {
+    }
 };
 
 MaxRPGHeuristic<LiftedTag>::MaxRPGHeuristic(TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
@@ -45,6 +55,8 @@ MaxRPGHeuristic<LiftedTag>::MaxRPGHeuristic(TaskPtr<LiftedTag> task, ygg::Execut
                                   cost_mode))
 {
 }
+
+MaxRPGHeuristic<LiftedTag>::MaxRPGHeuristic(std::unique_ptr<Impl> impl) : m_impl(std::move(impl)) {}
 
 MaxRPGHeuristic<LiftedTag>::~MaxRPGHeuristic() = default;
 MaxRPGHeuristic<LiftedTag>::MaxRPGHeuristic(MaxRPGHeuristic&&) noexcept = default;
@@ -57,6 +69,10 @@ MaxRPGHeuristicPtr<LiftedTag> MaxRPGHeuristic<LiftedTag>::create(TaskPtr<LiftedT
 
 void MaxRPGHeuristic<LiftedTag>::set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) { m_impl->set_goal(goal); }
 ygg::float_t MaxRPGHeuristic<LiftedTag>::evaluate(const StateView<LiftedTag>& state) { return m_impl->evaluate(state); }
+HeuristicPtr<LiftedTag> MaxRPGHeuristic<LiftedTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
+{
+    return HeuristicPtr<LiftedTag>(new MaxRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context))));
+}
 void MaxRPGHeuristic<LiftedTag>::print_summary(size_t verbosity) const { m_impl->print_summary(verbosity); }
 
 }

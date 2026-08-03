@@ -57,9 +57,6 @@ Workspace = datalog.lifted.UnannotatedProgramWorkspace
 class Context:
     execution_context: ExecutionContext
     task: planning.Task
-    axiom_evaluator: planning.AxiomEvaluator | None
-    successor_generator: planning.SuccessorGenerator
-    initial_node: planning.Node
 
 
 def parse_task(domain_file: Path, task_file: Path) -> PlanningTask:
@@ -72,11 +69,7 @@ def parse_task(domain_file: Path, task_file: Path) -> PlanningTask:
 def make_context(domain_file: Path, task_file: Path) -> Context:
     execution_context = ExecutionContext(1)
     task = planning.Task(parse_task(domain_file, task_file))
-    axiom_evaluator = planning.AxiomEvaluatorFactory().create(task, execution_context)
-    state_repository = planning.StateRepositoryFactory().create(task, axiom_evaluator)
-    successor_generator = planning.SuccessorGeneratorFactory().create(task, execution_context, state_repository)
-    initial_node = successor_generator.get_initial_node()
-    return Context(execution_context, task, axiom_evaluator, successor_generator, initial_node)
+    return Context(execution_context, task)
 
 
 def atoms_by_predicate(workspace: Workspace) -> list[PredicateAtoms]:
@@ -97,15 +90,36 @@ def atoms_by_predicate(workspace: Workspace) -> list[PredicateAtoms]:
     return result
 
 
+def solve_program(
+    execution_context: ExecutionContext,
+    program: datalog.lifted.Program,
+    input_workspace: Workspace | None = None,
+) -> Workspace:
+    workspace = Workspace(program)
+    if input_workspace is not None:
+        for fact_set in input_workspace.get_fluent_fact_sets().get_predicate_sets():
+            for binding in fact_set.get_bindings():
+                workspace.insert_fluent_binding(binding)
+
+    execution = datalog.lifted.UnannotatedProgramExecutionContext(workspace)
+    datalog.lifted.solve(execution, execution_context)
+    return workspace
+
+
 def run_config(context: Context, config: ConfigName) -> list[PredicateAtoms]:
     if config == "axiom_evaluator":
-        if context.axiom_evaluator is None:
+        program = planning.AxiomEvaluatorProgram(context.task.get_task())
+        if len(program.get_datalog_program().get_program().get_rules()) == 0:
             return []
-        return atoms_by_predicate(context.axiom_evaluator.get_workspace())
+        return atoms_by_predicate(solve_program(context.execution_context, program.get_datalog_program()))
 
     if config == "applicable_action":
-        context.successor_generator.get_applicable_action_bindings(context.initial_node)
-        return atoms_by_predicate(context.successor_generator.get_workspace())
+        axiom_program = planning.AxiomEvaluatorProgram(context.task.get_task())
+        axiom_workspace = None
+        if len(axiom_program.get_datalog_program().get_program().get_rules()) != 0:
+            axiom_workspace = solve_program(context.execution_context, axiom_program.get_datalog_program())
+        program = planning.ApplicableActionProgram(context.task.get_task())
+        return atoms_by_predicate(solve_program(context.execution_context, program.get_datalog_program(), axiom_workspace))
 
     if config == "ground_task":
         program = planning.GroundTaskProgram(context.task.get_task())

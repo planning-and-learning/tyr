@@ -18,15 +18,10 @@
 #ifndef TYR_PLANNING_GROUND_AXIOM_EVALUATOR_HPP_
 #define TYR_PLANNING_GROUND_AXIOM_EVALUATOR_HPP_
 
-#include "tyr/planning/ground/state_builder.hpp"
-//
-#include "tyr/formalism/planning/ground_axiom_index.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
-#include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground/match_tree/declarations.hpp"
-#include "tyr/planning/ground/match_tree/match_tree.hpp"
 
-#include <vector>
+#include <atomic>
+#include <memory>
 
 namespace tyr::planning
 {
@@ -36,22 +31,27 @@ class AxiomEvaluator<GroundTag>
     friend class AxiomEvaluatorFactory<GroundTag>;
 
 private:
-    AxiomEvaluator(ygg::uint_t index, TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context);
+    struct Impl;
+
+    AxiomEvaluator(ygg::uint_t index,
+                   TaskPtr<GroundTag> task,
+                   ygg::ExecutionContextPtr execution_context,
+                   std::shared_ptr<std::atomic<ygg::uint_t>> next_index);
+    explicit AxiomEvaluator(std::unique_ptr<Impl> impl);
 
 public:
+    ~AxiomEvaluator();
+
     AxiomEvaluator(const AxiomEvaluator&) = delete;
     AxiomEvaluator& operator=(const AxiomEvaluator&) = delete;
 
     void compute_extended_state(ygg::Builder<State<GroundTag>>& state_builder);
+    [[nodiscard]] AxiomEvaluatorPtr<GroundTag> make_worker(ygg::ExecutionContextPtr execution_context) const;
 
-    auto get_index() const noexcept { return m_index; }
+    ygg::uint_t get_index() const noexcept;
 
 private:
-    ygg::uint_t m_index;
-    TaskPtr<GroundTag> m_task;
-    std::vector<match_tree::MatchTreePtr<::tyr::formalism::planning::GroundAxiom>> m_axiom_match_tree_strata;
-
-    ::tyr::formalism::planning::GroundAxiomViewList m_applicable_axioms;
+    std::unique_ptr<Impl> m_impl;
 };
 }
 

@@ -63,6 +63,21 @@ struct FFRPGHeuristic<GroundTag>::Impl :
         m_markings.front().resize(get_program().get_datalog_program().get_program().get_atoms<f::FluentTag>().size());
     }
 
+    Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) :
+        Base(source.m_definition,
+             std::move(execution_context),
+             datalog::OrAnnotationPolicy<GroundTag>(),
+             datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>()),
+        m_markings(1),
+        m_function_markings(),
+        m_numeric_support_selector_workspace(),
+        m_effect_families(),
+        m_relaxed_plan(),
+        m_preferred_actions()
+    {
+        m_markings.front().resize(get_program().get_datalog_program().get_program().get_atoms<f::FluentTag>().size());
+    }
+
     void set_goal(f::planning::GroundConjunctiveConditionView goal)
     {
         Base::set_goal(goal);
@@ -102,6 +117,8 @@ FFRPGHeuristic<GroundTag>::FFRPGHeuristic(TaskPtr<GroundTag> task, ygg::Executio
 {
 }
 
+FFRPGHeuristic<GroundTag>::FFRPGHeuristic(std::unique_ptr<Impl> impl) : m_impl(std::move(impl)) {}
+
 FFRPGHeuristic<GroundTag>::~FFRPGHeuristic() = default;
 FFRPGHeuristic<GroundTag>::FFRPGHeuristic(FFRPGHeuristic&&) noexcept = default;
 FFRPGHeuristic<GroundTag>& FFRPGHeuristic<GroundTag>::operator=(FFRPGHeuristic&&) noexcept = default;
@@ -114,6 +131,11 @@ FFRPGHeuristicPtr<GroundTag> FFRPGHeuristic<GroundTag>::create(TaskPtr<GroundTag
 void FFRPGHeuristic<GroundTag>::set_goal(f::planning::GroundConjunctiveConditionView goal) { m_impl->set_goal(goal); }
 
 ygg::float_t FFRPGHeuristic<GroundTag>::evaluate(const StateView<GroundTag>& state) { return m_impl->evaluate(state); }
+
+HeuristicPtr<GroundTag> FFRPGHeuristic<GroundTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
+{
+    return HeuristicPtr<GroundTag>(new FFRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context))));
+}
 
 const ygg::UnorderedSet<f::planning::ActionBindingView>& FFRPGHeuristic<GroundTag>::get_preferred_actions() { return m_impl->m_preferred_actions; }
 

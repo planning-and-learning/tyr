@@ -19,9 +19,11 @@
 
 #include "planning/parser.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
+#include "tyr/datalog/lifted/policies/annotation.hpp"
 #include "tyr/datalog/lifted/programs/program.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/datas.hpp"
+#include "tyr/formalism/datalog/merge.hpp"
 #include "tyr/planning/lifted/programs/ground.hpp"
 #include "tyr/planning/planning.hpp"
 
@@ -215,10 +217,19 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
     const auto& test_case = GetParam();
     auto execution_context = ygg::ExecutionContext::create(1);
     auto task = p::Task<::tyr::LiftedTag>::create(make_test_parser(test_case.domain_file).parse_task(test_case.task_file));
-    auto axiom_evaluator = p::AxiomEvaluatorFactory<::tyr::LiftedTag>().create(task, execution_context);
-    auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(task, axiom_evaluator);
-    auto successor_generator = p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, execution_context, state_repository);
-    const auto initial_node = successor_generator->get_initial_node();
+
+    const auto solve_workspace = [&](auto& workspace)
+    {
+        auto context = d::ProgramExecutionContext(workspace);
+        execution_context->arena().execute([&] { d::solve_bottom_up(context); });
+    };
+
+    const auto solve_program = [&](const auto& program)
+    {
+        auto workspace = d::ProgramWorkspace<::tyr::LiftedTag>(program);
+        solve_workspace(workspace);
+        return collect_atoms_by_predicate(workspace);
+    };
 
     for (size_t config_index = 0; config_index < kConfigNames.size(); ++config_index)
     {
@@ -226,7 +237,7 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
         const auto& expected = test_case.configs[config_index];
         SCOPED_TRACE("config=" + std::string(config));
 
-        if (config == "axiom_evaluator" && !axiom_evaluator)
+        if (config == "axiom_evaluator" && !task->has_axioms())
         {
             EXPECT_TRUE(expected.empty());
             continue;
@@ -235,12 +246,29 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
         const auto run_config = [&]() -> AtomsByPredicate
         {
             if (config == "axiom_evaluator")
-                return collect_atoms_by_predicate(axiom_evaluator->get_workspace());
+            {
+                const auto program = p::AxiomEvaluatorProgram<::tyr::LiftedTag>(task->get_task());
+                return solve_program(program.get_datalog_program());
+            }
 
             if (config == "applicable_action")
             {
-                successor_generator->get_applicable_action_bindings(initial_node);
-                return collect_atoms_by_predicate(successor_generator->get_workspace());
+                const auto action_program = p::ApplicableActionProgram<::tyr::LiftedTag>(task->get_task());
+                auto action_workspace = d::ProgramWorkspace<::tyr::LiftedTag>(action_program.get_datalog_program());
+                if (task->has_axioms())
+                {
+                    const auto axiom_program = p::AxiomEvaluatorProgram<::tyr::LiftedTag>(task->get_task());
+                    auto axiom_workspace = d::ProgramWorkspace<::tyr::LiftedTag>(axiom_program.get_datalog_program());
+                    solve_workspace(axiom_workspace);
+
+                    auto merge_context = fd::MergeContext { action_workspace.datalog_builder, action_workspace.workspace_repository };
+                    for (const auto& set : axiom_workspace.facts.fact_sets.predicate.get_sets())
+                        for (const auto binding : set.get_bindings())
+                            action_workspace.facts.fact_sets.predicate.insert(fd::merge_d2d(binding, merge_context).first);
+                }
+
+                solve_workspace(action_workspace);
+                return collect_atoms_by_predicate(action_workspace);
             }
 
             if (config == "ground_task")

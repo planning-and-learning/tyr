@@ -18,17 +18,16 @@
 #ifndef TYR_FORMALISM_FDR_CONTEXT_HPP_
 #define TYR_FORMALISM_FDR_CONTEXT_HPP_
 
-#include <yggdrasil/buffer/declarations.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/containers/associative_containers.hpp>
 #include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
-#include <concepts>
+#include <atomic>
+#include <mutex>
+#include <optional>
 #include <vector>
+#include <yggdrasil/containers/segmented_vector.hpp>
+#include <yggdrasil/core/types.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -45,20 +44,33 @@ public:
     // Construct with binary ground mutexes.
     FDRContext(const GroundAtomViewList<FluentTag>& all_atoms, RepositoryPtr context);
 
-    // Copy the FDRContext.
+    // Copy the FDRContext after concurrent registrations have completed.
     FDRContext(const FDRContext& other, Builder& builder, RepositoryPtr context);
 
     FDRFactView<FluentTag> get_fact(GroundAtomView<FluentTag> atom);
 
     std::optional<FDRFactView<FluentTag>> get_fact(GroundAtomView<FluentTag> atom) const;
 
+    /// Concurrent get_fact calls must have completed before accessing the variable list.
     const FDRVariableViewList<FluentTag>& get_variables() const noexcept;
 
 private:
+    struct FactSlot
+    {
+        ygg::Data<FDRFact<FluentTag>> fact;
+        std::atomic_bool ready { false };
+    };
+
+    std::optional<FDRFactView<FluentTag>> find_fact(GroundAtomView<FluentTag> atom) const;
+    void ensure_fact_slot(GroundAtomView<FluentTag> atom);
+    bool publish_fact(GroundAtomView<FluentTag> atom, ygg::Data<FDRFact<FluentTag>> fact);
+
     RepositoryPtr m_context;
+    // Facts are append-only and lock-free to read; only first registration serializes the reusable builder and variable list.
+    ygg::SegmentedVector<FactSlot, 32, true> m_facts;
+    std::mutex m_registration_mutex;
     ygg::Data<FDRVariable<FluentTag>> m_builder;
     FDRVariableViewList<FluentTag> m_variables;
-    ygg::UnorderedMap<GroundAtomView<FluentTag>, FDRFactView<FluentTag>> m_mapping;
 };
 
 }

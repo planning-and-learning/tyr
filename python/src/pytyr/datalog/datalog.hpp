@@ -35,6 +35,7 @@
 #include <tyr/datalog/policies/annotation.hpp>
 #include <tyr/datalog/policies/cost.hpp>
 #include <tyr/datalog/policies/termination.hpp>
+#include <tyr/formalism/datalog/merge.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/python/bindings.hpp>
 #include <yggdrasil/python/type_casters.hpp>
@@ -396,15 +397,27 @@ void bind_workspace(nb::module_& m, const std::string& name)
             .def("reset_facts", [](Workspace& self) { self.facts.reset(); })
             .def(
                 "insert_fluent_atom",
-                [](Workspace& self, Atom atom) { return self.facts.fact_sets.predicate.insert(atom); },
+                [](Workspace& self, Atom atom)
+                {
+                    auto context = ::tyr::formalism::datalog::MergeContext { self.datalog_builder, self.workspace_repository };
+                    return self.facts.fact_sets.predicate.insert(::tyr::formalism::datalog::merge_d2d(atom, context).first);
+                },
                 "atom"_a)
             .def(
                 "insert_fluent_binding",
-                [](Workspace& self, PredicateBinding binding) { return self.facts.fact_sets.predicate.insert(binding); },
+                [](Workspace& self, PredicateBinding binding)
+                {
+                    auto context = ::tyr::formalism::datalog::MergeContext { self.datalog_builder, self.workspace_repository };
+                    return self.facts.fact_sets.predicate.insert(::tyr::formalism::datalog::merge_d2d(binding, context).first);
+                },
                 "binding"_a)
             .def(
                 "set_fluent_function",
-                [](Workspace& self, FunctionBinding binding, const Interval& interval) { return self.facts.fact_sets.function.insert(binding, interval); },
+                [](Workspace& self, FunctionBinding binding, const Interval& interval)
+                {
+                    auto context = ::tyr::formalism::datalog::MergeContext { self.datalog_builder, self.workspace_repository };
+                    return self.facts.fact_sets.function.insert(::tyr::formalism::datalog::merge_d2d(binding, context).first, interval);
+                },
                 "binding"_a,
                 "interval"_a)
             .def("get_statistics", [](Workspace& self) -> auto& { return self.statistics; }, nb::rv_policy::reference_internal);

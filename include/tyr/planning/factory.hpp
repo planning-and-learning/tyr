@@ -26,6 +26,7 @@
 #include "tyr/planning/lifted/state_repository.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 
+#include <atomic>
 #include <memory>
 #include <utility>
 
@@ -36,49 +37,54 @@ template<TaskKind Kind>
 class StateRepositoryFactory
 {
 public:
-    StateRepositoryFactory() : m_next_index(0) {}
+    StateRepositoryFactory() : m_next_index(std::make_shared<std::atomic<ygg::uint_t>>(0)) {}
 
     StateRepositoryPtr<Kind> create(TaskPtr<Kind> task, AxiomEvaluatorPtr<Kind> axiom_evaluator)
     {
-        return StateRepositoryPtr<Kind>(new StateRepository<Kind>(m_next_index++, std::move(task), std::move(axiom_evaluator)));
+        return StateRepositoryPtr<Kind>(
+            new StateRepository<Kind>(m_next_index->fetch_add(1, std::memory_order_relaxed), std::move(task), std::move(axiom_evaluator), m_next_index));
     }
 
 private:
-    ygg::uint_t m_next_index;
+    std::shared_ptr<std::atomic<ygg::uint_t>> m_next_index;
 };
 
 template<TaskKind Kind>
 class AxiomEvaluatorFactory
 {
 public:
-    AxiomEvaluatorFactory() : m_next_index(0) {}
+    AxiomEvaluatorFactory() : m_next_index(std::make_shared<std::atomic<ygg::uint_t>>(0)) {}
 
     AxiomEvaluatorPtr<Kind> create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context)
     {
         if (!task->has_axioms())
             return nullptr;
 
-        return AxiomEvaluatorPtr<Kind>(new AxiomEvaluator<Kind>(m_next_index++, std::move(task), std::move(execution_context)));
+        return AxiomEvaluatorPtr<Kind>(
+            new AxiomEvaluator<Kind>(m_next_index->fetch_add(1, std::memory_order_relaxed), std::move(task), std::move(execution_context), m_next_index));
     }
 
 private:
-    ygg::uint_t m_next_index;
+    std::shared_ptr<std::atomic<ygg::uint_t>> m_next_index;
 };
 
 template<TaskKind Kind>
 class SuccessorGeneratorFactory
 {
 public:
-    SuccessorGeneratorFactory() : m_next_index(0) {}
+    SuccessorGeneratorFactory() : m_next_index(std::make_shared<std::atomic<ygg::uint_t>>(0)) {}
 
     SuccessorGeneratorPtr<Kind> create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, StateRepositoryPtr<Kind> state_repository)
     {
-        return SuccessorGeneratorPtr<Kind>(
-            new SuccessorGenerator<Kind>(m_next_index++, std::move(task), std::move(execution_context), std::move(state_repository)));
+        return SuccessorGeneratorPtr<Kind>(new SuccessorGenerator<Kind>(m_next_index->fetch_add(1, std::memory_order_relaxed),
+                                                                        std::move(task),
+                                                                        std::move(execution_context),
+                                                                        std::move(state_repository),
+                                                                        m_next_index));
     }
 
 private:
-    ygg::uint_t m_next_index;
+    std::shared_ptr<std::atomic<ygg::uint_t>> m_next_index;
 };
 
 }

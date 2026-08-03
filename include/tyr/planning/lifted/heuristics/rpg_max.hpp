@@ -41,10 +41,12 @@ public:
 
     void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override;
     ygg::float_t evaluate(const StateView<LiftedTag>& state) override;
+    [[nodiscard]] HeuristicPtr<LiftedTag> make_worker(ygg::ExecutionContextPtr execution_context) const override;
     void print_summary(size_t verbosity) const override;
 
 private:
     struct Impl;
+    explicit MaxRPGHeuristic(std::unique_ptr<Impl> impl);
     std::unique_ptr<Impl> m_impl;
 };
 

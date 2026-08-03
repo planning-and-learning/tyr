@@ -220,8 +220,7 @@ void bind_axiom_evaluator(nb::module_& m, const std::string& name)
                    .def("get_index", &T::get_index);
 
     if constexpr (std::same_as<Kind, LiftedTag>)
-        cls.def("get_axiom_program", &T::get_axiom_program, nb::rv_policy::reference_internal)
-            .def("get_workspace", &T::get_workspace, nb::rv_policy::reference_internal);
+        cls.def("get_axiom_program", &T::get_axiom_program, nb::rv_policy::reference_internal);
 }
 
 template<TaskKind Kind>
@@ -279,8 +278,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
                 nb::rv_policy::move,
                 "node"_a,
                 nb::call_guard<nb::gil_scoped_release>())
-            .def("get_action_program", &T::get_action_program, nb::rv_policy::reference_internal)
-            .def("get_workspace", &T::get_workspace, nb::rv_policy::reference_internal);
+            .def("get_action_program", &T::get_action_program, nb::rv_policy::reference_internal);
     }
 }
 
@@ -411,11 +409,13 @@ class PyHeuristic : public Heuristic<Kind>
 public:
     using Base = Heuristic<Kind>;
 
-    NB_TRAMPOLINE(Base, 3);
+    NB_TRAMPOLINE(Base, 4);
 
     void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override { NB_OVERRIDE_PURE(set_goal, goal); }
 
     ygg::float_t evaluate(const StateView<Kind>& state) override { NB_OVERRIDE_PURE(evaluate, state); }
+
+    HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override { NB_OVERRIDE_PURE(make_worker, execution_context); }
 
     const ygg::UnorderedSet<fp::ActionBindingView>& get_preferred_actions() override { return Base::get_preferred_actions(); }
 };

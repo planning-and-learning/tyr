@@ -118,29 +118,6 @@ void benchmark_interned_action_bindings(benchmark::State& state, const Benchmark
     state.counters["num_successors"] = benchmark::Counter(static_cast<double>(bindings.size()));
 }
 
-void benchmark_action_binding_iterator(benchmark::State& state, const BenchmarkCase& benchmark_case)
-{
-    auto task = create_task(benchmark_case);
-    auto successor_generator = create_successor_generator(task);
-    const auto initial_node = successor_generator->get_initial_node();
-    auto num_bindings = size_t(0);
-
-    for (auto _ : state)
-    {
-        num_bindings = 0;
-        successor_generator->for_each_applicable_action_binding(initial_node,
-                                                                [&](const auto& binding)
-                                                                {
-                                                                    benchmark::DoNotOptimize(&binding);
-                                                                    benchmark::DoNotOptimize(binding.objects.data());
-                                                                    benchmark::DoNotOptimize(binding.objects.size());
-                                                                    ++num_bindings;
-                                                                });
-        benchmark::DoNotOptimize(num_bindings);
-    }
-
-    state.counters["num_successors"] = benchmark::Counter(static_cast<double>(num_bindings));
-}
 }
 
 int main(int argc, char** argv)
@@ -153,8 +130,6 @@ int main(int argc, char** argv)
                                      [benchmark_case](benchmark::State& state) { benchmark_initial_successors(state, benchmark_case); });
         benchmark::RegisterBenchmark((benchmark_case.name + "/interned_bindings").c_str(),
                                      [benchmark_case](benchmark::State& state) { benchmark_interned_action_bindings(state, benchmark_case); });
-        benchmark::RegisterBenchmark((benchmark_case.name + "/binding_iterator").c_str(),
-                                     [benchmark_case](benchmark::State& state) { benchmark_action_binding_iterator(state, benchmark_case); });
     }
 
     benchmark::RunSpecifiedBenchmarks();

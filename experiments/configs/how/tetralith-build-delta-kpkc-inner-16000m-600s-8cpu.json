@@ -12,5 +12,5 @@
   "cpus_per_task": 8,
   "memory_per_cpu_mib": 2840,
   "scheduler_time_limit": "24:00:00",
-  "max_tasks": null
+  "max_tasks": 300
 }

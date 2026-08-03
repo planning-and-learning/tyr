@@ -18,27 +18,15 @@
 #ifndef TYR_PLANNING_LIFTED_SUCCESSOR_GENERATOR_HPP_
 #define TYR_PLANNING_LIFTED_SUCCESSOR_GENERATOR_HPP_
 
-#include "tyr/datalog/lifted/policies/annotation.hpp"
-#include "tyr/datalog/lifted/workspaces/program.hpp"
-#include "tyr/datalog/policies/termination.hpp"
-#include "tyr/formalism/planning/ground_action_view.hpp"
-#include "tyr/planning/action_executor.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground/match_tree/declarations.hpp"
-#include "tyr/planning/lifted/axiom_evaluator.hpp"
-#include "tyr/planning/lifted/programs/action.hpp"
-#include "tyr/planning/lifted/state_repository.hpp"
 #include "tyr/planning/lifted/state_view.hpp"
-#include "tyr/planning/lifted/task.hpp"
-#include "tyr/planning/node.hpp"
+#include "tyr/planning/programs/action.hpp"
 #include "tyr/planning/successor_generator.hpp"
 
-#include <type_traits>
-#include <utility>
+#include <atomic>
+#include <memory>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/core/itertools.hpp>
-#include <yggdrasil/execution/onetbb.hpp>
 
 namespace tyr::planning
 {
@@ -49,9 +37,24 @@ class SuccessorGenerator<LiftedTag>
     friend class SuccessorGeneratorFactory<LiftedTag>;
 
 private:
-    SuccessorGenerator(ygg::uint_t index, TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, StateRepositoryPtr<LiftedTag> state_repository);
+    struct Impl;
+
+    SuccessorGenerator(ygg::uint_t index,
+                       TaskPtr<LiftedTag> task,
+                       ygg::ExecutionContextPtr execution_context,
+                       StateRepositoryPtr<LiftedTag> state_repository,
+                       std::shared_ptr<std::atomic<ygg::uint_t>> next_index);
+
+    explicit SuccessorGenerator(std::unique_ptr<Impl> impl) noexcept;
 
 public:
+    ~SuccessorGenerator();
+
+    SuccessorGenerator(const SuccessorGenerator&) = delete;
+    SuccessorGenerator& operator=(const SuccessorGenerator&) = delete;
+    SuccessorGenerator(SuccessorGenerator&&) noexcept;
+    SuccessorGenerator& operator=(SuccessorGenerator&&) noexcept;
+
     Node<LiftedTag> get_initial_node();
 
     // Unlabeled successor API. Does not intern action bindings.
@@ -76,81 +79,22 @@ public:
     Node<LiftedTag> get_successor_node(const Node<LiftedTag>& node,
                                        const ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action>>& binding);
 
-    template<typename Callback>
-    void for_each_applicable_action_binding(const Node<LiftedTag>& node, Callback&& callback);
-
-    template<typename Callback>
-    void for_each_applicable_action_binding(const Node<LiftedTag>& node,
-                                            ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action>>& scratch_binding,
-                                            Callback&& callback);
-
     // Lookup
     Node<LiftedTag> get_node(ygg::Index<State<LiftedTag>> state_index);
+    [[nodiscard]] SuccessorGeneratorPtr<LiftedTag> make_worker(ygg::ExecutionContextPtr execution_context) const;
 
     // Diagnostics
     void print_summary(size_t verbosity) const;
 
-    const auto& get_action_program() const noexcept { return m_action_program; }
-    const auto& get_state_repository() const noexcept { return m_state_repository; }
-    const auto& get_workspace() const noexcept { return m_workspace; }
-    auto get_index() const noexcept { return m_index; }
+    const ApplicableActionProgram<LiftedTag>& get_action_program() const noexcept;
+    const StateRepositoryPtr<LiftedTag>& get_state_repository() const noexcept;
+    ygg::uint_t get_index() const noexcept;
 
 private:
-    void compute_action_facts(const Node<LiftedTag>& node);
-
-    using ActionBindingCallback = void (*)(const ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action>>&, void*);
-
-    void for_each_applicable_action_binding_impl(const Node<LiftedTag>& node,
-                                                 ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action>>& scratch_binding,
-                                                 ActionBindingCallback callback,
-                                                 void* callback_data);
-
-private:
-    ygg::uint_t m_index;
-    TaskPtr<LiftedTag> m_task;
-    ygg::ExecutionContextPtr m_execution_context;
-    ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action>> m_scratch_action_binding;
-    ApplicableActionProgram<LiftedTag> m_action_program;
-    ygg::UnorderedMap<::tyr::formalism::planning::ActionBindingView, ::tyr::formalism::planning::GroundActionView> m_action_binding_to_ground_action;
-
-    datalog::ProgramWorkspace<LiftedTag> m_workspace;
-    ygg::itertools::cartesian_set::Workspace<ygg::Index<::tyr::formalism::Object>> m_cartesian_workspace;
-
-    StateRepositoryPtr<LiftedTag> m_state_repository;
-
-    ActionExecutor m_executor;
+    std::unique_ptr<Impl> m_impl;
 };
 
 static_assert(SuccessorGeneratorConcept<SuccessorGenerator<LiftedTag>, LiftedTag>);
-
-/**
- * Implementations
- */
-
-// Action binding API (no interning)
-
-template<typename Callback>
-void SuccessorGenerator<LiftedTag>::for_each_applicable_action_binding(const Node<LiftedTag>& node, Callback&& callback)
-{
-    auto scratch_binding = ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action>>();
-    for_each_applicable_action_binding(node, scratch_binding, std::forward<Callback>(callback));
-}
-
-template<typename Callback>
-void SuccessorGenerator<LiftedTag>::for_each_applicable_action_binding(
-    const Node<LiftedTag>& node,
-    ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action>>& scratch_binding,
-    Callback&& callback)
-{
-    using CallbackStorage = std::remove_reference_t<Callback>;
-    auto callback_storage = &callback;
-    for_each_applicable_action_binding_impl(
-        node,
-        scratch_binding,
-        [](const ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action>>& binding, void* callback_data)
-        { (*static_cast<CallbackStorage*>(callback_data))(binding); },
-        callback_storage);
-}
 }
 
 #endif

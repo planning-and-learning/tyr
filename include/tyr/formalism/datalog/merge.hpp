@@ -194,9 +194,9 @@ std::pair<PredicateBindingView<T>, bool> merge_d2d(PredicateBindingView<T> eleme
     auto& binding = *binding_ptr;
     binding.clear();
 
-    binding.relation = element.get_relation().get_index();
+    binding.relation = merge_d2d(element.get_relation(), context).first.get_index();
     for (const auto object : element.get_objects())
-        binding.objects.push_back(object.get_index());
+        binding.objects.push_back(merge_d2d(object, context).first.get_index());
 
     canonicalize(binding);
     return context.destination.get_or_create(binding);
@@ -281,9 +281,9 @@ std::pair<FunctionBindingView<T>, bool> merge_d2d(FunctionBindingView<T> element
     auto& binding = *binding_ptr;
     binding.clear();
 
-    binding.relation = element.get_relation().get_index();
+    binding.relation = merge_d2d(element.get_relation(), context).first.get_index();
     for (const auto object : element.get_objects())
-        binding.objects.push_back(object.get_index());
+        binding.objects.push_back(merge_d2d(object, context).first.get_index());
 
     canonicalize(binding);
     return context.destination.get_or_create(binding);
