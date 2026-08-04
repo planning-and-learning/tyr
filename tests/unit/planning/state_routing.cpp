@@ -40,13 +40,6 @@ namespace
 {
 
 template<TaskKind Kind>
-struct TestMetadata
-{
-    p::WorkerStateIndex<Kind> parent;
-    ygg::uint_t marker;
-};
-
-template<TaskKind Kind>
 struct TransferResult
 {
     ygg::Index<p::State<Kind>> state;
@@ -162,20 +155,11 @@ void expect_state_routing(const p::TaskPtr<Kind>& task)
 
     auto local_state = repository->get_state_builder();
     const auto local_result = generator->generate_successor_state(initial, action, *local_state);
-    auto router = p::SingleWorkerStateRouter<Kind, p::RandomDistHashTag, TestMetadata<Kind>>(17);
-    router.send(std::move(local_state),
-                local_result,
-                action,
-                TestMetadata<Kind> { p::WorkerStateIndex<Kind> { ygg::Index<p::Worker>(0), initial.get_state().get_index() }, 42 });
-    const auto routed = router.receive(*generator);
-    EXPECT_EQ(routed.labeled_node.label, action);
-    EXPECT_EQ(routed.metadata.parent.state, initial.get_state().get_index());
-    EXPECT_EQ(routed.metadata.parent.worker, ygg::Index<p::Worker>(0));
-    EXPECT_EQ(routed.metadata.marker, 42);
+    const auto local_node = generator->finalize_successor_state(std::move(local_state), local_result);
 
     const auto compatibility_node = generator->get_successor_node(initial, action);
-    EXPECT_EQ(routed.labeled_node.node, compatibility_node);
-    const auto source_states_after_local_route = repository->num_states();
+    EXPECT_EQ(local_node, compatibility_node);
+    const auto source_states_after_local_finalize = repository->num_states();
 
     auto transfer_pool = p::StateTransferPool<Kind> {};
     auto transferred_state = transfer_pool.export_state(std::move(remote_state));
@@ -194,7 +178,7 @@ void expect_state_routing(const p::TaskPtr<Kind>& task)
     const auto transferred_result = result_future.get();
     EXPECT_EQ(transferred_result.hash, remote_hash);
     EXPECT_EQ(transferred_result.metric, compatibility_node.get_metric());
-    EXPECT_EQ(repository->num_states(), source_states_after_local_route);
+    EXPECT_EQ(repository->num_states(), source_states_after_local_finalize);
     EXPECT_EQ(worker_repository->num_states(), 2);
     EXPECT_EQ(dist_hash.hash(worker_repository->get_registered_state(transferred_result.state).get_state_builder()), remote_hash);
 }

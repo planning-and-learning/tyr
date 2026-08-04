@@ -41,8 +41,10 @@ class LazyGBFSPolicy
 public:
     using Options = gbfs_lazy::Options<Kind>;
     using EventHandlerPtr = gbfs_lazy::EventHandlerPtr<Kind>;
+    using WorkerEventHandlerPtr = gbfs_lazy::WorkerEventHandlerPtr<Kind>;
     using ParentState = std::conditional_t<std::same_as<Search, SequentialSearch>, ygg::Index<State<Kind>>, WorkerStateIndex<Kind>>;
     static constexpr bool eager = false;
+    static constexpr bool terminate_on_goal = true;
 
     struct SearchNode
     {
@@ -89,8 +91,6 @@ public:
     {
     }
 
-    static EventHandlerPtr create_default_event_handler() { return gbfs_lazy::DefaultEventHandler<Kind>::create(0); }
-
     SearchNode& initialize_start(ygg::Index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value)
     {
         m_start_h_value = h_value;
@@ -119,6 +119,8 @@ public:
         return PoppedEntry { state };
     }
 
+    bool should_discard(const PoppedEntry&, ygg::float_t) const noexcept { return false; }
+
     SearchNode& get_search_node(ygg::Index<State<Kind>> state)
     {
         static const auto default_node = SearchNode { std::numeric_limits<ygg::float_t>::infinity(), no_parent(), SearchNodeStatus::NEW, false };
@@ -126,9 +128,14 @@ public:
     }
 
     template<typename ImproveBestH, typename EmitEvent>
-    ExpansionResult
-    prepare_expansion(const PoppedEntry&, const Node<Kind>& node, SearchNode& search_node, ImproveBestH&& improve_best_h, EmitEvent&& emit_event)
+    ExpansionResult prepare_expansion(const PoppedEntry&,
+                                      const Node<Kind>& node,
+                                      SearchNode& search_node,
+                                      Statistics& statistics,
+                                      ImproveBestH&& improve_best_h,
+                                      EmitEvent&& emit_event)
     {
+        statistics.increment_num_expanded();
         std::forward<EmitEvent>(emit_event)([&](auto& handler) { handler.on_expand_node(node); });
 
         m_state_h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_heuristic.evaluate(node.get_state()));

@@ -29,7 +29,7 @@ class PyEventHandler : public EventHandler<Kind>
 public:
     using Base = EventHandler<Kind>;
 
-    NB_TRAMPOLINE(Base, 11);
+    NB_TRAMPOLINE(Base, 9);
 
     void on_expand_node(const Node<Kind>& node) override { NB_OVERRIDE_PURE(on_expand_node, node); }
 
@@ -49,15 +49,14 @@ public:
 
     void on_start_search(const Node<Kind>& node) override { NB_OVERRIDE_PURE(on_start_search, node); }
 
-    void on_finish_layer(ygg::uint_t layer) override { NB_OVERRIDE_PURE(on_finish_layer, layer); }
+    void on_finish_layer(ygg::uint_t layer, const tyr::planning::Statistics& statistics) override { NB_OVERRIDE_PURE(on_finish_layer, layer, statistics); }
 
-    void on_end_search(tyr::planning::SearchStatus status) override { NB_OVERRIDE_PURE(on_end_search, status); }
+    void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override
+    {
+        NB_OVERRIDE_PURE(on_end_search, status, statistics);
+    }
 
     void on_solved(const Plan<Kind>& plan) override { NB_OVERRIDE_PURE(on_solved, plan); }
-
-    const tyr::planning::Statistics& get_search_statistics() const override { NB_OVERRIDE_PURE(get_search_statistics); }
-
-    const tyr::planning::Statistics& get_statistics() const override { NB_OVERRIDE_PURE(get_statistics); }
 };
 
 template<TaskKind Kind>
@@ -116,11 +115,9 @@ void bind_event_handler(nb::module_& m, const std::string& name)
         .def("on_prune_node", nb::overload_cast<const Node<Kind>&>(&T::on_prune_node), "node"_a)
         .def("on_prune_node", nb::overload_cast<const Node<Kind>&, const LabeledNode<Kind>&>(&T::on_prune_node), "source_node"_a, "labeled_succ_node"_a)
         .def("on_start_search", &T::on_start_search, "node"_a)
-        .def("on_finish_layer", &T::on_finish_layer, "layer"_a)
-        .def("on_end_search", &T::on_end_search, "status"_a)
-        .def("on_solved", &T::on_solved, "plan"_a)
-        .def("get_search_statistics", &T::get_search_statistics, nb::rv_policy::reference_internal)
-        .def("get_statistics", &T::get_statistics, nb::rv_policy::reference_internal);
+        .def("on_finish_layer", &T::on_finish_layer, "layer"_a, "statistics"_a)
+        .def("on_end_search", &T::on_end_search, "status"_a, "statistics"_a)
+        .def("on_solved", &T::on_solved, "plan"_a);
 }
 
 template<TaskKind Kind>
@@ -130,8 +127,6 @@ void bind_default_event_handler(nb::module_& m, const std::string& name)
 
     nb::class_<T, EventHandler<Kind>>(m, name.c_str())  //
         .def(nb::init<size_t>(), "verbosity"_a = 0)
-        .def("get_search_statistics", &T::get_search_statistics, nb::rv_policy::reference_internal)
-        .def("get_statistics", &T::get_statistics, nb::rv_policy::reference_internal)
         .def("get_progress_statistics", &T::get_progress_statistics, nb::rv_policy::reference_internal);
 }
 

@@ -47,39 +47,16 @@ def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None
     class AStarEventHandler(planning.lifted.astar_eager.EventHandler):
         def __init__(self) -> None:
             super().__init__()
-            self.search_statistics = planning.Statistics()
-
-        @override
-        def on_expand_node(self, node: Node): pass
-        @override
-        def on_expand_goal_node(self, node: Node): pass
-        @override
-        def on_generate_node(self, source_node: Node, labeled_succ_node: LabeledNode): pass
-        @override
-        def on_generate_node_relaxed(self, source_node: Node, labeled_succ_node: LabeledNode): pass
-        @override
-        def on_generate_node_not_relaxed(self, source_node: Node, labeled_succ_node: LabeledNode): pass
-        @override
-        def on_close_node(self, node: Node): pass
-        @override
-        def on_prune_node(self, *args: Node | LabeledNode, **kwargs: Node | LabeledNode): pass
         @override
         def on_start_search(self, node: Node, f_value: float): pass
         @override
-        def on_finish_f_layer(self, f_value: float): pass
-        @override
-        def on_end_search(self, status: SearchStatus): pass
+        def on_end_search(self, status: SearchStatus, statistics: planning.Statistics): pass
         @override
         def on_solved(self, plan: Plan): pass
-        @override
-        def get_search_statistics(self): return self.search_statistics
-        @override
-        def get_statistics(self): return self.search_statistics
 
     class BRFSEventHandler(planning.lifted.brfs.EventHandler):
         def __init__(self) -> None:
             super().__init__()
-            self.search_statistics = planning.Statistics()
 
         @override
         def on_expand_node(self, node: Node): pass
@@ -92,46 +69,27 @@ def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None
         @override
         def on_start_search(self, node: Node): pass
         @override
-        def on_finish_layer(self, layer: int): pass
+        def on_finish_layer(self, layer: int, statistics: planning.Statistics): pass
         @override
-        def on_end_search(self, status: SearchStatus): pass
+        def on_end_search(self, status: SearchStatus, statistics: planning.Statistics): pass
         @override
         def on_solved(self, plan: Plan): pass
-        @override
-        def get_search_statistics(self): return self.search_statistics
-        @override
-        def get_statistics(self): return self.search_statistics
 
     class GBFSEventHandler(planning.lifted.gbfs_lazy.EventHandler):
         def __init__(self) -> None:
             super().__init__()
-            self.search_statistics = planning.Statistics()
-
-        @override
-        def on_expand_node(self, node: Node): pass
-        @override
-        def on_expand_goal_node(self, node: Node): pass
-        @override
-        def on_generate_node(self, source_node: Node, labeled_succ_node: LabeledNode): pass
-        @override
-        def on_prune_node(self, *args: Node | LabeledNode, **kwargs: Node | LabeledNode): pass
         @override
         def on_start_search(self, node: Node, h_value: float): pass
         @override
         def on_new_best_h_value(self, h_value: float): pass
         @override
-        def on_end_search(self, status: SearchStatus): pass
+        def on_end_search(self, status: SearchStatus, statistics: planning.Statistics): pass
         @override
         def on_solved(self, plan: Plan): pass
-        @override
-        def get_search_statistics(self): return self.search_statistics
-        @override
-        def get_statistics(self): return self.search_statistics
 
     class IWEventHandler(planning.lifted.iw.EventHandler):
         def __init__(self) -> None:
             super().__init__()
-            self.search_statistics = planning.Statistics()
             self.algorithm_statistics = planning.lifted.iw.Statistics()
 
         @override
@@ -141,11 +99,9 @@ def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None
         @override
         def on_end_arity(self, arity: int, status: SearchStatus): pass
         @override
-        def on_end_search(self, status: SearchStatus): pass
+        def on_end_search(self, status: SearchStatus, statistics: planning.Statistics): pass
         @override
         def on_solved(self, arity: int): pass
-        @override
-        def get_search_statistics(self): return self.search_statistics
         @override
         def get_statistics(self): return self.algorithm_statistics
 
@@ -163,7 +119,7 @@ def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None
         @override
         def on_end_subsearch(self, subsearch_index: int, status: SearchStatus): pass
         @override
-        def on_end_search(self, status: SearchStatus): pass
+        def on_end_search(self, status: SearchStatus, statistics: planning.Statistics): pass
         @override
         def on_solved(self, plan: Plan): pass
         @override

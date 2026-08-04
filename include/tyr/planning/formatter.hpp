@@ -116,14 +116,29 @@ struct formatter<tyr::planning::Statistics, char>
     {
         return fmt::format_to(ctx.out(),
                               "[Search] Search time: {} ms ({} ns)\n"
+                              "[Search] Idle worker time: {} ms ({} ns)\n"
                               "[Search] Number of expanded states: {}\n"
                               "[Search] Number of generated states: {}\n"
-                              "[Search] Number of pruned states: {}",
+                              "[Search] Number of pruned states: {}\n"
+                              "[Search] Number of registered states: {}\n"
+                              "[Search] State storage memory usage: {} bytes\n"
+                              "[Search] Action bindings memory usage: {} bytes\n"
+                              "[Search] Predicate bindings memory usage: {} bytes\n"
+                              "[Search] Axiom bindings memory usage: {} bytes\n"
+                              "[Search] Function bindings memory usage: {} bytes",
                               ygg::to_ms(value.get_search_time()),
                               ygg::to_ns(value.get_search_time()),
+                              ygg::to_ms(value.get_idle_time()),
+                              ygg::to_ns(value.get_idle_time()),
                               value.get_num_expanded(),
                               value.get_num_generated(),
-                              value.get_num_pruned());
+                              value.get_num_pruned(),
+                              value.get_num_registered_states(),
+                              value.get_state_storage_memory_usage(),
+                              value.get_action_bindings_memory_usage(),
+                              value.get_predicate_bindings_memory_usage(),
+                              value.get_axiom_bindings_memory_usage(),
+                              value.get_function_bindings_memory_usage());
     }
 };
 

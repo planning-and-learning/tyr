@@ -2,7 +2,7 @@
 """Regenerate the siw search-statistics fixture (ground + lifted).
 
 Each per-kind object records the search outcome (status, plan, maximum_effective_width)
-plus the four counters aggregated across subsearches by the siw event handler. The
+plus the four counters aggregated across subsearches in the search result. The
 suite-level ``max_arity`` is preserved and used for the runs.
 
 Usage:
@@ -26,7 +26,6 @@ from .fixture_generation import (
     FixtureCase,
     HeuristicName,
     SearchResultLike,
-    Statistics,
     TaskKind,
     counters_of,
     generate_main,
@@ -48,7 +47,6 @@ class _SiwStatistics(Protocol):
 
 class _SiwEventHandler(Protocol):
     def get_statistics(self) -> _SiwStatistics: ...
-    def get_search_statistics(self) -> Statistics: ...
 
 
 def run_config(kind: TaskKind,
@@ -90,7 +88,7 @@ def run_config(kind: TaskKind,
     plan = result.plan
     if plan is not None:
         config["plan"] = plan_of(plan)
-    config.update(counters_of(handler.get_search_statistics()))
+    config.update(counters_of(result.statistics))
     return config
 
 

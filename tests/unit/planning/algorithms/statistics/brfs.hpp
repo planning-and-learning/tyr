@@ -32,7 +32,8 @@ void check_statistics(const SearchStatistics& expected, const SearchCase& test_c
     options.event_handler = event_handler;
     const auto result = p::brfs::find_solution(*context.task, *context.successor_generator, options);
 
-    expect_statistics(expected, event_handler->get_statistics(), result);
+    expect_statistics(expected, result.statistics, result);
+    expect_repository_statistics(context, result.statistics);
 }
 }
 

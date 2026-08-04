@@ -12,12 +12,12 @@ Author: Dominik Drexler (dominik.drexler@liu.se)
 import argparse
 
 from pathlib import Path
-from typing import overload, override
+from typing import override
 
 from pyyggdrasil.execution import ExecutionContext
 
 from pypddl.formalism import ParserOptions
-from pytyr.planning import SearchStatus
+from pytyr.planning import SearchStatus, Statistics
 from pytyr.formalism.planning import Parser, GroundConjunctiveCondition
 
 # Note: we can easily switch between lifted and ground planning by swapping the submodule,
@@ -35,7 +35,6 @@ from pytyr.planning.lifted import (
     ConjunctiveGoalStrategy,
     State,
     Node,
-    LabeledNode,
     Plan,
 )
 
@@ -112,67 +111,18 @@ class CustomGoalStrategy(GoalStrategy):
 
 class CustomEventHandler(EventHandler):
     """
-    CustomEventHandler derives from EventHandler to implement custom ways to react on events triggered during an A* eager search.
+    CustomEventHandler derives from EventHandler to react to search lifecycle events.
 
-    We can use it for instance to create a search tree, or even a complete state space
-    when running A* with a blind heuristic and a goal strategy that always returns False.
-    We can also use it to collect custom search statistics.
+    Worker-local node events are intentionally C++-only. Common counters are returned
+    with SearchResult instead of being maintained by an event handler.
     """
-
-    @override
-    def on_expand_node(self, node: Node) -> None:
-        pass
-
-    @override
-    def on_expand_goal_node(self, node: Node) -> None:
-        pass
-
-    @override
-    def on_generate_node(
-        self, source_node: Node, labeled_succ_node: LabeledNode
-    ) -> None:
-        pass
-
-    @override
-    def on_generate_node_relaxed(
-        self, source_node: Node, labeled_succ_node: LabeledNode
-    ) -> None:
-        pass
-
-    @override
-    def on_generate_node_not_relaxed(
-        self, source_node: Node, labeled_succ_node: LabeledNode
-    ) -> None:
-        pass
-
-    @override
-    def on_close_node(self, node: Node) -> None:
-        pass
-
-    @overload
-    def on_prune_node(self, node: Node) -> None: ...
-
-    @overload
-    def on_prune_node(
-        self, source_node: Node, labeled_succ_node: LabeledNode
-    ) -> None: ...
-
-    @override
-    def on_prune_node(
-        self, *args: Node | LabeledNode, **kwargs: Node | LabeledNode
-    ) -> None:
-        pass
 
     @override
     def on_start_search(self, node: Node, f_value: float) -> None:
         pass
 
     @override
-    def on_finish_f_layer(self, f_value: float) -> None:
-        pass
-
-    @override
-    def on_end_search(self, status: SearchStatus) -> None:
+    def on_end_search(self, status: SearchStatus, statistics: Statistics) -> None:
         pass
 
     @override
@@ -215,10 +165,10 @@ def main() -> None:
         lifted_task, execution_context, state_repository
     )
 
-    options = Options()  # Lifted search is parallelized but only useful on large tasks.
+    options = Options()  # Search defaults to one worker; ExecutionContext controls lifted inner parallelism.
     options.event_handler = DefaultEventHandler(
         0
-    )  # Collects and prints statistics. If verbosity >= 2, then also prints labeled nodes.
+    )  # Prints search progress when verbosity is nonzero.
     options.goal_strategy = ConjunctiveGoalStrategy(
         lifted_task
     )  # Terminates the search when reaching a state that satisfies the task's goal.
@@ -227,6 +177,7 @@ def main() -> None:
     search_result = find_solution(lifted_task, successor_generator, heuristic, options)
 
     print("Search status:", search_result.status)
+    print("Search statistics:", search_result.statistics)
 
     plan = search_result.plan
 

@@ -320,7 +320,9 @@ void bind_search_result(nb::module_& m, const std::string& name)
         .def_rw("status", &T::status)
         .def_rw("plan", &T::plan)
         .def_rw("goal_node", &T::goal_node)
-        .def_rw("cycle_range", &T::cycle_range);
+        .def_rw("cycle_range", &T::cycle_range)
+        .def_rw("statistics", &T::statistics)
+        .def_rw("worker_statistics", &T::worker_statistics);
 }
 
 template<TaskKind Kind>

@@ -21,12 +21,12 @@
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/state_routing/dist_hash.hpp"
 #include "tyr/planning/state_routing/state_transfer.hpp"
+#include "tyr/planning/successor_generator.hpp"
 #include "tyr/planning/worker_state_index.hpp"
 
 #include <atomic>
 #include <cassert>
 #include <chrono>
-#include <concepts>
 #include <condition_variable>
 #include <cstddef>
 #include <cstdint>
@@ -37,10 +37,8 @@
 #include <optional>
 #include <stdexcept>
 #include <thread>
-#include <type_traits>
 #include <utility>
 #include <vector>
-#include <yggdrasil/execution/onetbb.hpp>
 
 namespace tyr::planning::detail
 {
@@ -61,15 +59,10 @@ class ParallelExecutionPolicy
     };
 
 public:
-    using Search = ParallelSearch;
     static constexpr bool parallel = true;
 
-    template<DistHashKind WorkerHashKind, typename WorkerMetadata>
     struct WorkerState
     {
-        static_assert(std::same_as<WorkerHashKind, HashKind>);
-        static_assert(std::same_as<WorkerMetadata, Metadata>);
-
         explicit WorkerState(uint64_t) {}
 
         std::mutex mutex;
@@ -79,23 +72,17 @@ public:
 
     explicit ParallelExecutionPolicy(uint64_t seed) : m_dist_hash(seed) {}
 
-    template<typename SearchPolicy>
-    static typename SearchPolicy::EventHandlerPtr make_event_handler(const typename SearchPolicy::Options& options)
-    {
-        return options.event_handler;
-    }
-
     template<typename Options>
     static void validate(const Options& options)
     {
         if (options.num_search_workers <= 1)
-            throw std::invalid_argument("gbfs_lazy::find_solution(...): num_search_workers must be greater than one for parallel search.");
+            throw std::invalid_argument("Parallel search requires num_search_workers to be greater than one.");
         if (options.num_search_workers > std::numeric_limits<ygg::uint_t>::max())
-            throw std::invalid_argument("gbfs_lazy::find_solution(...): num_search_workers exceeds the worker index range.");
+            throw std::invalid_argument("Parallel search worker count exceeds the worker index range.");
         if (options.pruning_strategy)
-            throw std::invalid_argument("gbfs_lazy::find_solution(...): pruning strategies are not supported by parallel search.");
+            throw std::invalid_argument("Parallel search does not support custom pruning strategies.");
         if (options.goal_strategy)
-            throw std::invalid_argument("gbfs_lazy::find_solution(...): custom goal strategies are not supported by parallel search.");
+            throw std::invalid_argument("Parallel search does not support custom goal strategies.");
     }
 
     template<typename Options>
@@ -108,8 +95,8 @@ public:
 
     void initialize_best_h(ygg::float_t value) noexcept { m_best_h_value.store(value, std::memory_order_relaxed); }
 
-    template<typename EventHandlerPtr, typename Callback>
-    bool improve_best_h(ygg::float_t value, EventHandlerPtr& event_handler, Callback&& callback)
+    template<typename Callback>
+    bool improve_best_h(ygg::float_t value, Callback&& callback)
     {
         if (value >= m_best_h_value.load(std::memory_order_relaxed))
             return false;
@@ -119,17 +106,8 @@ public:
             return false;
 
         m_best_h_value.store(value, std::memory_order_relaxed);
-        call_event(event_handler, std::forward<Callback>(callback));
+        std::forward<Callback>(callback)();
         return true;
-    }
-
-    template<typename EventHandlerPtr, typename Callback>
-    void call_event(EventHandlerPtr& event_handler, Callback&& callback)
-    {
-        if (!event_handler)
-            return;
-        const auto lock = std::lock_guard(m_event_mutex);
-        std::forward<Callback>(callback)(*event_handler);
     }
 
     void start(std::optional<std::chrono::steady_clock::duration> max_time)
@@ -205,18 +183,27 @@ public:
     }
 
     template<typename Engine>
-    bool set_goal(Engine& engine, WorkerStateIndex<Kind> goal)
+    bool consider_goal(Engine& engine, WorkerStateIndex<Kind> goal, ygg::float_t cost, bool terminate)
     {
+        auto notify = false;
         {
             const auto lock = std::lock_guard(m_terminal_mutex);
-            if (!running())
+            if (!running() || cost >= m_incumbent_cost.load(std::memory_order_relaxed))
                 return false;
             m_goal = goal;
-            m_status.store(SearchStatus::SOLVED, std::memory_order_release);
+            m_incumbent_cost.store(cost, std::memory_order_relaxed);
+            if (terminate)
+            {
+                m_status.store(SearchStatus::SOLVED, std::memory_order_release);
+                notify = true;
+            }
         }
-        notify_workers(engine);
+        if (notify)
+            notify_workers(engine);
         return true;
     }
+
+    ygg::float_t incumbent_cost() const noexcept { return m_incumbent_cost.load(std::memory_order_relaxed); }
 
     template<typename Engine, typename WorkerData>
     auto receive_one(Engine&, WorkerData& worker) -> std::optional<typename Engine::IncomingSuccessor>
@@ -232,9 +219,10 @@ public:
 
         auto target = m_transfer_pool.import_state(*worker.successor_generator.get_state_repository(), std::move(message->target));
         auto node = worker.successor_generator.finalize_successor_state(std::move(target), message->action_result);
-        return typename Engine::IncomingSuccessor { std::move(message->source),
-                                                    RoutedSuccessor<Kind, Metadata> { LabeledNode<Kind> { message->action, std::move(node) },
-                                                                                      std::move(message->metadata) } };
+        return typename Engine::IncomingSuccessor {
+            std::move(message->source),
+            typename Engine::RoutedSuccessor { LabeledNode<Kind> { message->action, std::move(node) }, std::move(message->metadata) },
+        };
     }
 
     template<typename Engine, typename WorkerData>
@@ -251,9 +239,10 @@ public:
         {
             retain_successor();
             auto node = sender.successor_generator.finalize_successor_state(std::move(target), action_result);
-            return
-                typename Engine::IncomingSuccessor { source,
-                                                     RoutedSuccessor<Kind, Metadata> { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata) } };
+            return typename Engine::IncomingSuccessor {
+                source,
+                typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata) },
+            };
         }
 
         auto message = Message { source, m_transfer_pool.export_state(std::move(target)), action_result, action, std::move(metadata) };
@@ -276,7 +265,10 @@ public:
         if (m_deadline)
         {
             if (!worker.execution.condition.wait_until(lock, *m_deadline, ready) && running())
+            {
+                lock.unlock();
                 set_terminal(engine, SearchStatus::OUT_OF_TIME);
+            }
         }
         else
         {
@@ -330,9 +322,8 @@ private:
     {
         {
             const auto lock = std::lock_guard(m_terminal_mutex);
-            if (!running())
-                return;
-            m_exception = std::move(exception);
+            if (!m_exception)
+                m_exception = std::move(exception);
             m_status.store(SearchStatus::FAILED, std::memory_order_release);
         }
         notify_workers(engine);
@@ -344,26 +335,42 @@ private:
         const auto old = m_work.fetch_sub(1, std::memory_order_acq_rel);
         assert(old > 0);
         if (old == 1)
-            set_terminal(engine, SearchStatus::EXHAUSTED);
+            finish_search(engine);
+    }
+
+    template<typename Engine>
+    void finish_search(Engine& engine)
+    {
+        {
+            const auto lock = std::lock_guard(m_terminal_mutex);
+            if (!running())
+                return;
+            m_status.store(m_goal ? SearchStatus::SOLVED : SearchStatus::EXHAUSTED, std::memory_order_release);
+        }
+        notify_workers(engine);
     }
 
     template<typename Engine>
     void notify_workers(Engine& engine)
     {
         for (size_t i = 0; i < engine.num_workers(); ++i)
-            engine.get_worker(ygg::Index<Worker>(static_cast<ygg::uint_t>(i))).execution.condition.notify_all();
+        {
+            auto& execution = engine.get_worker(ygg::Index<Worker>(static_cast<ygg::uint_t>(i))).execution;
+            const auto lock = std::lock_guard(execution.mutex);
+            execution.condition.notify_all();
+        }
     }
 
     DistHash<Kind, HashKind> m_dist_hash;
     std::optional<std::chrono::steady_clock::time_point> m_deadline;
     StateTransferPool<Kind> m_transfer_pool;
-    mutable std::mutex m_event_mutex;
     mutable std::mutex m_best_h_mutex;
     mutable std::mutex m_terminal_mutex;
     std::atomic<SearchStatus> m_status { SearchStatus::IN_PROGRESS };
     std::atomic<size_t> m_work { 0 };
     std::atomic<ygg::uint_t> m_num_states { 0 };
     std::atomic<ygg::float_t> m_best_h_value { std::numeric_limits<ygg::float_t>::infinity() };
+    std::atomic<ygg::float_t> m_incumbent_cost { std::numeric_limits<ygg::float_t>::infinity() };
     std::optional<WorkerStateIndex<Kind>> m_goal;
     std::exception_ptr m_exception;
     std::vector<std::jthread> m_threads;

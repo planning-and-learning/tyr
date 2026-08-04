@@ -15,8 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <filesystem>
 #include "statistics.hpp"
+
+#include <filesystem>
 
 namespace p = tyr::planning;
 
@@ -119,8 +120,9 @@ void check_expectation(const IwExpectation& expectation, const IwCase& test_case
     }
     if (expectation.counters)
     {
-        expect_counters(*expectation.counters, event_handler->get_search_statistics());
+        expect_counters(*expectation.counters, result.statistics);
     }
+    expect_repository_statistics(context, result.statistics);
 }
 
 class IwStatisticsTest : public ::testing::TestWithParam<IwCase>

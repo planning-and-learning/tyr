@@ -23,9 +23,7 @@
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
 
-#include <chrono>
-#include <concepts>
-#include <cstdint>
+#include <cstddef>
 
 namespace tyr::planning::brfs
 {
@@ -50,21 +48,17 @@ public:
 
     virtual void on_start_search(const Node<Kind>& node) = 0;
 
-    virtual void on_finish_layer(ygg::uint_t layer) = 0;
+    virtual void on_finish_layer(ygg::uint_t layer, const tyr::planning::Statistics& statistics) = 0;
 
-    virtual void on_end_search(tyr::planning::SearchStatus status) = 0;
+    virtual void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) = 0;
 
     virtual void on_solved(const Plan<Kind>& plan) = 0;
-
-    virtual const tyr::planning::Statistics& get_search_statistics() const = 0;
-    virtual const tyr::planning::Statistics& get_statistics() const = 0;
 };
 
 template<typename Derived, TaskKind Kind>
 class EventHandlerBase : public EventHandler<Kind>
 {
 protected:
-    tyr::planning::Statistics m_statistics;
     tyr::planning::ProgressStatistics m_progress_statistics;
     size_t m_verbosity;
 
@@ -78,12 +72,10 @@ private:
     bool verbosity(size_t level) const { return m_verbosity >= level; }
 
 public:
-    explicit EventHandlerBase(size_t verbosity = 0) : m_statistics(), m_verbosity(verbosity) {}
+    explicit EventHandlerBase(size_t verbosity = 0) : m_verbosity(verbosity) {}
 
     void on_expand_node(const Node<Kind>& node) override
     {
-        m_statistics.increment_num_expanded();
-
         if (verbosity(2))
             self().on_expand_node_impl(node);
     }
@@ -97,7 +89,6 @@ public:
     void on_generate_node(const Node<Kind>& source_node, const LabeledNode<Kind>& labeled_succ_node) override
     {
         static_cast<void>(source_node);
-        m_statistics.increment_num_generated();
 
         if (verbosity(2))
             self().on_generate_node_impl(labeled_succ_node);
@@ -105,8 +96,6 @@ public:
 
     void on_prune_node(const Node<Kind>& node) override
     {
-        m_statistics.increment_num_pruned();
-
         if (verbosity(2))
             self().on_prune_node_impl(node);
     }
@@ -114,7 +103,6 @@ public:
     void on_prune_node(const Node<Kind>& source_node, const LabeledNode<Kind>& labeled_succ_node) override
     {
         static_cast<void>(source_node);
-        m_statistics.increment_num_pruned();
 
         if (verbosity(2))
             self().on_prune_node_impl(labeled_succ_node.node);
@@ -122,29 +110,24 @@ public:
 
     void on_start_search(const Node<Kind>& node) override
     {
-        m_statistics.clear();
         m_progress_statistics.clear();
-
-        m_statistics.set_search_start_time_point(std::chrono::high_resolution_clock::now());
 
         if (verbosity(1))
             self().on_start_search_impl(node);
     }
 
-    void on_finish_layer(ygg::uint_t layer) override
+    void on_finish_layer(ygg::uint_t layer, const tyr::planning::Statistics& statistics) override
     {
-        m_progress_statistics.add_snapshot(m_statistics);
+        m_progress_statistics.add_snapshot(statistics);
 
         if (verbosity(1))
-            self().on_finish_layer_impl(layer, m_statistics.get_num_expanded(), m_statistics.get_num_generated());
+            self().on_finish_layer_impl(layer, statistics);
     }
 
-    void on_end_search(tyr::planning::SearchStatus status) override
+    void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override
     {
-        m_statistics.set_search_end_time_point(std::chrono::high_resolution_clock::now());
-
         if (verbosity(1))
-            self().on_end_search_impl(status);
+            self().on_end_search_impl(status, statistics);
     }
 
     void on_solved(const Plan<Kind>& plan) override
@@ -153,8 +136,6 @@ public:
             self().on_solved_impl(plan);
     }
 
-    const tyr::planning::Statistics& get_search_statistics() const override { return m_statistics; }
-    const tyr::planning::Statistics& get_statistics() const override { return m_statistics; }
     const tyr::planning::ProgressStatistics& get_progress_statistics() const { return m_progress_statistics; }
 };
 
@@ -174,9 +155,9 @@ private:
 
     void on_start_search_impl(const Node<Kind>& node) const;
 
-    void on_finish_layer_impl(ygg::uint_t layer, uint64_t num_expanded_states, uint64_t num_generated_states) const;
+    void on_finish_layer_impl(ygg::uint_t layer, const tyr::planning::Statistics& statistics) const;
 
-    void on_end_search_impl(tyr::planning::SearchStatus status) const;
+    void on_end_search_impl(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) const;
 
     void on_solved_impl(const Plan<Kind>& plan) const;
 

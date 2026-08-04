@@ -28,14 +28,13 @@ void check_statistics(const SearchStatistics& expected, const SearchCase& test_c
     auto context = create_search_context<StatisticsTaskKind>(test_case.domain_file, test_case.task_file);
     const auto num_ground_actions_before = context.task->get_repository()->template size<::tyr::formalism::planning::GroundAction>();
     auto heuristic = create_search_heuristic<StatisticsTaskKind>(heuristic_name, context, cost_mode);
-    auto event_handler = p::gbfs_lazy::DefaultEventHandler<StatisticsTaskKind>::create();
 
     auto options = p::gbfs_lazy::Options<StatisticsTaskKind>();
-    options.event_handler = event_handler;
     options.cost_mode = cost_mode;
     const auto result = p::gbfs_lazy::find_solution(*context.task, *context.successor_generator, *heuristic, options);
 
-    expect_statistics(expected, event_handler->get_statistics(), result);
+    expect_statistics(expected, result.statistics, result);
+    expect_repository_statistics(context, result.statistics);
     if constexpr (std::is_same_v<StatisticsTaskKind, ::tyr::LiftedTag>)
     {
         EXPECT_EQ(context.task->get_repository()->template size<::tyr::formalism::planning::GroundAction>(), num_ground_actions_before);

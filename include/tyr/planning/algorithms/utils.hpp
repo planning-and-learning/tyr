@@ -18,6 +18,7 @@
 #ifndef TYR_PLANNING_ALGORITHMS_UTILS_HPP_
 #define TYR_PLANNING_ALGORITHMS_UTILS_HPP_
 
+#include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/plan.hpp"
 
@@ -25,6 +26,7 @@
 #include <optional>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
@@ -63,6 +65,10 @@ struct SearchResult
     std::optional<Plan<Kind>> plan = std::nullopt;
     std::optional<Node<Kind>> goal_node = std::nullopt;
     std::optional<std::pair<size_t, size_t>> cycle_range = std::nullopt;
+    /// Idle time is summed worker time and may exceed the aggregate wall time.
+    Statistics statistics {};
+    /// Ordered by worker index. Shared task-repository memory is reported only by statistics.
+    std::vector<Statistics> worker_statistics;
 };
 
 }

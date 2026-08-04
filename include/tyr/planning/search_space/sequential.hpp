@@ -30,8 +30,7 @@
 namespace tyr::planning
 {
 
-template<TaskKind Kind, typename SearchNode>
-    requires SearchNodeConcept<SearchNode, Kind>
+template<TaskKind Kind, SearchNodeConcept<ygg::Index<State<Kind>>> SearchNode>
 NodeList<Kind> extract_node_trajectory(const ygg::SegmentedVector<SearchNode>& search_nodes,
                                        const SearchNode& final_search_node,
                                        const Node<Kind>& final_node,
@@ -89,8 +88,7 @@ LabeledNodeList<Kind> extract_labeled_node_trajectory(const NodeList<Kind>& node
     return labeled_node_trajectory;
 }
 
-template<TaskKind Kind, typename SearchNode>
-    requires SearchNodeConcept<SearchNode, Kind>
+template<TaskKind Kind, SearchNodeConcept<ygg::Index<State<Kind>>> SearchNode>
 inline Plan<Kind> extract_total_ordered_plan(const SearchNode& final_search_node,
                                              const Node<Kind>& final_node,
                                              const ygg::SegmentedVector<SearchNode>& search_nodes,
@@ -107,8 +105,7 @@ inline Plan<Kind> extract_total_ordered_plan(const SearchNode& final_search_node
 template<>
 struct PlanReconstructionPolicy<SequentialSearch>
 {
-    template<TaskKind Kind, typename SearchNode>
-        requires SearchNodeConcept<SearchNode, Kind>
+    template<TaskKind Kind, SearchNodeConcept<ygg::Index<State<Kind>>> SearchNode>
     static Plan<Kind> extract_total_ordered_plan(const SearchNode& final_search_node,
                                                  const Node<Kind>& final_node,
                                                  const ygg::SegmentedVector<SearchNode>& search_nodes,

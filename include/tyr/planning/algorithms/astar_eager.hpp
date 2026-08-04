@@ -22,6 +22,7 @@
 #include "tyr/planning/declarations.hpp"
 
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -41,6 +42,8 @@ struct Options
     ygg::uint_t max_num_states = std::numeric_limits<ygg::uint_t>::max();
     std::optional<std::chrono::steady_clock::duration> max_time = std::nullopt;
     CostMode cost_mode = CostMode::GENERAL;
+    /// Values above one enable hash-distributed shared-memory search, which currently requires the default pruning and goal strategies.
+    size_t num_search_workers = 1;
     uint64_t random_seed = 0;
     bool shuffle_labeled_succ_nodes = false;
 

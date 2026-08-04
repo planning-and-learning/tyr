@@ -26,11 +26,13 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/plan.hpp"
 
+#include <chrono>
 #include <cstddef>
 #include <limits>
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include <type_traits>
 #include <vector>
 
 namespace tyr::planning::serialized
@@ -55,9 +57,10 @@ concept SerializedSolverConcept =
         typename T::EventHandlerType::StatisticsType;
         solver.options.start_node = start_node;
         solver.options.goal_strategy = goal_strategy;
-        solver.options.event_handler->get_search_statistics();
+    } && (std::same_as<typename T::EventHandlerType::StatisticsType, tyr::planning::Statistics> || requires(T solver) {
+        solver.options.event_handler;
         solver.options.event_handler->get_statistics();
-    };
+    });
 
 namespace detail
 {
@@ -119,18 +122,27 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Solver>& op
     if (!options.goal_strategy)
         throw std::invalid_argument("serialized::find_solution(...): goal strategy is required.");
 
-    if (options.max_num_subsearches == 0)
-    {
-        if (!options.start_node && !solver.options.start_node)
-            throw std::invalid_argument("serialized::find_solution(...): start node is required if max_num_subsearches is 0.");
-        const auto result = detail::make_empty_result(options.start_node ? *options.start_node : *solver.options.start_node);
-        event_handler->on_start_search();
-        event_handler->on_solved(*result.plan);
-        event_handler->on_end_search(result.status);
-        return result;
-    }
+    if (options.max_num_subsearches == 0 && !options.start_node && !solver.options.start_node)
+        throw std::invalid_argument("serialized::find_solution(...): start node is required if max_num_subsearches is 0.");
+
+    auto statistics = tyr::planning::Statistics {};
+    statistics.set_search_start_time_point(std::chrono::steady_clock::now());
 
     event_handler->on_start_search();
+
+    const auto finalize = [&](SearchResult<Kind> result)
+    {
+        statistics.set_search_end_time_point(std::chrono::steady_clock::now());
+        result.statistics = statistics;
+        result.worker_statistics.clear();
+        if (result.plan && result.status == SearchStatus::SOLVED)
+            event_handler->on_solved(*result.plan);
+        event_handler->on_end_search(result.status, result.statistics);
+        return result;
+    };
+
+    if (options.max_num_subsearches == 0)
+        return finalize(detail::make_empty_result(options.start_node ? *options.start_node : *solver.options.start_node));
 
     auto current_start_node = options.start_node ? options.start_node : solver.options.start_node;
     auto combined_start_node = std::optional<Node<Kind>> {};
@@ -143,9 +155,7 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Solver>& op
     if (current_start_node && options.goal_strategy->is_dynamic_goal_satisfied(current_start_node->get_state(), current_start_node->get_state()))
     {
         auto result = detail::make_empty_result(*current_start_node);
-        event_handler->on_solved(*result.plan);
-        event_handler->on_end_search(result.status);
-        return result;
+        return finalize(std::move(result));
     }
 
     if (auto serialized_subgoal_strategy = std::dynamic_pointer_cast<SerializedGoalStrategy<Kind>>(options.subgoal_strategy))
@@ -160,6 +170,7 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Solver>& op
         event_handler->on_start_subsearch(subsearch_index);
 
         auto sub_result = local_solver.solve();
+        statistics.add(sub_result.statistics);
 
         if (!combined_start_node && sub_result.plan)
         {
@@ -168,24 +179,21 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Solver>& op
                 reached_subgoals.push_back(detail::ReachedSubgoal<Kind> { *combined_start_node, 0 });
         }
 
-        if (local_solver.options.event_handler)
-            event_handler->add_subsearch_statistics(local_solver.options.event_handler->get_search_statistics(),
-                                                    local_solver.options.event_handler->get_statistics());
+        if constexpr (std::is_same_v<typename Solver::EventHandlerType::StatisticsType, tyr::planning::Statistics>)
+            event_handler->add_subsearch_statistics(sub_result.statistics, sub_result.statistics);
+        else if (local_solver.options.event_handler)
+            event_handler->add_subsearch_statistics(sub_result.statistics, local_solver.options.event_handler->get_statistics());
 
         event_handler->on_end_subsearch(subsearch_index, sub_result.status);
 
         if (sub_result.status != SearchStatus::SOLVED)
-        {
-            event_handler->on_end_search(sub_result.status);
-            return sub_result;
-        }
+            return finalize(std::move(sub_result));
 
         if (!sub_result.plan || !sub_result.goal_node)
         {
             auto result = SearchResult<Kind> {};
             result.status = SearchStatus::FAILED;
-            event_handler->on_end_search(result.status);
-            return result;
+            return finalize(std::move(result));
         }
 
         auto current_node = combined_labeled_succ_nodes.empty() ? *combined_start_node : combined_labeled_succ_nodes.back().node;
@@ -202,10 +210,7 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Solver>& op
                 result.goal_node = current_node;
             }
 
-            if (result.plan && result.status == SearchStatus::SOLVED)
-                event_handler->on_solved(*result.plan);
-            event_handler->on_end_search(result.status);
-            return result;
+            return finalize(std::move(result));
         }
 
         detail::append_plan(*sub_result.plan, current_node, combined_labeled_succ_nodes);
@@ -217,9 +222,7 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Solver>& op
             result.plan = Plan<Kind>(*combined_start_node, std::move(combined_labeled_succ_nodes));
             result.goal_node = result.plan->get_labeled_succ_nodes().back().node;
 
-            event_handler->on_solved(*result.plan);
-            event_handler->on_end_search(result.status);
-            return result;
+            return finalize(std::move(result));
         }
 
         if (const auto cycle_begin = detail::find_reached_subgoal(reached_subgoals, *sub_result.goal_node))
@@ -230,8 +233,7 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Solver>& op
             result.goal_node = result.plan->get_labeled_succ_nodes().back().node;
             result.cycle_range = std::pair<size_t, size_t> { *cycle_begin, result.plan->get_length() };
 
-            event_handler->on_end_search(result.status);
-            return result;
+            return finalize(std::move(result));
         }
 
         current_start_node = Node<Kind>(sub_result.goal_node->get_state(), 0);
@@ -245,8 +247,7 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Solver>& op
         result.plan = Plan<Kind>(*combined_start_node, std::move(combined_labeled_succ_nodes));
         result.goal_node = !result.plan->empty() ? result.plan->get_labeled_succ_nodes().back().node : result.plan->get_start_node();
     }
-    event_handler->on_end_search(result.status);
-    return result;
+    return finalize(std::move(result));
 }
 
 template<TaskKind Kind, SerializedSolverConcept<Kind> Subsolver>

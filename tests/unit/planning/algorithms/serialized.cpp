@@ -37,9 +37,6 @@ namespace
 template<::tyr::TaskKind Kind>
 class SilentBrfsEventHandler : public p::brfs::EventHandler<Kind>
 {
-private:
-    p::Statistics m_statistics;
-
 public:
     void on_expand_node(const p::Node<Kind>& node) override { static_cast<void>(node); }
     void on_expand_goal_node(const p::Node<Kind>& node) override { static_cast<void>(node); }
@@ -54,16 +51,18 @@ public:
         static_cast<void>(source_node);
         static_cast<void>(labeled_succ_node);
     }
-    void on_start_search(const p::Node<Kind>& node) override
+    void on_start_search(const p::Node<Kind>& node) override { static_cast<void>(node); }
+    void on_finish_layer(ygg::uint_t layer, const p::Statistics& statistics) override
     {
-        static_cast<void>(node);
-        m_statistics.clear();
+        static_cast<void>(layer);
+        static_cast<void>(statistics);
     }
-    void on_finish_layer(ygg::uint_t layer) override { static_cast<void>(layer); }
-    void on_end_search(p::SearchStatus status) override { static_cast<void>(status); }
+    void on_end_search(p::SearchStatus status, const p::Statistics& statistics) override
+    {
+        static_cast<void>(status);
+        static_cast<void>(statistics);
+    }
     void on_solved(const p::Plan<Kind>& plan) override { static_cast<void>(plan); }
-    const p::Statistics& get_search_statistics() const override { return m_statistics; }
-    const p::Statistics& get_statistics() const override { return m_statistics; }
 };
 
 struct GroundSearchContext
@@ -164,41 +163,17 @@ TEST(TyrPlanningSerialized, BrfsEventHandlerClearsProgressSnapshotsOnSearchStart
 {
     auto context = create_gripper_context();
     auto node = context.successor_generator->get_initial_node();
-    auto labeled_succ_nodes = p::LabeledNodeList<::tyr::GroundTag> {};
-    context.successor_generator->get_labeled_successor_nodes(node, labeled_succ_nodes);
-    ASSERT_FALSE(labeled_succ_nodes.empty());
     auto event_handler = p::brfs::DefaultEventHandler<::tyr::GroundTag>(0);
+    auto statistics = p::Statistics {};
+    statistics.increment_num_generated();
 
     event_handler.on_start_search(node);
-    event_handler.on_generate_node(node, labeled_succ_nodes.front());
-    event_handler.on_finish_layer(0);
+    event_handler.on_finish_layer(0, statistics);
 
     ASSERT_EQ(event_handler.get_progress_statistics().size(), 1);
     EXPECT_EQ(event_handler.get_progress_statistics().get_snapshots().front().get_num_generated(), 1);
 
     event_handler.on_start_search(node);
-
-    EXPECT_TRUE(event_handler.get_progress_statistics().empty());
-    EXPECT_EQ(event_handler.get_progress_statistics().size(), 0);
-}
-
-TEST(TyrPlanningSerialized, AStarEventHandlerClearsProgressSnapshotsOnSearchStart)
-{
-    auto context = create_gripper_context();
-    auto node = context.successor_generator->get_initial_node();
-    auto labeled_succ_nodes = p::LabeledNodeList<::tyr::GroundTag> {};
-    context.successor_generator->get_labeled_successor_nodes(node, labeled_succ_nodes);
-    ASSERT_FALSE(labeled_succ_nodes.empty());
-    auto event_handler = p::astar_eager::DefaultEventHandler<::tyr::GroundTag>(0);
-
-    event_handler.on_start_search(node, 0);
-    event_handler.on_generate_node(node, labeled_succ_nodes.front());
-    event_handler.on_finish_f_layer(0);
-
-    ASSERT_EQ(event_handler.get_progress_statistics().size(), 1);
-    EXPECT_EQ(event_handler.get_progress_statistics().get_snapshots().front().get_num_generated(), 1);
-
-    event_handler.on_start_search(node, 0);
 
     EXPECT_TRUE(event_handler.get_progress_statistics().empty());
     EXPECT_EQ(event_handler.get_progress_statistics().size(), 0);
@@ -313,11 +288,27 @@ TEST(TyrPlanningSerialized, DetectsRepeatedSubgoalState)
 
     auto first_subresult = p::SearchResult<::tyr::GroundTag> {};
     first_subresult.status = p::SearchStatus::SOLVED;
+    first_subresult.statistics.increment_num_generated();
+    first_subresult.statistics.increment_num_pruned();
+    first_subresult.statistics.set_num_registered_states(20);
+    first_subresult.statistics.set_state_storage_memory_usage(100);
+    first_subresult.statistics.set_action_bindings_memory_usage(10);
+    first_subresult.statistics.set_predicate_bindings_memory_usage(40);
+    first_subresult.statistics.set_axiom_bindings_memory_usage(5);
+    first_subresult.statistics.set_function_bindings_memory_usage(80);
     first_subresult.goal_node = first_goal_node;
     first_subresult.plan = p::Plan<::tyr::GroundTag>(start_node, p::LabeledNodeList<::tyr::GroundTag> { first_labeled_succ_node });
 
     auto second_subresult = p::SearchResult<::tyr::GroundTag> {};
     second_subresult.status = p::SearchStatus::SOLVED;
+    second_subresult.statistics.increment_num_generated();
+    second_subresult.statistics.increment_num_expanded();
+    second_subresult.statistics.set_num_registered_states(30);
+    second_subresult.statistics.set_state_storage_memory_usage(90);
+    second_subresult.statistics.set_action_bindings_memory_usage(15);
+    second_subresult.statistics.set_predicate_bindings_memory_usage(35);
+    second_subresult.statistics.set_axiom_bindings_memory_usage(7);
+    second_subresult.statistics.set_function_bindings_memory_usage(70);
     second_subresult.goal_node = repeated_start_node;
     second_subresult.plan = p::Plan<::tyr::GroundTag>(second_start_node,
                                                       p::LabeledNodeList<::tyr::GroundTag> { p::LabeledNode<::tyr::GroundTag> {
@@ -342,6 +333,15 @@ TEST(TyrPlanningSerialized, DetectsRepeatedSubgoalState)
     EXPECT_EQ(result.plan->get_cost(), 2);
     EXPECT_EQ(result.cycle_range->first, 0);
     EXPECT_EQ(result.cycle_range->second, 2);
+    EXPECT_EQ(result.statistics.get_num_generated(), 2);
+    EXPECT_EQ(result.statistics.get_num_expanded(), 1);
+    EXPECT_EQ(result.statistics.get_num_pruned(), 1);
+    EXPECT_EQ(result.statistics.get_num_registered_states(), 30);
+    EXPECT_EQ(result.statistics.get_state_storage_memory_usage(), 100);
+    EXPECT_EQ(result.statistics.get_action_bindings_memory_usage(), 15);
+    EXPECT_EQ(result.statistics.get_predicate_bindings_memory_usage(), 40);
+    EXPECT_EQ(result.statistics.get_axiom_bindings_memory_usage(), 7);
+    EXPECT_EQ(result.statistics.get_function_bindings_memory_usage(), 80);
 }
 
 }

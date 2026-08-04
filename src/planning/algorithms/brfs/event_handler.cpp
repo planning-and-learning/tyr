@@ -63,17 +63,17 @@ void DefaultEventHandler<Kind>::on_start_search_impl(const Node<Kind>& node) con
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_finish_layer_impl(ygg::uint_t layer, uint64_t num_expanded_states, uint64_t num_generated_states) const
+void DefaultEventHandler<Kind>::on_finish_layer_impl(ygg::uint_t layer, const tyr::planning::Statistics& statistics) const
 {
-    std::cout << "[BRFS] Finished layer: " << layer << " with num expanded states " << num_expanded_states << " and num generated states "
-              << num_generated_states << " (" << ygg::to_ms(this->get_statistics().get_current_search_time()) << " ms)" << std::endl;
+    std::cout << "[BRFS] Finished layer: " << layer << " with num expanded states " << statistics.get_num_expanded() << " and num generated states "
+              << statistics.get_num_generated() << " (" << ygg::to_ms(statistics.get_current_search_time()) << " ms)" << std::endl;
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_end_search_impl(tyr::planning::SearchStatus status) const
+void DefaultEventHandler<Kind>::on_end_search_impl(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) const
 {
     static_cast<void>(status);
-    fmt::print(std::cout, "[BRFS] Search ended.\n{}\n{}\n", this->get_statistics(), this->get_progress_statistics());
+    fmt::print(std::cout, "[BRFS] Search ended.\n{}\n{}\n", statistics, this->get_progress_statistics());
 }
 
 template<TaskKind Kind>

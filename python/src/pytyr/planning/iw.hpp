@@ -29,7 +29,7 @@ class PyEventHandler : public EventHandler<Kind>
 public:
     using Base = EventHandler<Kind>;
 
-    NB_TRAMPOLINE(Base, 8);
+    NB_TRAMPOLINE(Base, 6);
 
     void on_start_search(ygg::uint_t max_arity) override { NB_OVERRIDE_PURE(on_start_search, max_arity); }
 
@@ -37,16 +37,12 @@ public:
 
     void on_end_arity(ygg::uint_t arity, tyr::planning::SearchStatus status) override { NB_OVERRIDE_PURE(on_end_arity, arity, status); }
 
-    void on_end_search(tyr::planning::SearchStatus status) override { NB_OVERRIDE_PURE(on_end_search, status); }
-
-    void on_solved(ygg::uint_t arity) override { NB_OVERRIDE_PURE(on_solved, arity); }
-
-    void add_subsearch_statistics(const tyr::planning::Statistics& search_statistics) override
+    void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override
     {
-        NB_OVERRIDE_PURE(add_subsearch_statistics, search_statistics);
+        NB_OVERRIDE_PURE(on_end_search, status, statistics);
     }
 
-    const tyr::planning::Statistics& get_search_statistics() const override { NB_OVERRIDE_PURE(get_search_statistics); }
+    void on_solved(ygg::uint_t arity) override { NB_OVERRIDE_PURE(on_solved, arity); }
 
     const Statistics<Kind>& get_statistics() const override { NB_OVERRIDE_PURE(get_statistics); }
 };
@@ -115,10 +111,8 @@ void bind_event_handler(nb::module_& m, const std::string& name)
         .def("on_start_search", &T::on_start_search, "max_arity"_a)
         .def("on_start_arity", &T::on_start_arity, "arity"_a)
         .def("on_end_arity", &T::on_end_arity, "arity"_a, "status"_a)
-        .def("on_end_search", &T::on_end_search, "status"_a)
+        .def("on_end_search", &T::on_end_search, "status"_a, "statistics"_a)
         .def("on_solved", &T::on_solved, "arity"_a)
-        .def("add_subsearch_statistics", &T::add_subsearch_statistics, "search_statistics"_a)
-        .def("get_search_statistics", &T::get_search_statistics, nb::rv_policy::reference_internal)
         .def("get_statistics", &T::get_statistics, nb::rv_policy::reference_internal);
 }
 
@@ -129,7 +123,6 @@ void bind_default_event_handler(nb::module_& m, const std::string& name)
 
     nb::class_<T, EventHandler<Kind>>(m, name.c_str())  //
         .def(nb::init<size_t>(), "verbosity"_a = 0)
-        .def("get_search_statistics", &T::get_search_statistics, nb::rv_policy::reference_internal)
         .def("get_statistics", &T::get_statistics, nb::rv_policy::reference_internal);
 }
 

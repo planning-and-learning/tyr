@@ -27,14 +27,13 @@ void check_statistics(const SearchStatistics& expected, const SearchCase& test_c
 {
     auto context = create_search_context<StatisticsTaskKind>(test_case.domain_file, test_case.task_file);
     auto heuristic = create_search_heuristic<StatisticsTaskKind>(heuristic_name, context, cost_mode);
-    auto event_handler = p::astar_eager::DefaultEventHandler<StatisticsTaskKind>::create();
 
     auto options = p::astar_eager::Options<StatisticsTaskKind>();
-    options.event_handler = event_handler;
     options.cost_mode = cost_mode;
     const auto result = p::astar_eager::find_solution(*context.task, *context.successor_generator, *heuristic, options);
 
-    expect_statistics(expected, event_handler->get_statistics(), result);
+    expect_statistics(expected, result.statistics, result);
+    expect_repository_statistics(context, result.statistics);
 }
 }
 

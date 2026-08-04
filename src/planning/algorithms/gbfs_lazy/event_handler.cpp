@@ -28,67 +28,93 @@
 
 #include <fmt/ostream.h>
 #include <iostream>
-#include <yggdrasil/core/chrono.hpp>
+#include <syncstream>
 
 namespace tyr::planning::gbfs_lazy
 {
-template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_expand_node_impl(const Node<Kind>& node) const
+namespace
 {
-    fmt::print(std::cout, "[GBFS] ----------------------------------------\n[GBFS] Expanding node: {}\n\n", node);
+
+template<TaskKind Kind>
+class DefaultWorkerEventHandler final : public WorkerEventHandler<Kind>
+{
+public:
+    explicit DefaultWorkerEventHandler(ygg::Index<Worker> index) : m_index(index) {}
+
+    void on_expand_node(const Node<Kind>& node) override
+    {
+        auto out = std::osyncstream(std::cout);
+        fmt::print(out,
+                   "[GBFS][Worker {}] ----------------------------------------\n[GBFS][Worker {}] Expanding node: {}\n\n",
+                   ygg::uint_t(m_index),
+                   ygg::uint_t(m_index),
+                   node);
+    }
+
+    void on_generate_node(const Node<Kind>&, const LabeledNode<Kind>& labeled_succ_node) override
+    {
+        auto out = std::osyncstream(std::cout);
+        fmt::print(out,
+                   "[GBFS][Worker {}] Action: {}\n[GBFS][Worker {}] Successor node: {}\n\n",
+                   ygg::uint_t(m_index),
+                   labeled_succ_node.label,
+                   ygg::uint_t(m_index),
+                   labeled_succ_node.node);
+    }
+
+private:
+    ygg::Index<Worker> m_index;
+};
+
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_expand_goal_node_impl(const Node<Kind>& node) const
+DefaultEventHandler<Kind>::DefaultEventHandler(size_t verbosity) : m_verbosity(verbosity)
 {
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_generate_node_impl(const LabeledNode<Kind>& labeled_succ_node) const
+void DefaultEventHandler<Kind>::on_start_search(const Node<Kind>&, ygg::float_t h_value)
 {
-    fmt::print(std::cout, "[GBFS] Action: {}\n", labeled_succ_node.label);
-    fmt::print(std::cout, "[GBFS] Successor node: {}\n\n", labeled_succ_node.node);
+    if (m_verbosity < 1)
+        return;
+    auto out = std::osyncstream(std::cout);
+    fmt::print(out, "[GBFS] Search started.\n[GBFS] Start node h_value: {}\n", h_value);
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_prune_node_impl(const Node<Kind>& node) const
+void DefaultEventHandler<Kind>::on_new_best_h_value(ygg::float_t h_value)
 {
+    if (m_verbosity < 1)
+        return;
+    auto out = std::osyncstream(std::cout);
+    fmt::print(out, "[GBFS] New best h_value: {}\n", h_value);
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_start_search_impl(const Node<Kind>& node, ygg::float_t h_value) const
+void DefaultEventHandler<Kind>::on_end_search(SearchStatus, const tyr::planning::Statistics& statistics)
 {
-    std::cout << "[GBFS] Search started.\n"
-              << "[GBFS] Start node h_value: " << h_value << std::endl;
+    if (m_verbosity < 1)
+        return;
+    auto out = std::osyncstream(std::cout);
+    fmt::print(out, "[GBFS] Search ended.\n{}\n", statistics);
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_new_best_h_value_impl(ygg::float_t h_value, uint64_t num_expanded_states, uint64_t num_generated_states) const
+void DefaultEventHandler<Kind>::on_solved(const Plan<Kind>& plan)
 {
-    std::cout << "[GBFS] New best h_value: " << h_value << " with num expanded states " << num_expanded_states << " and num generated states "
-              << num_generated_states << " (" << ygg::to_ms(this->get_statistics().get_current_search_time()) << " ms)" << std::endl;
+    if (m_verbosity < 1)
+        return;
+    auto out = std::osyncstream(std::cout);
+    fmt::print(out, "[GBFS] Plan found.\n[GBFS] Plan cost: {}\n[GBFS] Plan length: {}\n{}\n", plan.get_cost(), plan.get_length(), plan);
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_end_search_impl(tyr::planning::SearchStatus status) const
+WorkerEventHandlerPtr<Kind> DefaultEventHandler<Kind>::make_worker(ygg::Index<Worker> index)
 {
-    static_cast<void>(status);
-    fmt::print(std::cout, "[GBFS] Search ended.\n{}\n", this->m_statistics);
-}
-
-template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_solved_impl(const Plan<Kind>& plan) const
-{
-    std::cout << "[GBFS] Plan found.\n"
-              << "[GBFS] Plan cost: " << plan.get_cost() << "\n"
-              << "[GBFS] Plan length: " << plan.get_length() << std::endl;
-
-    fmt::print(std::cout, "{}\n", plan);
-}
-
-template<TaskKind Kind>
-DefaultEventHandler<Kind>::DefaultEventHandler(size_t verbosity) : EventHandlerBase<DefaultEventHandler<Kind>, Kind>(verbosity)
-{
+    if (m_verbosity < 2)
+        return nullptr;
+    return std::make_unique<DefaultWorkerEventHandler<Kind>>(index);
 }
 
 template<TaskKind Kind>

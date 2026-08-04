@@ -21,6 +21,7 @@
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/algorithms/brfs/event_handler.hpp"
 #include "tyr/planning/algorithms/concepts.hpp"
+#include "repository_statistics.hpp"
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
@@ -40,6 +41,7 @@
 #include "tyr/planning/state_index.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <deque>
 #include <random>
 #include <yggdrasil/containers/segmented_vector.hpp>
@@ -91,6 +93,21 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
     auto search_nodes = SearchNodeVector<Kind>();
     auto queue = std::deque<ygg::Index<State<Kind>>> {};
 
+    result.statistics.set_search_start_time_point(std::chrono::steady_clock::now());
+
+    const auto finalize = [&](SearchStatus status) -> SearchResult<Kind>
+    {
+        const auto search_end = std::chrono::steady_clock::now();
+        result.status = status;
+        detail::snapshot_state_repository_statistics(state_repository, result.statistics);
+        detail::snapshot_task_repository_statistics(*task.get_repository(), result.statistics);
+        result.statistics.set_search_end_time_point(search_end);
+        event_handler->on_end_search(status, result.statistics);
+        if (result.plan && status == SearchStatus::SOLVED)
+            event_handler->on_solved(*result.plan);
+        return std::move(result);
+    };
+
     auto& start_search_node = get_or_create_search_node(start_state_index, search_nodes);
     start_search_node.status = SearchNodeStatus::OPEN;
     start_search_node.g_value = 0;
@@ -98,30 +115,17 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
     event_handler->on_start_search(start_node);
 
     if (!goal_strategy->is_static_goal_satisfied(task))
-    {
-        result.status = SearchStatus::UNSOLVABLE;
-        event_handler->on_end_search(result.status);
-        return result;
-    }
+        return finalize(SearchStatus::UNSOLVABLE);
 
     if (goal_strategy->is_dynamic_goal_satisfied(start_state, start_state))
     {
         result.plan = Plan(start_node, LabeledNodeList<Kind> {});
         result.goal_node = start_node;
-        result.status = SearchStatus::SOLVED;
-
-        event_handler->on_end_search(result.status);
-        event_handler->on_solved(result.plan.value());
-
-        return result;
+        return finalize(SearchStatus::SOLVED);
     }
 
     if (pruning_strategy->should_prune_state(start_state))
-    {
-        result.status = SearchStatus::EXHAUSTED;
-        event_handler->on_end_search(result.status);
-        return result;
-    }
+        return finalize(SearchStatus::EXHAUSTED);
 
     auto labeled_succ_nodes = std::vector<LabeledNode<Kind>> {};
     auto current_layer = ygg::uint_t { 0 };
@@ -132,11 +136,7 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
     while (!queue.empty())
     {
         if (stopwatch && stopwatch->has_finished())
-        {
-            result.status = SearchStatus::OUT_OF_TIME;
-            event_handler->on_end_search(result.status);
-            return result;
-        }
+            return finalize(SearchStatus::OUT_OF_TIME);
 
         const auto state_index = queue.front();
         queue.pop_front();
@@ -150,7 +150,7 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
 
         if (search_node.g_value > current_layer)
         {
-            event_handler->on_finish_layer(current_layer);
+            event_handler->on_finish_layer(current_layer, result.statistics);
             current_layer = search_node.g_value;
         }
 
@@ -160,14 +160,10 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
 
             result.plan = extract_total_ordered_plan(search_node, node, search_nodes, successor_generator, CostMode::UNIT);
             result.goal_node = node;
-            result.status = SearchStatus::SOLVED;
-
-            event_handler->on_end_search(result.status);
-            event_handler->on_solved(result.plan.value());
-
-            return result;
+            return finalize(SearchStatus::SOLVED);
         }
 
+        result.statistics.increment_num_expanded();
         event_handler->on_expand_node(node);
 
         search_node.status = SearchNodeStatus::CLOSED;
@@ -175,11 +171,7 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
         successor_generator.get_labeled_successor_nodes(node, labeled_succ_nodes);
 
         if (stopwatch && stopwatch->has_finished())
-        {
-            result.status = SearchStatus::OUT_OF_TIME;
-            event_handler->on_end_search(result.status);
-            return result;
-        }
+            return finalize(SearchStatus::OUT_OF_TIME);
 
         if (options.shuffle_labeled_succ_nodes)
             ygg::portable_shuffle(labeled_succ_nodes.begin(), labeled_succ_nodes.end(), rng);
@@ -187,11 +179,7 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
         for (const auto& labeled_succ_node : labeled_succ_nodes)
         {
             if (stopwatch && stopwatch->has_finished())
-            {
-                result.status = SearchStatus::OUT_OF_TIME;
-                event_handler->on_end_search(result.status);
-                return result;
-            }
+                return finalize(SearchStatus::OUT_OF_TIME);
 
             const auto& succ_node = labeled_succ_node.node;
             const auto& succ_state = succ_node.get_state();
@@ -202,11 +190,7 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
             const auto is_new_successor_state = (successor_search_node.status == SearchNodeStatus::NEW);
 
             if (is_new_successor_state && search_nodes.size() >= options.max_num_states)
-            {
-                result.status = SearchStatus::OUT_OF_STATES;
-                event_handler->on_end_search(result.status);
-                return result;
-            }
+                return finalize(SearchStatus::OUT_OF_STATES);
 
             if (!is_new_successor_state)
                 continue;
@@ -220,10 +204,12 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
             if (pruning_strategy->should_prune_successor_state(state, succ_state, is_new_successor_state))
             {
                 successor_search_node.status = SearchNodeStatus::CLOSED;
+                result.statistics.increment_num_pruned();
                 event_handler->on_prune_node(node, brfs_labeled_succ_node);
                 continue;
             }
 
+            result.statistics.increment_num_generated();
             event_handler->on_generate_node(node, brfs_labeled_succ_node);
 
             if (goal_strategy->is_dynamic_goal_satisfied(start_state, succ_state))
@@ -234,21 +220,14 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
 
                 result.plan = extract_total_ordered_plan(successor_search_node, brfs_succ_node, search_nodes, successor_generator, CostMode::UNIT);
                 result.goal_node = brfs_succ_node;
-                result.status = SearchStatus::SOLVED;
-
-                event_handler->on_end_search(result.status);
-                event_handler->on_solved(result.plan.value());
-
-                return result;
+                return finalize(SearchStatus::SOLVED);
             }
 
             queue.push_back(succ_state_index);
         }
     }
 
-    result.status = SearchStatus::EXHAUSTED;
-    event_handler->on_end_search(result.status);
-    return result;
+    return finalize(SearchStatus::EXHAUSTED);
 }
 
 template SearchResult<LiftedTag>

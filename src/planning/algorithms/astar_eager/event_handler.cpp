@@ -28,82 +28,95 @@
 
 #include <fmt/ostream.h>
 #include <iostream>
-#include <yggdrasil/core/chrono.hpp>
+#include <syncstream>
 
 namespace tyr::planning::astar_eager
 {
-template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_expand_node_impl(const Node<Kind>& node) const
+namespace
 {
-    fmt::print(std::cout, "[ASTAR] ----------------------------------------\n[ASTAR] Expanding node: {}\n\n", node);
+
+template<TaskKind Kind>
+class DefaultWorkerEventHandler final : public WorkerEventHandler<Kind>
+{
+public:
+    DefaultWorkerEventHandler(ygg::Index<Worker> index, bool trace_nodes) : m_index(index), m_trace_nodes(trace_nodes) {}
+
+    void on_expand_node(const Node<Kind>& node) override
+    {
+        if (!m_trace_nodes)
+            return;
+        auto out = std::osyncstream(std::cout);
+        fmt::print(out,
+                   "[ASTAR][Worker {}] ----------------------------------------\n[ASTAR][Worker {}] Expanding node: {}\n\n",
+                   ygg::uint_t(m_index),
+                   ygg::uint_t(m_index),
+                   node);
+    }
+
+    void on_generate_node(const Node<Kind>&, const LabeledNode<Kind>& labeled_succ_node) override
+    {
+        if (!m_trace_nodes)
+            return;
+        auto out = std::osyncstream(std::cout);
+        fmt::print(out,
+                   "[ASTAR][Worker {}] Action: {}\n[ASTAR][Worker {}] Successor node: {}\n\n",
+                   ygg::uint_t(m_index),
+                   labeled_succ_node.label,
+                   ygg::uint_t(m_index),
+                   labeled_succ_node.node);
+    }
+
+    void on_finish_f_layer(ygg::float_t f_value) override
+    {
+        auto out = std::osyncstream(std::cout);
+        fmt::print(out, "[ASTAR][Worker {}] Finished f-layer: {}\n", ygg::uint_t(m_index), f_value);
+    }
+
+private:
+    ygg::Index<Worker> m_index;
+    bool m_trace_nodes;
+};
+
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_expand_goal_node_impl(const Node<Kind>& node) const
+DefaultEventHandler<Kind>::DefaultEventHandler(size_t verbosity) : m_verbosity(verbosity)
 {
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_generate_node_impl(const LabeledNode<Kind>& labeled_succ_node) const
+void DefaultEventHandler<Kind>::on_start_search(const Node<Kind>&, ygg::float_t f_value)
 {
-    fmt::print(std::cout, "[ASTAR] Action: {}\n", labeled_succ_node.label);
-    fmt::print(std::cout, "[ASTAR] Successor node: {}\n\n", labeled_succ_node.node);
+    if (m_verbosity < 1)
+        return;
+    auto out = std::osyncstream(std::cout);
+    fmt::print(out, "[ASTAR] Search started.\n[ASTAR] Start node f_value: {}\n", f_value);
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_generate_node_relaxed_impl(const LabeledNode<Kind>& labeled_succ_node) const
+void DefaultEventHandler<Kind>::on_end_search(SearchStatus, const tyr::planning::Statistics& statistics)
 {
+    if (m_verbosity < 1)
+        return;
+    auto out = std::osyncstream(std::cout);
+    fmt::print(out, "[ASTAR] Search ended.\n{}\n", statistics);
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_generate_node_not_relaxed_impl(const LabeledNode<Kind>& labeled_succ_node) const
+void DefaultEventHandler<Kind>::on_solved(const Plan<Kind>& plan)
 {
+    if (m_verbosity < 1)
+        return;
+    auto out = std::osyncstream(std::cout);
+    fmt::print(out, "[ASTAR] Plan found.\n[ASTAR] Plan cost: {}\n[ASTAR] Plan length: {}\n{}\n", plan.get_cost(), plan.get_length(), plan);
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_close_node_impl(const Node<Kind>& node) const
+WorkerEventHandlerPtr<Kind> DefaultEventHandler<Kind>::make_worker(ygg::Index<Worker> index)
 {
-}
-
-template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_prune_node_impl(const Node<Kind>& node) const
-{
-}
-
-template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_start_search_impl(const Node<Kind>& node, ygg::float_t f_value) const
-{
-    std::cout << "[ASTAR] Search started.\n"
-              << "[ASTAR] Start node f_value: " << f_value << std::endl;
-}
-
-template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_finish_f_layer_impl(ygg::float_t f_value, uint64_t num_expanded_states, uint64_t num_generated_states) const
-{
-    std::cout << "[ASTAR] Finished f-layer: " << f_value << " with num expanded states " << num_expanded_states << " and num generated states "
-              << num_generated_states << " (" << ygg::to_ms(this->get_statistics().get_current_search_time()) << " ms)" << std::endl;
-}
-
-template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_end_search_impl(tyr::planning::SearchStatus status) const
-{
-    static_cast<void>(status);
-    fmt::print(std::cout, "[ASTAR] Search ended.\n{}\n{}\n", this->get_statistics(), this->get_progress_statistics());
-}
-
-template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_solved_impl(const Plan<Kind>& plan) const
-{
-    std::cout << "[ASTAR] Plan found.\n"
-              << "[ASTAR] Plan cost: " << plan.get_cost() << "\n"
-              << "[ASTAR] Plan length: " << plan.get_length() << std::endl;
-
-    fmt::print(std::cout, "{}\n", plan);
-}
-
-template<TaskKind Kind>
-DefaultEventHandler<Kind>::DefaultEventHandler(size_t verbosity) : EventHandlerBase<DefaultEventHandler<Kind>, Kind>(verbosity)
-{
+    if (m_verbosity < 1)
+        return nullptr;
+    return std::make_unique<DefaultWorkerEventHandler<Kind>>(index, m_verbosity >= 2);
 }
 
 template<TaskKind Kind>

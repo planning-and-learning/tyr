@@ -29,35 +29,18 @@ class PyEventHandler : public EventHandler<Kind>
 public:
     using Base = EventHandler<Kind>;
 
-    NB_TRAMPOLINE(Base, 11);
-
-    void on_expand_node(const Node<Kind>& node) override { NB_OVERRIDE_PURE(on_expand_node, node); }
-
-    void on_expand_goal_node(const Node<Kind>& node) override { NB_OVERRIDE_PURE(on_expand_goal_node, node); }
-
-    void on_generate_node(const Node<Kind>& source_node, const LabeledNode<Kind>& labeled_succ_node) override
-    {
-        NB_OVERRIDE_PURE(on_generate_node, source_node, labeled_succ_node);
-    }
-
-    void on_prune_node(const Node<Kind>& node) override { NB_OVERRIDE_PURE(on_prune_node, node); }
-
-    void on_prune_node(const Node<Kind>& source_node, const LabeledNode<Kind>& labeled_succ_node) override
-    {
-        NB_OVERRIDE_PURE(on_prune_node, source_node, labeled_succ_node);
-    }
+    NB_TRAMPOLINE(Base, 4);
 
     void on_start_search(const Node<Kind>& node, ygg::float_t h_value) override { NB_OVERRIDE_PURE(on_start_search, node, h_value); }
 
     void on_new_best_h_value(ygg::float_t h_value) override { NB_OVERRIDE_PURE(on_new_best_h_value, h_value); }
 
-    void on_end_search(tyr::planning::SearchStatus status) override { NB_OVERRIDE_PURE(on_end_search, status); }
+    void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override
+    {
+        NB_OVERRIDE_PURE(on_end_search, status, statistics);
+    }
 
     void on_solved(const Plan<Kind>& plan) override { NB_OVERRIDE_PURE(on_solved, plan); }
-
-    const tyr::planning::Statistics& get_search_statistics() const override { NB_OVERRIDE_PURE(get_search_statistics); }
-
-    const tyr::planning::Statistics& get_statistics() const override { NB_OVERRIDE_PURE(get_statistics); }
 };
 
 template<TaskKind Kind>
@@ -116,17 +99,10 @@ void bind_event_handler(nb::module_& m, const std::string& name)
 
     nb::class_<T, PyEventHandler<Kind>>(m, name.c_str())
         .def(nb::init<>())
-        .def("on_expand_node", &T::on_expand_node, "node"_a)
-        .def("on_expand_goal_node", &T::on_expand_goal_node, "node"_a)
-        .def("on_generate_node", &T::on_generate_node, "source_node"_a, "labeled_succ_node"_a)
-        .def("on_prune_node", nb::overload_cast<const Node<Kind>&>(&T::on_prune_node), "node"_a)
-        .def("on_prune_node", nb::overload_cast<const Node<Kind>&, const LabeledNode<Kind>&>(&T::on_prune_node), "source_node"_a, "labeled_succ_node"_a)
         .def("on_start_search", &T::on_start_search, "node"_a, "h_value"_a)
         .def("on_new_best_h_value", &T::on_new_best_h_value, "h_value"_a)
-        .def("on_end_search", &T::on_end_search, "status"_a)
-        .def("on_solved", &T::on_solved, "plan"_a)
-        .def("get_search_statistics", &T::get_search_statistics, nb::rv_policy::reference_internal)
-        .def("get_statistics", &T::get_statistics, nb::rv_policy::reference_internal);
+        .def("on_end_search", &T::on_end_search, "status"_a, "statistics"_a)
+        .def("on_solved", &T::on_solved, "plan"_a);
 }
 
 template<TaskKind Kind>
@@ -134,10 +110,7 @@ void bind_default_event_handler(nb::module_& m, const std::string& name)
 {
     using T = DefaultEventHandler<Kind>;
 
-    nb::class_<T, EventHandler<Kind>>(m, name.c_str())  //
-        .def(nb::init<size_t>(), "verbosity"_a = 0)
-        .def("get_search_statistics", &T::get_search_statistics, nb::rv_policy::reference_internal)
-        .def("get_statistics", &T::get_statistics, nb::rv_policy::reference_internal);
+    nb::class_<T, EventHandler<Kind>>(m, name.c_str()).def(nb::init<size_t>(), "verbosity"_a = 0);
 }
 
 template<TaskKind Kind>

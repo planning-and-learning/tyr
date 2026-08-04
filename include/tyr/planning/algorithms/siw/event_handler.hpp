@@ -33,7 +33,6 @@ template<TaskKind Kind>
 class EventHandler : public serialized::EventHandler<Kind, iw::Solver<Kind>>
 {
 public:
-    virtual const tyr::planning::Statistics& get_search_statistics() const = 0;
     virtual const Statistics<Kind>& get_statistics() const = 0;
 };
 
@@ -45,7 +44,6 @@ class EventHandlerBase : public EventHandler<Kind>
 {
 protected:
     Statistics<Kind> m_statistics;
-    tyr::planning::Statistics m_search_statistics;
     size_t m_verbosity;
 
 private:
@@ -58,12 +56,11 @@ private:
     bool verbosity(size_t level) const { return m_verbosity >= level; }
 
 public:
-    explicit EventHandlerBase(size_t verbosity = 0) : m_statistics(), m_search_statistics(), m_verbosity(verbosity) {}
+    explicit EventHandlerBase(size_t verbosity = 0) : m_statistics(), m_verbosity(verbosity) {}
 
     void on_start_search() override
     {
         m_statistics.clear();
-        m_search_statistics.clear();
 
         if (verbosity(1))
             self().on_start_search_impl();
@@ -77,7 +74,7 @@ public:
 
     void add_subsearch_statistics(const tyr::planning::Statistics& search_statistics, const iw::Statistics<Kind>& solver_statistics) override
     {
-        m_search_statistics.add(search_statistics);
+        static_cast<void>(search_statistics);
         if (auto arity = solver_statistics.get_solution_arity())
             m_statistics.add_effective_width(*arity);
     }
@@ -88,10 +85,10 @@ public:
             self().on_end_subsearch_impl(subsearch_index, status);
     }
 
-    void on_end_search(tyr::planning::SearchStatus status) override
+    void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override
     {
         if (verbosity(1))
-            self().on_end_search_impl(status);
+            self().on_end_search_impl(status, statistics);
     }
 
     void on_solved(const Plan<Kind>& plan) override
@@ -100,7 +97,6 @@ public:
             self().on_solved_impl(plan);
     }
 
-    const tyr::planning::Statistics& get_search_statistics() const override { return m_search_statistics; }
     const Statistics<Kind>& get_statistics() const override { return m_statistics; }
 };
 
@@ -117,7 +113,11 @@ private:
         static_cast<void>(subsearch_index);
         static_cast<void>(status);
     }
-    void on_end_search_impl(SearchStatus status) const { static_cast<void>(status); }
+    void on_end_search_impl(SearchStatus status, const tyr::planning::Statistics& statistics) const
+    {
+        static_cast<void>(status);
+        static_cast<void>(statistics);
+    }
     void on_solved_impl(const Plan<Kind>& plan) const { static_cast<void>(plan); }
 
 public:

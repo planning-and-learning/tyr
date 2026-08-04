@@ -2,7 +2,7 @@
 """Regenerate the iw search-statistics fixture (ground + lifted).
 
 Each per-kind object records the search outcome (status, plan, solution_arity) plus the
-four counters aggregated across width iterations by the iw event handler. The suite-level
+four counters aggregated across width iterations in the search result. The suite-level
 ``max_arity`` is preserved and used for the runs.
 
 Usage:
@@ -26,7 +26,6 @@ from .fixture_generation import (
     FixtureCase,
     HeuristicName,
     SearchResultLike,
-    Statistics,
     TaskKind,
     counters_of,
     generate_main,
@@ -48,7 +47,6 @@ class _IwStatistics(Protocol):
 
 class _IwEventHandler(Protocol):
     def get_statistics(self) -> _IwStatistics: ...
-    def get_search_statistics(self) -> Statistics: ...
 
 
 def run_config(kind: TaskKind,
@@ -86,7 +84,7 @@ def run_config(kind: TaskKind,
     solution_arity = handler.get_statistics().get_solution_arity()
     if solution_arity is not None:
         config["solution_arity"] = solution_arity
-    config.update(counters_of(handler.get_search_statistics()))
+    config.update(counters_of(result.statistics))
     return config
 
 

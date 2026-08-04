@@ -22,12 +22,13 @@
 #include "tyr/planning/algorithms/concepts.hpp"
 #include "tyr/planning/algorithms/iw/pruning_strategy.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
-#include "tyr/planning/node.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/node.hpp"
 
+#include <chrono>
 #include <memory>
 #include <stdexcept>
 
@@ -74,8 +75,18 @@ SearchResult<Kind> find_solution(brfs::Solver<Kind>& brfs_solver, ygg::uint_t ma
 
     const auto event_handler = options.event_handler ? options.event_handler : DefaultEventHandler<Kind>::create();
 
+    auto statistics = tyr::planning::Statistics {};
     auto result = SearchResult<Kind> {};
     result.status = SearchStatus::EXHAUSTED;
+    statistics.set_search_start_time_point(std::chrono::steady_clock::now());
+
+    const auto finalize = [&](SearchResult<Kind> result)
+    {
+        statistics.set_search_end_time_point(std::chrono::steady_clock::now());
+        result.statistics = statistics;
+        event_handler->on_end_search(result.status, result.statistics);
+        return result;
+    };
 
     event_handler->on_start_search(max_arity);
 
@@ -93,25 +104,19 @@ SearchResult<Kind> find_solution(brfs::Solver<Kind>& brfs_solver, ygg::uint_t ma
         local_brfs_solver.options.shuffle_labeled_succ_nodes = options.shuffle_labeled_succ_nodes;
 
         result = local_brfs_solver.solve();
-        if (local_brfs_solver.options.event_handler)
-            event_handler->add_subsearch_statistics(local_brfs_solver.options.event_handler->get_search_statistics());
+        statistics.add(result.statistics);
         event_handler->on_end_arity(arity, result.status);
 
         if (result.status == SearchStatus::SOLVED)
         {
             event_handler->on_solved(arity);
-            event_handler->on_end_search(result.status);
-            return result;
+            return finalize(std::move(result));
         }
         if (result.status != SearchStatus::EXHAUSTED)
-        {
-            event_handler->on_end_search(result.status);
-            return result;
-        }
+            return finalize(std::move(result));
     }
 
-    event_handler->on_end_search(result.status);
-    return result;
+    return finalize(std::move(result));
 }
 
 static_assert(SolverConcept<Solver<LiftedTag>, LiftedTag>);

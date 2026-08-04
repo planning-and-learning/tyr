@@ -21,6 +21,8 @@
 #include "tyr/planning/search_space/parallel.hpp"
 #include "tyr/planning/search_space/sequential.hpp"
 
+#include <array>
+#include <atomic>
 #include <chrono>
 #include <filesystem>
 #include <gtest/gtest.h>
@@ -28,6 +30,7 @@
 #include <memory>
 #include <optional>
 #include <ranges>
+#include <semaphore>
 #include <span>
 #include <stdexcept>
 #include <string_view>
@@ -54,6 +57,115 @@ struct ParallelSearchNode
 {
     ygg::float_t g_value;
     p::WorkerStateIndex<Kind> parent_state;
+};
+
+template<TaskKind Kind>
+class CountingGBFSWorkerEventHandler final : public p::gbfs_lazy::WorkerEventHandler<Kind>
+{
+public:
+    explicit CountingGBFSWorkerEventHandler(p::Statistics& statistics) : m_statistics(statistics) {}
+
+    void on_expand_node(const p::Node<Kind>&) override { m_statistics.increment_num_expanded(); }
+    void on_generate_node(const p::Node<Kind>&, const p::LabeledNode<Kind>&) override { m_statistics.increment_num_generated(); }
+    void on_prune_node(const p::Node<Kind>&, const p::LabeledNode<Kind>&) override { m_statistics.increment_num_pruned(); }
+
+private:
+    p::Statistics& m_statistics;
+};
+
+template<TaskKind Kind>
+class CountingGBFSEventHandler final : public p::gbfs_lazy::EventHandler<Kind>
+{
+public:
+    explicit CountingGBFSEventHandler(const p::StateRepository<Kind>* caller_repository) : m_caller_repository(caller_repository) {}
+
+    void on_start_search(const p::Node<Kind>&, ygg::float_t) override {}
+    void on_new_best_h_value(ygg::float_t) override {}
+
+    void on_end_search(p::SearchStatus status, const p::Statistics& statistics) override
+    {
+        end_status = status;
+        end_statistics = statistics;
+    }
+
+    void on_solved(const p::Plan<Kind>& plan) override
+    {
+        solved_plan_length = plan.get_length();
+        plan_materialized = plan.get_start_node().get_state().get_state_repository().get() == m_caller_repository;
+        for (const auto& successor : plan.get_labeled_succ_nodes())
+            plan_materialized &= successor.node.get_state().get_state_repository().get() == m_caller_repository;
+    }
+
+    p::gbfs_lazy::WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<p::Worker> index) override
+    {
+        ++num_workers_created;
+        return std::make_unique<CountingGBFSWorkerEventHandler<Kind>>(worker_statistics.at(ygg::uint_t(index)));
+    }
+
+    p::Statistics totals() const
+    {
+        auto result = p::Statistics {};
+        for (const auto& statistics : worker_statistics)
+            result.add(statistics);
+        return result;
+    }
+
+    std::array<p::Statistics, 2> worker_statistics;
+    size_t num_workers_created = 0;
+    bool plan_materialized = false;
+    size_t solved_plan_length = 0;
+    std::optional<p::SearchStatus> end_status;
+    std::optional<p::Statistics> end_statistics;
+
+private:
+    const p::StateRepository<Kind>* m_caller_repository;
+};
+
+struct AStarGoalGate
+{
+    std::binary_semaphore cheap_path { 0 };
+    std::atomic<bool> expensive_goal_seen { false };
+};
+
+template<TaskKind Kind>
+class GatedAStarWorkerEventHandler final : public p::astar_eager::WorkerEventHandler<Kind>
+{
+public:
+    explicit GatedAStarWorkerEventHandler(AStarGoalGate& gate) : m_gate(gate) {}
+
+    void on_expand_node(const p::Node<Kind>& node) override
+    {
+        if (node.get_metric() == 1 && !m_gate.cheap_path.try_acquire_for(std::chrono::seconds(5)))
+            throw std::runtime_error("Timed out waiting for the expensive goal.");
+    }
+
+    void on_expand_goal_node(const p::Node<Kind>& node) override
+    {
+        if (node.get_metric() == 100)
+        {
+            m_gate.expensive_goal_seen.store(true, std::memory_order_relaxed);
+            m_gate.cheap_path.release();
+        }
+    }
+
+private:
+    AStarGoalGate& m_gate;
+};
+
+template<TaskKind Kind>
+class GatedAStarEventHandler final : public p::astar_eager::EventHandler<Kind>
+{
+public:
+    void on_start_search(const p::Node<Kind>&, ygg::float_t) override {}
+    void on_end_search(p::SearchStatus, const p::Statistics&) override {}
+    void on_solved(const p::Plan<Kind>&) override {}
+
+    p::astar_eager::WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<p::Worker>) override
+    {
+        return std::make_unique<GatedAStarWorkerEventHandler<Kind>>(gate);
+    }
+
+    AStarGoalGate gate;
 };
 
 template<typename SearchNode>
@@ -256,6 +368,126 @@ void expect_parallel_lazy_gbfs(const p::TaskPtr<Kind>& task)
 }
 
 template<TaskKind Kind>
+void expect_parallel_lazy_gbfs_worker_events(const p::TaskPtr<Kind>& task)
+{
+    auto execution_context = ygg::ExecutionContext::create(1);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto repository = p::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
+    auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context, repository);
+    auto heuristic = p::BlindHeuristic<Kind>::create();
+    auto event_handler = std::make_shared<CountingGBFSEventHandler<Kind>>(repository.get());
+
+    auto options = p::gbfs_lazy::Options<Kind> {};
+    options.event_handler = event_handler;
+    options.num_search_workers = 2;
+    const auto result = p::gbfs_lazy::find_solution(*task, *generator, *heuristic, options);
+
+    ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
+    ASSERT_TRUE(result.plan);
+    EXPECT_EQ(event_handler->num_workers_created, 2);
+
+    const auto totals = event_handler->totals();
+    EXPECT_EQ(totals.get_num_generated(), result.statistics.get_num_generated());
+    EXPECT_EQ(totals.get_num_expanded(), result.statistics.get_num_expanded());
+    EXPECT_EQ(totals.get_num_pruned(), result.statistics.get_num_pruned());
+
+    ASSERT_TRUE(event_handler->end_status);
+    EXPECT_EQ(*event_handler->end_status, result.status);
+    ASSERT_TRUE(event_handler->end_statistics);
+    EXPECT_EQ(event_handler->end_statistics->get_num_generated(), result.statistics.get_num_generated());
+    EXPECT_EQ(event_handler->end_statistics->get_num_expanded(), result.statistics.get_num_expanded());
+    EXPECT_EQ(event_handler->end_statistics->get_num_deadends(), result.statistics.get_num_deadends());
+    EXPECT_EQ(event_handler->end_statistics->get_num_pruned(), result.statistics.get_num_pruned());
+    EXPECT_EQ(event_handler->end_statistics->get_search_time(), result.statistics.get_search_time());
+
+    EXPECT_TRUE(event_handler->plan_materialized);
+    EXPECT_EQ(event_handler->solved_plan_length, result.plan->get_length());
+
+    ASSERT_EQ(result.worker_statistics.size(), 2);
+    auto worker_totals = p::Statistics {};
+    auto num_registered_states = uint64_t { 0 };
+    auto state_storage_memory_usage = size_t { 0 };
+    for (const auto& statistics : result.worker_statistics)
+    {
+        worker_totals.add(statistics);
+        num_registered_states += statistics.get_num_registered_states();
+        state_storage_memory_usage += statistics.get_state_storage_memory_usage();
+        EXPECT_LE(statistics.get_idle_time(), std::chrono::duration_cast<std::chrono::nanoseconds>(statistics.get_search_time()));
+    }
+    EXPECT_EQ(worker_totals.get_num_generated(), result.statistics.get_num_generated());
+    EXPECT_EQ(worker_totals.get_num_expanded(), result.statistics.get_num_expanded());
+    EXPECT_EQ(worker_totals.get_num_deadends(), result.statistics.get_num_deadends());
+    EXPECT_EQ(worker_totals.get_num_pruned(), result.statistics.get_num_pruned());
+    EXPECT_EQ(worker_totals.get_idle_time(), result.statistics.get_idle_time());
+    EXPECT_EQ(num_registered_states, result.statistics.get_num_registered_states());
+    EXPECT_EQ(state_storage_memory_usage, result.statistics.get_state_storage_memory_usage());
+}
+
+template<TaskKind Kind>
+std::optional<uint64_t> find_weighted_astar_seed(p::SuccessorGenerator<Kind>& generator)
+{
+    const auto start = generator.get_initial_node();
+    auto direct = std::optional<decltype(generator.get_state_repository()->get_state_builder())> {};
+    auto via = std::optional<decltype(generator.get_state_repository()->get_state_builder())> {};
+    for (const auto action : generator.get_applicable_action_bindings(start))
+    {
+        auto state = generator.get_state_repository()->get_state_builder();
+        const auto result = generator.generate_successor_state(start, action, *state);
+        if (result.auxiliary_value == 100)
+            direct.emplace(std::move(state));
+        else if (result.auxiliary_value == 1)
+            via.emplace(std::move(state));
+    }
+    if (!direct || !via)
+        return std::nullopt;
+
+    for (uint64_t seed = 0; seed < 1024; ++seed)
+    {
+        const auto hash = p::DistHash<Kind, p::RandomDistHashTag>(seed);
+        const auto start_owner = hash.owner(start.get_state().get_state_builder(), 2);
+        if (hash.owner(**direct, 2) == start_owner && hash.owner(**via, 2) != start_owner)
+            return seed;
+    }
+    return std::nullopt;
+}
+
+template<TaskKind Kind>
+void expect_parallel_astar_keeps_searching_after_first_goal(const p::TaskPtr<Kind>& task)
+{
+    auto execution_context = ygg::ExecutionContext::create(1);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto repository = p::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
+    auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context, repository);
+    auto heuristic = p::BlindHeuristic<Kind>::create();
+    const auto seed = find_weighted_astar_seed(*generator);
+    ASSERT_TRUE(seed);
+
+    auto event_handler = std::make_shared<GatedAStarEventHandler<Kind>>();
+    auto options = p::astar_eager::Options<Kind> {};
+    options.event_handler = event_handler;
+    options.num_search_workers = 2;
+    options.random_seed = *seed;
+    const auto result = p::astar_eager::find_solution(*task, *generator, *heuristic, options);
+
+    ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
+    ASSERT_TRUE(result.plan);
+    ASSERT_TRUE(result.goal_node);
+    EXPECT_TRUE(event_handler->gate.expensive_goal_seen.load(std::memory_order_relaxed));
+    EXPECT_EQ(result.plan->get_cost(), 2);
+    EXPECT_EQ(result.plan->get_length(), 2);
+    ASSERT_EQ(result.worker_statistics.size(), 2);
+    for (const auto& statistics : result.worker_statistics)
+    {
+        EXPECT_GT(statistics.get_num_registered_states(), 0);
+        EXPECT_GT(statistics.get_state_storage_memory_usage(), 0);
+    }
+    EXPECT_EQ(result.plan->get_start_node().get_state().get_state_repository(), repository);
+    for (const auto& successor : result.plan->get_labeled_succ_nodes())
+        EXPECT_EQ(successor.node.get_state().get_state_repository(), repository);
+    EXPECT_EQ(result.goal_node->get_state().get_state_repository(), repository);
+}
+
+template<TaskKind Kind>
 void expect_parallel_lazy_gbfs_exhaustion(const p::TaskPtr<Kind>& task)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
@@ -263,14 +495,13 @@ void expect_parallel_lazy_gbfs_exhaustion(const p::TaskPtr<Kind>& task)
     auto repository = p::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
     auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context, repository);
     auto heuristic = p::BlindHeuristic<Kind>::create();
-    auto event_handler = p::gbfs_lazy::DefaultEventHandler<Kind>::create();
     auto options = p::gbfs_lazy::Options<Kind> {};
-    options.event_handler = event_handler;
     options.num_search_workers = 2;
 
-    EXPECT_EQ(p::gbfs_lazy::find_solution(*task, *generator, *heuristic, options).status, p::SearchStatus::EXHAUSTED);
-    EXPECT_GT(event_handler->get_statistics().get_num_expanded(), 0);
-    EXPECT_GT(event_handler->get_statistics().get_num_generated(), 0);
+    const auto result = p::gbfs_lazy::find_solution(*task, *generator, *heuristic, options);
+    EXPECT_EQ(result.status, p::SearchStatus::EXHAUSTED);
+    EXPECT_GT(result.statistics.get_num_expanded(), 0);
+    EXPECT_GT(result.statistics.get_num_generated(), 0);
 }
 
 }
@@ -301,6 +532,18 @@ TEST(TyrPlanningPlanReconstructionTest, ParallelLazyGBFSMaterializesGroundAndLif
     expect_parallel_lazy_gbfs(lifted_task);
 }
 
+TEST(TyrPlanningPlanReconstructionTest, ParallelLazyGBFSWorkerEventsMatchResultStatistics)
+{
+    const auto root = std::filesystem::path(BENCHMARKS_DIR);
+    auto lifted_task =
+        p::Task<LiftedTag>::create(make_test_parser(root / "classical/tests/gripper/domain.pddl").parse_task(root / "classical/tests/gripper/test-1.pddl"));
+    auto grounding_context = ygg::ExecutionContext::create(1);
+    auto ground_task = lifted_task->instantiate_ground_task(*grounding_context).task;
+    ASSERT_NE(ground_task, nullptr);
+
+    expect_parallel_lazy_gbfs_worker_events(ground_task);
+}
+
 TEST(TyrPlanningPlanReconstructionTest, ParallelLazyGBFSDetectsGlobalExhaustion)
 {
     const auto benchmark_root = std::filesystem::path(BENCHMARKS_DIR);
@@ -315,6 +558,20 @@ TEST(TyrPlanningPlanReconstructionTest, ParallelLazyGBFSDetectsGlobalExhaustion)
 
     expect_parallel_lazy_gbfs_exhaustion(ground_task);
     expect_parallel_lazy_gbfs_exhaustion(lifted_task);
+}
+
+TEST(TyrPlanningPlanReconstructionTest, ParallelAStarDoesNotStopAtTheFirstGoal)
+{
+    const auto benchmark_root = std::filesystem::path(BENCHMARKS_DIR);
+    const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/fixtures/planning/algorithms";
+    auto lifted_task = p::Task<LiftedTag>::create(
+        make_test_parser(benchmark_root / "classical/tests/transport/domain.pddl").parse_task(fixture_root / "parallel_astar_weighted.pddl"));
+    auto grounding_context = ygg::ExecutionContext::create(1);
+    auto ground_task = lifted_task->instantiate_ground_task(*grounding_context).task;
+    ASSERT_NE(ground_task, nullptr);
+
+    expect_parallel_astar_keeps_searching_after_first_goal(ground_task);
+    expect_parallel_astar_keeps_searching_after_first_goal(lifted_task);
 }
 
 }

@@ -1,4 +1,5 @@
 import gc
+from datetime import timedelta
 from types import ModuleType
 
 import pytest
@@ -48,6 +49,16 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
     assert statistics.get_num_expanded() == 0
     assert statistics.get_num_deadends() == 0
     assert statistics.get_num_pruned() == 0
+    assert statistics.get_num_registered_states() == 0
+    assert statistics.get_idle_time() == timedelta(0)
+    for getter in (
+        "get_state_storage_memory_usage",
+        "get_action_bindings_memory_usage",
+        "get_predicate_bindings_memory_usage",
+        "get_axiom_bindings_memory_usage",
+        "get_function_bindings_memory_usage",
+    ):
+        assert getattr(statistics, getter)() == 0
     statistics.increment_num_generated()
     statistics.increment_num_expanded()
     statistics.increment_num_deadends()
@@ -62,6 +73,15 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
     assert statistics.get_num_deadends() == 0
     assert statistics.get_num_pruned() == 0
     assert repr(statistics) == str(statistics)
+    for label in (
+        "Number of registered states",
+        "State storage memory usage",
+        "Action bindings memory usage",
+        "Predicate bindings memory usage",
+        "Axiom bindings memory usage",
+        "Function bindings memory usage",
+    ):
+        assert label in str(statistics)
 
     snapshot = planning.ProgressStatisticsSnapshot(1, 2, 3, 4)
 
@@ -97,17 +117,15 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
     assert "deadend" in str(progress_statistics)
 
     for task_module in (planning.ground, planning.lifted):
-        for algorithm_module in (task_module.astar_eager, task_module.brfs, task_module.gbfs_lazy):
-            for event_handler in (algorithm_module.DefaultEventHandler(), algorithm_module.DefaultEventHandler(0)):
-                assert isinstance(event_handler.get_search_statistics(), planning.Statistics)
-                assert isinstance(event_handler.get_statistics(), planning.Statistics)
+        for algorithm_module in (task_module.astar_eager, task_module.gbfs_lazy):
+            event_handler = algorithm_module.DefaultEventHandler()
+            assert not hasattr(event_handler, "on_expand_node")
+            assert not hasattr(event_handler, "get_statistics")
 
-        for algorithm_module in (task_module.astar_eager, task_module.brfs):
-            for event_handler in (algorithm_module.DefaultEventHandler(), algorithm_module.DefaultEventHandler(0)):
-                assert isinstance(event_handler.get_progress_statistics(), planning.ProgressStatistics)
+        for event_handler in (task_module.brfs.DefaultEventHandler(), task_module.brfs.DefaultEventHandler(0)):
+            assert isinstance(event_handler.get_progress_statistics(), planning.ProgressStatistics)
 
         for event_handler in (task_module.iw.DefaultEventHandler(), task_module.iw.DefaultEventHandler(0)):
-            assert isinstance(event_handler.get_search_statistics(), planning.Statistics)
             assert isinstance(event_handler.get_statistics(), task_module.iw.Statistics)
 
         for event_handler in (task_module.siw.DefaultEventHandler(), task_module.siw.DefaultEventHandler(0)):
@@ -116,40 +134,21 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
 
 def test_default_event_handler_statistics_keep_handlers_alive():
     for task_module in (planning.ground, planning.lifted):
-        for algorithm_module in (task_module.astar_eager, task_module.brfs):
-            event_handler = algorithm_module.DefaultEventHandler()
-            search_statistics = event_handler.get_search_statistics()
-            statistics = event_handler.get_statistics()
-            progress_statistics = event_handler.get_progress_statistics()
+        event_handler = task_module.brfs.DefaultEventHandler()
+        progress_statistics = event_handler.get_progress_statistics()
 
-            del event_handler
-            gc.collect()
+        del event_handler
+        gc.collect()
 
-            assert search_statistics.get_num_generated() == 0
-            assert statistics.get_num_generated() == 0
-            assert progress_statistics.empty()
+        assert progress_statistics.empty()
 
-        for algorithm_module in (task_module.gbfs_lazy,):
-            event_handler = algorithm_module.DefaultEventHandler()
-            search_statistics = event_handler.get_search_statistics()
-            statistics = event_handler.get_statistics()
+        event_handler = task_module.iw.DefaultEventHandler()
+        statistics = event_handler.get_statistics()
 
-            del event_handler
-            gc.collect()
+        del event_handler
+        gc.collect()
 
-            assert search_statistics.get_num_generated() == 0
-            assert statistics.get_num_generated() == 0
-
-        for algorithm_module in (task_module.iw,):
-            event_handler = algorithm_module.DefaultEventHandler()
-            search_statistics = event_handler.get_search_statistics()
-            statistics = event_handler.get_statistics()
-
-            del event_handler
-            gc.collect()
-
-            assert search_statistics.get_num_generated() == 0
-            assert statistics.get_solution_arity() is None
+        assert statistics.get_solution_arity() is None
 
         event_handler = task_module.siw.DefaultEventHandler()
         statistics = event_handler.get_statistics()
@@ -236,12 +235,38 @@ def test_search_result_exposes_all_result_fields():
         assert result.plan is None
         assert result.goal_node is None
         assert result.cycle_range is None
+        assert isinstance(result.statistics, planning.Statistics)
+        assert result.worker_statistics == []
+        assert result.statistics.get_num_generated() == 0
 
         result.status = planning.SearchStatus.CYCLE
         result.cycle_range = (1, 3)
+        result.statistics.increment_num_generated()
 
         assert result.status == planning.SearchStatus.CYCLE
         assert result.cycle_range == (1, 3)
+        assert result.statistics.get_num_generated() == 1
+
+
+def _assert_worker_statistics(result, num_workers: int):
+    assert len(result.worker_statistics) == num_workers
+    for getter in (
+        "get_num_generated",
+        "get_num_expanded",
+        "get_num_deadends",
+        "get_num_pruned",
+        "get_num_registered_states",
+        "get_state_storage_memory_usage",
+    ):
+        worker_total = sum(getattr(worker, getter)() for worker in result.worker_statistics)
+        assert worker_total == getattr(result.statistics, getter)()
+    worker_idle_time = sum(
+        (worker.get_idle_time() for worker in result.worker_statistics),
+        start=timedelta(0),
+    )
+    assert abs(worker_idle_time - result.statistics.get_idle_time()) <= timedelta(
+        microseconds=num_workers
+    )
 
 
 def test_algorithm_options_are_default_constructible_with_expected_fields():
@@ -255,6 +280,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "max_num_states": ygg_uint_max,
             "max_time": None,
             "cost_mode": planning.CostMode.GENERAL,
+            "num_search_workers": 1,
             "random_seed": 0,
             "shuffle_labeled_succ_nodes": False,
         },
@@ -309,6 +335,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "max_num_states",
             "max_time",
             "cost_mode",
+            "num_search_workers",
             "random_seed",
             "shuffle_labeled_succ_nodes",
         ),
@@ -404,9 +431,29 @@ def test_parallel_lazy_gbfs_is_available_through_python_bindings():
         (planning.ground, ground_task),
         (planning.lifted, lifted_task),
     ):
+        class EventHandler(task_module.gbfs_lazy.EventHandler):
+            def __init__(self):
+                super().__init__()
+                self.end_status = None
+                self.num_expanded = None
+                self.solved = False
+
+            def on_start_search(self, node, h_value):
+                pass
+
+            def on_new_best_h_value(self, h_value):
+                pass
+
+            def on_end_search(self, status, statistics):
+                self.end_status = status
+                self.num_expanded = statistics.get_num_expanded()
+
+            def on_solved(self, plan):
+                self.solved = True
+
         state_repository = _make_state_repository(task_module, task)
         successor_generator = _make_successor_generator(task_module, task, state_repository)
-        event_handler = task_module.gbfs_lazy.DefaultEventHandler()
+        event_handler = EventHandler()
         options = task_module.gbfs_lazy.Options()
         options.event_handler = event_handler
         options.num_search_workers = 2
@@ -422,7 +469,23 @@ def test_parallel_lazy_gbfs_is_available_through_python_bindings():
         assert result.plan is not None
         assert result.goal_node is not None
         assert result.goal_node.get_state().get_state_repository() == state_repository
-        assert event_handler.get_statistics().get_num_expanded() > 0
+        assert result.statistics.get_num_expanded() > 0
+        assert event_handler.end_status == result.status
+        assert event_handler.num_expanded == result.statistics.get_num_expanded()
+        assert event_handler.solved
+        assert not hasattr(event_handler, "on_expand_node")
+        _assert_worker_statistics(result, 2)
+
+        astar_options = task_module.astar_eager.Options()
+        astar_options.num_search_workers = 2
+        astar_result = task_module.astar_eager.find_solution(
+            task,
+            successor_generator,
+            task_module.BlindHeuristic(),
+            astar_options,
+        )
+        assert astar_result.status == planning.SearchStatus.SOLVED
+        _assert_worker_statistics(astar_result, 2)
 
 
 def test_planning_task_view_accessors_keep_temporary_owners_alive():

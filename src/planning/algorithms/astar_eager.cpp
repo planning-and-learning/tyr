@@ -18,6 +18,7 @@
 #include "tyr/planning/algorithms/astar_eager.hpp"
 
 #include "search_engine/astar_eager.hpp"
+#include "search_engine/parallel.hpp"
 #include "search_engine/sequential.hpp"
 #include "tyr/planning/algorithms/concepts.hpp"
 
@@ -27,9 +28,18 @@ namespace tyr::planning::astar_eager
 template<TaskKind Kind>
 SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& successor_generator, Heuristic<Kind>& heuristic, const Options<Kind>& options)
 {
-    using Search = detail::EagerAStarPolicy<Kind>;
+    if (options.num_search_workers == 0)
+        throw std::invalid_argument("astar_eager::find_solution(...): num_search_workers must be greater than zero.");
+    if (options.num_search_workers > 1)
+    {
+        using Search = detail::EagerAStarPolicy<Kind, ParallelSearch>;
+        using Execution = detail::ParallelExecutionPolicy<Kind, typename Search::SuccessorMetadata, RandomDistHashTag>;
+        return detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
+    }
+
+    using Search = detail::EagerAStarPolicy<Kind, SequentialSearch>;
     using Execution = detail::SequentialExecutionPolicy<Kind>;
-    return detail::SearchEngine<Kind, Search, Execution, RandomDistHashTag>::find_solution(task, successor_generator, heuristic, options);
+    return detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
 }
 
 template SearchResult<LiftedTag> find_solution<LiftedTag>(Task<LiftedTag>& task,
@@ -50,7 +60,16 @@ static_assert(SolverConcept<Solver<GroundTag>, GroundTag>);
 namespace tyr::planning::detail
 {
 
-template class SearchEngine<LiftedTag, EagerAStarPolicy<LiftedTag>, SequentialExecutionPolicy<LiftedTag>, RandomDistHashTag>;
-template class SearchEngine<GroundTag, EagerAStarPolicy<GroundTag>, SequentialExecutionPolicy<GroundTag>, RandomDistHashTag>;
+template class SearchEngine<LiftedTag, EagerAStarPolicy<LiftedTag, SequentialSearch>, SequentialExecutionPolicy<LiftedTag>>;
+template class SearchEngine<GroundTag, EagerAStarPolicy<GroundTag, SequentialSearch>, SequentialExecutionPolicy<GroundTag>>;
+
+using LiftedParallelAStar = EagerAStarPolicy<LiftedTag, ParallelSearch>;
+using GroundParallelAStar = EagerAStarPolicy<GroundTag, ParallelSearch>;
+template class SearchEngine<LiftedTag,
+                            LiftedParallelAStar,
+                            ParallelExecutionPolicy<LiftedTag, typename LiftedParallelAStar::SuccessorMetadata, RandomDistHashTag>>;
+template class SearchEngine<GroundTag,
+                            GroundParallelAStar,
+                            ParallelExecutionPolicy<GroundTag, typename GroundParallelAStar::SuccessorMetadata, RandomDistHashTag>>;
 
 }

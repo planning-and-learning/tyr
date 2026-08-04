@@ -40,7 +40,7 @@ public:
     virtual void add_subsearch_statistics(const tyr::planning::Statistics& search_statistics,
                                           const typename Subsolver::EventHandlerType::StatisticsType& solver_statistics) = 0;
     virtual void on_end_subsearch(ygg::uint_t subsearch_index, tyr::planning::SearchStatus status) = 0;
-    virtual void on_end_search(tyr::planning::SearchStatus status) = 0;
+    virtual void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) = 0;
     virtual void on_solved(const Plan<Kind>& plan) = 0;
 };
 
@@ -90,10 +90,10 @@ public:
             self().on_end_subsearch_impl(subsearch_index, status);
     }
 
-    void on_end_search(tyr::planning::SearchStatus status) override
+    void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override
     {
         if (verbosity(1))
-            self().on_end_search_impl(status);
+            self().on_end_search_impl(status, statistics);
     }
 
     void on_solved(const Plan<Kind>& plan) override
@@ -118,7 +118,11 @@ private:
         static_cast<void>(subsearch_index);
         static_cast<void>(status);
     }
-    void on_end_search_impl(SearchStatus status) const { static_cast<void>(status); }
+    void on_end_search_impl(SearchStatus status, const tyr::planning::Statistics& statistics) const
+    {
+        static_cast<void>(status);
+        static_cast<void>(statistics);
+    }
     void on_solved_impl(const Plan<Kind>& plan) const { static_cast<void>(plan); }
 
 public:

@@ -19,7 +19,6 @@
 
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/algorithms/gbfs_lazy.hpp"
-#include "tyr/planning/algorithms/gbfs_lazy/event_handler.hpp"
 #include "tyr/planning/factory.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
@@ -111,11 +110,8 @@ void benchmark_gbfs_lazy_lmcut(benchmark::State& state, const BenchmarkCase& ben
         auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(task, axiom_evaluator);
         auto successor_generator = p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, execution_context, state_repository);
         auto heuristic = p::LMCutHeuristic<::tyr::LiftedTag>::create(task, execution_context);
-        auto event_handler = p::gbfs_lazy::DefaultEventHandler<::tyr::LiftedTag>::create(0);
-
         auto options = p::gbfs_lazy::Options<::tyr::LiftedTag>();
         options.start_node = successor_generator->get_initial_node();
-        options.event_handler = event_handler;
         initial_h_value = heuristic->evaluate(options.start_node->get_state());
 
         auto result = p::SearchResult<::tyr::LiftedTag>();
@@ -124,8 +120,8 @@ void benchmark_gbfs_lazy_lmcut(benchmark::State& state, const BenchmarkCase& ben
             result = p::gbfs_lazy::find_solution(*task, *successor_generator, *heuristic, options);
         }
 
-        num_expanded = event_handler->get_statistics().get_num_expanded();
-        num_generated = event_handler->get_statistics().get_num_generated();
+        num_expanded = result.statistics.get_num_expanded();
+        num_generated = result.statistics.get_num_generated();
         solved = result.status == p::SearchStatus::SOLVED;
         cost = result.plan ? result.plan->get_cost() : ygg::float_t(0);
         length = result.plan ? result.plan->get_length() : std::size_t(0);

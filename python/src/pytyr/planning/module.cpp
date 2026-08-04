@@ -82,8 +82,15 @@ void bind_module_definitions(nb::module_& m)
                               .def("get_num_expanded", &Statistics::get_num_expanded)
                               .def("get_num_deadends", &Statistics::get_num_deadends)
                               .def("get_num_pruned", &Statistics::get_num_pruned)
+                              .def("get_num_registered_states", &Statistics::get_num_registered_states)
+                              .def("get_state_storage_memory_usage", &Statistics::get_state_storage_memory_usage)
+                              .def("get_action_bindings_memory_usage", &Statistics::get_action_bindings_memory_usage)
+                              .def("get_predicate_bindings_memory_usage", &Statistics::get_predicate_bindings_memory_usage)
+                              .def("get_axiom_bindings_memory_usage", &Statistics::get_axiom_bindings_memory_usage)
+                              .def("get_function_bindings_memory_usage", &Statistics::get_function_bindings_memory_usage)
                               .def("get_search_time", &Statistics::get_search_time)
-                              .def("get_current_search_time", &Statistics::get_current_search_time);
+                              .def("get_current_search_time", &Statistics::get_current_search_time)
+                              .def("get_idle_time", &Statistics::get_idle_time);
     ygg::add_print(statistics_cls);
 
     using ProgressSnapshot = ProgressStatistics::Snapshot;

@@ -18,6 +18,8 @@
 #ifndef TYR_SRC_PLANNING_ALGORITHMS_SEARCH_ENGINE_ENGINE_HPP_
 #define TYR_SRC_PLANNING_ALGORITHMS_SEARCH_ENGINE_ENGINE_HPP_
 
+#include "../repository_statistics.hpp"
+#include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
@@ -33,11 +35,10 @@
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/search_space/parallel.hpp"
 #include "tyr/planning/search_space/sequential.hpp"
-#include "tyr/planning/state_routing/dist_hash.hpp"
-#include "tyr/planning/state_routing/single_worker.hpp"
 #include "tyr/planning/worker_state_index.hpp"
 
 #include <cassert>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -80,18 +81,24 @@ SearchNode& get_or_create_search_node(ygg::Index<State<Kind>> state_index, ygg::
     return search_nodes[ygg::uint_t(state_index)];
 }
 
-template<TaskKind Kind, typename SearchPolicy, typename ExecutionPolicy, DistHashKind HashKind>
+template<TaskKind Kind, typename SearchPolicy, typename ExecutionPolicy>
 class SearchEngine
 {
 public:
     using Options = typename SearchPolicy::Options;
     using SearchNode = typename SearchPolicy::SearchNode;
-    using WorkerExecutionState = typename ExecutionPolicy::template WorkerState<HashKind, typename SearchPolicy::SuccessorMetadata>;
+    using WorkerExecutionState = typename ExecutionPolicy::WorkerState;
+
+    struct RoutedSuccessor
+    {
+        LabeledNode<Kind> labeled_node;
+        typename SearchPolicy::SuccessorMetadata metadata;
+    };
 
     struct IncomingSuccessor
     {
         Node<Kind> source;
-        RoutedSuccessor<Kind, typename SearchPolicy::SuccessorMetadata> routed;
+        RoutedSuccessor routed;
     };
 
     struct WorkerData
@@ -101,7 +108,8 @@ public:
                    Heuristic<Kind>& heuristic_,
                    const Options& options,
                    PruningStrategyPtr<Kind> pruning_strategy_,
-                   GoalStrategyPtr<Kind> goal_strategy_) :
+                   GoalStrategyPtr<Kind> goal_strategy_,
+                   typename SearchPolicy::WorkerEventHandlerPtr event_handler_) :
             index(index_),
             successor_generator(successor_generator_),
             heuristic(heuristic_),
@@ -109,7 +117,8 @@ public:
             execution(options.random_seed),
             rng(options.random_seed + ygg::uint_t(index)),
             pruning_strategy(std::move(pruning_strategy_)),
-            goal_strategy(std::move(goal_strategy_))
+            goal_strategy(std::move(goal_strategy_)),
+            event_handler(std::move(event_handler_))
         {
         }
 
@@ -119,7 +128,8 @@ public:
                    HeuristicPtr<Kind> heuristic_,
                    const Options& options,
                    PruningStrategyPtr<Kind> pruning_strategy_,
-                   GoalStrategyPtr<Kind> goal_strategy_) :
+                   GoalStrategyPtr<Kind> goal_strategy_,
+                   typename SearchPolicy::WorkerEventHandlerPtr event_handler_) :
             index(index_),
             execution_context(std::move(execution_context_)),
             owned_successor_generator(std::move(successor_generator_)),
@@ -130,7 +140,8 @@ public:
             execution(options.random_seed),
             rng(options.random_seed + ygg::uint_t(index)),
             pruning_strategy(std::move(pruning_strategy_)),
-            goal_strategy(std::move(goal_strategy_))
+            goal_strategy(std::move(goal_strategy_)),
+            event_handler(std::move(event_handler_))
         {
         }
 
@@ -144,9 +155,11 @@ public:
         WorkerExecutionState execution;
         std::mt19937_64 rng;
         std::vector<::tyr::formalism::planning::ActionBindingView> applicable_actions;
-        std::vector<RoutedSuccessor<Kind, typename SearchPolicy::SuccessorMetadata>> routed_successors;
+        std::vector<RoutedSuccessor> routed_successors;
         PruningStrategyPtr<Kind> pruning_strategy;
         GoalStrategyPtr<Kind> goal_strategy;
+        Statistics statistics;
+        typename SearchPolicy::WorkerEventHandlerPtr event_handler;
     };
 
     using WorkerStorage = std::conditional_t<ExecutionPolicy::parallel, std::vector<std::unique_ptr<WorkerData>>, WorkerData>;
@@ -182,6 +195,22 @@ public:
 
     void worker_loop(WorkerData& worker)
     {
+        worker.statistics.set_search_start_time_point(std::chrono::steady_clock::now());
+        try
+        {
+            worker_loop_impl(worker);
+        }
+        catch (...)
+        {
+            worker.statistics.set_search_end_time_point(std::chrono::steady_clock::now());
+            throw;
+        }
+        worker.statistics.set_search_end_time_point(std::chrono::steady_clock::now());
+    }
+
+private:
+    void worker_loop_impl(WorkerData& worker)
+    {
         while (m_execution.begin_iteration(*this, worker))
         {
             if (m_execution.timed_out())
@@ -205,25 +234,30 @@ public:
                 continue;
             }
 
+            const auto idle_start = std::chrono::steady_clock::now();
             m_execution.wait_for_work(*this, worker);
+            worker.statistics.add_idle_time(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - idle_start));
             if (!m_execution.running())
                 return;
         }
     }
 
-private:
     SearchEngine(Task<Kind>& task, SuccessorGenerator<Kind>& successor_generator, Heuristic<Kind>& heuristic, const Options& options) :
         m_task(task),
         m_caller_successor_generator(successor_generator),
         m_options(options),
-        m_event_handler(ExecutionPolicy::template make_event_handler<SearchPolicy>(options)),
+        m_event_handler(options.event_handler),
         m_start_node(options.start_node ? *options.start_node : successor_generator.get_initial_node()),
         m_execution(options.random_seed),
-        m_workers(make_workers(task, successor_generator, heuristic, options))
+        m_workers(make_workers(task, successor_generator, heuristic, options, m_event_handler))
     {
     }
 
-    static WorkerStorage make_workers(Task<Kind>& task, SuccessorGenerator<Kind>& successor_generator, Heuristic<Kind>& heuristic, const Options& options)
+    static WorkerStorage make_workers(Task<Kind>& task,
+                                      SuccessorGenerator<Kind>& successor_generator,
+                                      Heuristic<Kind>& heuristic,
+                                      const Options& options,
+                                      const typename SearchPolicy::EventHandlerPtr& event_handler)
     {
         if constexpr (ExecutionPolicy::parallel)
         {
@@ -241,7 +275,8 @@ private:
                                                                std::move(worker_heuristic),
                                                                options,
                                                                PruningStrategy<Kind>::create(),
-                                                               ConjunctiveGoalStrategy<Kind>::create(task)));
+                                                               ConjunctiveGoalStrategy<Kind>::create(task),
+                                                               event_handler ? event_handler->make_worker(index) : nullptr));
             }
             return workers;
         }
@@ -252,7 +287,8 @@ private:
                               heuristic,
                               options,
                               options.pruning_strategy ? options.pruning_strategy : PruningStrategy<Kind>::create(),
-                              options.goal_strategy ? options.goal_strategy : ConjunctiveGoalStrategy<Kind>::create(task));
+                              options.goal_strategy ? options.goal_strategy : ConjunctiveGoalStrategy<Kind>::create(task),
+                              event_handler ? event_handler->make_worker(ygg::Index<Worker>(0)) : nullptr);
         }
     }
 
@@ -267,11 +303,19 @@ private:
         m_execution.initialize_best_h(start_h_value);
         auto& start_search_node = start_worker.search.initialize_start(start_state_index, start_g_value, start_h_value);
 
-        call_event([&](auto& handler) { handler.on_start_search(m_start_node, start_worker.search.get_start_priority()); });
+        const auto search_start = std::chrono::steady_clock::now();
+        m_result.statistics.set_search_start_time_point(search_start);
+        for_each_worker(
+            [&](auto& worker)
+            {
+                worker.statistics.set_search_start_time_point(search_start);
+                worker.statistics.set_search_end_time_point(search_start);
+            });
+        call_root_event([&](auto& handler) { handler.on_start_search(m_start_node, start_worker.search.get_start_priority()); });
 
         if (!start_worker.goal_strategy->is_static_goal_satisfied(m_task))
         {
-            finish(SearchStatus::UNSOLVABLE);
+            finalize(SearchStatus::UNSOLVABLE);
             return std::move(m_result);
         }
 
@@ -279,27 +323,26 @@ private:
         {
             m_result.plan = Plan(m_start_node, LabeledNodeList<Kind> {});
             m_result.goal_node = m_start_node;
-            m_result.status = SearchStatus::SOLVED;
-            call_event([&](auto& handler) { handler.on_end_search(m_result.status); });
-            call_event([&](auto& handler) { handler.on_solved(*m_result.plan); });
+            finalize(SearchStatus::SOLVED);
+            call_root_event([&](auto& handler) { handler.on_solved(*m_result.plan); });
             return std::move(m_result);
         }
 
         if (std::isnan(m_start_node.get_metric()))
         {
-            call_event([](auto& handler) { handler.on_end_search(SearchStatus::FAILED); });
+            finalize(SearchStatus::FAILED);
             throw std::runtime_error("find_solution(...): start node metric value is NaN.");
         }
 
         if (start_search_node.status == SearchNodeStatus::DEAD_END)
         {
-            finish(SearchStatus::UNSOLVABLE);
+            finalize(SearchStatus::UNSOLVABLE);
             return std::move(m_result);
         }
 
         if (start_worker.pruning_strategy->should_prune_state(start_state))
         {
-            finish(SearchStatus::EXHAUSTED);
+            finalize(SearchStatus::EXHAUSTED);
             return std::move(m_result);
         }
 
@@ -307,15 +350,24 @@ private:
         {
             if (m_options.max_num_states == 0)
             {
-                finish(SearchStatus::OUT_OF_STATES);
+                finalize(SearchStatus::OUT_OF_STATES);
                 return std::move(m_result);
             }
         }
 
         start_worker.search.open_start(start_state_index, start_search_node);
         m_execution.start(m_options.max_time);
-        m_execution.invoke(*this);
-        return finish_search();
+        try
+        {
+            m_execution.invoke(*this);
+            snapshot_statistics();
+            return finish_search();
+        }
+        catch (...)
+        {
+            finalize(SearchStatus::FAILED);
+            throw;
+        }
     }
 
     StateView<Kind> prepare_start_state(WorkerData& worker)
@@ -335,6 +387,12 @@ private:
     void expand_one(WorkerData& worker)
     {
         const auto entry = worker.search.pop();
+        if (worker.search.should_discard(entry, m_execution.incumbent_cost()))
+        {
+            m_execution.finish_expansion(*this);
+            return;
+        }
+
         auto& state_repository = *worker.successor_generator.get_state_repository();
         const auto state = state_repository.get_registered_state(entry.state);
         auto& search_node = worker.search.get_search_node(entry.state);
@@ -350,9 +408,10 @@ private:
             entry,
             node,
             search_node,
+            worker.statistics,
             [&](ygg::float_t h_value, auto&& callback)
-            { return m_execution.improve_best_h(h_value, m_event_handler, std::forward<decltype(callback)>(callback)); },
-            [&](auto&& callback) { call_event(std::forward<decltype(callback)>(callback)); });
+            { return m_execution.improve_best_h(h_value, [&] { call_root_event(std::forward<decltype(callback)>(callback)); }); },
+            [&](auto&& callback) { call_worker_event(worker, std::forward<decltype(callback)>(callback)); });
         if (expansion_result == ExpansionResult::SKIP)
         {
             m_execution.finish_expansion(*this);
@@ -377,6 +436,15 @@ private:
                 if (!m_execution.running())
                     break;
 
+                if constexpr (SearchPolicy::check_timeout_per_successor)
+                {
+                    if (m_execution.timed_out())
+                    {
+                        m_execution.set_terminal(*this, SearchStatus::OUT_OF_TIME);
+                        break;
+                    }
+                }
+
                 auto successor_state = state_repository.get_state_builder();
                 const auto action_result = worker.successor_generator.generate_successor_state(node, action, *successor_state);
                 auto metadata = worker.search.make_successor_metadata(worker.index, entry.state, search_node, action);
@@ -388,6 +456,12 @@ private:
                         break;
                 }
             }
+
+            if constexpr (SearchPolicy::check_timeout_after_generation)
+            {
+                if (m_execution.running() && m_execution.timed_out())
+                    m_execution.set_terminal(*this, SearchStatus::OUT_OF_TIME);
+            }
         }
         else
         {
@@ -397,11 +471,12 @@ private:
             {
                 auto successor_state = state_repository.get_state_builder();
                 const auto action_result = worker.successor_generator.generate_successor_state(node, action, *successor_state);
-                worker.execution.router.send(std::move(successor_state),
-                                             action_result,
-                                             action,
-                                             worker.search.make_successor_metadata(worker.index, entry.state, search_node, action));
-                worker.routed_successors.push_back(worker.execution.router.receive(worker.successor_generator));
+                worker.routed_successors.push_back(m_execution.route(*this,
+                                                                     worker,
+                                                                     std::move(successor_state),
+                                                                     action_result,
+                                                                     action,
+                                                                     worker.search.make_successor_metadata(worker.index, entry.state, search_node, action)));
             }
 
             if constexpr (SearchPolicy::check_timeout_after_generation)
@@ -443,8 +518,7 @@ private:
             m_execution.release_successor(*this);
     }
 
-    AcceptanceResult
-    accept_successor(WorkerData& worker, const Node<Kind>& source_node, const RoutedSuccessor<Kind, typename SearchPolicy::SuccessorMetadata>& routed_successor)
+    AcceptanceResult accept_successor(WorkerData& worker, const Node<Kind>& source_node, const RoutedSuccessor& routed_successor)
     {
         const auto& source_state = source_node.get_state();
         const auto& labeled_successor = routed_successor.labeled_node;
@@ -466,7 +540,8 @@ private:
             if (worker.pruning_strategy->should_prune_successor_state(source_state, successor_state, is_new))
             {
                 successor_search_node.status = SearchNodeStatus::CLOSED;
-                call_event([&](auto& handler) { handler.on_prune_node(source_node, labeled_successor); });
+                worker.statistics.increment_num_pruned();
+                call_worker_event(worker, [&](auto& handler) { handler.on_prune_node(source_node, labeled_successor); });
                 return AcceptanceResult::DISCARDED;
             }
 
@@ -476,7 +551,8 @@ private:
 
             if (g_value < successor_search_node.g_value)
             {
-                call_event([&](auto& handler) { handler.on_generate_node(source_node, normalized_successor); });
+                worker.statistics.increment_num_generated();
+                call_worker_event(worker, [&](auto& handler) { handler.on_generate_node(source_node, normalized_successor); });
                 worker.search.set_parent(successor_search_node, routed_successor.metadata.parent);
                 successor_search_node.g_value = g_value;
 
@@ -490,12 +566,12 @@ private:
                 successor_search_node.status = worker.goal_strategy->is_dynamic_goal_satisfied(m_start_node.get_state(), successor_state) ?
                                                    SearchNodeStatus::GOAL :
                                                    SearchNodeStatus::OPEN;
-                call_event([&](auto& handler) { handler.on_generate_node_relaxed(source_node, normalized_successor); });
+                call_worker_event(worker, [&](auto& handler) { handler.on_generate_node_relaxed(source_node, normalized_successor); });
                 worker.search.open_successor(successor_state.get_index(), g_value, h_value, successor_search_node.status, false);
                 return AcceptanceResult::QUEUED;
             }
 
-            call_event([&](auto& handler) { handler.on_generate_node_not_relaxed(source_node, normalized_successor); });
+            call_worker_event(worker, [&](auto& handler) { handler.on_generate_node_not_relaxed(source_node, normalized_successor); });
             return AcceptanceResult::DISCARDED;
         }
         else
@@ -522,11 +598,13 @@ private:
             if (worker.pruning_strategy->should_prune_successor_state(source_state, successor_state, is_new))
             {
                 successor_search_node.status = SearchNodeStatus::CLOSED;
-                call_event([&](auto& handler) { handler.on_prune_node(source_node, normalized_successor); });
+                worker.statistics.increment_num_pruned();
+                call_worker_event(worker, [&](auto& handler) { handler.on_prune_node(source_node, normalized_successor); });
                 return AcceptanceResult::DISCARDED;
             }
 
-            call_event([&](auto& handler) { handler.on_generate_node(source_node, normalized_successor); });
+            worker.statistics.increment_num_generated();
+            call_worker_event(worker, [&](auto& handler) { handler.on_generate_node(source_node, normalized_successor); });
             worker.search.open_successor(successor_state.get_index(),
                                          g_value,
                                          routed_successor.metadata.inherited_h_value,
@@ -539,22 +617,68 @@ private:
     void solve(WorkerData& worker, const SearchNode&, const Node<Kind>& node)
     {
         const auto goal = WorkerStateIndex<Kind> { worker.index, node.get_state().get_index() };
-        if (m_execution.set_goal(*this, goal))
-            call_event([&](auto& handler) { handler.on_expand_goal_node(node); });
+        if (m_execution.consider_goal(*this, goal, node.get_metric(), SearchPolicy::terminate_on_goal))
+            call_worker_event(worker, [&](auto& handler) { handler.on_expand_goal_node(node); });
     }
 
-    void finish(SearchStatus status)
+    void finalize(SearchStatus status)
     {
+        if (m_finalized)
+            return;
+
         m_execution.set_terminal(*this, status);
         m_result.status = status;
-        call_event([&](auto& handler) { handler.on_end_search(status); });
+        snapshot_statistics();
+        m_finalized = true;
+        call_root_event([&](auto& handler) { handler.on_end_search(status, m_result.statistics); });
+    }
+
+    void snapshot_statistics()
+    {
+        if (m_statistics_snapshotted)
+            return;
+
+        const auto search_end = std::chrono::steady_clock::now();
+        auto num_registered_states = uint64_t { 0 };
+        auto state_storage_memory_usage = size_t { 0 };
+        m_result.worker_statistics.clear();
+        m_result.worker_statistics.reserve(num_workers());
+        for_each_worker(
+            [&](auto& worker)
+            {
+                const auto& repository = *worker.successor_generator.get_state_repository();
+                snapshot_state_repository_statistics(repository, worker.statistics);
+                num_registered_states += worker.statistics.get_num_registered_states();
+                state_storage_memory_usage += worker.statistics.get_state_storage_memory_usage();
+                m_result.statistics.add(worker.statistics);
+                m_result.worker_statistics.push_back(worker.statistics);
+            });
+        m_result.statistics.set_num_registered_states(num_registered_states);
+        m_result.statistics.set_state_storage_memory_usage(state_storage_memory_usage);
+        snapshot_task_repository_statistics(*m_task.get_repository(), m_result.statistics);
+        m_result.statistics.set_search_end_time_point(search_end);
+        m_statistics_snapshotted = true;
+    }
+
+    template<typename Callback>
+    void for_each_worker(Callback&& callback)
+    {
+        if constexpr (ExecutionPolicy::parallel)
+        {
+            for (auto& worker : m_workers)
+                std::forward<Callback>(callback)(*worker);
+        }
+        else
+        {
+            std::forward<Callback>(callback)(m_workers);
+        }
     }
 
     SearchResult<Kind> finish_search()
     {
         if (const auto exception = m_execution.exception())
         {
-            call_event([](auto& handler) { handler.on_end_search(SearchStatus::FAILED); });
+            finalize(SearchStatus::FAILED);
             std::rethrow_exception(exception);
         }
 
@@ -593,16 +717,24 @@ private:
             }
         }
 
-        call_event([&](auto& handler) { handler.on_end_search(m_result.status); });
+        finalize(m_result.status);
         if (m_result.plan)
-            call_event([&](auto& handler) { handler.on_solved(*m_result.plan); });
+            call_root_event([&](auto& handler) { handler.on_solved(*m_result.plan); });
         return std::move(m_result);
     }
 
     template<typename Callback>
-    void call_event(Callback&& callback)
+    void call_root_event(Callback&& callback)
     {
-        m_execution.call_event(m_event_handler, std::forward<Callback>(callback));
+        if (m_event_handler)
+            std::forward<Callback>(callback)(*m_event_handler);
+    }
+
+    template<typename Callback>
+    static void call_worker_event(WorkerData& worker, Callback&& callback)
+    {
+        if (worker.event_handler)
+            std::forward<Callback>(callback)(*worker.event_handler);
     }
 
     Task<Kind>& m_task;
@@ -613,6 +745,8 @@ private:
     ExecutionPolicy m_execution;
     WorkerStorage m_workers;
     SearchResult<Kind> m_result;
+    bool m_statistics_snapshotted { false };
+    bool m_finalized { false };
 };
 
 }

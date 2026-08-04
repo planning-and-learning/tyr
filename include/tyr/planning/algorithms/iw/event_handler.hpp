@@ -23,7 +23,6 @@
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
 
-#include <chrono>
 #include <memory>
 
 namespace tyr::planning::iw
@@ -39,10 +38,8 @@ public:
     virtual void on_start_search(ygg::uint_t max_arity) = 0;
     virtual void on_start_arity(ygg::uint_t arity) = 0;
     virtual void on_end_arity(ygg::uint_t arity, SearchStatus status) = 0;
-    virtual void on_end_search(tyr::planning::SearchStatus status) = 0;
+    virtual void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) = 0;
     virtual void on_solved(ygg::uint_t arity) = 0;
-    virtual void add_subsearch_statistics(const tyr::planning::Statistics& search_statistics) = 0;
-    virtual const tyr::planning::Statistics& get_search_statistics() const = 0;
     virtual const Statistics<Kind>& get_statistics() const = 0;
 };
 
@@ -54,7 +51,6 @@ class EventHandlerBase : public EventHandler<Kind>
 {
 protected:
     Statistics<Kind> m_statistics;
-    tyr::planning::Statistics m_search_statistics;
     size_t m_verbosity;
 
 private:
@@ -67,13 +63,11 @@ private:
     bool verbosity(size_t level) const { return m_verbosity >= level; }
 
 public:
-    explicit EventHandlerBase(size_t verbosity = 0) : m_statistics(), m_search_statistics(), m_verbosity(verbosity) {}
+    explicit EventHandlerBase(size_t verbosity = 0) : m_statistics(), m_verbosity(verbosity) {}
 
     void on_start_search(ygg::uint_t max_arity) override
     {
         m_statistics.clear();
-        m_search_statistics.clear();
-        m_search_statistics.set_search_start_time_point(std::chrono::high_resolution_clock::now());
 
         if (verbosity(1))
             self().on_start_search_impl(max_arity);
@@ -91,12 +85,10 @@ public:
             self().on_end_arity_impl(arity, status);
     }
 
-    void on_end_search(tyr::planning::SearchStatus status) override
+    void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override
     {
-        m_search_statistics.set_search_end_time_point(std::chrono::high_resolution_clock::now());
-
         if (verbosity(1))
-            self().on_end_search_impl(status);
+            self().on_end_search_impl(status, statistics);
     }
 
     void on_solved(ygg::uint_t arity) override
@@ -107,9 +99,6 @@ public:
             self().on_solved_impl(arity);
     }
 
-    void add_subsearch_statistics(const tyr::planning::Statistics& search_statistics) override { m_search_statistics.add(search_statistics); }
-
-    const tyr::planning::Statistics& get_search_statistics() const override { return m_search_statistics; }
     const Statistics<Kind>& get_statistics() const override { return m_statistics; }
 };
 
@@ -126,7 +115,11 @@ private:
         static_cast<void>(arity);
         static_cast<void>(status);
     }
-    void on_end_search_impl(tyr::planning::SearchStatus status) const { static_cast<void>(status); }
+    void on_end_search_impl(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) const
+    {
+        static_cast<void>(status);
+        static_cast<void>(statistics);
+    }
     void on_solved_impl(ygg::uint_t arity) const { static_cast<void>(arity); }
 
 public:

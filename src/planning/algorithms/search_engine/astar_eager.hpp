@@ -23,25 +23,30 @@
 #include "tyr/planning/algorithms/astar_eager/event_handler.hpp"
 #include "tyr/planning/algorithms/openlists/priority_queue.hpp"
 
+#include <concepts>
 #include <limits>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 namespace tyr::planning::detail
 {
 
-template<TaskKind Kind>
+template<TaskKind Kind, SearchKind Search>
 class EagerAStarPolicy
 {
 public:
     using Options = astar_eager::Options<Kind>;
     using EventHandlerPtr = astar_eager::EventHandlerPtr<Kind>;
+    using WorkerEventHandlerPtr = astar_eager::WorkerEventHandlerPtr<Kind>;
+    using ParentState = std::conditional_t<std::same_as<Search, SequentialSearch>, ygg::Index<State<Kind>>, WorkerStateIndex<Kind>>;
     static constexpr bool eager = true;
+    static constexpr bool terminate_on_goal = std::same_as<Search, SequentialSearch>;
 
     struct SearchNode
     {
         ygg::float_t g_value;
-        ygg::Index<State<Kind>> parent_state;
+        ParentState parent_state;
         SearchNodeStatus status;
     };
 
@@ -76,8 +81,6 @@ public:
 
     EagerAStarPolicy(Heuristic<Kind>& heuristic, const Options& options) : m_heuristic(heuristic), m_options(options) {}
 
-    static EventHandlerPtr create_default_event_handler() { return astar_eager::DefaultEventHandler<Kind>::create(0); }
-
     SearchNode& initialize_start(ygg::Index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value)
     {
         m_f_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(g_value + h_value);
@@ -103,24 +106,39 @@ public:
         return PoppedEntry { entry.f_value, entry.state };
     }
 
+    bool should_discard(const PoppedEntry& entry, ygg::float_t incumbent_cost) const noexcept
+    {
+        if constexpr (std::same_as<Search, ParallelSearch>)
+            // Work credits keep every open entry and in-flight state alive, so exhausting entries below the incumbent proves the global lower bound.
+            return entry.f_value >= incumbent_cost;
+        else
+            return false;
+    }
+
     SearchNode& get_search_node(ygg::Index<State<Kind>> state)
     {
-        static const auto default_node = SearchNode { std::numeric_limits<ygg::float_t>::infinity(), ygg::Index<State<Kind>>::max(), SearchNodeStatus::NEW };
+        static const auto default_node = SearchNode { std::numeric_limits<ygg::float_t>::infinity(), no_parent(), SearchNodeStatus::NEW };
         return get_or_create_search_node(state, m_search_nodes, default_node);
     }
 
     template<typename ImproveBestH, typename EmitEvent>
-    ExpansionResult prepare_expansion(const PoppedEntry& entry, const Node<Kind>& node, SearchNode& search_node, ImproveBestH&&, EmitEvent&& emit_event)
+    ExpansionResult
+    prepare_expansion(const PoppedEntry& entry, const Node<Kind>& node, SearchNode& search_node, Statistics& statistics, ImproveBestH&&, EmitEvent&& emit_event)
     {
-        if (entry.f_value > m_f_value)
+        if constexpr (std::same_as<Search, SequentialSearch>)
         {
-            std::forward<EmitEvent>(emit_event)([&](auto& handler) { handler.on_finish_f_layer(m_f_value); });
-            m_f_value = entry.f_value;
+            if (entry.f_value > m_f_value)
+            {
+                std::forward<EmitEvent>(emit_event)([&](auto& handler) { handler.on_finish_f_layer(m_f_value); });
+                m_f_value = entry.f_value;
+            }
         }
+        // A remote lower-f entry may arrive later, so a parallel worker cannot declare an f-layer finished.
 
         if (search_node.status == SearchNodeStatus::GOAL)
             return ExpansionResult::GOAL;
 
+        statistics.increment_num_expanded();
         std::forward<EmitEvent>(emit_event)([&](auto& handler) { handler.on_expand_node(node); });
         search_node.status = SearchNodeStatus::CLOSED;
         return ExpansionResult::EXPAND;
@@ -134,7 +152,13 @@ public:
         return SuccessorMetadata { WorkerStateIndex<Kind> { worker, state }, search_node.g_value };
     }
 
-    static void set_parent(SearchNode& search_node, WorkerStateIndex<Kind> parent) noexcept { search_node.parent_state = parent.state; }
+    static void set_parent(SearchNode& search_node, WorkerStateIndex<Kind> parent) noexcept
+    {
+        if constexpr (std::same_as<Search, SequentialSearch>)
+            search_node.parent_state = parent.state;
+        else
+            search_node.parent_state = parent;
+    }
 
     void open_successor(ygg::Index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value, SearchNodeStatus status, bool)
     {
@@ -145,6 +169,14 @@ public:
     const ygg::SegmentedVector<SearchNode>& get_search_nodes() const noexcept { return m_search_nodes; }
 
 private:
+    static constexpr ParentState no_parent() noexcept
+    {
+        if constexpr (std::same_as<Search, SequentialSearch>)
+            return ygg::Index<State<Kind>>::max();
+        else
+            return WorkerStateIndex<Kind> { ygg::Index<Worker>::max(), ygg::Index<State<Kind>>::max() };
+    }
+
     Heuristic<Kind>& m_heuristic;
     const Options& m_options;
     ygg::uint_t m_step { 0 };
@@ -153,10 +185,12 @@ private:
     PriorityQueue<QueueEntry> m_openlist;
 };
 
-static_assert(sizeof(EagerAStarPolicy<LiftedTag>::SearchNode) == 16);
-static_assert(sizeof(EagerAStarPolicy<GroundTag>::SearchNode) == 16);
-static_assert(sizeof(EagerAStarPolicy<LiftedTag>::QueueEntry) == 24);
-static_assert(sizeof(EagerAStarPolicy<GroundTag>::QueueEntry) == 24);
+static_assert(sizeof(EagerAStarPolicy<LiftedTag, SequentialSearch>::SearchNode) == 16);
+static_assert(sizeof(EagerAStarPolicy<GroundTag, SequentialSearch>::SearchNode) == 16);
+static_assert(sizeof(EagerAStarPolicy<LiftedTag, ParallelSearch>::SearchNode) == 24);
+static_assert(sizeof(EagerAStarPolicy<GroundTag, ParallelSearch>::SearchNode) == 24);
+static_assert(sizeof(EagerAStarPolicy<LiftedTag, SequentialSearch>::QueueEntry) == 24);
+static_assert(sizeof(EagerAStarPolicy<GroundTag, SequentialSearch>::QueueEntry) == 24);
 
 }
 

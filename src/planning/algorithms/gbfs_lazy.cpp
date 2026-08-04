@@ -34,12 +34,12 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
     {
         using Search = ::tyr::planning::detail::LazyGBFSPolicy<Kind, ParallelSearch>;
         using Execution = ::tyr::planning::detail::ParallelExecutionPolicy<Kind, typename Search::SuccessorMetadata, RandomDistHashTag>;
-        return ::tyr::planning::detail::SearchEngine<Kind, Search, Execution, RandomDistHashTag>::find_solution(task, successor_generator, heuristic, options);
+        return ::tyr::planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
     }
 
     using Search = ::tyr::planning::detail::LazyGBFSPolicy<Kind, SequentialSearch>;
     using Execution = ::tyr::planning::detail::SequentialExecutionPolicy<Kind>;
-    return ::tyr::planning::detail::SearchEngine<Kind, Search, Execution, RandomDistHashTag>::find_solution(task, successor_generator, heuristic, options);
+    return ::tyr::planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
 }
 
 template SearchResult<LiftedTag> find_solution<LiftedTag>(Task<LiftedTag>& task,
@@ -60,18 +60,16 @@ static_assert(SolverConcept<Solver<GroundTag>, GroundTag>);
 namespace tyr::planning::detail
 {
 
-template class SearchEngine<LiftedTag, LazyGBFSPolicy<LiftedTag, SequentialSearch>, SequentialExecutionPolicy<LiftedTag>, RandomDistHashTag>;
-template class SearchEngine<GroundTag, LazyGBFSPolicy<GroundTag, SequentialSearch>, SequentialExecutionPolicy<GroundTag>, RandomDistHashTag>;
+template class SearchEngine<LiftedTag, LazyGBFSPolicy<LiftedTag, SequentialSearch>, SequentialExecutionPolicy<LiftedTag>>;
+template class SearchEngine<GroundTag, LazyGBFSPolicy<GroundTag, SequentialSearch>, SequentialExecutionPolicy<GroundTag>>;
 
 using LiftedParallelGBFS = LazyGBFSPolicy<LiftedTag, ParallelSearch>;
 using GroundParallelGBFS = LazyGBFSPolicy<GroundTag, ParallelSearch>;
 template class SearchEngine<LiftedTag,
                             LiftedParallelGBFS,
-                            ParallelExecutionPolicy<LiftedTag, typename LiftedParallelGBFS::SuccessorMetadata, RandomDistHashTag>,
-                            RandomDistHashTag>;
+                            ParallelExecutionPolicy<LiftedTag, typename LiftedParallelGBFS::SuccessorMetadata, RandomDistHashTag>>;
 template class SearchEngine<GroundTag,
                             GroundParallelGBFS,
-                            ParallelExecutionPolicy<GroundTag, typename GroundParallelGBFS::SuccessorMetadata, RandomDistHashTag>,
-                            RandomDistHashTag>;
+                            ParallelExecutionPolicy<GroundTag, typename GroundParallelGBFS::SuccessorMetadata, RandomDistHashTag>>;
 
 }

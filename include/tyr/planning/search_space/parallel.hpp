@@ -19,6 +19,7 @@
 #define TYR_PLANNING_SEARCH_SPACE_PARALLEL_HPP_
 
 #include "tyr/planning/algorithms/utils.hpp"
+#include "tyr/planning/search_space/search_node.hpp"
 #include "tyr/planning/worker_state_index.hpp"
 
 #include <algorithm>
@@ -33,7 +34,7 @@
 namespace tyr::planning
 {
 
-template<TaskKind Kind, typename SearchNode>
+template<TaskKind Kind, SearchNodeConcept<WorkerStateIndex<Kind>> SearchNode>
 struct WorkerSearchSpaceView
 {
     SuccessorGenerator<Kind>& successor_generator;
@@ -43,7 +44,7 @@ struct WorkerSearchSpaceView
 template<>
 struct PlanReconstructionPolicy<ParallelSearch>
 {
-    template<TaskKind Kind, typename SearchNode>
+    template<TaskKind Kind, SearchNodeConcept<WorkerStateIndex<Kind>> SearchNode>
     static Plan<Kind> extract_total_ordered_plan(WorkerStateIndex<Kind> final_state,
                                                  std::span<const WorkerSearchSpaceView<Kind, SearchNode>> workers,
                                                  SuccessorGenerator<Kind>& caller_successor_generator,
@@ -104,7 +105,7 @@ struct PlanReconstructionPolicy<ParallelSearch>
     }
 
 private:
-    template<TaskKind Kind, typename SearchNode>
+    template<TaskKind Kind, SearchNodeConcept<WorkerStateIndex<Kind>> SearchNode>
     static const WorkerSearchSpaceView<Kind, SearchNode>& get_worker(WorkerStateIndex<Kind> state,
                                                                      std::span<const WorkerSearchSpaceView<Kind, SearchNode>> workers)
     {
@@ -113,7 +114,7 @@ private:
         return workers[index];
     }
 
-    template<TaskKind Kind, typename SearchNode>
+    template<TaskKind Kind, SearchNodeConcept<WorkerStateIndex<Kind>> SearchNode>
     static const SearchNode& get_search_node(WorkerStateIndex<Kind> state, std::span<const WorkerSearchSpaceView<Kind, SearchNode>> workers)
     {
         const auto& search_nodes = get_worker(state, workers).search_nodes;
@@ -131,7 +132,7 @@ private:
                && ygg::EqualTo<> {}(lhs_builder.get_numeric_variables(), rhs_builder.get_numeric_variables());
     }
 
-    template<TaskKind Kind, typename SearchNode>
+    template<TaskKind Kind, SearchNodeConcept<WorkerStateIndex<Kind>> SearchNode>
     static Node<Kind>
     materialize(WorkerStateIndex<Kind> state, std::span<const WorkerSearchSpaceView<Kind, SearchNode>> workers, StateRepository<Kind>& caller_repository)
     {

@@ -18,14 +18,19 @@
 #ifndef TYR_SRC_PLANNING_ALGORITHMS_SEARCH_ENGINE_SEQUENTIAL_HPP_
 #define TYR_SRC_PLANNING_ALGORITHMS_SEARCH_ENGINE_SEQUENTIAL_HPP_
 
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
-#include "tyr/planning/state_routing/single_worker.hpp"
+#include "tyr/planning/ground/state_builder.hpp"
+#include "tyr/planning/lifted/state_builder.hpp"
+#include "tyr/planning/successor_generator.hpp"
 #include "tyr/planning/worker_state_index.hpp"
 
+#include <cassert>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <limits>
 #include <optional>
 #include <utility>
 #include <yggdrasil/core/chrono.hpp>
@@ -37,24 +42,14 @@ template<TaskKind Kind>
 class SequentialExecutionPolicy
 {
 public:
-    using Search = SequentialSearch;
     static constexpr bool parallel = false;
 
     explicit SequentialExecutionPolicy(uint64_t) noexcept {}
 
-    template<DistHashKind HashKind, typename Metadata>
     struct WorkerState
     {
-        explicit WorkerState(uint64_t seed) : router(seed) {}
-
-        SingleWorkerStateRouter<Kind, HashKind, Metadata> router;
+        explicit WorkerState(uint64_t) noexcept {}
     };
-
-    template<typename SearchPolicy>
-    static typename SearchPolicy::EventHandlerPtr make_event_handler(const typename SearchPolicy::Options& options)
-    {
-        return options.event_handler ? options.event_handler : SearchPolicy::create_default_event_handler();
-    }
 
     template<typename Options>
     static void validate(const Options&)
@@ -69,20 +64,14 @@ public:
 
     void initialize_best_h(ygg::float_t value) noexcept { m_best_h_value = value; }
 
-    template<typename EventHandlerPtr, typename Callback>
-    bool improve_best_h(ygg::float_t value, EventHandlerPtr& event_handler, Callback&& callback)
+    template<typename Callback>
+    bool improve_best_h(ygg::float_t value, Callback&& callback)
     {
         if (value >= m_best_h_value)
             return false;
         m_best_h_value = value;
-        call_event(event_handler, std::forward<Callback>(callback));
+        std::forward<Callback>(callback)();
         return true;
-    }
-
-    template<typename EventHandlerPtr, typename Callback>
-    static void call_event(EventHandlerPtr& event_handler, Callback&& callback)
-    {
-        std::forward<Callback>(callback)(*event_handler);
     }
 
     template<typename Engine>
@@ -120,14 +109,18 @@ public:
     }
 
     template<typename Engine>
-    bool set_goal(Engine&, WorkerStateIndex<Kind> goal)
+    bool consider_goal(Engine&, WorkerStateIndex<Kind> goal, ygg::float_t cost, bool terminate)
     {
         if (!running())
             return false;
+        assert(terminate);
         m_goal = goal;
+        m_incumbent_cost = cost;
         m_status = SearchStatus::SOLVED;
         return true;
     }
+
+    ygg::float_t incumbent_cost() const noexcept { return m_incumbent_cost; }
 
     SearchStatus status() const noexcept { return m_status; }
     std::optional<WorkerStateIndex<Kind>> goal() const noexcept { return m_goal; }
@@ -143,6 +136,18 @@ public:
     auto receive_one(Engine&, Worker&) -> std::optional<typename Engine::IncomingSuccessor>
     {
         return std::nullopt;
+    }
+
+    template<typename Engine, typename WorkerData, typename Metadata>
+    auto route(Engine&,
+               WorkerData& worker,
+               ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> target,
+               PendingActionResult action_result,
+               ::tyr::formalism::planning::ActionBindingView action,
+               Metadata metadata) -> typename Engine::RoutedSuccessor
+    {
+        auto node = worker.successor_generator.finalize_successor_state(std::move(target), action_result);
+        return typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata) };
     }
 
     bool reserve_state(size_t current_size, ygg::uint_t max_num_states) const noexcept { return current_size < max_num_states; }
@@ -166,6 +171,7 @@ public:
 
 private:
     ygg::float_t m_best_h_value { 0 };
+    ygg::float_t m_incumbent_cost { std::numeric_limits<ygg::float_t>::infinity() };
     SearchStatus m_status { SearchStatus::IN_PROGRESS };
     std::optional<WorkerStateIndex<Kind>> m_goal;
     std::optional<ygg::CountdownWatch> m_stopwatch;

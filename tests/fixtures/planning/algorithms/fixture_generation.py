@@ -110,14 +110,11 @@ class SearchResultLike(Protocol):
     def status(self) -> SearchStatus: ...
     @property
     def plan(self) -> PlanLike | None: ...
-
-
-class SearchEventHandlerLike(Protocol):
-    def get_statistics(self) -> Statistics: ...
+    @property
+    def statistics(self) -> Statistics: ...
 
 
 class SearchOptionsLike(Protocol):
-    event_handler: SearchEventHandlerLike
     max_num_states: int
     max_time: float
     cost_mode: CostMode
@@ -222,9 +219,7 @@ def run_search_config(
     """Run one plain-search configuration and return its fixture object (counters + plan)."""
     context = make_context(kind, domain_file, task_file)
     module = getattr(planning_module(context), algorithm)  # runtime-selected submodule (see module docstring)
-    handler = cast(SearchEventHandlerLike, module.DefaultEventHandler())
     options = cast(SearchOptionsLike, module.Options())
-    options.event_handler = handler
     if apply_limits:
         options.max_num_states = MAX_NUM_STATES
         options.max_time = MAX_TIME
@@ -242,7 +237,7 @@ def run_search_config(
     if result.status not in RECORDED_STATUSES:
         return f"status {SEARCH_STATUS_NAMES[result.status]} within {MAX_TIME}s/{MAX_NUM_STATES} states"
 
-    config: ConfigResult = dict(counters_of(handler.get_statistics()))
+    config: ConfigResult = dict(counters_of(result.statistics))
     plan = result.plan
     if plan is not None:
         config["plan"] = plan_of(plan)
