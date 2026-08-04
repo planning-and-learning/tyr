@@ -22,8 +22,6 @@
 #include "tyr/planning/algorithms/astar_eager/event_handler.hpp"
 #include "tyr/planning/algorithms/concepts.hpp"
 #include "tyr/planning/algorithms/openlists/alternating.hpp"
-#include "tyr/planning/algorithms/portable_shuffle.hpp"
-#include "tyr/planning/algorithms/state_routing.hpp"
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
@@ -40,14 +38,16 @@
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
-#include "tyr/planning/search_node.hpp"
-#include "tyr/planning/search_space.hpp"
+#include "tyr/planning/search_space/sequential.hpp"
 #include "tyr/planning/state_index.hpp"
+#include "tyr/planning/state_routing/single_worker.hpp"
+#include "tyr/planning/worker_state_index.hpp"
 
 #include <algorithm>
 #include <random>
 #include <yggdrasil/containers/segmented_vector.hpp>
 #include <yggdrasil/core/chrono.hpp>
+#include <yggdrasil/core/portable_shuffle.hpp>
 
 namespace tyr::planning::astar_eager
 {
@@ -73,7 +73,7 @@ using SearchNodeVector = ygg::SegmentedVector<SearchNode<Kind>>;
 template<TaskKind Kind>
 struct SuccessorMetadata
 {
-    InternalStateID<Kind> parent;
+    WorkerStateIndex<Kind> parent;
     ygg::float_t source_g_value;
 };
 
@@ -236,7 +236,8 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
 
             event_handler->on_expand_goal_node(node);
 
-            result.plan = extract_total_ordered_plan(search_node, node, search_nodes, successor_generator, options.cost_mode);
+            result.plan =
+                PlanReconstructionPolicy<SequentialSearch>::extract_total_ordered_plan(search_node, node, search_nodes, successor_generator, options.cost_mode);
             result.goal_node = node;
             result.status = SearchStatus::SOLVED;
 
@@ -264,7 +265,7 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
             state_router.send(std::move(successor_state),
                               action_result,
                               action,
-                              SuccessorMetadata<Kind> { InternalStateID<Kind> { 0, state_index }, search_node.g_value });
+                              SuccessorMetadata<Kind> { WorkerStateIndex<Kind> { ygg::Index<Worker>(0), state_index }, search_node.g_value });
             routed_successors.push_back(state_router.receive(successor_generator));
         }
 
@@ -276,7 +277,7 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
         }
 
         if (options.shuffle_labeled_succ_nodes)
-            portable_shuffle(routed_successors.begin(), routed_successors.end(), rng);
+            ygg::portable_shuffle(routed_successors.begin(), routed_successors.end(), rng);
 
         for (const auto& routed_successor : routed_successors)
         {

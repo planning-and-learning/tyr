@@ -15,16 +15,17 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_SEARCH_SPACE_HPP_
-#define TYR_PLANNING_SEARCH_SPACE_HPP_
+#ifndef TYR_PLANNING_SEARCH_SPACE_SEQUENTIAL_HPP_
+#define TYR_PLANNING_SEARCH_SPACE_SEQUENTIAL_HPP_
 
 #include "tyr/planning/algorithms/utils.hpp"
-#include "tyr/planning/applicability.hpp"
-#include "tyr/planning/node.hpp"
-#include "tyr/planning/search_node.hpp"
+#include "tyr/planning/search_space/search_node.hpp"
 
+#include <algorithm>
+#include <cassert>
+#include <utility>
+#include <vector>
 #include <yggdrasil/containers/segmented_vector.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning
 {
@@ -102,6 +103,21 @@ inline Plan<Kind> extract_total_ordered_plan(const SearchNode& final_search_node
 
     return Plan<Kind>(node_trajectory.front(), std::move(labeled_node_trajectory));
 }
+
+template<>
+struct PlanReconstructionPolicy<SequentialSearch>
+{
+    template<TaskKind Kind, typename SearchNode>
+        requires SearchNodeConcept<SearchNode, Kind>
+    static Plan<Kind> extract_total_ordered_plan(const SearchNode& final_search_node,
+                                                 const Node<Kind>& final_node,
+                                                 const ygg::SegmentedVector<SearchNode>& search_nodes,
+                                                 SuccessorGenerator<Kind>& successor_generator,
+                                                 CostMode action_cost_mode = CostMode::GENERAL)
+    {
+        return planning::extract_total_ordered_plan(final_search_node, final_node, search_nodes, successor_generator, action_cost_mode);
+    }
+};
 
 }
 

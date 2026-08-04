@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_SEARCH_NODE_HPP_
-#define TYR_PLANNING_SEARCH_NODE_HPP_
+#ifndef TYR_PLANNING_SEARCH_SPACE_SEARCH_NODE_HPP_
+#define TYR_PLANNING_SEARCH_SPACE_SEARCH_NODE_HPP_
 
 #include "tyr/planning/state_index.hpp"
 

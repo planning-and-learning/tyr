@@ -20,12 +20,31 @@
 
 #include "tyr/declarations.hpp"
 
+#include <concepts>
 #include <memory>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/execution/declarations.hpp>
 
 namespace tyr::planning
 {
+
+struct Worker
+{
+};
+
+struct SequentialSearch
+{
+};
+
+struct ParallelSearch
+{
+};
+
+template<typename T>
+concept SearchKind = std::same_as<T, SequentialSearch> || std::same_as<T, ParallelSearch>;
+
+template<SearchKind Search>
+struct PlanReconstructionPolicy;
 
 template<TaskKind Kind>
 class Task;

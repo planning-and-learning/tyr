@@ -22,8 +22,6 @@
 #include "tyr/planning/algorithms/concepts.hpp"
 #include "tyr/planning/algorithms/gbfs_lazy/event_handler.hpp"
 #include "tyr/planning/algorithms/openlists/alternating.hpp"
-#include "tyr/planning/algorithms/portable_shuffle.hpp"
-#include "tyr/planning/algorithms/state_routing.hpp"
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
@@ -40,14 +38,16 @@
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
-#include "tyr/planning/search_node.hpp"
-#include "tyr/planning/search_space.hpp"
+#include "tyr/planning/search_space/sequential.hpp"
 #include "tyr/planning/state_index.hpp"
+#include "tyr/planning/state_routing/single_worker.hpp"
+#include "tyr/planning/worker_state_index.hpp"
 
 #include <algorithm>
 #include <random>
 #include <yggdrasil/containers/segmented_vector.hpp>
 #include <yggdrasil/core/chrono.hpp>
+#include <yggdrasil/core/portable_shuffle.hpp>
 
 namespace tyr::planning::gbfs_lazy
 {
@@ -74,7 +74,7 @@ using SearchNodeVector = ygg::SegmentedVector<SearchNode<Kind>>;
 template<TaskKind Kind>
 struct SuccessorMetadata
 {
-    InternalStateID<Kind> parent;
+    WorkerStateIndex<Kind> parent;
     ygg::float_t source_g_value;
     ygg::float_t inherited_h_value;
     bool preferred;
@@ -265,15 +265,16 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
             auto successor_state = state_repository.get_state_builder();
             const auto action_result = successor_generator.generate_successor_state(node, action, *successor_state);
             const auto preferred = preferred_actions && preferred_actions->contains(action);
-            state_router.send(std::move(successor_state),
-                              action_result,
-                              action,
-                              SuccessorMetadata<Kind> { InternalStateID<Kind> { 0, state_index }, search_node.g_value, state_h_value, preferred });
+            state_router.send(
+                std::move(successor_state),
+                action_result,
+                action,
+                SuccessorMetadata<Kind> { WorkerStateIndex<Kind> { ygg::Index<Worker>(0), state_index }, search_node.g_value, state_h_value, preferred });
             routed_successors.push_back(state_router.receive(successor_generator));
         }
 
         if (options.shuffle_labeled_succ_nodes)
-            portable_shuffle(routed_successors.begin(), routed_successors.end(), rng);
+            ygg::portable_shuffle(routed_successors.begin(), routed_successors.end(), rng);
 
         for (const auto& routed_successor : routed_successors)
         {
@@ -322,7 +323,11 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
 
                 event_handler->on_expand_goal_node(normalized_succ_node);
 
-                result.plan = extract_total_ordered_plan(successor_search_node, normalized_succ_node, search_nodes, successor_generator, options.cost_mode);
+                result.plan = PlanReconstructionPolicy<SequentialSearch>::extract_total_ordered_plan(successor_search_node,
+                                                                                                     normalized_succ_node,
+                                                                                                     search_nodes,
+                                                                                                     successor_generator,
+                                                                                                     options.cost_mode);
                 result.goal_node = normalized_succ_node;
                 result.status = SearchStatus::SOLVED;
 

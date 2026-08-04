@@ -40,7 +40,7 @@ namespace
 template<TaskKind Kind>
 struct TestMetadata
 {
-    p::InternalStateID<Kind> parent;
+    p::WorkerStateIndex<Kind> parent;
     ygg::uint_t marker;
 };
 
@@ -70,7 +70,7 @@ void expect_state_routing(const p::TaskPtr<Kind>& task)
 
     EXPECT_EQ(dist_hash.hash(initial.get_state().get_state_builder()), dist_hash.hash(worker_initial.get_state().get_state_builder()));
     EXPECT_EQ(dist_hash.owner(initial.get_state().get_state_builder(), 19), dist_hash.owner(worker_initial.get_state().get_state_builder(), 19));
-    EXPECT_EQ(dist_hash.owner(initial.get_state().get_state_builder(), 1), 0);
+    EXPECT_EQ(dist_hash.owner(initial.get_state().get_state_builder(), 1), ygg::Index<p::Worker>(0));
 
     auto derived_only_difference = repository->get_state_builder();
     derived_only_difference->assign_unextended_part(initial.get_state().get_state_builder());
@@ -119,11 +119,14 @@ void expect_state_routing(const p::TaskPtr<Kind>& task)
     auto local_state = repository->get_state_builder();
     const auto local_result = generator->generate_successor_state(initial, action, *local_state);
     auto router = p::SingleWorkerStateRouter<Kind, p::RandomDistHashTag, TestMetadata<Kind>>(17);
-    router.send(std::move(local_state), local_result, action, TestMetadata<Kind> { p::InternalStateID<Kind> { 0, initial.get_state().get_index() }, 42 });
+    router.send(std::move(local_state),
+                local_result,
+                action,
+                TestMetadata<Kind> { p::WorkerStateIndex<Kind> { ygg::Index<p::Worker>(0), initial.get_state().get_index() }, 42 });
     const auto routed = router.receive(*generator);
     EXPECT_EQ(routed.labeled_node.label, action);
     EXPECT_EQ(routed.metadata.parent.state, initial.get_state().get_index());
-    EXPECT_EQ(routed.metadata.parent.worker, 0);
+    EXPECT_EQ(routed.metadata.parent.worker, ygg::Index<p::Worker>(0));
     EXPECT_EQ(routed.metadata.marker, 42);
 
     const auto compatibility_node = generator->get_successor_node(initial, action);

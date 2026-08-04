@@ -21,12 +21,10 @@
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/algorithms/brfs/event_handler.hpp"
 #include "tyr/planning/algorithms/concepts.hpp"
-#include "tyr/planning/algorithms/portable_shuffle.hpp"
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/applicability.hpp"
-#include "tyr/planning/node.hpp"
 #include "tyr/planning/ground/state_builder.hpp"
 #include "tyr/planning/ground/state_repository.hpp"
 #include "tyr/planning/ground/state_view.hpp"
@@ -37,8 +35,8 @@
 #include "tyr/planning/lifted/state_view.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
-#include "tyr/planning/search_node.hpp"
-#include "tyr/planning/search_space.hpp"
+#include "tyr/planning/node.hpp"
+#include "tyr/planning/search_space/sequential.hpp"
 #include "tyr/planning/state_index.hpp"
 
 #include <algorithm>
@@ -46,6 +44,7 @@
 #include <random>
 #include <yggdrasil/containers/segmented_vector.hpp>
 #include <yggdrasil/core/chrono.hpp>
+#include <yggdrasil/core/portable_shuffle.hpp>
 
 namespace tyr::planning::brfs
 {
@@ -183,7 +182,7 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
         }
 
         if (options.shuffle_labeled_succ_nodes)
-            portable_shuffle(labeled_succ_nodes.begin(), labeled_succ_nodes.end(), rng);
+            ygg::portable_shuffle(labeled_succ_nodes.begin(), labeled_succ_nodes.end(), rng);
 
         for (const auto& labeled_succ_node : labeled_succ_nodes)
         {
