@@ -269,14 +269,21 @@ private:
                 auto execution_context = ExecutionPolicy::create_execution_context();
                 auto worker_successor_generator = successor_generator.make_worker(execution_context);
                 auto worker_heuristic = heuristic.make_worker(execution_context);
+                auto worker_pruning_strategy = options.pruning_strategy ? options.pruning_strategy->make_worker(index) : PruningStrategy<Kind>::create();
+                if (!worker_pruning_strategy)
+                    throw std::invalid_argument("Parallel search pruning strategy does not support worker construction.");
+                auto worker_goal_strategy = options.goal_strategy ? options.goal_strategy->make_worker(index) : ConjunctiveGoalStrategy<Kind>::create(task);
+                if (!worker_goal_strategy)
+                    throw std::invalid_argument("Parallel search goal strategy does not support worker construction.");
+                auto worker_event_handler = event_handler ? event_handler->make_worker(index) : nullptr;
                 workers.push_back(std::make_unique<WorkerData>(index,
                                                                std::move(execution_context),
                                                                std::move(worker_successor_generator),
                                                                std::move(worker_heuristic),
                                                                options,
-                                                               PruningStrategy<Kind>::create(),
-                                                               ConjunctiveGoalStrategy<Kind>::create(task),
-                                                               event_handler ? event_handler->make_worker(index) : nullptr));
+                                                               std::move(worker_pruning_strategy),
+                                                               std::move(worker_goal_strategy),
+                                                               std::move(worker_event_handler)));
             }
             return workers;
         }
@@ -535,24 +542,25 @@ private:
             return AcceptanceResult::TERMINAL;
         }
 
+        const auto g_value = compute_successor_g_value(routed_successor.metadata.source_g_value, successor_node.get_metric(), m_options.cost_mode);
+        const auto normalized_node = Node<Kind>(successor_state, g_value);
+        const auto normalized_successor = LabeledNode<Kind> { labeled_successor.label, normalized_node };
+        const auto emit_transition = [&](TransitionOutcome outcome)
+        { call_worker_event(worker, [&](auto& handler) { handler.on_generate_transition(source_node, normalized_successor, outcome); }); };
+
         if constexpr (SearchPolicy::eager)
         {
             if (worker.pruning_strategy->should_prune_successor_state(source_state, successor_state, is_new))
             {
                 successor_search_node.status = SearchNodeStatus::CLOSED;
                 worker.statistics.increment_num_pruned();
-                call_worker_event(worker, [&](auto& handler) { handler.on_prune_node(source_node, labeled_successor); });
+                emit_transition(TransitionOutcome::PRUNED);
                 return AcceptanceResult::DISCARDED;
             }
-
-            const auto g_value = compute_successor_g_value(routed_successor.metadata.source_g_value, successor_node.get_metric(), m_options.cost_mode);
-            const auto normalized_node = Node<Kind>(successor_state, g_value);
-            const auto normalized_successor = LabeledNode<Kind> { labeled_successor.label, normalized_node };
 
             if (g_value < successor_search_node.g_value)
             {
                 worker.statistics.increment_num_generated();
-                call_worker_event(worker, [&](auto& handler) { handler.on_generate_node(source_node, normalized_successor); });
                 worker.search.set_parent(successor_search_node, routed_successor.metadata.parent);
                 successor_search_node.g_value = g_value;
 
@@ -560,28 +568,29 @@ private:
                 if (h_value == std::numeric_limits<ygg::float_t>::infinity())
                 {
                     successor_search_node.status = SearchNodeStatus::DEAD_END;
+                    emit_transition(TransitionOutcome::DEAD_END);
                     return AcceptanceResult::DISCARDED;
                 }
 
                 successor_search_node.status = worker.goal_strategy->is_dynamic_goal_satisfied(m_start_node.get_state(), successor_state) ?
                                                    SearchNodeStatus::GOAL :
                                                    SearchNodeStatus::OPEN;
-                call_worker_event(worker, [&](auto& handler) { handler.on_generate_node_relaxed(source_node, normalized_successor); });
                 worker.search.open_successor(successor_state.get_index(), g_value, h_value, successor_search_node.status, false);
+                emit_transition(successor_search_node.status == SearchNodeStatus::GOAL ? TransitionOutcome::GOAL :
+                                                                                         (is_new ? TransitionOutcome::OPENED : TransitionOutcome::RELAXED));
                 return AcceptanceResult::QUEUED;
             }
 
-            call_worker_event(worker, [&](auto& handler) { handler.on_generate_node_not_relaxed(source_node, normalized_successor); });
+            emit_transition(TransitionOutcome::DUPLICATE);
             return AcceptanceResult::DISCARDED;
         }
         else
         {
             if (!is_new)
+            {
+                emit_transition(TransitionOutcome::DUPLICATE);
                 return AcceptanceResult::DISCARDED;
-
-            const auto g_value = compute_successor_g_value(routed_successor.metadata.source_g_value, successor_node.get_metric(), m_options.cost_mode);
-            const auto normalized_node = Node<Kind>(successor_state, g_value);
-            const auto normalized_successor = LabeledNode<Kind> { labeled_successor.label, normalized_node };
+            }
 
             successor_search_node.status = SearchNodeStatus::OPEN;
             worker.search.set_parent(successor_search_node, routed_successor.metadata.parent);
@@ -591,6 +600,7 @@ private:
             if (worker.goal_strategy->is_dynamic_goal_satisfied(m_start_node.get_state(), successor_state))
             {
                 successor_search_node.status = SearchNodeStatus::GOAL;
+                emit_transition(TransitionOutcome::GOAL);
                 solve(worker, successor_search_node, normalized_node);
                 return AcceptanceResult::TERMINAL;
             }
@@ -599,17 +609,17 @@ private:
             {
                 successor_search_node.status = SearchNodeStatus::CLOSED;
                 worker.statistics.increment_num_pruned();
-                call_worker_event(worker, [&](auto& handler) { handler.on_prune_node(source_node, normalized_successor); });
+                emit_transition(TransitionOutcome::PRUNED);
                 return AcceptanceResult::DISCARDED;
             }
 
             worker.statistics.increment_num_generated();
-            call_worker_event(worker, [&](auto& handler) { handler.on_generate_node(source_node, normalized_successor); });
             worker.search.open_successor(successor_state.get_index(),
                                          g_value,
                                          routed_successor.metadata.inherited_h_value,
                                          successor_search_node.status,
                                          routed_successor.metadata.preferred);
+            emit_transition(TransitionOutcome::OPENED);
             return AcceptanceResult::QUEUED;
         }
     }

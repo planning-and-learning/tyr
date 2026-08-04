@@ -56,6 +56,20 @@ concept StateRepositoryConcept =
         { r.get_task() } -> std::same_as<const TaskPtr<Kind>&>;
         { r.get_index() } -> std::same_as<ygg::uint_t>;
     };
+
+template<TaskKind Kind>
+StateView<Kind> materialize_state(const StateView<Kind>& source, StateRepository<Kind>& target)
+{
+    if (source.get_state_repository().get() == &target)
+        return source;
+
+    auto builder = target.get_state_builder();
+    builder->assign_unextended_part(source.get_state_builder());
+    return target.register_state(std::move(builder));
+}
+
+extern template StateView<GroundTag> materialize_state(const StateView<GroundTag>& source, StateRepository<GroundTag>& target);
+extern template StateView<LiftedTag> materialize_state(const StateView<LiftedTag>& source, StateRepository<LiftedTag>& target);
 }
 
 #endif

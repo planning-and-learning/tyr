@@ -163,6 +163,34 @@ void expect_worker_chain(const p::TaskPtr<Kind>& task)
     auto goal_count_worker = goal_count->make_worker(worker_context);
     EXPECT_NE(goal_count.get(), goal_count_worker.get());
     EXPECT_EQ(goal_count->evaluate(source_initial.get_state()), goal_count_worker->evaluate(worker_initial.get_state()));
+
+    const auto worker_index = ygg::Index<p::Worker>(0);
+
+    auto pruning = p::PruningStrategy<Kind>::create();
+    auto pruning_worker = pruning->make_worker(worker_index);
+    ASSERT_NE(pruning_worker, nullptr);
+    EXPECT_NE(pruning.get(), pruning_worker.get());
+    EXPECT_FALSE(pruning_worker->should_prune_state(worker_initial.get_state()));
+
+    auto conjunctive_goal = p::ConjunctiveGoalStrategy<Kind>::create(*task);
+    auto conjunctive_goal_worker = conjunctive_goal->make_worker(worker_index);
+    ASSERT_NE(conjunctive_goal_worker, nullptr);
+    EXPECT_NE(conjunctive_goal.get(), conjunctive_goal_worker.get());
+    EXPECT_EQ(conjunctive_goal->is_dynamic_goal_satisfied(source_initial.get_state(), source_initial.get_state()),
+              conjunctive_goal_worker->is_dynamic_goal_satisfied(worker_initial.get_state(), worker_initial.get_state()));
+
+    auto serialized_goal = p::SerializedGoalStrategy<Kind>::create(*task);
+    auto serialized_goal_worker = serialized_goal->make_worker(worker_index);
+    ASSERT_NE(serialized_goal_worker, nullptr);
+    EXPECT_NE(serialized_goal.get(), serialized_goal_worker.get());
+    EXPECT_EQ(serialized_goal->is_dynamic_goal_satisfied(source_initial.get_state(), source_initial.get_state()),
+              serialized_goal_worker->is_dynamic_goal_satisfied(worker_initial.get_state(), worker_initial.get_state()));
+
+    auto exhaustive_goal = p::ExhaustiveGoalStrategy<Kind>::create();
+    auto exhaustive_goal_worker = exhaustive_goal->make_worker(worker_index);
+    ASSERT_NE(exhaustive_goal_worker, nullptr);
+    EXPECT_NE(exhaustive_goal.get(), exhaustive_goal_worker.get());
+    EXPECT_FALSE(exhaustive_goal_worker->is_dynamic_goal_satisfied(worker_initial.get_state(), worker_initial.get_state()));
 }
 }
 

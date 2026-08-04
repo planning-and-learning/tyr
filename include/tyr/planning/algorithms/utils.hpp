@@ -23,6 +23,7 @@
 #include "tyr/planning/plan.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <stdexcept>
 #include <utility>
@@ -43,6 +44,16 @@ enum class SearchStatus
     CYCLE,
     SOLVED,
     UNSOLVABLE
+};
+
+enum class TransitionOutcome : uint8_t
+{
+    OPENED,
+    RELAXED,
+    DUPLICATE,
+    PRUNED,
+    DEAD_END,
+    GOAL,
 };
 
 inline ygg::float_t compute_successor_g_value(ygg::float_t source_g_value, ygg::float_t generated_successor_g_value, CostMode mode)

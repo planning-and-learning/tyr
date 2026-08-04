@@ -38,10 +38,7 @@ public:
 
     virtual void on_expand_node(const Node<Kind>&) {}
     virtual void on_expand_goal_node(const Node<Kind>&) {}
-    virtual void on_generate_node(const Node<Kind>&, const LabeledNode<Kind>&) {}
-    virtual void on_generate_node_relaxed(const Node<Kind>&, const LabeledNode<Kind>&) {}
-    virtual void on_generate_node_not_relaxed(const Node<Kind>&, const LabeledNode<Kind>&) {}
-    virtual void on_prune_node(const Node<Kind>&, const LabeledNode<Kind>&) {}
+    virtual void on_generate_transition(const Node<Kind>&, const LabeledNode<Kind>&, TransitionOutcome) {}
     virtual void on_finish_f_layer(ygg::float_t) {}
 };
 

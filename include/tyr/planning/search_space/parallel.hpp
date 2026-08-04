@@ -20,6 +20,7 @@
 
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/search_space/search_node.hpp"
+#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/worker_state_index.hpp"
 
 #include <algorithm>
@@ -139,12 +140,7 @@ private:
         const auto& worker = get_worker(state, workers);
         auto source_state = worker.successor_generator.get_state_repository()->get_registered_state(state.state);
         const auto g_value = get_search_node(state, workers).g_value;
-        if (source_state.get_state_repository().get() == &caller_repository)
-            return Node<Kind>(std::move(source_state), g_value);
-
-        auto state_builder = caller_repository.get_state_builder();
-        state_builder->assign_unextended_part(source_state.get_state_builder());
-        return Node<Kind>(caller_repository.register_state(std::move(state_builder)), g_value);
+        return Node<Kind>(materialize_state(source_state, caller_repository), g_value);
     }
 };
 

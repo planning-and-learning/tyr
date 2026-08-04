@@ -79,10 +79,6 @@ public:
             throw std::invalid_argument("Parallel search requires num_search_workers to be greater than one.");
         if (options.num_search_workers > std::numeric_limits<ygg::uint_t>::max())
             throw std::invalid_argument("Parallel search worker count exceeds the worker index range.");
-        if (options.pruning_strategy)
-            throw std::invalid_argument("Parallel search does not support custom pruning strategies.");
-        if (options.goal_strategy)
-            throw std::invalid_argument("Parallel search does not support custom goal strategies.");
     }
 
     template<typename Options>

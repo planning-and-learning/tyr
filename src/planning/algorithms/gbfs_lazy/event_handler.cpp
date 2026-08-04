@@ -51,8 +51,10 @@ public:
                    node);
     }
 
-    void on_generate_node(const Node<Kind>&, const LabeledNode<Kind>& labeled_succ_node) override
+    void on_generate_transition(const Node<Kind>&, const LabeledNode<Kind>& labeled_succ_node, TransitionOutcome outcome) override
     {
+        if (outcome != TransitionOutcome::OPENED)
+            return;
         auto out = std::osyncstream(std::cout);
         fmt::print(out,
                    "[GBFS][Worker {}] Action: {}\n[GBFS][Worker {}] Successor node: {}\n\n",

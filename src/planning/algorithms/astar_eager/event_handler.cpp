@@ -53,9 +53,11 @@ public:
                    node);
     }
 
-    void on_generate_node(const Node<Kind>&, const LabeledNode<Kind>& labeled_succ_node) override
+    void on_generate_transition(const Node<Kind>&, const LabeledNode<Kind>& labeled_succ_node, TransitionOutcome outcome) override
     {
-        if (!m_trace_nodes)
+        if (!m_trace_nodes
+            || (outcome != TransitionOutcome::OPENED && outcome != TransitionOutcome::RELAXED && outcome != TransitionOutcome::DEAD_END
+                && outcome != TransitionOutcome::GOAL))
             return;
         auto out = std::osyncstream(std::cout);
         fmt::print(out,

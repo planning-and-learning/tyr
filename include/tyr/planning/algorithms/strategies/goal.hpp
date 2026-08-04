@@ -23,6 +23,7 @@
 #include "tyr/planning/ground/state_repository.hpp"
 #include "tyr/planning/lifted/state_repository.hpp"
 #include "tyr/planning/state_view.hpp"
+#include "tyr/planning/worker_index.hpp"
 
 #include <memory>
 
@@ -34,6 +35,9 @@ class GoalStrategy
 {
 public:
     virtual ~GoalStrategy() = default;
+
+    /// Custom strategies opt into parallel search by returning an independently usable worker.
+    [[nodiscard]] virtual GoalStrategyPtr<Kind> make_worker(ygg::Index<Worker>) const { return nullptr; }
 
     virtual bool is_static_goal_satisfied(const Task<Kind>& task) = 0;
     virtual bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state) = 0;
@@ -53,6 +57,8 @@ public:
     {
         return std::make_shared<ConjunctiveGoalStrategy<Kind>>(goal);
     }
+
+    [[nodiscard]] GoalStrategyPtr<Kind> make_worker(ygg::Index<Worker>) const override { return create(m_goal); }
 
     bool is_static_goal_satisfied(const Task<Kind>& task) override { return is_statically_applicable(m_goal, task.get_static_atoms_bitset()); }
     bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state) override
@@ -80,6 +86,8 @@ public:
     {
         return std::make_shared<SerializedGoalStrategy<Kind>>(goal);
     }
+
+    [[nodiscard]] GoalStrategyPtr<Kind> make_worker(ygg::Index<Worker>) const override { return create(m_goal); }
 
     bool is_static_goal_satisfied(const Task<Kind>& task) override { return is_statically_applicable(m_goal, task.get_static_atoms_bitset()); }
 
@@ -116,6 +124,8 @@ class ExhaustiveGoalStrategy : public GoalStrategy<Kind>
 {
 public:
     static std::shared_ptr<ExhaustiveGoalStrategy<Kind>> create() { return std::make_shared<ExhaustiveGoalStrategy<Kind>>(); }
+
+    [[nodiscard]] GoalStrategyPtr<Kind> make_worker(ygg::Index<Worker>) const override { return create(); }
 
     bool is_static_goal_satisfied(const Task<Kind>& task) override
     {

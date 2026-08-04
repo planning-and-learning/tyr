@@ -20,6 +20,7 @@
 
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_view.hpp"
+#include "tyr/planning/worker_index.hpp"
 
 #include <memory>
 
@@ -32,12 +33,33 @@ class PruningStrategy
 public:
     virtual ~PruningStrategy() = default;
 
-    static std::shared_ptr<PruningStrategy<Kind>> create() { return std::make_shared<PruningStrategy<Kind>>(); }
+    static PruningStrategyPtr<Kind> create();
+
+    /// Custom strategies opt into parallel search by returning an independently usable worker.
+    [[nodiscard]] virtual PruningStrategyPtr<Kind> make_worker(ygg::Index<Worker>) const { return nullptr; }
 
     virtual bool should_prune_state(const StateView<Kind>& state) { return false; }
 
     virtual bool should_prune_successor_state(const StateView<Kind>& state, const StateView<Kind>& succ_state, bool is_new_succ) { return false; }
 };
+
+namespace detail
+{
+
+template<TaskKind Kind>
+class NoPruningStrategy final : public PruningStrategy<Kind>
+{
+public:
+    [[nodiscard]] PruningStrategyPtr<Kind> make_worker(ygg::Index<Worker>) const override { return PruningStrategy<Kind>::create(); }
+};
+
+}
+
+template<TaskKind Kind>
+PruningStrategyPtr<Kind> PruningStrategy<Kind>::create()
+{
+    return std::make_shared<detail::NoPruningStrategy<Kind>>();
+}
 
 }
 

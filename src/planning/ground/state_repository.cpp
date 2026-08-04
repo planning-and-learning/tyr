@@ -57,6 +57,8 @@ namespace fp = tyr::formalism::planning;
 namespace tyr::planning
 {
 
+template StateView<GroundTag> materialize_state(const StateView<GroundTag>& source, StateRepository<GroundTag>& target);
+
 struct StateRepository<GroundTag>::Impl
 {
     struct Definition

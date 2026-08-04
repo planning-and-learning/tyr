@@ -66,11 +66,29 @@ public:
     explicit CountingGBFSWorkerEventHandler(p::Statistics& statistics) : m_statistics(statistics) {}
 
     void on_expand_node(const p::Node<Kind>&) override { m_statistics.increment_num_expanded(); }
-    void on_generate_node(const p::Node<Kind>&, const p::LabeledNode<Kind>&) override { m_statistics.increment_num_generated(); }
-    void on_prune_node(const p::Node<Kind>&, const p::LabeledNode<Kind>&) override { m_statistics.increment_num_pruned(); }
+    void on_generate_transition(const p::Node<Kind>&, const p::LabeledNode<Kind>&, p::TransitionOutcome outcome) override
+    {
+        if (outcome == p::TransitionOutcome::OPENED)
+            m_statistics.increment_num_generated();
+        else if (outcome == p::TransitionOutcome::PRUNED)
+            m_statistics.increment_num_pruned();
+    }
 
 private:
     p::Statistics& m_statistics;
+};
+
+template<TaskKind Kind>
+class UnsupportedParallelPruningStrategy final : public p::PruningStrategy<Kind>
+{
+};
+
+template<TaskKind Kind>
+class UnsupportedParallelGoalStrategy final : public p::GoalStrategy<Kind>
+{
+public:
+    bool is_static_goal_satisfied(const p::Task<Kind>&) override { return true; }
+    bool is_dynamic_goal_satisfied(const p::StateView<Kind>&, const p::StateView<Kind>&) override { return false; }
 };
 
 template<TaskKind Kind>
@@ -352,10 +370,18 @@ void expect_parallel_lazy_gbfs(const p::TaskPtr<Kind>& task)
 
     options.num_search_workers = 2;
     options.pruning_strategy = p::PruningStrategy<Kind>::create();
-    EXPECT_THROW(p::gbfs_lazy::find_solution(*task, *generator, *heuristic, options), std::invalid_argument);
+    EXPECT_EQ(p::gbfs_lazy::find_solution(*task, *generator, *heuristic, options).status, p::SearchStatus::SOLVED);
 
     options.pruning_strategy = nullptr;
     options.goal_strategy = p::ConjunctiveGoalStrategy<Kind>::create(*task);
+    EXPECT_EQ(p::gbfs_lazy::find_solution(*task, *generator, *heuristic, options).status, p::SearchStatus::SOLVED);
+
+    options.goal_strategy = nullptr;
+    options.pruning_strategy = std::make_shared<UnsupportedParallelPruningStrategy<Kind>>();
+    EXPECT_THROW(p::gbfs_lazy::find_solution(*task, *generator, *heuristic, options), std::invalid_argument);
+
+    options.pruning_strategy = nullptr;
+    options.goal_strategy = std::make_shared<UnsupportedParallelGoalStrategy<Kind>>();
     EXPECT_THROW(p::gbfs_lazy::find_solution(*task, *generator, *heuristic, options), std::invalid_argument);
 
     options.goal_strategy = nullptr;

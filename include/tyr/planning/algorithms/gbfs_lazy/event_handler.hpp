@@ -38,8 +38,7 @@ public:
 
     virtual void on_expand_node(const Node<Kind>&) {}
     virtual void on_expand_goal_node(const Node<Kind>&) {}
-    virtual void on_generate_node(const Node<Kind>&, const LabeledNode<Kind>&) {}
-    virtual void on_prune_node(const Node<Kind>&, const LabeledNode<Kind>&) {}
+    virtual void on_generate_transition(const Node<Kind>&, const LabeledNode<Kind>&, TransitionOutcome) {}
 };
 
 /// @brief Search-wide events shared by all lazy GBFS workers.
