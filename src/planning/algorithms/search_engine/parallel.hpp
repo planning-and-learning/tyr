@@ -24,6 +24,7 @@
 #include "tyr/planning/successor_generator.hpp"
 #include "tyr/planning/worker_state_index.hpp"
 
+#include <algorithm>
 #include <atomic>
 #include <cassert>
 #include <chrono>
@@ -106,11 +107,15 @@ public:
         return true;
     }
 
-    void start(std::optional<std::chrono::steady_clock::duration> max_time)
+    void start(std::optional<std::chrono::steady_clock::duration> max_time, ygg::float_t start_priority, bool synchronize_f_layers)
     {
         m_status.store(SearchStatus::IN_PROGRESS, std::memory_order_relaxed);
         m_work.store(1, std::memory_order_relaxed);
         m_num_states.store(1, std::memory_order_relaxed);
+        m_synchronize_f_layers = synchronize_f_layers;
+        m_active_f_value.store(start_priority, std::memory_order_relaxed);
+        m_layer_generation.store(0, std::memory_order_relaxed);
+        m_num_waiting_workers = 0;
         if (max_time)
             m_deadline = std::chrono::steady_clock::now() + *max_time;
     }
@@ -188,7 +193,7 @@ public:
                 return false;
             m_goal = goal;
             m_incumbent_cost.store(cost, std::memory_order_relaxed);
-            if (terminate)
+            if (terminate || (m_synchronize_f_layers && cost <= m_active_f_value.load(std::memory_order_relaxed)))
             {
                 m_status.store(SearchStatus::SOLVED, std::memory_order_release);
                 notify = true;
@@ -200,6 +205,22 @@ public:
     }
 
     ygg::float_t incumbent_cost() const noexcept { return m_incumbent_cost.load(std::memory_order_relaxed); }
+
+    template<typename Engine, typename WorkerData>
+    bool can_expand(Engine&, const WorkerData& worker) const noexcept
+    {
+        if constexpr (Engine::supports_f_layer_synchronization)
+        {
+            if (m_synchronize_f_layers)
+            {
+                const auto min_f_value = worker.search.get_min_f_value();
+                const auto incumbent = incumbent_cost();
+                return min_f_value <= m_active_f_value.load(std::memory_order_acquire)
+                       && (incumbent == std::numeric_limits<ygg::float_t>::infinity() || min_f_value < incumbent);
+            }
+        }
+        return !worker.search.empty();
+    }
 
     template<typename Engine, typename WorkerData>
     auto receive_one(Engine&, WorkerData& worker) -> std::optional<typename Engine::IncomingSuccessor>
@@ -256,6 +277,15 @@ public:
     template<typename Engine, typename WorkerData>
     void wait_for_work(Engine& engine, WorkerData& worker)
     {
+        if constexpr (Engine::supports_f_layer_synchronization)
+        {
+            if (m_synchronize_f_layers)
+            {
+                wait_for_f_layer(engine, worker);
+                return;
+            }
+        }
+
         auto lock = std::unique_lock(worker.execution.mutex);
         const auto ready = [&] { return !running() || !worker.execution.messages.empty(); };
         if (m_deadline)
@@ -304,6 +334,79 @@ public:
     }
 
 private:
+    template<typename Engine, typename WorkerData>
+    void wait_for_f_layer(Engine& engine, WorkerData& worker)
+    {
+        auto generation = size_t { 0 };
+        auto terminal_status = std::optional<SearchStatus> {};
+        auto release_workers = false;
+        {
+            auto lock = std::unique_lock(m_layer_mutex);
+            if (!running())
+                return;
+
+            generation = m_layer_generation.load(std::memory_order_relaxed);
+            ++m_num_waiting_workers;
+            assert(m_num_waiting_workers <= engine.num_workers());
+            if (m_num_waiting_workers == engine.num_workers())
+            {
+                m_num_waiting_workers = 0;
+                auto next_f_value = std::numeric_limits<ygg::float_t>::infinity();
+                auto num_open_entries = size_t { 0 };
+                for (size_t i = 0; i < engine.num_workers(); ++i)
+                {
+                    const auto& search = engine.get_worker(ygg::Index<Worker>(static_cast<ygg::uint_t>(i))).search;
+                    next_f_value = std::min(next_f_value, search.get_min_f_value());
+                    num_open_entries += search.get_num_open_entries();
+                }
+
+                const auto work = m_work.load(std::memory_order_acquire);
+                if (work < num_open_entries)
+                    throw std::logic_error("Parallel search work credits are inconsistent with the open lists.");
+
+                if (work == num_open_entries)
+                {
+                    const auto incumbent = incumbent_cost();
+                    if (incumbent != std::numeric_limits<ygg::float_t>::infinity() && next_f_value >= incumbent)
+                        terminal_status = SearchStatus::SOLVED;
+                    else if (num_open_entries == 0)
+                        terminal_status = SearchStatus::EXHAUSTED;
+                    else
+                        m_active_f_value.store(next_f_value, std::memory_order_release);
+                }
+
+                if (!terminal_status)
+                    m_layer_generation.fetch_add(1, std::memory_order_release);
+                release_workers = true;
+            }
+        }
+
+        if (release_workers)
+        {
+            if (terminal_status)
+                set_terminal(engine, *terminal_status);
+            else
+                notify_workers(engine);
+            return;
+        }
+
+        auto lock = std::unique_lock(worker.execution.mutex);
+        const auto ready = [&]
+        { return !running() || m_layer_generation.load(std::memory_order_acquire) != generation; };
+        if (m_deadline)
+        {
+            if (!worker.execution.condition.wait_until(lock, *m_deadline, ready) && running())
+            {
+                lock.unlock();
+                set_terminal(engine, SearchStatus::OUT_OF_TIME);
+            }
+        }
+        else
+        {
+            worker.execution.condition.wait(lock, ready);
+        }
+    }
+
     void join()
     {
         for (auto& thread : m_threads)
@@ -362,11 +465,16 @@ private:
     StateTransferPool<Kind> m_transfer_pool;
     mutable std::mutex m_best_h_mutex;
     mutable std::mutex m_terminal_mutex;
+    std::mutex m_layer_mutex;
     std::atomic<SearchStatus> m_status { SearchStatus::IN_PROGRESS };
     std::atomic<size_t> m_work { 0 };
     std::atomic<ygg::uint_t> m_num_states { 0 };
     std::atomic<ygg::float_t> m_best_h_value { std::numeric_limits<ygg::float_t>::infinity() };
     std::atomic<ygg::float_t> m_incumbent_cost { std::numeric_limits<ygg::float_t>::infinity() };
+    std::atomic<ygg::float_t> m_active_f_value { std::numeric_limits<ygg::float_t>::infinity() };
+    std::atomic<size_t> m_layer_generation { 0 };
+    size_t m_num_waiting_workers { 0 };
+    bool m_synchronize_f_layers { false };
     std::optional<WorkerStateIndex<Kind>> m_goal;
     std::exception_ptr m_exception;
     std::vector<std::jthread> m_threads;

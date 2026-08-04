@@ -119,6 +119,7 @@ struct formatter<tyr::planning::Statistics, char>
                               "[Search] Idle worker time: {} ms ({} ns)\n"
                               "[Search] Number of expanded states: {}\n"
                               "[Search] Number of generated states: {}\n"
+                              "[Search] Number of dead-end states: {}\n"
                               "[Search] Number of pruned states: {}\n"
                               "[Search] Number of registered states: {}\n"
                               "[Search] State storage memory usage: {} bytes\n"
@@ -132,6 +133,7 @@ struct formatter<tyr::planning::Statistics, char>
                               ygg::to_ns(value.get_idle_time()),
                               value.get_num_expanded(),
                               value.get_num_generated(),
+                              value.get_num_deadends(),
                               value.get_num_pruned(),
                               value.get_num_registered_states(),
                               value.get_state_storage_memory_usage(),

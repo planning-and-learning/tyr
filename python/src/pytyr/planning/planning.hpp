@@ -322,7 +322,8 @@ void bind_search_result(nb::module_& m, const std::string& name)
         .def_rw("goal_node", &T::goal_node)
         .def_rw("cycle_range", &T::cycle_range)
         .def_rw("statistics", &T::statistics)
-        .def_rw("worker_statistics", &T::worker_statistics);
+        .def_rw("worker_statistics", &T::worker_statistics)
+        .def_prop_ro("worker_utilization", &T::get_worker_utilization);
 }
 
 template<TaskKind Kind>

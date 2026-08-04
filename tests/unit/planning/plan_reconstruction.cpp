@@ -143,6 +143,7 @@ struct AStarGoalGate
 {
     std::binary_semaphore cheap_path { 0 };
     std::atomic<bool> expensive_goal_seen { false };
+    std::atomic<uint64_t> num_expanded_goals { 0 };
 };
 
 template<TaskKind Kind>
@@ -157,14 +158,16 @@ public:
             throw std::runtime_error("Timed out waiting for the expensive goal.");
     }
 
-    void on_expand_goal_node(const p::Node<Kind>& node) override
+    void on_generate_transition(const p::Node<Kind>&, const p::LabeledNode<Kind>& successor, p::TransitionOutcome outcome) override
     {
-        if (node.get_metric() == 100)
+        if (outcome == p::TransitionOutcome::GOAL && successor.node.get_metric() == 100)
         {
             m_gate.expensive_goal_seen.store(true, std::memory_order_relaxed);
             m_gate.cheap_path.release();
         }
     }
+
+    void on_expand_goal_node(const p::Node<Kind>&) override { m_gate.num_expanded_goals.fetch_add(1, std::memory_order_relaxed); }
 
 private:
     AStarGoalGate& m_gate;
@@ -184,6 +187,76 @@ public:
     }
 
     AStarGoalGate gate;
+};
+
+struct AStarLayerGate
+{
+    std::binary_semaphore lower_started { 0 };
+    std::binary_semaphore higher_started { 0 };
+    std::atomic<bool> higher_expanded { false };
+};
+
+template<TaskKind Kind>
+class LayeredAStarWorkerEventHandler final : public p::astar_eager::WorkerEventHandler<Kind>
+{
+public:
+    explicit LayeredAStarWorkerEventHandler(AStarLayerGate& gate) : m_gate(gate) {}
+
+    void on_expand_node(const p::Node<Kind>& node) override
+    {
+        if (node.get_metric() == 1)
+        {
+            m_gate.lower_started.release();
+            static_cast<void>(m_gate.higher_started.try_acquire_for(std::chrono::milliseconds(100)));
+        }
+        else if (node.get_metric() == 100)
+        {
+            if (!m_gate.lower_started.try_acquire_for(std::chrono::seconds(5)))
+                throw std::runtime_error("Timed out waiting for the lower f-layer.");
+            m_gate.higher_expanded.store(true, std::memory_order_relaxed);
+            m_gate.higher_started.release();
+        }
+    }
+
+private:
+    AStarLayerGate& m_gate;
+};
+
+template<TaskKind Kind>
+class LayeredAStarEventHandler final : public p::astar_eager::EventHandler<Kind>
+{
+public:
+    void on_start_search(const p::Node<Kind>&, ygg::float_t) override {}
+    void on_end_search(p::SearchStatus, const p::Statistics&) override {}
+    void on_solved(const p::Plan<Kind>&) override {}
+
+    p::astar_eager::WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<p::Worker>) override
+    {
+        return std::make_unique<LayeredAStarWorkerEventHandler<Kind>>(gate);
+    }
+
+    AStarLayerGate gate;
+};
+
+template<TaskKind Kind>
+class ThrowingAStarWorkerEventHandler final : public p::astar_eager::WorkerEventHandler<Kind>
+{
+public:
+    void on_expand_node(const p::Node<Kind>&) override { throw std::runtime_error("Worker event failure."); }
+};
+
+template<TaskKind Kind>
+class ThrowingAStarEventHandler final : public p::astar_eager::EventHandler<Kind>
+{
+public:
+    void on_start_search(const p::Node<Kind>&, ygg::float_t) override {}
+    void on_end_search(p::SearchStatus, const p::Statistics&) override {}
+    void on_solved(const p::Plan<Kind>&) override {}
+
+    p::astar_eager::WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<p::Worker>) override
+    {
+        return std::make_unique<ThrowingAStarWorkerEventHandler<Kind>>();
+    }
 };
 
 template<typename SearchNode>
@@ -478,7 +551,7 @@ std::optional<uint64_t> find_weighted_astar_seed(p::SuccessorGenerator<Kind>& ge
 }
 
 template<TaskKind Kind>
-void expect_parallel_astar_keeps_searching_after_first_goal(const p::TaskPtr<Kind>& task)
+void expect_parallel_astar_keeps_searching_after_first_goal(const p::TaskPtr<Kind>& task, p::astar_eager::ParallelSearchMode mode)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
     auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
@@ -492,6 +565,7 @@ void expect_parallel_astar_keeps_searching_after_first_goal(const p::TaskPtr<Kin
     auto options = p::astar_eager::Options<Kind> {};
     options.event_handler = event_handler;
     options.num_search_workers = 2;
+    options.parallel_search_mode = mode;
     options.random_seed = *seed;
     const auto result = p::astar_eager::find_solution(*task, *generator, *heuristic, options);
 
@@ -499,6 +573,7 @@ void expect_parallel_astar_keeps_searching_after_first_goal(const p::TaskPtr<Kin
     ASSERT_TRUE(result.plan);
     ASSERT_TRUE(result.goal_node);
     EXPECT_TRUE(event_handler->gate.expensive_goal_seen.load(std::memory_order_relaxed));
+    EXPECT_EQ(event_handler->gate.num_expanded_goals.load(std::memory_order_relaxed), 0);
     EXPECT_EQ(result.plan->get_cost(), 2);
     EXPECT_EQ(result.plan->get_length(), 2);
     ASSERT_EQ(result.worker_statistics.size(), 2);
@@ -511,6 +586,57 @@ void expect_parallel_astar_keeps_searching_after_first_goal(const p::TaskPtr<Kin
     for (const auto& successor : result.plan->get_labeled_succ_nodes())
         EXPECT_EQ(successor.node.get_state().get_state_repository(), repository);
     EXPECT_EQ(result.goal_node->get_state().get_state_repository(), repository);
+}
+
+template<TaskKind Kind>
+void expect_parallel_astar_coordinates_f_layers(const p::TaskPtr<Kind>& task,
+                                                p::astar_eager::ParallelSearchMode mode,
+                                                bool expect_higher_expansion)
+{
+    auto execution_context = ygg::ExecutionContext::create(1);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto repository = p::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
+    auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context, repository);
+    auto heuristic = p::BlindHeuristic<Kind>::create();
+    const auto seed = find_weighted_astar_seed(*generator);
+    ASSERT_TRUE(seed);
+
+    auto event_handler = std::make_shared<LayeredAStarEventHandler<Kind>>();
+    auto options = p::astar_eager::Options<Kind> {};
+    options.event_handler = event_handler;
+    options.goal_strategy = p::ExhaustiveGoalStrategy<Kind>::create();
+    options.num_search_workers = 2;
+    options.parallel_search_mode = mode;
+    options.random_seed = *seed;
+    const auto result = p::astar_eager::find_solution(*task, *generator, *heuristic, options);
+
+    EXPECT_EQ(result.status, p::SearchStatus::EXHAUSTED);
+    EXPECT_EQ(event_handler->gate.higher_expanded.load(std::memory_order_relaxed), expect_higher_expansion);
+    EXPECT_EQ(result.statistics.get_num_expanded(), expect_higher_expansion ? 4 : 3);
+}
+
+template<TaskKind Kind>
+void expect_synchronous_parallel_astar_stops_all_workers(const p::TaskPtr<Kind>& task)
+{
+    auto execution_context = ygg::ExecutionContext::create(1);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto repository = p::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
+    auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context, repository);
+    auto heuristic = p::BlindHeuristic<Kind>::create();
+    const auto seed = find_weighted_astar_seed(*generator);
+    ASSERT_TRUE(seed);
+    auto options = p::astar_eager::Options<Kind> {};
+    options.event_handler = std::make_shared<LayeredAStarEventHandler<Kind>>();
+    options.goal_strategy = p::ExhaustiveGoalStrategy<Kind>::create();
+    options.num_search_workers = 2;
+    options.parallel_search_mode = p::astar_eager::ParallelSearchMode::SYNCHRONOUS;
+    options.random_seed = *seed;
+    options.max_time = std::chrono::milliseconds(50);
+    EXPECT_EQ(p::astar_eager::find_solution(*task, *generator, *heuristic, options).status, p::SearchStatus::OUT_OF_TIME);
+
+    options.max_time = std::nullopt;
+    options.event_handler = std::make_shared<ThrowingAStarEventHandler<Kind>>();
+    EXPECT_THROW(p::astar_eager::find_solution(*task, *generator, *heuristic, options), std::runtime_error);
 }
 
 template<TaskKind Kind>
@@ -596,8 +722,28 @@ TEST(TyrPlanningPlanReconstructionTest, ParallelAStarDoesNotStopAtTheFirstGoal)
     auto ground_task = lifted_task->instantiate_ground_task(*grounding_context).task;
     ASSERT_NE(ground_task, nullptr);
 
-    expect_parallel_astar_keeps_searching_after_first_goal(ground_task);
-    expect_parallel_astar_keeps_searching_after_first_goal(lifted_task);
+    for (const auto mode : { p::astar_eager::ParallelSearchMode::SYNCHRONOUS, p::astar_eager::ParallelSearchMode::ASYNCHRONOUS })
+    {
+        expect_parallel_astar_keeps_searching_after_first_goal(ground_task, mode);
+        expect_parallel_astar_keeps_searching_after_first_goal(lifted_task, mode);
+    }
+}
+
+TEST(TyrPlanningPlanReconstructionTest, ParallelAStarSelectsFLayerCoordination)
+{
+    const auto benchmark_root = std::filesystem::path(BENCHMARKS_DIR);
+    const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/fixtures/planning/algorithms";
+    auto lifted_task = p::Task<LiftedTag>::create(
+        make_test_parser(benchmark_root / "classical/tests/transport/domain.pddl").parse_task(fixture_root / "parallel_astar_weighted.pddl"));
+    auto grounding_context = ygg::ExecutionContext::create(1);
+    auto ground_task = lifted_task->instantiate_ground_task(*grounding_context).task;
+    ASSERT_NE(ground_task, nullptr);
+
+    expect_parallel_astar_coordinates_f_layers(ground_task, p::astar_eager::ParallelSearchMode::SYNCHRONOUS, false);
+    expect_parallel_astar_coordinates_f_layers(lifted_task, p::astar_eager::ParallelSearchMode::SYNCHRONOUS, false);
+    expect_parallel_astar_coordinates_f_layers(ground_task, p::astar_eager::ParallelSearchMode::ASYNCHRONOUS, true);
+    expect_parallel_astar_coordinates_f_layers(lifted_task, p::astar_eager::ParallelSearchMode::ASYNCHRONOUS, true);
+    expect_synchronous_parallel_astar_stops_all_workers(ground_task);
 }
 
 }

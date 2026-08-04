@@ -6,6 +6,15 @@ from lab.reports import Attribute, geometric_mean, arithmetic_mean
 
 import re
 
+
+FLOAT = r"([-+]?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?|inf))"
+WORKER_STATISTICS = re.compile(
+    r"^\[Search\] Worker (\d+): idle=(\d+) ns, expanded=(\d+), generated=(\d+), "
+    r"deadends=(\d+), pruned=(\d+), registered=(\d+), state_storage=(\d+) bytes$",
+    re.MULTILINE,
+)
+
+
 def process_invalid(content, props):
     props["invalid"] = int("invalid" in props)
 
@@ -15,6 +24,38 @@ def process_unsolvable(content, props):
 def add_search_time_s(content, props):
     if "search_time_ns" in props:
         props["search_time_s"] = props["search_time_ns"] / 1_000_000_000
+
+
+def add_idle_time_s(content, props):
+    if "idle_time_ns" in props:
+        props["idle_time_s"] = props["idle_time_ns"] / 1_000_000_000
+
+
+def parse_worker_statistics(content, props):
+    matches = sorted((tuple(map(int, match)) for match in WORKER_STATISTICS.findall(content)), key=lambda values: values[0])
+    if not matches:
+        return
+
+    indices = [values[0] for values in matches]
+    if indices != list(range(len(matches))):
+        tools.add_unexplained_error(props, f"Unexpected search worker indices: {indices}")
+        return
+
+    names = (
+        "worker_idle_time_ns",
+        "worker_num_expanded",
+        "worker_num_generated",
+        "worker_num_deadends",
+        "worker_num_pruned",
+        "worker_num_registered_states",
+        "worker_state_storage_memory_usage_bytes",
+    )
+    for offset, name in enumerate(names, start=1):
+        props[name] = [values[offset] for values in matches]
+
+    if props.get("search_time_ns", 0) > 0:
+        props["worker_utilizations"] = [max(0.0, min(1.0, 1.0 - idle / props["search_time_ns"])) for idle in props["worker_idle_time_ns"]]
+
 
 def add_total_time_s(content, props):
     if "total_time_ns" in props:
@@ -72,17 +113,34 @@ class SearchParser(Parser):
     """
     def __init__(self):
         super().__init__()
-        self.add_pattern("cost", r"\[.*\] Plan cost: (\d+)", type=int)
+        self.add_pattern("cost", rf"\[.*\] Plan cost: {FLOAT}", type=float)
         self.add_pattern("length", r"\[.*\] Plan length: (\d+)", type=int)
-        self.add_pattern("initial_h_value", r"\[.*\] Start node h_value: (\d+)", type=int)
-        self.add_pattern("initial_f_value", r"\[.*\] Start node f_value: (\d+)", type=int)
+        self.add_pattern("initial_h_value", rf"\[.*\] Start node h_value: {FLOAT}", type=float)
+        self.add_pattern("initial_f_value", rf"\[.*\] Start node f_value: {FLOAT}", type=float)
+
+        self.add_pattern("num_worker_threads", r"\[INPUT\] Num worker threads: (\d+)", type=int)
+        self.add_pattern("num_search_workers", r"\[INPUT\] Num search workers: (\d+)", type=int)
+        self.add_pattern("parallel_search_mode", r"\[INPUT\] Parallel search mode: (synchronous|asynchronous)", type=str)
 
         self.add_pattern("search_time_ms", r"\[Search\] Search time: (\d+) ms", type=int)
         self.add_pattern("search_time_ns", r"\[Search\] Search time: \d+ ms \((\d+) ns\)", type=int)
+        self.add_pattern("idle_time_ms", r"\[Search\] Idle worker time: (\d+) ms", type=int)
+        self.add_pattern("idle_time_ns", r"\[Search\] Idle worker time: \d+ ms \((\d+) ns\)", type=int)
+        self.add_pattern("worker_utilization", rf"\[Search\] Worker utilization: {FLOAT}", type=float)
         self.add_pattern("num_expanded", r"\[Search\] Number of expanded states: (\d+)", type=int)
         self.add_pattern("num_generated", r"\[Search\] Number of generated states: (\d+)", type=int)
+        self.add_pattern("num_deadends", r"\[Search\] Number of dead-end states: (\d+)", type=int)
+        self.add_pattern("num_pruned", r"\[Search\] Number of pruned states: (\d+)", type=int)
+        self.add_pattern("num_registered_states", r"\[Search\] Number of registered states: (\d+)", type=int)
+        self.add_pattern("search_state_storage_memory_usage_bytes", r"\[Search\] State storage memory usage: (\d+) bytes", type=int)
+        self.add_pattern("search_action_bindings_memory_usage_bytes", r"\[Search\] Action bindings memory usage: (\d+) bytes", type=int)
+        self.add_pattern("search_predicate_bindings_memory_usage_bytes", r"\[Search\] Predicate bindings memory usage: (\d+) bytes", type=int)
+        self.add_pattern("search_axiom_bindings_memory_usage_bytes", r"\[Search\] Axiom bindings memory usage: (\d+) bytes", type=int)
+        self.add_pattern("search_function_bindings_memory_usage_bytes", r"\[Search\] Function bindings memory usage: (\d+) bytes", type=int)
         self.add_pattern("num_expanded_until_last_snapshot", r"\[Search\] Number of expanded states at last snapshot: (\d+)", type=int)
         self.add_pattern("num_generated_until_last_snapshot", r"\[Search\] Number of generated states at last snapshot: (\d+)", type=int)
+        self.add_pattern("num_deadends_until_last_snapshot", r"\[Search\] Number of deadend states at last snapshot: (\d+)", type=int)
+        self.add_pattern("num_pruned_until_last_snapshot", r"\[Search\] Number of pruned states at last snapshot: (\d+)", type=int)
 
         self.add_pattern("total_time_ms", r"\[Total\] Total time: (\d+) ms", type=int)
         self.add_pattern("total_time_ns", r"\[Total\] Total time: \d+ ms \((\d+) ns\)", type=int)
@@ -94,6 +152,7 @@ class SearchParser(Parser):
         self.add_pattern("axiom_bindings_memory_usage_bytes", r"\[Total\] Axiom bindings memory usage: (\d+) bytes", type=int)
         self.add_pattern("function_bindings_memory_usage_bytes", r"\[Total\] Function bindings memory usage: (\d+) bytes", type=int)
         self.add_pattern("states_memory_usage_bytes", r"\[Total\] States memory usage: (\d+) bytes", type=int)
+        self.add_pattern("retained_plan_states_memory_usage_bytes", r"\[Total\] Retained plan states memory usage: (\d+) bytes", type=int)
         self.add_pattern("peak_memory_usage_bytes", r"\[Total\] Peak memory usage: (\d+) bytes", type=int)
 
         self.add_pattern("unsolvable", r"(Task is unsolvable!)", type=str)
@@ -104,6 +163,8 @@ class SearchParser(Parser):
         self.add_function(process_invalid)
         self.add_function(process_unsolvable)
         self.add_function(add_search_time_s)
+        self.add_function(add_idle_time_s)
+        self.add_function(parse_worker_statistics)
         self.add_function(add_total_time_s)
         self.add_function(add_preprocessing_time_s)
         self.add_function(add_search_time_ms_per_expanded)
@@ -124,11 +185,21 @@ class SearchParser(Parser):
             "invalid",
             "initial_h_value",
             "initial_f_value",
+            "num_worker_threads",
+            "num_search_workers",
+            "parallel_search_mode",
             Attribute("search_time_s", function=geometric_mean, digits=2),
+            Attribute("idle_time_s", function=arithmetic_mean, digits=2),
+            Attribute("worker_utilization", function=arithmetic_mean, min_wins=False, digits=3),
             "num_expanded",
             "num_generated",
+            "num_deadends",
+            "num_pruned",
+            "num_registered_states",
             "num_expanded_until_last_snapshot",
             "num_generated_until_last_snapshot",
+            "num_deadends_until_last_snapshot",
+            "num_pruned_until_last_snapshot",
             Attribute("search_time_ms_per_expanded", function=geometric_mean, digits=2),
             Attribute("total_time_s", function=geometric_mean, digits=2),
             Attribute("preprocessing_time_s", function=geometric_mean, digits=2),
@@ -141,6 +212,12 @@ class SearchParser(Parser):
             Attribute("axiom_bindings_memory_usage_bytes", function=geometric_mean),
             Attribute("function_bindings_memory_usage_bytes", function=geometric_mean),
             Attribute("states_memory_usage_bytes", function=geometric_mean),
+            Attribute("retained_plan_states_memory_usage_bytes", function=geometric_mean),
+            Attribute("search_state_storage_memory_usage_bytes", function=geometric_mean),
+            Attribute("search_action_bindings_memory_usage_bytes", function=geometric_mean),
+            Attribute("search_predicate_bindings_memory_usage_bytes", function=geometric_mean),
+            Attribute("search_axiom_bindings_memory_usage_bytes", function=geometric_mean),
+            Attribute("search_function_bindings_memory_usage_bytes", function=geometric_mean),
             Attribute("peak_memory_usage_bytes", function=geometric_mean),
             Attribute("memory_mb", function=geometric_mean),
             

@@ -24,7 +24,9 @@
 #include "tyr/planning/algorithms/openlists/priority_queue.hpp"
 
 #include <concepts>
+#include <cmath>
 #include <limits>
+#include <stdexcept>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -42,6 +44,7 @@ public:
     using ParentState = std::conditional_t<std::same_as<Search, SequentialSearch>, ygg::Index<State<Kind>>, WorkerStateIndex<Kind>>;
     static constexpr bool eager = true;
     static constexpr bool terminate_on_goal = std::same_as<Search, SequentialSearch>;
+    static constexpr bool supports_f_layer_synchronization = std::same_as<Search, ParallelSearch>;
 
     struct SearchNode
     {
@@ -84,6 +87,8 @@ public:
     SearchNode& initialize_start(ygg::Index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value)
     {
         m_f_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(g_value + h_value);
+        if (std::isnan(m_f_value))
+            throw std::runtime_error("A* start f-value is NaN.");
         auto& search_node = get_search_node(state);
         search_node.status = h_value == std::numeric_limits<ygg::float_t>::infinity() ? SearchNodeStatus::DEAD_END : SearchNodeStatus::OPEN;
         search_node.g_value = g_value;
@@ -98,6 +103,13 @@ public:
     }
 
     bool empty() const { return m_openlist.empty(); }
+
+    ygg::float_t get_min_f_value() const noexcept
+    {
+        return m_openlist.empty() ? std::numeric_limits<ygg::float_t>::infinity() : m_openlist.top_entry().f_value;
+    }
+
+    size_t get_num_open_entries() const noexcept { return m_openlist.size(); }
 
     PoppedEntry pop()
     {
@@ -163,7 +175,17 @@ public:
     void open_successor(ygg::Index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value, SearchNodeStatus status, bool)
     {
         const auto f_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(g_value + h_value);
+        if (std::isnan(f_value))
+            throw std::runtime_error("A* successor f-value is NaN.");
         m_openlist.insert(QueueEntry { f_value, state, status, m_step++ });
+    }
+
+    static bool synchronize_f_layers(const Options& options) noexcept
+    {
+        if constexpr (supports_f_layer_synchronization)
+            return options.parallel_search_mode == astar_eager::ParallelSearchMode::SYNCHRONOUS;
+        else
+            return false;
     }
 
     const ygg::SegmentedVector<SearchNode>& get_search_nodes() const noexcept { return m_search_nodes; }

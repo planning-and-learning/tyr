@@ -48,6 +48,26 @@ void print_summary(const formalism::planning::Repository& repository)
                      + repository.template memory_usage<formalism::RelationBinding<formalism::Function<formalism::AuxiliaryTag>>>()
               << " bytes" << std::endl;
 }
+
+template<TaskKind Kind>
+void print_search_statistics(const planning::SearchResult<Kind>& result)
+{
+    fmt::print(std::cout, "[Search] Worker utilization: {}\n", result.get_worker_utilization());
+    for (size_t i = 0; i < result.worker_statistics.size(); ++i)
+    {
+        const auto& worker = result.worker_statistics[i];
+        fmt::print(std::cout,
+                   "[Search] Worker {}: idle={} ns, expanded={}, generated={}, deadends={}, pruned={}, registered={}, state_storage={} bytes\n",
+                   i,
+                   ygg::to_ns(worker.get_idle_time()),
+                   worker.get_num_expanded(),
+                   worker.get_num_generated(),
+                   worker.get_num_deadends(),
+                   worker.get_num_pruned(),
+                   worker.get_num_registered_states(),
+                   worker.get_state_storage_memory_usage());
+    }
+}
 }
 
 int main(int argc, char** argv)
@@ -58,6 +78,10 @@ int main(int argc, char** argv)
     program.add_argument("-O", "--plan-filepath").default_value(std::string("plan.out")).help("The path to the output plan file.");
     program.add_argument("-N", "--num-worker-threads").default_value(size_t(1)).scan<'u', size_t>().help("The number of inner worker threads.");
     program.add_argument("--num-search-workers").default_value(size_t(1)).scan<'u', size_t>().help("The number of search workers.");
+    program.add_argument("--parallel-search-mode")
+        .default_value(std::string("synchronous"))
+        .choices("synchronous", "asynchronous")
+        .help("The coordination mode used by parallel A* search.");
     program.add_argument("-R", "--random-seed").default_value(uint64_t(0)).scan<'u', uint64_t>().help("The random seed.");
     program.add_argument("-S", "--shuffle-labeled-succ-nodes").default_value(false).implicit_value(true).help("Enable shuffling the labeled successor nodes.");
     program.add_argument("-G", "--instantiate-ground-task")
@@ -96,6 +120,9 @@ int main(int argc, char** argv)
         auto plan_filepath = program.get<std::string>("--plan-filepath");
         auto num_worker_threads = program.get<std::size_t>("--num-worker-threads");
         auto num_search_workers = program.get<std::size_t>("--num-search-workers");
+        auto parallel_search_mode_name = program.get<std::string>("--parallel-search-mode");
+        auto parallel_search_mode = parallel_search_mode_name == "synchronous" ? planning::astar_eager::ParallelSearchMode::SYNCHRONOUS :
+                                                                                  planning::astar_eager::ParallelSearchMode::ASYNCHRONOUS;
         auto random_seed = program.get<uint64_t>("--random-seed");
         auto shuffle_labeled_succ_nodes = program.get<bool>("--shuffle-labeled-succ-nodes");
         auto instantiate_ground_task = program.get<bool>("--instantiate-ground-task");
@@ -119,6 +146,7 @@ int main(int argc, char** argv)
 
         std::cout << "[INPUT] Num worker threads: " << num_worker_threads << std::endl;
         std::cout << "[INPUT] Num search workers: " << num_search_workers << std::endl;
+        std::cout << "[INPUT] Parallel search mode: " << parallel_search_mode_name << std::endl;
         std::cout << "[INPUT] Random seed: " << random_seed << std::endl;
         std::cout << "[INPUT] Shuffle labeled successor nodes: " << shuffle_labeled_succ_nodes << std::endl;
 
@@ -148,6 +176,7 @@ int main(int argc, char** argv)
             options.event_handler = planning::astar_eager::DefaultEventHandler<LiftedTag>::create(verbosity);
             options.cost_mode = search_cost_mode;
             options.num_search_workers = num_search_workers;
+            options.parallel_search_mode = parallel_search_mode;
             options.random_seed = random_seed;
             options.shuffle_labeled_succ_nodes = shuffle_labeled_succ_nodes;
 
@@ -168,6 +197,7 @@ int main(int argc, char** argv)
                 throw std::invalid_argument("The heuristic is not implemented.");
 
             auto result = planning::astar_eager::find_solution(*lifted_task, *successor_generator, *heuristic, options);
+            print_search_statistics(result);
 
             if (result.status == planning::SearchStatus::SOLVED)
             {
@@ -209,6 +239,7 @@ int main(int argc, char** argv)
                 options.event_handler = planning::astar_eager::DefaultEventHandler<GroundTag>::create(verbosity);
                 options.cost_mode = search_cost_mode;
                 options.num_search_workers = num_search_workers;
+                options.parallel_search_mode = parallel_search_mode;
                 options.random_seed = random_seed;
                 options.shuffle_labeled_succ_nodes = shuffle_labeled_succ_nodes;
 
@@ -229,6 +260,7 @@ int main(int argc, char** argv)
                     throw std::invalid_argument("The heuristic is not implemented.");
 
                 auto result = planning::astar_eager::find_solution(*ground_task, *successor_generator, *heuristic, options);
+                print_search_statistics(result);
 
                 if (result.status == planning::SearchStatus::SOLVED)
                 {

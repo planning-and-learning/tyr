@@ -91,7 +91,7 @@ public:
         return false;
     }
 
-    void start(std::optional<std::chrono::steady_clock::duration> max_time)
+    void start(std::optional<std::chrono::steady_clock::duration> max_time, ygg::float_t, bool)
     {
         if (max_time)
             m_stopwatch.emplace(*max_time);
@@ -125,6 +125,12 @@ public:
     SearchStatus status() const noexcept { return m_status; }
     std::optional<WorkerStateIndex<Kind>> goal() const noexcept { return m_goal; }
     std::exception_ptr exception() const noexcept { return nullptr; }
+
+    template<typename Engine, typename Worker>
+    static bool can_expand(Engine&, const Worker& worker) noexcept
+    {
+        return !worker.search.empty();
+    }
 
     template<typename Engine, typename Worker>
     void wait_for_work(Engine& engine, Worker&)

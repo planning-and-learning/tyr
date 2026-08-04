@@ -281,6 +281,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "max_time": None,
             "cost_mode": planning.CostMode.GENERAL,
             "num_search_workers": 1,
+            "parallel_search_mode": planning.ParallelSearchMode.SYNCHRONOUS,
             "random_seed": 0,
             "shuffle_labeled_succ_nodes": False,
         },
@@ -336,6 +337,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "max_time",
             "cost_mode",
             "num_search_workers",
+            "parallel_search_mode",
             "random_seed",
             "shuffle_labeled_succ_nodes",
         ),
@@ -478,14 +480,16 @@ def test_parallel_lazy_gbfs_is_available_through_python_bindings():
 
         astar_options = task_module.astar_eager.Options()
         astar_options.num_search_workers = 2
-        astar_result = task_module.astar_eager.find_solution(
-            task,
-            successor_generator,
-            task_module.BlindHeuristic(),
-            astar_options,
-        )
-        assert astar_result.status == planning.SearchStatus.SOLVED
-        _assert_worker_statistics(astar_result, 2)
+        for mode in (planning.ParallelSearchMode.SYNCHRONOUS, planning.ParallelSearchMode.ASYNCHRONOUS):
+            astar_options.parallel_search_mode = mode
+            astar_result = task_module.astar_eager.find_solution(
+                task,
+                successor_generator,
+                task_module.BlindHeuristic(),
+                astar_options,
+            )
+            assert astar_result.status == planning.SearchStatus.SOLVED
+            _assert_worker_statistics(astar_result, 2)
 
 
 def test_planning_task_view_accessors_keep_temporary_owners_alive():
@@ -529,6 +533,16 @@ def test_cost_mode_is_bound_for_cost_sensitive_algorithms():
             assert options.cost_mode == planning.CostMode.GENERAL
             options.cost_mode = planning.CostMode.UNIT
             assert options.cost_mode == planning.CostMode.UNIT
+
+
+def test_parallel_astar_search_mode_is_bound():
+    assert planning.ParallelSearchMode.SYNCHRONOUS != planning.ParallelSearchMode.ASYNCHRONOUS
+
+    for task_module in (planning.ground, planning.lifted):
+        options = task_module.astar_eager.Options()
+        assert options.parallel_search_mode == planning.ParallelSearchMode.SYNCHRONOUS
+        options.parallel_search_mode = planning.ParallelSearchMode.ASYNCHRONOUS
+        assert options.parallel_search_mode == planning.ParallelSearchMode.ASYNCHRONOUS
 
 
 def test_ground_task_instantiation_result_default_is_explicit_failure():

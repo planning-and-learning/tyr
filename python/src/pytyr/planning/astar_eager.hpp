@@ -56,6 +56,7 @@ void bind_options(nb::module_& m, const std::string& name)
         .def_rw("max_time", &T::max_time)
         .def_rw("cost_mode", &T::cost_mode)
         .def_rw("num_search_workers", &T::num_search_workers)
+        .def_rw("parallel_search_mode", &T::parallel_search_mode)
         .def_rw("random_seed", &T::random_seed)
         .def_rw("shuffle_labeled_succ_nodes", &T::shuffle_labeled_succ_nodes);
 }

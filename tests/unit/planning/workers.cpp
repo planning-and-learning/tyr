@@ -207,4 +207,19 @@ TEST(TyrPlanningWorkerTest, GroundAndLiftedWorkersOwnMutableStateAndShareDefinit
     expect_worker_chain(ground_task);
 }
 
+TEST(TyrPlanningWorkerTest, UtilizationUsesAggregateWorkerCapacity)
+{
+    auto result = p::SearchResult<::tyr::GroundTag> {};
+    const auto start = std::chrono::steady_clock::time_point {};
+    result.statistics.set_search_start_time_point(start);
+    result.statistics.set_search_end_time_point(start + std::chrono::nanoseconds(100));
+    result.statistics.add_idle_time(std::chrono::nanoseconds(100));
+    result.worker_statistics.resize(4);
+
+    EXPECT_DOUBLE_EQ(static_cast<double>(result.get_worker_utilization()), 0.75);
+
+    result.worker_statistics.clear();
+    EXPECT_DOUBLE_EQ(static_cast<double>(result.get_worker_utilization()), 0.0);
+}
+
 }

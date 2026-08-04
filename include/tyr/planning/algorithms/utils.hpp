@@ -22,6 +22,8 @@
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/plan.hpp"
 
+#include <algorithm>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -80,6 +82,18 @@ struct SearchResult
     Statistics statistics {};
     /// Ordered by worker index. Shared task-repository memory is reported only by statistics.
     std::vector<Statistics> worker_statistics;
+
+    /// Fraction of aggregate search-worker capacity not spent waiting for work.
+    ygg::float_t get_worker_utilization() const noexcept
+    {
+        const auto search_time = std::chrono::duration<long double>(statistics.get_search_time()).count();
+        const auto capacity = search_time * worker_statistics.size();
+        if (capacity <= 0)
+            return 0;
+
+        const auto idle_time = std::chrono::duration<long double>(statistics.get_idle_time()).count();
+        return static_cast<ygg::float_t>(std::clamp(1.0L - idle_time / capacity, 0.0L, 1.0L));
+    }
 };
 
 }

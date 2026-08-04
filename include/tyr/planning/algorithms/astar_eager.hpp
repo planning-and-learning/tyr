@@ -32,6 +32,12 @@
 namespace tyr::planning::astar_eager
 {
 
+enum class ParallelSearchMode : uint8_t
+{
+    SYNCHRONOUS,
+    ASYNCHRONOUS,
+};
+
 template<TaskKind Kind>
 struct Options
 {
@@ -44,6 +50,7 @@ struct Options
     CostMode cost_mode = CostMode::GENERAL;
     /// Values above one enable hash-distributed shared-memory search; custom strategies must provide independent workers.
     size_t num_search_workers = 1;
+    ParallelSearchMode parallel_search_mode = ParallelSearchMode::SYNCHRONOUS;
     uint64_t random_seed = 0;
     bool shuffle_labeled_succ_nodes = false;
 

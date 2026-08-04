@@ -5,6 +5,7 @@ import pytest
 pytest.importorskip("lab")
 
 from experiments import run_search
+from experiments.parser_search import SearchParser
 
 
 def configuration(**overrides):
@@ -168,6 +169,65 @@ def test_default_output_separates_planners():
     gbfs = what(name="ipc", planner="gbfs_lazy")
 
     assert run_search.default_output_dir(astar, how_config) != run_search.default_output_dir(gbfs, how_config)
+
+
+def test_search_parser_reads_parallel_statistics(tmp_path):
+    (tmp_path / "run.log").write_text(
+        """[INPUT] Num worker threads: 1
+[INPUT] Num search workers: 4
+[INPUT] Parallel search mode: synchronous
+[GBFS] Start node h_value: 3.5
+[GBFS] Plan cost: 1.25e+1
+[GBFS] Plan length: 3
+[Search] Search time: 100 ms (100000000 ns)
+[Search] Idle worker time: 75 ms (75000000 ns)
+[Search] Worker utilization: 0.8125
+[Search] Number of expanded states: 40
+[Search] Number of generated states: 70
+[Search] Number of dead-end states: 2
+[Search] Number of pruned states: 5
+[Search] Number of registered states: 65
+[Search] State storage memory usage: 1000 bytes
+[Search] Action bindings memory usage: 101 bytes
+[Search] Predicate bindings memory usage: 102 bytes
+[Search] Axiom bindings memory usage: 103 bytes
+[Search] Function bindings memory usage: 104 bytes
+[Search] Worker 0: idle=25000000 ns, expanded=25, generated=40, deadends=1, pruned=2, registered=35, state_storage=600 bytes
+[Search] Worker 1: idle=50000000 ns, expanded=15, generated=30, deadends=1, pruned=3, registered=30, state_storage=400 bytes
+[Search] Number of expanded states at last snapshot: 39
+[Search] Number of generated states at last snapshot: 69
+[Search] Number of deadend states at last snapshot: 1
+[Search] Number of pruned states at last snapshot: 4
+[Total] Retained plan states memory usage: 200 bytes
+[Total] Peak memory usage: 3000 bytes
+[Total] Total time: 120 ms (120000000 ns)
+""",
+        encoding="utf-8",
+    )
+    props = {}
+
+    SearchParser().parse(tmp_path, props)
+
+    assert props["cost"] == 12.5
+    assert props["initial_h_value"] == 3.5
+    assert props["num_search_workers"] == 4
+    assert props["parallel_search_mode"] == "synchronous"
+    assert props["idle_time_ns"] == 75_000_000
+    assert props["idle_time_s"] == 0.075
+    assert props["worker_utilization"] == 0.8125
+    assert props["num_deadends"] == 2
+    assert props["num_pruned"] == 5
+    assert props["num_registered_states"] == 65
+    assert props["search_state_storage_memory_usage_bytes"] == 1000
+    assert props["search_function_bindings_memory_usage_bytes"] == 104
+    assert props["worker_idle_time_ns"] == [25_000_000, 50_000_000]
+    assert props["worker_num_expanded"] == [25, 15]
+    assert props["worker_num_registered_states"] == [35, 30]
+    assert props["worker_state_storage_memory_usage_bytes"] == [600, 400]
+    assert props["worker_utilizations"] == [0.75, 0.5]
+    assert props["num_deadends_until_last_snapshot"] == 1
+    assert props["num_pruned_until_last_snapshot"] == 4
+    assert props["retained_plan_states_memory_usage_bytes"] == 200
 
 
 def test_tetralith_state_round_trip(tmp_path):

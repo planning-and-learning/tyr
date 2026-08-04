@@ -19,6 +19,7 @@
 
 #include "ground/module.hpp"
 #include "lifted/module.hpp"
+#include "tyr/planning/algorithms/astar_eager.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/formatter.hpp"
 
@@ -60,6 +61,10 @@ void bind_module_definitions(nb::module_& m)
      */
 
     nb::enum_<CostMode>(m, "CostMode").value("UNIT", CostMode::UNIT).value("GENERAL", CostMode::GENERAL);
+
+    nb::enum_<astar_eager::ParallelSearchMode>(m, "ParallelSearchMode")
+        .value("SYNCHRONOUS", astar_eager::ParallelSearchMode::SYNCHRONOUS)
+        .value("ASYNCHRONOUS", astar_eager::ParallelSearchMode::ASYNCHRONOUS);
 
     auto ground_module = m.def_submodule("ground");
     bind_ground_module_definitions(ground_module);

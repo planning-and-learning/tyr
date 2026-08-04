@@ -48,6 +48,26 @@ void print_summary(const formalism::planning::Repository& repository)
                      + repository.template memory_usage<formalism::RelationBinding<formalism::Function<formalism::AuxiliaryTag>>>()
               << " bytes" << std::endl;
 }
+
+template<TaskKind Kind>
+void print_search_statistics(const planning::SearchResult<Kind>& result)
+{
+    fmt::print(std::cout, "[Search] Worker utilization: {}\n", result.get_worker_utilization());
+    for (size_t i = 0; i < result.worker_statistics.size(); ++i)
+    {
+        const auto& worker = result.worker_statistics[i];
+        fmt::print(std::cout,
+                   "[Search] Worker {}: idle={} ns, expanded={}, generated={}, deadends={}, pruned={}, registered={}, state_storage={} bytes\n",
+                   i,
+                   ygg::to_ns(worker.get_idle_time()),
+                   worker.get_num_expanded(),
+                   worker.get_num_generated(),
+                   worker.get_num_deadends(),
+                   worker.get_num_pruned(),
+                   worker.get_num_registered_states(),
+                   worker.get_state_storage_memory_usage());
+    }
+}
 }
 
 int main(int argc, char** argv)
@@ -172,6 +192,7 @@ int main(int argc, char** argv)
                 throw std::invalid_argument("The heuristic is not implemented.");
 
             auto result = planning::gbfs_lazy::find_solution(*lifted_task, *successor_generator, *heuristic, options);
+            print_search_statistics(result);
 
             if (result.status == planning::SearchStatus::SOLVED)
             {
@@ -242,6 +263,7 @@ int main(int argc, char** argv)
                     throw std::invalid_argument("The heuristic is not implemented.");
 
                 auto result = planning::gbfs_lazy::find_solution(*ground_task, *successor_generator, *heuristic, options);
+                print_search_statistics(result);
 
                 if (result.status == planning::SearchStatus::SOLVED)
                 {

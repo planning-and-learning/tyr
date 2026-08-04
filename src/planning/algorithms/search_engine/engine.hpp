@@ -88,6 +88,7 @@ public:
     using Options = typename SearchPolicy::Options;
     using SearchNode = typename SearchPolicy::SearchNode;
     using WorkerExecutionState = typename ExecutionPolicy::WorkerState;
+    static constexpr bool supports_f_layer_synchronization = SearchPolicy::supports_f_layer_synchronization;
 
     struct RoutedSuccessor
     {
@@ -228,7 +229,7 @@ private:
                     return;
             }
 
-            if (!worker.search.empty())
+            if (m_execution.can_expand(*this, worker))
             {
                 expand_one(worker);
                 continue;
@@ -307,6 +308,8 @@ private:
         const auto start_state_index = start_state.get_index();
         const auto start_g_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_start_node.get_metric());
         const auto start_h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(start_worker.heuristic.evaluate(start_state));
+        if (std::isnan(start_h_value))
+            throw std::runtime_error("find_solution(...): start heuristic value is NaN.");
         m_execution.initialize_best_h(start_h_value);
         auto& start_search_node = start_worker.search.initialize_start(start_state_index, start_g_value, start_h_value);
 
@@ -363,7 +366,9 @@ private:
         }
 
         start_worker.search.open_start(start_state_index, start_search_node);
-        m_execution.start(m_options.max_time);
+        m_execution.start(m_options.max_time,
+                          start_worker.search.get_start_priority(),
+                          SearchPolicy::synchronize_f_layers(m_options));
         try
         {
             m_execution.invoke(*this);
@@ -533,7 +538,8 @@ private:
         const auto& successor_state = successor_node.get_state();
         auto& successor_search_node = worker.search.get_search_node(successor_state.get_index());
 
-        assert(!std::isnan(successor_node.get_metric()));
+        if (std::isnan(successor_node.get_metric()))
+            throw std::runtime_error("find_solution(...): successor metric value is NaN.");
 
         const auto is_new = successor_search_node.status == SearchNodeStatus::NEW;
         if (is_new && !m_execution.reserve_state(worker.search.get_search_nodes().size(), m_options.max_num_states))
@@ -543,6 +549,8 @@ private:
         }
 
         const auto g_value = compute_successor_g_value(routed_successor.metadata.source_g_value, successor_node.get_metric(), m_options.cost_mode);
+        if (std::isnan(g_value))
+            throw std::runtime_error("find_solution(...): successor path cost is NaN.");
         const auto normalized_node = Node<Kind>(successor_state, g_value);
         const auto normalized_successor = LabeledNode<Kind> { labeled_successor.label, normalized_node };
         const auto emit_transition = [&](TransitionOutcome outcome)
@@ -564,7 +572,23 @@ private:
                 worker.search.set_parent(successor_search_node, routed_successor.metadata.parent);
                 successor_search_node.g_value = g_value;
 
+                if constexpr (ExecutionPolicy::parallel)
+                {
+                    if (worker.goal_strategy->is_dynamic_goal_satisfied(m_start_node.get_state(), successor_state))
+                    {
+                        successor_search_node.status = SearchNodeStatus::GOAL;
+                        static_cast<void>(m_execution.consider_goal(*this,
+                                                                    WorkerStateIndex<Kind> { worker.index, successor_state.get_index() },
+                                                                    g_value,
+                                                                    SearchPolicy::terminate_on_goal));
+                        emit_transition(TransitionOutcome::GOAL);
+                        return m_execution.running() ? AcceptanceResult::DISCARDED : AcceptanceResult::TERMINAL;
+                    }
+                }
+
                 const auto h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(worker.heuristic.evaluate(successor_state));
+                if (std::isnan(h_value))
+                    throw std::runtime_error("find_solution(...): successor heuristic value is NaN.");
                 if (h_value == std::numeric_limits<ygg::float_t>::infinity())
                 {
                     successor_search_node.status = SearchNodeStatus::DEAD_END;
@@ -572,10 +596,11 @@ private:
                     return AcceptanceResult::DISCARDED;
                 }
 
-                successor_search_node.status = worker.goal_strategy->is_dynamic_goal_satisfied(m_start_node.get_state(), successor_state) ?
-                                                   SearchNodeStatus::GOAL :
-                                                   SearchNodeStatus::OPEN;
+                const auto is_goal = !ExecutionPolicy::parallel
+                                     && worker.goal_strategy->is_dynamic_goal_satisfied(m_start_node.get_state(), successor_state);
+                successor_search_node.status = is_goal ? SearchNodeStatus::GOAL : SearchNodeStatus::OPEN;
                 worker.search.open_successor(successor_state.get_index(), g_value, h_value, successor_search_node.status, false);
+
                 emit_transition(successor_search_node.status == SearchNodeStatus::GOAL ? TransitionOutcome::GOAL :
                                                                                          (is_new ? TransitionOutcome::OPENED : TransitionOutcome::RELAXED));
                 return AcceptanceResult::QUEUED;

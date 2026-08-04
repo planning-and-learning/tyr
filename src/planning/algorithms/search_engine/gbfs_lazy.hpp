@@ -25,9 +25,11 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <concepts>
 #include <cstddef>
 #include <limits>
+#include <stdexcept>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -45,6 +47,7 @@ public:
     using ParentState = std::conditional_t<std::same_as<Search, SequentialSearch>, ygg::Index<State<Kind>>, WorkerStateIndex<Kind>>;
     static constexpr bool eager = false;
     static constexpr bool terminate_on_goal = true;
+    static constexpr bool supports_f_layer_synchronization = false;
 
     struct SearchNode
     {
@@ -110,6 +113,8 @@ public:
 
     bool empty() const { return m_openlist.empty(); }
 
+    static bool synchronize_f_layers(const Options&) noexcept { return false; }
+
     PoppedEntry pop()
     {
         const auto state = m_openlist.top();
@@ -139,6 +144,8 @@ public:
         std::forward<EmitEvent>(emit_event)([&](auto& handler) { handler.on_expand_node(node); });
 
         m_state_h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_heuristic.evaluate(node.get_state()));
+        if (std::isnan(m_state_h_value))
+            throw std::runtime_error("GBFS heuristic value is NaN.");
         if (m_state_h_value == std::numeric_limits<ygg::float_t>::infinity())
         {
             search_node.status = SearchNodeStatus::DEAD_END;
