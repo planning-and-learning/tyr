@@ -62,9 +62,10 @@ public:
     create_state(const std::vector<::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag>>& fluent_facts,
                  const std::vector<::tyr::formalism::planning::GroundFunctionTermViewValuePair<::tyr::formalism::FluentTag>>& fterm_values);
 
-    ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>> get_state_builder();
+    ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> get_state_builder();
 
-    StateView<LiftedTag> register_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>> state);
+    /// The builder must come from this repository and have no retained mutable aliases.
+    StateView<LiftedTag> register_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state);
     [[nodiscard]] StateRepositoryPtr<LiftedTag> make_worker(ygg::ExecutionContextPtr execution_context) const;
 
     size_t memory_usage() const noexcept;

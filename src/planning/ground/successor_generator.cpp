@@ -254,7 +254,7 @@ SuccessorGenerator<GroundTag>::generate_successor_state(const Node<GroundTag>& n
     return PendingActionResult { m_impl->evaluator.executor.apply_action_unregistered(state_context, ground_action(binding), out_state) };
 }
 
-Node<GroundTag> SuccessorGenerator<GroundTag>::finalize_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>> state,
+Node<GroundTag> SuccessorGenerator<GroundTag>::finalize_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state,
                                                                         PendingActionResult result)
 {
     return m_impl->evaluator.executor.finalize_action(*m_impl->evaluator.state_repository, std::move(state), result.auxiliary_value);

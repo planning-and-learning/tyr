@@ -50,7 +50,7 @@ concept SuccessorGeneratorConcept = requires(T& r,
                                              std::vector<::tyr::formalism::planning::ActionBindingView>& action_bindings,
                                              ::tyr::formalism::planning::ActionBindingView binding,
                                              ygg::Builder<State<Kind>>& state_builder,
-                                             ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>> state_builder_ptr,
+                                             ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state_builder_ptr,
                                              PendingActionResult pending_result,
                                              ygg::ExecutionContextPtr execution_context) {
     requires TaskKind<Kind>;

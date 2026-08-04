@@ -343,7 +343,7 @@ SuccessorGenerator<LiftedTag>::generate_successor_state(const Node<LiftedTag>& n
     return PendingActionResult { m_impl->generate_successor_state(node, m_impl->evaluator.scratch_action_binding, out_state) };
 }
 
-Node<LiftedTag> SuccessorGenerator<LiftedTag>::finalize_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>> state,
+Node<LiftedTag> SuccessorGenerator<LiftedTag>::finalize_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state,
                                                                         PendingActionResult result)
 {
     return m_impl->evaluator.executor.finalize_action(*m_impl->evaluator.state_repository, std::move(state), result.auxiliary_value);

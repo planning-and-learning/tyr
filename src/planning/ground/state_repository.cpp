@@ -84,7 +84,7 @@ struct StateRepository<GroundTag>::Impl
         AtomStorageBackend<GroundTag, StateStoragePolicyTag> derived_backend;
         NumericStorageBackend<GroundTag, StateStoragePolicyTag> numeric_backend;
         ygg::IndexedHashSet<State<GroundTag>> packed_states;
-        ygg::SharedObjectPool<ygg::Builder<State<GroundTag>>> state_builder_pool;
+        ygg::SharedObjectPool<ygg::Builder<State<GroundTag>>, true> state_builder_pool;
         AxiomEvaluatorPtr<GroundTag> axiom_evaluator;
     };
 
@@ -144,7 +144,7 @@ StateView<GroundTag> StateRepository<GroundTag>::get_initial_state()
     for (const auto fterm_value : m_impl->definition->task->get_task().get_fterm_values<f::FluentTag>())
         state_builder->set(fterm_value.get_fterm().get_index(), fterm_value.get_value());
 
-    return register_state(state_builder);
+    return register_state(std::move(state_builder));
 }
 
 StateView<GroundTag> StateRepository<GroundTag>::get_registered_state(ygg::Index<State<GroundTag>> state_index)
@@ -188,7 +188,7 @@ StateView<GroundTag> StateRepository<GroundTag>::create_state(const std::vector<
     return register_state(std::move(state_builder));
 }
 
-ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>> StateRepository<GroundTag>::get_state_builder()
+ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> StateRepository<GroundTag>::get_state_builder()
 {
     auto state_builder = m_impl->evaluator.state_builder_pool.get_or_allocate();
     state_builder->clear();
@@ -199,7 +199,7 @@ ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>> StateRepository<GroundT
     return state_builder;
 }
 
-StateView<GroundTag> StateRepository<GroundTag>::register_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>> state)
+StateView<GroundTag> StateRepository<GroundTag>::register_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state)
 {
     if (m_impl->evaluator.axiom_evaluator)
         m_impl->evaluator.axiom_evaluator->compute_extended_state(*state);

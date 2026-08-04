@@ -22,6 +22,7 @@
 #include "tyr/planning/declarations.hpp"
 
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -43,6 +44,8 @@ struct Options
     CostMode cost_mode = CostMode::GENERAL;
     bool use_preferred_actions = true;
     ygg::uint_t boost_preferred_queue = 1000;
+    /// Values above one enable hash-distributed shared-memory search, which currently requires the default pruning and goal strategies.
+    size_t num_search_workers = 1;
     uint64_t random_seed = 0;
     bool shuffle_labeled_succ_nodes = false;
 

@@ -82,7 +82,7 @@ struct StateRepository<LiftedTag>::Impl
         AtomStorageBackend<LiftedTag, StateStoragePolicyTag> derived_backend;
         NumericStorageBackend<LiftedTag, StateStoragePolicyTag> numeric_backend;
         ygg::IndexedHashSet<State<LiftedTag>> packed_states;
-        ygg::SharedObjectPool<ygg::Builder<State<LiftedTag>>> state_builder_pool;
+        ygg::SharedObjectPool<ygg::Builder<State<LiftedTag>>, true> state_builder_pool;
         AxiomEvaluatorPtr<LiftedTag> axiom_evaluator;
     };
 
@@ -142,7 +142,7 @@ StateView<LiftedTag> StateRepository<LiftedTag>::get_initial_state()
     for (const auto fterm_value : m_impl->definition->task->get_task().get_fterm_values<f::FluentTag>())
         state_builder->set(fterm_value.get_fterm().get_index(), fterm_value.get_value());
 
-    return register_state(state_builder);
+    return register_state(std::move(state_builder));
 }
 
 StateView<LiftedTag> StateRepository<LiftedTag>::get_registered_state(ygg::Index<State<LiftedTag>> state_index)
@@ -187,7 +187,7 @@ StateRepository<LiftedTag>::create_state(const std::vector<fp::FDRFactView<f::Fl
     return register_state(std::move(state_builder));
 }
 
-ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>> StateRepository<LiftedTag>::get_state_builder()
+ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> StateRepository<LiftedTag>::get_state_builder()
 {
     auto state_builder = m_impl->evaluator.state_builder_pool.get_or_allocate();
     state_builder->clear();
@@ -195,7 +195,7 @@ ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>> StateRepository<LiftedT
     return state_builder;
 }
 
-StateView<LiftedTag> StateRepository<LiftedTag>::register_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>> state)
+StateView<LiftedTag> StateRepository<LiftedTag>::register_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state)
 {
     if (m_impl->evaluator.axiom_evaluator)
         m_impl->evaluator.axiom_evaluator->compute_extended_state(*state);

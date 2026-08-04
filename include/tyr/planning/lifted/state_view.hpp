@@ -40,7 +40,7 @@ public:
     using TaskType = planning::Task<::tyr::LiftedTag>;
 
     View(std::shared_ptr<planning::StateRepository<::tyr::LiftedTag>> owner,
-         ygg::SharedObjectPoolPtr<Builder<planning::State<::tyr::LiftedTag>>> state_builder) noexcept;
+         ygg::SharedObjectPoolPtr<Builder<planning::State<::tyr::LiftedTag>>, true> state_builder) noexcept;
     View(const View&);
     View(View&&) noexcept;
     View& operator=(const View&);
@@ -106,8 +106,9 @@ private:
     template<::tyr::formalism::FactKind T>
     const std::vector<ygg::float_t>& get_numeric_variables() const noexcept;
 
+    // The pooled builder must be released before its owning repository.
     std::shared_ptr<planning::StateRepository<::tyr::LiftedTag>> m_state_repository;
-    ygg::SharedObjectPoolPtr<Builder<planning::State<::tyr::LiftedTag>>> m_state_builder;
+    ygg::SharedObjectPoolPtr<Builder<planning::State<::tyr::LiftedTag>>, true> m_state_builder;
 };
 
 using LiftedStateView = ygg::View<ygg::Index<planning::State<::tyr::LiftedTag>>, std::shared_ptr<planning::StateRepository<::tyr::LiftedTag>>>;

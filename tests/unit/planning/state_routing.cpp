@@ -23,6 +23,8 @@
 #include <filesystem>
 #include <future>
 #include <gtest/gtest.h>
+#include <memory>
+#include <optional>
 #include <thread>
 #include <tuple>
 #include <utility>
@@ -67,6 +69,48 @@ void expect_state_routing(const p::TaskPtr<Kind>& task)
     const auto initial = generator->get_initial_node();
     const auto worker_initial = worker->get_initial_node();
     const auto dist_hash = p::DistHash<Kind, p::RandomDistHashTag>(17);
+
+    const auto expected_source_index = initial.get_state().get_index();
+    const auto expected_source_hash = dist_hash.hash(initial.get_state().get_state_builder());
+    auto source = std::optional<p::StateView<Kind>>(repository->get_registered_state(expected_source_index));
+    auto transferred_source = source;
+    source.reset();
+    auto source_reader = std::jthread(
+        [source = std::move(transferred_source), expected_source_index, expected_source_hash, &dist_hash]() mutable
+        {
+            EXPECT_EQ(source->get_index(), expected_source_index);
+            EXPECT_EQ(dist_hash.hash(source->get_state_builder()), expected_source_hash);
+            source.reset();
+        });
+    source_reader.join();
+
+    auto thread_release_worker = generator->make_worker(ygg::ExecutionContext::create(1));
+    auto thread_released_state = thread_release_worker->get_initial_node().get_state();
+    const auto thread_release_owner = std::weak_ptr(thread_released_state.get_state_repository());
+    thread_release_worker.reset();
+    EXPECT_FALSE(thread_release_owner.expired());
+    {
+        auto releaser = std::jthread([state = std::move(thread_released_state)] { EXPECT_FALSE(state.get_index().is_max()); });
+    }
+    EXPECT_TRUE(thread_release_owner.expired());
+
+    auto copy_assignment_worker = generator->make_worker(ygg::ExecutionContext::create(1));
+    auto copy_assigned_source = copy_assignment_worker->get_initial_node().get_state();
+    const auto copy_assignment_owner = std::weak_ptr(copy_assigned_source.get_state_repository());
+    copy_assignment_worker.reset();
+    EXPECT_FALSE(copy_assignment_owner.expired());
+    copy_assigned_source = initial.get_state();
+    EXPECT_TRUE(copy_assignment_owner.expired());
+    EXPECT_EQ(copy_assigned_source.get_state_repository(), repository);
+
+    auto move_assignment_worker = generator->make_worker(ygg::ExecutionContext::create(1));
+    auto move_assigned_source = move_assignment_worker->get_initial_node().get_state();
+    const auto move_assignment_owner = std::weak_ptr(move_assigned_source.get_state_repository());
+    move_assignment_worker.reset();
+    EXPECT_FALSE(move_assignment_owner.expired());
+    move_assigned_source = repository->get_registered_state(expected_source_index);
+    EXPECT_TRUE(move_assignment_owner.expired());
+    EXPECT_EQ(move_assigned_source.get_state_repository(), repository);
 
     EXPECT_EQ(dist_hash.hash(initial.get_state().get_state_builder()), dist_hash.hash(worker_initial.get_state().get_state_builder()));
     EXPECT_EQ(dist_hash.owner(initial.get_state().get_state_builder(), 19), dist_hash.owner(worker_initial.get_state().get_state_builder(), 19));

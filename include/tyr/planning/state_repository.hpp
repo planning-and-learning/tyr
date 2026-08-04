@@ -39,7 +39,7 @@ concept StateRepositoryConcept =
     requires(T& r,
              const T& const_r,
              ygg::Index<State<Kind>> index,
-             ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>> state_builder,
+             ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state_builder,
              const std::vector<ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>& fluent_facts,
              const std::vector<std::pair<ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>>, ygg::float_t>>& fterm_values,
              const std::vector<::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag>>& fluent_fact_views,
@@ -50,7 +50,7 @@ concept StateRepositoryConcept =
         { r.get_registered_state(index) } -> std::same_as<StateView<Kind>>;
         { r.create_state(fluent_facts, fterm_values) } -> std::same_as<StateView<Kind>>;
         { r.create_state(fluent_fact_views, fterm_value_views) } -> std::same_as<StateView<Kind>>;
-        { r.get_state_builder() } -> std::same_as<ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>>>;
+        { r.get_state_builder() } -> std::same_as<ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true>>;
         { r.register_state(state_builder) } -> std::same_as<StateView<Kind>>;
         { const_r.make_worker(execution_context) } -> std::same_as<StateRepositoryPtr<Kind>>;
         { r.get_task() } -> std::same_as<const TaskPtr<Kind>&>;

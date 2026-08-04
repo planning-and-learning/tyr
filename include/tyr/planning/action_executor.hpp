@@ -77,7 +77,7 @@ public:
 
     template<TaskKind Kind>
     Node<Kind> finalize_action(StateRepository<Kind>& state_repository,
-                               ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>> successor_state_builder,
+                               ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> successor_state_builder,
                                ygg::float_t auxiliary_value);
 
 private:

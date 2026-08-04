@@ -56,7 +56,8 @@ int main(int argc, char** argv)
     program.add_argument("-D", "--domain-filepath").required().help("The path to the PDDL domain file.");
     program.add_argument("-P", "--problem-filepath").required().help("The path to the PDDL problem file.");
     program.add_argument("-O", "--plan-filepath").default_value(std::string("plan.out")).help("The path to the output plan file.");
-    program.add_argument("-N", "--num-worker-threads").default_value(size_t(1)).scan<'u', size_t>().help("The number of worker threads.");
+    program.add_argument("-N", "--num-worker-threads").default_value(size_t(1)).scan<'u', size_t>().help("The number of inner worker threads.");
+    program.add_argument("--num-search-workers").default_value(size_t(1)).scan<'u', size_t>().help("The number of search workers.");
     program.add_argument("-R", "--random-seed").default_value(uint64_t(0)).scan<'u', uint64_t>().help("The random seed.");
     program.add_argument("-S", "--shuffle-labeled-succ-nodes").default_value(false).implicit_value(true).help("Toggle shuffling the labeled successor nodes.");
     program.add_argument("--disable-preferred-actions").default_value(false).implicit_value(true).help("Disable preferred action queues.");
@@ -95,6 +96,7 @@ int main(int argc, char** argv)
         auto problem_filepath = program.get<std::string>("--problem-filepath");
         auto plan_filepath = program.get<std::string>("--plan-filepath");
         auto num_worker_threads = program.get<std::size_t>("--num-worker-threads");
+        auto num_search_workers = program.get<std::size_t>("--num-search-workers");
         auto random_seed = program.get<uint64_t>("--random-seed");
         auto shuffle_labeled_succ_nodes = program.get<bool>("--shuffle-labeled-succ-nodes");
         auto disable_preferred_actions = program.get<bool>("--disable-preferred-actions");
@@ -105,7 +107,20 @@ int main(int argc, char** argv)
         auto search_cost_mode = program.get<std::string>("--search-cost-type") == "unit" ? CostMode::UNIT : CostMode::GENERAL;
         auto verbosity = program.get<size_t>("--verbosity");
 
+        if (num_search_workers == 0)
+        {
+            std::cerr << "--num-search-workers must be greater than zero." << std::endl;
+            return 1;
+        }
+
+        if (num_worker_threads > 1 && num_search_workers > 1)
+        {
+            std::cerr << "--num-worker-threads and --num-search-workers cannot both exceed 1." << std::endl;
+            return 1;
+        }
+
         std::cout << "[INPUT] Num worker threads: " << num_worker_threads << std::endl;
+        std::cout << "[INPUT] Num search workers: " << num_search_workers << std::endl;
         std::cout << "[INPUT] Random seed: " << random_seed << std::endl;
         std::cout << "[INPUT] Shuffle labeled successor nodes: " << shuffle_labeled_succ_nodes << std::endl;
         std::cout << "[INPUT] Use preferred actions: " << !disable_preferred_actions << std::endl;
@@ -136,6 +151,7 @@ int main(int argc, char** argv)
             options.event_handler = planning::gbfs_lazy::DefaultEventHandler<LiftedTag>::create(verbosity);
             options.cost_mode = search_cost_mode;
             options.random_seed = random_seed;
+            options.num_search_workers = num_search_workers;
             options.use_preferred_actions = !disable_preferred_actions;
             options.shuffle_labeled_succ_nodes = shuffle_labeled_succ_nodes;
 
@@ -170,13 +186,17 @@ int main(int argc, char** argv)
                 plan_file.close();
             }
 
-            successor_generator->print_summary(1);
-            if (successor_generator->get_state_repository()->get_axiom_evaluator())
-                successor_generator->get_state_repository()->get_axiom_evaluator()->print_summary(1);
-            heuristic->print_summary(1);
+            if (num_search_workers == 1)
+            {
+                successor_generator->print_summary(1);
+                if (successor_generator->get_state_repository()->get_axiom_evaluator())
+                    successor_generator->get_state_repository()->get_axiom_evaluator()->print_summary(1);
+                heuristic->print_summary(1);
+            }
 
             print_summary(*lifted_task->get_repository());
-            std::cout << "[Total] States memory usage: " << successor_generator->get_state_repository()->memory_usage() << " bytes" << std::endl;
+            std::cout << (num_search_workers == 1 ? "[Total] States memory usage: " : "[Total] Retained plan states memory usage: ")
+                      << successor_generator->get_state_repository()->memory_usage() << " bytes" << std::endl;
         }
         else
         {
@@ -201,6 +221,7 @@ int main(int argc, char** argv)
                 options.event_handler = planning::gbfs_lazy::DefaultEventHandler<GroundTag>::create(verbosity);
                 options.cost_mode = search_cost_mode;
                 options.random_seed = random_seed;
+                options.num_search_workers = num_search_workers;
                 options.use_preferred_actions = !disable_preferred_actions;
                 options.shuffle_labeled_succ_nodes = shuffle_labeled_succ_nodes;
 
@@ -236,7 +257,8 @@ int main(int argc, char** argv)
                 }
 
                 print_summary(*ground_task->get_repository());
-                std::cout << "[Total] States memory usage: " << successor_generator->get_state_repository()->memory_usage() << " bytes" << std::endl;
+                std::cout << (num_search_workers == 1 ? "[Total] States memory usage: " : "[Total] Retained plan states memory usage: ")
+                          << successor_generator->get_state_repository()->memory_usage() << " bytes" << std::endl;
             }
         }
     }

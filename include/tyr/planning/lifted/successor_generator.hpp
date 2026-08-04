@@ -77,7 +77,7 @@ public:
 
     PendingActionResult
     generate_successor_state(const Node<LiftedTag>& node, ::tyr::formalism::planning::ActionBindingView binding, ygg::Builder<State<LiftedTag>>& out_state);
-    Node<LiftedTag> finalize_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>> state, PendingActionResult result);
+    Node<LiftedTag> finalize_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state, PendingActionResult result);
 
     // Action binding API (no interning)
     Node<LiftedTag> get_successor_node(const Node<LiftedTag>& node,

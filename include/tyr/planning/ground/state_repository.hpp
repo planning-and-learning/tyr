@@ -62,9 +62,10 @@ public:
     create_state(const std::vector<::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag>>& fluent_facts,
                  const std::vector<::tyr::formalism::planning::GroundFunctionTermViewValuePair<::tyr::formalism::FluentTag>>& fterm_values);
 
-    ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>> get_state_builder();
+    ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> get_state_builder();
 
-    StateView<GroundTag> register_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>> state);
+    /// The builder must come from this repository and have no retained mutable aliases.
+    StateView<GroundTag> register_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state);
     [[nodiscard]] StateRepositoryPtr<GroundTag> make_worker(ygg::ExecutionContextPtr execution_context) const;
 
     size_t memory_usage() const noexcept;

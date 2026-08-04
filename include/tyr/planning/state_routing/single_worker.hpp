@@ -42,7 +42,7 @@ template<TaskKind Kind, DistHashKind HashKind, typename Metadata>
 class SingleWorkerStateRouter
 {
     using Builder = ygg::Builder<State<Kind>>;
-    using LocalState = ygg::SharedObjectPoolPtr<Builder>;
+    using LocalState = ygg::SharedObjectPoolPtr<Builder, true>;
 
     struct PendingSuccessor
     {

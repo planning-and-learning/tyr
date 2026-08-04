@@ -278,6 +278,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "cost_mode": planning.CostMode.GENERAL,
             "use_preferred_actions": True,
             "boost_preferred_queue": 1000,
+            "num_search_workers": 1,
             "random_seed": 0,
             "shuffle_labeled_succ_nodes": False,
         },
@@ -331,6 +332,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "cost_mode",
             "use_preferred_actions",
             "boost_preferred_queue",
+            "num_search_workers",
             "random_seed",
             "shuffle_labeled_succ_nodes",
         ),
@@ -393,6 +395,34 @@ def _make_successor_generator(task_module: ModuleType, task: Task, state_reposit
         ExecutionContext(1),
         state_repository,
     )
+
+
+def test_parallel_lazy_gbfs_is_available_through_python_bindings():
+    ground_task, lifted_task = _make_gripper_tasks()
+
+    for task_module, task in (
+        (planning.ground, ground_task),
+        (planning.lifted, lifted_task),
+    ):
+        state_repository = _make_state_repository(task_module, task)
+        successor_generator = _make_successor_generator(task_module, task, state_repository)
+        event_handler = task_module.gbfs_lazy.DefaultEventHandler()
+        options = task_module.gbfs_lazy.Options()
+        options.event_handler = event_handler
+        options.num_search_workers = 2
+
+        result = task_module.gbfs_lazy.find_solution(
+            task,
+            successor_generator,
+            task_module.BlindHeuristic(),
+            options,
+        )
+
+        assert result.status == planning.SearchStatus.SOLVED
+        assert result.plan is not None
+        assert result.goal_node is not None
+        assert result.goal_node.get_state().get_state_repository() == state_repository
+        assert event_handler.get_statistics().get_num_expanded() > 0
 
 
 def test_planning_task_view_accessors_keep_temporary_owners_alive():

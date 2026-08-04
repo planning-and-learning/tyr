@@ -176,7 +176,7 @@ namespace ygg
 namespace planning = ::tyr::planning;
 
 LiftedStateView::View(std::shared_ptr<planning::StateRepository<::tyr::LiftedTag>> owner,
-                      ygg::SharedObjectPoolPtr<Builder<planning::State<::tyr::LiftedTag>>> state_builder) noexcept :
+                      ygg::SharedObjectPoolPtr<Builder<planning::State<::tyr::LiftedTag>>, true> state_builder) noexcept :
     m_state_repository(std::move(owner)),
     m_state_builder(std::move(state_builder))
 {
@@ -188,9 +188,25 @@ LiftedStateView::View(const View&) = default;
 
 LiftedStateView::View(View&&) noexcept = default;
 
-LiftedStateView& LiftedStateView::operator=(const View&) = default;
+LiftedStateView& LiftedStateView::operator=(const View& other)
+{
+    if (this != &other)
+    {
+        m_state_builder = other.m_state_builder;
+        m_state_repository = other.m_state_repository;
+    }
+    return *this;
+}
 
-LiftedStateView& LiftedStateView::operator=(View&&) noexcept = default;
+LiftedStateView& LiftedStateView::operator=(View&& other) noexcept
+{
+    if (this != &other)
+    {
+        m_state_builder = std::move(other.m_state_builder);
+        m_state_repository = std::move(other.m_state_repository);
+    }
+    return *this;
+}
 
 ygg::Index<planning::State<::tyr::LiftedTag>> LiftedStateView::get_index() const { return m_state_builder->get_index(); }
 

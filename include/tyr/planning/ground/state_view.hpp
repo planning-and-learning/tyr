@@ -41,7 +41,7 @@ public:
     using TaskType = planning::Task<::tyr::GroundTag>;
 
     View(std::shared_ptr<planning::StateRepository<::tyr::GroundTag>> owner,
-         ygg::SharedObjectPoolPtr<Builder<planning::State<::tyr::GroundTag>>> state_builder) noexcept;
+         ygg::SharedObjectPoolPtr<Builder<planning::State<::tyr::GroundTag>>, true> state_builder) noexcept;
     View(const View&);
     View(View&&) noexcept;
     View& operator=(const View&);
@@ -109,8 +109,9 @@ public:
     const std::vector<ygg::float_t>& get_numeric_variables() const noexcept;
 
 private:
+    // The pooled builder must be released before its owning repository.
     std::shared_ptr<planning::StateRepository<::tyr::GroundTag>> m_state_repository;
-    ygg::SharedObjectPoolPtr<Builder<planning::State<::tyr::GroundTag>>> m_state_builder;
+    ygg::SharedObjectPoolPtr<Builder<planning::State<::tyr::GroundTag>>, true> m_state_builder;
 };
 
 using GroundStateView = ygg::View<ygg::Index<planning::State<::tyr::GroundTag>>, std::shared_ptr<planning::StateRepository<::tyr::GroundTag>>>;

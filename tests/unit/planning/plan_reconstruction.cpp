@@ -21,6 +21,7 @@
 #include "tyr/planning/search_space/parallel.hpp"
 #include "tyr/planning/search_space/sequential.hpp"
 
+#include <chrono>
 #include <filesystem>
 #include <gtest/gtest.h>
 #include <limits>
@@ -28,6 +29,7 @@
 #include <optional>
 #include <ranges>
 #include <span>
+#include <stdexcept>
 #include <string_view>
 #include <vector>
 #include <yggdrasil/containers/segmented_vector.hpp>
@@ -194,6 +196,83 @@ void expect_plan_reconstruction(const p::TaskPtr<Kind>& task)
     expect_parallel_reconstruction(task);
 }
 
+template<TaskKind Kind>
+void expect_parallel_lazy_gbfs(const p::TaskPtr<Kind>& task)
+{
+    auto execution_context = ygg::ExecutionContext::create(1);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto repository = p::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
+    auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context, repository);
+    auto heuristic = p::BlindHeuristic<Kind>::create();
+
+    auto options = p::gbfs_lazy::Options<Kind> {};
+    options.num_search_workers = 2;
+    const auto result = p::gbfs_lazy::find_solution(*task, *generator, *heuristic, options);
+
+    ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
+    ASSERT_TRUE(result.plan);
+    ASSERT_TRUE(result.goal_node);
+    ASSERT_FALSE(result.plan->empty());
+
+    const auto expect_caller_state = [&](const auto& node)
+    {
+        const auto& state = node.get_state();
+        EXPECT_EQ(state.get_state_repository(), repository);
+        EXPECT_EQ(state.get_state_builder().get_index(), state.get_index());
+        EXPECT_EQ(repository->get_registered_state(state.get_index()), state);
+    };
+    expect_caller_state(result.plan->get_start_node());
+    for (const auto& successor : result.plan->get_labeled_succ_nodes())
+        expect_caller_state(successor.node);
+    expect_caller_state(*result.goal_node);
+
+    auto goal = p::ConjunctiveGoalStrategy<Kind>(*task);
+    EXPECT_TRUE(goal.is_dynamic_goal_satisfied(result.plan->get_start_node().get_state(), result.goal_node->get_state()));
+
+    options.num_search_workers = 0;
+    EXPECT_THROW(p::gbfs_lazy::find_solution(*task, *generator, *heuristic, options), std::invalid_argument);
+
+    if constexpr (std::numeric_limits<size_t>::max() > std::numeric_limits<ygg::uint_t>::max())
+    {
+        options.num_search_workers = static_cast<size_t>(std::numeric_limits<ygg::uint_t>::max()) + 1;
+        EXPECT_THROW(p::gbfs_lazy::find_solution(*task, *generator, *heuristic, options), std::invalid_argument);
+    }
+
+    options.num_search_workers = 2;
+    options.pruning_strategy = p::PruningStrategy<Kind>::create();
+    EXPECT_THROW(p::gbfs_lazy::find_solution(*task, *generator, *heuristic, options), std::invalid_argument);
+
+    options.pruning_strategy = nullptr;
+    options.goal_strategy = p::ConjunctiveGoalStrategy<Kind>::create(*task);
+    EXPECT_THROW(p::gbfs_lazy::find_solution(*task, *generator, *heuristic, options), std::invalid_argument);
+
+    options.goal_strategy = nullptr;
+    options.max_num_states = 1;
+    EXPECT_EQ(p::gbfs_lazy::find_solution(*task, *generator, *heuristic, options).status, p::SearchStatus::OUT_OF_STATES);
+
+    options.max_num_states = std::numeric_limits<ygg::uint_t>::max();
+    options.max_time = std::chrono::steady_clock::duration::zero();
+    EXPECT_EQ(p::gbfs_lazy::find_solution(*task, *generator, *heuristic, options).status, p::SearchStatus::OUT_OF_TIME);
+}
+
+template<TaskKind Kind>
+void expect_parallel_lazy_gbfs_exhaustion(const p::TaskPtr<Kind>& task)
+{
+    auto execution_context = ygg::ExecutionContext::create(1);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto repository = p::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
+    auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context, repository);
+    auto heuristic = p::BlindHeuristic<Kind>::create();
+    auto event_handler = p::gbfs_lazy::DefaultEventHandler<Kind>::create();
+    auto options = p::gbfs_lazy::Options<Kind> {};
+    options.event_handler = event_handler;
+    options.num_search_workers = 2;
+
+    EXPECT_EQ(p::gbfs_lazy::find_solution(*task, *generator, *heuristic, options).status, p::SearchStatus::EXHAUSTED);
+    EXPECT_GT(event_handler->get_statistics().get_num_expanded(), 0);
+    EXPECT_GT(event_handler->get_statistics().get_num_generated(), 0);
+}
+
 }
 
 TEST(TyrPlanningPlanReconstructionTest, ReconstructsGroundAndLiftedWorkerTrajectories)
@@ -207,6 +286,35 @@ TEST(TyrPlanningPlanReconstructionTest, ReconstructsGroundAndLiftedWorkerTraject
 
     expect_plan_reconstruction(ground_task);
     expect_plan_reconstruction(lifted_task);
+}
+
+TEST(TyrPlanningPlanReconstructionTest, ParallelLazyGBFSMaterializesGroundAndLiftedPlansInCallerRepository)
+{
+    const auto root = std::filesystem::path(BENCHMARKS_DIR);
+    auto lifted_task =
+        p::Task<LiftedTag>::create(make_test_parser(root / "classical/tests/gripper/domain.pddl").parse_task(root / "classical/tests/gripper/test-1.pddl"));
+    auto grounding_context = ygg::ExecutionContext::create(1);
+    auto ground_task = lifted_task->instantiate_ground_task(*grounding_context).task;
+    ASSERT_NE(ground_task, nullptr);
+
+    expect_parallel_lazy_gbfs(ground_task);
+    expect_parallel_lazy_gbfs(lifted_task);
+}
+
+TEST(TyrPlanningPlanReconstructionTest, ParallelLazyGBFSDetectsGlobalExhaustion)
+{
+    const auto benchmark_root = std::filesystem::path(BENCHMARKS_DIR);
+    const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/fixtures/planning/algorithms";
+    auto lifted_task = p::Task<LiftedTag>::create(
+        make_test_parser(benchmark_root / "classical/tests/gripper/domain.pddl").parse_task(fixture_root / "parallel_gripper_unsolvable.pddl"));
+    auto grounding_context = ygg::ExecutionContext::create(1);
+    auto grounding_options = p::GroundTaskInstantiationOptions {};
+    grounding_options.disable_invariant_synthesis = true;
+    auto ground_task = lifted_task->instantiate_ground_task(*grounding_context, grounding_options).task;
+    ASSERT_NE(ground_task, nullptr);
+
+    expect_parallel_lazy_gbfs_exhaustion(ground_task);
+    expect_parallel_lazy_gbfs_exhaustion(lifted_task);
 }
 
 }

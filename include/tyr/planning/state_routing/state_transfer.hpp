@@ -35,7 +35,7 @@ class StateTransferPool
 {
 public:
     using Builder = ygg::Builder<State<Kind>>;
-    using LocalState = ygg::SharedObjectPoolPtr<Builder>;
+    using LocalState = ygg::SharedObjectPoolPtr<Builder, true>;
     using TransferredState = ygg::UniqueObjectPoolPtr<Builder, true>;
 
     static_assert(std::is_nothrow_swappable_v<Builder>);

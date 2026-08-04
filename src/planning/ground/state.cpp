@@ -146,7 +146,7 @@ namespace ygg
 namespace planning = ::tyr::planning;
 
 GroundStateView::View(std::shared_ptr<planning::StateRepository<::tyr::GroundTag>> owner,
-                      ygg::SharedObjectPoolPtr<Builder<planning::State<::tyr::GroundTag>>> state_builder) noexcept :
+                      ygg::SharedObjectPoolPtr<Builder<planning::State<::tyr::GroundTag>>, true> state_builder) noexcept :
     m_state_repository(std::move(owner)),
     m_state_builder(std::move(state_builder))
 {
@@ -158,9 +158,25 @@ GroundStateView::View(const View&) = default;
 
 GroundStateView::View(View&&) noexcept = default;
 
-GroundStateView& GroundStateView::operator=(const View&) = default;
+GroundStateView& GroundStateView::operator=(const View& other)
+{
+    if (this != &other)
+    {
+        m_state_builder = other.m_state_builder;
+        m_state_repository = other.m_state_repository;
+    }
+    return *this;
+}
 
-GroundStateView& GroundStateView::operator=(View&&) noexcept = default;
+GroundStateView& GroundStateView::operator=(View&& other) noexcept
+{
+    if (this != &other)
+    {
+        m_state_builder = std::move(other.m_state_builder);
+        m_state_repository = std::move(other.m_state_repository);
+    }
+    return *this;
+}
 
 ygg::Index<planning::State<::tyr::GroundTag>> GroundStateView::get_index() const { return m_state_builder->get_index(); }
 

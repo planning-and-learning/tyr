@@ -277,7 +277,7 @@ ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Lifted
 
 template<TaskKind Kind>
 Node<Kind> ActionExecutor::finalize_action(StateRepository<Kind>& state_repository,
-                                           ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>> successor_state_builder,
+                                           ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> successor_state_builder,
                                            ygg::float_t auxiliary_value)
 {
     auto successor_state = state_repository.register_state(std::move(successor_state_builder));
@@ -292,9 +292,9 @@ Node<Kind> ActionExecutor::finalize_action(StateRepository<Kind>& state_reposito
 }
 
 template Node<LiftedTag> ActionExecutor::finalize_action(StateRepository<LiftedTag>& state_repository,
-                                                         ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>> successor_state_builder,
+                                                         ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> successor_state_builder,
                                                          ygg::float_t auxiliary_value);
 template Node<GroundTag> ActionExecutor::finalize_action(StateRepository<GroundTag>& state_repository,
-                                                         ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>> successor_state_builder,
+                                                         ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> successor_state_builder,
                                                          ygg::float_t auxiliary_value);
 }
