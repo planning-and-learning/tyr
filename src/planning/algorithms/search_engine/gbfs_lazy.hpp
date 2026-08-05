@@ -48,7 +48,8 @@ public:
     using WorkerEventHandlerPtr = gbfs_lazy::WorkerEventHandlerPtr<Kind>;
     using ParentState = typename ParentPolicy::Type;
     static constexpr bool terminate_on_goal = true;
-    static constexpr bool supports_f_layer_synchronization = false;
+    static constexpr bool supports_priority_layer_synchronization = false;
+    static constexpr bool emits_priority_layer_events = false;
 
     struct SearchNode
     {
@@ -131,13 +132,14 @@ public:
         return get_or_create_search_node(state, m_search_nodes, default_node);
     }
 
-    template<typename ImproveBestH, typename EmitEvent>
+    template<typename ImproveBestH, typename EmitEvent, typename FinishPriorityLayer>
     ExpansionResult prepare_expansion(const PoppedEntry&,
                                       const Node<Kind>& node,
                                       SearchNode& search_node,
                                       Statistics& statistics,
                                       ImproveBestH&& improve_best_h,
-                                      EmitEvent&& emit_event)
+                                      EmitEvent&& emit_event,
+                                      FinishPriorityLayer&&)
     {
         statistics.increment_num_expanded();
         std::forward<EmitEvent>(emit_event)([&](auto& handler) { handler.on_expand_node(node); });
@@ -232,6 +234,22 @@ public:
     }
 
     const ygg::SegmentedVector<SearchNode>& get_search_nodes() const noexcept { return m_search_nodes; }
+
+    static WorkerEventHandlerPtr make_worker_event_handler(const EventHandlerPtr& event_handler, ygg::Index<Worker> index)
+    {
+        return event_handler ? event_handler->make_worker(index) : nullptr;
+    }
+
+    template<typename Handler>
+    static void on_start_search(Handler& handler, const Node<Kind>& node, ygg::float_t priority)
+    {
+        handler.on_start_search(node, priority);
+    }
+
+    template<typename Handler>
+    static constexpr void on_finish_priority_layer(Handler&, ygg::float_t, const Statistics&) noexcept
+    {
+    }
 
 private:
     using Queue = PriorityQueue<QueueEntry>;

@@ -124,6 +124,7 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
 
         for event_handler in (task_module.brfs.DefaultEventHandler(), task_module.brfs.DefaultEventHandler(0)):
             assert isinstance(event_handler.get_progress_statistics(), planning.ProgressStatistics)
+            assert not hasattr(event_handler, "on_expand_node")
 
         for event_handler in (task_module.iw.DefaultEventHandler(), task_module.iw.DefaultEventHandler(0)):
             assert isinstance(event_handler.get_statistics(), task_module.iw.Statistics)
@@ -293,6 +294,8 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "goal_strategy": None,
             "max_num_states": ygg_uint_max,
             "max_time": None,
+            "num_search_workers": 1,
+            "state_repository_mode": planning.StateRepositoryMode.HASH_DISTRIBUTED,
             "random_seed": 0,
             "shuffle_labeled_succ_nodes": False,
         },
@@ -351,6 +354,8 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "goal_strategy",
             "max_num_states",
             "max_time",
+            "num_search_workers",
+            "state_repository_mode",
             "random_seed",
             "shuffle_labeled_succ_nodes",
         ),
@@ -430,7 +435,7 @@ def _make_successor_generator(task_module: ModuleType, task: Task, state_reposit
     )
 
 
-def test_parallel_lazy_gbfs_is_available_through_python_bindings():
+def test_parallel_search_is_available_through_python_bindings():
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in (
@@ -482,6 +487,18 @@ def test_parallel_lazy_gbfs_is_available_through_python_bindings():
         assert event_handler.solved
         assert not hasattr(event_handler, "on_expand_node")
         _assert_worker_statistics(result, 2)
+
+        brfs_options = task_module.brfs.Options()
+        brfs_options.num_search_workers = 2
+        brfs_options.state_repository_mode = planning.StateRepositoryMode.SHARED
+        brfs_result = task_module.brfs.find_solution(
+            task,
+            successor_generator,
+            brfs_options,
+        )
+        assert brfs_result.status == planning.SearchStatus.SOLVED
+        assert brfs_result.goal_node.get_state().get_state_repository() == state_repository
+        _assert_worker_statistics(brfs_result, 2)
 
         astar_options = task_module.astar_eager.Options()
         astar_options.num_search_workers = 2
@@ -555,11 +572,27 @@ def test_state_repository_mode_is_bound():
     assert planning.StateRepositoryMode.HASH_DISTRIBUTED != planning.StateRepositoryMode.SHARED
 
     for task_module in (planning.ground, planning.lifted):
-        for algorithm_module in (task_module.astar_eager, task_module.gbfs_lazy):
+        for algorithm_module in (
+            task_module.astar_eager,
+            task_module.brfs,
+            task_module.gbfs_lazy,
+        ):
             options = algorithm_module.Options()
             assert options.state_repository_mode == planning.StateRepositoryMode.HASH_DISTRIBUTED
             options.state_repository_mode = planning.StateRepositoryMode.SHARED
             assert options.state_repository_mode == planning.StateRepositoryMode.SHARED
+
+        iw_solver = task_module.iw.Solver()
+        iw_solver.brfs_solver.options.num_search_workers = 2
+        iw_solver.brfs_solver.options.state_repository_mode = planning.StateRepositoryMode.SHARED
+        assert iw_solver.brfs_solver.options.num_search_workers == 2
+        assert iw_solver.brfs_solver.options.state_repository_mode == planning.StateRepositoryMode.SHARED
+
+        siw_solver = task_module.siw.Solver()
+        siw_solver.iw_solver.brfs_solver.options.num_search_workers = 2
+        siw_solver.iw_solver.brfs_solver.options.state_repository_mode = planning.StateRepositoryMode.SHARED
+        assert siw_solver.iw_solver.brfs_solver.options.num_search_workers == 2
+        assert siw_solver.iw_solver.brfs_solver.options.state_repository_mode == planning.StateRepositoryMode.SHARED
 
 
 def test_ground_task_instantiation_result_default_is_explicit_failure():

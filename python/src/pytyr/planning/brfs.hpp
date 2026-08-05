@@ -29,23 +29,7 @@ class PyEventHandler : public EventHandler<Kind>
 public:
     using Base = EventHandler<Kind>;
 
-    NB_TRAMPOLINE(Base, 9);
-
-    void on_expand_node(const Node<Kind>& node) override { NB_OVERRIDE_PURE(on_expand_node, node); }
-
-    void on_expand_goal_node(const Node<Kind>& node) override { NB_OVERRIDE_PURE(on_expand_goal_node, node); }
-
-    void on_generate_node(const Node<Kind>& source_node, const LabeledNode<Kind>& labeled_succ_node) override
-    {
-        NB_OVERRIDE_PURE(on_generate_node, source_node, labeled_succ_node);
-    }
-
-    void on_prune_node(const Node<Kind>& node) override { NB_OVERRIDE_PURE(on_prune_node, node); }
-
-    void on_prune_node(const Node<Kind>& source_node, const LabeledNode<Kind>& labeled_succ_node) override
-    {
-        NB_OVERRIDE_PURE(on_prune_node, source_node, labeled_succ_node);
-    }
+    NB_TRAMPOLINE(Base, 4);
 
     void on_start_search(const Node<Kind>& node) override { NB_OVERRIDE_PURE(on_start_search, node); }
 
@@ -72,6 +56,8 @@ void bind_options(nb::module_& m, const std::string& name)
         .def_rw("goal_strategy", &T::goal_strategy)
         .def_rw("max_num_states", &T::max_num_states)
         .def_rw("max_time", &T::max_time)
+        .def_rw("num_search_workers", &T::num_search_workers)
+        .def_rw("state_repository_mode", &T::state_repository_mode)
         .def_rw("random_seed", &T::random_seed)
         .def_rw("shuffle_labeled_succ_nodes", &T::shuffle_labeled_succ_nodes);
 }
@@ -109,11 +95,6 @@ void bind_event_handler(nb::module_& m, const std::string& name)
 
     nb::class_<T, PyEventHandler<Kind>>(m, name.c_str())
         .def(nb::init<>())
-        .def("on_expand_node", &T::on_expand_node, "node"_a)
-        .def("on_expand_goal_node", &T::on_expand_goal_node, "node"_a)
-        .def("on_generate_node", &T::on_generate_node, "source_node"_a, "labeled_succ_node"_a)
-        .def("on_prune_node", nb::overload_cast<const Node<Kind>&>(&T::on_prune_node), "node"_a)
-        .def("on_prune_node", nb::overload_cast<const Node<Kind>&, const LabeledNode<Kind>&>(&T::on_prune_node), "source_node"_a, "labeled_succ_node"_a)
         .def("on_start_search", &T::on_start_search, "node"_a)
         .def("on_finish_layer", &T::on_finish_layer, "layer"_a, "statistics"_a)
         .def("on_end_search", &T::on_end_search, "status"_a, "statistics"_a)

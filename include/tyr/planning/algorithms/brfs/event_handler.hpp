@@ -18,16 +18,30 @@
 #ifndef TYR_PLANNING_ALGORITHMS_BRFS_EVENT_HANDLER_HPP_
 #define TYR_PLANNING_ALGORITHMS_BRFS_EVENT_HANDLER_HPP_
 
-#include "tyr/formalism/planning/ground_action_view.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/worker_index.hpp"
 
 #include <cstddef>
+#include <memory>
 
 namespace tyr::planning::brfs
 {
 
+/// @brief Worker-local events emitted synchronously by BrFS search.
+template<TaskKind Kind>
+class WorkerEventHandler
+{
+public:
+    virtual ~WorkerEventHandler() = default;
+
+    virtual void on_expand_node(const Node<Kind>&) {}
+    virtual void on_expand_goal_node(const Node<Kind>&) {}
+    virtual void on_generate_transition(const Node<Kind>&, const LabeledNode<Kind>&, TransitionOutcome) {}
+};
+
+/// @brief Search-lifecycle events shared by all BrFS workers.
 template<TaskKind Kind>
 class EventHandler
 {
@@ -36,135 +50,32 @@ public:
 
     virtual ~EventHandler() = default;
 
-    virtual void on_expand_node(const Node<Kind>& node) = 0;
-
-    virtual void on_expand_goal_node(const Node<Kind>& node) = 0;
-
-    virtual void on_generate_node(const Node<Kind>& source_node, const LabeledNode<Kind>& labeled_succ_node) = 0;
-
-    virtual void on_prune_node(const Node<Kind>& node) = 0;
-
-    virtual void on_prune_node(const Node<Kind>& source_node, const LabeledNode<Kind>& labeled_succ_node) = 0;
-
     virtual void on_start_search(const Node<Kind>& node) = 0;
-
     virtual void on_finish_layer(ygg::uint_t layer, const tyr::planning::Statistics& statistics) = 0;
-
     virtual void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) = 0;
-
     virtual void on_solved(const Plan<Kind>& plan) = 0;
-};
-
-template<typename Derived, TaskKind Kind>
-class EventHandlerBase : public EventHandler<Kind>
-{
-protected:
-    tyr::planning::ProgressStatistics m_progress_statistics;
-    size_t m_verbosity;
-
-private:
-    EventHandlerBase() = default;
-    friend Derived;
-
-    constexpr const auto& self() const { return static_cast<const Derived&>(*this); }
-    constexpr auto& self() { return static_cast<Derived&>(*this); }
-
-    bool verbosity(size_t level) const { return m_verbosity >= level; }
-
-public:
-    explicit EventHandlerBase(size_t verbosity = 0) : m_verbosity(verbosity) {}
-
-    void on_expand_node(const Node<Kind>& node) override
-    {
-        if (verbosity(2))
-            self().on_expand_node_impl(node);
-    }
-
-    void on_expand_goal_node(const Node<Kind>& node) override
-    {
-        if (verbosity(2))
-            self().on_expand_goal_node_impl(node);
-    }
-
-    void on_generate_node(const Node<Kind>& source_node, const LabeledNode<Kind>& labeled_succ_node) override
-    {
-        static_cast<void>(source_node);
-
-        if (verbosity(2))
-            self().on_generate_node_impl(labeled_succ_node);
-    }
-
-    void on_prune_node(const Node<Kind>& node) override
-    {
-        if (verbosity(2))
-            self().on_prune_node_impl(node);
-    }
-
-    void on_prune_node(const Node<Kind>& source_node, const LabeledNode<Kind>& labeled_succ_node) override
-    {
-        static_cast<void>(source_node);
-
-        if (verbosity(2))
-            self().on_prune_node_impl(labeled_succ_node.node);
-    }
-
-    void on_start_search(const Node<Kind>& node) override
-    {
-        m_progress_statistics.clear();
-
-        if (verbosity(1))
-            self().on_start_search_impl(node);
-    }
-
-    void on_finish_layer(ygg::uint_t layer, const tyr::planning::Statistics& statistics) override
-    {
-        m_progress_statistics.add_snapshot(statistics);
-
-        if (verbosity(1))
-            self().on_finish_layer_impl(layer, statistics);
-    }
-
-    void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override
-    {
-        if (verbosity(1))
-            self().on_end_search_impl(status, statistics);
-    }
-
-    void on_solved(const Plan<Kind>& plan) override
-    {
-        if (verbosity(1))
-            self().on_solved_impl(plan);
-    }
-
-    const tyr::planning::ProgressStatistics& get_progress_statistics() const { return m_progress_statistics; }
+    virtual WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<Worker>) { return nullptr; }
 };
 
 template<TaskKind Kind>
-class DefaultEventHandler : public EventHandlerBase<DefaultEventHandler<Kind>, Kind>
+class DefaultEventHandler : public EventHandler<Kind>
 {
-private:
-    friend class EventHandlerBase<DefaultEventHandler<Kind>, Kind>;
-
-    void on_expand_node_impl(const Node<Kind>& node) const;
-
-    void on_expand_goal_node_impl(const Node<Kind>& node) const;
-
-    void on_generate_node_impl(const LabeledNode<Kind>& labeled_succ_node) const;
-
-    void on_prune_node_impl(const Node<Kind>& node) const;
-
-    void on_start_search_impl(const Node<Kind>& node) const;
-
-    void on_finish_layer_impl(ygg::uint_t layer, const tyr::planning::Statistics& statistics) const;
-
-    void on_end_search_impl(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) const;
-
-    void on_solved_impl(const Plan<Kind>& plan) const;
-
 public:
-    DefaultEventHandler(size_t verbosity = 0);
+    explicit DefaultEventHandler(size_t verbosity = 0);
+
+    void on_start_search(const Node<Kind>& node) override;
+    void on_finish_layer(ygg::uint_t layer, const tyr::planning::Statistics& statistics) override;
+    void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override;
+    void on_solved(const Plan<Kind>& plan) override;
+    WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<Worker> index) override;
+
+    const tyr::planning::ProgressStatistics& get_progress_statistics() const noexcept { return m_progress_statistics; }
 
     static DefaultEventHandlerPtr<Kind> create(size_t verbosity = 0);
+
+private:
+    tyr::planning::ProgressStatistics m_progress_statistics;
+    size_t m_verbosity;
 };
 
 }

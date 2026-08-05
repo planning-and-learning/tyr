@@ -139,6 +139,58 @@ private:
     const p::StateRepository<Kind>* m_caller_repository;
 };
 
+template<TaskKind Kind>
+class CountingBrFSWorkerEventHandler final : public p::brfs::WorkerEventHandler<Kind>
+{
+public:
+    explicit CountingBrFSWorkerEventHandler(p::Statistics& statistics) : m_statistics(statistics) {}
+
+    void on_expand_node(const p::Node<Kind>&) override { m_statistics.increment_num_expanded(); }
+    void on_generate_transition(const p::Node<Kind>&, const p::LabeledNode<Kind>&, p::TransitionOutcome outcome) override
+    {
+        if (outcome == p::TransitionOutcome::OPENED || outcome == p::TransitionOutcome::GOAL)
+            m_statistics.increment_num_generated();
+        else if (outcome == p::TransitionOutcome::PRUNED)
+            m_statistics.increment_num_pruned();
+    }
+
+private:
+    p::Statistics& m_statistics;
+};
+
+template<TaskKind Kind>
+class CountingBrFSEventHandler final : public p::brfs::EventHandler<Kind>
+{
+public:
+    void on_start_search(const p::Node<Kind>&) override { ++num_starts; }
+    void on_finish_layer(ygg::uint_t layer, const p::Statistics& statistics) override
+    {
+        finished_layers.push_back(layer);
+        layer_statistics.push_back(statistics);
+    }
+    void on_end_search(p::SearchStatus status, const p::Statistics& statistics) override
+    {
+        end_status = status;
+        end_statistics = statistics;
+    }
+    void on_solved(const p::Plan<Kind>& plan) override { solved_plan_length = plan.get_length(); }
+
+    p::brfs::WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<p::Worker> index) override
+    {
+        ++num_workers_created;
+        return std::make_unique<CountingBrFSWorkerEventHandler<Kind>>(worker_statistics.at(ygg::uint_t(index)));
+    }
+
+    std::array<p::Statistics, 2> worker_statistics;
+    std::vector<ygg::uint_t> finished_layers;
+    std::vector<p::Statistics> layer_statistics;
+    size_t num_starts = 0;
+    size_t num_workers_created = 0;
+    size_t solved_plan_length = 0;
+    std::optional<p::SearchStatus> end_status;
+    std::optional<p::Statistics> end_statistics;
+};
+
 struct AStarGoalGate
 {
     std::binary_semaphore cheap_path { 0 };
@@ -459,12 +511,169 @@ void expect_parallel_lazy_gbfs(const p::TaskPtr<Kind>& task, p::StateRepositoryM
     EXPECT_THROW(p::gbfs_lazy::find_solution(*task, *generator, *heuristic, options), std::invalid_argument);
 
     options.goal_strategy = nullptr;
+    options.max_num_states = 0;
+    EXPECT_EQ(p::gbfs_lazy::find_solution(*task, *generator, *heuristic, options).status, p::SearchStatus::OUT_OF_STATES);
+
     options.max_num_states = 1;
     EXPECT_EQ(p::gbfs_lazy::find_solution(*task, *generator, *heuristic, options).status, p::SearchStatus::OUT_OF_STATES);
 
     options.max_num_states = std::numeric_limits<ygg::uint_t>::max();
     options.max_time = std::chrono::steady_clock::duration::zero();
     EXPECT_EQ(p::gbfs_lazy::find_solution(*task, *generator, *heuristic, options).status, p::SearchStatus::OUT_OF_TIME);
+}
+
+template<TaskKind Kind>
+void expect_parallel_brfs(const p::TaskPtr<Kind>& task, p::StateRepositoryMode state_repository_mode)
+{
+    auto execution_context = ygg::ExecutionContext::create(1);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto repository = p::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
+    auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context, repository);
+
+    auto options = p::brfs::Options<Kind> {};
+    options.num_search_workers = 2;
+    options.state_repository_mode = state_repository_mode;
+    const auto result = p::brfs::find_solution(*task, *generator, options);
+
+    ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
+    ASSERT_TRUE(result.plan);
+    ASSERT_TRUE(result.goal_node);
+    ASSERT_FALSE(result.plan->empty());
+    EXPECT_EQ(result.plan->get_cost(), result.plan->get_length());
+    EXPECT_EQ(result.plan->get_start_node().get_state().get_state_repository(), repository);
+    for (const auto& successor : result.plan->get_labeled_succ_nodes())
+        EXPECT_EQ(successor.node.get_state().get_state_repository(), repository);
+    EXPECT_EQ(result.goal_node->get_state().get_state_repository(), repository);
+
+    ASSERT_EQ(result.worker_statistics.size(), 2);
+    auto num_registered_states = uint64_t { 0 };
+    auto state_storage_memory_usage = size_t { 0 };
+    for (const auto& statistics : result.worker_statistics)
+    {
+        num_registered_states += statistics.get_num_registered_states();
+        state_storage_memory_usage += statistics.get_state_storage_memory_usage();
+    }
+    EXPECT_EQ(num_registered_states, result.statistics.get_num_registered_states());
+    EXPECT_EQ(state_storage_memory_usage, result.statistics.get_state_storage_memory_usage());
+
+    options.num_search_workers = 0;
+    EXPECT_THROW(p::brfs::find_solution(*task, *generator, options), std::invalid_argument);
+
+    options.num_search_workers = 2;
+    options.max_num_states = 0;
+    EXPECT_EQ(p::brfs::find_solution(*task, *generator, options).status, p::SearchStatus::OUT_OF_STATES);
+
+    options.max_num_states = 1;
+    EXPECT_EQ(p::brfs::find_solution(*task, *generator, options).status, p::SearchStatus::OUT_OF_STATES);
+
+    options.max_num_states = std::numeric_limits<ygg::uint_t>::max();
+    options.max_time = std::chrono::steady_clock::duration::zero();
+    EXPECT_EQ(p::brfs::find_solution(*task, *generator, options).status, p::SearchStatus::OUT_OF_TIME);
+}
+
+template<TaskKind Kind>
+void expect_brfs_events(const p::TaskPtr<Kind>& task, p::StateRepositoryMode state_repository_mode, size_t num_workers)
+{
+    auto execution_context = ygg::ExecutionContext::create(1);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto repository = p::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
+    auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context, repository);
+    auto event_handler = std::make_shared<CountingBrFSEventHandler<Kind>>();
+
+    auto options = p::brfs::Options<Kind> {};
+    options.event_handler = event_handler;
+    options.num_search_workers = num_workers;
+    options.state_repository_mode = state_repository_mode;
+    const auto result = p::brfs::find_solution(*task, *generator, options);
+
+    ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
+    ASSERT_TRUE(result.plan);
+    EXPECT_EQ(event_handler->num_starts, 1);
+    EXPECT_EQ(event_handler->num_workers_created, num_workers);
+    EXPECT_EQ(event_handler->solved_plan_length, result.plan->get_length());
+    ASSERT_TRUE(event_handler->end_status);
+    EXPECT_EQ(*event_handler->end_status, result.status);
+    ASSERT_TRUE(event_handler->end_statistics);
+    EXPECT_EQ(event_handler->end_statistics->get_num_generated(), result.statistics.get_num_generated());
+    EXPECT_EQ(event_handler->end_statistics->get_num_expanded(), result.statistics.get_num_expanded());
+
+    auto worker_totals = p::Statistics {};
+    for (const auto& statistics : event_handler->worker_statistics)
+        worker_totals.add(statistics);
+    EXPECT_EQ(worker_totals.get_num_generated(), result.statistics.get_num_generated());
+    EXPECT_EQ(worker_totals.get_num_expanded(), result.statistics.get_num_expanded());
+    EXPECT_EQ(worker_totals.get_num_pruned(), result.statistics.get_num_pruned());
+
+    ASSERT_EQ(event_handler->finished_layers.size(), event_handler->layer_statistics.size());
+    ASSERT_FALSE(event_handler->finished_layers.empty());
+    EXPECT_EQ(event_handler->finished_layers.front(), 0);
+    EXPECT_TRUE(std::ranges::is_sorted(event_handler->finished_layers));
+    for (size_t i = 1; i < event_handler->layer_statistics.size(); ++i)
+    {
+        EXPECT_EQ(event_handler->finished_layers[i], event_handler->finished_layers[i - 1] + 1);
+        EXPECT_LE(event_handler->layer_statistics[i - 1].get_num_generated(), event_handler->layer_statistics[i].get_num_generated());
+        EXPECT_LE(event_handler->layer_statistics[i - 1].get_num_expanded(), event_handler->layer_statistics[i].get_num_expanded());
+    }
+}
+
+template<TaskKind Kind>
+void expect_aggregated_worker_statistics(const p::SearchResult<Kind>& result, size_t num_workers)
+{
+    ASSERT_EQ(result.worker_statistics.size(), num_workers);
+    auto totals = p::Statistics {};
+    for (const auto& worker : result.worker_statistics)
+    {
+        totals.add(worker);
+        EXPECT_EQ(worker.get_search_time(), result.statistics.get_search_time());
+    }
+    EXPECT_EQ(totals.get_num_generated(), result.statistics.get_num_generated());
+    EXPECT_EQ(totals.get_num_expanded(), result.statistics.get_num_expanded());
+    EXPECT_EQ(totals.get_num_deadends(), result.statistics.get_num_deadends());
+    EXPECT_EQ(totals.get_num_pruned(), result.statistics.get_num_pruned());
+    EXPECT_EQ(totals.get_idle_time(), result.statistics.get_idle_time());
+}
+
+template<TaskKind Kind>
+void expect_parallel_iw(const p::TaskPtr<Kind>& task, p::StateRepositoryMode state_repository_mode)
+{
+    auto execution_context = ygg::ExecutionContext::create(1);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto repository = p::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
+    auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context, repository);
+    auto brfs_solver = p::brfs::Solver<Kind> { task, generator };
+    brfs_solver.options.num_search_workers = 2;
+    brfs_solver.options.state_repository_mode = state_repository_mode;
+
+    const auto iw_result = p::iw::find_solution(brfs_solver, 2);
+    ASSERT_EQ(iw_result.status, p::SearchStatus::SOLVED);
+    ASSERT_TRUE(iw_result.plan);
+    EXPECT_EQ(iw_result.plan->get_start_node().get_state().get_state_repository(), repository);
+    expect_aggregated_worker_statistics(iw_result, 2);
+}
+
+template<TaskKind Kind>
+void expect_parallel_siw_outer_orchestration(const p::TaskPtr<Kind>& task)
+{
+    auto execution_context = ygg::ExecutionContext::create(1);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto repository = p::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
+    auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context, repository);
+    auto brfs_solver = p::brfs::Solver<Kind> { task, generator };
+    brfs_solver.options.num_search_workers = 2;
+    brfs_solver.options.state_repository_mode = p::StateRepositoryMode::SHARED;
+
+    auto iw_solver = p::iw::Solver<Kind> { brfs_solver, 2 };
+    auto event_handler = p::siw::DefaultEventHandler<Kind>::create();
+    auto options = p::siw::Options<Kind> {};
+    options.event_handler = event_handler;
+    const auto siw_result = p::siw::find_solution(iw_solver, options);
+    ASSERT_EQ(siw_result.status, p::SearchStatus::SOLVED);
+    ASSERT_TRUE(siw_result.plan);
+    EXPECT_GT(event_handler->get_statistics().get_num_solved_subsearches(), 1);
+    EXPECT_EQ(siw_result.plan->get_start_node().get_state().get_state_repository(), repository);
+    for (const auto& successor : siw_result.plan->get_labeled_succ_nodes())
+        EXPECT_EQ(successor.node.get_state().get_state_repository(), repository);
+    expect_aggregated_worker_statistics(siw_result, 2);
 }
 
 template<TaskKind Kind>
@@ -718,6 +927,23 @@ void expect_parallel_lazy_gbfs_exhaustion(const p::TaskPtr<Kind>& task, p::State
     EXPECT_GT(result.statistics.get_num_generated(), 0);
 }
 
+template<TaskKind Kind>
+void expect_parallel_brfs_exhaustion(const p::TaskPtr<Kind>& task, p::StateRepositoryMode state_repository_mode)
+{
+    auto execution_context = ygg::ExecutionContext::create(1);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto repository = p::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
+    auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context, repository);
+    auto options = p::brfs::Options<Kind> {};
+    options.num_search_workers = 2;
+    options.state_repository_mode = state_repository_mode;
+
+    const auto result = p::brfs::find_solution(*task, *generator, options);
+    EXPECT_EQ(result.status, p::SearchStatus::EXHAUSTED);
+    EXPECT_GT(result.statistics.get_num_expanded(), 0);
+    EXPECT_GT(result.statistics.get_num_generated(), 0);
+}
+
 }
 
 TEST(TyrPlanningPlanReconstructionTest, ReconstructsGroundAndLiftedWorkerTrajectories)
@@ -768,6 +994,64 @@ TEST(TyrPlanningPlanReconstructionTest, ParallelAStarSupportsRepositoryAndFLayer
     }
 }
 
+TEST(TyrPlanningPlanReconstructionTest, ParallelBrFSSupportsRepositoryModes)
+{
+    const auto root = std::filesystem::path(BENCHMARKS_DIR);
+    auto lifted_task =
+        p::Task<LiftedTag>::create(make_test_parser(root / "classical/tests/gripper/domain.pddl").parse_task(root / "classical/tests/gripper/test-1.pddl"));
+    auto grounding_context = ygg::ExecutionContext::create(1);
+    auto ground_task = lifted_task->instantiate_ground_task(*grounding_context).task;
+    ASSERT_NE(ground_task, nullptr);
+
+    for (const auto mode : { p::StateRepositoryMode::HASH_DISTRIBUTED, p::StateRepositoryMode::SHARED })
+    {
+        expect_parallel_brfs(ground_task, mode);
+        expect_parallel_brfs(lifted_task, mode);
+    }
+}
+
+TEST(TyrPlanningPlanReconstructionTest, BrFSEmitsWorkerAndGlobalLayerEvents)
+{
+    const auto root = std::filesystem::path(BENCHMARKS_DIR);
+    auto lifted_task =
+        p::Task<LiftedTag>::create(make_test_parser(root / "classical/tests/gripper/domain.pddl").parse_task(root / "classical/tests/gripper/test-1.pddl"));
+    auto grounding_context = ygg::ExecutionContext::create(1);
+    auto ground_task = lifted_task->instantiate_ground_task(*grounding_context).task;
+    ASSERT_NE(ground_task, nullptr);
+
+    expect_brfs_events(ground_task, p::StateRepositoryMode::HASH_DISTRIBUTED, 1);
+    for (const auto mode : { p::StateRepositoryMode::HASH_DISTRIBUTED, p::StateRepositoryMode::SHARED })
+        expect_brfs_events(ground_task, mode, 2);
+}
+
+TEST(TyrPlanningPlanReconstructionTest, ParallelBrFSSupportsIW)
+{
+    const auto root = std::filesystem::path(BENCHMARKS_DIR);
+    auto lifted_task =
+        p::Task<LiftedTag>::create(make_test_parser(root / "classical/tests/gripper/domain.pddl").parse_task(root / "classical/tests/gripper/test-1.pddl"));
+    auto grounding_context = ygg::ExecutionContext::create(1);
+    auto ground_task = lifted_task->instantiate_ground_task(*grounding_context).task;
+    ASSERT_NE(ground_task, nullptr);
+
+    for (const auto mode : { p::StateRepositoryMode::HASH_DISTRIBUTED, p::StateRepositoryMode::SHARED })
+    {
+        expect_parallel_iw(ground_task, mode);
+        expect_parallel_iw(lifted_task, mode);
+    }
+}
+
+TEST(TyrPlanningPlanReconstructionTest, SIWSequentiallyOrchestratesParallelIWSubsearches)
+{
+    const auto root = std::filesystem::path(BENCHMARKS_DIR);
+    auto lifted_task =
+        p::Task<LiftedTag>::create(make_test_parser(root / "classical/tests/blocks_4/domain.pddl").parse_task(root / "classical/tests/blocks_4/test-1.pddl"));
+    auto grounding_context = ygg::ExecutionContext::create(1);
+    auto ground_task = lifted_task->instantiate_ground_task(*grounding_context).task;
+    ASSERT_NE(ground_task, nullptr);
+
+    expect_parallel_siw_outer_orchestration(ground_task);
+}
+
 TEST(TyrPlanningPlanReconstructionTest, LazyGBFSWorkerEventsMatchResultStatistics)
 {
     const auto root = std::filesystem::path(BENCHMARKS_DIR);
@@ -782,7 +1066,7 @@ TEST(TyrPlanningPlanReconstructionTest, LazyGBFSWorkerEventsMatchResultStatistic
         expect_lazy_gbfs_worker_events(ground_task, mode, 2);
 }
 
-TEST(TyrPlanningPlanReconstructionTest, ParallelLazyGBFSDetectsGlobalExhaustion)
+TEST(TyrPlanningPlanReconstructionTest, ParallelSearchDetectsGlobalExhaustion)
 {
     const auto benchmark_root = std::filesystem::path(BENCHMARKS_DIR);
     const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/fixtures/planning/algorithms";
@@ -798,6 +1082,8 @@ TEST(TyrPlanningPlanReconstructionTest, ParallelLazyGBFSDetectsGlobalExhaustion)
     {
         expect_parallel_lazy_gbfs_exhaustion(ground_task, mode);
         expect_parallel_lazy_gbfs_exhaustion(lifted_task, mode);
+        expect_parallel_brfs_exhaustion(ground_task, mode);
+        expect_parallel_brfs_exhaustion(lifted_task, mode);
     }
 }
 

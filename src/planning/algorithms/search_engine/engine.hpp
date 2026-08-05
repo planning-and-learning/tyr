@@ -186,6 +186,18 @@ public:
 
     const WorkerData& get_worker(ygg::Index<Worker> index) const noexcept { return m_workers.get(index); }
 
+    void on_finish_priority_layer(ygg::float_t priority)
+    {
+        if (!m_event_handler || !SearchPolicy::emits_priority_layer_events)
+            return;
+
+        auto statistics = Statistics {};
+        for_each_worker([&](const auto& worker) { statistics.add(worker.statistics); });
+        statistics.set_search_start_time_point(m_search_start_time_point);
+        statistics.set_search_end_time_point(std::chrono::steady_clock::now());
+        call_root_event([&](auto& handler) { SearchPolicy::on_finish_priority_layer(handler, priority, statistics); });
+    }
+
     void worker_loop(WorkerData& worker)
     {
         worker.statistics.set_search_start_time_point(std::chrono::steady_clock::now());
@@ -259,6 +271,7 @@ private:
         auto& start_search_node = start_worker.initialize_start(start_state_index, start_g_value, start_h_value);
 
         const auto search_start = std::chrono::steady_clock::now();
+        m_search_start_time_point = search_start;
         m_result.statistics.set_search_start_time_point(search_start);
         for_each_worker(
             [&](auto& worker)
@@ -266,7 +279,7 @@ private:
                 worker.statistics.set_search_start_time_point(search_start);
                 worker.statistics.set_search_end_time_point(search_start);
             });
-        call_root_event([&](auto& handler) { handler.on_start_search(m_start_node, start_worker.search.get_start_priority()); });
+        call_root_event([&](auto& handler) { SearchPolicy::on_start_search(handler, m_start_node, start_worker.search.get_start_priority()); });
 
         if (!start_worker.goal_strategy->is_static_goal_satisfied(m_task))
         {
@@ -351,7 +364,8 @@ private:
             worker.statistics,
             [&](ygg::float_t h_value, auto&& callback)
             { return m_execution.improve_best_h(h_value, [&] { call_root_event(std::forward<decltype(callback)>(callback)); }); },
-            [&](auto&& callback) { call_worker_event(worker, std::forward<decltype(callback)>(callback)); });
+            [&](auto&& callback) { call_worker_event(worker, std::forward<decltype(callback)>(callback)); },
+            [&](ygg::float_t priority) { on_finish_priority_layer(priority); });
         if (expansion_result == ExpansionResult::SKIP)
         {
             m_execution.finish_expansion(*this);
@@ -498,6 +512,7 @@ private:
     SuccessorGenerator<Kind>& m_caller_successor_generator;
     const Options& m_options;
     typename SearchPolicy::EventHandlerPtr m_event_handler;
+    std::chrono::steady_clock::time_point m_search_start_time_point;
     Node<Kind> m_start_node;
     ExecutionPolicy m_execution;
     Workers m_workers;

@@ -16,8 +16,10 @@
  */
 
 #include <array>
+#include <atomic>
 #include <gtest/gtest.h>
 #include <stdexcept>
+#include <thread>
 #include <tyr/planning/algorithms/iw/novelty_table.hpp>
 #include <tyr/planning/algorithms/iw/pruning_strategy.hpp>
 #include <vector>
@@ -118,6 +120,33 @@ TEST(TyrTests, TyrPlanningIwDynamicNoveltyTableReportsArity)
 {
     auto table = planning::iw::DynamicNoveltyTable<2>();
     EXPECT_EQ(table.get_arity(), 2);
+}
+
+TEST(TyrTests, TyrPlanningIwDynamicNoveltyTableWorkersShareSeenTuples)
+{
+    auto table = planning::iw::DynamicNoveltyTable<2>();
+    auto worker = table.make_worker();
+    const auto tuple = std::array<ygg::uint_t, 2> { 1, 3 };
+
+    EXPECT_TRUE(table.insert(tuple));
+    EXPECT_FALSE(worker.insert(tuple));
+}
+
+TEST(TyrTests, TyrPlanningIwDynamicNoveltyTableClaimsTupleOnceConcurrently)
+{
+    auto table = planning::iw::DynamicNoveltyTable<2>();
+    const auto tuple = std::array<ygg::uint_t, 2> { 1, 3 };
+    auto num_novel = std::atomic<size_t> { 0 };
+    auto threads = std::vector<std::thread> {};
+    for (auto i = size_t { 0 }; i < 8; ++i)
+    {
+        threads.emplace_back([worker = table.make_worker(), tuple, &num_novel]() mutable
+                             { num_novel.fetch_add(worker.insert(tuple), std::memory_order_relaxed); });
+    }
+    for (auto& thread : threads)
+        thread.join();
+
+    EXPECT_EQ(num_novel.load(std::memory_order_relaxed), 1);
 }
 
 TEST(TyrTests, TyrPlanningIwForEachTupleGeneratesCanonicalTuplesUpToArity)

@@ -166,6 +166,10 @@ using DefaultEventHandlerPtr = std::shared_ptr<DefaultEventHandler<Kind>>;
 namespace brfs
 {
 template<TaskKind Kind>
+class WorkerEventHandler;
+template<TaskKind Kind>
+using WorkerEventHandlerPtr = std::unique_ptr<WorkerEventHandler<Kind>>;
+template<TaskKind Kind>
 class EventHandler;
 template<TaskKind Kind>
 using EventHandlerPtr = std::shared_ptr<EventHandler<Kind>>;

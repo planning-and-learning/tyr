@@ -238,11 +238,11 @@ public:
     }
 };
 
-template<typename SearchPolicy, bool = SearchPolicy::supports_f_layer_synchronization>
-class ParallelCoordinationPolicy;
+template<typename SearchPolicy, bool = SearchPolicy::supports_priority_layer_synchronization>
+class ParallelLayerCoordinationPolicy;
 
 template<typename SearchPolicy>
-class ParallelCoordinationPolicy<SearchPolicy, false>
+class ParallelLayerCoordinationPolicy<SearchPolicy, false>
 {
 public:
     void start(ygg::float_t, const typename SearchPolicy::Options&) noexcept {}
@@ -263,46 +263,47 @@ public:
 };
 
 template<typename SearchPolicy>
-class ParallelCoordinationPolicy<SearchPolicy, true>
+class ParallelLayerCoordinationPolicy<SearchPolicy, true>
 {
 public:
     void start(ygg::float_t start_priority, const typename SearchPolicy::Options& options) noexcept
     {
-        m_synchronize_f_layers = SearchPolicy::synchronize_f_layers(options);
-        m_active_f_value.store(start_priority, std::memory_order_relaxed);
+        m_synchronize_priority_layers = SearchPolicy::synchronize_priority_layers(options);
+        m_active_priority.store(start_priority, std::memory_order_relaxed);
         m_layer_generation.store(0, std::memory_order_relaxed);
         m_num_waiting_workers = 0;
     }
 
-    bool proves_goal(ygg::float_t cost) const noexcept { return m_synchronize_f_layers && cost <= m_active_f_value.load(std::memory_order_relaxed); }
+    bool proves_goal(ygg::float_t cost) const noexcept { return m_synchronize_priority_layers && cost <= m_active_priority.load(std::memory_order_relaxed); }
 
     template<typename ExecutionPolicy, typename WorkerData>
     bool can_expand(const ExecutionPolicy& execution, const WorkerData& worker) const noexcept
     {
-        if (!m_synchronize_f_layers)
+        if (!m_synchronize_priority_layers)
             return !worker.search.empty();
 
-        const auto min_f_value = worker.search.get_min_f_value();
+        const auto min_priority = worker.search.get_min_priority();
         const auto incumbent = execution.incumbent_cost();
-        return min_f_value <= m_active_f_value.load(std::memory_order_acquire)
-               && (incumbent == std::numeric_limits<ygg::float_t>::infinity() || min_f_value < incumbent);
+        return min_priority <= m_active_priority.load(std::memory_order_acquire)
+               && (incumbent == std::numeric_limits<ygg::float_t>::infinity() || min_priority < incumbent);
     }
 
     template<typename ExecutionPolicy, typename Engine, typename WorkerData>
     void wait_for_work(ExecutionPolicy& execution, Engine& engine, WorkerData& worker)
     {
-        if (m_synchronize_f_layers)
-            wait_for_f_layer(execution, engine, worker);
+        if (m_synchronize_priority_layers)
+            wait_for_priority_layer(execution, engine, worker);
         else
             execution.wait_for_messages(engine, worker);
     }
 
 private:
     template<typename ExecutionPolicy, typename Engine, typename WorkerData>
-    void wait_for_f_layer(ExecutionPolicy& execution, Engine& engine, WorkerData& worker)
+    void wait_for_priority_layer(ExecutionPolicy& execution, Engine& engine, WorkerData& worker)
     {
         auto generation = size_t { 0 };
         auto terminal_status = std::optional<SearchStatus> {};
+        auto finished_priority = std::optional<ygg::float_t> {};
         auto release_workers = false;
         {
             auto lock = std::unique_lock(m_layer_mutex);
@@ -315,12 +316,12 @@ private:
             if (m_num_waiting_workers == engine.num_workers())
             {
                 m_num_waiting_workers = 0;
-                auto next_f_value = std::numeric_limits<ygg::float_t>::infinity();
+                auto next_priority = std::numeric_limits<ygg::float_t>::infinity();
                 auto num_open_entries = size_t { 0 };
                 for (size_t i = 0; i < engine.num_workers(); ++i)
                 {
                     const auto& search = engine.get_worker(ygg::Index<Worker>(static_cast<ygg::uint_t>(i))).search;
-                    next_f_value = std::min(next_f_value, search.get_min_f_value());
+                    next_priority = std::min(next_priority, search.get_min_priority());
                     num_open_entries += search.get_num_open_entries();
                 }
 
@@ -331,16 +332,17 @@ private:
                 if (work == num_open_entries)
                 {
                     const auto incumbent = execution.incumbent_cost();
-                    if (incumbent != std::numeric_limits<ygg::float_t>::infinity() && next_f_value >= incumbent)
+                    if (incumbent != std::numeric_limits<ygg::float_t>::infinity() && next_priority >= incumbent)
                         terminal_status = SearchStatus::SOLVED;
                     else if (num_open_entries == 0)
                         terminal_status = SearchStatus::EXHAUSTED;
                     else
-                        m_active_f_value.store(next_f_value, std::memory_order_release);
+                    {
+                        finished_priority = m_active_priority.load(std::memory_order_relaxed);
+                        m_active_priority.store(next_priority, std::memory_order_release);
+                    }
                 }
 
-                if (!terminal_status)
-                    m_layer_generation.fetch_add(1, std::memory_order_release);
                 release_workers = true;
             }
         }
@@ -350,7 +352,12 @@ private:
             if (terminal_status)
                 execution.set_terminal(engine, *terminal_status);
             else
+            {
+                if (finished_priority)
+                    engine.on_finish_priority_layer(*finished_priority);
+                m_layer_generation.fetch_add(1, std::memory_order_release);
                 execution.notify_workers(engine);
+            }
             return;
         }
 
@@ -371,10 +378,10 @@ private:
     }
 
     std::mutex m_layer_mutex;
-    std::atomic<ygg::float_t> m_active_f_value { std::numeric_limits<ygg::float_t>::infinity() };
+    std::atomic<ygg::float_t> m_active_priority { std::numeric_limits<ygg::float_t>::infinity() };
     std::atomic<size_t> m_layer_generation { 0 };
     size_t m_num_waiting_workers { 0 };
-    bool m_synchronize_f_layers { false };
+    bool m_synchronize_priority_layers { false };
 };
 
 template<TaskKind Kind, SearchPolicyConcept<Kind> SearchPolicy, StateRoutingPolicyConcept<Kind> StatePolicy>
@@ -382,11 +389,11 @@ template<TaskKind Kind, SearchPolicyConcept<Kind> SearchPolicy, StateRoutingPoli
 class ParallelExecutionPolicy
 {
     using BuilderPtr = ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true>;
-    using CoordinationPolicy = ParallelCoordinationPolicy<SearchPolicy>;
+    using CoordinationPolicy = ParallelLayerCoordinationPolicy<SearchPolicy>;
     using Metadata = typename SearchPolicy::SuccessorMetadata;
 
     template<typename, bool>
-    friend class ParallelCoordinationPolicy;
+    friend class ParallelLayerCoordinationPolicy;
 
     struct Message
     {
@@ -848,7 +855,7 @@ public:
             auto worker_goal_strategy = options.goal_strategy ? options.goal_strategy->make_worker(index) : ConjunctiveGoalStrategy<Kind>::create(task);
             if (!worker_goal_strategy)
                 throw std::invalid_argument("Parallel search goal strategy does not support worker construction.");
-            auto worker_event_handler = event_handler ? event_handler->make_worker(index) : nullptr;
+            auto worker_event_handler = SearchPolicy::make_worker_event_handler(event_handler, index);
             m_workers.push_back(std::make_unique<WorkerData>(index,
                                                              std::move(execution_context),
                                                              std::move(successor_generators[i]),

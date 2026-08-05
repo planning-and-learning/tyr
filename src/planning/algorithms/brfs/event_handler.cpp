@@ -28,67 +28,105 @@
 
 #include <fmt/ostream.h>
 #include <iostream>
+#include <syncstream>
 #include <yggdrasil/core/chrono.hpp>
 
 namespace tyr::planning::brfs
 {
+namespace
+{
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_expand_node_impl(const Node<Kind>& node) const
+class DefaultWorkerEventHandler final : public WorkerEventHandler<Kind>
 {
-    fmt::print(std::cout, "[BRFS] ----------------------------------------\n[BRFS] Expanding node: {}\n\n", node);
+public:
+    explicit DefaultWorkerEventHandler(ygg::Index<Worker> index) : m_index(index) {}
+
+    void on_expand_node(const Node<Kind>& node) override
+    {
+        auto out = std::osyncstream(std::cout);
+        fmt::print(out,
+                   "[BRFS][Worker {}] ----------------------------------------\n[BRFS][Worker {}] Expanding node: {}\n\n",
+                   ygg::uint_t(m_index),
+                   ygg::uint_t(m_index),
+                   node);
+    }
+
+    void on_generate_transition(const Node<Kind>&, const LabeledNode<Kind>& labeled_succ_node, TransitionOutcome outcome) override
+    {
+        if (outcome != TransitionOutcome::OPENED && outcome != TransitionOutcome::GOAL)
+            return;
+
+        auto out = std::osyncstream(std::cout);
+        fmt::print(out,
+                   "[BRFS][Worker {}] Action: {}\n[BRFS][Worker {}] Successor node: {}\n\n",
+                   ygg::uint_t(m_index),
+                   labeled_succ_node.label,
+                   ygg::uint_t(m_index),
+                   labeled_succ_node.node);
+    }
+
+private:
+    ygg::Index<Worker> m_index;
+};
+
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_expand_goal_node_impl(const Node<Kind>& node) const
+DefaultEventHandler<Kind>::DefaultEventHandler(size_t verbosity) : m_verbosity(verbosity)
 {
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_generate_node_impl(const LabeledNode<Kind>& labeled_succ_node) const
+void DefaultEventHandler<Kind>::on_start_search(const Node<Kind>& node)
 {
-    fmt::print(std::cout, "[BRFS] Action: {}\n", labeled_succ_node.label);
-    fmt::print(std::cout, "[BRFS] Successor node: {}\n\n", labeled_succ_node.node);
+    m_progress_statistics.clear();
+    if (m_verbosity < 1)
+        return;
+    auto out = std::osyncstream(std::cout);
+    fmt::print(out, "[BRFS] Search started.\n[BRFS] Start node: {}\n", node);
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_prune_node_impl(const Node<Kind>& node) const
+void DefaultEventHandler<Kind>::on_finish_layer(ygg::uint_t layer, const tyr::planning::Statistics& statistics)
 {
+    m_progress_statistics.add_snapshot(statistics);
+    if (m_verbosity < 1)
+        return;
+    auto out = std::osyncstream(std::cout);
+    fmt::print(out,
+               "[BRFS] Finished layer: {} with num expanded states {} and num generated states {} ({} ms)\n",
+               layer,
+               statistics.get_num_expanded(),
+               statistics.get_num_generated(),
+               ygg::to_ms(statistics.get_current_search_time()));
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_start_search_impl(const Node<Kind>& node) const
+void DefaultEventHandler<Kind>::on_end_search(tyr::planning::SearchStatus, const tyr::planning::Statistics& statistics)
 {
-    fmt::print(std::cout, "[BRFS] Search started.\n[BRFS] Start node: {}\n", node);
+    if (m_verbosity < 1)
+        return;
+    auto out = std::osyncstream(std::cout);
+    fmt::print(out, "[BRFS] Search ended.\n{}\n{}\n", statistics, m_progress_statistics);
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_finish_layer_impl(ygg::uint_t layer, const tyr::planning::Statistics& statistics) const
+void DefaultEventHandler<Kind>::on_solved(const Plan<Kind>& plan)
 {
-    std::cout << "[BRFS] Finished layer: " << layer << " with num expanded states " << statistics.get_num_expanded() << " and num generated states "
-              << statistics.get_num_generated() << " (" << ygg::to_ms(statistics.get_current_search_time()) << " ms)" << std::endl;
+    if (m_verbosity < 1)
+        return;
+    auto out = std::osyncstream(std::cout);
+    fmt::print(out, "[BRFS] Plan found.\n[BRFS] Plan cost: {}\n[BRFS] Plan length: {}\n{}\n", plan.get_cost(), plan.get_length(), plan);
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_end_search_impl(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) const
+WorkerEventHandlerPtr<Kind> DefaultEventHandler<Kind>::make_worker(ygg::Index<Worker> index)
 {
-    static_cast<void>(status);
-    fmt::print(std::cout, "[BRFS] Search ended.\n{}\n{}\n", statistics, this->get_progress_statistics());
-}
+    if (m_verbosity < 2)
+        return nullptr;
 
-template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_solved_impl(const Plan<Kind>& plan) const
-{
-    std::cout << "[BRFS] Plan found.\n"
-              << "[BRFS] Plan cost: " << plan.get_cost() << "\n"
-              << "[BRFS] Plan length: " << plan.get_length() << std::endl;
-
-    fmt::print(std::cout, "{}\n", plan);
-}
-
-template<TaskKind Kind>
-DefaultEventHandler<Kind>::DefaultEventHandler(size_t verbosity) : EventHandlerBase<DefaultEventHandler<Kind>, Kind>(verbosity)
-{
+    return std::make_unique<DefaultWorkerEventHandler<Kind>>(index);
 }
 
 template<TaskKind Kind>

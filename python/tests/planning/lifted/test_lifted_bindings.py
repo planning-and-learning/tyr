@@ -9,7 +9,6 @@ from pytyr.formalism.planning import Parser
 from pyyggdrasil.execution import ExecutionContext
 
 Node = planning.lifted.Node
-LabeledNode = planning.lifted.LabeledNode
 State = planning.lifted.State
 Plan = planning.lifted.Plan
 IwStatistics = planning.lifted.iw.Statistics
@@ -58,14 +57,6 @@ def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None
         def __init__(self) -> None:
             super().__init__()
 
-        @override
-        def on_expand_node(self, node: Node): pass
-        @override
-        def on_expand_goal_node(self, node: Node): pass
-        @override
-        def on_generate_node(self, source_node: Node, labeled_succ_node: LabeledNode): pass
-        @override
-        def on_prune_node(self, *args: Node | LabeledNode, **kwargs: Node | LabeledNode): pass
         @override
         def on_start_search(self, node: Node): pass
         @override

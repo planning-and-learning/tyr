@@ -40,7 +40,7 @@ template<TaskKind Kind>
 struct AStarModePolicy<Kind, SequentialSearch>
 {
     static constexpr bool terminate_on_goal = true;
-    static constexpr bool supports_f_layer_synchronization = false;
+    static constexpr bool supports_priority_layer_synchronization = false;
 
     static constexpr bool should_discard(ygg::float_t, ygg::float_t) noexcept { return false; }
 
@@ -54,14 +54,14 @@ struct AStarModePolicy<Kind, SequentialSearch>
         current_f_value = entry_f_value;
     }
 
-    static constexpr bool synchronize_f_layers(const astar_eager::Options<Kind>&) noexcept { return false; }
+    static constexpr bool synchronize_priority_layers(const astar_eager::Options<Kind>&) noexcept { return false; }
 };
 
 template<TaskKind Kind>
 struct AStarModePolicy<Kind, ParallelSearch>
 {
     static constexpr bool terminate_on_goal = false;
-    static constexpr bool supports_f_layer_synchronization = true;
+    static constexpr bool supports_priority_layer_synchronization = true;
 
     static constexpr bool should_discard(ygg::float_t entry_f_value, ygg::float_t incumbent_cost) noexcept
     {
@@ -74,7 +74,7 @@ struct AStarModePolicy<Kind, ParallelSearch>
     {
     }
 
-    static bool synchronize_f_layers(const astar_eager::Options<Kind>& options) noexcept
+    static bool synchronize_priority_layers(const astar_eager::Options<Kind>& options) noexcept
     {
         return options.parallel_search_mode == astar_eager::ParallelSearchMode::SYNCHRONOUS;
     }
@@ -93,7 +93,8 @@ public:
     using WorkerEventHandlerPtr = astar_eager::WorkerEventHandlerPtr<Kind>;
     using ParentState = typename ParentPolicy::Type;
     static constexpr bool terminate_on_goal = ModePolicy::terminate_on_goal;
-    static constexpr bool supports_f_layer_synchronization = ModePolicy::supports_f_layer_synchronization;
+    static constexpr bool supports_priority_layer_synchronization = ModePolicy::supports_priority_layer_synchronization;
+    static constexpr bool emits_priority_layer_events = false;
 
     struct SearchNode
     {
@@ -153,7 +154,7 @@ public:
 
     bool empty() const { return m_openlist.empty(); }
 
-    ygg::float_t get_min_f_value() const noexcept
+    ygg::float_t get_min_priority() const noexcept
     {
         return m_openlist.empty() ? std::numeric_limits<ygg::float_t>::infinity() : m_openlist.top_entry().f_value;
     }
@@ -178,9 +179,14 @@ public:
         return get_or_create_search_node(state, m_search_nodes, default_node);
     }
 
-    template<typename ImproveBestH, typename EmitEvent>
-    ExpansionResult
-    prepare_expansion(const PoppedEntry& entry, const Node<Kind>& node, SearchNode& search_node, Statistics& statistics, ImproveBestH&&, EmitEvent&& emit_event)
+    template<typename ImproveBestH, typename EmitEvent, typename FinishPriorityLayer>
+    ExpansionResult prepare_expansion(const PoppedEntry& entry,
+                                      const Node<Kind>& node,
+                                      SearchNode& search_node,
+                                      Statistics& statistics,
+                                      ImproveBestH&&,
+                                      EmitEvent&& emit_event,
+                                      FinishPriorityLayer&&)
     {
         ModePolicy::finish_f_layer(entry.f_value, m_f_value, emit_event);
         // A remote lower-f entry may arrive later, so a parallel worker cannot declare an f-layer finished.
@@ -266,7 +272,23 @@ public:
         return AcceptanceResult::QUEUED;
     }
 
-    static bool synchronize_f_layers(const Options& options) noexcept { return ModePolicy::synchronize_f_layers(options); }
+    static bool synchronize_priority_layers(const Options& options) noexcept { return ModePolicy::synchronize_priority_layers(options); }
+
+    static WorkerEventHandlerPtr make_worker_event_handler(const EventHandlerPtr& event_handler, ygg::Index<Worker> index)
+    {
+        return event_handler ? event_handler->make_worker(index) : nullptr;
+    }
+
+    template<typename Handler>
+    static void on_start_search(Handler& handler, const Node<Kind>& node, ygg::float_t priority)
+    {
+        handler.on_start_search(node, priority);
+    }
+
+    template<typename Handler>
+    static constexpr void on_finish_priority_layer(Handler&, ygg::float_t, const Statistics&) noexcept
+    {
+    }
 
     const ygg::SegmentedVector<SearchNode>& get_search_nodes() const noexcept { return m_search_nodes; }
 

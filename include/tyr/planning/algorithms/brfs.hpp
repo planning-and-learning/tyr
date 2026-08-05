@@ -22,6 +22,7 @@
 #include "tyr/planning/declarations.hpp"
 
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -34,12 +35,16 @@ namespace tyr::planning::brfs
 template<TaskKind Kind>
 struct Options
 {
+    static constexpr CostMode cost_mode = CostMode::UNIT;
+
     std::optional<Node<Kind>> start_node = std::nullopt;
     EventHandlerPtr<Kind> event_handler = nullptr;
     PruningStrategyPtr<Kind> pruning_strategy = nullptr;
     GoalStrategyPtr<Kind> goal_strategy = nullptr;
     ygg::uint_t max_num_states = std::numeric_limits<ygg::uint_t>::max();
     std::optional<std::chrono::steady_clock::duration> max_time = std::nullopt;
+    size_t num_search_workers = 1;
+    StateRepositoryMode state_repository_mode = StateRepositoryMode::HASH_DISTRIBUTED;
     uint64_t random_seed = 0;
     bool shuffle_labeled_succ_nodes = false;
 

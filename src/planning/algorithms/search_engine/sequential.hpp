@@ -276,7 +276,7 @@ public:
                  options,
                  options.pruning_strategy ? options.pruning_strategy : PruningStrategy<Kind>::create(),
                  options.goal_strategy ? options.goal_strategy : ConjunctiveGoalStrategy<Kind>::create(task),
-                 event_handler ? event_handler->make_worker(ygg::Index<Worker>(0)) : nullptr)
+                 SearchPolicy::make_worker_event_handler(event_handler, ygg::Index<Worker>(0)))
     {
     }
 

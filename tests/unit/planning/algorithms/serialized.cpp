@@ -34,37 +34,6 @@ namespace tyr::tests
 {
 namespace
 {
-template<::tyr::TaskKind Kind>
-class SilentBrfsEventHandler : public p::brfs::EventHandler<Kind>
-{
-public:
-    void on_expand_node(const p::Node<Kind>& node) override { static_cast<void>(node); }
-    void on_expand_goal_node(const p::Node<Kind>& node) override { static_cast<void>(node); }
-    void on_generate_node(const p::Node<Kind>& source_node, const p::LabeledNode<Kind>& labeled_succ_node) override
-    {
-        static_cast<void>(source_node);
-        static_cast<void>(labeled_succ_node);
-    }
-    void on_prune_node(const p::Node<Kind>& node) override { static_cast<void>(node); }
-    void on_prune_node(const p::Node<Kind>& source_node, const p::LabeledNode<Kind>& labeled_succ_node) override
-    {
-        static_cast<void>(source_node);
-        static_cast<void>(labeled_succ_node);
-    }
-    void on_start_search(const p::Node<Kind>& node) override { static_cast<void>(node); }
-    void on_finish_layer(ygg::uint_t layer, const p::Statistics& statistics) override
-    {
-        static_cast<void>(layer);
-        static_cast<void>(statistics);
-    }
-    void on_end_search(p::SearchStatus status, const p::Statistics& statistics) override
-    {
-        static_cast<void>(status);
-        static_cast<void>(statistics);
-    }
-    void on_solved(const p::Plan<Kind>& plan) override { static_cast<void>(plan); }
-};
-
 struct GroundSearchContext
 {
     p::TaskPtr<::tyr::GroundTag> task;
@@ -116,7 +85,7 @@ public:
     explicit ScriptedSolver(std::deque<p::SearchResult<::tyr::GroundTag>> results) :
         m_results(std::make_shared<std::deque<p::SearchResult<::tyr::GroundTag>>>(std::move(results)))
     {
-        options.event_handler = std::make_shared<SilentBrfsEventHandler<::tyr::GroundTag>>();
+        options.event_handler = p::brfs::DefaultEventHandler<::tyr::GroundTag>::create();
     }
 
     p::SearchResult<::tyr::GroundTag> solve()
@@ -177,6 +146,9 @@ TEST(TyrPlanningSerialized, BrfsEventHandlerClearsProgressSnapshotsOnSearchStart
 
     EXPECT_TRUE(event_handler.get_progress_statistics().empty());
     EXPECT_EQ(event_handler.get_progress_statistics().size(), 0);
+
+    EXPECT_EQ(event_handler.make_worker(ygg::Index<p::Worker>(0)), nullptr);
+    EXPECT_NE(p::brfs::DefaultEventHandler<::tyr::GroundTag>(2).make_worker(ygg::Index<p::Worker>(0)), nullptr);
 }
 
 TEST(TyrPlanningSerialized, ThrowsWhenSubgoalStrategyIsMissing)
@@ -240,12 +212,12 @@ TEST(TyrPlanningSerialized, BrfsSubsolverMatchesDirectBrfs)
     auto serialized_context = create_gripper_context();
 
     auto direct_options = p::brfs::Options<::tyr::GroundTag> {};
-    direct_options.event_handler = std::make_shared<SilentBrfsEventHandler<::tyr::GroundTag>>();
+    direct_options.event_handler = p::brfs::DefaultEventHandler<::tyr::GroundTag>::create();
     const auto direct_result = p::brfs::find_solution(*direct_context.task, *direct_context.successor_generator, direct_options);
 
     auto brfs_solver =
         p::brfs::Solver<::tyr::GroundTag> { serialized_context.task, serialized_context.successor_generator, p::brfs::Options<::tyr::GroundTag> {} };
-    brfs_solver.options.event_handler = std::make_shared<SilentBrfsEventHandler<::tyr::GroundTag>>();
+    brfs_solver.options.event_handler = p::brfs::DefaultEventHandler<::tyr::GroundTag>::create();
 
     auto serialized_options = p::serialized::Options<::tyr::GroundTag, decltype(brfs_solver)> {};
     const auto event_handler = p::serialized::DefaultEventHandler<::tyr::GroundTag, decltype(brfs_solver)>::create();

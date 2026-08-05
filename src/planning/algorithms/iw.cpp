@@ -28,9 +28,11 @@
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <memory>
 #include <stdexcept>
+#include <vector>
 
 namespace tyr::planning::iw
 {
@@ -46,6 +48,15 @@ public:
     bool should_prune_successor_state(const StateView<Kind>& state, const StateView<Kind>& succ_state, bool is_new_succ) override
     {
         return m_lhs->should_prune_successor_state(state, succ_state, is_new_succ) || m_rhs->should_prune_successor_state(state, succ_state, is_new_succ);
+    }
+
+    [[nodiscard]] PruningStrategyPtr<Kind> make_worker(ygg::Index<Worker> index) const override
+    {
+        auto lhs = m_lhs->make_worker(index);
+        auto rhs = m_rhs->make_worker(index);
+        if (!lhs || !rhs)
+            return nullptr;
+        return std::make_shared<CombinedPruningStrategy>(std::move(lhs), std::move(rhs));
     }
 
 private:
@@ -76,14 +87,23 @@ SearchResult<Kind> find_solution(brfs::Solver<Kind>& brfs_solver, ygg::uint_t ma
     const auto event_handler = options.event_handler ? options.event_handler : DefaultEventHandler<Kind>::create();
 
     auto statistics = tyr::planning::Statistics {};
+    auto worker_statistics = std::vector<tyr::planning::Statistics> {};
     auto result = SearchResult<Kind> {};
     result.status = SearchStatus::EXHAUSTED;
-    statistics.set_search_start_time_point(std::chrono::steady_clock::now());
+    const auto search_start = std::chrono::steady_clock::now();
+    statistics.set_search_start_time_point(search_start);
 
     const auto finalize = [&](SearchResult<Kind> result)
     {
-        statistics.set_search_end_time_point(std::chrono::steady_clock::now());
+        const auto search_end = std::chrono::steady_clock::now();
+        statistics.set_search_end_time_point(search_end);
+        for (auto& worker : worker_statistics)
+        {
+            worker.set_search_start_time_point(search_start);
+            worker.set_search_end_time_point(search_end);
+        }
         result.statistics = statistics;
+        result.worker_statistics = worker_statistics;
         event_handler->on_end_search(result.status, result.statistics);
         return result;
     };
@@ -105,6 +125,9 @@ SearchResult<Kind> find_solution(brfs::Solver<Kind>& brfs_solver, ygg::uint_t ma
 
         result = local_brfs_solver.solve();
         statistics.add(result.statistics);
+        worker_statistics.resize(std::max(worker_statistics.size(), result.worker_statistics.size()));
+        for (size_t i = 0; i < result.worker_statistics.size(); ++i)
+            worker_statistics[i].add(result.worker_statistics[i]);
         event_handler->on_end_arity(arity, result.status);
 
         if (result.status == SearchStatus::SOLVED)

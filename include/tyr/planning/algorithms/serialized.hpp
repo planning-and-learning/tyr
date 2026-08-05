@@ -26,6 +26,7 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/plan.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <limits>
@@ -126,15 +127,23 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Solver>& op
         throw std::invalid_argument("serialized::find_solution(...): start node is required if max_num_subsearches is 0.");
 
     auto statistics = tyr::planning::Statistics {};
-    statistics.set_search_start_time_point(std::chrono::steady_clock::now());
+    auto worker_statistics = std::vector<tyr::planning::Statistics> {};
+    const auto search_start = std::chrono::steady_clock::now();
+    statistics.set_search_start_time_point(search_start);
 
     event_handler->on_start_search();
 
     const auto finalize = [&](SearchResult<Kind> result)
     {
-        statistics.set_search_end_time_point(std::chrono::steady_clock::now());
+        const auto search_end = std::chrono::steady_clock::now();
+        statistics.set_search_end_time_point(search_end);
+        for (auto& worker : worker_statistics)
+        {
+            worker.set_search_start_time_point(search_start);
+            worker.set_search_end_time_point(search_end);
+        }
         result.statistics = statistics;
-        result.worker_statistics.clear();
+        result.worker_statistics = worker_statistics;
         if (result.plan && result.status == SearchStatus::SOLVED)
             event_handler->on_solved(*result.plan);
         event_handler->on_end_search(result.status, result.statistics);
@@ -171,6 +180,9 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Solver>& op
 
         auto sub_result = local_solver.solve();
         statistics.add(sub_result.statistics);
+        worker_statistics.resize(std::max(worker_statistics.size(), sub_result.worker_statistics.size()));
+        for (size_t i = 0; i < sub_result.worker_statistics.size(); ++i)
+            worker_statistics[i].add(sub_result.worker_statistics[i]);
 
         if (!combined_start_node && sub_result.plan)
         {

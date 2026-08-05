@@ -26,12 +26,14 @@
 
 #include <algorithm>
 #include <array>
-#include <boost/dynamic_bitset.hpp>
 #include <cassert>
 #include <limits>
+#include <memory>
+#include <mutex>
 #include <span>
 #include <stdexcept>
 #include <vector>
+#include <yggdrasil/containers/segmented_bit_vector.hpp>
 #include <yggdrasil/core/types.hpp>
 
 namespace tyr::planning::iw
@@ -39,6 +41,19 @@ namespace tyr::planning::iw
 
 using AtomIndexList = std::vector<ygg::uint_t>;
 using TupleIndex = uint64_t;
+
+namespace detail
+{
+
+template<size_t Arity>
+struct NoveltyTableStorage
+{
+    // ponytail: one lock preserves exact state-level novelty; shard only if profiling shows contention.
+    mutable std::mutex mutex;
+    std::array<ygg::SegmentedBitVector<>, Arity + 1> seen_by_arity;
+};
+
+}
 
 template<size_t Arity>
 inline bool validate_tuple(std::span<const ygg::uint_t> tuple)
@@ -224,19 +239,32 @@ template<size_t Arity>
 class DynamicNoveltyTable
 {
 public:
-    DynamicNoveltyTable() = default;
+    DynamicNoveltyTable() : m_storage(std::make_shared<detail::NoveltyTableStorage<Arity>>()) {}
+    DynamicNoveltyTable(const DynamicNoveltyTable&) = delete;
+    DynamicNoveltyTable& operator=(const DynamicNoveltyTable&) = delete;
+    DynamicNoveltyTable(DynamicNoveltyTable&&) noexcept = default;
+    DynamicNoveltyTable& operator=(DynamicNoveltyTable&&) noexcept = default;
+
+    [[nodiscard]] DynamicNoveltyTable make_worker() const
+    {
+        // Worker construction happens before search threads start; sequential IW keeps the lock-free fast path.
+        m_thread_safe = true;
+        return DynamicNoveltyTable(m_storage, true);
+    }
 
     ygg::uint_t get_arity() const noexcept { return Arity; }
 
     size_t get_num_bits(ygg::uint_t arity) const
     {
         assert(arity <= Arity);
-        return m_seen_by_arity[arity].size();
+        const auto lock = lock_if_shared();
+        return m_storage->seen_by_arity[arity].size();
     }
 
     void clear()
     {
-        for (auto& seen : m_seen_by_arity)
+        const auto lock = lock_if_shared();
+        for (auto& seen : m_storage->seen_by_arity)
             seen.clear();
     }
 
@@ -249,24 +277,15 @@ public:
     bool test(std::span<const ygg::uint_t> tuple) const
     {
         assert(validate_tuple<Arity>(tuple));
-
-        const auto rank = rank_tuple<Arity>(tuple);
-        const auto& seen = m_seen_by_arity[tuple.size()];
-        return rank < seen.size() && seen.test(rank);
+        const auto lock = lock_if_shared();
+        return test_unlocked(tuple);
     }
 
     bool insert(std::span<const ygg::uint_t> tuple)
     {
         assert(validate_tuple<Arity>(tuple));
-
-        const auto rank = rank_tuple<Arity>(tuple);
-        auto& seen = m_seen_by_arity[tuple.size()];
-        if (rank >= seen.size())
-            seen.resize(rank + 1, false);
-
-        const auto novel = !seen.test(rank);
-        seen.set(rank);
-        return novel;
+        const auto lock = lock_if_shared();
+        return insert_unlocked(tuple);
     }
 
     template<TaskKind Kind>
@@ -275,18 +294,19 @@ public:
         validate_max_arity(max_arity);
 
         collect_atoms(state, m_atoms);
+        const auto lock = lock_if_shared();
 
         if constexpr (Arity == 0)
         {
-            return insert(std::span<const ygg::uint_t> {});
+            return insert_unlocked(std::span<const ygg::uint_t> {});
         }
         else
         {
             if (max_arity == 0)
-                return insert(std::span<const ygg::uint_t> {});
+                return insert_unlocked(std::span<const ygg::uint_t> {});
 
             auto novel = false;
-            for_each_tuple<Arity>(m_atoms, max_arity, m_tuple, [&](std::span<const ygg::uint_t> tuple) { novel = insert(tuple) || novel; });
+            for_each_tuple<Arity>(m_atoms, max_arity, m_tuple, [&](std::span<const ygg::uint_t> tuple) { novel = insert_unlocked(tuple) || novel; });
 
             return novel;
         }
@@ -329,6 +349,7 @@ public:
             m_kept_atoms.clear();
             std::ranges::set_intersection(m_atoms, m_src_atoms, std::back_inserter(m_kept_atoms));
 
+            const auto lock = lock_if_shared();
             auto novel = false;
             for_each_tuple_with_added_atoms<Arity>(m_added_atoms,
                                                    m_kept_atoms,
@@ -336,7 +357,7 @@ public:
                                                    m_added_tuple,
                                                    m_kept_tuple,
                                                    m_tuple,
-                                                   [&](std::span<const ygg::uint_t> tuple) { novel = insert(tuple) || novel; });
+                                                   [&](std::span<const ygg::uint_t> tuple) { novel = insert_unlocked(tuple) || novel; });
 
             return novel;
         }
@@ -349,6 +370,39 @@ public:
     }
 
 private:
+    explicit DynamicNoveltyTable(std::shared_ptr<detail::NoveltyTableStorage<Arity>> storage, bool thread_safe) :
+        m_storage(std::move(storage)),
+        m_thread_safe(thread_safe)
+    {
+    }
+
+    std::unique_lock<std::mutex> lock_if_shared() const
+    {
+        auto lock = std::unique_lock(m_storage->mutex, std::defer_lock);
+        if (m_thread_safe)
+            lock.lock();
+        return lock;
+    }
+
+    bool test_unlocked(std::span<const ygg::uint_t> tuple) const
+    {
+        const auto rank = rank_tuple<Arity>(tuple);
+        const auto& seen = m_storage->seen_by_arity[tuple.size()];
+        return rank < seen.size() && seen[rank];
+    }
+
+    bool insert_unlocked(std::span<const ygg::uint_t> tuple)
+    {
+        const auto rank = rank_tuple<Arity>(tuple);
+        auto& seen = m_storage->seen_by_arity[tuple.size()];
+        if (rank >= seen.size())
+            seen.resize(rank + 1, false);
+
+        const auto novel = !seen[rank];
+        seen[rank] = true;
+        return novel;
+    }
+
     template<TaskKind Kind>
     void collect_atoms(StateView<Kind> state, AtomIndexList& out)
     {
@@ -363,7 +417,8 @@ private:
         assert(std::ranges::adjacent_find(out) == out.end());
     }
 
-    std::array<boost::dynamic_bitset<>, Arity + 1> m_seen_by_arity;
+    std::shared_ptr<detail::NoveltyTableStorage<Arity>> m_storage;
+    mutable bool m_thread_safe { false };
     AtomIndexList m_atoms;
     AtomIndexList m_src_atoms;
     AtomIndexList m_added_atoms;
