@@ -22,7 +22,7 @@
 #include "tyr/planning/state_storage/tags.hpp"
 
 #include <limits>
-#include <valla/valla.hpp>
+#include <yggdrasil/containers/tree_vector_set.hpp>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/semantics/comparison.hpp>
 
@@ -32,12 +32,12 @@ namespace tyr::planning
 template<TaskKind Kind>
 struct NumericPackedStorage<Kind, TreeCompression> : ygg::comparison::Mixin<NumericPackedStorage<Kind, TreeCompression>>
 {
-    valla::Slot<ygg::uint_t> slot;
+    ygg::TreeVectorIndex<ygg::float_t> index;
 
     NumericPackedStorage() = default;
-    explicit NumericPackedStorage(valla::Slot<ygg::uint_t> slot) : slot(slot) {}
+    explicit NumericPackedStorage(ygg::TreeVectorIndex<ygg::float_t> index) : index(index) {}
 
-    auto identifying_members() const noexcept { return std::tie(slot.i1, slot.i2); }
+    auto identifying_members() const noexcept { return std::tie(index); }
 };
 
 template<TaskKind Kind>
@@ -54,10 +54,7 @@ public:
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    valla::IndexedHashSet<valla::Slot<ygg::uint_t>, ygg::uint_t>& m_uint_nodes;
-    valla::IndexedHashSet<ygg::float_t, ygg::uint_t>& m_float_nodes;
-
-    std::vector<ygg::uint_t> m_uint_node_buffer;
+    ygg::TreeVectorSet<ygg::float_t>& m_float_vectors;
 };
 
 }

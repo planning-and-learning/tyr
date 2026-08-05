@@ -12,7 +12,6 @@ yggdrasil_find_python_native_prefix(pypddl PYPDDL_NATIVE_PREFIX)
 yggdrasil_register_native_dependency_prefix("${YGGDRASIL_NATIVE_PREFIX}")
 yggdrasil_register_native_dependency_prefix("${PYPDDL_NATIVE_PREFIX}")
 
-find_dependency(valla CONFIG COMPONENTS core PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 find_dependency(loki @TYR_LOKI_REQUIRED_VERSION@ CONFIG COMPONENTS parsers PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 
 # Components

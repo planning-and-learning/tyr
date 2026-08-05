@@ -23,9 +23,9 @@
 #include "tyr/planning/state_storage/tags.hpp"
 
 #include <concepts>
-#include <valla/valla.hpp>
 #include <vector>
 #include <yggdrasil/containers/raw_array_set.hpp>
+#include <yggdrasil/containers/tree_vector_set.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
@@ -61,16 +61,14 @@ struct StateStorageContext<GroundTag, TreeCompression>
     ygg::uint_t derived_num_bits;
     ygg::RawArraySet<ygg::uint_t> derived_array_set;
 
-    valla::IndexedHashSet<valla::Slot<ygg::uint_t>, ygg::uint_t> uint_nodes;
-    valla::IndexedHashSet<ygg::float_t, ygg::uint_t> float_nodes;
+    ygg::TreeVectorSet<ygg::float_t> float_vectors;
 
     size_t memory_usage() const noexcept
     {
         size_t bytes = 0;
         bytes += fluent_array_set.memory_usage();
         bytes += derived_array_set.memory_usage();
-        bytes += uint_nodes.memory_usage();
-        bytes += float_nodes.memory_usage();
+        bytes += float_vectors.memory_usage();
         return bytes;
     }
 

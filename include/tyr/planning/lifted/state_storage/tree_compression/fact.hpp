@@ -24,6 +24,7 @@
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
 
+#include <yggdrasil/containers/tree_vector_set.hpp>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/semantics/comparison.hpp>
 
@@ -33,12 +34,12 @@ namespace tyr::planning
 template<>
 struct FactPackedStorage<LiftedTag, TreeCompression> : ygg::comparison::Mixin<FactPackedStorage<LiftedTag, TreeCompression>>
 {
-    valla::Slot<ygg::uint_t> slot;
+    ygg::TreeVectorIndex<ygg::uint_t> index;
 
     FactPackedStorage() = default;
-    explicit FactPackedStorage(valla::Slot<ygg::uint_t> slot) : slot(slot) {}
+    explicit FactPackedStorage(ygg::TreeVectorIndex<ygg::uint_t> index) : index(index) {}
 
-    auto identifying_members() const noexcept { return std::tie(slot.i1, slot.i2); }
+    auto identifying_members() const noexcept { return std::tie(index); }
 };
 
 template<>
@@ -55,9 +56,9 @@ public:
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    valla::IndexedHashSet<valla::Slot<ygg::uint_t>, ygg::uint_t>& m_uint_nodes;
+    ygg::TreeVectorSet<ygg::uint_t>& m_uint_vectors;
 
-    std::vector<ygg::uint_t> m_uint_node_buffer;
+    std::vector<ygg::uint_t> m_buffer;
 };
 
 }

@@ -206,7 +206,6 @@ target_link_libraries(
     PUBLIC
         yggdrasil::yggdrasil
         TBB::tbb
-        valla::core
         fmt::fmt-header-only
         gtl::gtl
         loki::parsers

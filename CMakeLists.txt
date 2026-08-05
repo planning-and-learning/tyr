@@ -180,11 +180,6 @@ if(TBB_FOUND)
     message(STATUS "Found TBB: ${TBB_DIR} (found version ${TBB_VERSION})")
 endif()
 
-find_package(valla CONFIG COMPONENTS core REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
-if(valla_FOUND)
-    message(STATUS "Found valla: ${valla_DIR} (found version ${valla_VERSION})")
-endif()
-
 find_package(
     loki ${TYR_LOKI_REQUIRED_VERSION}
     CONFIG REQUIRED COMPONENTS parsers

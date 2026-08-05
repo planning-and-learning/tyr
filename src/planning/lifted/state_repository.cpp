@@ -42,8 +42,6 @@
 
 #include <tuple>           // for operat...
 #include <utility>         // for move
-#include <valla/slot.hpp>  // for Slot
-#include <valla/valla.hpp>
 #include <yggdrasil/containers/vector.hpp>      // for ygg::View
 #include <yggdrasil/semantics/comparators.hpp>  // for operat...
 

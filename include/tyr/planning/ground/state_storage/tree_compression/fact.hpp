@@ -26,7 +26,6 @@
 
 #include <boost/dynamic_bitset.hpp>
 #include <limits>
-#include <valla/valla.hpp>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/semantics/comparison.hpp>
 

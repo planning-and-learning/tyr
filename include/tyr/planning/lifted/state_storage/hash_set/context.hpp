@@ -23,7 +23,6 @@
 #include "tyr/planning/state_storage/tags.hpp"
 
 #include <concepts>
-#include <valla/valla.hpp>
 #include <vector>
 #include <yggdrasil/containers/raw_vector_set.hpp>
 #include <yggdrasil/core/config.hpp>

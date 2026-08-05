@@ -23,18 +23,20 @@
 namespace tyr::planning
 {
 
-AtomStorageBackend<LiftedTag, TreeCompression>::AtomStorageBackend(StateStorageContext<LiftedTag, TreeCompression>& ctx) : m_uint_nodes(ctx.uint_nodes) {}
+AtomStorageBackend<LiftedTag, TreeCompression>::AtomStorageBackend(StateStorageContext<LiftedTag, TreeCompression>& ctx) :
+    m_uint_vectors(ctx.uint_vectors)
+{
+}
 
 typename AtomStorageBackend<LiftedTag, TreeCompression>::Packed
 AtomStorageBackend<LiftedTag, TreeCompression>::insert(const typename AtomStorageBackend<LiftedTag, TreeCompression>::Unpacked& unpacked)
 {
-    m_uint_node_buffer.clear();
+    m_buffer.clear();
     const auto& bits = unpacked.indices;
     for (auto i = bits.find_first(); i != boost::dynamic_bitset<>::npos; i = bits.find_next(i))
-        m_uint_node_buffer.push_back(i);
+        m_buffer.push_back(i);
 
-    const auto slot = valla::insert_sequence(m_uint_node_buffer, m_uint_nodes);
-    return AtomStorageBackend<LiftedTag, TreeCompression>::Packed { slot };
+    return AtomStorageBackend<LiftedTag, TreeCompression>::Packed { m_uint_vectors.insert(m_buffer) };
 }
 
 void AtomStorageBackend<LiftedTag, TreeCompression>::unpack(const typename AtomStorageBackend<LiftedTag, TreeCompression>::Packed& packed,
@@ -42,12 +44,12 @@ void AtomStorageBackend<LiftedTag, TreeCompression>::unpack(const typename AtomS
 {
     auto& indices = unpacked.indices;
 
-    m_uint_node_buffer.clear();
+    m_buffer.resize(packed.index.size);
     indices.clear();
 
-    valla::read_sequence(packed.slot, m_uint_nodes, std::back_inserter(m_uint_node_buffer));
+    m_uint_vectors.read(packed.index, m_buffer);
 
-    for (const auto i : m_uint_node_buffer)
+    for (const auto i : m_buffer)
         ygg::set(i, true, indices);
 }
 

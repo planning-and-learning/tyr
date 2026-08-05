@@ -23,18 +23,20 @@
 namespace tyr::planning
 {
 
-FactStorageBackend<LiftedTag, TreeCompression>::FactStorageBackend(StateStorageContext<LiftedTag, TreeCompression>& ctx) : m_uint_nodes(ctx.uint_nodes) {}
+FactStorageBackend<LiftedTag, TreeCompression>::FactStorageBackend(StateStorageContext<LiftedTag, TreeCompression>& ctx) :
+    m_uint_vectors(ctx.uint_vectors)
+{
+}
 
 typename FactStorageBackend<LiftedTag, TreeCompression>::Packed
 FactStorageBackend<LiftedTag, TreeCompression>::insert(const typename FactStorageBackend<LiftedTag, TreeCompression>::Unpacked& unpacked)
 {
-    m_uint_node_buffer.clear();
+    m_buffer.clear();
     const auto& bits = unpacked.indices;
     for (auto i = bits.find_first(); i != boost::dynamic_bitset<>::npos; i = bits.find_next(i))
-        m_uint_node_buffer.push_back(i);
+        m_buffer.push_back(i);
 
-    const auto slot = valla::insert_sequence(m_uint_node_buffer, m_uint_nodes);
-    return FactStorageBackend<LiftedTag, TreeCompression>::Packed { slot };
+    return FactStorageBackend<LiftedTag, TreeCompression>::Packed { m_uint_vectors.insert(m_buffer) };
 }
 
 void FactStorageBackend<LiftedTag, TreeCompression>::unpack(const typename FactStorageBackend<LiftedTag, TreeCompression>::Packed& packed,
@@ -42,12 +44,12 @@ void FactStorageBackend<LiftedTag, TreeCompression>::unpack(const typename FactS
 {
     auto& indices = unpacked.indices;
 
-    m_uint_node_buffer.clear();
+    m_buffer.resize(packed.index.size);
     indices.clear();
 
-    valla::read_sequence(packed.slot, m_uint_nodes, std::back_inserter(m_uint_node_buffer));
+    m_uint_vectors.read(packed.index, m_buffer);
 
-    for (const auto i : m_uint_node_buffer)
+    for (const auto i : m_buffer)
         ygg::set(i, true, indices);
 }
 

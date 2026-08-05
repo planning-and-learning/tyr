@@ -38,8 +38,6 @@
 
 #include "tyr/planning/task.hpp"
 
-#include <valla/valla.hpp>
-
 /**
  * Definitions
  */

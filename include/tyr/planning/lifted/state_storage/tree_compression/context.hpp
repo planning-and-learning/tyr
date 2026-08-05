@@ -23,8 +23,8 @@
 #include "tyr/planning/state_storage/tags.hpp"
 
 #include <concepts>
-#include <valla/valla.hpp>
 #include <vector>
+#include <yggdrasil/containers/tree_vector_set.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
@@ -37,14 +37,14 @@ namespace tyr::planning
 template<>
 struct StateStorageContext<LiftedTag, TreeCompression>
 {
-    valla::IndexedHashSet<valla::Slot<ygg::uint_t>, ygg::uint_t> uint_nodes;
-    valla::IndexedHashSet<ygg::float_t, ygg::uint_t> float_nodes;
+    ygg::TreeVectorSet<ygg::uint_t> uint_vectors;
+    ygg::TreeVectorSet<ygg::float_t> float_vectors;
 
     size_t memory_usage() const noexcept
     {
         size_t bytes = 0;
-        bytes += uint_nodes.memory_usage();
-        bytes += float_nodes.memory_usage();
+        bytes += uint_vectors.memory_usage();
+        bytes += float_vectors.memory_usage();
         return bytes;
     }
 };

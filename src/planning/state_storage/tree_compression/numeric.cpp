@@ -27,9 +27,7 @@ namespace tyr::planning
 
 template<TaskKind Kind>
 NumericStorageBackend<Kind, TreeCompression>::NumericStorageBackend(StateStorageContext<Kind, TreeCompression>& ctx) :
-    m_uint_nodes(ctx.uint_nodes),
-    m_float_nodes(ctx.float_nodes),
-    m_uint_node_buffer()
+    m_float_vectors(ctx.float_vectors)
 {
 }
 
@@ -40,20 +38,15 @@ NumericStorageBackend<Kind, TreeCompression>::insert(typename NumericStorageBack
     for (auto& value : unpacked.values)
         value = ygg::FloatTolerance<ygg::float_t>::canonicalize(value);
 
-    m_uint_node_buffer.clear();
-    valla::encode_as_unsigned_integrals(unpacked.values, m_float_nodes, std::back_inserter(m_uint_node_buffer));
-    const auto slot = valla::insert_sequence(m_uint_node_buffer, m_uint_nodes);
-    return NumericStorageBackend<Kind, TreeCompression>::Packed { slot };
+    return NumericStorageBackend<Kind, TreeCompression>::Packed { m_float_vectors.insert(unpacked.values) };
 }
 
 template<TaskKind Kind>
 void NumericStorageBackend<Kind, TreeCompression>::unpack(const typename NumericStorageBackend<Kind, TreeCompression>::Packed& packed,
                                                           typename NumericStorageBackend<Kind, TreeCompression>::Unpacked& unpacked)
 {
-    m_uint_node_buffer.clear();
-    unpacked.values.clear();
-    valla::read_sequence(packed.slot, m_uint_nodes, std::back_inserter(m_uint_node_buffer));
-    valla::decode_from_unsigned_integrals(m_uint_node_buffer, m_float_nodes, std::back_inserter(unpacked.values));
+    unpacked.values.resize(packed.index.size);
+    m_float_vectors.read(packed.index, unpacked.values);
 }
 
 template class NumericStorageBackend<LiftedTag, TreeCompression>;
