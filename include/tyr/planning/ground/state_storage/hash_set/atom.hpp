@@ -43,21 +43,22 @@ struct AtomPackedStorage<GroundTag, HashSet> : ygg::comparison::Mixin<AtomPacked
     auto identifying_members() const noexcept { return std::tie(index); }
 };
 
-template<>
-class AtomStorageBackend<GroundTag, HashSet>
+template<bool ThreadSafe>
+class AtomStorageBackend<GroundTag, HashSet, ThreadSafe>
 {
 public:
+    using Context = StateStorageContext<GroundTag, HashSet, ThreadSafe>;
     using Unpacked = AtomUnpackedStorage<GroundTag>;
     using Packed = AtomPackedStorage<GroundTag, HashSet>;
 
-    explicit AtomStorageBackend(StateStorageContext<GroundTag, HashSet>& ctx);
+    explicit AtomStorageBackend(Context& ctx);
 
     Packed insert(const Unpacked& unpacked);
 
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    ygg::RawArraySet<ygg::uint_t>& m_array_set;
+    typename Context::ArraySet& m_array_set;
     ygg::uint_t m_num_bits;
 
     std::vector<ygg::uint_t> m_buffer;

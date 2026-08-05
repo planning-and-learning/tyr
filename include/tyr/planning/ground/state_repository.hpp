@@ -26,6 +26,7 @@
 
 #include <atomic>
 #include <memory>
+#include <span>
 #include <utility>
 #include <vector>
 #include <yggdrasil/containers/shared_object_pool.hpp>
@@ -37,6 +38,7 @@ template<>
 class StateRepository<GroundTag> : public std::enable_shared_from_this<StateRepository<GroundTag>>
 {
     friend class StateRepositoryFactory<GroundTag>;
+    friend class SuccessorGenerator<GroundTag>;
 
 private:
     struct Impl;
@@ -46,6 +48,7 @@ private:
                     AxiomEvaluatorPtr<GroundTag> axiom_evaluator,
                     std::shared_ptr<std::atomic<ygg::uint_t>> next_index);
     explicit StateRepository(std::unique_ptr<Impl> impl);
+    [[nodiscard]] std::vector<StateRepositoryPtr<GroundTag>> make_shared_workers(std::span<const ygg::ExecutionContextPtr> execution_contexts) const;
 
 public:
     ~StateRepository();
@@ -68,6 +71,7 @@ public:
     StateView<GroundTag> register_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state);
     [[nodiscard]] StateRepositoryPtr<GroundTag> make_worker(ygg::ExecutionContextPtr execution_context) const;
 
+    /// All repositories sharing this storage must be quiescent while inspecting memory usage.
     size_t memory_usage() const noexcept;
 
     const TaskPtr<GroundTag>& get_task() const noexcept;

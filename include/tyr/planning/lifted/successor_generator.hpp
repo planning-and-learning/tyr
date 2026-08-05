@@ -26,6 +26,7 @@
 
 #include <atomic>
 #include <memory>
+#include <span>
 #include <vector>
 
 namespace tyr::planning
@@ -86,6 +87,8 @@ public:
     // Lookup
     Node<LiftedTag> get_node(ygg::Index<State<LiftedTag>> state_index);
     [[nodiscard]] SuccessorGeneratorPtr<LiftedTag> make_worker(ygg::ExecutionContextPtr execution_context) const;
+    /// Creates worker-local generators backed by one concurrent state repository.
+    [[nodiscard]] std::vector<SuccessorGeneratorPtr<LiftedTag>> make_shared_workers(std::span<const ygg::ExecutionContextPtr> execution_contexts) const;
 
     // Diagnostics
     void print_summary(size_t verbosity) const;

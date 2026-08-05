@@ -19,6 +19,7 @@
 #define TYR_SRC_PLANNING_ALGORITHMS_SEARCH_ENGINE_ENGINE_HPP_
 
 #include "../repository_statistics.hpp"
+#include "concepts.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
@@ -33,8 +34,6 @@
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
-#include "tyr/planning/search_space/parallel.hpp"
-#include "tyr/planning/search_space/sequential.hpp"
 #include "tyr/planning/worker_state_index.hpp"
 
 #include <cassert>
@@ -43,17 +42,13 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
-#include <limits>
 #include <memory>
 #include <optional>
 #include <random>
-#include <span>
 #include <stdexcept>
-#include <type_traits>
 #include <utility>
 #include <vector>
 #include <yggdrasil/containers/segmented_vector.hpp>
-#include <yggdrasil/core/portable_shuffle.hpp>
 
 namespace tyr::planning::detail
 {
@@ -65,13 +60,6 @@ enum class ExpansionResult : uint8_t
     GOAL,
 };
 
-enum class AcceptanceResult : uint8_t
-{
-    QUEUED,
-    DISCARDED,
-    TERMINAL,
-};
-
 template<TaskKind Kind, typename SearchNode>
 SearchNode& get_or_create_search_node(ygg::Index<State<Kind>> state_index, ygg::SegmentedVector<SearchNode>& search_nodes, const SearchNode& default_node)
 {
@@ -81,14 +69,17 @@ SearchNode& get_or_create_search_node(ygg::Index<State<Kind>> state_index, ygg::
     return search_nodes[ygg::uint_t(state_index)];
 }
 
-template<TaskKind Kind, typename SearchPolicy, typename ExecutionPolicy>
+template<TaskKind Kind, SearchPolicyConcept<Kind> SearchPolicy, ExecutionPolicyConcept<Kind, SearchPolicy> ExecutionPolicy>
 class SearchEngine
 {
+    friend SearchPolicy;
+    friend ExecutionPolicy;
+
 public:
+    using SearchTag = typename SearchPolicy::SearchTag;
     using Options = typename SearchPolicy::Options;
     using SearchNode = typename SearchPolicy::SearchNode;
     using WorkerExecutionState = typename ExecutionPolicy::WorkerState;
-    static constexpr bool supports_f_layer_synchronization = SearchPolicy::supports_f_layer_synchronization;
 
     struct RoutedSuccessor
     {
@@ -127,11 +118,13 @@ public:
                    ygg::ExecutionContextPtr execution_context_,
                    SuccessorGeneratorPtr<Kind> successor_generator_,
                    HeuristicPtr<Kind> heuristic_,
+                   size_t num_state_owners_,
                    const Options& options,
                    PruningStrategyPtr<Kind> pruning_strategy_,
                    GoalStrategyPtr<Kind> goal_strategy_,
                    typename SearchPolicy::WorkerEventHandlerPtr event_handler_) :
             index(index_),
+            num_state_owners(num_state_owners_),
             execution_context(std::move(execution_context_)),
             owned_successor_generator(std::move(successor_generator_)),
             owned_heuristic(std::move(heuristic_)),
@@ -144,9 +137,23 @@ public:
             goal_strategy(std::move(goal_strategy_)),
             event_handler(std::move(event_handler_))
         {
+            assert(num_state_owners > 0);
         }
 
+        ygg::Index<State<Kind>> get_search_node_index(ygg::Index<State<Kind>> state) const noexcept
+        {
+            return ExecutionPolicy::search_node_index(state, index, num_state_owners);
+        }
+
+        SearchNode& initialize_start(ygg::Index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value)
+        {
+            return search.initialize_start(get_search_node_index(state), g_value, h_value);
+        }
+
+        SearchNode& get_search_node(ygg::Index<State<Kind>> state) { return search.get_search_node(get_search_node_index(state)); }
+
         ygg::Index<Worker> index;
+        size_t num_state_owners { 1 };
         ygg::ExecutionContextPtr execution_context;
         SuccessorGeneratorPtr<Kind> owned_successor_generator;
         HeuristicPtr<Kind> owned_heuristic;
@@ -163,7 +170,9 @@ public:
         typename SearchPolicy::WorkerEventHandlerPtr event_handler;
     };
 
-    using WorkerStorage = std::conditional_t<ExecutionPolicy::parallel, std::vector<std::unique_ptr<WorkerData>>, WorkerData>;
+    using Workers = WorkerPolicy<SearchTag, Kind, SearchPolicy, ExecutionPolicy, WorkerData>;
+
+    static_assert(WorkerPolicyConcept<Workers, WorkerData, Kind, SearchPolicy>);
 
     static SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& successor_generator, Heuristic<Kind>& heuristic, const Options& options)
     {
@@ -171,28 +180,11 @@ public:
         return SearchEngine(task, successor_generator, heuristic, options).run();
     }
 
-    size_t num_workers() const noexcept
-    {
-        if constexpr (ExecutionPolicy::parallel)
-            return m_workers.size();
-        else
-            return 1;
-    }
+    size_t num_workers() const noexcept { return m_workers.size(); }
 
-    WorkerData& get_worker(ygg::Index<Worker> index) noexcept
-    {
-        if constexpr (ExecutionPolicy::parallel)
-        {
-            const auto value = static_cast<size_t>(ygg::uint_t(index));
-            assert(value < m_workers.size());
-            return *m_workers[value];
-        }
-        else
-        {
-            assert(index == ygg::Index<Worker>(0));
-            return m_workers;
-        }
-    }
+    WorkerData& get_worker(ygg::Index<Worker> index) noexcept { return m_workers.get(index); }
+
+    const WorkerData& get_worker(ygg::Index<Worker> index) const noexcept { return m_workers.get(index); }
 
     void worker_loop(WorkerData& worker)
     {
@@ -250,68 +242,21 @@ private:
         m_event_handler(options.event_handler),
         m_start_node(options.start_node ? *options.start_node : successor_generator.get_initial_node()),
         m_execution(options.random_seed),
-        m_workers(make_workers(task, successor_generator, heuristic, options, m_event_handler))
+        m_workers(task, successor_generator, heuristic, options, m_event_handler)
     {
-    }
-
-    static WorkerStorage make_workers(Task<Kind>& task,
-                                      SuccessorGenerator<Kind>& successor_generator,
-                                      Heuristic<Kind>& heuristic,
-                                      const Options& options,
-                                      const typename SearchPolicy::EventHandlerPtr& event_handler)
-    {
-        if constexpr (ExecutionPolicy::parallel)
-        {
-            auto workers = std::vector<std::unique_ptr<WorkerData>> {};
-            workers.reserve(ExecutionPolicy::num_workers(options));
-            for (size_t i = 0; i < ExecutionPolicy::num_workers(options); ++i)
-            {
-                const auto index = ygg::Index<Worker>(static_cast<ygg::uint_t>(i));
-                auto execution_context = ExecutionPolicy::create_execution_context();
-                auto worker_successor_generator = successor_generator.make_worker(execution_context);
-                auto worker_heuristic = heuristic.make_worker(execution_context);
-                auto worker_pruning_strategy = options.pruning_strategy ? options.pruning_strategy->make_worker(index) : PruningStrategy<Kind>::create();
-                if (!worker_pruning_strategy)
-                    throw std::invalid_argument("Parallel search pruning strategy does not support worker construction.");
-                auto worker_goal_strategy = options.goal_strategy ? options.goal_strategy->make_worker(index) : ConjunctiveGoalStrategy<Kind>::create(task);
-                if (!worker_goal_strategy)
-                    throw std::invalid_argument("Parallel search goal strategy does not support worker construction.");
-                auto worker_event_handler = event_handler ? event_handler->make_worker(index) : nullptr;
-                workers.push_back(std::make_unique<WorkerData>(index,
-                                                               std::move(execution_context),
-                                                               std::move(worker_successor_generator),
-                                                               std::move(worker_heuristic),
-                                                               options,
-                                                               std::move(worker_pruning_strategy),
-                                                               std::move(worker_goal_strategy),
-                                                               std::move(worker_event_handler)));
-            }
-            return workers;
-        }
-        else
-        {
-            return WorkerData(ygg::Index<Worker>(0),
-                              successor_generator,
-                              heuristic,
-                              options,
-                              options.pruning_strategy ? options.pruning_strategy : PruningStrategy<Kind>::create(),
-                              options.goal_strategy ? options.goal_strategy : ConjunctiveGoalStrategy<Kind>::create(task),
-                              event_handler ? event_handler->make_worker(ygg::Index<Worker>(0)) : nullptr);
-        }
     }
 
     SearchResult<Kind> run()
     {
-        const auto start_owner = m_execution.owner(*this, m_start_node.get_state().get_state_builder());
+        auto [start_owner, start_state] = prepare_start_state();
         auto& start_worker = get_worker(start_owner);
-        auto start_state = prepare_start_state(start_worker);
         const auto start_state_index = start_state.get_index();
         const auto start_g_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_start_node.get_metric());
         const auto start_h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(start_worker.heuristic.evaluate(start_state));
         if (std::isnan(start_h_value))
             throw std::runtime_error("find_solution(...): start heuristic value is NaN.");
         m_execution.initialize_best_h(start_h_value);
-        auto& start_search_node = start_worker.search.initialize_start(start_state_index, start_g_value, start_h_value);
+        auto& start_search_node = start_worker.initialize_start(start_state_index, start_g_value, start_h_value);
 
         const auto search_start = std::chrono::steady_clock::now();
         m_result.statistics.set_search_start_time_point(search_start);
@@ -356,19 +301,14 @@ private:
             return std::move(m_result);
         }
 
-        if constexpr (ExecutionPolicy::parallel)
+        if (!ExecutionPolicy::has_start_state_capacity(m_options.max_num_states))
         {
-            if (m_options.max_num_states == 0)
-            {
-                finalize(SearchStatus::OUT_OF_STATES);
-                return std::move(m_result);
-            }
+            finalize(SearchStatus::OUT_OF_STATES);
+            return std::move(m_result);
         }
 
         start_worker.search.open_start(start_state_index, start_search_node);
-        m_execution.start(m_options.max_time,
-                          start_worker.search.get_start_priority(),
-                          SearchPolicy::synchronize_f_layers(m_options));
+        m_execution.start(m_options.max_time, start_worker.search.get_start_priority(), m_options);
         try
         {
             m_execution.invoke(*this);
@@ -382,19 +322,7 @@ private:
         }
     }
 
-    StateView<Kind> prepare_start_state(WorkerData& worker)
-    {
-        if constexpr (!ExecutionPolicy::parallel)
-        {
-            return m_start_node.get_state();
-        }
-        else
-        {
-            auto builder = worker.successor_generator.get_state_repository()->get_state_builder();
-            builder->assign_unextended_part(m_start_node.get_state().get_state_builder());
-            return worker.successor_generator.get_state_repository()->register_state(std::move(builder));
-        }
-    }
+    std::pair<ygg::Index<Worker>, StateView<Kind>> prepare_start_state() { return m_execution.prepare_start_state(*this, m_start_node.get_state()); }
 
     void expand_one(WorkerData& worker)
     {
@@ -407,7 +335,7 @@ private:
 
         auto& state_repository = *worker.successor_generator.get_state_repository();
         const auto state = state_repository.get_registered_state(entry.state);
-        auto& search_node = worker.search.get_search_node(entry.state);
+        auto& search_node = worker.get_search_node(entry.state);
         auto node = Node<Kind>(state, search_node.g_value);
 
         if (search_node.status == SearchNodeStatus::CLOSED || search_node.status == SearchNodeStatus::DEAD_END)
@@ -438,88 +366,7 @@ private:
         }
 
         worker.successor_generator.get_applicable_action_bindings(node, worker.applicable_actions);
-        if constexpr (ExecutionPolicy::parallel)
-        {
-            if (m_options.shuffle_labeled_succ_nodes)
-                ygg::portable_shuffle(worker.applicable_actions.begin(), worker.applicable_actions.end(), worker.rng);
-
-            for (const auto action : worker.applicable_actions)
-            {
-                if (!m_execution.running())
-                    break;
-
-                if constexpr (SearchPolicy::check_timeout_per_successor)
-                {
-                    if (m_execution.timed_out())
-                    {
-                        m_execution.set_terminal(*this, SearchStatus::OUT_OF_TIME);
-                        break;
-                    }
-                }
-
-                auto successor_state = state_repository.get_state_builder();
-                const auto action_result = worker.successor_generator.generate_successor_state(node, action, *successor_state);
-                auto metadata = worker.search.make_successor_metadata(worker.index, entry.state, search_node, action);
-                if (auto incoming = m_execution.route(*this, worker, node, std::move(successor_state), action_result, action, std::move(metadata)))
-                {
-                    const auto result = accept_successor(worker, incoming->source, incoming->routed);
-                    handle_acceptance(result);
-                    if (result == AcceptanceResult::TERMINAL || !m_execution.running())
-                        break;
-                }
-            }
-
-            if constexpr (SearchPolicy::check_timeout_after_generation)
-            {
-                if (m_execution.running() && m_execution.timed_out())
-                    m_execution.set_terminal(*this, SearchStatus::OUT_OF_TIME);
-            }
-        }
-        else
-        {
-            worker.routed_successors.clear();
-            worker.routed_successors.reserve(worker.applicable_actions.size());
-            for (const auto action : worker.applicable_actions)
-            {
-                auto successor_state = state_repository.get_state_builder();
-                const auto action_result = worker.successor_generator.generate_successor_state(node, action, *successor_state);
-                worker.routed_successors.push_back(m_execution.route(*this,
-                                                                     worker,
-                                                                     std::move(successor_state),
-                                                                     action_result,
-                                                                     action,
-                                                                     worker.search.make_successor_metadata(worker.index, entry.state, search_node, action)));
-            }
-
-            if constexpr (SearchPolicy::check_timeout_after_generation)
-            {
-                if (m_execution.timed_out())
-                {
-                    m_execution.set_terminal(*this, SearchStatus::OUT_OF_TIME);
-                    return;
-                }
-            }
-
-            if (m_options.shuffle_labeled_succ_nodes)
-                ygg::portable_shuffle(worker.routed_successors.begin(), worker.routed_successors.end(), worker.rng);
-
-            for (const auto& routed_successor : worker.routed_successors)
-            {
-                if constexpr (SearchPolicy::check_timeout_per_successor)
-                {
-                    if (m_execution.timed_out())
-                    {
-                        m_execution.set_terminal(*this, SearchStatus::OUT_OF_TIME);
-                        return;
-                    }
-                }
-
-                const auto result = accept_successor(worker, node, routed_successor);
-                handle_acceptance(result);
-                if (result == AcceptanceResult::TERMINAL)
-                    return;
-            }
-        }
+        m_execution.expand_successors(*this, worker, node, entry, search_node, state_repository);
 
         m_execution.finish_expansion(*this);
     }
@@ -532,11 +379,10 @@ private:
 
     AcceptanceResult accept_successor(WorkerData& worker, const Node<Kind>& source_node, const RoutedSuccessor& routed_successor)
     {
-        const auto& source_state = source_node.get_state();
         const auto& labeled_successor = routed_successor.labeled_node;
         const auto& successor_node = labeled_successor.node;
         const auto& successor_state = successor_node.get_state();
-        auto& successor_search_node = worker.search.get_search_node(successor_state.get_index());
+        auto& successor_search_node = worker.get_search_node(successor_state.get_index());
 
         if (std::isnan(successor_node.get_metric()))
             throw std::runtime_error("find_solution(...): successor metric value is NaN.");
@@ -555,98 +401,7 @@ private:
         const auto normalized_successor = LabeledNode<Kind> { labeled_successor.label, normalized_node };
         const auto emit_transition = [&](TransitionOutcome outcome)
         { call_worker_event(worker, [&](auto& handler) { handler.on_generate_transition(source_node, normalized_successor, outcome); }); };
-
-        if constexpr (SearchPolicy::eager)
-        {
-            if (worker.pruning_strategy->should_prune_successor_state(source_state, successor_state, is_new))
-            {
-                successor_search_node.status = SearchNodeStatus::CLOSED;
-                worker.statistics.increment_num_pruned();
-                emit_transition(TransitionOutcome::PRUNED);
-                return AcceptanceResult::DISCARDED;
-            }
-
-            if (g_value < successor_search_node.g_value)
-            {
-                worker.statistics.increment_num_generated();
-                worker.search.set_parent(successor_search_node, routed_successor.metadata.parent);
-                successor_search_node.g_value = g_value;
-
-                if constexpr (ExecutionPolicy::parallel)
-                {
-                    if (worker.goal_strategy->is_dynamic_goal_satisfied(m_start_node.get_state(), successor_state))
-                    {
-                        successor_search_node.status = SearchNodeStatus::GOAL;
-                        static_cast<void>(m_execution.consider_goal(*this,
-                                                                    WorkerStateIndex<Kind> { worker.index, successor_state.get_index() },
-                                                                    g_value,
-                                                                    SearchPolicy::terminate_on_goal));
-                        emit_transition(TransitionOutcome::GOAL);
-                        return m_execution.running() ? AcceptanceResult::DISCARDED : AcceptanceResult::TERMINAL;
-                    }
-                }
-
-                const auto h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(worker.heuristic.evaluate(successor_state));
-                if (std::isnan(h_value))
-                    throw std::runtime_error("find_solution(...): successor heuristic value is NaN.");
-                if (h_value == std::numeric_limits<ygg::float_t>::infinity())
-                {
-                    successor_search_node.status = SearchNodeStatus::DEAD_END;
-                    emit_transition(TransitionOutcome::DEAD_END);
-                    return AcceptanceResult::DISCARDED;
-                }
-
-                const auto is_goal = !ExecutionPolicy::parallel
-                                     && worker.goal_strategy->is_dynamic_goal_satisfied(m_start_node.get_state(), successor_state);
-                successor_search_node.status = is_goal ? SearchNodeStatus::GOAL : SearchNodeStatus::OPEN;
-                worker.search.open_successor(successor_state.get_index(), g_value, h_value, successor_search_node.status, false);
-
-                emit_transition(successor_search_node.status == SearchNodeStatus::GOAL ? TransitionOutcome::GOAL :
-                                                                                         (is_new ? TransitionOutcome::OPENED : TransitionOutcome::RELAXED));
-                return AcceptanceResult::QUEUED;
-            }
-
-            emit_transition(TransitionOutcome::DUPLICATE);
-            return AcceptanceResult::DISCARDED;
-        }
-        else
-        {
-            if (!is_new)
-            {
-                emit_transition(TransitionOutcome::DUPLICATE);
-                return AcceptanceResult::DISCARDED;
-            }
-
-            successor_search_node.status = SearchNodeStatus::OPEN;
-            worker.search.set_parent(successor_search_node, routed_successor.metadata.parent);
-            successor_search_node.g_value = g_value;
-            successor_search_node.preferred = routed_successor.metadata.preferred;
-
-            if (worker.goal_strategy->is_dynamic_goal_satisfied(m_start_node.get_state(), successor_state))
-            {
-                successor_search_node.status = SearchNodeStatus::GOAL;
-                emit_transition(TransitionOutcome::GOAL);
-                solve(worker, successor_search_node, normalized_node);
-                return AcceptanceResult::TERMINAL;
-            }
-
-            if (worker.pruning_strategy->should_prune_successor_state(source_state, successor_state, is_new))
-            {
-                successor_search_node.status = SearchNodeStatus::CLOSED;
-                worker.statistics.increment_num_pruned();
-                emit_transition(TransitionOutcome::PRUNED);
-                return AcceptanceResult::DISCARDED;
-            }
-
-            worker.statistics.increment_num_generated();
-            worker.search.open_successor(successor_state.get_index(),
-                                         g_value,
-                                         routed_successor.metadata.inherited_h_value,
-                                         successor_search_node.status,
-                                         routed_successor.metadata.preferred);
-            emit_transition(TransitionOutcome::OPENED);
-            return AcceptanceResult::QUEUED;
-        }
+        return worker.search.accept_successor(*this, worker, source_node, normalized_node, routed_successor, successor_search_node, is_new, emit_transition);
     }
 
     void solve(WorkerData& worker, const SearchNode&, const Node<Kind>& node)
@@ -676,13 +431,13 @@ private:
         const auto search_end = std::chrono::steady_clock::now();
         auto num_registered_states = uint64_t { 0 };
         auto state_storage_memory_usage = size_t { 0 };
+        m_execution.snapshot_worker_state_statistics(*this);
+
         m_result.worker_statistics.clear();
         m_result.worker_statistics.reserve(num_workers());
         for_each_worker(
             [&](auto& worker)
             {
-                const auto& repository = *worker.successor_generator.get_state_repository();
-                snapshot_state_repository_statistics(repository, worker.statistics);
                 num_registered_states += worker.statistics.get_num_registered_states();
                 state_storage_memory_usage += worker.statistics.get_state_storage_memory_usage();
                 m_result.statistics.add(worker.statistics);
@@ -698,15 +453,7 @@ private:
     template<typename Callback>
     void for_each_worker(Callback&& callback)
     {
-        if constexpr (ExecutionPolicy::parallel)
-        {
-            for (auto& worker : m_workers)
-                std::forward<Callback>(callback)(*worker);
-        }
-        else
-        {
-            std::forward<Callback>(callback)(m_workers);
-        }
+        m_workers.for_each(std::forward<Callback>(callback));
     }
 
     SearchResult<Kind> finish_search()
@@ -722,34 +469,9 @@ private:
         {
             const auto goal = m_execution.goal();
             assert(goal);
-
-            if constexpr (ExecutionPolicy::parallel)
-            {
-                auto views = std::vector<WorkerSearchSpaceView<Kind, SearchNode>> {};
-                views.reserve(num_workers());
-                for (const auto& worker : m_workers)
-                    views.push_back(WorkerSearchSpaceView<Kind, SearchNode> { worker->successor_generator, worker->search.get_search_nodes() });
-
-                m_result.plan =
-                    PlanReconstructionPolicy<ParallelSearch>::extract_total_ordered_plan(*goal,
-                                                                                         std::span<const WorkerSearchSpaceView<Kind, SearchNode>>(views),
-                                                                                         m_caller_successor_generator,
-                                                                                         m_options.cost_mode);
-                m_result.goal_node = m_result.plan->empty() ? m_result.plan->get_start_node() : m_result.plan->get_labeled_succ_nodes().back().node;
-            }
-            else
-            {
-                auto& worker = get_worker(goal->worker);
-                const auto state = worker.successor_generator.get_state_repository()->get_registered_state(goal->state);
-                const auto& search_node = worker.search.get_search_node(goal->state);
-                const auto node = Node<Kind>(state, search_node.g_value);
-                m_result.plan = PlanReconstructionPolicy<SequentialSearch>::extract_total_ordered_plan(search_node,
-                                                                                                       node,
-                                                                                                       worker.search.get_search_nodes(),
-                                                                                                       worker.successor_generator,
-                                                                                                       m_options.cost_mode);
-                m_result.goal_node = node;
-            }
+            auto [plan, goal_node] = m_workers.reconstruct_solution(*goal, m_caller_successor_generator, m_options);
+            m_result.plan = std::move(plan);
+            m_result.goal_node = std::move(goal_node);
         }
 
         finalize(m_result.status);
@@ -778,7 +500,7 @@ private:
     typename SearchPolicy::EventHandlerPtr m_event_handler;
     Node<Kind> m_start_node;
     ExecutionPolicy m_execution;
-    WorkerStorage m_workers;
+    Workers m_workers;
     SearchResult<Kind> m_result;
     bool m_statistics_snapshotted { false };
     bool m_finalized { false };

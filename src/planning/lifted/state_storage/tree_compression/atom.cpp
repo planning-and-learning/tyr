@@ -23,24 +23,25 @@
 namespace tyr::planning
 {
 
-AtomStorageBackend<LiftedTag, TreeCompression>::AtomStorageBackend(StateStorageContext<LiftedTag, TreeCompression>& ctx) :
-    m_uint_vectors(ctx.uint_vectors)
+template<bool ThreadSafe>
+AtomStorageBackend<LiftedTag, TreeCompression, ThreadSafe>::AtomStorageBackend(Context& ctx) : m_uint_vectors(ctx.uint_vectors)
 {
 }
 
-typename AtomStorageBackend<LiftedTag, TreeCompression>::Packed
-AtomStorageBackend<LiftedTag, TreeCompression>::insert(const typename AtomStorageBackend<LiftedTag, TreeCompression>::Unpacked& unpacked)
+template<bool ThreadSafe>
+typename AtomStorageBackend<LiftedTag, TreeCompression, ThreadSafe>::Packed
+AtomStorageBackend<LiftedTag, TreeCompression, ThreadSafe>::insert(const Unpacked& unpacked)
 {
     m_buffer.clear();
     const auto& bits = unpacked.indices;
     for (auto i = bits.find_first(); i != boost::dynamic_bitset<>::npos; i = bits.find_next(i))
         m_buffer.push_back(i);
 
-    return AtomStorageBackend<LiftedTag, TreeCompression>::Packed { m_uint_vectors.insert(m_buffer) };
+    return Packed { m_uint_vectors.insert(m_buffer) };
 }
 
-void AtomStorageBackend<LiftedTag, TreeCompression>::unpack(const typename AtomStorageBackend<LiftedTag, TreeCompression>::Packed& packed,
-                                                            typename AtomStorageBackend<LiftedTag, TreeCompression>::Unpacked& unpacked)
+template<bool ThreadSafe>
+void AtomStorageBackend<LiftedTag, TreeCompression, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     auto& indices = unpacked.indices;
 
@@ -52,5 +53,8 @@ void AtomStorageBackend<LiftedTag, TreeCompression>::unpack(const typename AtomS
     for (const auto i : m_buffer)
         ygg::set(i, true, indices);
 }
+
+template class AtomStorageBackend<LiftedTag, TreeCompression, false>;
+template class AtomStorageBackend<LiftedTag, TreeCompression, true>;
 
 }

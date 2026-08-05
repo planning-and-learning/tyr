@@ -78,6 +78,10 @@ int main(int argc, char** argv)
     program.add_argument("-O", "--plan-filepath").default_value(std::string("plan.out")).help("The path to the output plan file.");
     program.add_argument("-N", "--num-worker-threads").default_value(size_t(1)).scan<'u', size_t>().help("The number of inner worker threads.");
     program.add_argument("--num-search-workers").default_value(size_t(1)).scan<'u', size_t>().help("The number of search workers.");
+    program.add_argument("--state-repository-mode")
+        .default_value(std::string("hash-distributed"))
+        .choices("hash-distributed", "shared")
+        .help("The state repository mode used by parallel search.");
     program.add_argument("--parallel-search-mode")
         .default_value(std::string("synchronous"))
         .choices("synchronous", "asynchronous")
@@ -120,9 +124,12 @@ int main(int argc, char** argv)
         auto plan_filepath = program.get<std::string>("--plan-filepath");
         auto num_worker_threads = program.get<std::size_t>("--num-worker-threads");
         auto num_search_workers = program.get<std::size_t>("--num-search-workers");
+        auto state_repository_mode_name = program.get<std::string>("--state-repository-mode");
+        auto state_repository_mode =
+            state_repository_mode_name == "hash-distributed" ? planning::StateRepositoryMode::HASH_DISTRIBUTED : planning::StateRepositoryMode::SHARED;
         auto parallel_search_mode_name = program.get<std::string>("--parallel-search-mode");
         auto parallel_search_mode = parallel_search_mode_name == "synchronous" ? planning::astar_eager::ParallelSearchMode::SYNCHRONOUS :
-                                                                                  planning::astar_eager::ParallelSearchMode::ASYNCHRONOUS;
+                                                                                 planning::astar_eager::ParallelSearchMode::ASYNCHRONOUS;
         auto random_seed = program.get<uint64_t>("--random-seed");
         auto shuffle_labeled_succ_nodes = program.get<bool>("--shuffle-labeled-succ-nodes");
         auto instantiate_ground_task = program.get<bool>("--instantiate-ground-task");
@@ -146,6 +153,7 @@ int main(int argc, char** argv)
 
         std::cout << "[INPUT] Num worker threads: " << num_worker_threads << std::endl;
         std::cout << "[INPUT] Num search workers: " << num_search_workers << std::endl;
+        std::cout << "[INPUT] State repository mode: " << state_repository_mode_name << std::endl;
         std::cout << "[INPUT] Parallel search mode: " << parallel_search_mode_name << std::endl;
         std::cout << "[INPUT] Random seed: " << random_seed << std::endl;
         std::cout << "[INPUT] Shuffle labeled successor nodes: " << shuffle_labeled_succ_nodes << std::endl;
@@ -176,6 +184,7 @@ int main(int argc, char** argv)
             options.event_handler = planning::astar_eager::DefaultEventHandler<LiftedTag>::create(verbosity);
             options.cost_mode = search_cost_mode;
             options.num_search_workers = num_search_workers;
+            options.state_repository_mode = state_repository_mode;
             options.parallel_search_mode = parallel_search_mode;
             options.random_seed = random_seed;
             options.shuffle_labeled_succ_nodes = shuffle_labeled_succ_nodes;
@@ -239,6 +248,7 @@ int main(int argc, char** argv)
                 options.event_handler = planning::astar_eager::DefaultEventHandler<GroundTag>::create(verbosity);
                 options.cost_mode = search_cost_mode;
                 options.num_search_workers = num_search_workers;
+                options.state_repository_mode = state_repository_mode;
                 options.parallel_search_mode = parallel_search_mode;
                 options.random_seed = random_seed;
                 options.shuffle_labeled_succ_nodes = shuffle_labeled_succ_nodes;

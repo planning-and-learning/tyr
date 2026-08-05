@@ -25,15 +25,16 @@
 namespace tyr::planning
 {
 
-FactStorageBackend<GroundTag, HashSet>::FactStorageBackend(StateStorageContext<GroundTag, HashSet>& ctx) :
+template<bool ThreadSafe>
+FactStorageBackend<GroundTag, HashSet, ThreadSafe>::FactStorageBackend(Context& ctx) :
     m_array_set(ctx.fluent_array_set),
     m_infos(ctx.fluent_infos),
     m_buffer(m_array_set.array_size())
 {
 }
 
-typename FactStorageBackend<GroundTag, HashSet>::Packed
-FactStorageBackend<GroundTag, HashSet>::insert(const typename FactStorageBackend<GroundTag, HashSet>::Unpacked& unpacked)
+template<bool ThreadSafe>
+typename FactStorageBackend<GroundTag, HashSet, ThreadSafe>::Packed FactStorageBackend<GroundTag, HashSet, ThreadSafe>::insert(const Unpacked& unpacked)
 {
     auto data = m_buffer.data();
     const auto& values = unpacked.values;
@@ -46,11 +47,11 @@ FactStorageBackend<GroundTag, HashSet>::insert(const typename FactStorageBackend
         ygg::bit::int_reference(data + info.begin, info.offset, info.length) = values[i];
     }
 
-    return typename FactStorageBackend<GroundTag, HashSet>::Packed { m_array_set.insert(m_buffer) };
+    return Packed { m_array_set.insert(m_buffer) };
 }
 
-void FactStorageBackend<GroundTag, HashSet>::unpack(const typename FactStorageBackend<GroundTag, HashSet>::Packed& packed,
-                                                    typename FactStorageBackend<GroundTag, HashSet>::Unpacked& unpacked)
+template<bool ThreadSafe>
+void FactStorageBackend<GroundTag, HashSet, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     const auto data = m_array_set[packed.index];
     auto& values = unpacked.values;
@@ -65,5 +66,8 @@ void FactStorageBackend<GroundTag, HashSet>::unpack(const typename FactStorageBa
         values[i] = ygg::bit::read_int(data.data() + info.begin, info.offset, info.length);
     }
 }
+
+template class FactStorageBackend<GroundTag, HashSet, false>;
+template class FactStorageBackend<GroundTag, HashSet, true>;
 
 }

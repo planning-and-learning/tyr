@@ -23,21 +23,24 @@
 namespace tyr::planning
 {
 
-AtomStorageBackend<LiftedTag, HashSet>::AtomStorageBackend(StateStorageContext<LiftedTag, HashSet>& ctx) : m_uint_vec_set(ctx.uint_vec_set), m_buffer() {}
+template<bool ThreadSafe>
+AtomStorageBackend<LiftedTag, HashSet, ThreadSafe>::AtomStorageBackend(Context& ctx) : m_uint_vec_set(ctx.uint_vec_set), m_buffer()
+{
+}
 
-typename AtomStorageBackend<LiftedTag, HashSet>::Packed
-AtomStorageBackend<LiftedTag, HashSet>::insert(const typename AtomStorageBackend<LiftedTag, HashSet>::Unpacked& unpacked)
+template<bool ThreadSafe>
+typename AtomStorageBackend<LiftedTag, HashSet, ThreadSafe>::Packed AtomStorageBackend<LiftedTag, HashSet, ThreadSafe>::insert(const Unpacked& unpacked)
 {
     m_buffer.clear();
     const auto& bits = unpacked.indices;
     for (auto i = bits.find_first(); i != boost::dynamic_bitset<>::npos; i = bits.find_next(i))
         m_buffer.push_back(i);
 
-    return AtomStorageBackend<LiftedTag, HashSet>::Packed { m_uint_vec_set.insert(m_buffer) };
+    return Packed { m_uint_vec_set.insert(m_buffer) };
 }
 
-void AtomStorageBackend<LiftedTag, HashSet>::unpack(const typename AtomStorageBackend<LiftedTag, HashSet>::Packed& packed,
-                                                    typename AtomStorageBackend<LiftedTag, HashSet>::Unpacked& unpacked)
+template<bool ThreadSafe>
+void AtomStorageBackend<LiftedTag, HashSet, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     const auto view = m_uint_vec_set[packed.index];
 
@@ -45,5 +48,8 @@ void AtomStorageBackend<LiftedTag, HashSet>::unpack(const typename AtomStorageBa
     for (ygg::uint_t i = 0; i < view.size(); ++i)
         ygg::set(view[i], true, unpacked.indices);
 }
+
+template class AtomStorageBackend<LiftedTag, HashSet, false>;
+template class AtomStorageBackend<LiftedTag, HashSet, true>;
 
 }

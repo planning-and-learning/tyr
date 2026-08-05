@@ -175,6 +175,7 @@ def test_search_parser_reads_parallel_statistics(tmp_path):
     (tmp_path / "run.log").write_text(
         """[INPUT] Num worker threads: 1
 [INPUT] Num search workers: 4
+[INPUT] State repository mode: shared
 [INPUT] Parallel search mode: synchronous
 [GBFS] Start node h_value: 3.5
 [GBFS] Plan cost: 1.25e+1
@@ -211,6 +212,7 @@ def test_search_parser_reads_parallel_statistics(tmp_path):
     assert props["cost"] == 12.5
     assert props["initial_h_value"] == 3.5
     assert props["num_search_workers"] == 4
+    assert props["state_repository_mode"] == "shared"
     assert props["parallel_search_mode"] == "synchronous"
     assert props["idle_time_ns"] == 75_000_000
     assert props["idle_time_s"] == 0.075

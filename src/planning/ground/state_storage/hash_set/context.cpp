@@ -23,10 +23,10 @@ namespace tyr::planning
 {
 namespace
 {
-template<std::unsigned_integral Block>
-auto compute_layout_data(const Task<GroundTag>& task) -> StateStorageContext<GroundTag, HashSet>::LayoutData
+template<bool ThreadSafe, std::unsigned_integral Block>
+auto compute_layout_data(const Task<GroundTag>& task) -> typename StateStorageContext<GroundTag, HashSet, ThreadSafe>::LayoutData
 {
-    using Context = StateStorageContext<GroundTag, HashSet>;
+    using Context = StateStorageContext<GroundTag, HashSet, ThreadSafe>;
     using VariableInfo = Context::VariableInfo;
     using LayoutData = Context::LayoutData;
 
@@ -59,14 +59,22 @@ auto compute_layout_data(const Task<GroundTag>& task) -> StateStorageContext<Gro
 
 }
 
-StateStorageContext<GroundTag, HashSet>::StateStorageContext(const Task<GroundTag>& task) : StateStorageContext(compute_layout_data<ygg::uint_t>(task)) {}
+template<bool ThreadSafe>
+StateStorageContext<GroundTag, HashSet, ThreadSafe>::StateStorageContext(const Task<GroundTag>& task) :
+    StateStorageContext(compute_layout_data<ThreadSafe, ygg::uint_t>(task))
+{
+}
 
-StateStorageContext<GroundTag, HashSet>::StateStorageContext(LayoutData&& layout_data) :
+template<bool ThreadSafe>
+StateStorageContext<GroundTag, HashSet, ThreadSafe>::StateStorageContext(LayoutData&& layout_data) :
     fluent_infos(layout_data.fluent_infos),
     fluent_array_set(layout_data.fluent_array_size),
     derived_num_bits(layout_data.derived_num_bits),
     derived_array_set(layout_data.derived_array_size)
 {
 }
+
+template struct StateStorageContext<GroundTag, HashSet, false>;
+template struct StateStorageContext<GroundTag, HashSet, true>;
 
 }

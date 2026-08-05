@@ -35,9 +35,12 @@ namespace tyr::planning
  * Context
  */
 
-template<>
-struct StateStorageContext<GroundTag, TreeCompression>
+template<bool ThreadSafe>
+struct StateStorageContext<GroundTag, TreeCompression, ThreadSafe>
 {
+    using ArraySet = ygg::RawArraySet<ygg::uint_t, 1024, ThreadSafe>;
+    using FloatVectorSet = ygg::TreeVectorSet<ygg::float_t, 32, ThreadSafe>;
+
     explicit StateStorageContext(const Task<GroundTag>& task);
 
     struct VariableInfo
@@ -56,12 +59,12 @@ struct StateStorageContext<GroundTag, TreeCompression>
     };
 
     std::vector<VariableInfo> fluent_infos;
-    ygg::RawArraySet<ygg::uint_t> fluent_array_set;
+    ArraySet fluent_array_set;
 
     ygg::uint_t derived_num_bits;
-    ygg::RawArraySet<ygg::uint_t> derived_array_set;
+    ArraySet derived_array_set;
 
-    ygg::TreeVectorSet<ygg::float_t> float_vectors;
+    FloatVectorSet float_vectors;
 
     size_t memory_usage() const noexcept
     {

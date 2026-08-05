@@ -25,31 +25,30 @@
 namespace tyr::planning
 {
 
-template<TaskKind Kind>
-NumericStorageBackend<Kind, TreeCompression>::NumericStorageBackend(StateStorageContext<Kind, TreeCompression>& ctx) :
-    m_float_vectors(ctx.float_vectors)
+template<TaskKind Kind, bool ThreadSafe>
+NumericStorageBackend<Kind, TreeCompression, ThreadSafe>::NumericStorageBackend(Context& ctx) : m_float_vectors(ctx.float_vectors)
 {
 }
 
-template<TaskKind Kind>
-typename NumericStorageBackend<Kind, TreeCompression>::Packed
-NumericStorageBackend<Kind, TreeCompression>::insert(typename NumericStorageBackend<Kind, TreeCompression>::Unpacked& unpacked)
+template<TaskKind Kind, bool ThreadSafe>
+typename NumericStorageBackend<Kind, TreeCompression, ThreadSafe>::Packed NumericStorageBackend<Kind, TreeCompression, ThreadSafe>::insert(Unpacked& unpacked)
 {
     for (auto& value : unpacked.values)
         value = ygg::FloatTolerance<ygg::float_t>::canonicalize(value);
 
-    return NumericStorageBackend<Kind, TreeCompression>::Packed { m_float_vectors.insert(unpacked.values) };
+    return Packed { m_float_vectors.insert(unpacked.values) };
 }
 
-template<TaskKind Kind>
-void NumericStorageBackend<Kind, TreeCompression>::unpack(const typename NumericStorageBackend<Kind, TreeCompression>::Packed& packed,
-                                                          typename NumericStorageBackend<Kind, TreeCompression>::Unpacked& unpacked)
+template<TaskKind Kind, bool ThreadSafe>
+void NumericStorageBackend<Kind, TreeCompression, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     unpacked.values.resize(packed.index.size);
     m_float_vectors.read(packed.index, unpacked.values);
 }
 
-template class NumericStorageBackend<LiftedTag, TreeCompression>;
-template class NumericStorageBackend<GroundTag, TreeCompression>;
+template class NumericStorageBackend<LiftedTag, TreeCompression, false>;
+template class NumericStorageBackend<LiftedTag, TreeCompression, true>;
+template class NumericStorageBackend<GroundTag, TreeCompression, false>;
+template class NumericStorageBackend<GroundTag, TreeCompression, true>;
 
 }

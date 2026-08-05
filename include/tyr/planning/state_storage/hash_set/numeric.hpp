@@ -39,21 +39,22 @@ struct NumericPackedStorage<Kind, HashSet> : ygg::comparison::Mixin<NumericPacke
     auto identifying_members() const noexcept { return std::tie(index); }
 };
 
-template<TaskKind Kind>
-class NumericStorageBackend<Kind, HashSet>
+template<TaskKind Kind, bool ThreadSafe>
+class NumericStorageBackend<Kind, HashSet, ThreadSafe>
 {
 public:
+    using Context = StateStorageContext<Kind, HashSet, ThreadSafe>;
     using Unpacked = NumericUnpackedStorage<Kind>;
     using Packed = NumericPackedStorage<Kind, HashSet>;
 
-    explicit NumericStorageBackend(StateStorageContext<Kind, HashSet>& ctx);
+    explicit NumericStorageBackend(Context& ctx);
 
     Packed insert(Unpacked& unpacked);
 
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    ygg::RawVectorSet<ygg::uint_t, ygg::float_t>& m_float_vec_set;
+    typename Context::FloatVectorSet& m_float_vec_set;
 };
 
 }

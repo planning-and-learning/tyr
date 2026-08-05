@@ -23,24 +23,22 @@
 
 namespace tyr::planning
 {
-template<TaskKind Kind>
-NumericStorageBackend<Kind, HashSet>::NumericStorageBackend(StateStorageContext<Kind, HashSet>& ctx) : m_float_vec_set(ctx.float_vec_set)
+template<TaskKind Kind, bool ThreadSafe>
+NumericStorageBackend<Kind, HashSet, ThreadSafe>::NumericStorageBackend(Context& ctx) : m_float_vec_set(ctx.float_vec_set)
 {
 }
 
-template<TaskKind Kind>
-typename NumericStorageBackend<Kind, HashSet>::Packed
-NumericStorageBackend<Kind, HashSet>::insert(typename NumericStorageBackend<Kind, HashSet>::Unpacked& unpacked)
+template<TaskKind Kind, bool ThreadSafe>
+typename NumericStorageBackend<Kind, HashSet, ThreadSafe>::Packed NumericStorageBackend<Kind, HashSet, ThreadSafe>::insert(Unpacked& unpacked)
 {
     for (auto& value : unpacked.values)
         value = ygg::FloatTolerance<ygg::float_t>::canonicalize(value);
 
-    return NumericStorageBackend<Kind, HashSet>::Packed { m_float_vec_set.insert(unpacked.values) };
+    return Packed { m_float_vec_set.insert(unpacked.values) };
 }
 
-template<TaskKind Kind>
-void NumericStorageBackend<Kind, HashSet>::unpack(const typename NumericStorageBackend<Kind, HashSet>::Packed& packed,
-                                                  typename NumericStorageBackend<Kind, HashSet>::Unpacked& unpacked)
+template<TaskKind Kind, bool ThreadSafe>
+void NumericStorageBackend<Kind, HashSet, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     const auto view = m_float_vec_set[packed.index];
 
@@ -49,7 +47,9 @@ void NumericStorageBackend<Kind, HashSet>::unpack(const typename NumericStorageB
         unpacked.values[i] = view[i];
 }
 
-template class NumericStorageBackend<LiftedTag, HashSet>;
-template class NumericStorageBackend<GroundTag, HashSet>;
+template class NumericStorageBackend<LiftedTag, HashSet, false>;
+template class NumericStorageBackend<LiftedTag, HashSet, true>;
+template class NumericStorageBackend<GroundTag, HashSet, false>;
+template class NumericStorageBackend<GroundTag, HashSet, true>;
 
 }

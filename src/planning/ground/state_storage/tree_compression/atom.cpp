@@ -25,26 +25,28 @@
 namespace tyr::planning
 {
 
-AtomStorageBackend<GroundTag, TreeCompression>::AtomStorageBackend(StateStorageContext<GroundTag, TreeCompression>& ctx) :
+template<bool ThreadSafe>
+AtomStorageBackend<GroundTag, TreeCompression, ThreadSafe>::AtomStorageBackend(Context& ctx) :
     m_array_set(ctx.derived_array_set),
     m_num_bits(ctx.derived_num_bits),
     m_buffer(m_array_set.array_size())
 {
 }
 
-typename AtomStorageBackend<GroundTag, TreeCompression>::Packed
-AtomStorageBackend<GroundTag, TreeCompression>::insert(const typename AtomStorageBackend<GroundTag, TreeCompression>::Unpacked& unpacked)
+template<bool ThreadSafe>
+typename AtomStorageBackend<GroundTag, TreeCompression, ThreadSafe>::Packed
+AtomStorageBackend<GroundTag, TreeCompression, ThreadSafe>::insert(const Unpacked& unpacked)
 {
     auto data = m_buffer.data();
 
     std::fill(m_buffer.begin(), m_buffer.end(), ygg::uint_t(0));
     for (ygg::uint_t i = 0; i < m_num_bits; ++i)
         ygg::bit::bit_reference(data, i) = unpacked.indices.test(i);
-    return typename AtomStorageBackend<GroundTag, TreeCompression>::Packed { m_array_set.insert(m_buffer) };
+    return Packed { m_array_set.insert(m_buffer) };
 }
 
-void AtomStorageBackend<GroundTag, TreeCompression>::unpack(const typename AtomStorageBackend<GroundTag, TreeCompression>::Packed& packed,
-                                                            typename AtomStorageBackend<GroundTag, TreeCompression>::Unpacked& unpacked)
+template<bool ThreadSafe>
+void AtomStorageBackend<GroundTag, TreeCompression, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     const auto data = m_array_set[packed.index];
     auto& indices = unpacked.indices;
@@ -55,5 +57,8 @@ void AtomStorageBackend<GroundTag, TreeCompression>::unpack(const typename AtomS
     for (ygg::uint_t i = 0; i < m_num_bits; ++i)
         indices[i] = bool(ygg::bit::bit_reference(data.data(), i));
 }
+
+template class AtomStorageBackend<GroundTag, TreeCompression, false>;
+template class AtomStorageBackend<GroundTag, TreeCompression, true>;
 
 }

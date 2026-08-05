@@ -43,22 +43,23 @@ struct FactPackedStorage<GroundTag, HashSet> : ygg::comparison::Mixin<FactPacked
     auto identifying_members() const noexcept { return std::tie(index); }
 };
 
-template<>
-class FactStorageBackend<GroundTag, HashSet>
+template<bool ThreadSafe>
+class FactStorageBackend<GroundTag, HashSet, ThreadSafe>
 {
 public:
+    using Context = StateStorageContext<GroundTag, HashSet, ThreadSafe>;
     using Unpacked = FactUnpackedStorage<GroundTag>;
     using Packed = FactPackedStorage<GroundTag, HashSet>;
-    using VariableInfo = typename StateStorageContext<GroundTag, HashSet>::VariableInfo;
+    using VariableInfo = typename Context::VariableInfo;
 
-    explicit FactStorageBackend(StateStorageContext<GroundTag, HashSet>& ctx);
+    explicit FactStorageBackend(Context& ctx);
 
     Packed insert(const Unpacked& unpacked);
 
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    ygg::RawArraySet<ygg::uint_t>& m_array_set;
+    typename Context::ArraySet& m_array_set;
     const std::vector<VariableInfo>& m_infos;
 
     std::vector<ygg::uint_t> m_buffer;

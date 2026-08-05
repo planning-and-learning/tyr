@@ -25,26 +25,27 @@
 namespace tyr::planning
 {
 
-AtomStorageBackend<GroundTag, HashSet>::AtomStorageBackend(StateStorageContext<GroundTag, HashSet>& ctx) :
+template<bool ThreadSafe>
+AtomStorageBackend<GroundTag, HashSet, ThreadSafe>::AtomStorageBackend(Context& ctx) :
     m_array_set(ctx.derived_array_set),
     m_num_bits(ctx.derived_num_bits),
     m_buffer(m_array_set.array_size())
 {
 }
 
-typename AtomStorageBackend<GroundTag, HashSet>::Packed
-AtomStorageBackend<GroundTag, HashSet>::insert(const typename AtomStorageBackend<GroundTag, HashSet>::Unpacked& unpacked)
+template<bool ThreadSafe>
+typename AtomStorageBackend<GroundTag, HashSet, ThreadSafe>::Packed AtomStorageBackend<GroundTag, HashSet, ThreadSafe>::insert(const Unpacked& unpacked)
 {
     auto data = m_buffer.data();
 
     std::fill(m_buffer.begin(), m_buffer.end(), ygg::uint_t(0));
     for (ygg::uint_t i = 0; i < m_num_bits; ++i)
         ygg::bit::bit_reference(data, i) = unpacked.indices.test(i);
-    return typename AtomStorageBackend<GroundTag, HashSet>::Packed { m_array_set.insert(m_buffer) };
+    return Packed { m_array_set.insert(m_buffer) };
 }
 
-void AtomStorageBackend<GroundTag, HashSet>::unpack(const typename AtomStorageBackend<GroundTag, HashSet>::Packed& packed,
-                                                    typename AtomStorageBackend<GroundTag, HashSet>::Unpacked& unpacked)
+template<bool ThreadSafe>
+void AtomStorageBackend<GroundTag, HashSet, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     const auto data = m_array_set[packed.index];
     auto& indices = unpacked.indices;
@@ -55,5 +56,8 @@ void AtomStorageBackend<GroundTag, HashSet>::unpack(const typename AtomStorageBa
     for (ygg::uint_t i = 0; i < m_num_bits; ++i)
         indices[i] = bool(ygg::bit::bit_reference(data.data(), i));
 }
+
+template class AtomStorageBackend<GroundTag, HashSet, false>;
+template class AtomStorageBackend<GroundTag, HashSet, true>;
 
 }

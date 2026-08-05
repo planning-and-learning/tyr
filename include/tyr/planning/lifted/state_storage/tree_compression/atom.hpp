@@ -42,21 +42,22 @@ struct AtomPackedStorage<LiftedTag, TreeCompression> : ygg::comparison::Mixin<At
     auto identifying_members() const noexcept { return std::tie(index); }
 };
 
-template<>
-class AtomStorageBackend<LiftedTag, TreeCompression>
+template<bool ThreadSafe>
+class AtomStorageBackend<LiftedTag, TreeCompression, ThreadSafe>
 {
 public:
+    using Context = StateStorageContext<LiftedTag, TreeCompression, ThreadSafe>;
     using Unpacked = AtomUnpackedStorage<LiftedTag>;
     using Packed = AtomPackedStorage<LiftedTag, TreeCompression>;
 
-    explicit AtomStorageBackend(StateStorageContext<LiftedTag, TreeCompression>& ctx);
+    explicit AtomStorageBackend(Context& ctx);
 
     Packed insert(const Unpacked& unpacked);
 
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    ygg::TreeVectorSet<ygg::uint_t>& m_uint_vectors;
+    typename Context::UintVectorSet& m_uint_vectors;
 
     std::vector<ygg::uint_t> m_buffer;
 };

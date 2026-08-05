@@ -25,6 +25,7 @@
 
 #include <atomic>
 #include <memory>
+#include <span>
 #include <vector>
 
 namespace tyr::planning
@@ -77,6 +78,8 @@ public:
 
     Node<GroundTag> get_node(ygg::Index<State<GroundTag>> state_index);
     [[nodiscard]] SuccessorGeneratorPtr<GroundTag> make_worker(ygg::ExecutionContextPtr execution_context) const;
+    /// Creates worker-local generators backed by one concurrent state repository.
+    [[nodiscard]] std::vector<SuccessorGeneratorPtr<GroundTag>> make_shared_workers(std::span<const ygg::ExecutionContextPtr> execution_contexts) const;
 
     const StateRepositoryPtr<GroundTag>& get_state_repository() const noexcept;
     ygg::uint_t get_index() const noexcept;

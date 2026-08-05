@@ -41,21 +41,22 @@ struct AtomPackedStorage<LiftedTag, HashSet> : ygg::comparison::Mixin<AtomPacked
     auto identifying_members() const noexcept { return std::tie(index); }
 };
 
-template<>
-class AtomStorageBackend<LiftedTag, HashSet>
+template<bool ThreadSafe>
+class AtomStorageBackend<LiftedTag, HashSet, ThreadSafe>
 {
 public:
+    using Context = StateStorageContext<LiftedTag, HashSet, ThreadSafe>;
     using Unpacked = AtomUnpackedStorage<LiftedTag>;
     using Packed = AtomPackedStorage<LiftedTag, HashSet>;
 
-    explicit AtomStorageBackend(StateStorageContext<LiftedTag, HashSet>& ctx);
+    explicit AtomStorageBackend(Context& ctx);
 
     Packed insert(const Unpacked& unpacked);
 
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    ygg::RawVectorSet<ygg::uint_t, ygg::uint_t>& m_uint_vec_set;
+    typename Context::UintVectorSet& m_uint_vec_set;
 
     std::vector<ygg::uint_t> m_buffer;
 };

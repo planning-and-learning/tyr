@@ -229,6 +229,23 @@ SuccessorGeneratorPtr<LiftedTag> SuccessorGenerator<LiftedTag>::make_worker(ygg:
                                                                  m_impl->next_index)));
 }
 
+std::vector<SuccessorGeneratorPtr<LiftedTag>>
+SuccessorGenerator<LiftedTag>::make_shared_workers(std::span<const ygg::ExecutionContextPtr> execution_contexts) const
+{
+    auto state_repositories = m_impl->evaluator.state_repository->make_shared_workers(execution_contexts);
+    auto workers = std::vector<SuccessorGeneratorPtr<LiftedTag>> {};
+    workers.reserve(state_repositories.size());
+    for (size_t i = 0; i < state_repositories.size(); ++i)
+    {
+        workers.emplace_back(new SuccessorGenerator<LiftedTag>(std::make_unique<Impl>(m_impl->next_index->fetch_add(1, std::memory_order_relaxed),
+                                                                                      m_impl->definition,
+                                                                                      execution_contexts[i],
+                                                                                      std::move(state_repositories[i]),
+                                                                                      m_impl->next_index)));
+    }
+    return workers;
+}
+
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_initial_node()
 {
     auto initial_state = m_impl->evaluator.state_repository->get_initial_state();

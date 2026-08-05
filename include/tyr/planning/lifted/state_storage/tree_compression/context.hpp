@@ -34,11 +34,14 @@ namespace tyr::planning
  * Context
  */
 
-template<>
-struct StateStorageContext<LiftedTag, TreeCompression>
+template<bool ThreadSafe>
+struct StateStorageContext<LiftedTag, TreeCompression, ThreadSafe>
 {
-    ygg::TreeVectorSet<ygg::uint_t> uint_vectors;
-    ygg::TreeVectorSet<ygg::float_t> float_vectors;
+    using UintVectorSet = ygg::TreeVectorSet<ygg::uint_t, 32, ThreadSafe>;
+    using FloatVectorSet = ygg::TreeVectorSet<ygg::float_t, 32, ThreadSafe>;
+
+    UintVectorSet uint_vectors;
+    FloatVectorSet float_vectors;
 
     size_t memory_usage() const noexcept
     {

@@ -133,6 +133,22 @@ SuccessorGeneratorPtr<GroundTag> SuccessorGenerator<GroundTag>::make_worker(ygg:
                                                                  m_impl->next_index)));
 }
 
+std::vector<SuccessorGeneratorPtr<GroundTag>>
+SuccessorGenerator<GroundTag>::make_shared_workers(std::span<const ygg::ExecutionContextPtr> execution_contexts) const
+{
+    auto state_repositories = m_impl->evaluator.state_repository->make_shared_workers(execution_contexts);
+    auto workers = std::vector<SuccessorGeneratorPtr<GroundTag>> {};
+    workers.reserve(state_repositories.size());
+    for (auto& state_repository : state_repositories)
+    {
+        workers.emplace_back(new SuccessorGenerator<GroundTag>(std::make_unique<Impl>(m_impl->next_index->fetch_add(1, std::memory_order_relaxed),
+                                                                                      m_impl->definition,
+                                                                                      std::move(state_repository),
+                                                                                      m_impl->next_index)));
+    }
+    return workers;
+}
+
 Node<GroundTag> SuccessorGenerator<GroundTag>::get_initial_node()
 {
     auto initial_state = m_impl->evaluator.state_repository->get_initial_state();

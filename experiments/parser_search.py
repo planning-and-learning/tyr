@@ -120,6 +120,11 @@ class SearchParser(Parser):
 
         self.add_pattern("num_worker_threads", r"\[INPUT\] Num worker threads: (\d+)", type=int)
         self.add_pattern("num_search_workers", r"\[INPUT\] Num search workers: (\d+)", type=int)
+        self.add_pattern(
+            "state_repository_mode",
+            r"\[INPUT\] State repository mode: (hash-distributed|shared)",
+            type=str,
+        )
         self.add_pattern("parallel_search_mode", r"\[INPUT\] Parallel search mode: (synchronous|asynchronous)", type=str)
 
         self.add_pattern("search_time_ms", r"\[Search\] Search time: (\d+) ms", type=int)
@@ -187,6 +192,7 @@ class SearchParser(Parser):
             "initial_f_value",
             "num_worker_threads",
             "num_search_workers",
+            "state_repository_mode",
             "parallel_search_mode",
             Attribute("search_time_s", function=geometric_mean, digits=2),
             Attribute("idle_time_s", function=arithmetic_mean, digits=2),

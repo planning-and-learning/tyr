@@ -40,6 +40,15 @@ struct WorkerSearchSpaceView
 {
     SuccessorGenerator<Kind>& successor_generator;
     const ygg::SegmentedVector<SearchNode>& search_nodes;
+    size_t state_index_divisor = 1;
+
+    const SearchNode& get_search_node(ygg::Index<State<Kind>> state) const
+    {
+        assert(state_index_divisor > 0);
+        const auto index = static_cast<size_t>(ygg::uint_t(state)) / state_index_divisor;
+        assert(index < search_nodes.size());
+        return search_nodes[index];
+    }
 };
 
 template<>
@@ -118,10 +127,7 @@ private:
     template<TaskKind Kind, SearchNodeConcept<WorkerStateIndex<Kind>> SearchNode>
     static const SearchNode& get_search_node(WorkerStateIndex<Kind> state, std::span<const WorkerSearchSpaceView<Kind, SearchNode>> workers)
     {
-        const auto& search_nodes = get_worker(state, workers).search_nodes;
-        const auto index = static_cast<size_t>(ygg::uint_t(state.state));
-        assert(index < search_nodes.size());
-        return search_nodes[index];
+        return get_worker(state, workers).get_search_node(state.state);
     }
 
     template<TaskKind Kind>

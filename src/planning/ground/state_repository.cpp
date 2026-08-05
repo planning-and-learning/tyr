@@ -45,7 +45,8 @@
 #include <boost/dynamic_bitset.hpp>  // for dynami...
 #include <gtl/phmap.hpp>             // for operat...
 #include <tuple>                     // for operat...
-#include <utility>                   // for move
+#include <type_traits>
+#include <utility>                              // for move
 #include <yggdrasil/containers/vector.hpp>      // for ygg::View
 #include <yggdrasil/semantics/comparators.hpp>  // for operat...
 
@@ -66,24 +67,38 @@ struct StateRepository<GroundTag>::Impl
         TaskPtr<GroundTag> task;
     };
 
+    template<bool ThreadSafe>
+    struct Storage
+    {
+        using PackedStates =
+            ygg::IndexedHashSet<State<GroundTag>, ygg::Hash<ygg::Data<State<GroundTag>>>, ygg::EqualTo<ygg::Data<State<GroundTag>>>, 32, ThreadSafe>;
+
+        explicit Storage(const Definition& definition) : context(*definition.task), packed_states() {}
+
+        StateStorageContext<GroundTag, StateStoragePolicyTag, ThreadSafe> context;
+        PackedStates packed_states;
+    };
+
+    template<bool ThreadSafe>
+    using StoragePtr = std::conditional_t<ThreadSafe, std::shared_ptr<Storage<ThreadSafe>>, std::unique_ptr<Storage<ThreadSafe>>>;
+
+    template<bool ThreadSafe>
     struct Evaluator
     {
-        Evaluator(const Definition& definition, AxiomEvaluatorPtr<GroundTag> axiom_evaluator_) :
-            context(*definition.task),
-            fluent_backend(context),
-            derived_backend(context),
-            numeric_backend(context),
-            packed_states(),
+        Evaluator(StoragePtr<ThreadSafe> storage_, AxiomEvaluatorPtr<GroundTag> axiom_evaluator_) :
+            storage(std::move(storage_)),
+            fluent_backend(storage->context),
+            derived_backend(storage->context),
+            numeric_backend(storage->context),
             state_builder_pool(),
             axiom_evaluator(std::move(axiom_evaluator_))
         {
         }
 
-        StateStorageContext<GroundTag, StateStoragePolicyTag> context;
-        FactStorageBackend<GroundTag, StateStoragePolicyTag> fluent_backend;
-        AtomStorageBackend<GroundTag, StateStoragePolicyTag> derived_backend;
-        NumericStorageBackend<GroundTag, StateStoragePolicyTag> numeric_backend;
-        ygg::IndexedHashSet<State<GroundTag>> packed_states;
+        StoragePtr<ThreadSafe> storage;
+        FactStorageBackend<GroundTag, StateStoragePolicyTag, ThreadSafe> fluent_backend;
+        AtomStorageBackend<GroundTag, StateStoragePolicyTag, ThreadSafe> derived_backend;
+        NumericStorageBackend<GroundTag, StateStoragePolicyTag, ThreadSafe> numeric_backend;
         ygg::SharedObjectPool<ygg::Builder<State<GroundTag>>, true> state_builder_pool;
         AxiomEvaluatorPtr<GroundTag> axiom_evaluator;
     };
@@ -92,7 +107,8 @@ struct StateRepository<GroundTag>::Impl
         index(index_),
         next_index(std::move(next_index_)),
         definition(std::make_shared<Definition>(std::move(task))),
-        evaluator(*definition, std::move(axiom_evaluator))
+        evaluator(std::make_unique<Evaluator<false>>(std::make_unique<Storage<false>>(*definition), std::move(axiom_evaluator))),
+        shared_evaluator()
     {
     }
 
@@ -103,14 +119,45 @@ struct StateRepository<GroundTag>::Impl
         index(index_),
         next_index(std::move(next_index_)),
         definition(std::move(definition_)),
-        evaluator(*definition, std::move(axiom_evaluator))
+        evaluator(std::make_unique<Evaluator<false>>(std::make_unique<Storage<false>>(*definition), std::move(axiom_evaluator))),
+        shared_evaluator()
     {
+    }
+
+    Impl(ygg::uint_t index_,
+         std::shared_ptr<const Definition> definition_,
+         std::shared_ptr<Storage<true>> storage,
+         AxiomEvaluatorPtr<GroundTag> axiom_evaluator,
+         std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
+        index(index_),
+        next_index(std::move(next_index_)),
+        definition(std::move(definition_)),
+        evaluator(),
+        shared_evaluator(std::make_unique<Evaluator<true>>(std::move(storage), std::move(axiom_evaluator)))
+    {
+    }
+
+    template<typename Callback>
+    decltype(auto) visit_evaluator(Callback&& callback)
+    {
+        if (evaluator)
+            return std::forward<Callback>(callback)(*evaluator);
+        return std::forward<Callback>(callback)(*shared_evaluator);
+    }
+
+    template<typename Callback>
+    decltype(auto) visit_evaluator(Callback&& callback) const
+    {
+        if (evaluator)
+            return std::forward<Callback>(callback)(static_cast<const Evaluator<false>&>(*evaluator));
+        return std::forward<Callback>(callback)(static_cast<const Evaluator<true>&>(*shared_evaluator));
     }
 
     ygg::uint_t index;
     std::shared_ptr<std::atomic<ygg::uint_t>> next_index;
     std::shared_ptr<const Definition> definition;
-    Evaluator evaluator;
+    std::unique_ptr<Evaluator<false>> evaluator;
+    std::unique_ptr<Evaluator<true>> shared_evaluator;
 };
 
 StateRepository<GroundTag>::StateRepository(ygg::uint_t index,
@@ -127,11 +174,34 @@ StateRepository<GroundTag>::~StateRepository() = default;
 
 StateRepositoryPtr<GroundTag> StateRepository<GroundTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
 {
-    auto axiom_evaluator = m_impl->evaluator.axiom_evaluator ? m_impl->evaluator.axiom_evaluator->make_worker(std::move(execution_context)) : nullptr;
+    const auto& source_axiom_evaluator =
+        m_impl->visit_evaluator([](const auto& evaluator) -> const AxiomEvaluatorPtr<GroundTag>& { return evaluator.axiom_evaluator; });
+    auto axiom_evaluator = source_axiom_evaluator ? source_axiom_evaluator->make_worker(std::move(execution_context)) : nullptr;
     return StateRepositoryPtr<GroundTag>(new StateRepository<GroundTag>(std::make_unique<Impl>(m_impl->next_index->fetch_add(1, std::memory_order_relaxed),
                                                                                                m_impl->definition,
                                                                                                std::move(axiom_evaluator),
                                                                                                m_impl->next_index)));
+}
+
+std::vector<StateRepositoryPtr<GroundTag>> StateRepository<GroundTag>::make_shared_workers(std::span<const ygg::ExecutionContextPtr> execution_contexts) const
+{
+    auto workers = std::vector<StateRepositoryPtr<GroundTag>> {};
+    if (execution_contexts.empty())
+        return workers;
+
+    const auto storage = std::make_shared<Impl::Storage<true>>(*m_impl->definition);
+    const auto repository_index = m_impl->next_index->fetch_add(1, std::memory_order_relaxed);
+    const auto& source_axiom_evaluator =
+        m_impl->visit_evaluator([](const auto& evaluator) -> const AxiomEvaluatorPtr<GroundTag>& { return evaluator.axiom_evaluator; });
+
+    workers.reserve(execution_contexts.size());
+    for (const auto& execution_context : execution_contexts)
+    {
+        auto axiom_evaluator = source_axiom_evaluator ? source_axiom_evaluator->make_worker(execution_context) : nullptr;
+        workers.emplace_back(new StateRepository<GroundTag>(
+            std::make_unique<Impl>(repository_index, m_impl->definition, storage, std::move(axiom_evaluator), m_impl->next_index)));
+    }
+    return workers;
 }
 
 StateView<GroundTag> StateRepository<GroundTag>::get_initial_state()
@@ -149,14 +219,17 @@ StateView<GroundTag> StateRepository<GroundTag>::get_initial_state()
 
 StateView<GroundTag> StateRepository<GroundTag>::get_registered_state(ygg::Index<State<GroundTag>> state_index)
 {
-    const auto& packed_state = m_impl->evaluator.packed_states[state_index];
-
     auto state_builder = get_state_builder();
 
     state_builder->set(state_index);
-    m_impl->evaluator.fluent_backend.unpack(packed_state.template get_atoms<f::FluentTag>(), state_builder->template get_atoms<f::FluentTag>());
-    m_impl->evaluator.derived_backend.unpack(packed_state.template get_atoms<f::DerivedTag>(), state_builder->template get_atoms<f::DerivedTag>());
-    m_impl->evaluator.numeric_backend.unpack(packed_state.get_numeric_variables(), state_builder->get_numeric_variables());
+    m_impl->visit_evaluator(
+        [&](auto& evaluator)
+        {
+            const auto& packed_state = evaluator.storage->packed_states[state_index];
+            evaluator.fluent_backend.unpack(packed_state.template get_atoms<f::FluentTag>(), state_builder->template get_atoms<f::FluentTag>());
+            evaluator.derived_backend.unpack(packed_state.template get_atoms<f::DerivedTag>(), state_builder->template get_atoms<f::DerivedTag>());
+            evaluator.numeric_backend.unpack(packed_state.get_numeric_variables(), state_builder->get_numeric_variables());
+        });
 
     return StateView<GroundTag>(shared_from_this(), std::move(state_builder));
 }
@@ -190,7 +263,7 @@ StateView<GroundTag> StateRepository<GroundTag>::create_state(const std::vector<
 
 ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> StateRepository<GroundTag>::get_state_builder()
 {
-    auto state_builder = m_impl->evaluator.state_builder_pool.get_or_allocate();
+    auto state_builder = m_impl->visit_evaluator([](auto& evaluator) { return evaluator.state_builder_pool.get_or_allocate(); });
     state_builder->clear();
 
     state_builder->resize_fluent_facts(m_impl->definition->task->get_task().get_fluent_variables().size());
@@ -201,34 +274,71 @@ ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> StateRepository<G
 
 StateView<GroundTag> StateRepository<GroundTag>::register_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state)
 {
-    if (m_impl->evaluator.axiom_evaluator)
-        m_impl->evaluator.axiom_evaluator->compute_extended_state(*state);
+    m_impl->visit_evaluator(
+        [&](auto& evaluator)
+        {
+            if (evaluator.axiom_evaluator)
+                evaluator.axiom_evaluator->compute_extended_state(*state);
 
-    state->set(m_impl->evaluator.packed_states
-                   .insert(ygg::Data<State<GroundTag>>(ygg::Index<State<GroundTag>>(m_impl->evaluator.packed_states.size()),
-                                                       m_impl->evaluator.fluent_backend.insert(state->template get_atoms<f::FluentTag>()),
-                                                       m_impl->evaluator.derived_backend.insert(state->template get_atoms<f::DerivedTag>()),
-                                                       m_impl->evaluator.numeric_backend.insert(state->get_numeric_variables())))
-                   .first);
+            auto& packed_states = evaluator.storage->packed_states;
+            using PackedStates = std::remove_cvref_t<decltype(packed_states)>;
+            if constexpr (!PackedStates::thread_safe)
+            {
+                state->set(packed_states
+                               .insert(ygg::Data<State<GroundTag>>(ygg::Index<State<GroundTag>>(packed_states.size()),
+                                                                   evaluator.fluent_backend.insert(state->template get_atoms<f::FluentTag>()),
+                                                                   evaluator.derived_backend.insert(state->template get_atoms<f::DerivedTag>()),
+                                                                   evaluator.numeric_backend.insert(state->get_numeric_variables())))
+                               .first);
+            }
+            else
+            {
+                const auto candidate = ygg::Data<State<GroundTag>>(ygg::Index<State<GroundTag>>::max(),
+                                                                   evaluator.fluent_backend.insert(state->template get_atoms<f::FluentTag>()),
+                                                                   evaluator.derived_backend.insert(state->template get_atoms<f::DerivedTag>()),
+                                                                   evaluator.numeric_backend.insert(state->get_numeric_variables()));
+                const auto hash = PackedStates::hash(candidate);
+                auto state_index = packed_states.find_with_hash(candidate, hash);
+                if (!state_index)
+                {
+                    state_index.emplace(packed_states
+                                            .complete_miss_with_hash(hash,
+                                                                     candidate,
+                                                                     [&](ygg::Index<State<GroundTag>> index)
+                                                                     {
+                                                                         return ygg::Data<State<GroundTag>>(index,
+                                                                                                            candidate.template get_atoms<f::FluentTag>(),
+                                                                                                            candidate.template get_atoms<f::DerivedTag>(),
+                                                                                                            candidate.get_numeric_variables());
+                                                                     })
+                                            .first);
+                }
+                state->set(*state_index);
+            }
+        });
 
     return StateView<GroundTag>(shared_from_this(), std::move(state));
 }
 
 size_t StateRepository<GroundTag>::memory_usage() const noexcept
 {
-    size_t bytes = 0;
-    bytes += m_impl->evaluator.context.memory_usage();
-    bytes += m_impl->evaluator.packed_states.memory_usage();
-    return bytes;
+    return m_impl->visit_evaluator([](const auto& evaluator)
+                                   { return evaluator.storage->context.memory_usage() + evaluator.storage->packed_states.memory_usage(); });
 }
 
 const TaskPtr<GroundTag>& StateRepository<GroundTag>::get_task() const noexcept { return m_impl->definition->task; }
 
-const AxiomEvaluatorPtr<GroundTag>& StateRepository<GroundTag>::get_axiom_evaluator() const noexcept { return m_impl->evaluator.axiom_evaluator; }
+const AxiomEvaluatorPtr<GroundTag>& StateRepository<GroundTag>::get_axiom_evaluator() const noexcept
+{
+    return m_impl->visit_evaluator([](const auto& evaluator) -> const AxiomEvaluatorPtr<GroundTag>& { return evaluator.axiom_evaluator; });
+}
 
 ygg::uint_t StateRepository<GroundTag>::get_index() const noexcept { return m_impl->index; }
 
-size_t StateRepository<GroundTag>::num_states() const noexcept { return m_impl->evaluator.packed_states.size(); }
+size_t StateRepository<GroundTag>::num_states() const noexcept
+{
+    return m_impl->visit_evaluator([](const auto& evaluator) { return evaluator.storage->packed_states.size(); });
+}
 
 static_assert(StateRepositoryConcept<StateRepository<GroundTag>, GroundTag>);
 

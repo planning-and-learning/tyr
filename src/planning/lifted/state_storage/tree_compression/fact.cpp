@@ -23,24 +23,25 @@
 namespace tyr::planning
 {
 
-FactStorageBackend<LiftedTag, TreeCompression>::FactStorageBackend(StateStorageContext<LiftedTag, TreeCompression>& ctx) :
-    m_uint_vectors(ctx.uint_vectors)
+template<bool ThreadSafe>
+FactStorageBackend<LiftedTag, TreeCompression, ThreadSafe>::FactStorageBackend(Context& ctx) : m_uint_vectors(ctx.uint_vectors)
 {
 }
 
-typename FactStorageBackend<LiftedTag, TreeCompression>::Packed
-FactStorageBackend<LiftedTag, TreeCompression>::insert(const typename FactStorageBackend<LiftedTag, TreeCompression>::Unpacked& unpacked)
+template<bool ThreadSafe>
+typename FactStorageBackend<LiftedTag, TreeCompression, ThreadSafe>::Packed
+FactStorageBackend<LiftedTag, TreeCompression, ThreadSafe>::insert(const Unpacked& unpacked)
 {
     m_buffer.clear();
     const auto& bits = unpacked.indices;
     for (auto i = bits.find_first(); i != boost::dynamic_bitset<>::npos; i = bits.find_next(i))
         m_buffer.push_back(i);
 
-    return FactStorageBackend<LiftedTag, TreeCompression>::Packed { m_uint_vectors.insert(m_buffer) };
+    return Packed { m_uint_vectors.insert(m_buffer) };
 }
 
-void FactStorageBackend<LiftedTag, TreeCompression>::unpack(const typename FactStorageBackend<LiftedTag, TreeCompression>::Packed& packed,
-                                                            typename FactStorageBackend<LiftedTag, TreeCompression>::Unpacked& unpacked)
+template<bool ThreadSafe>
+void FactStorageBackend<LiftedTag, TreeCompression, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     auto& indices = unpacked.indices;
 
@@ -52,5 +53,8 @@ void FactStorageBackend<LiftedTag, TreeCompression>::unpack(const typename FactS
     for (const auto i : m_buffer)
         ygg::set(i, true, indices);
 }
+
+template class FactStorageBackend<LiftedTag, TreeCompression, false>;
+template class FactStorageBackend<LiftedTag, TreeCompression, true>;
 
 }

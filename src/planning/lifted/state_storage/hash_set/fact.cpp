@@ -23,21 +23,24 @@
 namespace tyr::planning
 {
 
-FactStorageBackend<LiftedTag, HashSet>::FactStorageBackend(StateStorageContext<LiftedTag, HashSet>& ctx) : m_uint_vec_set(ctx.uint_vec_set), m_buffer() {}
+template<bool ThreadSafe>
+FactStorageBackend<LiftedTag, HashSet, ThreadSafe>::FactStorageBackend(Context& ctx) : m_uint_vec_set(ctx.uint_vec_set), m_buffer()
+{
+}
 
-typename FactStorageBackend<LiftedTag, HashSet>::Packed
-FactStorageBackend<LiftedTag, HashSet>::insert(const typename FactStorageBackend<LiftedTag, HashSet>::Unpacked& unpacked)
+template<bool ThreadSafe>
+typename FactStorageBackend<LiftedTag, HashSet, ThreadSafe>::Packed FactStorageBackend<LiftedTag, HashSet, ThreadSafe>::insert(const Unpacked& unpacked)
 {
     m_buffer.clear();
     const auto& bits = unpacked.indices;
     for (auto i = bits.find_first(); i != boost::dynamic_bitset<>::npos; i = bits.find_next(i))
         m_buffer.push_back(i);
 
-    return FactStorageBackend<LiftedTag, HashSet>::Packed { m_uint_vec_set.insert(m_buffer) };
+    return Packed { m_uint_vec_set.insert(m_buffer) };
 }
 
-void FactStorageBackend<LiftedTag, HashSet>::unpack(const typename FactStorageBackend<LiftedTag, HashSet>::Packed& packed,
-                                                    typename FactStorageBackend<LiftedTag, HashSet>::Unpacked& unpacked)
+template<bool ThreadSafe>
+void FactStorageBackend<LiftedTag, HashSet, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     const auto view = m_uint_vec_set[packed.index];
 
@@ -45,5 +48,8 @@ void FactStorageBackend<LiftedTag, HashSet>::unpack(const typename FactStorageBa
     for (ygg::uint_t i = 0; i < view.size(); ++i)
         ygg::set(view[i], true, unpacked.indices);
 }
+
+template class FactStorageBackend<LiftedTag, HashSet, false>;
+template class FactStorageBackend<LiftedTag, HashSet, true>;
 
 }

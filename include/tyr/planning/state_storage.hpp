@@ -32,20 +32,20 @@ namespace tyr::planning
  * Context
  */
 
-template<TaskKind Kind, typename Tag>
+template<TaskKind Kind, typename Tag, bool ThreadSafe = false>
 struct StateStorageContext;
 
 /**
  * Backend
  */
 
-template<TaskKind Kind, typename Tag>
+template<TaskKind Kind, typename Tag, bool ThreadSafe = false>
 class AtomStorageBackend;
 
-template<TaskKind Kind, typename Tag>
+template<TaskKind Kind, typename Tag, bool ThreadSafe = false>
 class FactStorageBackend;
 
-template<TaskKind Kind, typename Tag>
+template<TaskKind Kind, typename Tag, bool ThreadSafe = false>
 class NumericStorageBackend;
 
 /**

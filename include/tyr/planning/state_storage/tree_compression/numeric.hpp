@@ -40,21 +40,22 @@ struct NumericPackedStorage<Kind, TreeCompression> : ygg::comparison::Mixin<Nume
     auto identifying_members() const noexcept { return std::tie(index); }
 };
 
-template<TaskKind Kind>
-class NumericStorageBackend<Kind, TreeCompression>
+template<TaskKind Kind, bool ThreadSafe>
+class NumericStorageBackend<Kind, TreeCompression, ThreadSafe>
 {
 public:
+    using Context = StateStorageContext<Kind, TreeCompression, ThreadSafe>;
     using Unpacked = NumericUnpackedStorage<Kind>;
     using Packed = NumericPackedStorage<Kind, TreeCompression>;
 
-    explicit NumericStorageBackend(StateStorageContext<Kind, TreeCompression>& ctx);
+    explicit NumericStorageBackend(Context& ctx);
 
     Packed insert(Unpacked& unpacked);
 
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    ygg::TreeVectorSet<ygg::float_t>& m_float_vectors;
+    typename Context::FloatVectorSet& m_float_vectors;
 };
 
 }

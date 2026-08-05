@@ -19,6 +19,7 @@
 #define TYR_SRC_PLANNING_ALGORITHMS_SEARCH_ENGINE_GBFS_LAZY_HPP_
 
 #include "engine.hpp"
+#include "parent_state.hpp"
 #include "tyr/planning/algorithms/gbfs_lazy.hpp"
 #include "tyr/planning/algorithms/gbfs_lazy/event_handler.hpp"
 #include "tyr/planning/algorithms/openlists/alternating.hpp"
@@ -26,12 +27,10 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <concepts>
 #include <cstddef>
 #include <limits>
 #include <stdexcept>
 #include <tuple>
-#include <type_traits>
 #include <utility>
 
 namespace tyr::planning::detail
@@ -41,11 +40,13 @@ template<TaskKind Kind, SearchKind Search>
 class LazyGBFSPolicy
 {
 public:
+    using ParentPolicy = ParentStatePolicy<Kind, Search>;
+    using TaskTag = Kind;
+    using SearchTag = Search;
     using Options = gbfs_lazy::Options<Kind>;
     using EventHandlerPtr = gbfs_lazy::EventHandlerPtr<Kind>;
     using WorkerEventHandlerPtr = gbfs_lazy::WorkerEventHandlerPtr<Kind>;
-    using ParentState = std::conditional_t<std::same_as<Search, SequentialSearch>, ygg::Index<State<Kind>>, WorkerStateIndex<Kind>>;
-    static constexpr bool eager = false;
+    using ParentState = typename ParentPolicy::Type;
     static constexpr bool terminate_on_goal = true;
     static constexpr bool supports_f_layer_synchronization = false;
 
@@ -113,8 +114,6 @@ public:
 
     bool empty() const { return m_openlist.empty(); }
 
-    static bool synchronize_f_layers(const Options&) noexcept { return false; }
-
     PoppedEntry pop()
     {
         const auto state = m_openlist.top();
@@ -172,13 +171,7 @@ public:
         return SuccessorMetadata { WorkerStateIndex<Kind> { worker, state }, search_node.g_value, m_state_h_value, preferred };
     }
 
-    static void set_parent(SearchNode& search_node, WorkerStateIndex<Kind> parent) noexcept
-    {
-        if constexpr (std::same_as<Search, SequentialSearch>)
-            search_node.parent_state = parent.state;
-        else
-            search_node.parent_state = parent;
-    }
+    static void set_parent(SearchNode& search_node, WorkerStateIndex<Kind> parent) noexcept { search_node.parent_state = ParentPolicy::make_parent(parent); }
 
     void open_successor(ygg::Index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value, SearchNodeStatus, bool preferred)
     {
@@ -188,18 +181,62 @@ public:
             m_standard_openlist.insert(QueueEntry { g_value, h_value, state, m_step++ });
     }
 
+    template<typename Engine, typename WorkerData, typename EmitTransition>
+    AcceptanceResult accept_successor(Engine& engine,
+                                      WorkerData& worker,
+                                      const Node<Kind>& source_node,
+                                      const Node<Kind>& successor_node,
+                                      const typename Engine::RoutedSuccessor& routed_successor,
+                                      SearchNode& successor_search_node,
+                                      bool is_new,
+                                      EmitTransition&& emit_transition)
+    {
+        if (!is_new)
+        {
+            emit_transition(TransitionOutcome::DUPLICATE);
+            return AcceptanceResult::DISCARDED;
+        }
+
+        const auto& source_state = source_node.get_state();
+        const auto& successor_state = successor_node.get_state();
+        const auto g_value = successor_node.get_metric();
+        successor_search_node.status = SearchNodeStatus::OPEN;
+        set_parent(successor_search_node, routed_successor.metadata.parent);
+        successor_search_node.g_value = g_value;
+        successor_search_node.preferred = routed_successor.metadata.preferred;
+
+        if (worker.goal_strategy->is_dynamic_goal_satisfied(engine.m_start_node.get_state(), successor_state))
+        {
+            successor_search_node.status = SearchNodeStatus::GOAL;
+            emit_transition(TransitionOutcome::GOAL);
+            engine.solve(worker, successor_search_node, successor_node);
+            return AcceptanceResult::TERMINAL;
+        }
+
+        if (worker.pruning_strategy->should_prune_successor_state(source_state, successor_state, is_new))
+        {
+            successor_search_node.status = SearchNodeStatus::CLOSED;
+            worker.statistics.increment_num_pruned();
+            emit_transition(TransitionOutcome::PRUNED);
+            return AcceptanceResult::DISCARDED;
+        }
+
+        worker.statistics.increment_num_generated();
+        open_successor(successor_state.get_index(),
+                       g_value,
+                       routed_successor.metadata.inherited_h_value,
+                       successor_search_node.status,
+                       routed_successor.metadata.preferred);
+        emit_transition(TransitionOutcome::OPENED);
+        return AcceptanceResult::QUEUED;
+    }
+
     const ygg::SegmentedVector<SearchNode>& get_search_nodes() const noexcept { return m_search_nodes; }
 
 private:
     using Queue = PriorityQueue<QueueEntry>;
 
-    static constexpr ParentState no_parent() noexcept
-    {
-        if constexpr (std::same_as<Search, SequentialSearch>)
-            return ygg::Index<State<Kind>>::max();
-        else
-            return WorkerStateIndex<Kind> { ygg::Index<Worker>::max(), ygg::Index<State<Kind>>::max() };
-    }
+    static constexpr ParentState no_parent() noexcept { return ParentPolicy::no_parent(); }
 
     Heuristic<Kind>& m_heuristic;
     const Options& m_options;

@@ -23,6 +23,7 @@
 #include "tyr/planning/state_index.hpp"
 
 #include <concepts>
+#include <span>
 #include <utility>
 #include <vector>
 #include <yggdrasil/containers/shared_object_pool.hpp>
@@ -52,7 +53,8 @@ concept SuccessorGeneratorConcept = requires(T& r,
                                              ygg::Builder<State<Kind>>& state_builder,
                                              ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state_builder_ptr,
                                              PendingActionResult pending_result,
-                                             ygg::ExecutionContextPtr execution_context) {
+                                             ygg::ExecutionContextPtr execution_context,
+                                             std::span<const ygg::ExecutionContextPtr> execution_contexts) {
     requires TaskKind<Kind>;
     { r.get_initial_node() } -> std::same_as<Node<Kind>>;
     { r.get_successor_nodes(node) } -> std::same_as<NodeList<Kind>>;
@@ -66,6 +68,7 @@ concept SuccessorGeneratorConcept = requires(T& r,
     { r.finalize_successor_state(std::move(state_builder_ptr), pending_result) } -> std::same_as<Node<Kind>>;
     { r.get_node(state_index) } -> std::same_as<Node<Kind>>;
     { const_r.make_worker(execution_context) } -> std::same_as<SuccessorGeneratorPtr<Kind>>;
+    { const_r.make_shared_workers(execution_contexts) } -> std::same_as<std::vector<SuccessorGeneratorPtr<Kind>>>;
     { r.get_index() } -> std::same_as<ygg::uint_t>;
 };
 

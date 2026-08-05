@@ -33,12 +33,26 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
     if (options.num_search_workers > 1)
     {
         using Search = ::tyr::planning::detail::LazyGBFSPolicy<Kind, ParallelSearch>;
-        using Execution = ::tyr::planning::detail::ParallelExecutionPolicy<Kind, typename Search::SuccessorMetadata, RandomDistHashTag>;
-        return ::tyr::planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
+        switch (options.state_repository_mode)
+        {
+            case StateRepositoryMode::HASH_DISTRIBUTED:
+            {
+                using Distribution = ::tyr::planning::detail::HashDistributedStatePolicy<Kind, RandomDistHashTag>;
+                using Execution = ::tyr::planning::detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
+                return ::tyr::planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
+            }
+            case StateRepositoryMode::SHARED:
+            {
+                using Distribution = ::tyr::planning::detail::SharedStatePolicy<Kind>;
+                using Execution = ::tyr::planning::detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
+                return ::tyr::planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
+            }
+        }
+        throw std::invalid_argument("gbfs_lazy::find_solution(...): unknown state repository mode.");
     }
 
     using Search = ::tyr::planning::detail::LazyGBFSPolicy<Kind, SequentialSearch>;
-    using Execution = ::tyr::planning::detail::SequentialExecutionPolicy<Kind>;
+    using Execution = ::tyr::planning::detail::SequentialExecutionPolicy<Kind, Search>;
     return ::tyr::planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
 }
 
@@ -54,22 +68,5 @@ template SearchResult<GroundTag> find_solution<GroundTag>(Task<GroundTag>& task,
 
 static_assert(SolverConcept<Solver<LiftedTag>, LiftedTag>);
 static_assert(SolverConcept<Solver<GroundTag>, GroundTag>);
-
-}
-
-namespace tyr::planning::detail
-{
-
-template class SearchEngine<LiftedTag, LazyGBFSPolicy<LiftedTag, SequentialSearch>, SequentialExecutionPolicy<LiftedTag>>;
-template class SearchEngine<GroundTag, LazyGBFSPolicy<GroundTag, SequentialSearch>, SequentialExecutionPolicy<GroundTag>>;
-
-using LiftedParallelGBFS = LazyGBFSPolicy<LiftedTag, ParallelSearch>;
-using GroundParallelGBFS = LazyGBFSPolicy<GroundTag, ParallelSearch>;
-template class SearchEngine<LiftedTag,
-                            LiftedParallelGBFS,
-                            ParallelExecutionPolicy<LiftedTag, typename LiftedParallelGBFS::SuccessorMetadata, RandomDistHashTag>>;
-template class SearchEngine<GroundTag,
-                            GroundParallelGBFS,
-                            ParallelExecutionPolicy<GroundTag, typename GroundParallelGBFS::SuccessorMetadata, RandomDistHashTag>>;
 
 }

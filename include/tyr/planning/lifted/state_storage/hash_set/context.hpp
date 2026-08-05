@@ -34,11 +34,14 @@ namespace tyr::planning
  * Context
  */
 
-template<>
-struct StateStorageContext<LiftedTag, HashSet>
+template<bool ThreadSafe>
+struct StateStorageContext<LiftedTag, HashSet, ThreadSafe>
 {
-    ygg::RawVectorSet<ygg::uint_t, ygg::uint_t> uint_vec_set;
-    ygg::RawVectorSet<ygg::uint_t, ygg::float_t> float_vec_set;
+    using UintVectorSet = ygg::RawVectorSet<ygg::uint_t, ygg::uint_t, 1024, ThreadSafe>;
+    using FloatVectorSet = ygg::RawVectorSet<ygg::uint_t, ygg::float_t, 1024, ThreadSafe>;
+
+    UintVectorSet uint_vec_set;
+    FloatVectorSet float_vec_set;
 
     size_t memory_usage() const noexcept
     {

@@ -35,6 +35,12 @@
 namespace tyr::planning
 {
 
+enum class StateRepositoryMode : uint8_t
+{
+    HASH_DISTRIBUTED,
+    SHARED,
+};
+
 enum class SearchStatus
 {
     IN_PROGRESS,

@@ -281,6 +281,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "max_time": None,
             "cost_mode": planning.CostMode.GENERAL,
             "num_search_workers": 1,
+            "state_repository_mode": planning.StateRepositoryMode.HASH_DISTRIBUTED,
             "parallel_search_mode": planning.ParallelSearchMode.SYNCHRONOUS,
             "random_seed": 0,
             "shuffle_labeled_succ_nodes": False,
@@ -306,6 +307,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "use_preferred_actions": True,
             "boost_preferred_queue": 1000,
             "num_search_workers": 1,
+            "state_repository_mode": planning.StateRepositoryMode.HASH_DISTRIBUTED,
             "random_seed": 0,
             "shuffle_labeled_succ_nodes": False,
         },
@@ -337,6 +339,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "max_time",
             "cost_mode",
             "num_search_workers",
+            "state_repository_mode",
             "parallel_search_mode",
             "random_seed",
             "shuffle_labeled_succ_nodes",
@@ -362,6 +365,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "use_preferred_actions",
             "boost_preferred_queue",
             "num_search_workers",
+            "state_repository_mode",
             "random_seed",
             "shuffle_labeled_succ_nodes",
         ),
@@ -459,6 +463,7 @@ def test_parallel_lazy_gbfs_is_available_through_python_bindings():
         options = task_module.gbfs_lazy.Options()
         options.event_handler = event_handler
         options.num_search_workers = 2
+        options.state_repository_mode = planning.StateRepositoryMode.SHARED
 
         result = task_module.gbfs_lazy.find_solution(
             task,
@@ -480,6 +485,7 @@ def test_parallel_lazy_gbfs_is_available_through_python_bindings():
 
         astar_options = task_module.astar_eager.Options()
         astar_options.num_search_workers = 2
+        astar_options.state_repository_mode = planning.StateRepositoryMode.SHARED
         for mode in (planning.ParallelSearchMode.SYNCHRONOUS, planning.ParallelSearchMode.ASYNCHRONOUS):
             astar_options.parallel_search_mode = mode
             astar_result = task_module.astar_eager.find_solution(
@@ -543,6 +549,17 @@ def test_parallel_astar_search_mode_is_bound():
         assert options.parallel_search_mode == planning.ParallelSearchMode.SYNCHRONOUS
         options.parallel_search_mode = planning.ParallelSearchMode.ASYNCHRONOUS
         assert options.parallel_search_mode == planning.ParallelSearchMode.ASYNCHRONOUS
+
+
+def test_state_repository_mode_is_bound():
+    assert planning.StateRepositoryMode.HASH_DISTRIBUTED != planning.StateRepositoryMode.SHARED
+
+    for task_module in (planning.ground, planning.lifted):
+        for algorithm_module in (task_module.astar_eager, task_module.gbfs_lazy):
+            options = algorithm_module.Options()
+            assert options.state_repository_mode == planning.StateRepositoryMode.HASH_DISTRIBUTED
+            options.state_repository_mode = planning.StateRepositoryMode.SHARED
+            assert options.state_repository_mode == planning.StateRepositoryMode.SHARED
 
 
 def test_ground_task_instantiation_result_default_is_explicit_failure():

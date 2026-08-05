@@ -25,15 +25,17 @@
 namespace tyr::planning
 {
 
-FactStorageBackend<GroundTag, TreeCompression>::FactStorageBackend(StateStorageContext<GroundTag, TreeCompression>& ctx) :
+template<bool ThreadSafe>
+FactStorageBackend<GroundTag, TreeCompression, ThreadSafe>::FactStorageBackend(Context& ctx) :
     m_array_set(ctx.fluent_array_set),
     m_infos(ctx.fluent_infos),
     m_buffer(m_array_set.array_size())
 {
 }
 
-typename FactStorageBackend<GroundTag, TreeCompression>::Packed
-FactStorageBackend<GroundTag, TreeCompression>::insert(const typename FactStorageBackend<GroundTag, TreeCompression>::Unpacked& unpacked)
+template<bool ThreadSafe>
+typename FactStorageBackend<GroundTag, TreeCompression, ThreadSafe>::Packed
+FactStorageBackend<GroundTag, TreeCompression, ThreadSafe>::insert(const Unpacked& unpacked)
 {
     auto data = m_buffer.data();
     const auto& values = unpacked.values;
@@ -46,11 +48,11 @@ FactStorageBackend<GroundTag, TreeCompression>::insert(const typename FactStorag
         ygg::bit::int_reference(data + info.begin, info.offset, info.length) = values[i];
     }
 
-    return typename FactStorageBackend<GroundTag, TreeCompression>::Packed { m_array_set.insert(m_buffer) };
+    return Packed { m_array_set.insert(m_buffer) };
 }
 
-void FactStorageBackend<GroundTag, TreeCompression>::unpack(const typename FactStorageBackend<GroundTag, TreeCompression>::Packed& packed,
-                                                            typename FactStorageBackend<GroundTag, TreeCompression>::Unpacked& unpacked)
+template<bool ThreadSafe>
+void FactStorageBackend<GroundTag, TreeCompression, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     const auto data = m_array_set[packed.index];
     auto& values = unpacked.values;
@@ -65,5 +67,8 @@ void FactStorageBackend<GroundTag, TreeCompression>::unpack(const typename FactS
         values[i] = ygg::bit::read_int(data.data() + info.begin, info.offset, info.length);
     }
 }
+
+template class FactStorageBackend<GroundTag, TreeCompression, false>;
+template class FactStorageBackend<GroundTag, TreeCompression, true>;
 
 }

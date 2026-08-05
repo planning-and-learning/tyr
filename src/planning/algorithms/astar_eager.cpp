@@ -33,12 +33,26 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
     if (options.num_search_workers > 1)
     {
         using Search = detail::EagerAStarPolicy<Kind, ParallelSearch>;
-        using Execution = detail::ParallelExecutionPolicy<Kind, typename Search::SuccessorMetadata, RandomDistHashTag>;
-        return detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
+        switch (options.state_repository_mode)
+        {
+            case StateRepositoryMode::HASH_DISTRIBUTED:
+            {
+                using Distribution = detail::HashDistributedStatePolicy<Kind, RandomDistHashTag>;
+                using Execution = detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
+                return detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
+            }
+            case StateRepositoryMode::SHARED:
+            {
+                using Distribution = detail::SharedStatePolicy<Kind>;
+                using Execution = detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
+                return detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
+            }
+        }
+        throw std::invalid_argument("astar_eager::find_solution(...): unknown state repository mode.");
     }
 
     using Search = detail::EagerAStarPolicy<Kind, SequentialSearch>;
-    using Execution = detail::SequentialExecutionPolicy<Kind>;
+    using Execution = detail::SequentialExecutionPolicy<Kind, Search>;
     return detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
 }
 
@@ -54,22 +68,5 @@ template SearchResult<GroundTag> find_solution<GroundTag>(Task<GroundTag>& task,
 
 static_assert(SolverConcept<Solver<LiftedTag>, LiftedTag>);
 static_assert(SolverConcept<Solver<GroundTag>, GroundTag>);
-
-}
-
-namespace tyr::planning::detail
-{
-
-template class SearchEngine<LiftedTag, EagerAStarPolicy<LiftedTag, SequentialSearch>, SequentialExecutionPolicy<LiftedTag>>;
-template class SearchEngine<GroundTag, EagerAStarPolicy<GroundTag, SequentialSearch>, SequentialExecutionPolicy<GroundTag>>;
-
-using LiftedParallelAStar = EagerAStarPolicy<LiftedTag, ParallelSearch>;
-using GroundParallelAStar = EagerAStarPolicy<GroundTag, ParallelSearch>;
-template class SearchEngine<LiftedTag,
-                            LiftedParallelAStar,
-                            ParallelExecutionPolicy<LiftedTag, typename LiftedParallelAStar::SuccessorMetadata, RandomDistHashTag>>;
-template class SearchEngine<GroundTag,
-                            GroundParallelAStar,
-                            ParallelExecutionPolicy<GroundTag, typename GroundParallelAStar::SuccessorMetadata, RandomDistHashTag>>;
 
 }

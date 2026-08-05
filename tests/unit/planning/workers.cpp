@@ -19,6 +19,7 @@
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/planning.hpp"
 
+#include <barrier>
 #include <concepts>
 #include <filesystem>
 #include <future>
@@ -26,6 +27,7 @@
 #include <memory>
 #include <type_traits>
 #include <unordered_set>
+#include <vector>
 #include <yggdrasil/execution/onetbb.hpp>
 
 namespace p = tyr::planning;
@@ -192,6 +194,73 @@ void expect_worker_chain(const p::TaskPtr<Kind>& task)
     EXPECT_NE(exhaustive_goal.get(), exhaustive_goal_worker.get());
     EXPECT_FALSE(exhaustive_goal_worker->is_dynamic_goal_satisfied(worker_initial.get_state(), worker_initial.get_state()));
 }
+
+template<::tyr::TaskKind Kind>
+void expect_shared_worker_cohort(const p::TaskPtr<Kind>& task)
+{
+    auto source_context = ygg::ExecutionContext::create(1);
+    auto source_axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, source_context);
+    auto source_repository = p::StateRepositoryFactory<Kind>().create(task, source_axiom_evaluator);
+    auto source = p::SuccessorGeneratorFactory<Kind>().create(task, source_context, source_repository);
+
+    auto worker_contexts = std::vector<ygg::ExecutionContextPtr> { ygg::ExecutionContext::create(1), ygg::ExecutionContext::create(1) };
+    auto workers = source->make_shared_workers(worker_contexts);
+    ASSERT_EQ(workers.size(), 2);
+
+    const auto first_repository = workers[0]->get_state_repository();
+    const auto second_repository = workers[1]->get_state_repository();
+    EXPECT_NE(workers[0].get(), workers[1].get());
+    EXPECT_NE(first_repository.get(), second_repository.get());
+    EXPECT_NE(workers[0]->get_index(), workers[1]->get_index());
+    EXPECT_EQ(first_repository->get_index(), second_repository->get_index());
+
+    auto initial_start = std::barrier(2);
+    auto first_initial_future = std::async(std::launch::async,
+                                           [&]
+                                           {
+                                               initial_start.arrive_and_wait();
+                                               return workers[0]->get_initial_node();
+                                           });
+    auto second_initial_future = std::async(std::launch::async,
+                                            [&]
+                                            {
+                                                initial_start.arrive_and_wait();
+                                                return workers[1]->get_initial_node();
+                                            });
+    const auto first_initial = first_initial_future.get();
+    const auto second_initial = second_initial_future.get();
+    ASSERT_EQ(first_repository->num_states(), 1);
+    ASSERT_EQ(second_repository->num_states(), 1);
+    EXPECT_EQ(first_initial.get_state(), second_initial.get_state());
+    EXPECT_EQ(first_initial.get_metric(), second_initial.get_metric());
+
+    const auto actions = workers[0]->get_applicable_action_bindings(first_initial);
+    ASSERT_FALSE(actions.empty());
+    const auto action = actions.front();
+    auto successor_start = std::barrier(2);
+    auto first_future = std::async(std::launch::async,
+                                   [&]
+                                   {
+                                       successor_start.arrive_and_wait();
+                                       return workers[0]->get_successor_node(first_initial, action);
+                                   });
+    auto second_future = std::async(std::launch::async,
+                                    [&]
+                                    {
+                                        successor_start.arrive_and_wait();
+                                        return workers[1]->get_successor_node(second_initial, action);
+                                    });
+    const auto first_successor = first_future.get();
+    const auto second_successor = second_future.get();
+
+    EXPECT_EQ(first_successor.get_state().get_index(), ygg::Index<p::State<Kind>>(1));
+    EXPECT_EQ(first_successor.get_state(), second_successor.get_state());
+    EXPECT_EQ(first_successor.get_metric(), second_successor.get_metric());
+    EXPECT_EQ(first_repository->num_states(), 2);
+    EXPECT_EQ(second_repository->num_states(), 2);
+    EXPECT_EQ(first_repository->get_registered_state(first_successor.get_state().get_index()),
+              second_repository->get_registered_state(second_successor.get_state().get_index()));
+}
 }
 
 TEST(TyrPlanningWorkerTest, GroundAndLiftedWorkersOwnMutableStateAndShareDefinitions)
@@ -205,6 +274,8 @@ TEST(TyrPlanningWorkerTest, GroundAndLiftedWorkersOwnMutableStateAndShareDefinit
 
     expect_worker_chain(lifted_task);
     expect_worker_chain(ground_task);
+    expect_shared_worker_cohort(lifted_task);
+    expect_shared_worker_cohort(ground_task);
 }
 
 TEST(TyrPlanningWorkerTest, UtilizationUsesAggregateWorkerCapacity)

@@ -8,6 +8,7 @@ from .._pytyr.planning import (
     ProgressStatistics,
     ProgressStatisticsSnapshot,
     SearchStatus,
+    StateRepositoryMode,
     Statistics,
 )
 

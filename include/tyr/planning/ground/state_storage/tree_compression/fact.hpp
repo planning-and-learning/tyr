@@ -43,22 +43,23 @@ struct FactPackedStorage<GroundTag, TreeCompression> : ygg::comparison::Mixin<Fa
     auto identifying_members() const noexcept { return std::tie(index); }
 };
 
-template<>
-class FactStorageBackend<GroundTag, TreeCompression>
+template<bool ThreadSafe>
+class FactStorageBackend<GroundTag, TreeCompression, ThreadSafe>
 {
 public:
+    using Context = StateStorageContext<GroundTag, TreeCompression, ThreadSafe>;
     using Unpacked = FactUnpackedStorage<GroundTag>;
     using Packed = FactPackedStorage<GroundTag, TreeCompression>;
-    using VariableInfo = typename StateStorageContext<GroundTag, TreeCompression>::VariableInfo;
+    using VariableInfo = typename Context::VariableInfo;
 
-    explicit FactStorageBackend(StateStorageContext<GroundTag, TreeCompression>& ctx);
+    explicit FactStorageBackend(Context& ctx);
 
     Packed insert(const Unpacked& unpacked);
 
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    ygg::RawArraySet<ygg::uint_t>& m_array_set;
+    typename Context::ArraySet& m_array_set;
     const std::vector<VariableInfo>& m_infos;
 
     std::vector<ygg::uint_t> m_buffer;

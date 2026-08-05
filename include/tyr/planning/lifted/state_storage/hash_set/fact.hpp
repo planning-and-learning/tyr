@@ -41,21 +41,22 @@ struct FactPackedStorage<LiftedTag, HashSet> : ygg::comparison::Mixin<FactPacked
     auto identifying_members() const noexcept { return std::tie(index); }
 };
 
-template<>
-class FactStorageBackend<LiftedTag, HashSet>
+template<bool ThreadSafe>
+class FactStorageBackend<LiftedTag, HashSet, ThreadSafe>
 {
 public:
+    using Context = StateStorageContext<LiftedTag, HashSet, ThreadSafe>;
     using Unpacked = FactUnpackedStorage<LiftedTag>;
     using Packed = FactPackedStorage<LiftedTag, HashSet>;
 
-    explicit FactStorageBackend(StateStorageContext<LiftedTag, HashSet>& ctx);
+    explicit FactStorageBackend(Context& ctx);
 
     Packed insert(const Unpacked& unpacked);
 
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    ygg::RawVectorSet<ygg::uint_t, ygg::uint_t>& m_uint_vec_set;
+    typename Context::UintVectorSet& m_uint_vec_set;
 
     std::vector<ygg::uint_t> m_buffer;
 };
