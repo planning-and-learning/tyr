@@ -85,14 +85,14 @@ struct FFRPGHeuristic<GroundTag>::Impl :
         m_preferred_actions.clear();
     }
 
-    ygg::float_t evaluate(const StateView<GroundTag>& state)
+    ygg::float_t evaluate(const ygg::Builder<State<GroundTag>>& state)
     {
         m_relaxed_plan.clear();
         m_preferred_actions.clear();
         return Base::evaluate(state);
     }
 
-    ygg::float_t compute_result(const StateView<GroundTag>& state);
+    ygg::float_t compute_result(const ygg::Builder<State<GroundTag>>& state);
     bool mark_atom(fd::GroundAtomView<f::FluentTag> atom);
     bool mark_function(fd::GroundFunctionTermView<f::FluentTag> term);
     void extract_relaxed_plan_and_preferred_actions(fd::GroundAtomView<f::FluentTag> atom, const StateContext<GroundTag>& state_context);
@@ -130,7 +130,7 @@ FFRPGHeuristicPtr<GroundTag> FFRPGHeuristic<GroundTag>::create(TaskPtr<GroundTag
 
 void FFRPGHeuristic<GroundTag>::set_goal(f::planning::GroundConjunctiveConditionView goal) { m_impl->set_goal(goal); }
 
-ygg::float_t FFRPGHeuristic<GroundTag>::evaluate(const StateView<GroundTag>& state) { return m_impl->evaluate(state); }
+ygg::float_t FFRPGHeuristic<GroundTag>::evaluate(const ygg::Builder<State<GroundTag>>& state) { return m_impl->evaluate(state); }
 
 HeuristicPtr<GroundTag> FFRPGHeuristic<GroundTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
 {
@@ -139,14 +139,14 @@ HeuristicPtr<GroundTag> FFRPGHeuristic<GroundTag>::make_worker(ygg::ExecutionCon
 
 const ygg::UnorderedSet<f::planning::ActionBindingView>& FFRPGHeuristic<GroundTag>::get_preferred_actions() { return m_impl->m_preferred_actions; }
 
-ygg::float_t FFRPGHeuristic<GroundTag>::Impl::compute_result(const StateView<GroundTag>& state)
+ygg::float_t FFRPGHeuristic<GroundTag>::Impl::compute_result(const ygg::Builder<State<GroundTag>>& state)
 {
     m_function_markings.clear();
     m_numeric_support_selector_workspace.clear();
     for (auto& bitset : m_markings)
         bitset.reset();
 
-    const auto state_context = StateContext<GroundTag>(get_task(), state.get_state_builder(), ygg::float_t(0));
+    const auto state_context = StateContext<GroundTag>(get_task(), state, ygg::float_t(0));
     if (const auto& goal = m_workspace.tp.get_goal())
     {
         for (const auto literal : goal->get_literals<f::FluentTag>())

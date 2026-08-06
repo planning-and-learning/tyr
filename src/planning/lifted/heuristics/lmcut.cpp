@@ -114,7 +114,7 @@ struct LMCutHeuristic<LiftedTag>::Impl :
 
     Impl(TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode);
     Impl(const Impl& source, ygg::ExecutionContextPtr execution_context);
-    ygg::float_t evaluate(const StateView<LiftedTag>& state);
+    ygg::float_t evaluate(const ygg::Builder<State<LiftedTag>>& state);
 
 private:
     RuleEdge make_rule_edge(const datalog::WitnessAnnotation<LiftedTag, f::PredicateTag>& witness) const;
@@ -209,7 +209,7 @@ LMCutHeuristic<LiftedTag>::Impl::Impl(const Impl& source, ygg::ExecutionContextP
 {
 }
 
-ygg::float_t LMCutHeuristic<LiftedTag>::Impl::evaluate(const StateView<LiftedTag>& state)
+ygg::float_t LMCutHeuristic<LiftedTag>::Impl::evaluate(const ygg::Builder<State<LiftedTag>>& state)
 {
     auto value = datalog::Cost(0);
     clear_repository_views();
@@ -862,7 +862,7 @@ LMCutHeuristicPtr<LiftedTag> LMCutHeuristic<LiftedTag>::create(TaskPtr<LiftedTag
 }
 
 void LMCutHeuristic<LiftedTag>::set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) { m_impl->set_goal(goal); }
-ygg::float_t LMCutHeuristic<LiftedTag>::evaluate(const StateView<LiftedTag>& state) { return m_impl->evaluate(state); }
+ygg::float_t LMCutHeuristic<LiftedTag>::evaluate(const ygg::Builder<State<LiftedTag>>& state) { return m_impl->evaluate(state); }
 HeuristicPtr<LiftedTag> LMCutHeuristic<LiftedTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
 {
     return HeuristicPtr<LiftedTag>(new LMCutHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context))));

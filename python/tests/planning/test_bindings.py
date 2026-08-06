@@ -49,6 +49,9 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
     assert statistics.get_num_expanded() == 0
     assert statistics.get_num_deadends() == 0
     assert statistics.get_num_pruned() == 0
+    assert statistics.get_num_routed_successors() == 0
+    assert statistics.get_num_remote_routed_successors() == 0
+    assert statistics.get_communication_overhead() == 0
     assert statistics.get_num_registered_states() == 0
     assert statistics.get_idle_time() == timedelta(0)
     assert statistics.get_num_destination_lock_acquisitions() == 0
@@ -66,15 +69,23 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
     statistics.increment_num_expanded()
     statistics.increment_num_deadends()
     statistics.increment_num_pruned()
+    statistics.increment_num_routed_successors(False)
+    statistics.increment_num_routed_successors(True)
     assert statistics.get_num_generated() == 1
     assert statistics.get_num_expanded() == 1
     assert statistics.get_num_deadends() == 1
     assert statistics.get_num_pruned() == 1
+    assert statistics.get_num_routed_successors() == 2
+    assert statistics.get_num_remote_routed_successors() == 1
+    assert statistics.get_communication_overhead() == 0.5
     statistics.clear()
     assert statistics.get_num_generated() == 0
     assert statistics.get_num_expanded() == 0
     assert statistics.get_num_deadends() == 0
     assert statistics.get_num_pruned() == 0
+    assert statistics.get_num_routed_successors() == 0
+    assert statistics.get_num_remote_routed_successors() == 0
+    assert statistics.get_communication_overhead() == 0
     assert repr(statistics) == str(statistics)
     for label in (
         "Number of registered states",
@@ -83,6 +94,9 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
         "Predicate bindings memory usage",
         "Axiom bindings memory usage",
         "Function bindings memory usage",
+        "Number of routed successors",
+        "Number of remotely routed successors",
+        "Communication overhead",
         "Destination lock acquisitions",
         "Destination lock wait time",
         "Destination lock hold time",
@@ -262,11 +276,18 @@ def _assert_worker_statistics(result, num_workers: int):
         "get_num_expanded",
         "get_num_deadends",
         "get_num_pruned",
+        "get_num_routed_successors",
+        "get_num_remote_routed_successors",
         "get_num_registered_states",
         "get_state_storage_memory_usage",
     ):
         worker_total = sum(getattr(worker, getter)() for worker in result.worker_statistics)
         assert worker_total == getattr(result.statistics, getter)()
+    assert result.statistics.get_communication_overhead() == (
+        result.statistics.get_num_remote_routed_successors() / result.statistics.get_num_routed_successors()
+        if result.statistics.get_num_routed_successors()
+        else 0
+    )
     worker_idle_time = sum(
         (worker.get_idle_time() for worker in result.worker_statistics),
         start=timedelta(0),

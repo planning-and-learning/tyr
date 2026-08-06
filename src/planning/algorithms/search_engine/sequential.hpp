@@ -32,11 +32,13 @@
 
 #include <cassert>
 #include <chrono>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <limits>
 #include <optional>
+#include <stdexcept>
 #include <utility>
 #include <yggdrasil/core/chrono.hpp>
 #include <yggdrasil/core/portable_shuffle.hpp>
@@ -154,7 +156,7 @@ public:
     template<typename Worker, typename Callback>
     static decltype(auto) with_worker_lock(Worker&, Callback&& callback)
     {
-        return std::forward<Callback>(callback)();
+        return std::forward<Callback>(callback)([](auto&& evaluate) { return std::forward<decltype(evaluate)>(evaluate)(); });
     }
 
     template<typename Engine>
@@ -169,15 +171,24 @@ public:
     }
 
     template<typename Engine, typename WorkerData, typename Metadata>
-    auto route(Engine&,
+    auto route(Engine& engine,
                WorkerData& worker,
                ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> target,
                PendingActionResult action_result,
                ::tyr::formalism::planning::ActionBindingView action,
                Metadata metadata) -> typename Engine::RoutedSuccessor
     {
-        auto node = worker.successor_generator.finalize_successor_state(std::move(target), action_result);
-        return typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata) };
+        const auto completed = worker.successor_generator.complete_successor_state(*target, action_result);
+        if (std::isnan(completed.metric))
+            throw std::runtime_error("find_solution(...): successor metric value is NaN.");
+
+        const auto g_value = compute_successor_g_value(metadata.source_g_value, completed.metric, engine.m_options.cost_mode);
+        if (std::isnan(g_value))
+            throw std::runtime_error("find_solution(...): successor path cost is NaN.");
+
+        auto node = worker.successor_generator.register_completed_successor_state(std::move(target), completed);
+        worker.statistics.increment_num_routed_successors(false);
+        return typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata), g_value, false };
     }
 
     template<typename Engine, typename WorkerData>
@@ -216,16 +227,27 @@ public:
     }
 
     template<typename Engine, typename WorkerData, typename EmitTransition>
-    static std::optional<AcceptanceResult>
-    accept_generated_goal(Engine&, WorkerData&, typename SearchPolicy::SearchNode&, const StateView<Kind>&, ygg::float_t, EmitTransition&&)
+    static std::optional<AcceptanceResult> accept_generated_goal(Engine&,
+                                                                 WorkerData&,
+                                                                 typename SearchPolicy::SearchNode&,
+                                                                 const typename Engine::RoutedSuccessor&,
+                                                                 const StateView<Kind>&,
+                                                                 ygg::float_t,
+                                                                 EmitTransition&&)
     {
         return std::nullopt;
     }
 
     template<typename Engine, typename WorkerData>
-    static bool is_queued_goal(Engine& engine, WorkerData& worker, const StateView<Kind>& state)
+    static bool is_generated_goal(Engine& engine, WorkerData& worker, const typename Engine::RoutedSuccessor&, const StateView<Kind>& state)
     {
         return worker.goal_strategy->is_dynamic_goal_satisfied(engine.m_start_node.get_state(), state);
+    }
+
+    template<typename Engine, typename WorkerData>
+    static bool is_queued_goal(Engine& engine, WorkerData& worker, const typename Engine::RoutedSuccessor& routed_successor, const StateView<Kind>& state)
+    {
+        return is_generated_goal(engine, worker, routed_successor, state);
     }
 
     template<typename Engine>

@@ -76,7 +76,7 @@ AddRPGHeuristicPtr<GroundTag> AddRPGHeuristic<GroundTag>::create(TaskPtr<GroundT
 
 void AddRPGHeuristic<GroundTag>::set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) { m_impl->set_goal(goal); }
 
-ygg::float_t AddRPGHeuristic<GroundTag>::evaluate(const StateView<GroundTag>& state) { return m_impl->evaluate(state); }
+ygg::float_t AddRPGHeuristic<GroundTag>::evaluate(const ygg::Builder<State<GroundTag>>& state) { return m_impl->evaluate(state); }
 
 HeuristicPtr<GroundTag> AddRPGHeuristic<GroundTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
 {

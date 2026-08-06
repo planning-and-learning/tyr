@@ -68,7 +68,7 @@ MaxRPGHeuristicPtr<LiftedTag> MaxRPGHeuristic<LiftedTag>::create(TaskPtr<LiftedT
 }
 
 void MaxRPGHeuristic<LiftedTag>::set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) { m_impl->set_goal(goal); }
-ygg::float_t MaxRPGHeuristic<LiftedTag>::evaluate(const StateView<LiftedTag>& state) { return m_impl->evaluate(state); }
+ygg::float_t MaxRPGHeuristic<LiftedTag>::evaluate(const ygg::Builder<State<LiftedTag>>& state) { return m_impl->evaluate(state); }
 HeuristicPtr<LiftedTag> MaxRPGHeuristic<LiftedTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
 {
     return HeuristicPtr<LiftedTag>(new MaxRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context))));

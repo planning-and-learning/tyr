@@ -37,18 +37,24 @@ public:
     virtual ~GoalStrategy() = default;
 
     /// Custom strategies opt into parallel search by returning an independently usable worker. Each returned worker is called serially, without OS-thread
-    /// affinity. seed_state and state may belong to different worker repositories; implementations must inspect state contents rather than repository
-    /// identity. Retaining either view retains its repository. A strategy must not re-enter the search or wait for work from the same logical worker.
+    /// affinity. The target builder is borrowed, may not be registered yet, and may later be rejected as a duplicate or by pruning. Implementations must
+    /// inspect its contents and must not retain it. A strategy must not re-enter the search or wait for work from the same logical worker.
     [[nodiscard]] virtual GoalStrategyPtr<Kind> make_worker(ygg::Index<Worker>) const { return nullptr; }
 
     virtual bool is_static_goal_satisfied(const Task<Kind>& task) = 0;
-    virtual bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state) = 0;
+    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state)
+    {
+        return is_dynamic_goal_satisfied(seed_state, state.get_state_builder());
+    }
+    virtual bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const ygg::Builder<State<Kind>>& state) = 0;
 };
 
 template<TaskKind Kind>
 class ConjunctiveGoalStrategy : public GoalStrategy<Kind>
 {
 public:
+    using GoalStrategy<Kind>::is_dynamic_goal_satisfied;
+
     ConjunctiveGoalStrategy(const Task<Kind>& task) : m_goal(task.get_task().get_goal()) {}
     ConjunctiveGoalStrategy(::tyr::formalism::planning::GroundConjunctiveConditionView goal) : m_goal(goal) {}
 
@@ -63,10 +69,9 @@ public:
     [[nodiscard]] GoalStrategyPtr<Kind> make_worker(ygg::Index<Worker>) const override { return create(m_goal); }
 
     bool is_static_goal_satisfied(const Task<Kind>& task) override { return is_statically_applicable(m_goal, task.get_static_atoms_bitset()); }
-    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state) override
+    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const ygg::Builder<State<Kind>>& state) override
     {
-        static_cast<void>(seed_state);
-        const auto state_context = StateContext { *state.get_state_repository()->get_task(), state.get_state_builder(), ygg::float_t { 0 } };
+        const auto state_context = StateContext { *seed_state.get_state_repository()->get_task(), state, ygg::float_t { 0 } };
         return is_dynamically_applicable(m_goal, state_context);
     }
 
@@ -78,6 +83,8 @@ template<TaskKind Kind>
 class SerializedGoalStrategy : public GoalStrategy<Kind>
 {
 public:
+    using GoalStrategy<Kind>::is_dynamic_goal_satisfied;
+
     SerializedGoalStrategy(const Task<Kind>& task) : m_goal(task.get_task().get_goal()) {}
     SerializedGoalStrategy(::tyr::formalism::planning::GroundConjunctiveConditionView goal) : m_goal(goal) {}
 
@@ -93,15 +100,16 @@ public:
 
     bool is_static_goal_satisfied(const Task<Kind>& task) override { return is_statically_applicable(m_goal, task.get_static_atoms_bitset()); }
 
-    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state) override
+    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const ygg::Builder<State<Kind>>& state) override
     {
-        return count_satisfied_goals(state) > count_satisfied_goals(seed_state);
+        const auto& task = *seed_state.get_state_repository()->get_task();
+        return count_satisfied_goals(task, state) > count_satisfied_goals(task, seed_state.get_state_builder());
     }
 
 private:
-    ygg::uint_t count_satisfied_goals(const StateView<Kind>& state) const
+    ygg::uint_t count_satisfied_goals(const Task<Kind>& task, const ygg::Builder<State<Kind>>& state) const
     {
-        const auto state_context = StateContext { *state.get_state_repository()->get_task(), state.get_state_builder(), ygg::float_t { 0 } };
+        const auto state_context = StateContext { task, state, ygg::float_t { 0 } };
         auto result = ygg::uint_t { 0 };
 
         for (auto literal : m_goal.template get_literals<::tyr::formalism::StaticTag>())
@@ -125,6 +133,8 @@ template<TaskKind Kind>
 class ExhaustiveGoalStrategy : public GoalStrategy<Kind>
 {
 public:
+    using GoalStrategy<Kind>::is_dynamic_goal_satisfied;
+
     static std::shared_ptr<ExhaustiveGoalStrategy<Kind>> create() { return std::make_shared<ExhaustiveGoalStrategy<Kind>>(); }
 
     [[nodiscard]] GoalStrategyPtr<Kind> make_worker(ygg::Index<Worker>) const override { return create(); }
@@ -135,7 +145,7 @@ public:
         return true;
     }
 
-    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state) override
+    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const ygg::Builder<State<Kind>>& state) override
     {
         static_cast<void>(seed_state);
         static_cast<void>(state);

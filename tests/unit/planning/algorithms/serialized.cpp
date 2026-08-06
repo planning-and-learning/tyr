@@ -65,7 +65,7 @@ public:
         return true;
     }
 
-    bool is_dynamic_goal_satisfied(const p::StateView<::tyr::GroundTag>& seed_state, const p::StateView<::tyr::GroundTag>& state) override
+    bool is_dynamic_goal_satisfied(const p::StateView<::tyr::GroundTag>& seed_state, const ygg::Builder<p::State<::tyr::GroundTag>>& state) override
     {
         static_cast<void>(seed_state);
         static_cast<void>(state);
@@ -105,6 +105,8 @@ TEST(TyrPlanningSerialized, StatisticsClearResetsCountersAndProgressSnapshots)
     statistics.increment_num_expanded();
     statistics.increment_num_deadends();
     statistics.increment_num_pruned();
+    statistics.increment_num_routed_successors(false);
+    statistics.increment_num_routed_successors(true);
 
     auto progress_statistics = p::ProgressStatistics();
     progress_statistics.add_snapshot(statistics);
@@ -116,6 +118,9 @@ TEST(TyrPlanningSerialized, StatisticsClearResetsCountersAndProgressSnapshots)
     EXPECT_EQ(statistics.get_num_expanded(), 1);
     EXPECT_EQ(statistics.get_num_deadends(), 1);
     EXPECT_EQ(statistics.get_num_pruned(), 1);
+    EXPECT_EQ(statistics.get_num_routed_successors(), 2);
+    EXPECT_EQ(statistics.get_num_remote_routed_successors(), 1);
+    EXPECT_DOUBLE_EQ(statistics.get_communication_overhead(), 0.5);
 
     statistics.clear();
     progress_statistics.clear();
@@ -124,6 +129,9 @@ TEST(TyrPlanningSerialized, StatisticsClearResetsCountersAndProgressSnapshots)
     EXPECT_EQ(statistics.get_num_expanded(), 0);
     EXPECT_EQ(statistics.get_num_deadends(), 0);
     EXPECT_EQ(statistics.get_num_pruned(), 0);
+    EXPECT_EQ(statistics.get_num_routed_successors(), 0);
+    EXPECT_EQ(statistics.get_num_remote_routed_successors(), 0);
+    EXPECT_DOUBLE_EQ(statistics.get_communication_overhead(), 0.0);
     EXPECT_TRUE(progress_statistics.empty());
     EXPECT_EQ(progress_statistics.size(), 0);
     EXPECT_TRUE(progress_statistics.get_snapshots().empty());
@@ -133,19 +141,28 @@ TEST(TyrPlanningSerialized, StatisticsAggregatesAndClearsDestinationLockMetrics)
 {
     auto statistics = p::Statistics {};
     statistics.add_destination_lock_statistics(std::chrono::nanoseconds(3), std::chrono::nanoseconds(5));
+    statistics.increment_num_routed_successors(false);
 
     auto other = p::Statistics {};
     other.add_destination_lock_statistics(std::chrono::nanoseconds(7), std::chrono::nanoseconds(11));
+    other.increment_num_routed_successors(true);
+    other.increment_num_routed_successors(true);
     statistics.add(other);
 
     EXPECT_EQ(statistics.get_num_destination_lock_acquisitions(), 2);
     EXPECT_EQ(statistics.get_destination_lock_wait_time(), std::chrono::nanoseconds(10));
     EXPECT_EQ(statistics.get_destination_lock_hold_time(), std::chrono::nanoseconds(16));
+    EXPECT_EQ(statistics.get_num_routed_successors(), 3);
+    EXPECT_EQ(statistics.get_num_remote_routed_successors(), 2);
+    EXPECT_DOUBLE_EQ(statistics.get_communication_overhead(), 2.0 / 3.0);
 
     statistics.clear();
     EXPECT_EQ(statistics.get_num_destination_lock_acquisitions(), 0);
     EXPECT_EQ(statistics.get_destination_lock_wait_time(), std::chrono::nanoseconds(0));
     EXPECT_EQ(statistics.get_destination_lock_hold_time(), std::chrono::nanoseconds(0));
+    EXPECT_EQ(statistics.get_num_routed_successors(), 0);
+    EXPECT_EQ(statistics.get_num_remote_routed_successors(), 0);
+    EXPECT_DOUBLE_EQ(statistics.get_communication_overhead(), 0.0);
 }
 
 TEST(TyrPlanningSerialized, BrfsEventHandlerClearsProgressSnapshotsOnSearchStart)

@@ -55,6 +55,13 @@ struct AStarModePolicy<Kind, SequentialSearch>
     }
 
     static constexpr bool synchronize_priority_layers(const astar_eager::Options<Kind>&) noexcept { return false; }
+
+    static constexpr void prepare_routed_successor(Heuristic<Kind>&, const ygg::Builder<State<Kind>>&, bool, ygg::float_t&) noexcept {}
+
+    static ygg::float_t get_successor_h_value(Heuristic<Kind>& heuristic, const StateView<Kind>& state, ygg::float_t)
+    {
+        return ygg::FloatTolerance<ygg::float_t>::canonicalize(heuristic.evaluate(state));
+    }
 };
 
 template<TaskKind Kind>
@@ -78,6 +85,21 @@ struct AStarModePolicy<Kind, ParallelSearch>
     {
         return options.parallel_search_mode == astar_eager::ParallelSearchMode::SYNCHRONOUS;
     }
+
+    static void prepare_routed_successor(Heuristic<Kind>& heuristic, const ygg::Builder<State<Kind>>& state, bool is_goal, ygg::float_t& h_value)
+    {
+        if (is_goal)
+        {
+            h_value = 0;
+            return;
+        }
+
+        h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(heuristic.evaluate(state));
+        if (std::isnan(h_value))
+            throw std::runtime_error("find_solution(...): successor heuristic value is NaN.");
+    }
+
+    static constexpr ygg::float_t get_successor_h_value(Heuristic<Kind>&, const StateView<Kind>&, ygg::float_t h_value) noexcept { return h_value; }
 };
 
 template<TaskKind Kind, SearchKind Search>
@@ -107,6 +129,7 @@ public:
     {
         WorkerStateIndex<Kind> parent;
         ygg::float_t source_g_value;
+        ygg::float_t h_value;
     };
 
     struct QueueEntry
@@ -179,11 +202,12 @@ public:
         return get_or_create_search_node(state, m_search_nodes, default_node);
     }
 
-    template<typename ImproveBestH, typename EmitEvent, typename FinishPriorityLayer>
+    template<typename EvaluateUnlocked, typename ImproveBestH, typename EmitEvent, typename FinishPriorityLayer>
     ExpansionResult prepare_expansion(const PoppedEntry& entry,
                                       const Node<Kind>& node,
                                       SearchNode& search_node,
                                       Statistics& statistics,
+                                      EvaluateUnlocked&&,
                                       ImproveBestH&&,
                                       EmitEvent&& emit_event,
                                       FinishPriorityLayer&&)
@@ -205,7 +229,12 @@ public:
                                               const SearchNode& search_node,
                                               ::tyr::formalism::planning::ActionBindingView) const
     {
-        return SuccessorMetadata { WorkerStateIndex<Kind> { worker, state }, search_node.g_value };
+        return SuccessorMetadata { WorkerStateIndex<Kind> { worker, state }, search_node.g_value, 0 };
+    }
+
+    static void prepare_routed_successor(Heuristic<Kind>& heuristic, const ygg::Builder<State<Kind>>& state, bool is_goal, SuccessorMetadata& metadata)
+    {
+        ModePolicy::prepare_routed_successor(heuristic, state, is_goal, metadata.h_value);
     }
 
     static void set_parent(SearchNode& search_node, WorkerStateIndex<Kind> parent) noexcept { search_node.parent_state = ParentPolicy::make_parent(parent); }
@@ -251,10 +280,11 @@ public:
         set_parent(successor_search_node, routed_successor.metadata.parent);
         successor_search_node.g_value = g_value;
 
-        if (auto result = engine.m_execution.accept_generated_goal(engine, worker, successor_search_node, successor_state, g_value, emit_transition))
+        if (auto result =
+                engine.m_execution.accept_generated_goal(engine, worker, successor_search_node, routed_successor, successor_state, g_value, emit_transition))
             return *result;
 
-        if (engine.m_execution.is_queued_goal(engine, worker, successor_state))
+        if (engine.m_execution.is_queued_goal(engine, worker, routed_successor, successor_state))
         {
             successor_search_node.status = SearchNodeStatus::GOAL;
             open_successor(successor_state.get_index(), g_value, 0, successor_search_node.status, false);
@@ -262,7 +292,7 @@ public:
             return AcceptanceResult::QUEUED;
         }
 
-        const auto h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(worker.heuristic.evaluate(successor_state));
+        const auto h_value = ModePolicy::get_successor_h_value(worker.heuristic, successor_state, routed_successor.metadata.h_value);
         if (std::isnan(h_value))
             throw std::runtime_error("find_solution(...): successor heuristic value is NaN.");
         if (h_value == std::numeric_limits<ygg::float_t>::infinity())

@@ -87,19 +87,27 @@ template<TaskKind Kind>
 class GoalAsDeadEndHeuristic final : public p::Heuristic<Kind>
 {
 public:
-    explicit GoalAsDeadEndHeuristic(::tyr::formalism::planning::GroundConjunctiveConditionView goal) : m_goal(goal) {}
+    using p::Heuristic<Kind>::evaluate;
+
+    explicit GoalAsDeadEndHeuristic(p::TaskPtr<Kind> task) : m_task(std::move(task)), m_goal(m_task->get_task().get_goal()) {}
 
     void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override { m_goal = goal; }
 
-    ygg::float_t evaluate(const p::StateView<Kind>& state) override
+    ygg::float_t evaluate(const ygg::Builder<p::State<Kind>>& state) override
     {
-        const auto context = p::StateContext<Kind>(*state.get_state_repository()->get_task(), state.get_state_builder(), 0);
+        const auto context = p::StateContext<Kind>(*m_task, state, 0);
         return p::is_dynamically_applicable(m_goal, context) ? std::numeric_limits<ygg::float_t>::infinity() : 0;
     }
 
-    p::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr) const override { return std::make_shared<GoalAsDeadEndHeuristic>(m_goal); }
+    p::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr) const override
+    {
+        auto worker = std::make_shared<GoalAsDeadEndHeuristic>(m_task);
+        worker->set_goal(m_goal);
+        return worker;
+    }
 
 private:
+    p::TaskPtr<Kind> m_task;
     ::tyr::formalism::planning::GroundConjunctiveConditionView m_goal;
 };
 
@@ -107,8 +115,10 @@ template<TaskKind Kind>
 class NullWorkerHeuristic final : public p::Heuristic<Kind>
 {
 public:
+    using p::Heuristic<Kind>::evaluate;
+
     void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView) override {}
-    ygg::float_t evaluate(const p::StateView<Kind>&) override { return 0; }
+    ygg::float_t evaluate(const ygg::Builder<p::State<Kind>>&) override { return 0; }
     p::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr) const override { return nullptr; }
 };
 
@@ -116,8 +126,10 @@ template<TaskKind Kind>
 class ThrowingHeuristic final : public p::Heuristic<Kind>
 {
 public:
+    using p::Heuristic<Kind>::evaluate;
+
     void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView) override {}
-    ygg::float_t evaluate(const p::StateView<Kind>&) override { throw std::runtime_error("Unexpected heuristic evaluation."); }
+    ygg::float_t evaluate(const ygg::Builder<p::State<Kind>>&) override { throw std::runtime_error("Unexpected heuristic evaluation."); }
     p::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr) const override { return std::make_shared<ThrowingHeuristic>(); }
 };
 
@@ -125,8 +137,10 @@ template<TaskKind Kind>
 class InfiniteHeuristic final : public p::Heuristic<Kind>
 {
 public:
+    using p::Heuristic<Kind>::evaluate;
+
     void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView) override {}
-    ygg::float_t evaluate(const p::StateView<Kind>&) override { return std::numeric_limits<ygg::float_t>::infinity(); }
+    ygg::float_t evaluate(const ygg::Builder<p::State<Kind>>&) override { return std::numeric_limits<ygg::float_t>::infinity(); }
     p::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr) const override { return std::make_shared<InfiniteHeuristic>(); }
 };
 
@@ -153,7 +167,7 @@ class AlwaysGoalStrategy final : public p::GoalStrategy<Kind>
 public:
     p::GoalStrategyPtr<Kind> make_worker(ygg::Index<p::Worker>) const override { return std::make_shared<AlwaysGoalStrategy>(); }
     bool is_static_goal_satisfied(const p::Task<Kind>&) override { return true; }
-    bool is_dynamic_goal_satisfied(const p::StateView<Kind>&, const p::StateView<Kind>&) override { return true; }
+    bool is_dynamic_goal_satisfied(const p::StateView<Kind>&, const ygg::Builder<p::State<Kind>>&) override { return true; }
 };
 
 template<TaskKind Kind>
@@ -162,7 +176,7 @@ class StaticallyUnsatisfiedGoalStrategy final : public p::GoalStrategy<Kind>
 public:
     p::GoalStrategyPtr<Kind> make_worker(ygg::Index<p::Worker>) const override { return std::make_shared<StaticallyUnsatisfiedGoalStrategy>(); }
     bool is_static_goal_satisfied(const p::Task<Kind>&) override { return false; }
-    bool is_dynamic_goal_satisfied(const p::StateView<Kind>&, const p::StateView<Kind>&) override { return false; }
+    bool is_dynamic_goal_satisfied(const p::StateView<Kind>&, const ygg::Builder<p::State<Kind>>&) override { return false; }
 };
 
 template<TaskKind Kind>
@@ -171,7 +185,10 @@ class NonRootGoalStrategy final : public p::GoalStrategy<Kind>
 public:
     p::GoalStrategyPtr<Kind> make_worker(ygg::Index<p::Worker>) const override { return std::make_shared<NonRootGoalStrategy>(); }
     bool is_static_goal_satisfied(const p::Task<Kind>&) override { return true; }
-    bool is_dynamic_goal_satisfied(const p::StateView<Kind>& seed_state, const p::StateView<Kind>& state) override { return seed_state != state; }
+    bool is_dynamic_goal_satisfied(const p::StateView<Kind>& seed_state, const ygg::Builder<p::State<Kind>>& state) override
+    {
+        return &seed_state.get_state_builder() != &state;
+    }
 };
 
 template<typename Callback>
@@ -189,7 +206,7 @@ void expect_astar_goal_precedes_heuristic(const p::TaskPtr<Kind>& task)
         [&](size_t num_workers, p::StateRepositoryMode mode)
         {
             auto context = make_search_context(task);
-            auto heuristic = GoalAsDeadEndHeuristic<Kind>(task->get_task().get_goal());
+            auto heuristic = GoalAsDeadEndHeuristic<Kind>(task);
             auto options = p::astar_eager::Options<Kind> {};
             options.num_search_workers = num_workers;
             options.state_repository_mode = mode;
@@ -486,7 +503,7 @@ void expect_dead_end_statistics(const p::TaskPtr<Kind>& task)
             }
             {
                 auto context = make_search_context(task);
-                auto heuristic = GoalAsDeadEndHeuristic<Kind>(task->get_task().get_goal());
+                auto heuristic = GoalAsDeadEndHeuristic<Kind>(task);
                 auto options = p::astar_eager::Options<Kind> {};
                 options.num_search_workers = num_workers;
                 options.state_repository_mode = mode;
@@ -497,7 +514,7 @@ void expect_dead_end_statistics(const p::TaskPtr<Kind>& task)
             }
             {
                 auto context = make_search_context(task);
-                auto heuristic = GoalAsDeadEndHeuristic<Kind>(task->get_task().get_goal());
+                auto heuristic = GoalAsDeadEndHeuristic<Kind>(task);
                 auto options = p::gbfs_lazy::Options<Kind> {};
                 options.num_search_workers = num_workers;
                 options.state_repository_mode = mode;

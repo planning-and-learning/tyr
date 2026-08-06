@@ -141,24 +141,26 @@ void expect_state_routing(const p::TaskPtr<Kind>& task)
 
     auto remote_state = repository->get_state_builder();
     const auto remote_result = generator->generate_successor_state(initial, action, *remote_state);
+    const auto remote_completed = generator->complete_successor_state(*remote_state, remote_result);
     const auto remote_hash = dist_hash.hash(*remote_state);
     EXPECT_EQ(repository->num_states(), source_states_before_generation);
 
     auto local_state = repository->get_state_builder();
     const auto local_result = generator->generate_successor_state(initial, action, *local_state);
-    const auto local_node = generator->finalize_successor_state(std::move(local_state), local_result);
+    const auto local_completed = generator->complete_successor_state(*local_state, local_result);
+    const auto local_node = generator->register_completed_successor_state(std::move(local_state), local_completed);
 
     const auto compatibility_node = generator->get_successor_node(initial, action);
     EXPECT_EQ(local_node, compatibility_node);
-    const auto source_states_after_local_finalize = repository->num_states();
+    const auto source_states_after_local_registration = repository->num_states();
 
     auto owner_state = worker_repository->get_state_builder();
     using std::swap;
     swap(*owner_state, *remote_state);
     EXPECT_EQ(dist_hash.hash(*owner_state), remote_hash);
-    const auto owner_node = worker->finalize_successor_state(std::move(owner_state), remote_result);
+    const auto owner_node = worker->register_completed_successor_state(std::move(owner_state), remote_completed);
     EXPECT_EQ(owner_node.get_metric(), compatibility_node.get_metric());
-    EXPECT_EQ(repository->num_states(), source_states_after_local_finalize);
+    EXPECT_EQ(repository->num_states(), source_states_after_local_registration);
     EXPECT_EQ(worker_repository->num_states(), 2);
     EXPECT_EQ(dist_hash.hash(worker_repository->get_registered_state(owner_node.get_state().get_index()).get_state_builder()), remote_hash);
 }

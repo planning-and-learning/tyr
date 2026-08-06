@@ -187,6 +187,9 @@ def test_search_parser_reads_parallel_statistics(tmp_path):
 [Search] Number of generated states: 70
 [Search] Number of dead-end states: 2
 [Search] Number of pruned states: 5
+[Search] Number of routed successors: 100
+[Search] Number of remotely routed successors: 40
+[Search] Communication overhead: 0.4
 [Search] Number of registered states: 65
 [Search] State storage memory usage: 1000 bytes
 [Search] Action bindings memory usage: 101 bytes
@@ -195,6 +198,8 @@ def test_search_parser_reads_parallel_statistics(tmp_path):
 [Search] Function bindings memory usage: 104 bytes
 [Search] Worker 0: idle=25000000 ns, expanded=25, generated=40, deadends=1, pruned=2, registered=35, state_storage=600 bytes
 [Search] Worker 1: idle=50000000 ns, expanded=15, generated=30, deadends=1, pruned=3, registered=30, state_storage=400 bytes
+[Search] Worker 0 communication: routed=60, remote=10
+[Search] Worker 1 communication: routed=40, remote=30
 [Search] Number of expanded states at last snapshot: 39
 [Search] Number of generated states at last snapshot: 69
 [Search] Number of deadend states at last snapshot: 1
@@ -219,6 +224,9 @@ def test_search_parser_reads_parallel_statistics(tmp_path):
     assert props["worker_utilization"] == 0.8125
     assert props["num_deadends"] == 2
     assert props["num_pruned"] == 5
+    assert props["num_routed_successors"] == 100
+    assert props["num_remote_routed_successors"] == 40
+    assert props["communication_overhead"] == 0.4
     assert props["num_registered_states"] == 65
     assert props["search_state_storage_memory_usage_bytes"] == 1000
     assert props["search_function_bindings_memory_usage_bytes"] == 104
@@ -227,6 +235,9 @@ def test_search_parser_reads_parallel_statistics(tmp_path):
     assert props["worker_num_registered_states"] == [35, 30]
     assert props["worker_state_storage_memory_usage_bytes"] == [600, 400]
     assert props["worker_utilizations"] == [0.75, 0.5]
+    assert props["worker_num_routed_successors"] == [60, 40]
+    assert props["worker_num_remote_routed_successors"] == [10, 30]
+    assert props["worker_communication_overheads"] == pytest.approx([1 / 6, 0.75])
     assert props["num_deadends_until_last_snapshot"] == 1
     assert props["num_pruned_until_last_snapshot"] == 4
     assert props["retained_plan_states_memory_usage_bytes"] == 200
@@ -244,6 +255,42 @@ def test_search_parser_rejects_incomplete_worker_statistics(tmp_path):
     SearchParser().parse(tmp_path, props)
 
     assert props["unexplained_errors"] == ["Unexpected search worker indices: [0]"]
+
+
+def test_search_parser_rejects_mismatched_communication_statistics(tmp_path):
+    (tmp_path / "run.log").write_text(
+        """[INPUT] Num search workers: 2
+[Search] Number of routed successors: 10
+[Search] Number of remotely routed successors: 4
+[Search] Communication overhead: 0.4
+[Search] Worker 0 communication: routed=5, remote=1
+[Search] Worker 1 communication: routed=4, remote=3
+""",
+        encoding="utf-8",
+    )
+    props = {}
+
+    SearchParser().parse(tmp_path, props)
+
+    assert props["unexplained_errors"] == ["Communication aggregate does not match worker values: num_routed_successors"]
+
+
+def test_search_parser_derives_zero_communication_overhead(tmp_path):
+    (tmp_path / "run.log").write_text(
+        """[INPUT] Num search workers: 2
+[Search] Worker 0 communication: routed=0, remote=0
+[Search] Worker 1 communication: routed=0, remote=0
+""",
+        encoding="utf-8",
+    )
+    props = {}
+
+    SearchParser().parse(tmp_path, props)
+
+    assert props["num_routed_successors"] == 0
+    assert props["num_remote_routed_successors"] == 0
+    assert props["communication_overhead"] == 0
+    assert props["worker_communication_overheads"] == [0, 0]
 
 
 def test_search_parser_reads_destination_lock_statistics(tmp_path):

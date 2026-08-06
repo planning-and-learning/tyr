@@ -170,6 +170,20 @@ void bind_state(nb::module_& m, const std::string& name)
 }
 
 template<TaskKind Kind>
+void bind_state_builder(nb::module_& m, const std::string& name)
+{
+    using T = ygg::Builder<State<Kind>>;
+
+    nb::class_<T>(m, name.c_str(), "Borrowed read-only state under evaluation; do not retain it after the callback returns.")
+        .def("get", nb::overload_cast<fp::FDRVariableView<::tyr::formalism::FluentTag>>(&T::get, nb::const_), "fluent_variable"_a)
+        .def(
+            "get",
+            [](const T& state, fp::GroundFunctionTermView<::tyr::formalism::FluentTag> fterm) { return state.get(fterm.get_index()); },
+            "fluent_fterm"_a)
+        .def("test", nb::overload_cast<fp::GroundAtomView<::tyr::formalism::DerivedTag>>(&T::test, nb::const_), "derived_atom"_a);
+}
+
+template<TaskKind Kind>
 void bind_node(nb::module_& m, const std::string& name)
 {
     using T = Node<Kind>;
@@ -331,12 +345,13 @@ class PyGoalStrategy : public GoalStrategy<Kind>
 {
 public:
     using Base = GoalStrategy<Kind>;
+    using Base::is_dynamic_goal_satisfied;
 
     NB_TRAMPOLINE(Base, 2);
 
     bool is_static_goal_satisfied(const Task<Kind>& task) override { NB_OVERRIDE_PURE(is_static_goal_satisfied, task); }
 
-    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state) override
+    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const ygg::Builder<State<Kind>>& state) override
     {
         NB_OVERRIDE_PURE(is_dynamic_goal_satisfied, seed_state, state);
     }
@@ -350,7 +365,10 @@ void bind_goal_strategy(nb::module_& m, const std::string& name)
     nb::class_<T, PyGoalStrategy<Kind>>(m, name.c_str())  //
         .def(nb::init<>())
         .def("is_static_goal_satisfied", &T::is_static_goal_satisfied, "task"_a)
-        .def("is_dynamic_goal_satisfied", &T::is_dynamic_goal_satisfied, "seed_state"_a, "state"_a);
+        .def("is_dynamic_goal_satisfied",
+             nb::overload_cast<const StateView<Kind>&, const StateView<Kind>&>(&T::is_dynamic_goal_satisfied),
+             "seed_state"_a,
+             "state"_a);
 }
 
 template<TaskKind Kind>
@@ -409,12 +427,13 @@ class PyHeuristic : public Heuristic<Kind>
 {
 public:
     using Base = Heuristic<Kind>;
+    using Base::evaluate;
 
     NB_TRAMPOLINE(Base, 4);
 
     void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override { NB_OVERRIDE_PURE(set_goal, goal); }
 
-    ygg::float_t evaluate(const StateView<Kind>& state) override { NB_OVERRIDE_PURE(evaluate, state); }
+    ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state) override { NB_OVERRIDE_PURE(evaluate, state); }
 
     HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override { NB_OVERRIDE_PURE(make_worker, execution_context); }
 

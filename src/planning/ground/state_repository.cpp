@@ -289,12 +289,25 @@ ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> StateRepository<G
 
 StateView<GroundTag> StateRepository<GroundTag>::register_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state)
 {
+    compute_extended_state(*state);
+    return register_extended_state(std::move(state));
+}
+
+void StateRepository<GroundTag>::compute_extended_state(ygg::Builder<State<GroundTag>>& state)
+{
     m_impl->visit_evaluator(
         [&](auto& evaluator)
         {
             if (evaluator.axiom_evaluator)
-                evaluator.axiom_evaluator->compute_extended_state(*state);
+                evaluator.axiom_evaluator->compute_extended_state(state);
+        });
+}
 
+StateView<GroundTag> StateRepository<GroundTag>::register_extended_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state)
+{
+    m_impl->visit_evaluator(
+        [&](auto& evaluator)
+        {
             auto& packed_states = evaluator.storage->packed_states;
             using PackedStates = std::remove_cvref_t<decltype(packed_states)>;
             if constexpr (!PackedStates::thread_safe)

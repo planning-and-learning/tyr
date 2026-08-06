@@ -169,6 +169,7 @@ should not be used further.
 
     bind_index<ygg::Index<State<LiftedTag>>>(m, "StateIndex");
     bind_state<LiftedTag>(m, "State");
+    bind_state_builder<LiftedTag>(m, "StateBuilder");
     bind_node<LiftedTag>(m, "Node");
     bind_labeled_node<LiftedTag>(m, "LabeledNode");
     bind_plan<LiftedTag>(m, "Plan");

@@ -67,6 +67,11 @@ void print_search_statistics(const planning::SearchResult<Kind>& result)
                    worker.get_num_registered_states(),
                    worker.get_state_storage_memory_usage());
         fmt::print(std::cout,
+                   "[Search] Worker {} communication: routed={}, remote={}\n",
+                   i,
+                   worker.get_num_routed_successors(),
+                   worker.get_num_remote_routed_successors());
+        fmt::print(std::cout,
                    "[Search] Worker {} destination lock: acquisitions={}, wait={} ns, hold={} ns\n",
                    i,
                    worker.get_num_destination_lock_acquisitions(),

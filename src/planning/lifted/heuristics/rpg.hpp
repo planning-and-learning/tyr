@@ -117,7 +117,7 @@ public:
 
     void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) { m_source_goal = goal; }
 
-    ygg::float_t evaluate(const StateView<LiftedTag>& state)
+    ygg::float_t evaluate(const ygg::Builder<State<LiftedTag>>& state)
     {
         begin_state_evaluation();
         return evaluate_current_state(state);
@@ -250,18 +250,18 @@ protected:
         materialize_goal();
     }
 
-    ygg::float_t evaluate_current_state(const StateView<LiftedTag>& state)
+    ygg::float_t evaluate_current_state(const ygg::Builder<State<LiftedTag>>& state)
     {
         m_workspace.facts.reset();
 
         auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { m_workspace.datalog_builder, m_workspace.workspace_repository };
 
-        insert_fluent_atoms_to_fact_set(state.get_state_builder(),
+        insert_fluent_atoms_to_fact_set(state,
                                         *m_task->get_repository(),
                                         m_definition->rpg_program.get_translation_context().p2d.fluent_to_fluent_predicate,
                                         merge_context,
                                         m_workspace.facts.fact_sets);
-        insert_numeric_variables_to_fact_set(state.get_state_builder(), *m_task->get_repository(), merge_context, m_workspace.facts.fact_sets);
+        insert_numeric_variables_to_fact_set(state, *m_task->get_repository(), merge_context, m_workspace.facts.fact_sets);
 
         auto ctx = datalog::ProgramExecutionContext(m_workspace);
         m_execution_context->arena().execute([&] { datalog::solve_bottom_up(ctx); });
@@ -272,7 +272,7 @@ protected:
                    std::numeric_limits<ygg::float_t>::infinity();
     }
 
-    ygg::float_t compute_result(const StateView<LiftedTag>&) const noexcept { return get_goal_cost(); }
+    ygg::float_t compute_result(const ygg::Builder<State<LiftedTag>>&) const noexcept { return get_goal_cost(); }
 
     std::shared_ptr<const LiftedRPGDefinition> m_definition;
     TaskPtr<LiftedTag> m_task;

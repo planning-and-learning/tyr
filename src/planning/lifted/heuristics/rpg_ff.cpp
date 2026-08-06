@@ -48,14 +48,14 @@ struct FFRPGHeuristic<LiftedTag>::Impl :
     Impl(const Impl& source, ygg::ExecutionContextPtr execution_context);
 
     void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal);
-    ygg::float_t evaluate(const StateView<LiftedTag>& state)
+    ygg::float_t evaluate(const ygg::Builder<State<LiftedTag>>& state)
     {
         m_numeric_support_selector_workspace.clear();
         m_relaxed_plan.clear();
         m_preferred_actions.clear();
         return Base::evaluate(state);
     }
-    ygg::float_t compute_result(const StateView<LiftedTag>& state);
+    ygg::float_t compute_result(const ygg::Builder<State<LiftedTag>>& state);
     const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>& get_preferred_actions() const noexcept;
 
 private:
@@ -123,14 +123,14 @@ void FFRPGHeuristic<LiftedTag>::Impl::set_goal(::tyr::formalism::planning::Groun
     m_preferred_actions.clear();
 }
 
-ygg::float_t FFRPGHeuristic<LiftedTag>::Impl::compute_result(const StateView<LiftedTag>& state)
+ygg::float_t FFRPGHeuristic<LiftedTag>::Impl::compute_result(const ygg::Builder<State<LiftedTag>>& state)
 {
     for (auto& bitset : m_markings)
         bitset.reset();
     for (auto& bitset : m_function_markings)
         bitset.reset();
 
-    auto state_context = StateContext<LiftedTag>(*this->m_task, state.get_state_builder(), ygg::float_t(0));
+    auto state_context = StateContext<LiftedTag>(*this->m_task, state, ygg::float_t(0));
     auto grounder_context = ::tyr::formalism::planning::GrounderContext { this->m_workspace.planning_builder, *this->m_task->get_repository(), m_binding };
 
     if (const auto& goal = m_workspace.tp.get_goal())
@@ -311,7 +311,7 @@ FFRPGHeuristicPtr<LiftedTag> FFRPGHeuristic<LiftedTag>::create(TaskPtr<LiftedTag
 }
 
 void FFRPGHeuristic<LiftedTag>::set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) { m_impl->set_goal(goal); }
-ygg::float_t FFRPGHeuristic<LiftedTag>::evaluate(const StateView<LiftedTag>& state) { return m_impl->evaluate(state); }
+ygg::float_t FFRPGHeuristic<LiftedTag>::evaluate(const ygg::Builder<State<LiftedTag>>& state) { return m_impl->evaluate(state); }
 HeuristicPtr<LiftedTag> FFRPGHeuristic<LiftedTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
 {
     return HeuristicPtr<LiftedTag>(new FFRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context))));

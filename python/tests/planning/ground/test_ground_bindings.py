@@ -131,21 +131,30 @@ def test_pruning_strategy_subclasses_can_call_super_constructor() -> None:
 
 
 def test_goal_strategy_subclasses_can_call_super_constructor() -> None:
+    task = _ground_task()
+    execution_context = ExecutionContext(1)
+    axiom_evaluator = planning.ground.AxiomEvaluatorFactory().create(task, execution_context)
+    state = planning.ground.StateRepositoryFactory().create(task, axiom_evaluator).get_initial_state()
+
     class PythonGoalStrategy(planning.ground.GoalStrategy):
         def __init__(self) -> None:
             super().__init__()
+            self.saw_builder = False
 
         @override
         def is_static_goal_satisfied(self, task: planning.ground.Task):
             return True
 
         @override
-        def is_dynamic_goal_satisfied(self, seed_state: State, state: State):
+        def is_dynamic_goal_satisfied(self, seed_state: State, state: planning.ground.StateBuilder):
+            self.saw_builder = isinstance(state, planning.ground.StateBuilder)
             return False
 
     goal_strategy = PythonGoalStrategy()
 
     assert isinstance(goal_strategy, planning.ground.GoalStrategy)
+    assert not planning.ground.GoalStrategy.is_dynamic_goal_satisfied(goal_strategy, state, state)
+    assert goal_strategy.saw_builder
 
 
 def test_heuristic_subclasses_dispatch_virtual_methods_through_base_binding() -> None:
@@ -160,15 +169,15 @@ def test_heuristic_subclasses_dispatch_virtual_methods_through_base_binding() ->
         def __init__(self) -> None:
             super().__init__()
             self.goal: formalism_planning.GroundConjunctiveCondition | None = None
-            self.evaluated_states: list[State] = []
+            self.saw_builder = False
 
         @override
         def set_goal(self, goal: formalism_planning.GroundConjunctiveCondition):
             self.goal = goal
 
         @override
-        def evaluate(self, state: State):
-            self.evaluated_states.append(state)
+        def evaluate(self, state: planning.ground.StateBuilder):
+            self.saw_builder = isinstance(state, planning.ground.StateBuilder)
             return 7.0
 
     heuristic = PythonHeuristic()
@@ -180,4 +189,4 @@ def test_heuristic_subclasses_dispatch_virtual_methods_through_base_binding() ->
 
     assert heuristic.goal == goal
     assert value == 7.0
-    assert heuristic.evaluated_states == [state]
+    assert heuristic.saw_builder

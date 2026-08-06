@@ -34,6 +34,7 @@ from pytyr.planning.lifted import (
     GoalStrategy,
     ConjunctiveGoalStrategy,
     State,
+    StateBuilder,
     Node,
     Plan,
 )
@@ -67,7 +68,7 @@ class CustomHeuristic(Heuristic):
         pass
 
     @override
-    def evaluate(self, state: State) -> float:
+    def evaluate(self, state: StateBuilder) -> float:
         raise NotImplementedError
 
 
@@ -104,7 +105,7 @@ class CustomGoalStrategy(GoalStrategy):
         raise NotImplementedError
 
     @override
-    def is_dynamic_goal_satisfied(self, seed_state: State, state: State) -> bool:
+    def is_dynamic_goal_satisfied(self, seed_state: State, state: StateBuilder) -> bool:
         """Is checked for every generated state."""
         raise NotImplementedError
 

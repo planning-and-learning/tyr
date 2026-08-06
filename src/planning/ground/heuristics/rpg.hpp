@@ -31,8 +31,10 @@
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/planning/ground/programs/rpg.hpp"
-#include "tyr/planning/ground/state_view.hpp"
+#include "tyr/planning/ground/state_builder.hpp"
+#include "tyr/planning/ground/state_iterators.hpp"
 #include "tyr/planning/ground/task.hpp"
+#include "tyr/planning/state_iterators.hpp"
 
 #include <limits>
 #include <memory>
@@ -140,25 +142,34 @@ public:
         m_workspace.tp.set_goals(m_definition->goal);
     }
 
-    ygg::float_t evaluate(const StateView<GroundTag>& state) { return evaluate_impl(state, true); }
+    ygg::float_t evaluate(const ygg::Builder<State<GroundTag>>& state) { return evaluate_impl(state, true); }
 
 protected:
     constexpr const auto& self() const { return static_cast<const Derived&>(*this); }
     constexpr auto& self() { return static_cast<Derived&>(*this); }
 
-    ygg::float_t evaluate_impl(const StateView<GroundTag>& state, bool initialize_costs)
+    ygg::float_t evaluate_impl(const ygg::Builder<State<GroundTag>>& state, bool initialize_costs)
     {
         if (initialize_costs)
             initialize_rule_costs();
         m_workspace.facts.reset();
         const auto& p2d = m_definition->rpg_program.get_translation_context().p2d;
-        for (const auto fact : state.get_fluent_facts_view())
-            if (const auto atom = fact.get_atom())
+        const auto& repository = *m_definition->task->get_repository();
+        const auto fluent_facts = FDRFactRange<GroundTag, ::tyr::formalism::FluentTag>(state.template get_atoms<::tyr::formalism::FluentTag>().values);
+        for (const auto fact : fluent_facts)
+        {
+            const auto fact_view = ygg::make_view(fact, repository);
+            if (const auto atom = fact_view.get_atom())
                 m_workspace.facts.fact_sets.predicate.insert(p2d.fluent_to_fluent_atom.at(*atom));
+        }
 
-        for (const auto& [fterm, value] : state.get_fluent_fterm_values_view())
+        const auto fluent_fterm_values = FunctionTermValueRange<::tyr::formalism::FluentTag>(state.get_numeric_variables().values);
+        for (const auto& [fterm_index, value] : fluent_fterm_values)
+        {
+            const auto fterm = ygg::make_view(fterm_index, repository);
             if (const auto it = p2d.fluent_to_fluent_fterm.find(fterm); it != p2d.fluent_to_fluent_fterm.end())
                 m_workspace.facts.fact_sets.function.insert(it->second, value);
+        }
 
         auto ctx = datalog::ProgramExecutionContext(m_workspace, m_queue_workspace);
         ctx.initialize();
@@ -170,7 +181,7 @@ protected:
                    std::numeric_limits<ygg::float_t>::infinity();
     }
 
-    ygg::float_t compute_result(const StateView<GroundTag>&) const noexcept { return get_goal_cost(); }
+    ygg::float_t compute_result(const ygg::Builder<State<GroundTag>>&) const noexcept { return get_goal_cost(); }
 
     void initialize_rule_costs() { m_workspace.clear_costs(); }
 

@@ -40,8 +40,10 @@ public:
 
     static MaxRPGHeuristicPtr<GroundTag> create(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
 
+    using Heuristic<GroundTag>::evaluate;
+
     void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override;
-    ygg::float_t evaluate(const StateView<GroundTag>& state) override;
+    ygg::float_t evaluate(const ygg::Builder<State<GroundTag>>& state) override;
     [[nodiscard]] HeuristicPtr<GroundTag> make_worker(ygg::ExecutionContextPtr execution_context) const override;
 
 private:

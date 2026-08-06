@@ -68,7 +68,7 @@ AddRPGHeuristicPtr<LiftedTag> AddRPGHeuristic<LiftedTag>::create(TaskPtr<LiftedT
 }
 
 void AddRPGHeuristic<LiftedTag>::set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) { m_impl->set_goal(goal); }
-ygg::float_t AddRPGHeuristic<LiftedTag>::evaluate(const StateView<LiftedTag>& state) { return m_impl->evaluate(state); }
+ygg::float_t AddRPGHeuristic<LiftedTag>::evaluate(const ygg::Builder<State<LiftedTag>>& state) { return m_impl->evaluate(state); }
 HeuristicPtr<LiftedTag> AddRPGHeuristic<LiftedTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
 {
     return HeuristicPtr<LiftedTag>(new AddRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context))));

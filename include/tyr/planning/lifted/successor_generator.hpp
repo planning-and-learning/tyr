@@ -78,7 +78,10 @@ public:
 
     PendingActionResult
     generate_successor_state(const Node<LiftedTag>& node, ::tyr::formalism::planning::ActionBindingView binding, ygg::Builder<State<LiftedTag>>& out_state);
-    Node<LiftedTag> finalize_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state, PendingActionResult result);
+    /// Computes axiom closure and the final metric without interning the state.
+    CompletedActionResult complete_successor_state(ygg::Builder<State<LiftedTag>>& state, PendingActionResult result);
+    /// Interns a state previously completed by a compatible worker.
+    Node<LiftedTag> register_completed_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state, CompletedActionResult result);
 
     // Action binding API (no interning)
     Node<LiftedTag> get_successor_node(const Node<LiftedTag>& node,

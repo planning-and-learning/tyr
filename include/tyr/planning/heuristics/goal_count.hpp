@@ -37,9 +37,11 @@ public:
 
     static std::shared_ptr<GoalCountHeuristic<Kind>> create(std::shared_ptr<const Task<Kind>> task);
 
+    using Heuristic<Kind>::evaluate;
+
     void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override;
 
-    ygg::float_t evaluate(const StateView<Kind>& state) override;
+    ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state) override;
 
     [[nodiscard]] HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override;
 

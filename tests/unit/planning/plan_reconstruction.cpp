@@ -89,7 +89,7 @@ class UnsupportedParallelGoalStrategy final : public p::GoalStrategy<Kind>
 {
 public:
     bool is_static_goal_satisfied(const p::Task<Kind>&) override { return true; }
-    bool is_dynamic_goal_satisfied(const p::StateView<Kind>&, const p::StateView<Kind>&) override { return false; }
+    bool is_dynamic_goal_satisfied(const p::StateView<Kind>&, const ygg::Builder<p::State<Kind>>&) override { return false; }
 };
 
 template<TaskKind Kind>
@@ -219,7 +219,11 @@ public:
         const auto source_owner = owner(source);
         observe_repository(m_lanes.at(ygg::uint_t(source_owner)), source);
         if (source_owner != worker)
+        {
             m_num_remote_transitions.fetch_add(1, std::memory_order_relaxed);
+            if (m_mode == p::StateRepositoryMode::SHARED && source.get_state_repository() != target.get_state_repository())
+                m_wrong_shared_remote_repository.store(true, std::memory_order_relaxed);
+        }
         access(worker, target);
     }
 
@@ -238,6 +242,7 @@ public:
         EXPECT_GT(num_accesses, 0);
         EXPECT_GT(m_num_remote_transitions.load(std::memory_order_relaxed), 0);
         EXPECT_GT(m_num_duplicates.load(std::memory_order_relaxed), 0);
+        EXPECT_FALSE(m_wrong_shared_remote_repository.load(std::memory_order_relaxed));
     }
 
 private:
@@ -258,8 +263,11 @@ private:
         return m_hash.owner(state.get_state_builder(), num_workers);
     }
 
-    static void observe_repository(Lane& lane, const p::StateView<Kind>& state)
+    void observe_repository(Lane& lane, const p::StateView<Kind>& state) const
     {
+        if (m_mode == p::StateRepositoryMode::SHARED)
+            return;
+
         auto* expected_repository = static_cast<const p::StateRepository<Kind>*>(nullptr);
         const auto* repository = state.get_state_repository().get();
         if (!lane.repository.compare_exchange_strong(expected_repository, repository, std::memory_order_relaxed) && expected_repository != repository)
@@ -271,6 +279,7 @@ private:
     std::array<Lane, num_workers> m_lanes;
     std::atomic<uint64_t> m_num_remote_transitions { 0 };
     std::atomic<uint64_t> m_num_duplicates { 0 };
+    std::atomic<bool> m_wrong_shared_remote_repository { false };
 };
 
 template<TaskKind Kind>
@@ -779,6 +788,8 @@ void expect_aggregated_worker_statistics(const p::SearchResult<Kind>& result, si
     EXPECT_EQ(totals.get_num_expanded(), result.statistics.get_num_expanded());
     EXPECT_EQ(totals.get_num_deadends(), result.statistics.get_num_deadends());
     EXPECT_EQ(totals.get_num_pruned(), result.statistics.get_num_pruned());
+    EXPECT_EQ(totals.get_num_routed_successors(), result.statistics.get_num_routed_successors());
+    EXPECT_EQ(totals.get_num_remote_routed_successors(), result.statistics.get_num_remote_routed_successors());
     EXPECT_EQ(totals.get_idle_time(), result.statistics.get_idle_time());
 }
 
@@ -1115,6 +1126,21 @@ void expect_parallel_brfs_exhaustion(const p::TaskPtr<Kind>& task, p::StateRepos
     EXPECT_EQ(result.statistics.get_num_generated(), sequential_result.statistics.get_num_generated());
     EXPECT_EQ(result.statistics.get_num_pruned(), 0);
     EXPECT_EQ(result.worker_statistics.size(), OwnerAccessGuard<Kind>::num_workers);
+    EXPECT_GT(sequential_result.statistics.get_num_routed_successors(), 0);
+    EXPECT_EQ(sequential_result.statistics.get_num_remote_routed_successors(), 0);
+    EXPECT_DOUBLE_EQ(sequential_result.statistics.get_communication_overhead(), 0.0);
+    EXPECT_GT(result.statistics.get_num_routed_successors(), 0);
+    EXPECT_GT(result.statistics.get_num_remote_routed_successors(), 0);
+    EXPECT_LE(result.statistics.get_num_remote_routed_successors(), result.statistics.get_num_routed_successors());
+    EXPECT_DOUBLE_EQ(result.statistics.get_communication_overhead(),
+                     static_cast<double>(result.statistics.get_num_remote_routed_successors())
+                         / static_cast<double>(result.statistics.get_num_routed_successors()));
+
+    auto worker_totals = p::Statistics {};
+    for (const auto& statistics : result.worker_statistics)
+        worker_totals.add(statistics);
+    EXPECT_EQ(worker_totals.get_num_routed_successors(), result.statistics.get_num_routed_successors());
+    EXPECT_EQ(worker_totals.get_num_remote_routed_successors(), result.statistics.get_num_remote_routed_successors());
 }
 
 }

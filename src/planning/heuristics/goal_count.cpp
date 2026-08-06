@@ -42,11 +42,11 @@ void GoalCountHeuristic<Kind>::set_goal(::tyr::formalism::planning::GroundConjun
 }
 
 template<TaskKind Kind>
-ygg::float_t GoalCountHeuristic<Kind>::evaluate(const StateView<Kind>& state)
+ygg::float_t GoalCountHeuristic<Kind>::evaluate(const ygg::Builder<State<Kind>>& state)
 {
     auto unsat_counter = ygg::float_t { 0 };
 
-    auto state_context = StateContext<Kind> { *m_task, state.get_state_builder(), ygg::float_t { 0 } };
+    auto state_context = StateContext<Kind> { *m_task, state, ygg::float_t { 0 } };
 
     for (const auto fact : m_goal.template get_facts<::tyr::formalism::PositiveTag>())
     {

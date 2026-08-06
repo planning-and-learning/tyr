@@ -32,6 +32,7 @@
 #include <atomic>
 #include <cassert>
 #include <chrono>
+#include <cmath>
 #include <condition_variable>
 #include <cstddef>
 #include <cstdint>
@@ -62,7 +63,7 @@ public:
     {
         ygg::Index<Worker> owner;
         BuilderPtr state;
-        PendingActionResult action_result;
+        CompletedActionResult action_result;
     };
 
     explicit HashDistributedStatePolicy(uint64_t seed) : m_dist_hash(seed) {}
@@ -87,26 +88,25 @@ public:
         return { owner, repository.register_state(std::move(builder)) };
     }
 
-    template<typename WorkerData>
-    PreparedTarget prepare_target(WorkerData&, BuilderPtr target, PendingActionResult action_result, size_t num_workers)
+    template<typename Engine, typename WorkerData>
+    PreparedTarget prepare_target(Engine& engine, WorkerData& sender, BuilderPtr target, CompletedActionResult action_result, size_t num_workers)
     {
-        return PreparedTarget { m_dist_hash.owner(*target, num_workers), std::move(target), action_result };
+        const auto owner = m_dist_hash.owner(*target, num_workers);
+        if (owner != sender.index)
+        {
+            auto receiver_target = engine.get_worker(owner).successor_generator.get_state_repository()->get_state_builder();
+            using std::swap;
+            swap(*receiver_target, *target);
+            target = std::move(receiver_target);
+        }
+
+        return PreparedTarget { owner, std::move(target), action_result };
     }
 
     template<typename WorkerData>
-    static Node<Kind> take_local_target(WorkerData& worker, PreparedTarget&& target)
+    static Node<Kind> take_target(WorkerData& receiver, PreparedTarget&& target)
     {
-        return worker.successor_generator.finalize_successor_state(std::move(target.state), target.action_result);
-    }
-
-    template<typename WorkerData>
-    static Node<Kind> take_remote_target(WorkerData&, WorkerData& receiver, PreparedTarget&& target)
-    {
-        auto& repository = *receiver.successor_generator.get_state_repository();
-        auto builder = repository.get_state_builder();
-        using std::swap;
-        swap(*builder, *target.state);
-        return receiver.successor_generator.finalize_successor_state(std::move(builder), target.action_result);
+        return receiver.successor_generator.register_completed_successor_state(std::move(target.state), target.action_result);
     }
 
     static size_t search_node_divisor(size_t) noexcept { return 1; }
@@ -165,27 +165,17 @@ public:
         return ygg::Index<Worker>(static_cast<ygg::uint_t>(ygg::uint_t(state) % num_workers));
     }
 
-    template<typename WorkerData>
-    static PreparedTarget prepare_target(WorkerData& worker, BuilderPtr target, PendingActionResult action_result, size_t num_workers)
+    template<typename Engine, typename WorkerData>
+    static PreparedTarget prepare_target(Engine&, WorkerData& worker, BuilderPtr target, CompletedActionResult action_result, size_t num_workers)
     {
-        auto node = worker.successor_generator.finalize_successor_state(std::move(target), action_result);
+        auto node = worker.successor_generator.register_completed_successor_state(std::move(target), action_result);
         return PreparedTarget { owner(node.get_state().get_index(), num_workers), std::move(node) };
     }
 
     template<typename WorkerData>
-    static Node<Kind> take_local_target(WorkerData&, PreparedTarget&& target)
+    static Node<Kind> take_target(WorkerData&, PreparedTarget&& target)
     {
         return std::move(target.node);
-    }
-
-    template<typename WorkerData>
-    static Node<Kind> take_remote_target(WorkerData&, WorkerData& receiver, PreparedTarget&& target)
-    {
-        const auto& repository = receiver.successor_generator.get_state_repository();
-        auto state = repository->get_state_builder();
-        // A remote sender must not use the receiver evaluator's reusable unpacking scratch.
-        *state = target.node.get_state().get_state_builder();
-        return Node<Kind>(StateView<Kind>(repository, std::move(state)), target.node.get_metric());
     }
 
     static size_t search_node_divisor(size_t num_workers) noexcept { return num_workers; }
@@ -576,8 +566,24 @@ public:
     template<typename WorkerData, typename Callback>
     static decltype(auto) with_worker_lock(WorkerData& worker, Callback&& callback)
     {
-        const auto lock = std::lock_guard(worker.execution.mutex);
-        return std::forward<Callback>(callback)();
+        auto lock = std::unique_lock(worker.execution.mutex);
+        const auto evaluate_unlocked = [&](auto&& evaluate)
+        {
+            // Lazy evaluation uses only worker-local heuristic state, so receiver publication need not wait for it.
+            lock.unlock();
+            try
+            {
+                auto result = std::forward<decltype(evaluate)>(evaluate)();
+                lock.lock();
+                return result;
+            }
+            catch (...)
+            {
+                lock.lock();
+                throw;
+            }
+        };
+        return std::forward<Callback>(callback)(evaluate_unlocked);
     }
 
     template<typename Engine, typename WorkerData>
@@ -589,7 +595,19 @@ public:
                            ::tyr::formalism::planning::ActionBindingView action,
                            Metadata metadata)
     {
-        auto prepared = m_state_policy.prepare_target(sender, std::move(target), action_result, engine.num_workers());
+        const auto completed = sender.successor_generator.complete_successor_state(*target, action_result);
+        if (std::isnan(completed.metric))
+            throw std::runtime_error("find_solution(...): successor metric value is NaN.");
+
+        const auto g_value = compute_successor_g_value(metadata.source_g_value, completed.metric, engine.m_options.cost_mode);
+        if (std::isnan(g_value))
+            throw std::runtime_error("find_solution(...): successor path cost is NaN.");
+
+        const auto is_goal = sender.goal_strategy->is_dynamic_goal_satisfied(engine.m_start_node.get_state(), *target);
+        sender.search.prepare_routed_successor(sender.heuristic, *target, is_goal, metadata);
+
+        auto prepared = m_state_policy.prepare_target(engine, sender, std::move(target), completed, engine.num_workers());
+        sender.statistics.increment_num_routed_successors(prepared.owner != sender.index);
         auto& receiver = engine.get_worker(prepared.owner);
         const auto wait_start = m_collect_destination_lock_statistics ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point {};
 
@@ -600,9 +618,8 @@ public:
             const auto hold_start = m_collect_destination_lock_statistics ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point {};
             if (running())
             {
-                auto node = prepared.owner == sender.index ? m_state_policy.take_local_target(sender, std::move(prepared)) :
-                                                             m_state_policy.take_remote_target(sender, receiver, std::move(prepared));
-                auto routed = typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata) };
+                auto node = m_state_policy.take_target(receiver, std::move(prepared));
+                auto routed = typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata), g_value, is_goal };
                 result = engine.accept_successor(receiver, source, routed);
                 if (result == AcceptanceResult::QUEUED)
                     retain_successor();
@@ -662,11 +679,12 @@ public:
     std::optional<AcceptanceResult> accept_generated_goal(Engine& engine,
                                                           WorkerData& worker,
                                                           typename SearchPolicy::SearchNode& search_node,
+                                                          const typename Engine::RoutedSuccessor& routed_successor,
                                                           const StateView<Kind>& state,
                                                           ygg::float_t g_value,
                                                           EmitTransition&& emit_transition)
     {
-        if (!worker.goal_strategy->is_dynamic_goal_satisfied(engine.m_start_node.get_state(), state))
+        if (!routed_successor.is_goal)
             return std::nullopt;
 
         search_node.status = SearchNodeStatus::GOAL;
@@ -676,7 +694,13 @@ public:
     }
 
     template<typename Engine, typename WorkerData>
-    static constexpr bool is_queued_goal(Engine&, WorkerData&, const StateView<Kind>&) noexcept
+    static constexpr bool is_generated_goal(Engine&, WorkerData&, const typename Engine::RoutedSuccessor& routed_successor, const StateView<Kind>&) noexcept
+    {
+        return routed_successor.is_goal;
+    }
+
+    template<typename Engine, typename WorkerData>
+    static constexpr bool is_queued_goal(Engine&, WorkerData&, const typename Engine::RoutedSuccessor&, const StateView<Kind>&) noexcept
     {
         return false;
     }

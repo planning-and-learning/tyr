@@ -86,6 +86,8 @@ public:
     {
         LabeledNode<Kind> labeled_node;
         typename SearchPolicy::SuccessorMetadata metadata;
+        ygg::float_t g_value;
+        bool is_goal;
     };
 
     struct WorkerData
@@ -330,7 +332,7 @@ private:
         auto claimed = false;
         m_execution.with_worker_lock(
             worker,
-            [&]
+            [&](auto&& evaluate_unlocked)
             {
                 if (!m_execution.can_expand_locked(*this, worker))
                     return;
@@ -353,6 +355,7 @@ private:
                     node,
                     search_node,
                     worker.statistics,
+                    std::forward<decltype(evaluate_unlocked)>(evaluate_unlocked),
                     [&](ygg::float_t h_value, auto&& callback)
                     { return m_execution.improve_best_h(h_value, [&] { call_root_event(std::forward<decltype(callback)>(callback)); }); },
                     [&](auto&& callback) { call_worker_event(worker, std::forward<decltype(callback)>(callback)); },
@@ -387,9 +390,6 @@ private:
         const auto& successor_state = successor_node.get_state();
         auto& successor_search_node = worker.get_search_node(successor_state.get_index());
 
-        if (std::isnan(successor_node.get_metric()))
-            throw std::runtime_error("find_solution(...): successor metric value is NaN.");
-
         const auto is_new = successor_search_node.status == SearchNodeStatus::NEW;
         if (is_new && !m_execution.reserve_state(m_options.max_num_states))
         {
@@ -397,10 +397,7 @@ private:
             return AcceptanceResult::TERMINAL;
         }
 
-        const auto g_value = compute_successor_g_value(routed_successor.metadata.source_g_value, successor_node.get_metric(), m_options.cost_mode);
-        if (std::isnan(g_value))
-            throw std::runtime_error("find_solution(...): successor path cost is NaN.");
-        const auto normalized_node = Node<Kind>(successor_state, g_value);
+        const auto normalized_node = Node<Kind>(successor_state, routed_successor.g_value);
         const auto emit_transition = [&](TransitionOutcome outcome)
         {
             call_worker_event(worker,

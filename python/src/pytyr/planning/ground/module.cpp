@@ -52,6 +52,7 @@ void bind_ground_module_definitions(nb::module_& m)
 
     bind_index<ygg::Index<State<GroundTag>>>(m, "StateIndex");
     bind_state<GroundTag>(m, "State");
+    bind_state_builder<GroundTag>(m, "StateBuilder");
     bind_node<GroundTag>(m, "Node");
     bind_labeled_node<GroundTag>(m, "LabeledNode");
     bind_plan<GroundTag>(m, "Plan");

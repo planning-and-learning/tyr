@@ -51,6 +51,8 @@ private:
     explicit StateRepository(std::unique_ptr<Impl> impl);
     [[nodiscard]] std::vector<StateRepositoryPtr<GroundTag>> make_shared_workers(std::span<const ygg::ExecutionContextPtr> execution_contexts) const;
     ygg::uint_t get_storage_identity() const noexcept;
+    void compute_extended_state(ygg::Builder<State<GroundTag>>& state);
+    StateView<GroundTag> register_extended_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state);
 
 public:
     ~StateRepository();

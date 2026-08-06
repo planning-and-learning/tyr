@@ -34,9 +34,11 @@ public:
 
     static std::shared_ptr<BlindHeuristic> create() { return std::make_shared<BlindHeuristic>(); }
 
+    using Heuristic<Kind>::evaluate;
+
     void set_goal([[maybe_unused]] ::tyr::formalism::planning::GroundConjunctiveConditionView goal) override {}
 
-    ygg::float_t evaluate([[maybe_unused]] const StateView<Kind>& state) override { return ygg::float_t { 0 }; }
+    ygg::float_t evaluate([[maybe_unused]] const ygg::Builder<State<Kind>>& state) override { return ygg::float_t { 0 }; }
 
     [[nodiscard]] HeuristicPtr<Kind> make_worker([[maybe_unused]] ygg::ExecutionContextPtr execution_context) const override { return create(); }
 };

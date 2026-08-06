@@ -119,6 +119,9 @@ struct formatter<tyr::planning::Statistics, char>
                               "[Search] Idle worker time: {} ms ({} ns)\n"
                               "[Search] Number of expanded states: {}\n"
                               "[Search] Number of generated states: {}\n"
+                              "[Search] Number of routed successors: {}\n"
+                              "[Search] Number of remotely routed successors: {}\n"
+                              "[Search] Communication overhead: {}\n"
                               "[Search] Number of dead-end states: {}\n"
                               "[Search] Number of pruned states: {}\n"
                               "[Search] Number of registered states: {}\n"
@@ -136,6 +139,9 @@ struct formatter<tyr::planning::Statistics, char>
                               ygg::to_ns(value.get_idle_time()),
                               value.get_num_expanded(),
                               value.get_num_generated(),
+                              value.get_num_routed_successors(),
+                              value.get_num_remote_routed_successors(),
+                              value.get_communication_overhead(),
                               value.get_num_deadends(),
                               value.get_num_pruned(),
                               value.get_num_registered_states(),

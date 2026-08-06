@@ -33,6 +33,9 @@ namespace tyr::planning
  * actions, so evaluate() is intentionally non-const and must not be called concurrently on the same instance. Preferred actions describe the latest
  * evaluation and must not be retained across another evaluation or reconfiguration.
  *
+ * Evaluation consumes state contents through a builder and must not depend on repository registration or state identity. Parallel eager search may
+ * evaluate a completed candidate before duplicate and pruning checks.
+ *
  * Heavy built-in heuristics hide a task-derived definition and a worker-local evaluator behind their private implementation. Definitions are frozen before
  * being shared between workers, while evaluators own all mutable workspaces. This avoids repeating task translation without exposing those implementation
  * details through the search API. set_goal() is configuration and must run before workers are materialized, or after they have been discarded. Custom
@@ -48,7 +51,8 @@ public:
 
     virtual void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) = 0;
 
-    virtual ygg::float_t evaluate(const StateView<Kind>& state) = 0;
+    ygg::float_t evaluate(const StateView<Kind>& state);
+    virtual ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state) = 0;
 
     [[nodiscard]] virtual HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const = 0;
 

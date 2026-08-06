@@ -18,9 +18,17 @@
 #include "tyr/planning/heuristic.hpp"
 
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/planning/ground/state_view.hpp"
+#include "tyr/planning/lifted/state_view.hpp"
 
 namespace tyr::planning
 {
+
+template<TaskKind Kind>
+ygg::float_t Heuristic<Kind>::evaluate(const StateView<Kind>& state)
+{
+    return evaluate(state.get_state_builder());
+}
 
 template<TaskKind Kind>
 const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>& Heuristic<Kind>::get_preferred_actions()

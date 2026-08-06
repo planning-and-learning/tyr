@@ -46,6 +46,18 @@ ygg::float_t evaluate_metric(ygg::View<::cista::optional<ygg::Index<::tyr::forma
 
     return ygg::FloatTolerance<ygg::float_t>::canonicalize(value);
 }
+
+template<TaskKind Kind>
+ygg::float_t evaluate_successor_metric(const Task<Kind>& task, const ygg::Builder<State<Kind>>& state, ygg::float_t auxiliary_value)
+{
+    auto context = StateContext<Kind> { task, state, auxiliary_value };
+    if (const auto metric = task.get_task().get_metric())
+        context.auxiliary_value = evaluate(metric.value().get_fexpr(), context);
+    else
+        ++context.auxiliary_value;  // Assume unit cost if no metric is given.
+
+    return ygg::FloatTolerance<ygg::float_t>::canonicalize(context.auxiliary_value);
+}
 }
 
 #endif

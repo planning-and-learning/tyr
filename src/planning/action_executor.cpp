@@ -19,6 +19,7 @@
 #include "tyr/formalism/planning/views.hpp"
 //
 
+#include "metric.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
@@ -184,7 +185,9 @@ Node<Kind> ActionExecutor::apply_action(const StateContext<Kind>& state_context,
 {
     auto successor_state_builder = state_repository.get_state_builder();
     const auto auxiliary_value = apply_action_unregistered(state_context, action, *successor_state_builder);
-    return finalize_action(state_repository, std::move(successor_state_builder), auxiliary_value);
+    auto successor_state = state_repository.register_state(std::move(successor_state_builder));
+    const auto metric = evaluate_successor_metric(*state_repository.get_task(), successor_state.get_state_builder(), auxiliary_value);
+    return Node<Kind>(std::move(successor_state), metric);
 }
 
 template Node<LiftedTag>
@@ -246,7 +249,9 @@ Node<LiftedTag> ActionExecutor::apply_action(const StateContext<LiftedTag>& stat
 {
     auto successor_state_builder = state_repository.get_state_builder();
     const auto auxiliary_value = apply_action_unregistered(state_context, action, grounder, fdr, *successor_state_builder);
-    return finalize_action(state_repository, std::move(successor_state_builder), auxiliary_value);
+    auto successor_state = state_repository.register_state(std::move(successor_state_builder));
+    const auto metric = evaluate_successor_metric(*state_repository.get_task(), successor_state.get_state_builder(), auxiliary_value);
+    return Node<LiftedTag>(std::move(successor_state), metric);
 }
 
 ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<LiftedTag>& state_context,
@@ -275,26 +280,4 @@ ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Lifted
                                           });
 }
 
-template<TaskKind Kind>
-Node<Kind> ActionExecutor::finalize_action(StateRepository<Kind>& state_repository,
-                                           ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> successor_state_builder,
-                                           ygg::float_t auxiliary_value)
-{
-    auto successor_state = state_repository.register_state(std::move(successor_state_builder));
-    auto successor_state_context = StateContext { *state_repository.get_task(), successor_state.get_state_builder(), auxiliary_value };
-
-    if (successor_state_context.task.get_task().get_metric())
-        successor_state_context.auxiliary_value = evaluate(successor_state_context.task.get_task().get_metric().value().get_fexpr(), successor_state_context);
-    else
-        ++successor_state_context.auxiliary_value;  // Assume unit cost if no metric is given
-
-    return Node<Kind>(std::move(successor_state), ygg::FloatTolerance<ygg::float_t>::canonicalize(successor_state_context.auxiliary_value));
-}
-
-template Node<LiftedTag> ActionExecutor::finalize_action(StateRepository<LiftedTag>& state_repository,
-                                                         ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> successor_state_builder,
-                                                         ygg::float_t auxiliary_value);
-template Node<GroundTag> ActionExecutor::finalize_action(StateRepository<GroundTag>& state_repository,
-                                                         ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> successor_state_builder,
-                                                         ygg::float_t auxiliary_value);
 }

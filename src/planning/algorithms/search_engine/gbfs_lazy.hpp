@@ -132,11 +132,12 @@ public:
         return get_or_create_search_node(state, m_search_nodes, default_node);
     }
 
-    template<typename ImproveBestH, typename EmitEvent, typename FinishPriorityLayer>
+    template<typename EvaluateUnlocked, typename ImproveBestH, typename EmitEvent, typename FinishPriorityLayer>
     ExpansionResult prepare_expansion(const PoppedEntry&,
                                       const Node<Kind>& node,
                                       SearchNode& search_node,
                                       Statistics& statistics,
+                                      EvaluateUnlocked&& evaluate_unlocked,
                                       ImproveBestH&& improve_best_h,
                                       EmitEvent&& emit_event,
                                       FinishPriorityLayer&&)
@@ -144,7 +145,8 @@ public:
         statistics.increment_num_expanded();
         std::forward<EmitEvent>(emit_event)([&](auto& handler) { handler.on_expand_node(node); });
 
-        m_state_h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_heuristic.evaluate(node.get_state()));
+        m_state_h_value = std::forward<EvaluateUnlocked>(evaluate_unlocked)(
+            [&] { return ygg::FloatTolerance<ygg::float_t>::canonicalize(m_heuristic.evaluate(node.get_state())); });
         if (std::isnan(m_state_h_value))
             throw std::runtime_error("GBFS heuristic value is NaN.");
         if (m_state_h_value == std::numeric_limits<ygg::float_t>::infinity())
@@ -173,6 +175,8 @@ public:
         const auto preferred = m_preferred_actions && m_preferred_actions->contains(action);
         return SuccessorMetadata { WorkerStateIndex<Kind> { worker, state }, search_node.g_value, m_state_h_value, preferred };
     }
+
+    static constexpr void prepare_routed_successor(Heuristic<Kind>&, const ygg::Builder<State<Kind>>&, bool, SuccessorMetadata&) noexcept {}
 
     static void set_parent(SearchNode& search_node, WorkerStateIndex<Kind> parent) noexcept { search_node.parent_state = ParentPolicy::make_parent(parent); }
 
@@ -208,7 +212,7 @@ public:
         successor_search_node.g_value = g_value;
         successor_search_node.preferred = routed_successor.metadata.preferred;
 
-        if (worker.goal_strategy->is_dynamic_goal_satisfied(engine.m_start_node.get_state(), successor_state))
+        if (engine.m_execution.is_generated_goal(engine, worker, routed_successor, successor_state))
         {
             successor_search_node.status = SearchNodeStatus::GOAL;
             emit_transition(TransitionOutcome::GOAL);

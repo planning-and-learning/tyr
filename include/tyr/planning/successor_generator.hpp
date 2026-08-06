@@ -41,6 +41,11 @@ struct PendingActionResult
     ygg::float_t auxiliary_value;
 };
 
+struct CompletedActionResult
+{
+    ygg::float_t metric;
+};
+
 template<typename T, typename Kind>
 concept SuccessorGeneratorConcept = requires(T& r,
                                              const T& const_r,
@@ -53,6 +58,7 @@ concept SuccessorGeneratorConcept = requires(T& r,
                                              ygg::Builder<State<Kind>>& state_builder,
                                              ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state_builder_ptr,
                                              PendingActionResult pending_result,
+                                             CompletedActionResult completed_result,
                                              ygg::ExecutionContextPtr execution_context,
                                              std::span<const ygg::ExecutionContextPtr> execution_contexts) {
     requires TaskKind<Kind>;
@@ -65,7 +71,8 @@ concept SuccessorGeneratorConcept = requires(T& r,
     { r.get_applicable_action_bindings(node, action_bindings) } -> std::same_as<void>;
     { r.get_successor_node(node, binding) } -> std::same_as<Node<Kind>>;
     { r.generate_successor_state(node, binding, state_builder) } -> std::same_as<PendingActionResult>;
-    { r.finalize_successor_state(std::move(state_builder_ptr), pending_result) } -> std::same_as<Node<Kind>>;
+    { r.complete_successor_state(state_builder, pending_result) } -> std::same_as<CompletedActionResult>;
+    { r.register_completed_successor_state(std::move(state_builder_ptr), completed_result) } -> std::same_as<Node<Kind>>;
     { r.get_node(state_index) } -> std::same_as<Node<Kind>>;
     { const_r.make_worker(execution_context) } -> std::same_as<SuccessorGeneratorPtr<Kind>>;
     { const_r.make_shared_workers(execution_contexts) } -> std::same_as<std::vector<SuccessorGeneratorPtr<Kind>>>;

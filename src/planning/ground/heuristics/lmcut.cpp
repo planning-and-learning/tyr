@@ -136,7 +136,7 @@ struct LMCutHeuristic<GroundTag>::Impl :
     {
     }
 
-    ygg::float_t evaluate(const StateView<GroundTag>& state);
+    ygg::float_t evaluate(const ygg::Builder<State<GroundTag>>& state);
     datalog::Cost get_residual_cost(CostKey action_binding) const;
     template<f::RelationKind R>
     datalog::Cost get_residual_cost(fd::GroundRuleView<R> rule) const;
@@ -201,14 +201,14 @@ LMCutHeuristicPtr<GroundTag> LMCutHeuristic<GroundTag>::create(TaskPtr<GroundTag
 
 void LMCutHeuristic<GroundTag>::set_goal(f::planning::GroundConjunctiveConditionView goal) { m_impl->set_goal(goal); }
 
-ygg::float_t LMCutHeuristic<GroundTag>::evaluate(const StateView<GroundTag>& state) { return m_impl->evaluate(state); }
+ygg::float_t LMCutHeuristic<GroundTag>::evaluate(const ygg::Builder<State<GroundTag>>& state) { return m_impl->evaluate(state); }
 
 HeuristicPtr<GroundTag> LMCutHeuristic<GroundTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
 {
     return HeuristicPtr<GroundTag>(new LMCutHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context))));
 }
 
-ygg::float_t LMCutHeuristic<GroundTag>::Impl::evaluate(const StateView<GroundTag>& state)
+ygg::float_t LMCutHeuristic<GroundTag>::Impl::evaluate(const ygg::Builder<State<GroundTag>>& state)
 {
     auto value = datalog::Cost(0);
     m_residual_costs.clear();

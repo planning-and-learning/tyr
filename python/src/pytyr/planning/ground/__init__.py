@@ -3,6 +3,7 @@
 from ..._pytyr.planning.ground import (
     Task,
     State,
+    StateBuilder,
     StateIndex,
     Node,
     LabeledNode,

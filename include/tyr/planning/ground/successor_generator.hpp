@@ -74,7 +74,10 @@ public:
 
     PendingActionResult
     generate_successor_state(const Node<GroundTag>& node, ::tyr::formalism::planning::ActionBindingView binding, ygg::Builder<State<GroundTag>>& out_state);
-    Node<GroundTag> finalize_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state, PendingActionResult result);
+    /// Computes axiom closure and the final metric without interning the state.
+    CompletedActionResult complete_successor_state(ygg::Builder<State<GroundTag>>& state, PendingActionResult result);
+    /// Interns a state previously completed by a compatible worker.
+    Node<GroundTag> register_completed_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state, CompletedActionResult result);
 
     Node<GroundTag> get_node(ygg::Index<State<GroundTag>> state_index);
     [[nodiscard]] SuccessorGeneratorPtr<GroundTag> make_worker(ygg::ExecutionContextPtr execution_context) const;

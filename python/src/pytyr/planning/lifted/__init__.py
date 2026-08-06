@@ -13,6 +13,7 @@ from ..._pytyr.planning.lifted import (
 from ..._pytyr.planning.lifted import (
     Task,
     State,
+    StateBuilder,
     StateIndex,
     Node,
     LabeledNode,

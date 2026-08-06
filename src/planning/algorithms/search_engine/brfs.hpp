@@ -149,11 +149,12 @@ public:
         return get_or_create_search_node(state, m_search_nodes, default_node);
     }
 
-    template<typename ImproveBestH, typename EmitEvent, typename FinishPriorityLayer>
+    template<typename EvaluateUnlocked, typename ImproveBestH, typename EmitEvent, typename FinishPriorityLayer>
     ExpansionResult prepare_expansion(const PoppedEntry& entry,
                                       const Node<Kind>& node,
                                       SearchNode& search_node,
                                       Statistics& statistics,
+                                      EvaluateUnlocked&&,
                                       ImproveBestH&&,
                                       EmitEvent&& emit_event,
                                       FinishPriorityLayer&& finish_priority_layer)
@@ -172,6 +173,8 @@ public:
     {
         return SuccessorMetadata { WorkerStateIndex<Kind> { worker, state }, static_cast<ygg::float_t>(search_node.g_value) };
     }
+
+    static constexpr void prepare_routed_successor(Heuristic<Kind>&, const ygg::Builder<State<Kind>>&, bool, SuccessorMetadata&) noexcept {}
 
     static void set_parent(SearchNode& search_node, WorkerStateIndex<Kind> parent) noexcept { search_node.parent_state = ParentPolicy::make_parent(parent); }
 
@@ -212,7 +215,7 @@ public:
         }
 
         worker.statistics.increment_num_generated();
-        if (worker.goal_strategy->is_dynamic_goal_satisfied(engine.m_start_node.get_state(), successor_state))
+        if (engine.m_execution.is_generated_goal(engine, worker, routed_successor, successor_state))
         {
             successor_search_node.status = SearchNodeStatus::GOAL;
             emit_transition(TransitionOutcome::GOAL);

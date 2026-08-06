@@ -280,12 +280,25 @@ ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> StateRepository<L
 
 StateView<LiftedTag> StateRepository<LiftedTag>::register_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state)
 {
+    compute_extended_state(*state);
+    return register_extended_state(std::move(state));
+}
+
+void StateRepository<LiftedTag>::compute_extended_state(ygg::Builder<State<LiftedTag>>& state)
+{
     m_impl->visit_evaluator(
         [&](auto& evaluator)
         {
             if (evaluator.axiom_evaluator)
-                evaluator.axiom_evaluator->compute_extended_state(*state);
+                evaluator.axiom_evaluator->compute_extended_state(state);
+        });
+}
 
+StateView<LiftedTag> StateRepository<LiftedTag>::register_extended_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state)
+{
+    m_impl->visit_evaluator(
+        [&](auto& evaluator)
+        {
             auto& packed_states = evaluator.storage->packed_states;
             using PackedStates = std::remove_cvref_t<decltype(packed_states)>;
             if constexpr (!PackedStates::thread_safe)

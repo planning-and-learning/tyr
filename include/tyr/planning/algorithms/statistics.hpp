@@ -34,6 +34,8 @@ private:
     uint64_t m_num_expanded;
     uint64_t m_num_deadends;
     uint64_t m_num_pruned;
+    uint64_t m_num_routed_successors;
+    uint64_t m_num_remote_routed_successors;
     uint64_t m_num_registered_states;
 
     size_t m_state_storage_memory_usage;
@@ -56,6 +58,8 @@ public:
         m_num_expanded(0),
         m_num_deadends(0),
         m_num_pruned(0),
+        m_num_routed_successors(0),
+        m_num_remote_routed_successors(0),
         m_num_registered_states(0),
         m_state_storage_memory_usage(0),
         m_action_bindings_memory_usage(0),
@@ -75,6 +79,8 @@ public:
         m_num_expanded = 0;
         m_num_deadends = 0;
         m_num_pruned = 0;
+        m_num_routed_successors = 0;
+        m_num_remote_routed_successors = 0;
         m_num_registered_states = 0;
         m_state_storage_memory_usage = 0;
         m_action_bindings_memory_usage = 0;
@@ -97,6 +103,13 @@ public:
     void increment_num_expanded() { ++m_num_expanded; }
     void increment_num_deadends() { ++m_num_deadends; }
     void increment_num_pruned() { ++m_num_pruned; }
+    /// Counts HDA* communication before receiver-side duplicate detection and pruning. Each worker is the sole writer of its outgoing counters.
+    void increment_num_routed_successors(bool remote) noexcept
+    {
+        ++m_num_routed_successors;
+        if (remote)
+            ++m_num_remote_routed_successors;
+    }
     void add_idle_time(std::chrono::nanoseconds duration) noexcept { m_idle_time += duration; }
     void add_destination_lock_statistics(std::chrono::nanoseconds wait_time, std::chrono::nanoseconds hold_time) noexcept
     {
@@ -119,6 +132,8 @@ public:
         m_num_expanded += other.m_num_expanded;
         m_num_deadends += other.m_num_deadends;
         m_num_pruned += other.m_num_pruned;
+        m_num_routed_successors += other.m_num_routed_successors;
+        m_num_remote_routed_successors += other.m_num_remote_routed_successors;
         m_num_registered_states = std::max(m_num_registered_states, other.m_num_registered_states);
         m_state_storage_memory_usage = std::max(m_state_storage_memory_usage, other.m_state_storage_memory_usage);
         m_action_bindings_memory_usage = std::max(m_action_bindings_memory_usage, other.m_action_bindings_memory_usage);
@@ -142,6 +157,13 @@ public:
     uint64_t get_num_expanded() const { return m_num_expanded; }
     uint64_t get_num_deadends() const { return m_num_deadends; }
     uint64_t get_num_pruned() const { return m_num_pruned; }
+    uint64_t get_num_routed_successors() const noexcept { return m_num_routed_successors; }
+    uint64_t get_num_remote_routed_successors() const noexcept { return m_num_remote_routed_successors; }
+    /// HDA* communication overhead: the fraction of generated successor routes sent to another worker.
+    double get_communication_overhead() const noexcept
+    {
+        return m_num_routed_successors == 0 ? 0.0 : static_cast<double>(m_num_remote_routed_successors) / static_cast<double>(m_num_routed_successors);
+    }
     uint64_t get_num_registered_states() const noexcept { return m_num_registered_states; }
 
     size_t get_state_storage_memory_usage() const noexcept { return m_state_storage_memory_usage; }

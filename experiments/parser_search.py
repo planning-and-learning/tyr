@@ -4,6 +4,7 @@ from lab.parser import Parser
 from lab import tools
 from lab.reports import Attribute, geometric_mean, arithmetic_mean
 
+import math
 import re
 
 
@@ -15,6 +16,10 @@ WORKER_STATISTICS = re.compile(
 )
 WORKER_DESTINATION_LOCK_STATISTICS = re.compile(
     r"^\[Search\] Worker (\d+) destination lock: acquisitions=(\d+), wait=(\d+) ns, hold=(\d+) ns$",
+    re.MULTILINE,
+)
+WORKER_COMMUNICATION_STATISTICS = re.compile(
+    r"^\[Search\] Worker (\d+) communication: routed=(\d+), remote=(\d+)$",
     re.MULTILINE,
 )
 
@@ -60,6 +65,59 @@ def parse_worker_statistics(content, props):
 
     if props.get("search_time_ns", 0) > 0:
         props["worker_utilizations"] = [max(0.0, min(1.0, 1.0 - idle / props["search_time_ns"])) for idle in props["worker_idle_time_ns"]]
+
+
+def parse_communication_statistics(content, props):
+    matches = sorted(
+        (tuple(map(int, match)) for match in WORKER_COMMUNICATION_STATISTICS.findall(content)),
+        key=lambda values: values[0],
+    )
+    aggregate_names = ("num_routed_successors", "num_remote_routed_successors")
+    if matches:
+        indices = [values[0] for values in matches]
+        expected_workers = props.get("num_search_workers", len(matches))
+        if indices != list(range(expected_workers)):
+            tools.add_unexplained_error(props, f"Unexpected communication worker indices: {indices}")
+            return
+
+        routed = [values[1] for values in matches]
+        remote = [values[2] for values in matches]
+        if any(remote_count > routed_count for routed_count, remote_count in zip(routed, remote)):
+            tools.add_unexplained_error(props, "Remote routed successors exceed routed successors for a worker")
+            return
+
+        props["worker_num_routed_successors"] = routed
+        props["worker_num_remote_routed_successors"] = remote
+        props["worker_communication_overheads"] = [
+            remote_count / routed_count if routed_count else 0.0
+            for routed_count, remote_count in zip(routed, remote)
+        ]
+
+        for name, total in zip(aggregate_names, (sum(routed), sum(remote))):
+            if name in props and props[name] != total:
+                tools.add_unexplained_error(props, f"Communication aggregate does not match worker values: {name}")
+            else:
+                props[name] = total
+
+    present_aggregates = [name in props for name in aggregate_names]
+    if any(present_aggregates) and not all(present_aggregates):
+        tools.add_unexplained_error(props, "Incomplete communication aggregate statistics")
+        return
+    if not all(present_aggregates):
+        return
+
+    routed = props["num_routed_successors"]
+    remote = props["num_remote_routed_successors"]
+    if remote > routed:
+        tools.add_unexplained_error(props, "Remote routed successors exceed routed successors")
+        return
+
+    overhead = remote / routed if routed else 0.0
+    if "communication_overhead" in props and not math.isclose(
+        props["communication_overhead"], overhead, rel_tol=1e-9, abs_tol=1e-12
+    ):
+        tools.add_unexplained_error(props, "Communication overhead does not match routed successor counts")
+    props["communication_overhead"] = overhead
 
 
 def parse_destination_lock_statistics(content, props):
@@ -203,6 +261,9 @@ class SearchParser(Parser):
         self.add_pattern("num_generated", r"\[Search\] Number of generated states: (\d+)", type=int)
         self.add_pattern("num_deadends", r"\[Search\] Number of dead-end states: (\d+)", type=int)
         self.add_pattern("num_pruned", r"\[Search\] Number of pruned states: (\d+)", type=int)
+        self.add_pattern("num_routed_successors", r"\[Search\] Number of routed successors: (\d+)", type=int)
+        self.add_pattern("num_remote_routed_successors", r"\[Search\] Number of remotely routed successors: (\d+)", type=int)
+        self.add_pattern("communication_overhead", rf"\[Search\] Communication overhead: {FLOAT}", type=float)
         self.add_pattern("num_registered_states", r"\[Search\] Number of registered states: (\d+)", type=int)
         self.add_pattern("search_state_storage_memory_usage_bytes", r"\[Search\] State storage memory usage: (\d+) bytes", type=int)
         self.add_pattern("search_action_bindings_memory_usage_bytes", r"\[Search\] Action bindings memory usage: (\d+) bytes", type=int)
@@ -237,6 +298,7 @@ class SearchParser(Parser):
         self.add_function(add_search_time_s)
         self.add_function(add_idle_time_s)
         self.add_function(parse_worker_statistics)
+        self.add_function(parse_communication_statistics)
         self.add_function(parse_destination_lock_statistics)
         self.add_function(add_total_time_s)
         self.add_function(add_preprocessing_time_s)
@@ -278,6 +340,9 @@ class SearchParser(Parser):
             "num_generated",
             "num_deadends",
             "num_pruned",
+            "num_routed_successors",
+            "num_remote_routed_successors",
+            Attribute("communication_overhead", function=arithmetic_mean, digits=3),
             "num_registered_states",
             "num_expanded_until_last_snapshot",
             "num_generated_until_last_snapshot",

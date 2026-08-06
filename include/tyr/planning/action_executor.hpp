@@ -22,7 +22,6 @@
 #include "tyr/planning/applicability_lifted_decl.hpp"
 #include "tyr/planning/declarations.hpp"
 
-#include <yggdrasil/containers/shared_object_pool.hpp>
 #include <yggdrasil/core/itertools.hpp>
 #include <yggdrasil/core/types.hpp>
 
@@ -76,12 +75,6 @@ public:
                                            ::tyr::formalism::planning::GrounderContext& grounder,
                                            ::tyr::formalism::planning::FDRContext& fdr,
                                            ygg::Builder<State<LiftedTag>>& successor_state_builder);
-
-    /// Interns a completed successor in the selected repository and evaluates the resulting node metric.
-    template<TaskKind Kind>
-    Node<Kind> finalize_action(StateRepository<Kind>& state_repository,
-                               ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> successor_state_builder,
-                               ygg::float_t auxiliary_value);
 
 private:
     ygg::DataList<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> m_del_effects;
