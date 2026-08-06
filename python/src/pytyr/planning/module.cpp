@@ -69,6 +69,8 @@ void bind_module_definitions(nb::module_& m)
         .value("HASH_DISTRIBUTED", StateRepositoryMode::HASH_DISTRIBUTED)
         .value("SHARED", StateRepositoryMode::SHARED);
 
+    nb::enum_<DistHashMode>(m, "DistHashMode").value("RANDOM", DistHashMode::RANDOM).value("LMCUT", DistHashMode::LMCUT);
+
     nb::enum_<astar_eager::ParallelSearchMode>(m, "ParallelSearchMode")
         .value("SYNCHRONOUS", astar_eager::ParallelSearchMode::SYNCHRONOUS)
         .value("ASYNCHRONOUS", astar_eager::ParallelSearchMode::ASYNCHRONOUS);
@@ -86,17 +88,17 @@ void bind_module_definitions(nb::module_& m)
     auto statistics_cls = nb::class_<Statistics>(m, "Statistics")
                               .def(nb::init<>())
                               .def("clear", &Statistics::clear)
-                              .def("increment_num_generated", &Statistics::increment_num_generated)
+                              .def("increment_num_accepted_successors", &Statistics::increment_num_accepted_successors)
                               .def("increment_num_expanded", &Statistics::increment_num_expanded)
                               .def("increment_num_deadends", &Statistics::increment_num_deadends)
                               .def("increment_num_pruned", &Statistics::increment_num_pruned)
-                              .def("increment_num_routed_successors", &Statistics::increment_num_routed_successors, "remote"_a)
-                              .def("get_num_generated", &Statistics::get_num_generated)
+                              .def("increment_num_generated_successors", &Statistics::increment_num_generated_successors, "transferred"_a)
+                              .def("get_num_accepted_successors", &Statistics::get_num_accepted_successors)
                               .def("get_num_expanded", &Statistics::get_num_expanded)
                               .def("get_num_deadends", &Statistics::get_num_deadends)
                               .def("get_num_pruned", &Statistics::get_num_pruned)
-                              .def("get_num_routed_successors", &Statistics::get_num_routed_successors)
-                              .def("get_num_remote_routed_successors", &Statistics::get_num_remote_routed_successors)
+                              .def("get_num_generated_successors", &Statistics::get_num_generated_successors)
+                              .def("get_num_transferred_successors", &Statistics::get_num_transferred_successors)
                               .def("get_communication_overhead", &Statistics::get_communication_overhead)
                               .def("get_num_registered_states", &Statistics::get_num_registered_states)
                               .def("get_state_storage_memory_usage", &Statistics::get_state_storage_memory_usage)
@@ -116,8 +118,8 @@ void bind_module_definitions(nb::module_& m)
 
     auto progress_snapshot_cls =
         nb::class_<ProgressSnapshot>(m, "ProgressStatisticsSnapshot")
-            .def(nb::init<uint64_t, uint64_t, uint64_t, uint64_t>(), "num_generated"_a, "num_expanded"_a, "num_deadends"_a, "num_pruned"_a)
-            .def("get_num_generated", &ProgressSnapshot::get_num_generated)
+            .def(nb::init<uint64_t, uint64_t, uint64_t, uint64_t>(), "num_accepted_successors"_a, "num_expanded"_a, "num_deadends"_a, "num_pruned"_a)
+            .def("get_num_accepted_successors", &ProgressSnapshot::get_num_accepted_successors)
             .def("get_num_expanded", &ProgressSnapshot::get_num_expanded)
             .def("get_num_deadends", &ProgressSnapshot::get_num_deadends)
             .def("get_num_pruned", &ProgressSnapshot::get_num_pruned);

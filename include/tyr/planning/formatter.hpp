@@ -118,9 +118,9 @@ struct formatter<tyr::planning::Statistics, char>
                               "[Search] Search time: {} ms ({} ns)\n"
                               "[Search] Idle worker time: {} ms ({} ns)\n"
                               "[Search] Number of expanded states: {}\n"
-                              "[Search] Number of generated states: {}\n"
-                              "[Search] Number of routed successors: {}\n"
-                              "[Search] Number of remotely routed successors: {}\n"
+                              "[Search] Number of generated successors: {}\n"
+                              "[Search] Number of accepted successors: {}\n"
+                              "[Search] Number of transferred successors: {}\n"
                               "[Search] Communication overhead: {}\n"
                               "[Search] Number of dead-end states: {}\n"
                               "[Search] Number of pruned states: {}\n"
@@ -138,9 +138,9 @@ struct formatter<tyr::planning::Statistics, char>
                               ygg::to_ms(value.get_idle_time()),
                               ygg::to_ns(value.get_idle_time()),
                               value.get_num_expanded(),
-                              value.get_num_generated(),
-                              value.get_num_routed_successors(),
-                              value.get_num_remote_routed_successors(),
+                              value.get_num_generated_successors(),
+                              value.get_num_accepted_successors(),
+                              value.get_num_transferred_successors(),
                               value.get_communication_overhead(),
                               value.get_num_deadends(),
                               value.get_num_pruned(),
@@ -173,11 +173,11 @@ struct formatter<tyr::planning::ProgressStatistics, char>
         const auto& last = value.get_snapshots().back();
         return fmt::format_to(ctx.out(),
                               "[Search] Number of expanded states at last snapshot: {}\n"
-                              "[Search] Number of generated states at last snapshot: {}\n"
+                              "[Search] Number of accepted successors at last snapshot: {}\n"
                               "[Search] Number of deadend states at last snapshot: {}\n"
                               "[Search] Number of pruned states at last snapshot: {}",
                               last.get_num_expanded(),
-                              last.get_num_generated(),
+                              last.get_num_accepted_successors(),
                               last.get_num_deadends(),
                               last.get_num_pruned());
     }
@@ -192,11 +192,11 @@ struct formatter<tyr::planning::ProgressStatistics::Snapshot, char>
     {
         return fmt::format_to(ctx.out(),
                               "[Search] Number of expanded states at snapshot: {}\n"
-                              "[Search] Number of generated states at snapshot: {}\n"
+                              "[Search] Number of accepted successors at snapshot: {}\n"
                               "[Search] Number of deadend states at snapshot: {}\n"
                               "[Search] Number of pruned states at snapshot: {}",
                               value.get_num_expanded(),
-                              value.get_num_generated(),
+                              value.get_num_accepted_successors(),
                               value.get_num_deadends(),
                               value.get_num_pruned());
     }

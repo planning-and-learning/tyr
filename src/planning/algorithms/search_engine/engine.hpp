@@ -255,18 +255,15 @@ private:
                 worker.statistics.set_search_end_time_point(m_search_start_time_point);
             });
 
-        auto [start_owner, start_state] = prepare_start_state();
-        auto& start_worker = get_worker(start_owner);
-        const auto start_state_index = start_state.get_index();
-        const auto start_g_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_start_node.get_metric());
+        auto& root_worker = get_worker(ygg::Index<Worker>(0));
 
-        if (!start_worker.goal_strategy->is_static_goal_satisfied(m_task))
+        if (!root_worker.goal_strategy->is_static_goal_satisfied(m_task))
         {
             finalize(SearchStatus::UNSOLVABLE);
             return std::move(m_result);
         }
 
-        if (start_worker.goal_strategy->is_dynamic_goal_satisfied(m_start_node.get_state(), start_state))
+        if (root_worker.goal_strategy->is_dynamic_goal_satisfied(m_start_node.get_state(), m_start_node.get_state()))
         {
             m_result.plan = Plan(m_start_node, LabeledNodeList<Kind> {});
             m_result.goal_node = m_start_node;
@@ -280,6 +277,17 @@ private:
             finalize(SearchStatus::OUT_OF_STATES);
             return std::move(m_result);
         }
+
+        if (timed_out())
+        {
+            finalize(SearchStatus::OUT_OF_TIME);
+            return std::move(m_result);
+        }
+
+        auto [start_owner, start_state] = prepare_start_state();
+        auto& start_worker = get_worker(start_owner);
+        const auto start_state_index = start_state.get_index();
+        const auto start_g_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_start_node.get_metric());
 
         if (start_worker.pruning_strategy->should_prune_state(start_state))
         {

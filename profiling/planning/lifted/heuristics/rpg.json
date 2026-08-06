@@ -222,8 +222,8 @@
             "type": "int",
             "compare": "lower_is_better"
         },
-        "num_generated": {
-            "description": "The number of states generated during search.",
+        "num_accepted_successors": {
+            "description": "The number of successors accepted during search.",
             "type": "int",
             "compare": "lower_is_better"
         },

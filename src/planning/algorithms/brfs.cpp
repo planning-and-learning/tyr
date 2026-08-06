@@ -43,9 +43,22 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
         {
             case StateRepositoryMode::HASH_DISTRIBUTED:
             {
-                using Distribution = detail::HashDistributedStatePolicy<Kind, RandomDistHashTag>;
-                using Execution = detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
-                return detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
+                switch (options.dist_hash_mode)
+                {
+                    case DistHashMode::RANDOM:
+                    {
+                        using Distribution = detail::HashDistributedStatePolicy<Kind, RandomDistHashTag>;
+                        using Execution = detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
+                        return detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
+                    }
+                    case DistHashMode::LMCUT:
+                    {
+                        using Distribution = detail::HashDistributedStatePolicy<Kind, LMCutDistHashTag>;
+                        using Execution = detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
+                        return detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
+                    }
+                }
+                throw std::invalid_argument("brfs::find_solution(...): unknown distribution hash mode.");
             }
             case StateRepositoryMode::SHARED:
             {

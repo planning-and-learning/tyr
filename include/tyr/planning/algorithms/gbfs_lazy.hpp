@@ -51,6 +51,7 @@ struct Options
     /// Values above one enable parallel shared-memory search; custom strategies must provide independent workers.
     size_t num_search_workers = 1;
     StateRepositoryMode state_repository_mode = StateRepositoryMode::HASH_DISTRIBUTED;
+    DistHashMode dist_hash_mode = DistHashMode::LMCUT;
     bool collect_destination_lock_statistics = false;
     uint64_t random_seed = 0;
     bool shuffle_labeled_succ_nodes = false;

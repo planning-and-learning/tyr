@@ -44,6 +44,7 @@ public:
 
     void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override;
     ygg::float_t evaluate(const ygg::Builder<State<GroundTag>>& state) override;
+    ::tyr::formalism::planning::GroundAtomViewList<::tyr::formalism::FluentTag> compute_cut_frontier_atoms(const ygg::Builder<State<GroundTag>>& state);
     [[nodiscard]] HeuristicPtr<GroundTag> make_worker(ygg::ExecutionContextPtr execution_context) const override;
 
 private:

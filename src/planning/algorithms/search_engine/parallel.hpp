@@ -81,6 +81,7 @@ public:
     template<typename Engine>
     std::pair<ygg::Index<Worker>, StateView<Kind>> prepare_start_state(Engine& engine, const StateView<Kind>& start_state)
     {
+        m_dist_hash.initialize(start_state);
         const auto owner = m_dist_hash.owner(start_state.get_state_builder(), engine.num_workers());
         auto& repository = *engine.get_worker(owner).successor_generator.get_state_repository();
         auto builder = repository.get_state_builder();
@@ -583,7 +584,7 @@ public:
         sender.search.prepare_routed_successor(sender.heuristic, *target, is_goal, metadata);
 
         auto prepared = m_state_policy.prepare_target(engine, sender, std::move(target), completed, engine.num_workers());
-        sender.statistics.increment_num_routed_successors(prepared.owner != sender.index);
+        sender.statistics.increment_num_generated_successors(prepared.owner != sender.index);
         auto& receiver = engine.get_worker(prepared.owner);
         const auto wait_start = m_collect_destination_lock_statistics ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point {};
 

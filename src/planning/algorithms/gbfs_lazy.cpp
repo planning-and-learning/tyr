@@ -37,9 +37,22 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
         {
             case StateRepositoryMode::HASH_DISTRIBUTED:
             {
-                using Distribution = ::tyr::planning::detail::HashDistributedStatePolicy<Kind, RandomDistHashTag>;
-                using Execution = ::tyr::planning::detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
-                return ::tyr::planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
+                switch (options.dist_hash_mode)
+                {
+                    case DistHashMode::RANDOM:
+                    {
+                        using Distribution = ::tyr::planning::detail::HashDistributedStatePolicy<Kind, RandomDistHashTag>;
+                        using Execution = ::tyr::planning::detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
+                        return ::tyr::planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
+                    }
+                    case DistHashMode::LMCUT:
+                    {
+                        using Distribution = ::tyr::planning::detail::HashDistributedStatePolicy<Kind, LMCutDistHashTag>;
+                        using Execution = ::tyr::planning::detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
+                        return ::tyr::planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
+                    }
+                }
+                throw std::invalid_argument("gbfs_lazy::find_solution(...): unknown distribution hash mode.");
             }
             case StateRepositoryMode::SHARED:
             {

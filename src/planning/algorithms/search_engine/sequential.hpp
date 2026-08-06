@@ -176,7 +176,7 @@ public:
         if (!std::isfinite(g_value))
             throw std::runtime_error("find_solution(...): successor path cost is not finite.");
 
-        worker.statistics.increment_num_routed_successors(false);
+        worker.statistics.increment_num_generated_successors(false);
         const auto routed = typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata), g_value, false };
         return engine.accept_successor(worker, source, routed);
     }

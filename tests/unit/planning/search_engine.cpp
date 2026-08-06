@@ -371,7 +371,7 @@ void expect_one_step_goal_result(const p::SearchResult<Kind>& result)
     ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
     ASSERT_TRUE(result.plan);
     EXPECT_EQ(result.plan->get_length(), 1);
-    EXPECT_EQ(result.statistics.get_num_generated(), 1);
+    EXPECT_EQ(result.statistics.get_num_accepted_successors(), 1);
     EXPECT_EQ(result.statistics.get_num_pruned(), 0);
 }
 

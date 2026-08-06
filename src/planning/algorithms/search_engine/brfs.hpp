@@ -212,7 +212,7 @@ public:
             return AcceptanceResult::DISCARDED;
         }
 
-        worker.statistics.increment_num_generated();
+        worker.statistics.increment_num_accepted_successors();
         if (is_goal)
         {
             successor_search_node.status = SearchNodeStatus::GOAL;

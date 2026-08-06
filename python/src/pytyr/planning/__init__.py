@@ -4,6 +4,7 @@ from pyyggdrasil.execution import ExecutionContext
 
 from .._pytyr.planning import (
     CostMode,
+    DistHashMode,
     ParallelSearchMode,
     ProgressStatistics,
     ProgressStatisticsSnapshot,

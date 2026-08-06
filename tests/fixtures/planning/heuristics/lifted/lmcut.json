@@ -71,10 +71,10 @@
             "task_file": "classical/tests/blocks_4/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 3
+                    "h": 2
                 },
                 "general": {
-                    "h": 3
+                    "h": 2
                 }
             }
         },
@@ -84,10 +84,10 @@
             "task_file": "classical/tests/childsnack/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 3
+                    "h": 4
                 },
                 "general": {
-                    "h": 3
+                    "h": 4
                 }
             }
         },
@@ -123,10 +123,10 @@
             "task_file": "classical/tests/ferry/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 4
+                    "h": 2
                 },
                 "general": {
-                    "h": 4
+                    "h": 2
                 }
             }
         },
@@ -292,10 +292,10 @@
             "task_file": "classical/tests/reward/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 4
+                    "h": 3
                 },
                 "general": {
-                    "h": 4
+                    "h": 3
                 }
             }
         },
@@ -318,10 +318,10 @@
             "task_file": "classical/tests/satellite/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 5
+                    "h": 3
                 },
                 "general": {
-                    "h": 5
+                    "h": 3
                 }
             }
         },
@@ -344,10 +344,10 @@
             "task_file": "classical/tests/sokoban/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 25
+                    "h": 26
                 },
                 "general": {
-                    "h": 25
+                    "h": 26
                 }
             }
         },
@@ -370,10 +370,10 @@
             "task_file": "classical/tests/transport/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 3
+                    "h": 2
                 },
                 "general": {
-                    "h": 52
+                    "h": 51
                 }
             }
         },
@@ -383,10 +383,10 @@
             "task_file": "classical/tests/visitall/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 6
+                    "h": 4
                 },
                 "general": {
-                    "h": 6
+                    "h": 4
                 }
             }
         },
@@ -399,7 +399,7 @@
                     "h": 9
                 },
                 "general": {
-                    "h": 80
+                    "h": 170
                 }
             }
         },

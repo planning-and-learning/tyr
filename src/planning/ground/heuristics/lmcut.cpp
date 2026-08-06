@@ -101,6 +101,7 @@ struct LMCutHeuristic<GroundTag>::Impl :
     using RuleEdge = GroundLMCutRuleEdge;
     using NumericEdge = GroundLMCutNumericEdge;
     using Precondition = std::variant<Atom, NumericNode>;
+    using CutFrontierAtoms = f::planning::GroundAtomViewList<f::FluentTag>;
 
     Impl(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
         Base(std::move(task),
@@ -109,7 +110,7 @@ struct LMCutHeuristic<GroundTag>::Impl :
              datalog::AchieverAndAnnotationPolicy<GroundTag, datalog::MaxAggregation>(),
              cost_mode,
              true),
-        m_residual_costs(),
+        m_action_used_costs(),
         m_rule_edge_used_costs(),
         m_numeric_edge_used_costs(),
         m_goal_zone(),
@@ -125,6 +126,8 @@ struct LMCutHeuristic<GroundTag>::Impl :
         m_numeric_support_selector_workspace(),
         m_max_precondition_depth(0)
     {
+        // The propositional justification graph contains every reachable operator arc, including arcs discovered after the goal first becomes reachable.
+        m_workspace.tp.set_early_termination(use_expanded_edges());
     }
 
     Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) :
@@ -134,19 +137,15 @@ struct LMCutHeuristic<GroundTag>::Impl :
              datalog::AchieverAndAnnotationPolicy<GroundTag, datalog::MaxAggregation>()),
         m_max_precondition_depth(0)
     {
+        m_workspace.tp.set_early_termination(use_expanded_edges());
     }
 
-    ygg::float_t evaluate(const ygg::Builder<State<GroundTag>>& state);
-    datalog::Cost get_residual_cost(CostKey action_binding) const;
-    template<f::RelationKind R>
-    datalog::Cost get_residual_cost(fd::GroundRuleView<R> rule) const;
+    ygg::float_t evaluate(const ygg::Builder<State<GroundTag>>& state, CutFrontierAtoms* cut_frontier_atoms = nullptr);
     template<f::RelationKind R>
     datalog::Cost get_witness_body_cost(const datalog::WitnessAnnotation<GroundTag, R>& witness) const;
     template<f::RelationKind R>
     datalog::Cost get_witness_edge_residual_cost(const datalog::WitnessAnnotation<GroundTag, R>& witness) const;
-    void set_residual_cost(CostKey action_binding, datalog::Cost cost);
-    template<f::RelationKind R>
-    void set_residual_cost(fd::GroundRuleView<R> rule, datalog::Cost cost);
+    void use_action_cost(CostKey action_binding, datalog::Cost cost);
     void use_rule_edge_cost(Rule rule, datalog::Cost cost);
     void use_numeric_edge_cost(NumericEdge edge, datalog::Cost cost);
     void apply_residual_costs();
@@ -161,12 +160,13 @@ struct LMCutHeuristic<GroundTag>::Impl :
     bool is_before_goal_zone(Atom atom);
     bool is_before_goal_zone(NumericNode node);
     bool is_before_goal_zone(Precondition precondition);
-    void extract_cut();
-    void extract_expanded_cut();
+    void append_cut_frontier_atom(Atom atom, CutFrontierAtoms* cut_frontier_atoms) const;
+    void extract_cut(CutFrontierAtoms* cut_frontier_atoms);
+    void extract_expanded_cut(CutFrontierAtoms* cut_frontier_atoms);
 
     bool use_expanded_edges() const noexcept { return m_definition->use_expanded_lmcut; }
 
-    ygg::UnorderedMap<CostKey, datalog::Cost> m_residual_costs;
+    ygg::UnorderedMap<CostKey, datalog::Cost> m_action_used_costs;
     ygg::UnorderedMap<RuleEdge, datalog::Cost> m_rule_edge_used_costs;
     ygg::UnorderedMap<NumericEdge, datalog::Cost> m_numeric_edge_used_costs;
     ygg::UnorderedSet<Atom> m_goal_zone;
@@ -175,7 +175,7 @@ struct LMCutHeuristic<GroundTag>::Impl :
     ygg::UnorderedSet<NumericNode> m_numeric_before_goal_zone;
     ygg::UnorderedSet<Atom> m_not_before_goal_zone;
     ygg::UnorderedSet<NumericNode> m_numeric_not_before_goal_zone;
-    ygg::UnorderedSet<CostKey> m_cut;
+    ygg::UnorderedMap<CostKey, datalog::Cost> m_cut;
     ygg::UnorderedMap<RuleEdge, datalog::Cost> m_rule_cut;
     ygg::UnorderedMap<NumericEdge, datalog::Cost> m_numeric_cut;
     std::deque<std::vector<Precondition>> m_max_precondition_buffers;
@@ -203,15 +203,24 @@ void LMCutHeuristic<GroundTag>::set_goal(f::planning::GroundConjunctiveCondition
 
 ygg::float_t LMCutHeuristic<GroundTag>::evaluate(const ygg::Builder<State<GroundTag>>& state) { return m_impl->evaluate(state); }
 
+f::planning::GroundAtomViewList<f::FluentTag> LMCutHeuristic<GroundTag>::compute_cut_frontier_atoms(const ygg::Builder<State<GroundTag>>& state)
+{
+    auto atoms = f::planning::GroundAtomViewList<f::FluentTag> {};
+    static_cast<void>(m_impl->evaluate(state, &atoms));
+    std::sort(atoms.begin(), atoms.end());
+    atoms.erase(std::unique(atoms.begin(), atoms.end()), atoms.end());
+    return atoms;
+}
+
 HeuristicPtr<GroundTag> LMCutHeuristic<GroundTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
 {
     return HeuristicPtr<GroundTag>(new LMCutHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context))));
 }
 
-ygg::float_t LMCutHeuristic<GroundTag>::Impl::evaluate(const ygg::Builder<State<GroundTag>>& state)
+ygg::float_t LMCutHeuristic<GroundTag>::Impl::evaluate(const ygg::Builder<State<GroundTag>>& state, CutFrontierAtoms* cut_frontier_atoms)
 {
     auto value = datalog::Cost(0);
-    m_residual_costs.clear();
+    m_action_used_costs.clear();
     m_rule_edge_used_costs.clear();
     m_numeric_edge_used_costs.clear();
 
@@ -229,7 +238,7 @@ ygg::float_t LMCutHeuristic<GroundTag>::Impl::evaluate(const ygg::Builder<State<
         auto cut_cost = std::numeric_limits<datalog::Cost>::max();
         if (use_expanded_edges())
         {
-            extract_expanded_cut();
+            extract_expanded_cut(cut_frontier_atoms);
             if (m_rule_cut.empty() && m_numeric_cut.empty())
                 return ygg::float_t(value + hmax_cost);
 
@@ -248,36 +257,23 @@ ygg::float_t LMCutHeuristic<GroundTag>::Impl::evaluate(const ygg::Builder<State<
         }
         else
         {
-            extract_cut();
+            extract_cut(cut_frontier_atoms);
             if (m_cut.empty())
                 return ygg::float_t(value + hmax_cost);
 
-            for (const auto key : m_cut)
-                cut_cost = std::min(cut_cost, get_residual_cost(key));
+            for (const auto& [_, residual] : m_cut)
+                cut_cost = std::min(cut_cost, residual);
 
             assert(cut_cost > 0 && cut_cost != std::numeric_limits<datalog::Cost>::max());
 
             value += cut_cost;
-            for (const auto key : m_cut)
-                set_residual_cost(key, get_residual_cost(key) - cut_cost);
+            for (const auto& [action_binding, _] : m_cut)
+                use_action_cost(action_binding, cut_cost);
         }
     }
 }
 
-datalog::Cost LMCutHeuristic<GroundTag>::Impl::get_residual_cost(CostKey action_binding) const
-{
-    const auto used_it = m_residual_costs.find(action_binding);
-    const auto used = used_it == m_residual_costs.end() ? datalog::Cost(0) : used_it->second;
-    return used >= datalog::Cost(1) ? datalog::Cost(0) : datalog::Cost(1) - used;
-}
-
-template<f::RelationKind R>
-datalog::Cost LMCutHeuristic<GroundTag>::Impl::get_residual_cost(fd::GroundRuleView<R> rule) const
-{
-    const auto& mapping = get_program().template get_rule_to_action_mapping<R>();
-    const auto action_it = mapping.find(rule);
-    return action_it == mapping.end() ? datalog::Cost(0) : get_residual_cost(action_it->second.get_row());
-}
+void LMCutHeuristic<GroundTag>::Impl::use_action_cost(CostKey action_binding, datalog::Cost cost) { m_action_used_costs[action_binding] += cost; }
 
 template<f::RelationKind R>
 datalog::Cost LMCutHeuristic<GroundTag>::Impl::get_witness_body_cost(const datalog::WitnessAnnotation<GroundTag, R>& witness) const
@@ -300,20 +296,6 @@ datalog::Cost LMCutHeuristic<GroundTag>::Impl::get_witness_edge_residual_cost(co
     return witness.get_cost() <= body_cost ? datalog::Cost(0) : witness.get_cost() - body_cost;
 }
 
-void LMCutHeuristic<GroundTag>::Impl::set_residual_cost(CostKey action_binding, datalog::Cost cost)
-{
-    m_residual_costs.insert_or_assign(action_binding, datalog::Cost(1) - cost);
-}
-
-template<f::RelationKind R>
-void LMCutHeuristic<GroundTag>::Impl::set_residual_cost(fd::GroundRuleView<R> rule, datalog::Cost cost)
-{
-    const auto& mapping = get_program().template get_rule_to_action_mapping<R>();
-    const auto action_it = mapping.find(rule);
-    if (action_it != mapping.end())
-        set_residual_cost(action_it->second.get_row(), cost);
-}
-
 void LMCutHeuristic<GroundTag>::Impl::use_rule_edge_cost(Rule rule, datalog::Cost cost)
 {
     auto& used = m_rule_edge_used_costs[RuleEdge { rule }];
@@ -329,7 +311,7 @@ void LMCutHeuristic<GroundTag>::Impl::use_numeric_edge_cost(NumericEdge edge, da
 void LMCutHeuristic<GroundTag>::Impl::apply_residual_costs()
 {
     m_workspace.clear_costs();
-    for (const auto& [action_binding, used_cost] : m_residual_costs)
+    for (const auto& [action_binding, used_cost] : m_action_used_costs)
         set_action_binding_cost(action_binding, used_cost);
     for (const auto& [edge, used_cost] : m_rule_edge_used_costs)
         m_workspace.cost_policy.set_cost(edge.rule, used_cost);
@@ -395,13 +377,12 @@ void LMCutHeuristic<GroundTag>::Impl::mark_goal_zone(Atom atom)
     {
         for (const auto& witness : *achievers)
         {
-            if (witness.get_cost() != atom_cost)
+            if (use_expanded_edges() && witness.get_cost() != atom_cost)
                 continue;
 
             const auto& mapping = get_program().get_rule_to_action_mapping<f::PredicateTag>();
             const auto action_it = mapping.find(witness.get_rule_key());
-            const auto residual = use_expanded_edges() ? (action_it != mapping.end() ? get_witness_edge_residual_cost(witness) : datalog::Cost(0)) :
-                                                         get_residual_cost(witness.get_rule_key());
+            const auto residual = action_it != mapping.end() ? get_witness_edge_residual_cost(witness) : datalog::Cost(0);
             if (action_it != mapping.end() && residual > 0)
                 continue;
 
@@ -425,8 +406,7 @@ void LMCutHeuristic<GroundTag>::Impl::mark_goal_zone(NumericNode node)
 
     const auto& mapping = get_program().get_rule_to_action_mapping<f::FunctionTag>();
     const auto action_it = mapping.find(witness->get_rule_key());
-    const auto residual = use_expanded_edges() ? (action_it != mapping.end() ? get_witness_edge_residual_cost(*witness) : datalog::Cost(0)) :
-                                                 get_residual_cost(witness->get_rule_key());
+    const auto residual = action_it != mapping.end() ? get_witness_edge_residual_cost(*witness) : datalog::Cost(0);
     if (action_it != mapping.end() && residual > 0)
         return;
 
@@ -452,28 +432,27 @@ bool LMCutHeuristic<GroundTag>::Impl::is_before_goal_zone(Atom atom)
 
     m_not_before_goal_zone.insert(atom);
 
-    auto has_optimal_achiever = false;
+    auto has_achiever = false;
     auto before = false;
     const auto atom_cost = get_atom_cost(atom);
     if (const auto* achievers = m_workspace.and_ap.find_achievers(atom))
     {
         for (const auto& witness : *achievers)
         {
-            if (before || witness.get_cost() != atom_cost)
+            if (before || (use_expanded_edges() && witness.get_cost() != atom_cost))
                 continue;
 
-            has_optimal_achiever = true;
+            has_achiever = true;
             const auto& mapping = get_program().get_rule_to_action_mapping<f::PredicateTag>();
             const auto action_it = mapping.find(witness.get_rule_key());
-            const auto residual = use_expanded_edges() ? (action_it != mapping.end() ? get_witness_edge_residual_cost(witness) : datalog::Cost(0)) :
-                                                         get_residual_cost(witness.get_rule_key());
+            const auto residual = action_it != mapping.end() ? get_witness_edge_residual_cost(witness) : datalog::Cost(0);
             const auto& preconditions = get_witness_max_preconditions(witness, residual);
             before = preconditions.empty() || std::ranges::any_of(preconditions, [&](const auto precondition) { return is_before_goal_zone(precondition); });
             release_witness_max_preconditions();
         }
     }
 
-    if (!has_optimal_achiever)
+    if (!has_achiever)
         before = true;
 
     if (before)
@@ -503,8 +482,7 @@ bool LMCutHeuristic<GroundTag>::Impl::is_before_goal_zone(NumericNode node)
     {
         const auto& mapping = get_program().get_rule_to_action_mapping<f::FunctionTag>();
         const auto action_it = mapping.find(witness->get_rule_key());
-        const auto residual = use_expanded_edges() ? (action_it != mapping.end() ? get_witness_edge_residual_cost(*witness) : datalog::Cost(0)) :
-                                                     get_residual_cost(witness->get_rule_key());
+        const auto residual = action_it != mapping.end() ? get_witness_edge_residual_cost(*witness) : datalog::Cost(0);
         const auto& preconditions = get_witness_max_preconditions(*witness, residual);
         before = preconditions.empty() || std::ranges::any_of(preconditions, [&](const auto precondition) { return is_before_goal_zone(precondition); });
         release_witness_max_preconditions();
@@ -524,7 +502,17 @@ bool LMCutHeuristic<GroundTag>::Impl::is_before_goal_zone(NumericNode node)
     return false;
 }
 
-void LMCutHeuristic<GroundTag>::Impl::extract_cut()
+void LMCutHeuristic<GroundTag>::Impl::append_cut_frontier_atom(Atom atom, CutFrontierAtoms* cut_frontier_atoms) const
+{
+    if (!cut_frontier_atoms)
+        return;
+
+    const auto& mapping = m_definition->rpg_program.get_translation_context().d2p.fluent_to_fluent_atom;
+    if (const auto it = mapping.find(atom); it != mapping.end())
+        cut_frontier_atoms->push_back(it->second);
+}
+
+void LMCutHeuristic<GroundTag>::Impl::extract_cut(CutFrontierAtoms* cut_frontier_atoms)
 {
     m_goal_zone.clear();
     m_numeric_goal_zone.clear();
@@ -558,37 +546,43 @@ void LMCutHeuristic<GroundTag>::Impl::extract_cut()
         }
     }
 
-    auto inspect_witness = [&](const auto& witness)
+    auto inspect_witness = [&](const auto& witness, const Atom* frontier_atom)
     {
         using R = typename std::decay_t<decltype(witness)>::Relation;
         const auto& mapping = get_program().get_rule_to_action_mapping<R>();
         const auto action_it = mapping.find(witness.get_rule_key());
-        if (action_it == mapping.end() || get_residual_cost(action_it->second.get_row()) == 0)
+        if (action_it == mapping.end())
             return;
 
-        const auto& preconditions = get_witness_max_preconditions(witness, get_residual_cost(witness.get_rule_key()));
+        const auto residual = get_witness_edge_residual_cost(witness);
+        if (residual == datalog::Cost(0))
+            return;
+
+        const auto& preconditions = get_witness_max_preconditions(witness, residual);
         const auto crosses_cut =
             preconditions.empty() || std::ranges::any_of(preconditions, [&](const auto precondition) { return is_before_goal_zone(precondition); });
         release_witness_max_preconditions();
         if (crosses_cut)
-            m_cut.insert(action_it->second.get_row());
+        {
+            const auto [it, inserted] = m_cut.emplace(action_it->second.get_row(), residual);
+            if (!inserted)
+                it->second = std::min(it->second, residual);
+            if (frontier_atom)
+                append_cut_frontier_atom(*frontier_atom, cut_frontier_atoms);
+        }
     };
 
     for (const auto atom : m_goal_zone)
-    {
-        const auto atom_cost = get_atom_cost(atom);
         if (const auto* achievers = m_workspace.and_ap.find_achievers(atom))
             for (const auto& witness : *achievers)
-                if (witness.get_cost() == atom_cost)
-                    inspect_witness(witness);
-    }
+                inspect_witness(witness, &atom);
 
     for (const auto& node : m_numeric_goal_zone)
         if (const auto* witness = get_numeric_witness(node); witness && witness->get_cost() == get_numeric_cost(node))
-            inspect_witness(*witness);
+            inspect_witness(*witness, nullptr);
 }
 
-void LMCutHeuristic<GroundTag>::Impl::extract_expanded_cut()
+void LMCutHeuristic<GroundTag>::Impl::extract_expanded_cut(CutFrontierAtoms* cut_frontier_atoms)
 {
     m_goal_zone.clear();
     m_numeric_goal_zone.clear();
@@ -623,7 +617,7 @@ void LMCutHeuristic<GroundTag>::Impl::extract_expanded_cut()
         }
     }
 
-    auto inspect_rule_witness = [&](const auto& witness)
+    auto inspect_rule_witness = [&](const auto& witness, Atom frontier_atom)
     {
         using R = typename std::decay_t<decltype(witness)>::Relation;
         const auto& mapping = get_program().get_rule_to_action_mapping<R>();
@@ -643,6 +637,7 @@ void LMCutHeuristic<GroundTag>::Impl::extract_expanded_cut()
             const auto [it, inserted] = m_rule_cut.emplace(edge, residual);
             if (!inserted)
                 it->second = std::min(it->second, residual);
+            append_cut_frontier_atom(frontier_atom, cut_frontier_atoms);
         }
     };
 
@@ -675,7 +670,7 @@ void LMCutHeuristic<GroundTag>::Impl::extract_expanded_cut()
         if (const auto* achievers = m_workspace.and_ap.find_achievers(atom))
             for (const auto& witness : *achievers)
                 if (witness.get_cost() == atom_cost)
-                    inspect_rule_witness(witness);
+                    inspect_rule_witness(witness, atom);
     }
 
     for (const auto& node : m_numeric_goal_zone)

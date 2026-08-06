@@ -266,7 +266,7 @@ public:
 
         if (engine.m_execution.is_generated_goal(engine, worker, routed_successor, successor_state))
         {
-            worker.statistics.increment_num_generated();
+            worker.statistics.increment_num_accepted_successors();
             set_parent(successor_search_node, routed_successor.metadata.parent);
             successor_search_node.g_value = g_value;
 
@@ -289,7 +289,7 @@ public:
             return AcceptanceResult::DISCARDED;
         }
 
-        worker.statistics.increment_num_generated();
+        worker.statistics.increment_num_accepted_successors();
         set_parent(successor_search_node, routed_successor.metadata.parent);
         successor_search_node.g_value = g_value;
 

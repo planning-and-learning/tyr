@@ -95,10 +95,10 @@ void DefaultEventHandler<Kind>::on_finish_layer(ygg::uint_t layer, const tyr::pl
         return;
     auto out = std::osyncstream(std::cout);
     fmt::print(out,
-               "[BRFS] Finished layer: {} with num expanded states {} and num generated states {} ({} ms)\n",
+               "[BRFS] Finished layer: {} with num expanded states {} and num accepted successors {} ({} ms)\n",
                layer,
                statistics.get_num_expanded(),
-               statistics.get_num_generated(),
+               statistics.get_num_accepted_successors(),
                ygg::to_ms(statistics.get_current_search_time()));
 }
 

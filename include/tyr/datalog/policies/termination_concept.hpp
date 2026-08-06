@@ -39,6 +39,7 @@ concept TerminationPolicyConcept = TaskKind<Kind>
                                                const NumericSupportSelector<Kind>& numeric_support_selector) {
                                           { p.set_goals(goals) } -> std::same_as<void>;
                                           { cp.check(fact_sets) } -> std::same_as<bool>;
+                                          { cp.should_terminate(fact_sets) } -> std::same_as<bool>;
                                           { cp.get_total_cost(fact_sets, and_annot, numeric_and_annot, numeric_support_selector) } -> std::same_as<Cost>;
                                           { p.reset() } -> std::same_as<void>;
                                           { p.clear() } -> std::same_as<void>;

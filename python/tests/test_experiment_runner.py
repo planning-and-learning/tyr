@@ -176,6 +176,7 @@ def test_search_parser_reads_parallel_statistics(tmp_path):
         """[INPUT] Num worker threads: 1
 [INPUT] Num search workers: 2
 [INPUT] State repository mode: shared
+[INPUT] Distribution hash mode: lmcut
 [INPUT] Parallel search mode: synchronous
 [GBFS] Start node h_value: 3.5
 [GBFS] Plan cost: 1.25e+1
@@ -184,11 +185,11 @@ def test_search_parser_reads_parallel_statistics(tmp_path):
 [Search] Idle worker time: 75 ms (75000000 ns)
 [Search] Worker utilization: 0.8125
 [Search] Number of expanded states: 40
-[Search] Number of generated states: 70
+[Search] Number of accepted successors: 70
 [Search] Number of dead-end states: 2
 [Search] Number of pruned states: 5
-[Search] Number of routed successors: 100
-[Search] Number of remotely routed successors: 40
+[Search] Number of generated successors: 100
+[Search] Number of transferred successors: 40
 [Search] Communication overhead: 0.4
 [Search] Number of registered states: 65
 [Search] State storage memory usage: 1000 bytes
@@ -196,12 +197,12 @@ def test_search_parser_reads_parallel_statistics(tmp_path):
 [Search] Predicate bindings memory usage: 102 bytes
 [Search] Axiom bindings memory usage: 103 bytes
 [Search] Function bindings memory usage: 104 bytes
-[Search] Worker 0: idle=25000000 ns, expanded=25, generated=40, deadends=1, pruned=2, registered=35, state_storage=600 bytes
-[Search] Worker 1: idle=50000000 ns, expanded=15, generated=30, deadends=1, pruned=3, registered=30, state_storage=400 bytes
-[Search] Worker 0 communication: routed=60, remote=10
-[Search] Worker 1 communication: routed=40, remote=30
+[Search] Worker 0: idle=25000000 ns, expanded=25, accepted=40, deadends=1, pruned=2, registered=35, state_storage=600 bytes
+[Search] Worker 1: idle=50000000 ns, expanded=15, accepted=30, deadends=1, pruned=3, registered=30, state_storage=400 bytes
+[Search] Worker 0 communication: generated=60, transferred=10
+[Search] Worker 1 communication: generated=40, transferred=30
 [Search] Number of expanded states at last snapshot: 39
-[Search] Number of generated states at last snapshot: 69
+[Search] Number of accepted successors at last snapshot: 69
 [Search] Number of deadend states at last snapshot: 1
 [Search] Number of pruned states at last snapshot: 4
 [Total] Retained plan states memory usage: 200 bytes
@@ -218,26 +219,30 @@ def test_search_parser_reads_parallel_statistics(tmp_path):
     assert props["initial_h_value"] == 3.5
     assert props["num_search_workers"] == 2
     assert props["state_repository_mode"] == "shared"
+    assert props["dist_hash_mode"] == "lmcut"
     assert props["parallel_search_mode"] == "synchronous"
     assert props["idle_time_ns"] == 75_000_000
     assert props["idle_time_s"] == 0.075
     assert props["worker_utilization"] == 0.8125
+    assert props["num_accepted_successors"] == 70
     assert props["num_deadends"] == 2
     assert props["num_pruned"] == 5
-    assert props["num_routed_successors"] == 100
-    assert props["num_remote_routed_successors"] == 40
+    assert props["num_generated_successors"] == 100
+    assert props["num_transferred_successors"] == 40
     assert props["communication_overhead"] == 0.4
     assert props["num_registered_states"] == 65
     assert props["search_state_storage_memory_usage_bytes"] == 1000
     assert props["search_function_bindings_memory_usage_bytes"] == 104
     assert props["worker_idle_time_ns"] == [25_000_000, 50_000_000]
     assert props["worker_num_expanded"] == [25, 15]
+    assert props["worker_num_accepted_successors"] == [40, 30]
     assert props["worker_num_registered_states"] == [35, 30]
     assert props["worker_state_storage_memory_usage_bytes"] == [600, 400]
     assert props["worker_utilizations"] == [0.75, 0.5]
-    assert props["worker_num_routed_successors"] == [60, 40]
-    assert props["worker_num_remote_routed_successors"] == [10, 30]
+    assert props["worker_num_generated_successors"] == [60, 40]
+    assert props["worker_num_transferred_successors"] == [10, 30]
     assert props["worker_communication_overheads"] == pytest.approx([1 / 6, 0.75])
+    assert props["num_accepted_successors_until_last_snapshot"] == 69
     assert props["num_deadends_until_last_snapshot"] == 1
     assert props["num_pruned_until_last_snapshot"] == 4
     assert props["retained_plan_states_memory_usage_bytes"] == 200
@@ -246,7 +251,7 @@ def test_search_parser_reads_parallel_statistics(tmp_path):
 def test_search_parser_rejects_incomplete_worker_statistics(tmp_path):
     (tmp_path / "run.log").write_text(
         """[INPUT] Num search workers: 2
-[Search] Worker 0: idle=0 ns, expanded=1, generated=2, deadends=0, pruned=0, registered=2, state_storage=100 bytes
+[Search] Worker 0: idle=0 ns, expanded=1, accepted=2, deadends=0, pruned=0, registered=2, state_storage=100 bytes
 """,
         encoding="utf-8",
     )
@@ -274,11 +279,11 @@ def test_search_parser_rejects_missing_worker_statistics(tmp_path):
 def test_search_parser_rejects_mismatched_communication_statistics(tmp_path):
     (tmp_path / "run.log").write_text(
         """[INPUT] Num search workers: 2
-[Search] Number of routed successors: 10
-[Search] Number of remotely routed successors: 4
+[Search] Number of generated successors: 10
+[Search] Number of transferred successors: 4
 [Search] Communication overhead: 0.4
-[Search] Worker 0 communication: routed=5, remote=1
-[Search] Worker 1 communication: routed=4, remote=3
+[Search] Worker 0 communication: generated=5, transferred=1
+[Search] Worker 1 communication: generated=4, transferred=3
 """,
         encoding="utf-8",
     )
@@ -286,16 +291,16 @@ def test_search_parser_rejects_mismatched_communication_statistics(tmp_path):
 
     SearchParser().parse(tmp_path, props)
 
-    assert props["unexplained_errors"] == ["Communication aggregate does not match worker values: num_routed_successors"]
+    assert props["unexplained_errors"] == ["Communication aggregate does not match worker values: num_generated_successors"]
 
 
 def test_search_parser_rejects_missing_communication_worker_statistics(tmp_path):
     (tmp_path / "run.log").write_text(
         """[INPUT] Num search workers: 2
-[Search] Number of routed successors: 10
-[Search] Number of remotely routed successors: 4
-[Search] Worker 0: idle=0 ns, expanded=1, generated=2, deadends=0, pruned=0, registered=2, state_storage=100 bytes
-[Search] Worker 1: idle=0 ns, expanded=1, generated=2, deadends=0, pruned=0, registered=2, state_storage=100 bytes
+[Search] Number of generated successors: 10
+[Search] Number of transferred successors: 4
+[Search] Worker 0: idle=0 ns, expanded=1, accepted=2, deadends=0, pruned=0, registered=2, state_storage=100 bytes
+[Search] Worker 1: idle=0 ns, expanded=1, accepted=2, deadends=0, pruned=0, registered=2, state_storage=100 bytes
 """,
         encoding="utf-8",
     )
@@ -309,8 +314,8 @@ def test_search_parser_rejects_missing_communication_worker_statistics(tmp_path)
 def test_search_parser_derives_zero_communication_overhead(tmp_path):
     (tmp_path / "run.log").write_text(
         """[INPUT] Num search workers: 2
-[Search] Worker 0 communication: routed=0, remote=0
-[Search] Worker 1 communication: routed=0, remote=0
+[Search] Worker 0 communication: generated=0, transferred=0
+[Search] Worker 1 communication: generated=0, transferred=0
 """,
         encoding="utf-8",
     )
@@ -318,8 +323,8 @@ def test_search_parser_derives_zero_communication_overhead(tmp_path):
 
     SearchParser().parse(tmp_path, props)
 
-    assert props["num_routed_successors"] == 0
-    assert props["num_remote_routed_successors"] == 0
+    assert props["num_generated_successors"] == 0
+    assert props["num_transferred_successors"] == 0
     assert props["communication_overhead"] == 0
     assert props["worker_communication_overheads"] == [0, 0]
 

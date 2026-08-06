@@ -147,6 +147,8 @@ add_library(
     planning/algorithms/iw.cpp
     planning/algorithms/utils.cpp
 
+    planning/state_routing/dist_hash.cpp
+
     planning/applicability.cpp
     planning/applicability_lifted.cpp
     planning/action_executor.cpp

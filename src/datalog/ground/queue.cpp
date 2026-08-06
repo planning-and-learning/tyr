@@ -816,7 +816,7 @@ bool fire_rule(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundRuleView<f::Predic
         notify_fact_inserted(ctx, head);
     if (is_annotation_improvement(update))
         notify_fact_annotation_improved(ctx, head);
-    return ctx.out().tp().check(FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets });
+    return ctx.out().tp().should_terminate(FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets });
 }
 
 template<OrAnnotationPolicyConcept<GroundTag> OrAP,
@@ -871,7 +871,7 @@ bool commit_numeric_bucket(GroundCtx<OrAP, AndAP, TP, CP>& ctx, PendingNumericBu
     for (const auto term : changed_terms)
         notify_numeric_interval_changed(ctx, term);
 
-    return !changed_terms.empty() && ctx.out().tp().check(FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets });
+    return !changed_terms.empty() && ctx.out().tp().should_terminate(FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets });
 }
 
 template<f::RelationKind R,

@@ -1,0 +1,6 @@
+(define (problem lmcut-state-routing-test)
+  (:domain lmcut-state-routing)
+  (:objects item - token)
+  (:init (start item))
+  (:goal (goal item))
+)

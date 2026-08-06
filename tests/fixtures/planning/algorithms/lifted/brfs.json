@@ -13,7 +13,7 @@
             "domain_file": "classical/tests/airport/domain.pddl",
             "task_file": "classical/tests/airport/test-1.pddl",
             "default": {
-                "num_generated": 18,
+                "num_accepted_successors": 18,
                 "num_expanded": 15,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -38,7 +38,7 @@
             "domain_file": "classical/tests/assembly/domain.pddl",
             "task_file": "classical/tests/assembly/test-1.pddl",
             "default": {
-                "num_generated": 1,
+                "num_accepted_successors": 1,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -56,7 +56,7 @@
             "domain_file": "classical/tests/barman/domain.pddl",
             "task_file": "classical/tests/barman/test-1.pddl",
             "default": {
-                "num_generated": 237,
+                "num_accepted_successors": 237,
                 "num_expanded": 214,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -84,7 +84,7 @@
             "domain_file": "classical/tests/blocks_3/domain.pddl",
             "task_file": "classical/tests/blocks_3/test-1.pddl",
             "default": {
-                "num_generated": 24,
+                "num_accepted_successors": 24,
                 "num_expanded": 20,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -105,7 +105,7 @@
             "domain_file": "classical/tests/blocks_4/domain.pddl",
             "task_file": "classical/tests/blocks_4/test-1.pddl",
             "default": {
-                "num_generated": 10,
+                "num_accepted_successors": 10,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -126,7 +126,7 @@
             "domain_file": "classical/tests/childsnack/domain.pddl",
             "task_file": "classical/tests/childsnack/test-1.pddl",
             "default": {
-                "num_generated": 6,
+                "num_accepted_successors": 6,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -147,7 +147,7 @@
             "domain_file": "classical/tests/delivery/domain.pddl",
             "task_file": "classical/tests/delivery/test-1.pddl",
             "default": {
-                "num_generated": 7,
+                "num_accepted_successors": 7,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -168,7 +168,7 @@
             "domain_file": "classical/tests/driverlog/domain.pddl",
             "task_file": "classical/tests/driverlog/test-1.pddl",
             "default": {
-                "num_generated": 23,
+                "num_accepted_successors": 23,
                 "num_expanded": 23,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -194,7 +194,7 @@
             "domain_file": "classical/tests/ferry/domain.pddl",
             "task_file": "classical/tests/ferry/test-1.pddl",
             "default": {
-                "num_generated": 14,
+                "num_accepted_successors": 14,
                 "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -218,7 +218,7 @@
             "domain_file": "classical/tests/grid/domain.pddl",
             "task_file": "classical/tests/grid/test-1.pddl",
             "default": {
-                "num_generated": 11,
+                "num_accepted_successors": 11,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -239,7 +239,7 @@
             "domain_file": "classical/tests/gripper/domain.pddl",
             "task_file": "classical/tests/gripper/test-1.pddl",
             "default": {
-                "num_generated": 15,
+                "num_accepted_successors": 15,
                 "num_expanded": 11,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -259,7 +259,7 @@
             "domain_file": "classical/tests/hiking/domain.pddl",
             "task_file": "classical/tests/hiking/test-1.pddl",
             "default": {
-                "num_generated": 24,
+                "num_accepted_successors": 24,
                 "num_expanded": 22,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -280,7 +280,7 @@
             "domain_file": "classical/tests/logistics/domain.pddl",
             "task_file": "classical/tests/logistics/test-1.pddl",
             "default": {
-                "num_generated": 8,
+                "num_accepted_successors": 8,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -301,7 +301,7 @@
             "domain_file": "classical/tests/miconic/domain.pddl",
             "task_file": "classical/tests/miconic/test-1.pddl",
             "default": {
-                "num_generated": 14,
+                "num_accepted_successors": 14,
                 "num_expanded": 11,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -323,7 +323,7 @@
             "domain_file": "classical/tests/miconic-fulladl/domain.pddl",
             "task_file": "classical/tests/miconic-fulladl/test-1.pddl",
             "default": {
-                "num_generated": 45,
+                "num_accepted_successors": 45,
                 "num_expanded": 35,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -347,7 +347,7 @@
             "domain_file": "classical/tests/miconic-simpleadl/domain.pddl",
             "task_file": "classical/tests/miconic-simpleadl/test-1.pddl",
             "default": {
-                "num_generated": 4,
+                "num_accepted_successors": 4,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -368,7 +368,7 @@
             "domain_file": "classical/tests/parcprinter/domain.pddl",
             "task_file": "classical/tests/parcprinter/test-1.pddl",
             "default": {
-                "num_generated": 23,
+                "num_accepted_successors": 23,
                 "num_expanded": 18,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -393,7 +393,7 @@
             "domain_file": "classical/tests/pathways/domain.pddl",
             "task_file": "classical/tests/pathways/test-1.pddl",
             "default": {
-                "num_generated": 5151,
+                "num_accepted_successors": 5151,
                 "num_expanded": 4395,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -416,7 +416,7 @@
             "domain_file": "classical/tests/philosophers/domain.pddl",
             "task_file": "classical/tests/philosophers/test-1.pddl",
             "default": {
-                "num_generated": 127,
+                "num_accepted_successors": 127,
                 "num_expanded": 118,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -451,7 +451,7 @@
             "domain_file": "classical/tests/psr-middle/domain.pddl",
             "task_file": "classical/tests/psr-middle/test-1.pddl",
             "default": {
-                "num_generated": 309,
+                "num_accepted_successors": 309,
                 "num_expanded": 62,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -480,7 +480,7 @@
             "domain_file": "classical/tests/reward/domain.pddl",
             "task_file": "classical/tests/reward/test-1.pddl",
             "default": {
-                "num_generated": 8,
+                "num_accepted_successors": 8,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -501,7 +501,7 @@
             "domain_file": "classical/tests/rovers/domain.pddl",
             "task_file": "classical/tests/rovers/test-1.pddl",
             "default": {
-                "num_generated": 14,
+                "num_accepted_successors": 14,
                 "num_expanded": 10,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -522,7 +522,7 @@
             "domain_file": "classical/tests/satellite/domain.pddl",
             "task_file": "classical/tests/satellite/test-1.pddl",
             "default": {
-                "num_generated": 109,
+                "num_accepted_successors": 109,
                 "num_expanded": 49,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -546,7 +546,7 @@
             "domain_file": "classical/tests/schedule/domain.pddl",
             "task_file": "classical/tests/schedule/test-1.pddl",
             "default": {
-                "num_generated": 368,
+                "num_accepted_successors": 368,
                 "num_expanded": 22,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -573,7 +573,7 @@
             "domain_file": "classical/tests/spanner/domain.pddl",
             "task_file": "classical/tests/spanner/test-1.pddl",
             "default": {
-                "num_generated": 5,
+                "num_accepted_successors": 5,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -594,7 +594,7 @@
             "domain_file": "classical/tests/transport/domain.pddl",
             "task_file": "classical/tests/transport/test-1.pddl",
             "default": {
-                "num_generated": 130,
+                "num_accepted_successors": 130,
                 "num_expanded": 83,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -616,7 +616,7 @@
             "domain_file": "classical/tests/visitall/domain.pddl",
             "task_file": "classical/tests/visitall/test-1.pddl",
             "default": {
-                "num_generated": 47,
+                "num_accepted_successors": 47,
                 "num_expanded": 41,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -641,7 +641,7 @@
             "domain_file": "classical/tests/woodworking/domain.pddl",
             "task_file": "classical/tests/woodworking/test-1.pddl",
             "default": {
-                "num_generated": 11057,
+                "num_accepted_successors": 11057,
                 "num_expanded": 7295,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -667,7 +667,7 @@
             "domain_file": "numeric/tests/fo-counters/domain.pddl",
             "task_file": "numeric/tests/fo-counters/test-1.pddl",
             "default": {
-                "num_generated": 252,
+                "num_accepted_successors": 252,
                 "num_expanded": 93,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -689,7 +689,7 @@
             "domain_file": "numeric/tests/refuel/domain.pddl",
             "task_file": "numeric/tests/refuel/test-1.pddl",
             "default": {
-                "num_generated": 5,
+                "num_accepted_successors": 5,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -711,7 +711,7 @@
             "domain_file": "numeric/tests/refuel-adl/domain.pddl",
             "task_file": "numeric/tests/refuel-adl/test-1.pddl",
             "default": {
-                "num_generated": 333,
+                "num_accepted_successors": 333,
                 "num_expanded": 312,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -738,7 +738,7 @@
             "domain_file": "numeric/tests/tpp/domain.pddl",
             "task_file": "numeric/tests/tpp/test-1.pddl",
             "default": {
-                "num_generated": 488,
+                "num_accepted_successors": 488,
                 "num_expanded": 288,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -762,7 +762,7 @@
             "domain_file": "numeric/tests/zenotravel/domain.pddl",
             "task_file": "numeric/tests/zenotravel/test-1.pddl",
             "default": {
-                "num_generated": 1113,
+                "num_accepted_successors": 1113,
                 "num_expanded": 642,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -788,7 +788,7 @@
             "domain_file": "numeric/tests/block-grouping/domain.pddl",
             "task_file": "numeric/tests/block-grouping/test-1.pddl",
             "default": {
-                "num_generated": 25,
+                "num_accepted_successors": 25,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -807,7 +807,7 @@
             "domain_file": "numeric/tests/counters/domain.pddl",
             "task_file": "numeric/tests/counters/test-1.pddl",
             "default": {
-                "num_generated": 3287,
+                "num_accepted_successors": 3287,
                 "num_expanded": 2654,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -836,7 +836,7 @@
             "domain_file": "numeric/tests/delivery/domain.pddl",
             "task_file": "numeric/tests/delivery/test-1.pddl",
             "default": {
-                "num_generated": 549,
+                "num_accepted_successors": 549,
                 "num_expanded": 96,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -856,7 +856,7 @@
             "domain_file": "numeric/tests/drone/domain.pddl",
             "task_file": "numeric/tests/drone/test-1.pddl",
             "default": {
-                "num_generated": 53,
+                "num_accepted_successors": 53,
                 "num_expanded": 24,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -877,7 +877,7 @@
             "domain_file": "numeric/tests/expedition/domain.pddl",
             "task_file": "numeric/tests/expedition/test-1.pddl",
             "default": {
-                "num_generated": 1,
+                "num_accepted_successors": 1,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -895,7 +895,7 @@
             "domain_file": "numeric/tests/ext-plant-watering/domain.pddl",
             "task_file": "numeric/tests/ext-plant-watering/test-1.pddl",
             "default": {
-                "num_generated": 5817,
+                "num_accepted_successors": 5817,
                 "num_expanded": 3474,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -920,7 +920,7 @@
             "domain_file": "numeric/tests/farmland/domain.pddl",
             "task_file": "numeric/tests/farmland/test-1.pddl",
             "default": {
-                "num_generated": 4,
+                "num_accepted_successors": 4,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -939,7 +939,7 @@
             "domain_file": "numeric/tests/fo-farmland/domain.pddl",
             "task_file": "numeric/tests/fo-farmland/test-1.pddl",
             "default": {
-                "num_generated": 5,
+                "num_accepted_successors": 5,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -958,7 +958,7 @@
             "domain_file": "numeric/tests/fo-sailing/domain.pddl",
             "task_file": "numeric/tests/fo-sailing/test-1.pddl",
             "default": {
-                "num_generated": 35,
+                "num_accepted_successors": 35,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -977,7 +977,7 @@
             "domain_file": "numeric/tests/hydropower/domain.pddl",
             "task_file": "numeric/tests/hydropower/test-1.pddl",
             "default": {
-                "num_generated": 6,
+                "num_accepted_successors": 6,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -996,7 +996,7 @@
             "domain_file": "numeric/tests/markettrader/domain.pddl",
             "task_file": "numeric/tests/markettrader/test-1.pddl",
             "default": {
-                "num_generated": 49,
+                "num_accepted_successors": 49,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1015,7 +1015,7 @@
             "domain_file": "numeric/tests/mprime/domain.pddl",
             "task_file": "numeric/tests/mprime/test-1.pddl",
             "default": {
-                "num_generated": 2913,
+                "num_accepted_successors": 2913,
                 "num_expanded": 890,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1036,7 +1036,7 @@
             "domain_file": "numeric/tests/pathwaysmetric/domain.pddl",
             "task_file": "numeric/tests/pathwaysmetric/test-1.pddl",
             "default": {
-                "num_generated": 152,
+                "num_accepted_successors": 152,
                 "num_expanded": 17,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1055,7 +1055,7 @@
             "domain_file": "numeric/tests/rover/domain.pddl",
             "task_file": "numeric/tests/rover/test-1.pddl",
             "default": {
-                "num_generated": 1899,
+                "num_accepted_successors": 1899,
                 "num_expanded": 575,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1077,7 +1077,7 @@
             "domain_file": "numeric/tests/sailing/domain.pddl",
             "task_file": "numeric/tests/sailing/test-1.pddl",
             "default": {
-                "num_generated": 69,
+                "num_accepted_successors": 69,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1096,7 +1096,7 @@
             "domain_file": "numeric/tests/settersnumeric/domain.pddl",
             "task_file": "numeric/tests/settersnumeric/test-1.pddl",
             "default": {
-                "num_generated": 5,
+                "num_accepted_successors": 5,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1115,7 +1115,7 @@
             "domain_file": "numeric/tests/sugar/domain.pddl",
             "task_file": "numeric/tests/sugar/test-1.pddl",
             "default": {
-                "num_generated": 647,
+                "num_accepted_successors": 647,
                 "num_expanded": 128,
                 "num_deadends": 0,
                 "num_pruned": 0,

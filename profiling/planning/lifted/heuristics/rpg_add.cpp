@@ -101,7 +101,7 @@ void benchmark_gbfs_lazy_rpg_add(benchmark::State& state, const BenchmarkCase& b
     auto cost = ygg::float_t(0);
     auto length = std::size_t(0);
     auto num_expanded = uint64_t(0);
-    auto num_generated = uint64_t(0);
+    auto num_accepted_successors = uint64_t(0);
     auto solved = false;
 
     for (auto _ : state)
@@ -121,7 +121,7 @@ void benchmark_gbfs_lazy_rpg_add(benchmark::State& state, const BenchmarkCase& b
         }
 
         num_expanded = result.statistics.get_num_expanded();
-        num_generated = result.statistics.get_num_generated();
+        num_accepted_successors = result.statistics.get_num_accepted_successors();
         solved = result.status == p::SearchStatus::SOLVED;
         cost = result.plan ? result.plan->get_cost() : ygg::float_t(0);
         length = result.plan ? result.plan->get_length() : std::size_t(0);
@@ -131,7 +131,7 @@ void benchmark_gbfs_lazy_rpg_add(benchmark::State& state, const BenchmarkCase& b
         benchmark::DoNotOptimize(cost);
         benchmark::DoNotOptimize(length);
         benchmark::DoNotOptimize(num_expanded);
-        benchmark::DoNotOptimize(num_generated);
+        benchmark::DoNotOptimize(num_accepted_successors);
         benchmark::DoNotOptimize(solved);
     }
 
@@ -139,7 +139,7 @@ void benchmark_gbfs_lazy_rpg_add(benchmark::State& state, const BenchmarkCase& b
     state.counters["cost"] = benchmark::Counter(static_cast<double>(cost));
     state.counters["length"] = benchmark::Counter(static_cast<double>(length));
     state.counters["num_expanded"] = benchmark::Counter(static_cast<double>(num_expanded));
-    state.counters["num_generated"] = benchmark::Counter(static_cast<double>(num_generated));
+    state.counters["num_accepted_successors"] = benchmark::Counter(static_cast<double>(num_accepted_successors));
     state.counters["solved"] = benchmark::Counter(solved ? 1.0 : 0.0);
 }
 }

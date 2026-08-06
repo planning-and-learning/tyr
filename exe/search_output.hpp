@@ -59,20 +59,20 @@ void print_search_statistics(const planning::SearchResult<Kind>& result)
     {
         const auto& worker = result.worker_statistics[i];
         fmt::print(std::cout,
-                   "[Search] Worker {}: idle={} ns, expanded={}, generated={}, deadends={}, pruned={}, registered={}, state_storage={} bytes\n",
+                   "[Search] Worker {}: idle={} ns, expanded={}, accepted={}, deadends={}, pruned={}, registered={}, state_storage={} bytes\n",
                    i,
                    ygg::to_ns(worker.get_idle_time()),
                    worker.get_num_expanded(),
-                   worker.get_num_generated(),
+                   worker.get_num_accepted_successors(),
                    worker.get_num_deadends(),
                    worker.get_num_pruned(),
                    worker.get_num_registered_states(),
                    worker.get_state_storage_memory_usage());
         fmt::print(std::cout,
-                   "[Search] Worker {} communication: routed={}, remote={}\n",
+                   "[Search] Worker {} communication: generated={}, transferred={}\n",
                    i,
-                   worker.get_num_routed_successors(),
-                   worker.get_num_remote_routed_successors());
+                   worker.get_num_generated_successors(),
+                   worker.get_num_transferred_successors());
         fmt::print(std::cout,
                    "[Search] Worker {} destination lock: acquisitions={}, wait={} ns, hold={} ns\n",
                    i,

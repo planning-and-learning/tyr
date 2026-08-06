@@ -39,6 +39,10 @@ int main(int argc, char** argv)
         .default_value(std::string("hash-distributed"))
         .choices("hash-distributed", "shared")
         .help("The state repository mode used by parallel search.");
+    program.add_argument("--dist-hash-mode")
+        .default_value(std::string("lmcut"))
+        .choices("random", "lmcut")
+        .help("The state hash used by hash-distributed parallel search.");
     program.add_argument("--collect-destination-lock-statistics")
         .default_value(false)
         .implicit_value(true)
@@ -85,6 +89,8 @@ int main(int argc, char** argv)
         auto state_repository_mode_name = program.get<std::string>("--state-repository-mode");
         auto state_repository_mode =
             state_repository_mode_name == "hash-distributed" ? planning::StateRepositoryMode::HASH_DISTRIBUTED : planning::StateRepositoryMode::SHARED;
+        auto dist_hash_mode_name = program.get<std::string>("--dist-hash-mode");
+        auto dist_hash_mode = dist_hash_mode_name == "random" ? planning::DistHashMode::RANDOM : planning::DistHashMode::LMCUT;
         auto collect_destination_lock_statistics = program.get<bool>("--collect-destination-lock-statistics");
         auto random_seed = program.get<uint64_t>("--random-seed");
         auto shuffle_labeled_succ_nodes = program.get<bool>("--shuffle-labeled-succ-nodes");
@@ -111,6 +117,7 @@ int main(int argc, char** argv)
         std::cout << "[INPUT] Num worker threads: " << num_worker_threads << std::endl;
         std::cout << "[INPUT] Num search workers: " << num_search_workers << std::endl;
         std::cout << "[INPUT] State repository mode: " << state_repository_mode_name << std::endl;
+        std::cout << "[INPUT] Distribution hash mode: " << dist_hash_mode_name << std::endl;
         std::cout << "[INPUT] Collect destination lock statistics: " << collect_destination_lock_statistics << std::endl;
         std::cout << "[INPUT] Random seed: " << random_seed << std::endl;
         std::cout << "[INPUT] Shuffle labeled successor nodes: " << shuffle_labeled_succ_nodes << std::endl;
@@ -144,6 +151,7 @@ int main(int argc, char** argv)
             options.random_seed = random_seed;
             options.num_search_workers = num_search_workers;
             options.state_repository_mode = state_repository_mode;
+            options.dist_hash_mode = dist_hash_mode;
             options.collect_destination_lock_statistics = collect_destination_lock_statistics;
             options.use_preferred_actions = !disable_preferred_actions;
             options.shuffle_labeled_succ_nodes = shuffle_labeled_succ_nodes;
@@ -217,6 +225,7 @@ int main(int argc, char** argv)
                 options.random_seed = random_seed;
                 options.num_search_workers = num_search_workers;
                 options.state_repository_mode = state_repository_mode;
+                options.dist_hash_mode = dist_hash_mode;
                 options.collect_destination_lock_statistics = collect_destination_lock_statistics;
                 options.use_preferred_actions = !disable_preferred_actions;
                 options.shuffle_labeled_succ_nodes = shuffle_labeled_succ_nodes;

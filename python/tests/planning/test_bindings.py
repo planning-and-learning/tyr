@@ -45,12 +45,12 @@ def test_planning_modules_export_expected_algorithm_submodules():
 def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
     statistics = planning.Statistics()
 
-    assert statistics.get_num_generated() == 0
+    assert statistics.get_num_accepted_successors() == 0
     assert statistics.get_num_expanded() == 0
     assert statistics.get_num_deadends() == 0
     assert statistics.get_num_pruned() == 0
-    assert statistics.get_num_routed_successors() == 0
-    assert statistics.get_num_remote_routed_successors() == 0
+    assert statistics.get_num_generated_successors() == 0
+    assert statistics.get_num_transferred_successors() == 0
     assert statistics.get_communication_overhead() == 0
     assert statistics.get_num_registered_states() == 0
     assert statistics.get_idle_time() == timedelta(0)
@@ -65,26 +65,26 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
         "get_function_bindings_memory_usage",
     ):
         assert getattr(statistics, getter)() == 0
-    statistics.increment_num_generated()
+    statistics.increment_num_accepted_successors()
     statistics.increment_num_expanded()
     statistics.increment_num_deadends()
     statistics.increment_num_pruned()
-    statistics.increment_num_routed_successors(False)
-    statistics.increment_num_routed_successors(True)
-    assert statistics.get_num_generated() == 1
+    statistics.increment_num_generated_successors(False)
+    statistics.increment_num_generated_successors(True)
+    assert statistics.get_num_accepted_successors() == 1
     assert statistics.get_num_expanded() == 1
     assert statistics.get_num_deadends() == 1
     assert statistics.get_num_pruned() == 1
-    assert statistics.get_num_routed_successors() == 2
-    assert statistics.get_num_remote_routed_successors() == 1
+    assert statistics.get_num_generated_successors() == 2
+    assert statistics.get_num_transferred_successors() == 1
     assert statistics.get_communication_overhead() == 0.5
     statistics.clear()
-    assert statistics.get_num_generated() == 0
+    assert statistics.get_num_accepted_successors() == 0
     assert statistics.get_num_expanded() == 0
     assert statistics.get_num_deadends() == 0
     assert statistics.get_num_pruned() == 0
-    assert statistics.get_num_routed_successors() == 0
-    assert statistics.get_num_remote_routed_successors() == 0
+    assert statistics.get_num_generated_successors() == 0
+    assert statistics.get_num_transferred_successors() == 0
     assert statistics.get_communication_overhead() == 0
     assert repr(statistics) == str(statistics)
     for label in (
@@ -94,8 +94,8 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
         "Predicate bindings memory usage",
         "Axiom bindings memory usage",
         "Function bindings memory usage",
-        "Number of routed successors",
-        "Number of remotely routed successors",
+        "Number of generated successors",
+        "Number of transferred successors",
         "Communication overhead",
         "Destination lock acquisitions",
         "Destination lock wait time",
@@ -105,7 +105,7 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
 
     snapshot = planning.ProgressStatisticsSnapshot(1, 2, 3, 4)
 
-    assert snapshot.get_num_generated() == 1
+    assert snapshot.get_num_accepted_successors() == 1
     assert snapshot.get_num_expanded() == 2
     assert snapshot.get_num_deadends() == 3
     assert snapshot.get_num_pruned() == 4
@@ -122,8 +122,8 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
     assert len(progress_statistics.get_snapshots()) == 2
     assert progress_statistics.size() == 2
     assert not progress_statistics.empty()
-    assert progress_statistics.get_snapshots()[0].get_num_generated() == 0
-    assert progress_statistics.get_snapshots()[1].get_num_generated() == 0
+    assert progress_statistics.get_snapshots()[0].get_num_accepted_successors() == 0
+    assert progress_statistics.get_snapshots()[1].get_num_accepted_successors() == 0
     progress_statistics.clear()
     assert progress_statistics.get_snapshots() == []
     assert progress_statistics.empty()
@@ -132,7 +132,7 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
     progress_statistics = planning.ProgressStatistics()
     progress_statistics.add_snapshot(statistics)
     assert len(progress_statistics.get_snapshots()) == 1
-    assert progress_statistics.get_snapshots()[0].get_num_generated() == 0
+    assert progress_statistics.get_snapshots()[0].get_num_accepted_successors() == 0
     assert repr(progress_statistics) == str(progress_statistics)
     assert "deadend" in str(progress_statistics)
 
@@ -258,34 +258,34 @@ def test_search_result_exposes_all_result_fields():
         assert result.cycle_range is None
         assert isinstance(result.statistics, planning.Statistics)
         assert result.worker_statistics == []
-        assert result.statistics.get_num_generated() == 0
+        assert result.statistics.get_num_accepted_successors() == 0
 
         result.status = planning.SearchStatus.CYCLE
         result.cycle_range = (1, 3)
-        result.statistics.increment_num_generated()
+        result.statistics.increment_num_accepted_successors()
 
         assert result.status == planning.SearchStatus.CYCLE
         assert result.cycle_range == (1, 3)
-        assert result.statistics.get_num_generated() == 1
+        assert result.statistics.get_num_accepted_successors() == 1
 
 
 def _assert_worker_statistics(result, num_workers: int):
     assert len(result.worker_statistics) == num_workers
     for getter in (
-        "get_num_generated",
+        "get_num_accepted_successors",
         "get_num_expanded",
         "get_num_deadends",
         "get_num_pruned",
-        "get_num_routed_successors",
-        "get_num_remote_routed_successors",
+        "get_num_generated_successors",
+        "get_num_transferred_successors",
         "get_num_registered_states",
         "get_state_storage_memory_usage",
     ):
         worker_total = sum(getattr(worker, getter)() for worker in result.worker_statistics)
         assert worker_total == getattr(result.statistics, getter)()
     assert result.statistics.get_communication_overhead() == (
-        result.statistics.get_num_remote_routed_successors() / result.statistics.get_num_routed_successors()
-        if result.statistics.get_num_routed_successors()
+        result.statistics.get_num_transferred_successors() / result.statistics.get_num_generated_successors()
+        if result.statistics.get_num_generated_successors()
         else 0
     )
     worker_idle_time = sum(
@@ -323,6 +323,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "cost_mode": planning.CostMode.GENERAL,
             "num_search_workers": 1,
             "state_repository_mode": planning.StateRepositoryMode.HASH_DISTRIBUTED,
+            "dist_hash_mode": planning.DistHashMode.LMCUT,
             "parallel_search_mode": planning.ParallelSearchMode.SYNCHRONOUS,
             "collect_destination_lock_statistics": False,
             "random_seed": 0,
@@ -337,6 +338,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "max_time": None,
             "num_search_workers": 1,
             "state_repository_mode": planning.StateRepositoryMode.HASH_DISTRIBUTED,
+            "dist_hash_mode": planning.DistHashMode.LMCUT,
             "collect_destination_lock_statistics": False,
             "random_seed": 0,
             "shuffle_labeled_succ_nodes": False,
@@ -353,6 +355,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "boost_preferred_queue": 1000,
             "num_search_workers": 1,
             "state_repository_mode": planning.StateRepositoryMode.HASH_DISTRIBUTED,
+            "dist_hash_mode": planning.DistHashMode.LMCUT,
             "collect_destination_lock_statistics": False,
             "random_seed": 0,
             "shuffle_labeled_succ_nodes": False,
@@ -386,6 +389,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "cost_mode",
             "num_search_workers",
             "state_repository_mode",
+            "dist_hash_mode",
             "parallel_search_mode",
             "collect_destination_lock_statistics",
             "random_seed",
@@ -400,6 +404,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "max_time",
             "num_search_workers",
             "state_repository_mode",
+            "dist_hash_mode",
             "collect_destination_lock_statistics",
             "random_seed",
             "shuffle_labeled_succ_nodes",
@@ -416,6 +421,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "boost_preferred_queue",
             "num_search_workers",
             "state_repository_mode",
+            "dist_hash_mode",
             "collect_destination_lock_statistics",
             "random_seed",
             "shuffle_labeled_succ_nodes",
@@ -789,6 +795,21 @@ def test_state_repository_mode_is_bound():
         siw_solver.iw_solver.brfs_solver.options.state_repository_mode = planning.StateRepositoryMode.SHARED
         assert siw_solver.iw_solver.brfs_solver.options.num_search_workers == 2
         assert siw_solver.iw_solver.brfs_solver.options.state_repository_mode == planning.StateRepositoryMode.SHARED
+
+
+def test_dist_hash_mode_is_bound():
+    assert planning.DistHashMode.RANDOM != planning.DistHashMode.LMCUT
+
+    for task_module in (planning.ground, planning.lifted):
+        for algorithm_module in (
+            task_module.astar_eager,
+            task_module.brfs,
+            task_module.gbfs_lazy,
+        ):
+            options = algorithm_module.Options()
+            assert options.dist_hash_mode == planning.DistHashMode.LMCUT
+            options.dist_hash_mode = planning.DistHashMode.RANDOM
+            assert options.dist_hash_mode == planning.DistHashMode.RANDOM
 
 
 def test_ground_task_instantiation_result_default_is_explicit_failure():

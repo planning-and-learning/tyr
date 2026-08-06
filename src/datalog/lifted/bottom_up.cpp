@@ -821,7 +821,7 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP, CP>& c
     while (true)
     {
         // Facts are committed in cost order, so the goal cost is proven minimal once the goal holds.
-        if (program_out.tp().check(FactSets { ctx.in().program().facts().fact_sets, program_out.facts().fact_sets }))
+        if (program_out.tp().should_terminate(FactSets { ctx.in().program().facts().fact_sets, program_out.facts().fact_sets }))
             return;
 
         scheduler.on_start_iteration();

@@ -85,7 +85,7 @@ SEARCH_STATUS_NAMES = {
 
 
 class ConfigStatistics(TypedDict):
-    num_generated: int
+    num_accepted_successors: int
     num_expanded: int
     num_deadends: int
     num_pruned: int
@@ -185,7 +185,7 @@ def make_heuristic(context: Context, name: HeuristicName, cost_suffix: CostSuffi
 
 def counters_of(statistics: Statistics) -> ConfigStatistics:
     return ConfigStatistics(
-        num_generated=statistics.get_num_generated(),
+        num_accepted_successors=statistics.get_num_accepted_successors(),
         num_expanded=statistics.get_num_expanded(),
         num_deadends=statistics.get_num_deadends(),
         num_pruned=statistics.get_num_pruned(),

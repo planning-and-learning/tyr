@@ -43,6 +43,12 @@ enum class StateRepositoryMode : uint8_t
     SHARED,
 };
 
+enum class DistHashMode : uint8_t
+{
+    RANDOM,
+    LMCUT,
+};
+
 enum class SearchStatus
 {
     IN_PROGRESS,

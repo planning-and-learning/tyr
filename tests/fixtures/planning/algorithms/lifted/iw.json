@@ -67,7 +67,7 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 459,
+                "num_accepted_successors": 459,
                 "num_expanded": 459,
                 "num_deadends": 0,
                 "num_pruned": 1203
@@ -94,7 +94,7 @@
                     ]
                 },
                 "solution_arity": 1,
-                "num_generated": 20,
+                "num_accepted_successors": 20,
                 "num_expanded": 18,
                 "num_deadends": 0,
                 "num_pruned": 2
@@ -114,7 +114,7 @@
                     ]
                 },
                 "solution_arity": 0,
-                "num_generated": 1,
+                "num_accepted_successors": 1,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0
@@ -126,7 +126,7 @@
             "task_file": "classical/tests/barman/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 56,
+                "num_accepted_successors": 56,
                 "num_expanded": 59,
                 "num_deadends": 0,
                 "num_pruned": 77
@@ -149,7 +149,7 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 32,
+                "num_accepted_successors": 32,
                 "num_expanded": 30,
                 "num_deadends": 0,
                 "num_pruned": 11
@@ -172,7 +172,7 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 20,
+                "num_accepted_successors": 20,
                 "num_expanded": 19,
                 "num_deadends": 0,
                 "num_pruned": 7
@@ -195,7 +195,7 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 11,
+                "num_accepted_successors": 11,
                 "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 4
@@ -218,7 +218,7 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 13,
+                "num_accepted_successors": 13,
                 "num_expanded": 14,
                 "num_deadends": 0,
                 "num_pruned": 4
@@ -230,7 +230,7 @@
             "task_file": "classical/tests/driverlog/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 24,
+                "num_accepted_successors": 24,
                 "num_expanded": 27,
                 "num_deadends": 0,
                 "num_pruned": 9
@@ -242,7 +242,7 @@
             "task_file": "classical/tests/ferry/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 17,
+                "num_accepted_successors": 17,
                 "num_expanded": 20,
                 "num_deadends": 0,
                 "num_pruned": 6
@@ -265,7 +265,7 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 17,
+                "num_accepted_successors": 17,
                 "num_expanded": 15,
                 "num_deadends": 0,
                 "num_pruned": 4
@@ -287,7 +287,7 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 23,
+                "num_accepted_successors": 23,
                 "num_expanded": 23,
                 "num_deadends": 0,
                 "num_pruned": 14
@@ -299,7 +299,7 @@
             "task_file": "classical/tests/hiking/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 23,
+                "num_accepted_successors": 23,
                 "num_expanded": 26,
                 "num_deadends": 0,
                 "num_pruned": 25
@@ -322,7 +322,7 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 15,
+                "num_accepted_successors": 15,
                 "num_expanded": 17,
                 "num_deadends": 0,
                 "num_pruned": 6
@@ -334,7 +334,7 @@
             "task_file": "classical/tests/miconic/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 18,
+                "num_accepted_successors": 18,
                 "num_expanded": 21,
                 "num_deadends": 0,
                 "num_pruned": 9
@@ -360,7 +360,7 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 36,
+                "num_accepted_successors": 36,
                 "num_expanded": 35,
                 "num_deadends": 0,
                 "num_pruned": 18
@@ -383,7 +383,7 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 7,
+                "num_accepted_successors": 7,
                 "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 2
@@ -410,7 +410,7 @@
                     ]
                 },
                 "solution_arity": 1,
-                "num_generated": 18,
+                "num_accepted_successors": 18,
                 "num_expanded": 17,
                 "num_deadends": 0,
                 "num_pruned": 4
@@ -435,7 +435,7 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 725,
+                "num_accepted_successors": 725,
                 "num_expanded": 605,
                 "num_deadends": 0,
                 "num_pruned": 4433
@@ -447,7 +447,7 @@
             "task_file": "classical/tests/philosophers/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 142,
+                "num_accepted_successors": 142,
                 "num_expanded": 145,
                 "num_deadends": 0,
                 "num_pruned": 40
@@ -459,7 +459,7 @@
             "task_file": "classical/tests/psr-middle/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 1,
+                "num_accepted_successors": 1,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 14
@@ -471,7 +471,7 @@
             "task_file": "classical/tests/pushworld/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 779,
+                "num_accepted_successors": 779,
                 "num_expanded": 782,
                 "num_deadends": 0,
                 "num_pruned": 378
@@ -494,7 +494,7 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 13,
+                "num_accepted_successors": 13,
                 "num_expanded": 14,
                 "num_deadends": 0,
                 "num_pruned": 5
@@ -517,7 +517,7 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 18,
+                "num_accepted_successors": 18,
                 "num_expanded": 18,
                 "num_deadends": 0,
                 "num_pruned": 10
@@ -543,7 +543,7 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 54,
+                "num_accepted_successors": 54,
                 "num_expanded": 46,
                 "num_deadends": 0,
                 "num_pruned": 52
@@ -564,7 +564,7 @@
                     ]
                 },
                 "solution_arity": 0,
-                "num_generated": 45,
+                "num_accepted_successors": 45,
                 "num_expanded": 22,
                 "num_deadends": 0,
                 "num_pruned": 323
@@ -576,7 +576,7 @@
             "task_file": "classical/tests/sokoban/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 9163,
+                "num_accepted_successors": 9163,
                 "num_expanded": 9166,
                 "num_deadends": 0,
                 "num_pruned": 5871
@@ -599,7 +599,7 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 9,
+                "num_accepted_successors": 9,
                 "num_expanded": 11,
                 "num_deadends": 0,
                 "num_pruned": 3
@@ -623,7 +623,7 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 82,
+                "num_accepted_successors": 82,
                 "num_expanded": 71,
                 "num_deadends": 0,
                 "num_pruned": 93
@@ -650,7 +650,7 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 41,
+                "num_accepted_successors": 41,
                 "num_expanded": 41,
                 "num_deadends": 0,
                 "num_pruned": 21
@@ -662,7 +662,7 @@
             "task_file": "classical/tests/woodworking/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 265,
+                "num_accepted_successors": 265,
                 "num_expanded": 268,
                 "num_deadends": 0,
                 "num_pruned": 1015
@@ -674,7 +674,7 @@
             "task_file": "numeric/tests/fo-counters/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 3,
+                "num_accepted_successors": 3,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 9
@@ -686,7 +686,7 @@
             "task_file": "numeric/tests/refuel/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 1,
+                "num_accepted_successors": 1,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 1
@@ -698,7 +698,7 @@
             "task_file": "numeric/tests/refuel-adl/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 10,
+                "num_accepted_successors": 10,
                 "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 42
@@ -710,7 +710,7 @@
             "task_file": "numeric/tests/tpp/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 15,
+                "num_accepted_successors": 15,
                 "num_expanded": 18,
                 "num_deadends": 0,
                 "num_pruned": 21
@@ -722,7 +722,7 @@
             "task_file": "numeric/tests/zenotravel/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 28,
+                "num_accepted_successors": 28,
                 "num_expanded": 31,
                 "num_deadends": 0,
                 "num_pruned": 44
@@ -743,7 +743,7 @@
                     ]
                 },
                 "solution_arity": 0,
-                "num_generated": 20,
+                "num_accepted_successors": 20,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 5
@@ -755,7 +755,7 @@
             "task_file": "numeric/tests/counters/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 7,
+                "num_accepted_successors": 7,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 25
@@ -777,7 +777,7 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 293,
+                "num_accepted_successors": 293,
                 "num_expanded": 144,
                 "num_deadends": 0,
                 "num_pruned": 739
@@ -789,7 +789,7 @@
             "task_file": "numeric/tests/drone/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 4,
+                "num_accepted_successors": 4,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 11
@@ -809,7 +809,7 @@
                     ]
                 },
                 "solution_arity": 0,
-                "num_generated": 1,
+                "num_accepted_successors": 1,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0
@@ -821,7 +821,7 @@
             "task_file": "numeric/tests/ext-plant-watering/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 16,
+                "num_accepted_successors": 16,
                 "num_expanded": 17,
                 "num_deadends": 0,
                 "num_pruned": 96
@@ -842,7 +842,7 @@
                     ]
                 },
                 "solution_arity": 0,
-                "num_generated": 4,
+                "num_accepted_successors": 4,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0
@@ -863,7 +863,7 @@
                     ]
                 },
                 "solution_arity": 0,
-                "num_generated": 4,
+                "num_accepted_successors": 4,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 1
@@ -884,7 +884,7 @@
                     ]
                 },
                 "solution_arity": 0,
-                "num_generated": 9,
+                "num_accepted_successors": 9,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 26
@@ -905,7 +905,7 @@
                     ]
                 },
                 "solution_arity": 0,
-                "num_generated": 3,
+                "num_accepted_successors": 3,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 3
@@ -926,7 +926,7 @@
                     ]
                 },
                 "solution_arity": 0,
-                "num_generated": 13,
+                "num_accepted_successors": 13,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 36
@@ -949,7 +949,7 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 74,
+                "num_accepted_successors": 74,
                 "num_expanded": 61,
                 "num_deadends": 0,
                 "num_pruned": 881
@@ -970,7 +970,7 @@
                     ]
                 },
                 "solution_arity": 0,
-                "num_generated": 17,
+                "num_accepted_successors": 17,
                 "num_expanded": 17,
                 "num_deadends": 0,
                 "num_pruned": 135
@@ -994,7 +994,7 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated": 237,
+                "num_accepted_successors": 237,
                 "num_expanded": 196,
                 "num_deadends": 0,
                 "num_pruned": 797
@@ -1015,7 +1015,7 @@
                     ]
                 },
                 "solution_arity": 0,
-                "num_generated": 15,
+                "num_accepted_successors": 15,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 54
@@ -1036,7 +1036,7 @@
                     ]
                 },
                 "solution_arity": 0,
-                "num_generated": 3,
+                "num_accepted_successors": 3,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 2
@@ -1048,7 +1048,7 @@
             "task_file": "numeric/tests/sugar/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 150,
+                "num_accepted_successors": 150,
                 "num_expanded": 153,
                 "num_deadends": 0,
                 "num_pruned": 753

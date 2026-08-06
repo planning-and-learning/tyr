@@ -30,12 +30,12 @@ namespace tyr::planning
 class Statistics
 {
 private:
-    uint64_t m_num_generated {};
+    uint64_t m_num_generated_successors {};
+    uint64_t m_num_accepted_successors {};
     uint64_t m_num_expanded {};
     uint64_t m_num_deadends {};
     uint64_t m_num_pruned {};
-    uint64_t m_num_routed_successors {};
-    uint64_t m_num_remote_routed_successors {};
+    uint64_t m_num_transferred_successors {};
     uint64_t m_num_registered_states {};
 
     size_t m_state_storage_memory_usage {};
@@ -61,16 +61,17 @@ public:
      * Setters
      */
 
-    void increment_num_generated() { ++m_num_generated; }
+    void increment_num_accepted_successors() noexcept { ++m_num_accepted_successors; }
     void increment_num_expanded() { ++m_num_expanded; }
     void increment_num_deadends() { ++m_num_deadends; }
     void increment_num_pruned() { ++m_num_pruned; }
-    /// Counts HDA* communication before receiver-side duplicate detection and pruning. Each worker is the sole writer of its outgoing counters.
-    void increment_num_routed_successors(bool remote) noexcept
+    /// Generated successors are counted before receiver-side duplicate detection and pruning, matching the HDA* communication-overhead definition.
+    /// Each worker is the sole writer of its outgoing counters.
+    void increment_num_generated_successors(bool transferred) noexcept
     {
-        ++m_num_routed_successors;
-        if (remote)
-            ++m_num_remote_routed_successors;
+        ++m_num_generated_successors;
+        if (transferred)
+            ++m_num_transferred_successors;
     }
     void add_idle_time(std::chrono::nanoseconds duration) noexcept { m_idle_time += duration; }
     void add_destination_lock_statistics(std::chrono::nanoseconds wait_time, std::chrono::nanoseconds hold_time) noexcept
@@ -90,12 +91,12 @@ public:
     /// Accumulate work while retaining the peak resource usage of sequentially composed searches.
     void add(const Statistics& other)
     {
-        m_num_generated += other.m_num_generated;
+        m_num_generated_successors += other.m_num_generated_successors;
+        m_num_accepted_successors += other.m_num_accepted_successors;
         m_num_expanded += other.m_num_expanded;
         m_num_deadends += other.m_num_deadends;
         m_num_pruned += other.m_num_pruned;
-        m_num_routed_successors += other.m_num_routed_successors;
-        m_num_remote_routed_successors += other.m_num_remote_routed_successors;
+        m_num_transferred_successors += other.m_num_transferred_successors;
         m_num_registered_states = std::max(m_num_registered_states, other.m_num_registered_states);
         m_state_storage_memory_usage = std::max(m_state_storage_memory_usage, other.m_state_storage_memory_usage);
         m_action_bindings_memory_usage = std::max(m_action_bindings_memory_usage, other.m_action_bindings_memory_usage);
@@ -115,16 +116,16 @@ public:
      * Getters
      */
 
-    uint64_t get_num_generated() const { return m_num_generated; }
+    uint64_t get_num_generated_successors() const noexcept { return m_num_generated_successors; }
+    uint64_t get_num_accepted_successors() const noexcept { return m_num_accepted_successors; }
     uint64_t get_num_expanded() const { return m_num_expanded; }
     uint64_t get_num_deadends() const { return m_num_deadends; }
     uint64_t get_num_pruned() const { return m_num_pruned; }
-    uint64_t get_num_routed_successors() const noexcept { return m_num_routed_successors; }
-    uint64_t get_num_remote_routed_successors() const noexcept { return m_num_remote_routed_successors; }
-    /// HDA* communication overhead: the fraction of generated successor routes sent to another worker.
+    uint64_t get_num_transferred_successors() const noexcept { return m_num_transferred_successors; }
+    /// HDA* communication overhead: the fraction of generated successors transferred to another worker.
     double get_communication_overhead() const noexcept
     {
-        return m_num_routed_successors == 0 ? 0.0 : static_cast<double>(m_num_remote_routed_successors) / static_cast<double>(m_num_routed_successors);
+        return m_num_generated_successors == 0 ? 0.0 : static_cast<double>(m_num_transferred_successors) / static_cast<double>(m_num_generated_successors);
     }
     uint64_t get_num_registered_states() const noexcept { return m_num_registered_states; }
 
@@ -148,21 +149,21 @@ public:
     class Snapshot
     {
     private:
-        uint64_t m_num_generated;
+        uint64_t m_num_accepted_successors;
         uint64_t m_num_expanded;
         uint64_t m_num_deadends;
         uint64_t m_num_pruned;
 
     public:
-        Snapshot(uint64_t num_generated, uint64_t num_expanded, uint64_t num_deadends, uint64_t num_pruned) :
-            m_num_generated(num_generated),
+        Snapshot(uint64_t num_accepted_successors, uint64_t num_expanded, uint64_t num_deadends, uint64_t num_pruned) :
+            m_num_accepted_successors(num_accepted_successors),
             m_num_expanded(num_expanded),
             m_num_deadends(num_deadends),
             m_num_pruned(num_pruned)
         {
         }
 
-        uint64_t get_num_generated() const { return m_num_generated; }
+        uint64_t get_num_accepted_successors() const noexcept { return m_num_accepted_successors; }
         uint64_t get_num_expanded() const { return m_num_expanded; }
         uint64_t get_num_deadends() const { return m_num_deadends; }
         uint64_t get_num_pruned() const { return m_num_pruned; }
@@ -171,7 +172,7 @@ public:
     void add_snapshot(const Statistics& statistics)
     {
         m_snapshots.push_back(
-            Snapshot(statistics.get_num_generated(), statistics.get_num_expanded(), statistics.get_num_deadends(), statistics.get_num_pruned()));
+            Snapshot(statistics.get_num_accepted_successors(), statistics.get_num_expanded(), statistics.get_num_deadends(), statistics.get_num_pruned()));
     }
 
     void add_snap_shot(const Statistics& statistics) { add_snapshot(statistics); }

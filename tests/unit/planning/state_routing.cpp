@@ -20,11 +20,14 @@
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/planning.hpp"
 
+#include <algorithm>
 #include <concepts>
 #include <filesystem>
 #include <gtest/gtest.h>
 #include <memory>
 #include <optional>
+#include <stdexcept>
+#include <string_view>
 #include <thread>
 #include <tuple>
 #include <utility>
@@ -165,6 +168,55 @@ void expect_state_routing(const p::TaskPtr<Kind>& task)
     EXPECT_EQ(dist_hash.hash(worker_repository->get_registered_state(owner_node.get_state().get_index()).get_state_builder()), remote_hash);
 }
 
+template<TaskKind Kind>
+void expect_lmcut_state_routing(const p::TaskPtr<Kind>& task)
+{
+    auto execution_context = ygg::ExecutionContext::create(1);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto repository = p::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
+    auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context, repository);
+    const auto initial_node = generator->get_initial_node();
+    const auto& initial = initial_node.get_state();
+
+    auto heuristic = p::LMCutHeuristic<Kind>(task, ygg::ExecutionContext::create(1), ::tyr::CostMode::UNIT);
+    const auto frontier = heuristic.compute_cut_frontier_atoms(initial.get_state_builder());
+    EXPECT_EQ(frontier.size(), 2);
+    const auto find_frontier_atom = [&](std::string_view name)
+    { return std::ranges::find_if(frontier, [&](const auto atom) { return atom.get_predicate().get_name().str() == name; }); };
+    const auto landmark_it = find_frontier_atom("landmark");
+    ASSERT_NE(landmark_it, frontier.end());
+    EXPECT_NE(find_frontier_atom("goal"), frontier.end());
+    EXPECT_EQ(find_frontier_atom("side"), frontier.end());
+
+    const auto bindings = generator->get_applicable_action_bindings(initial_node);
+    const auto reach_landmark = std::ranges::find_if(bindings, [](const auto binding) { return binding.get_relation().get_name().str() == "reach-landmark"; });
+    ASSERT_NE(reach_landmark, bindings.end());
+    auto side = std::optional<fp::GroundAtomView<f::FluentTag>> {};
+    for (const auto conditional_effect : generator->ground_action(*reach_landmark).get_effects())
+        for (const auto fact : conditional_effect.get_effect().template get_facts<f::PositiveTag>())
+            if (const auto atom = fact.get_atom(); atom && atom->get_predicate().get_name().str() == "side")
+                side = *atom;
+    ASSERT_TRUE(side);
+
+    auto first_hash = p::DistHash<Kind, p::LMCutDistHashTag>(17);
+    auto second_hash = p::DistHash<Kind, p::LMCutDistHashTag>(17);
+    first_hash.initialize(initial);
+    second_hash.initialize(initial);
+    EXPECT_THROW(first_hash.initialize(initial), std::logic_error);
+    EXPECT_EQ(first_hash.hash(initial.get_state_builder()), second_hash.hash(initial.get_state_builder()));
+    EXPECT_EQ(first_hash.owner(initial.get_state_builder(), 1), ygg::Index<p::Worker>(0));
+
+    auto side_state = repository->get_state_builder();
+    side_state->assign_unextended_part(initial.get_state_builder());
+    side_state->set(task->get_fdr_context()->get_fact(*side).get_data());
+    EXPECT_EQ(first_hash.hash(*side_state), first_hash.hash(initial.get_state_builder()));
+
+    auto landmark_state = repository->get_state_builder();
+    landmark_state->assign_unextended_part(initial.get_state_builder());
+    landmark_state->set(task->get_fdr_context()->get_fact(*landmark_it).get_data());
+    EXPECT_NE(first_hash.hash(*landmark_state), first_hash.hash(initial.get_state_builder()));
+}
+
 }
 
 TEST(TyrPlanningStateRoutingTest, RoutesGroundAndLiftedStatesWithoutProducerRegistration)
@@ -178,6 +230,18 @@ TEST(TyrPlanningStateRoutingTest, RoutesGroundAndLiftedStatesWithoutProducerRegi
 
     expect_state_routing(ground_task);
     expect_state_routing(lifted_task);
+}
+
+TEST(TyrPlanningStateRoutingTest, UsesInitialLMCutFrontierAsStableDistributionFeatures)
+{
+    const auto root = std::filesystem::path(ROOT_DIR) / "tests/fixtures/planning/state_routing";
+    auto lifted_task = p::Task<LiftedTag>::create(make_test_parser(root / "domain.pddl").parse_task(root / "problem.pddl"));
+    auto grounding_context = ygg::ExecutionContext::create(1);
+    auto ground_task = lifted_task->instantiate_ground_task(*grounding_context).task;
+    ASSERT_NE(ground_task, nullptr);
+
+    expect_lmcut_state_routing(ground_task);
+    expect_lmcut_state_routing(lifted_task);
 }
 
 }

@@ -36,3 +36,15 @@ TEST(TyrPlanningLiftedLMCutHeuristicTest, RepeatedEvaluationReusesResetWorkspace
     const auto first = heuristic->evaluate(state);
     EXPECT_EQ(heuristic->evaluate(state), first);
 }
+
+TEST(TyrPlanningLiftedLMCutHeuristicTest, WeightedAlternativeRemainsAdmissible)
+{
+    const auto fixture = ygg::common::root_path() / "tests/fixtures/planning/heuristics/lmcut_weighted_alternative";
+    auto context = tyr::tests::create_heuristic_context<tyr::LiftedTag>(fixture / "domain.pddl", fixture / "problem.pddl");
+    const auto state = context.successor_generator->get_initial_node().get_state();
+    auto general = tyr::planning::LMCutHeuristic<tyr::LiftedTag>::create(context.task, context.execution_context, tyr::CostMode::GENERAL);
+    auto unit = tyr::planning::LMCutHeuristic<tyr::LiftedTag>::create(context.task, context.execution_context, tyr::CostMode::UNIT);
+
+    EXPECT_EQ(general->evaluate(state), 50);
+    EXPECT_EQ(unit->evaluate(state), 1);
+}

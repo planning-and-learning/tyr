@@ -38,6 +38,7 @@ public:
 
     void set_goals(::tyr::formalism::datalog::GroundConjunctiveConditionView) {}
     bool check(const FactSets&) const noexcept { return false; }
+    bool should_terminate(const FactSets&) const noexcept { return false; }
     Cost
     get_total_cost(const FactSets&, const PredicateAnnotations<Kind>&, const FunctionAnnotations<Kind>&, const NumericSupportSelector<Kind>&) const noexcept
     {
@@ -56,6 +57,8 @@ public:
     void set_goals(::tyr::formalism::datalog::GroundConjunctiveConditionView goals_);
 
     bool check(const FactSets& fact_sets) const noexcept;
+    bool should_terminate(const FactSets& fact_sets) const noexcept;
+    void set_early_termination(bool enabled) noexcept { early_termination = enabled; }
 
     Cost get_total_cost(const FactSets& fact_sets,
                         const PredicateAnnotations<Kind>& and_annot,
@@ -72,6 +75,7 @@ private:
     std::optional<::tyr::formalism::datalog::GroundConjunctiveConditionView> goals;
     mutable NumericSupportSelectorWorkspace<Kind> numeric_support_selector_workspace;
     AggregationFunction agg;
+    bool early_termination { true };
 };
 
 }
