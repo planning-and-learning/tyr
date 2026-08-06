@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "planning/algorithms/search_engine/successor_generator_access.hpp"
 #include "planning/parser.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/planning.hpp"
@@ -141,14 +142,13 @@ void expect_state_routing(const p::TaskPtr<Kind>& task)
 
     auto remote_state = repository->get_state_builder();
     const auto remote_result = generator->generate_successor_state(initial, action, *remote_state);
-    const auto remote_completed = generator->complete_successor_state(*remote_state, remote_result);
+    const auto remote_completed = p::detail::SuccessorGeneratorAccess::complete(*generator, *remote_state, remote_result);
     const auto remote_hash = dist_hash.hash(*remote_state);
     EXPECT_EQ(repository->num_states(), source_states_before_generation);
 
     auto local_state = repository->get_state_builder();
     const auto local_result = generator->generate_successor_state(initial, action, *local_state);
-    const auto local_completed = generator->complete_successor_state(*local_state, local_result);
-    const auto local_node = generator->register_completed_successor_state(std::move(local_state), local_completed);
+    const auto local_node = generator->finalize_successor_state(std::move(local_state), local_result);
 
     const auto compatibility_node = generator->get_successor_node(initial, action);
     EXPECT_EQ(local_node, compatibility_node);
@@ -158,7 +158,7 @@ void expect_state_routing(const p::TaskPtr<Kind>& task)
     using std::swap;
     swap(*owner_state, *remote_state);
     EXPECT_EQ(dist_hash.hash(*owner_state), remote_hash);
-    const auto owner_node = worker->register_completed_successor_state(std::move(owner_state), remote_completed);
+    const auto owner_node = p::detail::SuccessorGeneratorAccess::register_state(*worker, std::move(owner_state), remote_completed);
     EXPECT_EQ(owner_node.get_metric(), compatibility_node.get_metric());
     EXPECT_EQ(repository->num_states(), source_states_after_local_registration);
     EXPECT_EQ(worker_repository->num_states(), 2);

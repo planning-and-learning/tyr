@@ -172,8 +172,9 @@ public:
 
     static SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& successor_generator, Heuristic<Kind>& heuristic, const Options& options)
     {
+        const auto search_start = std::chrono::steady_clock::now();
         ExecutionPolicy::validate(options);
-        return SearchEngine(task, successor_generator, heuristic, options).run();
+        return SearchEngine(task, successor_generator, heuristic, options, search_start).run();
     }
 
     size_t num_workers() const noexcept { return m_workers.size(); }
@@ -231,12 +232,17 @@ private:
         }
     }
 
-    SearchEngine(Task<Kind>& task, SuccessorGenerator<Kind>& successor_generator, Heuristic<Kind>& heuristic, const Options& options) :
+    SearchEngine(Task<Kind>& task,
+                 SuccessorGenerator<Kind>& successor_generator,
+                 Heuristic<Kind>& heuristic,
+                 const Options& options,
+                 std::chrono::steady_clock::time_point search_start) :
         m_task(task),
         m_caller_successor_generator(successor_generator),
         m_options(options),
         m_event_handler(options.event_handler),
-        m_start_node(make_start_node(task, successor_generator, options)),
+        m_search_start_time_point(search_start),
+        m_start_node(tyr::planning::normalize_start_node(task, successor_generator, options.start_node)),
         m_execution(options.random_seed),
         m_workers(task, successor_generator, heuristic, options, m_event_handler)
     {
@@ -244,22 +250,21 @@ private:
 
     SearchResult<Kind> run()
     {
+        const auto deadline = m_options.max_time ? std::optional(m_search_start_time_point + *m_options.max_time) : std::nullopt;
+        const auto timed_out = [&] { return deadline && std::chrono::steady_clock::now() >= *deadline; };
+
+        m_result.statistics.set_search_start_time_point(m_search_start_time_point);
+        for_each_worker(
+            [&](auto& worker)
+            {
+                worker.statistics.set_search_start_time_point(m_search_start_time_point);
+                worker.statistics.set_search_end_time_point(m_search_start_time_point);
+            });
+
         auto [start_owner, start_state] = prepare_start_state();
         auto& start_worker = get_worker(start_owner);
         const auto start_state_index = start_state.get_index();
         const auto start_g_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_start_node.get_metric());
-        if (std::isnan(start_g_value))
-            throw std::runtime_error("find_solution(...): start node metric value is NaN.");
-
-        const auto search_start = std::chrono::steady_clock::now();
-        m_search_start_time_point = search_start;
-        m_result.statistics.set_search_start_time_point(search_start);
-        for_each_worker(
-            [&](auto& worker)
-            {
-                worker.statistics.set_search_start_time_point(search_start);
-                worker.statistics.set_search_end_time_point(search_start);
-            });
 
         if (!start_worker.goal_strategy->is_static_goal_satisfied(m_task))
         {
@@ -267,7 +272,7 @@ private:
             return std::move(m_result);
         }
 
-        if (start_worker.goal_strategy->is_dynamic_goal_satisfied(start_state, start_state))
+        if (start_worker.goal_strategy->is_dynamic_goal_satisfied(m_start_node.get_state(), start_state))
         {
             m_result.plan = Plan(m_start_node, LabeledNodeList<Kind> {});
             m_result.goal_node = m_start_node;
@@ -288,9 +293,20 @@ private:
             return std::move(m_result);
         }
 
+        if (timed_out())
+        {
+            finalize(SearchStatus::OUT_OF_TIME);
+            return std::move(m_result);
+        }
+
         const auto start_h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(start_worker.heuristic.evaluate(start_state));
         if (std::isnan(start_h_value))
             throw std::runtime_error("find_solution(...): start heuristic value is NaN.");
+        if (timed_out())
+        {
+            finalize(SearchStatus::OUT_OF_TIME);
+            return std::move(m_result);
+        }
         m_execution.initialize_best_h(start_h_value);
         auto& start_search_node = start_worker.initialize_start(start_state_index, start_g_value, start_h_value);
         call_root_event([&](auto& handler) { SearchPolicy::on_start_search(handler, m_start_node, start_worker.search.get_start_priority()); });
@@ -303,7 +319,7 @@ private:
         }
 
         start_worker.search.open_start(start_state_index, start_search_node);
-        m_execution.start(m_options.max_time, start_worker.search.get_start_priority(), m_options);
+        m_execution.start(deadline, start_worker.search.get_start_priority(), m_options);
         try
         {
             m_execution.invoke(*this);
@@ -495,19 +511,6 @@ private:
     {
         if (worker.event_handler)
             std::forward<Callback>(callback)(*worker.event_handler);
-    }
-
-    static Node<Kind> make_start_node(Task<Kind>& task, SuccessorGenerator<Kind>& successor_generator, const Options& options)
-    {
-        auto& target_repository = *successor_generator.get_state_repository();
-        if (target_repository.get_task().get() != &task)
-            throw std::invalid_argument("find_solution(...): successor generator belongs to a different task.");
-
-        const auto start_node = options.start_node ? *options.start_node : successor_generator.get_initial_node();
-        if (start_node.get_state().get_state_repository()->get_task().get() != &task)
-            throw std::invalid_argument("find_solution(...): start node belongs to a different task.");
-
-        return Node<Kind>(materialize_state(start_node.get_state(), target_repository), start_node.get_metric());
     }
 
     Task<Kind>& m_task;

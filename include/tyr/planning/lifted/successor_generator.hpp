@@ -36,6 +36,7 @@ template<>
 class SuccessorGenerator<LiftedTag>
 {
     friend class SuccessorGeneratorFactory<LiftedTag>;
+    friend class detail::SuccessorGeneratorAccess;
 
 private:
     struct Impl;
@@ -76,12 +77,11 @@ public:
 
     void get_applicable_action_bindings(const Node<LiftedTag>& node, std::vector<::tyr::formalism::planning::ActionBindingView>& out_bindings);
 
+    /// Writes an unregistered successor. Pass the same pooled builder and result to finalize_successor_state().
     PendingActionResult
     generate_successor_state(const Node<LiftedTag>& node, ::tyr::formalism::planning::ActionBindingView binding, ygg::Builder<State<LiftedTag>>& out_state);
-    /// Computes axiom closure and the final metric without interning the state.
-    CompletedActionResult complete_successor_state(ygg::Builder<State<LiftedTag>>& state, PendingActionResult result);
-    /// Interns a state previously completed by a compatible worker.
-    Node<LiftedTag> register_completed_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state, CompletedActionResult result);
+    /// Computes axiom closure and the final metric, then interns the completed state.
+    Node<LiftedTag> finalize_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state, PendingActionResult result);
 
     // Action binding API (no interning)
     Node<LiftedTag> get_successor_node(const Node<LiftedTag>& node,
@@ -101,6 +101,10 @@ public:
     ygg::uint_t get_index() const noexcept;
 
 private:
+    detail::CompletedActionResult complete_successor_state(ygg::Builder<State<LiftedTag>>& state, PendingActionResult result);
+    Node<LiftedTag> register_completed_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state,
+                                                       detail::CompletedActionResult result);
+
     std::unique_ptr<Impl> m_impl;
 };
 

@@ -29,6 +29,7 @@
 #include <limits>
 #include <optional>
 #include <stdexcept>
+#include <utility>
 
 namespace tyr::planning::siw
 {
@@ -61,6 +62,7 @@ SearchResult<Kind> find_solution(iw::Solver<Kind>& iw_solver, const Options<Kind
         options.subgoal_strategy ? options.subgoal_strategy : SerializedGoalStrategy<Kind>::create(*iw_solver.brfs_solver.task);
     serialized_options.goal_strategy = options.goal_strategy ? options.goal_strategy : ConjunctiveGoalStrategy<Kind>::create(*iw_solver.brfs_solver.task);
     serialized_options.max_num_subsearches = options.max_num_subsearches;
+    serialized_options.max_time = iw_solver.options.max_time ? iw_solver.options.max_time : iw_solver.brfs_solver.options.max_time;
 
     if (!iw_solver.options.event_handler)
         iw_solver.options.event_handler = iw::DefaultEventHandler<Kind>::create();
@@ -75,6 +77,13 @@ struct Solver
 
     iw::Solver<Kind> iw_solver;
     Options<Kind> options;
+
+    Node<Kind> normalize_start_node(std::optional<Node<Kind>> start_node)
+    {
+        if (!start_node)
+            start_node = options.start_node;
+        return iw_solver.normalize_start_node(std::move(start_node));
+    }
 
     SearchResult<Kind> solve() { return find_solution(iw_solver, options); }
 };

@@ -21,9 +21,11 @@
 #include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/plan.hpp"
+#include "tyr/planning/state_repository.hpp"
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -76,6 +78,14 @@ inline ygg::float_t compute_successor_g_value(ygg::float_t source_g_value, ygg::
 
     throw std::runtime_error("compute_successor_g_value(...): unknown action cost mode.");
 }
+
+template<TaskKind Kind>
+Node<Kind> normalize_start_node(Task<Kind>& task, SuccessorGenerator<Kind>& successor_generator, std::optional<Node<Kind>> start_node);
+
+extern template Node<GroundTag>
+normalize_start_node(Task<GroundTag>& task, SuccessorGenerator<GroundTag>& successor_generator, std::optional<Node<GroundTag>> start_node);
+extern template Node<LiftedTag>
+normalize_start_node(Task<LiftedTag>& task, SuccessorGenerator<LiftedTag>& successor_generator, std::optional<Node<LiftedTag>> start_node);
 
 template<TaskKind Kind>
 struct SearchResult

@@ -360,16 +360,23 @@ SuccessorGenerator<LiftedTag>::generate_successor_state(const Node<LiftedTag>& n
     return PendingActionResult { m_impl->generate_successor_state(node, m_impl->evaluator.scratch_action_binding, out_state) };
 }
 
-CompletedActionResult SuccessorGenerator<LiftedTag>::complete_successor_state(ygg::Builder<State<LiftedTag>>& state, PendingActionResult result)
+detail::CompletedActionResult SuccessorGenerator<LiftedTag>::complete_successor_state(ygg::Builder<State<LiftedTag>>& state, PendingActionResult result)
 {
     m_impl->evaluator.state_repository->compute_extended_state(state);
-    return CompletedActionResult { evaluate_successor_metric(*m_impl->definition->task, state, result.auxiliary_value) };
+    return detail::CompletedActionResult { evaluate_successor_metric(*m_impl->definition->task, state, result.auxiliary_value) };
 }
 
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::register_completed_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state,
-                                                                                  CompletedActionResult result)
+                                                                                  detail::CompletedActionResult result)
 {
     return Node<LiftedTag>(m_impl->evaluator.state_repository->register_extended_state(std::move(state)), result.metric);
+}
+
+Node<LiftedTag> SuccessorGenerator<LiftedTag>::finalize_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state,
+                                                                        PendingActionResult result)
+{
+    const auto completed = complete_successor_state(*state, result);
+    return register_completed_successor_state(std::move(state), completed);
 }
 
 // Action binding API (no interning)
@@ -379,8 +386,7 @@ SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag>& node,
 {
     auto state = m_impl->evaluator.state_repository->get_state_builder();
     const auto result = PendingActionResult { m_impl->generate_successor_state(node, binding, *state) };
-    const auto completed = complete_successor_state(*state, result);
-    return register_completed_successor_state(std::move(state), completed);
+    return finalize_successor_state(std::move(state), result);
 }
 
 // Lookup

@@ -89,9 +89,6 @@ public:
     static constexpr bool terminate_on_goal = true;
     static constexpr bool supports_priority_layer_synchronization = ModePolicy::supports_priority_layer_synchronization;
     static constexpr bool emits_priority_layer_events = true;
-    static constexpr bool check_timeout_after_generation = true;
-    static constexpr bool check_timeout_per_successor = true;
-
     struct SearchNode
     {
         ygg::uint_t g_value;
@@ -206,7 +203,8 @@ public:
         successor_search_node.g_value = static_cast<ygg::uint_t>(g_value);
         set_parent(successor_search_node, routed_successor.metadata.parent);
 
-        if (worker.pruning_strategy->should_prune_successor_state(source_state, successor_state, true))
+        const auto is_goal = engine.m_execution.is_generated_goal(engine, worker, routed_successor, successor_state);
+        if (!is_goal && worker.pruning_strategy->should_prune_successor_state(source_state, successor_state, true))
         {
             successor_search_node.status = SearchNodeStatus::CLOSED;
             worker.statistics.increment_num_pruned();
@@ -215,7 +213,7 @@ public:
         }
 
         worker.statistics.increment_num_generated();
-        if (engine.m_execution.is_generated_goal(engine, worker, routed_successor, successor_state))
+        if (is_goal)
         {
             successor_search_node.status = SearchNodeStatus::GOAL;
             emit_transition(TransitionOutcome::GOAL);

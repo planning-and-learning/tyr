@@ -86,9 +86,6 @@ public:
         ygg::Index<State<Kind>> state;
     };
 
-    static constexpr bool check_timeout_after_generation = false;
-    static constexpr bool check_timeout_per_successor = false;
-
     LazyGBFSPolicy(Heuristic<Kind>& heuristic, const Options& options) :
         m_heuristic(heuristic),
         m_options(options),
@@ -214,6 +211,7 @@ public:
 
         if (engine.m_execution.is_generated_goal(engine, worker, routed_successor, successor_state))
         {
+            worker.statistics.increment_num_generated();
             successor_search_node.status = SearchNodeStatus::GOAL;
             emit_transition(TransitionOutcome::GOAL);
             engine.solve(worker, successor_search_node, successor_node);

@@ -69,7 +69,7 @@ public:
     void on_expand_node(const p::Node<Kind>&) override { m_statistics.increment_num_expanded(); }
     void on_generate_transition(const p::Node<Kind>&, const p::LabeledNode<Kind>&, p::TransitionOutcome outcome) override
     {
-        if (outcome == p::TransitionOutcome::OPENED)
+        if (outcome == p::TransitionOutcome::OPENED || outcome == p::TransitionOutcome::GOAL)
             m_statistics.increment_num_generated();
         else if (outcome == p::TransitionOutcome::PRUNED)
             m_statistics.increment_num_pruned();

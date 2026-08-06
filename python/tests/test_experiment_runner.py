@@ -257,6 +257,20 @@ def test_search_parser_rejects_incomplete_worker_statistics(tmp_path):
     assert props["unexplained_errors"] == ["Unexpected search worker indices: [0]"]
 
 
+def test_search_parser_rejects_missing_worker_statistics(tmp_path):
+    (tmp_path / "run.log").write_text(
+        """[INPUT] Num search workers: 2
+[Search] Number of expanded states: 1
+""",
+        encoding="utf-8",
+    )
+    props = {}
+
+    SearchParser().parse(tmp_path, props)
+
+    assert props["unexplained_errors"] == ["Unexpected search worker indices: []"]
+
+
 def test_search_parser_rejects_mismatched_communication_statistics(tmp_path):
     (tmp_path / "run.log").write_text(
         """[INPUT] Num search workers: 2
@@ -273,6 +287,23 @@ def test_search_parser_rejects_mismatched_communication_statistics(tmp_path):
     SearchParser().parse(tmp_path, props)
 
     assert props["unexplained_errors"] == ["Communication aggregate does not match worker values: num_routed_successors"]
+
+
+def test_search_parser_rejects_missing_communication_worker_statistics(tmp_path):
+    (tmp_path / "run.log").write_text(
+        """[INPUT] Num search workers: 2
+[Search] Number of routed successors: 10
+[Search] Number of remotely routed successors: 4
+[Search] Worker 0: idle=0 ns, expanded=1, generated=2, deadends=0, pruned=0, registered=2, state_storage=100 bytes
+[Search] Worker 1: idle=0 ns, expanded=1, generated=2, deadends=0, pruned=0, registered=2, state_storage=100 bytes
+""",
+        encoding="utf-8",
+    )
+    props = {}
+
+    SearchParser().parse(tmp_path, props)
+
+    assert props["unexplained_errors"] == ["Missing communication worker statistics"]
 
 
 def test_search_parser_derives_zero_communication_overhead(tmp_path):

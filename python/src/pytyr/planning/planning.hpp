@@ -174,7 +174,7 @@ void bind_state_builder(nb::module_& m, const std::string& name)
 {
     using T = ygg::Builder<State<Kind>>;
 
-    nb::class_<T>(m, name.c_str(), "Borrowed read-only state under evaluation; do not retain it after the callback returns.")
+    nb::class_<T>(m, name.c_str(), "Owning read-only state snapshot that remains valid after the callback returns.")
         .def("get", nb::overload_cast<fp::FDRVariableView<::tyr::formalism::FluentTag>>(&T::get, nb::const_), "fluent_variable"_a)
         .def(
             "get",
@@ -347,7 +347,9 @@ public:
     using Base = GoalStrategy<Kind>;
     using Base::is_dynamic_goal_satisfied;
 
-    NB_TRAMPOLINE(Base, 2);
+    NB_TRAMPOLINE(Base, 3);
+
+    GoalStrategyPtr<Kind> make_worker(ygg::Index<Worker> index) const override { NB_OVERRIDE(make_worker, index); }
 
     bool is_static_goal_satisfied(const Task<Kind>& task) override { NB_OVERRIDE_PURE(is_static_goal_satisfied, task); }
 
@@ -364,6 +366,7 @@ void bind_goal_strategy(nb::module_& m, const std::string& name)
 
     nb::class_<T, PyGoalStrategy<Kind>>(m, name.c_str())  //
         .def(nb::init<>())
+        .def("make_worker", &T::make_worker, "worker_index"_a)
         .def("is_static_goal_satisfied", &T::is_static_goal_satisfied, "task"_a)
         .def("is_dynamic_goal_satisfied",
              nb::overload_cast<const StateView<Kind>&, const StateView<Kind>&>(&T::is_dynamic_goal_satisfied),
@@ -397,7 +400,9 @@ class PyPruningStrategy : public PruningStrategy<Kind>
 public:
     using Base = PruningStrategy<Kind>;
 
-    NB_TRAMPOLINE(Base, 2);
+    NB_TRAMPOLINE(Base, 3);
+
+    PruningStrategyPtr<Kind> make_worker(ygg::Index<Worker> index) const override { NB_OVERRIDE(make_worker, index); }
 
     bool should_prune_state(const StateView<Kind>& state) override { NB_OVERRIDE(should_prune_state, state); }
 
@@ -414,6 +419,7 @@ void bind_pruning_strategy(nb::module_& m, const std::string& name)
 
     nb::class_<T, PyPruningStrategy<Kind>>(m, name.c_str())  //
         .def(nb::init<>())
+        .def("make_worker", &T::make_worker, "worker_index"_a)
         .def("should_prune_state", nb::overload_cast<const StateView<Kind>&>(&T::should_prune_state), "state"_a)
         .def("should_prune_successor_state",
              nb::overload_cast<const StateView<Kind>&, const StateView<Kind>&, bool>(&T::should_prune_successor_state),

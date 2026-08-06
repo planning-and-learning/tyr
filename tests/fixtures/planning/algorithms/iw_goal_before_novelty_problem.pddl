@@ -1,0 +1,5 @@
+(define (problem iw-goal-before-novelty-problem)
+  (:domain iw-goal-before-novelty)
+  (:init (stage-0) (= (progress) 0))
+  (:goal (and (>= (progress) 1)))
+)

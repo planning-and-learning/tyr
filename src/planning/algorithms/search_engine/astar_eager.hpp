@@ -152,9 +152,6 @@ public:
         ygg::Index<State<Kind>> state;
     };
 
-    static constexpr bool check_timeout_after_generation = true;
-    static constexpr bool check_timeout_per_successor = true;
-
     EagerAStarPolicy(Heuristic<Kind>&, const Options&) {}
 
     SearchNode& initialize_start(ygg::Index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value)
@@ -267,6 +264,22 @@ public:
             return AcceptanceResult::DISCARDED;
         }
 
+        if (engine.m_execution.is_generated_goal(engine, worker, routed_successor, successor_state))
+        {
+            worker.statistics.increment_num_generated();
+            set_parent(successor_search_node, routed_successor.metadata.parent);
+            successor_search_node.g_value = g_value;
+
+            if (auto result = engine.m_execution
+                                  .accept_generated_goal(engine, worker, successor_search_node, routed_successor, successor_state, g_value, emit_transition))
+                return *result;
+
+            successor_search_node.status = SearchNodeStatus::GOAL;
+            open_successor(successor_state.get_index(), g_value, 0, successor_search_node.status, false);
+            emit_transition(TransitionOutcome::GOAL);
+            return AcceptanceResult::QUEUED;
+        }
+
         if (worker.pruning_strategy->should_prune_successor_state(source_state, successor_state, is_new))
         {
             if (is_new)
@@ -279,18 +292,6 @@ public:
         worker.statistics.increment_num_generated();
         set_parent(successor_search_node, routed_successor.metadata.parent);
         successor_search_node.g_value = g_value;
-
-        if (auto result =
-                engine.m_execution.accept_generated_goal(engine, worker, successor_search_node, routed_successor, successor_state, g_value, emit_transition))
-            return *result;
-
-        if (engine.m_execution.is_queued_goal(engine, worker, routed_successor, successor_state))
-        {
-            successor_search_node.status = SearchNodeStatus::GOAL;
-            open_successor(successor_state.get_index(), g_value, 0, successor_search_node.status, false);
-            emit_transition(TransitionOutcome::GOAL);
-            return AcceptanceResult::QUEUED;
-        }
 
         const auto h_value = ModePolicy::get_successor_h_value(worker.heuristic, successor_state, routed_successor.metadata.h_value);
         if (std::isnan(h_value))

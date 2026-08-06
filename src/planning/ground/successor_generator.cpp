@@ -270,16 +270,23 @@ SuccessorGenerator<GroundTag>::generate_successor_state(const Node<GroundTag>& n
     return PendingActionResult { m_impl->evaluator.executor.apply_action_unregistered(state_context, ground_action(binding), out_state) };
 }
 
-CompletedActionResult SuccessorGenerator<GroundTag>::complete_successor_state(ygg::Builder<State<GroundTag>>& state, PendingActionResult result)
+detail::CompletedActionResult SuccessorGenerator<GroundTag>::complete_successor_state(ygg::Builder<State<GroundTag>>& state, PendingActionResult result)
 {
     m_impl->evaluator.state_repository->compute_extended_state(state);
-    return CompletedActionResult { evaluate_successor_metric(*m_impl->definition->task, state, result.auxiliary_value) };
+    return detail::CompletedActionResult { evaluate_successor_metric(*m_impl->definition->task, state, result.auxiliary_value) };
 }
 
 Node<GroundTag> SuccessorGenerator<GroundTag>::register_completed_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state,
-                                                                                  CompletedActionResult result)
+                                                                                  detail::CompletedActionResult result)
 {
     return Node<GroundTag>(m_impl->evaluator.state_repository->register_extended_state(std::move(state)), result.metric);
+}
+
+Node<GroundTag> SuccessorGenerator<GroundTag>::finalize_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state,
+                                                                        PendingActionResult result)
+{
+    const auto completed = complete_successor_state(*state, result);
+    return register_completed_successor_state(std::move(state), completed);
 }
 
 fp::GroundActionView SuccessorGenerator<GroundTag>::ground_action(fp::ActionBindingView binding) const

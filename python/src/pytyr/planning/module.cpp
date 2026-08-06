@@ -22,6 +22,7 @@
 #include "tyr/planning/algorithms/astar_eager.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/formatter.hpp"
+#include "tyr/planning/worker_index.hpp"
 
 #include <cstdint>
 #include <nanobind/stl/chrono.h>
@@ -40,6 +41,8 @@ namespace tyr::planning
 
 void bind_module_definitions(nb::module_& m)
 {
+    ygg::bind_index<ygg::Index<Worker>>(m, "WorkerIndex");
+
     /**
      * SearchStatus
      */

@@ -40,7 +40,6 @@
 #include <optional>
 #include <stdexcept>
 #include <utility>
-#include <yggdrasil/core/chrono.hpp>
 #include <yggdrasil/core/portable_shuffle.hpp>
 
 namespace tyr::planning::detail
@@ -111,16 +110,15 @@ public:
         return false;
     }
 
-    void start(std::optional<std::chrono::steady_clock::duration> max_time, ygg::float_t, const typename SearchPolicy::Options&)
+    void start(std::optional<std::chrono::steady_clock::time_point> deadline, ygg::float_t, const typename SearchPolicy::Options&)
     {
-        if (max_time)
-            m_stopwatch.emplace(*max_time);
+        m_deadline = deadline;
         m_num_states = 1;
         m_status = SearchStatus::IN_PROGRESS;
     }
 
     bool running() const noexcept { return m_status == SearchStatus::IN_PROGRESS; }
-    bool timed_out() const { return m_stopwatch && m_stopwatch->has_finished(); }
+    bool timed_out() const { return m_deadline && std::chrono::steady_clock::now() >= *m_deadline; }
 
     template<typename Engine>
     void set_terminal(Engine&, SearchStatus status)
@@ -178,15 +176,11 @@ public:
                ::tyr::formalism::planning::ActionBindingView action,
                Metadata metadata) -> typename Engine::RoutedSuccessor
     {
-        const auto completed = worker.successor_generator.complete_successor_state(*target, action_result);
-        if (std::isnan(completed.metric))
-            throw std::runtime_error("find_solution(...): successor metric value is NaN.");
+        auto node = worker.successor_generator.finalize_successor_state(std::move(target), action_result);
+        const auto g_value = compute_successor_g_value(metadata.source_g_value, node.get_metric(), engine.m_options.cost_mode);
+        if (!std::isfinite(g_value))
+            throw std::runtime_error("find_solution(...): successor path cost is not finite.");
 
-        const auto g_value = compute_successor_g_value(metadata.source_g_value, completed.metric, engine.m_options.cost_mode);
-        if (std::isnan(g_value))
-            throw std::runtime_error("find_solution(...): successor path cost is NaN.");
-
-        auto node = worker.successor_generator.register_completed_successor_state(std::move(target), completed);
         worker.statistics.increment_num_routed_successors(false);
         return typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata), g_value, false };
     }
@@ -204,12 +198,6 @@ public:
 
         for (const auto action : worker.applicable_actions)
         {
-            if (SearchPolicy::check_timeout_per_successor && timed_out())
-            {
-                set_terminal(engine, SearchStatus::OUT_OF_TIME);
-                return;
-            }
-
             auto successor_state = state_repository.get_state_builder();
             const auto action_result = worker.successor_generator.generate_successor_state(node, action, *successor_state);
             auto routed_successor = route(engine,
@@ -221,9 +209,6 @@ public:
             if (engine.accept_successor(worker, node, routed_successor) == AcceptanceResult::TERMINAL)
                 return;
         }
-
-        if (SearchPolicy::check_timeout_after_generation && timed_out())
-            set_terminal(engine, SearchStatus::OUT_OF_TIME);
     }
 
     template<typename Engine, typename WorkerData, typename EmitTransition>
@@ -242,12 +227,6 @@ public:
     static bool is_generated_goal(Engine& engine, WorkerData& worker, const typename Engine::RoutedSuccessor&, const StateView<Kind>& state)
     {
         return worker.goal_strategy->is_dynamic_goal_satisfied(engine.m_start_node.get_state(), state);
-    }
-
-    template<typename Engine, typename WorkerData>
-    static bool is_queued_goal(Engine& engine, WorkerData& worker, const typename Engine::RoutedSuccessor& routed_successor, const StateView<Kind>& state)
-    {
-        return is_generated_goal(engine, worker, routed_successor, state);
     }
 
     template<typename Engine>
@@ -277,7 +256,7 @@ private:
     SearchStatus m_status { SearchStatus::IN_PROGRESS };
     ygg::uint_t m_num_states { 0 };
     std::optional<WorkerStateIndex<Kind>> m_goal;
-    std::optional<ygg::CountdownWatch> m_stopwatch;
+    std::optional<std::chrono::steady_clock::time_point> m_deadline;
 };
 
 template<TaskKind Kind, SearchPolicyConcept<Kind> SearchPolicy, ExecutionPolicyConcept<Kind, SearchPolicy> ExecutionPolicy, typename WorkerData>

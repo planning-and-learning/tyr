@@ -10,6 +10,7 @@ from .._pytyr.planning import (
     SearchStatus,
     StateRepositoryMode,
     Statistics,
+    WorkerIndex,
 )
 
 from . import (

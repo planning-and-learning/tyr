@@ -592,6 +592,125 @@ def test_parallel_search_rejects_null_python_heuristic_workers():
             task_module.astar_eager.find_solution(task, successor_generator, NullWorkerHeuristic(), options)
 
 
+def test_parallel_search_constructs_python_goal_and_pruning_workers():
+    ground_task, lifted_task = _make_gripper_tasks()
+
+    for task_module, task in (
+        (planning.ground, ground_task),
+        (planning.lifted, lifted_task),
+    ):
+        state_repository = _make_state_repository(task_module, task)
+        initial_state = state_repository.get_initial_state()
+        fluent_variables = [fact.get_variable() for fact in initial_state.fluent_facts()]
+        successor_generator = _make_successor_generator(task_module, task, state_repository)
+        factory_indices = {"goal": [], "pruning": []}
+        worker_ids = {"goal": set(), "pruning": set()}
+        callback_indices = {"goal": [], "pruning": []}
+        retained_snapshots = []
+
+        class PythonGoalStrategy(task_module.GoalStrategy):
+            def __init__(self, worker_index=None):
+                super().__init__()
+                self.worker_index = worker_index
+
+            def make_worker(self, worker_index):
+                factory_indices["goal"].append((isinstance(worker_index, planning.WorkerIndex), int(worker_index)))
+                worker = PythonGoalStrategy(int(worker_index))
+                worker_ids["goal"].add(id(worker))
+                return worker
+
+            def is_static_goal_satisfied(self, task):
+                callback_indices["goal"].append(self.worker_index)
+                return True
+
+            def is_dynamic_goal_satisfied(self, seed_state, state):
+                callback_indices["goal"].append(self.worker_index)
+                if len(callback_indices["goal"]) > 2 and not retained_snapshots:
+                    retained_snapshots.append((state, tuple(state.get(variable) for variable in fluent_variables)))
+                return False
+
+        class PythonPruningStrategy(task_module.PruningStrategy):
+            def __init__(self, worker_index=None):
+                super().__init__()
+                self.worker_index = worker_index
+
+            def make_worker(self, worker_index):
+                factory_indices["pruning"].append((isinstance(worker_index, planning.WorkerIndex), int(worker_index)))
+                worker = PythonPruningStrategy(int(worker_index))
+                worker_ids["pruning"].add(id(worker))
+                return worker
+
+            def should_prune_state(self, state):
+                callback_indices["pruning"].append(self.worker_index)
+                return False
+
+            def should_prune_successor_state(self, state, succ_state, is_new_succ_state):
+                callback_indices["pruning"].append(self.worker_index)
+                return False
+
+        options = task_module.brfs.Options()
+        options.num_search_workers = 2
+        options.state_repository_mode = planning.StateRepositoryMode.SHARED
+        options.goal_strategy = PythonGoalStrategy()
+        options.pruning_strategy = PythonPruningStrategy()
+
+        result = task_module.brfs.find_solution(task, successor_generator, options)
+
+        assert result.status == planning.SearchStatus.EXHAUSTED
+        for strategy in ("goal", "pruning"):
+            assert factory_indices[strategy] == [(True, 0), (True, 1)]
+            assert len(worker_ids[strategy]) == 2
+            assert set(callback_indices[strategy]) == {0, 1}
+
+        assert "Owning read-only state snapshot" in task_module.StateBuilder.__doc__
+        assert retained_snapshots
+        snapshot, values = retained_snapshots[0]
+        gc.collect()
+        assert tuple(snapshot.get(variable) for variable in fluent_variables) == values
+
+
+def test_parallel_search_rejects_missing_or_null_python_strategy_workers():
+    ground_task, lifted_task = _make_gripper_tasks()
+
+    for task_module, task in (
+        (planning.ground, ground_task),
+        (planning.lifted, lifted_task),
+    ):
+        class MissingWorkerGoalStrategy(task_module.GoalStrategy):
+            def is_static_goal_satisfied(self, task):
+                return True
+
+            def is_dynamic_goal_satisfied(self, seed_state, state):
+                return False
+
+        class NullWorkerGoalStrategy(MissingWorkerGoalStrategy):
+            def make_worker(self, worker_index):
+                return None
+
+        class MissingWorkerPruningStrategy(task_module.PruningStrategy):
+            pass
+
+        class NullWorkerPruningStrategy(MissingWorkerPruningStrategy):
+            def make_worker(self, worker_index):
+                return None
+
+        state_repository = _make_state_repository(task_module, task)
+        successor_generator = _make_successor_generator(task_module, task, state_repository)
+        cases = (
+            ("goal_strategy", MissingWorkerGoalStrategy(), "goal strategy does not support worker construction"),
+            ("goal_strategy", NullWorkerGoalStrategy(), "goal strategy does not support worker construction"),
+            ("pruning_strategy", MissingWorkerPruningStrategy(), "pruning strategy does not support worker construction"),
+            ("pruning_strategy", NullWorkerPruningStrategy(), "pruning strategy does not support worker construction"),
+        )
+
+        for field, strategy, error in cases:
+            options = task_module.brfs.Options()
+            options.num_search_workers = 2
+            setattr(options, field, strategy)
+            with pytest.raises(ValueError, match=error):
+                task_module.brfs.find_solution(task, successor_generator, options)
+
+
 def test_planning_task_view_accessors_keep_temporary_owners_alive():
     parser_options = ParserOptions()
     parser = Parser(str(GRIPPER.domain_path), parser_options)

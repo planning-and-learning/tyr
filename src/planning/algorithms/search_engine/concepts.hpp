@@ -63,8 +63,6 @@ concept SearchPolicyConcept = TaskKind<Kind>
                                  } && std::constructible_from<T, Heuristic<Kind>&, const typename T::Options&> && requires(T& policy, const T& const_policy, Heuristic<Kind>& heuristic, const ygg::Builder<State<Kind>>& state_builder, ygg::Index<Worker> worker, ygg::Index<State<Kind>> state, ygg::float_t value, bool is_goal, SearchNodeStatus status, bool preferred, typename T::SuccessorMetadata& metadata, const typename T::SuccessorMetadata& const_metadata, typename T::SearchNode& search_node, const typename T::SearchNode& const_search_node, const typename T::PoppedEntry& entry, ::tyr::formalism::planning::ActionBindingView action, const typename T::Options& options, const typename T::EventHandlerPtr& event_handler) {
                                      { T::terminate_on_goal } -> std::convertible_to<bool>;
                                      { T::supports_priority_layer_synchronization } -> std::convertible_to<bool>;
-                                     { T::check_timeout_after_generation } -> std::convertible_to<bool>;
-                                     { T::check_timeout_per_successor } -> std::convertible_to<bool>;
                                      { policy.initialize_start(state, value, value) } -> std::same_as<typename T::SearchNode&>;
                                      { const_policy.get_start_priority() } -> std::same_as<ygg::float_t>;
                                      { policy.open_start(state, const_search_node) } -> std::same_as<void>;
@@ -105,7 +103,7 @@ concept ExecutionPolicyConcept = TaskKind<Kind> && SearchPolicyConcept<SearchPol
     typename T::WorkerState;
     requires std::same_as<typename T::SearchTag, typename SearchPolicy::SearchTag>;
     requires std::same_as<typename T::TaskTag, Kind>;
-} && std::constructible_from<typename T::WorkerState, uint64_t> && requires(T& policy, const T& const_policy, const typename SearchPolicy::Options& options, ygg::Index<State<Kind>> state, ygg::Index<Worker> worker, size_t num_workers, ygg::float_t value, std::optional<std::chrono::steady_clock::duration> max_time, ygg::uint_t max_num_states) {
+} && std::constructible_from<typename T::WorkerState, uint64_t> && requires(T& policy, const T& const_policy, const typename SearchPolicy::Options& options, ygg::Index<State<Kind>> state, ygg::Index<Worker> worker, size_t num_workers, ygg::float_t value, std::optional<std::chrono::steady_clock::time_point> deadline, ygg::uint_t max_num_states) {
     { T::validate(options) } -> std::same_as<void>;
     { T::num_workers(options) } -> std::same_as<size_t>;
     { T::search_node_index(state, worker, num_workers) } -> std::same_as<ygg::Index<State<Kind>>>;
@@ -114,7 +112,7 @@ concept ExecutionPolicyConcept = TaskKind<Kind> && SearchPolicyConcept<SearchPol
     {
         policy.improve_best_h(value, [] {})
     } -> std::convertible_to<bool>;
-    { policy.start(max_time, value, options) } -> std::same_as<void>;
+    { policy.start(deadline, value, options) } -> std::same_as<void>;
     { const_policy.running() } -> std::convertible_to<bool>;
     { const_policy.timed_out() } -> std::convertible_to<bool>;
     { const_policy.incumbent_cost() } -> std::same_as<ygg::float_t>;

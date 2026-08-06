@@ -145,6 +145,7 @@ add_library(
     planning/algorithms/gbfs_lazy.cpp
     planning/algorithms/gbfs_lazy/event_handler.cpp
     planning/algorithms/iw.cpp
+    planning/algorithms/utils.cpp
 
     planning/applicability.cpp
     planning/applicability_lifted.cpp

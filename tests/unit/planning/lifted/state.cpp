@@ -1,7 +1,9 @@
+#include "tyr/planning/lifted/state_builder.hpp"
 #include "tyr/planning/lifted/state_data.hpp"
 #include "tyr/planning/lifted/state_view.hpp"
 
 #include <concepts>
+#include <gtest/gtest.h>
 
 namespace f = tyr::formalism;
 namespace p = tyr::planning;
@@ -40,3 +42,16 @@ static_assert(requires(const Data& data, const View& view) {
     view.get_state_repository();
     view.get_state_builder();
 });
+
+TEST(TyrPlanningLiftedStateTest, ClearResetsRegistrationWithoutReallocatingVectorStorage)
+{
+    auto builder = ygg::Builder<Entity> {};
+    builder.set(Index(7));
+    builder.get_numeric_variables().values.resize(64);
+    const auto numeric_capacity = builder.get_numeric_variables().values.capacity();
+
+    builder.clear();
+
+    EXPECT_TRUE(builder.get_index().is_max());
+    EXPECT_EQ(builder.get_numeric_variables().values.capacity(), numeric_capacity);
+}

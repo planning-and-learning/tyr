@@ -24,6 +24,7 @@
 #include <gtest/gtest.h>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -50,19 +51,20 @@ TaskPair make_task_pair(p::TaskPtr<LiftedTag> lifted)
     return { std::move(lifted), std::move(ground) };
 }
 
-TaskPair parse_tasks(const std::filesystem::path& problem)
+TaskPair parse_tasks(const std::filesystem::path& domain, const std::filesystem::path& problem)
 {
     const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/fixtures/planning/algorithms";
-    return make_task_pair(
-        p::Task<LiftedTag>::create(make_test_parser(fixture_root / "parallel_search_edge_cases_domain.pddl").parse_task(fixture_root / problem)));
+    return make_task_pair(p::Task<LiftedTag>::create(make_test_parser(fixture_root / domain).parse_task(fixture_root / problem)));
 }
 
-TaskPair parse_weighted_tasks()
+TaskPair parse_tasks(const std::filesystem::path& problem) { return parse_tasks("parallel_search_edge_cases_domain.pddl", problem); }
+
+TaskPair parse_pruned_improvement_tasks()
 {
     const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/fixtures/planning/algorithms";
     const auto benchmark_root = std::filesystem::path(BENCHMARKS_DIR);
     return make_task_pair(p::Task<LiftedTag>::create(
-        make_test_parser(benchmark_root / "classical/tests/transport/domain.pddl").parse_task(fixture_root / "parallel_astar_weighted.pddl")));
+        make_test_parser(benchmark_root / "classical/tests/transport/domain.pddl").parse_task(fixture_root / "parallel_astar_pruned_improvement.pddl")));
 }
 
 template<TaskKind Kind>
@@ -162,6 +164,14 @@ public:
 };
 
 template<TaskKind Kind>
+class AlwaysSuccessorPruningStrategy final : public p::PruningStrategy<Kind>
+{
+public:
+    p::PruningStrategyPtr<Kind> make_worker(ygg::Index<p::Worker>) const override { return std::make_shared<AlwaysSuccessorPruningStrategy>(); }
+    bool should_prune_successor_state(const p::StateView<Kind>&, const p::StateView<Kind>&, bool) override { return true; }
+};
+
+template<TaskKind Kind>
 class AlwaysGoalStrategy final : public p::GoalStrategy<Kind>
 {
 public:
@@ -189,6 +199,73 @@ public:
     {
         return &seed_state.get_state_builder() != &state;
     }
+};
+
+template<TaskKind Kind>
+class SeedRecordingGoalStrategy final : public p::GoalStrategy<Kind>
+{
+    using SeedIdentity = decltype(std::declval<p::StateView<Kind>>().identifying_members());
+
+    struct Observations
+    {
+        explicit Observations(SeedIdentity expected_seed_) : expected_seed(std::move(expected_seed_)) {}
+
+        SeedIdentity expected_seed;
+        std::optional<SeedIdentity> root_seed;
+        std::optional<SeedIdentity> successor_seed;
+        size_t num_root_checks { 0 };
+        size_t num_successor_checks { 0 };
+    };
+
+public:
+    SeedRecordingGoalStrategy(const p::Task<Kind>& task, SeedIdentity expected_seed) :
+        m_goal(task.get_task().get_goal()),
+        m_observations(std::make_shared<Observations>(std::move(expected_seed)))
+    {
+    }
+
+    p::GoalStrategyPtr<Kind> make_worker(ygg::Index<p::Worker>) const override
+    {
+        return p::GoalStrategyPtr<Kind>(new SeedRecordingGoalStrategy(m_goal, m_observations));
+    }
+
+    bool is_static_goal_satisfied(const p::Task<Kind>& task) override { return p::is_statically_applicable(m_goal, task.get_static_atoms_bitset()); }
+
+    bool is_dynamic_goal_satisfied(const p::StateView<Kind>& seed_state, const ygg::Builder<p::State<Kind>>& state) override
+    {
+        const auto context = p::StateContext<Kind>(*seed_state.get_state_repository()->get_task(), state, 0);
+        const auto is_goal = p::is_dynamically_applicable(m_goal, context);
+        if (is_goal)
+        {
+            m_observations->successor_seed = seed_state.identifying_members();
+            ++m_observations->num_successor_checks;
+        }
+        else
+        {
+            m_observations->root_seed = seed_state.identifying_members();
+            ++m_observations->num_root_checks;
+        }
+        return is_goal;
+    }
+
+    bool observed_expected_seeds() const
+    {
+        return m_observations->root_seed && *m_observations->root_seed == m_observations->expected_seed && m_observations->successor_seed
+               && *m_observations->successor_seed == m_observations->expected_seed;
+    }
+
+    size_t get_num_root_checks() const noexcept { return m_observations->num_root_checks; }
+    size_t get_num_successor_checks() const noexcept { return m_observations->num_successor_checks; }
+
+private:
+    SeedRecordingGoalStrategy(::tyr::formalism::planning::GroundConjunctiveConditionView goal, std::shared_ptr<Observations> observations) :
+        m_goal(goal),
+        m_observations(std::move(observations))
+    {
+    }
+
+    ::tyr::formalism::planning::GroundConjunctiveConditionView m_goal;
+    std::shared_ptr<Observations> m_observations;
 };
 
 template<typename Callback>
@@ -254,8 +331,104 @@ void expect_astar_pruned_improvement_preserves_existing_state(const p::TaskPtr<K
             const auto result = p::astar_eager::find_solution(*task, *context.successor_generator, *heuristic, options);
             ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
             ASSERT_TRUE(result.plan);
-            EXPECT_EQ(result.plan->get_cost(), 100);
+            EXPECT_EQ(result.plan->get_cost(), 101);
         });
+}
+
+template<TaskKind Kind>
+void expect_one_step_goal_result(const p::SearchResult<Kind>& result)
+{
+    ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
+    ASSERT_TRUE(result.plan);
+    EXPECT_EQ(result.plan->get_length(), 1);
+    EXPECT_EQ(result.statistics.get_num_generated(), 1);
+    EXPECT_EQ(result.statistics.get_num_pruned(), 0);
+}
+
+template<TaskKind Kind>
+void expect_goals_bypass_successor_pruning(const p::TaskPtr<Kind>& task)
+{
+    for_each_execution_mode(
+        [&](size_t num_workers, p::StateRepositoryMode mode)
+        {
+            {
+                auto context = make_search_context(task);
+                auto heuristic = p::BlindHeuristic<Kind>::create();
+                auto options = p::astar_eager::Options<Kind> {};
+                options.num_search_workers = num_workers;
+                options.state_repository_mode = mode;
+                options.pruning_strategy = std::make_shared<AlwaysSuccessorPruningStrategy<Kind>>();
+                expect_one_step_goal_result(p::astar_eager::find_solution(*task, *context.successor_generator, *heuristic, options));
+            }
+            {
+                auto context = make_search_context(task);
+                auto options = p::brfs::Options<Kind> {};
+                options.num_search_workers = num_workers;
+                options.state_repository_mode = mode;
+                options.pruning_strategy = std::make_shared<AlwaysSuccessorPruningStrategy<Kind>>();
+                expect_one_step_goal_result(p::brfs::find_solution(*task, *context.successor_generator, options));
+            }
+            {
+                auto context = make_search_context(task);
+                auto heuristic = p::BlindHeuristic<Kind>::create();
+                auto options = p::gbfs_lazy::Options<Kind> {};
+                options.num_search_workers = num_workers;
+                options.state_repository_mode = mode;
+                options.pruning_strategy = std::make_shared<AlwaysSuccessorPruningStrategy<Kind>>();
+                expect_one_step_goal_result(p::gbfs_lazy::find_solution(*task, *context.successor_generator, *heuristic, options));
+            }
+        });
+}
+
+template<TaskKind Kind>
+void expect_iw_goal_bypasses_novelty_pruning(const p::TaskPtr<Kind>& task)
+{
+    for_each_execution_mode(
+        [&](size_t num_workers, p::StateRepositoryMode mode)
+        {
+            auto context = make_search_context(task);
+            auto brfs_options = p::brfs::Options<Kind> {};
+            brfs_options.num_search_workers = num_workers;
+            brfs_options.state_repository_mode = mode;
+            auto solver = p::brfs::Solver<Kind> { task, context.successor_generator, std::move(brfs_options) };
+            auto event_handler = p::iw::DefaultEventHandler<Kind>::create();
+            auto options = p::iw::Options<Kind> {};
+            options.event_handler = event_handler;
+
+            const auto result = p::iw::find_solution(solver, 1, options);
+            ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
+            ASSERT_TRUE(result.plan);
+            EXPECT_EQ(result.plan->get_length(), 3);
+            const auto solution_arity = event_handler->get_statistics().get_solution_arity();
+            ASSERT_TRUE(solution_arity);
+            EXPECT_EQ(*solution_arity, 1);
+        });
+}
+
+template<TaskKind Kind>
+void expect_parallel_goal_workers_receive_caller_seed(const p::TaskPtr<Kind>& task)
+{
+    for (const auto mode : { p::StateRepositoryMode::HASH_DISTRIBUTED, p::StateRepositoryMode::SHARED })
+    {
+        auto caller = make_search_context(task);
+        auto foreign = make_search_context(task);
+        const auto foreign_start = foreign.successor_generator->get_initial_node();
+        const auto normalized_start = p::materialize_state(foreign_start.get_state(), *caller.repository);
+        ASSERT_NE(normalized_start.identifying_members(), foreign_start.get_state().identifying_members());
+
+        auto goal_strategy = std::make_shared<SeedRecordingGoalStrategy<Kind>>(*task, normalized_start.identifying_members());
+        auto options = p::brfs::Options<Kind> {};
+        options.start_node = foreign_start;
+        options.goal_strategy = goal_strategy;
+        options.num_search_workers = 2;
+        options.state_repository_mode = mode;
+
+        const auto result = p::brfs::find_solution(*task, *caller.successor_generator, options);
+        ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
+        EXPECT_TRUE(goal_strategy->observed_expected_seeds());
+        EXPECT_EQ(goal_strategy->get_num_root_checks(), 1);
+        EXPECT_EQ(goal_strategy->get_num_successor_checks(), 1);
+    }
 }
 
 template<TaskKind Kind>
@@ -425,41 +598,42 @@ void expect_terminal_roots_skip_heuristic(const p::TaskPtr<Kind>& task)
 }
 
 template<TaskKind Kind>
-void expect_nan_start_metrics_are_rejected(const p::TaskPtr<Kind>& task)
+void expect_non_finite_start_metrics_are_rejected(const p::TaskPtr<Kind>& task)
 {
     for_each_execution_mode(
         [&](size_t num_workers, p::StateRepositoryMode mode)
         {
-            const auto nan = std::numeric_limits<ygg::float_t>::quiet_NaN();
-
+            for (const auto metric : { std::numeric_limits<ygg::float_t>::quiet_NaN(), std::numeric_limits<ygg::float_t>::infinity() })
             {
-                auto context = make_search_context(task);
-                auto heuristic = p::BlindHeuristic<Kind>::create();
-                auto options = p::astar_eager::Options<Kind> {};
-                options.start_node = p::Node<Kind>(context.successor_generator->get_initial_node().get_state(), nan);
-                options.num_search_workers = num_workers;
-                options.state_repository_mode = mode;
-                options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>();
-                EXPECT_THROW(p::astar_eager::find_solution(*task, *context.successor_generator, *heuristic, options), std::runtime_error);
-            }
-            {
-                auto context = make_search_context(task);
-                auto heuristic = p::BlindHeuristic<Kind>::create();
-                auto options = p::gbfs_lazy::Options<Kind> {};
-                options.start_node = p::Node<Kind>(context.successor_generator->get_initial_node().get_state(), nan);
-                options.num_search_workers = num_workers;
-                options.state_repository_mode = mode;
-                options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>();
-                EXPECT_THROW(p::gbfs_lazy::find_solution(*task, *context.successor_generator, *heuristic, options), std::runtime_error);
-            }
-            {
-                auto context = make_search_context(task);
-                auto options = p::brfs::Options<Kind> {};
-                options.start_node = p::Node<Kind>(context.successor_generator->get_initial_node().get_state(), nan);
-                options.num_search_workers = num_workers;
-                options.state_repository_mode = mode;
-                options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>();
-                EXPECT_THROW(p::brfs::find_solution(*task, *context.successor_generator, options), std::runtime_error);
+                {
+                    auto context = make_search_context(task);
+                    auto heuristic = p::BlindHeuristic<Kind>::create();
+                    auto options = p::astar_eager::Options<Kind> {};
+                    options.start_node = p::Node<Kind>(context.successor_generator->get_initial_node().get_state(), metric);
+                    options.num_search_workers = num_workers;
+                    options.state_repository_mode = mode;
+                    options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>();
+                    EXPECT_THROW(p::astar_eager::find_solution(*task, *context.successor_generator, *heuristic, options), std::runtime_error);
+                }
+                {
+                    auto context = make_search_context(task);
+                    auto heuristic = p::BlindHeuristic<Kind>::create();
+                    auto options = p::gbfs_lazy::Options<Kind> {};
+                    options.start_node = p::Node<Kind>(context.successor_generator->get_initial_node().get_state(), metric);
+                    options.num_search_workers = num_workers;
+                    options.state_repository_mode = mode;
+                    options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>();
+                    EXPECT_THROW(p::gbfs_lazy::find_solution(*task, *context.successor_generator, *heuristic, options), std::runtime_error);
+                }
+                {
+                    auto context = make_search_context(task);
+                    auto options = p::brfs::Options<Kind> {};
+                    options.start_node = p::Node<Kind>(context.successor_generator->get_initial_node().get_state(), metric);
+                    options.num_search_workers = num_workers;
+                    options.state_repository_mode = mode;
+                    options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>();
+                    EXPECT_THROW(p::brfs::find_solution(*task, *context.successor_generator, options), std::runtime_error);
+                }
             }
         });
 }
@@ -556,9 +730,30 @@ TEST(TyrPlanningSearchEngineTest, PrunedDuplicatesDoNotCloseAcceptedAStarStates)
 
 TEST(TyrPlanningSearchEngineTest, PrunedImprovementsDoNotOverwriteAcceptedAStarStates)
 {
-    const auto tasks = parse_weighted_tasks();
+    const auto tasks = parse_pruned_improvement_tasks();
     expect_astar_pruned_improvement_preserves_existing_state(tasks.ground);
     expect_astar_pruned_improvement_preserves_existing_state(tasks.lifted);
+}
+
+TEST(TyrPlanningSearchEngineTest, GoalsBypassSuccessorPruning)
+{
+    const auto tasks = parse_tasks("parallel_search_simple.pddl");
+    expect_goals_bypass_successor_pruning(tasks.ground);
+    expect_goals_bypass_successor_pruning(tasks.lifted);
+}
+
+TEST(TyrPlanningSearchEngineTest, IwGoalsBypassNoveltyPruning)
+{
+    const auto tasks = parse_tasks("iw_goal_before_novelty_domain.pddl", "iw_goal_before_novelty_problem.pddl");
+    expect_iw_goal_bypasses_novelty_pruning(tasks.ground);
+    expect_iw_goal_bypasses_novelty_pruning(tasks.lifted);
+}
+
+TEST(TyrPlanningSearchEngineTest, ParallelGoalWorkersReceiveCallerNormalizedSeed)
+{
+    const auto tasks = parse_tasks("parallel_search_simple.pddl");
+    expect_parallel_goal_workers_receive_caller_seed(tasks.ground);
+    expect_parallel_goal_workers_receive_caller_seed(tasks.lifted);
 }
 
 TEST(TyrPlanningSearchEngineTest, StateLimitsAreRootInclusiveAndSolveLocal)
@@ -597,11 +792,11 @@ TEST(TyrPlanningSearchEngineTest, TerminalRootsSkipHeuristicEvaluation)
     expect_terminal_roots_skip_heuristic(tasks.lifted);
 }
 
-TEST(TyrPlanningSearchEngineTest, RejectsNanStartMetricsBeforeRecognizingGoals)
+TEST(TyrPlanningSearchEngineTest, RejectsNonFiniteStartMetricsBeforeRecognizingGoals)
 {
     const auto tasks = parse_tasks("parallel_search_simple.pddl");
-    expect_nan_start_metrics_are_rejected(tasks.ground);
-    expect_nan_start_metrics_are_rejected(tasks.lifted);
+    expect_non_finite_start_metrics_are_rejected(tasks.ground);
+    expect_non_finite_start_metrics_are_rejected(tasks.lifted);
 }
 
 TEST(TyrPlanningSearchEngineTest, CountsEachDeadEndOnce)

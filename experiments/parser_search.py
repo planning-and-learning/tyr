@@ -43,6 +43,10 @@ def add_idle_time_s(content, props):
 def parse_worker_statistics(content, props):
     matches = sorted((tuple(map(int, match)) for match in WORKER_STATISTICS.findall(content)), key=lambda values: values[0])
     if not matches:
+        if props.get("num_search_workers", 0) and any(
+            name in props for name in ("search_time_ns", "num_expanded", "num_generated", "num_deadends", "num_pruned")
+        ):
+            tools.add_unexplained_error(props, "Unexpected search worker indices: []")
         return
 
     indices = [values[0] for values in matches]
@@ -73,9 +77,13 @@ def parse_communication_statistics(content, props):
         key=lambda values: values[0],
     )
     aggregate_names = ("num_routed_successors", "num_remote_routed_successors")
+    expected_workers = props.get("num_search_workers", len(matches))
+    if expected_workers and not matches and any(name in props for name in aggregate_names):
+        tools.add_unexplained_error(props, "Missing communication worker statistics")
+        return
+
     if matches:
         indices = [values[0] for values in matches]
-        expected_workers = props.get("num_search_workers", len(matches))
         if indices != list(range(expected_workers)):
             tools.add_unexplained_error(props, f"Unexpected communication worker indices: {indices}")
             return

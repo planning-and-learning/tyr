@@ -53,7 +53,7 @@ public:
 
     void on_generate_transition(const Node<Kind>&, const LabeledNode<Kind>& labeled_succ_node, TransitionOutcome outcome) override
     {
-        if (outcome != TransitionOutcome::OPENED)
+        if (outcome != TransitionOutcome::OPENED && outcome != TransitionOutcome::GOAL)
             return;
         auto out = std::osyncstream(std::cout);
         fmt::print(out,

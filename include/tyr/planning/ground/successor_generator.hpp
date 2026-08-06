@@ -35,6 +35,7 @@ template<>
 class SuccessorGenerator<GroundTag>
 {
     friend class SuccessorGeneratorFactory<GroundTag>;
+    friend class detail::SuccessorGeneratorAccess;
 
 private:
     struct Impl;
@@ -72,12 +73,11 @@ public:
     std::vector<::tyr::formalism::planning::ActionBindingView> get_applicable_action_bindings(const Node<GroundTag>& node);
     void get_applicable_action_bindings(const Node<GroundTag>& node, std::vector<::tyr::formalism::planning::ActionBindingView>& out_bindings);
 
+    /// Writes an unregistered successor. Pass the same pooled builder and result to finalize_successor_state().
     PendingActionResult
     generate_successor_state(const Node<GroundTag>& node, ::tyr::formalism::planning::ActionBindingView binding, ygg::Builder<State<GroundTag>>& out_state);
-    /// Computes axiom closure and the final metric without interning the state.
-    CompletedActionResult complete_successor_state(ygg::Builder<State<GroundTag>>& state, PendingActionResult result);
-    /// Interns a state previously completed by a compatible worker.
-    Node<GroundTag> register_completed_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state, CompletedActionResult result);
+    /// Computes axiom closure and the final metric, then interns the completed state.
+    Node<GroundTag> finalize_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state, PendingActionResult result);
 
     Node<GroundTag> get_node(ygg::Index<State<GroundTag>> state_index);
     [[nodiscard]] SuccessorGeneratorPtr<GroundTag> make_worker(ygg::ExecutionContextPtr execution_context) const;
@@ -88,6 +88,10 @@ public:
     ygg::uint_t get_index() const noexcept;
 
 private:
+    detail::CompletedActionResult complete_successor_state(ygg::Builder<State<GroundTag>>& state, PendingActionResult result);
+    Node<GroundTag> register_completed_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state,
+                                                       detail::CompletedActionResult result);
+
     std::unique_ptr<Impl> m_impl;
 };
 

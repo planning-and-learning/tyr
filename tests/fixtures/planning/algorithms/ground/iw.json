@@ -563,11 +563,11 @@
                         "(do-lathe a0)"
                     ]
                 },
-                "solution_arity": 2,
-                "num_generated": 114,
-                "num_expanded": 73,
+                "solution_arity": 0,
+                "num_generated": 45,
+                "num_expanded": 2,
                 "num_deadends": 0,
-                "num_pruned": 829
+                "num_pruned": 1
             }
         },
         {
@@ -733,11 +733,20 @@
             "domain_file": "numeric/tests/block-grouping/domain.pddl",
             "task_file": "numeric/tests/block-grouping/test-1.pddl",
             "default": {
-                "status": "EXHAUSTED",
-                "num_generated": 19,
-                "num_expanded": 20,
+                "status": "SOLVED",
+                "plan": {
+                    "cost": 2,
+                    "length": 2,
+                    "actions": [
+                        "(move_block_left b1)",
+                        "(move_block_down b1)"
+                    ]
+                },
+                "solution_arity": 0,
+                "num_generated": 20,
+                "num_expanded": 6,
                 "num_deadends": 0,
-                "num_pruned": 180
+                "num_pruned": 71
             }
         },
         {
@@ -823,11 +832,20 @@
             "domain_file": "numeric/tests/farmland/domain.pddl",
             "task_file": "numeric/tests/farmland/test-1.pddl",
             "default": {
-                "status": "EXHAUSTED",
-                "num_generated": 3,
-                "num_expanded": 4,
+                "status": "SOLVED",
+                "plan": {
+                    "cost": 2,
+                    "length": 2,
+                    "actions": [
+                        "(move-slow farm0 farm1)",
+                        "(move-fast farm0 farm1)"
+                    ]
+                },
+                "solution_arity": 0,
+                "num_generated": 4,
+                "num_expanded": 3,
                 "num_deadends": 0,
-                "num_pruned": 4
+                "num_pruned": 2
             }
         },
         {
@@ -835,11 +853,20 @@
             "domain_file": "numeric/tests/fo-farmland/domain.pddl",
             "task_file": "numeric/tests/fo-farmland/test-1.pddl",
             "default": {
-                "status": "EXHAUSTED",
-                "num_generated": 3,
-                "num_expanded": 4,
+                "status": "SOLVED",
+                "plan": {
+                    "cost": 2,
+                    "length": 2,
+                    "actions": [
+                        "(hire-car)",
+                        "(move-by-car farm0 farm1)"
+                    ]
+                },
+                "solution_arity": 0,
+                "num_generated": 4,
+                "num_expanded": 2,
                 "num_deadends": 0,
-                "num_pruned": 5
+                "num_pruned": 3
             }
         },
         {
@@ -847,11 +874,20 @@
             "domain_file": "numeric/tests/fo-sailing/domain.pddl",
             "task_file": "numeric/tests/fo-sailing/test-1.pddl",
             "default": {
-                "status": "EXHAUSTED",
-                "num_generated": 8,
-                "num_expanded": 9,
+                "status": "SOLVED",
+                "plan": {
+                    "cost": 2,
+                    "length": 2,
+                    "actions": [
+                        "(go_north_west b0)",
+                        "(save_person b0 p0)"
+                    ]
+                },
+                "solution_arity": 0,
+                "num_generated": 9,
+                "num_expanded": 4,
                 "num_deadends": 0,
-                "num_pruned": 41
+                "num_pruned": 17
             }
         },
         {
@@ -859,11 +895,20 @@
             "domain_file": "numeric/tests/hydropower/domain.pddl",
             "task_file": "numeric/tests/hydropower/test-1.pddl",
             "default": {
-                "status": "EXHAUSTED",
-                "num_generated": 98,
-                "num_expanded": 101,
+                "status": "SOLVED",
+                "plan": {
+                    "cost": 2,
+                    "length": 2,
+                    "actions": [
+                        "(pump_water_up t0000 n7)",
+                        "(pump_water_up t0000 n7)"
+                    ]
+                },
+                "solution_arity": 0,
+                "num_generated": 3,
+                "num_expanded": 3,
                 "num_deadends": 0,
-                "num_pruned": 102
+                "num_pruned": 2
             }
         },
         {
@@ -871,11 +916,20 @@
             "domain_file": "numeric/tests/markettrader/domain.pddl",
             "task_file": "numeric/tests/markettrader/test-1.pddl",
             "default": {
-                "status": "EXHAUSTED",
-                "num_generated": 14,
-                "num_expanded": 17,
+                "status": "SOLVED",
+                "plan": {
+                    "cost": 2,
+                    "length": 2,
+                    "actions": [
+                        "(travel camel0 oslo palanga)",
+                        "(buy camel0 food palanga)"
+                    ]
+                },
+                "solution_arity": 0,
+                "num_generated": 13,
+                "num_expanded": 3,
                 "num_deadends": 0,
-                "num_pruned": 117
+                "num_pruned": 14
             }
         },
         {
@@ -906,11 +960,20 @@
             "domain_file": "numeric/tests/pathwaysmetric/domain.pddl",
             "task_file": "numeric/tests/pathwaysmetric/test-1.pddl",
             "default": {
-                "status": "EXHAUSTED",
-                "num_generated": 168,
-                "num_expanded": 171,
+                "status": "SOLVED",
+                "plan": {
+                    "cost": 2,
+                    "length": 2,
+                    "actions": [
+                        "(choose sp1)",
+                        "(initialize sp1)"
+                    ]
+                },
+                "solution_arity": 0,
+                "num_generated": 17,
+                "num_expanded": 2,
                 "num_deadends": 0,
-                "num_pruned": 1088
+                "num_pruned": 0
             }
         },
         {
@@ -942,11 +1005,20 @@
             "domain_file": "numeric/tests/sailing/domain.pddl",
             "task_file": "numeric/tests/sailing/test-1.pddl",
             "default": {
-                "status": "EXHAUSTED",
-                "num_generated": 14,
-                "num_expanded": 15,
+                "status": "SOLVED",
+                "plan": {
+                    "cost": 2,
+                    "length": 2,
+                    "actions": [
+                        "(go_north_west b0)",
+                        "(save_person b0 p0)"
+                    ]
+                },
+                "solution_arity": 0,
+                "num_generated": 15,
+                "num_expanded": 6,
                 "num_deadends": 0,
-                "num_pruned": 99
+                "num_pruned": 54
             }
         },
         {
@@ -954,11 +1026,20 @@
             "domain_file": "numeric/tests/settersnumeric/domain.pddl",
             "task_file": "numeric/tests/settersnumeric/test-1.pddl",
             "default": {
-                "status": "EXHAUSTED",
-                "num_generated": 7,
-                "num_expanded": 10,
+                "status": "SOLVED",
+                "plan": {
+                    "cost": 2,
+                    "length": 2,
+                    "actions": [
+                        "(build-cabin location3)",
+                        "(fell-timber location3)"
+                    ]
+                },
+                "solution_arity": 0,
+                "num_generated": 3,
+                "num_expanded": 2,
                 "num_deadends": 0,
-                "num_pruned": 18
+                "num_pruned": 2
             }
         },
         {

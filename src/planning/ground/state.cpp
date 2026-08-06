@@ -81,6 +81,7 @@ void GroundStateBuilder::set(fp::GroundAtomView<f::DerivedTag> view) { set(view.
 
 void GroundStateBuilder::clear()
 {
+    m_index = ygg::Index<planning::State<::tyr::GroundTag>>::max();
     clear_unextended_part();
     clear_extended_part();
 }

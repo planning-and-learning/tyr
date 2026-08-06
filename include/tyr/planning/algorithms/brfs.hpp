@@ -28,6 +28,7 @@
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include <utility>
 
 namespace tyr::planning::brfs
 {
@@ -68,6 +69,18 @@ struct Solver
     TaskPtr<Kind> task;
     SuccessorGeneratorPtr<Kind> successor_generator;
     Options<Kind> options;
+
+    Node<Kind> normalize_start_node(std::optional<Node<Kind>> start_node)
+    {
+        if (!task)
+            throw std::invalid_argument("brfs::Solver::normalize_start_node(): task is required.");
+        if (!successor_generator)
+            throw std::invalid_argument("brfs::Solver::normalize_start_node(): successor generator is required.");
+        if (!start_node)
+            start_node = options.start_node;
+
+        return tyr::planning::normalize_start_node(*task, *successor_generator, std::move(start_node));
+    }
 
     SearchResult<Kind> solve()
     {

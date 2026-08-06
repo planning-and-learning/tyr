@@ -38,7 +38,8 @@ public:
 
     /// Custom strategies opt into parallel search by returning an independently usable worker. Each returned worker is called serially, without OS-thread
     /// affinity. The target builder is borrowed, may not be registered yet, and may later be rejected as a duplicate or by pruning. Implementations must
-    /// inspect its contents and must not retain it. A strategy must not re-enter the search or wait for work from the same logical worker.
+    /// inspect its contents and must not retain it. Workers must give equivalent results for identical task, seed-state, and candidate-state contents. A
+    /// strategy must not re-enter the search or wait for work from the same logical worker.
     [[nodiscard]] virtual GoalStrategyPtr<Kind> make_worker(ygg::Index<Worker>) const { return nullptr; }
 
     virtual bool is_static_goal_satisfied(const Task<Kind>& task) = 0;

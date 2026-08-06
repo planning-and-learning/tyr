@@ -20,6 +20,7 @@
 
 #include "../repository_statistics.hpp"
 #include "concepts.hpp"
+#include "successor_generator_access.hpp"
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
@@ -106,7 +107,7 @@ public:
     template<typename WorkerData>
     static Node<Kind> take_target(WorkerData& receiver, PreparedTarget&& target)
     {
-        return receiver.successor_generator.register_completed_successor_state(std::move(target.state), target.action_result);
+        return SuccessorGeneratorAccess::register_state(receiver.successor_generator, std::move(target.state), target.action_result);
     }
 
     static size_t search_node_divisor(size_t) noexcept { return 1; }
@@ -168,7 +169,7 @@ public:
     template<typename Engine, typename WorkerData>
     static PreparedTarget prepare_target(Engine&, WorkerData& worker, BuilderPtr target, CompletedActionResult action_result, size_t num_workers)
     {
-        auto node = worker.successor_generator.register_completed_successor_state(std::move(target), action_result);
+        auto node = SuccessorGeneratorAccess::register_state(worker.successor_generator, std::move(target), action_result);
         return PreparedTarget { owner(node.get_state().get_index(), num_workers), std::move(node) };
     }
 
@@ -467,15 +468,14 @@ public:
         return true;
     }
 
-    void start(std::optional<std::chrono::steady_clock::duration> max_time, ygg::float_t start_priority, const typename SearchPolicy::Options& options)
+    void start(std::optional<std::chrono::steady_clock::time_point> deadline, ygg::float_t start_priority, const typename SearchPolicy::Options& options)
     {
         m_status.store(SearchStatus::IN_PROGRESS, std::memory_order_relaxed);
         m_work.store(1, std::memory_order_relaxed);
         m_num_states.store(1, std::memory_order_relaxed);
         m_collect_destination_lock_statistics = options.collect_destination_lock_statistics;
         m_coordination.start(start_priority, options, num_workers(options));
-        if (max_time)
-            m_deadline = std::chrono::steady_clock::now() + *max_time;
+        m_deadline = deadline;
     }
 
     template<typename Engine>
@@ -595,13 +595,10 @@ public:
                            ::tyr::formalism::planning::ActionBindingView action,
                            Metadata metadata)
     {
-        const auto completed = sender.successor_generator.complete_successor_state(*target, action_result);
-        if (std::isnan(completed.metric))
-            throw std::runtime_error("find_solution(...): successor metric value is NaN.");
-
+        const auto completed = SuccessorGeneratorAccess::complete(sender.successor_generator, *target, action_result);
         const auto g_value = compute_successor_g_value(metadata.source_g_value, completed.metric, engine.m_options.cost_mode);
-        if (std::isnan(g_value))
-            throw std::runtime_error("find_solution(...): successor path cost is NaN.");
+        if (!std::isfinite(g_value))
+            throw std::runtime_error("find_solution(...): successor path cost is not finite.");
 
         const auto is_goal = sender.goal_strategy->is_dynamic_goal_satisfied(engine.m_start_node.get_state(), *target);
         sender.search.prepare_routed_successor(sender.heuristic, *target, is_goal, metadata);
@@ -654,24 +651,11 @@ public:
             if (!running())
                 break;
 
-            if (SearchPolicy::check_timeout_per_successor && timed_out())
-            {
-                set_terminal(engine, SearchStatus::OUT_OF_TIME);
-                notify_if_stopped(engine);
-                break;
-            }
-
             auto successor_state = state_repository.get_state_builder();
             const auto action_result = worker.successor_generator.generate_successor_state(node, action, *successor_state);
             auto metadata = worker.search.make_successor_metadata(worker.index, entry.state, search_node, action);
             if (route(engine, worker, node, std::move(successor_state), action_result, action, std::move(metadata)) == AcceptanceResult::TERMINAL || !running())
                 break;
-        }
-
-        if (SearchPolicy::check_timeout_after_generation && running() && timed_out())
-        {
-            set_terminal(engine, SearchStatus::OUT_OF_TIME);
-            notify_if_stopped(engine);
         }
     }
 
@@ -697,12 +681,6 @@ public:
     static constexpr bool is_generated_goal(Engine&, WorkerData&, const typename Engine::RoutedSuccessor& routed_successor, const StateView<Kind>&) noexcept
     {
         return routed_successor.is_goal;
-    }
-
-    template<typename Engine, typename WorkerData>
-    static constexpr bool is_queued_goal(Engine&, WorkerData&, const typename Engine::RoutedSuccessor&, const StateView<Kind>&) noexcept
-    {
-        return false;
     }
 
     template<typename Engine>

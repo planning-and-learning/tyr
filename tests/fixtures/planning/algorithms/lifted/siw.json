@@ -138,11 +138,11 @@
             "task_file": "classical/tests/blocks_3/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "maximum_effective_width": 1,
-                "num_generated": 19,
-                "num_expanded": 21,
+                "maximum_effective_width": 0,
+                "num_generated": 16,
+                "num_expanded": 18,
                 "num_deadends": 0,
-                "num_pruned": 7
+                "num_pruned": 3
             }
         },
         {
@@ -151,7 +151,7 @@
             "task_file": "classical/tests/blocks_4/test-1.pddl",
             "default": {
                 "status": "SOLVED",
-                "maximum_effective_width": 1,
+                "maximum_effective_width": 0,
                 "plan": {
                     "cost": 4,
                     "length": 4,
@@ -162,10 +162,10 @@
                         "(stack b2 b3)"
                     ]
                 },
-                "num_generated": 16,
-                "num_expanded": 13,
+                "num_generated": 7,
+                "num_expanded": 6,
                 "num_deadends": 0,
-                "num_pruned": 9
+                "num_pruned": 4
             }
         },
         {
@@ -432,10 +432,10 @@
                         "(finisher1-stack-letter sheet1 dummy-sheet)"
                     ]
                 },
-                "num_generated": 17,
-                "num_expanded": 19,
+                "num_generated": 15,
+                "num_expanded": 15,
                 "num_deadends": 0,
-                "num_pruned": 5
+                "num_pruned": 1
             }
         },
         {
@@ -530,7 +530,7 @@
             "task_file": "classical/tests/reward/test-1.pddl",
             "default": {
                 "status": "SOLVED",
-                "maximum_effective_width": 1,
+                "maximum_effective_width": 0,
                 "plan": {
                     "cost": 4,
                     "length": 4,
@@ -541,10 +541,10 @@
                         "(pick-reward c_0_2)"
                     ]
                 },
-                "num_generated": 9,
-                "num_expanded": 10,
+                "num_generated": 5,
+                "num_expanded": 5,
                 "num_deadends": 0,
-                "num_pruned": 3
+                "num_pruned": 1
             }
         },
         {
@@ -590,10 +590,10 @@
                         "(take_image satellite0 star1 instrument0 thermograph1)"
                     ]
                 },
-                "num_generated": 38,
-                "num_expanded": 29,
+                "num_generated": 31,
+                "num_expanded": 24,
                 "num_deadends": 0,
-                "num_pruned": 22
+                "num_pruned": 15
             }
         },
         {
@@ -763,10 +763,10 @@
             "default": {
                 "status": "EXHAUSTED",
                 "maximum_effective_width": 2,
-                "num_generated": 267,
-                "num_expanded": 207,
+                "num_generated": 216,
+                "num_expanded": 169,
                 "num_deadends": 0,
-                "num_pruned": 675
+                "num_pruned": 538
             }
         },
         {
@@ -775,10 +775,11 @@
             "task_file": "numeric/tests/fo-counters/test-1.pddl",
             "default": {
                 "status": "EXHAUSTED",
-                "num_generated": 3,
-                "num_expanded": 4,
+                "maximum_effective_width": 0,
+                "num_generated": 10,
+                "num_expanded": 10,
                 "num_deadends": 0,
-                "num_pruned": 9
+                "num_pruned": 26
             }
         },
         {
@@ -935,11 +936,20 @@
             "domain_file": "numeric/tests/farmland/domain.pddl",
             "task_file": "numeric/tests/farmland/test-1.pddl",
             "default": {
-                "status": "EXHAUSTED",
-                "num_generated": 3,
-                "num_expanded": 4,
+                "status": "SOLVED",
+                "maximum_effective_width": 0,
+                "plan": {
+                    "cost": 2,
+                    "length": 2,
+                    "actions": [
+                        "(move-fast farm0 farm1)",
+                        "(move-fast farm0 farm1)"
+                    ]
+                },
+                "num_generated": 4,
+                "num_expanded": 2,
                 "num_deadends": 0,
-                "num_pruned": 4
+                "num_pruned": 0
             }
         },
         {
@@ -947,11 +957,20 @@
             "domain_file": "numeric/tests/fo-farmland/domain.pddl",
             "task_file": "numeric/tests/fo-farmland/test-1.pddl",
             "default": {
-                "status": "EXHAUSTED",
-                "num_generated": 3,
-                "num_expanded": 4,
+                "status": "SOLVED",
+                "maximum_effective_width": 0,
+                "plan": {
+                    "cost": 2,
+                    "length": 2,
+                    "actions": [
+                        "(hire-car)",
+                        "(move-by-car farm0 farm1)"
+                    ]
+                },
+                "num_generated": 4,
+                "num_expanded": 2,
                 "num_deadends": 0,
-                "num_pruned": 5
+                "num_pruned": 1
             }
         },
         {
@@ -959,11 +978,20 @@
             "domain_file": "numeric/tests/fo-sailing/domain.pddl",
             "task_file": "numeric/tests/fo-sailing/test-1.pddl",
             "default": {
-                "status": "EXHAUSTED",
-                "num_generated": 8,
-                "num_expanded": 9,
+                "status": "SOLVED",
+                "maximum_effective_width": 0,
+                "plan": {
+                    "cost": 2,
+                    "length": 2,
+                    "actions": [
+                        "(go_north_west b0)",
+                        "(save_person b0 p0)"
+                    ]
+                },
+                "num_generated": 9,
+                "num_expanded": 5,
                 "num_deadends": 0,
-                "num_pruned": 41
+                "num_pruned": 26
             }
         },
         {
@@ -971,11 +999,20 @@
             "domain_file": "numeric/tests/hydropower/domain.pddl",
             "task_file": "numeric/tests/hydropower/test-1.pddl",
             "default": {
-                "status": "EXHAUSTED",
-                "num_generated": 98,
-                "num_expanded": 101,
+                "status": "SOLVED",
+                "maximum_effective_width": 0,
+                "plan": {
+                    "cost": 2,
+                    "length": 2,
+                    "actions": [
+                        "(pump_water_up t0000 n7)",
+                        "(pump_water_up t0000 n7)"
+                    ]
+                },
+                "num_generated": 3,
+                "num_expanded": 3,
                 "num_deadends": 0,
-                "num_pruned": 102
+                "num_pruned": 3
             }
         },
         {
@@ -1027,11 +1064,20 @@
             "domain_file": "numeric/tests/pathwaysmetric/domain.pddl",
             "task_file": "numeric/tests/pathwaysmetric/test-1.pddl",
             "default": {
-                "status": "EXHAUSTED",
-                "num_generated": 168,
-                "num_expanded": 171,
+                "status": "SOLVED",
+                "maximum_effective_width": 0,
+                "plan": {
+                    "cost": 2,
+                    "length": 2,
+                    "actions": [
+                        "(choose sp1)",
+                        "(initialize sp1)"
+                    ]
+                },
+                "num_generated": 17,
+                "num_expanded": 17,
                 "num_deadends": 0,
-                "num_pruned": 1088
+                "num_pruned": 135
             }
         },
         {
@@ -1052,10 +1098,10 @@
                         "(communicate_soil_data rover0 general waypoint0 waypoint0 waypoint1)"
                     ]
                 },
-                "num_generated": 48,
-                "num_expanded": 37,
+                "num_generated": 35,
+                "num_expanded": 29,
                 "num_deadends": 0,
-                "num_pruned": 147
+                "num_pruned": 121
             }
         },
         {
@@ -1063,11 +1109,20 @@
             "domain_file": "numeric/tests/sailing/domain.pddl",
             "task_file": "numeric/tests/sailing/test-1.pddl",
             "default": {
-                "status": "EXHAUSTED",
-                "num_generated": 14,
-                "num_expanded": 15,
+                "status": "SOLVED",
+                "maximum_effective_width": 0,
+                "plan": {
+                    "cost": 2,
+                    "length": 2,
+                    "actions": [
+                        "(go_north_west b0)",
+                        "(save_person b0 p0)"
+                    ]
+                },
+                "num_generated": 15,
+                "num_expanded": 6,
                 "num_deadends": 0,
-                "num_pruned": 99
+                "num_pruned": 54
             }
         },
         {
@@ -1075,11 +1130,20 @@
             "domain_file": "numeric/tests/settersnumeric/domain.pddl",
             "task_file": "numeric/tests/settersnumeric/test-1.pddl",
             "default": {
-                "status": "EXHAUSTED",
-                "num_generated": 7,
-                "num_expanded": 10,
+                "status": "SOLVED",
+                "maximum_effective_width": 0,
+                "plan": {
+                    "cost": 2,
+                    "length": 2,
+                    "actions": [
+                        "(build-cabin location3)",
+                        "(fell-timber location3)"
+                    ]
+                },
+                "num_generated": 3,
+                "num_expanded": 2,
                 "num_deadends": 0,
-                "num_pruned": 18
+                "num_pruned": 2
             }
         },
         {

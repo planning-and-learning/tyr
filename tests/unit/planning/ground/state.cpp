@@ -1,7 +1,9 @@
+#include "tyr/planning/ground/state_builder.hpp"
 #include "tyr/planning/ground/state_data.hpp"
 #include "tyr/planning/ground/state_view.hpp"
 
 #include <concepts>
+#include <gtest/gtest.h>
 
 namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;
@@ -45,3 +47,19 @@ static_assert(requires(const Data& data, const View& view) {
     view.get_fluent_values();
     view.template get_numeric_variables<f::FluentTag>();
 });
+
+TEST(TyrPlanningGroundStateTest, ClearResetsRegistrationWithoutReallocatingVectorStorage)
+{
+    auto builder = ygg::Builder<Entity> {};
+    builder.set(Index(7));
+    builder.resize_fluent_facts(64);
+    builder.get_numeric_variables().values.resize(64);
+    const auto fact_capacity = builder.get_atoms<f::FluentTag>().values.capacity();
+    const auto numeric_capacity = builder.get_numeric_variables().values.capacity();
+
+    builder.clear();
+
+    EXPECT_TRUE(builder.get_index().is_max());
+    EXPECT_EQ(builder.get_atoms<f::FluentTag>().values.capacity(), fact_capacity);
+    EXPECT_EQ(builder.get_numeric_variables().values.capacity(), numeric_capacity);
+}

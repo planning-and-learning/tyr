@@ -100,6 +100,7 @@ void LiftedStateBuilder::set(::tyr::formalism::planning::GroundAtomView<::tyr::f
 
 void LiftedStateBuilder::clear()
 {
+    m_index = ygg::Index<planning::State<::tyr::LiftedTag>>::max();
     clear_unextended_part();
     clear_extended_part();
 }

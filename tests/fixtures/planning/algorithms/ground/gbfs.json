@@ -5,7 +5,7 @@
             "domain_file": "classical/tests/agricola/domain.pddl",
             "task_file": "classical/tests/agricola/test-1.pddl",
             "hff_unit": {
-                "num_generated": 259,
+                "num_generated": 260,
                 "num_expanded": 71,
                 "num_deadends": 1,
                 "num_pruned": 0,
@@ -72,7 +72,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 259,
+                "num_generated": 260,
                 "num_expanded": 71,
                 "num_deadends": 1,
                 "num_pruned": 0,
@@ -154,7 +154,7 @@
             "domain_file": "classical/tests/airport/domain.pddl",
             "task_file": "classical/tests/airport/test-1.pddl",
             "blind_unit": {
-                "num_generated": 19,
+                "num_generated": 20,
                 "num_expanded": 17,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -174,7 +174,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 19,
+                "num_generated": 20,
                 "num_expanded": 17,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -194,7 +194,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 17,
+                "num_generated": 18,
                 "num_expanded": 11,
                 "num_deadends": 2,
                 "num_pruned": 0,
@@ -214,7 +214,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 17,
+                "num_generated": 18,
                 "num_expanded": 11,
                 "num_deadends": 2,
                 "num_pruned": 0,
@@ -234,7 +234,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 17,
+                "num_generated": 18,
                 "num_expanded": 11,
                 "num_deadends": 2,
                 "num_pruned": 0,
@@ -254,7 +254,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 17,
+                "num_generated": 18,
                 "num_expanded": 11,
                 "num_deadends": 2,
                 "num_pruned": 0,
@@ -274,7 +274,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 15,
+                "num_generated": 16,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -294,7 +294,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 15,
+                "num_generated": 16,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -314,7 +314,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 17,
+                "num_generated": 18,
                 "num_expanded": 11,
                 "num_deadends": 2,
                 "num_pruned": 0,
@@ -334,7 +334,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 17,
+                "num_generated": 18,
                 "num_expanded": 11,
                 "num_deadends": 2,
                 "num_pruned": 0,
@@ -359,7 +359,7 @@
             "domain_file": "classical/tests/assembly/domain.pddl",
             "task_file": "classical/tests/assembly/test-1.pddl",
             "blind_unit": {
-                "num_generated": 0,
+                "num_generated": 1,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -372,7 +372,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 0,
+                "num_generated": 1,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -385,7 +385,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 0,
+                "num_generated": 1,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -398,7 +398,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 0,
+                "num_generated": 1,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -411,7 +411,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 0,
+                "num_generated": 1,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -424,7 +424,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 0,
+                "num_generated": 1,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -437,7 +437,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 0,
+                "num_generated": 1,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -450,7 +450,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 0,
+                "num_generated": 1,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -463,7 +463,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 0,
+                "num_generated": 1,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -476,7 +476,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 0,
+                "num_generated": 1,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -494,7 +494,7 @@
             "domain_file": "classical/tests/barman/domain.pddl",
             "task_file": "classical/tests/barman/test-1.pddl",
             "blind_unit": {
-                "num_generated": 236,
+                "num_generated": 237,
                 "num_expanded": 216,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -517,7 +517,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 188,
+                "num_generated": 189,
                 "num_expanded": 164,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -540,7 +540,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 86,
+                "num_generated": 87,
                 "num_expanded": 45,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -563,7 +563,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 78,
+                "num_generated": 79,
                 "num_expanded": 40,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -586,7 +586,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 74,
+                "num_generated": 75,
                 "num_expanded": 31,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -612,7 +612,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 67,
+                "num_generated": 68,
                 "num_expanded": 28,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -638,7 +638,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 68,
+                "num_generated": 69,
                 "num_expanded": 33,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -661,7 +661,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 68,
+                "num_generated": 69,
                 "num_expanded": 34,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -684,7 +684,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 86,
+                "num_generated": 87,
                 "num_expanded": 45,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -707,7 +707,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 76,
+                "num_generated": 77,
                 "num_expanded": 38,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -735,7 +735,7 @@
             "domain_file": "classical/tests/blocks_3/domain.pddl",
             "task_file": "classical/tests/blocks_3/test-1.pddl",
             "blind_unit": {
-                "num_generated": 23,
+                "num_generated": 24,
                 "num_expanded": 18,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -751,7 +751,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 23,
+                "num_generated": 24,
                 "num_expanded": 18,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -767,7 +767,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 16,
+                "num_generated": 17,
                 "num_expanded": 10,
                 "num_deadends": 4,
                 "num_pruned": 0,
@@ -783,7 +783,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 16,
+                "num_generated": 17,
                 "num_expanded": 10,
                 "num_deadends": 4,
                 "num_pruned": 0,
@@ -799,7 +799,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 16,
+                "num_generated": 17,
                 "num_expanded": 10,
                 "num_deadends": 4,
                 "num_pruned": 0,
@@ -815,7 +815,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 16,
+                "num_generated": 17,
                 "num_expanded": 10,
                 "num_deadends": 4,
                 "num_pruned": 0,
@@ -831,7 +831,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 16,
+                "num_generated": 17,
                 "num_expanded": 8,
                 "num_deadends": 2,
                 "num_pruned": 0,
@@ -847,7 +847,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 16,
+                "num_generated": 17,
                 "num_expanded": 8,
                 "num_deadends": 2,
                 "num_pruned": 0,
@@ -863,7 +863,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 16,
+                "num_generated": 17,
                 "num_expanded": 10,
                 "num_deadends": 4,
                 "num_pruned": 0,
@@ -879,7 +879,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 16,
+                "num_generated": 17,
                 "num_expanded": 10,
                 "num_deadends": 4,
                 "num_pruned": 0,
@@ -900,7 +900,7 @@
             "domain_file": "classical/tests/blocks_4/domain.pddl",
             "task_file": "classical/tests/blocks_4/test-1.pddl",
             "blind_unit": {
-                "num_generated": 10,
+                "num_generated": 11,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -916,7 +916,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 10,
+                "num_generated": 11,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -932,7 +932,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -948,7 +948,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -964,7 +964,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -980,7 +980,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -996,7 +996,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1012,7 +1012,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1028,7 +1028,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1044,7 +1044,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1065,7 +1065,7 @@
             "domain_file": "classical/tests/childsnack/domain.pddl",
             "task_file": "classical/tests/childsnack/test-1.pddl",
             "blind_unit": {
-                "num_generated": 5,
+                "num_generated": 6,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1081,7 +1081,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 5,
+                "num_generated": 6,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1097,7 +1097,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 5,
+                "num_generated": 6,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1113,7 +1113,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 5,
+                "num_generated": 6,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1129,7 +1129,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 5,
+                "num_generated": 6,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1145,7 +1145,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 5,
+                "num_generated": 6,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1161,7 +1161,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 5,
+                "num_generated": 6,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1177,7 +1177,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 5,
+                "num_generated": 6,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1193,7 +1193,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 5,
+                "num_generated": 6,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1209,7 +1209,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 5,
+                "num_generated": 6,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1230,7 +1230,7 @@
             "domain_file": "classical/tests/delivery/domain.pddl",
             "task_file": "classical/tests/delivery/test-1.pddl",
             "blind_unit": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1246,7 +1246,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1262,7 +1262,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1278,7 +1278,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1294,7 +1294,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1310,7 +1310,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1326,7 +1326,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1342,7 +1342,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1358,7 +1358,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1374,7 +1374,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1395,7 +1395,7 @@
             "domain_file": "classical/tests/driverlog/domain.pddl",
             "task_file": "classical/tests/driverlog/test-1.pddl",
             "blind_unit": {
-                "num_generated": 22,
+                "num_generated": 23,
                 "num_expanded": 23,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1416,7 +1416,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 22,
+                "num_generated": 23,
                 "num_expanded": 23,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1437,7 +1437,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 20,
+                "num_generated": 21,
                 "num_expanded": 16,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1458,7 +1458,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 20,
+                "num_generated": 21,
                 "num_expanded": 16,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1479,7 +1479,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 18,
+                "num_generated": 19,
                 "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1500,7 +1500,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 18,
+                "num_generated": 19,
                 "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1521,7 +1521,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 21,
+                "num_generated": 22,
                 "num_expanded": 18,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1542,7 +1542,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 21,
+                "num_generated": 22,
                 "num_expanded": 18,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1563,7 +1563,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 18,
+                "num_generated": 19,
                 "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1584,7 +1584,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 18,
+                "num_generated": 19,
                 "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1610,7 +1610,7 @@
             "domain_file": "classical/tests/ferry/domain.pddl",
             "task_file": "classical/tests/ferry/test-1.pddl",
             "blind_unit": {
-                "num_generated": 13,
+                "num_generated": 14,
                 "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1629,7 +1629,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 13,
+                "num_generated": 14,
                 "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1648,7 +1648,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 11,
+                "num_generated": 12,
                 "num_expanded": 11,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1667,7 +1667,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 11,
+                "num_generated": 12,
                 "num_expanded": 11,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1686,7 +1686,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1705,7 +1705,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1724,7 +1724,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1743,7 +1743,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1762,7 +1762,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1781,7 +1781,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1805,7 +1805,7 @@
             "domain_file": "classical/tests/grid/domain.pddl",
             "task_file": "classical/tests/grid/test-1.pddl",
             "blind_unit": {
-                "num_generated": 10,
+                "num_generated": 11,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1821,7 +1821,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 10,
+                "num_generated": 11,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1837,7 +1837,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1853,7 +1853,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1869,7 +1869,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1885,7 +1885,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1901,7 +1901,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1917,7 +1917,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1933,7 +1933,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1949,7 +1949,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1970,7 +1970,7 @@
             "domain_file": "classical/tests/gripper/domain.pddl",
             "task_file": "classical/tests/gripper/test-1.pddl",
             "blind_unit": {
-                "num_generated": 11,
+                "num_generated": 12,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -1985,7 +1985,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 11,
+                "num_generated": 12,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2000,7 +2000,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 11,
+                "num_generated": 12,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2015,7 +2015,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 11,
+                "num_generated": 12,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2030,7 +2030,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2045,7 +2045,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2060,7 +2060,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2075,7 +2075,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2090,7 +2090,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 11,
+                "num_generated": 12,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2105,7 +2105,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 11,
+                "num_generated": 12,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2125,7 +2125,7 @@
             "domain_file": "classical/tests/hiking/domain.pddl",
             "task_file": "classical/tests/hiking/test-1.pddl",
             "blind_unit": {
-                "num_generated": 23,
+                "num_generated": 24,
                 "num_expanded": 22,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2141,7 +2141,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 23,
+                "num_generated": 24,
                 "num_expanded": 22,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2157,7 +2157,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 21,
+                "num_generated": 22,
                 "num_expanded": 15,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2173,7 +2173,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 21,
+                "num_generated": 22,
                 "num_expanded": 15,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2189,7 +2189,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 21,
+                "num_generated": 22,
                 "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2205,7 +2205,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 21,
+                "num_generated": 22,
                 "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2221,7 +2221,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 13,
+                "num_generated": 14,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2237,7 +2237,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 13,
+                "num_generated": 14,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2253,7 +2253,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 21,
+                "num_generated": 22,
                 "num_expanded": 15,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2269,7 +2269,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 21,
+                "num_generated": 22,
                 "num_expanded": 15,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2290,7 +2290,7 @@
             "domain_file": "classical/tests/logistics/domain.pddl",
             "task_file": "classical/tests/logistics/test-1.pddl",
             "blind_unit": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2306,7 +2306,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2322,7 +2322,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2338,7 +2338,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2354,7 +2354,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2370,7 +2370,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2386,7 +2386,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2402,7 +2402,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2418,7 +2418,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2434,7 +2434,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2455,7 +2455,7 @@
             "domain_file": "classical/tests/miconic/domain.pddl",
             "task_file": "classical/tests/miconic/test-1.pddl",
             "blind_unit": {
-                "num_generated": 14,
+                "num_generated": 15,
                 "num_expanded": 12,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2472,7 +2472,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 14,
+                "num_generated": 15,
                 "num_expanded": 12,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2489,7 +2489,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 12,
+                "num_generated": 13,
                 "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2506,7 +2506,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 12,
+                "num_generated": 13,
                 "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2523,7 +2523,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2542,7 +2542,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2561,7 +2561,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 10,
+                "num_generated": 11,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2578,7 +2578,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 10,
+                "num_generated": 11,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2595,7 +2595,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 10,
+                "num_generated": 11,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2612,7 +2612,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 10,
+                "num_generated": 11,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2634,7 +2634,7 @@
             "domain_file": "classical/tests/miconic-fulladl/domain.pddl",
             "task_file": "classical/tests/miconic-fulladl/test-1.pddl",
             "blind_unit": {
-                "num_generated": 44,
+                "num_generated": 45,
                 "num_expanded": 35,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2653,7 +2653,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 44,
+                "num_generated": 45,
                 "num_expanded": 35,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2672,7 +2672,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 44,
+                "num_generated": 45,
                 "num_expanded": 35,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2691,7 +2691,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 44,
+                "num_generated": 45,
                 "num_expanded": 35,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2710,7 +2710,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 44,
+                "num_generated": 45,
                 "num_expanded": 35,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2729,7 +2729,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 44,
+                "num_generated": 45,
                 "num_expanded": 35,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2748,7 +2748,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 44,
+                "num_generated": 45,
                 "num_expanded": 35,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2767,7 +2767,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 44,
+                "num_generated": 45,
                 "num_expanded": 35,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2786,7 +2786,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 44,
+                "num_generated": 45,
                 "num_expanded": 35,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2805,7 +2805,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 44,
+                "num_generated": 45,
                 "num_expanded": 35,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2829,7 +2829,7 @@
             "domain_file": "classical/tests/miconic-simpleadl/domain.pddl",
             "task_file": "classical/tests/miconic-simpleadl/test-1.pddl",
             "blind_unit": {
-                "num_generated": 3,
+                "num_generated": 4,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2845,7 +2845,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 3,
+                "num_generated": 4,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2861,7 +2861,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 3,
+                "num_generated": 4,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2877,7 +2877,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 3,
+                "num_generated": 4,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2893,7 +2893,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 3,
+                "num_generated": 4,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2909,7 +2909,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 3,
+                "num_generated": 4,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2925,7 +2925,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 3,
+                "num_generated": 4,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2941,7 +2941,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 3,
+                "num_generated": 4,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2957,7 +2957,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 3,
+                "num_generated": 4,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2973,7 +2973,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 3,
+                "num_generated": 4,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2994,7 +2994,7 @@
             "domain_file": "classical/tests/parcprinter/domain.pddl",
             "task_file": "classical/tests/parcprinter/test-1.pddl",
             "blind_unit": {
-                "num_generated": 18,
+                "num_generated": 19,
                 "num_expanded": 16,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3014,7 +3014,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 24,
+                "num_generated": 25,
                 "num_expanded": 20,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3037,7 +3037,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3057,7 +3057,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 15,
+                "num_generated": 16,
                 "num_expanded": 12,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3080,7 +3080,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3100,7 +3100,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 15,
+                "num_generated": 16,
                 "num_expanded": 12,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3123,7 +3123,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3143,7 +3143,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 14,
+                "num_generated": 15,
                 "num_expanded": 11,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3166,7 +3166,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 9,
+                "num_generated": 10,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3186,7 +3186,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 15,
+                "num_generated": 16,
                 "num_expanded": 12,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3214,7 +3214,7 @@
             "domain_file": "classical/tests/pathways/domain.pddl",
             "task_file": "classical/tests/pathways/test-1.pddl",
             "blind_unit": {
-                "num_generated": 4899,
+                "num_generated": 4900,
                 "num_expanded": 3780,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3232,7 +3232,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 4899,
+                "num_generated": 4900,
                 "num_expanded": 3780,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3250,7 +3250,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 674,
+                "num_generated": 675,
                 "num_expanded": 90,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3268,7 +3268,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 674,
+                "num_generated": 675,
                 "num_expanded": 90,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3286,7 +3286,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 183,
+                "num_generated": 184,
                 "num_expanded": 14,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3304,7 +3304,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 183,
+                "num_generated": 184,
                 "num_expanded": 14,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3322,7 +3322,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 79,
+                "num_generated": 80,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3340,7 +3340,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 79,
+                "num_generated": 80,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3358,7 +3358,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 674,
+                "num_generated": 675,
                 "num_expanded": 90,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3376,7 +3376,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 674,
+                "num_generated": 675,
                 "num_expanded": 90,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3399,7 +3399,7 @@
             "domain_file": "classical/tests/philosophers/domain.pddl",
             "task_file": "classical/tests/philosophers/test-1.pddl",
             "blind_unit": {
-                "num_generated": 129,
+                "num_generated": 130,
                 "num_expanded": 120,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3429,7 +3429,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 129,
+                "num_generated": 130,
                 "num_expanded": 120,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3459,7 +3459,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 129,
+                "num_generated": 130,
                 "num_expanded": 120,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3489,7 +3489,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 129,
+                "num_generated": 130,
                 "num_expanded": 120,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3519,7 +3519,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 129,
+                "num_generated": 130,
                 "num_expanded": 120,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3549,7 +3549,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 129,
+                "num_generated": 130,
                 "num_expanded": 120,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3579,7 +3579,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 129,
+                "num_generated": 130,
                 "num_expanded": 120,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3609,7 +3609,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 129,
+                "num_generated": 130,
                 "num_expanded": 120,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3639,7 +3639,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 129,
+                "num_generated": 130,
                 "num_expanded": 120,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3669,7 +3669,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 129,
+                "num_generated": 130,
                 "num_expanded": 120,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3704,7 +3704,7 @@
             "domain_file": "classical/tests/psr-middle/domain.pddl",
             "task_file": "classical/tests/psr-middle/test-1.pddl",
             "blind_unit": {
-                "num_generated": 283,
+                "num_generated": 284,
                 "num_expanded": 54,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3720,7 +3720,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 283,
+                "num_generated": 284,
                 "num_expanded": 54,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3736,7 +3736,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 283,
+                "num_generated": 284,
                 "num_expanded": 54,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3752,7 +3752,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 283,
+                "num_generated": 284,
                 "num_expanded": 54,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3768,7 +3768,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 283,
+                "num_generated": 284,
                 "num_expanded": 54,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3784,7 +3784,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 283,
+                "num_generated": 284,
                 "num_expanded": 54,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3800,7 +3800,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 283,
+                "num_generated": 284,
                 "num_expanded": 54,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3816,7 +3816,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 283,
+                "num_generated": 284,
                 "num_expanded": 54,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3832,7 +3832,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 283,
+                "num_generated": 284,
                 "num_expanded": 54,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3848,7 +3848,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 283,
+                "num_generated": 284,
                 "num_expanded": 54,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3886,7 +3886,7 @@
             "domain_file": "classical/tests/reward/domain.pddl",
             "task_file": "classical/tests/reward/test-1.pddl",
             "blind_unit": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3902,7 +3902,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3918,7 +3918,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3934,7 +3934,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3950,7 +3950,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 6,
+                "num_generated": 7,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3966,7 +3966,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 6,
+                "num_generated": 7,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3982,7 +3982,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 6,
+                "num_generated": 7,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3998,7 +3998,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 6,
+                "num_generated": 7,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4014,7 +4014,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 6,
+                "num_generated": 7,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4030,7 +4030,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 6,
+                "num_generated": 7,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4051,7 +4051,7 @@
             "domain_file": "classical/tests/rovers/domain.pddl",
             "task_file": "classical/tests/rovers/test-1.pddl",
             "blind_unit": {
-                "num_generated": 13,
+                "num_generated": 14,
                 "num_expanded": 10,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4067,7 +4067,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 13,
+                "num_generated": 14,
                 "num_expanded": 10,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4083,7 +4083,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 11,
+                "num_generated": 12,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4099,7 +4099,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 11,
+                "num_generated": 12,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4115,7 +4115,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 11,
+                "num_generated": 12,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4131,7 +4131,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 11,
+                "num_generated": 12,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4147,7 +4147,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4163,7 +4163,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4179,7 +4179,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 11,
+                "num_generated": 12,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4195,7 +4195,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 11,
+                "num_generated": 12,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4216,7 +4216,7 @@
             "domain_file": "classical/tests/satellite/domain.pddl",
             "task_file": "classical/tests/satellite/test-1.pddl",
             "blind_unit": {
-                "num_generated": 71,
+                "num_generated": 72,
                 "num_expanded": 32,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4235,7 +4235,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 71,
+                "num_generated": 72,
                 "num_expanded": 32,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4254,7 +4254,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 71,
+                "num_generated": 72,
                 "num_expanded": 31,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4273,7 +4273,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 71,
+                "num_generated": 72,
                 "num_expanded": 31,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4292,7 +4292,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 28,
+                "num_generated": 29,
                 "num_expanded": 11,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4311,7 +4311,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 28,
+                "num_generated": 29,
                 "num_expanded": 11,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4330,7 +4330,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 20,
+                "num_generated": 21,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4349,7 +4349,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 20,
+                "num_generated": 21,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4368,7 +4368,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 28,
+                "num_generated": 29,
                 "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4387,7 +4387,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 28,
+                "num_generated": 29,
                 "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4411,7 +4411,7 @@
             "domain_file": "classical/tests/schedule/domain.pddl",
             "task_file": "classical/tests/schedule/test-1.pddl",
             "blind_unit": {
-                "num_generated": 45,
+                "num_generated": 46,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4425,7 +4425,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 45,
+                "num_generated": 46,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4439,7 +4439,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 45,
+                "num_generated": 46,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4453,7 +4453,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 45,
+                "num_generated": 46,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4467,7 +4467,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 45,
+                "num_generated": 46,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4481,7 +4481,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 45,
+                "num_generated": 46,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4495,7 +4495,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 45,
+                "num_generated": 46,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4509,7 +4509,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 45,
+                "num_generated": 46,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4523,7 +4523,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 45,
+                "num_generated": 46,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4537,7 +4537,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 45,
+                "num_generated": 46,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4573,7 +4573,7 @@
             "domain_file": "classical/tests/spanner/domain.pddl",
             "task_file": "classical/tests/spanner/test-1.pddl",
             "blind_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4589,7 +4589,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4605,7 +4605,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 5,
                 "num_deadends": 1,
                 "num_pruned": 0,
@@ -4621,7 +4621,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 5,
                 "num_deadends": 1,
                 "num_pruned": 0,
@@ -4637,7 +4637,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 5,
                 "num_deadends": 1,
                 "num_pruned": 0,
@@ -4653,7 +4653,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 5,
                 "num_deadends": 1,
                 "num_pruned": 0,
@@ -4669,7 +4669,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 5,
                 "num_deadends": 1,
                 "num_pruned": 0,
@@ -4685,7 +4685,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 5,
                 "num_deadends": 1,
                 "num_pruned": 0,
@@ -4701,7 +4701,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 5,
                 "num_deadends": 1,
                 "num_pruned": 0,
@@ -4717,7 +4717,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 5,
                 "num_deadends": 1,
                 "num_pruned": 0,
@@ -4738,7 +4738,7 @@
             "domain_file": "classical/tests/transport/domain.pddl",
             "task_file": "classical/tests/transport/test-1.pddl",
             "blind_unit": {
-                "num_generated": 129,
+                "num_generated": 130,
                 "num_expanded": 83,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4755,7 +4755,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 123,
+                "num_generated": 124,
                 "num_expanded": 64,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4772,7 +4772,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 84,
+                "num_generated": 85,
                 "num_expanded": 41,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4789,7 +4789,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 119,
+                "num_generated": 120,
                 "num_expanded": 50,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4806,7 +4806,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 48,
+                "num_generated": 49,
                 "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4825,7 +4825,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 29,
+                "num_generated": 30,
                 "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4842,7 +4842,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 25,
+                "num_generated": 26,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4859,7 +4859,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 17,
+                "num_generated": 18,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4876,7 +4876,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 35,
+                "num_generated": 36,
                 "num_expanded": 14,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4893,7 +4893,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 119,
+                "num_generated": 120,
                 "num_expanded": 50,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4915,7 +4915,7 @@
             "domain_file": "classical/tests/visitall/domain.pddl",
             "task_file": "classical/tests/visitall/test-1.pddl",
             "blind_unit": {
-                "num_generated": 46,
+                "num_generated": 47,
                 "num_expanded": 41,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4935,7 +4935,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 46,
+                "num_generated": 47,
                 "num_expanded": 41,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4955,7 +4955,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 43,
+                "num_generated": 44,
                 "num_expanded": 37,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4975,7 +4975,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 43,
+                "num_generated": 44,
                 "num_expanded": 37,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4995,7 +4995,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 23,
+                "num_generated": 24,
                 "num_expanded": 19,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5021,7 +5021,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 23,
+                "num_generated": 24,
                 "num_expanded": 19,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5047,7 +5047,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 24,
+                "num_generated": 25,
                 "num_expanded": 16,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5067,7 +5067,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 24,
+                "num_generated": 25,
                 "num_expanded": 16,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5087,7 +5087,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 26,
+                "num_generated": 27,
                 "num_expanded": 18,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5107,7 +5107,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 26,
+                "num_generated": 27,
                 "num_expanded": 18,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5132,7 +5132,7 @@
             "domain_file": "classical/tests/woodworking/domain.pddl",
             "task_file": "classical/tests/woodworking/test-1.pddl",
             "blind_unit": {
-                "num_generated": 13169,
+                "num_generated": 13170,
                 "num_expanded": 9379,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5153,7 +5153,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 13025,
+                "num_generated": 13026,
                 "num_expanded": 9144,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5174,7 +5174,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 1423,
+                "num_generated": 1424,
                 "num_expanded": 447,
                 "num_deadends": 16,
                 "num_pruned": 0,
@@ -5195,7 +5195,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 451,
+                "num_generated": 452,
                 "num_expanded": 96,
                 "num_deadends": 4,
                 "num_pruned": 0,
@@ -5217,7 +5217,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 580,
+                "num_generated": 581,
                 "num_expanded": 159,
                 "num_deadends": 1,
                 "num_pruned": 0,
@@ -5242,7 +5242,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 367,
+                "num_generated": 368,
                 "num_expanded": 89,
                 "num_deadends": 2,
                 "num_pruned": 0,
@@ -5267,7 +5267,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 95,
+                "num_generated": 96,
                 "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5290,7 +5290,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 113,
+                "num_generated": 114,
                 "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5313,7 +5313,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 378,
+                "num_generated": 379,
                 "num_expanded": 86,
                 "num_deadends": 1,
                 "num_pruned": 0,
@@ -5339,7 +5339,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 454,
+                "num_generated": 455,
                 "num_expanded": 79,
                 "num_deadends": 3,
                 "num_pruned": 0,
@@ -5368,7 +5368,7 @@
             "domain_file": "numeric/tests/fo-counters/domain.pddl",
             "task_file": "numeric/tests/fo-counters/test-1.pddl",
             "blind_unit": {
-                "num_generated": 123,
+                "num_generated": 124,
                 "num_expanded": 46,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5385,7 +5385,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 123,
+                "num_generated": 124,
                 "num_expanded": 46,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5402,7 +5402,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 44,
+                "num_generated": 45,
                 "num_expanded": 12,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5419,7 +5419,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 44,
+                "num_generated": 45,
                 "num_expanded": 12,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5436,7 +5436,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 34,
+                "num_generated": 35,
                 "num_expanded": 10,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5453,7 +5453,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 34,
+                "num_generated": 35,
                 "num_expanded": 10,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5470,7 +5470,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 34,
+                "num_generated": 35,
                 "num_expanded": 10,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5487,7 +5487,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 34,
+                "num_generated": 35,
                 "num_expanded": 10,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5504,7 +5504,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 44,
+                "num_generated": 45,
                 "num_expanded": 12,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5521,7 +5521,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 44,
+                "num_generated": 45,
                 "num_expanded": 12,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5543,7 +5543,7 @@
             "domain_file": "numeric/tests/refuel/domain.pddl",
             "task_file": "numeric/tests/refuel/test-1.pddl",
             "blind_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5560,7 +5560,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5577,7 +5577,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5594,7 +5594,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5611,7 +5611,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5628,7 +5628,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5645,7 +5645,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5662,7 +5662,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5679,7 +5679,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5696,7 +5696,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5718,7 +5718,7 @@
             "domain_file": "numeric/tests/refuel-adl/domain.pddl",
             "task_file": "numeric/tests/refuel-adl/test-1.pddl",
             "blind_unit": {
-                "num_generated": 321,
+                "num_generated": 322,
                 "num_expanded": 294,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5740,7 +5740,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 321,
+                "num_generated": 322,
                 "num_expanded": 294,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5762,7 +5762,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 321,
+                "num_generated": 322,
                 "num_expanded": 294,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5784,7 +5784,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 321,
+                "num_generated": 322,
                 "num_expanded": 294,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5806,7 +5806,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 321,
+                "num_generated": 322,
                 "num_expanded": 294,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5828,7 +5828,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 321,
+                "num_generated": 322,
                 "num_expanded": 294,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5850,7 +5850,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 321,
+                "num_generated": 322,
                 "num_expanded": 294,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5872,7 +5872,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 321,
+                "num_generated": 322,
                 "num_expanded": 294,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5894,7 +5894,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 321,
+                "num_generated": 322,
                 "num_expanded": 294,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5916,7 +5916,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 321,
+                "num_generated": 322,
                 "num_expanded": 294,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5943,7 +5943,7 @@
             "domain_file": "numeric/tests/tpp/domain.pddl",
             "task_file": "numeric/tests/tpp/test-1.pddl",
             "blind_unit": {
-                "num_generated": 502,
+                "num_generated": 503,
                 "num_expanded": 308,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5962,7 +5962,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 328,
+                "num_generated": 329,
                 "num_expanded": 152,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5983,7 +5983,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 74,
+                "num_generated": 75,
                 "num_expanded": 33,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6002,7 +6002,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 91,
+                "num_generated": 92,
                 "num_expanded": 57,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6022,7 +6022,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 40,
+                "num_generated": 41,
                 "num_expanded": 20,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6043,7 +6043,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 41,
+                "num_generated": 42,
                 "num_expanded": 16,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6066,7 +6066,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 32,
+                "num_generated": 33,
                 "num_expanded": 16,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6087,7 +6087,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 58,
+                "num_generated": 59,
                 "num_expanded": 18,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6107,7 +6107,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 46,
+                "num_generated": 47,
                 "num_expanded": 25,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6126,7 +6126,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 51,
+                "num_generated": 52,
                 "num_expanded": 24,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6152,7 +6152,7 @@
             "domain_file": "numeric/tests/zenotravel/domain.pddl",
             "task_file": "numeric/tests/zenotravel/test-1.pddl",
             "blind_unit": {
-                "num_generated": 1269,
+                "num_generated": 1270,
                 "num_expanded": 743,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6173,7 +6173,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 451,
+                "num_generated": 452,
                 "num_expanded": 252,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6194,7 +6194,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 149,
+                "num_generated": 150,
                 "num_expanded": 57,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6215,7 +6215,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 371,
+                "num_generated": 372,
                 "num_expanded": 193,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6238,7 +6238,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 72,
+                "num_generated": 73,
                 "num_expanded": 23,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6259,7 +6259,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 204,
+                "num_generated": 205,
                 "num_expanded": 76,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6284,7 +6284,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 63,
+                "num_generated": 64,
                 "num_expanded": 20,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6307,7 +6307,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 37,
+                "num_generated": 38,
                 "num_expanded": 11,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6328,7 +6328,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 104,
+                "num_generated": 105,
                 "num_expanded": 39,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6351,7 +6351,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 148,
+                "num_generated": 149,
                 "num_expanded": 53,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6378,7 +6378,7 @@
             "domain_file": "numeric/tests/block-grouping/domain.pddl",
             "task_file": "numeric/tests/block-grouping/test-1.pddl",
             "blind_unit": {
-                "num_generated": 90,
+                "num_generated": 91,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6392,7 +6392,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 90,
+                "num_generated": 91,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6406,7 +6406,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 90,
+                "num_generated": 91,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6420,7 +6420,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 90,
+                "num_generated": 91,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6434,7 +6434,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 90,
+                "num_generated": 91,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6448,7 +6448,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 90,
+                "num_generated": 91,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6462,7 +6462,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 28,
+                "num_generated": 29,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6476,7 +6476,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 28,
+                "num_generated": 29,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6490,7 +6490,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 90,
+                "num_generated": 91,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6504,7 +6504,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 90,
+                "num_generated": 91,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6523,7 +6523,7 @@
             "domain_file": "numeric/tests/counters/domain.pddl",
             "task_file": "numeric/tests/counters/test-1.pddl",
             "blind_unit": {
-                "num_generated": 3473,
+                "num_generated": 3474,
                 "num_expanded": 2848,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6547,7 +6547,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 3473,
+                "num_generated": 3474,
                 "num_expanded": 2848,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6571,7 +6571,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 720,
+                "num_generated": 721,
                 "num_expanded": 274,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6595,7 +6595,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 3473,
+                "num_generated": 3474,
                 "num_expanded": 2848,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6619,7 +6619,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 147,
+                "num_generated": 148,
                 "num_expanded": 31,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6643,7 +6643,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 3473,
+                "num_generated": 3474,
                 "num_expanded": 2848,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6667,7 +6667,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 255,
+                "num_generated": 256,
                 "num_expanded": 55,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6691,7 +6691,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 489,
+                "num_generated": 490,
                 "num_expanded": 206,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6721,7 +6721,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 720,
+                "num_generated": 721,
                 "num_expanded": 274,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6745,7 +6745,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 3473,
+                "num_generated": 3474,
                 "num_expanded": 2848,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6774,7 +6774,7 @@
             "domain_file": "numeric/tests/delivery/domain.pddl",
             "task_file": "numeric/tests/delivery/test-1.pddl",
             "blind_unit": {
-                "num_generated": 274,
+                "num_generated": 275,
                 "num_expanded": 44,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6789,7 +6789,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 863,
+                "num_generated": 864,
                 "num_expanded": 119,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6804,7 +6804,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 274,
+                "num_generated": 275,
                 "num_expanded": 44,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6819,7 +6819,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 863,
+                "num_generated": 864,
                 "num_expanded": 119,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6834,7 +6834,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 75,
+                "num_generated": 76,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6849,7 +6849,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 134,
+                "num_generated": 135,
                 "num_expanded": 14,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6864,7 +6864,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 64,
+                "num_generated": 65,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6879,7 +6879,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 45,
+                "num_generated": 46,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6894,7 +6894,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 274,
+                "num_generated": 275,
                 "num_expanded": 44,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6909,7 +6909,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 129,
+                "num_generated": 130,
                 "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6929,7 +6929,7 @@
             "domain_file": "numeric/tests/drone/domain.pddl",
             "task_file": "numeric/tests/drone/test-1.pddl",
             "blind_unit": {
-                "num_generated": 52,
+                "num_generated": 53,
                 "num_expanded": 24,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6945,7 +6945,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 52,
+                "num_generated": 53,
                 "num_expanded": 24,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6961,7 +6961,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 40,
+                "num_generated": 41,
                 "num_expanded": 17,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6977,7 +6977,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 52,
+                "num_generated": 53,
                 "num_expanded": 24,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -6993,7 +6993,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 39,
+                "num_generated": 40,
                 "num_expanded": 18,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7009,7 +7009,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 52,
+                "num_generated": 53,
                 "num_expanded": 24,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7025,7 +7025,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 19,
+                "num_generated": 20,
                 "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7041,7 +7041,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 30,
+                "num_generated": 31,
                 "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7057,7 +7057,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 30,
+                "num_generated": 31,
                 "num_expanded": 12,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7073,7 +7073,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 52,
+                "num_generated": 53,
                 "num_expanded": 24,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7094,7 +7094,7 @@
             "domain_file": "numeric/tests/expedition/domain.pddl",
             "task_file": "numeric/tests/expedition/test-1.pddl",
             "blind_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7107,7 +7107,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7120,7 +7120,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7133,7 +7133,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7146,7 +7146,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7159,7 +7159,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7172,7 +7172,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7185,7 +7185,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7198,7 +7198,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7211,7 +7211,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 1,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7229,7 +7229,7 @@
             "domain_file": "numeric/tests/ext-plant-watering/domain.pddl",
             "task_file": "numeric/tests/ext-plant-watering/test-1.pddl",
             "blind_unit": {
-                "num_generated": 6960,
+                "num_generated": 6961,
                 "num_expanded": 4391,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7249,7 +7249,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 6960,
+                "num_generated": 6961,
                 "num_expanded": 4391,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7269,7 +7269,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 3519,
+                "num_generated": 3520,
                 "num_expanded": 1134,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7307,7 +7307,7 @@
             "domain_file": "numeric/tests/farmland/domain.pddl",
             "task_file": "numeric/tests/farmland/test-1.pddl",
             "blind_unit": {
-                "num_generated": 5,
+                "num_generated": 6,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7321,7 +7321,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 5,
+                "num_generated": 6,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7335,7 +7335,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 5,
+                "num_generated": 6,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7349,7 +7349,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 5,
+                "num_generated": 6,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7363,7 +7363,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 5,
+                "num_generated": 6,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7377,7 +7377,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 5,
+                "num_generated": 6,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7391,7 +7391,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7405,7 +7405,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7419,7 +7419,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 5,
+                "num_generated": 6,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7433,7 +7433,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 5,
+                "num_generated": 6,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7452,7 +7452,7 @@
             "domain_file": "numeric/tests/fo-farmland/domain.pddl",
             "task_file": "numeric/tests/fo-farmland/test-1.pddl",
             "blind_unit": {
-                "num_generated": 6,
+                "num_generated": 7,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7466,7 +7466,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 6,
+                "num_generated": 7,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7480,7 +7480,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 6,
+                "num_generated": 7,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7494,7 +7494,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 6,
+                "num_generated": 7,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7508,7 +7508,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 6,
+                "num_generated": 7,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7522,7 +7522,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 6,
+                "num_generated": 7,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7536,7 +7536,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7550,7 +7550,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 7,
+                "num_generated": 8,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7564,7 +7564,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 6,
+                "num_generated": 7,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7578,7 +7578,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 6,
+                "num_generated": 7,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7597,7 +7597,7 @@
             "domain_file": "numeric/tests/fo-sailing/domain.pddl",
             "task_file": "numeric/tests/fo-sailing/test-1.pddl",
             "blind_unit": {
-                "num_generated": 25,
+                "num_generated": 26,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7611,7 +7611,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 25,
+                "num_generated": 26,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7625,7 +7625,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 25,
+                "num_generated": 26,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7639,7 +7639,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 25,
+                "num_generated": 26,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7653,7 +7653,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 25,
+                "num_generated": 26,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7667,7 +7667,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 25,
+                "num_generated": 26,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7681,7 +7681,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 25,
+                "num_generated": 26,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7695,7 +7695,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 14,
+                "num_generated": 15,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7709,7 +7709,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 25,
+                "num_generated": 26,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7723,7 +7723,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 25,
+                "num_generated": 26,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7742,7 +7742,7 @@
             "domain_file": "numeric/tests/hydropower/domain.pddl",
             "task_file": "numeric/tests/hydropower/test-1.pddl",
             "blind_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7756,7 +7756,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7770,7 +7770,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7784,7 +7784,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7798,7 +7798,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7812,7 +7812,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7826,7 +7826,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 3,
+                "num_generated": 4,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7840,7 +7840,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 3,
+                "num_generated": 4,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7854,7 +7854,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7868,7 +7868,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7887,7 +7887,7 @@
             "domain_file": "numeric/tests/markettrader/domain.pddl",
             "task_file": "numeric/tests/markettrader/test-1.pddl",
             "blind_unit": {
-                "num_generated": 26,
+                "num_generated": 27,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7901,7 +7901,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 26,
+                "num_generated": 27,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7915,7 +7915,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 26,
+                "num_generated": 27,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7929,7 +7929,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 26,
+                "num_generated": 27,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7943,7 +7943,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 26,
+                "num_generated": 27,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7957,7 +7957,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 26,
+                "num_generated": 27,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7971,7 +7971,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 19,
+                "num_generated": 20,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7985,7 +7985,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 19,
+                "num_generated": 20,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -7999,7 +7999,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 26,
+                "num_generated": 27,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8013,7 +8013,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 26,
+                "num_generated": 27,
                 "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8032,7 +8032,7 @@
             "domain_file": "numeric/tests/mprime/domain.pddl",
             "task_file": "numeric/tests/mprime/test-1.pddl",
             "blind_unit": {
-                "num_generated": 2900,
+                "num_generated": 2901,
                 "num_expanded": 885,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8048,7 +8048,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 2900,
+                "num_generated": 2901,
                 "num_expanded": 885,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8064,7 +8064,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 405,
+                "num_generated": 406,
                 "num_expanded": 40,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8080,7 +8080,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 2900,
+                "num_generated": 2901,
                 "num_expanded": 885,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8096,7 +8096,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 697,
+                "num_generated": 698,
                 "num_expanded": 83,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8113,7 +8113,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 2900,
+                "num_generated": 2901,
                 "num_expanded": 885,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8129,7 +8129,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 124,
+                "num_generated": 125,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8146,7 +8146,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 223,
+                "num_generated": 224,
                 "num_expanded": 14,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8164,7 +8164,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 405,
+                "num_generated": 406,
                 "num_expanded": 40,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8180,7 +8180,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 2900,
+                "num_generated": 2901,
                 "num_expanded": 885,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8201,7 +8201,7 @@
             "domain_file": "numeric/tests/pathwaysmetric/domain.pddl",
             "task_file": "numeric/tests/pathwaysmetric/test-1.pddl",
             "blind_unit": {
-                "num_generated": 16,
+                "num_generated": 17,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8215,7 +8215,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 16,
+                "num_generated": 17,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8229,7 +8229,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 16,
+                "num_generated": 17,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8243,7 +8243,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 16,
+                "num_generated": 17,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8257,7 +8257,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 16,
+                "num_generated": 17,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8271,7 +8271,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 16,
+                "num_generated": 17,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8285,7 +8285,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 16,
+                "num_generated": 17,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8299,7 +8299,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 16,
+                "num_generated": 17,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8313,7 +8313,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 16,
+                "num_generated": 17,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8327,7 +8327,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 16,
+                "num_generated": 17,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8346,7 +8346,7 @@
             "domain_file": "numeric/tests/rover/domain.pddl",
             "task_file": "numeric/tests/rover/test-1.pddl",
             "blind_unit": {
-                "num_generated": 1861,
+                "num_generated": 1862,
                 "num_expanded": 554,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8363,7 +8363,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 1797,
+                "num_generated": 1798,
                 "num_expanded": 509,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8380,7 +8380,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 1797,
+                "num_generated": 1798,
                 "num_expanded": 509,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8397,7 +8397,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 185,
+                "num_generated": 186,
                 "num_expanded": 36,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8414,7 +8414,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 1797,
+                "num_generated": 1798,
                 "num_expanded": 509,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8431,7 +8431,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 58,
+                "num_generated": 59,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8448,7 +8448,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 58,
+                "num_generated": 59,
                 "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8465,7 +8465,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 185,
+                "num_generated": 186,
                 "num_expanded": 36,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8482,7 +8482,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 1797,
+                "num_generated": 1798,
                 "num_expanded": 509,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8507,7 +8507,7 @@
             "domain_file": "numeric/tests/sailing/domain.pddl",
             "task_file": "numeric/tests/sailing/test-1.pddl",
             "blind_unit": {
-                "num_generated": 68,
+                "num_generated": 69,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8521,7 +8521,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 68,
+                "num_generated": 69,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8535,7 +8535,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 68,
+                "num_generated": 69,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8549,7 +8549,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 68,
+                "num_generated": 69,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8563,7 +8563,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 68,
+                "num_generated": 69,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8577,7 +8577,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 68,
+                "num_generated": 69,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8591,7 +8591,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 68,
+                "num_generated": 69,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8605,7 +8605,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 27,
+                "num_generated": 28,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8619,7 +8619,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 68,
+                "num_generated": 69,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8633,7 +8633,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 68,
+                "num_generated": 69,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8652,7 +8652,7 @@
             "domain_file": "numeric/tests/settersnumeric/domain.pddl",
             "task_file": "numeric/tests/settersnumeric/test-1.pddl",
             "blind_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8666,7 +8666,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8680,7 +8680,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8694,7 +8694,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8708,7 +8708,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8722,7 +8722,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8736,7 +8736,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8750,7 +8750,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8764,7 +8764,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8778,7 +8778,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 4,
+                "num_generated": 5,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8797,7 +8797,7 @@
             "domain_file": "numeric/tests/sugar/domain.pddl",
             "task_file": "numeric/tests/sugar/test-1.pddl",
             "blind_unit": {
-                "num_generated": 600,
+                "num_generated": 601,
                 "num_expanded": 105,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8812,7 +8812,7 @@
                 }
             },
             "blind_general": {
-                "num_generated": 600,
+                "num_generated": 601,
                 "num_expanded": 105,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8827,7 +8827,7 @@
                 }
             },
             "hmax_unit": {
-                "num_generated": 492,
+                "num_generated": 493,
                 "num_expanded": 75,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8842,7 +8842,7 @@
                 }
             },
             "hmax_general": {
-                "num_generated": 596,
+                "num_generated": 597,
                 "num_expanded": 105,
                 "num_deadends": 4,
                 "num_pruned": 0,
@@ -8857,7 +8857,7 @@
                 }
             },
             "hadd_unit": {
-                "num_generated": 492,
+                "num_generated": 493,
                 "num_expanded": 75,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8872,7 +8872,7 @@
                 }
             },
             "hadd_general": {
-                "num_generated": 596,
+                "num_generated": 597,
                 "num_expanded": 105,
                 "num_deadends": 4,
                 "num_pruned": 0,
@@ -8887,7 +8887,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated": 53,
+                "num_generated": 54,
                 "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8902,7 +8902,7 @@
                 }
             },
             "hff_general": {
-                "num_generated": 117,
+                "num_generated": 118,
                 "num_expanded": 10,
                 "num_deadends": 1,
                 "num_pruned": 0,
@@ -8917,7 +8917,7 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated": 492,
+                "num_generated": 493,
                 "num_expanded": 75,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -8932,7 +8932,7 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated": 596,
+                "num_generated": 597,
                 "num_expanded": 105,
                 "num_deadends": 4,
                 "num_pruned": 0,

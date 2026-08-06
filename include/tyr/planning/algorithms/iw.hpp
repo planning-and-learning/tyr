@@ -33,6 +33,7 @@
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include <utility>
 
 namespace tyr::planning::iw
 {
@@ -67,6 +68,13 @@ struct Solver
     brfs::Solver<Kind> brfs_solver;
     ygg::uint_t max_arity = MaxArity;
     Options<Kind> options;
+
+    Node<Kind> normalize_start_node(std::optional<Node<Kind>> start_node)
+    {
+        if (!start_node)
+            start_node = options.start_node;
+        return brfs_solver.normalize_start_node(std::move(start_node));
+    }
 
     SearchResult<Kind> solve() { return find_solution(brfs_solver, max_arity, options); }
 };

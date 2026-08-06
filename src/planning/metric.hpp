@@ -26,6 +26,8 @@
 #include "tyr/planning/lifted/state_builder.hpp"
 #include "tyr/planning/task.hpp"
 
+#include <cmath>
+#include <stdexcept>
 #include <yggdrasil/containers/optional.hpp>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/core/types.hpp>
@@ -56,7 +58,10 @@ ygg::float_t evaluate_successor_metric(const Task<Kind>& task, const ygg::Builde
     else
         ++context.auxiliary_value;  // Assume unit cost if no metric is given.
 
-    return ygg::FloatTolerance<ygg::float_t>::canonicalize(context.auxiliary_value);
+    const auto result = ygg::FloatTolerance<ygg::float_t>::canonicalize(context.auxiliary_value);
+    if (!std::isfinite(result))
+        throw std::runtime_error("Successor metric value is not finite.");
+    return result;
 }
 }
 
