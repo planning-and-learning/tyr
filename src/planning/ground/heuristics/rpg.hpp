@@ -99,20 +99,6 @@ struct RPGPolicy<GroundTag>
         }
     }
 
-    template<typename Workspace>
-    static void prepare_rule_binding(Workspace&, ::tyr::formalism::planning::ActionBindingView) noexcept
-    {
-    }
-
-    template<::tyr::formalism::RelationKind R, typename Workspace>
-    static std::optional<datalog::WitnessRuleKeyT<GroundTag, R>> make_rule_cost_key(Workspace&,
-                                                                                    ::tyr::formalism::datalog::GroundRuleView<R> rule,
-                                                                                    ::tyr::formalism::planning::GroundActionView mapped_action,
-                                                                                    ::tyr::formalism::planning::ActionBindingView action_binding)
-    {
-        return mapped_action.get_row() == action_binding ? std::optional(rule) : std::nullopt;
-    }
-
     template<::tyr::formalism::RelationKind R, typename Definition, typename Workspace>
     static std::optional<::tyr::formalism::planning::ActionBindingView>
     get_action_binding(const Definition& definition, Workspace&, const datalog::WitnessAnnotation<GroundTag, R>& witness)

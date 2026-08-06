@@ -20,7 +20,10 @@
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 
+#include <cassert>
+#include <ranges>
 #include <tuple>
 #include <utility>
 #include <yggdrasil/containers/associative_containers.hpp>
@@ -30,6 +33,44 @@
 
 namespace tyr::datalog
 {
+
+template<::tyr::formalism::RelationKind R>
+struct ActionCostLookup
+{
+    ::tyr::formalism::planning::ActionView action;
+    ::tyr::formalism::datalog::RuleBindingView<R> rule_binding;
+
+    auto get_key() const noexcept
+    {
+        assert(rule_binding.get_data().size() >= action.get_arity());
+        return std::make_pair(action.get_index(), std::views::take(rule_binding.get_data(), action.get_arity()));
+    }
+};
+
+struct ActionCostHash
+{
+    using is_transparent = void;
+
+    template<typename Key>
+    size_t operator()(const Key& key) const noexcept
+    {
+        const auto [relation, objects] = key.get_key();
+        return ygg::hash_combine(relation, ygg::hash_range(objects));
+    }
+};
+
+struct ActionCostEqual
+{
+    using is_transparent = void;
+
+    template<typename Lhs, typename Rhs>
+    bool operator()(const Lhs& lhs, const Rhs& rhs) const noexcept
+    {
+        const auto lhs_key = lhs.get_key();
+        const auto rhs_key = rhs.get_key();
+        return ygg::EqualTo<> {}(lhs_key.first, rhs_key.first) && ygg::equal_range(lhs_key.second, rhs_key.second);
+    }
+};
 
 template<TaskKind Kind, ::tyr::formalism::RelationKind R>
 struct NumericTransitionCostKey : ygg::comparison::Mixin<NumericTransitionCostKey<Kind, R>>
@@ -128,10 +169,30 @@ template<TaskKind Kind>
 class RuleCostOverridePolicy
 {
 public:
+    using PredicateRuleKey = WitnessRuleKeyT<Kind, ::tyr::formalism::PredicateTag>;
+    using FunctionRuleKey = WitnessRuleKeyT<Kind, ::tyr::formalism::FunctionTag>;
+
+    template<::tyr::formalism::RelationKind R>
+    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, ::tyr::formalism::datalog::GroundRuleView<R>, ::tyr::formalism::datalog::RuleView<R>>;
+    using Action = std::conditional_t<std::same_as<Kind, GroundTag>, ::tyr::formalism::planning::GroundActionView, ::tyr::formalism::planning::ActionView>;
+    template<::tyr::formalism::RelationKind R>
+    using RuleToActionMapping = ygg::UnorderedMap<Rule<R>, Action>;
+
+    RuleCostOverridePolicy() = default;
+    RuleCostOverridePolicy(const RuleToActionMapping<::tyr::formalism::PredicateTag>& predicate_rule_to_action,
+                           const RuleToActionMapping<::tyr::formalism::FunctionTag>& function_rule_to_action) noexcept :
+        m_predicate_rule_to_action(&predicate_rule_to_action),
+        m_function_rule_to_action(&function_rule_to_action)
+    {
+    }
+
     template<typename RuleKey>
     Cost get_cost(RuleKey rule_key) const
     {
-        return storage_for(rule_key).get_cost(rule_key);
+        const auto& costs = storage_for(rule_key).get_costs();
+        if (const auto it = costs.find(rule_key); it != costs.end())
+            return it->second;
+        return get_action_cost(rule_key);
     }
 
     template<typename RuleKey>
@@ -144,7 +205,10 @@ public:
     {
         predicate_storage.clear();
         function_storage.clear();
+        m_action_costs.clear();
     }
+
+    void set_action_cost(::tyr::formalism::planning::ActionBindingView action, Cost cost) { m_action_costs.insert_or_assign(action, cost); }
 
     template<typename RuleKey>
     void set_cost(RuleKey rule_key, Cost cost)
@@ -169,8 +233,44 @@ protected:
     const auto& storage_for(WitnessRuleKeyT<Kind, ::tyr::formalism::PredicateTag>) const noexcept { return predicate_storage; }
     const auto& storage_for(WitnessRuleKeyT<Kind, ::tyr::formalism::FunctionTag>) const noexcept { return function_storage; }
 
+    const auto* mapping(::tyr::formalism::PredicateTag) const noexcept { return m_predicate_rule_to_action; }
+    const auto* mapping(::tyr::formalism::FunctionTag) const noexcept { return m_function_rule_to_action; }
+
+    template<::tyr::formalism::RelationKind R>
+    Cost get_action_cost(::tyr::formalism::datalog::GroundRuleView<R> rule) const
+        requires std::same_as<Kind, GroundTag>
+    {
+        const auto* rule_to_action = mapping(R {});
+        if (!rule_to_action)
+            return Cost(0);
+
+        const auto action = rule_to_action->find(rule);
+        if (action == rule_to_action->end())
+            return Cost(0);
+        const auto cost = m_action_costs.find(action->second.get_row());
+        return cost == m_action_costs.end() ? Cost(0) : cost->second;
+    }
+
+    template<::tyr::formalism::RelationKind R>
+    Cost get_action_cost(::tyr::formalism::datalog::RuleBindingView<R> rule_binding) const
+        requires std::same_as<Kind, LiftedTag>
+    {
+        const auto* rule_to_action = mapping(R {});
+        if (!rule_to_action)
+            return Cost(0);
+
+        const auto action = rule_to_action->find(rule_binding.get_relation());
+        if (action == rule_to_action->end() || rule_binding.get_data().size() < action->second.get_arity())
+            return Cost(0);
+        const auto cost = m_action_costs.find(ActionCostLookup<R> { action->second, rule_binding });
+        return cost == m_action_costs.end() ? Cost(0) : cost->second;
+    }
+
     RuleCostOverrideStorage<Kind, ::tyr::formalism::PredicateTag> predicate_storage;
     RuleCostOverrideStorage<Kind, ::tyr::formalism::FunctionTag> function_storage;
+    const RuleToActionMapping<::tyr::formalism::PredicateTag>* m_predicate_rule_to_action { nullptr };
+    const RuleToActionMapping<::tyr::formalism::FunctionTag>* m_function_rule_to_action { nullptr };
+    gtl::flat_hash_map<::tyr::formalism::planning::ActionBindingView, Cost, ActionCostHash, ActionCostEqual> m_action_costs;
 };
 
 }

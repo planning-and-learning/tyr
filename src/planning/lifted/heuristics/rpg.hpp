@@ -71,27 +71,6 @@ struct RPGPolicy<LiftedTag>
         insert_numeric_variables_to_fact_set(state, *definition.task->get_repository(), merge_context, workspace.facts.fact_sets);
     }
 
-    template<typename Workspace>
-    static void prepare_rule_binding(Workspace& workspace, ::tyr::formalism::planning::ActionBindingView action_binding)
-    {
-        workspace.binding.clear();
-        for (const auto object : action_binding.get_data())
-            workspace.binding.push_back(object);
-    }
-
-    template<::tyr::formalism::RelationKind R, typename Workspace>
-    static std::optional<datalog::WitnessRuleKeyT<LiftedTag, R>> make_rule_cost_key(Workspace& workspace,
-                                                                                    ::tyr::formalism::datalog::RuleView<R> rule,
-                                                                                    ::tyr::formalism::planning::ActionView mapped_action,
-                                                                                    ::tyr::formalism::planning::ActionBindingView action_binding)
-    {
-        if (mapped_action.get_index() != action_binding.get_relation().get_index())
-            return std::nullopt;
-
-        auto grounder_context = ::tyr::formalism::datalog::GrounderContext { workspace.datalog_builder, workspace.workspace_repository, workspace.binding };
-        return ::tyr::formalism::datalog::ground_binding(rule, grounder_context).first;
-    }
-
     template<::tyr::formalism::RelationKind R, typename Definition, typename Workspace>
     static std::optional<::tyr::formalism::planning::ActionBindingView>
     get_action_binding(const Definition& definition, Workspace& workspace, const datalog::WitnessAnnotation<LiftedTag, R>& witness)

@@ -23,17 +23,19 @@
 #include "tyr/datalog/lifted/solver.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
+#include "tyr/datalog/policies/cost.hpp"
 #include "tyr/datalog/policies/cost_concept.hpp"
 #include "tyr/datalog/policies/termination_concept.hpp"
 #include "tyr/datalog/workspaces/program.hpp"
 #include "tyr/formalism/datalog/views.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/programs/rpg.hpp"
 
 #include <cstddef>
 #include <limits>
 #include <memory>
+#include <type_traits>
 #include <utility>
 #include <yggdrasil/execution/onetbb.hpp>
 
@@ -103,7 +105,7 @@ public:
         m_definition(std::make_shared<Definition>(std::move(task), cost_mode, compute_expanded_lmcut)),
         m_execution_context(std::move(execution_context)),
         m_source_goal(m_definition->task->get_task().get_goal()),
-        m_workspace(m_definition->rpg_program.get_datalog_program(), std::move(or_ap), std::move(and_ap), TP {})
+        m_workspace(m_definition->rpg_program.get_datalog_program(), std::move(or_ap), std::move(and_ap), TP {}, make_cost_policy(*m_definition))
     {
         Policy::set_goal(*m_definition, m_workspace, m_source_goal);
     }
@@ -112,7 +114,7 @@ public:
         m_definition(source.m_definition),
         m_execution_context(std::move(execution_context)),
         m_source_goal(source.m_source_goal),
-        m_workspace(m_definition->rpg_program.get_datalog_program(), std::move(or_ap), std::move(and_ap), TP {})
+        m_workspace(m_definition->rpg_program.get_datalog_program(), std::move(or_ap), std::move(and_ap), TP {}, make_cost_policy(*m_definition))
     {
         Policy::set_goal(*m_definition, m_workspace, m_source_goal);
     }
@@ -152,16 +154,9 @@ protected:
     ygg::float_t compute_result(const ygg::Builder<State<Kind>>&) const noexcept { return get_goal_cost(); }
 
     void set_action_binding_cost(::tyr::formalism::planning::ActionBindingView action_binding, datalog::Cost cost)
+        requires std::same_as<CP, datalog::RuleCostOverridePolicy<Kind>>
     {
-        Policy::prepare_rule_binding(m_workspace, action_binding);
-        const auto set_costs = [&]<::tyr::formalism::RelationKind R>()
-        {
-            for (const auto& [rule, mapped_action] : m_definition->rpg_program.template get_rule_to_action_mapping<R>())
-                if (const auto rule_key = Policy::make_rule_cost_key(m_workspace, rule, mapped_action, action_binding))
-                    m_workspace.cost_policy.set_cost(*rule_key, cost);
-        };
-        set_costs.template operator()<::tyr::formalism::PredicateTag>();
-        set_costs.template operator()<::tyr::formalism::FunctionTag>();
+        m_workspace.cost_policy.set_action_cost(action_binding, cost);
     }
 
     datalog::Cost get_predicate_cost(datalog::PredicateAnnotationHead<Kind> head) const noexcept
@@ -211,6 +206,16 @@ protected:
     ygg::ExecutionContextPtr m_execution_context;
     ::tyr::formalism::planning::GroundConjunctiveConditionView m_source_goal;
     Workspace m_workspace;
+
+private:
+    static CP make_cost_policy(const Definition& definition)
+    {
+        if constexpr (std::same_as<CP, datalog::RuleCostOverridePolicy<Kind>>)
+            return CP(definition.rpg_program.template get_rule_to_action_mapping<::tyr::formalism::PredicateTag>(),
+                      definition.rpg_program.template get_rule_to_action_mapping<::tyr::formalism::FunctionTag>());
+        else
+            return CP {};
+    }
 };
 
 }
