@@ -37,14 +37,19 @@ struct Options
 {
     static constexpr CostMode cost_mode = CostMode::UNIT;
 
+    /// Optional initial node. It must belong to this task; search materializes its state in the caller successor generator's repository and restarts unit
+    /// depth at zero.
     std::optional<Node<Kind>> start_node = std::nullopt;
     EventHandlerPtr<Kind> event_handler = nullptr;
     PruningStrategyPtr<Kind> pruning_strategy = nullptr;
     GoalStrategyPtr<Kind> goal_strategy = nullptr;
+    /// Maximum solve-local states, including an unsolved start. Existing repository population is ignored, but a pre-interned state counts when first
+    /// encountered, and an over-limit successor may already be interned. A satisfied start may solve even when this is zero.
     ygg::uint_t max_num_states = std::numeric_limits<ygg::uint_t>::max();
     std::optional<std::chrono::steady_clock::duration> max_time = std::nullopt;
     size_t num_search_workers = 1;
     StateRepositoryMode state_repository_mode = StateRepositoryMode::HASH_DISTRIBUTED;
+    bool collect_destination_lock_statistics = false;
     uint64_t random_seed = 0;
     bool shuffle_labeled_succ_nodes = false;
 

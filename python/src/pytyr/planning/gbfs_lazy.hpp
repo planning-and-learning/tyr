@@ -61,6 +61,7 @@ void bind_options(nb::module_& m, const std::string& name)
         .def_rw("boost_preferred_queue", &T::boost_preferred_queue)
         .def_rw("num_search_workers", &T::num_search_workers)
         .def_rw("state_repository_mode", &T::state_repository_mode)
+        .def_rw("collect_destination_lock_statistics", &T::collect_destination_lock_statistics)
         .def_rw("random_seed", &T::random_seed)
         .def_rw("shuffle_labeled_succ_nodes", &T::shuffle_labeled_succ_nodes);
 }

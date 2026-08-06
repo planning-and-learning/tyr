@@ -212,7 +212,7 @@ ygg::Index<planning::State<::tyr::LiftedTag>> LiftedStateView::get_index() const
 
 std::tuple<ygg::Index<planning::State<::tyr::LiftedTag>>, ygg::uint_t> LiftedStateView::identifying_members() const noexcept
 {
-    return std::make_tuple(get_index(), m_state_repository->get_index());
+    return std::make_tuple(get_index(), m_state_repository->get_storage_identity());
 }
 
 ::tyr::formalism::planning::FDRValue LiftedStateView::get(ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const

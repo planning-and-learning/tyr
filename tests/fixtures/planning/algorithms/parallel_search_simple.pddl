@@ -1,0 +1,6 @@
+(define (problem parallel-search-simple)
+  (:domain parallel-search-edge-cases)
+  (:objects item - token start goal - location)
+  (:init (at item start) (edge start goal))
+  (:goal (at item goal))
+)

@@ -1,0 +1,13 @@
+(define (problem parallel-search-diamond)
+  (:domain parallel-search-edge-cases)
+  (:objects item - token start left right merge goal - location)
+  (:init
+    (at item start)
+    (edge start left)
+    (edge start right)
+    (edge left merge)
+    (edge right merge)
+    (edge merge goal)
+  )
+  (:goal (at item goal))
+)

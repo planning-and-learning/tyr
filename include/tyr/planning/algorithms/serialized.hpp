@@ -42,6 +42,7 @@ namespace tyr::planning::serialized
 template<TaskKind Kind, SolverConcept<Kind> Subsolver>
 struct Options
 {
+    /// Optional initial node for the first subsearch; when a subsearch runs, it must belong to the subsolver's task.
     std::optional<Node<Kind>> start_node = std::nullopt;
     EventHandlerPtr<Kind, Subsolver> event_handler = nullptr;
     GoalStrategyPtr<Kind> subgoal_strategy = nullptr;

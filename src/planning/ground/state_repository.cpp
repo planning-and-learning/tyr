@@ -53,6 +53,11 @@
 namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;
 
+namespace
+{
+std::atomic<ygg::uint_t> next_storage_identity { 0 };
+}
+
 namespace tyr::planning
 {
 
@@ -73,8 +78,14 @@ struct StateRepository<GroundTag>::Impl
         using PackedStates =
             ygg::IndexedHashSet<State<GroundTag>, ygg::Hash<ygg::Data<State<GroundTag>>>, ygg::EqualTo<ygg::Data<State<GroundTag>>>, 32, ThreadSafe>;
 
-        explicit Storage(const Definition& definition) : context(*definition.task), packed_states() {}
+        explicit Storage(const Definition& definition) :
+            identity(next_storage_identity.fetch_add(1, std::memory_order_relaxed)),
+            context(*definition.task),
+            packed_states()
+        {
+        }
 
+        const ygg::uint_t identity;
         StateStorageContext<GroundTag, StateStoragePolicyTag, ThreadSafe> context;
         PackedStates packed_states;
     };
@@ -108,7 +119,8 @@ struct StateRepository<GroundTag>::Impl
         next_index(std::move(next_index_)),
         definition(std::make_shared<Definition>(std::move(task))),
         evaluator(std::make_unique<Evaluator<false>>(std::make_unique<Storage<false>>(*definition), std::move(axiom_evaluator))),
-        shared_evaluator()
+        shared_evaluator(),
+        storage_identity(evaluator->storage->identity)
     {
     }
 
@@ -120,7 +132,8 @@ struct StateRepository<GroundTag>::Impl
         next_index(std::move(next_index_)),
         definition(std::move(definition_)),
         evaluator(std::make_unique<Evaluator<false>>(std::make_unique<Storage<false>>(*definition), std::move(axiom_evaluator))),
-        shared_evaluator()
+        shared_evaluator(),
+        storage_identity(evaluator->storage->identity)
     {
     }
 
@@ -133,7 +146,8 @@ struct StateRepository<GroundTag>::Impl
         next_index(std::move(next_index_)),
         definition(std::move(definition_)),
         evaluator(),
-        shared_evaluator(std::make_unique<Evaluator<true>>(std::move(storage), std::move(axiom_evaluator)))
+        shared_evaluator(std::make_unique<Evaluator<true>>(std::move(storage), std::move(axiom_evaluator))),
+        storage_identity(shared_evaluator->storage->identity)
     {
     }
 
@@ -158,6 +172,7 @@ struct StateRepository<GroundTag>::Impl
     std::shared_ptr<const Definition> definition;
     std::unique_ptr<Evaluator<false>> evaluator;
     std::unique_ptr<Evaluator<true>> shared_evaluator;
+    const ygg::uint_t storage_identity;
 };
 
 StateRepository<GroundTag>::StateRepository(ygg::uint_t index,
@@ -334,6 +349,8 @@ const AxiomEvaluatorPtr<GroundTag>& StateRepository<GroundTag>::get_axiom_evalua
 }
 
 ygg::uint_t StateRepository<GroundTag>::get_index() const noexcept { return m_impl->index; }
+
+ygg::uint_t StateRepository<GroundTag>::get_storage_identity() const noexcept { return m_impl->storage_identity; }
 
 size_t StateRepository<GroundTag>::num_states() const noexcept
 {

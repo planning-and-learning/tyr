@@ -1,0 +1,87 @@
+name: CI ThreadSanitizer
+
+on:
+  push:
+    branches-ignore:
+      - test-pypi
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Tyr
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install build requirements
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake
+          python -m pip install --no-cache-dir --upgrade pip uv
+          uv pip install --system --no-cache -r pyproject.toml --extra test
+        env:
+          PIP_NO_CACHE_DIR: 1
+          PYYGGDRASIL_JOBS: 2
+          PYPDDL_JOBS: 2
+
+      - name: Rebuild oneTBB with ThreadSanitizer
+        run: |
+          git clone --depth 1 --branch v2022.2.0 https://github.com/uxlfoundation/oneTBB.git /tmp/oneTBB
+          PYYGGDRASIL_PREFIX="$(python -c 'import pyyggdrasil; print(pyyggdrasil.native_prefix())')"
+          CC=clang CXX=clang++ cmake \
+            -S /tmp/oneTBB \
+            -B /tmp/oneTBB-build \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_INSTALL_PREFIX="${PYYGGDRASIL_PREFIX}" \
+            -DTBB_SANITIZE=thread \
+            -DTBB_ENABLE_IPO=OFF \
+            -DTBB_TEST=OFF \
+            -DTBB_EXAMPLES=OFF \
+            -DTBB_STRICT=OFF \
+            -DTBBMALLOC_BUILD=OFF
+          cmake --build /tmp/oneTBB-build --target install -j16
+
+      - name: Configure Tyr with ThreadSanitizer
+        run: |
+          CC=clang CXX=clang++ cmake \
+            -S . \
+            -B build_tsan \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DTYR_BUILD_TESTS=ON \
+            -DTYR_ENABLE_LTO=OFF \
+            -DTYR_USE_LLD=OFF \
+            -DTYR_RELATION_STORAGE_POLICY=Bit \
+            -DCMAKE_CXX_FLAGS="-fsanitize=thread -fno-omit-frame-pointer" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=thread" \
+            -DCMAKE_SHARED_LINKER_FLAGS="-fsanitize=thread" \
+            -DPython_EXECUTABLE="$(python -c 'import sys; print(sys.executable)')" \
+            -DCMAKE_PREFIX_PATH="$(python -c 'import pypddl, pyyggdrasil; print(f"{pypddl.native_prefix()};{pyyggdrasil.native_prefix()}")')"
+
+      - name: Build focused concurrent tests
+        run: |
+          cmake --build build_tsan \
+            --target \
+              planning_search_engine \
+              planning_plan_reconstruction \
+              planning_state_routing \
+              planning_workers \
+              planning_algorithms_iw_novelty_table \
+            -j16
+
+      - name: Run focused concurrent tests
+        working-directory: build_tsan/tests/unit
+        run: |
+          PYPDDL_LIB_DIR="$(python -c 'import pypddl; print(pypddl.native_prefix() / "lib")')"
+          PYYGGDRASIL_LIB_DIR="$(python -c 'import pyyggdrasil; print(pyyggdrasil.native_prefix() / "lib")')"
+          export LD_LIBRARY_PATH="${PYPDDL_LIB_DIR}:${PYYGGDRASIL_LIB_DIR}:$PWD/../../src:${LD_LIBRARY_PATH:-}"
+          TSAN_OPTIONS=halt_on_error=1 ctest \
+            --parallel 1 \
+            --output-on-failure \
+            --repeat until-fail:3 \
+            -R '^(planning_search_engine|planning_plan_reconstruction|planning_state_routing|planning_workers|planning_algorithms_iw_novelty_table)$'

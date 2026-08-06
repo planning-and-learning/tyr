@@ -34,6 +34,7 @@
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
+#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/worker_state_index.hpp"
 
 #include <cassert>
@@ -85,12 +86,6 @@ public:
     {
         LabeledNode<Kind> labeled_node;
         typename SearchPolicy::SuccessorMetadata metadata;
-    };
-
-    struct IncomingSuccessor
-    {
-        Node<Kind> source;
-        RoutedSuccessor routed;
     };
 
     struct WorkerData
@@ -200,7 +195,6 @@ public:
 
     void worker_loop(WorkerData& worker)
     {
-        worker.statistics.set_search_start_time_point(std::chrono::steady_clock::now());
         try
         {
             worker_loop_impl(worker);
@@ -221,23 +215,12 @@ private:
             if (m_execution.timed_out())
             {
                 m_execution.set_terminal(*this, SearchStatus::OUT_OF_TIME);
+                m_execution.notify_if_stopped(*this);
                 return;
             }
 
-            // Register queued states before generating more work from the local open list.
-            while (auto incoming = m_execution.receive_one(*this, worker))
-            {
-                const auto result = accept_successor(worker, incoming->source, incoming->routed);
-                handle_acceptance(result);
-                if (result == AcceptanceResult::TERMINAL || !m_execution.running())
-                    return;
-            }
-
-            if (m_execution.can_expand(*this, worker))
-            {
-                expand_one(worker);
+            if (expand_one(worker))
                 continue;
-            }
 
             const auto idle_start = std::chrono::steady_clock::now();
             m_execution.wait_for_work(*this, worker);
@@ -252,7 +235,7 @@ private:
         m_caller_successor_generator(successor_generator),
         m_options(options),
         m_event_handler(options.event_handler),
-        m_start_node(options.start_node ? *options.start_node : successor_generator.get_initial_node()),
+        m_start_node(make_start_node(task, successor_generator, options)),
         m_execution(options.random_seed),
         m_workers(task, successor_generator, heuristic, options, m_event_handler)
     {
@@ -302,6 +285,12 @@ private:
             throw std::runtime_error("find_solution(...): start node metric value is NaN.");
         }
 
+        if (!ExecutionPolicy::has_start_state_capacity(m_options.max_num_states))
+        {
+            finalize(SearchStatus::OUT_OF_STATES);
+            return std::move(m_result);
+        }
+
         if (start_search_node.status == SearchNodeStatus::DEAD_END)
         {
             finalize(SearchStatus::UNSOLVABLE);
@@ -311,12 +300,6 @@ private:
         if (start_worker.pruning_strategy->should_prune_state(start_state))
         {
             finalize(SearchStatus::EXHAUSTED);
-            return std::move(m_result);
-        }
-
-        if (!ExecutionPolicy::has_start_state_capacity(m_options.max_num_states))
-        {
-            finalize(SearchStatus::OUT_OF_STATES);
             return std::move(m_result);
         }
 
@@ -337,52 +320,67 @@ private:
 
     std::pair<ygg::Index<Worker>, StateView<Kind>> prepare_start_state() { return m_execution.prepare_start_state(*this, m_start_node.get_state()); }
 
-    void expand_one(WorkerData& worker)
+    bool expand_one(WorkerData& worker)
     {
-        const auto entry = worker.search.pop();
-        if (worker.search.should_discard(entry, m_execution.incumbent_cost()))
+        struct PreparedExpansion
         {
-            m_execution.finish_expansion(*this);
-            return;
-        }
+            typename SearchPolicy::PoppedEntry entry;
+            Node<Kind> node;
+            SearchNode search_node;
+        };
 
-        auto& state_repository = *worker.successor_generator.get_state_repository();
-        const auto state = state_repository.get_registered_state(entry.state);
-        auto& search_node = worker.get_search_node(entry.state);
-        auto node = Node<Kind>(state, search_node.g_value);
+        auto prepared = std::optional<PreparedExpansion> {};
+        auto claimed = false;
+        m_execution.with_worker_lock(
+            worker,
+            [&]
+            {
+                if (!m_execution.can_expand_locked(*this, worker))
+                    return;
 
-        if (search_node.status == SearchNodeStatus::CLOSED || search_node.status == SearchNodeStatus::DEAD_END)
+                claimed = true;
+                const auto entry = worker.search.pop();
+                if (worker.search.should_discard(entry, m_execution.incumbent_cost()))
+                    return;
+
+                auto& state_repository = *worker.successor_generator.get_state_repository();
+                auto state = state_repository.get_registered_state(entry.state);
+                auto& search_node = worker.get_search_node(entry.state);
+                auto node = Node<Kind>(std::move(state), search_node.g_value);
+
+                if (search_node.status == SearchNodeStatus::CLOSED || search_node.status == SearchNodeStatus::DEAD_END)
+                    return;
+
+                const auto expansion_result = worker.search.prepare_expansion(
+                    entry,
+                    node,
+                    search_node,
+                    worker.statistics,
+                    [&](ygg::float_t h_value, auto&& callback)
+                    { return m_execution.improve_best_h(h_value, [&] { call_root_event(std::forward<decltype(callback)>(callback)); }); },
+                    [&](auto&& callback) { call_worker_event(worker, std::forward<decltype(callback)>(callback)); },
+                    [&](ygg::float_t priority) { on_finish_priority_layer(priority); });
+                if (expansion_result == ExpansionResult::GOAL)
+                {
+                    solve(worker, search_node, node);
+                    return;
+                }
+                if (expansion_result == ExpansionResult::EXPAND)
+                    prepared.emplace(PreparedExpansion { entry, std::move(node), search_node });
+            });
+
+        if (!claimed)
+            return false;
+
+        m_execution.notify_if_stopped(*this);
+        if (prepared && m_execution.running())
         {
-            m_execution.finish_expansion(*this);
-            return;
+            auto& state_repository = *worker.successor_generator.get_state_repository();
+            worker.successor_generator.get_applicable_action_bindings(prepared->node, worker.applicable_actions);
+            m_execution.expand_successors(*this, worker, prepared->node, prepared->entry, prepared->search_node, state_repository);
         }
-
-        const auto expansion_result = worker.search.prepare_expansion(
-            entry,
-            node,
-            search_node,
-            worker.statistics,
-            [&](ygg::float_t h_value, auto&& callback)
-            { return m_execution.improve_best_h(h_value, [&] { call_root_event(std::forward<decltype(callback)>(callback)); }); },
-            [&](auto&& callback) { call_worker_event(worker, std::forward<decltype(callback)>(callback)); },
-            [&](ygg::float_t priority) { on_finish_priority_layer(priority); });
-        if (expansion_result == ExpansionResult::SKIP)
-        {
-            m_execution.finish_expansion(*this);
-            return;
-        }
-
-        if (expansion_result == ExpansionResult::GOAL)
-        {
-            solve(worker, search_node, node);
-            m_execution.finish_expansion(*this);
-            return;
-        }
-
-        worker.successor_generator.get_applicable_action_bindings(node, worker.applicable_actions);
-        m_execution.expand_successors(*this, worker, node, entry, search_node, state_repository);
-
         m_execution.finish_expansion(*this);
+        return true;
     }
 
     void handle_acceptance(AcceptanceResult result)
@@ -402,7 +400,7 @@ private:
             throw std::runtime_error("find_solution(...): successor metric value is NaN.");
 
         const auto is_new = successor_search_node.status == SearchNodeStatus::NEW;
-        if (is_new && !m_execution.reserve_state(worker.search.get_search_nodes().size(), m_options.max_num_states))
+        if (is_new && !m_execution.reserve_state(m_options.max_num_states))
         {
             m_execution.set_terminal(*this, SearchStatus::OUT_OF_STATES);
             return AcceptanceResult::TERMINAL;
@@ -412,9 +410,12 @@ private:
         if (std::isnan(g_value))
             throw std::runtime_error("find_solution(...): successor path cost is NaN.");
         const auto normalized_node = Node<Kind>(successor_state, g_value);
-        const auto normalized_successor = LabeledNode<Kind> { labeled_successor.label, normalized_node };
         const auto emit_transition = [&](TransitionOutcome outcome)
-        { call_worker_event(worker, [&](auto& handler) { handler.on_generate_transition(source_node, normalized_successor, outcome); }); };
+        {
+            call_worker_event(worker,
+                              [&](auto& handler)
+                              { handler.on_generate_transition(source_node, LabeledNode<Kind> { labeled_successor.label, normalized_node }, outcome); });
+        };
         return worker.search.accept_successor(*this, worker, source_node, normalized_node, routed_successor, successor_search_node, is_new, emit_transition);
     }
 
@@ -506,6 +507,19 @@ private:
     {
         if (worker.event_handler)
             std::forward<Callback>(callback)(*worker.event_handler);
+    }
+
+    static Node<Kind> make_start_node(Task<Kind>& task, SuccessorGenerator<Kind>& successor_generator, const Options& options)
+    {
+        auto& target_repository = *successor_generator.get_state_repository();
+        if (target_repository.get_task().get() != &task)
+            throw std::invalid_argument("find_solution(...): successor generator belongs to a different task.");
+
+        const auto start_node = options.start_node ? *options.start_node : successor_generator.get_initial_node();
+        if (start_node.get_state().get_state_repository()->get_task().get() != &task)
+            throw std::invalid_argument("find_solution(...): start node belongs to a different task.");
+
+        return Node<Kind>(materialize_state(start_node.get_state(), target_repository), start_node.get_metric());
     }
 
     Task<Kind>& m_task;

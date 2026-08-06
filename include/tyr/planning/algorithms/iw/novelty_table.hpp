@@ -48,7 +48,8 @@ namespace detail
 template<size_t Arity>
 struct NoveltyTableStorage
 {
-    // ponytail: one lock preserves exact state-level novelty; shard only if profiling shows contention.
+    // Justification: protects all novelty bits while one state is tested and inserted, so concurrent workers cannot both report the same tuple as novel.
+    // A lock is required across every arity lane to preserve exact state-level novelty; shard only if profiling justifies a different algorithm.
     mutable std::mutex mutex;
     std::array<ygg::SegmentedBitVector<>, Arity + 1> seen_by_arity;
 };

@@ -18,14 +18,14 @@
 #include "tyr/planning/lifted/state_repository.hpp"
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/fdr_context.hpp"  // for Binary...
+#include "tyr/formalism/planning/fdr_context.hpp"
 #include "tyr/formalism/planning/views.hpp"
-#include "tyr/planning/lifted/axiom_evaluator.hpp"  // for AxiomE...
+#include "tyr/planning/lifted/axiom_evaluator.hpp"
 #include "tyr/planning/lifted/state_data.hpp"
-#include "tyr/planning/lifted/task.hpp"       // for Lifted...
-#include "tyr/planning/state_repository.hpp"  // for StateR...
+#include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/state_storage/config.hpp"
-#include "tyr/planning/task_utils.hpp"  // for create...
+#include "tyr/planning/task_utils.hpp"
 
 #include <yggdrasil/containers/indexed_hash_set.hpp>
 #include <yggdrasil/core/config.hpp>
@@ -40,14 +40,19 @@
 #include "tyr/planning/state_storage/tree_compression/numeric.hpp"
 #endif
 
-#include <tuple>  // for operat...
+#include <tuple>
 #include <type_traits>
-#include <utility>                              // for move
-#include <yggdrasil/containers/vector.hpp>      // for ygg::View
-#include <yggdrasil/semantics/comparators.hpp>  // for operat...
+#include <utility>
+#include <yggdrasil/containers/vector.hpp>
+#include <yggdrasil/semantics/comparators.hpp>
 
 namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;
+
+namespace
+{
+std::atomic<ygg::uint_t> next_storage_identity { 0 };
+}
 
 namespace tyr::planning
 {
@@ -69,6 +74,9 @@ struct StateRepository<LiftedTag>::Impl
         using PackedStates =
             ygg::IndexedHashSet<State<LiftedTag>, ygg::Hash<ygg::Data<State<LiftedTag>>>, ygg::EqualTo<ygg::Data<State<LiftedTag>>>, 32, ThreadSafe>;
 
+        Storage() : identity(next_storage_identity.fetch_add(1, std::memory_order_relaxed)) {}
+
+        const ygg::uint_t identity;
         StateStorageContext<LiftedTag, StateStoragePolicyTag, ThreadSafe> context;
         PackedStates packed_states;
     };
@@ -104,7 +112,8 @@ struct StateRepository<LiftedTag>::Impl
         next_index(std::move(next_index_)),
         definition(std::make_shared<Definition>(std::move(task))),
         evaluator(std::make_unique<Evaluator<false>>(std::make_unique<Storage<false>>(), std::move(axiom_evaluator))),
-        shared_evaluator()
+        shared_evaluator(),
+        storage_identity(evaluator->storage->identity)
     {
     }
 
@@ -116,7 +125,8 @@ struct StateRepository<LiftedTag>::Impl
         next_index(std::move(next_index_)),
         definition(std::move(definition_)),
         evaluator(std::make_unique<Evaluator<false>>(std::make_unique<Storage<false>>(), std::move(axiom_evaluator))),
-        shared_evaluator()
+        shared_evaluator(),
+        storage_identity(evaluator->storage->identity)
     {
     }
 
@@ -129,7 +139,8 @@ struct StateRepository<LiftedTag>::Impl
         next_index(std::move(next_index_)),
         definition(std::move(definition_)),
         evaluator(),
-        shared_evaluator(std::make_unique<Evaluator<true>>(std::move(storage), std::move(axiom_evaluator)))
+        shared_evaluator(std::make_unique<Evaluator<true>>(std::move(storage), std::move(axiom_evaluator))),
+        storage_identity(shared_evaluator->storage->identity)
     {
     }
 
@@ -154,6 +165,7 @@ struct StateRepository<LiftedTag>::Impl
     std::shared_ptr<const Definition> definition;
     std::unique_ptr<Evaluator<false>> evaluator;
     std::unique_ptr<Evaluator<true>> shared_evaluator;
+    const ygg::uint_t storage_identity;
 };
 
 StateRepository<LiftedTag>::StateRepository(ygg::uint_t index,
@@ -333,6 +345,8 @@ const ygg::ExecutionContextPtr& StateRepository<LiftedTag>::get_execution_contex
 }
 
 ygg::uint_t StateRepository<LiftedTag>::get_index() const noexcept { return m_impl->index; }
+
+ygg::uint_t StateRepository<LiftedTag>::get_storage_identity() const noexcept { return m_impl->storage_identity; }
 
 size_t StateRepository<LiftedTag>::num_states() const noexcept
 {

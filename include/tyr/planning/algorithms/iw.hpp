@@ -40,9 +40,13 @@ namespace tyr::planning::iw
 template<TaskKind Kind>
 struct Options
 {
+    /// Optional initial node for every width subsearch; when set, it overrides the underlying BrFS option, must belong to the same task, and restarts unit
+    /// depth at zero.
     std::optional<Node<Kind>> start_node = std::nullopt;
     EventHandlerPtr<Kind> event_handler = nullptr;
     GoalStrategyPtr<Kind> goal_strategy = nullptr;
+    /// Maximum solve-local states in each width subsearch, including an unsolved start. Existing repository population is ignored, but a pre-interned state
+    /// counts when first encountered, and an over-limit successor may already be interned. A satisfied start may solve even when this is zero.
     ygg::uint_t max_num_states = std::numeric_limits<ygg::uint_t>::max();
     std::optional<std::chrono::steady_clock::duration> max_time = std::nullopt;
     uint64_t random_seed = 0;

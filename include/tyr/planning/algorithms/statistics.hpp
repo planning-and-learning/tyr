@@ -43,6 +43,9 @@ private:
     size_t m_function_bindings_memory_usage;
 
     std::chrono::nanoseconds m_idle_time;
+    uint64_t m_num_destination_lock_acquisitions;
+    std::chrono::nanoseconds m_destination_lock_wait_time;
+    std::chrono::nanoseconds m_destination_lock_hold_time;
 
     std::chrono::time_point<std::chrono::steady_clock> m_search_start_time_point;
     std::chrono::time_point<std::chrono::steady_clock> m_search_end_time_point;
@@ -59,7 +62,10 @@ public:
         m_predicate_bindings_memory_usage(0),
         m_axiom_bindings_memory_usage(0),
         m_function_bindings_memory_usage(0),
-        m_idle_time(0)
+        m_idle_time(0),
+        m_num_destination_lock_acquisitions(0),
+        m_destination_lock_wait_time(0),
+        m_destination_lock_hold_time(0)
     {
     }
 
@@ -76,6 +82,9 @@ public:
         m_axiom_bindings_memory_usage = 0;
         m_function_bindings_memory_usage = 0;
         m_idle_time = {};
+        m_num_destination_lock_acquisitions = 0;
+        m_destination_lock_wait_time = {};
+        m_destination_lock_hold_time = {};
         m_search_start_time_point = {};
         m_search_end_time_point = {};
     }
@@ -89,6 +98,12 @@ public:
     void increment_num_deadends() { ++m_num_deadends; }
     void increment_num_pruned() { ++m_num_pruned; }
     void add_idle_time(std::chrono::nanoseconds duration) noexcept { m_idle_time += duration; }
+    void add_destination_lock_statistics(std::chrono::nanoseconds wait_time, std::chrono::nanoseconds hold_time) noexcept
+    {
+        ++m_num_destination_lock_acquisitions;
+        m_destination_lock_wait_time += wait_time;
+        m_destination_lock_hold_time += hold_time;
+    }
 
     void set_num_registered_states(uint64_t value) noexcept { m_num_registered_states = value; }
     void set_state_storage_memory_usage(size_t value) noexcept { m_state_storage_memory_usage = value; }
@@ -111,6 +126,9 @@ public:
         m_axiom_bindings_memory_usage = std::max(m_axiom_bindings_memory_usage, other.m_axiom_bindings_memory_usage);
         m_function_bindings_memory_usage = std::max(m_function_bindings_memory_usage, other.m_function_bindings_memory_usage);
         m_idle_time += other.m_idle_time;
+        m_num_destination_lock_acquisitions += other.m_num_destination_lock_acquisitions;
+        m_destination_lock_wait_time += other.m_destination_lock_wait_time;
+        m_destination_lock_hold_time += other.m_destination_lock_hold_time;
     }
 
     void set_search_start_time_point(std::chrono::time_point<std::chrono::steady_clock> time_point) { m_search_start_time_point = time_point; }
@@ -135,6 +153,9 @@ public:
     auto get_search_time() const { return m_search_end_time_point - m_search_start_time_point; }
     auto get_current_search_time() const { return std::chrono::steady_clock::now() - m_search_start_time_point; }
     auto get_idle_time() const noexcept { return m_idle_time; }
+    uint64_t get_num_destination_lock_acquisitions() const noexcept { return m_num_destination_lock_acquisitions; }
+    auto get_destination_lock_wait_time() const noexcept { return m_destination_lock_wait_time; }
+    auto get_destination_lock_hold_time() const noexcept { return m_destination_lock_hold_time; }
 };
 
 class ProgressStatistics

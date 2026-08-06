@@ -232,17 +232,18 @@ public:
         const auto& successor_state = successor_node.get_state();
         const auto g_value = successor_node.get_metric();
 
-        if (worker.pruning_strategy->should_prune_successor_state(source_state, successor_state, is_new))
-        {
-            successor_search_node.status = SearchNodeStatus::CLOSED;
-            worker.statistics.increment_num_pruned();
-            emit_transition(TransitionOutcome::PRUNED);
-            return AcceptanceResult::DISCARDED;
-        }
-
         if (g_value >= successor_search_node.g_value)
         {
             emit_transition(TransitionOutcome::DUPLICATE);
+            return AcceptanceResult::DISCARDED;
+        }
+
+        if (worker.pruning_strategy->should_prune_successor_state(source_state, successor_state, is_new))
+        {
+            if (is_new)
+                successor_search_node.status = SearchNodeStatus::CLOSED;
+            worker.statistics.increment_num_pruned();
+            emit_transition(TransitionOutcome::PRUNED);
             return AcceptanceResult::DISCARDED;
         }
 
@@ -252,6 +253,14 @@ public:
 
         if (auto result = engine.m_execution.accept_generated_goal(engine, worker, successor_search_node, successor_state, g_value, emit_transition))
             return *result;
+
+        if (engine.m_execution.is_queued_goal(engine, worker, successor_state))
+        {
+            successor_search_node.status = SearchNodeStatus::GOAL;
+            open_successor(successor_state.get_index(), g_value, 0, successor_search_node.status, false);
+            emit_transition(TransitionOutcome::GOAL);
+            return AcceptanceResult::QUEUED;
+        }
 
         const auto h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(worker.heuristic.evaluate(successor_state));
         if (std::isnan(h_value))
@@ -263,12 +272,10 @@ public:
             return AcceptanceResult::DISCARDED;
         }
 
-        const auto is_goal = engine.m_execution.is_queued_goal(engine, worker, successor_state);
-        successor_search_node.status = is_goal ? SearchNodeStatus::GOAL : SearchNodeStatus::OPEN;
+        successor_search_node.status = SearchNodeStatus::OPEN;
         open_successor(successor_state.get_index(), g_value, h_value, successor_search_node.status, false);
 
-        emit_transition(successor_search_node.status == SearchNodeStatus::GOAL ? TransitionOutcome::GOAL :
-                                                                                 (is_new ? TransitionOutcome::OPENED : TransitionOutcome::RELAXED));
+        emit_transition(is_new ? TransitionOutcome::OPENED : TransitionOutcome::RELAXED);
         return AcceptanceResult::QUEUED;
     }
 

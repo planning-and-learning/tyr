@@ -34,6 +34,7 @@
 #include <span>
 #include <stdexcept>
 #include <string_view>
+#include <thread>
 #include <vector>
 #include <yggdrasil/containers/segmented_vector.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
@@ -189,6 +190,154 @@ public:
     size_t solved_plan_length = 0;
     std::optional<p::SearchStatus> end_status;
     std::optional<p::Statistics> end_statistics;
+};
+
+template<TaskKind Kind>
+class OwnerAccessGuard
+{
+public:
+    static constexpr size_t num_workers = 4;
+
+    OwnerAccessGuard(p::StateRepositoryMode mode, uint64_t seed) : m_mode(mode), m_hash(seed) {}
+
+    void access(ygg::Index<p::Worker> worker, const p::StateView<Kind>& state)
+    {
+        auto& lane = m_lanes.at(ygg::uint_t(worker));
+        if (lane.active.test_and_set(std::memory_order_acquire))
+            lane.reentered.store(true, std::memory_order_relaxed);
+
+        if (owner(state) != worker)
+            lane.wrong_owner.store(true, std::memory_order_relaxed);
+        observe_repository(lane, state);
+        lane.num_accesses.fetch_add(1, std::memory_order_relaxed);
+        std::this_thread::yield();
+        lane.active.clear(std::memory_order_release);
+    }
+
+    void access_transition(ygg::Index<p::Worker> worker, const p::StateView<Kind>& source, const p::StateView<Kind>& target)
+    {
+        const auto source_owner = owner(source);
+        observe_repository(m_lanes.at(ygg::uint_t(source_owner)), source);
+        if (source_owner != worker)
+            m_num_remote_transitions.fetch_add(1, std::memory_order_relaxed);
+        access(worker, target);
+    }
+
+    void count_duplicate() noexcept { m_num_duplicates.fetch_add(1, std::memory_order_relaxed); }
+
+    void expect_valid() const
+    {
+        auto num_accesses = uint64_t { 0 };
+        for (const auto& lane : m_lanes)
+        {
+            EXPECT_FALSE(lane.reentered.load(std::memory_order_relaxed));
+            EXPECT_FALSE(lane.wrong_owner.load(std::memory_order_relaxed));
+            EXPECT_FALSE(lane.wrong_repository.load(std::memory_order_relaxed));
+            num_accesses += lane.num_accesses.load(std::memory_order_relaxed);
+        }
+        EXPECT_GT(num_accesses, 0);
+        EXPECT_GT(m_num_remote_transitions.load(std::memory_order_relaxed), 0);
+        EXPECT_GT(m_num_duplicates.load(std::memory_order_relaxed), 0);
+    }
+
+private:
+    struct Lane
+    {
+        std::atomic_flag active = ATOMIC_FLAG_INIT;
+        std::atomic<bool> reentered { false };
+        std::atomic<bool> wrong_owner { false };
+        std::atomic<bool> wrong_repository { false };
+        std::atomic<const p::StateRepository<Kind>*> repository { nullptr };
+        std::atomic<uint64_t> num_accesses { 0 };
+    };
+
+    ygg::Index<p::Worker> owner(const p::StateView<Kind>& state) const
+    {
+        if (m_mode == p::StateRepositoryMode::SHARED)
+            return ygg::Index<p::Worker>(static_cast<ygg::uint_t>(ygg::uint_t(state.get_index()) % num_workers));
+        return m_hash.owner(state.get_state_builder(), num_workers);
+    }
+
+    static void observe_repository(Lane& lane, const p::StateView<Kind>& state)
+    {
+        auto* expected_repository = static_cast<const p::StateRepository<Kind>*>(nullptr);
+        const auto* repository = state.get_state_repository().get();
+        if (!lane.repository.compare_exchange_strong(expected_repository, repository, std::memory_order_relaxed) && expected_repository != repository)
+            lane.wrong_repository.store(true, std::memory_order_relaxed);
+    }
+
+    p::StateRepositoryMode m_mode;
+    p::DistHash<Kind, p::RandomDistHashTag> m_hash;
+    std::array<Lane, num_workers> m_lanes;
+    std::atomic<uint64_t> m_num_remote_transitions { 0 };
+    std::atomic<uint64_t> m_num_duplicates { 0 };
+};
+
+template<TaskKind Kind>
+class GuardedBrFSWorkerEventHandler final : public p::brfs::WorkerEventHandler<Kind>
+{
+public:
+    GuardedBrFSWorkerEventHandler(ygg::Index<p::Worker> worker, std::shared_ptr<OwnerAccessGuard<Kind>> guard) : m_worker(worker), m_guard(std::move(guard)) {}
+
+    void on_expand_node(const p::Node<Kind>& node) override { m_guard->access(m_worker, node.get_state()); }
+
+    void on_generate_transition(const p::Node<Kind>& source, const p::LabeledNode<Kind>& target, p::TransitionOutcome outcome) override
+    {
+        m_guard->access_transition(m_worker, source.get_state(), target.node.get_state());
+        if (outcome == p::TransitionOutcome::DUPLICATE)
+            m_guard->count_duplicate();
+    }
+
+private:
+    ygg::Index<p::Worker> m_worker;
+    std::shared_ptr<OwnerAccessGuard<Kind>> m_guard;
+};
+
+template<TaskKind Kind>
+class GuardedBrFSEventHandler final : public p::brfs::EventHandler<Kind>
+{
+public:
+    explicit GuardedBrFSEventHandler(std::shared_ptr<OwnerAccessGuard<Kind>> guard) : m_guard(std::move(guard)) {}
+
+    void on_start_search(const p::Node<Kind>&) override {}
+    void on_finish_layer(ygg::uint_t, const p::Statistics&) override {}
+    void on_end_search(p::SearchStatus, const p::Statistics&) override {}
+    void on_solved(const p::Plan<Kind>&) override {}
+
+    p::brfs::WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<p::Worker> worker) override
+    {
+        return std::make_unique<GuardedBrFSWorkerEventHandler<Kind>>(worker, m_guard);
+    }
+
+private:
+    std::shared_ptr<OwnerAccessGuard<Kind>> m_guard;
+};
+
+template<TaskKind Kind>
+class GuardedPruningStrategy final : public p::PruningStrategy<Kind>
+{
+public:
+    explicit GuardedPruningStrategy(std::shared_ptr<OwnerAccessGuard<Kind>> guard) : m_guard(std::move(guard)) {}
+
+    GuardedPruningStrategy(ygg::Index<p::Worker> worker, std::shared_ptr<OwnerAccessGuard<Kind>> guard) : m_worker(worker), m_guard(std::move(guard)) {}
+
+    p::PruningStrategyPtr<Kind> make_worker(ygg::Index<p::Worker> worker) const override { return std::make_shared<GuardedPruningStrategy>(worker, m_guard); }
+
+    bool should_prune_state(const p::StateView<Kind>& state) override
+    {
+        m_guard->access(m_worker, state);
+        return false;
+    }
+
+    bool should_prune_successor_state(const p::StateView<Kind>& source, const p::StateView<Kind>& state, bool) override
+    {
+        m_guard->access_transition(m_worker, source, state);
+        return false;
+    }
+
+private:
+    ygg::Index<p::Worker> m_worker { 0 };
+    std::shared_ptr<OwnerAccessGuard<Kind>> m_guard;
 };
 
 struct AStarGoalGate
@@ -930,18 +1079,42 @@ void expect_parallel_lazy_gbfs_exhaustion(const p::TaskPtr<Kind>& task, p::State
 template<TaskKind Kind>
 void expect_parallel_brfs_exhaustion(const p::TaskPtr<Kind>& task, p::StateRepositoryMode state_repository_mode)
 {
+    constexpr auto kind_name = std::same_as<Kind, GroundTag> ? "ground" : "lifted";
+    SCOPED_TRACE(kind_name);
+    SCOPED_TRACE(state_repository_mode == p::StateRepositoryMode::HASH_DISTRIBUTED ? "hash-distributed" : "shared");
+
+    auto sequential_execution_context = ygg::ExecutionContext::create(1);
+    auto sequential_axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, sequential_execution_context);
+    auto sequential_repository = p::StateRepositoryFactory<Kind>().create(task, sequential_axiom_evaluator);
+    auto sequential_generator = p::SuccessorGeneratorFactory<Kind>().create(task, sequential_execution_context, sequential_repository);
+    auto sequential_options = p::brfs::Options<Kind> {};
+    sequential_options.goal_strategy = p::ExhaustiveGoalStrategy<Kind>::create();
+    const auto sequential_result = p::brfs::find_solution(*task, *sequential_generator, sequential_options);
+
     auto execution_context = ygg::ExecutionContext::create(1);
     auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
     auto repository = p::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
     auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context, repository);
+    constexpr auto seed = uint64_t { 0 };
+    auto guard = std::make_shared<OwnerAccessGuard<Kind>>(state_repository_mode, seed);
     auto options = p::brfs::Options<Kind> {};
-    options.num_search_workers = 2;
+    options.event_handler = std::make_shared<GuardedBrFSEventHandler<Kind>>(guard);
+    options.pruning_strategy = std::make_shared<GuardedPruningStrategy<Kind>>(guard);
+    options.goal_strategy = p::ExhaustiveGoalStrategy<Kind>::create();
+    options.num_search_workers = OwnerAccessGuard<Kind>::num_workers;
     options.state_repository_mode = state_repository_mode;
+    options.random_seed = seed;
 
     const auto result = p::brfs::find_solution(*task, *generator, options);
+    guard->expect_valid();
+
+    EXPECT_EQ(sequential_result.status, p::SearchStatus::EXHAUSTED);
     EXPECT_EQ(result.status, p::SearchStatus::EXHAUSTED);
-    EXPECT_GT(result.statistics.get_num_expanded(), 0);
-    EXPECT_GT(result.statistics.get_num_generated(), 0);
+    EXPECT_EQ(result.statistics.get_num_registered_states(), sequential_result.statistics.get_num_registered_states());
+    EXPECT_EQ(result.statistics.get_num_expanded(), sequential_result.statistics.get_num_expanded());
+    EXPECT_EQ(result.statistics.get_num_generated(), sequential_result.statistics.get_num_generated());
+    EXPECT_EQ(result.statistics.get_num_pruned(), 0);
+    EXPECT_EQ(result.worker_statistics.size(), OwnerAccessGuard<Kind>::num_workers);
 }
 
 }

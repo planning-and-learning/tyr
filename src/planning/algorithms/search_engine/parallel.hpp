@@ -25,7 +25,6 @@
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/search_space/parallel.hpp"
 #include "tyr/planning/state_routing/dist_hash.hpp"
-#include "tyr/planning/state_routing/state_transfer.hpp"
 #include "tyr/planning/successor_generator.hpp"
 #include "tyr/planning/worker_state_index.hpp"
 
@@ -36,7 +35,6 @@
 #include <condition_variable>
 #include <cstddef>
 #include <cstdint>
-#include <deque>
 #include <exception>
 #include <limits>
 #include <memory>
@@ -56,16 +54,9 @@ template<TaskKind Kind, DistHashKind HashKind>
 class HashDistributedStatePolicy
 {
     using BuilderPtr = ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true>;
-    using TransferredState = typename StateTransferPool<Kind>::TransferredState;
 
 public:
     using TaskTag = Kind;
-
-    struct MessageTarget
-    {
-        TransferredState state;
-        PendingActionResult action_result;
-    };
 
     struct PreparedTarget
     {
@@ -108,16 +99,14 @@ public:
         return worker.successor_generator.finalize_successor_state(std::move(target.state), target.action_result);
     }
 
-    MessageTarget make_message_target(PreparedTarget&& target)
-    {
-        return MessageTarget { m_transfer_pool.export_state(std::move(target.state)), target.action_result };
-    }
-
     template<typename WorkerData>
-    Node<Kind> receive_target(WorkerData& worker, MessageTarget target)
+    static Node<Kind> take_remote_target(WorkerData&, WorkerData& receiver, PreparedTarget&& target)
     {
-        auto builder = m_transfer_pool.import_state(*worker.successor_generator.get_state_repository(), std::move(target.state));
-        return worker.successor_generator.finalize_successor_state(std::move(builder), target.action_result);
+        auto& repository = *receiver.successor_generator.get_state_repository();
+        auto builder = repository.get_state_builder();
+        using std::swap;
+        swap(*builder, *target.state);
+        return receiver.successor_generator.finalize_successor_state(std::move(builder), target.action_result);
     }
 
     static size_t search_node_divisor(size_t) noexcept { return 1; }
@@ -136,7 +125,6 @@ public:
 
 private:
     DistHash<Kind, HashKind> m_dist_hash;
-    StateTransferPool<Kind> m_transfer_pool;
 };
 
 template<TaskKind Kind>
@@ -146,12 +134,6 @@ class SharedStatePolicy
 
 public:
     using TaskTag = Kind;
-
-    struct MessageTarget
-    {
-        ygg::Index<State<Kind>> state;
-        ygg::float_t metric;
-    };
 
     struct PreparedTarget
     {
@@ -196,16 +178,14 @@ public:
         return std::move(target.node);
     }
 
-    static MessageTarget make_message_target(PreparedTarget&& target)
-    {
-        return MessageTarget { target.node.get_state().get_index(), target.node.get_metric() };
-    }
-
     template<typename WorkerData>
-    static Node<Kind> receive_target(WorkerData& worker, MessageTarget target)
+    static Node<Kind> take_remote_target(WorkerData&, WorkerData& receiver, PreparedTarget&& target)
     {
-        auto state = worker.successor_generator.get_state_repository()->get_registered_state(target.state);
-        return Node<Kind>(std::move(state), target.metric);
+        const auto& repository = receiver.successor_generator.get_state_repository();
+        auto state = repository->get_state_builder();
+        // A remote sender must not use the receiver evaluator's reusable unpacking scratch.
+        *state = target.node.get_state().get_state_builder();
+        return Node<Kind>(StateView<Kind>(repository, std::move(state)), target.node.get_metric());
     }
 
     static size_t search_node_divisor(size_t num_workers) noexcept { return num_workers; }
@@ -245,7 +225,7 @@ template<typename SearchPolicy>
 class ParallelLayerCoordinationPolicy<SearchPolicy, false>
 {
 public:
-    void start(ygg::float_t, const typename SearchPolicy::Options&) noexcept {}
+    void start(ygg::float_t, const typename SearchPolicy::Options&, size_t) noexcept {}
 
     bool proves_goal(ygg::float_t) const noexcept { return false; }
 
@@ -258,7 +238,7 @@ public:
     template<typename ExecutionPolicy, typename Engine, typename WorkerData>
     static void wait_for_work(ExecutionPolicy& execution, Engine& engine, WorkerData& worker)
     {
-        execution.wait_for_messages(engine, worker);
+        execution.wait_for_open(engine, worker);
     }
 };
 
@@ -266,15 +246,16 @@ template<typename SearchPolicy>
 class ParallelLayerCoordinationPolicy<SearchPolicy, true>
 {
 public:
-    void start(ygg::float_t start_priority, const typename SearchPolicy::Options& options) noexcept
+    void start(ygg::float_t start_priority, const typename SearchPolicy::Options& options, size_t num_workers)
     {
         m_synchronize_priority_layers = SearchPolicy::synchronize_priority_layers(options);
         m_active_priority.store(start_priority, std::memory_order_relaxed);
         m_layer_generation.store(0, std::memory_order_relaxed);
         m_num_waiting_workers = 0;
+        m_waiting_workers.assign(num_workers, uint8_t { 0 });
     }
 
-    bool proves_goal(ygg::float_t cost) const noexcept { return m_synchronize_priority_layers && cost <= m_active_priority.load(std::memory_order_relaxed); }
+    static constexpr bool proves_goal(ygg::float_t) noexcept { return false; }
 
     template<typename ExecutionPolicy, typename WorkerData>
     bool can_expand(const ExecutionPolicy& execution, const WorkerData& worker) const noexcept
@@ -294,7 +275,7 @@ public:
         if (m_synchronize_priority_layers)
             wait_for_priority_layer(execution, engine, worker);
         else
-            execution.wait_for_messages(engine, worker);
+            execution.wait_for_open(engine, worker);
     }
 
 private:
@@ -304,17 +285,25 @@ private:
         auto generation = size_t { 0 };
         auto terminal_status = std::optional<SearchStatus> {};
         auto finished_priority = std::optional<ygg::float_t> {};
+        auto next_active_priority = std::optional<ygg::float_t> {};
         auto release_workers = false;
+        const auto worker_index = static_cast<size_t>(ygg::uint_t(worker.index));
         {
             auto lock = std::unique_lock(m_layer_mutex);
             if (!execution.running())
                 return;
 
             generation = m_layer_generation.load(std::memory_order_relaxed);
-            ++m_num_waiting_workers;
+            assert(worker_index < m_waiting_workers.size());
+            if (!m_waiting_workers[worker_index])
+            {
+                m_waiting_workers[worker_index] = true;
+                ++m_num_waiting_workers;
+            }
             assert(m_num_waiting_workers <= engine.num_workers());
             if (m_num_waiting_workers == engine.num_workers())
             {
+                std::fill(m_waiting_workers.begin(), m_waiting_workers.end(), uint8_t { 0 });
                 m_num_waiting_workers = 0;
                 auto next_priority = std::numeric_limits<ygg::float_t>::infinity();
                 auto num_open_entries = size_t { 0 };
@@ -326,21 +315,23 @@ private:
                 }
 
                 const auto work = execution.m_work.load(std::memory_order_acquire);
-                if (work < num_open_entries)
+                if (work != num_open_entries)
                     throw std::logic_error("Parallel search work credits are inconsistent with the open lists.");
 
-                if (work == num_open_entries)
+                const auto incumbent = execution.incumbent_cost();
+                if (incumbent != std::numeric_limits<ygg::float_t>::infinity() && next_priority >= incumbent)
+                    terminal_status = SearchStatus::SOLVED;
+                else if (num_open_entries == 0)
+                    terminal_status = SearchStatus::EXHAUSTED;
+                else
                 {
-                    const auto incumbent = execution.incumbent_cost();
-                    if (incumbent != std::numeric_limits<ygg::float_t>::infinity() && next_priority >= incumbent)
-                        terminal_status = SearchStatus::SOLVED;
-                    else if (num_open_entries == 0)
-                        terminal_status = SearchStatus::EXHAUSTED;
-                    else
+                    const auto active_priority = m_active_priority.load(std::memory_order_relaxed);
+                    if (next_priority > active_priority)
                     {
-                        finished_priority = m_active_priority.load(std::memory_order_relaxed);
-                        m_active_priority.store(next_priority, std::memory_order_release);
+                        finished_priority = active_priority;
+                        next_active_priority = next_priority;
                     }
+                    // A counted waiter received eligible work before sleeping. Resume the current layer without reporting it as finished.
                 }
 
                 release_workers = true;
@@ -350,11 +341,16 @@ private:
         if (release_workers)
         {
             if (terminal_status)
+            {
                 execution.set_terminal(engine, *terminal_status);
+                execution.notify_if_stopped(engine);
+            }
             else
             {
                 if (finished_priority)
                     engine.on_finish_priority_layer(*finished_priority);
+                if (next_active_priority)
+                    m_active_priority.store(*next_active_priority, std::memory_order_release);
                 m_layer_generation.fetch_add(1, std::memory_order_release);
                 execution.notify_workers(engine);
             }
@@ -362,24 +358,37 @@ private:
         }
 
         auto lock = std::unique_lock(worker.execution.mutex);
-        const auto ready = [&] { return !execution.running() || m_layer_generation.load(std::memory_order_acquire) != generation; };
+        const auto ready = [&]
+        { return !execution.running() || m_layer_generation.load(std::memory_order_acquire) != generation || can_expand(execution, worker); };
+        auto timed_out = false;
         if (execution.m_deadline)
+            timed_out = !worker.execution.condition.wait_until(lock, *execution.m_deadline, ready) && execution.running();
+        else
+            worker.execution.condition.wait(lock, ready);
+
+        lock.unlock();
         {
-            if (!worker.execution.condition.wait_until(lock, *execution.m_deadline, ready) && execution.running())
+            const auto layer_lock = std::lock_guard(m_layer_mutex);
+            if (m_waiting_workers[worker_index])
             {
-                lock.unlock();
-                execution.set_terminal(engine, SearchStatus::OUT_OF_TIME);
+                m_waiting_workers[worker_index] = false;
+                assert(m_num_waiting_workers > 0);
+                --m_num_waiting_workers;
             }
         }
-        else
+        if (timed_out)
         {
-            worker.execution.condition.wait(lock, ready);
+            execution.set_terminal(engine, SearchStatus::OUT_OF_TIME);
+            execution.notify_if_stopped(engine);
         }
     }
 
+    // Justification: protects waiting-worker membership and makes advancing or terminating a synchronized priority layer one decision; it is never held
+    // together with a worker mutex.
     std::mutex m_layer_mutex;
     std::atomic<ygg::float_t> m_active_priority { std::numeric_limits<ygg::float_t>::infinity() };
     std::atomic<size_t> m_layer_generation { 0 };
+    std::vector<uint8_t> m_waiting_workers;
     size_t m_num_waiting_workers { 0 };
     bool m_synchronize_priority_layers { false };
 };
@@ -395,14 +404,6 @@ class ParallelExecutionPolicy
     template<typename, bool>
     friend class ParallelLayerCoordinationPolicy;
 
-    struct Message
-    {
-        Node<Kind> source;
-        typename StatePolicy::MessageTarget target;
-        ::tyr::formalism::planning::ActionBindingView action;
-        Metadata metadata;
-    };
-
 public:
     using TaskTag = Kind;
     using SearchTag = ParallelSearch;
@@ -411,9 +412,9 @@ public:
     {
         explicit WorkerState(uint64_t) {}
 
+        // Justification: serializes one logical worker's search state and forms the condition-variable handshake that prevents lost wakeups.
         std::mutex mutex;
         std::condition_variable condition;
-        std::deque<Message> messages;
     };
 
     explicit ParallelExecutionPolicy(uint64_t seed) : m_state_policy(seed) {}
@@ -481,7 +482,8 @@ public:
         m_status.store(SearchStatus::IN_PROGRESS, std::memory_order_relaxed);
         m_work.store(1, std::memory_order_relaxed);
         m_num_states.store(1, std::memory_order_relaxed);
-        m_coordination.start(start_priority, options);
+        m_collect_destination_lock_statistics = options.collect_destination_lock_statistics;
+        m_coordination.start(start_priority, options, num_workers(options));
         if (max_time)
             m_deadline = std::chrono::steady_clock::now() + *max_time;
     }
@@ -546,13 +548,11 @@ public:
                 return;
             m_status.store(status, std::memory_order_release);
         }
-        notify_workers(engine);
     }
 
     template<typename Engine>
     bool consider_goal(Engine& engine, WorkerStateIndex<Kind> goal, ygg::float_t cost, bool terminate)
     {
-        auto notify = false;
         {
             const auto lock = std::lock_guard(m_terminal_mutex);
             if (!running() || cost >= m_incumbent_cost.load(std::memory_order_relaxed))
@@ -560,66 +560,65 @@ public:
             m_goal = goal;
             m_incumbent_cost.store(cost, std::memory_order_relaxed);
             if (terminate || m_coordination.proves_goal(cost))
-            {
                 m_status.store(SearchStatus::SOLVED, std::memory_order_release);
-                notify = true;
-            }
         }
-        if (notify)
-            notify_workers(engine);
         return true;
     }
 
     ygg::float_t incumbent_cost() const noexcept { return m_incumbent_cost.load(std::memory_order_relaxed); }
 
     template<typename Engine, typename WorkerData>
-    bool can_expand(Engine&, const WorkerData& worker) const noexcept
+    bool can_expand_locked(Engine&, WorkerData& worker) const noexcept
     {
         return m_coordination.can_expand(*this, worker);
     }
 
-    template<typename Engine, typename WorkerData>
-    auto receive_one(Engine&, WorkerData& worker) -> std::optional<typename Engine::IncomingSuccessor>
+    template<typename WorkerData, typename Callback>
+    static decltype(auto) with_worker_lock(WorkerData& worker, Callback&& callback)
     {
-        auto message = std::optional<Message> {};
-        {
-            const auto lock = std::lock_guard(worker.execution.mutex);
-            if (worker.execution.messages.empty())
-                return std::nullopt;
-            message.emplace(std::move(worker.execution.messages.front()));
-            worker.execution.messages.pop_front();
-        }
-
-        auto node = m_state_policy.receive_target(worker, std::move(message->target));
-        return typename Engine::IncomingSuccessor {
-            std::move(message->source),
-            typename Engine::RoutedSuccessor { LabeledNode<Kind> { message->action, std::move(node) }, std::move(message->metadata) },
-        };
+        const auto lock = std::lock_guard(worker.execution.mutex);
+        return std::forward<Callback>(callback)();
     }
 
     template<typename Engine, typename WorkerData>
-    auto route(Engine& engine,
-               WorkerData& sender,
-               const Node<Kind>& source,
-               BuilderPtr target,
-               PendingActionResult action_result,
-               ::tyr::formalism::planning::ActionBindingView action,
-               Metadata metadata) -> std::optional<typename Engine::IncomingSuccessor>
+    AcceptanceResult route(Engine& engine,
+                           WorkerData& sender,
+                           const Node<Kind>& source,
+                           BuilderPtr target,
+                           PendingActionResult action_result,
+                           ::tyr::formalism::planning::ActionBindingView action,
+                           Metadata metadata)
     {
         auto prepared = m_state_policy.prepare_target(sender, std::move(target), action_result, engine.num_workers());
-        if (prepared.owner == sender.index)
+        auto& receiver = engine.get_worker(prepared.owner);
+        const auto wait_start = m_collect_destination_lock_statistics ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point {};
+
+        auto result = AcceptanceResult::TERMINAL;
         {
-            retain_successor();
-            auto node = m_state_policy.take_local_target(sender, std::move(prepared));
-            return typename Engine::IncomingSuccessor {
-                source,
-                typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata) },
-            };
+            // Logical worker state is serialized here; callbacks do not have OS-thread affinity.
+            const auto lock = std::lock_guard(receiver.execution.mutex);
+            const auto hold_start = m_collect_destination_lock_statistics ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point {};
+            if (running())
+            {
+                auto node = prepared.owner == sender.index ? m_state_policy.take_local_target(sender, std::move(prepared)) :
+                                                             m_state_policy.take_remote_target(sender, receiver, std::move(prepared));
+                auto routed = typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata) };
+                result = engine.accept_successor(receiver, source, routed);
+                if (result == AcceptanceResult::QUEUED)
+                    retain_successor();
+            }
+            if (m_collect_destination_lock_statistics)
+            {
+                const auto hold_end = std::chrono::steady_clock::now();
+                receiver.statistics.add_destination_lock_statistics(std::chrono::duration_cast<std::chrono::nanoseconds>(hold_start - wait_start),
+                                                                    std::chrono::duration_cast<std::chrono::nanoseconds>(hold_end - hold_start));
+            }
         }
 
-        const auto target_owner = prepared.owner;
-        enqueue(engine, target_owner, Message { source, m_state_policy.make_message_target(std::move(prepared)), action, std::move(metadata) });
-        return std::nullopt;
+        if (result == AcceptanceResult::QUEUED)
+            receiver.execution.condition.notify_one();
+        notify_if_stopped(engine);
+        return result;
     }
 
     template<typename Engine, typename WorkerData>
@@ -627,7 +626,7 @@ public:
                            WorkerData& worker,
                            const Node<Kind>& node,
                            const typename SearchPolicy::PoppedEntry& entry,
-                           typename SearchPolicy::SearchNode& search_node,
+                           const typename SearchPolicy::SearchNode& search_node,
                            StateRepository<Kind>& state_repository)
     {
         if (engine.m_options.shuffle_labeled_succ_nodes)
@@ -641,23 +640,22 @@ public:
             if (SearchPolicy::check_timeout_per_successor && timed_out())
             {
                 set_terminal(engine, SearchStatus::OUT_OF_TIME);
+                notify_if_stopped(engine);
                 break;
             }
 
             auto successor_state = state_repository.get_state_builder();
             const auto action_result = worker.successor_generator.generate_successor_state(node, action, *successor_state);
             auto metadata = worker.search.make_successor_metadata(worker.index, entry.state, search_node, action);
-            if (auto incoming = route(engine, worker, node, std::move(successor_state), action_result, action, std::move(metadata)))
-            {
-                const auto result = engine.accept_successor(worker, incoming->source, incoming->routed);
-                engine.handle_acceptance(result);
-                if (result == AcceptanceResult::TERMINAL || !running())
-                    break;
-            }
+            if (route(engine, worker, node, std::move(successor_state), action_result, action, std::move(metadata)) == AcceptanceResult::TERMINAL || !running())
+                break;
         }
 
         if (SearchPolicy::check_timeout_after_generation && running() && timed_out())
+        {
             set_terminal(engine, SearchStatus::OUT_OF_TIME);
+            notify_if_stopped(engine);
+        }
     }
 
     template<typename Engine, typename WorkerData, typename EmitTransition>
@@ -695,8 +693,11 @@ public:
         m_coordination.wait_for_work(*this, engine, worker);
     }
 
-    bool reserve_state(size_t, ygg::uint_t max_num_states) noexcept
+    bool reserve_state(ygg::uint_t max_num_states) noexcept
     {
+        if (max_num_states == std::numeric_limits<ygg::uint_t>::max())
+            return true;
+
         auto count = m_num_states.load(std::memory_order_relaxed);
         while (count < max_num_states)
         {
@@ -721,30 +722,18 @@ public:
     }
 
 private:
-    template<typename Engine>
-    void enqueue(Engine& engine, ygg::Index<Worker> target_owner, Message message)
-    {
-        auto& inbox = engine.get_worker(target_owner).execution;
-        {
-            const auto lock = std::lock_guard(inbox.mutex);
-            inbox.messages.push_back(std::move(message));
-            // The receiver cannot observe the message before its credit is published.
-            m_work.fetch_add(1, std::memory_order_release);
-        }
-        inbox.condition.notify_one();
-    }
-
     template<typename Engine, typename WorkerData>
-    void wait_for_messages(Engine& engine, WorkerData& worker)
+    void wait_for_open(Engine& engine, WorkerData& worker)
     {
         auto lock = std::unique_lock(worker.execution.mutex);
-        const auto ready = [&] { return !running() || !worker.execution.messages.empty(); };
+        const auto ready = [&] { return !running() || !worker.search.empty(); };
         if (m_deadline)
         {
             if (!worker.execution.condition.wait_until(lock, *m_deadline, ready) && running())
             {
                 lock.unlock();
                 set_terminal(engine, SearchStatus::OUT_OF_TIME);
+                notify_if_stopped(engine);
             }
         }
         else
@@ -753,6 +742,15 @@ private:
         }
     }
 
+public:
+    template<typename Engine>
+    void notify_if_stopped(Engine& engine)
+    {
+        if (!running())
+            notify_workers(engine);
+    }
+
+private:
     void join()
     {
         for (auto& thread : m_threads)
@@ -809,13 +807,18 @@ private:
     StatePolicy m_state_policy;
     [[no_unique_address]] CoordinationPolicy m_coordination;
     std::optional<std::chrono::steady_clock::time_point> m_deadline;
+    // A worker mutex may be followed by either mutex below. Both are released before acquiring or notifying worker mutexes; two worker mutexes are never
+    // held together.
+    // Justification: makes comparison, replacement, and the corresponding root callback one best-heuristic update.
     mutable std::mutex m_best_h_mutex;
+    // Justification: publishes terminal status, incumbent, goal identity, and exceptions as coherent search-wide state.
     mutable std::mutex m_terminal_mutex;
     std::atomic<SearchStatus> m_status { SearchStatus::IN_PROGRESS };
     std::atomic<size_t> m_work { 0 };
     std::atomic<ygg::uint_t> m_num_states { 0 };
     std::atomic<ygg::float_t> m_best_h_value { std::numeric_limits<ygg::float_t>::infinity() };
     std::atomic<ygg::float_t> m_incumbent_cost { std::numeric_limits<ygg::float_t>::infinity() };
+    bool m_collect_destination_lock_statistics { false };
     std::optional<WorkerStateIndex<Kind>> m_goal;
     std::exception_ptr m_exception;
     std::vector<std::jthread> m_threads;
@@ -848,7 +851,11 @@ public:
         {
             const auto index = ygg::Index<Worker>(static_cast<ygg::uint_t>(i));
             auto execution_context = std::move(execution_contexts[i]);
+            if (!successor_generators[i])
+                throw std::invalid_argument("Parallel search successor generator does not support worker construction.");
             auto worker_heuristic = heuristic.make_worker(execution_context);
+            if (!worker_heuristic)
+                throw std::invalid_argument("Parallel search heuristic does not support worker construction.");
             auto worker_pruning_strategy = options.pruning_strategy ? options.pruning_strategy->make_worker(index) : PruningStrategy<Kind>::create();
             if (!worker_pruning_strategy)
                 throw std::invalid_argument("Parallel search pruning strategy does not support worker construction.");

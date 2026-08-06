@@ -36,7 +36,9 @@ namespace tyr::planning
  * Heavy built-in heuristics hide a task-derived definition and a worker-local evaluator behind their private implementation. Definitions are frozen before
  * being shared between workers, while evaluators own all mutable workspaces. This avoids repeating task translation without exposing those implementation
  * details through the search API. set_goal() is configuration and must run before workers are materialized, or after they have been discarded. Custom
- * heuristics need not use the same internal representation, but must return an independently mutable evaluator from make_worker().
+ * heuristics need not use the same internal representation, but must return an independently mutable evaluator from make_worker(). Each worker instance is
+ * called serially, but may run on different OS threads because remote states execute as work of their logical owner. Evaluation must not re-enter the
+ * search or wait for work from the same logical worker.
  */
 template<TaskKind Kind>
 class Heuristic

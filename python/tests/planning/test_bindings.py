@@ -51,6 +51,9 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
     assert statistics.get_num_pruned() == 0
     assert statistics.get_num_registered_states() == 0
     assert statistics.get_idle_time() == timedelta(0)
+    assert statistics.get_num_destination_lock_acquisitions() == 0
+    assert statistics.get_destination_lock_wait_time() == timedelta(0)
+    assert statistics.get_destination_lock_hold_time() == timedelta(0)
     for getter in (
         "get_state_storage_memory_usage",
         "get_action_bindings_memory_usage",
@@ -80,6 +83,9 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
         "Predicate bindings memory usage",
         "Axiom bindings memory usage",
         "Function bindings memory usage",
+        "Destination lock acquisitions",
+        "Destination lock wait time",
+        "Destination lock hold time",
     ):
         assert label in str(statistics)
 
@@ -268,6 +274,19 @@ def _assert_worker_statistics(result, num_workers: int):
     assert abs(worker_idle_time - result.statistics.get_idle_time()) <= timedelta(
         microseconds=num_workers
     )
+    assert sum(worker.get_num_destination_lock_acquisitions() for worker in result.worker_statistics) == (
+        result.statistics.get_num_destination_lock_acquisitions()
+    )
+    worker_lock_wait_time = sum(
+        (worker.get_destination_lock_wait_time() for worker in result.worker_statistics),
+        start=timedelta(0),
+    )
+    assert abs(worker_lock_wait_time - result.statistics.get_destination_lock_wait_time()) <= timedelta(microseconds=num_workers)
+    worker_lock_hold_time = sum(
+        (worker.get_destination_lock_hold_time() for worker in result.worker_statistics),
+        start=timedelta(0),
+    )
+    assert abs(worker_lock_hold_time - result.statistics.get_destination_lock_hold_time()) <= timedelta(microseconds=num_workers)
 
 
 def test_algorithm_options_are_default_constructible_with_expected_fields():
@@ -284,6 +303,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "num_search_workers": 1,
             "state_repository_mode": planning.StateRepositoryMode.HASH_DISTRIBUTED,
             "parallel_search_mode": planning.ParallelSearchMode.SYNCHRONOUS,
+            "collect_destination_lock_statistics": False,
             "random_seed": 0,
             "shuffle_labeled_succ_nodes": False,
         },
@@ -296,6 +316,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "max_time": None,
             "num_search_workers": 1,
             "state_repository_mode": planning.StateRepositoryMode.HASH_DISTRIBUTED,
+            "collect_destination_lock_statistics": False,
             "random_seed": 0,
             "shuffle_labeled_succ_nodes": False,
         },
@@ -311,6 +332,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "boost_preferred_queue": 1000,
             "num_search_workers": 1,
             "state_repository_mode": planning.StateRepositoryMode.HASH_DISTRIBUTED,
+            "collect_destination_lock_statistics": False,
             "random_seed": 0,
             "shuffle_labeled_succ_nodes": False,
         },
@@ -344,6 +366,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "num_search_workers",
             "state_repository_mode",
             "parallel_search_mode",
+            "collect_destination_lock_statistics",
             "random_seed",
             "shuffle_labeled_succ_nodes",
         ),
@@ -356,6 +379,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "max_time",
             "num_search_workers",
             "state_repository_mode",
+            "collect_destination_lock_statistics",
             "random_seed",
             "shuffle_labeled_succ_nodes",
         ),
@@ -371,6 +395,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "boost_preferred_queue",
             "num_search_workers",
             "state_repository_mode",
+            "collect_destination_lock_statistics",
             "random_seed",
             "shuffle_labeled_succ_nodes",
         ),
@@ -469,6 +494,7 @@ def test_parallel_search_is_available_through_python_bindings():
         options.event_handler = event_handler
         options.num_search_workers = 2
         options.state_repository_mode = planning.StateRepositoryMode.SHARED
+        options.collect_destination_lock_statistics = True
 
         result = task_module.gbfs_lazy.find_solution(
             task,
@@ -482,6 +508,7 @@ def test_parallel_search_is_available_through_python_bindings():
         assert result.goal_node is not None
         assert result.goal_node.get_state().get_state_repository() == state_repository
         assert result.statistics.get_num_expanded() > 0
+        assert result.statistics.get_num_destination_lock_acquisitions() > 0
         assert event_handler.end_status == result.status
         assert event_handler.num_expanded == result.statistics.get_num_expanded()
         assert event_handler.solved
@@ -513,6 +540,35 @@ def test_parallel_search_is_available_through_python_bindings():
             )
             assert astar_result.status == planning.SearchStatus.SOLVED
             _assert_worker_statistics(astar_result, 2)
+
+
+def test_parallel_search_rejects_null_python_heuristic_workers():
+    ground_task, lifted_task = _make_gripper_tasks()
+
+    for task_module, task in (
+        (planning.ground, ground_task),
+        (planning.lifted, lifted_task),
+    ):
+        class NullWorkerHeuristic(task_module.Heuristic):
+            def __init__(self):
+                super().__init__()
+
+            def set_goal(self, goal):
+                pass
+
+            def evaluate(self, state):
+                return 0.0
+
+            def make_worker(self, execution_context):
+                return None
+
+        state_repository = _make_state_repository(task_module, task)
+        successor_generator = _make_successor_generator(task_module, task, state_repository)
+        options = task_module.astar_eager.Options()
+        options.num_search_workers = 2
+
+        with pytest.raises(ValueError, match="heuristic does not support worker construction"):
+            task_module.astar_eager.find_solution(task, successor_generator, NullWorkerHeuristic(), options)
 
 
 def test_planning_task_view_accessors_keep_temporary_owners_alive():
@@ -822,7 +878,7 @@ def test_labeled_node_is_constructible_for_plan_construction():
         assert plan.get_labeled_succ_nodes()[0].node == labeled_node.node
 
 
-def test_state_views_from_independent_repository_factories_use_deterministic_factory_local_identity():
+def test_state_views_from_independent_repository_factories_use_distinct_storage_identity():
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in (
@@ -843,5 +899,5 @@ def test_state_views_from_independent_repository_factories_use_deterministic_fac
         assert first_repository.get_index() == 0
         assert second_repository.get_index() == 0
         assert first_state.get_index() == second_state.get_index()
-        assert first_state == second_state
-        assert hash(first_state) == hash(second_state)
+        assert first_state != second_state
+        assert len({first_state, second_state}) == 2

@@ -112,6 +112,8 @@ private:
             return repository.get() == state.get_state_repository().get() && index == state.get_index();
         }
 
+        // Justification: protects the one-time repository/index publication and subsequent reads shared by arity-zero workers; without it, workers could
+        // initialize different roots or race while observing the root identity.
         mutable std::mutex mutex;
         mutable bool thread_safe { false };
         std::shared_ptr<StateRepository<Kind>> repository;

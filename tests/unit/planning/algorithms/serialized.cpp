@@ -18,6 +18,7 @@
 #include "planning/parser.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <deque>
 #include <filesystem>
 #include <gtest/gtest.h>
@@ -126,6 +127,25 @@ TEST(TyrPlanningSerialized, StatisticsClearResetsCountersAndProgressSnapshots)
     EXPECT_TRUE(progress_statistics.empty());
     EXPECT_EQ(progress_statistics.size(), 0);
     EXPECT_TRUE(progress_statistics.get_snapshots().empty());
+}
+
+TEST(TyrPlanningSerialized, StatisticsAggregatesAndClearsDestinationLockMetrics)
+{
+    auto statistics = p::Statistics {};
+    statistics.add_destination_lock_statistics(std::chrono::nanoseconds(3), std::chrono::nanoseconds(5));
+
+    auto other = p::Statistics {};
+    other.add_destination_lock_statistics(std::chrono::nanoseconds(7), std::chrono::nanoseconds(11));
+    statistics.add(other);
+
+    EXPECT_EQ(statistics.get_num_destination_lock_acquisitions(), 2);
+    EXPECT_EQ(statistics.get_destination_lock_wait_time(), std::chrono::nanoseconds(10));
+    EXPECT_EQ(statistics.get_destination_lock_hold_time(), std::chrono::nanoseconds(16));
+
+    statistics.clear();
+    EXPECT_EQ(statistics.get_num_destination_lock_acquisitions(), 0);
+    EXPECT_EQ(statistics.get_destination_lock_wait_time(), std::chrono::nanoseconds(0));
+    EXPECT_EQ(statistics.get_destination_lock_hold_time(), std::chrono::nanoseconds(0));
 }
 
 TEST(TyrPlanningSerialized, BrfsEventHandlerClearsProgressSnapshotsOnSearchStart)

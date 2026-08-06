@@ -72,7 +72,7 @@ public:
 
     static ygg::Index<State<Kind>> search_node_index(ygg::Index<State<Kind>> state, ygg::Index<Worker>, size_t) noexcept { return state; }
 
-    static constexpr bool has_start_state_capacity(ygg::uint_t) noexcept { return true; }
+    static constexpr bool has_start_state_capacity(ygg::uint_t max_num_states) noexcept { return max_num_states > 0; }
 
     template<typename Engine>
     static std::pair<ygg::Index<Worker>, StateView<Kind>> prepare_start_state(Engine&, const StateView<Kind>& start_state)
@@ -113,6 +113,7 @@ public:
     {
         if (max_time)
             m_stopwatch.emplace(*max_time);
+        m_num_states = 1;
         m_status = SearchStatus::IN_PROGRESS;
     }
 
@@ -145,21 +146,26 @@ public:
     std::exception_ptr exception() const noexcept { return nullptr; }
 
     template<typename Engine, typename Worker>
-    static bool can_expand(Engine&, const Worker& worker) noexcept
+    static bool can_expand_locked(Engine&, const Worker& worker) noexcept
     {
         return !worker.search.empty();
+    }
+
+    template<typename Worker, typename Callback>
+    static decltype(auto) with_worker_lock(Worker&, Callback&& callback)
+    {
+        return std::forward<Callback>(callback)();
+    }
+
+    template<typename Engine>
+    static constexpr void notify_if_stopped(Engine&) noexcept
+    {
     }
 
     template<typename Engine, typename Worker>
     void wait_for_work(Engine& engine, Worker&)
     {
         set_terminal(engine, SearchStatus::EXHAUSTED);
-    }
-
-    template<typename Engine, typename Worker>
-    auto receive_one(Engine&, Worker&) -> std::optional<typename Engine::IncomingSuccessor>
-    {
-        return std::nullopt;
     }
 
     template<typename Engine, typename WorkerData, typename Metadata>
@@ -179,7 +185,7 @@ public:
                            WorkerData& worker,
                            const Node<Kind>& node,
                            const typename SearchPolicy::PoppedEntry& entry,
-                           typename SearchPolicy::SearchNode& search_node,
+                           const typename SearchPolicy::SearchNode& search_node,
                            StateRepository<Kind>& state_repository)
     {
         worker.routed_successors.clear();
@@ -240,7 +246,15 @@ public:
         detail::snapshot_state_repository_statistics(*worker.successor_generator.get_state_repository(), worker.statistics);
     }
 
-    bool reserve_state(size_t current_size, ygg::uint_t max_num_states) const noexcept { return current_size < max_num_states; }
+    bool reserve_state(ygg::uint_t max_num_states) noexcept
+    {
+        if (max_num_states == std::numeric_limits<ygg::uint_t>::max())
+            return true;
+        if (m_num_states >= max_num_states)
+            return false;
+        ++m_num_states;
+        return true;
+    }
     void retain_successor() noexcept {}
 
     template<typename Engine>
@@ -257,6 +271,7 @@ private:
     ygg::float_t m_best_h_value { 0 };
     ygg::float_t m_incumbent_cost { std::numeric_limits<ygg::float_t>::infinity() };
     SearchStatus m_status { SearchStatus::IN_PROGRESS };
+    ygg::uint_t m_num_states { 0 };
     std::optional<WorkerStateIndex<Kind>> m_goal;
     std::optional<ygg::CountdownWatch> m_stopwatch;
 };

@@ -87,7 +87,6 @@ concept SearchPolicyConcept =
 template<typename T, typename Kind>
 concept StateRoutingPolicyConcept = TaskKind<Kind> && std::constructible_from<T, uint64_t> && requires {
     typename T::TaskTag;
-    typename T::MessageTarget;
     typename T::PreparedTarget;
     requires std::same_as<typename T::TaskTag, Kind>;
 } && requires(SuccessorGenerator<Kind>& successor_generator, std::span<const ygg::ExecutionContextPtr> execution_contexts, ygg::Index<State<Kind>> state, ygg::Index<Worker> worker, size_t num_workers, typename T::PreparedTarget prepared) {
@@ -98,33 +97,31 @@ concept StateRoutingPolicyConcept = TaskKind<Kind> && std::constructible_from<T,
 };
 
 template<typename T, typename Kind, typename SearchPolicy>
-concept ExecutionPolicyConcept =
-    TaskKind<Kind> && SearchPolicyConcept<SearchPolicy, Kind> && std::constructible_from<T, uint64_t>
-    && requires {
-           typename T::SearchTag;
-           typename T::TaskTag;
-           typename T::WorkerState;
-           requires std::same_as<typename T::SearchTag, typename SearchPolicy::SearchTag>;
-           requires std::same_as<typename T::TaskTag, Kind>;
-       } && std::constructible_from<typename T::WorkerState, uint64_t> && requires(T& policy, const T& const_policy, const typename SearchPolicy::Options& options, ygg::Index<State<Kind>> state, ygg::Index<Worker> worker, size_t num_workers, size_t num_states, ygg::float_t value, std::optional<std::chrono::steady_clock::duration> max_time, ygg::uint_t max_num_states) {
-           { T::validate(options) } -> std::same_as<void>;
-           { T::num_workers(options) } -> std::same_as<size_t>;
-           { T::search_node_index(state, worker, num_workers) } -> std::same_as<ygg::Index<State<Kind>>>;
-           { T::has_start_state_capacity(max_num_states) } -> std::convertible_to<bool>;
-           { policy.initialize_best_h(value) } -> std::same_as<void>;
-           {
-               policy.improve_best_h(value, [] {})
-           } -> std::convertible_to<bool>;
-           { policy.start(max_time, value, options) } -> std::same_as<void>;
-           { const_policy.running() } -> std::convertible_to<bool>;
-           { const_policy.timed_out() } -> std::convertible_to<bool>;
-           { const_policy.incumbent_cost() } -> std::same_as<ygg::float_t>;
-           { const_policy.status() } -> std::same_as<SearchStatus>;
-           { const_policy.goal() } -> std::same_as<std::optional<WorkerStateIndex<Kind>>>;
-           { const_policy.exception() } -> std::same_as<std::exception_ptr>;
-           { policy.reserve_state(num_states, max_num_states) } -> std::convertible_to<bool>;
-           { policy.retain_successor() } -> std::same_as<void>;
-       };
+concept ExecutionPolicyConcept = TaskKind<Kind> && SearchPolicyConcept<SearchPolicy, Kind> && std::constructible_from<T, uint64_t> && requires {
+    typename T::SearchTag;
+    typename T::TaskTag;
+    typename T::WorkerState;
+    requires std::same_as<typename T::SearchTag, typename SearchPolicy::SearchTag>;
+    requires std::same_as<typename T::TaskTag, Kind>;
+} && std::constructible_from<typename T::WorkerState, uint64_t> && requires(T& policy, const T& const_policy, const typename SearchPolicy::Options& options, ygg::Index<State<Kind>> state, ygg::Index<Worker> worker, size_t num_workers, ygg::float_t value, std::optional<std::chrono::steady_clock::duration> max_time, ygg::uint_t max_num_states) {
+    { T::validate(options) } -> std::same_as<void>;
+    { T::num_workers(options) } -> std::same_as<size_t>;
+    { T::search_node_index(state, worker, num_workers) } -> std::same_as<ygg::Index<State<Kind>>>;
+    { T::has_start_state_capacity(max_num_states) } -> std::convertible_to<bool>;
+    { policy.initialize_best_h(value) } -> std::same_as<void>;
+    {
+        policy.improve_best_h(value, [] {})
+    } -> std::convertible_to<bool>;
+    { policy.start(max_time, value, options) } -> std::same_as<void>;
+    { const_policy.running() } -> std::convertible_to<bool>;
+    { const_policy.timed_out() } -> std::convertible_to<bool>;
+    { const_policy.incumbent_cost() } -> std::same_as<ygg::float_t>;
+    { const_policy.status() } -> std::same_as<SearchStatus>;
+    { const_policy.goal() } -> std::same_as<std::optional<WorkerStateIndex<Kind>>>;
+    { const_policy.exception() } -> std::same_as<std::exception_ptr>;
+    { policy.reserve_state(max_num_states) } -> std::convertible_to<bool>;
+    { policy.retain_successor() } -> std::same_as<void>;
+};
 
 template<typename T, typename WorkerData, typename Kind, typename SearchPolicy>
 concept WorkerPolicyConcept = TaskKind<Kind> && SearchPolicyConcept<SearchPolicy, Kind>

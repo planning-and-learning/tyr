@@ -46,6 +46,7 @@ public:
     Node<Kind>
     apply_action(const StateContext<Kind>& state_context, ::tyr::formalism::planning::GroundActionView action, StateRepository<Kind>& state_repository);
 
+    /// Applies the action into caller-owned storage without interning the successor; returns the updated auxiliary metric value.
     template<TaskKind Kind>
     ygg::float_t apply_action_unregistered(const StateContext<Kind>& state_context,
                                            ::tyr::formalism::planning::GroundActionView action,
@@ -69,12 +70,14 @@ public:
                                  ::tyr::formalism::planning::FDRContext& fdr,
                                  StateRepository<LiftedTag>& state_repository);
 
+    /// Applies the action into caller-owned storage without interning the successor; returns the updated auxiliary metric value.
     ygg::float_t apply_action_unregistered(const StateContext<LiftedTag>& state_context,
                                            ::tyr::formalism::planning::ActionView action,
                                            ::tyr::formalism::planning::GrounderContext& grounder,
                                            ::tyr::formalism::planning::FDRContext& fdr,
                                            ygg::Builder<State<LiftedTag>>& successor_state_builder);
 
+    /// Interns a completed successor in the selected repository and evaluates the resulting node metric.
     template<TaskKind Kind>
     Node<Kind> finalize_action(StateRepository<Kind>& state_repository,
                                ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> successor_state_builder,

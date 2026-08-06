@@ -126,7 +126,10 @@ struct formatter<tyr::planning::Statistics, char>
                               "[Search] Action bindings memory usage: {} bytes\n"
                               "[Search] Predicate bindings memory usage: {} bytes\n"
                               "[Search] Axiom bindings memory usage: {} bytes\n"
-                              "[Search] Function bindings memory usage: {} bytes",
+                              "[Search] Function bindings memory usage: {} bytes\n"
+                              "[Search] Destination lock acquisitions: {}\n"
+                              "[Search] Destination lock wait time: {} ms ({} ns)\n"
+                              "[Search] Destination lock hold time: {} ms ({} ns)",
                               ygg::to_ms(value.get_search_time()),
                               ygg::to_ns(value.get_search_time()),
                               ygg::to_ms(value.get_idle_time()),
@@ -140,7 +143,12 @@ struct formatter<tyr::planning::Statistics, char>
                               value.get_action_bindings_memory_usage(),
                               value.get_predicate_bindings_memory_usage(),
                               value.get_axiom_bindings_memory_usage(),
-                              value.get_function_bindings_memory_usage());
+                              value.get_function_bindings_memory_usage(),
+                              value.get_num_destination_lock_acquisitions(),
+                              ygg::to_ms(value.get_destination_lock_wait_time()),
+                              ygg::to_ns(value.get_destination_lock_wait_time()),
+                              ygg::to_ms(value.get_destination_lock_hold_time()),
+                              ygg::to_ns(value.get_destination_lock_hold_time()));
     }
 };
 

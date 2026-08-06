@@ -99,7 +99,10 @@ void bind_module_definitions(nb::module_& m)
                               .def("get_function_bindings_memory_usage", &Statistics::get_function_bindings_memory_usage)
                               .def("get_search_time", &Statistics::get_search_time)
                               .def("get_current_search_time", &Statistics::get_current_search_time)
-                              .def("get_idle_time", &Statistics::get_idle_time);
+                              .def("get_idle_time", &Statistics::get_idle_time)
+                              .def("get_num_destination_lock_acquisitions", &Statistics::get_num_destination_lock_acquisitions)
+                              .def("get_destination_lock_wait_time", &Statistics::get_destination_lock_wait_time)
+                              .def("get_destination_lock_hold_time", &Statistics::get_destination_lock_hold_time);
     ygg::add_print(statistics_cls);
 
     using ProgressSnapshot = ProgressStatistics::Snapshot;

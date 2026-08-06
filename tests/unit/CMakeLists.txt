@@ -112,6 +112,7 @@ add_gtest(
 
 add_gtest(planning_applicability "planning/applicability.cpp")
 add_gtest(planning_plan_reconstruction "planning/plan_reconstruction.cpp")
+add_gtest(planning_search_engine "planning/search_engine.cpp")
 add_gtest(planning_workers "planning/workers.cpp")
 add_gtest(planning_state_routing "planning/state_routing.cpp")
 add_gtest(formalism_planning_invariants_synthesis "formalism/planning/invariants/synthesis.cpp")

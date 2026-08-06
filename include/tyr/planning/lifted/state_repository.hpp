@@ -39,6 +39,7 @@ class StateRepository<LiftedTag> : public std::enable_shared_from_this<StateRepo
 {
     friend class StateRepositoryFactory<LiftedTag>;
     friend class SuccessorGenerator<LiftedTag>;
+    friend struct ::ygg::View<ygg::Index<State<LiftedTag>>, StateRepositoryPtr<LiftedTag>>;
 
 private:
     struct Impl;
@@ -49,6 +50,7 @@ private:
                     std::shared_ptr<std::atomic<ygg::uint_t>> next_index);
     explicit StateRepository(std::unique_ptr<Impl> impl);
     [[nodiscard]] std::vector<StateRepositoryPtr<LiftedTag>> make_shared_workers(std::span<const ygg::ExecutionContextPtr> execution_contexts) const;
+    ygg::uint_t get_storage_identity() const noexcept;
 
 public:
     ~StateRepository();

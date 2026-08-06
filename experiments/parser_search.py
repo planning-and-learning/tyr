@@ -13,6 +13,10 @@ WORKER_STATISTICS = re.compile(
     r"deadends=(\d+), pruned=(\d+), registered=(\d+), state_storage=(\d+) bytes$",
     re.MULTILINE,
 )
+WORKER_DESTINATION_LOCK_STATISTICS = re.compile(
+    r"^\[Search\] Worker (\d+) destination lock: acquisitions=(\d+), wait=(\d+) ns, hold=(\d+) ns$",
+    re.MULTILINE,
+)
 
 
 def process_invalid(content, props):
@@ -55,6 +59,64 @@ def parse_worker_statistics(content, props):
 
     if props.get("search_time_ns", 0) > 0:
         props["worker_utilizations"] = [max(0.0, min(1.0, 1.0 - idle / props["search_time_ns"])) for idle in props["worker_idle_time_ns"]]
+
+
+def parse_destination_lock_statistics(content, props):
+    matches = sorted(
+        (tuple(map(int, match)) for match in WORKER_DESTINATION_LOCK_STATISTICS.findall(content)),
+        key=lambda values: values[0],
+    )
+    aggregate_names = (
+        "num_destination_lock_acquisitions",
+        "destination_lock_wait_time_ns",
+        "destination_lock_hold_time_ns",
+    )
+    expected_workers = props.get("num_search_workers", len(matches))
+    if matches:
+        indices = [values[0] for values in matches]
+        if indices != list(range(expected_workers)):
+            tools.add_unexplained_error(props, f"Unexpected destination-lock worker indices: {indices}")
+            return
+
+        names = (
+            "worker_destination_lock_acquisitions",
+            "worker_destination_lock_wait_time_ns",
+            "worker_destination_lock_hold_time_ns",
+        )
+        for offset, name in enumerate(names, start=1):
+            props[name] = [values[offset] for values in matches]
+
+        present_aggregates = [name in props for name in aggregate_names]
+        if any(present_aggregates) and not all(present_aggregates):
+            tools.add_unexplained_error(props, "Incomplete destination-lock aggregate statistics")
+            return
+
+        for offset, name in enumerate(aggregate_names, start=1):
+            total = sum(values[offset] for values in matches)
+            if name in props and props[name] != total:
+                tools.add_unexplained_error(props, f"Destination-lock aggregate does not match worker values: {name}")
+            else:
+                props[name] = total
+    elif expected_workers and (props.get("collect_destination_lock_statistics") or any(name in props for name in aggregate_names)):
+        tools.add_unexplained_error(props, "Missing destination-lock worker statistics")
+
+    acquisitions = props.get("num_destination_lock_acquisitions")
+    if acquisitions is None:
+        return
+
+    wait_time = props.get("destination_lock_wait_time_ns", 0)
+    hold_time = props.get("destination_lock_hold_time_ns", 0)
+    props["destination_lock_mean_wait_time_ns"] = wait_time / acquisitions if acquisitions else 0.0
+    props["destination_lock_mean_hold_time_ns"] = hold_time / acquisitions if acquisitions else 0.0
+
+    capacity = props.get("search_time_ns", 0) * props.get("num_search_workers", 0)
+    if capacity > 0:
+        props["destination_lock_wait_capacity_ratio"] = wait_time / capacity
+        props["destination_lock_hold_capacity_ratio"] = hold_time / capacity
+        idle_time = props.get("idle_time_ns", 0)
+        if idle_time + wait_time > capacity:
+            tools.add_unexplained_error(props, "Idle and destination-lock wait time exceed worker capacity")
+        props["worker_utilization_excluding_destination_lock_wait"] = max(0.0, min(1.0, 1.0 - (idle_time + wait_time) / capacity))
 
 
 def add_total_time_s(content, props):
@@ -126,12 +188,16 @@ class SearchParser(Parser):
             type=str,
         )
         self.add_pattern("parallel_search_mode", r"\[INPUT\] Parallel search mode: (synchronous|asynchronous)", type=str)
+        self.add_pattern("collect_destination_lock_statistics", r"\[INPUT\] Collect destination lock statistics: ([01])", type=int)
 
         self.add_pattern("search_time_ms", r"\[Search\] Search time: (\d+) ms", type=int)
         self.add_pattern("search_time_ns", r"\[Search\] Search time: \d+ ms \((\d+) ns\)", type=int)
         self.add_pattern("idle_time_ms", r"\[Search\] Idle worker time: (\d+) ms", type=int)
         self.add_pattern("idle_time_ns", r"\[Search\] Idle worker time: \d+ ms \((\d+) ns\)", type=int)
         self.add_pattern("worker_utilization", rf"\[Search\] Worker utilization: {FLOAT}", type=float)
+        self.add_pattern("num_destination_lock_acquisitions", r"\[Search\] Destination lock acquisitions: (\d+)", type=int)
+        self.add_pattern("destination_lock_wait_time_ns", r"\[Search\] Destination lock wait time: \d+ ms \((\d+) ns\)", type=int)
+        self.add_pattern("destination_lock_hold_time_ns", r"\[Search\] Destination lock hold time: \d+ ms \((\d+) ns\)", type=int)
         self.add_pattern("num_expanded", r"\[Search\] Number of expanded states: (\d+)", type=int)
         self.add_pattern("num_generated", r"\[Search\] Number of generated states: (\d+)", type=int)
         self.add_pattern("num_deadends", r"\[Search\] Number of dead-end states: (\d+)", type=int)
@@ -170,6 +236,7 @@ class SearchParser(Parser):
         self.add_function(add_search_time_s)
         self.add_function(add_idle_time_s)
         self.add_function(parse_worker_statistics)
+        self.add_function(parse_destination_lock_statistics)
         self.add_function(add_total_time_s)
         self.add_function(add_preprocessing_time_s)
         self.add_function(add_search_time_ms_per_expanded)
@@ -194,9 +261,18 @@ class SearchParser(Parser):
             "num_search_workers",
             "state_repository_mode",
             "parallel_search_mode",
+            "collect_destination_lock_statistics",
             Attribute("search_time_s", function=geometric_mean, digits=2),
             Attribute("idle_time_s", function=arithmetic_mean, digits=2),
             Attribute("worker_utilization", function=arithmetic_mean, min_wins=False, digits=3),
+            "num_destination_lock_acquisitions",
+            Attribute("destination_lock_wait_time_ns", function=arithmetic_mean, digits=2),
+            Attribute("destination_lock_hold_time_ns", function=arithmetic_mean, digits=2),
+            Attribute("destination_lock_mean_wait_time_ns", function=arithmetic_mean, digits=2),
+            Attribute("destination_lock_mean_hold_time_ns", function=arithmetic_mean, digits=2),
+            Attribute("destination_lock_wait_capacity_ratio", function=arithmetic_mean, digits=3),
+            Attribute("destination_lock_hold_capacity_ratio", function=arithmetic_mean, digits=3),
+            Attribute("worker_utilization_excluding_destination_lock_wait", function=arithmetic_mean, min_wins=False, digits=3),
             "num_expanded",
             "num_generated",
             "num_deadends",

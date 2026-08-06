@@ -232,6 +232,120 @@ def test_search_parser_reads_parallel_statistics(tmp_path):
     assert props["retained_plan_states_memory_usage_bytes"] == 200
 
 
+def test_search_parser_reads_destination_lock_statistics(tmp_path):
+    (tmp_path / "run.log").write_text(
+        """[INPUT] Num search workers: 2
+[INPUT] Collect destination lock statistics: 1
+[Search] Search time: 100 ms (100000000 ns)
+[Search] Idle worker time: 75 ms (75000000 ns)
+[Search] Destination lock acquisitions: 8
+[Search] Destination lock wait time: 20 ms (20000000 ns)
+[Search] Destination lock hold time: 30 ms (30000000 ns)
+[Search] Worker 0 destination lock: acquisitions=3, wait=5000000 ns, hold=12000000 ns
+[Search] Worker 1 destination lock: acquisitions=5, wait=15000000 ns, hold=18000000 ns
+""",
+        encoding="utf-8",
+    )
+    props = {}
+
+    SearchParser().parse(tmp_path, props)
+
+    assert props["collect_destination_lock_statistics"] == 1
+    assert props["num_destination_lock_acquisitions"] == 8
+    assert props["destination_lock_wait_time_ns"] == 20_000_000
+    assert props["destination_lock_hold_time_ns"] == 30_000_000
+    assert props["destination_lock_mean_wait_time_ns"] == 2_500_000
+    assert props["destination_lock_mean_hold_time_ns"] == 3_750_000
+    assert props["destination_lock_wait_capacity_ratio"] == 0.1
+    assert props["destination_lock_hold_capacity_ratio"] == 0.15
+    assert props["worker_utilization_excluding_destination_lock_wait"] == 0.525
+    assert props["worker_destination_lock_acquisitions"] == [3, 5]
+    assert props["worker_destination_lock_wait_time_ns"] == [5_000_000, 15_000_000]
+    assert props["worker_destination_lock_hold_time_ns"] == [12_000_000, 18_000_000]
+
+
+def test_search_parser_rejects_incomplete_destination_lock_statistics(tmp_path):
+    (tmp_path / "run.log").write_text(
+        """[INPUT] Num search workers: 2
+[Search] Destination lock acquisitions: 3
+[Search] Destination lock wait time: 5 ms (5000000 ns)
+[Search] Destination lock hold time: 7 ms (7000000 ns)
+[Search] Worker 0 destination lock: acquisitions=3, wait=5000000 ns, hold=7000000 ns
+""",
+        encoding="utf-8",
+    )
+    props = {}
+
+    SearchParser().parse(tmp_path, props)
+
+    assert props["unexplained_errors"] == ["Unexpected destination-lock worker indices: [0]"]
+
+
+def test_search_parser_rejects_missing_destination_lock_worker_statistics(tmp_path):
+    (tmp_path / "run.log").write_text(
+        """[INPUT] Num search workers: 2
+[Search] Destination lock acquisitions: 0
+[Search] Destination lock wait time: 0 ms (0 ns)
+[Search] Destination lock hold time: 0 ms (0 ns)
+""",
+        encoding="utf-8",
+    )
+    props = {}
+
+    SearchParser().parse(tmp_path, props)
+
+    assert props["unexplained_errors"] == ["Missing destination-lock worker statistics"]
+
+
+def test_search_parser_derives_destination_lock_aggregates_from_worker_rows(tmp_path):
+    (tmp_path / "run.log").write_text(
+        """[INPUT] Num search workers: 2
+[Search] Search time: 100 ms (100000000 ns)
+[Search] Idle worker time: 75 ms (75000000 ns)
+[Search] Worker 0 destination lock: acquisitions=3, wait=5000000 ns, hold=12000000 ns
+[Search] Worker 1 destination lock: acquisitions=5, wait=15000000 ns, hold=18000000 ns
+""",
+        encoding="utf-8",
+    )
+    props = {}
+
+    SearchParser().parse(tmp_path, props)
+
+    assert props["num_destination_lock_acquisitions"] == 8
+    assert props["destination_lock_wait_time_ns"] == 20_000_000
+    assert props["destination_lock_hold_time_ns"] == 30_000_000
+    assert props["destination_lock_mean_wait_time_ns"] == 2_500_000
+
+
+def test_search_parser_rejects_missing_enabled_destination_lock_statistics(tmp_path):
+    (tmp_path / "run.log").write_text(
+        """[INPUT] Num search workers: 2
+[INPUT] Collect destination lock statistics: 1
+""",
+        encoding="utf-8",
+    )
+    props = {}
+
+    SearchParser().parse(tmp_path, props)
+
+    assert props["unexplained_errors"] == ["Missing destination-lock worker statistics"]
+
+
+def test_search_parser_rejects_incomplete_destination_lock_aggregates(tmp_path):
+    (tmp_path / "run.log").write_text(
+        """[INPUT] Num search workers: 1
+[Search] Destination lock acquisitions: 3
+[Search] Worker 0 destination lock: acquisitions=3, wait=5000000 ns, hold=7000000 ns
+""",
+        encoding="utf-8",
+    )
+    props = {}
+
+    SearchParser().parse(tmp_path, props)
+
+    assert props["unexplained_errors"] == ["Incomplete destination-lock aggregate statistics"]
+
+
 def test_tetralith_state_round_trip(tmp_path):
     what_config = what()
     how_config = tetralith_how()

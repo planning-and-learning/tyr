@@ -30,6 +30,9 @@ namespace tyr::planning::brfs
 {
 
 /// @brief Worker-local events emitted synchronously by BrFS search.
+/// Calls are serialized per logical worker but have no OS-thread affinity. For remote transitions, the source belongs to the sender repository and the
+/// target to the receiver repository; retaining either node intentionally retains its repository. A callback must not re-enter the search or wait for work
+/// from the same logical worker.
 template<TaskKind Kind>
 class WorkerEventHandler
 {
@@ -41,7 +44,7 @@ public:
     virtual void on_generate_transition(const Node<Kind>&, const LabeledNode<Kind>&, TransitionOutcome) {}
 };
 
-/// @brief Search-lifecycle events shared by all BrFS workers.
+/// @brief Search-lifecycle events shared by all BrFS workers. on_finish_layer runs on the worker that completes the depth barrier.
 template<TaskKind Kind>
 class EventHandler
 {

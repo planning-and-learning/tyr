@@ -28,6 +28,7 @@
 #include <type_traits>
 #include <unordered_set>
 #include <vector>
+#include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 
 namespace p = tyr::planning;
@@ -66,8 +67,10 @@ void expect_worker_chain(const p::TaskPtr<Kind>& task)
 
     auto worker_context = ygg::ExecutionContext::create(1);
     auto worker = source->make_worker(worker_context);
+    ASSERT_NE(worker, nullptr);
     auto nested_context = ygg::ExecutionContext::create(1);
     auto nested = worker->make_worker(nested_context);
+    ASSERT_NE(nested, nullptr);
 
     const auto worker_state_repository = worker->get_state_repository();
     const auto nested_state_repository = nested->get_state_repository();
@@ -196,6 +199,28 @@ void expect_worker_chain(const p::TaskPtr<Kind>& task)
 }
 
 template<::tyr::TaskKind Kind>
+void expect_independent_repository_identity(const p::TaskPtr<Kind>& task)
+{
+    auto first_repository = p::StateRepositoryFactory<Kind>().create(task, nullptr);
+    auto second_repository = p::StateRepositoryFactory<Kind>().create(task, nullptr);
+
+    const auto first_state = first_repository->get_initial_state();
+    const auto second_state = second_repository->get_initial_state();
+
+    EXPECT_EQ(first_repository->get_index(), 0);
+    EXPECT_EQ(second_repository->get_index(), 0);
+    EXPECT_EQ(first_state.get_index(), second_state.get_index());
+    EXPECT_NE(first_state, second_state);
+
+    auto states = ygg::UnorderedSet<p::StateView<Kind>> {};
+    states.insert(first_state);
+    states.insert(second_state);
+    EXPECT_EQ(states.size(), 2);
+
+    EXPECT_EQ(p::materialize_state(second_state, *first_repository), first_state);
+}
+
+template<::tyr::TaskKind Kind>
 void expect_shared_worker_cohort(const p::TaskPtr<Kind>& task)
 {
     auto source_context = ygg::ExecutionContext::create(1);
@@ -206,6 +231,8 @@ void expect_shared_worker_cohort(const p::TaskPtr<Kind>& task)
     auto worker_contexts = std::vector<ygg::ExecutionContextPtr> { ygg::ExecutionContext::create(1), ygg::ExecutionContext::create(1) };
     auto workers = source->make_shared_workers(worker_contexts);
     ASSERT_EQ(workers.size(), 2);
+    ASSERT_NE(workers[0], nullptr);
+    ASSERT_NE(workers[1], nullptr);
 
     const auto first_repository = workers[0]->get_state_repository();
     const auto second_repository = workers[1]->get_state_repository();
@@ -274,6 +301,8 @@ TEST(TyrPlanningWorkerTest, GroundAndLiftedWorkersOwnMutableStateAndShareDefinit
 
     expect_worker_chain(lifted_task);
     expect_worker_chain(ground_task);
+    expect_independent_repository_identity(lifted_task);
+    expect_independent_repository_identity(ground_task);
     expect_shared_worker_cohort(lifted_task);
     expect_shared_worker_cohort(ground_task);
 }

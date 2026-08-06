@@ -36,6 +36,7 @@ namespace tyr::planning::siw
 template<TaskKind Kind>
 struct Options
 {
+    /// Optional initial node for the first serialized IW subsearch; when a subsearch runs, it must belong to the underlying solver's task.
     std::optional<Node<Kind>> start_node = std::nullopt;
     EventHandlerPtr<Kind> event_handler = nullptr;
     GoalStrategyPtr<Kind> subgoal_strategy = nullptr;

@@ -36,7 +36,9 @@ class GoalStrategy
 public:
     virtual ~GoalStrategy() = default;
 
-    /// Custom strategies opt into parallel search by returning an independently usable worker.
+    /// Custom strategies opt into parallel search by returning an independently usable worker. Each returned worker is called serially, without OS-thread
+    /// affinity. seed_state and state may belong to different worker repositories; implementations must inspect state contents rather than repository
+    /// identity. Retaining either view retains its repository. A strategy must not re-enter the search or wait for work from the same logical worker.
     [[nodiscard]] virtual GoalStrategyPtr<Kind> make_worker(ygg::Index<Worker>) const { return nullptr; }
 
     virtual bool is_static_goal_satisfied(const Task<Kind>& task) = 0;
