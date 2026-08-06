@@ -120,7 +120,6 @@ concept ExecutionPolicyConcept = TaskKind<Kind> && SearchPolicyConcept<SearchPol
     { const_policy.goal() } -> std::same_as<std::optional<WorkerStateIndex<Kind>>>;
     { const_policy.exception() } -> std::same_as<std::exception_ptr>;
     { policy.reserve_state(max_num_states) } -> std::convertible_to<bool>;
-    { policy.retain_successor() } -> std::same_as<void>;
 };
 
 template<typename T, typename WorkerData, typename Kind, typename SearchPolicy>

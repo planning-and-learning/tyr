@@ -46,6 +46,7 @@ public:
 };
 
 /// @brief Search-lifecycle events shared by all A* workers.
+/// on_start_search is emitted only after the root passes immediate terminal checks and receives an f-value.
 template<TaskKind Kind>
 class EventHandler
 {

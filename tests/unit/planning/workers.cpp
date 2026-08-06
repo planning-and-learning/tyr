@@ -261,6 +261,14 @@ void expect_shared_worker_cohort(const p::TaskPtr<Kind>& task)
     EXPECT_EQ(first_initial.get_state(), second_initial.get_state());
     EXPECT_EQ(first_initial.get_metric(), second_initial.get_metric());
 
+    auto novelty = p::iw::NoveltyPruningStrategy<Kind>::create(0);
+    auto first_novelty_worker = novelty->make_worker(ygg::Index<p::Worker>(0));
+    auto second_novelty_worker = novelty->make_worker(ygg::Index<p::Worker>(1));
+    ASSERT_NE(first_novelty_worker, nullptr);
+    ASSERT_NE(second_novelty_worker, nullptr);
+    EXPECT_FALSE(first_novelty_worker->should_prune_state(first_initial.get_state()));
+    EXPECT_FALSE(second_novelty_worker->should_prune_state(second_initial.get_state()));
+
     const auto actions = workers[0]->get_applicable_action_bindings(first_initial);
     ASSERT_FALSE(actions.empty());
     const auto action = actions.front();

@@ -105,7 +105,7 @@ std::optional<size_t> find_reached_subgoal(const std::vector<ReachedSubgoal<Kind
 {
     for (const auto& reached_subgoal : reached_subgoals)
     {
-        if (reached_subgoal.node.get_state().get_index() == node.get_state().get_index())
+        if (reached_subgoal.node.get_state() == node.get_state())
             return reached_subgoal.plan_position;
     }
 
@@ -190,6 +190,8 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Solver>& op
             combined_start_node = sub_result.plan->get_start_node();
             if (reached_subgoals.empty())
                 reached_subgoals.push_back(detail::ReachedSubgoal<Kind> { *combined_start_node, 0 });
+            else
+                reached_subgoals.front() = detail::ReachedSubgoal<Kind> { *combined_start_node, 0 };
         }
 
         if constexpr (std::is_same_v<typename Solver::EventHandlerType::StatisticsType, tyr::planning::Statistics>)

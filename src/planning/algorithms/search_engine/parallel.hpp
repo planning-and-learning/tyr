@@ -710,12 +710,6 @@ public:
     void retain_successor() noexcept { m_work.fetch_add(1, std::memory_order_relaxed); }
 
     template<typename Engine>
-    void release_successor(Engine& engine)
-    {
-        release_work(engine);
-    }
-
-    template<typename Engine>
     void finish_expansion(Engine& engine)
     {
         release_work(engine);

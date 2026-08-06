@@ -174,7 +174,7 @@ def test_default_output_separates_planners():
 def test_search_parser_reads_parallel_statistics(tmp_path):
     (tmp_path / "run.log").write_text(
         """[INPUT] Num worker threads: 1
-[INPUT] Num search workers: 4
+[INPUT] Num search workers: 2
 [INPUT] State repository mode: shared
 [INPUT] Parallel search mode: synchronous
 [GBFS] Start node h_value: 3.5
@@ -211,7 +211,7 @@ def test_search_parser_reads_parallel_statistics(tmp_path):
 
     assert props["cost"] == 12.5
     assert props["initial_h_value"] == 3.5
-    assert props["num_search_workers"] == 4
+    assert props["num_search_workers"] == 2
     assert props["state_repository_mode"] == "shared"
     assert props["parallel_search_mode"] == "synchronous"
     assert props["idle_time_ns"] == 75_000_000
@@ -230,6 +230,20 @@ def test_search_parser_reads_parallel_statistics(tmp_path):
     assert props["num_deadends_until_last_snapshot"] == 1
     assert props["num_pruned_until_last_snapshot"] == 4
     assert props["retained_plan_states_memory_usage_bytes"] == 200
+
+
+def test_search_parser_rejects_incomplete_worker_statistics(tmp_path):
+    (tmp_path / "run.log").write_text(
+        """[INPUT] Num search workers: 2
+[Search] Worker 0: idle=0 ns, expanded=1, generated=2, deadends=0, pruned=0, registered=2, state_storage=100 bytes
+""",
+        encoding="utf-8",
+    )
+    props = {}
+
+    SearchParser().parse(tmp_path, props)
+
+    assert props["unexplained_errors"] == ["Unexpected search worker indices: [0]"]
 
 
 def test_search_parser_reads_destination_lock_statistics(tmp_path):

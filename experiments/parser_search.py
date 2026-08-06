@@ -41,7 +41,8 @@ def parse_worker_statistics(content, props):
         return
 
     indices = [values[0] for values in matches]
-    if indices != list(range(len(matches))):
+    expected_workers = props.get("num_search_workers", len(matches))
+    if indices != list(range(expected_workers)):
         tools.add_unexplained_error(props, f"Unexpected search worker indices: {indices}")
         return
 

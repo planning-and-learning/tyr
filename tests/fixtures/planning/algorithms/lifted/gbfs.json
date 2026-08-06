@@ -7,7 +7,7 @@
             "hff_unit": {
                 "num_generated": 259,
                 "num_expanded": 71,
-                "num_deadends": 0,
+                "num_deadends": 1,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 55,
@@ -74,7 +74,7 @@
             "hff_general": {
                 "num_generated": 259,
                 "num_expanded": 71,
-                "num_deadends": 0,
+                "num_deadends": 1,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 1117,
@@ -763,7 +763,7 @@
             "hmax_unit": {
                 "num_generated": 18,
                 "num_expanded": 10,
-                "num_deadends": 0,
+                "num_deadends": 3,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 4,
@@ -779,7 +779,7 @@
             "hmax_general": {
                 "num_generated": 18,
                 "num_expanded": 10,
-                "num_deadends": 0,
+                "num_deadends": 3,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 4,
@@ -795,7 +795,7 @@
             "hadd_unit": {
                 "num_generated": 18,
                 "num_expanded": 10,
-                "num_deadends": 0,
+                "num_deadends": 3,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 4,
@@ -811,7 +811,7 @@
             "hadd_general": {
                 "num_generated": 18,
                 "num_expanded": 10,
-                "num_deadends": 0,
+                "num_deadends": 3,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 4,
@@ -827,7 +827,7 @@
             "hff_unit": {
                 "num_generated": 16,
                 "num_expanded": 8,
-                "num_deadends": 0,
+                "num_deadends": 2,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 4,
@@ -843,7 +843,7 @@
             "hff_general": {
                 "num_generated": 16,
                 "num_expanded": 8,
-                "num_deadends": 0,
+                "num_deadends": 2,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 4,
@@ -859,7 +859,7 @@
             "hlmcut_unit": {
                 "num_generated": 18,
                 "num_expanded": 10,
-                "num_deadends": 0,
+                "num_deadends": 3,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 4,
@@ -875,7 +875,7 @@
             "hlmcut_general": {
                 "num_generated": 18,
                 "num_expanded": 10,
-                "num_deadends": 0,
+                "num_deadends": 3,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 4,
@@ -3072,7 +3072,7 @@
             "hadd_unit": {
                 "num_generated": 14,
                 "num_expanded": 12,
-                "num_deadends": 0,
+                "num_deadends": 1,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 11,
@@ -4603,7 +4603,7 @@
             "hmax_unit": {
                 "num_generated": 4,
                 "num_expanded": 5,
-                "num_deadends": 0,
+                "num_deadends": 1,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 4,
@@ -4619,7 +4619,7 @@
             "hmax_general": {
                 "num_generated": 4,
                 "num_expanded": 5,
-                "num_deadends": 0,
+                "num_deadends": 1,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 4,
@@ -4699,7 +4699,7 @@
             "hlmcut_unit": {
                 "num_generated": 4,
                 "num_expanded": 5,
-                "num_deadends": 0,
+                "num_deadends": 1,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 4,
@@ -4715,7 +4715,7 @@
             "hlmcut_general": {
                 "num_generated": 4,
                 "num_expanded": 5,
-                "num_deadends": 0,
+                "num_deadends": 1,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 4,
@@ -5172,7 +5172,7 @@
             "hmax_unit": {
                 "num_generated": 1140,
                 "num_expanded": 320,
-                "num_deadends": 0,
+                "num_deadends": 18,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 9,
@@ -5193,7 +5193,7 @@
             "hmax_general": {
                 "num_generated": 661,
                 "num_expanded": 122,
-                "num_deadends": 0,
+                "num_deadends": 5,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 175,
@@ -5214,7 +5214,7 @@
             "hadd_unit": {
                 "num_generated": 157,
                 "num_expanded": 27,
-                "num_deadends": 0,
+                "num_deadends": 1,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 11,
@@ -5237,7 +5237,7 @@
             "hadd_general": {
                 "num_generated": 549,
                 "num_expanded": 136,
-                "num_deadends": 0,
+                "num_deadends": 1,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 240,
@@ -5263,7 +5263,7 @@
             "hff_unit": {
                 "num_generated": 83,
                 "num_expanded": 13,
-                "num_deadends": 0,
+                "num_deadends": 1,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 12,
@@ -5287,7 +5287,7 @@
             "hff_general": {
                 "num_generated": 152,
                 "num_expanded": 19,
-                "num_deadends": 0,
+                "num_deadends": 1,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 205,
@@ -5310,7 +5310,7 @@
             "hlmcut_unit": {
                 "num_generated": 157,
                 "num_expanded": 27,
-                "num_deadends": 0,
+                "num_deadends": 1,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 11,
@@ -5333,7 +5333,7 @@
             "hlmcut_general": {
                 "num_generated": 489,
                 "num_expanded": 80,
-                "num_deadends": 0,
+                "num_deadends": 1,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 190,
@@ -7034,7 +7034,7 @@
             "hff_general": {
                 "num_generated": 78,
                 "num_expanded": 45,
-                "num_deadends": 0,
+                "num_deadends": 5,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 4,
@@ -8851,7 +8851,7 @@
             "hmax_general": {
                 "num_generated": 642,
                 "num_expanded": 128,
-                "num_deadends": 0,
+                "num_deadends": 4,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 3,
@@ -8881,7 +8881,7 @@
             "hadd_general": {
                 "num_generated": 642,
                 "num_expanded": 128,
-                "num_deadends": 0,
+                "num_deadends": 4,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 3,
@@ -8911,7 +8911,7 @@
             "hff_general": {
                 "num_generated": 148,
                 "num_expanded": 12,
-                "num_deadends": 0,
+                "num_deadends": 1,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 3,
@@ -8941,7 +8941,7 @@
             "hlmcut_general": {
                 "num_generated": 642,
                 "num_expanded": 128,
-                "num_deadends": 0,
+                "num_deadends": 4,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 3,

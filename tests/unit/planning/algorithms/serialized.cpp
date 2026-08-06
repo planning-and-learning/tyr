@@ -336,4 +336,52 @@ TEST(TyrPlanningSerialized, DetectsRepeatedSubgoalState)
     EXPECT_EQ(result.statistics.get_function_bindings_memory_usage(), 80);
 }
 
+TEST(TyrPlanningSerialized, DetectsCycleUsingCanonicalSubplanStateIdentity)
+{
+    auto context = create_gripper_context();
+    const auto initial_node = context.successor_generator->get_initial_node();
+    const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node);
+    const auto successor_it =
+        std::ranges::find_if(successors, [&](const auto& successor) { return successor.node.get_state().get_index() != initial_node.get_state().get_index(); });
+    ASSERT_NE(successor_it, successors.end());
+    const auto& successor = *successor_it;
+
+    auto foreign_generator = context.successor_generator->make_worker(ygg::ExecutionContext::create(1));
+    ASSERT_NE(foreign_generator, nullptr);
+    const auto foreign_start = foreign_generator->get_initial_node();
+    ASSERT_EQ(foreign_start.get_state().get_index(), initial_node.get_state().get_index());
+    ASSERT_NE(foreign_start.get_state(), initial_node.get_state());
+
+    const auto canonical_start = p::Node<::tyr::GroundTag>(successor.node.get_state(), 0);
+    const auto first_goal = p::Node<::tyr::GroundTag>(initial_node.get_state(), 1);
+    auto first_subresult = p::SearchResult<::tyr::GroundTag> {};
+    first_subresult.status = p::SearchStatus::SOLVED;
+    first_subresult.goal_node = first_goal;
+    first_subresult.plan =
+        p::Plan<::tyr::GroundTag>(canonical_start, p::LabeledNodeList<::tyr::GroundTag> { p::LabeledNode<::tyr::GroundTag> { successor.label, first_goal } });
+
+    const auto second_start = p::Node<::tyr::GroundTag>(first_goal.get_state(), 0);
+    const auto second_goal = p::Node<::tyr::GroundTag>(canonical_start.get_state(), 1);
+    auto second_subresult = p::SearchResult<::tyr::GroundTag> {};
+    second_subresult.status = p::SearchStatus::SOLVED;
+    second_subresult.goal_node = second_goal;
+    second_subresult.plan =
+        p::Plan<::tyr::GroundTag>(second_start, p::LabeledNodeList<::tyr::GroundTag> { p::LabeledNode<::tyr::GroundTag> { successor.label, second_goal } });
+
+    auto solver = ScriptedSolver(std::deque<p::SearchResult<::tyr::GroundTag>> { std::move(first_subresult), std::move(second_subresult) });
+    auto options = p::serialized::Options<::tyr::GroundTag, ScriptedSolver> {};
+    options.start_node = foreign_start;
+    options.subgoal_strategy = std::make_shared<NeverSatisfiedGoalStrategy>();
+    options.goal_strategy = std::make_shared<NeverSatisfiedGoalStrategy>();
+
+    const auto result = p::serialized::find_solution(solver, options);
+
+    ASSERT_EQ(result.status, p::SearchStatus::CYCLE);
+    ASSERT_TRUE(result.plan);
+    ASSERT_TRUE(result.cycle_range);
+    EXPECT_EQ(result.plan->get_start_node().get_state(), canonical_start.get_state());
+    EXPECT_EQ(result.plan->get_length(), 2);
+    EXPECT_EQ(*result.cycle_range, (std::pair<size_t, size_t> { 0, 2 }));
+}
+
 }

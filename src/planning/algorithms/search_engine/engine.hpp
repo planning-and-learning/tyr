@@ -158,7 +158,6 @@ public:
         WorkerExecutionState execution;
         std::mt19937_64 rng;
         std::vector<::tyr::formalism::planning::ActionBindingView> applicable_actions;
-        std::vector<RoutedSuccessor> routed_successors;
         PruningStrategyPtr<Kind> pruning_strategy;
         GoalStrategyPtr<Kind> goal_strategy;
         Statistics statistics;
@@ -247,11 +246,8 @@ private:
         auto& start_worker = get_worker(start_owner);
         const auto start_state_index = start_state.get_index();
         const auto start_g_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_start_node.get_metric());
-        const auto start_h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(start_worker.heuristic.evaluate(start_state));
-        if (std::isnan(start_h_value))
-            throw std::runtime_error("find_solution(...): start heuristic value is NaN.");
-        m_execution.initialize_best_h(start_h_value);
-        auto& start_search_node = start_worker.initialize_start(start_state_index, start_g_value, start_h_value);
+        if (std::isnan(start_g_value))
+            throw std::runtime_error("find_solution(...): start node metric value is NaN.");
 
         const auto search_start = std::chrono::steady_clock::now();
         m_search_start_time_point = search_start;
@@ -262,7 +258,6 @@ private:
                 worker.statistics.set_search_start_time_point(search_start);
                 worker.statistics.set_search_end_time_point(search_start);
             });
-        call_root_event([&](auto& handler) { SearchPolicy::on_start_search(handler, m_start_node, start_worker.search.get_start_priority()); });
 
         if (!start_worker.goal_strategy->is_static_goal_satisfied(m_task))
         {
@@ -279,27 +274,29 @@ private:
             return std::move(m_result);
         }
 
-        if (std::isnan(m_start_node.get_metric()))
-        {
-            finalize(SearchStatus::FAILED);
-            throw std::runtime_error("find_solution(...): start node metric value is NaN.");
-        }
-
         if (!ExecutionPolicy::has_start_state_capacity(m_options.max_num_states))
         {
             finalize(SearchStatus::OUT_OF_STATES);
             return std::move(m_result);
         }
 
-        if (start_search_node.status == SearchNodeStatus::DEAD_END)
-        {
-            finalize(SearchStatus::UNSOLVABLE);
-            return std::move(m_result);
-        }
-
         if (start_worker.pruning_strategy->should_prune_state(start_state))
         {
             finalize(SearchStatus::EXHAUSTED);
+            return std::move(m_result);
+        }
+
+        const auto start_h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(start_worker.heuristic.evaluate(start_state));
+        if (std::isnan(start_h_value))
+            throw std::runtime_error("find_solution(...): start heuristic value is NaN.");
+        m_execution.initialize_best_h(start_h_value);
+        auto& start_search_node = start_worker.initialize_start(start_state_index, start_g_value, start_h_value);
+        call_root_event([&](auto& handler) { SearchPolicy::on_start_search(handler, m_start_node, start_worker.search.get_start_priority()); });
+
+        if (start_search_node.status == SearchNodeStatus::DEAD_END)
+        {
+            start_worker.statistics.increment_num_deadends();
+            finalize(SearchStatus::UNSOLVABLE);
             return std::move(m_result);
         }
 
@@ -381,12 +378,6 @@ private:
         }
         m_execution.finish_expansion(*this);
         return true;
-    }
-
-    void handle_acceptance(AcceptanceResult result)
-    {
-        if (result == AcceptanceResult::DISCARDED)
-            m_execution.release_successor(*this);
     }
 
     AcceptanceResult accept_successor(WorkerData& worker, const Node<Kind>& source_node, const RoutedSuccessor& routed_successor)

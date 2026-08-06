@@ -290,7 +290,7 @@ public:
     }
 
     template<TaskKind Kind>
-    bool insert(StateView<Kind> state, ygg::uint_t max_arity)
+    bool insert(const StateView<Kind>& state, ygg::uint_t max_arity)
     {
         validate_max_arity(max_arity);
 
@@ -314,13 +314,13 @@ public:
     }
 
     template<TaskKind Kind>
-    bool insert(StateView<Kind> state)
+    bool insert(const StateView<Kind>& state)
     {
         return insert(state, Arity);
     }
 
     template<TaskKind Kind>
-    bool insert(StateView<Kind> src, StateView<Kind> dst, ygg::uint_t max_arity)
+    bool insert(const StateView<Kind>& src, const StateView<Kind>& dst, ygg::uint_t max_arity)
     {
         validate_max_arity(max_arity);
 
@@ -365,7 +365,7 @@ public:
     }
 
     template<TaskKind Kind>
-    bool insert(StateView<Kind> src, StateView<Kind> dst)
+    bool insert(const StateView<Kind>& src, const StateView<Kind>& dst)
     {
         return insert(src, dst, Arity);
     }
@@ -405,7 +405,7 @@ private:
     }
 
     template<TaskKind Kind>
-    void collect_atoms(StateView<Kind> state, AtomIndexList& out)
+    void collect_atoms(const StateView<Kind>& state, AtomIndexList& out)
     {
         out.clear();
         for (const auto fact : state.get_fluent_facts_view())

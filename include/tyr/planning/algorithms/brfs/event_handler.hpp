@@ -45,6 +45,7 @@ public:
 };
 
 /// @brief Search-lifecycle events shared by all BrFS workers. on_finish_layer runs on the worker that completes the depth barrier.
+/// on_start_search is emitted only after the root passes immediate terminal checks.
 template<TaskKind Kind>
 class EventHandler
 {

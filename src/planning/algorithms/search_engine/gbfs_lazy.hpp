@@ -149,6 +149,7 @@ public:
             throw std::runtime_error("GBFS heuristic value is NaN.");
         if (m_state_h_value == std::numeric_limits<ygg::float_t>::infinity())
         {
+            statistics.increment_num_deadends();
             search_node.status = SearchNodeStatus::DEAD_END;
             return ExpansionResult::SKIP;
         }

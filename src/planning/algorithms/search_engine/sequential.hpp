@@ -188,30 +188,10 @@ public:
                            const typename SearchPolicy::SearchNode& search_node,
                            StateRepository<Kind>& state_repository)
     {
-        worker.routed_successors.clear();
-        worker.routed_successors.reserve(worker.applicable_actions.size());
-        for (const auto action : worker.applicable_actions)
-        {
-            auto successor_state = state_repository.get_state_builder();
-            const auto action_result = worker.successor_generator.generate_successor_state(node, action, *successor_state);
-            worker.routed_successors.push_back(route(engine,
-                                                     worker,
-                                                     std::move(successor_state),
-                                                     action_result,
-                                                     action,
-                                                     worker.search.make_successor_metadata(worker.index, entry.state, search_node, action)));
-        }
-
-        if (SearchPolicy::check_timeout_after_generation && timed_out())
-        {
-            set_terminal(engine, SearchStatus::OUT_OF_TIME);
-            return;
-        }
-
         if (engine.m_options.shuffle_labeled_succ_nodes)
-            ygg::portable_shuffle(worker.routed_successors.begin(), worker.routed_successors.end(), worker.rng);
+            ygg::portable_shuffle(worker.applicable_actions.begin(), worker.applicable_actions.end(), worker.rng);
 
-        for (const auto& routed_successor : worker.routed_successors)
+        for (const auto action : worker.applicable_actions)
         {
             if (SearchPolicy::check_timeout_per_successor && timed_out())
             {
@@ -219,11 +199,20 @@ public:
                 return;
             }
 
-            const auto result = engine.accept_successor(worker, node, routed_successor);
-            engine.handle_acceptance(result);
-            if (result == AcceptanceResult::TERMINAL)
+            auto successor_state = state_repository.get_state_builder();
+            const auto action_result = worker.successor_generator.generate_successor_state(node, action, *successor_state);
+            auto routed_successor = route(engine,
+                                          worker,
+                                          std::move(successor_state),
+                                          action_result,
+                                          action,
+                                          worker.search.make_successor_metadata(worker.index, entry.state, search_node, action));
+            if (engine.accept_successor(worker, node, routed_successor) == AcceptanceResult::TERMINAL)
                 return;
         }
+
+        if (SearchPolicy::check_timeout_after_generation && timed_out())
+            set_terminal(engine, SearchStatus::OUT_OF_TIME);
     }
 
     template<typename Engine, typename WorkerData, typename EmitTransition>
@@ -255,13 +244,6 @@ public:
         ++m_num_states;
         return true;
     }
-    void retain_successor() noexcept {}
-
-    template<typename Engine>
-    void release_successor(Engine&) noexcept
-    {
-    }
-
     template<typename Engine>
     void finish_expansion(Engine&) noexcept
     {

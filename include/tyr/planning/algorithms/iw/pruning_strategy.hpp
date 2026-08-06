@@ -24,7 +24,9 @@
 
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <stdexcept>
+#include <tuple>
 
 namespace tyr::planning::iw
 {
@@ -81,18 +83,15 @@ private:
         bool initialize_or_matches(const StateView<Kind>& state)
         {
             const auto lock = lock_if_shared();
-            if (!repository)
-            {
-                repository = state.get_state_repository();
-                index = state.get_index();
-            }
+            if (!identity)
+                identity = state.identifying_members();
             return matches_unlocked(state);
         }
 
         bool matches(const StateView<Kind>& state) const
         {
             const auto lock = lock_if_shared();
-            return repository && matches_unlocked(state);
+            return identity && matches_unlocked(state);
         }
 
         /// Worker construction happens before search threads start.
@@ -107,17 +106,14 @@ private:
             return lock;
         }
 
-        bool matches_unlocked(const StateView<Kind>& state) const
-        {
-            return repository.get() == state.get_state_repository().get() && index == state.get_index();
-        }
+        bool matches_unlocked(const StateView<Kind>& state) const { return *identity == state.identifying_members(); }
 
-        // Justification: protects the one-time repository/index publication and subsequent reads shared by arity-zero workers; without it, workers could
+        // Justification: protects the one-time state-identity publication and subsequent reads shared by arity-zero workers; without it, workers could
         // initialize different roots or race while observing the root identity.
         mutable std::mutex mutex;
         mutable bool thread_safe { false };
-        std::shared_ptr<StateRepository<Kind>> repository;
-        ygg::Index<State<Kind>> index = ygg::Index<State<Kind>>::max();
+        using Identity = std::tuple<ygg::Index<State<Kind>>, ygg::uint_t>;
+        std::optional<Identity> identity;
     };
 
     NoveltyPruningStrategy(ygg::uint_t max_arity, std::shared_ptr<SharedRootState> root_state, DynamicNoveltyTable<MaxArity> novelty_table) :

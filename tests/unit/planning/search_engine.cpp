@@ -113,6 +113,24 @@ public:
 };
 
 template<TaskKind Kind>
+class ThrowingHeuristic final : public p::Heuristic<Kind>
+{
+public:
+    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView) override {}
+    ygg::float_t evaluate(const p::StateView<Kind>&) override { throw std::runtime_error("Unexpected heuristic evaluation."); }
+    p::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr) const override { return std::make_shared<ThrowingHeuristic>(); }
+};
+
+template<TaskKind Kind>
+class InfiniteHeuristic final : public p::Heuristic<Kind>
+{
+public:
+    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView) override {}
+    ygg::float_t evaluate(const p::StateView<Kind>&) override { return std::numeric_limits<ygg::float_t>::infinity(); }
+    p::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr) const override { return std::make_shared<InfiniteHeuristic>(); }
+};
+
+template<TaskKind Kind>
 class DuplicatePruningStrategy final : public p::PruningStrategy<Kind>
 {
 public:
@@ -122,12 +140,38 @@ public:
 };
 
 template<TaskKind Kind>
+class AlwaysPruningStrategy final : public p::PruningStrategy<Kind>
+{
+public:
+    p::PruningStrategyPtr<Kind> make_worker(ygg::Index<p::Worker>) const override { return std::make_shared<AlwaysPruningStrategy>(); }
+    bool should_prune_state(const p::StateView<Kind>&) override { return true; }
+};
+
+template<TaskKind Kind>
 class AlwaysGoalStrategy final : public p::GoalStrategy<Kind>
 {
 public:
     p::GoalStrategyPtr<Kind> make_worker(ygg::Index<p::Worker>) const override { return std::make_shared<AlwaysGoalStrategy>(); }
     bool is_static_goal_satisfied(const p::Task<Kind>&) override { return true; }
     bool is_dynamic_goal_satisfied(const p::StateView<Kind>&, const p::StateView<Kind>&) override { return true; }
+};
+
+template<TaskKind Kind>
+class StaticallyUnsatisfiedGoalStrategy final : public p::GoalStrategy<Kind>
+{
+public:
+    p::GoalStrategyPtr<Kind> make_worker(ygg::Index<p::Worker>) const override { return std::make_shared<StaticallyUnsatisfiedGoalStrategy>(); }
+    bool is_static_goal_satisfied(const p::Task<Kind>&) override { return false; }
+    bool is_dynamic_goal_satisfied(const p::StateView<Kind>&, const p::StateView<Kind>&) override { return false; }
+};
+
+template<TaskKind Kind>
+class NonRootGoalStrategy final : public p::GoalStrategy<Kind>
+{
+public:
+    p::GoalStrategyPtr<Kind> make_worker(ygg::Index<p::Worker>) const override { return std::make_shared<NonRootGoalStrategy>(); }
+    bool is_static_goal_satisfied(const p::Task<Kind>&) override { return true; }
+    bool is_dynamic_goal_satisfied(const p::StateView<Kind>& seed_state, const p::StateView<Kind>& state) override { return seed_state != state; }
 };
 
 template<typename Callback>
@@ -248,6 +292,11 @@ void expect_foreign_start_handling(const p::TaskPtr<Kind>& task, const p::TaskPt
             ASSERT_TRUE(result.plan);
             EXPECT_EQ(result.plan->get_start_node().get_state().get_state_repository(), caller.repository);
             EXPECT_EQ(result.plan->get_start_node().get_metric(), 7);
+
+            options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>();
+            const auto immediate_result = p::astar_eager::find_solution(*task, *caller.successor_generator, *heuristic, options);
+            ASSERT_TRUE(immediate_result.plan);
+            EXPECT_EQ(immediate_result.plan->get_start_node().get_state().get_state_repository(), caller.repository);
         });
 
     auto caller = make_search_context(task);
@@ -309,6 +358,171 @@ void expect_destination_lock_statistics(const p::TaskPtr<Kind>& task)
     }
 }
 
+template<TaskKind Kind>
+void expect_terminal_roots_skip_heuristic(const p::TaskPtr<Kind>& task)
+{
+    for_each_execution_mode(
+        [&](size_t num_workers, p::StateRepositoryMode mode)
+        {
+            const auto check_astar = [&](auto configure, p::SearchStatus expected_status)
+            {
+                auto context = make_search_context(task);
+                auto heuristic = ThrowingHeuristic<Kind> {};
+                auto options = p::astar_eager::Options<Kind> {};
+                options.num_search_workers = num_workers;
+                options.state_repository_mode = mode;
+                configure(options);
+
+                auto result = p::SearchResult<Kind> {};
+                ASSERT_NO_THROW(result = p::astar_eager::find_solution(*task, *context.successor_generator, heuristic, options));
+                EXPECT_EQ(result.status, expected_status);
+            };
+            const auto check_gbfs = [&](auto configure, p::SearchStatus expected_status)
+            {
+                auto context = make_search_context(task);
+                auto heuristic = ThrowingHeuristic<Kind> {};
+                auto options = p::gbfs_lazy::Options<Kind> {};
+                options.num_search_workers = num_workers;
+                options.state_repository_mode = mode;
+                configure(options);
+
+                auto result = p::SearchResult<Kind> {};
+                ASSERT_NO_THROW(result = p::gbfs_lazy::find_solution(*task, *context.successor_generator, heuristic, options));
+                EXPECT_EQ(result.status, expected_status);
+            };
+
+            const auto dynamic_goal = [](auto& options) { options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>(); };
+            const auto static_failure = [](auto& options) { options.goal_strategy = std::make_shared<StaticallyUnsatisfiedGoalStrategy<Kind>>(); };
+            const auto no_capacity = [](auto& options) { options.max_num_states = 0; };
+            const auto root_pruned = [](auto& options) { options.pruning_strategy = std::make_shared<AlwaysPruningStrategy<Kind>>(); };
+
+            check_astar(dynamic_goal, p::SearchStatus::SOLVED);
+            check_astar(static_failure, p::SearchStatus::UNSOLVABLE);
+            check_astar(no_capacity, p::SearchStatus::OUT_OF_STATES);
+            check_astar(root_pruned, p::SearchStatus::EXHAUSTED);
+            check_gbfs(dynamic_goal, p::SearchStatus::SOLVED);
+            check_gbfs(static_failure, p::SearchStatus::UNSOLVABLE);
+            check_gbfs(no_capacity, p::SearchStatus::OUT_OF_STATES);
+            check_gbfs(root_pruned, p::SearchStatus::EXHAUSTED);
+        });
+}
+
+template<TaskKind Kind>
+void expect_nan_start_metrics_are_rejected(const p::TaskPtr<Kind>& task)
+{
+    for_each_execution_mode(
+        [&](size_t num_workers, p::StateRepositoryMode mode)
+        {
+            const auto nan = std::numeric_limits<ygg::float_t>::quiet_NaN();
+
+            {
+                auto context = make_search_context(task);
+                auto heuristic = p::BlindHeuristic<Kind>::create();
+                auto options = p::astar_eager::Options<Kind> {};
+                options.start_node = p::Node<Kind>(context.successor_generator->get_initial_node().get_state(), nan);
+                options.num_search_workers = num_workers;
+                options.state_repository_mode = mode;
+                options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>();
+                EXPECT_THROW(p::astar_eager::find_solution(*task, *context.successor_generator, *heuristic, options), std::runtime_error);
+            }
+            {
+                auto context = make_search_context(task);
+                auto heuristic = p::BlindHeuristic<Kind>::create();
+                auto options = p::gbfs_lazy::Options<Kind> {};
+                options.start_node = p::Node<Kind>(context.successor_generator->get_initial_node().get_state(), nan);
+                options.num_search_workers = num_workers;
+                options.state_repository_mode = mode;
+                options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>();
+                EXPECT_THROW(p::gbfs_lazy::find_solution(*task, *context.successor_generator, *heuristic, options), std::runtime_error);
+            }
+            {
+                auto context = make_search_context(task);
+                auto options = p::brfs::Options<Kind> {};
+                options.start_node = p::Node<Kind>(context.successor_generator->get_initial_node().get_state(), nan);
+                options.num_search_workers = num_workers;
+                options.state_repository_mode = mode;
+                options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>();
+                EXPECT_THROW(p::brfs::find_solution(*task, *context.successor_generator, options), std::runtime_error);
+            }
+        });
+}
+
+template<TaskKind Kind>
+void expect_dead_end_statistics(const p::TaskPtr<Kind>& task)
+{
+    const auto expect_one_dead_end = [](const p::SearchResult<Kind>& result)
+    {
+        EXPECT_EQ(result.statistics.get_num_deadends(), 1);
+        auto worker_total = uint64_t { 0 };
+        for (const auto& statistics : result.worker_statistics)
+            worker_total += statistics.get_num_deadends();
+        EXPECT_EQ(worker_total, 1);
+    };
+
+    for_each_execution_mode(
+        [&](size_t num_workers, p::StateRepositoryMode mode)
+        {
+            {
+                auto context = make_search_context(task);
+                auto heuristic = InfiniteHeuristic<Kind> {};
+                auto options = p::astar_eager::Options<Kind> {};
+                options.num_search_workers = num_workers;
+                options.state_repository_mode = mode;
+                options.goal_strategy = p::ExhaustiveGoalStrategy<Kind>::create();
+                const auto result = p::astar_eager::find_solution(*task, *context.successor_generator, heuristic, options);
+                EXPECT_EQ(result.status, p::SearchStatus::UNSOLVABLE);
+                expect_one_dead_end(result);
+            }
+            {
+                auto context = make_search_context(task);
+                auto heuristic = InfiniteHeuristic<Kind> {};
+                auto options = p::gbfs_lazy::Options<Kind> {};
+                options.num_search_workers = num_workers;
+                options.state_repository_mode = mode;
+                options.goal_strategy = p::ExhaustiveGoalStrategy<Kind>::create();
+                const auto result = p::gbfs_lazy::find_solution(*task, *context.successor_generator, heuristic, options);
+                EXPECT_EQ(result.status, p::SearchStatus::UNSOLVABLE);
+                expect_one_dead_end(result);
+            }
+            {
+                auto context = make_search_context(task);
+                auto heuristic = GoalAsDeadEndHeuristic<Kind>(task->get_task().get_goal());
+                auto options = p::astar_eager::Options<Kind> {};
+                options.num_search_workers = num_workers;
+                options.state_repository_mode = mode;
+                options.goal_strategy = p::ExhaustiveGoalStrategy<Kind>::create();
+                const auto result = p::astar_eager::find_solution(*task, *context.successor_generator, heuristic, options);
+                EXPECT_EQ(result.status, p::SearchStatus::EXHAUSTED);
+                expect_one_dead_end(result);
+            }
+            {
+                auto context = make_search_context(task);
+                auto heuristic = GoalAsDeadEndHeuristic<Kind>(task->get_task().get_goal());
+                auto options = p::gbfs_lazy::Options<Kind> {};
+                options.num_search_workers = num_workers;
+                options.state_repository_mode = mode;
+                options.goal_strategy = p::ExhaustiveGoalStrategy<Kind>::create();
+                const auto result = p::gbfs_lazy::find_solution(*task, *context.successor_generator, heuristic, options);
+                EXPECT_EQ(result.status, p::SearchStatus::EXHAUSTED);
+                expect_one_dead_end(result);
+            }
+        });
+}
+
+template<TaskKind Kind>
+void expect_sequential_expansion_stops_materializing_after_goal(const p::TaskPtr<Kind>& task)
+{
+    auto context = make_search_context(task);
+    auto options = p::brfs::Options<Kind> {};
+    options.goal_strategy = std::make_shared<NonRootGoalStrategy<Kind>>();
+
+    const auto result = p::brfs::find_solution(*task, *context.successor_generator, options);
+    ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
+    ASSERT_TRUE(result.plan);
+    EXPECT_EQ(result.plan->get_length(), 1);
+    EXPECT_EQ(result.statistics.get_num_registered_states(), 2);
+}
+
 TEST(TyrPlanningSearchEngineTest, ChecksGoalsBeforeHeuristics)
 {
     const auto tasks = parse_tasks("parallel_search_simple.pddl");
@@ -357,6 +571,34 @@ TEST(TyrPlanningSearchEngineTest, DestinationLockStatisticsAreOptInAndAggregated
     const auto tasks = parse_tasks("parallel_search_simple.pddl");
     expect_destination_lock_statistics(tasks.ground);
     expect_destination_lock_statistics(tasks.lifted);
+}
+
+TEST(TyrPlanningSearchEngineTest, TerminalRootsSkipHeuristicEvaluation)
+{
+    const auto tasks = parse_tasks("parallel_search_simple.pddl");
+    expect_terminal_roots_skip_heuristic(tasks.ground);
+    expect_terminal_roots_skip_heuristic(tasks.lifted);
+}
+
+TEST(TyrPlanningSearchEngineTest, RejectsNanStartMetricsBeforeRecognizingGoals)
+{
+    const auto tasks = parse_tasks("parallel_search_simple.pddl");
+    expect_nan_start_metrics_are_rejected(tasks.ground);
+    expect_nan_start_metrics_are_rejected(tasks.lifted);
+}
+
+TEST(TyrPlanningSearchEngineTest, CountsEachDeadEndOnce)
+{
+    const auto tasks = parse_tasks("parallel_search_simple.pddl");
+    expect_dead_end_statistics(tasks.ground);
+    expect_dead_end_statistics(tasks.lifted);
+}
+
+TEST(TyrPlanningSearchEngineTest, SequentialExpansionStopsMaterializingAfterGoal)
+{
+    const auto tasks = parse_tasks("parallel_search_diamond.pddl");
+    expect_sequential_expansion_stops_materializing_after_goal(tasks.ground);
+    expect_sequential_expansion_stops_materializing_after_goal(tasks.lifted);
 }
 
 }

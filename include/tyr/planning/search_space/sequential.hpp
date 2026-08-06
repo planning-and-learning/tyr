@@ -65,24 +65,28 @@ LabeledNodeList<Kind> extract_labeled_node_trajectory(const NodeList<Kind>& node
 
     auto labeled_node_trajectory = LabeledNodeList<Kind> {};
     auto cur_node = node_trajectory.front();
-    auto labeled_succ_nodes = std::vector<LabeledNode<Kind>> {};
+    auto applicable_actions = std::vector<::tyr::formalism::planning::ActionBindingView> {};
 
     for (size_t i = 1; i < node_trajectory.size(); ++i)
     {
-        successor_generator.get_labeled_successor_nodes(cur_node, labeled_succ_nodes);
+        successor_generator.get_applicable_action_bindings(cur_node, applicable_actions);
+        [[maybe_unused]] auto found = false;
 
-        for (const auto& labeled_succ_node : labeled_succ_nodes)
+        for (const auto action : applicable_actions)
         {
-            const auto successor_g_value = compute_successor_g_value(cur_node.get_metric(), labeled_succ_node.node.get_metric(), action_cost_mode);
-            const auto normalized_succ_node = Node<Kind>(labeled_succ_node.node.get_state(), successor_g_value);
+            const auto successor = successor_generator.get_successor_node(cur_node, action);
+            const auto successor_g_value = compute_successor_g_value(cur_node.get_metric(), successor.get_metric(), action_cost_mode);
+            const auto normalized_succ_node = Node<Kind>(successor.get_state(), successor_g_value);
 
             if (normalized_succ_node == node_trajectory[i])
             {
-                labeled_node_trajectory.push_back(LabeledNode<Kind> { labeled_succ_node.label, normalized_succ_node });
+                labeled_node_trajectory.push_back(LabeledNode<Kind> { action, normalized_succ_node });
                 cur_node = normalized_succ_node;
+                found = true;
                 break;
             }
         }
+        assert(found);
     }
 
     return labeled_node_trajectory;

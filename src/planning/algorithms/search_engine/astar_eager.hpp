@@ -267,6 +267,8 @@ public:
             throw std::runtime_error("find_solution(...): successor heuristic value is NaN.");
         if (h_value == std::numeric_limits<ygg::float_t>::infinity())
         {
+            if (successor_search_node.status != SearchNodeStatus::DEAD_END)
+                worker.statistics.increment_num_deadends();
             successor_search_node.status = SearchNodeStatus::DEAD_END;
             emit_transition(TransitionOutcome::DEAD_END);
             return AcceptanceResult::DISCARDED;

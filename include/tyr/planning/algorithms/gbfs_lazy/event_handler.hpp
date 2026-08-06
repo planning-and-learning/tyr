@@ -46,6 +46,7 @@ public:
 
 /// @brief Search-wide events shared by all lazy GBFS workers.
 /// on_new_best_h_value is serialized but runs on the worker that found the value.
+/// on_start_search is emitted only after the root passes immediate terminal checks and receives an h-value.
 template<TaskKind Kind>
 class EventHandler
 {
