@@ -20,7 +20,9 @@
 
 #include "tyr/datalog/ground/policies/annotation.hpp"
 #include "tyr/datalog/ground/policies/cost.hpp"
+#include "tyr/datalog/ground/policies/numeric_support.hpp"
 #include "tyr/datalog/ground/workspaces/facts.hpp"
+#include "tyr/datalog/ground/workspaces/queue.hpp"
 #include "tyr/datalog/ground/workspaces/rule.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
 #include "tyr/datalog/policies/cost_concept.hpp"
@@ -82,6 +84,7 @@ struct ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>
     CP cost_policy;
     RuleWorkspace<GroundTag, ::tyr::formalism::PredicateTag> predicate_rules;
     RuleWorkspace<GroundTag, ::tyr::formalism::FunctionTag> function_rules;
+    QueueWorkspace<GroundTag> queue;
 
     explicit ProgramWorkspace(const ConstProgramWorkspace<GroundTag>& cws,
                               OrAP or_ap_ = OrAP(),
@@ -101,7 +104,8 @@ struct ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>
         tp(std::move(tp_)),
         cost_policy(std::move(cost_policy_)),
         predicate_rules(cws.program),
-        function_rules(cws.program)
+        function_rules(cws.program),
+        queue(cws.program)
     {
         if constexpr (AndAP::records_propositional_achievers)
             and_ap.initialize(cws.program.template get_predicates<::tyr::formalism::FluentTag>().size());
@@ -110,6 +114,8 @@ struct ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>
     explicit ProgramWorkspace(Program<GroundTag>& program, OrAP or_ap_ = OrAP(), AndAP and_ap_ = AndAP(), TP tp_ = TP(), CP cost_policy_ = CP());
 
     void clear_costs() { cost_policy.clear(); }
+
+    auto get_numeric_support_selector() const noexcept { return GroundNumericSupportSelector(const_workspace.facts, facts, numeric_and_annot); }
 };
 
 template<>

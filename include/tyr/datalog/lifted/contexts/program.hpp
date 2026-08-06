@@ -76,11 +76,7 @@ struct ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>
         const auto& delta_and_annot() const noexcept { return m_ws.delta_and_annot; }
         auto& delta_numeric_and_annot() noexcept { return m_ws.delta_numeric_and_annot; }
         const auto& delta_numeric_and_annot() const noexcept { return m_ws.delta_numeric_and_annot; }
-        const auto& numeric_support_selector() const noexcept
-        {
-            assert(m_ws.numeric_support_selector.has_value());
-            return *m_ws.numeric_support_selector;
-        }
+        const auto& numeric_support_selector() const noexcept { return m_ws.get_numeric_support_selector(); }
         void rebuild_numeric_support_selector(const TaggedFactSets<::tyr::formalism::StaticTag>& static_fact_sets)
         {
             m_ws.numeric_support_selector.emplace(FactSets { static_fact_sets, m_ws.facts.fact_sets }, m_ws.numeric_and_annot);

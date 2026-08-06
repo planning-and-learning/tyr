@@ -18,13 +18,40 @@
 #ifndef TYR_PLANNING_HEURISTICS_RPG_ADD_HPP_
 #define TYR_PLANNING_HEURISTICS_RPG_ADD_HPP_
 
-#include "tyr/planning/declarations.hpp"
+#include "tyr/planning/heuristic.hpp"
+
+#include <cstddef>
+#include <memory>
 
 namespace tyr::planning
 {
 
 template<TaskKind Kind>
-class AddRPGHeuristic;
+class AddRPGHeuristic : public Heuristic<Kind>
+{
+public:
+    AddRPGHeuristic(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
+    ~AddRPGHeuristic() override;
+
+    AddRPGHeuristic(const AddRPGHeuristic&) = delete;
+    AddRPGHeuristic& operator=(const AddRPGHeuristic&) = delete;
+    AddRPGHeuristic(AddRPGHeuristic&&) noexcept;
+    AddRPGHeuristic& operator=(AddRPGHeuristic&&) noexcept;
+
+    static AddRPGHeuristicPtr<Kind> create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
+
+    using Heuristic<Kind>::evaluate;
+
+    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override;
+    ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state) override;
+    [[nodiscard]] HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override;
+    void print_summary(size_t verbosity) const override;
+
+private:
+    struct Impl;
+    explicit AddRPGHeuristic(std::unique_ptr<Impl> impl);
+    std::unique_ptr<Impl> m_impl;
+};
 
 }
 

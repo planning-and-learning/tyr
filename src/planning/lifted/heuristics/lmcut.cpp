@@ -95,17 +95,19 @@ struct LiftedLMCutNumericEdge : ygg::comparison::Mixin<LiftedLMCutNumericEdge>
 }
 
 struct LMCutHeuristic<LiftedTag>::Impl :
-    detail::LiftedRPGBase<Impl,
-                          datalog::OrAnnotationPolicy<LiftedTag>,
-                          datalog::AchieverAndAnnotationPolicy<LiftedTag, datalog::MaxAggregation>,
-                          datalog::TerminationPolicy<LiftedTag, datalog::MaxAggregation>,
-                          datalog::RuleCostOverridePolicy<LiftedTag>>
+    detail::RPGEvaluator<LiftedTag,
+                         Impl,
+                         datalog::OrAnnotationPolicy<LiftedTag>,
+                         datalog::AchieverAndAnnotationPolicy<LiftedTag, datalog::MaxAggregation>,
+                         datalog::TerminationPolicy<LiftedTag, datalog::MaxAggregation>,
+                         datalog::RuleCostOverridePolicy<LiftedTag>>
 {
-    using Base = detail::LiftedRPGBase<Impl,
-                                       datalog::OrAnnotationPolicy<LiftedTag>,
-                                       datalog::AchieverAndAnnotationPolicy<LiftedTag, datalog::MaxAggregation>,
-                                       datalog::TerminationPolicy<LiftedTag, datalog::MaxAggregation>,
-                                       datalog::RuleCostOverridePolicy<LiftedTag>>;
+    using Base = detail::RPGEvaluator<LiftedTag,
+                                      Impl,
+                                      datalog::OrAnnotationPolicy<LiftedTag>,
+                                      datalog::AchieverAndAnnotationPolicy<LiftedTag, datalog::MaxAggregation>,
+                                      datalog::TerminationPolicy<LiftedTag, datalog::MaxAggregation>,
+                                      datalog::RuleCostOverridePolicy<LiftedTag>>;
     using ActionBinding = ::tyr::formalism::planning::ActionBindingView;
     using PredicateBinding = fd::PredicateBindingView<f::FluentTag>;
     using NumericNode = LiftedLMCutNumericNode;
@@ -202,12 +204,10 @@ LMCutHeuristic<LiftedTag>::Impl::Impl(TaskPtr<LiftedTag> task, ygg::ExecutionCon
 }
 
 LMCutHeuristic<LiftedTag>::Impl::Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) :
-    Base(source.m_definition,
-         source.m_task,
+    Base(source,
          std::move(execution_context),
          datalog::OrAnnotationPolicy<LiftedTag> {},
-         datalog::AchieverAndAnnotationPolicy<LiftedTag, datalog::MaxAggregation> {},
-         source.m_source_goal),
+         datalog::AchieverAndAnnotationPolicy<LiftedTag, datalog::MaxAggregation> {}),
     m_max_precondition_depth(0),
     m_use_expanded_edges(m_definition->use_expanded_lmcut)
 {
@@ -308,7 +308,7 @@ template<f::RelationKind R>
 datalog::Cost LMCutHeuristic<LiftedTag>::Impl::get_witness_body_cost(const datalog::WitnessAnnotation<LiftedTag, R>& witness)
 {
     auto body_cost = datalog::Cost(0);
-    for_each_witness_precondition(witness, [&](const auto precondition) { body_cost = std::max(body_cost, get_binding_cost(precondition)); });
+    for_each_witness_precondition(witness, [&](const auto precondition) { body_cost = std::max(body_cost, get_predicate_cost(precondition)); });
 
     for (const auto& support : witness.get_numeric_supports())
         body_cost = std::max(body_cost, support.get_cost());
@@ -387,7 +387,7 @@ datalog::Cost LMCutHeuristic<LiftedTag>::Impl::get_numeric_witness_body_cost(con
                                                                              NumericNode node)
 {
     auto body_cost = datalog::Cost(0);
-    for_each_witness_precondition(witness, [&](const auto precondition) { body_cost = std::max(body_cost, get_binding_cost(precondition)); });
+    for_each_witness_precondition(witness, [&](const auto precondition) { body_cost = std::max(body_cost, get_predicate_cost(precondition)); });
 
     for (const auto& support : witness.get_numeric_supports())
         if (!is_target_support(support, node))
@@ -477,7 +477,7 @@ LMCutHeuristic<LiftedTag>::Impl::get_witness_max_preconditions(const datalog::Wi
     for_each_witness_precondition(witness,
                                   [&](const auto precondition)
                                   {
-                                      if (get_binding_cost(precondition) == body_cost)
+                                      if (get_predicate_cost(precondition) == body_cost)
                                           result.emplace_back(precondition);
                                   });
 
@@ -506,7 +506,7 @@ LMCutHeuristic<LiftedTag>::Impl::get_numeric_witness_max_preconditions(const dat
     for_each_witness_precondition(witness,
                                   [&](const auto precondition)
                                   {
-                                      if (get_binding_cost(precondition) == body_cost)
+                                      if (get_predicate_cost(precondition) == body_cost)
                                           result.emplace_back(precondition);
                                   });
 
@@ -533,7 +533,7 @@ void LMCutHeuristic<LiftedTag>::Impl::mark_goal_zone(PredicateBinding binding)
     if (!m_goal_zone.insert(binding).second)
         return;
 
-    const auto binding_cost = get_binding_cost(binding);
+    const auto binding_cost = get_predicate_cost(binding);
     for_each_achiever(binding,
                       [&](const auto& witness)
                       {
@@ -594,7 +594,7 @@ bool LMCutHeuristic<LiftedTag>::Impl::is_before_goal_zone(PredicateBinding bindi
 
     auto has_achiever = false;
     auto before = false;
-    const auto binding_cost = get_binding_cost(binding);
+    const auto binding_cost = get_predicate_cost(binding);
     for_each_achiever(binding,
                       [&](const auto& witness)
                       {
@@ -692,7 +692,7 @@ void LMCutHeuristic<LiftedTag>::Impl::append_cut_frontier_atom(PredicateBinding 
     if (!mapping.contains(binding.get_relation()))
         return;
 
-    auto merge_context = f::planning::MergePlanningContext { m_workspace.planning_builder, *m_task->get_repository() };
+    auto merge_context = f::planning::MergePlanningContext { m_workspace.planning_builder, *get_task().get_repository() };
     cut_frontier_atoms->push_back(f::planning::merge_atom_d2p<f::FluentTag, f::FluentTag>(binding, mapping, merge_context).first);
 }
 
@@ -706,7 +706,7 @@ void LMCutHeuristic<LiftedTag>::Impl::extract_cut(CutFrontierAtoms* cut_frontier
     {
         for (const auto literal : goal->get_literals<::tyr::formalism::FluentTag>())
         {
-            if (literal.get_polarity() && get_binding_cost(literal.get_atom().get_row()) == goal_cost)
+            if (literal.get_polarity() && get_predicate_cost(literal.get_atom().get_row()) == goal_cost)
             {
                 mark_goal_zone(literal.get_atom().get_row());
                 break;
@@ -768,7 +768,7 @@ void LMCutHeuristic<LiftedTag>::Impl::extract_expanded_cut(CutFrontierAtoms* cut
     {
         for (const auto literal : goal->get_literals<::tyr::formalism::FluentTag>())
         {
-            if (literal.get_polarity() && get_binding_cost(literal.get_atom().get_row()) == goal_cost)
+            if (literal.get_polarity() && get_predicate_cost(literal.get_atom().get_row()) == goal_cost)
             {
                 mark_goal_zone(literal.get_atom().get_row());
                 break;
@@ -837,7 +837,7 @@ void LMCutHeuristic<LiftedTag>::Impl::extract_expanded_cut(CutFrontierAtoms* cut
 
     for (const auto binding : m_goal_zone)
     {
-        const auto binding_cost = get_binding_cost(binding);
+        const auto binding_cost = get_predicate_cost(binding);
         for_each_achiever(binding,
                           [&](const auto& witness)
                           {

@@ -22,7 +22,6 @@
 #include "tyr/datalog/ground/policies/annotation.hpp"
 #include "tyr/datalog/ground/policies/cost.hpp"
 #include "tyr/datalog/ground/workspaces/program.hpp"
-#include "tyr/datalog/ground/workspaces/queue.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
 #include "tyr/datalog/policies/cost_concept.hpp"
 #include "tyr/datalog/policies/termination.hpp"
@@ -66,7 +65,7 @@ struct ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>
     class Out
     {
     public:
-        explicit Out(ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>& ws, QueueWorkspace<GroundTag>& queue_ws) : m_ws(ws), m_queue_ws(queue_ws) {}
+        explicit Out(ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>& ws) : m_ws(ws) {}
 
         auto& facts() noexcept { return m_ws.facts; }
         const auto& facts() const noexcept { return m_ws.facts; }
@@ -95,19 +94,19 @@ struct ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>
         template<::tyr::formalism::RelationKind R>
         auto& queue_storage() noexcept
         {
-            return m_queue_ws.template get_storage<R>();
+            return m_ws.queue.template get_storage<R>();
         }
         template<::tyr::formalism::RelationKind R>
         const auto& queue_storage() const noexcept
         {
-            return m_queue_ws.template get_storage<R>();
+            return m_ws.queue.template get_storage<R>();
         }
         auto& fact_sets() noexcept { return m_ws.facts.fact_sets; }
         const auto& fact_sets() const noexcept { return m_ws.facts.fact_sets; }
-        auto& statistics() noexcept { return m_queue_ws.statistics; }
-        const auto& statistics() const noexcept { return m_queue_ws.statistics; }
-        auto& queue() noexcept { return m_queue_ws; }
-        const auto& queue() const noexcept { return m_queue_ws; }
+        auto& statistics() noexcept { return m_ws.queue.statistics; }
+        const auto& statistics() const noexcept { return m_ws.queue.statistics; }
+        auto& queue() noexcept { return m_ws.queue; }
+        const auto& queue() const noexcept { return m_ws.queue; }
 
     private:
         template<::tyr::formalism::RelationKind R>
@@ -128,14 +127,9 @@ struct ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>
         }
 
         ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>& m_ws;
-        QueueWorkspace<GroundTag>& m_queue_ws;
     };
 
-    ProgramExecutionContext(ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>& ws, QueueWorkspace<GroundTag>& queue_ws) :
-        m_in(ws.const_workspace),
-        m_out(ws, queue_ws)
-    {
-    }
+    explicit ProgramExecutionContext(ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>& ws) : m_in(ws.const_workspace), m_out(ws) { clear(); }
 
     void clear() { reset_from_current_facts(); }
 
@@ -243,8 +237,7 @@ template<OrAnnotationPolicyConcept<GroundTag> OrAP,
          AndAnnotationPolicyConcept<GroundTag> AndAP,
          TerminationPolicyConcept<GroundTag> TP,
          RuleCostPolicyConcept<GroundTag> CP>
-ProgramExecutionContext(ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>&,
-                        QueueWorkspace<GroundTag>&) -> ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>;
+ProgramExecutionContext(ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>&) -> ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>;
 
 }
 

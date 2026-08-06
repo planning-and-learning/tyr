@@ -34,15 +34,17 @@ namespace f = tyr::formalism;
 namespace tyr::planning
 {
 struct FFRPGHeuristic<LiftedTag>::Impl :
-    detail::LiftedRPGBase<Impl,
-                          datalog::OrAnnotationPolicy<LiftedTag>,
-                          datalog::AndAnnotationPolicy<LiftedTag, datalog::SumAggregation>,
-                          datalog::TerminationPolicy<LiftedTag, datalog::SumAggregation>>
+    detail::RPGEvaluator<LiftedTag,
+                         Impl,
+                         datalog::OrAnnotationPolicy<LiftedTag>,
+                         datalog::AndAnnotationPolicy<LiftedTag, datalog::SumAggregation>,
+                         datalog::TerminationPolicy<LiftedTag, datalog::SumAggregation>>
 {
-    using Base = detail::LiftedRPGBase<Impl,
-                                       datalog::OrAnnotationPolicy<LiftedTag>,
-                                       datalog::AndAnnotationPolicy<LiftedTag, datalog::SumAggregation>,
-                                       datalog::TerminationPolicy<LiftedTag, datalog::SumAggregation>>;
+    using Base = detail::RPGEvaluator<LiftedTag,
+                                      Impl,
+                                      datalog::OrAnnotationPolicy<LiftedTag>,
+                                      datalog::AndAnnotationPolicy<LiftedTag, datalog::SumAggregation>,
+                                      datalog::TerminationPolicy<LiftedTag, datalog::SumAggregation>>;
 
     Impl(TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode);
     Impl(const Impl& source, ygg::ExecutionContextPtr execution_context);
@@ -105,12 +107,7 @@ FFRPGHeuristic<LiftedTag>::Impl::Impl(TaskPtr<LiftedTag> task, ygg::ExecutionCon
 }
 
 FFRPGHeuristic<LiftedTag>::Impl::Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) :
-    Base(source.m_definition,
-         source.m_task,
-         std::move(execution_context),
-         datalog::OrAnnotationPolicy<LiftedTag> {},
-         datalog::AndAnnotationPolicy<LiftedTag, datalog::SumAggregation> {},
-         source.m_source_goal),
+    Base(source, std::move(execution_context), datalog::OrAnnotationPolicy<LiftedTag> {}, datalog::AndAnnotationPolicy<LiftedTag, datalog::SumAggregation> {}),
     m_markings(m_definition->rpg_program.get_datalog_program().get_program().get_predicates<::tyr::formalism::FluentTag>().size()),
     m_function_markings(m_definition->rpg_program.get_datalog_program().get_program().get_functions<::tyr::formalism::FluentTag>().size())
 {
@@ -130,8 +127,8 @@ ygg::float_t FFRPGHeuristic<LiftedTag>::Impl::compute_result(const ygg::Builder<
     for (auto& bitset : m_function_markings)
         bitset.reset();
 
-    auto state_context = StateContext<LiftedTag>(*this->m_task, state, ygg::float_t(0));
-    auto grounder_context = ::tyr::formalism::planning::GrounderContext { this->m_workspace.planning_builder, *this->m_task->get_repository(), m_binding };
+    auto state_context = StateContext<LiftedTag>(get_task(), state, ygg::float_t(0));
+    auto grounder_context = ::tyr::formalism::planning::GrounderContext { this->m_workspace.planning_builder, *get_task().get_repository(), m_binding };
 
     if (const auto& goal = m_workspace.tp.get_goal())
     {
@@ -258,7 +255,7 @@ void FFRPGHeuristic<LiftedTag>::Impl::extract_relaxed_plan_and_preferred_actions
 
         m_relaxed_plan.insert(*action_binding);
 
-        if (m_executor.is_applicable(action_binding->get_relation(), state_context, grounder_context, *m_task->get_fdr_context()))
+        if (m_executor.is_applicable(action_binding->get_relation(), state_context, grounder_context, *get_task().get_fdr_context()))
             m_preferred_actions.insert(*action_binding);
     }
 

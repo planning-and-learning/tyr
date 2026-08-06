@@ -36,6 +36,7 @@
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/planning/builder.hpp"
 
+#include <cassert>
 #include <concepts>
 #include <map>
 #include <optional>
@@ -240,6 +241,12 @@ public:
     void reset_evaluation();
 
     void clear_costs() { cost_policy.clear(); }
+
+    const auto& get_numeric_support_selector() const noexcept
+    {
+        assert(numeric_support_selector.has_value());
+        return *numeric_support_selector;
+    }
 };
 
 template<>

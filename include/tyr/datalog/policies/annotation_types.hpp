@@ -233,8 +233,7 @@ template<TaskKind Kind>
 class PredicateAnnotationMap
 {
 public:
-    /// Both engines key predicate annotations by the fluent predicate binding; the ground engine's atom
-    /// heads convert with get_row() at the call site.
+    /// Both engines key predicate annotations by the fluent predicate binding.
     using Key = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
 
     explicit PredicateAnnotationMap(size_t num_relations = 0) : m_annotations(num_relations) {}
@@ -250,7 +249,19 @@ public:
 
     const Annotation<Kind>* find(Key key) const noexcept { return m_annotations.find(key); }
 
+    const Annotation<Kind>* find(PredicateAnnotationHead<Kind> head) const noexcept
+        requires std::same_as<Kind, GroundTag>
+    {
+        return find(head.get_row());
+    }
+
     Annotation<Kind>* find(Key key) noexcept { return const_cast<Annotation<Kind>*>(std::as_const(*this).find(key)); }
+
+    Annotation<Kind>* find(PredicateAnnotationHead<Kind> head) noexcept
+        requires std::same_as<Kind, GroundTag>
+    {
+        return const_cast<Annotation<Kind>*>(std::as_const(*this).find(head));
+    }
 
 private:
     DenseRelationMap<::tyr::formalism::PredicateTag, Annotation<Kind>> m_annotations;

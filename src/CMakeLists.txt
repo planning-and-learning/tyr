@@ -82,6 +82,7 @@ add_library(
     datalog/lifted/policies/cost.cpp
     datalog/lifted/policies/numeric_support.cpp
     datalog/ground/policies/annotation.cpp
+    datalog/ground/policies/cost.cpp
     datalog/ground/policies/numeric_support.cpp
     datalog/policies/annotation_types.cpp
     datalog/policies/termination.cpp
@@ -107,6 +108,8 @@ add_library(
 
     planning/heuristic.cpp
     planning/heuristics/goal_count.cpp
+    planning/heuristics/rpg_add.cpp
+    planning/heuristics/rpg_max.cpp
 
     planning/ground/axiom_evaluator.cpp
     planning/ground/axiom_stratification.cpp
@@ -115,13 +118,9 @@ add_library(
     planning/ground/state_repository.cpp
     planning/ground/state.cpp
     planning/ground/successor_generator.cpp
-    planning/ground/heuristics/rpg_add.cpp
-    planning/ground/heuristics/rpg_max.cpp
     planning/ground/heuristics/rpg_ff.cpp
     planning/ground/heuristics/lmcut.cpp
 
-    planning/lifted/heuristics/rpg_add.cpp
-    planning/lifted/heuristics/rpg_max.cpp
     planning/lifted/heuristics/rpg_ff.cpp
     planning/lifted/heuristics/lmcut.cpp
     planning/lifted/axiom_evaluator.cpp

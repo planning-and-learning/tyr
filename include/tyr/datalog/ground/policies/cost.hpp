@@ -20,16 +20,5 @@
 
 #include "tyr/datalog/ground/policies/annotation_types.hpp"
 #include "tyr/datalog/policies/cost.hpp"
-#include "tyr/datalog/policies/cost_concept.hpp"
-
-namespace tyr::datalog
-{
-
-static_assert(RuleCostPolicyConcept<RuleCostPolicy<GroundTag>, GroundTag>);
-static_assert(RuleCostPolicyConcept<RuleCostOverridePolicy<GroundTag>, GroundTag>);
-static_assert(MutableRuleCostPolicyConcept<RuleCostPolicy<GroundTag>, GroundTag>);
-static_assert(MutableRuleCostPolicyConcept<RuleCostOverridePolicy<GroundTag>, GroundTag>);
-
-}
 
 #endif

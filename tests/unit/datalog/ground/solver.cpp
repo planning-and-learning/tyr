@@ -170,8 +170,7 @@ SolvedGroundQueue solve_default_state(GroundQueueFixture& fixture)
     const auto program = fixture.program();
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(program);
     auto workspace = datalog::ProgramWorkspace<GroundTag>(const_workspace);
-    auto queue_workspace = datalog::QueueWorkspace<GroundTag>(program);
-    auto ctx = datalog::ProgramExecutionContext(workspace, queue_workspace);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::compute_model(ctx);
     return { binding_views(ctx), ctx.out().statistics() };
@@ -231,8 +230,7 @@ TEST(TyrDatalogGroundQueueTest, ReusesGroundProgramExecutionContext)
     const auto program = fixture.program();
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(program);
     auto workspace = datalog::ProgramWorkspace<GroundTag>(const_workspace);
-    auto queue_workspace = datalog::QueueWorkspace<GroundTag>(program);
-    auto ctx = datalog::ProgramExecutionContext(workspace, queue_workspace);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::compute_model(ctx);
@@ -297,8 +295,7 @@ TEST(TyrDatalogGroundQueueTest, InitialFluentFactsSatisfyDynamicUnsatisfiedCount
     const auto program = fixture.program();
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(program);
     auto workspace = datalog::ProgramWorkspace<GroundTag>(const_workspace);
-    auto queue_workspace = datalog::QueueWorkspace<GroundTag>(program);
-    auto ctx = datalog::ProgramExecutionContext(workspace, queue_workspace);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
     const auto& dependencies = const_workspace.get_dependencies<f::PredicateTag>();
     const auto* a_rules = dependencies.fluent_precondition_to_rules.find(a.get_row());
 
@@ -320,8 +317,7 @@ TEST(TyrDatalogGroundQueueTest, ExplicitFluentStateDrivesDynamicUnsatisfiedCount
     const auto program = fixture.program();
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(program);
     auto workspace = datalog::ProgramWorkspace<GroundTag>(const_workspace);
-    auto queue_workspace = datalog::QueueWorkspace<GroundTag>(program);
-    auto ctx = datalog::ProgramExecutionContext(workspace, queue_workspace);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.out().facts().reset();
     ctx.initialize();
@@ -342,8 +338,7 @@ TEST(TyrDatalogGroundQueueTest, DerivedFactOnlyDecrementsRulesWaitingOnThatFact)
     const auto program = fixture.program();
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(program);
     auto workspace = datalog::ProgramWorkspace<GroundTag>(const_workspace);
-    auto queue_workspace = datalog::QueueWorkspace<GroundTag>(program);
-    auto ctx = datalog::ProgramExecutionContext(workspace, queue_workspace);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::compute_model(ctx);
@@ -389,8 +384,7 @@ TEST(TyrDatalogGroundQueueTest, GroundUsedCostOverrideDoesNotCreateMetricEffectC
                                datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>(),
                                datalog::NoTerminationPolicy<GroundTag>(),
                                cost_policy);
-    auto queue_workspace = datalog::QueueWorkspace<GroundTag>(program);
-    auto ctx = datalog::ProgramExecutionContext(workspace, queue_workspace);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::compute_model(ctx);
@@ -422,8 +416,7 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationStopsAfterGoalDerived)
                                datalog::OrAnnotationPolicy<GroundTag>(),
                                datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>(),
                                termination_policy);
-    auto queue_workspace = datalog::QueueWorkspace<GroundTag>(program);
-    auto ctx = datalog::ProgramExecutionContext(workspace, queue_workspace);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::compute_model(ctx);
@@ -451,8 +444,7 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyGroundRecordsFiredRule)
                                datalog::OrAnnotationPolicy<GroundTag>(),
                                datalog::AchieverAndAnnotationPolicy<GroundTag, datalog::MaxAggregation>(),
                                datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>());
-    auto queue_workspace = datalog::QueueWorkspace<GroundTag>(program);
-    auto ctx = datalog::ProgramExecutionContext(workspace, queue_workspace);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::compute_model(ctx);

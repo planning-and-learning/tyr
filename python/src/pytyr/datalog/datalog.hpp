@@ -30,8 +30,8 @@
 #include <nanobind/stl/vector.h>
 #include <tyr/datalog/datalog.hpp>
 #include <tyr/datalog/ground/solver.hpp>
-#include <tyr/datalog/lifted/solver.hpp>
 #include <tyr/datalog/lifted/policies/annotation.hpp>
+#include <tyr/datalog/lifted/solver.hpp>
 #include <tyr/datalog/policies/annotation.hpp>
 #include <tyr/datalog/policies/cost.hpp>
 #include <tyr/datalog/policies/termination.hpp>
@@ -257,22 +257,6 @@ void bind_cost_policy(nb::module_& m, const char* name)
     };
     bind_rule_costs.template operator()<::tyr::formalism::PredicateTag>();
     bind_rule_costs.template operator()<::tyr::formalism::FunctionTag>();
-
-    if constexpr (std::same_as<Kind, LiftedTag> && std::same_as<CostPolicy, RuleCostOverridePolicy<LiftedTag>>)
-    {
-        const auto bind_prefix_cost = [&]<::tyr::formalism::RelationKind R>()
-        {
-            cls.def(
-                "set_prefix_cost",
-                [](CostPolicy& self, ::tyr::formalism::datalog::RuleView<R> rule, const std::vector<ygg::Index<::tyr::formalism::Object>>& objects, Cost cost)
-                { self.set_prefix_cost(rule, objects, cost); },
-                "rule"_a,
-                "objects"_a,
-                "cost"_a);
-        };
-        bind_prefix_cost.template operator()<::tyr::formalism::PredicateTag>();
-        bind_prefix_cost.template operator()<::tyr::formalism::FunctionTag>();
-    }
 }
 
 template<TaskKind Kind, typename Aggregation>
@@ -432,33 +416,23 @@ void bind_configuration(nb::module_& m, const char* prefix)
     bind_workspace<Kind, Workspace>(m, workspace_name);
 
     auto cls = nb::class_<Context>(m, context_name.c_str());
+    cls.def(nb::init<Workspace&>(), "workspace"_a, nb::keep_alive<1, 2>())
+        .def("clear", &Context::clear)
+        .def("get_statistics", [](Context& self) -> auto& { return self.out().statistics(); }, nb::rv_policy::reference_internal);
+
     if constexpr (std::same_as<Kind, GroundTag>)
     {
-        cls.def(nb::init<Workspace&, QueueWorkspace<GroundTag>&>(), "workspace"_a, "queue_workspace"_a, nb::keep_alive<1, 2>(), nb::keep_alive<1, 3>())
-            .def("initialize", [](Context& self) { self.initialize(); })
+        cls.def("initialize", [](Context& self) { self.initialize(); })
             .def(
                 "initialize",
                 [](Context& self, const std::vector<::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag>>& fluent_atoms)
                 { self.initialize(fluent_atoms); },
-                "fluent_atoms"_a)
-            .def("clear", &Context::clear)
-            .def("get_statistics", [](Context& self) -> auto& { return self.out().statistics(); }, nb::rv_policy::reference_internal);
-    }
-    else
-    {
-        cls.def(nb::init<Workspace&>(), "workspace"_a, nb::keep_alive<1, 2>())
-            .def("clear", &Context::clear)
-            .def("get_statistics", [](Context& self) -> auto& { return self.out().statistics(); }, nb::rv_policy::reference_internal);
+                "fluent_atoms"_a);
     }
 
     m.def(
         "compute_model",
-        [](Context& context, ygg::ExecutionContext& execution_context)
-        {
-            execution_context.arena().execute(
-                [&]
-                [&] { compute_model(context); });
-        },
+        [](Context& context, ygg::ExecutionContext& execution_context) { execution_context.arena().execute([&] { compute_model(context); }); },
         "context"_a,
         "execution_context"_a,
         nb::call_guard<nb::gil_scoped_release>());

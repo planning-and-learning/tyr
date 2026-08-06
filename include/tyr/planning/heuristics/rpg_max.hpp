@@ -18,13 +18,40 @@
 #ifndef TYR_PLANNING_HEURISTICS_RPG_MAX_HPP_
 #define TYR_PLANNING_HEURISTICS_RPG_MAX_HPP_
 
-#include "tyr/planning/declarations.hpp"
+#include "tyr/planning/heuristic.hpp"
+
+#include <cstddef>
+#include <memory>
 
 namespace tyr::planning
 {
 
 template<TaskKind Kind>
-class MaxRPGHeuristic;
+class MaxRPGHeuristic : public Heuristic<Kind>
+{
+public:
+    MaxRPGHeuristic(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
+    ~MaxRPGHeuristic() override;
+
+    MaxRPGHeuristic(const MaxRPGHeuristic&) = delete;
+    MaxRPGHeuristic& operator=(const MaxRPGHeuristic&) = delete;
+    MaxRPGHeuristic(MaxRPGHeuristic&&) noexcept;
+    MaxRPGHeuristic& operator=(MaxRPGHeuristic&&) noexcept;
+
+    static MaxRPGHeuristicPtr<Kind> create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
+
+    using Heuristic<Kind>::evaluate;
+
+    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override;
+    ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state) override;
+    [[nodiscard]] HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override;
+    void print_summary(size_t verbosity) const override;
+
+private:
+    struct Impl;
+    explicit MaxRPGHeuristic(std::unique_ptr<Impl> impl);
+    std::unique_ptr<Impl> m_impl;
+};
 
 }
 

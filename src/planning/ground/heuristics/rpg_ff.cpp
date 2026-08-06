@@ -35,17 +35,17 @@ namespace tyr::planning
 {
 
 struct FFRPGHeuristic<GroundTag>::Impl :
-    detail::GroundRPGEvaluator<Impl,
-                               datalog::OrAnnotationPolicy<GroundTag>,
-                               datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>,
-                               datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>,
-                               datalog::RuleCostOverridePolicy<GroundTag>>
+    detail::RPGEvaluator<GroundTag,
+                         Impl,
+                         datalog::OrAnnotationPolicy<GroundTag>,
+                         datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>,
+                         datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>>
 {
-    using Base = detail::GroundRPGEvaluator<Impl,
-                                            datalog::OrAnnotationPolicy<GroundTag>,
-                                            datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>,
-                                            datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>,
-                                            datalog::RuleCostOverridePolicy<GroundTag>>;
+    using Base = detail::RPGEvaluator<GroundTag,
+                                      Impl,
+                                      datalog::OrAnnotationPolicy<GroundTag>,
+                                      datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>,
+                                      datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>>;
 
     Impl(TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
         Base(std::move(task),
@@ -64,7 +64,7 @@ struct FFRPGHeuristic<GroundTag>::Impl :
     }
 
     Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) :
-        Base(source.m_definition,
+        Base(source,
              std::move(execution_context),
              datalog::OrAnnotationPolicy<GroundTag>(),
              datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>()),

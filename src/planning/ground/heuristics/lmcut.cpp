@@ -83,17 +83,19 @@ struct GroundLMCutNumericEdge : ygg::comparison::Mixin<GroundLMCutNumericEdge>
 };
 
 struct LMCutHeuristic<GroundTag>::Impl :
-    detail::GroundRPGEvaluator<Impl,
-                               datalog::OrAnnotationPolicy<GroundTag>,
-                               datalog::AchieverAndAnnotationPolicy<GroundTag, datalog::MaxAggregation>,
-                               datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>,
-                               datalog::RuleCostOverridePolicy<GroundTag>>
+    detail::RPGEvaluator<GroundTag,
+                         Impl,
+                         datalog::OrAnnotationPolicy<GroundTag>,
+                         datalog::AchieverAndAnnotationPolicy<GroundTag, datalog::MaxAggregation>,
+                         datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>,
+                         datalog::RuleCostOverridePolicy<GroundTag>>
 {
-    using Base = detail::GroundRPGEvaluator<Impl,
-                                            datalog::OrAnnotationPolicy<GroundTag>,
-                                            datalog::AchieverAndAnnotationPolicy<GroundTag, datalog::MaxAggregation>,
-                                            datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>,
-                                            datalog::RuleCostOverridePolicy<GroundTag>>;
+    using Base = detail::RPGEvaluator<GroundTag,
+                                      Impl,
+                                      datalog::OrAnnotationPolicy<GroundTag>,
+                                      datalog::AchieverAndAnnotationPolicy<GroundTag, datalog::MaxAggregation>,
+                                      datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>,
+                                      datalog::RuleCostOverridePolicy<GroundTag>>;
     using Rule = fd::GroundRuleView<f::PredicateTag>;
     using CostKey = f::planning::ActionBindingView;
     using Atom = fd::GroundAtomView<f::FluentTag>;
@@ -131,7 +133,7 @@ struct LMCutHeuristic<GroundTag>::Impl :
     }
 
     Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) :
-        Base(source.m_definition,
+        Base(source,
              std::move(execution_context),
              datalog::OrAnnotationPolicy<GroundTag>(),
              datalog::AchieverAndAnnotationPolicy<GroundTag, datalog::MaxAggregation>()),
@@ -223,11 +225,12 @@ ygg::float_t LMCutHeuristic<GroundTag>::Impl::evaluate(const ygg::Builder<State<
     m_action_used_costs.clear();
     m_rule_edge_used_costs.clear();
     m_numeric_edge_used_costs.clear();
+    begin_state_evaluation();
 
     while (true)
     {
         apply_residual_costs();
-        const auto hmax = Base::evaluate_impl(state, false);
+        const auto hmax = evaluate_current_state(state);
         if (hmax == std::numeric_limits<ygg::float_t>::infinity())
             return hmax;
 
@@ -281,7 +284,7 @@ datalog::Cost LMCutHeuristic<GroundTag>::Impl::get_witness_body_cost(const datal
     auto body_cost = datalog::Cost(0);
     for (const auto literal : witness.get_rule_key().get_body().template get_literals<f::FluentTag>())
         if (literal.get_polarity())
-            body_cost = std::max(body_cost, get_atom_cost(literal.get_atom()));
+            body_cost = std::max(body_cost, get_predicate_cost(literal.get_atom()));
 
     for (const auto& support : witness.get_numeric_supports())
         body_cost = std::max(body_cost, support.get_cost());
@@ -346,7 +349,7 @@ auto LMCutHeuristic<GroundTag>::Impl::get_witness_max_preconditions(const datalo
 
     const auto body_cost = witness.get_cost() - edge_cost;
     for (const auto literal : rule.get_body().template get_literals<f::FluentTag>())
-        if (literal.get_polarity() && get_atom_cost(literal.get_atom()) == body_cost)
+        if (literal.get_polarity() && get_predicate_cost(literal.get_atom()) == body_cost)
             result.emplace_back(literal.get_atom());
 
     for (const auto& support : witness.get_numeric_supports())
@@ -372,7 +375,7 @@ void LMCutHeuristic<GroundTag>::Impl::mark_goal_zone(Atom atom)
     if (!m_goal_zone.insert(atom).second)
         return;
 
-    const auto atom_cost = get_atom_cost(atom);
+    const auto atom_cost = get_predicate_cost(atom);
     if (const auto* achievers = m_workspace.and_ap.find_achievers(atom))
     {
         for (const auto& witness : *achievers)
@@ -434,7 +437,7 @@ bool LMCutHeuristic<GroundTag>::Impl::is_before_goal_zone(Atom atom)
 
     auto has_achiever = false;
     auto before = false;
-    const auto atom_cost = get_atom_cost(atom);
+    const auto atom_cost = get_predicate_cost(atom);
     if (const auto* achievers = m_workspace.and_ap.find_achievers(atom))
     {
         for (const auto& witness : *achievers)
@@ -527,7 +530,7 @@ void LMCutHeuristic<GroundTag>::Impl::extract_cut(CutFrontierAtoms* cut_frontier
     {
         for (const auto literal : goal->get_literals<f::FluentTag>())
         {
-            if (literal.get_polarity() && get_atom_cost(literal.get_atom()) == goal_cost)
+            if (literal.get_polarity() && get_predicate_cost(literal.get_atom()) == goal_cost)
             {
                 mark_goal_zone(literal.get_atom());
                 break;
@@ -598,7 +601,7 @@ void LMCutHeuristic<GroundTag>::Impl::extract_expanded_cut(CutFrontierAtoms* cut
     {
         for (const auto literal : goal->get_literals<f::FluentTag>())
         {
-            if (literal.get_polarity() && get_atom_cost(literal.get_atom()) == goal_cost)
+            if (literal.get_polarity() && get_predicate_cost(literal.get_atom()) == goal_cost)
             {
                 mark_goal_zone(literal.get_atom());
                 break;
@@ -666,7 +669,7 @@ void LMCutHeuristic<GroundTag>::Impl::extract_expanded_cut(CutFrontierAtoms* cut
 
     for (const auto atom : m_goal_zone)
     {
-        const auto atom_cost = get_atom_cost(atom);
+        const auto atom_cost = get_predicate_cost(atom);
         if (const auto* achievers = m_workspace.and_ap.find_achievers(atom))
             for (const auto& witness : *achievers)
                 if (witness.get_cost() == atom_cost)

@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/lifted/heuristics/rpg_add.hpp"
+#include "tyr/planning/heuristics/rpg_add.hpp"
 
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/algorithms/gbfs_lazy.hpp"
