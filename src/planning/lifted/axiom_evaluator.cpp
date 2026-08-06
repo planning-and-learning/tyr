@@ -17,38 +17,38 @@
 
 #include "tyr/planning/lifted/axiom_evaluator.hpp"
 
-#include "tyr/datalog/fact_sets.hpp"  // for FactSets, Pre...
+#include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/formatter.hpp"
-#include "tyr/datalog/lifted/bottom_up.hpp"  // for solve_bottom_up
+#include "tyr/datalog/lifted/bottom_up.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/policies/annotation.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/merge_datalog.hpp"   // for MergeContext
-#include "tyr/formalism/planning/merge_planning.hpp"  // for MergeContext
-#include "tyr/formalism/planning/repository.hpp"      // for Repository
+#include "tyr/formalism/planning/merge_datalog.hpp"
+#include "tyr/formalism/planning/merge_planning.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/lifted/programs/axiom.hpp"
 #include "tyr/planning/lifted/state_builder.hpp"
-#include "tyr/planning/lifted/task.hpp"  // for LiftedTag
-#include "tyr/planning/task_utils.hpp"   // for insert_fact_s...
+#include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/task_utils.hpp"
 
 #include <algorithm>
 #include <atomic>
-#include <cista/containers/hash_storage.h>  // for operator!=
+#include <cista/containers/hash_storage.h>
 #include <fmt/ostream.h>
-#include <gtl/phmap.hpp>  // for operator!=
+#include <gtl/phmap.hpp>
 #include <iostream>
 #include <memory>
-#include <utility>  // for pair
+#include <utility>
 #include <vector>
-#include <yggdrasil/containers/vector.hpp>  // for ygg::View
+#include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/formatting/formatter.hpp>
-#include <yggdrasil/semantics/comparators.hpp>  // for operator!=
-#include <yggdrasil/semantics/equal_to.hpp>     // for EqualTo
-#include <yggdrasil/semantics/hash.hpp>         // for Hash
+#include <yggdrasil/semantics/comparators.hpp>
+#include <yggdrasil/semantics/equal_to.hpp>
+#include <yggdrasil/semantics/hash.hpp>
 
 namespace d = tyr::datalog;
 namespace f = tyr::formalism;

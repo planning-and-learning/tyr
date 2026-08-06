@@ -56,7 +56,6 @@ public:
         ygg::float_t g_value;
         ParentState parent_state;
         SearchNodeStatus status;
-        bool preferred;
     };
 
     struct SuccessorMetadata
@@ -99,7 +98,6 @@ public:
         auto& search_node = get_search_node(state);
         search_node.status = h_value == std::numeric_limits<ygg::float_t>::infinity() ? SearchNodeStatus::DEAD_END : SearchNodeStatus::OPEN;
         search_node.g_value = g_value;
-        search_node.preferred = false;
         return search_node;
     }
 
@@ -125,7 +123,7 @@ public:
 
     SearchNode& get_search_node(ygg::Index<State<Kind>> state)
     {
-        static const auto default_node = SearchNode { std::numeric_limits<ygg::float_t>::infinity(), no_parent(), SearchNodeStatus::NEW, false };
+        static const auto default_node = SearchNode { std::numeric_limits<ygg::float_t>::infinity(), no_parent(), SearchNodeStatus::NEW };
         return get_or_create_search_node(state, m_search_nodes, default_node);
     }
 
@@ -207,14 +205,12 @@ public:
         successor_search_node.status = SearchNodeStatus::OPEN;
         set_parent(successor_search_node, routed_successor.metadata.parent);
         successor_search_node.g_value = g_value;
-        successor_search_node.preferred = routed_successor.metadata.preferred;
-
         if (engine.m_execution.is_generated_goal(engine, worker, routed_successor, successor_state))
         {
             worker.statistics.increment_num_generated();
             successor_search_node.status = SearchNodeStatus::GOAL;
             emit_transition(TransitionOutcome::GOAL);
-            engine.solve(worker, successor_search_node, successor_node);
+            engine.solve(worker, successor_node);
             return AcceptanceResult::TERMINAL;
         }
 

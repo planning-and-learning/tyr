@@ -18,20 +18,20 @@
 #ifndef TYR_DATALOG_RULE_SCHEDULER_HPP_
 #define TYR_DATALOG_RULE_SCHEDULER_HPP_
 
-#include "tyr/analysis/listeners.hpp"              // for ListenerStratum
-#include "tyr/analysis/stratification.hpp"         // for RuleStratum, Rule...
-#include "tyr/formalism/datalog/declarations.hpp"  // for FluentTag (ptr only)
-#include "tyr/formalism/datalog/rule_index.hpp"    // for ygg::Index
+#include "tyr/analysis/listeners.hpp"
+#include "tyr/analysis/stratification.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/datalog/rule_index.hpp"
 
-#include <boost/dynamic_bitset/dynamic_bitset.hpp>  // for dynamic_bitset
+#include <boost/dynamic_bitset/dynamic_bitset.hpp>
 #include <cassert>
-#include <vector>  // for vector
+#include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/containers/vector.hpp>  // for ygg::View
-#include <yggdrasil/core/types.hpp>         // for ygg::IndexList
+#include <yggdrasil/containers/vector.hpp>
+#include <yggdrasil/core/types.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>  // for EqualTo
-#include <yggdrasil/semantics/hash.hpp>      // for Hash
+#include <yggdrasil/semantics/equal_to.hpp>
+#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::datalog
 {

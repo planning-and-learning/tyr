@@ -89,8 +89,6 @@ public:
     SerializedGoalStrategy(const Task<Kind>& task) : m_goal(task.get_task().get_goal()) {}
     SerializedGoalStrategy(::tyr::formalism::planning::GroundConjunctiveConditionView goal) : m_goal(goal) {}
 
-    void clear() noexcept {}
-
     static std::shared_ptr<SerializedGoalStrategy<Kind>> create(const Task<Kind>& task) { return std::make_shared<SerializedGoalStrategy<Kind>>(task); }
     static std::shared_ptr<SerializedGoalStrategy<Kind>> create(::tyr::formalism::planning::GroundConjunctiveConditionView goal)
     {

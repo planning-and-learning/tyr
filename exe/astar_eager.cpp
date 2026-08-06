@@ -15,6 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "search_output.hpp"
+
 #include <argparse/argparse.hpp>
 #include <chrono>
 #include <fmt/ostream.h>
@@ -24,62 +26,6 @@
 #include <yggdrasil/core/memory.hpp>
 
 using namespace tyr;
-
-namespace
-{
-void print_summary(const formalism::planning::Repository& repository)
-{
-    std::cout << "[Total] Number of objects: " << repository.template size<formalism::Object>() << std::endl;
-    std::cout << "[Total] Number of fluent atoms: " << repository.template size<formalism::planning::GroundAtom<formalism::FluentTag>>() << std::endl;
-    std::cout << "[Total] Number of derived atoms: " << repository.template size<formalism::planning::GroundAtom<formalism::DerivedTag>>() << std::endl;
-    std::cout << "[Total] Number of fluent fterms: " << repository.template size<formalism::planning::GroundFunctionTerm<formalism::FluentTag>>() << std::endl;
-    std::cout << "[Total] Action bindings memory usage: " << repository.template memory_usage<formalism::RelationBinding<formalism::planning::Action>>()
-              << " bytes" << std::endl;
-    std::cout << "[Total] Predicate bindings memory usage: "
-              << repository.template memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::StaticTag>>>()
-                     + repository.template memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>()
-                     + repository.template memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::DerivedTag>>>()
-              << " bytes" << std::endl;
-    std::cout << "[Total] Axiom bindings memory usage: " << repository.template memory_usage<formalism::RelationBinding<formalism::planning::Axiom>>()
-              << " bytes" << std::endl;
-    std::cout << "[Total] Function bindings memory usage: "
-              << repository.template memory_usage<formalism::RelationBinding<formalism::Function<formalism::StaticTag>>>()
-                     + repository.template memory_usage<formalism::RelationBinding<formalism::Function<formalism::FluentTag>>>()
-                     + repository.template memory_usage<formalism::RelationBinding<formalism::Function<formalism::AuxiliaryTag>>>()
-              << " bytes" << std::endl;
-}
-
-template<TaskKind Kind>
-void print_search_statistics(const planning::SearchResult<Kind>& result)
-{
-    fmt::print(std::cout, "[Search] Worker utilization: {}\n", result.get_worker_utilization());
-    for (size_t i = 0; i < result.worker_statistics.size(); ++i)
-    {
-        const auto& worker = result.worker_statistics[i];
-        fmt::print(std::cout,
-                   "[Search] Worker {}: idle={} ns, expanded={}, generated={}, deadends={}, pruned={}, registered={}, state_storage={} bytes\n",
-                   i,
-                   ygg::to_ns(worker.get_idle_time()),
-                   worker.get_num_expanded(),
-                   worker.get_num_generated(),
-                   worker.get_num_deadends(),
-                   worker.get_num_pruned(),
-                   worker.get_num_registered_states(),
-                   worker.get_state_storage_memory_usage());
-        fmt::print(std::cout,
-                   "[Search] Worker {} communication: routed={}, remote={}\n",
-                   i,
-                   worker.get_num_routed_successors(),
-                   worker.get_num_remote_routed_successors());
-        fmt::print(std::cout,
-                   "[Search] Worker {} destination lock: acquisitions={}, wait={} ns, hold={} ns\n",
-                   i,
-                   worker.get_num_destination_lock_acquisitions(),
-                   ygg::to_ns(worker.get_destination_lock_wait_time()),
-                   ygg::to_ns(worker.get_destination_lock_hold_time()));
-    }
-}
-}
 
 int main(int argc, char** argv)
 {
@@ -224,7 +170,7 @@ int main(int argc, char** argv)
                 throw std::invalid_argument("The heuristic is not implemented.");
 
             auto result = planning::astar_eager::find_solution(*lifted_task, *successor_generator, *heuristic, options);
-            print_search_statistics(result);
+            cli::print_search_statistics(result);
 
             if (result.status == planning::SearchStatus::SOLVED)
             {
@@ -239,7 +185,7 @@ int main(int argc, char** argv)
                 plan_file.close();
             }
 
-            print_summary(*lifted_task->get_repository());
+            cli::print_summary(*lifted_task->get_repository());
             std::cout << (num_search_workers == 1 ? "[Total] States memory usage: " : "[Total] Retained plan states memory usage: ")
                       << successor_generator->get_state_repository()->memory_usage() << " bytes" << std::endl;
         }
@@ -289,7 +235,7 @@ int main(int argc, char** argv)
                     throw std::invalid_argument("The heuristic is not implemented.");
 
                 auto result = planning::astar_eager::find_solution(*ground_task, *successor_generator, *heuristic, options);
-                print_search_statistics(result);
+                cli::print_search_statistics(result);
 
                 if (result.status == planning::SearchStatus::SOLVED)
                 {
@@ -304,7 +250,7 @@ int main(int argc, char** argv)
                     plan_file.close();
                 }
 
-                print_summary(*ground_task->get_repository());
+                cli::print_summary(*ground_task->get_repository());
                 std::cout << (num_search_workers == 1 ? "[Total] States memory usage: " : "[Total] Retained plan states memory usage: ")
                           << successor_generator->get_state_repository()->memory_usage() << " bytes" << std::endl;
             }

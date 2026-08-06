@@ -50,6 +50,7 @@
 #include <utility>
 #include <vector>
 #include <yggdrasil/containers/segmented_vector.hpp>
+#include <yggdrasil/core/portable_shuffle.hpp>
 
 namespace tyr::planning::detail
 {
@@ -103,7 +104,6 @@ public:
             successor_generator(successor_generator_),
             heuristic(heuristic_),
             search(heuristic, options),
-            execution(options.random_seed),
             rng(options.random_seed + ygg::uint_t(index)),
             pruning_strategy(std::move(pruning_strategy_)),
             goal_strategy(std::move(goal_strategy_)),
@@ -112,7 +112,6 @@ public:
         }
 
         WorkerData(ygg::Index<Worker> index_,
-                   ygg::ExecutionContextPtr execution_context_,
                    SuccessorGeneratorPtr<Kind> successor_generator_,
                    HeuristicPtr<Kind> heuristic_,
                    size_t num_state_owners_,
@@ -122,13 +121,11 @@ public:
                    typename SearchPolicy::WorkerEventHandlerPtr event_handler_) :
             index(index_),
             num_state_owners(num_state_owners_),
-            execution_context(std::move(execution_context_)),
             owned_successor_generator(std::move(successor_generator_)),
             owned_heuristic(std::move(heuristic_)),
             successor_generator(*owned_successor_generator),
             heuristic(*owned_heuristic),
             search(heuristic, options),
-            execution(options.random_seed),
             rng(options.random_seed + ygg::uint_t(index)),
             pruning_strategy(std::move(pruning_strategy_)),
             goal_strategy(std::move(goal_strategy_)),
@@ -151,7 +148,6 @@ public:
 
         ygg::Index<Worker> index;
         size_t num_state_owners { 1 };
-        ygg::ExecutionContextPtr execution_context;
         SuccessorGeneratorPtr<Kind> owned_successor_generator;
         HeuristicPtr<Kind> owned_heuristic;
         SuccessorGenerator<Kind>& successor_generator;
@@ -180,8 +176,6 @@ public:
     size_t num_workers() const noexcept { return m_workers.size(); }
 
     WorkerData& get_worker(ygg::Index<Worker> index) noexcept { return m_workers.get(index); }
-
-    const WorkerData& get_worker(ygg::Index<Worker> index) const noexcept { return m_workers.get(index); }
 
     void on_finish_priority_layer(ygg::float_t priority)
     {
@@ -216,7 +210,7 @@ private:
         {
             if (m_execution.timed_out())
             {
-                m_execution.set_terminal(*this, SearchStatus::OUT_OF_TIME);
+                m_execution.set_terminal(SearchStatus::OUT_OF_TIME);
                 m_execution.notify_if_stopped(*this);
                 return;
             }
@@ -281,7 +275,7 @@ private:
             return std::move(m_result);
         }
 
-        if (!ExecutionPolicy::has_start_state_capacity(m_options.max_num_states))
+        if (m_options.max_num_states == 0)
         {
             finalize(SearchStatus::OUT_OF_STATES);
             return std::move(m_result);
@@ -378,7 +372,7 @@ private:
                     [&](ygg::float_t priority) { on_finish_priority_layer(priority); });
                 if (expansion_result == ExpansionResult::GOAL)
                 {
-                    solve(worker, search_node, node);
+                    solve(worker, node);
                     return;
                 }
                 if (expansion_result == ExpansionResult::EXPAND)
@@ -391,9 +385,8 @@ private:
         m_execution.notify_if_stopped(*this);
         if (prepared && m_execution.running())
         {
-            auto& state_repository = *worker.successor_generator.get_state_repository();
             worker.successor_generator.get_applicable_action_bindings(prepared->node, worker.applicable_actions);
-            m_execution.expand_successors(*this, worker, prepared->node, prepared->entry, prepared->search_node, state_repository);
+            expand_successors(worker, prepared->node, prepared->entry, prepared->search_node);
         }
         m_execution.finish_expansion(*this);
         return true;
@@ -409,7 +402,7 @@ private:
         const auto is_new = successor_search_node.status == SearchNodeStatus::NEW;
         if (is_new && !m_execution.reserve_state(m_options.max_num_states))
         {
-            m_execution.set_terminal(*this, SearchStatus::OUT_OF_STATES);
+            m_execution.set_terminal(SearchStatus::OUT_OF_STATES);
             return AcceptanceResult::TERMINAL;
         }
 
@@ -423,10 +416,30 @@ private:
         return worker.search.accept_successor(*this, worker, source_node, normalized_node, routed_successor, successor_search_node, is_new, emit_transition);
     }
 
-    void solve(WorkerData& worker, const SearchNode&, const Node<Kind>& node)
+    void expand_successors(WorkerData& worker, const Node<Kind>& node, const typename SearchPolicy::PoppedEntry& entry, const SearchNode& search_node)
+    {
+        if (m_options.shuffle_labeled_succ_nodes)
+            ygg::portable_shuffle(worker.applicable_actions.begin(), worker.applicable_actions.end(), worker.rng);
+
+        auto& state_repository = *worker.successor_generator.get_state_repository();
+        for (const auto action : worker.applicable_actions)
+        {
+            if (!m_execution.running())
+                break;
+
+            auto successor_state = state_repository.get_state_builder();
+            const auto action_result = worker.successor_generator.generate_successor_state(node, action, *successor_state);
+            auto metadata = worker.search.make_successor_metadata(worker.index, entry.state, search_node, action);
+            if (m_execution.route(*this, worker, node, std::move(successor_state), action_result, action, std::move(metadata)) == AcceptanceResult::TERMINAL
+                || !m_execution.running())
+                break;
+        }
+    }
+
+    void solve(WorkerData& worker, const Node<Kind>& node)
     {
         const auto goal = WorkerStateIndex<Kind> { worker.index, node.get_state().get_index() };
-        if (m_execution.consider_goal(*this, goal, node.get_metric(), SearchPolicy::terminate_on_goal))
+        if (m_execution.consider_goal(goal, node.get_metric(), SearchPolicy::terminate_on_goal))
             call_worker_event(worker, [&](auto& handler) { handler.on_expand_goal_node(node); });
     }
 
@@ -435,7 +448,7 @@ private:
         if (m_finalized)
             return;
 
-        m_execution.set_terminal(*this, status);
+        m_execution.set_terminal(status);
         m_result.status = status;
         snapshot_statistics();
         m_finalized = true;

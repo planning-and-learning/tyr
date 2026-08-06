@@ -31,7 +31,6 @@
 #include <cmath>
 #include <cstddef>
 #include <limits>
-#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <type_traits>
@@ -179,9 +178,6 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Solver>& op
 
     auto combined_labeled_succ_nodes = LabeledNodeList<Kind> {};
     auto reached_subgoals = std::vector<detail::ReachedSubgoal<Kind>> { { combined_start_node, 0 } };
-
-    if (auto serialized_subgoal_strategy = std::dynamic_pointer_cast<SerializedGoalStrategy<Kind>>(options.subgoal_strategy))
-        serialized_subgoal_strategy->clear();
 
     for (auto subsearch_index = ygg::uint_t { 0 }; subsearch_index < options.max_num_subsearches; ++subsearch_index)
     {

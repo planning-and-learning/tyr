@@ -40,7 +40,6 @@
 #include <optional>
 #include <stdexcept>
 #include <utility>
-#include <yggdrasil/core/portable_shuffle.hpp>
 
 namespace tyr::planning::detail
 {
@@ -57,7 +56,6 @@ public:
 
     struct WorkerState
     {
-        explicit WorkerState(uint64_t) noexcept {}
     };
 
     template<typename Options>
@@ -72,8 +70,6 @@ public:
     }
 
     static ygg::Index<State<Kind>> search_node_index(ygg::Index<State<Kind>> state, ygg::Index<Worker>, size_t) noexcept { return state; }
-
-    static constexpr bool has_start_state_capacity(ygg::uint_t max_num_states) noexcept { return max_num_states > 0; }
 
     template<typename Engine>
     static std::pair<ygg::Index<Worker>, StateView<Kind>> prepare_start_state(Engine&, const StateView<Kind>& start_state)
@@ -100,13 +96,13 @@ public:
     }
 
     template<typename Engine, typename WorkerData>
-    bool begin_iteration(Engine& engine, WorkerData& worker)
+    bool begin_iteration(Engine&, WorkerData& worker)
     {
         if (!running())
             return false;
         if (!worker.search.empty())
             return true;
-        set_terminal(engine, SearchStatus::EXHAUSTED);
+        set_terminal(SearchStatus::EXHAUSTED);
         return false;
     }
 
@@ -120,15 +116,13 @@ public:
     bool running() const noexcept { return m_status == SearchStatus::IN_PROGRESS; }
     bool timed_out() const { return m_deadline && std::chrono::steady_clock::now() >= *m_deadline; }
 
-    template<typename Engine>
-    void set_terminal(Engine&, SearchStatus status)
+    void set_terminal(SearchStatus status)
     {
         if (running())
             m_status = status;
     }
 
-    template<typename Engine>
-    bool consider_goal(Engine&, WorkerStateIndex<Kind> goal, ygg::float_t cost, bool terminate)
+    bool consider_goal(WorkerStateIndex<Kind> goal, ygg::float_t cost, bool terminate)
     {
         if (!running())
             return false;
@@ -163,18 +157,19 @@ public:
     }
 
     template<typename Engine, typename Worker>
-    void wait_for_work(Engine& engine, Worker&)
+    void wait_for_work(Engine&, Worker&)
     {
-        set_terminal(engine, SearchStatus::EXHAUSTED);
+        set_terminal(SearchStatus::EXHAUSTED);
     }
 
-    template<typename Engine, typename WorkerData, typename Metadata>
-    auto route(Engine& engine,
-               WorkerData& worker,
-               ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> target,
-               PendingActionResult action_result,
-               ::tyr::formalism::planning::ActionBindingView action,
-               Metadata metadata) -> typename Engine::RoutedSuccessor
+    template<typename Engine, typename WorkerData>
+    AcceptanceResult route(Engine& engine,
+                           WorkerData& worker,
+                           const Node<Kind>& source,
+                           ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> target,
+                           PendingActionResult action_result,
+                           ::tyr::formalism::planning::ActionBindingView action,
+                           typename SearchPolicy::SuccessorMetadata metadata)
     {
         auto node = worker.successor_generator.finalize_successor_state(std::move(target), action_result);
         const auto g_value = compute_successor_g_value(metadata.source_g_value, node.get_metric(), engine.m_options.cost_mode);
@@ -182,33 +177,8 @@ public:
             throw std::runtime_error("find_solution(...): successor path cost is not finite.");
 
         worker.statistics.increment_num_routed_successors(false);
-        return typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata), g_value, false };
-    }
-
-    template<typename Engine, typename WorkerData>
-    void expand_successors(Engine& engine,
-                           WorkerData& worker,
-                           const Node<Kind>& node,
-                           const typename SearchPolicy::PoppedEntry& entry,
-                           const typename SearchPolicy::SearchNode& search_node,
-                           StateRepository<Kind>& state_repository)
-    {
-        if (engine.m_options.shuffle_labeled_succ_nodes)
-            ygg::portable_shuffle(worker.applicable_actions.begin(), worker.applicable_actions.end(), worker.rng);
-
-        for (const auto action : worker.applicable_actions)
-        {
-            auto successor_state = state_repository.get_state_builder();
-            const auto action_result = worker.successor_generator.generate_successor_state(node, action, *successor_state);
-            auto routed_successor = route(engine,
-                                          worker,
-                                          std::move(successor_state),
-                                          action_result,
-                                          action,
-                                          worker.search.make_successor_metadata(worker.index, entry.state, search_node, action));
-            if (engine.accept_successor(worker, node, routed_successor) == AcceptanceResult::TERMINAL)
-                return;
-        }
+        const auto routed = typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata), g_value, false };
+        return engine.accept_successor(worker, source, routed);
     }
 
     template<typename Engine, typename WorkerData, typename EmitTransition>
@@ -286,20 +256,8 @@ public:
         return m_worker;
     }
 
-    const WorkerData& get(ygg::Index<Worker> index) const noexcept
-    {
-        assert(index == ygg::Index<Worker>(0));
-        return m_worker;
-    }
-
     template<typename Callback>
     void for_each(Callback&& callback)
-    {
-        callback(m_worker);
-    }
-
-    template<typename Callback>
-    void for_each(Callback&& callback) const
     {
         callback(m_worker);
     }

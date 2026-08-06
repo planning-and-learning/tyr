@@ -18,22 +18,22 @@
 #ifndef TYR_PLANNING_LIFTED_TASK_HPP_
 #define TYR_PLANNING_LIFTED_TASK_HPP_
 
-#include "tyr/formalism/planning/declarations.hpp"  // for OverlayRepos...
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
 #include "tyr/formalism/planning/grounder_decl.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
-#include "tyr/formalism/planning/views.hpp"  // for ygg::View
+#include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/lifted/task_grounder_decl.hpp"
 #include "tyr/planning/task.hpp"
 
-#include <boost/dynamic_bitset.hpp>                 // for dynamic_bitset
-#include <limits>                                   // for numeric_limits
-#include <memory>                                   // for shared_ptr
-#include <vector>                                   // for vector
-#include <yggdrasil/containers/dynamic_bitset.hpp>  // for test
-#include <yggdrasil/containers/vector.hpp>          // for get
-#include <yggdrasil/core/config.hpp>                // for ygg::float_t, ygg::uint_t
+#include <boost/dynamic_bitset.hpp>
+#include <limits>
+#include <memory>
+#include <vector>
+#include <yggdrasil/containers/dynamic_bitset.hpp>
+#include <yggdrasil/containers/vector.hpp>
+#include <yggdrasil/core/config.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 
 namespace tyr::planning

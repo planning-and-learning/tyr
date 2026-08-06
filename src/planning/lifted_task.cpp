@@ -18,15 +18,15 @@
 #include "tyr/planning/lifted/task.hpp"
 
 #include "tyr/formalism/planning/formatter.hpp"
-#include "tyr/formalism/planning/views.hpp"  // for ygg::View
+#include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/lifted/task_grounder.hpp"
 #include "tyr/planning/task_utils.hpp"
 
 #include <tuple>
 #include <utility>
-#include <yggdrasil/containers/dynamic_bitset.hpp>  // for set
-#include <yggdrasil/containers/vector.hpp>          // for ygg::View, set
-#include <yggdrasil/semantics/comparators.hpp>      // for operat...
+#include <yggdrasil/containers/dynamic_bitset.hpp>
+#include <yggdrasil/containers/vector.hpp>
+#include <yggdrasil/semantics/comparators.hpp>
 
 namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;

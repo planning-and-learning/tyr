@@ -22,13 +22,13 @@
 #include "tyr/analysis/stratification.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/function_index.hpp"
-#include "tyr/formalism/predicate_index.hpp"  // for ygg::Index
+#include "tyr/formalism/predicate_index.hpp"
 
-#include <vector>  // for vector
+#include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/core/types.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>  // for EqualTo
-#include <yggdrasil/semantics/hash.hpp>      // for Hash
+#include <yggdrasil/semantics/equal_to.hpp>
+#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::analysis
 {

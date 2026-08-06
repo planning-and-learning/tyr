@@ -18,7 +18,7 @@
 #include "tyr/analysis/stratification.hpp"
 
 #include "stratification_utils.hpp"
-#include "tyr/formalism/datalog/repository.hpp"  // for Repository
+#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 
 #include <type_traits>

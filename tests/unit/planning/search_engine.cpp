@@ -136,6 +136,36 @@ public:
 };
 
 template<TaskKind Kind>
+class GoalAsThrowingHeuristic final : public p::Heuristic<Kind>
+{
+public:
+    using p::Heuristic<Kind>::evaluate;
+
+    explicit GoalAsThrowingHeuristic(p::TaskPtr<Kind> task) : m_task(std::move(task)), m_goal(m_task->get_task().get_goal()) {}
+
+    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override { m_goal = goal; }
+
+    ygg::float_t evaluate(const ygg::Builder<p::State<Kind>>& state) override
+    {
+        const auto context = p::StateContext<Kind>(*m_task, state, 0);
+        if (p::is_dynamically_applicable(m_goal, context))
+            throw std::runtime_error("Successor heuristic evaluation failed.");
+        return 0;
+    }
+
+    p::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr) const override
+    {
+        auto worker = std::make_shared<GoalAsThrowingHeuristic>(m_task);
+        worker->set_goal(m_goal);
+        return worker;
+    }
+
+private:
+    p::TaskPtr<Kind> m_task;
+    ::tyr::formalism::planning::GroundConjunctiveConditionView m_goal;
+};
+
+template<TaskKind Kind>
 class InfiniteHeuristic final : public p::Heuristic<Kind>
 {
 public:
@@ -714,6 +744,21 @@ void expect_sequential_expansion_stops_materializing_after_goal(const p::TaskPtr
     EXPECT_EQ(result.statistics.get_num_registered_states(), 2);
 }
 
+template<TaskKind Kind>
+void expect_parallel_lazy_heuristic_exceptions_propagate(const p::TaskPtr<Kind>& task)
+{
+    for (const auto mode : { p::StateRepositoryMode::HASH_DISTRIBUTED, p::StateRepositoryMode::SHARED })
+    {
+        auto context = make_search_context(task);
+        auto heuristic = GoalAsThrowingHeuristic<Kind>(task);
+        auto options = p::gbfs_lazy::Options<Kind> {};
+        options.num_search_workers = 2;
+        options.state_repository_mode = mode;
+        options.goal_strategy = p::ExhaustiveGoalStrategy<Kind>::create();
+        EXPECT_THROW(p::gbfs_lazy::find_solution(*task, *context.successor_generator, heuristic, options), std::runtime_error);
+    }
+}
+
 TEST(TyrPlanningSearchEngineTest, ChecksGoalsBeforeHeuristics)
 {
     const auto tasks = parse_tasks("parallel_search_simple.pddl");
@@ -811,6 +856,13 @@ TEST(TyrPlanningSearchEngineTest, SequentialExpansionStopsMaterializingAfterGoal
     const auto tasks = parse_tasks("parallel_search_diamond.pddl");
     expect_sequential_expansion_stops_materializing_after_goal(tasks.ground);
     expect_sequential_expansion_stops_materializing_after_goal(tasks.lifted);
+}
+
+TEST(TyrPlanningSearchEngineTest, ParallelLazyHeuristicExceptionsPropagateWithoutDeadlock)
+{
+    const auto tasks = parse_tasks("parallel_search_simple.pddl");
+    expect_parallel_lazy_heuristic_exceptions_propagate(tasks.ground);
+    expect_parallel_lazy_heuristic_exceptions_propagate(tasks.lifted);
 }
 
 }

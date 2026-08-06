@@ -24,6 +24,14 @@ WORKER_COMMUNICATION_STATISTICS = re.compile(
 )
 
 
+def parse_worker_rows(pattern, content, props):
+    rows = sorted((tuple(map(int, match)) for match in pattern.findall(content)), key=lambda values: values[0])
+    expected_workers = props.get("num_search_workers", len(rows))
+    indices = [values[0] for values in rows]
+    unexpected_indices = indices if indices != list(range(expected_workers)) else None
+    return rows, expected_workers, unexpected_indices
+
+
 def process_invalid(content, props):
     props["invalid"] = int("invalid" in props)
 
@@ -41,7 +49,7 @@ def add_idle_time_s(content, props):
 
 
 def parse_worker_statistics(content, props):
-    matches = sorted((tuple(map(int, match)) for match in WORKER_STATISTICS.findall(content)), key=lambda values: values[0])
+    matches, _, unexpected_indices = parse_worker_rows(WORKER_STATISTICS, content, props)
     if not matches:
         if props.get("num_search_workers", 0) and any(
             name in props for name in ("search_time_ns", "num_expanded", "num_generated", "num_deadends", "num_pruned")
@@ -49,10 +57,8 @@ def parse_worker_statistics(content, props):
             tools.add_unexplained_error(props, "Unexpected search worker indices: []")
         return
 
-    indices = [values[0] for values in matches]
-    expected_workers = props.get("num_search_workers", len(matches))
-    if indices != list(range(expected_workers)):
-        tools.add_unexplained_error(props, f"Unexpected search worker indices: {indices}")
+    if unexpected_indices is not None:
+        tools.add_unexplained_error(props, f"Unexpected search worker indices: {unexpected_indices}")
         return
 
     names = (
@@ -72,20 +78,15 @@ def parse_worker_statistics(content, props):
 
 
 def parse_communication_statistics(content, props):
-    matches = sorted(
-        (tuple(map(int, match)) for match in WORKER_COMMUNICATION_STATISTICS.findall(content)),
-        key=lambda values: values[0],
-    )
+    matches, expected_workers, unexpected_indices = parse_worker_rows(WORKER_COMMUNICATION_STATISTICS, content, props)
     aggregate_names = ("num_routed_successors", "num_remote_routed_successors")
-    expected_workers = props.get("num_search_workers", len(matches))
     if expected_workers and not matches and any(name in props for name in aggregate_names):
         tools.add_unexplained_error(props, "Missing communication worker statistics")
         return
 
     if matches:
-        indices = [values[0] for values in matches]
-        if indices != list(range(expected_workers)):
-            tools.add_unexplained_error(props, f"Unexpected communication worker indices: {indices}")
+        if unexpected_indices is not None:
+            tools.add_unexplained_error(props, f"Unexpected communication worker indices: {unexpected_indices}")
             return
 
         routed = [values[1] for values in matches]
@@ -129,20 +130,15 @@ def parse_communication_statistics(content, props):
 
 
 def parse_destination_lock_statistics(content, props):
-    matches = sorted(
-        (tuple(map(int, match)) for match in WORKER_DESTINATION_LOCK_STATISTICS.findall(content)),
-        key=lambda values: values[0],
-    )
+    matches, expected_workers, unexpected_indices = parse_worker_rows(WORKER_DESTINATION_LOCK_STATISTICS, content, props)
     aggregate_names = (
         "num_destination_lock_acquisitions",
         "destination_lock_wait_time_ns",
         "destination_lock_hold_time_ns",
     )
-    expected_workers = props.get("num_search_workers", len(matches))
     if matches:
-        indices = [values[0] for values in matches]
-        if indices != list(range(expected_workers)):
-            tools.add_unexplained_error(props, f"Unexpected destination-lock worker indices: {indices}")
+        if unexpected_indices is not None:
+            tools.add_unexplained_error(props, f"Unexpected destination-lock worker indices: {unexpected_indices}")
             return
 
         names = (

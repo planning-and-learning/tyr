@@ -17,14 +17,14 @@
 
 #include "tyr/planning/ground/state_repository.hpp"
 
-#include "tyr/formalism/planning/declarations.hpp"  // for ygg::Index
-#include "tyr/formalism/planning/views.hpp"         // for ygg::View
-#include "tyr/planning/ground/axiom_evaluator.hpp"  // for AxiomE...
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/views.hpp"
+#include "tyr/planning/ground/axiom_evaluator.hpp"
 #include "tyr/planning/ground/state_data.hpp"
-#include "tyr/planning/ground/task.hpp"  // for Ground...
+#include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/state_storage/config.hpp"
-#include "tyr/planning/task_utils.hpp"  // for create...
+#include "tyr/planning/task_utils.hpp"
 
 #include <yggdrasil/containers/indexed_hash_set.hpp>
 #include <yggdrasil/containers/raw_array_set.hpp>
@@ -40,15 +40,15 @@
 #include "tyr/planning/state_storage/tree_compression/numeric.hpp"
 #endif
 
-#include <algorithm>                 // for fill
-#include <assert.h>                  // for assert
-#include <boost/dynamic_bitset.hpp>  // for dynami...
-#include <gtl/phmap.hpp>             // for operat...
-#include <tuple>                     // for operat...
+#include <algorithm>
+#include <assert.h>
+#include <boost/dynamic_bitset.hpp>
+#include <gtl/phmap.hpp>
+#include <tuple>
 #include <type_traits>
-#include <utility>                              // for move
-#include <yggdrasil/containers/vector.hpp>      // for ygg::View
-#include <yggdrasil/semantics/comparators.hpp>  // for operat...
+#include <utility>
+#include <yggdrasil/containers/vector.hpp>
+#include <yggdrasil/semantics/comparators.hpp>
 
 namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;

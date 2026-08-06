@@ -19,9 +19,9 @@
 
 #include "../metric.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/planning/views.hpp"  // for ygg::View
+#include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/action_executor.hpp"
-#include "tyr/planning/applicability.hpp"  // for StateC...
+#include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/match_tree/match_tree.hpp"
 #include "tyr/planning/ground/state_builder.hpp"

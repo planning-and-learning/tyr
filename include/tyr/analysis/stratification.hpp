@@ -23,8 +23,8 @@
 #include "tyr/formalism/predicate_index.hpp"
 // for Program (ptr only), Rule
 
-#include <vector>                    // for vector
-#include <yggdrasil/core/types.hpp>  // for ygg::IndexList
+#include <vector>
+#include <yggdrasil/core/types.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 
 namespace tyr::analysis

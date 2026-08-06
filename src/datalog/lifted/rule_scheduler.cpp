@@ -18,14 +18,14 @@
 #include "tyr/datalog/lifted/rule_scheduler.hpp"
 
 #include "tyr/formalism/datalog/formatter.hpp"
-#include "tyr/formalism/datalog/views.hpp"  // for ygg::View
+#include "tyr/formalism/datalog/views.hpp"
 
 #include <algorithm>
-#include <assert.h>       // for assert
-#include <gtl/phmap.hpp>  // for operator!=, flat_hash_set
+#include <assert.h>
+#include <gtl/phmap.hpp>
 #include <type_traits>
-#include <utility>                    // for pair
-#include <yggdrasil/core/config.hpp>  // for ygg::uint_t
+#include <utility>
+#include <yggdrasil/core/config.hpp>
 
 namespace f = tyr::formalism;
 namespace fd = tyr::formalism::datalog;

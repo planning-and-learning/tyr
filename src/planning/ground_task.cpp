@@ -17,15 +17,15 @@
 
 #include "tyr/planning/ground/task.hpp"
 
-#include "tyr/formalism/planning/fdr_context.hpp"  // for Genera...
-#include "tyr/formalism/planning/repository.hpp"   // for Reposi...
-#include "tyr/formalism/planning/views.hpp"        // for ygg::Index
+#include "tyr/formalism/planning/fdr_context.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/views.hpp"
 
-#include <tuple>                                    // for operat...
-#include <utility>                                  // for move
-#include <yggdrasil/containers/dynamic_bitset.hpp>  // for set
-#include <yggdrasil/containers/vector.hpp>          // for ygg::View, set
-#include <yggdrasil/semantics/comparators.hpp>      // for operat...
+#include <tuple>
+#include <utility>
+#include <yggdrasil/containers/dynamic_bitset.hpp>
+#include <yggdrasil/containers/vector.hpp>
+#include <yggdrasil/semantics/comparators.hpp>
 
 namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;

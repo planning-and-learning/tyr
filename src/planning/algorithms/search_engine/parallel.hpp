@@ -47,7 +47,6 @@
 #include <thread>
 #include <utility>
 #include <vector>
-#include <yggdrasil/core/portable_shuffle.hpp>
 
 namespace tyr::planning::detail
 {
@@ -218,8 +217,6 @@ class ParallelLayerCoordinationPolicy<SearchPolicy, false>
 public:
     void start(ygg::float_t, const typename SearchPolicy::Options&, size_t) noexcept {}
 
-    bool proves_goal(ygg::float_t) const noexcept { return false; }
-
     template<typename ExecutionPolicy, typename WorkerData>
     static bool can_expand(const ExecutionPolicy&, const WorkerData& worker) noexcept
     {
@@ -245,8 +242,6 @@ public:
         m_num_waiting_workers = 0;
         m_waiting_workers.assign(num_workers, uint8_t { 0 });
     }
-
-    static constexpr bool proves_goal(ygg::float_t) noexcept { return false; }
 
     template<typename ExecutionPolicy, typename WorkerData>
     bool can_expand(const ExecutionPolicy& execution, const WorkerData& worker) const noexcept
@@ -333,7 +328,7 @@ private:
         {
             if (terminal_status)
             {
-                execution.set_terminal(engine, *terminal_status);
+                execution.set_terminal(*terminal_status);
                 execution.notify_if_stopped(engine);
             }
             else
@@ -369,7 +364,7 @@ private:
         }
         if (timed_out)
         {
-            execution.set_terminal(engine, SearchStatus::OUT_OF_TIME);
+            execution.set_terminal(SearchStatus::OUT_OF_TIME);
             execution.notify_if_stopped(engine);
         }
     }
@@ -401,8 +396,6 @@ public:
 
     struct WorkerState
     {
-        explicit WorkerState(uint64_t) {}
-
         // Justification: serializes one logical worker's search state and forms the condition-variable handshake that prevents lost wakeups.
         std::mutex mutex;
         std::condition_variable condition;
@@ -425,8 +418,6 @@ public:
         return options.num_search_workers;
     }
 
-    static ygg::ExecutionContextPtr create_execution_context() { return ygg::ExecutionContext::create(1); }
-
     static auto make_successor_generators(SuccessorGenerator<Kind>& successor_generator, std::span<const ygg::ExecutionContextPtr> execution_contexts)
     {
         return StatePolicy::make_successor_generators(successor_generator, execution_contexts);
@@ -442,8 +433,6 @@ public:
     {
         return StatePolicy::search_node_index(state, worker, num_workers);
     }
-
-    static constexpr bool has_start_state_capacity(ygg::uint_t max_num_states) noexcept { return max_num_states > 0; }
 
     template<typename Engine>
     auto prepare_start_state(Engine& engine, const StateView<Kind>& start_state)
@@ -481,12 +470,13 @@ public:
     template<typename Engine>
     void invoke(Engine& engine)
     {
+        auto threads = std::vector<std::jthread> {};
         try
         {
-            m_threads.reserve(engine.num_workers());
+            threads.reserve(engine.num_workers());
             for (size_t i = 0; i < engine.num_workers(); ++i)
             {
-                m_threads.emplace_back(
+                threads.emplace_back(
                     [this, &engine, i]
                     {
                         try
@@ -504,7 +494,6 @@ public:
         {
             record_exception(engine, std::current_exception());
         }
-        join();
     }
 
     template<typename Engine, typename WorkerData>
@@ -529,8 +518,7 @@ public:
         return m_exception;
     }
 
-    template<typename Engine>
-    void set_terminal(Engine& engine, SearchStatus status)
+    void set_terminal(SearchStatus status)
     {
         {
             const auto lock = std::lock_guard(m_terminal_mutex);
@@ -540,8 +528,7 @@ public:
         }
     }
 
-    template<typename Engine>
-    bool consider_goal(Engine& engine, WorkerStateIndex<Kind> goal, ygg::float_t cost, bool terminate)
+    bool consider_goal(WorkerStateIndex<Kind> goal, ygg::float_t cost, bool terminate)
     {
         {
             const auto lock = std::lock_guard(m_terminal_mutex);
@@ -549,7 +536,7 @@ public:
                 return false;
             m_goal = goal;
             m_incumbent_cost.store(cost, std::memory_order_relaxed);
-            if (terminate || m_coordination.proves_goal(cost))
+            if (terminate)
                 m_status.store(SearchStatus::SOLVED, std::memory_order_release);
         }
         return true;
@@ -571,17 +558,9 @@ public:
         {
             // Lazy evaluation uses only worker-local heuristic state, so receiver publication need not wait for it.
             lock.unlock();
-            try
-            {
-                auto result = std::forward<decltype(evaluate)>(evaluate)();
-                lock.lock();
-                return result;
-            }
-            catch (...)
-            {
-                lock.lock();
-                throw;
-            }
+            auto result = std::forward<decltype(evaluate)>(evaluate)();
+            lock.lock();
+            return result;
         };
         return std::forward<Callback>(callback)(evaluate_unlocked);
     }
@@ -635,30 +614,6 @@ public:
         return result;
     }
 
-    template<typename Engine, typename WorkerData>
-    void expand_successors(Engine& engine,
-                           WorkerData& worker,
-                           const Node<Kind>& node,
-                           const typename SearchPolicy::PoppedEntry& entry,
-                           const typename SearchPolicy::SearchNode& search_node,
-                           StateRepository<Kind>& state_repository)
-    {
-        if (engine.m_options.shuffle_labeled_succ_nodes)
-            ygg::portable_shuffle(worker.applicable_actions.begin(), worker.applicable_actions.end(), worker.rng);
-
-        for (const auto action : worker.applicable_actions)
-        {
-            if (!running())
-                break;
-
-            auto successor_state = state_repository.get_state_builder();
-            const auto action_result = worker.successor_generator.generate_successor_state(node, action, *successor_state);
-            auto metadata = worker.search.make_successor_metadata(worker.index, entry.state, search_node, action);
-            if (route(engine, worker, node, std::move(successor_state), action_result, action, std::move(metadata)) == AcceptanceResult::TERMINAL || !running())
-                break;
-        }
-    }
-
     template<typename Engine, typename WorkerData, typename EmitTransition>
     std::optional<AcceptanceResult> accept_generated_goal(Engine& engine,
                                                           WorkerData& worker,
@@ -672,7 +627,7 @@ public:
             return std::nullopt;
 
         search_node.status = SearchNodeStatus::GOAL;
-        static_cast<void>(consider_goal(engine, WorkerStateIndex<Kind> { worker.index, state.get_index() }, g_value, SearchPolicy::terminate_on_goal));
+        static_cast<void>(consider_goal(WorkerStateIndex<Kind> { worker.index, state.get_index() }, g_value, SearchPolicy::terminate_on_goal));
         std::forward<EmitTransition>(emit_transition)(TransitionOutcome::GOAL);
         return running() ? AcceptanceResult::DISCARDED : AcceptanceResult::TERMINAL;
     }
@@ -728,7 +683,7 @@ private:
             if (!worker.execution.condition.wait_until(lock, *m_deadline, ready) && running())
             {
                 lock.unlock();
-                set_terminal(engine, SearchStatus::OUT_OF_TIME);
+                set_terminal(SearchStatus::OUT_OF_TIME);
                 notify_if_stopped(engine);
             }
         }
@@ -747,15 +702,6 @@ public:
     }
 
 private:
-    void join()
-    {
-        for (auto& thread : m_threads)
-        {
-            if (thread.joinable())
-                thread.join();
-        }
-    }
-
     template<typename Engine>
     void record_exception(Engine& engine, std::exception_ptr exception)
     {
@@ -817,7 +763,6 @@ private:
     bool m_collect_destination_lock_statistics { false };
     std::optional<WorkerStateIndex<Kind>> m_goal;
     std::exception_ptr m_exception;
-    std::vector<std::jthread> m_threads;
 };
 
 template<TaskKind Kind, SearchPolicyConcept<Kind> SearchPolicy, ExecutionPolicyConcept<Kind, SearchPolicy> ExecutionPolicy, typename WorkerData>
@@ -836,7 +781,7 @@ public:
         auto execution_contexts = std::vector<ygg::ExecutionContextPtr> {};
         execution_contexts.reserve(num_workers);
         for (size_t i = 0; i < num_workers; ++i)
-            execution_contexts.push_back(ExecutionPolicy::create_execution_context());
+            execution_contexts.push_back(ygg::ExecutionContext::create(1));
 
         auto successor_generators =
             ExecutionPolicy::make_successor_generators(successor_generator, std::span<const ygg::ExecutionContextPtr>(execution_contexts));
@@ -860,7 +805,6 @@ public:
                 throw std::invalid_argument("Parallel search goal strategy does not support worker construction.");
             auto worker_event_handler = SearchPolicy::make_worker_event_handler(event_handler, index);
             m_workers.push_back(std::make_unique<WorkerData>(index,
-                                                             std::move(execution_context),
                                                              std::move(successor_generators[i]),
                                                              std::move(worker_heuristic),
                                                              num_workers,
@@ -880,24 +824,10 @@ public:
         return *m_workers[value];
     }
 
-    const WorkerData& get(ygg::Index<Worker> index) const noexcept
-    {
-        const auto value = static_cast<size_t>(ygg::uint_t(index));
-        assert(value < m_workers.size());
-        return *m_workers[value];
-    }
-
     template<typename Callback>
     void for_each(Callback&& callback)
     {
         for (auto& worker : m_workers)
-            callback(*worker);
-    }
-
-    template<typename Callback>
-    void for_each(Callback&& callback) const
-    {
-        for (const auto& worker : m_workers)
             callback(*worker);
     }
 

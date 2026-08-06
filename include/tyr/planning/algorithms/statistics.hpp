@@ -30,70 +30,32 @@ namespace tyr::planning
 class Statistics
 {
 private:
-    uint64_t m_num_generated;
-    uint64_t m_num_expanded;
-    uint64_t m_num_deadends;
-    uint64_t m_num_pruned;
-    uint64_t m_num_routed_successors;
-    uint64_t m_num_remote_routed_successors;
-    uint64_t m_num_registered_states;
+    uint64_t m_num_generated {};
+    uint64_t m_num_expanded {};
+    uint64_t m_num_deadends {};
+    uint64_t m_num_pruned {};
+    uint64_t m_num_routed_successors {};
+    uint64_t m_num_remote_routed_successors {};
+    uint64_t m_num_registered_states {};
 
-    size_t m_state_storage_memory_usage;
-    size_t m_action_bindings_memory_usage;
-    size_t m_predicate_bindings_memory_usage;
-    size_t m_axiom_bindings_memory_usage;
-    size_t m_function_bindings_memory_usage;
+    size_t m_state_storage_memory_usage {};
+    size_t m_action_bindings_memory_usage {};
+    size_t m_predicate_bindings_memory_usage {};
+    size_t m_axiom_bindings_memory_usage {};
+    size_t m_function_bindings_memory_usage {};
 
-    std::chrono::nanoseconds m_idle_time;
-    uint64_t m_num_destination_lock_acquisitions;
-    std::chrono::nanoseconds m_destination_lock_wait_time;
-    std::chrono::nanoseconds m_destination_lock_hold_time;
+    std::chrono::nanoseconds m_idle_time {};
+    uint64_t m_num_destination_lock_acquisitions {};
+    std::chrono::nanoseconds m_destination_lock_wait_time {};
+    std::chrono::nanoseconds m_destination_lock_hold_time {};
 
-    std::chrono::time_point<std::chrono::steady_clock> m_search_start_time_point;
-    std::chrono::time_point<std::chrono::steady_clock> m_search_end_time_point;
+    std::chrono::time_point<std::chrono::steady_clock> m_search_start_time_point {};
+    std::chrono::time_point<std::chrono::steady_clock> m_search_end_time_point {};
 
 public:
-    Statistics() :
-        m_num_generated(0),
-        m_num_expanded(0),
-        m_num_deadends(0),
-        m_num_pruned(0),
-        m_num_routed_successors(0),
-        m_num_remote_routed_successors(0),
-        m_num_registered_states(0),
-        m_state_storage_memory_usage(0),
-        m_action_bindings_memory_usage(0),
-        m_predicate_bindings_memory_usage(0),
-        m_axiom_bindings_memory_usage(0),
-        m_function_bindings_memory_usage(0),
-        m_idle_time(0),
-        m_num_destination_lock_acquisitions(0),
-        m_destination_lock_wait_time(0),
-        m_destination_lock_hold_time(0)
-    {
-    }
+    Statistics() = default;
 
-    void clear() noexcept
-    {
-        m_num_generated = 0;
-        m_num_expanded = 0;
-        m_num_deadends = 0;
-        m_num_pruned = 0;
-        m_num_routed_successors = 0;
-        m_num_remote_routed_successors = 0;
-        m_num_registered_states = 0;
-        m_state_storage_memory_usage = 0;
-        m_action_bindings_memory_usage = 0;
-        m_predicate_bindings_memory_usage = 0;
-        m_axiom_bindings_memory_usage = 0;
-        m_function_bindings_memory_usage = 0;
-        m_idle_time = {};
-        m_num_destination_lock_acquisitions = 0;
-        m_destination_lock_wait_time = {};
-        m_destination_lock_hold_time = {};
-        m_search_start_time_point = {};
-        m_search_end_time_point = {};
-    }
+    void clear() noexcept { *this = Statistics {}; }
 
     /**
      * Setters

@@ -217,7 +217,7 @@ public:
         {
             successor_search_node.status = SearchNodeStatus::GOAL;
             emit_transition(TransitionOutcome::GOAL);
-            engine.solve(worker, successor_search_node, successor_node);
+            engine.solve(worker, successor_node);
             return AcceptanceResult::TERMINAL;
         }
 
