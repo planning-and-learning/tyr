@@ -29,8 +29,8 @@
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
 #include <tyr/datalog/datalog.hpp>
-#include <tyr/datalog/ground/queue.hpp>
-#include <tyr/datalog/lifted/bottom_up.hpp>
+#include <tyr/datalog/ground/solver.hpp>
+#include <tyr/datalog/lifted/solver.hpp>
 #include <tyr/datalog/lifted/policies/annotation.hpp>
 #include <tyr/datalog/policies/annotation.hpp>
 #include <tyr/datalog/policies/cost.hpp>
@@ -452,17 +452,12 @@ void bind_configuration(nb::module_& m, const char* prefix)
     }
 
     m.def(
-        "solve",
+        "compute_model",
         [](Context& context, ygg::ExecutionContext& execution_context)
         {
             execution_context.arena().execute(
                 [&]
-                {
-                    if constexpr (std::same_as<Kind, GroundTag>)
-                        solve_ground_queue(context);
-                    else
-                        solve_bottom_up(context);
-                });
+                [&] { compute_model(context); });
         },
         "context"_a,
         "execution_context"_a,

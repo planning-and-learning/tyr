@@ -102,7 +102,7 @@ def solve_program(
                 workspace.insert_fluent_binding(binding)
 
     execution = datalog.lifted.UnannotatedProgramExecutionContext(workspace)
-    datalog.lifted.solve(execution, execution_context)
+    datalog.lifted.compute_model(execution, execution_context)
     return workspace
 
 
@@ -125,7 +125,7 @@ def run_config(context: Context, config: ConfigName) -> list[PredicateAtoms]:
         program = planning.GroundTaskProgram(context.task.get_task())
         workspace = datalog.lifted.UnannotatedProgramWorkspace(program.get_datalog_program())
         execution = datalog.lifted.UnannotatedProgramExecutionContext(workspace)
-        datalog.lifted.solve(execution, context.execution_context)
+        datalog.lifted.compute_model(execution, context.execution_context)
         return atoms_by_predicate(workspace)
 
     raise RuntimeError(f"unknown bottom-up fixture configuration: {config}")

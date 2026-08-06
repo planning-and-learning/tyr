@@ -19,7 +19,7 @@
 #define TYR_SRC_PLANNING_LIFTED_HEURISTICS_RPG_HPP_
 
 #include "tyr/datalog/formatter.hpp"
-#include "tyr/datalog/lifted/bottom_up.hpp"
+#include "tyr/datalog/lifted/solver.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/policies/cost.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
@@ -264,7 +264,7 @@ protected:
         insert_numeric_variables_to_fact_set(state, *m_task->get_repository(), merge_context, m_workspace.facts.fact_sets);
 
         auto ctx = datalog::ProgramExecutionContext(m_workspace);
-        m_execution_context->arena().execute([&] { datalog::solve_bottom_up(ctx); });
+        m_execution_context->arena().execute([&] { datalog::compute_model(ctx); });
 
         return m_workspace.tp.check(
                    datalog::FactSets { m_definition->rpg_program.get_const_program_workspace().facts.fact_sets, m_workspace.facts.fact_sets }) ?

@@ -18,7 +18,7 @@
 #include "tyr/datalog/lifted/delta_kpkc.hpp"
 
 #include "planning/parser.hpp"
-#include "tyr/datalog/lifted/bottom_up.hpp"
+#include "tyr/datalog/lifted/solver.hpp"
 #include "tyr/datalog/lifted/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
@@ -180,7 +180,7 @@ TEST(TyrDatalogLiftedDeltaKPKC, InnerParallelismMatchesSequentialRPG)
         p::insert_numeric_variables_to_fact_set(initial_state.get_state_builder(), *task->get_repository(), merge_context, workspace.facts.fact_sets);
 
         auto context = d::ProgramExecutionContext(workspace);
-        execution_context->arena().execute([&] { d::solve_bottom_up(context); });
+        execution_context->arena().execute([&] { d::compute_model(context); });
     };
     solve(sequential, sequential_context);
     solve(parallel, parallel_context);

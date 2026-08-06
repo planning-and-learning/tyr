@@ -121,9 +121,9 @@ target_link_libraries(formalism_planning_invariants_synthesis PRIVATE Boost::jso
 add_gtest(formalism_unification "formalism/unification.cpp")
 
 add_gtest(datalog_cost_policy "datalog/cost_policy.cpp")
-add_gtest(datalog_ground_queue "datalog/ground/queue.cpp")
-add_gtest(datalog_lifted_bottom_up "datalog/lifted/bottom_up.cpp")
-target_link_libraries(datalog_lifted_bottom_up PRIVATE Boost::iostreams Boost::json)
+add_gtest(datalog_ground_solver "datalog/ground/solver.cpp")
+add_gtest(datalog_lifted_solver "datalog/lifted/solver.cpp")
+target_link_libraries(datalog_lifted_solver PRIVATE Boost::iostreams Boost::json)
 add_gtest(datalog_lifted_delta_kpkc "datalog/lifted/delta_kpkc.cpp")
 
 foreach(task_kind ground lifted)

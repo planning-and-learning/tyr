@@ -15,11 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_DATALOG_LIFTED_APPLICABILITY_LIFTED_HPP_
-#define TYR_DATALOG_LIFTED_APPLICABILITY_LIFTED_HPP_
+#ifndef TYR_DATALOG_APPLICABILITY_LIFTED_HPP_
+#define TYR_DATALOG_APPLICABILITY_LIFTED_HPP_
 
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/datalog/lifted/applicability_lifted_decl.hpp"
+#include "tyr/datalog/applicability_lifted_decl.hpp"
 #include "tyr/datalog/numeric_utils.hpp"
 #include "tyr/formalism/arithmetic_operator_utils.hpp"
 #include "tyr/formalism/boolean_operator_utils.hpp"

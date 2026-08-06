@@ -19,7 +19,7 @@
 
 #include "../metric.hpp"
 #include "tyr/datalog/formatter.hpp"
-#include "tyr/datalog/lifted/bottom_up.hpp"
+#include "tyr/datalog/lifted/solver.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
@@ -148,7 +148,7 @@ void SuccessorGenerator<LiftedTag>::Impl::compute_action_facts(const Node<Lifted
                           evaluator.workspace.facts.assignment_sets);
 
     auto ctx = d::ProgramExecutionContext(evaluator.workspace);
-    evaluator.execution_context->arena().execute([&] { d::solve_bottom_up(ctx); });
+    evaluator.execution_context->arena().execute([&] { d::compute_model(ctx); });
 }
 
 template<typename Callback>

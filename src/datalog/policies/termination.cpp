@@ -18,7 +18,7 @@
 #include "tyr/datalog/policies/termination.hpp"
 
 #include "tyr/datalog/ground/policies/numeric_support.hpp"
-#include "tyr/datalog/lifted/applicability.hpp"
+#include "tyr/datalog/applicability.hpp"
 #include "tyr/datalog/lifted/policies/numeric_support.hpp"
 
 #include <cassert>

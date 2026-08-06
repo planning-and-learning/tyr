@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/lifted/bottom_up.hpp"
+#include "tyr/datalog/lifted/solver.hpp"
 
 #include "planning/parser.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
@@ -221,7 +221,7 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
     const auto solve_workspace = [&](auto& workspace)
     {
         auto context = d::ProgramExecutionContext(workspace);
-        execution_context->arena().execute([&] { d::solve_bottom_up(context); });
+        execution_context->arena().execute([&] { d::compute_model(context); });
     };
 
     const auto solve_program = [&](const auto& program)
@@ -276,7 +276,7 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
                 auto program = p::GroundTaskProgram(task->get_task());
                 auto workspace = d::ProgramWorkspace<::tyr::LiftedTag>(program.get_datalog_program());
                 auto context = d::ProgramExecutionContext(workspace);
-                execution_context->arena().execute([&] { d::solve_bottom_up(context); });
+                execution_context->arena().execute([&] { d::compute_model(context); });
                 return collect_atoms_by_predicate(workspace);
             }
 
@@ -351,7 +351,7 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindi
     using Termination = d::NoTerminationPolicy<LiftedTag>;
     auto workspace = d::ProgramWorkspace<LiftedTag, OrPolicy, AndPolicy, Termination>(program);
     auto context = d::ProgramExecutionContext(workspace);
-    d::solve_bottom_up(context);
+    d::compute_model(context);
 
     EXPECT_EQ(workspace.workspace_repository.size(rule.get_index()), 1);
     EXPECT_EQ(workspace.workspace_repository.size(goal.get_index()), 1);

@@ -18,7 +18,7 @@
 #include "tyr/planning/lifted/task_grounder.hpp"
 
 #include "tyr/analysis/declarations.hpp"
-#include "tyr/datalog/lifted/bottom_up.hpp"
+#include "tyr/datalog/lifted/solver.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/policies/annotation.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
@@ -435,7 +435,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     auto workspace = d::ProgramWorkspace<LiftedTag>(ground_program.get_datalog_program());
     auto ctx = d::ProgramExecutionContext(workspace);
 
-    execution_context.arena().execute([&] { d::solve_bottom_up(ctx); });
+    execution_context.arena().execute([&] { d::compute_model(ctx); });
 
     auto predicate_bindings = std::vector<fd::PredicateBindingView<f::FluentTag>> {};
     for (const auto& set : workspace.facts.fact_sets.predicate.get_sets())

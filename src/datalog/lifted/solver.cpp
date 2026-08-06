@@ -15,13 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/lifted/bottom_up.hpp"
+#include "tyr/datalog/lifted/solver.hpp"
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/formatter.hpp"
-#include "tyr/datalog/lifted/applicability.hpp"
-#include "tyr/datalog/lifted/applicability_lifted.hpp"
+#include "tyr/datalog/applicability.hpp"
+#include "tyr/datalog/applicability_lifted.hpp"
 #include "tyr/datalog/lifted/assignment_sets.hpp"
 #include "tyr/datalog/lifted/consistency_graph.hpp"
 #include "tyr/datalog/lifted/delta_kpkc.hpp"
@@ -808,7 +808,7 @@ template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
          AndAnnotationPolicyConcept<LiftedTag> AndAP,
          TerminationPolicyConcept<LiftedTag> TP,
          RuleCostPolicyConcept<LiftedTag> CP>
-void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx)
+void compute_model_for_stratum(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx)
 {
     auto& out = ctx.out();
     auto& scheduler = out.scheduler();
@@ -863,7 +863,7 @@ template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
          AndAnnotationPolicyConcept<LiftedTag> AndAP,
          TerminationPolicyConcept<LiftedTag> TP,
          RuleCostPolicyConcept<LiftedTag> CP>
-void solve_bottom_up(ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>& ctx)
+void compute_model(ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>& ctx)
 {
     auto& out = ctx.out();
     const auto program_stopwatch = ygg::StopwatchScope(out.statistics().total_time);
@@ -871,50 +871,50 @@ void solve_bottom_up(ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>& ct
 
     for (auto stratum_ctx : ctx.get_stratum_execution_contexts())
     {
-        solve_bottom_up_for_stratum(stratum_ctx);
+        compute_model_for_stratum(stratum_ctx);
     }
 }
 
 template void
-solve_bottom_up(ProgramExecutionContext<LiftedTag, NoOrAnnotationPolicy<LiftedTag>, NoAndAnnotationPolicy<LiftedTag>, NoTerminationPolicy<LiftedTag>>& ctx);
-template void solve_bottom_up(
+compute_model(ProgramExecutionContext<LiftedTag, NoOrAnnotationPolicy<LiftedTag>, NoAndAnnotationPolicy<LiftedTag>, NoTerminationPolicy<LiftedTag>>& ctx);
+template void compute_model(
     ProgramExecutionContext<LiftedTag, OrAnnotationPolicy<LiftedTag>, AndAnnotationPolicy<LiftedTag, SumAggregation>, NoTerminationPolicy<LiftedTag>>& ctx);
-template void solve_bottom_up(ProgramExecutionContext<LiftedTag,
+template void compute_model(ProgramExecutionContext<LiftedTag,
                                                       OrAnnotationPolicy<LiftedTag>,
                                                       AndAnnotationPolicy<LiftedTag, SumAggregation>,
                                                       TerminationPolicy<LiftedTag, SumAggregation>>& ctx);
-template void solve_bottom_up(
+template void compute_model(
     ProgramExecutionContext<LiftedTag, OrAnnotationPolicy<LiftedTag>, AndAnnotationPolicy<LiftedTag, MaxAggregation>, NoTerminationPolicy<LiftedTag>>& ctx);
-template void solve_bottom_up(ProgramExecutionContext<LiftedTag,
+template void compute_model(ProgramExecutionContext<LiftedTag,
                                                       OrAnnotationPolicy<LiftedTag>,
                                                       AndAnnotationPolicy<LiftedTag, MaxAggregation>,
                                                       TerminationPolicy<LiftedTag, MaxAggregation>>& ctx);
-template void solve_bottom_up(ProgramExecutionContext<LiftedTag,
+template void compute_model(ProgramExecutionContext<LiftedTag,
                                                       NoOrAnnotationPolicy<LiftedTag>,
                                                       NoAndAnnotationPolicy<LiftedTag>,
                                                       NoTerminationPolicy<LiftedTag>,
                                                       RuleCostOverridePolicy<LiftedTag>>& ctx);
-template void solve_bottom_up(ProgramExecutionContext<LiftedTag,
+template void compute_model(ProgramExecutionContext<LiftedTag,
                                                       OrAnnotationPolicy<LiftedTag>,
                                                       AndAnnotationPolicy<LiftedTag, SumAggregation>,
                                                       NoTerminationPolicy<LiftedTag>,
                                                       RuleCostOverridePolicy<LiftedTag>>& ctx);
-template void solve_bottom_up(ProgramExecutionContext<LiftedTag,
+template void compute_model(ProgramExecutionContext<LiftedTag,
                                                       OrAnnotationPolicy<LiftedTag>,
                                                       AndAnnotationPolicy<LiftedTag, SumAggregation>,
                                                       TerminationPolicy<LiftedTag, SumAggregation>,
                                                       RuleCostOverridePolicy<LiftedTag>>& ctx);
-template void solve_bottom_up(ProgramExecutionContext<LiftedTag,
+template void compute_model(ProgramExecutionContext<LiftedTag,
                                                       OrAnnotationPolicy<LiftedTag>,
                                                       AndAnnotationPolicy<LiftedTag, MaxAggregation>,
                                                       NoTerminationPolicy<LiftedTag>,
                                                       RuleCostOverridePolicy<LiftedTag>>& ctx);
-template void solve_bottom_up(ProgramExecutionContext<LiftedTag,
+template void compute_model(ProgramExecutionContext<LiftedTag,
                                                       OrAnnotationPolicy<LiftedTag>,
                                                       AndAnnotationPolicy<LiftedTag, MaxAggregation>,
                                                       TerminationPolicy<LiftedTag, MaxAggregation>,
                                                       RuleCostOverridePolicy<LiftedTag>>& ctx);
-template void solve_bottom_up(ProgramExecutionContext<LiftedTag,
+template void compute_model(ProgramExecutionContext<LiftedTag,
                                                       OrAnnotationPolicy<LiftedTag>,
                                                       AchieverAndAnnotationPolicy<LiftedTag, MaxAggregation>,
                                                       TerminationPolicy<LiftedTag, MaxAggregation>,

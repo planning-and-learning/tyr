@@ -15,19 +15,24 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_DATALOG_LIFTED_APPLICABILITY_LIFTED_DECL_HPP_
-#define TYR_DATALOG_LIFTED_APPLICABILITY_LIFTED_DECL_HPP_
+#ifndef TYR_DATALOG_GROUND_SOLVER_HPP_
+#define TYR_DATALOG_GROUND_SOLVER_HPP_
 
-#include "tyr/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/datalog/ground/contexts/program.hpp"
+#include "tyr/datalog/ground/workspaces/program.hpp"
+#include "tyr/datalog/policies/annotation_concept.hpp"
+#include "tyr/datalog/policies/cost_concept.hpp"
+#include "tyr/datalog/policies/termination_concept.hpp"
 
 namespace tyr::datalog
 {
-struct ApplicabilityContext
-{
-    const FactSets& fact_sets;
-    ::tyr::formalism::datalog::GrounderContext& grounder;
-};
+
+template<OrAnnotationPolicyConcept<GroundTag> OrAP,
+         AndAnnotationPolicyConcept<GroundTag> AndAP,
+         TerminationPolicyConcept<GroundTag> TP,
+         RuleCostPolicyConcept<GroundTag> CP>
+void compute_model(ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>& ctx);
+
 }
 
 #endif

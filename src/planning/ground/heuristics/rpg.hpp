@@ -22,7 +22,7 @@
 #include "tyr/datalog/ground/contexts/program.hpp"
 #include "tyr/datalog/ground/policies/cost.hpp"
 #include "tyr/datalog/ground/policies/numeric_support.hpp"
-#include "tyr/datalog/ground/queue.hpp"
+#include "tyr/datalog/ground/solver.hpp"
 #include "tyr/datalog/ground/workspaces/program.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
 #include "tyr/datalog/policies/cost_concept.hpp"
@@ -174,7 +174,7 @@ protected:
         auto ctx = datalog::ProgramExecutionContext(m_workspace, m_queue_workspace);
         ctx.initialize();
 
-        m_execution_context->arena().execute([&] { datalog::solve_ground_queue(ctx); });
+        m_execution_context->arena().execute([&] { datalog::compute_model(ctx); });
 
         return m_workspace.tp.check(datalog::FactSets { m_workspace.const_workspace.facts.fact_sets, m_workspace.facts.fact_sets }) ?
                    self().compute_result(state) :

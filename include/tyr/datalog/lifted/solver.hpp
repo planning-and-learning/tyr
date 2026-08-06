@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_SOLVER_BOTTOM_UP_HPP_
-#define TYR_SOLVER_BOTTOM_UP_HPP_
+#ifndef TYR_DATALOG_LIFTED_SOLVER_HPP_
+#define TYR_DATALOG_LIFTED_SOLVER_HPP_
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
@@ -40,7 +40,7 @@ template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
          AndAnnotationPolicyConcept<LiftedTag> AndAP,
          TerminationPolicyConcept<LiftedTag> TP,
          RuleCostPolicyConcept<LiftedTag> CP>
-void solve_bottom_up(ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>& ctx);
+void compute_model(ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>& ctx);
 
 }
 

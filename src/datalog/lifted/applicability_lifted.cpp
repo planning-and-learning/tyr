@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/lifted/applicability_lifted.hpp"
+#include "tyr/datalog/applicability_lifted.hpp"
 
 #ifndef TYR_HEADER_INSTANTIATION
 

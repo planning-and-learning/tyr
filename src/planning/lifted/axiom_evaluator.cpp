@@ -19,7 +19,7 @@
 
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/formatter.hpp"
-#include "tyr/datalog/lifted/bottom_up.hpp"
+#include "tyr/datalog/lifted/solver.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/policies/annotation.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
@@ -170,7 +170,7 @@ void AxiomEvaluator<LiftedTag>::compute_extended_state(ygg::Builder<State<Lifted
 
     auto ctx = d::ProgramExecutionContext(evaluator.workspace);
 
-    evaluator.execution_context->arena().execute([&] { d::solve_bottom_up(ctx); });
+    evaluator.execution_context->arena().execute([&] { d::compute_model(ctx); });
 
     auto merge_planning_context = fp::MergePlanningContext { evaluator.workspace.planning_builder, *m_impl->definition->task->get_repository() };
 

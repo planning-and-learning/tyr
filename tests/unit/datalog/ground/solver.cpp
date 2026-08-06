@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/ground/queue.hpp"
+#include "tyr/datalog/ground/solver.hpp"
 
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
@@ -173,7 +173,7 @@ SolvedGroundQueue solve_default_state(GroundQueueFixture& fixture)
     auto queue_workspace = datalog::QueueWorkspace<GroundTag>(program);
     auto ctx = datalog::ProgramExecutionContext(workspace, queue_workspace);
     ctx.initialize(fixture.initial_fluent_atoms);
-    dq::solve_ground_queue(ctx);
+    dq::compute_model(ctx);
     return { binding_views(ctx), ctx.out().statistics() };
 }
 }
@@ -235,13 +235,13 @@ TEST(TyrDatalogGroundQueueTest, ReusesGroundProgramExecutionContext)
     auto ctx = datalog::ProgramExecutionContext(workspace, queue_workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
-    dq::solve_ground_queue(ctx);
+    dq::compute_model(ctx);
     const auto first_statistics = ctx.out().statistics();
     EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
     EXPECT_EQ(first_statistics.num_facts_derived, 2);
 
     ctx.initialize(fixture.initial_fluent_atoms);
-    dq::solve_ground_queue(ctx);
+    dq::compute_model(ctx);
     const auto second_statistics = ctx.out().statistics();
     EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
     EXPECT_EQ(second_statistics.num_facts_derived, 2);
@@ -346,7 +346,7 @@ TEST(TyrDatalogGroundQueueTest, DerivedFactOnlyDecrementsRulesWaitingOnThatFact)
     auto ctx = datalog::ProgramExecutionContext(workspace, queue_workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
-    dq::solve_ground_queue(ctx);
+    dq::compute_model(ctx);
 
     EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
     EXPECT_EQ(ctx.out().rule_states<f::PredicateTag>()[fixture.ground_rules[1].get_value()].unsatisfied_count, 0);
@@ -393,7 +393,7 @@ TEST(TyrDatalogGroundQueueTest, GroundUsedCostOverrideDoesNotCreateMetricEffectC
     auto ctx = datalog::ProgramExecutionContext(workspace, queue_workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
-    dq::solve_ground_queue(ctx);
+    dq::compute_model(ctx);
 
     EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
     const auto* annotation = ctx.out().and_annot().find(a.get_row());
@@ -426,7 +426,7 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationStopsAfterGoalDerived)
     auto ctx = datalog::ProgramExecutionContext(workspace, queue_workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
-    dq::solve_ground_queue(ctx);
+    dq::compute_model(ctx);
 
     EXPECT_EQ(binding_views(ctx), binding_views({ a }));
     EXPECT_EQ(ctx.out().statistics().num_rules_fired, 1);
@@ -455,7 +455,7 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyGroundRecordsFiredRule)
     auto ctx = datalog::ProgramExecutionContext(workspace, queue_workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
-    dq::solve_ground_queue(ctx);
+    dq::compute_model(ctx);
 
     EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
     const auto* achievers = ctx.out().and_ap().find_achievers(b);

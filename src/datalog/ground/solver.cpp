@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/ground/queue.hpp"
+#include "tyr/datalog/ground/solver.hpp"
 
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/ground/policies/numeric_support.hpp"
@@ -928,7 +928,7 @@ template<OrAnnotationPolicyConcept<GroundTag> OrAP,
          AndAnnotationPolicyConcept<GroundTag> AndAP,
          TerminationPolicyConcept<GroundTag> TP,
          RuleCostPolicyConcept<GroundTag> CP>
-void solve_ground_queue(ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>& ctx)
+void compute_model(ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>& ctx)
 {
     initialize_numeric_constraint_satisfaction(ctx);
     seed_queue(ctx);
@@ -948,62 +948,57 @@ void solve_ground_queue(ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>&
     }
 }
 
-void solve_ground_queue(ProgramExecutionContext<GroundTag>& ctx)
-{
-    solve_ground_queue<NoOrAnnotationPolicy<GroundTag>, NoAndAnnotationPolicy<GroundTag>, NoTerminationPolicy<GroundTag>, RuleCostPolicy<GroundTag>>(ctx);
-}
-
-template void solve_ground_queue(ProgramExecutionContext<GroundTag,
+template void compute_model(ProgramExecutionContext<GroundTag,
                                                          NoOrAnnotationPolicy<GroundTag>,
                                                          NoAndAnnotationPolicy<GroundTag>,
                                                          NoTerminationPolicy<GroundTag>,
                                                          RuleCostPolicy<GroundTag>>& ctx);
-template void solve_ground_queue(ProgramExecutionContext<GroundTag,
+template void compute_model(ProgramExecutionContext<GroundTag,
                                                          OrAnnotationPolicy<GroundTag>,
                                                          AndAnnotationPolicy<GroundTag, SumAggregation>,
                                                          NoTerminationPolicy<GroundTag>,
                                                          RuleCostPolicy<GroundTag>>& ctx);
-template void solve_ground_queue(ProgramExecutionContext<GroundTag,
+template void compute_model(ProgramExecutionContext<GroundTag,
                                                          OrAnnotationPolicy<GroundTag>,
                                                          AndAnnotationPolicy<GroundTag, SumAggregation>,
                                                          TerminationPolicy<GroundTag, SumAggregation>,
                                                          RuleCostPolicy<GroundTag>>& ctx);
-template void solve_ground_queue(ProgramExecutionContext<GroundTag,
+template void compute_model(ProgramExecutionContext<GroundTag,
                                                          OrAnnotationPolicy<GroundTag>,
                                                          AndAnnotationPolicy<GroundTag, MaxAggregation>,
                                                          NoTerminationPolicy<GroundTag>,
                                                          RuleCostPolicy<GroundTag>>& ctx);
-template void solve_ground_queue(ProgramExecutionContext<GroundTag,
+template void compute_model(ProgramExecutionContext<GroundTag,
                                                          OrAnnotationPolicy<GroundTag>,
                                                          AndAnnotationPolicy<GroundTag, MaxAggregation>,
                                                          TerminationPolicy<GroundTag, MaxAggregation>,
                                                          RuleCostPolicy<GroundTag>>& ctx);
-template void solve_ground_queue(ProgramExecutionContext<GroundTag,
+template void compute_model(ProgramExecutionContext<GroundTag,
                                                          OrAnnotationPolicy<GroundTag>,
                                                          AchieverAndAnnotationPolicy<GroundTag, MaxAggregation>,
                                                          TerminationPolicy<GroundTag, MaxAggregation>,
                                                          RuleCostPolicy<GroundTag>>& ctx);
-template void solve_ground_queue(ProgramExecutionContext<GroundTag,
+template void compute_model(ProgramExecutionContext<GroundTag,
                                                          OrAnnotationPolicy<GroundTag>,
                                                          AndAnnotationPolicy<GroundTag, SumAggregation>,
                                                          NoTerminationPolicy<GroundTag>,
                                                          RuleCostOverridePolicy<GroundTag>>& ctx);
-template void solve_ground_queue(ProgramExecutionContext<GroundTag,
+template void compute_model(ProgramExecutionContext<GroundTag,
                                                          OrAnnotationPolicy<GroundTag>,
                                                          AndAnnotationPolicy<GroundTag, SumAggregation>,
                                                          TerminationPolicy<GroundTag, SumAggregation>,
                                                          RuleCostOverridePolicy<GroundTag>>& ctx);
-template void solve_ground_queue(ProgramExecutionContext<GroundTag,
+template void compute_model(ProgramExecutionContext<GroundTag,
                                                          OrAnnotationPolicy<GroundTag>,
                                                          AndAnnotationPolicy<GroundTag, MaxAggregation>,
                                                          NoTerminationPolicy<GroundTag>,
                                                          RuleCostOverridePolicy<GroundTag>>& ctx);
-template void solve_ground_queue(ProgramExecutionContext<GroundTag,
+template void compute_model(ProgramExecutionContext<GroundTag,
                                                          OrAnnotationPolicy<GroundTag>,
                                                          AndAnnotationPolicy<GroundTag, MaxAggregation>,
                                                          TerminationPolicy<GroundTag, MaxAggregation>,
                                                          RuleCostOverridePolicy<GroundTag>>& ctx);
-template void solve_ground_queue(ProgramExecutionContext<GroundTag,
+template void compute_model(ProgramExecutionContext<GroundTag,
                                                          OrAnnotationPolicy<GroundTag>,
                                                          AchieverAndAnnotationPolicy<GroundTag, MaxAggregation>,
                                                          TerminationPolicy<GroundTag, MaxAggregation>,

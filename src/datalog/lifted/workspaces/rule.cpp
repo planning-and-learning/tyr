@@ -17,7 +17,7 @@
 
 #include "tyr/datalog/lifted/workspaces/rule.hpp"
 
-#include "tyr/datalog/lifted/applicability.hpp"
+#include "tyr/datalog/applicability.hpp"
 #include "tyr/datalog/lifted/assignment_sets.hpp"
 #include "tyr/datalog/numeric_utils.hpp"
 #include "tyr/formalism/datalog/builder.hpp"

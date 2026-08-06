@@ -92,7 +92,7 @@ add_library(
     datalog/lifted/applicability.cpp
     datalog/lifted/applicability_lifted.cpp
     datalog/lifted/assignment_sets.cpp
-    datalog/lifted/bottom_up.cpp
+    datalog/lifted/solver.cpp
     datalog/lifted/consistency_graph.cpp
     datalog/lifted/delta_kpkc_graph.cpp
     datalog/lifted/delta_kpkc.cpp
@@ -100,7 +100,7 @@ add_library(
     datalog/ground/programs/program.cpp
     datalog/ground/workspaces/facts.cpp
     datalog/ground/workspaces/program.cpp
-    datalog/ground/queue.cpp
+    datalog/ground/solver.cpp
     datalog/lifted/rule_scheduler.cpp
 
     ${TYR_STATE_STORAGE_SRC_FILES}
