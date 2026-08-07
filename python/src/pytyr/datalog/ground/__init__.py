@@ -42,5 +42,5 @@ from ..._pytyr.datalog.ground import (
     SumProgramWorkspace,
     UnannotatedProgramExecutionContext,
     UnannotatedProgramWorkspace,
-    solve,
+    compute_model,
 )

@@ -35,14 +35,14 @@ namespace tyr::planning
 {
 
 struct FFRPGHeuristic<GroundTag>::Impl :
-    detail::RPGEvaluator<GroundTag,
-                         Impl,
+    detail::RPGEvaluator<Impl,
+                         GroundTag,
                          datalog::OrAnnotationPolicy<GroundTag>,
                          datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>,
                          datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>>
 {
-    using Base = detail::RPGEvaluator<GroundTag,
-                                      Impl,
+    using Base = detail::RPGEvaluator<Impl,
+                                      GroundTag,
                                       datalog::OrAnnotationPolicy<GroundTag>,
                                       datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>,
                                       datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>>;

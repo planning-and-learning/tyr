@@ -570,7 +570,7 @@
             },
             "hlmcut_general": {
                 "num_accepted_successors": 123,
-                "num_expanded": 91,
+                "num_expanded": 99,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -725,9 +725,9 @@
                 }
             },
             "hlmcut_unit": {
-                "num_accepted_successors": 13,
-                "num_expanded": 4,
-                "num_deadends": 5,
+                "num_accepted_successors": 15,
+                "num_expanded": 5,
+                "num_deadends": 6,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 4,
@@ -741,9 +741,9 @@
                 }
             },
             "hlmcut_general": {
-                "num_accepted_successors": 13,
-                "num_expanded": 4,
-                "num_deadends": 5,
+                "num_accepted_successors": 15,
+                "num_expanded": 5,
+                "num_deadends": 6,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 4,
@@ -890,8 +890,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_accepted_successors": 8,
-                "num_expanded": 4,
+                "num_accepted_successors": 9,
+                "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -906,8 +906,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_accepted_successors": 8,
-                "num_expanded": 4,
+                "num_accepted_successors": 9,
+                "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1056,7 +1056,7 @@
             },
             "hlmcut_unit": {
                 "num_accepted_successors": 6,
-                "num_expanded": 5,
+                "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1072,7 +1072,7 @@
             },
             "hlmcut_general": {
                 "num_accepted_successors": 6,
-                "num_expanded": 5,
+                "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1425,8 +1425,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_accepted_successors": 20,
-                "num_expanded": 16,
+                "num_accepted_successors": 22,
+                "num_expanded": 18,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1446,8 +1446,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_accepted_successors": 20,
-                "num_expanded": 16,
+                "num_accepted_successors": 22,
+                "num_expanded": 18,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1632,13 +1632,13 @@
                     "cost": 7,
                     "length": 7,
                     "actions": [
-                        "(board car2 loc3)",
-                        "(sail loc3 loc1)",
-                        "(debark car2 loc1)",
-                        "(sail loc1 loc3)",
                         "(board car1 loc3)",
                         "(sail loc3 loc1)",
-                        "(debark car1 loc1)"
+                        "(debark car1 loc1)",
+                        "(sail loc1 loc3)",
+                        "(board car2 loc3)",
+                        "(sail loc3 loc1)",
+                        "(debark car2 loc1)"
                     ]
                 }
             },
@@ -1651,13 +1651,13 @@
                     "cost": 7,
                     "length": 7,
                     "actions": [
-                        "(board car2 loc3)",
-                        "(sail loc3 loc1)",
-                        "(debark car2 loc1)",
-                        "(sail loc1 loc3)",
                         "(board car1 loc3)",
                         "(sail loc3 loc1)",
-                        "(debark car1 loc1)"
+                        "(debark car1 loc1)",
+                        "(sail loc1 loc3)",
+                        "(board car2 loc3)",
+                        "(sail loc3 loc1)",
+                        "(debark car2 loc1)"
                     ]
                 }
             }
@@ -2453,16 +2453,16 @@
                 }
             },
             "hlmcut_unit": {
-                "num_accepted_successors": 11,
-                "num_expanded": 6,
+                "num_accepted_successors": 13,
+                "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 5,
                     "length": 5,
                     "actions": [
-                        "(board f0 p1)",
                         "(board f0 p0)",
+                        "(board f0 p1)",
                         "(up f0 f1)",
                         "(depart f1 p0)",
                         "(depart f1 p1)"
@@ -2470,16 +2470,16 @@
                 }
             },
             "hlmcut_general": {
-                "num_accepted_successors": 11,
-                "num_expanded": 6,
+                "num_accepted_successors": 13,
+                "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 5,
                     "length": 5,
                     "actions": [
-                        "(board f0 p1)",
                         "(board f0 p0)",
+                        "(board f0 p1)",
                         "(up f0 f1)",
                         "(depart f1 p0)",
                         "(depart f1 p1)"
@@ -3872,8 +3872,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_accepted_successors": 6,
-                "num_expanded": 4,
+                "num_accepted_successors": 7,
+                "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3888,8 +3888,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_accepted_successors": 6,
-                "num_expanded": 4,
+                "num_accepted_successors": 7,
+                "num_expanded": 5,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4226,8 +4226,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_accepted_successors": 28,
-                "num_expanded": 12,
+                "num_accepted_successors": 58,
+                "num_expanded": 26,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4245,8 +4245,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_accepted_successors": 28,
-                "num_expanded": 12,
+                "num_accepted_successors": 58,
+                "num_expanded": 26,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4732,8 +4732,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_accepted_successors": 46,
-                "num_expanded": 17,
+                "num_accepted_successors": 81,
+                "num_expanded": 35,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4943,8 +4943,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_accepted_successors": 19,
-                "num_expanded": 12,
+                "num_accepted_successors": 31,
+                "num_expanded": 22,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4963,8 +4963,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_accepted_successors": 19,
-                "num_expanded": 12,
+                "num_accepted_successors": 31,
+                "num_expanded": 22,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {

@@ -28,6 +28,7 @@
 #include "tyr/datalog/policies/termination_concept.hpp"
 #include "tyr/datalog/workspaces/program.hpp"
 #include "tyr/formalism/datalog/views.hpp"
+#include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/programs/rpg.hpp"
@@ -83,8 +84,41 @@ struct RPGDefinition
 template<TaskKind Kind>
 struct RPGPolicy;
 
-template<TaskKind Kind,
-         typename Derived,
+template<typename Workspace, typename TranslateAtom>
+void materialize_goal(Workspace& workspace,
+                      ::tyr::formalism::planning::GroundConjunctiveConditionView source_goal,
+                      ::tyr::formalism::planning::MergeDatalogContext& merge_context,
+                      TranslateAtom&& translate_atom)
+{
+    namespace fd = ::tyr::formalism::datalog;
+    auto condition_ptr = merge_context.builder.template get_builder<fd::GroundConjunctiveCondition>();
+    auto& condition = *condition_ptr;
+    condition.clear();
+
+    for (const auto fact : source_goal.template get_facts<::tyr::formalism::PositiveTag>())
+    {
+        const auto atom = fact.get_atom();
+        if (!atom)
+            continue;
+
+        auto literal_ptr = merge_context.builder.template get_builder<fd::GroundLiteral<::tyr::formalism::FluentTag>>();
+        auto& literal = *literal_ptr;
+        literal.clear();
+        literal.atom = translate_atom(*atom).get_index();
+        literal.polarity = true;
+        fd::canonicalize(literal);
+        condition.fluent_literals.push_back(merge_context.destination.get_or_create(literal).first.get_index());
+    }
+
+    for (const auto numeric_constraint : source_goal.get_numeric_constraints())
+        condition.numeric_constraints.push_back(::tyr::formalism::planning::merge_p2d(numeric_constraint, merge_context));
+
+    fd::canonicalize(condition);
+    workspace.tp.set_goals(merge_context.destination.get_or_create(condition).first);
+}
+
+template<typename Derived,
+         TaskKind Kind,
          datalog::OrAnnotationPolicyConcept<Kind> OrAP,
          datalog::AndAnnotationPolicyConcept<Kind> AndAP,
          datalog::TerminationPolicyConcept<Kind> TP,

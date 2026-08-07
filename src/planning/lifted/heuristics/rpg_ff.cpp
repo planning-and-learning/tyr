@@ -34,14 +34,14 @@ namespace f = tyr::formalism;
 namespace tyr::planning
 {
 struct FFRPGHeuristic<LiftedTag>::Impl :
-    detail::RPGEvaluator<LiftedTag,
-                         Impl,
+    detail::RPGEvaluator<Impl,
+                         LiftedTag,
                          datalog::OrAnnotationPolicy<LiftedTag>,
                          datalog::AndAnnotationPolicy<LiftedTag, datalog::SumAggregation>,
                          datalog::TerminationPolicy<LiftedTag, datalog::SumAggregation>>
 {
-    using Base = detail::RPGEvaluator<LiftedTag,
-                                      Impl,
+    using Base = detail::RPGEvaluator<Impl,
+                                      LiftedTag,
                                       datalog::OrAnnotationPolicy<LiftedTag>,
                                       datalog::AndAnnotationPolicy<LiftedTag, datalog::SumAggregation>,
                                       datalog::TerminationPolicy<LiftedTag, datalog::SumAggregation>>;

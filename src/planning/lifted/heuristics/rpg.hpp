@@ -56,7 +56,12 @@ struct RPGPolicy<LiftedTag>
     begin_state_evaluation(const Definition& definition, Workspace& workspace, ::tyr::formalism::planning::GroundConjunctiveConditionView source_goal)
     {
         workspace.reset_evaluation();
-        materialize_goal(definition, workspace, source_goal);
+        auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { workspace.datalog_builder, workspace.workspace_repository };
+        const auto& p2d = definition.rpg_program.get_translation_context().p2d.fluent_to_fluent_predicate;
+        materialize_goal(workspace,
+                         source_goal,
+                         merge_context,
+                         [&](const auto atom) { return ::tyr::formalism::planning::merge_p2d(atom, p2d, merge_context).first; });
     }
 
     template<typename Definition, typename Workspace>
@@ -141,28 +146,6 @@ struct RPGPolicy<LiftedTag>
         collect_worker_statistics.template operator()<::tyr::formalism::PredicateTag>();
         collect_worker_statistics.template operator()<::tyr::formalism::FunctionTag>();
         fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_worker_statistics(rule_worker_statistics));
-    }
-
-private:
-    template<typename Definition, typename Workspace>
-    static void materialize_goal(const Definition& definition, Workspace& workspace, ::tyr::formalism::planning::GroundConjunctiveConditionView source_goal)
-    {
-        namespace fd = ::tyr::formalism::datalog;
-        auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { workspace.datalog_builder, workspace.workspace_repository };
-        auto condition_ptr = workspace.datalog_builder.template get_builder<fd::GroundConjunctiveCondition>();
-        auto& condition = *condition_ptr;
-        condition.clear();
-
-        const auto& p2d = definition.rpg_program.get_translation_context().p2d;
-        for (const auto fact : source_goal.template get_facts<::tyr::formalism::PositiveTag>())
-            if (const auto literal = ::tyr::formalism::planning::merge_p2d(fact, true, p2d.fluent_to_fluent_predicate, merge_context))
-                condition.fluent_literals.push_back(literal->get_index());
-
-        for (const auto numeric_constraint : source_goal.get_numeric_constraints())
-            condition.numeric_constraints.push_back(::tyr::formalism::planning::merge_p2d(numeric_constraint, merge_context));
-
-        fd::canonicalize(condition);
-        workspace.tp.set_goals(workspace.workspace_repository.get_or_create(condition).first);
     }
 };
 

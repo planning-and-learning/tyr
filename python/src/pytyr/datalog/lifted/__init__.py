@@ -41,5 +41,5 @@ from ..._pytyr.datalog.lifted import (
     UnannotatedOverrideProgramWorkspace,
     UnannotatedProgramExecutionContext,
     UnannotatedProgramWorkspace,
-    solve,
+    compute_model,
 )

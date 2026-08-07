@@ -95,15 +95,15 @@ struct LiftedLMCutNumericEdge : ygg::comparison::Mixin<LiftedLMCutNumericEdge>
 }
 
 struct LMCutHeuristic<LiftedTag>::Impl :
-    detail::RPGEvaluator<LiftedTag,
-                         Impl,
+    detail::RPGEvaluator<Impl,
+                         LiftedTag,
                          datalog::OrAnnotationPolicy<LiftedTag>,
                          datalog::AchieverAndAnnotationPolicy<LiftedTag, datalog::MaxAggregation>,
                          datalog::TerminationPolicy<LiftedTag, datalog::MaxAggregation>,
                          datalog::RuleCostOverridePolicy<LiftedTag>>
 {
-    using Base = detail::RPGEvaluator<LiftedTag,
-                                      Impl,
+    using Base = detail::RPGEvaluator<Impl,
+                                      LiftedTag,
                                       datalog::OrAnnotationPolicy<LiftedTag>,
                                       datalog::AchieverAndAnnotationPolicy<LiftedTag, datalog::MaxAggregation>,
                                       datalog::TerminationPolicy<LiftedTag, datalog::MaxAggregation>,

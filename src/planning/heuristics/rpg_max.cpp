@@ -33,14 +33,14 @@ namespace tyr::planning
 
 template<TaskKind Kind>
 struct MaxRPGHeuristic<Kind>::Impl :
-    detail::RPGEvaluator<Kind,
-                         Impl,
+    detail::RPGEvaluator<Impl,
+                         Kind,
                          datalog::OrAnnotationPolicy<Kind>,
                          datalog::AndAnnotationPolicy<Kind, datalog::MaxAggregation>,
                          datalog::TerminationPolicy<Kind, datalog::MaxAggregation>>
 {
-    using Base = detail::RPGEvaluator<Kind,
-                                      Impl,
+    using Base = detail::RPGEvaluator<Impl,
+                                      Kind,
                                       datalog::OrAnnotationPolicy<Kind>,
                                       datalog::AndAnnotationPolicy<Kind, datalog::MaxAggregation>,
                                       datalog::TerminationPolicy<Kind, datalog::MaxAggregation>>;

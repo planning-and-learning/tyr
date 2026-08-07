@@ -45,30 +45,8 @@ struct RPGPolicy<GroundTag>
         auto builder = fd::Builder {};
         auto& repository = definition.rpg_program.get_datalog_program().get_program_repository();
         auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { builder, repository };
-        auto condition_ptr = builder.get_builder<fd::GroundConjunctiveCondition>();
-        auto& condition = *condition_ptr;
-        condition.clear();
-
         const auto& p2d = definition.rpg_program.get_translation_context().p2d.fluent_to_fluent_atom;
-        for (const auto fact : source_goal.template get_facts<::tyr::formalism::PositiveTag>())
-        {
-            if (const auto atom = fact.get_atom())
-            {
-                auto literal_ptr = builder.get_builder<fd::GroundLiteral<::tyr::formalism::FluentTag>>();
-                auto& literal = *literal_ptr;
-                literal.clear();
-                literal.atom = p2d.at(*atom).get_index();
-                literal.polarity = true;
-                fd::canonicalize(literal);
-                condition.fluent_literals.push_back(repository.get_or_create(literal).first.get_index());
-            }
-        }
-
-        for (const auto numeric_constraint : source_goal.get_numeric_constraints())
-            condition.numeric_constraints.push_back(::tyr::formalism::planning::merge_p2d(numeric_constraint, merge_context));
-
-        fd::canonicalize(condition);
-        workspace.tp.set_goals(repository.get_or_create(condition).first);
+        materialize_goal(workspace, source_goal, merge_context, [&](const auto atom) { return p2d.at(atom); });
     }
 
     template<typename Definition, typename Workspace>

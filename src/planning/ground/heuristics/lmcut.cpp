@@ -83,15 +83,15 @@ struct GroundLMCutNumericEdge : ygg::comparison::Mixin<GroundLMCutNumericEdge>
 };
 
 struct LMCutHeuristic<GroundTag>::Impl :
-    detail::RPGEvaluator<GroundTag,
-                         Impl,
+    detail::RPGEvaluator<Impl,
+                         GroundTag,
                          datalog::OrAnnotationPolicy<GroundTag>,
                          datalog::AchieverAndAnnotationPolicy<GroundTag, datalog::MaxAggregation>,
                          datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>,
                          datalog::RuleCostOverridePolicy<GroundTag>>
 {
-    using Base = detail::RPGEvaluator<GroundTag,
-                                      Impl,
+    using Base = detail::RPGEvaluator<Impl,
+                                      GroundTag,
                                       datalog::OrAnnotationPolicy<GroundTag>,
                                       datalog::AchieverAndAnnotationPolicy<GroundTag, datalog::MaxAggregation>,
                                       datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>,

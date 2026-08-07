@@ -707,8 +707,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_accepted_successors": 77,
-                "num_expanded": 38,
+                "num_accepted_successors": 79,
+                "num_expanded": 40,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1029,7 +1029,7 @@
             },
             "hlmcut_unit": {
                 "num_accepted_successors": 10,
-                "num_expanded": 6,
+                "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1045,7 +1045,7 @@
             },
             "hlmcut_general": {
                 "num_accepted_successors": 10,
-                "num_expanded": 6,
+                "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1563,8 +1563,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_accepted_successors": 19,
-                "num_expanded": 13,
+                "num_accepted_successors": 21,
+                "num_expanded": 16,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1584,8 +1584,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_accepted_successors": 19,
-                "num_expanded": 13,
+                "num_accepted_successors": 21,
+                "num_expanded": 16,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1762,8 +1762,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_accepted_successors": 10,
-                "num_expanded": 9,
+                "num_accepted_successors": 12,
+                "num_expanded": 11,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1781,8 +1781,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_accepted_successors": 10,
-                "num_expanded": 9,
+                "num_accepted_successors": 12,
+                "num_expanded": 11,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4014,8 +4014,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_accepted_successors": 7,
-                "num_expanded": 6,
+                "num_accepted_successors": 8,
+                "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4030,8 +4030,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_accepted_successors": 7,
-                "num_expanded": 6,
+                "num_accepted_successors": 8,
+                "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4368,8 +4368,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_accepted_successors": 29,
-                "num_expanded": 13,
+                "num_accepted_successors": 72,
+                "num_expanded": 31,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4387,8 +4387,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_accepted_successors": 29,
-                "num_expanded": 13,
+                "num_accepted_successors": 72,
+                "num_expanded": 31,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4876,8 +4876,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_accepted_successors": 36,
-                "num_expanded": 14,
+                "num_accepted_successors": 85,
+                "num_expanded": 41,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5087,8 +5087,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_accepted_successors": 27,
-                "num_expanded": 18,
+                "num_accepted_successors": 44,
+                "num_expanded": 37,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5107,8 +5107,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_accepted_successors": 27,
-                "num_expanded": 18,
+                "num_accepted_successors": 44,
+                "num_expanded": 37,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5313,22 +5313,20 @@
                 }
             },
             "hlmcut_unit": {
-                "num_accepted_successors": 379,
-                "num_expanded": 86,
+                "num_accepted_successors": 364,
+                "num_expanded": 77,
                 "num_deadends": 1,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 14,
-                    "length": 14,
+                    "cost": 12,
+                    "length": 12,
                     "actions": [
                         "(do-grind p2 grinder0 verysmooth natural colourfragments untreated)",
                         "(do-glaze p2 glazer0 mauve)",
                         "(do-saw-medium b1 p1 saw0 cherry rough s3 s2 s1)",
                         "(do-glaze p1 glazer0 green)",
                         "(do-saw-medium b0 p0 saw0 beech rough s3 s2 s1)",
-                        "(do-glaze p0 glazer0 green)",
-                        "(load-highspeed-saw b1 highspeed-saw0)",
-                        "(do-plane p0 planer0 rough green glazed)",
+                        "(do-plane p0 planer0 rough natural untreated)",
                         "(do-immersion-varnish p0 immersion-varnisher0 mauve smooth)",
                         "(do-plane p1 planer0 rough green glazed)",
                         "(do-glaze p1 glazer0 green)",
@@ -5339,25 +5337,28 @@
                 }
             },
             "hlmcut_general": {
-                "num_accepted_successors": 455,
-                "num_expanded": 79,
-                "num_deadends": 3,
+                "num_accepted_successors": 231,
+                "num_expanded": 43,
+                "num_deadends": 2,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 210,
-                    "length": 12,
+                    "cost": 280,
+                    "length": 15,
                     "actions": [
-                        "(load-highspeed-saw b1 highspeed-saw0)",
-                        "(do-saw-medium b0 p0 saw0 beech rough s3 s2 s1)",
-                        "(do-plane p0 planer0 rough natural untreated)",
-                        "(cut-board-medium b1 p1 highspeed-saw0 cherry rough s3 s2 s1)",
-                        "(do-grind p0 grinder0 smooth natural untreated untreated)",
-                        "(unload-highspeed-saw b1 highspeed-saw0)",
-                        "(do-plane p1 planer0 rough natural untreated)",
                         "(do-plane p2 planer0 verysmooth natural colourfragments)",
-                        "(do-glaze p1 glazer0 green)",
-                        "(do-grind p2 grinder0 smooth natural untreated untreated)",
                         "(do-glaze p2 glazer0 mauve)",
+                        "(load-highspeed-saw b1 highspeed-saw0)",
+                        "(cut-board-medium b1 p1 highspeed-saw0 cherry rough s3 s2 s1)",
+                        "(do-glaze p1 glazer0 green)",
+                        "(do-saw-medium b0 p0 saw0 beech rough s3 s2 s1)",
+                        "(do-plane p1 planer0 rough green glazed)",
+                        "(do-glaze p1 glazer0 green)",
+                        "(do-plane p0 planer0 rough natural untreated)",
+                        "(do-immersion-varnish p0 immersion-varnisher0 mauve smooth)",
+                        "(do-grind p0 grinder0 smooth mauve varnished colourfragments)",
+                        "(unload-highspeed-saw b1 highspeed-saw0)",
+                        "(load-highspeed-saw b0 highspeed-saw0)",
+                        "(do-grind p0 grinder0 verysmooth natural colourfragments untreated)",
                         "(do-immersion-varnish p0 immersion-varnisher0 mauve verysmooth)"
                     ]
                 }
