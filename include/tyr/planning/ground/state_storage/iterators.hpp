@@ -15,20 +15,18 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_GROUND_STATE_ITERATORS_HPP_
-#define TYR_PLANNING_GROUND_STATE_ITERATORS_HPP_
+#ifndef TYR_PLANNING_GROUND_STATE_STORAGE_ITERATORS_HPP_
+#define TYR_PLANNING_GROUND_STATE_STORAGE_ITERATORS_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/indices.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/state_iterators.hpp"
+#include "tyr/planning/ground/state_storage.hpp"
+#include "tyr/planning/state_storage/iterators.hpp"
 
-#include <boost/dynamic_bitset.hpp>
 #include <cassert>
-#include <cmath>
+#include <cstddef>
 #include <iterator>
-#include <utility>
-#include <vector>
 #include <yggdrasil/core/types.hpp>
 
 namespace tyr::planning
@@ -48,25 +46,25 @@ public:
     using iterator_concept = std::input_iterator_tag;
     using pointer = void;
 
-    FDRFactIterator() noexcept : m_data(nullptr), m_i(0) {}
-    FDRFactIterator(const std::vector<ygg::uint_t>& data, bool begin) noexcept : m_data(&data), m_i(begin ? 0 : m_data->size())
+    FDRFactIterator() noexcept : m_storage(nullptr), m_i(0) {}
+    FDRFactIterator(const FactUnpackedStorage<GroundTag>& storage, bool begin) noexcept : m_storage(&storage), m_i(begin ? 0 : m_storage->values.size())
     {
         if (begin)
-            while (m_i < m_data->size() && ::tyr::formalism::planning::FDRValue((*m_data)[m_i]).is_none())
+            while (m_i < m_storage->values.size() && ::tyr::formalism::planning::FDRValue(m_storage->values[m_i]).is_none())
                 ++m_i;
     }
 
     value_type operator*() const noexcept
     {
-        assert(m_data);
+        assert(m_storage);
         return ygg::Data<::tyr::formalism::planning::FDRFact<Tag>> { ygg::Index<::tyr::formalism::planning::FDRVariable<Tag>> { static_cast<ygg::uint_t>(m_i) },
-                                                                     ::tyr::formalism::planning::FDRValue((*m_data)[m_i]) };
+                                                                     ::tyr::formalism::planning::FDRValue(m_storage->values[m_i]) };
     }
 
     FDRFactIterator& operator++() noexcept
     {
         ++m_i;
-        while (m_i < m_data->size() && ::tyr::formalism::planning::FDRValue((*m_data)[m_i]).is_none())
+        while (m_i < m_storage->values.size() && ::tyr::formalism::planning::FDRValue(m_storage->values[m_i]).is_none())
             ++m_i;
         return *this;
     }
@@ -77,11 +75,11 @@ public:
         return tmp;
     }
 
-    friend bool operator==(const FDRFactIterator& lhs, const FDRFactIterator& rhs) noexcept { return lhs.m_data == rhs.m_data && lhs.m_i == rhs.m_i; }
+    friend bool operator==(const FDRFactIterator& lhs, const FDRFactIterator& rhs) noexcept { return lhs.m_storage == rhs.m_storage && lhs.m_i == rhs.m_i; }
     friend bool operator!=(const FDRFactIterator& lhs, const FDRFactIterator& rhs) noexcept { return !(lhs == rhs); }
 
 private:
-    const std::vector<ygg::uint_t>* m_data;
+    const FactUnpackedStorage<GroundTag>* m_storage { nullptr };
     size_t m_i = 0;
 };
 
@@ -90,13 +88,13 @@ class FDRFactRange<GroundTag, Tag> : public std::ranges::view_interface<FDRFactR
 {
 public:
     FDRFactRange() = default;
-    explicit FDRFactRange(const std::vector<ygg::uint_t>& values) : m_data(&values) {}
+    explicit FDRFactRange(const FactUnpackedStorage<GroundTag>& storage) : m_storage(&storage) {}
 
-    auto begin() const { return FDRFactIterator<GroundTag, Tag>(*m_data, true); }
-    auto end() const { return FDRFactIterator<GroundTag, Tag>(*m_data, false); }
+    auto begin() const { return FDRFactIterator<GroundTag, Tag>(*m_storage, true); }
+    auto end() const { return FDRFactIterator<GroundTag, Tag>(*m_storage, false); }
 
 private:
-    const std::vector<ygg::uint_t>* m_data;
+    const FactUnpackedStorage<GroundTag>* m_storage { nullptr };
 };
 }
 

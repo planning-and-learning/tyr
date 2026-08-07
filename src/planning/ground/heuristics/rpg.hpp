@@ -26,9 +26,7 @@
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/planning/ground/programs/rpg.hpp"
 #include "tyr/planning/ground/state_builder.hpp"
-#include "tyr/planning/ground/state_iterators.hpp"
 #include "tyr/planning/ground/task.hpp"
-#include "tyr/planning/state_iterators.hpp"
 
 #include <optional>
 
@@ -70,28 +68,6 @@ struct RPGPolicy<GroundTag>
     static void begin_state_evaluation(const Definition&, Workspace& workspace, ::tyr::formalism::planning::GroundConjunctiveConditionView)
     {
         workspace.clear_costs();
-    }
-
-    template<typename Definition, typename Workspace>
-    static void insert_state_facts(const Definition& definition, Workspace& workspace, const ygg::Builder<State<GroundTag>>& state)
-    {
-        const auto& p2d = definition.rpg_program.get_translation_context().p2d;
-        const auto& repository = *definition.task->get_repository();
-        const auto fluent_facts = FDRFactRange<GroundTag, ::tyr::formalism::FluentTag>(state.template get_atoms<::tyr::formalism::FluentTag>().values);
-        for (const auto fact : fluent_facts)
-        {
-            const auto fact_view = ygg::make_view(fact, repository);
-            if (const auto atom = fact_view.get_atom())
-                workspace.facts.fact_sets.predicate.insert(p2d.fluent_to_fluent_atom.at(*atom));
-        }
-
-        const auto fluent_fterm_values = FunctionTermValueRange<::tyr::formalism::FluentTag>(state.get_numeric_variables().values);
-        for (const auto& [fterm_index, value] : fluent_fterm_values)
-        {
-            const auto fterm = ygg::make_view(fterm_index, repository);
-            if (const auto it = p2d.fluent_to_fluent_fterm.find(fterm); it != p2d.fluent_to_fluent_fterm.end())
-                workspace.facts.fact_sets.function.insert(it->second, value);
-        }
     }
 
     template<::tyr::formalism::RelationKind R, typename Definition, typename Workspace>

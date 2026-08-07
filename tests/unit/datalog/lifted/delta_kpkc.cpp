@@ -18,10 +18,9 @@
 #include "tyr/datalog/lifted/delta_kpkc.hpp"
 
 #include "planning/parser.hpp"
-#include "tyr/datalog/lifted/solver.hpp"
 #include "tyr/datalog/lifted/policies/annotation.hpp"
+#include "tyr/datalog/lifted/solver.hpp"
 #include "tyr/datalog/policies/termination.hpp"
-#include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/planning/factory.hpp"
 #include "tyr/planning/heuristics/rpg_ff.hpp"
 #include "tyr/planning/lifted/programs/action.hpp"
@@ -171,13 +170,8 @@ TEST(TyrDatalogLiftedDeltaKPKC, InnerParallelismMatchesSequentialRPG)
     {
         workspace.facts.reset();
         workspace.tp.set_goals(program.get_goal());
-        auto merge_context = f::planning::MergeDatalogContext { workspace.datalog_builder, workspace.workspace_repository };
-        p::insert_fluent_atoms_to_fact_set(initial_state.get_state_builder(),
-                                           *task->get_repository(),
-                                           program.get_translation_context().p2d.fluent_to_fluent_predicate,
-                                           merge_context,
-                                           workspace.facts.fact_sets);
-        p::insert_numeric_variables_to_fact_set(initial_state.get_state_builder(), *task->get_repository(), merge_context, workspace.facts.fact_sets);
+        p::insert_fluent_atoms_to_fact_set(initial_state.get_state_builder(), *task->get_repository(), program.get_translation_context().p2d, workspace);
+        p::insert_numeric_variables_to_fact_set(initial_state.get_state_builder(), *task->get_repository(), program.get_translation_context().p2d, workspace);
 
         auto context = d::ProgramExecutionContext(workspace);
         execution_context->arena().execute([&] { d::compute_model(context); });

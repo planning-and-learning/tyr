@@ -5243,16 +5243,16 @@
                 }
             },
             "hlmcut_unit": {
-                "num_accepted_successors": 118,
-                "num_expanded": 34,
+                "num_accepted_successors": 159,
+                "num_expanded": 53,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 5,
                     "length": 5,
                     "actions": [
-                        "(increase_rate c2)",
                         "(increase_rate c1)",
+                        "(increase_rate c2)",
                         "(increase_rate c2)",
                         "(increment c1)",
                         "(increment c2)"
@@ -5840,8 +5840,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_accepted_successors": 186,
-                "num_expanded": 80,
+                "num_accepted_successors": 344,
+                "num_expanded": 163,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5849,8 +5849,8 @@
                     "length": 7,
                     "actions": [
                         "(drive truck0 depot0 market3)",
-                        "(buy-all truck0 goods1 market3)",
                         "(buy-all truck0 goods0 market3)",
+                        "(buy-all truck0 goods1 market3)",
                         "(drive truck0 market3 market4)",
                         "(buy-allneeded truck0 goods0 market4)",
                         "(buy-allneeded truck0 goods1 market4)",
@@ -6435,8 +6435,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_accepted_successors": 2464,
-                "num_expanded": 1478,
+                "num_accepted_successors": 2927,
+                "num_expanded": 2124,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -6444,8 +6444,8 @@
                     "length": 12,
                     "actions": [
                         "(decrement c0)",
-                        "(increment c2)",
-                        "(increment c3)",
+                        "(decrement c0)",
+                        "(decrement c1)",
                         "(increment c3)",
                         "(decrement c0)",
                         "(decrement c0)",

@@ -15,20 +15,18 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_LIFTED_STATE_ITERATORS_HPP_
-#define TYR_PLANNING_LIFTED_STATE_ITERATORS_HPP_
+#ifndef TYR_PLANNING_LIFTED_STATE_STORAGE_ITERATORS_HPP_
+#define TYR_PLANNING_LIFTED_STATE_STORAGE_ITERATORS_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/indices.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/state_iterators.hpp"
+#include "tyr/planning/lifted/state_storage.hpp"
+#include "tyr/planning/state_storage/iterators.hpp"
 
 #include <boost/dynamic_bitset.hpp>
 #include <cassert>
-#include <cmath>
 #include <iterator>
-#include <utility>
-#include <vector>
 #include <yggdrasil/core/types.hpp>
 
 namespace tyr::planning
@@ -48,27 +46,24 @@ public:
     using iterator_concept = std::input_iterator_tag;
     using pointer = void;
 
-    FDRFactIterator() noexcept : m_data(nullptr), m_i(0) {}
-    FDRFactIterator(const boost::dynamic_bitset<>& data, bool begin) noexcept : m_data(&data), m_i(begin ? 0 : m_data->size())
+    FDRFactIterator() noexcept : m_storage(nullptr), m_i(0) {}
+    FDRFactIterator(const FactUnpackedStorage<LiftedTag>& storage, bool begin) noexcept :
+        m_storage(&storage),
+        m_i(begin ? m_storage->indices.find_first() : boost::dynamic_bitset<>::npos)
     {
-        if (begin)
-            while (m_i < m_data->size() && !m_data->test(m_i))
-                ++m_i;
     }
 
     value_type operator*() const noexcept
     {
-        assert(m_data);
-        assert(m_data->test(m_i));
+        assert(m_storage);
+        assert(m_storage->indices.test(m_i));
         return ygg::Data<::tyr::formalism::planning::FDRFact<Tag>> { ygg::Index<::tyr::formalism::planning::FDRVariable<Tag>> { static_cast<ygg::uint_t>(m_i) },
                                                                      ::tyr::formalism::planning::FDRValue { 1 } };
     }
 
     FDRFactIterator& operator++() noexcept
     {
-        ++m_i;
-        while (m_i < m_data->size() && !m_data->test(m_i))
-            ++m_i;
+        m_i = m_storage->indices.find_next(m_i);
         return *this;
     }
     FDRFactIterator operator++(int) noexcept
@@ -78,12 +73,12 @@ public:
         return tmp;
     }
 
-    friend bool operator==(const FDRFactIterator& lhs, const FDRFactIterator& rhs) noexcept { return lhs.m_data == rhs.m_data && lhs.m_i == rhs.m_i; }
+    friend bool operator==(const FDRFactIterator& lhs, const FDRFactIterator& rhs) noexcept { return lhs.m_storage == rhs.m_storage && lhs.m_i == rhs.m_i; }
     friend bool operator!=(const FDRFactIterator& lhs, const FDRFactIterator& rhs) noexcept { return !(lhs == rhs); }
 
 private:
-    const boost::dynamic_bitset<>* m_data;
-    size_t m_i = 0;
+    const FactUnpackedStorage<LiftedTag>* m_storage { nullptr };
+    boost::dynamic_bitset<>::size_type m_i = 0;
 };
 
 template<typename Tag>
@@ -91,13 +86,13 @@ class FDRFactRange<LiftedTag, Tag> : public std::ranges::view_interface<FDRFactR
 {
 public:
     FDRFactRange() = default;
-    explicit FDRFactRange(const boost::dynamic_bitset<>& values) : m_data(&values) {}
+    explicit FDRFactRange(const FactUnpackedStorage<LiftedTag>& storage) : m_storage(&storage) {}
 
-    auto begin() const { return FDRFactIterator<LiftedTag, Tag>(*m_data, true); }
-    auto end() const { return FDRFactIterator<LiftedTag, Tag>(*m_data, false); }
+    auto begin() const { return FDRFactIterator<LiftedTag, Tag>(*m_storage, true); }
+    auto end() const { return FDRFactIterator<LiftedTag, Tag>(*m_storage, false); }
 
 private:
-    const boost::dynamic_bitset<>* m_data;
+    const FactUnpackedStorage<LiftedTag>* m_storage { nullptr };
 };
 }
 

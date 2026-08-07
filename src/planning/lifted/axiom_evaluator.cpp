@@ -19,14 +19,12 @@
 
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/formatter.hpp"
-#include "tyr/datalog/lifted/solver.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/policies/annotation.hpp"
+#include "tyr/datalog/lifted/solver.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/merge_datalog.hpp"
-#include "tyr/formalism/planning/merge_planning.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/lifted/programs/axiom.hpp"
@@ -52,35 +50,9 @@
 
 namespace d = tyr::datalog;
 namespace f = tyr::formalism;
-namespace fd = tyr::formalism::datalog;
-namespace fp = tyr::formalism::planning;
 
 namespace tyr::planning
 {
-namespace
-{
-void read_derived_atoms_from_datalog_program(const AxiomEvaluatorProgram<LiftedTag>& axiom_program,
-                                             ygg::Builder<State<LiftedTag>>& state_builder,
-                                             fp::MergePlanningContext& merge_context,
-                                             d::TaggedFactSets<f::FluentTag>& fact_sets,
-                                             std::vector<fd::PredicateBindingView<f::FluentTag>>& derived_bindings)
-{
-    for (const auto& set : fact_sets.predicate.get_sets())
-        for (const auto& binding : set.get_bindings())
-            if (axiom_program.get_translation_context().d2p.fluent_to_derived_predicate.contains(binding.get_relation()))
-                derived_bindings.push_back(binding);
-
-    for (const auto binding : derived_bindings)
-    {
-        const auto ground_atom =
-            fp::merge_atom_d2p<f::FluentTag, f::DerivedTag>(binding, axiom_program.get_translation_context().d2p.fluent_to_derived_predicate, merge_context)
-                .first.get_index();
-
-        state_builder.set(ground_atom);
-    }
-}
-}
-
 struct AxiomEvaluator<LiftedTag>::Impl
 {
     using Program = AxiomEvaluatorProgram<LiftedTag>;
@@ -155,26 +127,21 @@ AxiomEvaluatorPtr<LiftedTag> AxiomEvaluator<LiftedTag>::make_worker(ygg::Executi
 void AxiomEvaluator<LiftedTag>::compute_extended_state(ygg::Builder<State<LiftedTag>>& state_builder)
 {
     auto& evaluator = m_impl->evaluator;
-    evaluator.derived_bindings.clear();
     evaluator.workspace.reset_evaluation();
 
-    auto merge_datalog_context = fp::MergeDatalogContext { evaluator.workspace.datalog_builder, evaluator.workspace.workspace_repository };
     const auto& program = m_impl->definition->program;
 
-    insert_unextended_state(state_builder,
-                            *m_impl->definition->task->get_repository(),
-                            program.get_translation_context().p2d,
-                            merge_datalog_context,
-                            evaluator.workspace.facts.fact_sets,
-                            evaluator.workspace.facts.assignment_sets);
+    insert_unextended_state(state_builder, *m_impl->definition->task->get_repository(), program.get_translation_context().p2d, evaluator.workspace);
 
     auto ctx = d::ProgramExecutionContext(evaluator.workspace);
 
     evaluator.execution_context->arena().execute([&] { d::compute_model(ctx); });
 
-    auto merge_planning_context = fp::MergePlanningContext { evaluator.workspace.planning_builder, *m_impl->definition->task->get_repository() };
-
-    read_derived_atoms_from_datalog_program(program, state_builder, merge_planning_context, evaluator.workspace.facts.fact_sets, evaluator.derived_bindings);
+    read_derived_atoms_from_fact_set(state_builder,
+                                     *m_impl->definition->task->get_repository(),
+                                     program.get_translation_context().d2p,
+                                     evaluator.workspace,
+                                     evaluator.derived_bindings);
 }
 
 void AxiomEvaluator<LiftedTag>::print_summary(size_t verbosity) const

@@ -20,52 +20,166 @@
 
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/datalog/declarations.hpp"
+#include "tyr/datalog/workspaces/program.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/planning/merge_datalog_decl.hpp"
+#include "tyr/formalism/planning/merge_planning_decl.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/planning/ground/programs/translation_context.hpp"
+#include "tyr/planning/ground/state_builder.hpp"
 #include "tyr/planning/lifted/programs/translation_context.hpp"
 #include "tyr/planning/lifted/state_builder.hpp"
 #include "tyr/planning/task.hpp"
 
+#include <concepts>
+#include <vector>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
 
-extern void
-insert_fluent_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
-                                const ::tyr::formalism::planning::Repository& repository,
-                                const ygg::UnorderedMap<::tyr::formalism::planning::PredicateView<::tyr::formalism::FluentTag>,
-                                                        ::tyr::formalism::datalog::PredicateView<::tyr::formalism::FluentTag>>& fluent_to_fluent_predicate,
-                                ::tyr::formalism::planning::MergeDatalogContext& merge_context,
-                                datalog::TaggedFactSets<::tyr::formalism::FluentTag>& fact_sets);
+namespace detail
+{
 
-void insert_derived_atoms_to_fact_set(
-    const ygg::Builder<State<LiftedTag>>& state,
-    const ::tyr::formalism::planning::Repository& repository,
-    const ygg::UnorderedMap<::tyr::formalism::planning::PredicateView<::tyr::formalism::DerivedTag>,
-                            ::tyr::formalism::datalog::PredicateView<::tyr::formalism::FluentTag>>& derived_to_fluent_predicate,
-    ::tyr::formalism::planning::MergeDatalogContext& merge_context,
-    datalog::TaggedFactSets<::tyr::formalism::FluentTag>& fact_sets);
+void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<GroundTag>>& state,
+                                     const ::tyr::formalism::planning::Repository& repository,
+                                     const P2DTranslationContext<GroundTag>::FluentToFluentAtomMapping& fluent_to_fluent_atom,
+                                     datalog::TaggedFactSets<::tyr::formalism::FluentTag>& fact_sets);
+
+void insert_numeric_variables_to_fact_set(const ygg::Builder<State<GroundTag>>& state,
+                                          const ::tyr::formalism::planning::Repository& repository,
+                                          const P2DTranslationContext<GroundTag>::FluentToFluentFunctionTermMapping& fluent_to_fluent_fterm,
+                                          datalog::TaggedFactSets<::tyr::formalism::FluentTag>& fact_sets);
+
+void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
+                                     const ::tyr::formalism::planning::Repository& repository,
+                                     const P2DTranslationContext<LiftedTag>::FluentToFluentPredicateMapping& fluent_to_fluent_predicate,
+                                     ::tyr::formalism::planning::MergeDatalogContext& merge_context,
+                                     datalog::TaggedFactSets<::tyr::formalism::FluentTag>& fact_sets);
+
+void insert_derived_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
+                                      const ::tyr::formalism::planning::Repository& repository,
+                                      const P2DTranslationContext<LiftedTag>::DerivedToFluentPredicateMapping& derived_to_fluent_predicate,
+                                      ::tyr::formalism::planning::MergeDatalogContext& merge_context,
+                                      datalog::TaggedFactSets<::tyr::formalism::FluentTag>& fact_sets);
 
 void insert_numeric_variables_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
                                           const ::tyr::formalism::planning::Repository& repository,
                                           ::tyr::formalism::planning::MergeDatalogContext& merge_context,
                                           datalog::TaggedFactSets<::tyr::formalism::FluentTag>& fact_sets);
 
-void insert_extended_state(const ygg::Builder<State<LiftedTag>>& state_builder,
-                           const ::tyr::formalism::planning::Repository& atoms_context,
-                           const P2DTranslationContext<LiftedTag>& translation_context,
-                           ::tyr::formalism::planning::MergeDatalogContext& merge_context,
-                           datalog::TaggedFactSets<::tyr::formalism::FluentTag>& fact_sets,
-                           datalog::TaggedAssignmentSets<::tyr::formalism::FluentTag>& assignment_sets);
+void read_derived_atoms_from_fact_set(ygg::Builder<State<LiftedTag>>& state,
+                                      ::tyr::formalism::planning::Repository& repository,
+                                      const D2PTranslationContext<LiftedTag>::FluentToDerivedPredicateMapping& fluent_to_derived_predicate,
+                                      ::tyr::formalism::planning::Builder& planning_builder,
+                                      const datalog::TaggedFactSets<::tyr::formalism::FluentTag>& fact_sets,
+                                      std::vector<::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>>& derived_bindings);
 
-void insert_unextended_state(const ygg::Builder<State<LiftedTag>>& state_builder,
-                             const ::tyr::formalism::planning::Repository& atoms_context,
+}
+
+template<TaskKind Kind,
+         datalog::OrAnnotationPolicyConcept<Kind> OrAP,
+         datalog::AndAnnotationPolicyConcept<Kind> AndAP,
+         datalog::TerminationPolicyConcept<Kind> TP,
+         datalog::RuleCostPolicyConcept<Kind> CP>
+void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<Kind>>& state,
+                                     const ::tyr::formalism::planning::Repository& repository,
+                                     const P2DTranslationContext<Kind>& translation_context,
+                                     datalog::ProgramWorkspace<Kind, OrAP, AndAP, TP, CP>& workspace)
+{
+    if constexpr (std::same_as<Kind, GroundTag>)
+    {
+        detail::insert_fluent_atoms_to_fact_set(state, repository, translation_context.fluent_to_fluent_atom, workspace.facts.fact_sets);
+    }
+    else
+    {
+        auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { workspace.datalog_builder, workspace.workspace_repository };
+        detail::insert_fluent_atoms_to_fact_set(state, repository, translation_context.fluent_to_fluent_predicate, merge_context, workspace.facts.fact_sets);
+    }
+}
+
+template<TaskKind Kind,
+         datalog::OrAnnotationPolicyConcept<Kind> OrAP,
+         datalog::AndAnnotationPolicyConcept<Kind> AndAP,
+         datalog::TerminationPolicyConcept<Kind> TP,
+         datalog::RuleCostPolicyConcept<Kind> CP>
+void insert_numeric_variables_to_fact_set(const ygg::Builder<State<Kind>>& state,
+                                          const ::tyr::formalism::planning::Repository& repository,
+                                          const P2DTranslationContext<Kind>& translation_context,
+                                          datalog::ProgramWorkspace<Kind, OrAP, AndAP, TP, CP>& workspace)
+{
+    if constexpr (std::same_as<Kind, GroundTag>)
+    {
+        detail::insert_numeric_variables_to_fact_set(state, repository, translation_context.fluent_to_fluent_fterm, workspace.facts.fact_sets);
+    }
+    else
+    {
+        auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { workspace.datalog_builder, workspace.workspace_repository };
+        detail::insert_numeric_variables_to_fact_set(state, repository, merge_context, workspace.facts.fact_sets);
+    }
+}
+
+template<datalog::OrAnnotationPolicyConcept<LiftedTag> OrAP,
+         datalog::AndAnnotationPolicyConcept<LiftedTag> AndAP,
+         datalog::TerminationPolicyConcept<LiftedTag> TP,
+         datalog::RuleCostPolicyConcept<LiftedTag> CP>
+void insert_derived_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
+                                      const ::tyr::formalism::planning::Repository& repository,
+                                      const P2DTranslationContext<LiftedTag>& translation_context,
+                                      datalog::ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>& workspace)
+{
+    auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { workspace.datalog_builder, workspace.workspace_repository };
+    detail::insert_derived_atoms_to_fact_set(state, repository, translation_context.derived_to_fluent_predicate, merge_context, workspace.facts.fact_sets);
+}
+
+template<datalog::OrAnnotationPolicyConcept<LiftedTag> OrAP,
+         datalog::AndAnnotationPolicyConcept<LiftedTag> AndAP,
+         datalog::TerminationPolicyConcept<LiftedTag> TP,
+         datalog::RuleCostPolicyConcept<LiftedTag> CP>
+void insert_extended_state(const ygg::Builder<State<LiftedTag>>& state,
+                           const ::tyr::formalism::planning::Repository& repository,
+                           const P2DTranslationContext<LiftedTag>& translation_context,
+                           datalog::ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>& workspace)
+{
+    workspace.facts.reset();
+    insert_fluent_atoms_to_fact_set(state, repository, translation_context, workspace);
+    insert_derived_atoms_to_fact_set(state, repository, translation_context, workspace);
+    insert_numeric_variables_to_fact_set(state, repository, translation_context, workspace);
+    workspace.facts.assignment_sets.insert(workspace.facts.fact_sets);
+}
+
+template<datalog::OrAnnotationPolicyConcept<LiftedTag> OrAP,
+         datalog::AndAnnotationPolicyConcept<LiftedTag> AndAP,
+         datalog::TerminationPolicyConcept<LiftedTag> TP,
+         datalog::RuleCostPolicyConcept<LiftedTag> CP>
+void insert_unextended_state(const ygg::Builder<State<LiftedTag>>& state,
+                             const ::tyr::formalism::planning::Repository& repository,
                              const P2DTranslationContext<LiftedTag>& translation_context,
-                             ::tyr::formalism::planning::MergeDatalogContext& merge_context,
-                             datalog::TaggedFactSets<::tyr::formalism::FluentTag>& fact_sets,
-                             datalog::TaggedAssignmentSets<::tyr::formalism::FluentTag>& assignment_sets);
+                             datalog::ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>& workspace)
+{
+    workspace.facts.reset();
+    insert_fluent_atoms_to_fact_set(state, repository, translation_context, workspace);
+    insert_numeric_variables_to_fact_set(state, repository, translation_context, workspace);
+    workspace.facts.assignment_sets.insert(workspace.facts.fact_sets);
+}
+
+template<datalog::OrAnnotationPolicyConcept<LiftedTag> OrAP,
+         datalog::AndAnnotationPolicyConcept<LiftedTag> AndAP,
+         datalog::TerminationPolicyConcept<LiftedTag> TP,
+         datalog::RuleCostPolicyConcept<LiftedTag> CP>
+void read_derived_atoms_from_fact_set(ygg::Builder<State<LiftedTag>>& state,
+                                      ::tyr::formalism::planning::Repository& repository,
+                                      const D2PTranslationContext<LiftedTag>& translation_context,
+                                      datalog::ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>& workspace,
+                                      std::vector<::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>>& derived_bindings)
+{
+    detail::read_derived_atoms_from_fact_set(state,
+                                             repository,
+                                             translation_context.fluent_to_derived_predicate,
+                                             workspace.planning_builder,
+                                             workspace.facts.fact_sets,
+                                             derived_bindings);
+}
 
 }
 

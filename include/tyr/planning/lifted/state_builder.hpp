@@ -22,14 +22,14 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/lifted/state_iterators.hpp"
 #include "tyr/planning/lifted/state_storage.hpp"
+#include "tyr/planning/lifted/state_storage/iterators.hpp"
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_index.hpp"
-#include "tyr/planning/state_iterators.hpp"
 #include "tyr/planning/state_storage.hpp"
 
 #include <boost/dynamic_bitset.hpp>
+#include <ranges>
 #include <vector>
 #include <yggdrasil/containers/dynamic_bitset.hpp>
 #include <yggdrasil/containers/vector.hpp>

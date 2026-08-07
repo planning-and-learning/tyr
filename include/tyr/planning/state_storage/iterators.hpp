@@ -15,16 +15,18 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_STATE_ITERATORS_HPP_
-#define TYR_PLANNING_STATE_ITERATORS_HPP_
+#ifndef TYR_PLANNING_STATE_STORAGE_ITERATORS_HPP_
+#define TYR_PLANNING_STATE_STORAGE_ITERATORS_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/indices.hpp"
+#include "tyr/planning/state_storage.hpp"
 
 #include <boost/dynamic_bitset.hpp>
 #include <cassert>
 #include <cmath>
 #include <iterator>
+#include <ranges>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/types.hpp>
@@ -73,7 +75,7 @@ public:
     friend bool operator!=(const AtomIterator& lhs, const AtomIterator& rhs) noexcept { return !(lhs == rhs); }
 
 private:
-    const boost::dynamic_bitset<>* m_data;
+    const boost::dynamic_bitset<>* m_data { nullptr };
     boost::dynamic_bitset<>::size_type m_i = 0;
 };
 
@@ -83,12 +85,16 @@ class AtomRange : public std::ranges::view_interface<AtomRange<Tag>>
 public:
     AtomRange() = default;
     explicit AtomRange(const boost::dynamic_bitset<>& values) : m_data(&values) {}
+    template<TaskKind Kind>
+    explicit AtomRange(const AtomUnpackedStorage<Kind>& storage) : AtomRange(storage.indices)
+    {
+    }
 
     auto begin() const { return AtomIterator<Tag>(*m_data, true); }
     auto end() const { return AtomIterator<Tag>(*m_data, false); }
 
 private:
-    const boost::dynamic_bitset<>* m_data;
+    const boost::dynamic_bitset<>* m_data { nullptr };
 };
 
 /**
@@ -156,7 +162,7 @@ public:
     friend bool operator!=(const FunctionTermValueIterator& lhs, const FunctionTermValueIterator& rhs) noexcept { return !(lhs == rhs); }
 
 private:
-    const std::vector<ygg::float_t>* m_data;
+    const std::vector<ygg::float_t>* m_data { nullptr };
     std::size_t m_i = 0;
 };
 
@@ -166,12 +172,16 @@ class FunctionTermValueRange : public std::ranges::view_interface<FunctionTermVa
 public:
     FunctionTermValueRange() = default;
     explicit FunctionTermValueRange(const std::vector<ygg::float_t>& values) : m_data(&values) {}
+    template<TaskKind Kind>
+    explicit FunctionTermValueRange(const NumericUnpackedStorage<Kind>& storage) : FunctionTermValueRange(storage.values)
+    {
+    }
 
     auto begin() const { return FunctionTermValueIterator<Tag>(*m_data, true); }
     auto end() const { return FunctionTermValueIterator<Tag>(*m_data, false); }
 
 private:
-    const std::vector<ygg::float_t>* m_data;
+    const std::vector<ygg::float_t>* m_data { nullptr };
 };
 }
 

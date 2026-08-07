@@ -26,12 +26,14 @@
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/state_storage.hpp"
+#include "tyr/planning/ground/state_storage/iterators.hpp"
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_storage.hpp"
 
 #include <boost/dynamic_bitset.hpp>
 #include <cassert>
 #include <limits>
+#include <ranges>
 #include <vector>
 #include <yggdrasil/containers/dynamic_bitset.hpp>
 #include <yggdrasil/containers/vector.hpp>
@@ -79,16 +81,26 @@ public:
     void set(ygg::Index<StateType> index);
 
     ::tyr::formalism::planning::FDRValue get(ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const;
-    ::tyr::formalism::planning::FDRValue get(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const;
     void set(ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact);
-
     ygg::float_t get(ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>> index) const;
     void set(ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>> index, ygg::float_t value);
-
     bool test(ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> index) const;
     void set(ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> index);
+
+    ::tyr::formalism::planning::FDRValue get(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const;
+    void set(::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag> view);
+    ygg::float_t get(::tyr::formalism::planning::GroundFunctionTermView<::tyr::formalism::FluentTag> view) const;
+    void set(::tyr::formalism::planning::GroundFunctionTermView<::tyr::formalism::FluentTag> view, ygg::float_t value);
     bool test(::tyr::formalism::planning::GroundAtomView<::tyr::formalism::DerivedTag> view) const;
     void set(::tyr::formalism::planning::GroundAtomView<::tyr::formalism::DerivedTag> view);
+
+    ::tyr::planning::FDRFactRange<::tyr::GroundTag, ::tyr::formalism::FluentTag> get_fluent_facts() const noexcept;
+    ::tyr::planning::AtomRange<::tyr::formalism::DerivedTag> get_derived_atoms() const noexcept;
+    ::tyr::planning::FunctionTermValueRange<::tyr::formalism::FluentTag> get_fluent_fterm_values() const noexcept;
+
+    auto get_fluent_facts_view(const ::tyr::formalism::planning::Repository& repository) const noexcept;
+    auto get_derived_atoms_view(const ::tyr::formalism::planning::Repository& repository) const noexcept;
+    auto get_fluent_fterm_values_view(const ::tyr::formalism::planning::Repository& repository) const noexcept;
 
     void clear();
     void clear_unextended_part();
@@ -122,6 +134,23 @@ private:
 };
 
 static_assert(::tyr::planning::StateBuilderConcept<Builder<::tyr::planning::State<::tyr::GroundTag>>, ::tyr::GroundTag>);
+
+inline auto Builder<::tyr::planning::State<::tyr::GroundTag>>::get_fluent_facts_view(const ::tyr::formalism::planning::Repository& repository_) const noexcept
+{
+    return get_fluent_facts() | std::views::transform([repository = &repository_](auto id) { return ygg::make_view(id, *repository); });
+}
+
+inline auto Builder<::tyr::planning::State<::tyr::GroundTag>>::get_derived_atoms_view(const ::tyr::formalism::planning::Repository& repository_) const noexcept
+{
+    return get_derived_atoms() | std::views::transform([repository = &repository_](auto id) { return ygg::make_view(id, *repository); });
+}
+
+inline auto
+Builder<::tyr::planning::State<::tyr::GroundTag>>::get_fluent_fterm_values_view(const ::tyr::formalism::planning::Repository& repository_) const noexcept
+{
+    return get_fluent_fterm_values()
+           | std::views::transform([repository = &repository_](auto&& pair) { return std::make_pair(ygg::make_view(pair.first, *repository), pair.second); });
+}
 
 }
 

@@ -32,6 +32,7 @@
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/programs/rpg.hpp"
+#include "tyr/planning/task_utils.hpp"
 
 #include <cstddef>
 #include <limits>
@@ -177,7 +178,10 @@ protected:
     ygg::float_t evaluate_current_state(const ygg::Builder<State<Kind>>& state)
     {
         m_workspace.facts.reset();
-        Policy::insert_state_facts(*m_definition, m_workspace, state);
+        const auto& repository = *m_definition->task->get_repository();
+        const auto& translation_context = m_definition->rpg_program.get_translation_context().p2d;
+        insert_fluent_atoms_to_fact_set(state, repository, translation_context, m_workspace);
+        insert_numeric_variables_to_fact_set(state, repository, translation_context, m_workspace);
         auto ctx = datalog::ProgramExecutionContext(m_workspace);
         m_execution_context->arena().execute([&] { datalog::compute_model(ctx); });
 

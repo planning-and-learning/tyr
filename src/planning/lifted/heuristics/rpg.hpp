@@ -32,7 +32,6 @@
 #include "tyr/planning/lifted/state_data.hpp"
 #include "tyr/planning/lifted/state_view.hpp"
 #include "tyr/planning/lifted/task.hpp"
-#include "tyr/planning/task_utils.hpp"
 
 #include <cassert>
 #include <fmt/ostream.h>
@@ -84,18 +83,6 @@ struct RPGPolicy<LiftedTag>
                          source_goal,
                          merge_context,
                          [&](const auto atom) { return ::tyr::formalism::planning::merge_p2d(atom, p2d, merge_context).first; });
-    }
-
-    template<typename Definition, typename Workspace>
-    static void insert_state_facts(const Definition& definition, Workspace& workspace, const ygg::Builder<State<LiftedTag>>& state)
-    {
-        auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { workspace.datalog_builder, workspace.workspace_repository };
-        insert_fluent_atoms_to_fact_set(state,
-                                        *definition.task->get_repository(),
-                                        definition.rpg_program.get_translation_context().p2d.fluent_to_fluent_predicate,
-                                        merge_context,
-                                        workspace.facts.fact_sets);
-        insert_numeric_variables_to_fact_set(state, *definition.task->get_repository(), merge_context, workspace.facts.fact_sets);
     }
 
     template<::tyr::formalism::RelationKind R, typename Definition, typename Workspace>

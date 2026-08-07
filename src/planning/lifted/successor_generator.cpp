@@ -19,10 +19,9 @@
 
 #include "../metric.hpp"
 #include "tyr/datalog/formatter.hpp"
-#include "tyr/datalog/lifted/solver.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
+#include "tyr/datalog/lifted/solver.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
-#include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/planning/action_executor.hpp"
 #include "tyr/planning/applicability_lifted.hpp"
 #include "tyr/planning/declarations.hpp"
@@ -137,15 +136,9 @@ void SuccessorGenerator<LiftedTag>::Impl::compute_action_facts(const Node<Lifted
     evaluator.workspace.reset_evaluation();
 
     const auto state = node.get_state();
-    auto merge_context = fp::MergeDatalogContext { evaluator.workspace.datalog_builder, evaluator.workspace.workspace_repository };
     const auto& program = definition->action_program;
 
-    insert_extended_state(state.get_state_builder(),
-                          *definition->task->get_repository(),
-                          program.get_translation_context().p2d,
-                          merge_context,
-                          evaluator.workspace.facts.fact_sets,
-                          evaluator.workspace.facts.assignment_sets);
+    insert_extended_state(state.get_state_builder(), *definition->task->get_repository(), program.get_translation_context().p2d, evaluator.workspace);
 
     auto ctx = d::ProgramExecutionContext(evaluator.workspace);
     evaluator.execution_context->arena().execute([&] { d::compute_model(ctx); });

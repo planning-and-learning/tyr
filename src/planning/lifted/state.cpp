@@ -130,17 +130,17 @@ void LiftedStateBuilder::swap(LiftedStateBuilder& other) noexcept
 
 planning::FDRFactRange<::tyr::LiftedTag, ::tyr::formalism::FluentTag> LiftedStateBuilder::get_fluent_facts() const noexcept
 {
-    return planning::FDRFactRange<::tyr::LiftedTag, ::tyr::formalism::FluentTag>(m_fact_storage.indices);
+    return planning::FDRFactRange<::tyr::LiftedTag, ::tyr::formalism::FluentTag>(m_fact_storage);
 }
 
 planning::AtomRange<::tyr::formalism::DerivedTag> LiftedStateBuilder::get_derived_atoms() const noexcept
 {
-    return planning::AtomRange<::tyr::formalism::DerivedTag>(m_atom_storage.indices);
+    return planning::AtomRange<::tyr::formalism::DerivedTag>(m_atom_storage);
 }
 
 planning::FunctionTermValueRange<::tyr::formalism::FluentTag> LiftedStateBuilder::get_fluent_fterm_values() const noexcept
 {
-    return planning::FunctionTermValueRange<::tyr::formalism::FluentTag>(m_numeric_storage.values);
+    return planning::FunctionTermValueRange<::tyr::formalism::FluentTag>(m_numeric_storage);
 }
 
 planning::NumericUnpackedStorage<::tyr::LiftedTag>& LiftedStateBuilder::get_numeric_variables() noexcept { return m_numeric_storage; }
@@ -258,35 +258,6 @@ ygg::float_t LiftedStateView::get(ygg::Index<::tyr::formalism::planning::GroundF
     return m_state_repository->get_task()->get(index);
 }
 
-template<::tyr::formalism::FactKind T>
-const boost::dynamic_bitset<>& LiftedStateView::get_atoms() const noexcept
-{
-    if constexpr (std::is_same_v<T, ::tyr::formalism::StaticTag>)
-        return m_state_repository->get_task()->get_static_atoms_bitset();
-    else if constexpr (std::is_same_v<T, ::tyr::formalism::FluentTag> || std::is_same_v<T, ::tyr::formalism::DerivedTag>)
-        return m_state_builder->template get_atoms<T>().indices;
-    else
-        static_assert(ygg::dependent_false<T>::value, "Missing case");
-}
-
-template const boost::dynamic_bitset<>& LiftedStateView::get_atoms<::tyr::formalism::StaticTag>() const noexcept;
-template const boost::dynamic_bitset<>& LiftedStateView::get_atoms<::tyr::formalism::FluentTag>() const noexcept;
-template const boost::dynamic_bitset<>& LiftedStateView::get_atoms<::tyr::formalism::DerivedTag>() const noexcept;
-
-template<::tyr::formalism::FactKind T>
-const std::vector<ygg::float_t>& LiftedStateView::get_numeric_variables() const noexcept
-{
-    if constexpr (std::is_same_v<T, ::tyr::formalism::StaticTag>)
-        return m_state_repository->get_task()->get_static_numeric_variables();
-    else if constexpr (std::is_same_v<T, ::tyr::formalism::FluentTag>)
-        return m_state_builder->get_numeric_variables().values;
-    else
-        static_assert(ygg::dependent_false<T>::value, "Missing case");
-}
-
-template const std::vector<ygg::float_t>& LiftedStateView::get_numeric_variables<::tyr::formalism::StaticTag>() const noexcept;
-template const std::vector<ygg::float_t>& LiftedStateView::get_numeric_variables<::tyr::formalism::FluentTag>() const noexcept;
-
 planning::AtomRange<::tyr::formalism::StaticTag> LiftedStateView::get_static_atoms() const noexcept
 {
     return planning::AtomRange<::tyr::formalism::StaticTag>(m_state_repository->get_task()->get_static_atoms_bitset());
@@ -294,13 +265,10 @@ planning::AtomRange<::tyr::formalism::StaticTag> LiftedStateView::get_static_ato
 
 planning::FDRFactRange<::tyr::LiftedTag, ::tyr::formalism::FluentTag> LiftedStateView::get_fluent_facts() const noexcept
 {
-    return planning::FDRFactRange<::tyr::LiftedTag, ::tyr::formalism::FluentTag>(get_atoms<::tyr::formalism::FluentTag>());
+    return m_state_builder->get_fluent_facts();
 }
 
-planning::AtomRange<::tyr::formalism::DerivedTag> LiftedStateView::get_derived_atoms() const noexcept
-{
-    return planning::AtomRange<::tyr::formalism::DerivedTag>(get_atoms<::tyr::formalism::DerivedTag>());
-}
+planning::AtomRange<::tyr::formalism::DerivedTag> LiftedStateView::get_derived_atoms() const noexcept { return m_state_builder->get_derived_atoms(); }
 
 planning::FunctionTermValueRange<::tyr::formalism::StaticTag> LiftedStateView::get_static_fterm_values() const noexcept
 {
@@ -309,7 +277,7 @@ planning::FunctionTermValueRange<::tyr::formalism::StaticTag> LiftedStateView::g
 
 planning::FunctionTermValueRange<::tyr::formalism::FluentTag> LiftedStateView::get_fluent_fterm_values() const noexcept
 {
-    return planning::FunctionTermValueRange<::tyr::formalism::FluentTag>(get_numeric_variables<::tyr::formalism::FluentTag>());
+    return m_state_builder->get_fluent_fterm_values();
 }
 
 const std::shared_ptr<::tyr::formalism::planning::Repository>& LiftedStateView::get_repository() const noexcept

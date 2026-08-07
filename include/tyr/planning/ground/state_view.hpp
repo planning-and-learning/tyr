@@ -22,8 +22,7 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground/state_iterators.hpp"
-#include "tyr/planning/state_iterators.hpp"
+#include "tyr/planning/ground/state_storage/iterators.hpp"
 #include "tyr/planning/state_view.hpp"
 #include "tyr/planning/task.hpp"
 
@@ -99,14 +98,6 @@ public:
     const Builder<planning::State<::tyr::GroundTag>>& get_state_builder() const noexcept;
 
     std::tuple<ygg::Index<planning::State<::tyr::GroundTag>>, ygg::uint_t> identifying_members() const noexcept;
-
-    template<::tyr::formalism::FactKind T>
-    const boost::dynamic_bitset<>& get_atoms() const noexcept;
-
-    const std::vector<ygg::uint_t>& get_fluent_values() const noexcept;
-
-    template<::tyr::formalism::FactKind T>
-    const std::vector<ygg::float_t>& get_numeric_variables() const noexcept;
 
 private:
     // The pooled builder must be released before its owning repository.
