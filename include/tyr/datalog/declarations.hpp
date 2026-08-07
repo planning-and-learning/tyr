@@ -121,6 +121,7 @@ struct Vertex;
 struct Edge;
 class VertexPartitions;
 class DeduplicatedAdjacencyMatrix;
+class PartitionedAdjacencyLayout;
 class PartitionedAdjacencyMatrix;
 }
 

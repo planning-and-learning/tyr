@@ -128,7 +128,7 @@ private:
 class AdjacencyMatrix
 {
 public:
-    AdjacencyMatrix(const GraphLayout& layout) : m_layout(layout), m_bitset_data(layout.nv * layout.k * layout.info.num_blocks) {}
+    AdjacencyMatrix(const GraphLayout& layout) : m_layout(layout), m_bitset_data(layout.nv * layout.info.num_blocks) {}
 
     auto get_row(ygg::uint_t v) const noexcept
     {
@@ -225,79 +225,78 @@ private:
                                             ///< from v into partition p.
 };
 
-class PartitionedAdjacencyMatrix
+class PartitionedAdjacencyLayout
 {
-private:
+public:
     static constexpr ygg::uint_t UNUSED = std::numeric_limits<ygg::uint_t>::max();
 
+    PartitionedAdjacencyLayout() = default;
+    PartitionedAdjacencyLayout(const GraphLayout& layout, const ::tyr::formalism::datalog::VariableDependencyGraph& dependency_graph);
+
+    friend bool operator==(const PartitionedAdjacencyLayout&, const PartitionedAdjacencyLayout&) noexcept = default;
+
+    ygg::uint_t get_offset(ygg::uint_t v, ygg::uint_t pi, ygg::uint_t pj) const noexcept
+    {
+        assert(v < m_row_offsets.size());
+        assert(pi < m_k);
+        assert(pj < m_k);
+
+        const auto pair_offset = m_pair_offsets[pi * m_k + pj];
+        return pair_offset == UNUSED ? UNUSED : m_row_offsets[v] + pair_offset;
+    }
+
+    size_t num_blocks() const noexcept { return m_num_blocks; }
+
+private:
+    size_t m_k { 0 };
+    std::vector<ygg::uint_t> m_row_offsets;
+    std::vector<ygg::uint_t> m_pair_offsets;
+    size_t m_num_blocks { 0 };
+};
+
+class PartitionedAdjacencyMatrix
+{
 public:
     PartitionedAdjacencyMatrix(const GraphLayout& layout,
+                               const PartitionedAdjacencyLayout& adjacency_layout,
                                const VertexPartitions& affected_partitions,
-                               const VertexPartitions& delta_partitions,
-                               const ::tyr::formalism::datalog::VariableDependencyGraph& dependency_graph) :
+                               const VertexPartitions& delta_partitions) :
         m_layout(layout),
+        m_adjacency_layout(adjacency_layout),
         m_affected_partitions(affected_partitions),
         m_delta_partitions(delta_partitions),
-        m_dependency_graph(dependency_graph),
-        m_adj_data(m_layout.nv * m_layout.k, Cell { UNUSED }),
-        m_adj_span(m_adj_data.data(), std::array<size_t, 2> { m_layout.nv, m_layout.k }),
         m_touched_partitions(m_layout.nv * m_layout.k, false),
-        m_bitset_data()
+        m_bitset_data(adjacency_layout.num_blocks(), 0)
     {
-        for (ygg::uint_t pi = 0; pi < m_layout.k; ++pi)
-        {
-            for (ygg::uint_t v : layout.vertex_partitions[pi])
-            {
-                for (ygg::uint_t pj = 0; pj < m_layout.k; ++pj)
-                {
-                    auto& cell = m_adj_span(v, pj);
-
-                    if (dependency_graph.binary().has_dependency(pi, pj))
-                    {
-                        cell.offset = m_bitset_data.size();
-
-                        const auto& info = m_layout.info.infos[pj];
-                        m_bitset_data.resize(m_bitset_data.size() + info.num_blocks);
-                    }
-                    else
-                    {
-                        cell.offset = UNUSED;
-                    }
-                }
-            }
-        }
     }
 
     friend bool operator==(const PartitionedAdjacencyMatrix& lhs, const PartitionedAdjacencyMatrix& rhs) noexcept
     {
-        return lhs.m_layout.nv == rhs.m_layout.nv && lhs.m_layout.k == rhs.m_layout.k && lhs.m_adj_data == rhs.m_adj_data
+        return lhs.m_layout.nv == rhs.m_layout.nv && lhs.m_layout.k == rhs.m_layout.k && lhs.m_adjacency_layout == rhs.m_adjacency_layout
                && lhs.m_bitset_data == rhs.m_bitset_data;
     }
 
     auto get_bitset(ygg::uint_t v, ygg::uint_t p) noexcept
     {
-        assert(m_dependency_graph.binary().has_dependency(m_layout.vertex_to_partition[v], p)
-               && "Should only modify adjacency when there is a binary dependency");
-
-        const auto& cell = m_adj_span(v, p);
+        const auto offset = m_adjacency_layout.get_offset(v, m_layout.vertex_to_partition[v], p);
+        assert(offset != PartitionedAdjacencyLayout::UNUSED && "Should only modify adjacency when there is a binary dependency");
         const auto& info = m_layout.info.infos[p];
 
-        return ygg::BitsetSpan<uint64_t>(m_bitset_data.data() + cell.offset, info.num_bits);
+        return ygg::BitsetSpan<uint64_t>(m_bitset_data.data() + offset, info.num_bits);
     }
 
     auto get_bitset(ygg::uint_t v, ygg::uint_t p) const noexcept
     {
-        const auto& cell = m_adj_span(v, p);
         const auto& info = m_layout.info.infos[p];
         const auto pv = m_layout.vertex_to_partition[v];
+        const auto offset = m_adjacency_layout.get_offset(v, pv, p);
 
-        if (m_dependency_graph.binary().has_dependency(pv, p))
+        if (offset != PartitionedAdjacencyLayout::UNUSED)
         {
-            return ygg::BitsetSpan<const uint64_t>(m_bitset_data.data() + cell.offset, info.num_bits);
+            return ygg::BitsetSpan<const uint64_t>(m_bitset_data.data() + offset, info.num_bits);
         }
         else
         {
-            assert(cell.offset == UNUSED);
             const auto bit = m_layout.vertex_to_bit[v];
             const auto& info_v = m_layout.info.infos[pv];
             const auto consistent_v = m_delta_partitions.get_bitset(info_v);
@@ -305,13 +304,6 @@ public:
             return consistent_v.test(bit) ? m_affected_partitions.get_bitset(info) : m_delta_partitions.get_bitset(info);
         }
     }
-
-    struct Cell
-    {
-        ygg::uint_t offset;
-
-        friend bool operator==(const Cell& lhs, const Cell& rhs) noexcept { return lhs.offset == rhs.offset; }
-    };
 
     template<typename Callback>
     void for_each_vertex(Callback&& callback) const noexcept
@@ -390,27 +382,19 @@ public:
         m_touched_partitions.reset();
     }
 
-    const auto& get_cell(ygg::uint_t v, ygg::uint_t p) const noexcept { return m_adj_span(v, p); }
-
     const auto& layout() const noexcept { return m_layout; }
     const auto& affected_partitions() const noexcept { return m_affected_partitions; }
     const auto& delta_partitions() const noexcept { return m_delta_partitions; }
     auto& touched_partitions() noexcept { return m_touched_partitions; }
     const auto& touched_partitions() const noexcept { return m_touched_partitions; }
     auto touched_partitions(ygg::uint_t v, ygg::uint_t p) noexcept { return m_touched_partitions[v * m_layout.k + p]; }
-    const auto& adj_data() const noexcept { return m_adj_data; }
-    auto adj_span() const noexcept { return m_adj_span; }
     const auto& bitset_data() const noexcept { return m_bitset_data; }
 
 private:
     const GraphLayout& m_layout;
+    const PartitionedAdjacencyLayout& m_adjacency_layout;
     const VertexPartitions& m_affected_partitions;
     const VertexPartitions& m_delta_partitions;
-    const ::tyr::formalism::datalog::VariableDependencyGraph& m_dependency_graph;
-
-    /// v x k matrix where each cell refers to a bitset either stored explicitly or referring implicitly to a vertex partition.
-    std::vector<Cell> m_adj_data;
-    ygg::MDSpan<Cell, 2> m_adj_span;
 
     /// v x k bitset to track touched cell bitsets
     boost::dynamic_bitset<> m_touched_partitions;
@@ -421,10 +405,10 @@ private:
 
 struct Graph
 {
-    Graph(const GraphLayout& layout, const ::tyr::formalism::datalog::VariableDependencyGraph& dependency_graph) :
+    Graph(const GraphLayout& layout, const PartitionedAdjacencyLayout& adjacency_layout) :
         affected_partitions(layout),
         delta_partitions(layout),
-        matrix(layout, affected_partitions, delta_partitions, dependency_graph)
+        matrix(layout, adjacency_layout, affected_partitions, delta_partitions)
     {
     }
 

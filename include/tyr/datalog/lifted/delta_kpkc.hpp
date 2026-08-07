@@ -137,7 +137,7 @@ private:
     bool update_compatible_adjacent_vertices_at_next_depth(Vertex src, size_t depth, Workspace& workspace) const;
 
 private:
-    GraphLayout m_layout;
+    const GraphLayout& m_layout;
     size_t m_iteration;
 
     Graph m_delta_graph;

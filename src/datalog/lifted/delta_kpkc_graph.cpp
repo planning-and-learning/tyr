@@ -19,6 +19,8 @@
 #include "tyr/datalog/lifted/delta_kpkc.hpp"
 #include "tyr/formalism/datalog/expression_arity.hpp"
 
+#include <stdexcept>
+
 namespace f = tyr::formalism;
 namespace fd = tyr::formalism::datalog;
 
@@ -86,6 +88,44 @@ GraphLayout::GraphLayout(size_t nv, const std::vector<std::vector<ygg::uint_t>>&
     info.num_blocks = block_offset;
 
     assert(verify_vertex_to_partition(nv, k, vertex_to_partition));
+}
+
+PartitionedAdjacencyLayout::PartitionedAdjacencyLayout(const GraphLayout& layout, const ::tyr::formalism::datalog::VariableDependencyGraph& dependency_graph) :
+    m_k(layout.k),
+    m_row_offsets(layout.nv),
+    m_pair_offsets(),
+    m_num_blocks(0)
+{
+    if (m_k != 0 && m_k > m_pair_offsets.max_size() / m_k)
+        throw std::overflow_error("PartitionedAdjacencyLayout: partition-pair table size overflow");
+    m_pair_offsets.assign(m_k * m_k, UNUSED);
+
+    const auto checked_add = [](size_t lhs, size_t rhs)
+    {
+        constexpr auto max_blocks = static_cast<size_t>(UNUSED);
+        if (lhs >= max_blocks || rhs >= max_blocks - lhs)
+            throw std::overflow_error("PartitionedAdjacencyLayout: adjacency block offset overflow");
+        return lhs + rhs;
+    };
+
+    for (ygg::uint_t pi = 0; pi < m_k; ++pi)
+    {
+        auto row_blocks = size_t { 0 };
+        for (ygg::uint_t pj = 0; pj < m_k; ++pj)
+        {
+            if (!dependency_graph.binary().has_dependency(pi, pj))
+                continue;
+
+            m_pair_offsets[pi * m_k + pj] = static_cast<ygg::uint_t>(row_blocks);
+            row_blocks = checked_add(row_blocks, layout.info.infos[pj].num_blocks);
+        }
+
+        for (const auto v : layout.vertex_partitions[pi])
+        {
+            m_row_offsets[v] = static_cast<ygg::uint_t>(m_num_blocks);
+            m_num_blocks = checked_add(m_num_blocks, row_blocks);
+        }
+    }
 }
 
 Workspace::Workspace(const GraphLayout& graph) :

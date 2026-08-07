@@ -231,6 +231,8 @@ public:
     const ::tyr::formalism::datalog::VariableDependencyGraph& get_variable_dependeny_graph() const noexcept;
     const std::vector<std::vector<ygg::uint_t>>& get_vertex_partitions() const noexcept;
     const std::vector<std::vector<ygg::uint_t>>& get_object_to_vertex_per_partition() const noexcept;
+    const kpkc::GraphLayout& get_graph_layout() const noexcept;
+    const kpkc::PartitionedAdjacencyLayout& get_partitioned_adjacency_layout() const noexcept;
     const kpkc::DeduplicatedAdjacencyMatrix& get_adjacency_matrix() const noexcept;
 
 private:
@@ -249,6 +251,7 @@ private:
     std::vector<std::vector<ygg::uint_t>> m_object_to_vertex_per_partition;
 
     kpkc::GraphLayout m_layout;
+    kpkc::PartitionedAdjacencyLayout m_partitioned_adjacency_layout;
     kpkc::DeduplicatedAdjacencyMatrix m_matrix;
 
     details::RuleToLiteralInfos m_unary_overapproximation_indexed_literals;

@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <gtest/gtest.h>
+#include <limits>
 #include <optional>
 #include <tuple>
 #include <type_traits>
@@ -80,7 +81,41 @@ TEST(TyrDatalogLiftedDeltaKPKC, DeltaEdgesSupportRoundRobinAnchorReplay)
 
     const auto& static_assignments = program.get_const_program_workspace().facts.assignment_sets;
     const auto& static_graph = pick_workspace->get_static_consistency_graph();
+    const auto& graph_layout = static_graph.get_graph_layout();
+    const auto& adjacency_layout = static_graph.get_partitioned_adjacency_layout();
+    const auto& dependencies = static_graph.get_variable_dependeny_graph().binary();
+    constexpr auto unused = std::numeric_limits<ygg::uint_t>::max();
+    auto expected_offset = size_t { 0 };
+    auto saw_explicit = false;
+    auto saw_implicit = false;
+    for (ygg::uint_t pi = 0; pi < graph_layout.k; ++pi)
+    {
+        for (const auto v : graph_layout.vertex_partitions[pi])
+        {
+            for (ygg::uint_t pj = 0; pj < graph_layout.k; ++pj)
+            {
+                if (dependencies.has_dependency(pi, pj))
+                {
+                    saw_explicit = true;
+                    ASSERT_LT(expected_offset, unused);
+                    EXPECT_EQ(adjacency_layout.get_offset(v, pi, pj), static_cast<ygg::uint_t>(expected_offset));
+                    expected_offset += graph_layout.info.infos[pj].num_blocks;
+                }
+                else
+                {
+                    saw_implicit = true;
+                    EXPECT_EQ(adjacency_layout.get_offset(v, pi, pj), unused);
+                }
+            }
+        }
+    }
+    EXPECT_TRUE(saw_explicit);
+    EXPECT_TRUE(saw_implicit);
+    EXPECT_EQ(adjacency_layout.num_blocks(), expected_offset);
+
     auto kpkc = d::kpkc::DeltaKPKC(static_graph);
+    EXPECT_EQ(kpkc.get_delta_graph().matrix.bitset_data().size(), expected_offset);
+    EXPECT_EQ(kpkc.get_full_graph().matrix.bitset_data().size(), expected_offset);
     kpkc.set_next_assignment_sets(static_graph, d::AssignmentSets(static_assignments, empty_assignments));
     kpkc.set_next_assignment_sets(static_graph, d::AssignmentSets(static_assignments, initial_assignments));
     ASSERT_EQ(kpkc.get_iteration(), 2);

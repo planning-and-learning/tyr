@@ -988,6 +988,7 @@ StaticConsistencyGraph::StaticConsistencyGraph(fd::ConjunctiveConditionView cond
     m_unary_overapproximation_vdg(unary_overapproximation_condition),
     m_binary_overapproximation_vdg(binary_overapproximation_condition),
     m_layout(),
+    m_partitioned_adjacency_layout(),
     m_matrix(m_layout),
     m_unary_overapproximation_indexed_literals(compute_indexed_literals(m_unary_overapproximation_condition)),
     m_binary_overapproximation_indexed_literals(compute_indexed_literals(m_binary_overapproximation_condition)),
@@ -1005,6 +1006,7 @@ StaticConsistencyGraph::StaticConsistencyGraph(fd::ConjunctiveConditionView cond
     m_object_to_vertex_per_partition = std::move(object_to_vertex_per_partition_);
 
     m_layout = kpkc::GraphLayout(m_vertices.size(), m_vertex_partitions);
+    m_partitioned_adjacency_layout = kpkc::PartitionedAdjacencyLayout(m_layout, m_binary_overapproximation_vdg);
 
     m_matrix = compute_edges(m_binary_overapproximation_indexed_literals.static_indexed, static_assignment_sets, m_vertices, m_vertex_partitions);
 
@@ -1254,6 +1256,10 @@ const std::vector<std::vector<ygg::uint_t>>& StaticConsistencyGraph::get_object_
 {
     return m_object_to_vertex_per_partition;
 }
+
+const kpkc::GraphLayout& StaticConsistencyGraph::get_graph_layout() const noexcept { return m_layout; }
+
+const kpkc::PartitionedAdjacencyLayout& StaticConsistencyGraph::get_partitioned_adjacency_layout() const noexcept { return m_partitioned_adjacency_layout; }
 
 const kpkc::DeduplicatedAdjacencyMatrix& StaticConsistencyGraph::get_adjacency_matrix() const noexcept { return m_matrix; }
 
