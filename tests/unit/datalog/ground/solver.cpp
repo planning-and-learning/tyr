@@ -21,6 +21,7 @@
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
+#include <concepts>
 #include <fmt/core.h>
 #include <gtest/gtest.h>
 #include <stdexcept>
@@ -37,6 +38,8 @@ namespace
 {
 using GroundAtomViews = std::vector<fd::GroundAtomView<f::FluentTag>>;
 using PredicateBindingViews = std::vector<fd::PredicateBindingView<f::FluentTag>>;
+
+static_assert(std::same_as<datalog::PredicateAnnotationHead<GroundTag>, fd::PredicateBindingView<f::FluentTag>>);
 
 template<typename Context>
 PredicateBindingViews binding_views(const Context& ctx)
@@ -185,8 +188,8 @@ TEST(TyrDatalogGroundQueueTest, GroundProgramStoresGroundRules)
 
     const auto program = fixture.program();
 
-    EXPECT_EQ(program.get_ground_rules<f::PredicateTag>().size(), 1);
-    EXPECT_EQ(program.get_ground_rules<f::PredicateTag>()[0].get_index(), fixture.ground_rules[0]);
+    EXPECT_EQ(program.get_rules<f::PredicateTag>().size(), 1);
+    EXPECT_EQ(program.get_rules<f::PredicateTag>()[0].get_index(), fixture.ground_rules[0]);
     EXPECT_NE(fmt::format("{}", program).find("GroundProgram"), std::string::npos);
 }
 
@@ -450,7 +453,7 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyGroundRecordsFiredRule)
     dq::compute_model(ctx);
 
     EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
-    const auto* achievers = ctx.out().and_ap().find_achievers(b);
+    const auto* achievers = ctx.out().and_ap().find_achievers(b.get_row());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
     EXPECT_EQ((*achievers)[0].get_rule_key().get_index(), derive_b.get_index());

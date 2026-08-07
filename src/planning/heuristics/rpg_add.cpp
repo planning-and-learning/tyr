@@ -45,19 +45,9 @@ struct AddRPGHeuristic<Kind>::Impl :
                                       datalog::AndAnnotationPolicy<Kind, datalog::SumAggregation>,
                                       datalog::TerminationPolicy<Kind, datalog::SumAggregation>>;
 
-    Impl(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
-        Base(std::move(task),
-             std::move(execution_context),
-             datalog::OrAnnotationPolicy<Kind> {},
-             datalog::AndAnnotationPolicy<Kind, datalog::SumAggregation> {},
-             cost_mode)
-    {
-    }
+    Impl(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) : Base(std::move(task), std::move(execution_context), cost_mode) {}
 
-    Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) :
-        Base(source, std::move(execution_context), datalog::OrAnnotationPolicy<Kind> {}, datalog::AndAnnotationPolicy<Kind, datalog::SumAggregation> {})
-    {
-    }
+    Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) : Base(source, std::move(execution_context)) {}
 };
 
 template<TaskKind Kind>

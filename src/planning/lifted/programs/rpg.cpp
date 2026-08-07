@@ -441,11 +441,6 @@ datalog::Program<LiftedTag>& RPGProgram<LiftedTag>::get_datalog_program() noexce
 
 const datalog::Program<LiftedTag>& RPGProgram<LiftedTag>::get_datalog_program() const noexcept { return m_datalog_program; }
 
-const datalog::ConstProgramWorkspace<LiftedTag>& RPGProgram<LiftedTag>::get_const_program_workspace() const noexcept
-{
-    return m_datalog_program.get_const_program_workspace();
-}
-
 ::tyr::formalism::datalog::GroundConjunctiveConditionView RPGProgram<LiftedTag>::get_goal() const noexcept
 {
     return m_datalog_program.get_program().get_goal().value();

@@ -45,46 +45,24 @@
 namespace tyr::planning::detail
 {
 
-template<::tyr::formalism::RelationKind R>
-auto get_rpg_rules(::tyr::formalism::datalog::ProgramView<GroundTag> program) noexcept
-{
-    return program.template get_ground_rules<R>();
-}
-
-template<::tyr::formalism::RelationKind R>
-auto get_rpg_rules(::tyr::formalism::datalog::ProgramView<LiftedTag> program) noexcept
-{
-    return program.template get_rules<R>();
-}
-
-template<TaskKind Kind>
-bool needs_expanded_lmcut(::tyr::formalism::datalog::ProgramView<Kind> program)
-{
-    for (const auto rule : get_rpg_rules<::tyr::formalism::PredicateTag>(program))
-        if (!rule.get_body().get_numeric_constraints().empty())
-            return true;
-    return !get_rpg_rules<::tyr::formalism::FunctionTag>(program).empty();
-}
-
 template<TaskKind Kind>
 struct RPGDefinition
 {
     TaskPtr<Kind> task;
     RPGProgram<Kind> rpg_program;
-    CostMode cost_mode;
-    bool use_expanded_lmcut;
 
-    RPGDefinition(TaskPtr<Kind> task, CostMode cost_mode, bool compute_expanded_lmcut) :
-        task(std::move(task)),
-        rpg_program(this->task->get_task(), cost_mode),
-        cost_mode(cost_mode),
-        use_expanded_lmcut(compute_expanded_lmcut && needs_expanded_lmcut(rpg_program.get_datalog_program().get_program()))
-    {
-    }
+    RPGDefinition(TaskPtr<Kind> task, CostMode cost_mode) : task(std::move(task)), rpg_program(this->task->get_task(), cost_mode) {}
 };
 
 template<TaskKind Kind>
 struct RPGPolicy;
+
+inline ::tyr::formalism::planning::ActionBindingView to_action_binding(::tyr::formalism::planning::GroundActionView action) noexcept
+{
+    return action.get_row();
+}
+
+inline ::tyr::formalism::planning::ActionBindingView to_action_binding(::tyr::formalism::planning::ActionBindingView action) noexcept { return action; }
 
 template<typename Workspace, typename TranslateAtom>
 void materialize_goal(Workspace& workspace,
@@ -132,25 +110,20 @@ public:
     using Policy = RPGPolicy<Kind>;
     using Workspace = datalog::ProgramWorkspace<Kind, OrAP, AndAP, TP, CP>;
 
-    RPGEvaluator(TaskPtr<Kind> task,
-                 ygg::ExecutionContextPtr execution_context,
-                 OrAP or_ap,
-                 AndAP and_ap,
-                 CostMode cost_mode = CostMode::GENERAL,
-                 bool compute_expanded_lmcut = false) :
-        m_definition(std::make_shared<Definition>(std::move(task), cost_mode, compute_expanded_lmcut)),
+    RPGEvaluator(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL) :
+        m_definition(std::make_shared<Definition>(std::move(task), cost_mode)),
         m_execution_context(std::move(execution_context)),
         m_source_goal(m_definition->task->get_task().get_goal()),
-        m_workspace(m_definition->rpg_program.get_datalog_program(), std::move(or_ap), std::move(and_ap), TP {}, make_cost_policy(*m_definition))
+        m_workspace(m_definition->rpg_program.get_datalog_program(), OrAP {}, AndAP {}, TP {}, make_cost_policy(*m_definition))
     {
         Policy::set_goal(*m_definition, m_workspace, m_source_goal);
     }
 
-    RPGEvaluator(const RPGEvaluator& source, ygg::ExecutionContextPtr execution_context, OrAP or_ap, AndAP and_ap) :
+    RPGEvaluator(const RPGEvaluator& source, ygg::ExecutionContextPtr execution_context) :
         m_definition(source.m_definition),
         m_execution_context(std::move(execution_context)),
         m_source_goal(source.m_source_goal),
-        m_workspace(m_definition->rpg_program.get_datalog_program(), std::move(or_ap), std::move(and_ap), TP {}, make_cost_policy(*m_definition))
+        m_workspace(m_definition->rpg_program.get_datalog_program(), OrAP {}, AndAP {}, TP {}, make_cost_policy(*m_definition))
     {
         Policy::set_goal(*m_definition, m_workspace, m_source_goal);
     }
@@ -177,11 +150,9 @@ protected:
 
     ygg::float_t evaluate_current_state(const ygg::Builder<State<Kind>>& state)
     {
-        m_workspace.facts.reset();
         const auto& repository = *m_definition->task->get_repository();
         const auto& translation_context = m_definition->rpg_program.get_translation_context().p2d;
-        insert_fluent_atoms_to_fact_set(state, repository, translation_context, m_workspace);
-        insert_numeric_variables_to_fact_set(state, repository, translation_context, m_workspace);
+        insert_unextended_state(state, repository, translation_context, m_workspace);
         auto ctx = datalog::ProgramExecutionContext(m_workspace);
         m_execution_context->arena().execute([&] { datalog::compute_model(ctx); });
 
@@ -225,14 +196,36 @@ protected:
         const auto action = get_action(witness);
         if (!action)
             return std::nullopt;
-        return Policy::get_action_binding(*action);
+        return detail::to_action_binding(*action);
+    }
+
+    ::tyr::formalism::planning::ActionBindingView get_action_binding(typename Policy::Action action) const noexcept
+    {
+        return detail::to_action_binding(action);
+    }
+
+    template<typename Executor>
+    bool is_action_applicable(Executor& executor, typename Policy::Action action, const StateContext<Kind>& state_context)
+    {
+        return Policy::is_action_applicable(*m_definition, m_workspace, executor, action, state_context);
+    }
+
+    template<typename Callback>
+    void for_each_numeric_predecessor(const datalog::NumericSupport<Kind>& support, Callback&& callback)
+    {
+        Policy::for_each_numeric_predecessor(m_workspace, support, std::forward<Callback>(callback));
+    }
+
+    void append_planning_cut_frontier_atom(datalog::PredicateAnnotationHead<Kind> head,
+                                           ::tyr::formalism::planning::GroundAtomViewList<::tyr::formalism::FluentTag>& atoms)
+    {
+        Policy::append_cut_frontier_atom(*m_definition, m_workspace, head, atoms);
     }
 
     template<::tyr::formalism::RelationKind R, typename Callback>
     void for_each_witness_precondition(const datalog::WitnessAnnotation<Kind, R>& witness, Callback&& callback)
     {
-        Policy::for_each_witness_precondition(*m_definition,
-                                              m_workspace,
+        Policy::for_each_witness_precondition(m_workspace,
                                               witness,
                                               std::forward<Callback>(callback),
                                               [](::tyr::formalism::datalog::GroundBooleanOperatorView) {});
@@ -243,8 +236,7 @@ protected:
                                        PredicateCallback&& predicate_callback,
                                        NumericCallback&& numeric_callback)
     {
-        Policy::for_each_witness_precondition(*m_definition,
-                                              m_workspace,
+        Policy::for_each_witness_precondition(m_workspace,
                                               witness,
                                               std::forward<PredicateCallback>(predicate_callback),
                                               std::forward<NumericCallback>(numeric_callback));
@@ -264,7 +256,6 @@ protected:
 
     Task<Kind>& get_task() noexcept { return *m_definition->task; }
     const Task<Kind>& get_task() const noexcept { return *m_definition->task; }
-    const RPGProgram<Kind>& get_program() const noexcept { return m_definition->rpg_program; }
 
     std::shared_ptr<Definition> m_definition;
     ygg::ExecutionContextPtr m_execution_context;

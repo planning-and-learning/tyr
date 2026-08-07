@@ -148,19 +148,21 @@ void insert_extended_state(const ygg::Builder<State<LiftedTag>>& state,
     workspace.facts.assignment_sets.insert(workspace.facts.fact_sets);
 }
 
-template<datalog::OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         datalog::AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         datalog::TerminationPolicyConcept<LiftedTag> TP,
-         datalog::RuleCostPolicyConcept<LiftedTag> CP>
-void insert_unextended_state(const ygg::Builder<State<LiftedTag>>& state,
+template<TaskKind Kind,
+         datalog::OrAnnotationPolicyConcept<Kind> OrAP,
+         datalog::AndAnnotationPolicyConcept<Kind> AndAP,
+         datalog::TerminationPolicyConcept<Kind> TP,
+         datalog::RuleCostPolicyConcept<Kind> CP>
+void insert_unextended_state(const ygg::Builder<State<Kind>>& state,
                              const ::tyr::formalism::planning::Repository& repository,
-                             const P2DTranslationContext<LiftedTag>& translation_context,
-                             datalog::ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>& workspace)
+                             const P2DTranslationContext<Kind>& translation_context,
+                             datalog::ProgramWorkspace<Kind, OrAP, AndAP, TP, CP>& workspace)
 {
     workspace.facts.reset();
     insert_fluent_atoms_to_fact_set(state, repository, translation_context, workspace);
     insert_numeric_variables_to_fact_set(state, repository, translation_context, workspace);
-    workspace.facts.assignment_sets.insert(workspace.facts.fact_sets);
+    if constexpr (std::same_as<Kind, LiftedTag>)
+        workspace.facts.assignment_sets.insert(workspace.facts.fact_sets);
 }
 
 template<datalog::OrAnnotationPolicyConcept<LiftedTag> OrAP,

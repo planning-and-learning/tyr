@@ -56,6 +56,8 @@ static_assert(requires(Data& data, const View& view) {
     data.template get_atoms<f::FluentTag>();
     data.template get_fterm_values<f::StaticTag>();
     data.template get_fterm_values<f::FluentTag>();
+    data.template get_rules<f::PredicateTag>();
+    data.template get_rules<f::FunctionTag>();
     view.get_index();
     view.template get_predicates<f::StaticTag>();
     view.template get_predicates<f::FluentTag>();
@@ -68,6 +70,6 @@ static_assert(requires(Data& data, const View& view) {
     view.template get_fterm_values<f::FluentTag>();
     view.get_goal();
     view.get_metric();
-    view.template get_ground_rules<f::PredicateTag>();
-    view.template get_ground_rules<f::FunctionTag>();
+    view.template get_rules<f::PredicateTag>();
+    view.template get_rules<f::FunctionTag>();
 });

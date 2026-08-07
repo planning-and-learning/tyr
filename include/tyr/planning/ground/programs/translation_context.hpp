@@ -36,7 +36,7 @@ struct D2PTranslationContext<GroundTag>
 {
     using StaticToStaticAtomMapping = ygg::UnorderedMap<::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::StaticTag>,
                                                         ::tyr::formalism::planning::GroundAtomView<::tyr::formalism::StaticTag>>;
-    using FluentToFluentAtomMapping = ygg::UnorderedMap<::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag>,
+    using FluentToFluentAtomMapping = ygg::UnorderedMap<::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>,
                                                         ::tyr::formalism::planning::GroundAtomView<::tyr::formalism::FluentTag>>;
     using FluentToDerivedAtomMapping = ygg::UnorderedMap<::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag>,
                                                          ::tyr::formalism::planning::GroundAtomView<::tyr::formalism::DerivedTag>>;

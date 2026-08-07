@@ -18,9 +18,9 @@
 #include "tyr/planning/lifted/task_grounder.hpp"
 
 #include "tyr/analysis/declarations.hpp"
-#include "tyr/datalog/lifted/solver.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/policies/annotation.hpp"
+#include "tyr/datalog/lifted/solver.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/formalism/canonicalization.hpp"
@@ -599,8 +599,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
                 const auto action = it->second;
 
                 workspace.binding.clear();
-                for (const auto object : binding.get_objects())
-                    workspace.binding.push_back(object.get_index());
+                ygg::extend(binding.get_objects(), workspace.binding);
 
                 auto grounder_context = fp::GrounderContext { workspace.planning_builder, *repository, workspace.binding };
 
@@ -638,8 +637,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
             if (const auto it = mapping.find(binding.get_relation()); it != mapping.end())
             {
                 workspace.binding.clear();
-                for (const auto object : binding.get_objects())
-                    workspace.binding.push_back(object.get_index());
+                ygg::extend(binding.get_objects(), workspace.binding);
 
                 auto grounder_context = fp::GrounderContext { workspace.planning_builder, *repository, workspace.binding };
 

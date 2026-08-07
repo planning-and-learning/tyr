@@ -25,12 +25,6 @@
 namespace tyr::datalog
 {
 
-void OrAnnotationPolicy<GroundTag>::initialize_annotation(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> head,
-                                                          PredicateAnnotations<GroundTag>& and_annot) const
-{
-    and_annot.insert_or_assign(head.get_row(), BaseAnnotation<GroundTag>(Cost(0)));
-}
-
 void OrAnnotationPolicy<GroundTag>::initialize_annotation(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
                                                           PredicateAnnotations<GroundTag>& and_annot) const
 {
@@ -51,31 +45,31 @@ void OrAnnotationPolicy<GroundTag>::initialize_annotation(::tyr::formalism::data
     numeric_and_annot.insert(head.get_relation().get_index(), head.get_index().row, interval, BaseAnnotation<GroundTag>(Cost(0)));
 }
 
-CostUpdate<GroundTag> OrAnnotationPolicy<GroundTag>::update_annotation(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> head,
+CostUpdate<GroundTag> OrAnnotationPolicy<GroundTag>::update_annotation(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
                                                                        const DeltaPredicateAnnotations<GroundTag>& delta_and_annot,
                                                                        PredicateAnnotations<GroundTag>& and_annot) const
 {
-    const auto* delta_annotation = delta_and_annot.find(head.get_row());
+    const auto* delta_annotation = delta_and_annot.find(head);
     if (!delta_annotation)
         return {};
 
     const auto new_cost = get_cost(*delta_annotation);
-    if (const auto* old_annotation = and_annot.find(head.get_row()))
+    if (const auto* old_annotation = and_annot.find(head))
     {
         const auto old_cost = get_cost(*old_annotation);
         if (new_cost < old_cost)
         {
-            and_annot.insert_or_assign(head.get_row(), *delta_annotation);
+            and_annot.insert_or_assign(head, *delta_annotation);
             return CostUpdate<GroundTag>(old_cost, new_cost);
         }
         if (new_cost == old_cost)
             if (const auto* witness = std::get_if<WitnessAnnotation<GroundTag>>(delta_annotation);
                 witness && witness_wins_tie<GroundTag>(*witness, old_annotation))
-                and_annot.insert_or_assign(head.get_row(), *delta_annotation);
+                and_annot.insert_or_assign(head, *delta_annotation);
         return CostUpdate<GroundTag>(old_cost, old_cost);
     }
 
-    and_annot.insert_or_assign(head.get_row(), *delta_annotation);
+    and_annot.insert_or_assign(head, *delta_annotation);
     return CostUpdate<GroundTag>(std::nullopt, new_cost);
 }
 
@@ -85,29 +79,28 @@ void AndAnnotationPolicy<GroundTag, AggregationFunction>::clear_achievers() noex
 }
 
 template<typename AggregationFunction>
-void AndAnnotationPolicy<GroundTag, AggregationFunction>::record_achiever(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag>,
+void AndAnnotationPolicy<GroundTag, AggregationFunction>::record_achiever(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>,
                                                                           const AndAnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>&) const noexcept
 {
 }
 
 template<typename AggregationFunction>
-void AndAnnotationPolicy<GroundTag, AggregationFunction>::update_annotation(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> head,
+void AndAnnotationPolicy<GroundTag, AggregationFunction>::update_annotation(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
                                                                             const AndAnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context,
                                                                             DeltaPredicateAnnotations<GroundTag>& delta_and_annot) const
 {
-    const auto best_global_cost = fetch_annotation_cost<GroundTag>(head.get_row(), context.and_annot);
-    const auto best_local_cost = fetch_annotation_cost<GroundTag>(head.get_row(), delta_and_annot);
+    const auto best_global_cost = fetch_annotation_cost<GroundTag>(head, context.and_annot);
+    const auto best_local_cost = fetch_annotation_cost<GroundTag>(head, delta_and_annot);
     const auto best_cost = std::min(best_global_cost, best_local_cost);
     if (best_cost < context.current_cost)
         return;
 
     auto witness = WitnessAnnotation<GroundTag>(context.rule, context.metric, context.current_cost, context.numeric_supports);
     if (best_cost == context.current_cost
-        && !witness_wins_tie<GroundTag>(witness,
-                                        select_incumbent<GroundTag>(head.get_row(), best_global_cost, best_local_cost, context.and_annot, delta_and_annot)))
+        && !witness_wins_tie<GroundTag>(witness, select_incumbent<GroundTag>(head, best_global_cost, best_local_cost, context.and_annot, delta_and_annot)))
         return;
 
-    delta_and_annot.insert_or_assign(head.get_row(), Annotation<GroundTag>(std::move(witness)));
+    delta_and_annot.insert_or_assign(head, Annotation<GroundTag>(std::move(witness)));
 }
 
 template<typename AggregationFunction>
@@ -130,17 +123,17 @@ void AchieverAndAnnotationPolicy<GroundTag, AggregationFunction>::clear_achiever
 
 template<typename AggregationFunction>
 const typename AchieverAndAnnotationPolicy<GroundTag, AggregationFunction>::Achievers*
-AchieverAndAnnotationPolicy<GroundTag, AggregationFunction>::find_achievers(Atom head) const noexcept
+AchieverAndAnnotationPolicy<GroundTag, AggregationFunction>::find_achievers(PredicateHead head) const noexcept
 {
-    return m_achievers.find(head.get_row());
+    return m_achievers.find(head);
 }
 
 template<typename AggregationFunction>
 void AchieverAndAnnotationPolicy<GroundTag, AggregationFunction>::record_achiever(
-    Atom head,
+    PredicateHead head,
     const AndAnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context)
 {
-    m_achievers.update(head.get_row(),
+    m_achievers.update(head,
                        [&](auto& achievers, bool initialized)
                        {
                            if (!initialized)

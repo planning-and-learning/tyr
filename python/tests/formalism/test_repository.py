@@ -3,6 +3,13 @@ import pytest
 from pytyr.formalism import datalog, planning
 
 
+def test_ground_program_rule_accessors() -> None:
+    assert hasattr(datalog.GroundProgram, "get_rules")
+    assert hasattr(datalog.GroundProgram, "get_function_rules")
+    assert not hasattr(datalog.GroundProgram, "get_ground_rules")
+    assert not hasattr(datalog.GroundProgram, "get_ground_function_rules")
+
+
 @pytest.mark.parametrize("module", [datalog, planning])
 def test_repository_factory_accepts_object_counts(module) -> None:
     factory = module.RepositoryFactory()

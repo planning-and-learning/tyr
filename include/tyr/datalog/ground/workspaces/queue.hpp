@@ -23,6 +23,7 @@
 #include "tyr/datalog/workspaces/queue.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
+#include <concepts>
 #include <tuple>
 #include <vector>
 #include <yggdrasil/core/types.hpp>
@@ -90,15 +91,31 @@ struct QueueWorkspace<GroundTag>
 
     explicit QueueWorkspace(::tyr::formalism::datalog::ProgramView<GroundTag> program)
     {
-        predicate_storage.reserve(program.template get_ground_rules<::tyr::formalism::PredicateTag>().size());
-        function_storage.reserve(program.template get_ground_rules<::tyr::formalism::FunctionTag>().size());
+        predicate_storage.reserve(program.template get_rules<::tyr::formalism::PredicateTag>().size());
+        function_storage.reserve(program.template get_rules<::tyr::formalism::FunctionTag>().size());
     }
 
     template<::tyr::formalism::RelationKind R>
-    auto& get_storage() noexcept;
+    auto& get_storage() noexcept
+    {
+        if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
+            return predicate_storage;
+        else if constexpr (std::same_as<R, ::tyr::formalism::FunctionTag>)
+            return function_storage;
+        else
+            static_assert(ygg::dependent_false<R>::value, "Missing relation kind");
+    }
 
     template<::tyr::formalism::RelationKind R>
-    const auto& get_storage() const noexcept;
+    const auto& get_storage() const noexcept
+    {
+        if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
+            return predicate_storage;
+        else if constexpr (std::same_as<R, ::tyr::formalism::FunctionTag>)
+            return function_storage;
+        else
+            static_assert(ygg::dependent_false<R>::value, "Missing relation kind");
+    }
 
     void clear()
     {
@@ -108,30 +125,6 @@ struct QueueWorkspace<GroundTag>
         scratch.clear();
     }
 };
-
-template<>
-inline auto& QueueWorkspace<GroundTag>::get_storage<::tyr::formalism::PredicateTag>() noexcept
-{
-    return predicate_storage;
-}
-
-template<>
-inline auto& QueueWorkspace<GroundTag>::get_storage<::tyr::formalism::FunctionTag>() noexcept
-{
-    return function_storage;
-}
-
-template<>
-inline const auto& QueueWorkspace<GroundTag>::get_storage<::tyr::formalism::PredicateTag>() const noexcept
-{
-    return predicate_storage;
-}
-
-template<>
-inline const auto& QueueWorkspace<GroundTag>::get_storage<::tyr::formalism::FunctionTag>() const noexcept
-{
-    return function_storage;
-}
 
 }
 

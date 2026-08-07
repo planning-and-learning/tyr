@@ -74,8 +74,8 @@ void bind_ground_program(nb::module_& m, RepositoryBinding& repository)
                        .def("get_fluent_fterm_values", &V::template get_fterm_values<FluentTag>)
                        .def("get_goal", &V::get_goal, nb::keep_alive<0, 1>())
                        .def("get_metric", &V::get_metric);
-        cls.def("get_ground_rules", &V::template get_ground_rules<PredicateTag>);
-        cls.def("get_ground_function_rules", &V::template get_ground_rules<FunctionTag>);
+        cls.def("get_rules", &V::template get_rules<PredicateTag>);
+        cls.def("get_function_rules", &V::template get_rules<FunctionTag>);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);

@@ -51,27 +51,22 @@ struct FFRPGHeuristic<Kind>::Impl :
                                       datalog::OrAnnotationPolicy<Kind>,
                                       datalog::AndAnnotationPolicy<Kind, datalog::SumAggregation>,
                                       datalog::TerminationPolicy<Kind, datalog::SumAggregation>>;
-    using RPGPolicy = typename Base::Policy;
     using PredicateHead = datalog::PredicateAnnotationHead<Kind>;
     using FunctionHead = datalog::FunctionAnnotationHead<Kind>;
     using NumericAnnotation = datalog::Annotation<Kind, ::tyr::formalism::FunctionTag>;
     using NumericSupportWorkspace = datalog::NumericSupportSelectorWorkspace<Kind>;
 
     Impl(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
-        Base(std::move(task),
-             std::move(execution_context),
-             datalog::OrAnnotationPolicy<Kind> {},
-             datalog::AndAnnotationPolicy<Kind, datalog::SumAggregation> {},
-             cost_mode),
-        m_predicate_markings(this->get_program().get_datalog_program().get_program().template get_predicates<::tyr::formalism::FluentTag>().size()),
-        m_function_markings(this->get_program().get_datalog_program().get_program().template get_functions<::tyr::formalism::FluentTag>().size())
+        Base(std::move(task), std::move(execution_context), cost_mode),
+        m_predicate_markings(this->m_workspace.facts.fact_sets.predicate.get_sets().size()),
+        m_function_markings(this->m_workspace.facts.fact_sets.function.get_sets().size())
     {
     }
 
     Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) :
-        Base(source, std::move(execution_context), datalog::OrAnnotationPolicy<Kind> {}, datalog::AndAnnotationPolicy<Kind, datalog::SumAggregation> {}),
-        m_predicate_markings(this->get_program().get_datalog_program().get_program().template get_predicates<::tyr::formalism::FluentTag>().size()),
-        m_function_markings(this->get_program().get_datalog_program().get_program().template get_functions<::tyr::formalism::FluentTag>().size())
+        Base(source, std::move(execution_context)),
+        m_predicate_markings(this->m_workspace.facts.fact_sets.predicate.get_sets().size()),
+        m_function_markings(this->m_workspace.facts.fact_sets.function.get_sets().size())
     {
     }
 
@@ -104,7 +99,7 @@ struct FFRPGHeuristic<Kind>::Impl :
             for (const auto literal : goal->template get_literals<::tyr::formalism::FluentTag>())
             {
                 assert(literal.get_polarity());
-                extract_relaxed_plan(RPGPolicy::get_predicate_head(literal.get_atom()), state_context, 0);
+                extract_relaxed_plan(literal.get_atom().get_row(), state_context, 0);
             }
 
             for (const auto constraint : goal->get_numeric_constraints())
@@ -119,8 +114,7 @@ struct FFRPGHeuristic<Kind>::Impl :
 private:
     void extract_relaxed_plan(PredicateHead head, const StateContext<Kind>& state_context, size_t numeric_support_depth)
     {
-        const auto binding = RPGPolicy::get_predicate_binding(head);
-        if (mark(m_predicate_markings, binding.get_index().relation, binding.get_index().row))
+        if (mark(m_predicate_markings, head.get_index().relation, head.get_index().row))
             return;
 
         const auto* annotation = this->m_workspace.and_annot.find(head);
@@ -171,9 +165,9 @@ private:
     {
         if (const auto action = this->get_action(witness))
         {
-            const auto action_binding = RPGPolicy::get_action_binding(*action);
+            const auto action_binding = this->get_action_binding(*action);
             m_relaxed_plan.insert(action_binding);
-            if (RPGPolicy::is_action_applicable(*this->m_definition, this->m_workspace, m_executor, *action, state_context))
+            if (this->is_action_applicable(m_executor, *action, state_context))
                 m_preferred_actions.insert(action_binding);
         }
 

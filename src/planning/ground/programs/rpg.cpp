@@ -490,7 +490,7 @@ fd::ProgramView<GroundTag> create_rpg_ground_program(fp::FDRTaskView task,
     for (const auto atom : task.get_atoms<f::FluentTag>())
     {
         const auto new_atom = fp::merge_p2d(atom, translation_context.p2d.fluent_to_fluent_atom, context.fluent_predicates, merge_context).first;
-        translation_context.d2p.fluent_to_fluent_atom.emplace(new_atom, atom);
+        translation_context.d2p.fluent_to_fluent_atom.emplace(new_atom.get_row(), atom);
         program.fluent_atoms.push_back(new_atom.get_index());
     }
     for (const auto fact : task.get_fluent_facts())
@@ -498,7 +498,7 @@ fd::ProgramView<GroundTag> create_rpg_ground_program(fp::FDRTaskView task,
         if (const auto atom = fact.get_atom())
         {
             const auto [new_atom, inserted] = fp::merge_p2d(*atom, translation_context.p2d.fluent_to_fluent_atom, context.fluent_predicates, merge_context);
-            translation_context.d2p.fluent_to_fluent_atom.emplace(new_atom, *atom);
+            translation_context.d2p.fluent_to_fluent_atom.emplace(new_atom.get_row(), *atom);
             if (inserted)
                 program.fluent_atoms.push_back(new_atom.get_index());
         }
@@ -584,8 +584,6 @@ const RPGProgram<GroundTag>::RuleToActionMapping<f::FunctionTag>& RPGProgram<Gro
 {
     return m_rule_to_action.function;
 }
-
-fd::ProgramView<GroundTag> RPGProgram<GroundTag>::get_program() const noexcept { return m_datalog_program.get_program(); }
 
 datalog::Program<GroundTag>& RPGProgram<GroundTag>::get_datalog_program() noexcept { return m_datalog_program; }
 

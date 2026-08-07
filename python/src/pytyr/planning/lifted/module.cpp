@@ -118,7 +118,6 @@ should not be used further.
     nb::class_<RelaxedProgram>(m, "RPGProgram")
         .def(nb::init<::tyr::formalism::planning::TaskView, CostMode>(), "task"_a, "cost_mode"_a = CostMode::GENERAL, nb::keep_alive<1, 2>())
         .def("get_datalog_program", nb::overload_cast<>(&RelaxedProgram::get_datalog_program), nb::rv_policy::reference_internal)
-        .def("get_const_program_workspace", &RelaxedProgram::get_const_program_workspace, nb::rv_policy::reference_internal)
         .def("get_goal", &RelaxedProgram::get_goal, nb::keep_alive<0, 1>())
         .def(
             "get_rule_to_action_mapping",

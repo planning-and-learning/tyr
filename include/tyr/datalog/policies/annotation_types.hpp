@@ -59,9 +59,7 @@ class ConcurrentPredicateAnnotations;
 class ConcurrentFunctionAnnotations;
 
 template<TaskKind Kind>
-using PredicateAnnotationHead = std::conditional_t<std::same_as<Kind, GroundTag>,
-                                                   ::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag>,
-                                                   ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>>;
+using PredicateAnnotationHead = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
 
 template<TaskKind Kind>
 using FunctionAnnotationHead = NumericSupportKeyT<Kind>;
@@ -249,19 +247,7 @@ public:
 
     const Annotation<Kind>* find(Key key) const noexcept { return m_annotations.find(key); }
 
-    const Annotation<Kind>* find(PredicateAnnotationHead<Kind> head) const noexcept
-        requires std::same_as<Kind, GroundTag>
-    {
-        return find(head.get_row());
-    }
-
     Annotation<Kind>* find(Key key) noexcept { return const_cast<Annotation<Kind>*>(std::as_const(*this).find(key)); }
-
-    Annotation<Kind>* find(PredicateAnnotationHead<Kind> head) noexcept
-        requires std::same_as<Kind, GroundTag>
-    {
-        return const_cast<Annotation<Kind>*>(std::as_const(*this).find(head));
-    }
 
 private:
     DenseRelationMap<::tyr::formalism::PredicateTag, Annotation<Kind>> m_annotations;

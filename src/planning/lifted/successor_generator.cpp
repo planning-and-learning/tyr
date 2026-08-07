@@ -165,8 +165,7 @@ void SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
 
             scratch_binding.relation = it->second.get_index();
             scratch_binding.objects.clear();
-            for (const auto object : binding.get_objects())
-                scratch_binding.objects.push_back(object.get_index());
+            ygg::extend(binding.get_objects(), scratch_binding.objects);
 
             assert(is_applicable(it->second.get_condition(), ApplicabilityContext { state_context, grounder_context, *definition->task->get_fdr_context() })
                    && "ApplicableActionProgram emitted an action binding whose condition is not satisfied.");
@@ -297,8 +296,7 @@ fp::GroundActionView SuccessorGenerator<LiftedTag>::ground_action(fp::ActionBind
         return it->second;
 
     m_impl->evaluator.workspace.binding.clear();
-    for (const auto object : binding.get_data())
-        m_impl->evaluator.workspace.binding.push_back(object);
+    ygg::extend(binding.get_objects(), m_impl->evaluator.workspace.binding);
 
     auto grounder_context =
         fp::GrounderContext { m_impl->evaluator.workspace.planning_builder, *m_impl->definition->task->get_repository(), m_impl->evaluator.workspace.binding };
@@ -318,8 +316,7 @@ Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<Lif
 {
     m_impl->evaluator.scratch_action_binding.relation = binding.get_relation().get_index();
     m_impl->evaluator.scratch_action_binding.objects.clear();
-    for (const auto object : binding.get_data())
-        m_impl->evaluator.scratch_action_binding.objects.push_back(object);
+    ygg::extend(binding.get_objects(), m_impl->evaluator.scratch_action_binding.objects);
 
     return get_successor_node(node, m_impl->evaluator.scratch_action_binding);
 }
@@ -347,8 +344,7 @@ SuccessorGenerator<LiftedTag>::generate_successor_state(const Node<LiftedTag>& n
 {
     m_impl->evaluator.scratch_action_binding.relation = binding.get_relation().get_index();
     m_impl->evaluator.scratch_action_binding.objects.clear();
-    for (const auto object : binding.get_data())
-        m_impl->evaluator.scratch_action_binding.objects.push_back(object);
+    ygg::extend(binding.get_objects(), m_impl->evaluator.scratch_action_binding.objects);
 
     return PendingActionResult { m_impl->generate_successor_state(node, m_impl->evaluator.scratch_action_binding, out_state) };
 }

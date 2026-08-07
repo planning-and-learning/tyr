@@ -475,7 +475,7 @@ template<f::RelationKind R,
          RuleCostPolicyConcept<GroundTag> CP>
 void initialize_numeric_constraint_satisfaction_for(GroundCtx<OrAP, AndAP, TP, CP>& ctx)
 {
-    for (const auto rule : ctx.in().program().template get_ground_rules<R>())
+    for (const auto rule : ctx.in().program().template get_rules<R>())
         update_numeric_constraint_satisfaction(ctx, rule);
 }
 
@@ -496,7 +496,7 @@ template<f::RelationKind R,
          RuleCostPolicyConcept<GroundTag> CP>
 void seed_queue_for(GroundCtx<OrAP, AndAP, TP, CP>& ctx)
 {
-    for (const auto rule : ctx.in().program().template get_ground_rules<R>())
+    for (const auto rule : ctx.in().program().template get_rules<R>())
         push_rule(ctx, rule);
 }
 
@@ -759,6 +759,7 @@ update_fact_annotation(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundRuleView<f
 {
     auto& out = ctx.out();
     auto& scratch = out.queue().scratch;
+    const auto head = fact.get_row();
     scratch.delta_and_annot.clear();
     scratch.numeric_supports.clear();
 
@@ -785,11 +786,11 @@ update_fact_annotation(GroundCtx<OrAP, AndAP, TP, CP>& ctx, fd::GroundRuleView<f
                                                                             rule,
                                                                             out.and_annot() };
 
-    out.and_ap().record_achiever(fact, context);
-    out.and_ap().update_annotation(fact, context, scratch.delta_and_annot);
+    out.and_ap().record_achiever(head, context);
+    out.and_ap().update_annotation(head, context, scratch.delta_and_annot);
 
-    if (scratch.delta_and_annot.find(fact.get_row()))
-        return out.or_ap().update_annotation(fact, scratch.delta_and_annot, out.and_annot());
+    if (scratch.delta_and_annot.find(head))
+        return out.or_ap().update_annotation(head, scratch.delta_and_annot, out.and_annot());
 
     return std::nullopt;
 }
@@ -949,58 +950,58 @@ void compute_model(ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>& ctx)
 }
 
 template void compute_model(ProgramExecutionContext<GroundTag,
-                                                         NoOrAnnotationPolicy<GroundTag>,
-                                                         NoAndAnnotationPolicy<GroundTag>,
-                                                         NoTerminationPolicy<GroundTag>,
-                                                         RuleCostPolicy<GroundTag>>& ctx);
+                                                    NoOrAnnotationPolicy<GroundTag>,
+                                                    NoAndAnnotationPolicy<GroundTag>,
+                                                    NoTerminationPolicy<GroundTag>,
+                                                    RuleCostPolicy<GroundTag>>& ctx);
 template void compute_model(ProgramExecutionContext<GroundTag,
-                                                         OrAnnotationPolicy<GroundTag>,
-                                                         AndAnnotationPolicy<GroundTag, SumAggregation>,
-                                                         NoTerminationPolicy<GroundTag>,
-                                                         RuleCostPolicy<GroundTag>>& ctx);
+                                                    OrAnnotationPolicy<GroundTag>,
+                                                    AndAnnotationPolicy<GroundTag, SumAggregation>,
+                                                    NoTerminationPolicy<GroundTag>,
+                                                    RuleCostPolicy<GroundTag>>& ctx);
 template void compute_model(ProgramExecutionContext<GroundTag,
-                                                         OrAnnotationPolicy<GroundTag>,
-                                                         AndAnnotationPolicy<GroundTag, SumAggregation>,
-                                                         TerminationPolicy<GroundTag, SumAggregation>,
-                                                         RuleCostPolicy<GroundTag>>& ctx);
+                                                    OrAnnotationPolicy<GroundTag>,
+                                                    AndAnnotationPolicy<GroundTag, SumAggregation>,
+                                                    TerminationPolicy<GroundTag, SumAggregation>,
+                                                    RuleCostPolicy<GroundTag>>& ctx);
 template void compute_model(ProgramExecutionContext<GroundTag,
-                                                         OrAnnotationPolicy<GroundTag>,
-                                                         AndAnnotationPolicy<GroundTag, MaxAggregation>,
-                                                         NoTerminationPolicy<GroundTag>,
-                                                         RuleCostPolicy<GroundTag>>& ctx);
+                                                    OrAnnotationPolicy<GroundTag>,
+                                                    AndAnnotationPolicy<GroundTag, MaxAggregation>,
+                                                    NoTerminationPolicy<GroundTag>,
+                                                    RuleCostPolicy<GroundTag>>& ctx);
 template void compute_model(ProgramExecutionContext<GroundTag,
-                                                         OrAnnotationPolicy<GroundTag>,
-                                                         AndAnnotationPolicy<GroundTag, MaxAggregation>,
-                                                         TerminationPolicy<GroundTag, MaxAggregation>,
-                                                         RuleCostPolicy<GroundTag>>& ctx);
+                                                    OrAnnotationPolicy<GroundTag>,
+                                                    AndAnnotationPolicy<GroundTag, MaxAggregation>,
+                                                    TerminationPolicy<GroundTag, MaxAggregation>,
+                                                    RuleCostPolicy<GroundTag>>& ctx);
 template void compute_model(ProgramExecutionContext<GroundTag,
-                                                         OrAnnotationPolicy<GroundTag>,
-                                                         AchieverAndAnnotationPolicy<GroundTag, MaxAggregation>,
-                                                         TerminationPolicy<GroundTag, MaxAggregation>,
-                                                         RuleCostPolicy<GroundTag>>& ctx);
+                                                    OrAnnotationPolicy<GroundTag>,
+                                                    AchieverAndAnnotationPolicy<GroundTag, MaxAggregation>,
+                                                    TerminationPolicy<GroundTag, MaxAggregation>,
+                                                    RuleCostPolicy<GroundTag>>& ctx);
 template void compute_model(ProgramExecutionContext<GroundTag,
-                                                         OrAnnotationPolicy<GroundTag>,
-                                                         AndAnnotationPolicy<GroundTag, SumAggregation>,
-                                                         NoTerminationPolicy<GroundTag>,
-                                                         RuleCostOverridePolicy<GroundTag>>& ctx);
+                                                    OrAnnotationPolicy<GroundTag>,
+                                                    AndAnnotationPolicy<GroundTag, SumAggregation>,
+                                                    NoTerminationPolicy<GroundTag>,
+                                                    RuleCostOverridePolicy<GroundTag>>& ctx);
 template void compute_model(ProgramExecutionContext<GroundTag,
-                                                         OrAnnotationPolicy<GroundTag>,
-                                                         AndAnnotationPolicy<GroundTag, SumAggregation>,
-                                                         TerminationPolicy<GroundTag, SumAggregation>,
-                                                         RuleCostOverridePolicy<GroundTag>>& ctx);
+                                                    OrAnnotationPolicy<GroundTag>,
+                                                    AndAnnotationPolicy<GroundTag, SumAggregation>,
+                                                    TerminationPolicy<GroundTag, SumAggregation>,
+                                                    RuleCostOverridePolicy<GroundTag>>& ctx);
 template void compute_model(ProgramExecutionContext<GroundTag,
-                                                         OrAnnotationPolicy<GroundTag>,
-                                                         AndAnnotationPolicy<GroundTag, MaxAggregation>,
-                                                         NoTerminationPolicy<GroundTag>,
-                                                         RuleCostOverridePolicy<GroundTag>>& ctx);
+                                                    OrAnnotationPolicy<GroundTag>,
+                                                    AndAnnotationPolicy<GroundTag, MaxAggregation>,
+                                                    NoTerminationPolicy<GroundTag>,
+                                                    RuleCostOverridePolicy<GroundTag>>& ctx);
 template void compute_model(ProgramExecutionContext<GroundTag,
-                                                         OrAnnotationPolicy<GroundTag>,
-                                                         AndAnnotationPolicy<GroundTag, MaxAggregation>,
-                                                         TerminationPolicy<GroundTag, MaxAggregation>,
-                                                         RuleCostOverridePolicy<GroundTag>>& ctx);
+                                                    OrAnnotationPolicy<GroundTag>,
+                                                    AndAnnotationPolicy<GroundTag, MaxAggregation>,
+                                                    TerminationPolicy<GroundTag, MaxAggregation>,
+                                                    RuleCostOverridePolicy<GroundTag>>& ctx);
 template void compute_model(ProgramExecutionContext<GroundTag,
-                                                         OrAnnotationPolicy<GroundTag>,
-                                                         AchieverAndAnnotationPolicy<GroundTag, MaxAggregation>,
-                                                         TerminationPolicy<GroundTag, MaxAggregation>,
-                                                         RuleCostOverridePolicy<GroundTag>>& ctx);
+                                                    OrAnnotationPolicy<GroundTag>,
+                                                    AchieverAndAnnotationPolicy<GroundTag, MaxAggregation>,
+                                                    TerminationPolicy<GroundTag, MaxAggregation>,
+                                                    RuleCostOverridePolicy<GroundTag>>& ctx);
 }

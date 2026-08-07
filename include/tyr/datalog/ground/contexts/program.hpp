@@ -202,7 +202,7 @@ private:
     void initialize_rule_states()
     {
         auto& states = m_out.template rule_states<R>();
-        for (const auto rule : m_in.program().template get_ground_rules<R>())
+        for (const auto rule : m_in.program().template get_rules<R>())
         {
             const auto rule_index = rule.get_index();
             if (position(rule_index) >= states.size())

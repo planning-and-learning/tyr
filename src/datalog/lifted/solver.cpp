@@ -17,11 +17,11 @@
 
 #include "tyr/datalog/lifted/solver.hpp"
 
+#include "tyr/datalog/applicability.hpp"
+#include "tyr/datalog/applicability_lifted.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/formatter.hpp"
-#include "tyr/datalog/applicability.hpp"
-#include "tyr/datalog/applicability_lifted.hpp"
 #include "tyr/datalog/lifted/assignment_sets.hpp"
 #include "tyr/datalog/lifted/consistency_graph.hpp"
 #include "tyr/datalog/lifted/delta_kpkc.hpp"
@@ -623,8 +623,7 @@ void process_pending_rule_bindings(RuleExecutionContext<f::PredicateTag, OrAP, A
                       [&](const auto pending_binding)
                       {
                           out.ground_context().binding.clear();
-                          for (const auto object : pending_binding.get_objects())
-                              out.ground_context().binding.push_back(object.get_index());
+                          ygg::extend(pending_binding.get_objects(), out.ground_context().binding);
 
                           assert(is_applicable(conflicting_condition.template get_literals<f::StaticTag>(), applicability_context));
 
@@ -880,43 +879,43 @@ compute_model(ProgramExecutionContext<LiftedTag, NoOrAnnotationPolicy<LiftedTag>
 template void compute_model(
     ProgramExecutionContext<LiftedTag, OrAnnotationPolicy<LiftedTag>, AndAnnotationPolicy<LiftedTag, SumAggregation>, NoTerminationPolicy<LiftedTag>>& ctx);
 template void compute_model(ProgramExecutionContext<LiftedTag,
-                                                      OrAnnotationPolicy<LiftedTag>,
-                                                      AndAnnotationPolicy<LiftedTag, SumAggregation>,
-                                                      TerminationPolicy<LiftedTag, SumAggregation>>& ctx);
+                                                    OrAnnotationPolicy<LiftedTag>,
+                                                    AndAnnotationPolicy<LiftedTag, SumAggregation>,
+                                                    TerminationPolicy<LiftedTag, SumAggregation>>& ctx);
 template void compute_model(
     ProgramExecutionContext<LiftedTag, OrAnnotationPolicy<LiftedTag>, AndAnnotationPolicy<LiftedTag, MaxAggregation>, NoTerminationPolicy<LiftedTag>>& ctx);
 template void compute_model(ProgramExecutionContext<LiftedTag,
-                                                      OrAnnotationPolicy<LiftedTag>,
-                                                      AndAnnotationPolicy<LiftedTag, MaxAggregation>,
-                                                      TerminationPolicy<LiftedTag, MaxAggregation>>& ctx);
+                                                    OrAnnotationPolicy<LiftedTag>,
+                                                    AndAnnotationPolicy<LiftedTag, MaxAggregation>,
+                                                    TerminationPolicy<LiftedTag, MaxAggregation>>& ctx);
 template void compute_model(ProgramExecutionContext<LiftedTag,
-                                                      NoOrAnnotationPolicy<LiftedTag>,
-                                                      NoAndAnnotationPolicy<LiftedTag>,
-                                                      NoTerminationPolicy<LiftedTag>,
-                                                      RuleCostOverridePolicy<LiftedTag>>& ctx);
+                                                    NoOrAnnotationPolicy<LiftedTag>,
+                                                    NoAndAnnotationPolicy<LiftedTag>,
+                                                    NoTerminationPolicy<LiftedTag>,
+                                                    RuleCostOverridePolicy<LiftedTag>>& ctx);
 template void compute_model(ProgramExecutionContext<LiftedTag,
-                                                      OrAnnotationPolicy<LiftedTag>,
-                                                      AndAnnotationPolicy<LiftedTag, SumAggregation>,
-                                                      NoTerminationPolicy<LiftedTag>,
-                                                      RuleCostOverridePolicy<LiftedTag>>& ctx);
+                                                    OrAnnotationPolicy<LiftedTag>,
+                                                    AndAnnotationPolicy<LiftedTag, SumAggregation>,
+                                                    NoTerminationPolicy<LiftedTag>,
+                                                    RuleCostOverridePolicy<LiftedTag>>& ctx);
 template void compute_model(ProgramExecutionContext<LiftedTag,
-                                                      OrAnnotationPolicy<LiftedTag>,
-                                                      AndAnnotationPolicy<LiftedTag, SumAggregation>,
-                                                      TerminationPolicy<LiftedTag, SumAggregation>,
-                                                      RuleCostOverridePolicy<LiftedTag>>& ctx);
+                                                    OrAnnotationPolicy<LiftedTag>,
+                                                    AndAnnotationPolicy<LiftedTag, SumAggregation>,
+                                                    TerminationPolicy<LiftedTag, SumAggregation>,
+                                                    RuleCostOverridePolicy<LiftedTag>>& ctx);
 template void compute_model(ProgramExecutionContext<LiftedTag,
-                                                      OrAnnotationPolicy<LiftedTag>,
-                                                      AndAnnotationPolicy<LiftedTag, MaxAggregation>,
-                                                      NoTerminationPolicy<LiftedTag>,
-                                                      RuleCostOverridePolicy<LiftedTag>>& ctx);
+                                                    OrAnnotationPolicy<LiftedTag>,
+                                                    AndAnnotationPolicy<LiftedTag, MaxAggregation>,
+                                                    NoTerminationPolicy<LiftedTag>,
+                                                    RuleCostOverridePolicy<LiftedTag>>& ctx);
 template void compute_model(ProgramExecutionContext<LiftedTag,
-                                                      OrAnnotationPolicy<LiftedTag>,
-                                                      AndAnnotationPolicy<LiftedTag, MaxAggregation>,
-                                                      TerminationPolicy<LiftedTag, MaxAggregation>,
-                                                      RuleCostOverridePolicy<LiftedTag>>& ctx);
+                                                    OrAnnotationPolicy<LiftedTag>,
+                                                    AndAnnotationPolicy<LiftedTag, MaxAggregation>,
+                                                    TerminationPolicy<LiftedTag, MaxAggregation>,
+                                                    RuleCostOverridePolicy<LiftedTag>>& ctx);
 template void compute_model(ProgramExecutionContext<LiftedTag,
-                                                      OrAnnotationPolicy<LiftedTag>,
-                                                      AchieverAndAnnotationPolicy<LiftedTag, MaxAggregation>,
-                                                      TerminationPolicy<LiftedTag, MaxAggregation>,
-                                                      RuleCostOverridePolicy<LiftedTag>>& ctx);
+                                                    OrAnnotationPolicy<LiftedTag>,
+                                                    AchieverAndAnnotationPolicy<LiftedTag, MaxAggregation>,
+                                                    TerminationPolicy<LiftedTag, MaxAggregation>,
+                                                    RuleCostOverridePolicy<LiftedTag>>& ctx);
 }

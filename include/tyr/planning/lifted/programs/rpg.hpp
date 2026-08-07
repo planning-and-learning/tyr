@@ -50,7 +50,6 @@ public:
     const RuleToActionMapping<R>& get_rule_to_action_mapping() const noexcept;
     datalog::Program<LiftedTag>& get_datalog_program() noexcept;
     const datalog::Program<LiftedTag>& get_datalog_program() const noexcept;
-    const datalog::ConstProgramWorkspace<LiftedTag>& get_const_program_workspace() const noexcept;
     ::tyr::formalism::datalog::GroundConjunctiveConditionView get_goal() const noexcept;
 
 private:

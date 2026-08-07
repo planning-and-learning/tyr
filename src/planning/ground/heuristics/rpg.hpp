@@ -39,9 +39,6 @@ struct RPGPolicy<GroundTag>
     using Action = ::tyr::formalism::planning::GroundActionView;
     using PredicateHead = datalog::PredicateAnnotationHead<GroundTag>;
 
-    static PredicateHead get_predicate_head(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> atom) noexcept { return atom; }
-    static auto get_predicate_binding(PredicateHead head) noexcept { return head.get_row(); }
-
     template<typename Definition, typename Workspace>
     static void append_cut_frontier_atom(const Definition& definition,
                                          Workspace&,
@@ -78,8 +75,6 @@ struct RPGPolicy<GroundTag>
         return it == mapping.end() ? std::nullopt : std::optional(it->second);
     }
 
-    static ::tyr::formalism::planning::ActionBindingView get_action_binding(Action action) noexcept { return action.get_row(); }
-
     template<typename Workspace, typename Callback>
     static void for_each_numeric_predecessor(Workspace&, const datalog::NumericSupport<GroundTag>& support, Callback&& callback)
     {
@@ -92,9 +87,8 @@ struct RPGPolicy<GroundTag>
         return executor.is_applicable(action, state_context);
     }
 
-    template<::tyr::formalism::RelationKind R, typename Definition, typename Workspace, typename PredicateCallback, typename NumericCallback>
-    static void for_each_witness_precondition(const Definition&,
-                                              Workspace&,
+    template<::tyr::formalism::RelationKind R, typename Workspace, typename PredicateCallback, typename NumericCallback>
+    static void for_each_witness_precondition(Workspace&,
                                               const datalog::WitnessAnnotation<GroundTag, R>& witness,
                                               PredicateCallback&& predicate_callback,
                                               NumericCallback&& numeric_callback)
@@ -102,7 +96,7 @@ struct RPGPolicy<GroundTag>
         const auto body = witness.get_rule_key().get_body();
         for (const auto literal : body.template get_literals<::tyr::formalism::FluentTag>())
             if (literal.get_polarity())
-                predicate_callback(literal.get_atom());
+                predicate_callback(literal.get_atom().get_row());
 
         for (const auto constraint : body.get_numeric_constraints())
             numeric_callback(constraint);

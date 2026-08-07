@@ -62,6 +62,15 @@ struct LMCutNumericNode : ygg::comparison::Mixin<LMCutNumericNode<Kind>>
     auto identifying_members() const noexcept { return std::make_tuple(key, lower(interval), upper(interval)); }
 };
 
+template<TaskKind Kind>
+bool needs_expanded_lmcut(fd::ProgramView<Kind> program)
+{
+    for (const auto rule : program.template get_rules<f::PredicateTag>())
+        if (!rule.get_body().get_numeric_constraints().empty())
+            return true;
+    return !program.template get_rules<f::FunctionTag>().empty();
+}
+
 }
 
 template<TaskKind Kind>
@@ -79,7 +88,6 @@ struct LMCutHeuristic<Kind>::Impl :
                                       datalog::AchieverAndAnnotationPolicy<Kind, datalog::MaxAggregation>,
                                       datalog::TerminationPolicy<Kind, datalog::MaxAggregation>,
                                       datalog::RuleCostOverridePolicy<Kind>>;
-    using Policy = typename Base::Policy;
     using ActionBinding = ::tyr::formalism::planning::ActionBindingView;
     using PredicateHead = datalog::PredicateAnnotationHead<Kind>;
     using NumericNode = LMCutNumericNode<Kind>;
@@ -125,9 +133,11 @@ private:
     void append_cut_frontier_atom(PredicateHead head, CutFrontierAtoms* cut_frontier_atoms);
     void extract_cut(CutFrontierAtoms* cut_frontier_atoms);
     void extract_expanded_cut(CutFrontierAtoms* cut_frontier_atoms);
-    bool use_expanded_edges() const noexcept { return this->m_definition->use_expanded_lmcut; }
-    bool use_expanded_numeric_target() const noexcept { return use_expanded_edges() && this->m_definition->cost_mode == CostMode::GENERAL; }
+    bool use_expanded_edges() const noexcept { return m_use_expanded_edges; }
+    bool use_expanded_numeric_target() const noexcept { return use_expanded_edges() && m_cost_mode == CostMode::GENERAL; }
 
+    CostMode m_cost_mode;
+    bool m_use_expanded_edges;
     ygg::UnorderedMap<ActionBinding, datalog::Cost> m_action_used_costs;
     ygg::UnorderedMap<RuleEdge, datalog::Cost> m_rule_edge_used_costs;
     ygg::UnorderedMap<NumericEdge, datalog::Cost> m_numeric_edge_used_costs;
@@ -146,12 +156,9 @@ private:
 
 template<TaskKind Kind>
 LMCutHeuristic<Kind>::Impl::Impl(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
-    Base(std::move(task),
-         std::move(execution_context),
-         datalog::OrAnnotationPolicy<Kind> {},
-         datalog::AchieverAndAnnotationPolicy<Kind, datalog::MaxAggregation> {},
-         cost_mode,
-         true)
+    Base(std::move(task), std::move(execution_context), cost_mode),
+    m_cost_mode(cost_mode),
+    m_use_expanded_edges(needs_expanded_lmcut(this->m_definition->rpg_program.get_datalog_program().get_program()))
 {
     // The propositional justification graph contains every reachable operator arc, including arcs discovered after the goal first becomes reachable.
     this->m_workspace.tp.set_early_termination(use_expanded_edges());
@@ -159,7 +166,9 @@ LMCutHeuristic<Kind>::Impl::Impl(TaskPtr<Kind> task, ygg::ExecutionContextPtr ex
 
 template<TaskKind Kind>
 LMCutHeuristic<Kind>::Impl::Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) :
-    Base(source, std::move(execution_context), datalog::OrAnnotationPolicy<Kind> {}, datalog::AchieverAndAnnotationPolicy<Kind, datalog::MaxAggregation> {})
+    Base(source, std::move(execution_context)),
+    m_cost_mode(source.m_cost_mode),
+    m_use_expanded_edges(source.m_use_expanded_edges)
 {
     this->m_workspace.tp.set_early_termination(use_expanded_edges());
 }
@@ -257,9 +266,7 @@ template<TaskKind Kind>
 datalog::Cost LMCutHeuristic<Kind>::Impl::get_numeric_support_cost(const datalog::NumericSupport<Kind>& support)
 {
     auto cost = datalog::Cost(0);
-    Policy::for_each_numeric_predecessor(this->m_workspace,
-                                         support,
-                                         [&](const auto, const auto, const auto predecessor_cost) { cost = std::max(cost, predecessor_cost); });
+    this->for_each_numeric_predecessor(support, [&](const auto, const auto, const auto predecessor_cost) { cost = std::max(cost, predecessor_cost); });
     return cost;
 }
 
@@ -268,13 +275,12 @@ void LMCutHeuristic<Kind>::Impl::append_numeric_support_preconditions(const data
                                                                       datalog::Cost body_cost,
                                                                       std::vector<Precondition>& result)
 {
-    Policy::for_each_numeric_predecessor(this->m_workspace,
-                                         support,
-                                         [&](const auto key, const auto interval, const auto cost)
-                                         {
-                                             if (cost == body_cost)
-                                                 result.emplace_back(NumericNode { key, interval });
-                                         });
+    this->for_each_numeric_predecessor(support,
+                                       [&](const auto key, const auto interval, const auto cost)
+                                       {
+                                           if (cost == body_cost)
+                                               result.emplace_back(NumericNode { key, interval });
+                                       });
 }
 
 template<TaskKind Kind>
@@ -570,7 +576,7 @@ template<TaskKind Kind>
 void LMCutHeuristic<Kind>::Impl::append_cut_frontier_atom(PredicateHead head, CutFrontierAtoms* cut_frontier_atoms)
 {
     if (cut_frontier_atoms)
-        Policy::append_cut_frontier_atom(*this->m_definition, this->m_workspace, head, *cut_frontier_atoms);
+        this->append_planning_cut_frontier_atom(head, *cut_frontier_atoms);
 }
 
 template<TaskKind Kind>
@@ -584,7 +590,7 @@ void LMCutHeuristic<Kind>::Impl::extract_cut(CutFrontierAtoms* cut_frontier_atom
     {
         for (const auto literal : goal->template get_literals<f::FluentTag>())
         {
-            const auto head = Policy::get_predicate_head(literal.get_atom());
+            const auto head = literal.get_atom().get_row();
             if (literal.get_polarity() && this->get_predicate_cost(head) == goal_cost)
             {
                 mark_goal_zone(head, 0);
@@ -647,7 +653,7 @@ void LMCutHeuristic<Kind>::Impl::extract_expanded_cut(CutFrontierAtoms* cut_fron
     {
         for (const auto literal : goal->template get_literals<f::FluentTag>())
         {
-            const auto head = Policy::get_predicate_head(literal.get_atom());
+            const auto head = literal.get_atom().get_row();
             if (literal.get_polarity() && this->get_predicate_cost(head) == goal_cost)
             {
                 mark_goal_zone(head, 0);

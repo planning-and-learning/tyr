@@ -39,7 +39,7 @@ void collect_head_terms(fd::GroundNumericEffectOperatorView<f::FluentTag> head, 
 template<f::RelationKind R>
 void initialize_dependencies(fd::ProgramView<GroundTag> program, GroundRuleDependencies<R>& dependencies)
 {
-    for (const auto rule : program.template get_ground_rules<R>())
+    for (const auto rule : program.template get_rules<R>())
     {
         const auto body = rule.get_body();
         for (const auto literal : body.template get_literals<f::FluentTag>())

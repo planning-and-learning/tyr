@@ -800,9 +800,9 @@ std::string to_string(ProgramView<GroundTag> value)
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "goal = ", value.get_goal());
         os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "ground rules = ", value.template get_ground_rules<PredicateTag>());
+        fmt::print(os, "{}{}\n", "ground rules = ", value.template get_rules<PredicateTag>());
         os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "numeric ground rules = ", value.template get_ground_rules<FunctionTag>());
+        fmt::print(os, "{}{}\n", "numeric ground rules = ", value.template get_rules<FunctionTag>());
     }
     os << ygg::print_indent << ")";
     return os.str();

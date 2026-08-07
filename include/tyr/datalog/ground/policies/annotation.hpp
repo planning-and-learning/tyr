@@ -37,8 +37,6 @@ public:
     using FunctionHead = FunctionAnnotationHead<GroundTag>;
 
     void initialize_annotation(PredicateHead head, PredicateAnnotations<GroundTag>& and_annot) const;
-    void initialize_annotation(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
-                               PredicateAnnotations<GroundTag>& and_annot) const;
 
     void initialize_annotation(FunctionHead head, ygg::ClosedInterval<ygg::float_t> interval, FunctionAnnotations<GroundTag>& numeric_and_annot) const;
     void initialize_annotation(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> head,
@@ -77,7 +75,7 @@ template<typename AggregationFunction>
 class AchieverAndAnnotationPolicy<GroundTag, AggregationFunction> : public AndAnnotationPolicy<GroundTag, AggregationFunction>
 {
 public:
-    using Atom = PredicateAnnotationHead<GroundTag>;
+    using PredicateHead = PredicateAnnotationHead<GroundTag>;
     using Achievers = std::vector<WitnessAnnotation<GroundTag, ::tyr::formalism::PredicateTag>>;
 
     static constexpr bool records_propositional_achievers = true;
@@ -86,9 +84,9 @@ public:
 
     void clear_achievers() noexcept;
 
-    const Achievers* find_achievers(Atom head) const noexcept;
+    const Achievers* find_achievers(PredicateHead head) const noexcept;
 
-    void record_achiever(Atom head, const AndAnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context);
+    void record_achiever(PredicateHead head, const AndAnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context);
 
 private:
     DenseRelationMap<::tyr::formalism::PredicateTag, Achievers> m_achievers;

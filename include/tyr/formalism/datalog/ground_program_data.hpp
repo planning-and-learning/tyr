@@ -135,7 +135,7 @@ struct Data<::tyr::formalism::datalog::GroundProgram>
 
     /// Dispatches on the relation kind, mirroring FactSets::get<T>() and AssignmentSets::get<T>().
     template<::tyr::formalism::RelationKind R>
-    auto& get_ground_rules() noexcept
+    auto& get_rules() noexcept
     {
         if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
             return predicate_ground_rules;
@@ -146,7 +146,7 @@ struct Data<::tyr::formalism::datalog::GroundProgram>
     }
 
     template<::tyr::formalism::RelationKind R>
-    const auto& get_ground_rules() const noexcept
+    const auto& get_rules() const noexcept
     {
         if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
             return predicate_ground_rules;

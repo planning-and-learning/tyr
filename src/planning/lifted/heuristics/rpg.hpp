@@ -47,9 +47,6 @@ struct RPGPolicy<LiftedTag>
     using Action = ::tyr::formalism::planning::ActionBindingView;
     using PredicateHead = datalog::PredicateAnnotationHead<LiftedTag>;
 
-    static PredicateHead get_predicate_head(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> atom) noexcept { return atom.get_row(); }
-    static PredicateHead get_predicate_binding(PredicateHead head) noexcept { return head; }
-
     template<typename Definition, typename Workspace>
     static void append_cut_frontier_atom(const Definition& definition,
                                          Workspace& workspace,
@@ -97,12 +94,9 @@ struct RPGPolicy<LiftedTag>
         auto grounder_context =
             ::tyr::formalism::planning::GrounderContext { workspace.planning_builder, *definition.task->get_repository(), workspace.binding };
         workspace.binding.clear();
-        for (const auto object : rule_binding.get_objects())
-            workspace.binding.push_back(object.get_index());
+        ygg::extend(rule_binding.get_objects(), workspace.binding);
         return ::tyr::formalism::planning::ground(it->second, grounder_context).first;
     }
-
-    static Action get_action_binding(Action action) noexcept { return action; }
 
     template<typename Workspace, typename Callback>
     static void for_each_numeric_predecessor(Workspace& workspace, const datalog::NumericSupport<LiftedTag>& support, Callback&& callback)
@@ -120,25 +114,22 @@ struct RPGPolicy<LiftedTag>
     is_action_applicable(const Definition& definition, Workspace& workspace, Executor& executor, Action action, const StateContext<LiftedTag>& state_context)
     {
         workspace.binding.clear();
-        for (const auto object : action.get_data())
-            workspace.binding.push_back(object);
+        ygg::extend(action.get_objects(), workspace.binding);
 
         auto grounder_context =
             ::tyr::formalism::planning::GrounderContext { workspace.planning_builder, *definition.task->get_repository(), workspace.binding };
         return executor.is_applicable(action.get_relation(), state_context, grounder_context, *definition.task->get_fdr_context());
     }
 
-    template<::tyr::formalism::RelationKind R, typename Definition, typename Workspace, typename PredicateCallback, typename NumericCallback>
-    static void for_each_witness_precondition(const Definition& definition,
-                                              Workspace& workspace,
+    template<::tyr::formalism::RelationKind R, typename Workspace, typename PredicateCallback, typename NumericCallback>
+    static void for_each_witness_precondition(Workspace& workspace,
                                               const datalog::WitnessAnnotation<LiftedTag, R>& witness,
                                               PredicateCallback&& predicate_callback,
                                               NumericCallback&& numeric_callback)
     {
         const auto rule_binding = witness.get_rule_key();
         const auto row = rule_binding.get_objects();
-        const auto& const_rule_workspace =
-            *definition.rpg_program.get_const_program_workspace().template get_rules<R>()[ygg::uint_t(rule_binding.get_relation().get_index())];
+        const auto& const_rule_workspace = *workspace.const_workspace.template get_rules<R>()[ygg::uint_t(rule_binding.get_relation().get_index())];
         const auto witness_condition = const_rule_workspace.get_witness_rule().get_body();
         auto grounder_context = ::tyr::formalism::datalog::GrounderContext { workspace.datalog_builder, workspace.workspace_repository, workspace.binding };
 
@@ -148,16 +139,14 @@ struct RPGPolicy<LiftedTag>
                 continue;
 
             workspace.binding.clear();
-            for (const auto object : row)
-                workspace.binding.push_back(object.get_index());
+            ygg::extend(row, workspace.binding);
             predicate_callback(::tyr::formalism::datalog::ground(literal.get_atom(), grounder_context).first.get_row());
         }
 
         for (const auto constraint : witness_condition.get_numeric_constraints())
         {
             workspace.binding.clear();
-            for (const auto object : row)
-                workspace.binding.push_back(object.get_index());
+            ygg::extend(row, workspace.binding);
             numeric_callback(::tyr::formalism::datalog::ground(constraint, grounder_context));
         }
     }

@@ -168,10 +168,8 @@ TEST(TyrDatalogLiftedDeltaKPKC, InnerParallelismMatchesSequentialRPG)
 
     const auto solve = [&](Workspace& workspace, const ygg::ExecutionContextPtr& execution_context)
     {
-        workspace.facts.reset();
         workspace.tp.set_goals(program.get_goal());
-        p::insert_fluent_atoms_to_fact_set(initial_state.get_state_builder(), *task->get_repository(), program.get_translation_context().p2d, workspace);
-        p::insert_numeric_variables_to_fact_set(initial_state.get_state_builder(), *task->get_repository(), program.get_translation_context().p2d, workspace);
+        p::insert_unextended_state(initial_state.get_state_builder(), *task->get_repository(), program.get_translation_context().p2d, workspace);
 
         auto context = d::ProgramExecutionContext(workspace);
         execution_context->arena().execute([&] { d::compute_model(context); });
