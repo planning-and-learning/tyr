@@ -1,30 +1,72 @@
 # Search experiments
 
-`run_search.py` replaces the dated A* and lazy-GBFS launchers. A **what**
-file fixes the benchmark and algorithm matrix; a **how** file selects the
-build, machine, output location, and limits.
+`run_search.py` combines two JSON files:
+
+- a **what** file containing the benchmark suites and ordered algorithm matrix;
+- a **how** file containing the build, environment, limits, and output location.
+
+Configurations appear in generated reports in the same order as in the what
+file.
+
+## Running locally
+
+From the repository root, run the five-configuration parallel-search smoke
+experiment with:
 
 ```console
 .venv/bin/python experiments/run_search.py \
-  --what experiments/configs/what/gbfs_lazy/ipc2023-release.json \
-  --how experiments/configs/how/local-build-8000m-5s.json \
-  build start parse fetch report
+  --what experiments/configs/what/gbfs_lazy/2026-8-7-gbfs_lazy-parallel-search-4.json \
+  --how experiments/configs/how/local-build-2500m-1s.json \
+  --local-processes 4 \
+  --all
 ```
 
-Lab's positional steps and `--all` still work. Relative `build_dir` and
-`output_root` values in how files are resolved from the repository root. The
-default experiment directory is:
+Adjust `--local-processes` so that concurrently running searches do not
+oversubscribe the machine. The example uses at most 16 cores.
 
-```text
-<output_root>/<planner>/<what-name>--<how-name>
+## Running on Tetralith
+
+Configure and build the release executable on a compute node. Tyr consumes
+Boost and the other native dependencies from `pyyggdrasil`; an unrelated
+cluster-wide `BOOST_ROOT` can be unset before configuration.
+
+```console
+unset BOOST_ROOT
+
+cmake -S . -B build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DPython_EXECUTABLE="$PWD/.venv/bin/python" \
+  -DCMAKE_PREFIX_PATH="$("$PWD/.venv/bin/python" -c 'import pypddl, pyyggdrasil; print(f"{pypddl.native_prefix()};{pyyggdrasil.native_prefix()}")')" \
+  -DTYR_BUILD_EXECUTABLES=ON \
+  -DTYR_HEADER_INSTANTIATION=ON \
+  -DTYR_ENABLE_SEMI_NAIVE=ON \
+  -DTYR_ENABLE_INNER_PARALLELISM=OFF
+
+cmake --build build --target gbfs_lazy -j16
 ```
 
-Tetralith submissions carry the resolved configuration into Lab's dependent
-Slurm steps automatically.
+Submit the full experiment from a Tetralith login node with:
 
-Use `--output-dir` for an exact path. Repeat `--suite` to replace the suite
-selected for the environment, or `--configuration` to run only named
-configurations from the what file.
+```console
+.venv/bin/python experiments/run_search.py \
+  --what experiments/configs/what/gbfs_lazy/2026-8-7-gbfs_lazy-parallel-search-4.json \
+  --how experiments/configs/how/tetralith-build-11360m-600s-4cpu.json \
+  --all
+```
+
+The runner submits the experiment and its dependent parsing and reporting
+steps to Slurm. The resolved configuration is carried into each step.
+
+## Presets
+
+| What preset | Purpose | Local how | Tetralith how |
+|---|---|---|---|
+| `2026-1-8-gbfs_lazy-parallel-datalog` | 1/2/4/8 inner Datalog threads | `local-build-2500m-1s` | `tetralith-build-16000m-600s-8cpu` |
+| `2026-8-7-gbfs_lazy-parallel-search-4` | sequential, 4-thread Datalog, shared search, random HDA*, and LM-cut HDA* | `local-build-2500m-1s` | `tetralith-build-11360m-600s-4cpu` |
+
+The `build_dir` in the how file must contain the selected planner executable.
+The build-specific `plain-kpkc`, `delta-kpkc`, and
+`delta-kpkc-inner` how files remain available for implementation comparisons.
 
 ## Configuration
 
@@ -32,33 +74,44 @@ A what file contains:
 
 ```json
 {
-  "name": "ipc2023-release",
+  "name": "gbfs-example",
   "planner": "gbfs_lazy",
   "suite_sets": {
-    "local": ["ipc2023-numeric-test"],
-    "tetralith": ["ipc2023-numeric"]
+    "local": ["ipc-satisficing-strips-test"],
+    "tetralith": ["autoscale-agile-strips", "htg"]
   },
   "configurations": [{
-    "name": "gbfs-lazy-lifted-rpg_ff-1",
+    "name": "gbfs-lazy-hff-pref-shared-4",
     "task_kind": "lifted",
     "heuristic": "rpg_ff",
     "threads": 1,
     "seed": 0,
-    "args": []
+    "args": [
+      "--heuristic-cost-type", "unit",
+      "--num-search-workers", "4",
+      "--state-repository-mode", "shared"
+    ]
   }],
-  "parsers": ["search"]
+  "parsers": ["search", "datalog"]
 }
 ```
 
-`task_kind` adds `-S` for lifted search and `-S -G` for ground search.
-`args` contains only additional planner arguments.
+`heuristic`, `threads`, and `seed` become `-H`, `-N`, and `-R`. Lifted tasks
+need no task-kind flag; Ground tasks add `-G`. Values in `args` are forwarded
+unchanged, so `-S` enables successor shuffling only when explicitly present.
+`run_planner.sh` supplies the executable and input/output paths but contains no
+algorithm-specific options. Inner Datalog threads and search workers cannot
+both exceed one in the same run. `parsers` accepts `search` and `datalog`.
 
 A local how file contains the common build/output and run limits plus
-`local_processes`. A Tetralith file instead contains `account`, `partition`,
-`qos`, `cpus_per_task`, `memory_per_cpu_mib`, `scheduler_time_limit`, and
-`max_tasks`.
+`local_processes`. A Tetralith how file instead contains `account`,
+`partition`, `qos`, `cpus_per_task`, `memory_per_cpu_mib`,
+`scheduler_time_limit`, and `max_tasks`. The Slurm memory allocation is
+`cpus_per_task * memory_per_cpu_mib`; it must cover the planner memory limit
+and should leave launcher overhead. `cpus_per_task` must be at least the
+largest inner-thread or search-worker count in the what file.
 
-Every how value has a named CLI override:
+Operational how fields have named CLI overrides:
 
 ```text
 --environment --build-dir --output-root --local-processes
@@ -68,30 +121,14 @@ Every how value has a named CLI override:
 --wall-time-limit-s
 ```
 
+Use `--output-dir` for an exact experiment path. Repeat `--suite` to replace
+the suite list or `--configuration` to select configurations by name.
 `max_tasks: null` and `--no-max-tasks` use Lab's environment default.
 
-## Legacy launcher profiles
+Lab's positional steps (`build start parse fetch report`) and `--all` are both
+supported. Relative `build_dir` and `output_root` paths are resolved from the
+repository root. The default experiment directory is:
 
-The what filenames preserve all 29 removed launcher stems. Use the matching
-how pair below; `{1,2,4}` denotes each listed thread-suffixed preset.
-
-| What preset | Local how | Tetralith how |
-|---|---|---|
-| A* `2026-4-3-blind` | `local-build-8000m-1s` | `tetralith-build-8000m-1800s-naiss2025-5-382` |
-| A*/GBFS `ipc2023-debug`, `minepddl-debug` | `local-build-debug-2500m-5s` | `tetralith-build-debug-2500m-300s-1cpu` |
-| A*/GBFS `ipc2023-release`, `minepddl-release`; GBFS `ipc2023-ff-release` | `local-build-8000m-5s` | `tetralith-build-8000m-1800s-naiss2025-22-1245` |
-| GBFS `2026-1-8-gbfs_lazy-{1,2,4}` | `local-build-16000m-1s` | `tetralith-build-16000m-600s-6cpu` |
-| GBFS `2026-1-8-gbfs_lazy-8` | `local-build-16000m-1s` | `tetralith-build-16000m-600s-8cpu` |
-| GBFS `2026-1-8-gbfs_lazy-profiling-classical-{1,2}` | `local-build-5000m-1s` | `tetralith-build-5000m-300s-2cpu-naiss2025-5-382` |
-| GBFS `2026-1-8-gbfs_lazy-profiling-classical` | `local-build-2500m-1s` | `tetralith-build-2500m-300s-1cpu` |
-| GBFS `2026-1-8-gbfs_lazy-profiling-numeric-{1,2}` | `local-build-5000m-5s` | `tetralith-build-5000m-300s-2cpu-naiss2025-22-1245` |
-| GBFS `2026-1-8-gbfs_lazy-profiling-numeric` | `local-build-2500m-5s` | `tetralith-build-2500m-300s-1cpu` |
-| GBFS `2026-1-8-gbfs_lazy-delta-kckp-{1,2,4}` | `local-build-delta-kpkc-16000m-1s` | `tetralith-build-delta-kpkc-16000m-600s-6cpu` |
-| GBFS `2026-1-8-gbfs_lazy-delta-kckp-8` | `local-build-delta-kpkc-16000m-1s` | `tetralith-build-delta-kpkc-16000m-600s-8cpu` |
-| GBFS `2026-1-8-gbfs_lazy-delta-kckp-inner-8` | `local-build-delta-kpkc-inner-16000m-1s` | `tetralith-build-delta-kpkc-inner-16000m-600s-8cpu` |
-| GBFS `2026-1-8-gbfs_lazy-plain-kckp-{1,2,4}` | `local-build-plain-kpkc-16000m-1s` | `tetralith-build-plain-kpkc-16000m-600s-6cpu` |
-| GBFS `2026-1-8-gbfs_lazy-plain-kckp-8` | `local-build-plain-kpkc-16000m-1s` | `tetralith-build-plain-kpkc-16000m-600s-8cpu` |
-
-The `kpkc` spelling in build-directory names is retained from the existing
-build trees. The `profiling-classical-1` preset also retains its empty local
-suite list; pass `--suite` to run it locally.
+```text
+<output_root>/<planner>/<what-name>--<how-name>
+```
