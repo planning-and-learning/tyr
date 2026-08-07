@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "../state_view_impl.hpp"
 #include "tyr/planning/lifted/state_builder.hpp"
 #include "tyr/planning/lifted/state_repository.hpp"
 #include "tyr/planning/lifted/state_view.hpp"
@@ -176,114 +177,7 @@ namespace ygg
 {
 namespace planning = ::tyr::planning;
 
-LiftedStateView::View(std::shared_ptr<planning::StateRepository<::tyr::LiftedTag>> owner,
-                      ygg::SharedObjectPoolPtr<Builder<planning::State<::tyr::LiftedTag>>, true> state_builder) noexcept :
-    m_state_repository(std::move(owner)),
-    m_state_builder(std::move(state_builder))
-{
-}
-
-LiftedStateView::~View() = default;
-
-LiftedStateView::View(const View&) = default;
-
-LiftedStateView::View(View&&) noexcept = default;
-
-LiftedStateView& LiftedStateView::operator=(const View& other)
-{
-    if (this != &other)
-    {
-        m_state_builder = other.m_state_builder;
-        m_state_repository = other.m_state_repository;
-    }
-    return *this;
-}
-
-LiftedStateView& LiftedStateView::operator=(View&& other) noexcept
-{
-    if (this != &other)
-    {
-        m_state_builder = std::move(other.m_state_builder);
-        m_state_repository = std::move(other.m_state_repository);
-    }
-    return *this;
-}
-
-ygg::Index<planning::State<::tyr::LiftedTag>> LiftedStateView::get_index() const { return m_state_builder->get_index(); }
-
-std::tuple<ygg::Index<planning::State<::tyr::LiftedTag>>, ygg::uint_t> LiftedStateView::identifying_members() const noexcept
-{
-    return std::make_tuple(get_index(), m_state_repository->get_storage_identity());
-}
-
-::tyr::formalism::planning::FDRValue LiftedStateView::get(ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const
-{
-    return m_state_builder->get(index);
-}
-
-ygg::float_t LiftedStateView::get(ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>> index) const
-{
-    return m_state_builder->get(index);
-}
-
-bool LiftedStateView::test(ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> index) const
-{
-    return m_state_builder->test(index);
-}
-
-const std::shared_ptr<planning::StateRepository<::tyr::LiftedTag>>& LiftedStateView::get_state_repository() const noexcept { return m_state_repository; }
-
-const Builder<planning::State<::tyr::LiftedTag>>& LiftedStateView::get_state_builder() const noexcept { return *m_state_builder; }
-
-bool LiftedStateView::test(::tyr::formalism::planning::GroundAtomView<::tyr::formalism::StaticTag> view) const { return test(view.get_index()); }
-
-ygg::float_t LiftedStateView::get(::tyr::formalism::planning::GroundFunctionTermView<::tyr::formalism::StaticTag> view) const { return get(view.get_index()); }
-
-::tyr::formalism::planning::FDRValue LiftedStateView::get(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const
-{
-    return get(view.get_index());
-}
-
-ygg::float_t LiftedStateView::get(::tyr::formalism::planning::GroundFunctionTermView<::tyr::formalism::FluentTag> view) const { return get(view.get_index()); }
-
-bool LiftedStateView::test(::tyr::formalism::planning::GroundAtomView<::tyr::formalism::DerivedTag> view) const { return test(view.get_index()); }
-
-bool LiftedStateView::test(ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::StaticTag>> index) const
-{
-    return m_state_repository->get_task()->test(index);
-}
-
-ygg::float_t LiftedStateView::get(ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::StaticTag>> index) const
-{
-    return m_state_repository->get_task()->get(index);
-}
-
-planning::AtomRange<::tyr::formalism::StaticTag> LiftedStateView::get_static_atoms() const noexcept
-{
-    return planning::AtomRange<::tyr::formalism::StaticTag>(m_state_repository->get_task()->get_static_atoms_bitset());
-}
-
-planning::FDRFactRange<::tyr::LiftedTag, ::tyr::formalism::FluentTag> LiftedStateView::get_fluent_facts() const noexcept
-{
-    return m_state_builder->get_fluent_facts();
-}
-
-planning::AtomRange<::tyr::formalism::DerivedTag> LiftedStateView::get_derived_atoms() const noexcept { return m_state_builder->get_derived_atoms(); }
-
-planning::FunctionTermValueRange<::tyr::formalism::StaticTag> LiftedStateView::get_static_fterm_values() const noexcept
-{
-    return planning::FunctionTermValueRange<::tyr::formalism::StaticTag>(m_state_repository->get_task()->get_static_numeric_variables());
-}
-
-planning::FunctionTermValueRange<::tyr::formalism::FluentTag> LiftedStateView::get_fluent_fterm_values() const noexcept
-{
-    return m_state_builder->get_fluent_fterm_values();
-}
-
-const std::shared_ptr<::tyr::formalism::planning::Repository>& LiftedStateView::get_repository() const noexcept
-{
-    return m_state_repository->get_task()->get_repository();
-}
+template class View<Index<planning::State<::tyr::LiftedTag>>, std::shared_ptr<planning::StateRepository<::tyr::LiftedTag>>>;
 
 static_assert(planning::IterableStateConcept<LiftedStateView>);
 static_assert(planning::IterableViewStateConcept<LiftedStateView>);

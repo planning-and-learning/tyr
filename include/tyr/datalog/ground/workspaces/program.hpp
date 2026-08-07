@@ -119,6 +119,12 @@ struct ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>
     void clear_costs() { cost_policy.clear(); }
 
     auto get_numeric_support_selector() const noexcept { return GroundNumericSupportSelector(const_workspace.facts, facts, numeric_and_annot); }
+
+    template<typename Callback>
+    void for_each_numeric_support(const NumericSupport<GroundTag>& support, Callback&& callback) const
+    {
+        std::forward<Callback>(callback)(support.get_key(), support.get_interval(), support.get_cost());
+    }
 };
 
 template<>

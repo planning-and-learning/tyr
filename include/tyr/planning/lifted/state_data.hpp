@@ -15,18 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_LIFTED_PACKED_STATE_HPP_
-#define TYR_PLANNING_LIFTED_PACKED_STATE_HPP_
+#ifndef TYR_PLANNING_LIFTED_STATE_DATA_HPP_
+#define TYR_PLANNING_LIFTED_STATE_DATA_HPP_
 
-#include "tyr/formalism/declarations.hpp"
-#include "tyr/planning/declarations.hpp"
-#include "tyr/planning/state_data.hpp"
-#include "tyr/planning/state_index.hpp"
 #include "tyr/planning/state_storage/config.hpp"
-
-#include <yggdrasil/core/concepts.hpp>
-#include <yggdrasil/core/config.hpp>
-#include <yggdrasil/semantics/canonicalization.hpp>
 
 #if defined(TYR_STATE_STORAGE_HASHSET)
 #include "tyr/planning/lifted/state_storage/hash_set/atom.hpp"
@@ -38,67 +30,6 @@
 #include "tyr/planning/state_storage/tree_compression/numeric.hpp"
 #endif
 
-#include "tyr/planning/task.hpp"
-
-/**
- * Definitions
- */
-
-namespace ygg
-{
-namespace planning = ::tyr::planning;
-
-template<>
-struct Data<planning::State<::tyr::LiftedTag>>
-{
-public:
-    using TaskType = planning::Task<::tyr::LiftedTag>;
-
-    Data() noexcept = default;
-    Data(ygg::Index<planning::State<::tyr::LiftedTag>> index,
-         planning::FactPackedStorage<::tyr::LiftedTag, planning::StateStoragePolicyTag> fact_storage,
-         planning::AtomPackedStorage<::tyr::LiftedTag, planning::StateStoragePolicyTag> atom_storage,
-         planning::NumericPackedStorage<::tyr::LiftedTag, planning::StateStoragePolicyTag> numeric_storage) noexcept :
-        m_index(index),
-        m_fact_storage(fact_storage),
-        m_atom_storage(atom_storage),
-        m_numeric_storage(numeric_storage)
-    {
-    }
-
-    ygg::Index<planning::State<::tyr::LiftedTag>> get_index() const noexcept { return m_index; }
-
-    /**
-     * New
-     */
-
-    template<::tyr::formalism::FactKind T>
-    auto get_atoms() const noexcept
-    {
-        if constexpr (std::same_as<T, ::tyr::formalism::FluentTag>)
-            return m_fact_storage;
-        else if constexpr (std::same_as<T, ::tyr::formalism::DerivedTag>)
-            return m_atom_storage;
-        else
-            static_assert(ygg::dependent_false<T>::value, "Missing case");
-    }
-
-    auto get_numeric_variables() const noexcept { return m_numeric_storage; }
-
-    auto identifying_members() const noexcept { return std::tie(m_fact_storage, m_atom_storage, m_numeric_storage); }
-
-private:
-    ygg::Index<planning::State<::tyr::LiftedTag>> m_index;
-
-    planning::FactPackedStorage<::tyr::LiftedTag, planning::StateStoragePolicyTag> m_fact_storage;
-    planning::AtomPackedStorage<::tyr::LiftedTag, planning::StateStoragePolicyTag> m_atom_storage;
-    planning::NumericPackedStorage<::tyr::LiftedTag, planning::StateStoragePolicyTag> m_numeric_storage;
-};
-
-inline bool is_canonical(const ygg::Data<planning::State<::tyr::LiftedTag>>&) { return true; }
-
-inline void canonicalize(ygg::Data<planning::State<::tyr::LiftedTag>>&) {}
-
-}
+#include "tyr/planning/state_data.hpp"
 
 #endif

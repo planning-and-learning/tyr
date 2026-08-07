@@ -66,12 +66,17 @@ inline ::tyr::formalism::planning::ActionBindingView to_action_binding(::tyr::fo
 inline ::tyr::formalism::planning::ActionBindingView to_action_binding(::tyr::formalism::planning::ActionBindingView action) noexcept { return action; }
 
 template<TaskKind Kind, typename Workspace>
-void materialize_goal(const RPGDefinition<Kind>& definition,
-                      Workspace& workspace,
-                      ::tyr::formalism::planning::GroundConjunctiveConditionView source_goal,
-                      ::tyr::formalism::planning::MergeDatalogContext& merge_context)
+void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, ::tyr::formalism::planning::GroundConjunctiveConditionView source_goal)
 {
     namespace fd = ::tyr::formalism::datalog;
+    auto& destination = [&]() -> fd::Repository&
+    {
+        if constexpr (std::same_as<Kind, GroundTag>)
+            return definition.rpg_program.get_datalog_program().get_program_repository();
+        else
+            return workspace.workspace_repository;
+    }();
+    auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { workspace.datalog_builder, destination };
     auto condition_ptr = merge_context.builder.template get_builder<fd::GroundConjunctiveCondition>();
     auto& condition = *condition_ptr;
     condition.clear();
@@ -153,9 +158,6 @@ public:
     void print_summary(size_t verbosity) const { Policy::print_summary(m_workspace, verbosity); }
 
 protected:
-    constexpr const auto& self() const { return static_cast<const Derived&>(*this); }
-    constexpr auto& self() { return static_cast<Derived&>(*this); }
-
     void begin_state_evaluation() { Policy::begin_state_evaluation(*m_definition, m_workspace, m_source_goal); }
 
     ygg::float_t evaluate_current_state(const ygg::Builder<State<Kind>>& state)
@@ -167,7 +169,7 @@ protected:
         m_execution_context->arena().execute([&] { datalog::compute_model(ctx); });
 
         return m_workspace.tp.check(datalog::FactSets { m_workspace.const_workspace.facts.fact_sets, m_workspace.facts.fact_sets }) ?
-                   self().compute_result(state) :
+                   static_cast<Derived&>(*this).compute_result(state) :
                    std::numeric_limits<ygg::float_t>::infinity();
     }
 
@@ -223,13 +225,14 @@ protected:
     template<typename Callback>
     void for_each_numeric_predecessor(const datalog::NumericSupport<Kind>& support, Callback&& callback)
     {
-        Policy::for_each_numeric_predecessor(m_workspace, support, std::forward<Callback>(callback));
+        m_workspace.for_each_numeric_support(support, std::forward<Callback>(callback));
     }
 
     void append_planning_cut_frontier_atom(datalog::PredicateAnnotationHead<Kind> head,
                                            ::tyr::formalism::planning::GroundAtomViewList<::tyr::formalism::FluentTag>& atoms)
     {
-        Policy::append_cut_frontier_atom(*m_definition, m_workspace, head, atoms);
+        if (const auto atom = Policy::translate_cut_atom(*m_definition, m_workspace, head))
+            atoms.push_back(*atom);
     }
 
     template<::tyr::formalism::RelationKind R, typename Callback>
@@ -264,7 +267,6 @@ protected:
             callback(achiever);
     }
 
-    Task<Kind>& get_task() noexcept { return *m_definition->task; }
     const Task<Kind>& get_task() const noexcept { return *m_definition->task; }
 
     std::shared_ptr<Definition> m_definition;

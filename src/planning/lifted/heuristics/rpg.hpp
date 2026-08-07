@@ -25,7 +25,6 @@
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
-#include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/merge_planning.hpp"
 #include "tyr/planning/lifted/programs/rpg.hpp"
 #include "tyr/planning/lifted/state_builder.hpp"
@@ -45,41 +44,38 @@ template<>
 struct RPGPolicy<LiftedTag>
 {
     using Action = ::tyr::formalism::planning::ActionBindingView;
-    using PredicateHead = datalog::PredicateAnnotationHead<LiftedTag>;
 
-    template<typename Definition, typename Workspace>
-    static void append_cut_frontier_atom(const Definition& definition,
-                                         Workspace& workspace,
-                                         PredicateHead head,
-                                         ::tyr::formalism::planning::GroundAtomViewList<::tyr::formalism::FluentTag>& atoms)
+    template<typename Workspace>
+    static std::optional<::tyr::formalism::planning::GroundAtomView<::tyr::formalism::FluentTag>>
+    translate_cut_atom(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, datalog::PredicateAnnotationHead<LiftedTag> head)
     {
         const auto& mapping = definition.rpg_program.get_translation_context().d2p.fluent_to_fluent_predicate;
         if (!mapping.contains(head.get_relation()))
-            return;
+            return std::nullopt;
 
         auto merge_context = ::tyr::formalism::planning::MergePlanningContext { workspace.planning_builder, *definition.task->get_repository() };
-        atoms.push_back(
-            ::tyr::formalism::planning::merge_atom_d2p<::tyr::formalism::FluentTag, ::tyr::formalism::FluentTag>(head, mapping, merge_context).first);
+        return ::tyr::formalism::planning::merge_atom_d2p<::tyr::formalism::FluentTag, ::tyr::formalism::FluentTag>(head, mapping, merge_context).first;
     }
 
-    template<typename Definition, typename Workspace>
-    static void set_goal(Definition&, Workspace&, ::tyr::formalism::planning::GroundConjunctiveConditionView) noexcept
+    template<typename Workspace>
+    static void set_goal(RPGDefinition<LiftedTag>&, Workspace&, ::tyr::formalism::planning::GroundConjunctiveConditionView) noexcept
     {
         // Lifted ground bindings live in the evaluation repository, which reset_evaluation()
         // clears. The goal is therefore materialized in begin_state_evaluation() after the reset.
     }
 
-    template<typename Definition, typename Workspace>
+    template<typename Workspace>
     static void
-    begin_state_evaluation(const Definition& definition, Workspace& workspace, ::tyr::formalism::planning::GroundConjunctiveConditionView source_goal)
+    begin_state_evaluation(RPGDefinition<LiftedTag>& definition, Workspace& workspace, ::tyr::formalism::planning::GroundConjunctiveConditionView source_goal)
     {
         workspace.reset_evaluation();
-        auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { workspace.datalog_builder, workspace.workspace_repository };
-        materialize_goal(definition, workspace, source_goal, merge_context);
+        // Lifted ground bindings live in the evaluation repository and must be restored after it is cleared.
+        materialize_goal(definition, workspace, source_goal);
     }
 
-    template<::tyr::formalism::RelationKind R, typename Definition, typename Workspace>
-    static std::optional<Action> get_action(const Definition& definition, Workspace& workspace, const datalog::WitnessAnnotation<LiftedTag, R>& witness)
+    template<::tyr::formalism::RelationKind R, typename Workspace>
+    static std::optional<Action>
+    get_action(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, const datalog::WitnessAnnotation<LiftedTag, R>& witness)
     {
         const auto rule_binding = witness.get_rule_key();
         const auto& mapping = definition.rpg_program.template get_rule_to_action_mapping<R>();
@@ -94,20 +90,12 @@ struct RPGPolicy<LiftedTag>
         return ::tyr::formalism::planning::ground(it->second, grounder_context).first;
     }
 
-    template<typename Workspace, typename Callback>
-    static void for_each_numeric_predecessor(Workspace& workspace, const datalog::NumericSupport<LiftedTag>& support, Callback&& callback)
-    {
-        using Entry = typename datalog::NumericSupportSelectorWorkspace<LiftedTag>::SelectionEntry;
-        const auto reported = workspace.get_numeric_support_selector().for_each_entry_support(
-            Entry { support.get_key(), support.get_interval(), nullptr, support.get_cost() },
-            [&](const auto key, const auto interval, const auto& annotation) { callback(key, interval, datalog::get_cost(annotation)); });
-        if (!reported)
-            callback(support.get_key(), support.get_interval(), support.get_cost());
-    }
-
-    template<typename Definition, typename Workspace, typename Executor>
-    static bool
-    is_action_applicable(const Definition& definition, Workspace& workspace, Executor& executor, Action action, const StateContext<LiftedTag>& state_context)
+    template<typename Workspace, typename Executor>
+    static bool is_action_applicable(const RPGDefinition<LiftedTag>& definition,
+                                     Workspace& workspace,
+                                     Executor& executor,
+                                     Action action,
+                                     const StateContext<LiftedTag>& state_context)
     {
         workspace.binding.clear();
         ygg::extend(action.get_objects(), workspace.binding);

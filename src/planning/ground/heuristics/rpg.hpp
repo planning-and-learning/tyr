@@ -21,9 +21,6 @@
 #include "../../heuristics/rpg.hpp"
 #include "tyr/datalog/ground/contexts/program.hpp"
 #include "tyr/datalog/ground/workspaces/program.hpp"
-#include "tyr/formalism/datalog/builder.hpp"
-#include "tyr/formalism/datalog/canonicalization.hpp"
-#include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/planning/ground/programs/rpg.hpp"
 #include "tyr/planning/ground/state_builder.hpp"
 #include "tyr/planning/ground/task.hpp"
@@ -37,49 +34,40 @@ template<>
 struct RPGPolicy<GroundTag>
 {
     using Action = ::tyr::formalism::planning::GroundActionView;
-    using PredicateHead = datalog::PredicateAnnotationHead<GroundTag>;
 
-    template<typename Definition, typename Workspace>
-    static void append_cut_frontier_atom(const Definition& definition,
-                                         Workspace&,
-                                         PredicateHead head,
-                                         ::tyr::formalism::planning::GroundAtomViewList<::tyr::formalism::FluentTag>& atoms)
+    template<typename Workspace>
+    static std::optional<::tyr::formalism::planning::GroundAtomView<::tyr::formalism::FluentTag>>
+    translate_cut_atom(const RPGDefinition<GroundTag>& definition, Workspace&, datalog::PredicateAnnotationHead<GroundTag> head)
     {
         const auto& mapping = definition.rpg_program.get_translation_context().d2p.fluent_to_fluent_atom;
         if (const auto it = mapping.find(head); it != mapping.end())
-            atoms.push_back(it->second);
+            return it->second;
+        return std::nullopt;
     }
 
-    template<typename Definition, typename Workspace>
-    static void set_goal(Definition& definition, Workspace& workspace, ::tyr::formalism::planning::GroundConjunctiveConditionView source_goal)
+    template<typename Workspace>
+    static void set_goal(RPGDefinition<GroundTag>& definition, Workspace& workspace, ::tyr::formalism::planning::GroundConjunctiveConditionView source_goal)
     {
-        auto& repository = definition.rpg_program.get_datalog_program().get_program_repository();
-        auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { workspace.datalog_builder, repository };
-        materialize_goal(definition, workspace, source_goal, merge_context);
+        materialize_goal(definition, workspace, source_goal);
     }
 
-    template<typename Definition, typename Workspace>
-    static void begin_state_evaluation(const Definition&, Workspace& workspace, ::tyr::formalism::planning::GroundConjunctiveConditionView)
+    template<typename Workspace>
+    static void begin_state_evaluation(const RPGDefinition<GroundTag>&, Workspace& workspace, ::tyr::formalism::planning::GroundConjunctiveConditionView)
     {
         workspace.clear_costs();
     }
 
-    template<::tyr::formalism::RelationKind R, typename Definition, typename Workspace>
-    static std::optional<Action> get_action(const Definition& definition, Workspace&, const datalog::WitnessAnnotation<GroundTag, R>& witness)
+    template<::tyr::formalism::RelationKind R, typename Workspace>
+    static std::optional<Action> get_action(const RPGDefinition<GroundTag>& definition, Workspace&, const datalog::WitnessAnnotation<GroundTag, R>& witness)
     {
         const auto& mapping = definition.rpg_program.template get_rule_to_action_mapping<R>();
         const auto it = mapping.find(witness.get_rule_key());
         return it == mapping.end() ? std::nullopt : std::optional(it->second);
     }
 
-    template<typename Workspace, typename Callback>
-    static void for_each_numeric_predecessor(Workspace&, const datalog::NumericSupport<GroundTag>& support, Callback&& callback)
-    {
-        callback(support.get_key(), support.get_interval(), support.get_cost());
-    }
-
-    template<typename Definition, typename Workspace, typename Executor>
-    static bool is_action_applicable(const Definition&, Workspace&, Executor& executor, Action action, const StateContext<GroundTag>& state_context)
+    template<typename Workspace, typename Executor>
+    static bool
+    is_action_applicable(const RPGDefinition<GroundTag>&, Workspace&, Executor& executor, Action action, const StateContext<GroundTag>& state_context)
     {
         return executor.is_applicable(action, state_context);
     }

@@ -93,8 +93,8 @@ void expect_worker_chain(const p::TaskPtr<Kind>& task)
         EXPECT_EQ(&source_axiom_evaluator->get_axiom_program(), &worker_axiom_evaluator->get_axiom_program());
         EXPECT_EQ(&source_axiom_evaluator->get_axiom_program(), &nested_axiom_evaluator->get_axiom_program());
 
-        EXPECT_EQ(worker_state_repository->get_execution_context(), worker_context);
-        EXPECT_EQ(nested_state_repository->get_execution_context(), nested_context);
+        EXPECT_EQ(worker_axiom_evaluator->get_execution_context(), worker_context);
+        EXPECT_EQ(nested_axiom_evaluator->get_execution_context(), nested_context);
     }
 
     EXPECT_EQ(source_state_repository->num_states(), 0);

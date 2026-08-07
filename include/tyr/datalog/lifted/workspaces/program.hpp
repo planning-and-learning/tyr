@@ -40,6 +40,7 @@
 #include <concepts>
 #include <map>
 #include <optional>
+#include <utility>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/dependent_false.hpp>
@@ -246,6 +247,12 @@ public:
     {
         assert(numeric_support_selector.has_value());
         return *numeric_support_selector;
+    }
+
+    template<typename Callback>
+    void for_each_numeric_support(const NumericSupport<LiftedTag>& support, Callback&& callback) const
+    {
+        get_numeric_support_selector().for_each_support(support, std::forward<Callback>(callback));
     }
 };
 

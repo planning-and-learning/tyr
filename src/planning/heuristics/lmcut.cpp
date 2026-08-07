@@ -129,6 +129,7 @@ private:
     bool is_before_goal_zone(NumericNode node, size_t depth);
     bool is_before_goal_zone(Precondition precondition, size_t depth);
     void clear_zones() noexcept;
+    void seed_goal_zone();
     void clear_evaluation_views() noexcept;
     void append_cut_frontier_atom(PredicateHead head, CutFrontierAtoms* cut_frontier_atoms);
     void extract_cut(CutFrontierAtoms* cut_frontier_atoms);
@@ -558,6 +559,35 @@ void LMCutHeuristic<Kind>::Impl::clear_zones() noexcept
 }
 
 template<TaskKind Kind>
+void LMCutHeuristic<Kind>::Impl::seed_goal_zone()
+{
+    const auto goal_cost = this->get_goal_cost();
+    if (const auto& goal = this->m_workspace.tp.get_goal())
+    {
+        for (const auto literal : goal->template get_literals<f::FluentTag>())
+        {
+            const auto head = literal.get_atom().get_row();
+            if (literal.get_polarity() && this->get_predicate_cost(head) == goal_cost)
+            {
+                mark_goal_zone(head, 0);
+                break;
+            }
+        }
+
+        const auto& selector = this->m_workspace.get_numeric_support_selector();
+        for (const auto constraint : goal->get_numeric_constraints())
+        {
+            if (selector.get_constraint_cost(constraint, m_numeric_support_selector_workspace, datalog::MaxAggregation {}) != goal_cost)
+                continue;
+
+            for (const auto& entry : m_numeric_support_selector_workspace.selection)
+                if (entry.cost == goal_cost)
+                    mark_goal_zone(NumericNode { entry.key, entry.interval }, 0);
+        }
+    }
+}
+
+template<TaskKind Kind>
 void LMCutHeuristic<Kind>::Impl::clear_evaluation_views() noexcept
 {
     clear_zones();
@@ -584,31 +614,7 @@ void LMCutHeuristic<Kind>::Impl::extract_cut(CutFrontierAtoms* cut_frontier_atom
 {
     clear_zones();
     m_cut.clear();
-
-    const auto goal_cost = this->get_goal_cost();
-    if (const auto& goal = this->m_workspace.tp.get_goal())
-    {
-        for (const auto literal : goal->template get_literals<f::FluentTag>())
-        {
-            const auto head = literal.get_atom().get_row();
-            if (literal.get_polarity() && this->get_predicate_cost(head) == goal_cost)
-            {
-                mark_goal_zone(head, 0);
-                break;
-            }
-        }
-
-        const auto& selector = this->m_workspace.get_numeric_support_selector();
-        for (const auto constraint : goal->get_numeric_constraints())
-        {
-            if (selector.get_constraint_cost(constraint, m_numeric_support_selector_workspace, datalog::MaxAggregation {}) != goal_cost)
-                continue;
-
-            for (const auto& entry : m_numeric_support_selector_workspace.selection)
-                if (entry.cost == goal_cost)
-                    mark_goal_zone(NumericNode { entry.key, entry.interval }, 0);
-        }
-    }
+    seed_goal_zone();
 
     auto inspect_witness = [&](const auto& witness, const PredicateHead* frontier_head)
     {
@@ -647,31 +653,7 @@ void LMCutHeuristic<Kind>::Impl::extract_expanded_cut(CutFrontierAtoms* cut_fron
     clear_zones();
     m_rule_cut.clear();
     m_numeric_cut.clear();
-
-    const auto goal_cost = this->get_goal_cost();
-    if (const auto& goal = this->m_workspace.tp.get_goal())
-    {
-        for (const auto literal : goal->template get_literals<f::FluentTag>())
-        {
-            const auto head = literal.get_atom().get_row();
-            if (literal.get_polarity() && this->get_predicate_cost(head) == goal_cost)
-            {
-                mark_goal_zone(head, 0);
-                break;
-            }
-        }
-
-        const auto& selector = this->m_workspace.get_numeric_support_selector();
-        for (const auto constraint : goal->get_numeric_constraints())
-        {
-            if (selector.get_constraint_cost(constraint, m_numeric_support_selector_workspace, datalog::MaxAggregation {}) != goal_cost)
-                continue;
-
-            for (const auto& entry : m_numeric_support_selector_workspace.selection)
-                if (entry.cost == goal_cost)
-                    mark_goal_zone(NumericNode { entry.key, entry.interval }, 0);
-        }
-    }
+    seed_goal_zone();
 
     auto inspect_rule_witness = [&](const auto& witness, PredicateHead frontier_head)
     {

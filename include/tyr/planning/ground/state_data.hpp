@@ -18,13 +18,7 @@
 #ifndef TYR_PLANNING_GROUND_STATE_DATA_HPP_
 #define TYR_PLANNING_GROUND_STATE_DATA_HPP_
 
-#include "tyr/formalism/declarations.hpp"
-#include "tyr/planning/declarations.hpp"
-#include "tyr/planning/state_data.hpp"
-#include "tyr/planning/state_index.hpp"
 #include "tyr/planning/state_storage/config.hpp"
-
-#include <yggdrasil/semantics/canonicalization.hpp>
 
 #if defined(TYR_STATE_STORAGE_HASHSET)
 #include "tyr/planning/ground/state_storage/hash_set/atom.hpp"
@@ -36,62 +30,6 @@
 #include "tyr/planning/state_storage/tree_compression/numeric.hpp"
 #endif
 
-#include "tyr/planning/task.hpp"
-
-/**
- * Definitions
- */
-
-namespace ygg
-{
-namespace planning = ::tyr::planning;
-
-template<>
-struct Data<planning::State<::tyr::GroundTag>>
-{
-public:
-    using TaskType = planning::Task<::tyr::GroundTag>;
-
-    Data() noexcept = default;
-    Data(ygg::Index<planning::State<::tyr::GroundTag>> index,
-         planning::FactPackedStorage<::tyr::GroundTag, planning::StateStoragePolicyTag> fact_storage,
-         planning::AtomPackedStorage<::tyr::GroundTag, planning::StateStoragePolicyTag> atom_storage,
-         planning::NumericPackedStorage<::tyr::GroundTag, planning::StateStoragePolicyTag> numeric_storage) noexcept :
-        m_index(index),
-        m_fact_storage(fact_storage),
-        m_atom_storage(atom_storage),
-        m_numeric_storage(numeric_storage)
-    {
-    }
-
-    ygg::Index<planning::State<::tyr::GroundTag>> get_index() const noexcept { return m_index; }
-
-    template<::tyr::formalism::FactKind T>
-    const auto get_atoms() const noexcept
-    {
-        if constexpr (std::same_as<T, ::tyr::formalism::FluentTag>)
-            return m_fact_storage;
-        else if constexpr (std::same_as<T, ::tyr::formalism::DerivedTag>)
-            return m_atom_storage;
-        else
-            static_assert(ygg::dependent_false<T>::value, "Missing case");
-    }
-
-    auto get_numeric_variables() const noexcept { return m_numeric_storage; }
-
-    auto identifying_members() const noexcept { return std::tie(m_fact_storage, m_atom_storage, m_numeric_storage); }
-
-private:
-    ygg::Index<planning::State<::tyr::GroundTag>> m_index;
-
-    planning::FactPackedStorage<::tyr::GroundTag, planning::StateStoragePolicyTag> m_fact_storage;
-    planning::AtomPackedStorage<::tyr::GroundTag, planning::StateStoragePolicyTag> m_atom_storage;
-    planning::NumericPackedStorage<::tyr::GroundTag, planning::StateStoragePolicyTag> m_numeric_storage;
-};
-
-inline bool is_canonical(const ygg::Data<planning::State<::tyr::GroundTag>>&) { return true; }
-
-inline void canonicalize(ygg::Data<planning::State<::tyr::GroundTag>>&) {}
-}
+#include "tyr/planning/state_data.hpp"
 
 #endif

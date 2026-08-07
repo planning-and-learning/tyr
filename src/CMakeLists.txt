@@ -112,17 +112,16 @@ add_library(
     planning/heuristics/rpg_add.cpp
     planning/heuristics/rpg_ff.cpp
     planning/heuristics/rpg_max.cpp
+    planning/state_repository.cpp
 
     planning/ground/axiom_evaluator.cpp
     planning/ground/axiom_stratification.cpp
     planning/ground/match_tree.cpp
     planning/ground/node.cpp
-    planning/ground/state_repository.cpp
     planning/ground/state.cpp
     planning/ground/successor_generator.cpp
     planning/lifted/axiom_evaluator.cpp
     planning/lifted/node.cpp
-    planning/lifted/state_repository.cpp
     planning/lifted/state.cpp
     planning/lifted/successor_generator.cpp
     planning/lifted/task_grounder.cpp

@@ -57,6 +57,16 @@ public:
     bool keys_equal(Key lhs, Key rhs) const noexcept { return lhs == rhs; }
     Cost missing_entries_cost() const noexcept { return std::numeric_limits<Cost>::max(); }
 
+    template<typename Callback>
+    void for_each_support(const NumericSupport<LiftedTag>& support, Callback&& callback) const
+    {
+        const auto reported =
+            this->for_each_entry_support(SelectionEntry { support.get_key(), support.get_interval(), nullptr, support.get_cost() },
+                                         [&](const auto key, const auto interval, const auto& annotation) { callback(key, interval, get_cost(annotation)); });
+        if (!reported)
+            callback(support.get_key(), support.get_interval(), support.get_cost());
+    }
+
     /**
      * Workspace-based conveniences on top of the shared core.
      */
