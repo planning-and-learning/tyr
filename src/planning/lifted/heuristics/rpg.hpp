@@ -26,6 +26,7 @@
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
+#include "tyr/formalism/planning/merge_planning.hpp"
 #include "tyr/planning/lifted/programs/rpg.hpp"
 #include "tyr/planning/lifted/state_builder.hpp"
 #include "tyr/planning/lifted/state_data.hpp"
@@ -45,6 +46,25 @@ template<>
 struct RPGPolicy<LiftedTag>
 {
     using Action = ::tyr::formalism::planning::ActionBindingView;
+    using PredicateHead = datalog::PredicateAnnotationHead<LiftedTag>;
+
+    static PredicateHead get_predicate_head(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> atom) noexcept { return atom.get_row(); }
+    static PredicateHead get_predicate_binding(PredicateHead head) noexcept { return head; }
+
+    template<typename Definition, typename Workspace>
+    static void append_cut_frontier_atom(const Definition& definition,
+                                         Workspace& workspace,
+                                         PredicateHead head,
+                                         ::tyr::formalism::planning::GroundAtomViewList<::tyr::formalism::FluentTag>& atoms)
+    {
+        const auto& mapping = definition.rpg_program.get_translation_context().d2p.fluent_to_fluent_predicate;
+        if (!mapping.contains(head.get_relation()))
+            return;
+
+        auto merge_context = ::tyr::formalism::planning::MergePlanningContext { workspace.planning_builder, *definition.task->get_repository() };
+        atoms.push_back(
+            ::tyr::formalism::planning::merge_atom_d2p<::tyr::formalism::FluentTag, ::tyr::formalism::FluentTag>(head, mapping, merge_context).first);
+    }
 
     template<typename Definition, typename Workspace>
     static void set_goal(Definition&, Workspace&, ::tyr::formalism::planning::GroundConjunctiveConditionView) noexcept
@@ -96,6 +116,17 @@ struct RPGPolicy<LiftedTag>
     }
 
     static Action get_action_binding(Action action) noexcept { return action; }
+
+    template<typename Workspace, typename Callback>
+    static void for_each_numeric_predecessor(Workspace& workspace, const datalog::NumericSupport<LiftedTag>& support, Callback&& callback)
+    {
+        using Entry = typename datalog::NumericSupportSelectorWorkspace<LiftedTag>::SelectionEntry;
+        const auto reported = workspace.get_numeric_support_selector().for_each_entry_support(
+            Entry { support.get_key(), support.get_interval(), nullptr, support.get_cost() },
+            [&](const auto key, const auto interval, const auto& annotation) { callback(key, interval, datalog::get_cost(annotation)); });
+        if (!reported)
+            callback(support.get_key(), support.get_interval(), support.get_cost());
+    }
 
     template<typename Definition, typename Workspace, typename Executor>
     static bool

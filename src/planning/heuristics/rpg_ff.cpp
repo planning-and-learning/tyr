@@ -52,7 +52,7 @@ struct FFRPGHeuristic<Kind>::Impl :
                                       datalog::AndAnnotationPolicy<Kind, datalog::SumAggregation>,
                                       datalog::TerminationPolicy<Kind, datalog::SumAggregation>>;
     using RPGPolicy = typename Base::Policy;
-    using PredicateHead = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
+    using PredicateHead = datalog::PredicateAnnotationHead<Kind>;
     using FunctionHead = datalog::FunctionAnnotationHead<Kind>;
     using NumericAnnotation = datalog::Annotation<Kind, ::tyr::formalism::FunctionTag>;
     using NumericSupportWorkspace = datalog::NumericSupportSelectorWorkspace<Kind>;
@@ -104,7 +104,7 @@ struct FFRPGHeuristic<Kind>::Impl :
             for (const auto literal : goal->template get_literals<::tyr::formalism::FluentTag>())
             {
                 assert(literal.get_polarity());
-                extract_relaxed_plan(literal.get_atom().get_row(), state_context, 0);
+                extract_relaxed_plan(RPGPolicy::get_predicate_head(literal.get_atom()), state_context, 0);
             }
 
             for (const auto constraint : goal->get_numeric_constraints())
@@ -119,7 +119,8 @@ struct FFRPGHeuristic<Kind>::Impl :
 private:
     void extract_relaxed_plan(PredicateHead head, const StateContext<Kind>& state_context, size_t numeric_support_depth)
     {
-        if (mark(m_predicate_markings, head.get_index().relation, head.get_index().row))
+        const auto binding = RPGPolicy::get_predicate_binding(head);
+        if (mark(m_predicate_markings, binding.get_index().relation, binding.get_index().row))
             return;
 
         const auto* annotation = this->m_workspace.and_annot.find(head);

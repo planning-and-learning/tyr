@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/lifted/heuristics/lmcut.hpp"
+#include "tyr/planning/heuristics/lmcut.hpp"
 
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/algorithms/gbfs_lazy.hpp"

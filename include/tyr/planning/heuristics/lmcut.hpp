@@ -18,13 +18,41 @@
 #ifndef TYR_PLANNING_HEURISTICS_LMCUT_HPP_
 #define TYR_PLANNING_HEURISTICS_LMCUT_HPP_
 
-#include "tyr/planning/declarations.hpp"
+#include "tyr/planning/heuristic.hpp"
+
+#include <cstddef>
+#include <memory>
 
 namespace tyr::planning
 {
 
 template<TaskKind Kind>
-class LMCutHeuristic;
+class LMCutHeuristic : public Heuristic<Kind>
+{
+public:
+    LMCutHeuristic(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
+    ~LMCutHeuristic() override;
+
+    LMCutHeuristic(const LMCutHeuristic&) = delete;
+    LMCutHeuristic& operator=(const LMCutHeuristic&) = delete;
+    LMCutHeuristic(LMCutHeuristic&&) noexcept;
+    LMCutHeuristic& operator=(LMCutHeuristic&&) noexcept;
+
+    static LMCutHeuristicPtr<Kind> create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
+
+    using Heuristic<Kind>::evaluate;
+
+    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override;
+    ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state) override;
+    ::tyr::formalism::planning::GroundAtomViewList<::tyr::formalism::FluentTag> compute_cut_frontier_atoms(const ygg::Builder<State<Kind>>& state);
+    [[nodiscard]] HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override;
+    void print_summary(size_t verbosity) const override;
+
+private:
+    struct Impl;
+    explicit LMCutHeuristic(std::unique_ptr<Impl> impl);
+    std::unique_ptr<Impl> m_impl;
+};
 
 }
 

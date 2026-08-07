@@ -18,10 +18,9 @@
 #include "tyr/planning/state_routing/dist_hash.hpp"
 
 #include "tyr/formalism/planning/ground_conjunctive_condition_view.hpp"
-#include "tyr/planning/ground/heuristics/lmcut.hpp"
 #include "tyr/planning/ground/state_repository.hpp"
 #include "tyr/planning/ground/task.hpp"
-#include "tyr/planning/lifted/heuristics/lmcut.hpp"
+#include "tyr/planning/heuristics/lmcut.hpp"
 #include "tyr/planning/lifted/state_repository.hpp"
 #include "tyr/planning/lifted/task.hpp"
 
