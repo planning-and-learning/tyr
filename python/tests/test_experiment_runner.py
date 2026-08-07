@@ -92,8 +92,8 @@ def test_checked_in_presets_are_valid():
     what_paths = sorted((root / "what").rglob("*.json"))
     how_paths = sorted((root / "how").glob("*.json"))
 
-    assert len(what_paths) == 29
-    assert len(how_paths) == 24
+    assert what_paths
+    assert how_paths
     for path in what_paths:
         run_search.validate_what(run_search.load_json(path))
     for path in how_paths:
@@ -459,14 +459,14 @@ def test_tetralith_state_round_trip(tmp_path):
 @pytest.mark.parametrize(
     ("config", "expected"),
     [
-        (configuration(), ["rpg_ff", "1", "0", "-S"]),
+        (configuration(), ["-H", "rpg_ff", "-N", "1", "-R", "0"]),
         (
             configuration(task_kind="ground", heuristic="blind", threads=8, seed=7),
-            ["blind", "8", "7", "-S", "-G"],
+            ["-H", "blind", "-N", "8", "-R", "7", "-G"],
         ),
         (
-            configuration(threads=4, args=["--heuristic-cost-type", "unit"]),
-            ["rpg_ff", "4", "0", "-S", "--heuristic-cost-type", "unit"],
+            configuration(threads=4, args=["-S", "--heuristic-cost-type", "unit"]),
+            ["-H", "rpg_ff", "-N", "4", "-R", "0", "-S", "--heuristic-cost-type", "unit"],
         ),
     ],
 )

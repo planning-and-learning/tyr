@@ -98,8 +98,8 @@ def validate_what(config):
         if isinstance(configuration["seed"], bool) or not isinstance(configuration["seed"], int):
             raise ConfigError(f"{prefix}.seed must be an integer")
         _string_list(configuration["args"], f"{prefix}.args", allow_empty=True)
-        if {"-S", "-G"} & set(configuration["args"]):
-            raise ConfigError(f"{prefix}.args must not contain task-kind flags")
+        if {"-G", "--instantiate-ground-task"} & set(configuration["args"]):
+            raise ConfigError(f"{prefix}.args must not contain ground-task flags")
         if configuration["task_kind"] not in {"lifted", "ground"}:
             raise ConfigError(f"{prefix}.task_kind must be 'lifted' or 'ground'")
         if configuration["name"] in names:
@@ -234,15 +234,18 @@ def select_configurations(what, requested):
 
 
 def planner_command(configuration):
-    task_kind_args = ["-S"] if configuration["task_kind"] == "lifted" else ["-S", "-G"]
+    task_kind_args = [] if configuration["task_kind"] == "lifted" else ["-G"]
     return [
         "{run_planner}",
         "{planner_exe}",
         "{domain}",
         "{problem}",
         "plan.out",
+        "-H",
         configuration["heuristic"],
+        "-N",
         str(configuration["threads"]),
+        "-R",
         str(configuration["seed"]),
         *task_kind_args,
         *configuration["args"],
@@ -350,7 +353,14 @@ def make_experiment(what, how, suites, configurations, output_dir, encoded_state
     experiment.add_step("start", experiment.start_runs)
     experiment.add_step("parse", experiment.parse)
     experiment.add_fetcher(name="fetch")
-    experiment.add_report(BaseReport(attributes=attributes), name="report", outfile="report.html")
+    experiment.add_report(
+        BaseReport(
+            attributes=attributes,
+            filter_algorithm=[configuration["name"] for configuration in configurations],
+        ),
+        name="report",
+        outfile="report.html",
+    )
     return experiment
 
 

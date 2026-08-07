@@ -6,10 +6,7 @@ planner_exe=$1
 domain_file=$2
 problem_file=$3
 plan_file=$4
-heuristic_type=$5
-num_threads=$6
-random_seed=$7
-shift 7
+shift 4
 extra_args=("$@")
 
 # Check if the plan file already exists and prompt for removal
@@ -26,9 +23,6 @@ cmd=(
   "-D" "$domain_file"
   "-P" "$problem_file"
   "-O" "$plan_file"
-  "-H" "$heuristic_type"
-  "-N" "$num_threads"
-  "-R" "$random_seed"
 )
 
 cmd+=("${extra_args[@]}")
