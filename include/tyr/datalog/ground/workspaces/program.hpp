@@ -29,6 +29,7 @@
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/policies/termination_concept.hpp"
 #include "tyr/datalog/workspaces/program.hpp"
+#include "tyr/formalism/datalog/builder.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <type_traits>
@@ -85,6 +86,7 @@ struct ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>
     RuleWorkspace<GroundTag, ::tyr::formalism::PredicateTag> predicate_rules;
     RuleWorkspace<GroundTag, ::tyr::formalism::FunctionTag> function_rules;
     QueueWorkspace<GroundTag> queue;
+    ::tyr::formalism::datalog::Builder datalog_builder;
 
     explicit ProgramWorkspace(const ConstProgramWorkspace<GroundTag>& cws,
                               OrAP or_ap_ = OrAP(),
@@ -105,7 +107,8 @@ struct ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>
         cost_policy(std::move(cost_policy_)),
         predicate_rules(cws.program),
         function_rules(cws.program),
-        queue(cws.program)
+        queue(cws.program),
+        datalog_builder()
     {
         if constexpr (AndAP::records_propositional_achievers)
             and_ap.initialize(cws.program.template get_predicates<::tyr::formalism::FluentTag>().size());

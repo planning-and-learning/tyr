@@ -53,12 +53,9 @@ struct RPGPolicy<GroundTag>
     template<typename Definition, typename Workspace>
     static void set_goal(Definition& definition, Workspace& workspace, ::tyr::formalism::planning::GroundConjunctiveConditionView source_goal)
     {
-        namespace fd = ::tyr::formalism::datalog;
-        auto builder = fd::Builder {};
         auto& repository = definition.rpg_program.get_datalog_program().get_program_repository();
-        auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { builder, repository };
-        const auto& p2d = definition.rpg_program.get_translation_context().p2d.fluent_to_fluent_atom;
-        materialize_goal(workspace, source_goal, merge_context, [&](const auto atom) { return p2d.at(atom); });
+        auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { workspace.datalog_builder, repository };
+        materialize_goal(definition, workspace, source_goal, merge_context);
     }
 
     template<typename Definition, typename Workspace>

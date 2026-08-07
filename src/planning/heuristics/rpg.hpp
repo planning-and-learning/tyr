@@ -34,6 +34,7 @@
 #include "tyr/planning/programs/rpg.hpp"
 #include "tyr/planning/task_utils.hpp"
 
+#include <concepts>
 #include <cstddef>
 #include <limits>
 #include <memory>
@@ -64,16 +65,25 @@ inline ::tyr::formalism::planning::ActionBindingView to_action_binding(::tyr::fo
 
 inline ::tyr::formalism::planning::ActionBindingView to_action_binding(::tyr::formalism::planning::ActionBindingView action) noexcept { return action; }
 
-template<typename Workspace, typename TranslateAtom>
-void materialize_goal(Workspace& workspace,
+template<TaskKind Kind, typename Workspace>
+void materialize_goal(const RPGDefinition<Kind>& definition,
+                      Workspace& workspace,
                       ::tyr::formalism::planning::GroundConjunctiveConditionView source_goal,
-                      ::tyr::formalism::planning::MergeDatalogContext& merge_context,
-                      TranslateAtom&& translate_atom)
+                      ::tyr::formalism::planning::MergeDatalogContext& merge_context)
 {
     namespace fd = ::tyr::formalism::datalog;
     auto condition_ptr = merge_context.builder.template get_builder<fd::GroundConjunctiveCondition>();
     auto& condition = *condition_ptr;
     condition.clear();
+
+    const auto translate_atom = [&](const auto atom)
+    {
+        const auto& p2d = definition.rpg_program.get_translation_context().p2d;
+        if constexpr (std::same_as<Kind, GroundTag>)
+            return p2d.fluent_to_fluent_atom.at(atom);
+        else
+            return ::tyr::formalism::planning::merge_p2d(atom, p2d.fluent_to_fluent_predicate, merge_context).first;
+    };
 
     for (const auto fact : source_goal.template get_facts<::tyr::formalism::PositiveTag>())
     {

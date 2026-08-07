@@ -75,11 +75,7 @@ struct RPGPolicy<LiftedTag>
     {
         workspace.reset_evaluation();
         auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { workspace.datalog_builder, workspace.workspace_repository };
-        const auto& p2d = definition.rpg_program.get_translation_context().p2d.fluent_to_fluent_predicate;
-        materialize_goal(workspace,
-                         source_goal,
-                         merge_context,
-                         [&](const auto atom) { return ::tyr::formalism::planning::merge_p2d(atom, p2d, merge_context).first; });
+        materialize_goal(definition, workspace, source_goal, merge_context);
     }
 
     template<::tyr::formalism::RelationKind R, typename Definition, typename Workspace>
