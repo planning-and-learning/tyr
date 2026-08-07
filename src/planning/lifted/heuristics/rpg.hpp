@@ -44,6 +44,8 @@ namespace tyr::planning::detail
 template<>
 struct RPGPolicy<LiftedTag>
 {
+    using Action = ::tyr::formalism::planning::ActionBindingView;
+
     template<typename Definition, typename Workspace>
     static void set_goal(Definition&, Workspace&, ::tyr::formalism::planning::GroundConjunctiveConditionView) noexcept
     {
@@ -77,8 +79,7 @@ struct RPGPolicy<LiftedTag>
     }
 
     template<::tyr::formalism::RelationKind R, typename Definition, typename Workspace>
-    static std::optional<::tyr::formalism::planning::ActionBindingView>
-    get_action_binding(const Definition& definition, Workspace& workspace, const datalog::WitnessAnnotation<LiftedTag, R>& witness)
+    static std::optional<Action> get_action(const Definition& definition, Workspace& workspace, const datalog::WitnessAnnotation<LiftedTag, R>& witness)
     {
         const auto rule_binding = witness.get_rule_key();
         const auto& mapping = definition.rpg_program.template get_rule_to_action_mapping<R>();
@@ -94,11 +95,27 @@ struct RPGPolicy<LiftedTag>
         return ::tyr::formalism::planning::ground(it->second, grounder_context).first;
     }
 
-    template<::tyr::formalism::RelationKind R, typename Definition, typename Workspace, typename Callback>
+    static Action get_action_binding(Action action) noexcept { return action; }
+
+    template<typename Definition, typename Workspace, typename Executor>
+    static bool
+    is_action_applicable(const Definition& definition, Workspace& workspace, Executor& executor, Action action, const StateContext<LiftedTag>& state_context)
+    {
+        workspace.binding.clear();
+        for (const auto object : action.get_data())
+            workspace.binding.push_back(object);
+
+        auto grounder_context =
+            ::tyr::formalism::planning::GrounderContext { workspace.planning_builder, *definition.task->get_repository(), workspace.binding };
+        return executor.is_applicable(action.get_relation(), state_context, grounder_context, *definition.task->get_fdr_context());
+    }
+
+    template<::tyr::formalism::RelationKind R, typename Definition, typename Workspace, typename PredicateCallback, typename NumericCallback>
     static void for_each_witness_precondition(const Definition& definition,
                                               Workspace& workspace,
                                               const datalog::WitnessAnnotation<LiftedTag, R>& witness,
-                                              Callback&& callback)
+                                              PredicateCallback&& predicate_callback,
+                                              NumericCallback&& numeric_callback)
     {
         const auto rule_binding = witness.get_rule_key();
         const auto row = rule_binding.get_objects();
@@ -115,7 +132,15 @@ struct RPGPolicy<LiftedTag>
             workspace.binding.clear();
             for (const auto object : row)
                 workspace.binding.push_back(object.get_index());
-            callback(::tyr::formalism::datalog::ground(literal.get_atom(), grounder_context).first.get_row());
+            predicate_callback(::tyr::formalism::datalog::ground(literal.get_atom(), grounder_context).first.get_row());
+        }
+
+        for (const auto constraint : witness_condition.get_numeric_constraints())
+        {
+            workspace.binding.clear();
+            for (const auto object : row)
+                workspace.binding.push_back(object.get_index());
+            numeric_callback(::tyr::formalism::datalog::ground(constraint, grounder_context));
         }
     }
 

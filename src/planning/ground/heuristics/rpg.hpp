@@ -38,6 +38,8 @@ namespace tyr::planning::detail
 template<>
 struct RPGPolicy<GroundTag>
 {
+    using Action = ::tyr::formalism::planning::GroundActionView;
+
     template<typename Definition, typename Workspace>
     static void set_goal(Definition& definition, Workspace& workspace, ::tyr::formalism::planning::GroundConjunctiveConditionView source_goal)
     {
@@ -78,20 +80,35 @@ struct RPGPolicy<GroundTag>
     }
 
     template<::tyr::formalism::RelationKind R, typename Definition, typename Workspace>
-    static std::optional<::tyr::formalism::planning::ActionBindingView>
-    get_action_binding(const Definition& definition, Workspace&, const datalog::WitnessAnnotation<GroundTag, R>& witness)
+    static std::optional<Action> get_action(const Definition& definition, Workspace&, const datalog::WitnessAnnotation<GroundTag, R>& witness)
     {
         const auto& mapping = definition.rpg_program.template get_rule_to_action_mapping<R>();
         const auto it = mapping.find(witness.get_rule_key());
-        return it == mapping.end() ? std::nullopt : std::optional(it->second.get_row());
+        return it == mapping.end() ? std::nullopt : std::optional(it->second);
     }
 
-    template<::tyr::formalism::RelationKind R, typename Definition, typename Workspace, typename Callback>
-    static void for_each_witness_precondition(const Definition&, Workspace&, const datalog::WitnessAnnotation<GroundTag, R>& witness, Callback&& callback)
+    static ::tyr::formalism::planning::ActionBindingView get_action_binding(Action action) noexcept { return action.get_row(); }
+
+    template<typename Definition, typename Workspace, typename Executor>
+    static bool is_action_applicable(const Definition&, Workspace&, Executor& executor, Action action, const StateContext<GroundTag>& state_context)
     {
-        for (const auto literal : witness.get_rule_key().get_body().template get_literals<::tyr::formalism::FluentTag>())
+        return executor.is_applicable(action, state_context);
+    }
+
+    template<::tyr::formalism::RelationKind R, typename Definition, typename Workspace, typename PredicateCallback, typename NumericCallback>
+    static void for_each_witness_precondition(const Definition&,
+                                              Workspace&,
+                                              const datalog::WitnessAnnotation<GroundTag, R>& witness,
+                                              PredicateCallback&& predicate_callback,
+                                              NumericCallback&& numeric_callback)
+    {
+        const auto body = witness.get_rule_key().get_body();
+        for (const auto literal : body.template get_literals<::tyr::formalism::FluentTag>())
             if (literal.get_polarity())
-                callback(literal.get_atom());
+                predicate_callback(literal.get_atom().get_row());
+
+        for (const auto constraint : body.get_numeric_constraints())
+            numeric_callback(constraint);
     }
 
     template<typename Workspace>

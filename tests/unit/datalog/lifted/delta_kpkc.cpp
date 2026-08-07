@@ -23,7 +23,7 @@
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/planning/factory.hpp"
-#include "tyr/planning/lifted/heuristics/rpg_ff.hpp"
+#include "tyr/planning/heuristics/rpg_ff.hpp"
 #include "tyr/planning/lifted/programs/action.hpp"
 #include "tyr/planning/lifted/programs/rpg.hpp"
 #include "tyr/planning/lifted/task.hpp"

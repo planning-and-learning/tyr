@@ -36,6 +36,7 @@
 #include <cstddef>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <type_traits>
 #include <utility>
 #include <yggdrasil/execution/onetbb.hpp>
@@ -209,15 +210,40 @@ protected:
     }
 
     template<::tyr::formalism::RelationKind R>
-    auto get_action_binding(const datalog::WitnessAnnotation<Kind, R>& witness)
+    auto get_action(const datalog::WitnessAnnotation<Kind, R>& witness)
     {
-        return Policy::get_action_binding(*m_definition, m_workspace, witness);
+        return Policy::get_action(*m_definition, m_workspace, witness);
+    }
+
+    template<::tyr::formalism::RelationKind R>
+    std::optional<::tyr::formalism::planning::ActionBindingView> get_action_binding(const datalog::WitnessAnnotation<Kind, R>& witness)
+    {
+        const auto action = get_action(witness);
+        if (!action)
+            return std::nullopt;
+        return Policy::get_action_binding(*action);
     }
 
     template<::tyr::formalism::RelationKind R, typename Callback>
     void for_each_witness_precondition(const datalog::WitnessAnnotation<Kind, R>& witness, Callback&& callback)
     {
-        Policy::for_each_witness_precondition(*m_definition, m_workspace, witness, std::forward<Callback>(callback));
+        Policy::for_each_witness_precondition(*m_definition,
+                                              m_workspace,
+                                              witness,
+                                              std::forward<Callback>(callback),
+                                              [](::tyr::formalism::datalog::GroundBooleanOperatorView) {});
+    }
+
+    template<::tyr::formalism::RelationKind R, typename PredicateCallback, typename NumericCallback>
+    void for_each_witness_precondition(const datalog::WitnessAnnotation<Kind, R>& witness,
+                                       PredicateCallback&& predicate_callback,
+                                       NumericCallback&& numeric_callback)
+    {
+        Policy::for_each_witness_precondition(*m_definition,
+                                              m_workspace,
+                                              witness,
+                                              std::forward<PredicateCallback>(predicate_callback),
+                                              std::forward<NumericCallback>(numeric_callback));
     }
 
     template<typename Callback>

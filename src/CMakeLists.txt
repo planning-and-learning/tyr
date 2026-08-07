@@ -109,6 +109,7 @@ add_library(
     planning/heuristic.cpp
     planning/heuristics/goal_count.cpp
     planning/heuristics/rpg_add.cpp
+    planning/heuristics/rpg_ff.cpp
     planning/heuristics/rpg_max.cpp
 
     planning/ground/axiom_evaluator.cpp
@@ -118,10 +119,8 @@ add_library(
     planning/ground/state_repository.cpp
     planning/ground/state.cpp
     planning/ground/successor_generator.cpp
-    planning/ground/heuristics/rpg_ff.cpp
     planning/ground/heuristics/lmcut.cpp
 
-    planning/lifted/heuristics/rpg_ff.cpp
     planning/lifted/heuristics/lmcut.cpp
     planning/lifted/axiom_evaluator.cpp
     planning/lifted/node.cpp

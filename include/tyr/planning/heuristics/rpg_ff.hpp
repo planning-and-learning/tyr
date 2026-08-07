@@ -15,16 +15,44 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_HEURISTICS_FF_HPP_
-#define TYR_PLANNING_HEURISTICS_FF_HPP_
+#ifndef TYR_PLANNING_HEURISTICS_RPG_FF_HPP_
+#define TYR_PLANNING_HEURISTICS_RPG_FF_HPP_
 
-#include "tyr/planning/declarations.hpp"
+#include "tyr/planning/heuristic.hpp"
+
+#include <cstddef>
+#include <memory>
 
 namespace tyr::planning
 {
 
 template<TaskKind Kind>
-class FFRPGHeuristic;
+class FFRPGHeuristic : public Heuristic<Kind>
+{
+public:
+    FFRPGHeuristic(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
+    ~FFRPGHeuristic() override;
+
+    FFRPGHeuristic(const FFRPGHeuristic&) = delete;
+    FFRPGHeuristic& operator=(const FFRPGHeuristic&) = delete;
+    FFRPGHeuristic(FFRPGHeuristic&&) noexcept;
+    FFRPGHeuristic& operator=(FFRPGHeuristic&&) noexcept;
+
+    static FFRPGHeuristicPtr<Kind> create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
+
+    using Heuristic<Kind>::evaluate;
+
+    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override;
+    ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state) override;
+    [[nodiscard]] HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override;
+    const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>& get_preferred_actions() override;
+    void print_summary(size_t verbosity) const override;
+
+private:
+    struct Impl;
+    explicit FFRPGHeuristic(std::unique_ptr<Impl> impl);
+    std::unique_ptr<Impl> m_impl;
+};
 
 }
 

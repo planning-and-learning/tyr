@@ -5210,7 +5210,7 @@
             },
             "hff_unit": {
                 "num_accepted_successors": 156,
-                "num_expanded": 51,
+                "num_expanded": 50,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5227,7 +5227,7 @@
             },
             "hff_general": {
                 "num_accepted_successors": 156,
-                "num_expanded": 51,
+                "num_expanded": 50,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
