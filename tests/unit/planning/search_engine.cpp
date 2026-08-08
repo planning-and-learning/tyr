@@ -77,9 +77,9 @@ struct SearchContext
 };
 
 template<TaskKind Kind>
-SearchContext<Kind> make_search_context(const p::TaskPtr<Kind>& task, bool concurrent = false)
+SearchContext<Kind> make_search_context(const p::TaskPtr<Kind>& task, bool concurrent = false, size_t num_datalog_threads = 1)
 {
-    auto execution_context = ygg::ExecutionContext::create(1);
+    auto execution_context = ygg::ExecutionContext::create(num_datalog_threads);
     auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
     auto repository_factory = p::StateRepositoryFactory<Kind> {};
     auto repository = concurrent ? repository_factory.create_concurrent(task) : repository_factory.create(task);
@@ -124,6 +124,27 @@ public:
     void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView) override {}
     ygg::float_t evaluate(const ygg::Builder<p::State<Kind>>&) override { return 0; }
     p::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr) const override { return nullptr; }
+};
+
+template<TaskKind Kind>
+class WorkerContextRecordingHeuristic final : public p::Heuristic<Kind>
+{
+public:
+    using p::Heuristic<Kind>::evaluate;
+
+    explicit WorkerContextRecordingHeuristic(std::vector<size_t>& worker_threads) : m_worker_threads(worker_threads) {}
+
+    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView) override {}
+    ygg::float_t evaluate(const ygg::Builder<p::State<Kind>>&) override { return 0; }
+
+    p::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override
+    {
+        m_worker_threads.push_back(execution_context->get_num_threads());
+        return std::make_shared<WorkerContextRecordingHeuristic>(m_worker_threads);
+    }
+
+private:
+    std::vector<size_t>& m_worker_threads;
 };
 
 template<TaskKind Kind>
@@ -851,6 +872,21 @@ TEST(TyrPlanningSearchEngineTest, RejectsNullParallelHeuristicWorkers)
     const auto tasks = parse_tasks("parallel_search_simple.pddl");
     expect_null_heuristic_worker_is_rejected(tasks.ground);
     expect_null_heuristic_worker_is_rejected(tasks.lifted);
+}
+
+TEST(TyrPlanningSearchEngineTest, SecondarySearchWorkersInheritPrototypeInnerConcurrency)
+{
+    const auto task = parse_tasks("parallel_search_simple.pddl").lifted;
+    auto context = make_search_context(task, false, 2);
+    auto worker_threads = std::vector<size_t> {};
+    auto heuristic = WorkerContextRecordingHeuristic<LiftedTag>(worker_threads);
+    auto options = p::gbfs_lazy::Options<LiftedTag> {};
+    options.num_search_workers = 2;
+
+    const auto result = p::gbfs_lazy::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options);
+
+    EXPECT_EQ(result.status, p::SearchStatus::SOLVED);
+    EXPECT_EQ(worker_threads, (std::vector<size_t> { 2 }));
 }
 
 TEST(TyrPlanningSearchEngineTest, DestinationLockStatisticsAreOptInAndAggregated)

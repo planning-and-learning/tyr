@@ -15,9 +15,10 @@
       "name": "gbfs-lazy-lifted-hff-pref-sequential-1",
       "task_kind": "lifted",
       "heuristic": "rpg_ff",
-      "threads": 1,
       "seed": 0,
       "args": [
+        "--num-datalog-threads",
+        "1",
         "--heuristic-cost-type",
         "unit",
         "--num-search-workers",
@@ -28,9 +29,10 @@
       "name": "gbfs-lazy-lifted-hff-pref-datalog-4",
       "task_kind": "lifted",
       "heuristic": "rpg_ff",
-      "threads": 4,
       "seed": 0,
       "args": [
+        "--num-datalog-threads",
+        "4",
         "--heuristic-cost-type",
         "unit",
         "--num-search-workers",
@@ -38,12 +40,29 @@
       ]
     },
     {
+      "name": "gbfs-lazy-lifted-hff-pref-shared-2x2",
+      "task_kind": "lifted",
+      "heuristic": "rpg_ff",
+      "seed": 0,
+      "args": [
+        "--num-datalog-threads",
+        "2",
+        "--heuristic-cost-type",
+        "unit",
+        "--num-search-workers",
+        "2",
+        "--state-repository-mode",
+        "shared"
+      ]
+    },
+    {
       "name": "gbfs-lazy-lifted-hff-pref-shared-4",
       "task_kind": "lifted",
       "heuristic": "rpg_ff",
-      "threads": 1,
       "seed": 0,
       "args": [
+        "--num-datalog-threads",
+        "1",
         "--heuristic-cost-type",
         "unit",
         "--num-search-workers",
@@ -53,12 +72,31 @@
       ]
     },
     {
+      "name": "gbfs-lazy-lifted-hff-pref-hash-random-2x2",
+      "task_kind": "lifted",
+      "heuristic": "rpg_ff",
+      "seed": 0,
+      "args": [
+        "--num-datalog-threads",
+        "2",
+        "--heuristic-cost-type",
+        "unit",
+        "--num-search-workers",
+        "2",
+        "--state-repository-mode",
+        "hash-distributed",
+        "--dist-hash-mode",
+        "random"
+      ]
+    },
+    {
       "name": "gbfs-lazy-lifted-hff-pref-hash-random-4",
       "task_kind": "lifted",
       "heuristic": "rpg_ff",
-      "threads": 1,
       "seed": 0,
       "args": [
+        "--num-datalog-threads",
+        "1",
         "--heuristic-cost-type",
         "unit",
         "--num-search-workers",

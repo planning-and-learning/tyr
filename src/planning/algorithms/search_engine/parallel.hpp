@@ -762,6 +762,7 @@ public:
 
         auto pruning_strategy = options.pruning_strategy ? options.pruning_strategy : PruningStrategy<Kind>::create();
         auto goal_strategy = options.goal_strategy ? options.goal_strategy : ConjunctiveGoalStrategy<Kind>::create(task);
+        const auto num_datalog_threads = axiom_evaluator.get_execution_context()->get_num_threads();
         m_workers.push_back(std::make_unique<WorkerData>(ygg::Index<Worker>(0),
                                                          state_repository,
                                                          axiom_evaluator,
@@ -776,7 +777,7 @@ public:
         for (size_t i = 1; i < num_workers; ++i)
         {
             const auto index = ygg::Index<Worker>(static_cast<ygg::uint_t>(i));
-            auto execution_context = ygg::ExecutionContext::create(1);
+            auto execution_context = ygg::ExecutionContext::create(num_datalog_threads);
             auto worker_state_repository = state_repository.make_worker();
             auto worker_axiom_evaluator = axiom_evaluator.make_worker(execution_context);
             auto worker_successor_generator = successor_generator.make_worker(execution_context);

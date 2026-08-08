@@ -33,8 +33,8 @@ int main(int argc, char** argv)
     program.add_argument("-D", "--domain-filepath").required().help("The path to the PDDL domain file.");
     program.add_argument("-P", "--problem-filepath").required().help("The path to the PDDL problem file.");
     program.add_argument("-O", "--plan-filepath").default_value(std::string("plan.out")).help("The path to the output plan file.");
-    program.add_argument("-N", "--num-worker-threads").default_value(size_t(1)).scan<'u', size_t>().help("The number of inner worker threads.");
-    program.add_argument("--num-search-workers").default_value(size_t(1)).scan<'u', size_t>().help("The number of search workers.");
+    program.add_argument("-N", "--num-datalog-threads").default_value(size_t(1)).scan<'u', size_t>().help("The number of Datalog threads.");
+    program.add_argument("-M", "--num-search-workers").default_value(size_t(1)).scan<'u', size_t>().help("The number of search workers.");
     program.add_argument("--state-repository-mode")
         .default_value(std::string("hash-distributed"))
         .choices("hash-distributed", "shared")
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
         auto domain_filepath = program.get<std::string>("--domain-filepath");
         auto problem_filepath = program.get<std::string>("--problem-filepath");
         auto plan_filepath = program.get<std::string>("--plan-filepath");
-        auto num_worker_threads = program.get<std::size_t>("--num-worker-threads");
+        auto num_datalog_threads = program.get<std::size_t>("--num-datalog-threads");
         auto num_search_workers = program.get<std::size_t>("--num-search-workers");
         auto state_repository_mode_name = program.get<std::string>("--state-repository-mode");
         auto dist_hash_mode_name = program.get<std::string>("--dist-hash-mode");
@@ -106,13 +106,7 @@ int main(int argc, char** argv)
             return 1;
         }
 
-        if (num_worker_threads > 1 && num_search_workers > 1)
-        {
-            std::cerr << "--num-worker-threads and --num-search-workers cannot both exceed 1." << std::endl;
-            return 1;
-        }
-
-        std::cout << "[INPUT] Num worker threads: " << num_worker_threads << std::endl;
+        std::cout << "[INPUT] Num Datalog threads: " << num_datalog_threads << std::endl;
         std::cout << "[INPUT] Num search workers: " << num_search_workers << std::endl;
         std::cout << "[INPUT] State repository mode: " << state_repository_mode_name << std::endl;
         std::cout << "[INPUT] Distribution hash mode: " << dist_hash_mode_name << std::endl;
@@ -134,7 +128,7 @@ int main(int argc, char** argv)
         if (verbosity > 1)
             fmt::print(std::cout, "{}\n", *lifted_task);
 
-        auto execution_context = ygg::ExecutionContext::create(num_worker_threads);
+        auto execution_context = ygg::ExecutionContext::create(num_datalog_threads);
 
         if (!instantiate_ground_task)
         {

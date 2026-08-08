@@ -55,30 +55,37 @@ struct AxiomEvaluator<GroundTag>::Impl
 
     struct Evaluator
     {
-        explicit Evaluator(const Definition& definition) : match_tree_workers(), applicable_axioms()
+        Evaluator(const Definition& definition, ygg::ExecutionContextPtr execution_context_) :
+            execution_context(std::move(execution_context_)),
+            match_tree_workers(),
+            applicable_axioms()
         {
             match_tree_workers.reserve(definition.match_tree_prototypes.size());
             for (const auto& prototype : definition.match_tree_prototypes)
                 match_tree_workers.push_back(prototype->make_worker());
         }
 
+        ygg::ExecutionContextPtr execution_context;
         std::vector<match_tree::MatchTreePtr<fp::GroundAxiom>> match_tree_workers;
         fp::GroundAxiomViewList applicable_axioms;
     };
 
-    Impl(ygg::uint_t index_, TaskPtr<GroundTag> task, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
+    Impl(ygg::uint_t index_, TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context_, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
         index(index_),
         next_index(std::move(next_index_)),
         definition(std::make_shared<Definition>(std::move(task))),
-        evaluator(*definition)
+        evaluator(*definition, std::move(execution_context_))
     {
     }
 
-    Impl(ygg::uint_t index_, std::shared_ptr<const Definition> definition_, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
+    Impl(ygg::uint_t index_,
+         std::shared_ptr<const Definition> definition_,
+         ygg::ExecutionContextPtr execution_context_,
+         std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
         index(index_),
         next_index(std::move(next_index_)),
         definition(std::move(definition_)),
-        evaluator(*definition)
+        evaluator(*definition, std::move(execution_context_))
     {
     }
 
@@ -92,9 +99,9 @@ AxiomEvaluator<GroundTag>::~AxiomEvaluator() = default;
 
 AxiomEvaluator<GroundTag>::AxiomEvaluator(ygg::uint_t index,
                                           TaskPtr<GroundTag> task,
-                                          ygg::ExecutionContextPtr,
+                                          ygg::ExecutionContextPtr execution_context,
                                           std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
-    m_impl(std::make_unique<Impl>(index, std::move(task), std::move(next_index)))
+    m_impl(std::make_unique<Impl>(index, std::move(task), std::move(execution_context), std::move(next_index)))
 {
 }
 
@@ -102,9 +109,10 @@ AxiomEvaluator<GroundTag>::AxiomEvaluator(std::unique_ptr<Impl> impl) : m_impl(s
 
 AxiomEvaluatorPtr<GroundTag> AxiomEvaluator<GroundTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
 {
-    static_cast<void>(execution_context);
-    return AxiomEvaluatorPtr<GroundTag>(new AxiomEvaluator<GroundTag>(
-        std::make_unique<Impl>(m_impl->next_index->fetch_add(1, std::memory_order_relaxed), m_impl->definition, m_impl->next_index)));
+    return AxiomEvaluatorPtr<GroundTag>(new AxiomEvaluator<GroundTag>(std::make_unique<Impl>(m_impl->next_index->fetch_add(1, std::memory_order_relaxed),
+                                                                                             m_impl->definition,
+                                                                                             std::move(execution_context),
+                                                                                             m_impl->next_index)));
 }
 
 void AxiomEvaluator<GroundTag>::compute_extended_state(ygg::Builder<State<GroundTag>>& state_builder)
@@ -137,6 +145,8 @@ void AxiomEvaluator<GroundTag>::compute_extended_state(ygg::Builder<State<Ground
 }
 
 const TaskPtr<GroundTag>& AxiomEvaluator<GroundTag>::get_task() const noexcept { return m_impl->definition->task; }
+
+const ygg::ExecutionContextPtr& AxiomEvaluator<GroundTag>::get_execution_context() const noexcept { return m_impl->evaluator.execution_context; }
 
 ygg::uint_t AxiomEvaluator<GroundTag>::get_index() const noexcept { return m_impl->index; }
 

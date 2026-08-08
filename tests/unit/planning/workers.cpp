@@ -88,13 +88,13 @@ void expect_worker_chain(const p::TaskPtr<Kind>& task)
     expect_distinct(source_state_repository, worker_state_repository, nested_state_repository);
     expect_distinct(source_axiom_evaluator, worker_axiom_evaluator, nested_axiom_evaluator);
 
+    EXPECT_EQ(worker_axiom_evaluator->get_execution_context(), worker_context);
+    EXPECT_EQ(nested_axiom_evaluator->get_execution_context(), nested_context);
+
     if constexpr (std::same_as<Kind, ::tyr::LiftedTag>)
     {
         EXPECT_EQ(&source->get_action_program(), &worker->get_action_program());
         EXPECT_EQ(&source->get_action_program(), &nested->get_action_program());
-
-        EXPECT_EQ(worker_axiom_evaluator->get_execution_context(), worker_context);
-        EXPECT_EQ(nested_axiom_evaluator->get_execution_context(), nested_context);
     }
 
     EXPECT_EQ(source_state_repository->num_states(), 0);

@@ -13,9 +13,8 @@ def configuration(**overrides):
         "name": "lifted",
         "task_kind": "lifted",
         "heuristic": "rpg_ff",
-        "threads": 1,
         "seed": 0,
-        "args": [],
+        "args": ["--num-datalog-threads", "1"],
     }
     result.update(overrides)
     return result
@@ -173,7 +172,7 @@ def test_default_output_separates_planners():
 
 def test_search_parser_reads_parallel_statistics(tmp_path):
     (tmp_path / "run.log").write_text(
-        """[INPUT] Num worker threads: 1
+        """[INPUT] Num Datalog threads: 1
 [INPUT] Num search workers: 2
 [INPUT] State repository mode: shared
 [INPUT] Distribution hash mode: lmcut
@@ -217,6 +216,7 @@ def test_search_parser_reads_parallel_statistics(tmp_path):
 
     assert props["cost"] == 12.5
     assert props["initial_h_value"] == 3.5
+    assert props["num_datalog_threads"] == 1
     assert props["num_search_workers"] == 2
     assert props["state_repository_mode"] == "shared"
     assert props["dist_hash_mode"] == "lmcut"
@@ -459,14 +459,14 @@ def test_tetralith_state_round_trip(tmp_path):
 @pytest.mark.parametrize(
     ("config", "expected"),
     [
-        (configuration(), ["-H", "rpg_ff", "-N", "1", "-R", "0"]),
+        (configuration(), ["-H", "rpg_ff", "-R", "0", "--num-datalog-threads", "1"]),
         (
-            configuration(task_kind="ground", heuristic="blind", threads=8, seed=7),
-            ["-H", "blind", "-N", "8", "-R", "7", "-G"],
+            configuration(task_kind="ground", heuristic="blind", seed=7, args=["--num-datalog-threads", "8"]),
+            ["-H", "blind", "-R", "7", "-G", "--num-datalog-threads", "8"],
         ),
         (
-            configuration(threads=4, args=["-S", "--heuristic-cost-type", "unit"]),
-            ["-H", "rpg_ff", "-N", "4", "-R", "0", "-S", "--heuristic-cost-type", "unit"],
+            configuration(args=["--num-datalog-threads", "4", "-S", "--heuristic-cost-type", "unit"]),
+            ["-H", "rpg_ff", "-R", "0", "--num-datalog-threads", "4", "-S", "--heuristic-cost-type", "unit"],
         ),
     ],
 )

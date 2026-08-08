@@ -85,9 +85,9 @@ A what file contains:
     "name": "gbfs-lazy-lifted-hff-pref-shared-4",
     "task_kind": "lifted",
     "heuristic": "rpg_ff",
-    "threads": 1,
     "seed": 0,
     "args": [
+      "--num-datalog-threads", "1",
       "--heuristic-cost-type", "unit",
       "--num-search-workers", "4",
       "--state-repository-mode", "shared"
@@ -97,20 +97,22 @@ A what file contains:
 }
 ```
 
-`heuristic`, `threads`, and `seed` become `-H`, `-N`, and `-R`. Lifted tasks
-need no task-kind flag; Ground tasks add `-G`. Values in `args` are forwarded
-unchanged, so `-S` enables successor shuffling only when explicitly present.
+`heuristic` and `seed` become `-H` and `-R`. Lifted tasks need no task-kind
+flag; Ground tasks add `-G`. All other planner options are forwarded unchanged
+from `args`, so `--num-datalog-threads` and `-S` apply only when explicitly
+present.
 `run_planner.sh` supplies the executable and input/output paths but contains no
-algorithm-specific options. Inner Datalog threads and search workers cannot
-both exceed one in the same run. `parsers` accepts `search` and `datalog`.
+algorithm-specific options. Inner Datalog threads and search workers may both
+exceed one; their product is the run's maximum thread capacity. `parsers`
+accepts `search` and `datalog`.
 
 A local how file contains the common build/output and run limits plus
 `local_processes`. A Tetralith how file instead contains `account`,
 `partition`, `qos`, `cpus_per_task`, `memory_per_cpu_mib`,
 `scheduler_time_limit`, and `max_tasks`. The Slurm memory allocation is
 `cpus_per_task * memory_per_cpu_mib`; it must cover the planner memory limit
-and should leave launcher overhead. `cpus_per_task` must be at least the
-largest inner-thread or search-worker count in the what file.
+and should leave launcher overhead. `cpus_per_task` must be at least the largest
+product of `--num-datalog-threads` and `--num-search-workers` in the what file.
 
 Operational how fields have named CLI overrides:
 

@@ -243,7 +243,7 @@ class SearchParser(Parser):
         self.add_pattern("initial_h_value", rf"\[.*\] Start node h_value: {FLOAT}", type=float)
         self.add_pattern("initial_f_value", rf"\[.*\] Start node f_value: {FLOAT}", type=float)
 
-        self.add_pattern("num_worker_threads", r"\[INPUT\] Num worker threads: (\d+)", type=int)
+        self.add_pattern("num_datalog_threads", r"\[INPUT\] Num Datalog threads: (\d+)", type=int)
         self.add_pattern("num_search_workers", r"\[INPUT\] Num search workers: (\d+)", type=int)
         self.add_pattern(
             "state_repository_mode",
@@ -329,7 +329,7 @@ class SearchParser(Parser):
             "invalid",
             "initial_h_value",
             "initial_f_value",
-            "num_worker_threads",
+            "num_datalog_threads",
             "num_search_workers",
             "state_repository_mode",
             "dist_hash_mode",

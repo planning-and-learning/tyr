@@ -88,13 +88,12 @@ def validate_what(config):
         raise ConfigError("what.configurations must be a non-empty list")
 
     names = set()
-    required_configuration = {"name", "task_kind", "heuristic", "threads", "seed", "args"}
+    required_configuration = {"name", "task_kind", "heuristic", "seed", "args"}
     for index, configuration in enumerate(configurations):
         prefix = f"what.configurations[{index}]"
         _object(configuration, prefix, required_configuration)
         _string(configuration["name"], f"{prefix}.name")
         _string(configuration["heuristic"], f"{prefix}.heuristic")
-        _positive_int(configuration["threads"], f"{prefix}.threads")
         if isinstance(configuration["seed"], bool) or not isinstance(configuration["seed"], int):
             raise ConfigError(f"{prefix}.seed must be an integer")
         _string_list(configuration["args"], f"{prefix}.args", allow_empty=True)
@@ -243,8 +242,6 @@ def planner_command(configuration):
         "plan.out",
         "-H",
         configuration["heuristic"],
-        "-N",
-        str(configuration["threads"]),
         "-R",
         str(configuration["seed"]),
         *task_kind_args,
