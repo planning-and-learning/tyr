@@ -98,11 +98,11 @@ PartitionedAdjacencyLayout::PartitionedAdjacencyLayout(const GraphLayout& layout
 {
     if (m_k != 0 && m_k > m_pair_offsets.max_size() / m_k)
         throw std::overflow_error("PartitionedAdjacencyLayout: partition-pair table size overflow");
-    m_pair_offsets.assign(m_k * m_k, UNUSED);
+    m_pair_offsets.assign(m_k * m_k, IMPLICIT);
 
     const auto checked_add = [](size_t lhs, size_t rhs)
     {
-        constexpr auto max_blocks = static_cast<size_t>(UNUSED);
+        constexpr auto max_blocks = static_cast<size_t>(STATIC_ONLY);
         if (lhs >= max_blocks || rhs >= max_blocks - lhs)
             throw std::overflow_error("PartitionedAdjacencyLayout: adjacency block offset overflow");
         return lhs + rhs;
@@ -113,8 +113,18 @@ PartitionedAdjacencyLayout::PartitionedAdjacencyLayout(const GraphLayout& layout
         auto row_blocks = size_t { 0 };
         for (ygg::uint_t pj = 0; pj < m_k; ++pj)
         {
-            if (!dependency_graph.binary().has_dependency(pi, pj))
+            const auto& dependencies = dependency_graph.binary();
+            if (!dependencies.has_dependency(pi, pj))
                 continue;
+
+            const auto has_runtime_dependency = dependencies.has_literal_dependency<::tyr::formalism::FluentTag, ::tyr::formalism::PositiveTag>(pi, pj)
+                                                || dependencies.has_literal_dependency<::tyr::formalism::FluentTag, ::tyr::formalism::NegativeTag>(pi, pj)
+                                                || dependencies.has_numeric_dependency(pi, pj);
+            if (!has_runtime_dependency)
+            {
+                m_pair_offsets[pi * m_k + pj] = STATIC_ONLY;
+                continue;
+            }
 
             m_pair_offsets[pi * m_k + pj] = static_cast<ygg::uint_t>(row_blocks);
             row_blocks = checked_add(row_blocks, layout.info.infos[pj].num_blocks);

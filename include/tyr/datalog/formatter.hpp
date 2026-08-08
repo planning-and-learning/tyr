@@ -33,6 +33,7 @@
 #include <ranges>
 #include <sstream>
 #include <string>
+#include <vector>
 #include <yggdrasil/core/chrono.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 #include <yggdrasil/formatting/dynamic_bitset_formatters.hpp>
@@ -309,13 +310,19 @@ struct formatter<tyr::datalog::kpkc::PartitionedAdjacencyMatrix, char>
             }
             os << "]\n";
             os << ygg::print_indent << "adjacency lists = [\n";
+            auto adjacency_data = std::vector<uint64_t>(value.layout().info.num_blocks);
             for (ygg::uint_t v = 0; v < value.layout().nv; ++v)
             {
                 ygg::IndentScope scope2(os);
                 os << ygg::print_indent;
                 fmt::print(os, "{}: [", v);
                 for (ygg::uint_t p = 0; p < value.layout().k; ++p)
-                    fmt::print(os, "{}, ", value.get_bitset(v, p));
+                {
+                    const auto& info = value.layout().info.infos[p];
+                    auto adjacency = ygg::BitsetSpan<uint64_t>(adjacency_data.data() + info.block_offset, info.num_bits);
+                    value.copy_adjacency_to(v, p, adjacency);
+                    fmt::print(os, "{}, ", adjacency);
+                }
                 os << "]\n";
             }
             os << "]\n";

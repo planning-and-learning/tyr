@@ -138,7 +138,7 @@ struct RuleWorkspace<LiftedTag, R>
     {
         explicit Common(const StaticConsistencyGraph& static_consistency_graph);
 
-        void initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSets& assignment_sets);
+        void initialize_iteration(const AssignmentSets& assignment_sets);
 
         void clear() noexcept;
 
@@ -275,9 +275,9 @@ void RuleWorkspace<LiftedTag, R>::Common::clear() noexcept
 }
 
 template<::tyr::formalism::RelationKind R>
-void RuleWorkspace<LiftedTag, R>::Common::initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSets& assignment_sets)
+void RuleWorkspace<LiftedTag, R>::Common::initialize_iteration(const AssignmentSets& assignment_sets)
 {
-    kpkc.set_next_assignment_sets(static_consistency_graph, assignment_sets);
+    kpkc.set_next_assignment_sets(assignment_sets);
 }
 
 template<::tyr::formalism::RelationKind R>

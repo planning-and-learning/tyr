@@ -23,17 +23,18 @@ namespace tyr::datalog::kpkc
 {
 
 DeltaKPKC::DeltaKPKC(const StaticConsistencyGraph& static_graph) :
-    m_layout(static_graph.get_graph_layout()),
+    m_static_graph(static_graph),
+    m_layout(m_static_graph.get_graph_layout()),
     m_iteration(0),
-    m_delta_graph(m_layout, static_graph.get_partitioned_adjacency_layout()),
-    m_full_graph(m_layout, static_graph.get_partitioned_adjacency_layout()),
+    m_delta_graph(m_layout, m_static_graph.get_partitioned_adjacency_layout(), m_static_graph.get_adjacency_matrix()),
+    m_full_graph(m_layout, m_static_graph.get_partitioned_adjacency_layout(), m_static_graph.get_adjacency_matrix()),
     m_delta_edges()
 {
 }
 
-void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const AssignmentSets& assignment_sets)
+void DeltaKPKC::set_next_assignment_sets(const AssignmentSets& assignment_sets)
 {
-    static_graph.initialize_dynamic_consistency_graphs(assignment_sets, m_layout, m_delta_graph, m_full_graph);
+    m_static_graph.initialize_dynamic_consistency_graphs(assignment_sets, m_layout, m_delta_graph, m_full_graph);
 
     m_delta_edges.clear();
     ++m_iteration;
@@ -98,27 +99,20 @@ bool DeltaKPKC::seed_from_anchor(const Edge& edge, Workspace& workspace) const
 
         const auto& info = m_layout.info.infos[p];
         auto cv_0 = ygg::BitsetSpan<uint64_t>(cv_0_row.data() + info.block_offset, info.num_bits);
-        auto full_src_adj_list = m_full_graph.matrix.get_bitset(edge.src.index, p);
-        auto full_dst_adj_list = m_full_graph.matrix.get_bitset(edge.dst.index, p);
-
-        cv_0.copy_from(full_src_adj_list);
-        cv_0 &= full_dst_adj_list;
+        m_full_graph.matrix.copy_adjacency_to(edge.src.index, p, cv_0);
+        m_full_graph.matrix.intersect_adjacency_with(edge.dst.index, p, cv_0);
 
         if (!cv_0.any())
             return false;  ///< triangle pruning
-
-        auto delta_src_adj_list = m_delta_graph.matrix.get_bitset(edge.src.index, p);
 
         if (p < pj)
-            cv_0 -= delta_src_adj_list;
+            m_delta_graph.matrix.subtract_adjacency_from(edge.src.index, p, cv_0);
 
         if (!cv_0.any())
             return false;  ///< triangle pruning
 
-        auto delta_dst_adj_list = m_delta_graph.matrix.get_bitset(edge.dst.index, p);
-
         if (p < pi)
-            cv_0 -= delta_dst_adj_list;
+            m_delta_graph.matrix.subtract_adjacency_from(edge.dst.index, p, cv_0);
 
         if (!cv_0.any())
             return false;  ///< triangle pruning

@@ -59,7 +59,7 @@ public:
 
     /// @brief Set new fact set to compute deltas.
     /// @param assignment_sets
-    void set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const AssignmentSets& assignment_sets);
+    void set_next_assignment_sets(const AssignmentSets& assignment_sets);
 
     /// @brief Reset should be called before first iteration.
     void reset();
@@ -137,6 +137,7 @@ private:
     bool update_compatible_adjacent_vertices_at_next_depth(Vertex src, size_t depth, Workspace& workspace) const;
 
 private:
+    const StaticConsistencyGraph& m_static_graph;
     const GraphLayout& m_layout;
     size_t m_iteration;
 
@@ -302,10 +303,8 @@ bool DeltaKPKC::update_compatible_adjacent_vertices_at_next_depth(Vertex src, si
         const auto& info = m_layout.info.infos[p];
         auto src_cur = ygg::BitsetSpan<const uint64_t>(cv_curr.data() + info.block_offset, info.num_bits);
         auto dst_next = ygg::BitsetSpan<uint64_t>(cv_next.data() + info.block_offset, info.num_bits);
-        auto src_full = m_full_graph.matrix.get_bitset(src.index, p);
-
         dst_next.copy_from(src_cur);
-        dst_next &= src_full;
+        m_full_graph.matrix.intersect_adjacency_with(src.index, p, dst_next);
 
         if (!dst_next.any())
             return false;
@@ -316,9 +315,7 @@ bool DeltaKPKC::update_compatible_adjacent_vertices_at_next_depth(Vertex src, si
 
             if (p_src < workspace.anchor_pi || p < workspace.anchor_pi)
             {
-                auto src_delta = m_delta_graph.matrix.get_bitset(src.index, p);
-
-                dst_next -= src_delta;
+                m_delta_graph.matrix.subtract_adjacency_from(src.index, p, dst_next);
 
                 if (!dst_next.any())
                     return false;

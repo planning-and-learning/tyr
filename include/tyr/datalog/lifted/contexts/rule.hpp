@@ -225,8 +225,7 @@ struct RuleExecutionContext
     {
         // std::cout << cws_rule.get_rule() << std::endl;
 
-        out().common().initialize_iteration(in().cws_rule().get_static_consistency_graph(),
-                                            AssignmentSets { stratum_in().program().facts().assignment_sets, stratum_out().program().facts().assignment_sets });
+        out().common().initialize_iteration(AssignmentSets { stratum_in().program().facts().assignment_sets, stratum_out().program().facts().assignment_sets });
     }
 
     void clear_common() noexcept { out().common().clear(); }

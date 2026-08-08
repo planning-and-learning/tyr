@@ -21,6 +21,7 @@
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/variable_dependency_graph.hpp"
 
+#include <bit>
 #include <boost/dynamic_bitset.hpp>
 #include <cstddef>
 #include <iostream>
@@ -228,7 +229,8 @@ private:
 class PartitionedAdjacencyLayout
 {
 public:
-    static constexpr ygg::uint_t UNUSED = std::numeric_limits<ygg::uint_t>::max();
+    static constexpr ygg::uint_t IMPLICIT = std::numeric_limits<ygg::uint_t>::max();
+    static constexpr ygg::uint_t STATIC_ONLY = IMPLICIT - 1;
 
     PartitionedAdjacencyLayout() = default;
     PartitionedAdjacencyLayout(const GraphLayout& layout, const ::tyr::formalism::datalog::VariableDependencyGraph& dependency_graph);
@@ -242,12 +244,23 @@ public:
         assert(pj < m_k);
 
         const auto pair_offset = m_pair_offsets[pi * m_k + pj];
-        return pair_offset == UNUSED ? UNUSED : m_row_offsets[v] + pair_offset;
+        return pair_offset >= STATIC_ONLY ? pair_offset : m_row_offsets[v] + pair_offset;
     }
+
+    bool is_implicit(ygg::uint_t pi, ygg::uint_t pj) const noexcept { return get_pair_offset(pi, pj) == IMPLICIT; }
+    bool is_static_only(ygg::uint_t pi, ygg::uint_t pj) const noexcept { return get_pair_offset(pi, pj) == STATIC_ONLY; }
+    bool is_runtime(ygg::uint_t pi, ygg::uint_t pj) const noexcept { return get_pair_offset(pi, pj) < STATIC_ONLY; }
 
     size_t num_blocks() const noexcept { return m_num_blocks; }
 
 private:
+    ygg::uint_t get_pair_offset(ygg::uint_t pi, ygg::uint_t pj) const noexcept
+    {
+        assert(pi < m_k);
+        assert(pj < m_k);
+        return m_pair_offsets[pi * m_k + pj];
+    }
+
     size_t m_k { 0 };
     std::vector<ygg::uint_t> m_row_offsets;
     std::vector<ygg::uint_t> m_pair_offsets;
@@ -259,10 +272,12 @@ class PartitionedAdjacencyMatrix
 public:
     PartitionedAdjacencyMatrix(const GraphLayout& layout,
                                const PartitionedAdjacencyLayout& adjacency_layout,
+                               const DeduplicatedAdjacencyMatrix& static_matrix,
                                const VertexPartitions& affected_partitions,
                                const VertexPartitions& delta_partitions) :
         m_layout(layout),
         m_adjacency_layout(adjacency_layout),
+        m_static_matrix(static_matrix),
         m_affected_partitions(affected_partitions),
         m_delta_partitions(delta_partitions),
         m_touched_partitions(m_layout.nv * m_layout.k, false),
@@ -270,39 +285,41 @@ public:
     {
     }
 
-    friend bool operator==(const PartitionedAdjacencyMatrix& lhs, const PartitionedAdjacencyMatrix& rhs) noexcept
-    {
-        return lhs.m_layout.nv == rhs.m_layout.nv && lhs.m_layout.k == rhs.m_layout.k && lhs.m_adjacency_layout == rhs.m_adjacency_layout
-               && lhs.m_bitset_data == rhs.m_bitset_data;
-    }
-
-    auto get_bitset(ygg::uint_t v, ygg::uint_t p) noexcept
+    auto get_runtime_bitset(ygg::uint_t v, ygg::uint_t p) noexcept
     {
         const auto offset = m_adjacency_layout.get_offset(v, m_layout.vertex_to_partition[v], p);
-        assert(offset != PartitionedAdjacencyLayout::UNUSED && "Should only modify adjacency when there is a binary dependency");
+        assert(offset < PartitionedAdjacencyLayout::STATIC_ONLY && "Only runtime-dependent adjacency is mutable");
         const auto& info = m_layout.info.infos[p];
 
         return ygg::BitsetSpan<uint64_t>(m_bitset_data.data() + offset, info.num_bits);
     }
 
-    auto get_bitset(ygg::uint_t v, ygg::uint_t p) const noexcept
+    auto get_runtime_bitset(ygg::uint_t v, ygg::uint_t p) const noexcept
     {
         const auto& info = m_layout.info.infos[p];
         const auto pv = m_layout.vertex_to_partition[v];
         const auto offset = m_adjacency_layout.get_offset(v, pv, p);
+        assert(offset < PartitionedAdjacencyLayout::STATIC_ONLY && "Only runtime-dependent adjacency is stored");
 
-        if (offset != PartitionedAdjacencyLayout::UNUSED)
-        {
-            return ygg::BitsetSpan<const uint64_t>(m_bitset_data.data() + offset, info.num_bits);
-        }
-        else
-        {
-            const auto bit = m_layout.vertex_to_bit[v];
-            const auto& info_v = m_layout.info.infos[pv];
-            const auto consistent_v = m_delta_partitions.get_bitset(info_v);
+        return ygg::BitsetSpan<const uint64_t>(m_bitset_data.data() + offset, info.num_bits);
+    }
 
-            return consistent_v.test(bit) ? m_affected_partitions.get_bitset(info) : m_delta_partitions.get_bitset(info);
-        }
+    void copy_adjacency_to(ygg::uint_t v, ygg::uint_t p, ygg::BitsetSpan<uint64_t> destination) const
+    {
+        assert(destination.size() == m_layout.info.infos[p].num_bits);
+        for_each_adjacency_block(v, p, [&](size_t block, uint64_t adjacency) { destination.blocks()[block] = adjacency; });
+    }
+
+    void intersect_adjacency_with(ygg::uint_t v, ygg::uint_t p, ygg::BitsetSpan<uint64_t> destination) const
+    {
+        assert(destination.size() == m_layout.info.infos[p].num_bits);
+        for_each_adjacency_block(v, p, [&](size_t block, uint64_t adjacency) { destination.blocks()[block] &= adjacency; });
+    }
+
+    void subtract_adjacency_from(ygg::uint_t v, ygg::uint_t p, ygg::BitsetSpan<uint64_t> destination) const
+    {
+        assert(destination.size() == m_layout.info.infos[p].num_bits);
+        for_each_adjacency_block(v, p, [&](size_t block, uint64_t adjacency) { destination.blocks()[block] &= ~adjacency; });
     }
 
     template<typename Callback>
@@ -346,20 +363,13 @@ public:
                 {
                     const auto& info_j = m_layout.info.infos[pj];
 
-                    auto dst_active = m_affected_partitions.get_bitset(info_j);
-
-                    auto adj = get_bitset(vi, pj);
-
-                    for_each_bit(
-                        [&](auto&& bj)
-                        {
-                            const ygg::uint_t vj = dst_offset + static_cast<ygg::uint_t>(bj);
-
-                            callback(Edge(Vertex(vi), Vertex(vj)));
-                        },
-                        [](auto&& a, auto&& b) noexcept { return a & b; },
-                        adj,
-                        dst_active);
+                    for_each_adjacent_vertex(vi,
+                                             pj,
+                                             [&](auto&& bj)
+                                             {
+                                                 const ygg::uint_t vj = dst_offset + static_cast<ygg::uint_t>(bj);
+                                                 callback(Edge(Vertex(vi), Vertex(vj)));
+                                             });
 
                     dst_offset += info_j.num_bits;
                 }
@@ -376,7 +386,7 @@ public:
             const auto v = t / m_layout.k;
             const auto p = t % m_layout.k;
 
-            get_bitset(v, p).reset();
+            get_runtime_bitset(v, p).reset();
         }
 
         m_touched_partitions.reset();
@@ -391,36 +401,85 @@ public:
     const auto& bitset_data() const noexcept { return m_bitset_data; }
 
 private:
+    auto get_contextual_partition(ygg::uint_t v, ygg::uint_t p) const noexcept
+    {
+        const auto pv = m_layout.vertex_to_partition[v];
+        const auto bit = m_layout.vertex_to_bit[v];
+        const auto source_delta = m_delta_partitions.get_bitset(m_layout.info.infos[pv]).test(bit);
+        return source_delta ? m_affected_partitions.get_bitset(p) : m_delta_partitions.get_bitset(p);
+    }
+
+    template<typename Callback>
+    void for_each_adjacency_block(ygg::uint_t v, ygg::uint_t p, Callback&& callback) const
+    {
+        const auto pv = m_layout.vertex_to_partition[v];
+        const auto offset = m_adjacency_layout.get_offset(v, pv, p);
+
+        if (offset < PartitionedAdjacencyLayout::STATIC_ONLY)
+        {
+            const auto& info = m_layout.info.infos[p];
+            const auto blocks = std::span<const uint64_t>(m_bitset_data.data() + offset, info.num_blocks);
+            for (size_t block = 0; block < blocks.size(); ++block)
+                callback(block, blocks[block]);
+            return;
+        }
+
+        const auto partition_blocks = get_contextual_partition(v, p).blocks();
+        if (offset == PartitionedAdjacencyLayout::IMPLICIT)
+        {
+            for (size_t block = 0; block < partition_blocks.size(); ++block)
+                callback(block, partition_blocks[block]);
+            return;
+        }
+
+        assert(offset == PartitionedAdjacencyLayout::STATIC_ONLY);
+        const auto static_blocks = m_static_matrix.get_bitset(v, p).blocks();
+        assert(static_blocks.size() == partition_blocks.size());
+        for (size_t block = 0; block < partition_blocks.size(); ++block)
+            callback(block, static_blocks[block] & partition_blocks[block]);
+    }
+
+    template<typename Callback>
+    void for_each_adjacent_vertex(ygg::uint_t v, ygg::uint_t p, Callback&& callback) const
+    {
+        const auto active_blocks = m_affected_partitions.get_bitset(p).blocks();
+        const auto num_bits = m_layout.info.infos[p].num_bits;
+        for_each_adjacency_block(v,
+                                 p,
+                                 [&](size_t block, uint64_t adjacency)
+                                 {
+                                     auto word = adjacency & active_blocks[block];
+                                     while (word)
+                                     {
+                                         const auto bit = static_cast<size_t>(std::countr_zero(word));
+                                         const auto index = block * ygg::BitsetSpan<const uint64_t>::Digits + bit;
+                                         if (index < num_bits)
+                                             callback(index);
+                                         word &= word - 1;
+                                     }
+                                 });
+    }
+
     const GraphLayout& m_layout;
     const PartitionedAdjacencyLayout& m_adjacency_layout;
+    const DeduplicatedAdjacencyMatrix& m_static_matrix;
     const VertexPartitions& m_affected_partitions;
     const VertexPartitions& m_delta_partitions;
 
     /// v x k bitset to track touched cell bitsets
     boost::dynamic_bitset<> m_touched_partitions;
 
-    /// Explicit storage
+    /// Runtime-filtered storage
     std::vector<uint64_t> m_bitset_data;
 };
 
 struct Graph
 {
-    Graph(const GraphLayout& layout, const PartitionedAdjacencyLayout& adjacency_layout) :
+    Graph(const GraphLayout& layout, const PartitionedAdjacencyLayout& adjacency_layout, const DeduplicatedAdjacencyMatrix& static_matrix) :
         affected_partitions(layout),
         delta_partitions(layout),
-        matrix(layout, adjacency_layout, affected_partitions, delta_partitions)
+        matrix(layout, adjacency_layout, static_matrix, affected_partitions, delta_partitions)
     {
-    }
-
-    friend bool same_affected_partitions(const Graph& lhs, const Graph& rhs) noexcept { return lhs.affected_partitions == rhs.affected_partitions; }
-
-    friend bool same_delta_partitions(const Graph& lhs, const Graph& rhs) noexcept { return lhs.delta_partitions == rhs.delta_partitions; }
-
-    friend bool same_matrix(const Graph& lhs, const Graph& rhs) noexcept { return lhs.matrix == rhs.matrix; }
-
-    friend bool operator==(const Graph& lhs, const Graph& rhs) noexcept
-    {
-        return same_affected_partitions(lhs, rhs) && same_delta_partitions(lhs, rhs) && same_matrix(lhs, rhs);
     }
 
     void reset() noexcept
