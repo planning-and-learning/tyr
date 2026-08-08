@@ -96,10 +96,7 @@ a::VariableDomain domain(std::initializer_list<ygg::uint_t> values)
 class LabeledGraph
 {
 public:
-    LabeledGraph(k::Graph graph, std::vector<Object> original_objects) :
-        m_graph(std::move(graph)),
-        m_original_objects(std::move(original_objects)),
-        m_domains(m_graph.get_layout().num_partitions)
+    explicit LabeledGraph(k::Graph graph) : m_graph(std::move(graph)), m_domains(m_graph.get_layout().num_partitions)
     {
         const auto& layout = m_graph.get_layout();
         for (ygg::uint_t partition = 0; partition < layout.num_partitions; ++partition)
@@ -116,7 +113,7 @@ public:
     bool is_satisfiable() const noexcept { return m_graph.is_satisfiable(); }
     const a::VariableDomainList& get_domains() const noexcept { return m_domains; }
 
-    Object get_object(k::Vertex vertex) const noexcept { return m_original_objects[m_graph.get_original_vertex(vertex).index]; }
+    Object get_object(k::Vertex vertex) const noexcept { return Object(m_graph.get_layout().vertex_labels[vertex.index]); }
 
     k::Vertex find_vertex(ygg::uint_t partition, Object object) const noexcept
     {
@@ -136,7 +133,6 @@ public:
 
 private:
     k::Graph m_graph;
-    std::vector<Object> m_original_objects;
     a::VariableDomainList m_domains;
 };
 
@@ -144,15 +140,16 @@ template<typename BinaryCompatible>
 LabeledGraph make_graph(a::VariableDomainList domains, bool satisfiable, BinaryCompatible&& binary_compatible)
 {
     auto partition_sizes = std::vector<size_t> {};
-    auto original_objects = std::vector<Object> {};
+    auto vertex_labels = std::vector<ygg::uint_t> {};
     partition_sizes.reserve(domains.size());
     for (const auto& variable_domain : domains)
     {
         partition_sizes.push_back(variable_domain.objects.size());
-        original_objects.insert(original_objects.end(), variable_domain.objects.begin(), variable_domain.objects.end());
+        for (const auto object : variable_domain.objects)
+            vertex_labels.push_back(ygg::uint_t(object));
     }
 
-    const auto layout = k::create_graph_layout(partition_sizes);
+    const auto layout = k::create_graph_layout(partition_sizes, vertex_labels);
     auto adjacency = k::AdjacencyMatrix(layout);
     auto universal_partition_pairs = boost::dynamic_bitset<>(layout.num_partitions * layout.num_partitions);
 
@@ -187,7 +184,7 @@ LabeledGraph make_graph(a::VariableDomainList domains, bool satisfiable, BinaryC
             }
         }
 
-    return LabeledGraph(k::Graph::create(satisfiable, std::move(adjacency), std::move(universal_partition_pairs)), std::move(original_objects));
+    return LabeledGraph(k::Graph::create(satisfiable, std::move(adjacency), std::move(universal_partition_pairs)));
 }
 
 Extensions enumerate(const LabeledGraph& graph, std::initializer_list<ygg::uint_t> prefix_values, k::Workspace& workspace)
@@ -226,6 +223,13 @@ Extensions enumerate_cliques(const LabeledGraph& graph, k::Workspace& workspace)
             workspace);
     return result;
 }
+}
+
+TEST(TyrKCKPGraphLayout, UsesVertexIndicesAsDefaultLabels)
+{
+    const auto layout = k::create_graph_layout(std::vector<size_t> { 2, 1 });
+
+    EXPECT_EQ(layout.vertex_labels, (std::vector<ygg::uint_t> { 0, 1, 2 }));
 }
 
 TEST(TyrAnalysisStaticLiteralCompatibility, ProjectsSupportedStaticTuplesExactlyWhenArityAllows)

@@ -42,7 +42,7 @@ namespace
 size_t pair_rank(size_t num_partitions, ygg::uint_t first, ygg::uint_t second) noexcept { return size_t(first) * num_partitions + second; }
 }
 
-GraphLayout create_graph_layout(std::span<const size_t> partition_sizes)
+GraphLayout create_graph_layout(std::span<const size_t> partition_sizes, std::span<const ygg::uint_t> vertex_labels)
 {
     auto partitions = std::vector<std::vector<ygg::uint_t>> {};
     partitions.reserve(partition_sizes.size());
@@ -54,17 +54,26 @@ GraphLayout create_graph_layout(std::span<const size_t> partition_sizes)
         for (size_t i = 0; i < partition_size; ++i)
             partition.push_back(vertex++);
     }
-    return GraphLayout(vertex, partitions);
+    return GraphLayout(vertex, partitions, vertex_labels);
 }
 
-GraphLayout::GraphLayout(size_t num_vertices_, const std::vector<std::vector<ygg::uint_t>>& partitions) :
+GraphLayout::GraphLayout(size_t num_vertices_, const std::vector<std::vector<ygg::uint_t>>& partitions, std::span<const ygg::uint_t> labels) :
     num_vertices(num_vertices_),
     num_partitions(partitions.size()),
     vertex_partitions(partitions),
     vertex_to_partition(num_vertices),
-    vertex_to_bit(num_vertices)
+    vertex_to_bit(num_vertices),
+    vertex_labels(labels.begin(), labels.end())
 {
     assert(verify_vertex_partitions(partitions));
+    assert(labels.empty() || labels.size() == num_vertices);
+
+    if (labels.empty())
+    {
+        vertex_labels.reserve(num_vertices);
+        for (ygg::uint_t vertex = 0; vertex < num_vertices; ++vertex)
+            vertex_labels.push_back(vertex);
+    }
 
     auto block_offset = ygg::uint_t { 0 };
     auto bit_offset = ygg::uint_t { 0 };
@@ -109,7 +118,7 @@ DeduplicatedAdjacencyMatrix::DeduplicatedAdjacencyMatrix(const AdjacencyMatrix& 
     }
 }
 
-Graph::Graph() : m_satisfiable(true), m_layout(create_graph_layout(std::span<const size_t> {})), m_original_vertices(), m_adjacency(m_layout) {}
+Graph::Graph() : m_satisfiable(true), m_layout(create_graph_layout(std::span<const size_t> {})), m_adjacency(m_layout) {}
 
 Graph Graph::create(bool satisfiable, AdjacencyMatrix adjacency, boost::dynamic_bitset<> universal_partition_pairs)
 {
@@ -207,7 +216,8 @@ Graph::Graph(bool satisfiable, AdjacencyMatrix adjacency, boost::dynamic_bitset<
     auto old_to_new = std::vector<ygg::uint_t>(old_layout.num_vertices, std::numeric_limits<ygg::uint_t>::max());
     auto old_to_new_bit = std::vector<std::vector<ygg::uint_t>>(old_layout.num_partitions);
     auto partition_sizes = std::vector<size_t>(old_layout.num_partitions);
-    m_original_vertices.reserve(old_layout.num_vertices);
+    auto vertex_labels = std::vector<ygg::uint_t> {};
+    vertex_labels.reserve(old_layout.num_vertices);
     auto new_vertex = ygg::uint_t { 0 };
     for (ygg::uint_t partition = 0; partition < old_layout.num_partitions; ++partition)
     {
@@ -219,7 +229,7 @@ Graph::Graph(bool satisfiable, AdjacencyMatrix adjacency, boost::dynamic_bitset<
         auto compact_bit = ygg::uint_t { 0 };
         for (auto bit = live_bits.find_first(); bit != ygg::BitsetSpan<const uint64_t>::npos; bit = live_bits.find_next(bit))
         {
-            m_original_vertices.emplace_back(info.bit_offset + bit);
+            vertex_labels.push_back(old_layout.vertex_labels[info.bit_offset + bit]);
             bit_mapping[bit] = compact_bit++;
             old_to_new[info.bit_offset + bit] = new_vertex++;
         }
@@ -228,7 +238,7 @@ Graph::Graph(bool satisfiable, AdjacencyMatrix adjacency, boost::dynamic_bitset<
     m_satisfiable = satisfiable && std::ranges::all_of(partition_sizes, [](const auto size) { return size != 0; });
     if (partition_sizes.empty())
         m_satisfiable = satisfiable;
-    m_layout = create_graph_layout(partition_sizes);
+    m_layout = create_graph_layout(partition_sizes, vertex_labels);
 
     auto compact = AdjacencyMatrix(m_layout);
     for (ygg::uint_t old_source = 0; old_source < old_layout.num_vertices; ++old_source)

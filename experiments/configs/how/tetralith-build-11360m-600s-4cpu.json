@@ -6,7 +6,7 @@
   "memory_limit_mib": 11360,
   "cpu_time_limit_s": null,
   "wall_time_limit_s": 600,
-  "account": "naiss2025-5-382",
+  "account": "naiss2025-22-1245",
   "partition": "tetralith",
   "qos": "normal",
   "cpus_per_task": 4,

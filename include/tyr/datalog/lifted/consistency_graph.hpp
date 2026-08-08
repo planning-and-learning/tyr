@@ -171,15 +171,12 @@ class StaticConsistencyGraph
 public:
     StaticConsistencyGraph(::tyr::formalism::datalog::ConjunctiveConditionView unary_overapproximation_condition,
                            ::tyr::formalism::datalog::ConjunctiveConditionView binary_overapproximation_condition,
-                           kckp::Graph compatibility_graph,
-                           std::vector<ygg::Index<::tyr::formalism::Object>> vertex_objects);
+                           kckp::Graph compatibility_graph);
 
     void initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
                                                const kckp::GraphLayout& layout,
                                                kckp::DeltaGraph& delta_graph,
                                                kckp::FullGraph& full_graph) const;
-
-    details::Vertex get_vertex(ygg::uint_t index) const;
 
     const ::tyr::formalism::datalog::VariableDependencyGraph& get_variable_dependeny_graph() const noexcept;
     const kckp::Graph& get_graph() const noexcept;
@@ -195,7 +192,6 @@ private:
     ::tyr::formalism::datalog::VariableDependencyGraph m_binary_overapproximation_vdg;
 
     kckp::Graph m_compatibility_graph;
-    std::vector<ygg::Index<::tyr::formalism::Object>> m_vertex_objects;
     kckp::PartitionedAdjacencyLayout m_partitioned_adjacency_layout;
 
     details::TaggedRuleToLiteralInfos<::tyr::formalism::FluentTag> m_unary_overapproximation_indexed_literals;

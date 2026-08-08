@@ -7,8 +7,8 @@
       "ipc-satisficing-adl-test"
     ],
     "tetralith": [
-      "ipc-satisficing-strips-test",
-      "ipc-satisficing-adl-test"
+      "ipc-satisficing-strips",
+      "ipc-satisficing-adl"
     ]
   },
   "configurations": [

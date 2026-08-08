@@ -253,6 +253,7 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
     EXPECT_FALSE((binary.has_literal_dependency<f::FluentTag, f::NegativeTag>(0, 1)));
     EXPECT_FALSE(binary.has_numeric_dependency(0, 1));
 
+    const auto& layout = static_graph.get_graph_layout();
     using Binding = std::array<std::string, 2>;
     const auto collect_edges = [&](const auto& graph)
     {
@@ -263,9 +264,9 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
                 auto binding = Binding {};
                 const auto insert = [&](const k::Vertex vertex)
                 {
-                    const auto& value = static_graph.get_vertex(vertex.index);
-                    binding[ygg::uint_t(value.get_parameter_index())] =
-                        ygg::make_view(value.get_object_index(), program.get_program_repository()).get_name().str();
+                    const auto parameter = layout.vertex_to_partition[vertex.index];
+                    const auto object = ygg::Index<f::Object>(layout.vertex_labels[vertex.index]);
+                    binding[parameter] = ygg::make_view(object, program.get_program_repository()).get_name().str();
                 };
                 insert(edge.src);
                 insert(edge.dst);
@@ -279,7 +280,6 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
         { "loc-x0-y1", "loc-x0-y2" },
     };
 
-    const auto& layout = static_graph.get_graph_layout();
     auto kckp = k::DeltaKCKP(static_graph.get_graph(), static_graph.get_partitioned_adjacency_layout());
     const auto update = [&]
     {
@@ -377,10 +377,10 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
         const auto collect = [&](const auto& clique)
         {
             auto binding = Binding {};
-            for (const auto vertex : clique)
+            for (ygg::uint_t p = 0; p < clique.size(); ++p)
             {
-                const auto& value = static_graph.get_vertex(vertex.index);
-                binding[ygg::uint_t(value.get_parameter_index())] = ygg::make_view(value.get_object_index(), program.get_program_repository()).get_name().str();
+                const auto object = ygg::Index<f::Object>(layout.vertex_labels[clique[p].index]);
+                binding[p] = ygg::make_view(object, program.get_program_repository()).get_name().str();
             }
             result.push_back(std::move(binding));
         };

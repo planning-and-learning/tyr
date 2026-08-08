@@ -233,7 +233,6 @@ public:
     ConstRuleWorkspace(::tyr::formalism::datalog::RuleView<R> rule,
                        ::tyr::formalism::datalog::Repository& repository,
                        kckp::Graph compatibility_graph,
-                       std::vector<ygg::Index<::tyr::formalism::Object>> vertex_objects,
                        const TaggedFactSets<::tyr::formalism::StaticTag>& static_fact_sets);
 
 private:

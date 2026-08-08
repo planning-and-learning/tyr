@@ -68,23 +68,6 @@
         "--dist-hash-mode",
         "random"
       ]
-    },
-    {
-      "name": "gbfs-lazy-lifted-hff-pref-hash-lmcut-4",
-      "task_kind": "lifted",
-      "heuristic": "rpg_ff",
-      "threads": 1,
-      "seed": 0,
-      "args": [
-        "--heuristic-cost-type",
-        "unit",
-        "--num-search-workers",
-        "4",
-        "--state-repository-mode",
-        "hash-distributed",
-        "--dist-hash-mode",
-        "lmcut"
-      ]
     }
   ],
   "parsers": [

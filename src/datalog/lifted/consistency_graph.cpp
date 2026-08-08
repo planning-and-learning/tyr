@@ -901,21 +901,18 @@ static auto classify_adjacency(const kckp::GraphLayout& layout, const fd::Variab
 
 StaticConsistencyGraph::StaticConsistencyGraph(fd::ConjunctiveConditionView unary_overapproximation_condition,
                                                fd::ConjunctiveConditionView binary_overapproximation_condition,
-                                               kckp::Graph compatibility_graph,
-                                               std::vector<ygg::Index<f::Object>> vertex_objects) :
+                                               kckp::Graph compatibility_graph) :
     m_unary_overapproximation_condition(unary_overapproximation_condition),
     m_binary_overapproximation_condition(binary_overapproximation_condition),
     m_unary_overapproximation_vdg(unary_overapproximation_condition),
     m_binary_overapproximation_vdg(binary_overapproximation_condition),
     m_compatibility_graph(std::move(compatibility_graph)),
-    m_vertex_objects(std::move(vertex_objects)),
     m_partitioned_adjacency_layout(m_compatibility_graph.get_layout(), classify_adjacency(m_compatibility_graph.get_layout(), m_binary_overapproximation_vdg)),
     m_unary_overapproximation_indexed_literals(compute_indexed_literals(m_unary_overapproximation_condition)),
     m_binary_overapproximation_indexed_literals(compute_indexed_literals(m_binary_overapproximation_condition)),
     m_unary_overapproximation_indexed_constraints(compute_indexed_constraints(m_unary_overapproximation_condition)),
     m_binary_overapproximation_indexed_constraints(compute_indexed_constraints(m_binary_overapproximation_condition))
 {
-    assert(m_vertex_objects.size() == m_compatibility_graph.get_layout().num_vertices);
 }
 
 void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
@@ -959,7 +956,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                     [&](auto&& bit)
                     {
                         const auto v = info.bit_offset + bit;
-                        const auto& vertex = get_vertex(v);
+                        const auto vertex = details::Vertex(f::ParameterIndex(p), ygg::Index<f::Object>(layout.vertex_labels[v]));
 
                         if (consistent_literals(vertex, m_unary_overapproximation_indexed_literals, assignment_sets.fluent_sets.predicate)
                             && consistent_numeric_constraints(vertex,
@@ -1072,14 +1069,14 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                         full_graph.matrix.touched_partitions(vj, pi) = true;
                     };
 
-                    const auto& vertex_i = get_vertex(vi);
+                    const auto vertex_i = details::Vertex(f::ParameterIndex(pi), ygg::Index<f::Object>(layout.vertex_labels[vi]));
 
                     for_each_bit(
                         [&](auto&& bj)
                         {
                             const auto vj = offset_j + bj;
 
-                            const auto& vertex_j = get_vertex(vj);
+                            const auto vertex_j = details::Vertex(f::ParameterIndex(pj), ygg::Index<f::Object>(layout.vertex_labels[vj]));
 
                             const auto edge = details::Edge(vertex_i, vertex_j);
 
@@ -1101,11 +1098,6 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
             }
         }
     }
-}
-
-details::Vertex StaticConsistencyGraph::get_vertex(ygg::uint_t index) const
-{
-    return details::Vertex(f::ParameterIndex(m_compatibility_graph.get_layout().vertex_to_partition[index]), m_vertex_objects[index]);
 }
 
 const fd::VariableDependencyGraph& StaticConsistencyGraph::get_variable_dependeny_graph() const noexcept { return m_binary_overapproximation_vdg; }

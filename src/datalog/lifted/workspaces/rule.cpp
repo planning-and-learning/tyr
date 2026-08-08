@@ -182,7 +182,6 @@ template<f::RelationKind R>
 ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(fd::RuleView<R> rule,
                                                      fd::Repository& repository,
                                                      kckp::Graph compatibility_graph,
-                                                     std::vector<ygg::Index<f::Object>> vertex_objects,
                                                      const TaggedFactSets<f::StaticTag>& static_fact_sets) :
     rule(rule),
     witness_rule(create_witness_rule(get_rule(), repository).first),
@@ -192,10 +191,7 @@ ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(fd::RuleView<R> rule,
     conflicting_overapproximation_rule(create_overapproximation_conflicting_rule(get_rule().get_arity() == 1 ? 1 : 2, get_rule(), repository).first),
     pre_evaluated_metric_cost(),
     runtime_metric_effects(),
-    static_consistency_graph(unary_overapproximation_rule.get_body(),
-                             binary_overapproximation_rule.get_body(),
-                             std::move(compatibility_graph),
-                             std::move(vertex_objects))
+    static_consistency_graph(unary_overapproximation_rule.get_body(), binary_overapproximation_rule.get_body(), std::move(compatibility_graph))
 {
     auto metric_effects = classify_metric_effects(get_rule(), repository, static_fact_sets);
     pre_evaluated_metric_cost = metric_effects.pre_evaluated_cost;

@@ -22,8 +22,6 @@
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 
-#include <cassert>
-
 namespace tyr::datalog
 {
 namespace
@@ -41,29 +39,13 @@ template<::tyr::formalism::RelationKind R>
 void initialize_const_rule_workspaces(Program<LiftedTag>& program,
                                       ::tyr::formalism::datalog::Repository& program_repository,
                                       const ConstFactsWorkspace<LiftedTag>& facts,
-                                      const analysis::RuleDomainMap<R>& domains,
                                       analysis::RuleCompatibilityGraphMap<R>& graphs,
                                       std::vector<std::optional<ConstRuleWorkspace<LiftedTag, R>>>& workspaces)
 {
     const auto rules = program.get_program().template get_rules<R>();
     workspaces.resize(rules.size());
     for (const auto rule : rules)
-    {
-        auto graph = std::move(graphs.at(rule.get_index()));
-        const auto& variable_domains = domains.at(rule.get_index()).payload;
-        const auto& layout = graph.get_layout();
-        assert(variable_domains.size() == layout.num_partitions);
-        auto vertex_objects = std::vector<ygg::Index<::tyr::formalism::Object>> {};
-        vertex_objects.reserve(layout.num_vertices);
-        for (ygg::uint_t partition = 0; partition < layout.num_partitions; ++partition)
-        {
-            const auto& objects = variable_domains[partition].objects;
-            assert(objects.size() == layout.info.infos[partition].num_bits);
-            vertex_objects.insert(vertex_objects.end(), objects.begin(), objects.end());
-        }
-
-        workspaces[ygg::uint_t(rule.get_index())].emplace(rule, program_repository, std::move(graph), std::move(vertex_objects), facts.fact_sets);
-    }
+        workspaces[ygg::uint_t(rule.get_index())].emplace(rule, program_repository, std::move(graphs.at(rule.get_index())), facts.fact_sets);
 }
 }
 
@@ -197,13 +179,11 @@ ConstProgramWorkspace<LiftedTag>::ConstProgramWorkspace(Program<LiftedTag>& prog
     initialize_const_rule_workspaces<::tyr::formalism::PredicateTag>(program,
                                                                      *program.m_program_repository,
                                                                      facts,
-                                                                     program.m_analysis.domains.predicate_rule_domains,
                                                                      program.m_analysis.compatibility_graphs.predicate_rules,
                                                                      predicate_rules);
     initialize_const_rule_workspaces<::tyr::formalism::FunctionTag>(program,
                                                                     *program.m_program_repository,
                                                                     facts,
-                                                                    program.m_analysis.domains.function_rule_domains,
                                                                     program.m_analysis.compatibility_graphs.function_rules,
                                                                     function_rules);
 }

@@ -76,15 +76,15 @@ static void create_nullary_binding(ygg::IndexList<f::Object>& binding) { binding
 static void create_general_binding(std::span<const kckp::Vertex> clique, const StaticConsistencyGraph& consistency_graph, ygg::IndexList<f::Object>& binding)
 {
     const auto k = clique.size();
+    const auto& layout = consistency_graph.get_graph_layout();
 
     binding.resize(k);
 
     for (ygg::uint_t p = 0; p < k; ++p)
     {
-        const auto& vertex = consistency_graph.get_vertex(clique[p].index);
-        assert(ygg::uint_t(vertex.get_parameter_index()) == p);
-
-        binding[p] = vertex.get_object_index();
+        const auto vertex = clique[p].index;
+        assert(layout.vertex_to_partition[vertex] == p);
+        binding[p] = ygg::Index<f::Object>(layout.vertex_labels[vertex]);
     }
 }
 

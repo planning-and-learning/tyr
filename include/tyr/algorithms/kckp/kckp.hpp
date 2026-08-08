@@ -63,10 +63,11 @@ struct GraphLayout
     std::vector<std::vector<ygg::uint_t>> vertex_partitions;
     std::vector<ygg::uint_t> vertex_to_partition;
     std::vector<ygg::uint_t> vertex_to_bit;
+    std::vector<ygg::uint_t> vertex_labels;
     PartitionInfo info;
 
     GraphLayout() = default;
-    GraphLayout(size_t num_vertices, const std::vector<std::vector<ygg::uint_t>>& vertex_partitions);
+    GraphLayout(size_t num_vertices, const std::vector<std::vector<ygg::uint_t>>& vertex_partitions, std::span<const ygg::uint_t> vertex_labels = {});
 };
 
 class VertexPartitions
@@ -134,7 +135,7 @@ private:
 
 class KCKP;
 
-GraphLayout create_graph_layout(std::span<const size_t> partition_sizes);
+GraphLayout create_graph_layout(std::span<const size_t> partition_sizes, std::span<const ygg::uint_t> vertex_labels = {});
 
 class Graph
 {
@@ -147,14 +148,12 @@ public:
     bool is_satisfiable() const noexcept { return m_satisfiable; }
     const GraphLayout& get_layout() const noexcept { return m_layout; }
     const DeduplicatedAdjacencyMatrix& get_adjacency_matrix() const noexcept { return m_adjacency; }
-    Vertex get_original_vertex(Vertex vertex) const noexcept;
 
 private:
     Graph(bool satisfiable, AdjacencyMatrix adjacency, boost::dynamic_bitset<> universal_partition_pairs);
 
     bool m_satisfiable { true };
     GraphLayout m_layout;
-    std::vector<Vertex> m_original_vertices;
     DeduplicatedAdjacencyMatrix m_adjacency;
 };
 
@@ -330,8 +329,6 @@ inline ygg::BitsetSpan<const uint64_t> DeduplicatedAdjacencyMatrix::get_bitset(y
     const auto start = m_row_data[m_row_offset[vertex] + partition];
     return ygg::BitsetSpan<const uint64_t>(m_bitset_data.data() + start, info.num_bits);
 }
-
-inline Vertex Graph::get_original_vertex(Vertex vertex) const noexcept { return m_original_vertices[vertex.index]; }
 
 inline std::span<uint64_t> Workspace::compatible_vertices(size_t depth) noexcept
 {

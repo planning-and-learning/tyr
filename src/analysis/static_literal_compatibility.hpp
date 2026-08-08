@@ -390,10 +390,15 @@ inline PairwiseCompatibilityResult create_pairwise_compatibility_graph(const Var
 
     auto partition_sizes = std::vector<size_t> {};
     partition_sizes.reserve(domains.size());
+    auto vertex_labels = std::vector<ygg::uint_t> {};
     for (const auto& domain : domains)
+    {
         partition_sizes.push_back(domain.objects.size());
+        for (const auto object : domain.objects)
+            vertex_labels.push_back(ygg::uint_t(object));
+    }
 
-    const auto layout = kckp::create_graph_layout(partition_sizes);
+    const auto layout = kckp::create_graph_layout(partition_sizes, vertex_labels);
     auto adjacency = kckp::AdjacencyMatrix(layout);
     auto universal_partition_pairs = boost::dynamic_bitset<>(layout.num_partitions * layout.num_partitions);
     auto object_to_bit =
@@ -453,11 +458,7 @@ inline PairwiseCompatibilityResult create_pairwise_compatibility_graph(const Var
     auto refined_domains = VariableDomainList(graph.get_layout().num_partitions);
     for (ygg::uint_t partition = 0; partition < graph.get_layout().num_partitions; ++partition)
         for (const auto vertex : graph.get_layout().vertex_partitions[partition])
-        {
-            const auto original_vertex = graph.get_original_vertex(kckp::Vertex(vertex));
-            assert(layout.vertex_to_partition[original_vertex.index] == partition);
-            refined_domains[partition].objects.push_back(domains[partition].objects[layout.vertex_to_bit[original_vertex.index]]);
-        }
+            refined_domains[partition].objects.emplace_back(graph.get_layout().vertex_labels[vertex]);
 
     return PairwiseCompatibilityResult { std::move(refined_domains), std::move(graph) };
 }
