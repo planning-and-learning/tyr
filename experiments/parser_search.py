@@ -136,6 +136,11 @@ def parse_destination_lock_statistics(content, props):
         "destination_lock_wait_time_ns",
         "destination_lock_hold_time_ns",
     )
+    if props.get("collect_destination_lock_statistics") == 0:
+        for name in aggregate_names:
+            props.pop(name, None)
+        return
+
     if matches:
         if unexpected_indices is not None:
             tools.add_unexplained_error(props, f"Unexpected destination-lock worker indices: {unexpected_indices}")
@@ -175,6 +180,8 @@ def parse_destination_lock_statistics(content, props):
     capacity = props.get("search_time_ns", 0) * props.get("num_search_workers", 0)
     if capacity > 0:
         props["destination_lock_wait_capacity_ratio"] = wait_time / capacity
+        if props.get("collect_destination_lock_statistics"):
+            props["communication_efficiency"] = max(0.0, min(1.0, 1.0 - wait_time / capacity))
         props["destination_lock_hold_capacity_ratio"] = hold_time / capacity
         idle_time = props.get("idle_time_ns", 0)
         if idle_time + wait_time > capacity:
@@ -344,6 +351,7 @@ class SearchParser(Parser):
             Attribute("destination_lock_mean_wait_time_ns", function=arithmetic_mean, digits=2),
             Attribute("destination_lock_mean_hold_time_ns", function=arithmetic_mean, digits=2),
             Attribute("destination_lock_wait_capacity_ratio", function=arithmetic_mean, digits=3),
+            Attribute("communication_efficiency", function=arithmetic_mean, min_wins=False, digits=3),
             Attribute("destination_lock_hold_capacity_ratio", function=arithmetic_mean, digits=3),
             Attribute("worker_utilization_excluding_destination_lock_wait", function=arithmetic_mean, min_wins=False, digits=3),
             "num_expanded",

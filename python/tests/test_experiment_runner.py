@@ -354,11 +354,33 @@ def test_search_parser_reads_destination_lock_statistics(tmp_path):
     assert props["destination_lock_mean_wait_time_ns"] == 2_500_000
     assert props["destination_lock_mean_hold_time_ns"] == 3_750_000
     assert props["destination_lock_wait_capacity_ratio"] == 0.1
+    assert props["communication_efficiency"] == 0.9
     assert props["destination_lock_hold_capacity_ratio"] == 0.15
     assert props["worker_utilization_excluding_destination_lock_wait"] == 0.525
     assert props["worker_destination_lock_acquisitions"] == [3, 5]
     assert props["worker_destination_lock_wait_time_ns"] == [5_000_000, 15_000_000]
     assert props["worker_destination_lock_hold_time_ns"] == [12_000_000, 18_000_000]
+
+
+def test_search_parser_ignores_disabled_destination_lock_statistics(tmp_path):
+    (tmp_path / "run.log").write_text(
+        """[INPUT] Num search workers: 2
+[INPUT] Collect destination lock statistics: 0
+[Search] Search time: 100 ms (100000000 ns)
+[Search] Destination lock acquisitions: 0
+[Search] Destination lock wait time: 0 ms (0 ns)
+[Search] Destination lock hold time: 0 ms (0 ns)
+[Search] Worker 0 destination lock: acquisitions=0, wait=0 ns, hold=0 ns
+[Search] Worker 1 destination lock: acquisitions=0, wait=0 ns, hold=0 ns
+""",
+        encoding="utf-8",
+    )
+    props = {}
+
+    SearchParser().parse(tmp_path, props)
+
+    assert {name for name in props if "destination_lock" in name} == {"collect_destination_lock_statistics"}
+    assert "communication_efficiency" not in props
 
 
 def test_search_parser_rejects_incomplete_destination_lock_statistics(tmp_path):
@@ -412,6 +434,7 @@ def test_search_parser_derives_destination_lock_aggregates_from_worker_rows(tmp_
     assert props["destination_lock_wait_time_ns"] == 20_000_000
     assert props["destination_lock_hold_time_ns"] == 30_000_000
     assert props["destination_lock_mean_wait_time_ns"] == 2_500_000
+    assert "communication_efficiency" not in props
 
 
 def test_search_parser_rejects_missing_enabled_destination_lock_statistics(tmp_path):

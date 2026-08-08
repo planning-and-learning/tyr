@@ -39,7 +39,8 @@
         "--num-search-workers",
         "4",
         "--state-repository-mode",
-        "shared"
+        "shared",
+        "--collect-destination-lock-statistics"
       ]
     },
     {
@@ -57,7 +58,8 @@
         "--state-repository-mode",
         "hash-distributed",
         "--dist-hash-mode",
-        "random"
+        "random",
+        "--collect-destination-lock-statistics"
       ]
     },
     {
@@ -75,7 +77,8 @@
         "--state-repository-mode",
         "hash-distributed",
         "--dist-hash-mode",
-        "lmcut"
+        "lmcut",
+        "--collect-destination-lock-statistics"
       ]
     }
   ],
