@@ -28,27 +28,12 @@ Program<LiftedTag>::Program(::tyr::formalism::datalog::ProgramView<LiftedTag> pr
     m_program(program),
     m_program_repository(std::move(program_repository)),
     m_repository_factory(std::move(repository_factory)),
-    m_domains(analysis::compute_variable_domains(m_program)),
+    m_analysis(analysis::analyze_program(m_program)),
     m_strata(analysis::compute_rule_stratification(m_program)),
     m_listeners(analysis::compute_listeners(m_strata, *m_program_repository)),
     m_const_program_workspace(*this)
 {
-}
-
-Program<LiftedTag>::Program(::tyr::formalism::datalog::ProgramView<LiftedTag> program,
-                            ::tyr::formalism::datalog::RepositoryPtr program_repository,
-                            ::tyr::formalism::datalog::RepositoryFactoryPtr repository_factory,
-                            analysis::ProgramVariableDomains domains,
-                            analysis::RuleStrata strata,
-                            analysis::ListenerStrata listeners) :
-    m_program(program),
-    m_program_repository(std::move(program_repository)),
-    m_repository_factory(std::move(repository_factory)),
-    m_domains(std::move(domains)),
-    m_strata(std::move(strata)),
-    m_listeners(std::move(listeners)),
-    m_const_program_workspace(*this)
-{
+    m_analysis.compatibility_graphs = {};
 }
 
 }

@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "static_literal_compatibility.hpp"
 #include "tyr/analysis/domains.hpp"
 #include "tyr/formalism/datalog/datas.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
@@ -94,6 +95,14 @@ VariableDomainList to_variable_domain_list(const TmpVariableDomainList& domains)
     for (const auto& domain : domains)
         result.push_back(to_variable_domain(domain));
 
+    return result;
+}
+
+TmpVariableDomainList to_tmp_variable_domain_list(const VariableDomainList& domains)
+{
+    auto result = TmpVariableDomainList(domains.size());
+    for (size_t parameter = 0; parameter < domains.size(); ++parameter)
+        result[parameter].objects.insert(domains[parameter].objects.begin(), domains[parameter].objects.end());
     return result;
 }
 
@@ -458,7 +467,7 @@ void apply_policy(fd::NumericEffectOperatorView<T> element, Policy& policy)
 
 }  // namespace
 
-ProgramVariableDomains compute_variable_domains(fd::ProgramView<LiftedTag> program)
+ProgramAnalysis analyze_program(fd::ProgramView<LiftedTag> program)
 {
     auto universe = ygg::UnorderedSet<ygg::Index<f::Object>> {};
     for (const auto object : program.get_objects())
@@ -512,12 +521,15 @@ ProgramVariableDomains compute_variable_domains(fd::ProgramView<LiftedTag> progr
 
     auto predicate_rule_domain_sets = TmpRuleDomainMap<f::PredicateTag> {};
     auto function_rule_domain_sets = TmpRuleDomainMap<f::FunctionTag> {};
+    auto compatibility_graphs = ProgramCompatibilityGraphs {};
 
     const auto restrict_rule_domains = [&](auto kind, auto& domain_sets)
     {
         using R = decltype(kind);
 
         domain_sets.reserve(program.get_rules<R>().size());
+        auto& graphs = compatibility_graphs.get_rules<R>();
+        graphs.reserve(program.get_rules<R>().size());
 
         for (const auto rule : program.get_rules<R>())
         {
@@ -536,6 +548,15 @@ ProgramVariableDomains compute_variable_domains(fd::ProgramView<LiftedTag> progr
 
             for (const auto op : rule.get_body().get_numeric_constraints())
                 apply_policy(op, restrict_policy);
+
+            const auto domains = to_variable_domain_list(parameter_domains);
+            const auto static_compatibility = detail::StaticLiteralCompatibility(rule.get_body().template get_literals<f::StaticTag>(),
+                                                                                 program.get_atoms<f::StaticTag>(),
+                                                                                 domains,
+                                                                                 program.get_objects().size());
+            auto compatibility = detail::create_pairwise_compatibility_graph(domains, program.get_objects().size(), { &static_compatibility });
+            parameter_domains = to_tmp_variable_domain_list(compatibility.domains);
+            graphs.emplace(rule.get_index(), std::move(compatibility.graph));
 
             domain_sets.emplace(rule.get_index(), std::move(parameter_domains));
         }
@@ -583,10 +604,19 @@ ProgramVariableDomains compute_variable_domains(fd::ProgramView<LiftedTag> progr
     auto predicate_rule_domains = to_rule_domain_map(predicate_rule_domain_sets);
     auto function_rule_domains = to_rule_domain_map(function_rule_domain_sets);
 
-    return ProgramVariableDomains {
-        std::move(static_predicate_domains), std::move(fluent_predicate_domains), std::move(static_function_domains),
-        std::move(fluent_function_domains),  std::move(predicate_rule_domains),   std::move(function_rule_domains),
+    return ProgramAnalysis {
+        ProgramVariableDomains {
+            std::move(static_predicate_domains),
+            std::move(fluent_predicate_domains),
+            std::move(static_function_domains),
+            std::move(fluent_function_domains),
+            std::move(predicate_rule_domains),
+            std::move(function_rule_domains),
+        },
+        std::move(compatibility_graphs),
     };
 }
+
+ProgramVariableDomains compute_variable_domains(fd::ProgramView<LiftedTag> program) { return std::move(analyze_program(program).domains); }
 
 }  // namespace tyr::analysis

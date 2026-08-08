@@ -233,22 +233,22 @@ inline size_t max_fterm_arity(LiftedBooleanOperatorView element)
 }
 
 /**
- * kpkc_arity
+ * kckp_arity
  */
 
 template<FactKind T>
-inline size_t kpkc_arity(LiteralView<T> element)
+inline size_t kckp_arity(LiteralView<T> element)
 {
     return element.get_atom().get_predicate().get_arity();
 }
 
 template<FactKind T>
-inline size_t kpkc_arity(FunctionTermView<T> element)
+inline size_t kckp_arity(FunctionTermView<T> element)
 {
     return element.get_function().get_arity();
 }
 
-inline size_t kpkc_arity(LiftedBooleanOperatorView element) { return std::max(max_fterm_arity(element), collect_parameters(element).size()); }
+inline size_t kckp_arity(LiftedBooleanOperatorView element) { return std::max(max_fterm_arity(element), collect_parameters(element).size()); }
 
 /**
  * parameter_arity

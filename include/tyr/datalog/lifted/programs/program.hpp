@@ -18,8 +18,8 @@
 #ifndef TYR_DATALOG_LIFTED_PROGRAMS_PROGRAM_HPP_
 #define TYR_DATALOG_LIFTED_PROGRAMS_PROGRAM_HPP_
 
-#include "tyr/analysis/declarations.hpp"
 #include "tyr/analysis/listeners.hpp"
+#include "tyr/analysis/program_analysis.hpp"
 #include "tyr/analysis/stratification.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/programs/program.hpp"
@@ -37,18 +37,11 @@ public:
             ::tyr::formalism::datalog::RepositoryPtr program_repository,
             ::tyr::formalism::datalog::RepositoryFactoryPtr repository_factory);
 
-    Program(::tyr::formalism::datalog::ProgramView<LiftedTag> program,
-            ::tyr::formalism::datalog::RepositoryPtr program_repository,
-            ::tyr::formalism::datalog::RepositoryFactoryPtr repository_factory,
-            analysis::ProgramVariableDomains domains,
-            analysis::RuleStrata strata,
-            analysis::ListenerStrata listeners);
-
     auto get_program() const noexcept { return m_program; }
     const auto& get_program_repository() const noexcept { return *m_program_repository; }
     auto& get_repository_factory() noexcept { return *m_repository_factory; }
     auto& get_repository_factory() const noexcept { return *m_repository_factory; }
-    const auto& get_domains() const noexcept { return m_domains; }
+    const auto& get_domains() const noexcept { return m_analysis.domains; }
     const auto& get_strata() const noexcept { return m_strata; }
     const auto& get_listeners() const noexcept { return m_listeners; }
     const auto& get_const_program_workspace() const noexcept { return m_const_program_workspace; }
@@ -59,7 +52,7 @@ private:
     ::tyr::formalism::datalog::ProgramView<LiftedTag> m_program;
     ::tyr::formalism::datalog::RepositoryPtr m_program_repository;
     ::tyr::formalism::datalog::RepositoryFactoryPtr m_repository_factory;
-    analysis::ProgramVariableDomains m_domains;
+    analysis::ProgramAnalysis m_analysis;
     analysis::RuleStrata m_strata;
     analysis::ListenerStrata m_listeners;
     ConstProgramWorkspace<LiftedTag> m_const_program_workspace;

@@ -105,7 +105,7 @@ public:
         {
         }
 
-        auto& kpkc_workspace() noexcept { return m_ws_worker.iteration.kpkc_workspace; }
+        auto& kckp_workspace() noexcept { return m_ws_worker.iteration.kckp_workspace; }
         auto& delta_and_annot() noexcept { return m_rctx.stratum_out().program().delta_and_annot(); }
         auto& delta_numeric_and_annot() noexcept { return m_rctx.stratum_out().program().delta_numeric_and_annot(); }
         auto& head_updates() noexcept { return m_ws_worker.iteration.head_updates; }
@@ -199,8 +199,8 @@ struct RuleExecutionContext
         const auto& ws_rule() const noexcept { return m_ws_rule; }
         auto& common() noexcept { return m_ws_rule.common; }
         const auto& common() const noexcept { return m_ws_rule.common; }
-        auto& kpkc() noexcept { return m_ws_rule.common.kpkc; }
-        const auto& kpkc() const noexcept { return m_ws_rule.common.kpkc; }
+        auto& kckp() noexcept { return m_ws_rule.common.kckp; }
+        const auto& kckp() const noexcept { return m_ws_rule.common.kckp; }
         auto& statistics() noexcept { return m_ws_rule.common.statistics; }
         const auto& statistics() const noexcept { return m_ws_rule.common.statistics; }
         auto& workers() noexcept { return m_ws_rule.worker; }

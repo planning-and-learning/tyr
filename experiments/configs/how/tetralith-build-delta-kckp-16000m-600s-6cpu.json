@@ -1,7 +1,7 @@
 {
-  "name": "tetralith-build-delta-kpkc-16000m-600s-6cpu",
+  "name": "tetralith-build-delta-kckp-16000m-600s-6cpu",
   "environment": "tetralith",
-  "build_dir": "build-delta-kpkc",
+  "build_dir": "build-delta-kckp",
   "output_root": "experiments/data",
   "memory_limit_mib": 16000,
   "cpu_time_limit_s": null,

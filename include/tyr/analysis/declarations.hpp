@@ -18,6 +18,8 @@
 #ifndef TYR_ANALYSIS_DECLARATIONS_HPP_
 #define TYR_ANALYSIS_DECLARATIONS_HPP_
 
+#include "tyr/algorithms/kckp/kckp.hpp"
+#include "tyr/analysis/variable_domain.hpp"
 #include "tyr/formalism/datalog/indices.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/declarations.hpp"
@@ -49,24 +51,6 @@ struct Scoped
     Payload payload;
 };
 
-struct VariableDomain
-{
-    std::vector<ygg::Index<::tyr::formalism::Object>> objects;
-
-    auto begin() noexcept { return objects.begin(); }
-    auto end() noexcept { return objects.end(); }
-    auto begin() const noexcept { return objects.begin(); }
-    auto end() const noexcept { return objects.end(); }
-
-    auto size() const noexcept { return objects.size(); }
-    bool empty() const noexcept { return objects.empty(); }
-
-    auto& operator[](std::size_t i) noexcept { return objects[i]; }
-    const auto& operator[](std::size_t i) const noexcept { return objects[i]; }
-};
-
-using VariableDomainList = std::vector<VariableDomain>;
-
 template<typename Element>
 using SimpleScopedDomain = Scoped<Element, VariableDomainList>;
 
@@ -95,11 +79,19 @@ struct ConditionalEffectDomainData
 {
     ConjunctiveConditionDomain condition_domain;
     ConjunctiveEffectDomain effect_domain;
+    kckp::Graph compatibility_graph;
+    std::vector<std::vector<kckp::Vertex>> object_to_vertex;
 };
 
 using ConditionalEffectDomain = Scoped<::tyr::formalism::planning::ConditionalEffect, ConditionalEffectDomainData>;
 
 using ConditionalEffectDomainMap = ygg::UnorderedMap<ygg::Index<::tyr::formalism::planning::ConditionalEffect>, ConditionalEffectDomain>;
+
+struct CompatibilityWorkspace
+{
+    kckp::Workspace kckp;
+    std::vector<kckp::Vertex> vertex_prefix;
+};
 
 struct ActionDomainData
 {

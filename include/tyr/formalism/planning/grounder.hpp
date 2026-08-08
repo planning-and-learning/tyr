@@ -18,7 +18,7 @@
 #ifndef TYR_FORMALISM_PLANNING_GROUNDER_HPP_
 #define TYR_FORMALISM_PLANNING_GROUNDER_HPP_
 
-#include "tyr/analysis/declarations.hpp"
+#include "tyr/analysis/domains.hpp"
 #include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
@@ -30,7 +30,6 @@
 #include "tyr/formalism/planning/views.hpp"
 
 #include <yggdrasil/containers/tuple.hpp>
-#include <yggdrasil/core/itertools.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -88,7 +87,7 @@ std::pair<ActionBindingView, bool> ground(ActionView action, GrounderContext& co
 std::pair<GroundActionView, bool> ground(ActionView element,
                                          GrounderContext& context,
                                          const analysis::ActionDomain& action_domains,
-                                         ygg::itertools::cartesian_set::Workspace<ygg::Index<::tyr::formalism::Object>>& iter_workspace,
+                                         analysis::CompatibilityWorkspace& compatibility_workspace,
                                          FDRContext& fdr);
 
 std::pair<AxiomBindingView, bool> ground(AxiomView axiom, GrounderContext& context);
@@ -226,10 +225,9 @@ inline std::pair<GroundMultiOperatorView, bool> ground(LiftedMultiOperatorView e
 
 inline GroundBooleanOperatorView ground(LiftedBooleanOperatorView element, GrounderContext& context)
 {
-    const auto data = visit([&](auto&& arg)
-                            { return ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>(arg.get_operator(),
-                                                                                                    ground(arg, context).first.get_index()); },
-                            element.get_variant());
+    const auto data = visit(
+        [&](auto&& arg) { return ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>(arg.get_operator(), ground(arg, context).first.get_index()); },
+        element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
@@ -367,9 +365,8 @@ std::pair<GroundNumericEffectView<T>, bool> ground(NumericEffectView<T> element,
 template<FactKind T>
 GroundNumericEffectOperatorView<T> ground(NumericEffectOperatorView<T> element, GrounderContext& context)
 {
-    const auto data =
-        visit([&](auto&& arg) { return ygg::Data<GroundNumericEffectOperator<T>>(arg.get_operator(), ground(arg, context).first.get_index()); },
-              element.get_variant());
+    const auto data = visit([&](auto&& arg) { return ygg::Data<GroundNumericEffectOperator<T>>(arg.get_operator(), ground(arg, context).first.get_index()); },
+                            element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
@@ -432,7 +429,7 @@ inline std::pair<ActionBindingView, bool> ground(ActionView action, GrounderCont
 inline std::pair<GroundActionView, bool> ground(ActionView element,
                                                 GrounderContext& context,
                                                 const analysis::ActionDomain& action_domains,
-                                                ygg::itertools::cartesian_set::Workspace<ygg::Index<::tyr::formalism::Object>>& iter_workspace,
+                                                analysis::CompatibilityWorkspace& compatibility_workspace,
                                                 FDRContext& fdr)
 {
     const auto binding = ground(element, context).first.get_index();
@@ -449,20 +446,19 @@ inline std::pair<GroundActionView, bool> ground(ActionView element,
     for (ygg::uint_t cond_effect_index = 0; cond_effect_index < element.get_effects().size(); ++cond_effect_index)
     {
         const auto cond_effect = element.get_effects()[cond_effect_index];
-        const auto& parameter_domains = action_domains.payload.effect_domains.at(cond_effect.get_index()).payload.effect_domain.payload;
+        const auto& effect_domain = action_domains.payload.effect_domains.at(cond_effect.get_index()).payload;
+        context.binding.resize(binding_size);
+        const auto prefix = std::span<const ygg::Index<::tyr::formalism::Object>>(context.binding.data(), element.get_arity());
 
-        assert(std::distance(parameter_domains.begin(), parameter_domains.end()) == static_cast<int>(element.get_arity() + cond_effect.get_arity()));
-
-        ygg::itertools::cartesian_set::for_each_element(parameter_domains.begin() + element.get_arity(),
-                                                        parameter_domains.end(),
-                                                        iter_workspace,
-                                                        [&](auto&& binding_cond)
-                                                        {
-                                                            context.binding.resize(binding_size);
-                                                            context.binding.insert(context.binding.end(), binding_cond.begin(), binding_cond.end());
-
-                                                            action.effects.push_back(ground(cond_effect, context, fdr).first.get_index());
-                                                        });
+        analysis::for_each_compatible_extension(effect_domain,
+                                                prefix,
+                                                compatibility_workspace,
+                                                [&](auto extension)
+                                                {
+                                                    context.binding.resize(binding_size);
+                                                    context.binding.insert(context.binding.end(), extension.begin(), extension.end());
+                                                    action.effects.push_back(ground(cond_effect, context, fdr).first.get_index());
+                                                });
     }
 
     context.binding.resize(binding_size);

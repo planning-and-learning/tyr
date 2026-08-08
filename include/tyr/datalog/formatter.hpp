@@ -18,10 +18,9 @@
 #ifndef TYR_DATALOG_FORMATTER_HPP_
 #define TYR_DATALOG_FORMATTER_HPP_
 
+#include "tyr/algorithms/kckp/formatter.hpp"
 #include "tyr/datalog/lifted/assignment.hpp"
 #include "tyr/datalog/lifted/consistency_graph.hpp"
-#include "tyr/datalog/lifted/delta_kpkc.hpp"
-#include "tyr/datalog/lifted/delta_kpkc_graph.hpp"
 #include "tyr/datalog/statistics/program.hpp"
 #include "tyr/datalog/statistics/rule.hpp"
 
@@ -179,27 +178,6 @@ struct formatter<tyr::datalog::details::TaggedRuleToLiteralInfos<T>, char>
 };
 
 template<>
-struct formatter<tyr::datalog::details::RuleToLiteralInfos, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::datalog::details::RuleToLiteralInfos& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "RuleToLiteralInfos(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "static indexed = ", value.static_indexed);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent indexed = ", value.fluent_indexed);
-        }
-        os << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
 struct formatter<tyr::datalog::StaticConsistencyGraph, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
@@ -207,128 +185,6 @@ struct formatter<tyr::datalog::StaticConsistencyGraph, char>
     auto format(const tyr::datalog::StaticConsistencyGraph&, FormatContext& ctx) const
     {
         return ctx.out();
-    }
-};
-
-template<>
-struct formatter<tyr::datalog::kpkc::Vertex, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::datalog::kpkc::Vertex& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.index);
-    }
-};
-
-template<>
-struct formatter<tyr::datalog::kpkc::Edge, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::datalog::kpkc::Edge& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "<{} -- {}>", value.src, value.dst);
-    }
-};
-
-template<>
-struct formatter<tyr::datalog::kpkc::VertexPartitions, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::datalog::kpkc::VertexPartitions& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "VertexPartitions(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent << "partitions = [";
-            for (ygg::uint_t p = 0; p < value.layout().k; ++p)
-            {
-                const auto& info = value.layout().info.infos[p];
-                fmt::print(os, "{}, ", ygg::BitsetSpan<const uint64_t>(value.data().data() + info.block_offset, info.num_bits));
-            }
-            os << "]\n";
-        }
-        os << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<tyr::datalog::kpkc::DeduplicatedAdjacencyMatrix, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::datalog::kpkc::DeduplicatedAdjacencyMatrix& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "DeduplicatedAdjacencyMatrix(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent << "adjacency lists = [\n";
-            for (ygg::uint_t v = 0; v < value.layout().nv; ++v)
-            {
-                ygg::IndentScope scope2(os);
-                os << ygg::print_indent;
-                fmt::print(os, "{}: [", v);
-                for (ygg::uint_t p = 0; p < value.layout().k; ++p)
-                    fmt::print(os, "{}, ", value.get_bitset(v, p));
-                os << "]\n";
-            }
-            os << "]\n";
-        }
-        os << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct formatter<tyr::datalog::kpkc::PartitionedAdjacencyMatrix, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::datalog::kpkc::PartitionedAdjacencyMatrix& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "PartitionedAdjacencyMatrix(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent << "affected partitions = [";
-            for (ygg::uint_t p = 0; p < value.layout().k; ++p)
-            {
-                const auto& info = value.layout().info.infos[p];
-                fmt::print(os, "{}, ", ygg::BitsetSpan<const uint64_t>(value.affected_partitions().data().data() + info.block_offset, info.num_bits));
-            }
-            os << "]\n";
-            os << ygg::print_indent << "delta partitions = [";
-            for (ygg::uint_t p = 0; p < value.layout().k; ++p)
-            {
-                const auto& info = value.layout().info.infos[p];
-                fmt::print(os, "{}, ", ygg::BitsetSpan<const uint64_t>(value.delta_partitions().data().data() + info.block_offset, info.num_bits));
-            }
-            os << "]\n";
-            os << ygg::print_indent << "adjacency lists = [\n";
-            auto adjacency_data = std::vector<uint64_t>(value.layout().info.num_blocks);
-            for (ygg::uint_t v = 0; v < value.layout().nv; ++v)
-            {
-                ygg::IndentScope scope2(os);
-                os << ygg::print_indent;
-                fmt::print(os, "{}: [", v);
-                for (ygg::uint_t p = 0; p < value.layout().k; ++p)
-                {
-                    const auto& info = value.layout().info.infos[p];
-                    auto adjacency = ygg::BitsetSpan<uint64_t>(adjacency_data.data() + info.block_offset, info.num_bits);
-                    value.copy_adjacency_to(v, p, adjacency);
-                    fmt::print(os, "{}, ", adjacency);
-                }
-                os << "]\n";
-            }
-            os << "]\n";
-        }
-        os << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
     }
 };
 

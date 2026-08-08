@@ -18,11 +18,11 @@
 #ifndef TYR_PLANNING_ACTION_EXECUTOR_HPP_
 #define TYR_PLANNING_ACTION_EXECUTOR_HPP_
 
+#include "tyr/analysis/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/applicability_lifted_decl.hpp"
 #include "tyr/planning/declarations.hpp"
 
-#include <yggdrasil/core/itertools.hpp>
 #include <yggdrasil/core/types.hpp>
 
 namespace tyr::planning
@@ -70,7 +70,7 @@ private:
     ygg::DataList<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> m_del_effects;
     ygg::DataList<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> m_add_effects;
     ::tyr::formalism::planning::EffectFamilyList m_effect_families;
-    ygg::itertools::cartesian_set::Workspace<ygg::Index<::tyr::formalism::Object>> m_cartesian_workspace;
+    analysis::CompatibilityWorkspace m_compatibility_workspace;
 };
 }
 

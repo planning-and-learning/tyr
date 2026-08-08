@@ -66,8 +66,8 @@ steps to Slurm. The resolved configuration is carried into each step.
 | `2026-8-8-gbfs_lazy-ground-parallel-search-4` | ground sequential, shared search, random HDA*, and LM-cut HDA* | `local-build-2500m-1s` | `tetralith-build-11360m-600s-4cpu` |
 
 The `build_dir` in the how file must contain the selected planner executable.
-The build-specific `plain-kpkc`, `delta-kpkc`, and
-`delta-kpkc-inner` how files remain available for implementation comparisons.
+The build-specific `plain-kckp`, `delta-kckp`, and
+`delta-kckp-inner` how files remain available for implementation comparisons.
 
 ## Configuration
 

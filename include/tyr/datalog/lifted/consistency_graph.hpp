@@ -18,17 +18,13 @@
 #ifndef TYR_DATALOG_CONSISTENCY_GRAPH_HPP_
 #define TYR_DATALOG_CONSISTENCY_GRAPH_HPP_
 
-#include "tyr/analysis/declarations.hpp"
+#include "tyr/algorithms/kckp/delta_kckp.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/lifted/assignment_sets.hpp"
-#include "tyr/datalog/lifted/delta_kpkc_graph.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/variable_dependency_graph.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 
-#include <boost/dynamic_bitset/dynamic_bitset.hpp>
-#include <optional>
-#include <ranges>
-#include <sstream>
 #include <vector>
 #include <yggdrasil/containers/vector.hpp>
 
@@ -40,6 +36,9 @@ namespace details
 {
 /**
  * For mapping rule bindings to literal bindings
+ *
+ * Fluent assignment sets are rebuilt once per state and shared across rules. These rule-specific mappings translate vertices and edges into those shared sets
+ * without materializing a new compatibility table for every rule and state.
  */
 
 struct RuleToLiteralInfoMappings
@@ -68,7 +67,7 @@ struct RuleToLiteralInfo
 {
     ygg::Index<::tyr::formalism::Predicate<T>> predicate;
     bool polarity;
-    size_t kpkc_arity;
+    size_t kckp_arity;
     size_t num_parameters;
     size_t num_constants;
 
@@ -83,28 +82,11 @@ struct TaggedRuleToLiteralInfos
     RuleToLiteralInfoMappings info_mappings;
 };
 
-struct RuleToLiteralInfos
-{
-    details::TaggedRuleToLiteralInfos<::tyr::formalism::StaticTag> static_indexed;
-    details::TaggedRuleToLiteralInfos<::tyr::formalism::FluentTag> fluent_indexed;
-
-    template<::tyr::formalism::FactKind T>
-    const auto& get() const noexcept
-    {
-        if constexpr (std::is_same_v<T, ::tyr::formalism::StaticTag>)
-            return static_indexed;
-        else if constexpr (std::is_same_v<T, ::tyr::formalism::FluentTag>)
-            return fluent_indexed;
-        else
-            static_assert(ygg::dependent_false<T>::value, "Missing case");
-    }
-};
-
 template<::tyr::formalism::FactKind T>
 struct RuleToFunctionTermInfo
 {
     ygg::Index<::tyr::formalism::Function<T>> function;
-    size_t kpkc_arity;
+    size_t kckp_arity;
     size_t num_parameters;
     size_t num_constants;
 
@@ -124,7 +106,7 @@ struct RuleToConstraintInfo
     TaggedRuleToFunctionTermInfos<::tyr::formalism::StaticTag> static_infos;
     TaggedRuleToFunctionTermInfos<::tyr::formalism::FluentTag> fluent_infos;
 
-    size_t kpkc_arity;
+    size_t kckp_arity;
 
     template<::tyr::formalism::FactKind T>
     const auto& get() const noexcept
@@ -165,8 +147,6 @@ public:
     auto get_object_index() const noexcept { return m_object_index; }
 };
 
-using Vertices = std::vector<Vertex>;
-
 /**
  * Edge
  */
@@ -188,74 +168,38 @@ public:
 
 class StaticConsistencyGraph
 {
-private:
-    /// @brief Helper to initialize vertices.
-    std::tuple<details::Vertices, std::vector<std::vector<ygg::uint_t>>, std::vector<std::vector<ygg::uint_t>>>
-    compute_vertices(const details::TaggedRuleToLiteralInfos<::tyr::formalism::StaticTag>& indexed_literals,
-                     const analysis::VariableDomainList& parameter_domains,
-                     size_t num_objects,
-                     ygg::uint_t begin_parameter_index,
-                     ygg::uint_t end_parameter_index,
-                     const TaggedAssignmentSets<::tyr::formalism::StaticTag>& static_assignment_sets);
-
-    /// @brief Helper to initialize edges.
-    kpkc::DeduplicatedAdjacencyMatrix compute_edges(const details::TaggedRuleToLiteralInfos<::tyr::formalism::StaticTag>& indexed_literals,
-                                                    const TaggedAssignmentSets<::tyr::formalism::StaticTag>& static_assignment_sets,
-                                                    const details::Vertices& vertices,
-                                                    const std::vector<std::vector<ygg::uint_t>>& vertex_partitions);
-
 public:
-    StaticConsistencyGraph(::tyr::formalism::datalog::ConjunctiveConditionView condition,
-                           ::tyr::formalism::datalog::ConjunctiveConditionView unary_overapproximation_condition,
+    StaticConsistencyGraph(::tyr::formalism::datalog::ConjunctiveConditionView unary_overapproximation_condition,
                            ::tyr::formalism::datalog::ConjunctiveConditionView binary_overapproximation_condition,
-                           ::tyr::formalism::datalog::ConjunctiveConditionView static_binary_overapproximation_condition,
-                           const analysis::VariableDomainList& parameter_domains,
-                           size_t num_objects,
-                           size_t num_fluent_predicates,
-                           ygg::uint_t begin_parameter_index,
-                           ygg::uint_t end_parameter_index,
-                           const TaggedAssignmentSets<::tyr::formalism::StaticTag>& static_assignment_sets);
+                           kckp::Graph compatibility_graph,
+                           std::vector<ygg::Index<::tyr::formalism::Object>> vertex_objects);
 
     void initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
-                                               const kpkc::GraphLayout& layout,
-                                               kpkc::DeltaGraph& delta_graph,
-                                               kpkc::FullGraph& full_graph) const;
+                                               const kckp::GraphLayout& layout,
+                                               kckp::DeltaGraph& delta_graph,
+                                               kckp::FullGraph& full_graph) const;
 
-    auto get_vertices() const noexcept { return std::ranges::subrange(m_vertices.cbegin(), m_vertices.cend()); }
+    details::Vertex get_vertex(ygg::uint_t index) const;
 
-    const details::Vertex& get_vertex(ygg::uint_t index) const;
-
-    size_t get_num_vertices() const noexcept;
-
-    ::tyr::formalism::datalog::ConjunctiveConditionView get_condition() const noexcept;
     const ::tyr::formalism::datalog::VariableDependencyGraph& get_variable_dependeny_graph() const noexcept;
-    const std::vector<std::vector<ygg::uint_t>>& get_vertex_partitions() const noexcept;
-    const std::vector<std::vector<ygg::uint_t>>& get_object_to_vertex_per_partition() const noexcept;
-    const kpkc::GraphLayout& get_graph_layout() const noexcept;
-    const kpkc::PartitionedAdjacencyLayout& get_partitioned_adjacency_layout() const noexcept;
-    const kpkc::DeduplicatedAdjacencyMatrix& get_adjacency_matrix() const noexcept;
+    const kckp::Graph& get_graph() const noexcept;
+    const kckp::GraphLayout& get_graph_layout() const noexcept;
+    const kckp::PartitionedAdjacencyLayout& get_partitioned_adjacency_layout() const noexcept;
+    const kckp::DeduplicatedAdjacencyMatrix& get_adjacency_matrix() const noexcept;
 
 private:
-    ::tyr::formalism::datalog::ConjunctiveConditionView m_condition;
     ::tyr::formalism::datalog::ConjunctiveConditionView m_unary_overapproximation_condition;
     ::tyr::formalism::datalog::ConjunctiveConditionView m_binary_overapproximation_condition;
 
     ::tyr::formalism::datalog::VariableDependencyGraph m_unary_overapproximation_vdg;
     ::tyr::formalism::datalog::VariableDependencyGraph m_binary_overapproximation_vdg;
 
-    /* The data member of the consistency graph. */
-    details::Vertices m_vertices;
+    kckp::Graph m_compatibility_graph;
+    std::vector<ygg::Index<::tyr::formalism::Object>> m_vertex_objects;
+    kckp::PartitionedAdjacencyLayout m_partitioned_adjacency_layout;
 
-    // Adjacency list of edges.
-    std::vector<std::vector<ygg::uint_t>> m_vertex_partitions;
-    std::vector<std::vector<ygg::uint_t>> m_object_to_vertex_per_partition;
-
-    kpkc::GraphLayout m_layout;
-    kpkc::PartitionedAdjacencyLayout m_partitioned_adjacency_layout;
-    kpkc::DeduplicatedAdjacencyMatrix m_matrix;
-
-    details::RuleToLiteralInfos m_unary_overapproximation_indexed_literals;
-    details::RuleToLiteralInfos m_binary_overapproximation_indexed_literals;
+    details::TaggedRuleToLiteralInfos<::tyr::formalism::FluentTag> m_unary_overapproximation_indexed_literals;
+    details::TaggedRuleToLiteralInfos<::tyr::formalism::FluentTag> m_binary_overapproximation_indexed_literals;
 
     details::RuleToRuleToConstraintInfos m_unary_overapproximation_indexed_constraints;
     details::RuleToRuleToConstraintInfos m_binary_overapproximation_indexed_constraints;
@@ -270,20 +214,12 @@ create_overapproximation_rule(size_t k, ::tyr::formalism::datalog::RuleView<R> e
 
 template<::tyr::formalism::RelationKind R>
 std::pair<::tyr::formalism::datalog::RuleView<R>, bool>
-create_static_overapproximation_rule(size_t k, ::tyr::formalism::datalog::RuleView<R> element, ::tyr::formalism::datalog::Repository& context);
-
-template<::tyr::formalism::RelationKind R>
-std::pair<::tyr::formalism::datalog::RuleView<R>, bool>
 create_overapproximation_conflicting_rule(size_t k, ::tyr::formalism::datalog::RuleView<R> element, ::tyr::formalism::datalog::Repository& context);
 
 extern template std::pair<::tyr::formalism::datalog::RuleView<::tyr::formalism::PredicateTag>, bool>
 create_overapproximation_rule(size_t, ::tyr::formalism::datalog::RuleView<::tyr::formalism::PredicateTag>, ::tyr::formalism::datalog::Repository&);
 extern template std::pair<::tyr::formalism::datalog::RuleView<::tyr::formalism::FunctionTag>, bool>
 create_overapproximation_rule(size_t, ::tyr::formalism::datalog::RuleView<::tyr::formalism::FunctionTag>, ::tyr::formalism::datalog::Repository&);
-extern template std::pair<::tyr::formalism::datalog::RuleView<::tyr::formalism::PredicateTag>, bool>
-create_static_overapproximation_rule(size_t, ::tyr::formalism::datalog::RuleView<::tyr::formalism::PredicateTag>, ::tyr::formalism::datalog::Repository&);
-extern template std::pair<::tyr::formalism::datalog::RuleView<::tyr::formalism::FunctionTag>, bool>
-create_static_overapproximation_rule(size_t, ::tyr::formalism::datalog::RuleView<::tyr::formalism::FunctionTag>, ::tyr::formalism::datalog::Repository&);
 extern template std::pair<::tyr::formalism::datalog::RuleView<::tyr::formalism::PredicateTag>, bool>
 create_overapproximation_conflicting_rule(size_t, ::tyr::formalism::datalog::RuleView<::tyr::formalism::PredicateTag>, ::tyr::formalism::datalog::Repository&);
 extern template std::pair<::tyr::formalism::datalog::RuleView<::tyr::formalism::FunctionTag>, bool>

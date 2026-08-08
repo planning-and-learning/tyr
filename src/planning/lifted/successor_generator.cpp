@@ -41,7 +41,6 @@
 #include <stdexcept>
 #include <utility>
 #include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/core/itertools.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 
 namespace d = tyr::datalog;
@@ -93,7 +92,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
         ygg::Data<f::RelationBinding<fp::Action>> scratch_action_binding;
         ActionBindingMap action_binding_to_ground_action;
         datalog::ProgramWorkspace<LiftedTag> workspace;
-        ygg::itertools::cartesian_set::Workspace<ygg::Index<f::Object>> cartesian_workspace;
+        analysis::CompatibilityWorkspace compatibility_workspace;
         ActionExecutor executor;
     };
 
@@ -137,7 +136,7 @@ SuccessorGenerator<LiftedTag>::Impl::Evaluator::Evaluator(const Definition& defi
     scratch_action_binding(),
     action_binding_to_ground_action(),
     workspace(definition.action_program.get_datalog_program()),
-    cartesian_workspace(),
+    compatibility_workspace(),
     executor()
 {
     assert(execution_context);
@@ -323,7 +322,7 @@ fp::GroundActionView SuccessorGenerator<LiftedTag>::ground_action(fp::ActionBind
     const auto ground_action = fp::ground(action,
                                           grounder_context,
                                           m_impl->definition->task->get_formalism_task().get_variable_domains().action_domains.at(action.get_index()),
-                                          m_impl->evaluator.cartesian_workspace,
+                                          m_impl->evaluator.compatibility_workspace,
                                           *m_impl->definition->task->get_fdr_context())
                                    .first;
     m_impl->evaluator.action_binding_to_ground_action.emplace(binding, ground_action);

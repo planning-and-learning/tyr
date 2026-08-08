@@ -1,4 +1,4 @@
-set(SUBDIRECTORIES "analysis" "buffer" "common" "formalism" "datalog" "planning")
+set(SUBDIRECTORIES "algorithms" "analysis" "buffer" "common" "formalism" "datalog" "planning")
 
 set(TYR_SRC_FILES "")
 set(TYR_PRIVATE_HEADER_FILES "")
@@ -42,6 +42,10 @@ endif()
 
 add_library(
     core SHARED ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
+    algorithms/kckp/graphs.cpp
+    algorithms/kckp/kckp.cpp
+    algorithms/kckp/delta_kckp.cpp
+
     analysis/listeners.cpp
     analysis/program_domains.cpp
     analysis/stratification.cpp
@@ -95,8 +99,6 @@ add_library(
     datalog/lifted/assignment_sets.cpp
     datalog/lifted/solver.cpp
     datalog/lifted/consistency_graph.cpp
-    datalog/lifted/delta_kpkc_graph.cpp
-    datalog/lifted/delta_kpkc.cpp
     datalog/fact_set.cpp
     datalog/ground/programs/program.cpp
     datalog/ground/workspaces/facts.cpp

@@ -108,22 +108,10 @@ template<::tyr::formalism::FactKind T>
 struct RuleToLiteralInfo;
 template<::tyr::formalism::FactKind T>
 struct TaggedRuleToLiteralInfos;
-struct RuleToLiteralInfos;
 }
 
 struct VertexAssignment;
 struct EdgeAssignment;
-
-namespace kpkc
-{
-struct Workspace;
-struct Vertex;
-struct Edge;
-class VertexPartitions;
-class DeduplicatedAdjacencyMatrix;
-class PartitionedAdjacencyLayout;
-class PartitionedAdjacencyMatrix;
-}
 
 }
 

@@ -119,12 +119,14 @@ target_include_directories(planning_state_routing PRIVATE ${PROJECT_SOURCE_DIR}/
 add_gtest(formalism_planning_invariants_synthesis "formalism/planning/invariants/synthesis.cpp")
 target_link_libraries(formalism_planning_invariants_synthesis PRIVATE Boost::json)
 add_gtest(formalism_unification "formalism/unification.cpp")
+add_gtest(algorithms_kckp "algorithms/kckp/kckp.cpp")
+target_include_directories(algorithms_kckp PRIVATE ${PROJECT_SOURCE_DIR}/src)
 
 add_gtest(datalog_cost_policy "datalog/cost_policy.cpp")
 add_gtest(datalog_ground_solver "datalog/ground/solver.cpp")
 add_gtest(datalog_lifted_solver "datalog/lifted/solver.cpp")
 target_link_libraries(datalog_lifted_solver PRIVATE Boost::iostreams Boost::json)
-add_gtest(datalog_lifted_delta_kpkc "datalog/lifted/delta_kpkc.cpp")
+add_gtest(algorithms_delta_kckp "algorithms/kckp/delta_kckp.cpp")
 
 foreach(task_kind ground lifted)
     foreach(heuristic rpg_max rpg_add rpg_ff lmcut)

@@ -19,6 +19,7 @@
 #include "tyr/formalism/planning/views.hpp"
 //
 
+#include "tyr/analysis/domains.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
@@ -75,7 +76,7 @@ inline void process_effects(fp::ActionView action,
                             StateContext<LiftedTag>& state_context,
                             fp::GrounderContext& grounder_context,
                             fp::FDRContext& fdr_context,
-                            ygg::itertools::cartesian_set::Workspace<ygg::Index<f::Object>>& cartesian_workspace,
+                            analysis::CompatibilityWorkspace& compatibility_workspace,
                             ::tyr::formalism::planning::EffectFamilyList& effect_families,
                             ygg::DataList<fp::FDRFact<f::FluentTag>>& tmp_del_effects,
                             ygg::DataList<fp::FDRFact<f::FluentTag>>& tmp_add_effects)
@@ -84,17 +85,18 @@ inline void process_effects(fp::ActionView action,
 
     for (const auto cond_effect : action.get_effects())
     {
-        const auto& parameter_domains = action_domain.payload.effect_domains.at(cond_effect.get_index()).payload.effect_domain.payload;
+        const auto& effect_domain = action_domain.payload.effect_domains.at(cond_effect.get_index()).payload;
         const auto binding_size = grounder_context.binding.size();
 
-        ygg::itertools::cartesian_set::for_each_element(
-            parameter_domains.begin() + action.get_arity(),
-            parameter_domains.end(),
-            cartesian_workspace,
-            [&](auto&& binding_cond)
+        const auto prefix = std::span<const ygg::Index<f::Object>>(grounder_context.binding.data(), action.get_arity());
+        analysis::for_each_compatible_extension(
+            effect_domain,
+            prefix,
+            compatibility_workspace,
+            [&](auto extension)
             {
                 grounder_context.binding.resize(binding_size);
-                grounder_context.binding.insert(grounder_context.binding.end(), binding_cond.begin(), binding_cond.end());
+                grounder_context.binding.insert(grounder_context.binding.end(), extension.begin(), extension.end());
 
                 if (is_applicable(cond_effect.get_condition(), applicability_context))
                 {
@@ -216,7 +218,7 @@ bool ActionExecutor::is_applicable_if_fires(fp::ActionView action,
     return tyr::planning::is_applicable_if_fires(action.get_effects(),
                                                  applicability_context,
                                                  m_effect_families,
-                                                 m_cartesian_workspace,
+                                                 m_compatibility_workspace,
                                                  state_context.task.get_formalism_task().get_variable_domains().action_domains.at(action.get_index()));
 }
 
@@ -239,7 +241,7 @@ ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Lifted
                                                   tmp_state_context,
                                                   grounder,
                                                   fdr,
-                                                  m_cartesian_workspace,
+                                                  m_compatibility_workspace,
                                                   m_effect_families,
                                                   del_effects,
                                                   add_effects);

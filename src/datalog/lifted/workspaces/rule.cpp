@@ -181,30 +181,21 @@ auto create_witness_rule(fd::RuleView<R> element, fd::Repository& context)
 template<f::RelationKind R>
 ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(fd::RuleView<R> rule,
                                                      fd::Repository& repository,
-                                                     const analysis::VariableDomainList& parameter_domains,
-                                                     size_t num_objects,
-                                                     size_t num_fluent_predicates,
-                                                     const TaggedFactSets<f::StaticTag>& static_fact_sets,
-                                                     const TaggedAssignmentSets<::tyr::formalism::StaticTag>& static_assignment_sets) :
+                                                     kckp::Graph compatibility_graph,
+                                                     std::vector<ygg::Index<f::Object>> vertex_objects,
+                                                     const TaggedFactSets<f::StaticTag>& static_fact_sets) :
     rule(rule),
     witness_rule(create_witness_rule(get_rule(), repository).first),
     nullary_condition(create_ground_nullary_conjunctive_condition(get_rule().get_body(), repository).first),
     unary_overapproximation_rule(create_overapproximation_rule(1, get_rule(), repository).first),
     binary_overapproximation_rule(create_overapproximation_rule(2, get_rule(), repository).first),
-    static_binary_overapproximation_rule(create_static_overapproximation_rule(2, get_rule(), repository).first),
     conflicting_overapproximation_rule(create_overapproximation_conflicting_rule(get_rule().get_arity() == 1 ? 1 : 2, get_rule(), repository).first),
     pre_evaluated_metric_cost(),
     runtime_metric_effects(),
-    static_consistency_graph(get_rule().get_body(),
-                             unary_overapproximation_rule.get_body(),
+    static_consistency_graph(unary_overapproximation_rule.get_body(),
                              binary_overapproximation_rule.get_body(),
-                             static_binary_overapproximation_rule.get_body(),
-                             parameter_domains,
-                             num_objects,
-                             num_fluent_predicates,
-                             0,
-                             get_rule().get_arity(),
-                             static_assignment_sets)
+                             std::move(compatibility_graph),
+                             std::move(vertex_objects))
 {
     auto metric_effects = classify_metric_effects(get_rule(), repository, static_fact_sets);
     pre_evaluated_metric_cost = metric_effects.pre_evaluated_cost;

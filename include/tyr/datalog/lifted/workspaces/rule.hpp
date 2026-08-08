@@ -18,8 +18,8 @@
 #ifndef TYR_DATALOG_LIFTED_WORKSPACES_RULE_HPP_
 #define TYR_DATALOG_LIFTED_WORKSPACES_RULE_HPP_
 
+#include "tyr/algorithms/kckp/delta_kckp.hpp"
 #include "tyr/datalog/lifted/consistency_graph.hpp"
-#include "tyr/datalog/lifted/delta_kpkc.hpp"
 #include "tyr/datalog/lifted/policies/numeric_support.hpp"
 #include "tyr/datalog/statistics/rule.hpp"
 #include "tyr/datalog/workspaces/rule.hpp"
@@ -142,8 +142,9 @@ struct RuleWorkspace<LiftedTag, R>
 
         void clear() noexcept;
 
-        /// KPKC
-        kpkc::DeltaKPKC kpkc;
+        /// KCKP
+        const StaticConsistencyGraph& static_consistency_graph;
+        kckp::DeltaKCKP kckp;
 
         /// Statistics
         RuleStatistics statistics;
@@ -162,8 +163,8 @@ struct RuleWorkspace<LiftedTag, R>
         /// Head updates
         RuleHeadIterationT<R> head_updates;
 
-        /// KPKC
-        kpkc::Workspace kpkc_workspace;
+        /// KCKP
+        kckp::Workspace kckp_workspace;
     };
 
     struct Solve
@@ -173,7 +174,7 @@ struct RuleWorkspace<LiftedTag, R>
         void clear() noexcept;
 
 #ifndef NDEBUG
-        /// In debug mode, we accumulate all bindings to verify the correctness of delta-kpkc
+        /// In debug mode, we accumulate all bindings to verify the correctness of delta-kckp
         ygg::UnorderedSet<ygg::IndexList<::tyr::formalism::Object>> seen_bindings;
 #endif
 
@@ -231,11 +232,9 @@ public:
 
     ConstRuleWorkspace(::tyr::formalism::datalog::RuleView<R> rule,
                        ::tyr::formalism::datalog::Repository& repository,
-                       const analysis::VariableDomainList& parameter_domains,
-                       size_t num_objects,
-                       size_t num_fluent_predicates,
-                       const TaggedFactSets<::tyr::formalism::StaticTag>& static_fact_sets,
-                       const TaggedAssignmentSets<::tyr::formalism::StaticTag>& static_assignment_sets);
+                       kckp::Graph compatibility_graph,
+                       std::vector<ygg::Index<::tyr::formalism::Object>> vertex_objects,
+                       const TaggedFactSets<::tyr::formalism::StaticTag>& static_fact_sets);
 
 private:
     ::tyr::formalism::datalog::RuleView<R> rule;
@@ -243,7 +242,6 @@ private:
     ::tyr::formalism::datalog::GroundConjunctiveConditionView nullary_condition;
     ::tyr::formalism::datalog::RuleView<R> unary_overapproximation_rule;
     ::tyr::formalism::datalog::RuleView<R> binary_overapproximation_rule;
-    ::tyr::formalism::datalog::RuleView<R> static_binary_overapproximation_rule;
     ::tyr::formalism::datalog::RuleView<R> conflicting_overapproximation_rule;
 
     Cost pre_evaluated_metric_cost;
@@ -264,26 +262,30 @@ inline bool supports_inner_parallelism(::tyr::formalism::datalog::AtomView<::tyr
 inline bool supports_inner_parallelism(::tyr::formalism::datalog::NumericEffectOperatorView<::tyr::formalism::FluentTag>) noexcept { return false; }
 
 template<::tyr::formalism::RelationKind R>
-RuleWorkspace<LiftedTag, R>::Common::Common(const StaticConsistencyGraph& static_consistency_graph) : kpkc(static_consistency_graph), statistics()
+RuleWorkspace<LiftedTag, R>::Common::Common(const StaticConsistencyGraph& static_consistency_graph) :
+    static_consistency_graph(static_consistency_graph),
+    kckp(static_consistency_graph.get_graph(), static_consistency_graph.get_partitioned_adjacency_layout()),
+    statistics()
 {
 }
 
 template<::tyr::formalism::RelationKind R>
 void RuleWorkspace<LiftedTag, R>::Common::clear() noexcept
 {
-    kpkc.reset();
+    kckp.reset();
 }
 
 template<::tyr::formalism::RelationKind R>
 void RuleWorkspace<LiftedTag, R>::Common::initialize_iteration(const AssignmentSets& assignment_sets)
 {
-    kpkc.set_next_assignment_sets(assignment_sets);
+    kckp.update([&](auto& delta_graph, auto& full_graph)
+                { static_consistency_graph.initialize_dynamic_consistency_graphs(assignment_sets, kckp.get_graph_layout(), delta_graph, full_graph); });
 }
 
 template<::tyr::formalism::RelationKind R>
 RuleWorkspace<LiftedTag, R>::Iteration::Iteration(const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common) :
     head_updates(make_head_iteration(cws.get_rule().get_head())),
-    kpkc_workspace(common.kpkc.get_graph_layout())
+    kckp_workspace(common.kckp.get_graph_layout())
 {
 }
 
@@ -348,7 +350,7 @@ RuleWorkspace<LiftedTag, R>::RuleWorkspace(const ConstRuleWorkspace<LiftedTag, R
     worker.emplace_back(cws_, common);
 
 #if defined(TYR_ENABLE_INNER_PARALLELISM) && defined(TYR_ENABLE_SEMI_NAIVE)
-    // Only propositional heads use partitionable delta KPKC; numeric effects require full KPKC enumeration.
+    // Only propositional heads use partitionable delta KCKP; numeric effects require full KCKP enumeration.
     if (supports_inner_parallelism(cws_.get_rule().get_head()) && cws_.get_rule().get_arity() > 2)
         worker.emplace_back(cws_, common);
 #endif

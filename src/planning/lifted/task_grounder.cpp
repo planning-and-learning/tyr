@@ -17,7 +17,7 @@
 
 #include "tyr/planning/lifted/task_grounder.hpp"
 
-#include "tyr/analysis/declarations.hpp"
+#include "tyr/analysis/domains.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/policies/annotation.hpp"
 #include "tyr/datalog/lifted/solver.hpp"
@@ -338,7 +338,7 @@ std::optional<fp::GroundActionView> ground_pruned(fp::ActionView element,
                                                   const ygg::UnorderedSet<fp::GroundAtomView<f::DerivedTag>>& derived_atoms,
                                                   const analysis::ActionDomain& action_domains,
                                                   const boost::dynamic_bitset<>& static_atoms_bitset,
-                                                  ygg::itertools::cartesian_set::Workspace<ygg::Index<f::Object>>& iter_workspace,
+                                                  analysis::CompatibilityWorkspace& compatibility_workspace,
                                                   fp::GrounderContext& context,
                                                   const fp::FDRContext& fdr_context)
 {
@@ -361,24 +361,23 @@ std::optional<fp::GroundActionView> ground_pruned(fp::ActionView element,
     for (ygg::uint_t cond_effect_index = 0; cond_effect_index < element.get_effects().size(); ++cond_effect_index)
     {
         const auto cond_effect = element.get_effects()[cond_effect_index];
-        const auto& parameter_domains = action_domains.payload.effect_domains.at(cond_effect.get_index()).payload.effect_domain.payload;
+        const auto& effect_domain = action_domains.payload.effect_domains.at(cond_effect.get_index()).payload;
+        context.binding.resize(binding_size);
+        const auto prefix = std::span<const ygg::Index<f::Object>>(context.binding.data(), element.get_arity());
+        analysis::for_each_compatible_extension(effect_domain,
+                                                prefix,
+                                                compatibility_workspace,
+                                                [&](auto extension)
+                                                {
+                                                    // push the additional parameters to the end
+                                                    context.binding.resize(binding_size);
+                                                    context.binding.insert(context.binding.end(), extension.begin(), extension.end());
 
-        assert(std::distance(parameter_domains.begin(), parameter_domains.end()) == static_cast<int>(element.get_arity() + cond_effect.get_arity()));
-
-        ygg::itertools::cartesian_set::for_each_element(
-            parameter_domains.begin() + element.get_arity(),
-            parameter_domains.end(),
-            iter_workspace,
-            [&](auto&& binding_cond)
-            {
-                // push the additional parameters to the end
-                context.binding.resize(binding_size);
-                context.binding.insert(context.binding.end(), binding_cond.begin(), binding_cond.end());
-
-                const auto ground_cond_effect_or_nullopt = ground_pruned(cond_effect, fluent_atoms, derived_atoms, static_atoms_bitset, context, fdr_context);
-                if (ground_cond_effect_or_nullopt.has_value())
-                    action.effects.push_back(ground_cond_effect_or_nullopt->get_index());
-            });
+                                                    const auto ground_cond_effect_or_nullopt =
+                                                        ground_pruned(cond_effect, fluent_atoms, derived_atoms, static_atoms_bitset, context, fdr_context);
+                                                    if (ground_cond_effect_or_nullopt.has_value())
+                                                        action.effects.push_back(ground_cond_effect_or_nullopt->get_index());
+                                                });
     }
     context.binding.resize(binding_size);  ///< important to restore the binding in case of grounding other actions
 
@@ -587,7 +586,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
     auto fluent_assign = ygg::UnorderedMap<ygg::Index<fp::FDRVariable<f::FluentTag>>, fp::FDRValue> {};
     auto derived_assign = ygg::UnorderedMap<ygg::Index<fp::GroundAtom<f::DerivedTag>>, bool> {};
-    auto iter_workspace = ygg::itertools::cartesian_set::Workspace<ygg::Index<f::Object>> {};
+    auto compatibility_workspace = analysis::CompatibilityWorkspace {};
 
     for_each_predicate_binding(
         [&](const auto binding)
@@ -609,7 +608,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
                                   derived_atoms_set,
                                   lifted_task.get_formalism_task().get_variable_domains().action_domains.at(action.get_index()),
                                   static_atoms_bitset,
-                                  iter_workspace,
+                                  compatibility_workspace,
                                   grounder_context,
                                   *fdr_context);
 

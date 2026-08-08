@@ -17,6 +17,7 @@
 
 #include "tyr/datalog/lifted/solver.hpp"
 
+#include "tyr/algorithms/kckp/delta_kckp.hpp"
 #include "tyr/datalog/applicability.hpp"
 #include "tyr/datalog/applicability_lifted.hpp"
 #include "tyr/datalog/declarations.hpp"
@@ -24,7 +25,6 @@
 #include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/assignment_sets.hpp"
 #include "tyr/datalog/lifted/consistency_graph.hpp"
-#include "tyr/datalog/lifted/delta_kpkc.hpp"
 #include "tyr/datalog/lifted/policies/annotation.hpp"
 #include "tyr/datalog/lifted/policies/numeric_support.hpp"
 #include "tyr/datalog/lifted/rule_scheduler.hpp"
@@ -73,7 +73,7 @@ namespace tyr::datalog
 
 static void create_nullary_binding(ygg::IndexList<f::Object>& binding) { binding.clear(); }
 
-static void create_general_binding(std::span<const kpkc::Vertex> clique, const StaticConsistencyGraph& consistency_graph, ygg::IndexList<f::Object>& binding)
+static void create_general_binding(std::span<const kckp::Vertex> clique, const StaticConsistencyGraph& consistency_graph, ygg::IndexList<f::Object>& binding)
 {
     const auto k = clique.size();
 
@@ -386,19 +386,19 @@ void generate_nullary_case(RuleExecutionContext<R, OrAP, AndAP, TP, CP>& rctx)
 }
 
 template<typename Callback>
-void for_each_relevant_clique(fd::AtomView<f::FluentTag>, kpkc::DeltaKPKC& algorithm, Callback&& callback, kpkc::Workspace& workspace)
+void for_each_relevant_clique(fd::AtomView<f::FluentTag>, kckp::DeltaKCKP& algorithm, Callback&& callback, kckp::Workspace& workspace)
 {
 #ifdef TYR_ENABLE_SEMI_NAIVE
-    algorithm.for_each_new_k_clique(std::forward<Callback>(callback), workspace);
+    algorithm.for_each_delta_clique(std::forward<Callback>(callback), workspace);
 #else
-    algorithm.for_each_k_clique(std::forward<Callback>(callback), workspace);
+    algorithm.for_each_clique(std::forward<Callback>(callback), workspace);
 #endif
 }
 
 template<typename Callback>
-void for_each_relevant_clique(fd::NumericEffectOperatorView<f::FluentTag>, kpkc::DeltaKPKC& algorithm, Callback&& callback, kpkc::Workspace& workspace)
+void for_each_relevant_clique(fd::NumericEffectOperatorView<f::FluentTag>, kckp::DeltaKCKP& algorithm, Callback&& callback, kckp::Workspace& workspace)
 {
-    algorithm.for_each_k_clique(std::forward<Callback>(callback), workspace);
+    algorithm.for_each_clique(std::forward<Callback>(callback), workspace);
 }
 
 inline bool require_novel_binding(fd::AtomView<f::FluentTag>) noexcept
@@ -421,10 +421,10 @@ bool try_generate_parallel(fd::AtomView<f::FluentTag>, RuleExecutionContext<f::P
 #if defined(TYR_ENABLE_INNER_PARALLELISM) && defined(TYR_ENABLE_SEMI_NAIVE)
     constexpr size_t kNumStripes = 2;
     constexpr size_t kParallelThreshold = 1024;
-    auto& kpkc_algorithm = rctx.out().kpkc();
-    if (kpkc_algorithm.get_iteration() > 1 && rctx.in().cws_rule().get_rule().get_arity() > 2 && oneapi::tbb::this_task_arena::max_concurrency() >= 2)
+    auto& kckp_algorithm = rctx.out().kckp();
+    if (kckp_algorithm.get_iteration() > 1 && rctx.in().cws_rule().get_rule().get_arity() > 2 && oneapi::tbb::this_task_arena::max_concurrency() >= 2)
     {
-        const auto& delta_edges = kpkc_algorithm.materialize_delta_edges();
+        const auto& delta_edges = kckp_algorithm.materialize_delta_edges();
         if (delta_edges.size() >= kParallelThreshold)
         {
             assert(rctx.out().workers().size() == kNumStripes);
@@ -435,14 +435,14 @@ bool try_generate_parallel(fd::AtomView<f::FluentTag>, RuleExecutionContext<f::P
                 {
                     auto wrctx = rctx.get_rule_worker_execution_context(stripe);
                     auto& out = wrctx.out();
-                    auto& kpkc_workspace = out.kpkc_workspace();
+                    auto& kckp_workspace = out.kckp_workspace();
                     ++out.statistics().num_executions;
 
                     for (auto edge_index = stripe; edge_index < delta_edges.size(); edge_index += kNumStripes)
                     {
-                        if (!kpkc_algorithm.seed_from_anchor(delta_edges[edge_index], kpkc_workspace))
+                        if (!kckp_algorithm.seed_from_anchor(delta_edges[edge_index], kckp_workspace))
                             continue;
-                        kpkc_algorithm.template complete_from_seed<kpkc::Edge>([&](auto&& clique) { process_clique(wrctx, clique, true); }, 0, kpkc_workspace);
+                        kckp_algorithm.template complete_from_seed<kckp::Edge>([&](auto&& clique) { process_clique(wrctx, clique, true); }, 0, kckp_workspace);
                     }
                 });
             return true;
@@ -525,7 +525,7 @@ template<f::RelationKind R,
          AndAnnotationPolicyConcept<LiftedTag> AndAP,
          TerminationPolicyConcept<LiftedTag> TP,
          RuleCostPolicyConcept<LiftedTag> CP>
-void process_clique(RuleWorkerExecutionContext<R, OrAP, AndAP, TP, CP>& wrctx, std::span<const kpkc::Vertex> clique, bool require_novel_binding)
+void process_clique(RuleWorkerExecutionContext<R, OrAP, AndAP, TP, CP>& wrctx, std::span<const kckp::Vertex> clique, bool require_novel_binding)
 {
     auto& in = wrctx.in();
     auto& out = wrctx.out();
@@ -533,7 +533,7 @@ void process_clique(RuleWorkerExecutionContext<R, OrAP, AndAP, TP, CP>& wrctx, s
 
     create_general_binding(clique, in.cws_rule().get_static_consistency_graph(), out.ground_context().binding);
 
-    assert(!require_novel_binding || ensure_novel_binding(out.ground_context().binding, out.seen_bindings()) && "Delta-KPKC generated duplicate binding.");
+    assert((!require_novel_binding || ensure_novel_binding(out.ground_context().binding, out.seen_bindings())) && "Delta-KCKP generated duplicate binding.");
 
     ++out.statistics().num_generated_rules;
 
@@ -565,17 +565,17 @@ template<f::RelationKind R,
 void generate_general_case(RuleExecutionContext<R, OrAP, AndAP, TP, CP>& rctx)
 {
     auto& rule_out = rctx.out();
-    auto& kpkc_algorithm = rule_out.kpkc();
+    auto& kckp_algorithm = rule_out.kckp();
     const auto head = rctx.in().cws_rule().get_rule().get_head();
     if (try_generate_parallel(head, rctx))
         return;
 
     auto wrctx = rctx.get_rule_worker_execution_context();
     auto& out = wrctx.out();
-    auto& kpkc_workspace = out.kpkc_workspace();
+    auto& kckp_workspace = out.kckp_workspace();
     ++out.statistics().num_executions;
 
-    for_each_relevant_clique(head, kpkc_algorithm, [&](auto&& clique) { process_clique(wrctx, clique, require_novel_binding(head)); }, kpkc_workspace);
+    for_each_relevant_clique(head, kckp_algorithm, [&](auto&& clique) { process_clique(wrctx, clique, require_novel_binding(head)); }, kckp_workspace);
 }
 
 template<f::RelationKind R,

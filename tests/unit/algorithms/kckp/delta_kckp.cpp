@@ -15,9 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/lifted/delta_kpkc.hpp"
+#include "tyr/algorithms/kckp/delta_kckp.hpp"
 
 #include "planning/parser.hpp"
+#include "tyr/datalog/lifted/consistency_graph.hpp"
 #include "tyr/datalog/lifted/policies/annotation.hpp"
 #include "tyr/datalog/lifted/solver.hpp"
 #include "tyr/datalog/policies/termination.hpp"
@@ -34,6 +35,8 @@
 #include <gtest/gtest.h>
 #include <limits>
 #include <optional>
+#include <span>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <type_traits>
@@ -42,11 +45,32 @@
 namespace d = tyr::datalog;
 namespace f = tyr::formalism;
 namespace fd = tyr::formalism::datalog;
+namespace k = tyr::kckp;
 namespace p = tyr::planning;
 
 namespace tyr::tests
 {
-TEST(TyrDatalogLiftedDeltaKPKC, DeltaEdgesSupportRoundRobinAnchorReplay)
+TEST(TyrKCKPPartitionedAdjacency, ClassifiesPartitionPairsAndRejectsInvalidTableSizes)
+{
+    const auto layout = k::GraphLayout(3, { { 0, 1 }, { 2 } });
+    const auto kinds = std::array {
+        k::AdjacencyKind::IMPLICIT,
+        k::AdjacencyKind::STATIC_ONLY,
+        k::AdjacencyKind::RUNTIME,
+        k::AdjacencyKind::IMPLICIT,
+    };
+    const auto adjacency = k::PartitionedAdjacencyLayout(layout, kinds);
+
+    EXPECT_TRUE(adjacency.is_implicit(0, 0));
+    EXPECT_TRUE(adjacency.is_static_only(0, 1));
+    EXPECT_TRUE(adjacency.is_runtime(1, 0));
+    EXPECT_EQ(adjacency.get_offset(2, 1, 0), 0);
+    EXPECT_EQ(adjacency.num_blocks(), 1);
+
+    EXPECT_THROW((k::PartitionedAdjacencyLayout(layout, std::span<const k::AdjacencyKind>(kinds).first(3))), std::invalid_argument);
+}
+
+TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
 {
     const auto root = std::filesystem::path(BENCHMARKS_DIR);
     auto task = make_test_parser(root / "classical/tests/gripper/domain.pddl").parse_task(root / "classical/tests/gripper/test-1.pddl");
@@ -88,27 +112,27 @@ TEST(TyrDatalogLiftedDeltaKPKC, DeltaEdgesSupportRoundRobinAnchorReplay)
     auto expected_offset = size_t { 0 };
     auto saw_runtime = false;
     auto saw_implicit = false;
-    for (ygg::uint_t pi = 0; pi < graph_layout.k; ++pi)
+    for (ygg::uint_t pi = 0; pi < graph_layout.num_partitions; ++pi)
     {
         for (const auto v : graph_layout.vertex_partitions[pi])
         {
-            for (ygg::uint_t pj = 0; pj < graph_layout.k; ++pj)
+            for (ygg::uint_t pj = 0; pj < graph_layout.num_partitions; ++pj)
             {
                 if (adjacency_layout.is_runtime(pi, pj))
                 {
                     saw_runtime = true;
-                    ASSERT_LT(expected_offset, d::kpkc::PartitionedAdjacencyLayout::STATIC_ONLY);
+                    ASSERT_LT(expected_offset, k::PartitionedAdjacencyLayout::STATIC_ONLY);
                     EXPECT_EQ(adjacency_layout.get_offset(v, pi, pj), static_cast<ygg::uint_t>(expected_offset));
                     expected_offset += graph_layout.info.infos[pj].num_blocks;
                 }
                 else if (adjacency_layout.is_static_only(pi, pj))
                 {
-                    EXPECT_EQ(adjacency_layout.get_offset(v, pi, pj), d::kpkc::PartitionedAdjacencyLayout::STATIC_ONLY);
+                    EXPECT_EQ(adjacency_layout.get_offset(v, pi, pj), k::PartitionedAdjacencyLayout::STATIC_ONLY);
                 }
                 else
                 {
                     saw_implicit = true;
-                    EXPECT_EQ(adjacency_layout.get_offset(v, pi, pj), d::kpkc::PartitionedAdjacencyLayout::IMPLICIT);
+                    EXPECT_EQ(adjacency_layout.get_offset(v, pi, pj), k::PartitionedAdjacencyLayout::IMPLICIT);
                 }
             }
         }
@@ -117,20 +141,25 @@ TEST(TyrDatalogLiftedDeltaKPKC, DeltaEdgesSupportRoundRobinAnchorReplay)
     EXPECT_TRUE(saw_implicit);
     EXPECT_EQ(adjacency_layout.num_blocks(), expected_offset);
 
-    auto kpkc = d::kpkc::DeltaKPKC(static_graph);
-    EXPECT_EQ(kpkc.get_delta_graph().matrix.bitset_data().size(), expected_offset);
-    EXPECT_EQ(kpkc.get_full_graph().matrix.bitset_data().size(), expected_offset);
-    kpkc.set_next_assignment_sets(d::AssignmentSets(static_assignments, empty_assignments));
-    kpkc.set_next_assignment_sets(d::AssignmentSets(static_assignments, initial_assignments));
-    ASSERT_EQ(kpkc.get_iteration(), 2);
+    auto kckp = k::DeltaKCKP(static_graph.get_graph(), adjacency_layout);
+    EXPECT_EQ(kckp.get_delta_graph().matrix.bitset_data().size(), expected_offset);
+    EXPECT_EQ(kckp.get_full_graph().matrix.bitset_data().size(), expected_offset);
+    const auto update = [&](const d::AssignmentSets& assignment_sets)
+    {
+        kckp.update([&](auto& delta_graph, auto& full_graph)
+                    { static_graph.initialize_dynamic_consistency_graphs(assignment_sets, graph_layout, delta_graph, full_graph); });
+    };
+    update(d::AssignmentSets(static_assignments, empty_assignments));
+    update(d::AssignmentSets(static_assignments, initial_assignments));
+    ASSERT_EQ(kckp.get_iteration(), 2);
 
-    auto authoritative_edges = std::vector<d::kpkc::Edge> {};
-    kpkc.get_delta_graph().matrix.for_each_edge([&](auto&& edge) { authoritative_edges.push_back(edge); });
+    auto authoritative_edges = std::vector<k::Edge> {};
+    kckp.get_delta_graph().matrix.for_each_edge([&](auto&& edge) { authoritative_edges.push_back(edge); });
     ASSERT_FALSE(authoritative_edges.empty());
-    const auto& delta_edges = kpkc.materialize_delta_edges();
+    const auto& delta_edges = kckp.materialize_delta_edges();
     ASSERT_EQ(delta_edges, authoritative_edges);
 
-    const auto& layout = kpkc.get_graph_layout();
+    const auto& layout = kckp.get_graph_layout();
     EXPECT_TRUE(std::ranges::any_of(delta_edges,
                                     [&](const auto& edge)
                                     {
@@ -153,19 +182,19 @@ TEST(TyrDatalogLiftedDeltaKPKC, DeltaEdgesSupportRoundRobinAnchorReplay)
     };
 
     auto sequential_cliques = std::vector<Clique> {};
-    auto sequential_workspace = d::kpkc::Workspace(layout);
-    kpkc.for_each_new_k_clique(collect(sequential_cliques), sequential_workspace);
+    auto sequential_workspace = k::Workspace(layout);
+    kckp.for_each_delta_clique(collect(sequential_cliques), sequential_workspace);
 
     auto striped_cliques = std::vector<Clique> {};
-    auto even_workspace = d::kpkc::Workspace(layout);
-    auto odd_workspace = d::kpkc::Workspace(layout);
+    auto even_workspace = k::Workspace(layout);
+    auto odd_workspace = k::Workspace(layout);
     for (size_t stripe = 0; stripe < 2; ++stripe)
     {
         auto& workspace = stripe == 0 ? even_workspace : odd_workspace;
         for (auto edge_index = stripe; edge_index < delta_edges.size(); edge_index += 2)
         {
-            if (kpkc.seed_from_anchor(delta_edges[edge_index], workspace))
-                kpkc.complete_from_seed<d::kpkc::Edge>(collect(striped_cliques), 0, workspace);
+            if (kckp.seed_from_anchor(delta_edges[edge_index], workspace))
+                kckp.complete_from_seed<k::Edge>(collect(striped_cliques), 0, workspace);
         }
     }
 
@@ -175,7 +204,7 @@ TEST(TyrDatalogLiftedDeltaKPKC, DeltaEdgesSupportRoundRobinAnchorReplay)
     EXPECT_EQ(striped_cliques, sequential_cliques);
 }
 
-TEST(TyrDatalogLiftedDeltaKPKC, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
+TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
 {
     const auto root = std::filesystem::path(BENCHMARKS_DIR);
     auto task = make_test_parser(root / "classical/tests/visitall/domain.pddl").parse_task(root / "classical/tests/visitall/test-1.pddl");
@@ -218,7 +247,7 @@ TEST(TyrDatalogLiftedDeltaKPKC, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
     const auto& static_assignments = program.get_const_program_workspace().facts.assignment_sets;
     const auto& static_graph = move_workspace->get_static_consistency_graph();
     const auto& binary = static_graph.get_variable_dependeny_graph().binary();
-    ASSERT_EQ(static_graph.get_graph_layout().k, 2);
+    ASSERT_EQ(static_graph.get_graph_layout().num_partitions, 2);
     ASSERT_TRUE(binary.has_dependency(0, 1));
     EXPECT_FALSE((binary.has_literal_dependency<f::FluentTag, f::PositiveTag>(0, 1)));
     EXPECT_FALSE((binary.has_literal_dependency<f::FluentTag, f::NegativeTag>(0, 1)));
@@ -229,10 +258,10 @@ TEST(TyrDatalogLiftedDeltaKPKC, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
     {
         auto result = std::vector<Binding> {};
         graph.matrix.for_each_edge(
-            [&](const d::kpkc::Edge edge)
+            [&](const k::Edge edge)
             {
                 auto binding = Binding {};
-                const auto insert = [&](const d::kpkc::Vertex vertex)
+                const auto insert = [&](const k::Vertex vertex)
                 {
                     const auto& value = static_graph.get_vertex(vertex.index);
                     binding[ygg::uint_t(value.get_parameter_index())] =
@@ -250,19 +279,26 @@ TEST(TyrDatalogLiftedDeltaKPKC, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
         { "loc-x0-y1", "loc-x0-y2" },
     };
 
-    auto kpkc = d::kpkc::DeltaKPKC(static_graph);
-    kpkc.set_next_assignment_sets(d::AssignmentSets(static_assignments, assignments));
-    ASSERT_EQ(kpkc.get_iteration(), 1);
-    EXPECT_EQ(collect_edges(kpkc.get_full_graph()), expected);
-    EXPECT_EQ(collect_edges(kpkc.get_delta_graph()), expected);
+    const auto& layout = static_graph.get_graph_layout();
+    auto kckp = k::DeltaKCKP(static_graph.get_graph(), static_graph.get_partitioned_adjacency_layout());
+    const auto update = [&]
+    {
+        kckp.update(
+            [&](auto& delta_graph, auto& full_graph)
+            { static_graph.initialize_dynamic_consistency_graphs(d::AssignmentSets(static_assignments, assignments), layout, delta_graph, full_graph); });
+    };
+    update();
+    ASSERT_EQ(kckp.get_iteration(), 1);
+    EXPECT_EQ(collect_edges(kckp.get_full_graph()), expected);
+    EXPECT_EQ(collect_edges(kckp.get_delta_graph()), expected);
 
-    kpkc.set_next_assignment_sets(d::AssignmentSets(static_assignments, assignments));
-    ASSERT_EQ(kpkc.get_iteration(), 2);
-    EXPECT_EQ(collect_edges(kpkc.get_full_graph()), expected);
-    EXPECT_TRUE(collect_edges(kpkc.get_delta_graph()).empty());
+    update();
+    ASSERT_EQ(kckp.get_iteration(), 2);
+    EXPECT_EQ(collect_edges(kckp.get_full_graph()), expected);
+    EXPECT_TRUE(collect_edges(kckp.get_delta_graph()).empty());
 }
 
-TEST(TyrDatalogLiftedDeltaKPKC, MixedAdjacencyMatchesAcrossIterations)
+TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
 {
     const auto root = std::filesystem::path(BENCHMARKS_DIR);
     auto task = make_test_parser(root / "classical/tests/transport/domain.pddl").parse_task(root / "classical/tests/transport/test-1.pddl");
@@ -324,7 +360,7 @@ TEST(TyrDatalogLiftedDeltaKPKC, MixedAdjacencyMatchesAcrossIterations)
     const auto& static_graph = drive_workspace->get_static_consistency_graph();
     const auto& layout = static_graph.get_graph_layout();
     const auto& adjacency_layout = static_graph.get_partitioned_adjacency_layout();
-    ASSERT_EQ(layout.k, 3);
+    ASSERT_EQ(layout.num_partitions, 3);
     EXPECT_TRUE(adjacency_layout.is_runtime(0, 1));
     EXPECT_TRUE(adjacency_layout.is_runtime(1, 0));
     EXPECT_TRUE(adjacency_layout.is_static_only(1, 2));
@@ -333,11 +369,11 @@ TEST(TyrDatalogLiftedDeltaKPKC, MixedAdjacencyMatchesAcrossIterations)
     EXPECT_TRUE(adjacency_layout.is_implicit(2, 0));
 
     using Binding = std::array<std::string, 3>;
-    auto kpkc = d::kpkc::DeltaKPKC(static_graph);
+    auto kckp = k::DeltaKCKP(static_graph.get_graph(), adjacency_layout);
     const auto collect_cliques = [&](bool delta)
     {
         auto result = std::vector<Binding> {};
-        auto workspace = d::kpkc::Workspace(layout);
+        auto workspace = k::Workspace(layout);
         const auto collect = [&](const auto& clique)
         {
             auto binding = Binding {};
@@ -349,9 +385,9 @@ TEST(TyrDatalogLiftedDeltaKPKC, MixedAdjacencyMatchesAcrossIterations)
             result.push_back(std::move(binding));
         };
         if (delta)
-            kpkc.for_each_new_k_clique(collect, workspace);
+            kckp.for_each_delta_clique(collect, workspace);
         else
-            kpkc.for_each_k_clique(collect, workspace);
+            kckp.for_each_clique(collect, workspace);
         std::ranges::sort(result);
         return result;
     };
@@ -376,33 +412,38 @@ TEST(TyrDatalogLiftedDeltaKPKC, MixedAdjacencyMatchesAcrossIterations)
     second_expected.push_back({ "truck-2", "city-loc-1", "city-loc-3" });
     std::ranges::sort(second_expected);
 
-    kpkc.set_next_assignment_sets(d::AssignmentSets(static_assignments, first_assignments));
-    EXPECT_EQ(count_vertices(kpkc.get_full_graph()), 5);
-    EXPECT_EQ(count_vertices(kpkc.get_delta_graph()), 5);
-    EXPECT_EQ(count_edges(kpkc.get_full_graph()), 6);
-    EXPECT_EQ(count_edges(kpkc.get_delta_graph()), 6);
+    const auto update = [&](const d::AssignmentSets& assignment_sets)
+    {
+        kckp.update([&](auto& delta_graph, auto& full_graph)
+                    { static_graph.initialize_dynamic_consistency_graphs(assignment_sets, layout, delta_graph, full_graph); });
+    };
+    update(d::AssignmentSets(static_assignments, first_assignments));
+    EXPECT_EQ(count_vertices(kckp.get_full_graph()), 5);
+    EXPECT_EQ(count_vertices(kckp.get_delta_graph()), 5);
+    EXPECT_EQ(count_edges(kckp.get_full_graph()), 6);
+    EXPECT_EQ(count_edges(kckp.get_delta_graph()), 6);
     EXPECT_EQ(collect_cliques(false), first_expected);
     EXPECT_EQ(collect_cliques(true), first_expected);
 
-    kpkc.set_next_assignment_sets(d::AssignmentSets(static_assignments, second_assignments));
-    EXPECT_EQ(count_vertices(kpkc.get_full_graph()), 7);
-    EXPECT_EQ(count_vertices(kpkc.get_delta_graph()), 5);
-    EXPECT_EQ(count_edges(kpkc.get_full_graph()), 11);
-    EXPECT_EQ(count_edges(kpkc.get_delta_graph()), 5);
+    update(d::AssignmentSets(static_assignments, second_assignments));
+    EXPECT_EQ(count_vertices(kckp.get_full_graph()), 7);
+    EXPECT_EQ(count_vertices(kckp.get_delta_graph()), 5);
+    EXPECT_EQ(count_edges(kckp.get_full_graph()), 11);
+    EXPECT_EQ(count_edges(kckp.get_delta_graph()), 5);
     EXPECT_EQ(collect_cliques(false), second_expected);
     EXPECT_EQ(collect_cliques(true), (std::vector<Binding> { { "truck-2", "city-loc-1", "city-loc-3" } }));
 
-    kpkc.set_next_assignment_sets(d::AssignmentSets(static_assignments, second_assignments));
-    EXPECT_EQ(count_vertices(kpkc.get_full_graph()), 7);
-    EXPECT_EQ(count_vertices(kpkc.get_delta_graph()), 0);
-    EXPECT_EQ(count_edges(kpkc.get_full_graph()), 11);
-    EXPECT_EQ(count_edges(kpkc.get_delta_graph()), 0);
+    update(d::AssignmentSets(static_assignments, second_assignments));
+    EXPECT_EQ(count_vertices(kckp.get_full_graph()), 7);
+    EXPECT_EQ(count_vertices(kckp.get_delta_graph()), 0);
+    EXPECT_EQ(count_edges(kckp.get_full_graph()), 11);
+    EXPECT_EQ(count_edges(kckp.get_delta_graph()), 0);
     EXPECT_EQ(collect_cliques(false), second_expected);
     EXPECT_TRUE(collect_cliques(true).empty());
 }
 
 #if defined(TYR_ENABLE_INNER_PARALLELISM) && defined(TYR_ENABLE_SEMI_NAIVE)
-TEST(TyrDatalogLiftedDeltaKPKC, InnerParallelismMatchesSequentialRPG)
+TEST(TyrKCKPDelta, InnerParallelismMatchesSequentialRPG)
 {
     const auto root = std::filesystem::path(BENCHMARKS_DIR);
     auto task = p::Task<::tyr::LiftedTag>::create(make_test_parser(root / "classical/profiling/rovers-large-simple/domain.pddl")

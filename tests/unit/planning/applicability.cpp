@@ -1,8 +1,10 @@
 #include "planning/parser.hpp"
+#include "tyr/analysis/domains.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/planning.hpp"
 
 #include <algorithm>
+#include <array>
 #include <filesystem>
 #include <gtest/gtest.h>
 #include <string>
@@ -63,6 +65,42 @@ inline constexpr std::string_view kEffectValidityProblem = R"(
 )
 )";
 
+inline constexpr std::string_view kPairwiseConditionalEffectDomain = R"(
+(define (domain pairwise-conditional-effect)
+  (:requirements :adl :typing :numeric-fluents)
+  (:types item)
+  (:predicates
+    (ready ?x - item)
+    (allowed ?x ?y - item)
+    (marked ?x - item))
+  (:functions (value ?x - item))
+
+  (:action apply
+    :parameters (?x - item)
+    :precondition (ready ?x)
+    :effect (forall (?y - item)
+      (when (allowed ?x ?y)
+        (and
+          (marked ?y)
+          (increase (value ?y) 1)))))
+)
+)";
+
+inline constexpr std::string_view kPairwiseConditionalEffectProblem = R"(
+(define (problem pairwise-conditional-effect-problem)
+  (:domain pairwise-conditional-effect)
+  (:objects a b c - item)
+  (:init
+    (ready a)
+    (allowed a b)
+    (allowed c c)
+    (= (value a) 0)
+    (= (value b) 0)
+    (= (value c) 0))
+  (:goal (ready a))
+)
+)";
+
 template<::tyr::TaskKind Kind>
 void expect_effect_validity_successors(const p::TaskPtr<Kind>& task)
 {
@@ -96,6 +134,35 @@ void expect_effect_validity_successors(const p::TaskPtr<Kind>& task)
     std::ranges::sort(action_names);
     EXPECT_EQ(action_names, (std::vector<std::string> { "quantified", "valid" }));
 }
+
+template<::tyr::TaskKind Kind>
+bool has_marked_object(const p::StateView<Kind>& state, std::string_view object_name)
+{
+    return std::ranges::any_of(state.get_fluent_facts_view(),
+                               [&](const auto fact)
+                               {
+                                   const auto atom = fact.get_atom();
+                                   return atom && atom->get_predicate().get_name().str() == "marked" && atom->get_objects()[0].get_name().str() == object_name;
+                               });
+}
+
+template<::tyr::TaskKind Kind>
+void expect_pairwise_conditional_effect_successor(const p::TaskPtr<Kind>& task)
+{
+    auto execution_context = ygg::ExecutionContext::create(1);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto state_repository = p::StateRepositoryFactory<Kind>().create(task);
+    auto successor_generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
+    const auto bindings = successor_generator->get_applicable_action_bindings(initial_node);
+
+    ASSERT_EQ(bindings.size(), 1);
+    EXPECT_EQ(successor_generator->ground_action(bindings.front()).get_effects().size(), 1);
+
+    const auto successor = successor_generator->get_successor_node(initial_node, bindings.front(), *state_repository, *axiom_evaluator);
+    EXPECT_TRUE(has_marked_object(successor.get_state(), "b"));
+    EXPECT_FALSE(has_marked_object(successor.get_state(), "c"));
+}
 }
 
 TEST(TyrPlanningApplicabilityTest, EffectFamiliesUseGroundedTargetsAndNeverShrink)
@@ -126,5 +193,45 @@ TEST(TyrPlanningApplicabilityTest, TppUndefinedDriveCostIsFilteredAsAnEffect)
         ASSERT_EQ(binding.get_data().size(), 3);
         EXPECT_NE(binding.get_data()[1], binding.get_data()[2]);
     }
+}
+
+TEST(TyrPlanningApplicabilityTest, PairwiseStaticCompatibilityRestrictsQuantifiedConditionalEffects)
+{
+    auto lifted_task =
+        p::Task<::tyr::LiftedTag>::create(fp::Parser(std::string(kPairwiseConditionalEffectDomain), "pairwise-conditional-effect-domain.pddl")
+                                              .parse_task(std::string(kPairwiseConditionalEffectProblem), "pairwise-conditional-effect-problem.pddl"));
+    auto execution_context = ygg::ExecutionContext::create(1);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<::tyr::LiftedTag>().create(lifted_task, execution_context);
+    auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(lifted_task);
+    auto successor_generator = p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(lifted_task, execution_context);
+    const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
+    const auto bindings = successor_generator->get_applicable_action_bindings(initial_node);
+
+    ASSERT_EQ(bindings.size(), 1);
+    ASSERT_EQ(bindings.front().get_objects().size(), 1);
+    const auto action = bindings.front().get_relation();
+    const auto effect = action.get_effects()[0];
+    const auto& effect_domain =
+        lifted_task->get_formalism_task().get_variable_domains().action_domains.at(action.get_index()).payload.effect_domains.at(effect.get_index()).payload;
+    const auto prefix = std::array { bindings.front().get_objects()[0].get_index() };
+    auto workspace = analysis::CompatibilityWorkspace {};
+    auto extensions = std::vector<ygg::Index<::tyr::formalism::Object>> {};
+    analysis::for_each_compatible_extension(effect_domain,
+                                            prefix,
+                                            workspace,
+                                            [&](const auto extension)
+                                            {
+                                                ASSERT_EQ(extension.size(), 1);
+                                                extensions.push_back(extension[0]);
+                                            });
+
+    ASSERT_EQ(extensions.size(), 1);
+    EXPECT_EQ(ygg::make_view(extensions.front(), *lifted_task->get_repository()).get_name().str(), "b");
+    expect_pairwise_conditional_effect_successor(lifted_task);
+
+    const auto ground_result = lifted_task->instantiate_ground_task(*execution_context);
+    ASSERT_EQ(ground_result.status, p::GroundTaskInstantiationStatus::SUCCESS);
+    ASSERT_TRUE(ground_result.task);
+    expect_pairwise_conditional_effect_successor(ground_result.task);
 }
 }

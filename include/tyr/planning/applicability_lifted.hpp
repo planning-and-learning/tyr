@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_APPLICABILITY_LIFTED_HPP_
 #define TYR_PLANNING_APPLICABILITY_LIFTED_HPP_
 
-#include "tyr/analysis/declarations.hpp"
+#include "tyr/analysis/domains.hpp"
 #include "tyr/formalism/arithmetic_operator_utils.hpp"
 #include "tyr/formalism/boolean_operator_utils.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
@@ -43,7 +43,6 @@
 #include <vector>
 #include <yggdrasil/containers/dynamic_bitset.hpp>
 #include <yggdrasil/containers/vector.hpp>
-#include <yggdrasil/core/itertools.hpp>
 #include <yggdrasil/semantics/equal_to.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 
@@ -90,13 +89,14 @@ ygg::float_t evaluate(::tyr::formalism::planning::NumericEffectOperatorView<T> e
 bool is_applicable_if_fires(::tyr::formalism::planning::ConditionalEffectView element,
                             const ApplicabilityContext& context,
                             ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families,
-                            ygg::itertools::cartesian_set::Workspace<ygg::Index<::tyr::formalism::Object>>& cartesian_workspace,
-                            const analysis::ConditionalEffectDomain& effect_domains);
+                            analysis::CompatibilityWorkspace& compatibility_workspace,
+                            const analysis::ConditionalEffectDomain& effect_domains,
+                            size_t action_arity);
 
 bool is_applicable_if_fires(::tyr::formalism::planning::ConditionalEffectListView elements,
                             const ApplicabilityContext& context,
                             ::tyr::formalism::planning::EffectFamilyList& out_fluent_effect_families,
-                            ygg::itertools::cartesian_set::Workspace<ygg::Index<::tyr::formalism::Object>>& cartesian_workspace,
+                            analysis::CompatibilityWorkspace& compatibility_workspace,
                             const analysis::ActionDomain& action_domains);
 
 /**
@@ -147,7 +147,7 @@ bool is_applicable(::tyr::formalism::planning::ConjunctiveEffectView element,
 bool is_applicable(::tyr::formalism::planning::ActionView element,
                    const ApplicabilityContext& context,
                    ::tyr::formalism::planning::EffectFamilyList& out_fluent_effect_families,
-                   ygg::itertools::cartesian_set::Workspace<ygg::Index<::tyr::formalism::Object>>& cartesian_workspace,
+                   analysis::CompatibilityWorkspace& compatibility_workspace,
                    const analysis::ActionDomain& action_domains);
 
 // Axiom
@@ -255,7 +255,7 @@ ygg::float_t evaluate(::tyr::formalism::planning::NumericEffectOperatorView<T> e
 inline bool is_applicable_if_fires(::tyr::formalism::planning::ConditionalEffectView element,
                                    const ApplicabilityContext& context,
                                    ::tyr::formalism::planning::EffectFamilyList& ref_fluent_effect_families,
-                                   ygg::itertools::cartesian_set::Workspace<ygg::Index<::tyr::formalism::Object>>& cartesian_workspace,
+                                   analysis::CompatibilityWorkspace& compatibility_workspace,
                                    const analysis::ConditionalEffectDomain& effect_domains,
                                    size_t action_arity)
 {
@@ -263,29 +263,29 @@ inline bool is_applicable_if_fires(::tyr::formalism::planning::ConditionalEffect
     if (effect.get_numeric_effects().empty() && !effect.get_auxiliary_numeric_effect().has_value())
         return true;
 
-    const auto& parameter_domains = effect_domains.payload.effect_domain.payload;
     const auto binding_size = context.grounder.binding.size();
 
     bool applicable = true;
 
-    ygg::itertools::cartesian_set::for_each_element(
-        parameter_domains.begin() + action_arity,
-        parameter_domains.end(),
-        cartesian_workspace,
-        [&](auto&& binding_cond)
-        {
-            if (!applicable)
-                return;
+    const auto prefix = std::span<const ygg::Index<::tyr::formalism::Object>>(context.grounder.binding.data(), action_arity);
+    analysis::for_each_compatible_extension(effect_domains.payload,
+                                            prefix,
+                                            compatibility_workspace,
+                                            [&](auto extension)
+                                            {
+                                                if (!applicable)
+                                                    return;
 
-            context.grounder.binding.resize(binding_size);
-            context.grounder.binding.insert(context.grounder.binding.end(), binding_cond.begin(), binding_cond.end());
+                                                context.grounder.binding.resize(binding_size);
+                                                context.grounder.binding.insert(context.grounder.binding.end(), extension.begin(), extension.end());
 
-            if (is_applicable(element.get_condition(), context) && !is_applicable(effect, context, ref_fluent_effect_families))
-            {
-                applicable = false;
-                return;
-            }
-        });
+                                                if (is_applicable(element.get_condition(), context)
+                                                    && !is_applicable(effect, context, ref_fluent_effect_families))
+                                                {
+                                                    applicable = false;
+                                                    return;
+                                                }
+                                            });
 
     context.grounder.binding.resize(binding_size);
 
@@ -295,19 +295,20 @@ inline bool is_applicable_if_fires(::tyr::formalism::planning::ConditionalEffect
 inline bool is_applicable_if_fires(::tyr::formalism::planning::ConditionalEffectListView elements,
                                    const ApplicabilityContext& context,
                                    ::tyr::formalism::planning::EffectFamilyList& out_fluent_effect_families,
-                                   ygg::itertools::cartesian_set::Workspace<ygg::Index<::tyr::formalism::Object>>& cartesian_workspace,
+                                   analysis::CompatibilityWorkspace& compatibility_workspace,
                                    const analysis::ActionDomain& action_domains)
 {
     out_fluent_effect_families.clear();
+    const auto action_arity = context.grounder.binding.size();
 
     for (const auto cond_effect : elements)
     {
         if (!is_applicable_if_fires(cond_effect,
                                     context,
                                     out_fluent_effect_families,
-                                    cartesian_workspace,
+                                    compatibility_workspace,
                                     action_domains.payload.effect_domains.at(cond_effect.get_index()),
-                                    context.grounder.binding.size()))
+                                    action_arity))
             return false;
     }
 
@@ -452,11 +453,11 @@ inline bool is_applicable(::tyr::formalism::planning::ConjunctiveEffectView elem
 inline bool is_applicable(::tyr::formalism::planning::ActionView element,
                           const ApplicabilityContext& context,
                           ::tyr::formalism::planning::EffectFamilyList& out_fluent_effect_families,
-                          ygg::itertools::cartesian_set::Workspace<ygg::Index<::tyr::formalism::Object>>& cartesian_workspace,
+                          analysis::CompatibilityWorkspace& compatibility_workspace,
                           const analysis::ActionDomain& action_domains)
 {
     return is_applicable(element.get_condition(), context)
-           && is_applicable_if_fires(element.get_effects(), context, out_fluent_effect_families, cartesian_workspace, action_domains);
+           && is_applicable_if_fires(element.get_effects(), context, out_fluent_effect_families, compatibility_workspace, action_domains);
 }
 
 // Axiom

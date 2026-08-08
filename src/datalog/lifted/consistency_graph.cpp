@@ -36,11 +36,9 @@
 #include <boost/dynamic_bitset/dynamic_bitset.hpp>
 #include <cassert>
 #include <optional>
-#include <ranges>
-#include <sstream>
+#include <stdexcept>
 #include <type_traits>
 #include <vector>
-#include <yggdrasil/core/chrono.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 
 namespace f = tyr::formalism;
@@ -71,7 +69,7 @@ inline bool consistent_literals(const Vertex& vertex,
         const auto predicate = info.predicate;
         const auto polarity = info.polarity;
 
-        assert(polarity || info.kpkc_arity == 1);  ///< Can only handly unary negated literals due to overapproximation
+        assert(polarity || info.kckp_arity == 1);  ///< Can only handly unary negated literals due to overapproximation
 
         const auto& pred_set = predicate_assignment_sets.get_set(predicate);
 
@@ -507,7 +505,7 @@ inline bool consistent_numeric_constraints(const Vertex& vertex,
         const auto numeric_constraint = numeric_constraints[i];
         const auto& info = indexed_constraints.infos[i];
 
-        assert(kpkc_arity(numeric_constraint) > 0);  ///< We test nullary constraints separately.
+        assert(kckp_arity(numeric_constraint) > 0);  ///< We test nullary constraints separately.
 
         if (!consistent_numeric_constraint(numeric_constraint, vertex, info, assignment_sets))
             return false;
@@ -544,7 +542,7 @@ consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos<T>& indexed
         const auto& pred_set = predicate_assignment_sets.get_set(info.predicate);
         const auto polarity = info.polarity;
 
-        assert(polarity || info.kpkc_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
+        assert(polarity || info.kckp_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
 
         for (auto pos_p : info.position_mappings.parameter_to_positions[p])
         {
@@ -582,7 +580,7 @@ consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos<T>& indexed
         const auto& pred_set = predicate_assignment_sets.get_set(info.predicate);
         const auto polarity = info.polarity;
 
-        assert(polarity || info.kpkc_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
+        assert(polarity || info.kckp_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
 
         for (auto pos_p : info.position_mappings.parameter_to_positions[p])
         {
@@ -619,7 +617,7 @@ consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos<T>& indexed
         const auto& pred_set = predicate_assignment_sets.get_set(info.predicate);
         const auto polarity = info.polarity;
 
-        assert(polarity || info.kpkc_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
+        assert(polarity || info.kckp_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
 
         for (auto pos_q : info.position_mappings.parameter_to_positions[q])
         {
@@ -664,7 +662,7 @@ inline bool consistent_numeric_constraints(const Edge& edge,
         const auto numeric_constraint = numeric_constraints[i];
         const auto& info = indexed_constraints.infos[i];
 
-        assert(kpkc_arity(numeric_constraint) > 1);  ///< We test nullary constraints separately.
+        assert(kckp_arity(numeric_constraint) > 1);  ///< We test nullary constraints separately.
 
         if (!consistent_numeric_constraint(numeric_constraint, edge, info, assignment_sets))
             return false;
@@ -673,100 +671,6 @@ inline bool consistent_numeric_constraints(const Edge& edge,
     return true;
 }
 
-}
-
-/**
- * StaticConsistencyGraph
- */
-
-std::tuple<details::Vertices, std::vector<std::vector<ygg::uint_t>>, std::vector<std::vector<ygg::uint_t>>>
-StaticConsistencyGraph::compute_vertices(const details::TaggedRuleToLiteralInfos<f::StaticTag>& indexed_literals,
-                                         const analysis::VariableDomainList& parameter_domains,
-                                         size_t num_objects,
-                                         ygg::uint_t begin_parameter_index,
-                                         ygg::uint_t end_parameter_index,
-                                         const TaggedAssignmentSets<f::StaticTag>& static_assignment_sets)
-{
-    auto vertices = details::Vertices {};
-
-    auto vertex_partitions = std::vector<std::vector<ygg::uint_t>> {};
-    auto object_to_vertex_per_partition = std::vector<std::vector<ygg::uint_t>> {};
-
-    for (ygg::uint_t parameter_index = begin_parameter_index; parameter_index < end_parameter_index; ++parameter_index)
-    {
-        auto& parameter_domain = parameter_domains[parameter_index];
-
-        auto vertex_partition = std::vector<ygg::uint_t> {};
-        auto object_to_vertex_partition = std::vector<ygg::uint_t>(num_objects, std::numeric_limits<ygg::uint_t>::max());
-
-        for (const auto object_index : parameter_domain.objects)
-        {
-            const auto vertex_index = static_cast<ygg::uint_t>(vertices.size());
-
-            auto vertex = details::Vertex(f::ParameterIndex(parameter_index), ygg::Index<f::Object>(object_index));
-
-            if (consistent_literals(vertex, indexed_literals, static_assignment_sets.predicate))
-            {
-                vertices.push_back(std::move(vertex));
-                vertex_partition.push_back(vertex_index);
-                object_to_vertex_partition[ygg::uint_t(object_index)] = vertex_index;
-            }
-        }
-
-        vertex_partitions.push_back(std::move(vertex_partition));
-        object_to_vertex_per_partition.push_back(std::move(object_to_vertex_partition));
-    }
-
-    return { std::move(vertices), std::move(vertex_partitions), std::move(object_to_vertex_per_partition) };
-}
-
-kpkc::DeduplicatedAdjacencyMatrix StaticConsistencyGraph::compute_edges(const details::TaggedRuleToLiteralInfos<f::StaticTag>& indexed_literals,
-                                                                        const TaggedAssignmentSets<f::StaticTag>& static_assignment_sets,
-                                                                        const details::Vertices& vertices,
-                                                                        const std::vector<std::vector<ygg::uint_t>>& vertex_partitions)
-{
-    const auto k = vertex_partitions.size();
-
-    auto matrix = kpkc::AdjacencyMatrix(m_layout);
-
-    auto offset_i = 0;
-
-    for (ygg::uint_t pi = 0; pi < k; ++pi)
-    {
-        const auto pi_size = vertex_partitions[pi].size();
-
-        for (ygg::uint_t bi = 0; bi < pi_size; ++bi)
-        {
-            const auto vi = offset_i + bi;
-            const auto& vertex_i = get_vertex(vi);
-            auto offset_j = offset_i + pi_size;
-
-            for (ygg::uint_t pj = pi + 1; pj < k; ++pj)
-            {
-                const auto pj_size = vertex_partitions[pj].size();
-
-                for (ygg::uint_t bj = 0; bj < pj_size; ++bj)
-                {
-                    const auto vj = offset_j + bj;
-                    const auto& vertex_j = get_vertex(vj);
-
-                    const auto edge = details::Edge(vertex_i, vertex_j);
-
-                    if (consistent_literals(edge, indexed_literals, static_assignment_sets.predicate))
-                    {
-                        matrix.get_bitset(vi, pj).set(bj);
-                        matrix.get_bitset(vj, pi).set(bi);
-                    }
-                }
-
-                offset_j += pj_size;
-            }
-        }
-
-        offset_i += pi_size;
-    }
-
-    return kpkc::DeduplicatedAdjacencyMatrix(matrix);
 }
 
 template<f::FactKind T>
@@ -785,7 +689,7 @@ static auto compute_tagged_indexed_literals(fd::LiteralListView<T> literals, siz
         auto info = details::RuleToLiteralInfo<T> {};
         info.predicate = literal.get_atom().get_predicate().get_index();
         info.polarity = literal.get_polarity();
-        info.kpkc_arity = kpkc_arity(literal);
+        info.kckp_arity = kckp_arity(literal);
         info.num_parameters = ygg::uint_t(0);
         info.num_constants = ygg::uint_t(0);
         info.position_mappings.constant_positions = std::vector<std::pair<ygg::uint_t, ygg::Index<f::Object>>> {};
@@ -871,7 +775,7 @@ static auto compute_tagged_indexed_fterms(const std::vector<fd::FunctionTermView
     {
         auto info = details::RuleToFunctionTermInfo<T> {};
         info.function = fterm.get_function().get_index();
-        info.kpkc_arity = kpkc_arity(fterm);
+        info.kckp_arity = kckp_arity(fterm);
         info.num_parameters = ygg::uint_t(0);
         info.num_constants = ygg::uint_t(0);
         info.position_mappings.constant_positions = std::vector<std::pair<ygg::uint_t, ygg::Index<f::Object>>> {};
@@ -952,7 +856,7 @@ static auto compute_constraint_info(fd::LiftedBooleanOperatorView element, size_
     result.static_infos = compute_tagged_indexed_fterms(static_fterms, arity);
     result.fluent_infos = compute_tagged_indexed_fterms(fluent_fterms, arity);
 
-    result.kpkc_arity = kpkc_arity(element);
+    result.kckp_arity = kckp_arity(element);
 
     return result;
 }
@@ -968,99 +872,65 @@ static auto compute_indexed_constraints(fd::ConjunctiveConditionView element)
 
 static auto compute_indexed_literals(fd::ConjunctiveConditionView element)
 {
-    return details::RuleToLiteralInfos { compute_tagged_indexed_literals(element.get_literals<f::StaticTag>(), element.get_arity()),
-                                         compute_tagged_indexed_literals(element.get_literals<f::FluentTag>(), element.get_arity()) };
+    return compute_tagged_indexed_literals(element.get_literals<f::FluentTag>(), element.get_arity());
 }
 
-StaticConsistencyGraph::StaticConsistencyGraph(fd::ConjunctiveConditionView condition,
-                                               fd::ConjunctiveConditionView unary_overapproximation_condition,
+static auto classify_adjacency(const kckp::GraphLayout& layout, const fd::VariableDependencyGraph& dependency_graph)
+{
+    assert(layout.num_partitions == dependency_graph.k());
+    auto result = std::vector<kckp::AdjacencyKind> {};
+    if (layout.num_partitions != 0 && layout.num_partitions > result.max_size() / layout.num_partitions)
+        throw std::overflow_error("StaticConsistencyGraph: partition-pair table size overflow");
+    result.assign(layout.num_partitions * layout.num_partitions, kckp::AdjacencyKind::IMPLICIT);
+    const auto& dependencies = dependency_graph.binary();
+
+    for (ygg::uint_t pi = 0; pi < layout.num_partitions; ++pi)
+        for (ygg::uint_t pj = 0; pj < layout.num_partitions; ++pj)
+        {
+            if (!dependencies.has_dependency(pi, pj))
+                continue;
+
+            const auto has_runtime_dependency = dependencies.has_literal_dependency<f::FluentTag, f::PositiveTag>(pi, pj)
+                                                || dependencies.has_literal_dependency<f::FluentTag, f::NegativeTag>(pi, pj)
+                                                || dependencies.has_numeric_dependency(pi, pj);
+            result[pi * layout.num_partitions + pj] = has_runtime_dependency ? kckp::AdjacencyKind::RUNTIME : kckp::AdjacencyKind::STATIC_ONLY;
+        }
+
+    return result;
+}
+
+StaticConsistencyGraph::StaticConsistencyGraph(fd::ConjunctiveConditionView unary_overapproximation_condition,
                                                fd::ConjunctiveConditionView binary_overapproximation_condition,
-                                               fd::ConjunctiveConditionView static_binary_overapproximation_condition,
-                                               const analysis::VariableDomainList& parameter_domains,
-                                               size_t num_objects,
-                                               size_t num_fluent_predicates,
-                                               ygg::uint_t begin_parameter_index,
-                                               ygg::uint_t end_parameter_index,
-                                               const TaggedAssignmentSets<f::StaticTag>& static_assignment_sets) :
-    m_condition(condition),
+                                               kckp::Graph compatibility_graph,
+                                               std::vector<ygg::Index<f::Object>> vertex_objects) :
     m_unary_overapproximation_condition(unary_overapproximation_condition),
     m_binary_overapproximation_condition(binary_overapproximation_condition),
     m_unary_overapproximation_vdg(unary_overapproximation_condition),
     m_binary_overapproximation_vdg(binary_overapproximation_condition),
-    m_layout(),
-    m_partitioned_adjacency_layout(),
-    m_matrix(m_layout),
+    m_compatibility_graph(std::move(compatibility_graph)),
+    m_vertex_objects(std::move(vertex_objects)),
+    m_partitioned_adjacency_layout(m_compatibility_graph.get_layout(), classify_adjacency(m_compatibility_graph.get_layout(), m_binary_overapproximation_vdg)),
     m_unary_overapproximation_indexed_literals(compute_indexed_literals(m_unary_overapproximation_condition)),
     m_binary_overapproximation_indexed_literals(compute_indexed_literals(m_binary_overapproximation_condition)),
     m_unary_overapproximation_indexed_constraints(compute_indexed_constraints(m_unary_overapproximation_condition)),
     m_binary_overapproximation_indexed_constraints(compute_indexed_constraints(m_binary_overapproximation_condition))
 {
-    auto [vertices_, vertex_partitions_, object_to_vertex_per_partition_] = compute_vertices(m_unary_overapproximation_indexed_literals.static_indexed,
-                                                                                             parameter_domains,
-                                                                                             num_objects,
-                                                                                             begin_parameter_index,
-                                                                                             end_parameter_index,
-                                                                                             static_assignment_sets);
-    m_vertices = std::move(vertices_);
-    m_vertex_partitions = std::move(vertex_partitions_);
-    m_object_to_vertex_per_partition = std::move(object_to_vertex_per_partition_);
-
-    m_layout = kpkc::GraphLayout(m_vertices.size(), m_vertex_partitions);
-    m_partitioned_adjacency_layout = kpkc::PartitionedAdjacencyLayout(m_layout, m_binary_overapproximation_vdg);
-
-    m_matrix = compute_edges(m_binary_overapproximation_indexed_literals.static_indexed, static_assignment_sets, m_vertices, m_vertex_partitions);
-
-    // std::ofstream file("graph.dot");
-    // file << fd::VariableDependencyGraph(m_condition) << std::endl;
-
-    // std::cout << "adj matrix bitset bytes: " << m_matrix.bitset_data().size() * sizeof(uint64_t) << "\n";
-    // std::cout << "adj matrix row_offset bytes: " << m_matrix.row_offset().size() * sizeof(ygg::uint_t) << "\n";
-    // std::cout << "adj matrix row_data bytes: " << m_matrix.row_data().size() * sizeof(ygg::uint_t) << "\n";
-    // std::cout << "adj matrix total bytes: "
-    //           << m_matrix.bitset_data().size() * sizeof(uint64_t) + m_matrix.row_offset().size() * sizeof(ygg::uint_t) + m_matrix.row_data().size() *
-    //           sizeof(ygg::uint_t)
-    //           << "\n";
-    // std::cout << std::endl;
-
-    // std::cout << "Num vertices: " << m_vertices.size() << " num edges: " << m_targets.size() << std::endl;
-
-    // std::cout << m_binary_overapproximation_vdg << std::endl;
-
-    // std::cout << std::endl;
-    // std::cout << "Unary overapproximation condition" << std::endl;
-    // std::cout << m_unary_overapproximation_condition << std::endl;
-    // std::cout << "Unary overapproximation indexed literals" << std::endl;
-    // std::cout << m_unary_overapproximation_indexed_literals << std::endl;
-    // std::cout << std::endl;
-    // std::cout << "Binary overapproximation condition" << std::endl;
-    // std::cout << m_binary_overapproximation_condition << std::endl;
-    // std::cout << "Binary overapproximation indexed literals" << std::endl;
-    // std::cout << m_binary_overapproximation_indexed_literals << std::endl;
+    assert(m_vertex_objects.size() == m_compatibility_graph.get_layout().num_vertices);
 }
 
 void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
-                                                                   const kpkc::GraphLayout& layout,
-                                                                   kpkc::DeltaGraph& delta_graph,
-                                                                   kpkc::FullGraph& full_graph) const
+                                                                   const kckp::GraphLayout& layout,
+                                                                   kckp::DeltaGraph& delta_graph,
+                                                                   kckp::FullGraph& full_graph) const
 {
-    // static struct Statistics
-    // {
-    //     std::chrono::nanoseconds total_time = std::chrono::nanoseconds::zero();
-    //     size_t num_executions = 0;
-    // } statistics;
-    // ++statistics.num_executions;
-    // const auto start = std::chrono::steady_clock::now();
-
     /// 1. Copy old full into delta, then add new vertices and edges into delta, before finally subtracting full from delta.
-
-    delta_graph.reset();
 
     /// 2. Monotonically update full consistent vertices partition
 
     {
         const auto unary_overapproximation_constraints = m_unary_overapproximation_condition.get_numeric_constraints();
 
-        for (ygg::uint_t p = 0; p < layout.k; ++p)
+        for (ygg::uint_t p = 0; p < layout.num_partitions; ++p)
         {
             const auto& info = layout.info.infos[p];
             auto full_affected_partition = full_graph.affected_partitions.get_bitset(info);
@@ -1091,7 +961,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                         const auto v = info.bit_offset + bit;
                         const auto& vertex = get_vertex(v);
 
-                        if (consistent_literals(vertex, m_unary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate)
+                        if (consistent_literals(vertex, m_unary_overapproximation_indexed_literals, assignment_sets.fluent_sets.predicate)
                             && consistent_numeric_constraints(vertex,
                                                               unary_overapproximation_constraints,
                                                               m_unary_overapproximation_indexed_constraints,
@@ -1114,7 +984,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
     {
         const auto binary_overapproximation_constraints = m_binary_overapproximation_condition.get_numeric_constraints();
 
-        for (ygg::uint_t pi = 0; pi < layout.k; ++pi)
+        for (ygg::uint_t pi = 0; pi < layout.num_partitions; ++pi)
         {
             const auto& info_i = layout.info.infos[pi];
             auto offset_i = info_i.bit_offset;
@@ -1123,7 +993,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
             auto delta_affected_partition_i = delta_graph.affected_partitions.get_bitset(info_i);
             const auto delta_delta_partition_i = delta_graph.delta_partitions.get_bitset(info_i);
 
-            for (ygg::uint_t pj = pi + 1; pj < layout.k; ++pj)
+            for (ygg::uint_t pj = pi + 1; pj < layout.num_partitions; ++pj)
             {
                 const auto& info_j = layout.info.infos[pj];
                 auto offset_j = info_j.bit_offset;
@@ -1149,7 +1019,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                          bi = full_affected_partition_i.find_next(bi))
                     {
                         const auto vi = offset_i + bi;
-                        const auto static_blocks = m_matrix.get_bitset(vi, pj).blocks();
+                        const auto static_blocks = m_compatibility_graph.get_adjacency_matrix().get_bitset(vi, pj).blocks();
                         const auto target_blocks = (delta_delta_partition_i.test(bi) ? full_affected_partition_j : delta_delta_partition_j).blocks();
                         auto affected_blocks = delta_affected_partition_j.blocks();
                         auto source_is_affected = false;
@@ -1172,7 +1042,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                 {
                     const auto vi = offset_i + bi;  ///< vi is consistent + delta
 
-                    const auto static_edges = m_matrix.get_bitset(vi, pj);
+                    const auto static_edges = m_compatibility_graph.get_adjacency_matrix().get_bitset(vi, pj);
                     auto full_edges_i = full_graph.matrix.get_runtime_bitset(vi, pj);
                     auto delta_edges_i = delta_graph.matrix.get_runtime_bitset(vi, pj);
                     auto delta_touched_i = delta_graph.matrix.touched_partitions(vi, pj);
@@ -1213,7 +1083,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
                             const auto edge = details::Edge(vertex_i, vertex_j);
 
-                            if (consistent_literals(edge, m_binary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate)
+                            if (consistent_literals(edge, m_binary_overapproximation_indexed_literals, assignment_sets.fluent_sets.predicate)
                                 && consistent_numeric_constraints(edge,
                                                                   binary_overapproximation_constraints,
                                                                   m_binary_overapproximation_indexed_constraints,
@@ -1231,36 +1101,22 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
             }
         }
     }
-
-    // const auto end = std::chrono::steady_clock::now();
-    // statistics.total_time += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-    // if (statistics.num_executions % 100 == 0)
-    // {
-    //     std::cout << "Total time init 2 after " << statistics.num_executions
-    //               << " executions: " << std::chrono::duration_cast<std::chrono::milliseconds>(statistics.total_time).count() << " ms\n";
-    // }
 }
 
-const details::Vertex& StaticConsistencyGraph::get_vertex(ygg::uint_t index) const { return m_vertices[index]; }
-
-size_t StaticConsistencyGraph::get_num_vertices() const noexcept { return m_vertices.size(); }
-
-fd::ConjunctiveConditionView StaticConsistencyGraph::get_condition() const noexcept { return m_condition; }
+details::Vertex StaticConsistencyGraph::get_vertex(ygg::uint_t index) const
+{
+    return details::Vertex(f::ParameterIndex(m_compatibility_graph.get_layout().vertex_to_partition[index]), m_vertex_objects[index]);
+}
 
 const fd::VariableDependencyGraph& StaticConsistencyGraph::get_variable_dependeny_graph() const noexcept { return m_binary_overapproximation_vdg; }
 
-const std::vector<std::vector<ygg::uint_t>>& StaticConsistencyGraph::get_vertex_partitions() const noexcept { return m_vertex_partitions; }
+const kckp::Graph& StaticConsistencyGraph::get_graph() const noexcept { return m_compatibility_graph; }
 
-const std::vector<std::vector<ygg::uint_t>>& StaticConsistencyGraph::get_object_to_vertex_per_partition() const noexcept
-{
-    return m_object_to_vertex_per_partition;
-}
+const kckp::GraphLayout& StaticConsistencyGraph::get_graph_layout() const noexcept { return m_compatibility_graph.get_layout(); }
 
-const kpkc::GraphLayout& StaticConsistencyGraph::get_graph_layout() const noexcept { return m_layout; }
+const kckp::PartitionedAdjacencyLayout& StaticConsistencyGraph::get_partitioned_adjacency_layout() const noexcept { return m_partitioned_adjacency_layout; }
 
-const kpkc::PartitionedAdjacencyLayout& StaticConsistencyGraph::get_partitioned_adjacency_layout() const noexcept { return m_partitioned_adjacency_layout; }
-
-const kpkc::DeduplicatedAdjacencyMatrix& StaticConsistencyGraph::get_adjacency_matrix() const noexcept { return m_matrix; }
+const kckp::DeduplicatedAdjacencyMatrix& StaticConsistencyGraph::get_adjacency_matrix() const noexcept { return m_compatibility_graph.get_adjacency_matrix(); }
 
 namespace
 {
@@ -1276,35 +1132,16 @@ create_overapproximation_conjunctive_condition(size_t k, fd::ConjunctiveConditio
         conj_cond.variables.push_back(variable.get_index());
 
     for (const auto literal : condition.get_literals<f::StaticTag>())
-        if ((!literal.get_polarity() && kpkc_arity(literal) == k) || (literal.get_polarity() && kpkc_arity(literal) >= k))
+        if ((!literal.get_polarity() && kckp_arity(literal) == k) || (literal.get_polarity() && kckp_arity(literal) >= k))
             conj_cond.static_literals.push_back(literal.get_index());
 
     for (const auto literal : condition.get_literals<f::FluentTag>())
-        if ((!literal.get_polarity() && kpkc_arity(literal) == k) || (literal.get_polarity() && kpkc_arity(literal) >= k))
+        if ((!literal.get_polarity() && kckp_arity(literal) == k) || (literal.get_polarity() && kckp_arity(literal) >= k))
             conj_cond.fluent_literals.push_back(literal.get_index());
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
-        if (kpkc_arity(numeric_constraint) >= k)
+        if (kckp_arity(numeric_constraint) >= k)
             conj_cond.numeric_constraints.push_back(numeric_constraint.get_data());
-
-    canonicalize(conj_cond);
-    return context.get_or_create(conj_cond);
-}
-
-std::pair<fd::ConjunctiveConditionView, bool>
-create_static_overapproximation_conjunctive_condition(size_t k, fd::ConjunctiveConditionView condition, fd::Repository& context)
-{
-    auto builder = fd::Builder {};
-    auto conj_cond_ptr = builder.get_builder<fd::ConjunctiveCondition>();
-    auto& conj_cond = *conj_cond_ptr;
-    conj_cond.clear();
-
-    for (const auto variable : condition.get_variables())
-        conj_cond.variables.push_back(variable.get_index());
-
-    for (const auto literal : condition.get_literals<f::StaticTag>())
-        if ((!literal.get_polarity() && kpkc_arity(literal) == k) || (literal.get_polarity() && kpkc_arity(literal) >= k))
-            conj_cond.static_literals.push_back(literal.get_index());
 
     canonicalize(conj_cond);
     return context.get_or_create(conj_cond);
@@ -1322,15 +1159,15 @@ create_overapproximation_conflicting_conjunctive_condition(size_t k, fd::Conjunc
         conj_cond.variables.push_back(variable.get_index());
 
     for (const auto literal : condition.get_literals<f::StaticTag>())
-        if (kpkc_arity(literal) > k)
+        if (kckp_arity(literal) > k)
             conj_cond.static_literals.push_back(literal.get_index());
 
     for (const auto literal : condition.get_literals<f::FluentTag>())
-        if (kpkc_arity(literal) > k)
+        if (kckp_arity(literal) > k)
             conj_cond.fluent_literals.push_back(literal.get_index());
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
-        if (kpkc_arity(numeric_constraint) > k)
+        if (kckp_arity(numeric_constraint) > k)
             conj_cond.numeric_constraints.push_back(numeric_constraint.get_data());
 
     canonicalize(conj_cond);
@@ -1382,23 +1219,6 @@ std::pair<fd::RuleView<R>, bool> create_overapproximation_rule(size_t k, fd::Rul
 }
 
 template<f::RelationKind R>
-std::pair<fd::RuleView<R>, bool> create_static_overapproximation_rule(size_t k, fd::RuleView<R> element, fd::Repository& context)
-{
-    auto builder = fd::Builder {};
-    auto merge_context = fd::MergeContext { builder, context };
-    auto rule_ptr = builder.get_builder<fd::Rule<R>>();
-    auto& rule = *rule_ptr;
-    rule.clear();
-
-    rule.variables = element.get_variables().get_data();
-    rule.body = create_static_overapproximation_conjunctive_condition(k, element.get_body(), context).first.get_index();
-    rule.head = merge_rule_head(element.get_head(), merge_context);
-
-    canonicalize(rule);
-    return context.get_or_create(rule);
-}
-
-template<f::RelationKind R>
 std::pair<fd::RuleView<R>, bool> create_overapproximation_conflicting_rule(size_t k, fd::RuleView<R> element, fd::Repository& context)
 {
     auto builder = fd::Builder {};
@@ -1417,8 +1237,6 @@ std::pair<fd::RuleView<R>, bool> create_overapproximation_conflicting_rule(size_
 
 template std::pair<fd::RuleView<f::PredicateTag>, bool> create_overapproximation_rule(size_t, fd::RuleView<f::PredicateTag>, fd::Repository&);
 template std::pair<fd::RuleView<f::FunctionTag>, bool> create_overapproximation_rule(size_t, fd::RuleView<f::FunctionTag>, fd::Repository&);
-template std::pair<fd::RuleView<f::PredicateTag>, bool> create_static_overapproximation_rule(size_t, fd::RuleView<f::PredicateTag>, fd::Repository&);
-template std::pair<fd::RuleView<f::FunctionTag>, bool> create_static_overapproximation_rule(size_t, fd::RuleView<f::FunctionTag>, fd::Repository&);
 template std::pair<fd::RuleView<f::PredicateTag>, bool> create_overapproximation_conflicting_rule(size_t, fd::RuleView<f::PredicateTag>, fd::Repository&);
 template std::pair<fd::RuleView<f::FunctionTag>, bool> create_overapproximation_conflicting_rule(size_t, fd::RuleView<f::FunctionTag>, fd::Repository&);
 }
