@@ -29,6 +29,7 @@
 #include <boost/dynamic_bitset.hpp>
 #include <cassert>
 #include <limits>
+#include <optional>
 #include <tuple>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
@@ -39,27 +40,18 @@ namespace tyr::datalog
 
 struct PerfectAssignmentHash
 {
-    size_t m_num_assignments;                           ///< The number of type legal [i/o] including a sentinel for each i
-    std::vector<std::vector<ygg::uint_t>> m_remapping;  ///< The remapping of o in O to index for each type legal [i/o]
-    std::vector<ygg::uint_t> m_offsets;                 ///< The offsets of i
-    analysis::VariableDomainList m_parameter_domains;
+    size_t m_num_assignments;
+    size_t m_num_objects;
+    std::vector<ygg::uint_t> m_remapping;
+    std::vector<size_t> m_vertex_offsets;
+    std::vector<size_t> m_pair_offsets;
 
     PerfectAssignmentHash(const analysis::VariableDomainList& parameter_domains, size_t num_objects);
 
-    /// @brief
-    /// @tparam Checked = true enables an assertion that checks whether an assignment is part of the hash function.
-    /// This assertion checks that the object in the vertex assignment is part of the parameter domain.
-    /// @param assignment
-    /// @return
-    template<bool Checked>
     size_t get_rank(const VertexAssignment& assignment) const noexcept;
-    /// @brief
-    /// @tparam Checked = true enables an assertion that checks whether an assignment is part of the hash function.
-    /// This assertion checks that each vertex assignment in the edge assignment is is part of the hash function.
-    /// @param assignment
-    /// @return
-    template<bool Checked>
     size_t get_rank(const EdgeAssignment& assignment) const noexcept;
+    std::optional<size_t> find_rank(const VertexAssignment& assignment) const noexcept;
+    std::optional<size_t> find_rank(const EdgeAssignment& assignment) const noexcept;
 
     size_t size() const noexcept;
 };

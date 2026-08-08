@@ -48,18 +48,6 @@ bool update_interval(ygg::ClosedInterval<T>& target, ygg::ClosedInterval<T> sour
     target = hull(target, source);
     return target != old;
 }
-
-[[maybe_unused]] inline bool contains(const analysis::VariableDomainList& parameter_domains, const VertexAssignment& assignment)
-{
-    const auto& objects = parameter_domains[ygg::uint_t(assignment.index)].objects;
-    return std::find(objects.begin(), objects.end(), assignment.object) != objects.end();
-}
-
-[[maybe_unused]] inline bool contains(const analysis::VariableDomainList& parameter_domains, const EdgeAssignment& assignment)
-{
-    return contains(parameter_domains, VertexAssignment(assignment.first_index, assignment.first_object))
-           && contains(parameter_domains, VertexAssignment(assignment.second_index, assignment.second_object));
-}
 }
 
 /**
@@ -67,77 +55,114 @@ bool update_interval(ygg::ClosedInterval<T>& target, ygg::ClosedInterval<T> sour
  */
 
 PerfectAssignmentHash::PerfectAssignmentHash(const analysis::VariableDomainList& parameter_domains, size_t num_objects) :
-    m_num_assignments(0),
-    m_remapping(),
-    m_offsets(),
-    m_parameter_domains(parameter_domains)
+    m_num_assignments(1),
+    m_num_objects(num_objects),
+    m_remapping(parameter_domains.size() * m_num_objects, 0),
+    m_vertex_offsets(parameter_domains.size() + 1, 0),
+    m_pair_offsets(parameter_domains.size() * parameter_domains.size(), 0)
 {
     const auto num_parameters = parameter_domains.size();
 
-    m_remapping.resize(num_parameters + 1);
-    m_offsets.resize(num_parameters + 1);
-
-    m_remapping[0].resize(1, 0);  // 0 is sentinel to map to 0
-    m_offsets[0] = m_num_assignments++;
-
     for (ygg::uint_t i = 0; i < num_parameters; ++i)
     {
-        m_remapping[i + 1].resize(num_objects + 1, 0);  // 0 is sentinel to map to 0
-        m_offsets[i + 1] = m_num_assignments++;
+        m_vertex_offsets[i] = m_num_assignments;
 
         const auto& parameter_domain = parameter_domains[i];
         auto new_index = ygg::uint_t { 0 };
         for (const auto object_index : parameter_domain.objects)
-        {
-            m_remapping[i + 1][ygg::uint_t(object_index) + 1] = ++new_index;
-            ++m_num_assignments;
-        }
+            m_remapping[i * m_num_objects + ygg::uint_t(object_index)] = ++new_index;
+        m_num_assignments += parameter_domain.objects.size();
     }
+    m_vertex_offsets[num_parameters] = m_num_assignments;
+
+    for (ygg::uint_t i = 0; i < num_parameters; ++i)
+        for (ygg::uint_t j = i + 1; j < num_parameters; ++j)
+        {
+            m_pair_offsets[i * num_parameters + j] = m_num_assignments;
+            m_num_assignments += (m_vertex_offsets[i + 1] - m_vertex_offsets[i]) * (m_vertex_offsets[j + 1] - m_vertex_offsets[j]);
+        }
 }
 
-template<bool Checked>
 size_t PerfectAssignmentHash::get_rank(const VertexAssignment& assignment) const noexcept
 {
     assert(assignment.is_valid());
-    if constexpr (Checked)
-        assert(contains(m_parameter_domains, assignment));
+    const auto index = ygg::uint_t(assignment.index);
+    const auto object = ygg::uint_t(assignment.object);
+    assert(index + 1 < m_vertex_offsets.size());
+    assert(object < m_num_objects);
 
-    const auto o = m_remapping[ygg::uint_t(assignment.index) + 1][ygg::uint_t(assignment.object) + 1];
+    const auto remapped_object = m_remapping[index * m_num_objects + object];
+    assert(remapped_object != 0);
 
-    const auto result = m_offsets[ygg::uint_t(assignment.index) + 1] + o;
+    const auto result = m_vertex_offsets[index] + remapped_object - 1;
 
     assert(result < m_num_assignments);
 
     return result;
 }
 
-template size_t PerfectAssignmentHash::get_rank<true>(const VertexAssignment& assignment) const noexcept;
-template size_t PerfectAssignmentHash::get_rank<false>(const VertexAssignment& assignment) const noexcept;
-
-template<bool Checked>
 size_t PerfectAssignmentHash::get_rank(const EdgeAssignment& assignment) const noexcept
 {
     assert(assignment.is_valid());
-    if constexpr (Checked)
-        assert(contains(m_parameter_domains, assignment));
+    const auto first_index = ygg::uint_t(assignment.first_index);
+    const auto second_index = ygg::uint_t(assignment.second_index);
+    const auto first_object = ygg::uint_t(assignment.first_object);
+    const auto second_object = ygg::uint_t(assignment.second_object);
+    const auto num_parameters = m_vertex_offsets.size() - 1;
+    assert(second_index < num_parameters);
+    assert(first_object < m_num_objects);
+    assert(second_object < m_num_objects);
 
-    const auto o1 = m_remapping[ygg::uint_t(assignment.first_index) + 1][ygg::uint_t(assignment.first_object) + 1];
-    const auto o2 = m_remapping[ygg::uint_t(assignment.second_index) + 1][ygg::uint_t(assignment.second_object) + 1];
+    const auto first_remapped_object = m_remapping[first_index * m_num_objects + first_object];
+    const auto second_remapped_object = m_remapping[second_index * m_num_objects + second_object];
+    assert(first_remapped_object != 0);
+    assert(second_remapped_object != 0);
 
-    const auto j1 = m_offsets[ygg::uint_t(assignment.first_index) + 1] + o1;
-    const auto j2 = m_offsets[ygg::uint_t(assignment.second_index) + 1] + o2;
+    const auto second_width = m_vertex_offsets[second_index + 1] - m_vertex_offsets[second_index];
+    const auto result = m_pair_offsets[first_index * num_parameters + second_index] + (first_remapped_object - 1) * second_width + second_remapped_object - 1;
 
-    const auto result = j1 * m_num_assignments + j2;
-
-    assert(result < m_num_assignments * m_num_assignments);
+    assert(result < m_num_assignments);
 
     return result;
 }
 
-template size_t PerfectAssignmentHash::get_rank<true>(const EdgeAssignment& assignment) const noexcept;
-template size_t PerfectAssignmentHash::get_rank<false>(const EdgeAssignment& assignment) const noexcept;
+std::optional<size_t> PerfectAssignmentHash::find_rank(const VertexAssignment& assignment) const noexcept
+{
+    assert(assignment.is_valid());
+    const auto index = ygg::uint_t(assignment.index);
+    const auto object = ygg::uint_t(assignment.object);
+    assert(index + 1 < m_vertex_offsets.size());
+    assert(object < m_num_objects);
 
-size_t PerfectAssignmentHash::size() const noexcept { return m_num_assignments * m_num_assignments; }
+    const auto remapped_object = m_remapping[index * m_num_objects + object];
+    if (remapped_object == 0)
+        return std::nullopt;
+
+    return m_vertex_offsets[index] + remapped_object - 1;
+}
+
+std::optional<size_t> PerfectAssignmentHash::find_rank(const EdgeAssignment& assignment) const noexcept
+{
+    assert(assignment.is_valid());
+    const auto first_index = ygg::uint_t(assignment.first_index);
+    const auto second_index = ygg::uint_t(assignment.second_index);
+    const auto first_object = ygg::uint_t(assignment.first_object);
+    const auto second_object = ygg::uint_t(assignment.second_object);
+    const auto num_parameters = m_vertex_offsets.size() - 1;
+    assert(second_index < num_parameters);
+    assert(first_object < m_num_objects);
+    assert(second_object < m_num_objects);
+
+    const auto first_remapped_object = m_remapping[first_index * m_num_objects + first_object];
+    const auto second_remapped_object = m_remapping[second_index * m_num_objects + second_object];
+    if (first_remapped_object == 0 || second_remapped_object == 0)
+        return std::nullopt;
+
+    const auto second_width = m_vertex_offsets[second_index + 1] - m_vertex_offsets[second_index];
+    return m_pair_offsets[first_index * num_parameters + second_index] + (first_remapped_object - 1) * second_width + second_remapped_object - 1;
+}
+
+size_t PerfectAssignmentHash::size() const noexcept { return m_num_assignments; }
 
 /**
  * PredicateAssignmentSet
@@ -172,18 +197,18 @@ void PredicateAssignmentSet<T>::insert(::tyr::formalism::datalog::PredicateBindi
     {
         const auto first_object = objects[first_index];
 
-        // Complete vertex.
-        m_set.set(m_hash.get_rank<false>(VertexAssignment(::tyr::formalism::ParameterIndex(first_index), first_object.get_index())));
+        if (const auto rank = m_hash.find_rank(VertexAssignment(::tyr::formalism::ParameterIndex(first_index), first_object.get_index())))
+            m_set.set(*rank);
 
         for (ygg::uint_t second_index = first_index + 1; second_index < arity; ++second_index)
         {
             const auto second_object = objects[second_index];
 
-            // Ordered complete edge.
-            m_set.set(m_hash.get_rank<false>(EdgeAssignment(::tyr::formalism::ParameterIndex(first_index),
-                                                            first_object.get_index(),
-                                                            ::tyr::formalism::ParameterIndex(second_index),
-                                                            second_object.get_index())));
+            if (const auto rank = m_hash.find_rank(EdgeAssignment(::tyr::formalism::ParameterIndex(first_index),
+                                                                  first_object.get_index(),
+                                                                  ::tyr::formalism::ParameterIndex(second_index),
+                                                                  second_object.get_index())))
+                m_set.set(*rank);
         }
     }
 }
@@ -191,25 +216,27 @@ void PredicateAssignmentSet<T>::insert(::tyr::formalism::datalog::PredicateBindi
 template<::tyr::formalism::FactKind T>
 bool PredicateAssignmentSet<T>::operator[](const VertexAssignment& assignment) const noexcept
 {
-    return m_set.test(m_hash.template get_rank<false>(assignment));
+    const auto rank = m_hash.find_rank(assignment);
+    return rank && m_set.test(*rank);
 }
 
 template<::tyr::formalism::FactKind T>
 bool PredicateAssignmentSet<T>::operator[](const EdgeAssignment& assignment) const noexcept
 {
-    return m_set.test(m_hash.template get_rank<false>(assignment));
+    const auto rank = m_hash.find_rank(assignment);
+    return rank && m_set.test(*rank);
 }
 
 template<::tyr::formalism::FactKind T>
 bool PredicateAssignmentSet<T>::at(const VertexAssignment& assignment) const noexcept
 {
-    return m_set.test(m_hash.template get_rank<true>(assignment));
+    return m_set.test(m_hash.get_rank(assignment));
 }
 
 template<::tyr::formalism::FactKind T>
 bool PredicateAssignmentSet<T>::at(const EdgeAssignment& assignment) const noexcept
 {
-    return m_set.test(m_hash.template get_rank<true>(assignment));
+    return m_set.test(m_hash.get_rank(assignment));
 }
 
 template<::tyr::formalism::FactKind T>
@@ -346,11 +373,9 @@ bool FunctionAssignmentSet<T>::insert(::tyr::formalism::datalog::FunctionBinding
     {
         const auto first_object = objects[first_index];
 
-        // Complete vertex.
+        if (const auto rank = m_hash.find_rank(VertexAssignment(::tyr::formalism::ParameterIndex(first_index), first_object.get_index())))
         {
-            const auto rank = m_hash.get_rank<false>(VertexAssignment(::tyr::formalism::ParameterIndex(first_index), first_object.get_index()));
-
-            auto& single_assignment_bound = m_set[rank];
+            auto& single_assignment_bound = m_set[*rank];
             changed |= update_interval(single_assignment_bound, interval);
         }
 
@@ -358,15 +383,14 @@ bool FunctionAssignmentSet<T>::insert(::tyr::formalism::datalog::FunctionBinding
         {
             const auto second_object = objects[second_index];
 
-            // Ordered complete edge.
-
-            const auto rank = m_hash.get_rank<false>(EdgeAssignment(::tyr::formalism::ParameterIndex(first_index),
-                                                                    first_object.get_index(),
-                                                                    ::tyr::formalism::ParameterIndex(second_index),
-                                                                    second_object.get_index()));
-
-            auto& double_assignment_bound = m_set[rank];
-            changed |= update_interval(double_assignment_bound, interval);
+            if (const auto rank = m_hash.find_rank(EdgeAssignment(::tyr::formalism::ParameterIndex(first_index),
+                                                                  first_object.get_index(),
+                                                                  ::tyr::formalism::ParameterIndex(second_index),
+                                                                  second_object.get_index())))
+            {
+                auto& double_assignment_bound = m_set[*rank];
+                changed |= update_interval(double_assignment_bound, interval);
+            }
         }
     }
 
@@ -394,13 +418,15 @@ ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::operator[](const Emp
 template<::tyr::formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::operator[](const VertexAssignment& assignment) const noexcept
 {
-    return m_set[m_hash.template get_rank<false>(assignment)];
+    const auto rank = m_hash.find_rank(assignment);
+    return rank ? m_set[*rank] : ygg::ClosedInterval<ygg::float_t> {};
 }
 
 template<::tyr::formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::operator[](const EdgeAssignment& assignment) const noexcept
 {
-    return m_set[m_hash.template get_rank<false>(assignment)];
+    const auto rank = m_hash.find_rank(assignment);
+    return rank ? m_set[*rank] : ygg::ClosedInterval<ygg::float_t> {};
 }
 
 template<::tyr::formalism::FactKind T>
@@ -442,13 +468,13 @@ ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::at(const EmptyAssign
 template<::tyr::formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::at(const VertexAssignment& assignment) const noexcept
 {
-    return m_set[m_hash.template get_rank<true>(assignment)];
+    return m_set[m_hash.get_rank(assignment)];
 }
 
 template<::tyr::formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::at(const EdgeAssignment& assignment) const noexcept
 {
-    return m_set[m_hash.template get_rank<true>(assignment)];
+    return m_set[m_hash.get_rank(assignment)];
 }
 
 template<::tyr::formalism::FactKind T>

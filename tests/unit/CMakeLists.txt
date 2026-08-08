@@ -124,6 +124,7 @@ target_include_directories(algorithms_kckp PRIVATE ${PROJECT_SOURCE_DIR}/src)
 
 add_gtest(datalog_cost_policy "datalog/cost_policy.cpp")
 add_gtest(datalog_ground_solver "datalog/ground/solver.cpp")
+add_gtest(datalog_lifted_assignment_sets "datalog/assignment_sets.cpp")
 add_gtest(datalog_lifted_solver "datalog/lifted/solver.cpp")
 target_link_libraries(datalog_lifted_solver PRIVATE Boost::iostreams Boost::json)
 add_gtest(algorithms_delta_kckp "algorithms/kckp/delta_kckp.cpp")
