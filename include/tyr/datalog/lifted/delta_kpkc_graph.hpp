@@ -473,9 +473,27 @@ private:
     std::vector<uint64_t> m_bitset_data;
 };
 
-struct Graph
+struct FullGraph
 {
-    Graph(const GraphLayout& layout, const PartitionedAdjacencyLayout& adjacency_layout, const DeduplicatedAdjacencyMatrix& static_matrix) :
+    FullGraph(const GraphLayout& layout, const PartitionedAdjacencyLayout& adjacency_layout, const DeduplicatedAdjacencyMatrix& static_matrix) :
+        affected_partitions(layout),
+        matrix(layout, adjacency_layout, static_matrix, affected_partitions, affected_partitions)
+    {
+    }
+
+    void reset() noexcept
+    {
+        affected_partitions.reset();
+        matrix.reset();
+    }
+
+    VertexPartitions affected_partitions;
+    PartitionedAdjacencyMatrix matrix;
+};
+
+struct DeltaGraph
+{
+    DeltaGraph(const GraphLayout& layout, const PartitionedAdjacencyLayout& adjacency_layout, const DeduplicatedAdjacencyMatrix& static_matrix) :
         affected_partitions(layout),
         delta_partitions(layout),
         matrix(layout, adjacency_layout, static_matrix, affected_partitions, delta_partitions)

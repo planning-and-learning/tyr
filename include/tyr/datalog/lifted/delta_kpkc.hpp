@@ -106,8 +106,8 @@ public:
      */
 
     const GraphLayout& get_graph_layout() const noexcept { return m_layout; }
-    const Graph& get_delta_graph() const noexcept { return m_delta_graph; }
-    const Graph& get_full_graph() const noexcept { return m_full_graph; }
+    const DeltaGraph& get_delta_graph() const noexcept { return m_delta_graph; }
+    const FullGraph& get_full_graph() const noexcept { return m_full_graph; }
     size_t get_iteration() const noexcept { return m_iteration; }
 
 private:
@@ -141,8 +141,8 @@ private:
     const GraphLayout& m_layout;
     size_t m_iteration;
 
-    Graph m_delta_graph;
-    Graph m_full_graph;
+    DeltaGraph m_delta_graph;
+    FullGraph m_full_graph;
 
     std::vector<Edge> m_delta_edges;
 };

@@ -225,7 +225,7 @@ TEST(TyrDatalogLiftedDeltaKPKC, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
     EXPECT_FALSE(binary.has_numeric_dependency(0, 1));
 
     using Binding = std::array<std::string, 2>;
-    const auto collect_edges = [&](const d::kpkc::Graph& graph)
+    const auto collect_edges = [&](const auto& graph)
     {
         auto result = std::vector<Binding> {};
         graph.matrix.for_each_edge(
@@ -355,13 +355,13 @@ TEST(TyrDatalogLiftedDeltaKPKC, MixedAdjacencyMatchesAcrossIterations)
         std::ranges::sort(result);
         return result;
     };
-    const auto count_vertices = [](const d::kpkc::Graph& graph)
+    const auto count_vertices = [](const auto& graph)
     {
         auto result = size_t { 0 };
         graph.matrix.for_each_vertex([&](auto) { ++result; });
         return result;
     };
-    const auto count_edges = [](const d::kpkc::Graph& graph)
+    const auto count_edges = [](const auto& graph)
     {
         auto result = size_t { 0 };
         graph.matrix.for_each_edge([&](auto) { ++result; });

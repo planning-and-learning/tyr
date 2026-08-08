@@ -1040,8 +1040,8 @@ StaticConsistencyGraph::StaticConsistencyGraph(fd::ConjunctiveConditionView cond
 
 void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
                                                                    const kpkc::GraphLayout& layout,
-                                                                   kpkc::Graph& delta_graph,
-                                                                   kpkc::Graph& full_graph) const
+                                                                   kpkc::DeltaGraph& delta_graph,
+                                                                   kpkc::FullGraph& full_graph) const
 {
     // static struct Statistics
     // {
@@ -1064,7 +1064,6 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
         {
             const auto& info = layout.info.infos[p];
             auto full_affected_partition = full_graph.affected_partitions.get_bitset(info);
-            auto full_delta_partition = full_graph.delta_partitions.get_bitset(info);
             auto delta_affected_partition = delta_graph.affected_partitions.get_bitset(info);
             auto delta_delta_partition = delta_graph.delta_partitions.get_bitset(info);
 
@@ -1080,9 +1079,8 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                 delta_affected_partition.set();
                 delta_delta_partition.set();
                 delta_affected_partition -= full_affected_partition;
-                delta_delta_partition -= full_delta_partition;
+                delta_delta_partition -= full_affected_partition;
                 full_affected_partition.set();
-                full_delta_partition.set();
             }
             else
             {
@@ -1102,8 +1100,6 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                             /// Process delta consistent vertex.
                             full_affected_partition.set(bit);
                             delta_affected_partition.set(bit);
-
-                            full_delta_partition.set(bit);
                             delta_delta_partition.set(bit);
                         }
                     },
@@ -1198,10 +1194,6 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                         assert(full_affected_partition_j.test(bj));
                         delta_affected_partition_i.set(bi);
                         delta_affected_partition_j.set(bj);
-
-                        // Set/test delta partitions
-                        assert(full_graph.delta_partitions.get_bitset(info_i).test(bi));
-                        assert(full_graph.delta_partitions.get_bitset(info_j).test(bj));
 
                         // Set touched partitions
                         delta_touched_i = true;
