@@ -26,55 +26,78 @@ namespace tyr::planning::gbfs_lazy
 {
 
 template<TaskKind Kind>
-SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& successor_generator, Heuristic<Kind>& heuristic, const Options<Kind>& options)
+SearchResult<Kind> find_solution(Task<Kind>& task,
+                                 StateRepository<Kind>& state_repository,
+                                 AxiomEvaluator<Kind>& axiom_evaluator,
+                                 SuccessorGenerator<Kind>& successor_generator,
+                                 Heuristic<Kind>& heuristic,
+                                 const Options<Kind>& options)
 {
     if (options.num_search_workers == 0)
         throw std::invalid_argument("gbfs_lazy::find_solution(...): num_search_workers must be greater than zero.");
     if (options.num_search_workers > 1)
     {
         using Search = ::tyr::planning::detail::LazyGBFSPolicy<Kind, ParallelSearch>;
-        switch (options.state_repository_mode)
+        if (!state_repository.is_concurrent())
         {
-            case StateRepositoryMode::HASH_DISTRIBUTED:
+            switch (options.dist_hash_mode)
             {
-                switch (options.dist_hash_mode)
+                case DistHashMode::RANDOM:
                 {
-                    case DistHashMode::RANDOM:
-                    {
-                        using Distribution = ::tyr::planning::detail::HashDistributedStatePolicy<Kind, RandomDistHashTag>;
-                        using Execution = ::tyr::planning::detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
-                        return ::tyr::planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
-                    }
-                    case DistHashMode::LMCUT:
-                    {
-                        using Distribution = ::tyr::planning::detail::HashDistributedStatePolicy<Kind, LMCutDistHashTag>;
-                        using Execution = ::tyr::planning::detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
-                        return ::tyr::planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
-                    }
+                    using Distribution = ::tyr::planning::detail::HashDistributedStatePolicy<Kind, RandomDistHashTag>;
+                    using Execution = ::tyr::planning::detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
+                    return ::tyr::planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task,
+                                                                                                         state_repository,
+                                                                                                         axiom_evaluator,
+                                                                                                         successor_generator,
+                                                                                                         heuristic,
+                                                                                                         options);
                 }
-                throw std::invalid_argument("gbfs_lazy::find_solution(...): unknown distribution hash mode.");
+                case DistHashMode::LMCUT:
+                {
+                    using Distribution = ::tyr::planning::detail::HashDistributedStatePolicy<Kind, LMCutDistHashTag>;
+                    using Execution = ::tyr::planning::detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
+                    return ::tyr::planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task,
+                                                                                                         state_repository,
+                                                                                                         axiom_evaluator,
+                                                                                                         successor_generator,
+                                                                                                         heuristic,
+                                                                                                         options);
+                }
             }
-            case StateRepositoryMode::SHARED:
-            {
-                using Distribution = ::tyr::planning::detail::SharedStatePolicy<Kind>;
-                using Execution = ::tyr::planning::detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
-                return ::tyr::planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
-            }
+            throw std::invalid_argument("gbfs_lazy::find_solution(...): unknown distribution hash mode.");
         }
-        throw std::invalid_argument("gbfs_lazy::find_solution(...): unknown state repository mode.");
+
+        using Distribution = ::tyr::planning::detail::SharedStatePolicy<Kind>;
+        using Execution = ::tyr::planning::detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
+        return ::tyr::planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task,
+                                                                                             state_repository,
+                                                                                             axiom_evaluator,
+                                                                                             successor_generator,
+                                                                                             heuristic,
+                                                                                             options);
     }
 
     using Search = ::tyr::planning::detail::LazyGBFSPolicy<Kind, SequentialSearch>;
     using Execution = ::tyr::planning::detail::SequentialExecutionPolicy<Kind, Search>;
-    return ::tyr::planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
+    return ::tyr::planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task,
+                                                                                         state_repository,
+                                                                                         axiom_evaluator,
+                                                                                         successor_generator,
+                                                                                         heuristic,
+                                                                                         options);
 }
 
 template SearchResult<LiftedTag> find_solution<LiftedTag>(Task<LiftedTag>& task,
+                                                          StateRepository<LiftedTag>& state_repository,
+                                                          AxiomEvaluator<LiftedTag>& axiom_evaluator,
                                                           SuccessorGenerator<LiftedTag>& successor_generator,
                                                           Heuristic<LiftedTag>& heuristic,
                                                           const Options<LiftedTag>& options);
 
 template SearchResult<GroundTag> find_solution<GroundTag>(Task<GroundTag>& task,
+                                                          StateRepository<GroundTag>& state_repository,
+                                                          AxiomEvaluator<GroundTag>& axiom_evaluator,
                                                           SuccessorGenerator<GroundTag>& successor_generator,
                                                           Heuristic<GroundTag>& heuristic,
                                                           const Options<GroundTag>& options);

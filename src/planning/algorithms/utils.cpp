@@ -17,10 +17,13 @@
 
 #include "tyr/planning/algorithms/utils.hpp"
 
+#include "../metric.hpp"
+#include "tyr/planning/ground/axiom_evaluator.hpp"
 #include "tyr/planning/ground/state_repository.hpp"
-#include "tyr/planning/ground/successor_generator.hpp"
+#include "tyr/planning/ground/task.hpp"
+#include "tyr/planning/lifted/axiom_evaluator.hpp"
 #include "tyr/planning/lifted/state_repository.hpp"
-#include "tyr/planning/lifted/successor_generator.hpp"
+#include "tyr/planning/lifted/task.hpp"
 
 #include <cmath>
 #include <stdexcept>
@@ -30,24 +33,39 @@ namespace tyr::planning
 {
 
 template<TaskKind Kind>
-Node<Kind> normalize_start_node(Task<Kind>& task, SuccessorGenerator<Kind>& successor_generator, std::optional<Node<Kind>> start_node)
+Node<Kind>
+normalize_start_node(Task<Kind>& task, StateRepository<Kind>& state_repository, AxiomEvaluator<Kind>& axiom_evaluator, std::optional<Node<Kind>> start_node)
 {
-    auto& target_repository = *successor_generator.get_state_repository();
-    if (target_repository.get_task().get() != &task)
-        throw std::invalid_argument("normalize_start_node(...): successor generator belongs to a different task.");
+    if (state_repository.get_task().get() != &task)
+        throw std::invalid_argument("normalize_start_node(...): state repository belongs to a different task.");
+    if (axiom_evaluator.get_task().get() != &task)
+        throw std::invalid_argument("normalize_start_node(...): axiom evaluator belongs to a different task.");
 
-    auto node = start_node ? std::move(*start_node) : successor_generator.get_initial_node();
+    auto node = [&]
+    {
+        if (start_node)
+            return std::move(*start_node);
+
+        auto state = state_repository.get_initial_state(axiom_evaluator);
+        const auto state_context = StateContext<Kind>(task, state.get_state_builder(), 0);
+        const auto metric = evaluate_metric(task.get_task().get_metric(), task.get_task().get_auxiliary_fterm_value(), state_context);
+        return Node<Kind>(std::move(state), metric);
+    }();
     if (node.get_state().get_state_repository()->get_task().get() != &task)
         throw std::invalid_argument("normalize_start_node(...): start node belongs to a different task.");
     if (!std::isfinite(node.get_metric()))
         throw std::runtime_error("normalize_start_node(...): start node metric value is not finite.");
 
-    return Node<Kind>(materialize_state(node.get_state(), target_repository), node.get_metric());
+    return Node<Kind>(materialize_state(node.get_state(), state_repository, axiom_evaluator), node.get_metric());
 }
 
-template Node<GroundTag>
-normalize_start_node(Task<GroundTag>& task, SuccessorGenerator<GroundTag>& successor_generator, std::optional<Node<GroundTag>> start_node);
-template Node<LiftedTag>
-normalize_start_node(Task<LiftedTag>& task, SuccessorGenerator<LiftedTag>& successor_generator, std::optional<Node<LiftedTag>> start_node);
+template Node<GroundTag> normalize_start_node(Task<GroundTag>& task,
+                                              StateRepository<GroundTag>& state_repository,
+                                              AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                              std::optional<Node<GroundTag>> start_node);
+template Node<LiftedTag> normalize_start_node(Task<LiftedTag>& task,
+                                              StateRepository<LiftedTag>& state_repository,
+                                              AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                              std::optional<Node<LiftedTag>> start_node);
 
 }

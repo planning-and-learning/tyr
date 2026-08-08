@@ -87,6 +87,8 @@ TEST(PlanningAlgorithmUtilsTest, DefaultConstructedWidthSolverAdaptersExposeNest
     auto iw_solver = p::iw::Solver<::tyr::GroundTag> {};
 
     EXPECT_EQ(iw_solver.brfs_solver.task, nullptr);
+    EXPECT_EQ(iw_solver.brfs_solver.state_repository, nullptr);
+    EXPECT_EQ(iw_solver.brfs_solver.axiom_evaluator, nullptr);
     EXPECT_EQ(iw_solver.brfs_solver.successor_generator, nullptr);
     EXPECT_EQ(iw_solver.max_arity, p::iw::MaxArity);
     EXPECT_EQ(iw_solver.options.event_handler, nullptr);
@@ -94,6 +96,8 @@ TEST(PlanningAlgorithmUtilsTest, DefaultConstructedWidthSolverAdaptersExposeNest
     auto siw_solver = p::siw::Solver<::tyr::GroundTag> {};
 
     EXPECT_EQ(siw_solver.iw_solver.brfs_solver.task, nullptr);
+    EXPECT_EQ(siw_solver.iw_solver.brfs_solver.state_repository, nullptr);
+    EXPECT_EQ(siw_solver.iw_solver.brfs_solver.axiom_evaluator, nullptr);
     EXPECT_EQ(siw_solver.iw_solver.brfs_solver.successor_generator, nullptr);
     EXPECT_EQ(siw_solver.iw_solver.max_arity, p::iw::MaxArity);
     EXPECT_EQ(siw_solver.iw_solver.options.event_handler, nullptr);

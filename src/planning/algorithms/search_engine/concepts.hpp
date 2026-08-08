@@ -86,8 +86,7 @@ concept StateRoutingPolicyConcept = TaskKind<Kind> && std::constructible_from<T,
     typename T::TaskTag;
     typename T::PreparedTarget;
     requires std::same_as<typename T::TaskTag, Kind>;
-} && requires(SuccessorGenerator<Kind>& successor_generator, std::span<const ygg::ExecutionContextPtr> execution_contexts, ygg::Index<State<Kind>> state, ygg::Index<Worker> worker, size_t num_workers, typename T::PreparedTarget prepared) {
-    { T::make_successor_generators(successor_generator, execution_contexts) } -> std::same_as<std::vector<SuccessorGeneratorPtr<Kind>>>;
+} && requires(ygg::Index<State<Kind>> state, ygg::Index<Worker> worker, size_t num_workers, typename T::PreparedTarget prepared) {
     { T::search_node_divisor(num_workers) } -> std::same_as<size_t>;
     { T::search_node_index(state, worker, num_workers) } -> std::same_as<ygg::Index<State<Kind>>>;
     { prepared.owner } -> std::same_as<ygg::Index<Worker>&>;
@@ -120,17 +119,13 @@ concept ExecutionPolicyConcept = TaskKind<Kind> && SearchPolicyConcept<SearchPol
 
 template<typename T, typename WorkerData, typename Kind, typename SearchPolicy>
 concept WorkerPolicyConcept = TaskKind<Kind> && SearchPolicyConcept<SearchPolicy, Kind>
-                              && requires(T& policy,
-                                          ygg::Index<Worker> worker,
-                                          WorkerStateIndex<Kind> goal,
-                                          SuccessorGenerator<Kind>& successor_generator,
-                                          const typename SearchPolicy::Options& options) {
+                              && requires(T& policy, ygg::Index<Worker> worker, WorkerStateIndex<Kind> goal, const typename SearchPolicy::Options& options) {
                                      { policy.size() } -> std::same_as<size_t>;
                                      { policy.get(worker) } -> std::same_as<WorkerData&>;
                                      {
                                          policy.for_each([](WorkerData&) {})
                                      } -> std::same_as<void>;
-                                     { policy.reconstruct_solution(goal, successor_generator, options) } -> std::same_as<std::pair<Plan<Kind>, Node<Kind>>>;
+                                     { policy.reconstruct_solution(goal, options) } -> std::same_as<std::pair<Plan<Kind>, Node<Kind>>>;
                                  };
 
 template<SearchKind Search,

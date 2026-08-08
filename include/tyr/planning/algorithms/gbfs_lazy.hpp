@@ -36,7 +36,7 @@ namespace tyr::planning::gbfs_lazy
 template<TaskKind Kind>
 struct Options
 {
-    /// Optional initial node. It must belong to this task; search materializes it in the caller successor generator's repository while preserving its metric.
+    /// Optional initial node. It must belong to this task; search materializes it in the caller repository while preserving its metric.
     std::optional<Node<Kind>> start_node = std::nullopt;
     EventHandlerPtr<Kind> event_handler = nullptr;
     PruningStrategyPtr<Kind> pruning_strategy = nullptr;
@@ -48,9 +48,8 @@ struct Options
     CostMode cost_mode = CostMode::GENERAL;
     bool use_preferred_actions = true;
     ygg::uint_t boost_preferred_queue = 1000;
-    /// Values above one enable parallel shared-memory search; custom strategies must provide independent workers.
+    /// Values above one enable parallel search. A concurrent state repository shares storage; a private one is hash-distributed.
     size_t num_search_workers = 1;
-    StateRepositoryMode state_repository_mode = StateRepositoryMode::HASH_DISTRIBUTED;
     DistHashMode dist_hash_mode = DistHashMode::LMCUT;
     bool collect_destination_lock_statistics = false;
     uint64_t random_seed = 0;
@@ -60,8 +59,12 @@ struct Options
 };
 
 template<TaskKind Kind>
-SearchResult<Kind>
-find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& successor_generator, Heuristic<Kind>& heuristic, const Options<Kind>& options = Options<Kind>());
+SearchResult<Kind> find_solution(Task<Kind>& task,
+                                 StateRepository<Kind>& state_repository,
+                                 AxiomEvaluator<Kind>& axiom_evaluator,
+                                 SuccessorGenerator<Kind>& successor_generator,
+                                 Heuristic<Kind>& heuristic,
+                                 const Options<Kind>& options = Options<Kind>());
 
 /// @brief Adapter that exposes GBFS lazy search through the generic solver interface.
 template<TaskKind Kind>
@@ -70,6 +73,8 @@ struct Solver
     using EventHandlerType = EventHandler<Kind>;
 
     TaskPtr<Kind> task;
+    StateRepositoryPtr<Kind> state_repository;
+    AxiomEvaluatorPtr<Kind> axiom_evaluator;
     SuccessorGeneratorPtr<Kind> successor_generator;
     HeuristicPtr<Kind> heuristic;
     Options<Kind> options;
@@ -78,24 +83,30 @@ struct Solver
     {
         if (!task)
             throw std::invalid_argument("gbfs_lazy::Solver::normalize_start_node(): task is required.");
-        if (!successor_generator)
-            throw std::invalid_argument("gbfs_lazy::Solver::normalize_start_node(): successor generator is required.");
+        if (!state_repository)
+            throw std::invalid_argument("gbfs_lazy::Solver::normalize_start_node(): state repository is required.");
+        if (!axiom_evaluator)
+            throw std::invalid_argument("gbfs_lazy::Solver::normalize_start_node(): axiom evaluator is required.");
         if (!start_node)
             start_node = options.start_node;
 
-        return tyr::planning::normalize_start_node(*task, *successor_generator, std::move(start_node));
+        return tyr::planning::normalize_start_node(*task, *state_repository, *axiom_evaluator, std::move(start_node));
     }
 
     SearchResult<Kind> solve()
     {
         if (!task)
             throw std::invalid_argument("gbfs_lazy::Solver::solve(): task is required.");
+        if (!state_repository)
+            throw std::invalid_argument("gbfs_lazy::Solver::solve(): state repository is required.");
+        if (!axiom_evaluator)
+            throw std::invalid_argument("gbfs_lazy::Solver::solve(): axiom evaluator is required.");
         if (!successor_generator)
             throw std::invalid_argument("gbfs_lazy::Solver::solve(): successor generator is required.");
         if (!heuristic)
             throw std::invalid_argument("gbfs_lazy::Solver::solve(): heuristic is required.");
 
-        return find_solution(*task, *successor_generator, *heuristic, options);
+        return find_solution(*task, *state_repository, *axiom_evaluator, *successor_generator, *heuristic, options);
     }
 };
 }

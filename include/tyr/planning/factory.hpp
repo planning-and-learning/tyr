@@ -39,10 +39,16 @@ class StateRepositoryFactory
 public:
     StateRepositoryFactory() : m_next_index(std::make_shared<std::atomic<ygg::uint_t>>(0)) {}
 
-    StateRepositoryPtr<Kind> create(TaskPtr<Kind> task, AxiomEvaluatorPtr<Kind> axiom_evaluator)
+    /// Creates a private repository. Parallel search gives each worker its own private clone.
+    StateRepositoryPtr<Kind> create(TaskPtr<Kind> task)
     {
-        return StateRepositoryPtr<Kind>(
-            new StateRepository<Kind>(m_next_index->fetch_add(1, std::memory_order_relaxed), std::move(task), std::move(axiom_evaluator), m_next_index));
+        return StateRepositoryPtr<Kind>(new StateRepository<Kind>(m_next_index->fetch_add(1, std::memory_order_relaxed), std::move(task), false, m_next_index));
+    }
+
+    /// Creates a concurrent repository whose workers share canonical state storage.
+    StateRepositoryPtr<Kind> create_concurrent(TaskPtr<Kind> task)
+    {
+        return StateRepositoryPtr<Kind>(new StateRepository<Kind>(m_next_index->fetch_add(1, std::memory_order_relaxed), std::move(task), true, m_next_index));
     }
 
 private:
@@ -57,9 +63,6 @@ public:
 
     AxiomEvaluatorPtr<Kind> create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context)
     {
-        if (!task->has_axioms())
-            return nullptr;
-
         return AxiomEvaluatorPtr<Kind>(
             new AxiomEvaluator<Kind>(m_next_index->fetch_add(1, std::memory_order_relaxed), std::move(task), std::move(execution_context), m_next_index));
     }
@@ -74,13 +77,10 @@ class SuccessorGeneratorFactory
 public:
     SuccessorGeneratorFactory() : m_next_index(std::make_shared<std::atomic<ygg::uint_t>>(0)) {}
 
-    SuccessorGeneratorPtr<Kind> create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, StateRepositoryPtr<Kind> state_repository)
+    SuccessorGeneratorPtr<Kind> create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context)
     {
-        return SuccessorGeneratorPtr<Kind>(new SuccessorGenerator<Kind>(m_next_index->fetch_add(1, std::memory_order_relaxed),
-                                                                        std::move(task),
-                                                                        std::move(execution_context),
-                                                                        std::move(state_repository),
-                                                                        m_next_index));
+        return SuccessorGeneratorPtr<Kind>(
+            new SuccessorGenerator<Kind>(m_next_index->fetch_add(1, std::memory_order_relaxed), std::move(task), std::move(execution_context), m_next_index));
     }
 
 private:

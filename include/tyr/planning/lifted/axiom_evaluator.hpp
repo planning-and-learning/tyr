@@ -19,9 +19,9 @@
 #define TYR_PLANNING_LIFTED_AXIOM_EVALUATOR_HPP_
 
 #include "tyr/planning/axiom_evaluator.hpp"
-#include "tyr/planning/programs/axiom.hpp"
 
 #include <atomic>
+#include <cstddef>
 #include <memory>
 
 namespace tyr::planning
@@ -47,7 +47,7 @@ public:
     void compute_extended_state(ygg::Builder<State<LiftedTag>>& state_builder);
     [[nodiscard]] AxiomEvaluatorPtr<LiftedTag> make_worker(ygg::ExecutionContextPtr execution_context) const;
 
-    const AxiomEvaluatorProgram<LiftedTag>& get_axiom_program() const noexcept;
+    const TaskPtr<LiftedTag>& get_task() const noexcept;
     const ygg::ExecutionContextPtr& get_execution_context() const noexcept;
     ygg::uint_t get_index() const noexcept;
 

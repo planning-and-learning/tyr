@@ -62,20 +62,23 @@ void expect_worker_chain(const p::TaskPtr<Kind>& task)
     auto successor_generator_factory = p::SuccessorGeneratorFactory<Kind> {};
 
     auto source_axiom_evaluator = axiom_factory.create(task, source_context);
-    auto source_state_repository = state_repository_factory.create(task, source_axiom_evaluator);
-    auto source = successor_generator_factory.create(task, source_context, source_state_repository);
+    auto source_state_repository = state_repository_factory.create(task);
+    auto source = successor_generator_factory.create(task, source_context);
 
     auto worker_context = ygg::ExecutionContext::create(1);
+    auto worker_axiom_evaluator = source_axiom_evaluator->make_worker(worker_context);
+    auto worker_state_repository = source_state_repository->make_worker();
     auto worker = source->make_worker(worker_context);
+    ASSERT_NE(worker_axiom_evaluator, nullptr);
+    ASSERT_NE(worker_state_repository, nullptr);
     ASSERT_NE(worker, nullptr);
     auto nested_context = ygg::ExecutionContext::create(1);
+    auto nested_axiom_evaluator = worker_axiom_evaluator->make_worker(nested_context);
+    auto nested_state_repository = worker_state_repository->make_worker();
     auto nested = worker->make_worker(nested_context);
+    ASSERT_NE(nested_axiom_evaluator, nullptr);
+    ASSERT_NE(nested_state_repository, nullptr);
     ASSERT_NE(nested, nullptr);
-
-    const auto worker_state_repository = worker->get_state_repository();
-    const auto nested_state_repository = nested->get_state_repository();
-    const auto worker_axiom_evaluator = worker_state_repository->get_axiom_evaluator();
-    const auto nested_axiom_evaluator = nested_state_repository->get_axiom_evaluator();
 
     ASSERT_NE(source_axiom_evaluator, nullptr);
     ASSERT_NE(worker_axiom_evaluator, nullptr);
@@ -90,9 +93,6 @@ void expect_worker_chain(const p::TaskPtr<Kind>& task)
         EXPECT_EQ(&source->get_action_program(), &worker->get_action_program());
         EXPECT_EQ(&source->get_action_program(), &nested->get_action_program());
 
-        EXPECT_EQ(&source_axiom_evaluator->get_axiom_program(), &worker_axiom_evaluator->get_axiom_program());
-        EXPECT_EQ(&source_axiom_evaluator->get_axiom_program(), &nested_axiom_evaluator->get_axiom_program());
-
         EXPECT_EQ(worker_axiom_evaluator->get_execution_context(), worker_context);
         EXPECT_EQ(nested_axiom_evaluator->get_execution_context(), nested_context);
     }
@@ -101,15 +101,15 @@ void expect_worker_chain(const p::TaskPtr<Kind>& task)
     EXPECT_EQ(worker_state_repository->num_states(), 0);
     EXPECT_EQ(nested_state_repository->num_states(), 0);
 
-    auto worker_initial_future = std::async(std::launch::async, [&] { return worker->get_initial_node(); });
-    auto nested_initial_future = std::async(std::launch::async, [&] { return nested->get_initial_node(); });
+    auto worker_initial_future = std::async(std::launch::async, [&] { return worker->get_initial_node(*worker_state_repository, *worker_axiom_evaluator); });
+    auto nested_initial_future = std::async(std::launch::async, [&] { return nested->get_initial_node(*nested_state_repository, *nested_axiom_evaluator); });
     const auto worker_initial = worker_initial_future.get();
     const auto nested_initial = nested_initial_future.get();
     EXPECT_EQ(source_state_repository->num_states(), 0);
     EXPECT_EQ(worker_state_repository->num_states(), 1);
     EXPECT_EQ(nested_state_repository->num_states(), 1);
 
-    const auto source_initial = source->get_initial_node();
+    const auto source_initial = source->get_initial_node(*source_state_repository, *source_axiom_evaluator);
     EXPECT_EQ(source_state_repository->num_states(), 1);
     EXPECT_EQ(source_initial.get_state().get_index(), worker_initial.get_state().get_index());
     EXPECT_EQ(source_initial.get_state().get_index(), nested_initial.get_state().get_index());
@@ -122,8 +122,10 @@ void expect_worker_chain(const p::TaskPtr<Kind>& task)
     if constexpr (std::same_as<Kind, ::tyr::LiftedTag>)
         initial_fdr_variable_count = task->get_fdr_context()->get_variables().size();
 
-    auto worker_successors_future = std::async(std::launch::async, [&] { return worker->get_labeled_successor_nodes(worker_initial); });
-    auto nested_successors_future = std::async(std::launch::async, [&] { return nested->get_labeled_successor_nodes(nested_initial); });
+    auto worker_successors_future =
+        std::async(std::launch::async, [&] { return worker->get_labeled_successor_nodes(worker_initial, *worker_state_repository, *worker_axiom_evaluator); });
+    auto nested_successors_future =
+        std::async(std::launch::async, [&] { return nested->get_labeled_successor_nodes(nested_initial, *nested_state_repository, *nested_axiom_evaluator); });
     const auto worker_successors = worker_successors_future.get();
     const auto nested_successors = nested_successors_future.get();
 
@@ -140,7 +142,7 @@ void expect_worker_chain(const p::TaskPtr<Kind>& task)
         EXPECT_EQ(indices.size(), variables.size());
     }
 
-    const auto source_successors = source->get_labeled_successor_nodes(source_initial);
+    const auto source_successors = source->get_labeled_successor_nodes(source_initial, *source_state_repository, *source_axiom_evaluator);
     if constexpr (std::same_as<Kind, ::tyr::LiftedTag>)
     {
         EXPECT_EQ(task->get_fdr_context()->get_variables().size(), worker_fdr_variable_count);
@@ -201,11 +203,14 @@ void expect_worker_chain(const p::TaskPtr<Kind>& task)
 template<::tyr::TaskKind Kind>
 void expect_independent_repository_identity(const p::TaskPtr<Kind>& task)
 {
-    auto first_repository = p::StateRepositoryFactory<Kind>().create(task, nullptr);
-    auto second_repository = p::StateRepositoryFactory<Kind>().create(task, nullptr);
+    auto execution_context = ygg::ExecutionContext::create(1);
+    auto first_axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto second_axiom_evaluator = first_axiom_evaluator->make_worker(execution_context);
+    auto first_repository = p::StateRepositoryFactory<Kind>().create(task);
+    auto second_repository = p::StateRepositoryFactory<Kind>().create(task);
 
-    const auto first_state = first_repository->get_initial_state();
-    const auto second_state = second_repository->get_initial_state();
+    const auto first_state = first_repository->get_initial_state(*first_axiom_evaluator);
+    const auto second_state = second_repository->get_initial_state(*second_axiom_evaluator);
 
     EXPECT_EQ(first_repository->get_index(), 0);
     EXPECT_EQ(second_repository->get_index(), 0);
@@ -217,7 +222,7 @@ void expect_independent_repository_identity(const p::TaskPtr<Kind>& task)
     states.insert(second_state);
     EXPECT_EQ(states.size(), 2);
 
-    EXPECT_EQ(p::materialize_state(second_state, *first_repository), first_state);
+    EXPECT_EQ(p::materialize_state(second_state, *first_repository, *first_axiom_evaluator), first_state);
 }
 
 template<::tyr::TaskKind Kind>
@@ -225,34 +230,36 @@ void expect_shared_worker_cohort(const p::TaskPtr<Kind>& task)
 {
     auto source_context = ygg::ExecutionContext::create(1);
     auto source_axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, source_context);
-    auto source_repository = p::StateRepositoryFactory<Kind>().create(task, source_axiom_evaluator);
-    auto source = p::SuccessorGeneratorFactory<Kind>().create(task, source_context, source_repository);
+    auto source_repository = p::StateRepositoryFactory<Kind>().create_concurrent(task);
+    auto source = p::SuccessorGeneratorFactory<Kind>().create(task, source_context);
+    auto worker_context = ygg::ExecutionContext::create(1);
+    auto worker_axiom_evaluator = source_axiom_evaluator->make_worker(worker_context);
+    auto worker_repository = source_repository->make_worker();
+    auto worker = source->make_worker(worker_context);
+    ASSERT_NE(worker_axiom_evaluator, nullptr);
+    ASSERT_NE(worker_repository, nullptr);
+    ASSERT_NE(worker, nullptr);
 
-    auto worker_contexts = std::vector<ygg::ExecutionContextPtr> { ygg::ExecutionContext::create(1), ygg::ExecutionContext::create(1) };
-    auto workers = source->make_shared_workers(worker_contexts);
-    ASSERT_EQ(workers.size(), 2);
-    ASSERT_NE(workers[0], nullptr);
-    ASSERT_NE(workers[1], nullptr);
-
-    const auto first_repository = workers[0]->get_state_repository();
-    const auto second_repository = workers[1]->get_state_repository();
-    EXPECT_NE(workers[0].get(), workers[1].get());
+    const auto& first_repository = source_repository;
+    const auto& second_repository = worker_repository;
+    EXPECT_NE(source.get(), worker.get());
     EXPECT_NE(first_repository.get(), second_repository.get());
-    EXPECT_NE(workers[0]->get_index(), workers[1]->get_index());
-    EXPECT_EQ(first_repository->get_index(), second_repository->get_index());
+    EXPECT_NE(source->get_index(), worker->get_index());
+    EXPECT_NE(first_repository->get_index(), second_repository->get_index());
+    EXPECT_TRUE(first_repository->shares_storage_with(*second_repository));
 
     auto initial_start = std::barrier(2);
     auto first_initial_future = std::async(std::launch::async,
                                            [&]
                                            {
                                                initial_start.arrive_and_wait();
-                                               return workers[0]->get_initial_node();
+                                               return source->get_initial_node(*source_repository, *source_axiom_evaluator);
                                            });
     auto second_initial_future = std::async(std::launch::async,
                                             [&]
                                             {
                                                 initial_start.arrive_and_wait();
-                                                return workers[1]->get_initial_node();
+                                                return worker->get_initial_node(*worker_repository, *worker_axiom_evaluator);
                                             });
     const auto first_initial = first_initial_future.get();
     const auto second_initial = second_initial_future.get();
@@ -260,6 +267,7 @@ void expect_shared_worker_cohort(const p::TaskPtr<Kind>& task)
     ASSERT_EQ(second_repository->num_states(), 1);
     EXPECT_EQ(first_initial.get_state(), second_initial.get_state());
     EXPECT_EQ(first_initial.get_metric(), second_initial.get_metric());
+    EXPECT_EQ(p::materialize_state(second_initial.get_state(), *source_repository, *source_axiom_evaluator).get_state_repository(), source_repository);
 
     auto novelty = p::iw::NoveltyPruningStrategy<Kind>::create(0);
     auto first_novelty_worker = novelty->make_worker(ygg::Index<p::Worker>(0));
@@ -269,7 +277,7 @@ void expect_shared_worker_cohort(const p::TaskPtr<Kind>& task)
     EXPECT_FALSE(first_novelty_worker->should_prune_state(first_initial.get_state()));
     EXPECT_FALSE(second_novelty_worker->should_prune_state(second_initial.get_state()));
 
-    const auto actions = workers[0]->get_applicable_action_bindings(first_initial);
+    const auto actions = source->get_applicable_action_bindings(first_initial);
     ASSERT_FALSE(actions.empty());
     const auto action = actions.front();
     auto successor_start = std::barrier(2);
@@ -277,13 +285,13 @@ void expect_shared_worker_cohort(const p::TaskPtr<Kind>& task)
                                    [&]
                                    {
                                        successor_start.arrive_and_wait();
-                                       return workers[0]->get_successor_node(first_initial, action);
+                                       return source->get_successor_node(first_initial, action, *source_repository, *source_axiom_evaluator);
                                    });
     auto second_future = std::async(std::launch::async,
                                     [&]
                                     {
                                         successor_start.arrive_and_wait();
-                                        return workers[1]->get_successor_node(second_initial, action);
+                                        return worker->get_successor_node(second_initial, action, *worker_repository, *worker_axiom_evaluator);
                                     });
     const auto first_successor = first_future.get();
     const auto second_successor = second_future.get();

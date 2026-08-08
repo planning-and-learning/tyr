@@ -126,6 +126,8 @@ class Context:
     execution_context: ExecutionContext
     # Opaque handles: only ever passed back into pytyr, never inspected here.
     task: Any
+    state_repository: Any
+    axiom_evaluator: Any
     successor_generator: Any
 
 
@@ -154,16 +156,16 @@ def make_context(kind: TaskKind, domain_file: Path, task_file: Path) -> Context:
 
     if kind == "lifted":
         axiom_evaluator = lifted_planning.AxiomEvaluatorFactory().create(lifted_task, execution_context)
-        state_repository = lifted_planning.StateRepositoryFactory().create(lifted_task, axiom_evaluator)
-        successor_generator = lifted_planning.SuccessorGeneratorFactory().create(lifted_task, execution_context, state_repository)
-        return Context(kind, execution_context, lifted_task, successor_generator)
+        state_repository = lifted_planning.StateRepositoryFactory().create(lifted_task)
+        successor_generator = lifted_planning.SuccessorGeneratorFactory().create(lifted_task, execution_context)
+        return Context(kind, execution_context, lifted_task, state_repository, axiom_evaluator, successor_generator)
 
     instantiation = lifted_task.instantiate_ground_task(execution_context, lifted_planning.GroundTaskInstantiationOptions())
     task = instantiation.task
     axiom_evaluator = ground_planning.AxiomEvaluatorFactory().create(task, execution_context)
-    state_repository = ground_planning.StateRepositoryFactory().create(task, axiom_evaluator)
-    successor_generator = ground_planning.SuccessorGeneratorFactory().create(task, execution_context, state_repository)
-    return Context(kind, execution_context, task, successor_generator)
+    state_repository = ground_planning.StateRepositoryFactory().create(task)
+    successor_generator = ground_planning.SuccessorGeneratorFactory().create(task, execution_context)
+    return Context(kind, execution_context, task, state_repository, axiom_evaluator, successor_generator)
 
 
 def cost_mode_of(suffix: CostSuffix | None) -> CostMode:
@@ -225,14 +227,33 @@ def run_search_config(
         options.max_time = MAX_TIME
 
     if heuristic_name is None:
-        result = cast(SearchResultLike, module.find_solution(context.task, context.successor_generator, options))
+        result = cast(
+            SearchResultLike,
+            module.find_solution(
+                context.task,
+                context.state_repository,
+                context.axiom_evaluator,
+                context.successor_generator,
+                options,
+            ),
+        )
     else:
         options.cost_mode = cost_mode_of(cost_suffix)
         try:
             heuristic = make_heuristic(context, heuristic_name, cost_suffix)
         except ValueError as error:
             return f"unsupported heuristic: {error}"
-        result = cast(SearchResultLike, module.find_solution(context.task, context.successor_generator, heuristic, options))
+        result = cast(
+            SearchResultLike,
+            module.find_solution(
+                context.task,
+                context.state_repository,
+                context.axiom_evaluator,
+                context.successor_generator,
+                heuristic,
+                options,
+            ),
+        )
 
     if result.status not in RECORDED_STATUSES:
         return f"status {SEARCH_STATUS_NAMES[result.status]} within {MAX_TIME}s/{MAX_NUM_STATES} states"

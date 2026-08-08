@@ -59,23 +59,27 @@ struct AxiomEvaluator<LiftedTag>::Impl
 
     struct Definition
     {
-        explicit Definition(TaskPtr<LiftedTag> task_) : task(std::move(task_)), program(task->get_task()) {}
+        explicit Definition(TaskPtr<LiftedTag> task_) : task(std::move(task_)), program()
+        {
+            if (task->has_axioms())
+                program = std::make_unique<Program>(task->get_task());
+        }
 
         TaskPtr<LiftedTag> task;
-        Program program;
+        std::unique_ptr<Program> program;
     };
 
     struct Evaluator
     {
         Evaluator(const Definition& definition, ygg::ExecutionContextPtr execution_context_) :
             execution_context(std::move(execution_context_)),
-            workspace(definition.program.get_datalog_program()),
+            workspace(definition.program ? std::make_unique<datalog::ProgramWorkspace<LiftedTag>>(definition.program->get_datalog_program()) : nullptr),
             derived_bindings()
         {
         }
 
         ygg::ExecutionContextPtr execution_context;
-        datalog::ProgramWorkspace<LiftedTag> workspace;
+        std::unique_ptr<datalog::ProgramWorkspace<LiftedTag>> workspace;
         std::vector<::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>> derived_bindings;
     };
 
@@ -127,42 +131,47 @@ AxiomEvaluatorPtr<LiftedTag> AxiomEvaluator<LiftedTag>::make_worker(ygg::Executi
 void AxiomEvaluator<LiftedTag>::compute_extended_state(ygg::Builder<State<LiftedTag>>& state_builder)
 {
     auto& evaluator = m_impl->evaluator;
-    evaluator.workspace.reset_evaluation();
+    if (!evaluator.workspace)
+        return;
 
-    const auto& program = m_impl->definition->program;
+    auto& workspace = *evaluator.workspace;
+    workspace.reset_evaluation();
 
-    insert_unextended_state(state_builder, *m_impl->definition->task->get_repository(), program.get_translation_context().p2d, evaluator.workspace);
+    const auto& program = *m_impl->definition->program;
 
-    auto ctx = d::ProgramExecutionContext(evaluator.workspace);
+    insert_unextended_state(state_builder, *m_impl->definition->task->get_repository(), program.get_translation_context().p2d, workspace);
+
+    auto ctx = d::ProgramExecutionContext(workspace);
 
     evaluator.execution_context->arena().execute([&] { d::compute_model(ctx); });
 
     read_derived_atoms_from_fact_set(state_builder,
                                      *m_impl->definition->task->get_repository(),
                                      program.get_translation_context().d2p,
-                                     evaluator.workspace,
+                                     workspace,
                                      evaluator.derived_bindings);
 }
 
 void AxiomEvaluator<LiftedTag>::print_summary(size_t verbosity) const
 {
-    if (verbosity < 1)
+    if (verbosity < 1 || !m_impl->evaluator.workspace)
         return;
 
+    const auto& workspace = *m_impl->evaluator.workspace;
     std::cout << "[Axiom evaluator] Summary" << std::endl;
-    fmt::print(std::cout, "{}\n", m_impl->evaluator.workspace.statistics);
+    fmt::print(std::cout, "{}\n", workspace.statistics);
     auto axiom_evaluator_rule_statistics = std::vector<datalog::RuleStatistics> {};
-    for (const auto& ws_rule : m_impl->evaluator.workspace.template get_rules<f::PredicateTag>())
+    for (const auto& ws_rule : workspace.template get_rules<f::PredicateTag>())
         axiom_evaluator_rule_statistics.push_back(ws_rule->common.statistics);
     fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_statistics(axiom_evaluator_rule_statistics));
     auto axiom_evaluator_rule_worker_statistics = std::vector<datalog::RuleWorkerStatistics> {};
-    for (const auto& ws_rule : m_impl->evaluator.workspace.template get_rules<f::PredicateTag>())
+    for (const auto& ws_rule : workspace.template get_rules<f::PredicateTag>())
         for (const auto& worker : ws_rule->worker)
             axiom_evaluator_rule_worker_statistics.push_back(worker.solve.statistics);
     fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_worker_statistics(axiom_evaluator_rule_worker_statistics));
 }
 
-const AxiomEvaluatorProgram<LiftedTag>& AxiomEvaluator<LiftedTag>::get_axiom_program() const noexcept { return m_impl->definition->program; }
+const TaskPtr<LiftedTag>& AxiomEvaluator<LiftedTag>::get_task() const noexcept { return m_impl->definition->task; }
 
 const ygg::ExecutionContextPtr& AxiomEvaluator<LiftedTag>::get_execution_context() const noexcept { return m_impl->evaluator.execution_context; }
 

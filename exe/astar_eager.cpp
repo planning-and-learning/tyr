@@ -90,8 +90,6 @@ int main(int argc, char** argv)
         auto num_worker_threads = program.get<std::size_t>("--num-worker-threads");
         auto num_search_workers = program.get<std::size_t>("--num-search-workers");
         auto state_repository_mode_name = program.get<std::string>("--state-repository-mode");
-        auto state_repository_mode =
-            state_repository_mode_name == "hash-distributed" ? planning::StateRepositoryMode::HASH_DISTRIBUTED : planning::StateRepositoryMode::SHARED;
         auto dist_hash_mode_name = program.get<std::string>("--dist-hash-mode");
         auto dist_hash_mode = dist_hash_mode_name == "random" ? planning::DistHashMode::RANDOM : planning::DistHashMode::LMCUT;
         auto parallel_search_mode_name = program.get<std::string>("--parallel-search-mode");
@@ -146,15 +144,16 @@ int main(int argc, char** argv)
         if (!instantiate_ground_task)
         {
             auto axiom_evaluator = planning::AxiomEvaluatorFactory<LiftedTag>().create(lifted_task, execution_context);
-            auto state_repository = planning::StateRepositoryFactory<LiftedTag>().create(lifted_task, axiom_evaluator);
-            auto successor_generator = planning::SuccessorGeneratorFactory<LiftedTag>().create(lifted_task, execution_context, state_repository);
+            auto state_repository_factory = planning::StateRepositoryFactory<LiftedTag>();
+            auto state_repository =
+                state_repository_mode_name == "shared" ? state_repository_factory.create_concurrent(lifted_task) : state_repository_factory.create(lifted_task);
+            auto successor_generator = planning::SuccessorGeneratorFactory<LiftedTag>().create(lifted_task, execution_context);
 
             auto options = planning::astar_eager::Options<LiftedTag>();
-            options.start_node = successor_generator->get_initial_node();
+            options.start_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
             options.event_handler = planning::astar_eager::DefaultEventHandler<LiftedTag>::create(verbosity);
             options.cost_mode = search_cost_mode;
             options.num_search_workers = num_search_workers;
-            options.state_repository_mode = state_repository_mode;
             options.dist_hash_mode = dist_hash_mode;
             options.parallel_search_mode = parallel_search_mode;
             options.collect_destination_lock_statistics = collect_destination_lock_statistics;
@@ -177,7 +176,7 @@ int main(int argc, char** argv)
             else
                 throw std::invalid_argument("The heuristic is not implemented.");
 
-            auto result = planning::astar_eager::find_solution(*lifted_task, *successor_generator, *heuristic, options);
+            auto result = planning::astar_eager::find_solution(*lifted_task, *state_repository, *axiom_evaluator, *successor_generator, *heuristic, options);
             cli::print_search_statistics(result);
 
             if (result.status == planning::SearchStatus::SOLVED)
@@ -195,7 +194,7 @@ int main(int argc, char** argv)
 
             cli::print_summary(*lifted_task->get_repository());
             std::cout << (num_search_workers == 1 ? "[Total] States memory usage: " : "[Total] Retained plan states memory usage: ")
-                      << successor_generator->get_state_repository()->memory_usage() << " bytes" << std::endl;
+                      << state_repository->memory_usage() << " bytes" << std::endl;
         }
         else
         {
@@ -212,15 +211,16 @@ int main(int argc, char** argv)
                 auto ground_task = ground_task_instantiation_result.task;
 
                 auto axiom_evaluator = planning::AxiomEvaluatorFactory<GroundTag>().create(ground_task, execution_context);
-                auto state_repository = planning::StateRepositoryFactory<GroundTag>().create(ground_task, axiom_evaluator);
-                auto successor_generator = planning::SuccessorGeneratorFactory<GroundTag>().create(ground_task, execution_context, state_repository);
+                auto state_repository_factory = planning::StateRepositoryFactory<GroundTag>();
+                auto state_repository = state_repository_mode_name == "shared" ? state_repository_factory.create_concurrent(ground_task) :
+                                                                                 state_repository_factory.create(ground_task);
+                auto successor_generator = planning::SuccessorGeneratorFactory<GroundTag>().create(ground_task, execution_context);
 
                 auto options = planning::astar_eager::Options<GroundTag>();
-                options.start_node = successor_generator->get_initial_node();
+                options.start_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
                 options.event_handler = planning::astar_eager::DefaultEventHandler<GroundTag>::create(verbosity);
                 options.cost_mode = search_cost_mode;
                 options.num_search_workers = num_search_workers;
-                options.state_repository_mode = state_repository_mode;
                 options.dist_hash_mode = dist_hash_mode;
                 options.parallel_search_mode = parallel_search_mode;
                 options.collect_destination_lock_statistics = collect_destination_lock_statistics;
@@ -243,7 +243,8 @@ int main(int argc, char** argv)
                 else
                     throw std::invalid_argument("The heuristic is not implemented.");
 
-                auto result = planning::astar_eager::find_solution(*ground_task, *successor_generator, *heuristic, options);
+                auto result =
+                    planning::astar_eager::find_solution(*ground_task, *state_repository, *axiom_evaluator, *successor_generator, *heuristic, options);
                 cli::print_search_statistics(result);
 
                 if (result.status == planning::SearchStatus::SOLVED)
@@ -261,7 +262,7 @@ int main(int argc, char** argv)
 
                 cli::print_summary(*ground_task->get_repository());
                 std::cout << (num_search_workers == 1 ? "[Total] States memory usage: " : "[Total] Retained plan states memory usage: ")
-                          << successor_generator->get_state_repository()->memory_usage() << " bytes" << std::endl;
+                          << state_repository->memory_usage() << " bytes" << std::endl;
             }
         }
     }

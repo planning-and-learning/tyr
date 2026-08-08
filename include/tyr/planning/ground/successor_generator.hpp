@@ -25,7 +25,6 @@
 
 #include <atomic>
 #include <memory>
-#include <span>
 #include <vector>
 
 namespace tyr::planning
@@ -35,7 +34,6 @@ template<>
 class SuccessorGenerator<GroundTag>
 {
     friend class SuccessorGeneratorFactory<GroundTag>;
-    friend class detail::SuccessorGeneratorAccess;
 
 private:
     struct Impl;
@@ -43,7 +41,6 @@ private:
     SuccessorGenerator(ygg::uint_t index,
                        TaskPtr<GroundTag> task,
                        ygg::ExecutionContextPtr execution_context,
-                       StateRepositoryPtr<GroundTag> state_repository,
                        std::shared_ptr<std::atomic<ygg::uint_t>> next_index);
 
     explicit SuccessorGenerator(std::unique_ptr<Impl> impl) noexcept;
@@ -56,18 +53,32 @@ public:
     SuccessorGenerator(SuccessorGenerator&&) noexcept;
     SuccessorGenerator& operator=(SuccessorGenerator&&) noexcept;
 
-    Node<GroundTag> get_initial_node();
+    Node<GroundTag> get_initial_node(StateRepository<GroundTag>& state_repository, AxiomEvaluator<GroundTag>& axiom_evaluator);
 
     // Unlabeled successor API.
-    NodeList<GroundTag> get_successor_nodes(const Node<GroundTag>& node);
-    void get_successor_nodes(const Node<GroundTag>& node, NodeList<GroundTag>& out_nodes);
+    NodeList<GroundTag>
+    get_successor_nodes(const Node<GroundTag>& node, StateRepository<GroundTag>& state_repository, AxiomEvaluator<GroundTag>& axiom_evaluator);
+    void get_successor_nodes(const Node<GroundTag>& node,
+                             StateRepository<GroundTag>& state_repository,
+                             AxiomEvaluator<GroundTag>& axiom_evaluator,
+                             NodeList<GroundTag>& out_nodes);
 
     // Labeled successor API.
-    LabeledNodeList<GroundTag> get_labeled_successor_nodes(const Node<GroundTag>& node);
-    void get_labeled_successor_nodes(const Node<GroundTag>& node, LabeledNodeList<GroundTag>& out_nodes);
+    LabeledNodeList<GroundTag>
+    get_labeled_successor_nodes(const Node<GroundTag>& node, StateRepository<GroundTag>& state_repository, AxiomEvaluator<GroundTag>& axiom_evaluator);
+    void get_labeled_successor_nodes(const Node<GroundTag>& node,
+                                     StateRepository<GroundTag>& state_repository,
+                                     AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                     LabeledNodeList<GroundTag>& out_nodes);
 
-    Node<GroundTag> get_successor_node(const Node<GroundTag>& node, ::tyr::formalism::planning::ActionBindingView binding);
-    Node<GroundTag> get_successor_node(const Node<GroundTag>& node, ::tyr::formalism::planning::GroundActionView action);
+    Node<GroundTag> get_successor_node(const Node<GroundTag>& node,
+                                       ::tyr::formalism::planning::ActionBindingView binding,
+                                       StateRepository<GroundTag>& state_repository,
+                                       AxiomEvaluator<GroundTag>& axiom_evaluator);
+    Node<GroundTag> get_successor_node(const Node<GroundTag>& node,
+                                       ::tyr::formalism::planning::GroundActionView action,
+                                       StateRepository<GroundTag>& state_repository,
+                                       AxiomEvaluator<GroundTag>& axiom_evaluator);
     ::tyr::formalism::planning::GroundActionView ground_action(::tyr::formalism::planning::ActionBindingView binding) const;
 
     std::vector<::tyr::formalism::planning::ActionBindingView> get_applicable_action_bindings(const Node<GroundTag>& node);
@@ -77,21 +88,18 @@ public:
     PendingActionResult
     generate_successor_state(const Node<GroundTag>& node, ::tyr::formalism::planning::ActionBindingView binding, ygg::Builder<State<GroundTag>>& out_state);
     /// Computes axiom closure and the final metric, then interns the completed state.
-    Node<GroundTag> finalize_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state, PendingActionResult result);
+    Node<GroundTag> finalize_successor_state(StateRepository<GroundTag>& state_repository,
+                                             AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                             ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state,
+                                             PendingActionResult result);
 
-    Node<GroundTag> get_node(ygg::Index<State<GroundTag>> state_index);
+    Node<GroundTag> get_node(StateRepository<GroundTag>& state_repository, ygg::Index<State<GroundTag>> state_index);
     [[nodiscard]] SuccessorGeneratorPtr<GroundTag> make_worker(ygg::ExecutionContextPtr execution_context) const;
-    /// Creates worker-local generators backed by one concurrent state repository.
-    [[nodiscard]] std::vector<SuccessorGeneratorPtr<GroundTag>> make_shared_workers(std::span<const ygg::ExecutionContextPtr> execution_contexts) const;
 
-    const StateRepositoryPtr<GroundTag>& get_state_repository() const noexcept;
+    const TaskPtr<GroundTag>& get_task() const noexcept;
     ygg::uint_t get_index() const noexcept;
 
 private:
-    detail::CompletedActionResult complete_successor_state(ygg::Builder<State<GroundTag>>& state, PendingActionResult result);
-    Node<GroundTag> register_completed_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state,
-                                                       detail::CompletedActionResult result);
-
     std::unique_ptr<Impl> m_impl;
 };
 

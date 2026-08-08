@@ -27,7 +27,6 @@
 #include <memory>
 #include <type_traits>
 #include <utility>
-#include <vector>
 #include <yggdrasil/containers/indexed_hash_set.hpp>
 #include <yggdrasil/semantics/comparators.hpp>
 
@@ -80,13 +79,12 @@ struct StateRepository<Kind>::Impl
     template<bool ThreadSafe>
     struct Evaluator
     {
-        Evaluator(StoragePtr<ThreadSafe> storage_, AxiomEvaluatorPtr<Kind> axiom_evaluator_) :
+        explicit Evaluator(StoragePtr<ThreadSafe> storage_) :
             storage(std::move(storage_)),
             fluent_backend(storage->context),
             derived_backend(storage->context),
             numeric_backend(storage->context),
-            state_builder_pool(),
-            axiom_evaluator(std::move(axiom_evaluator_))
+            state_builder_pool()
         {
         }
 
@@ -95,27 +93,23 @@ struct StateRepository<Kind>::Impl
         AtomStorageBackend<Kind, StateStoragePolicyTag, ThreadSafe> derived_backend;
         NumericStorageBackend<Kind, StateStoragePolicyTag, ThreadSafe> numeric_backend;
         ygg::SharedObjectPool<ygg::Builder<State<Kind>>, true> state_builder_pool;
-        AxiomEvaluatorPtr<Kind> axiom_evaluator;
     };
 
-    Impl(ygg::uint_t index_, TaskPtr<Kind> task, AxiomEvaluatorPtr<Kind> axiom_evaluator, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
+    Impl(ygg::uint_t index_, TaskPtr<Kind> task, bool concurrent, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
         index(index_),
         next_index(std::move(next_index_)),
         definition(std::make_shared<Definition>(std::move(task))),
-        evaluator(std::make_unique<Evaluator<false>>(std::make_unique<Storage<false>>(*definition), std::move(axiom_evaluator))),
-        shared_evaluator(),
-        storage_identity(evaluator->storage->identity)
+        evaluator(concurrent ? nullptr : std::make_unique<Evaluator<false>>(std::make_unique<Storage<false>>(*definition))),
+        shared_evaluator(concurrent ? std::make_unique<Evaluator<true>>(std::make_shared<Storage<true>>(*definition)) : nullptr),
+        storage_identity(concurrent ? shared_evaluator->storage->identity : evaluator->storage->identity)
     {
     }
 
-    Impl(ygg::uint_t index_,
-         std::shared_ptr<const Definition> definition_,
-         AxiomEvaluatorPtr<Kind> axiom_evaluator,
-         std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
+    Impl(ygg::uint_t index_, std::shared_ptr<const Definition> definition_, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
         index(index_),
         next_index(std::move(next_index_)),
         definition(std::move(definition_)),
-        evaluator(std::make_unique<Evaluator<false>>(std::make_unique<Storage<false>>(*definition), std::move(axiom_evaluator))),
+        evaluator(std::make_unique<Evaluator<false>>(std::make_unique<Storage<false>>(*definition))),
         shared_evaluator(),
         storage_identity(evaluator->storage->identity)
     {
@@ -124,13 +118,12 @@ struct StateRepository<Kind>::Impl
     Impl(ygg::uint_t index_,
          std::shared_ptr<const Definition> definition_,
          std::shared_ptr<Storage<true>> storage,
-         AxiomEvaluatorPtr<Kind> axiom_evaluator,
          std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
         index(index_),
         next_index(std::move(next_index_)),
         definition(std::move(definition_)),
         evaluator(),
-        shared_evaluator(std::make_unique<Evaluator<true>>(std::move(storage), std::move(axiom_evaluator))),
+        shared_evaluator(std::make_unique<Evaluator<true>>(std::move(storage))),
         storage_identity(shared_evaluator->storage->identity)
     {
     }
@@ -160,11 +153,8 @@ struct StateRepository<Kind>::Impl
 };
 
 template<TaskKind Kind>
-StateRepository<Kind>::StateRepository(ygg::uint_t index,
-                                       TaskPtr<Kind> task,
-                                       AxiomEvaluatorPtr<Kind> axiom_evaluator,
-                                       std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
-    m_impl(std::make_unique<Impl>(index, std::move(task), std::move(axiom_evaluator), std::move(next_index)))
+StateRepository<Kind>::StateRepository(ygg::uint_t index, TaskPtr<Kind> task, bool concurrent, std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
+    m_impl(std::make_unique<Impl>(index, std::move(task), concurrent, std::move(next_index)))
 {
 }
 
@@ -177,41 +167,18 @@ template<TaskKind Kind>
 StateRepository<Kind>::~StateRepository() = default;
 
 template<TaskKind Kind>
-StateRepositoryPtr<Kind> StateRepository<Kind>::make_worker(ygg::ExecutionContextPtr execution_context) const
+StateRepositoryPtr<Kind> StateRepository<Kind>::make_worker() const
 {
-    const auto& source_axiom_evaluator =
-        m_impl->visit_evaluator([](const auto& evaluator) -> const AxiomEvaluatorPtr<Kind>& { return evaluator.axiom_evaluator; });
-    auto axiom_evaluator = source_axiom_evaluator ? source_axiom_evaluator->make_worker(std::move(execution_context)) : nullptr;
-    return StateRepositoryPtr<Kind>(new StateRepository<Kind>(std::make_unique<Impl>(m_impl->next_index->fetch_add(1, std::memory_order_relaxed),
-                                                                                     m_impl->definition,
-                                                                                     std::move(axiom_evaluator),
-                                                                                     m_impl->next_index)));
+    const auto index = m_impl->next_index->fetch_add(1, std::memory_order_relaxed);
+    if (m_impl->evaluator)
+        return StateRepositoryPtr<Kind>(new StateRepository<Kind>(std::make_unique<Impl>(index, m_impl->definition, m_impl->next_index)));
+
+    return StateRepositoryPtr<Kind>(
+        new StateRepository<Kind>(std::make_unique<Impl>(index, m_impl->definition, m_impl->shared_evaluator->storage, m_impl->next_index)));
 }
 
 template<TaskKind Kind>
-std::vector<StateRepositoryPtr<Kind>> StateRepository<Kind>::make_shared_workers(std::span<const ygg::ExecutionContextPtr> execution_contexts) const
-{
-    auto workers = std::vector<StateRepositoryPtr<Kind>> {};
-    if (execution_contexts.empty())
-        return workers;
-
-    const auto storage = std::make_shared<typename Impl::template Storage<true>>(*m_impl->definition);
-    const auto repository_index = m_impl->next_index->fetch_add(1, std::memory_order_relaxed);
-    const auto& source_axiom_evaluator =
-        m_impl->visit_evaluator([](const auto& evaluator) -> const AxiomEvaluatorPtr<Kind>& { return evaluator.axiom_evaluator; });
-
-    workers.reserve(execution_contexts.size());
-    for (const auto& execution_context : execution_contexts)
-    {
-        auto axiom_evaluator = source_axiom_evaluator ? source_axiom_evaluator->make_worker(execution_context) : nullptr;
-        workers.emplace_back(
-            new StateRepository<Kind>(std::make_unique<Impl>(repository_index, m_impl->definition, storage, std::move(axiom_evaluator), m_impl->next_index)));
-    }
-    return workers;
-}
-
-template<TaskKind Kind>
-StateView<Kind> StateRepository<Kind>::get_initial_state()
+StateView<Kind> StateRepository<Kind>::get_initial_state(AxiomEvaluator<Kind>& axiom_evaluator)
 {
     auto state_builder = get_state_builder();
     detail::StateRepositoryPolicy<Kind>::insert_initial_fluent_facts(*m_impl->definition->task, *state_builder);
@@ -219,7 +186,7 @@ StateView<Kind> StateRepository<Kind>::get_initial_state()
     for (const auto fterm_value : m_impl->definition->task->get_task().template get_fterm_values<::tyr::formalism::FluentTag>())
         state_builder->set(fterm_value.get_fterm().get_index(), fterm_value.get_value());
 
-    return register_state(std::move(state_builder));
+    return register_state(axiom_evaluator, std::move(state_builder));
 }
 
 template<TaskKind Kind>
@@ -244,6 +211,7 @@ StateView<Kind> StateRepository<Kind>::get_registered_state(ygg::Index<State<Kin
 
 template<TaskKind Kind>
 StateView<Kind> StateRepository<Kind>::create_state(
+    AxiomEvaluator<Kind>& axiom_evaluator,
     const std::vector<ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>& fluent_facts,
     const std::vector<std::pair<ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>>, ygg::float_t>>& fterm_values)
 {
@@ -254,12 +222,13 @@ StateView<Kind> StateRepository<Kind>::create_state(
     for (const auto& [fterm, value] : fterm_values)
         state_builder->set(fterm, value);
 
-    return register_state(std::move(state_builder));
+    return register_state(axiom_evaluator, std::move(state_builder));
 }
 
 template<TaskKind Kind>
 StateView<Kind>
-StateRepository<Kind>::create_state(const std::vector<::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag>>& fluent_facts,
+StateRepository<Kind>::create_state(AxiomEvaluator<Kind>& axiom_evaluator,
+                                    const std::vector<::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag>>& fluent_facts,
                                     const std::vector<::tyr::formalism::planning::GroundFunctionTermViewValuePair<::tyr::formalism::FluentTag>>& fterm_values)
 {
     auto state_builder = get_state_builder();
@@ -269,7 +238,7 @@ StateRepository<Kind>::create_state(const std::vector<::tyr::formalism::planning
     for (const auto& [fterm, value] : fterm_values)
         state_builder->set(fterm.get_index(), value);
 
-    return register_state(std::move(state_builder));
+    return register_state(axiom_evaluator, std::move(state_builder));
 }
 
 template<TaskKind Kind>
@@ -281,21 +250,12 @@ ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> StateRepository<Kind>:
 }
 
 template<TaskKind Kind>
-StateView<Kind> StateRepository<Kind>::register_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state)
+StateView<Kind> StateRepository<Kind>::register_state(AxiomEvaluator<Kind>& axiom_evaluator, ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state)
 {
-    compute_extended_state(*state);
+    if (axiom_evaluator.get_task() != m_impl->definition->task)
+        throw std::invalid_argument("StateRepository::register_state(...): axiom evaluator belongs to a different task.");
+    axiom_evaluator.compute_extended_state(*state);
     return register_extended_state(std::move(state));
-}
-
-template<TaskKind Kind>
-void StateRepository<Kind>::compute_extended_state(ygg::Builder<State<Kind>>& state)
-{
-    m_impl->visit_evaluator(
-        [&](auto& evaluator)
-        {
-            if (evaluator.axiom_evaluator)
-                evaluator.axiom_evaluator->compute_extended_state(state);
-        });
 }
 
 template<TaskKind Kind>
@@ -359,9 +319,15 @@ const TaskPtr<Kind>& StateRepository<Kind>::get_task() const noexcept
 }
 
 template<TaskKind Kind>
-const AxiomEvaluatorPtr<Kind>& StateRepository<Kind>::get_axiom_evaluator() const noexcept
+bool StateRepository<Kind>::shares_storage_with(const StateRepository& other) const noexcept
 {
-    return m_impl->visit_evaluator([](const auto& evaluator) -> const AxiomEvaluatorPtr<Kind>& { return evaluator.axiom_evaluator; });
+    return m_impl->storage_identity == other.m_impl->storage_identity;
+}
+
+template<TaskKind Kind>
+bool StateRepository<Kind>::is_concurrent() const noexcept
+{
+    return static_cast<bool>(m_impl->shared_evaluator);
 }
 
 template<TaskKind Kind>

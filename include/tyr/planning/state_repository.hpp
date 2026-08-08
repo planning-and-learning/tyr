@@ -27,7 +27,7 @@
 #include <atomic>
 #include <concepts>
 #include <memory>
-#include <span>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 #include <yggdrasil/containers/shared_object_pool.hpp>
@@ -39,42 +39,43 @@ template<TaskKind Kind>
 class StateRepository : public std::enable_shared_from_this<StateRepository<Kind>>
 {
     friend class StateRepositoryFactory<Kind>;
-    friend class SuccessorGenerator<Kind>;
     friend struct ::ygg::View<ygg::Index<State<Kind>>, StateRepositoryPtr<Kind>>;
 
 private:
     struct Impl;
 
-    StateRepository(ygg::uint_t index, TaskPtr<Kind> task, AxiomEvaluatorPtr<Kind> axiom_evaluator, std::shared_ptr<std::atomic<ygg::uint_t>> next_index);
+    StateRepository(ygg::uint_t index, TaskPtr<Kind> task, bool concurrent, std::shared_ptr<std::atomic<ygg::uint_t>> next_index);
     explicit StateRepository(std::unique_ptr<Impl> impl);
-    [[nodiscard]] std::vector<StateRepositoryPtr<Kind>> make_shared_workers(std::span<const ygg::ExecutionContextPtr> execution_contexts) const;
     ygg::uint_t get_storage_identity() const noexcept;
-    void compute_extended_state(ygg::Builder<State<Kind>>& state);
-    StateView<Kind> register_extended_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state);
 
 public:
     ~StateRepository();
 
-    StateView<Kind> get_initial_state();
+    StateView<Kind> get_initial_state(AxiomEvaluator<Kind>& axiom_evaluator);
     StateView<Kind> get_registered_state(ygg::Index<State<Kind>> state_index);
 
     StateView<Kind> create_state(
+        AxiomEvaluator<Kind>& axiom_evaluator,
         const std::vector<ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>& fluent_facts,
         const std::vector<std::pair<ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>>, ygg::float_t>>& fterm_values);
-    StateView<Kind> create_state(const std::vector<::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag>>& fluent_facts,
+    StateView<Kind> create_state(AxiomEvaluator<Kind>& axiom_evaluator,
+                                 const std::vector<::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag>>& fluent_facts,
                                  const std::vector<::tyr::formalism::planning::GroundFunctionTermViewValuePair<::tyr::formalism::FluentTag>>& fterm_values);
 
     ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> get_state_builder();
 
     /// The builder must come from this repository and have no retained mutable aliases.
-    StateView<Kind> register_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state);
-    [[nodiscard]] StateRepositoryPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const;
+    StateView<Kind> register_state(AxiomEvaluator<Kind>& axiom_evaluator, ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state);
+    /// The builder must come from this repository, already contain its axiom closure, and have no retained mutable aliases.
+    StateView<Kind> register_extended_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state);
+    [[nodiscard]] StateRepositoryPtr<Kind> make_worker() const;
 
     /// All repositories sharing this storage must be quiescent while inspecting memory usage.
     size_t memory_usage() const noexcept;
 
     const TaskPtr<Kind>& get_task() const noexcept;
-    const AxiomEvaluatorPtr<Kind>& get_axiom_evaluator() const noexcept;
+    bool shares_storage_with(const StateRepository& other) const noexcept;
+    bool is_concurrent() const noexcept;
     ygg::uint_t get_index() const noexcept;
     size_t num_states() const noexcept;
 
@@ -95,32 +96,43 @@ concept StateRepositoryConcept =
              const std::vector<std::pair<ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>>, ygg::float_t>>& fterm_values,
              const std::vector<::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag>>& fluent_fact_views,
              const std::vector<::tyr::formalism::planning::GroundFunctionTermViewValuePair<::tyr::formalism::FluentTag>>& fterm_value_views,
-             ygg::ExecutionContextPtr execution_context) {
+             AxiomEvaluator<Kind>& axiom_evaluator) {
         requires TaskKind<Kind>;
-        { r.get_initial_state() } -> std::same_as<StateView<Kind>>;
+        { r.get_initial_state(axiom_evaluator) } -> std::same_as<StateView<Kind>>;
         { r.get_registered_state(index) } -> std::same_as<StateView<Kind>>;
-        { r.create_state(fluent_facts, fterm_values) } -> std::same_as<StateView<Kind>>;
-        { r.create_state(fluent_fact_views, fterm_value_views) } -> std::same_as<StateView<Kind>>;
+        { r.create_state(axiom_evaluator, fluent_facts, fterm_values) } -> std::same_as<StateView<Kind>>;
+        { r.create_state(axiom_evaluator, fluent_fact_views, fterm_value_views) } -> std::same_as<StateView<Kind>>;
         { r.get_state_builder() } -> std::same_as<ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true>>;
-        { r.register_state(state_builder) } -> std::same_as<StateView<Kind>>;
-        { const_r.make_worker(execution_context) } -> std::same_as<StateRepositoryPtr<Kind>>;
-        { r.get_task() } -> std::same_as<const TaskPtr<Kind>&>;
+        { r.register_state(axiom_evaluator, state_builder) } -> std::same_as<StateView<Kind>>;
+        { r.register_extended_state(state_builder) } -> std::same_as<StateView<Kind>>;
+        { const_r.make_worker() } -> std::same_as<StateRepositoryPtr<Kind>>;
+        { const_r.get_task() } -> std::same_as<const TaskPtr<Kind>&>;
+        { const_r.shares_storage_with(const_r) } -> std::same_as<bool>;
+        { const_r.is_concurrent() } -> std::same_as<bool>;
         { r.get_index() } -> std::same_as<ygg::uint_t>;
     };
 
 template<TaskKind Kind>
-StateView<Kind> materialize_state(const StateView<Kind>& source, StateRepository<Kind>& target)
+StateView<Kind> materialize_state(const StateView<Kind>& source, StateRepository<Kind>& target, AxiomEvaluator<Kind>& axiom_evaluator)
 {
+    if (source.get_state_repository()->get_task() != target.get_task())
+        throw std::invalid_argument("materialize_state(...): source state belongs to a different task.");
+    if (axiom_evaluator.get_task() != target.get_task())
+        throw std::invalid_argument("materialize_state(...): axiom evaluator belongs to a different task.");
     if (source.get_state_repository().get() == &target)
         return source;
+    if (source.get_state_repository()->shares_storage_with(target))
+        return target.get_registered_state(source.get_index());
 
     auto builder = target.get_state_builder();
     builder->assign_unextended_part(source.get_state_builder());
-    return target.register_state(std::move(builder));
+    return target.register_state(axiom_evaluator, std::move(builder));
 }
 
-extern template StateView<GroundTag> materialize_state(const StateView<GroundTag>& source, StateRepository<GroundTag>& target);
-extern template StateView<LiftedTag> materialize_state(const StateView<LiftedTag>& source, StateRepository<LiftedTag>& target);
+extern template StateView<GroundTag>
+materialize_state(const StateView<GroundTag>& source, StateRepository<GroundTag>& target, AxiomEvaluator<GroundTag>& axiom_evaluator);
+extern template StateView<LiftedTag>
+materialize_state(const StateView<LiftedTag>& source, StateRepository<LiftedTag>& target, AxiomEvaluator<LiftedTag>& axiom_evaluator);
 }
 
 #endif

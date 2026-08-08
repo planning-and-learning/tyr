@@ -63,6 +63,14 @@ ygg::float_t evaluate_successor_metric(const Task<Kind>& task, const ygg::Builde
         throw std::runtime_error("Successor metric value is not finite.");
     return result;
 }
+
+template<TaskKind Kind>
+ygg::float_t
+complete_successor_state(const Task<Kind>& task, AxiomEvaluator<Kind>& axiom_evaluator, ygg::Builder<State<Kind>>& state, ygg::float_t auxiliary_value)
+{
+    axiom_evaluator.compute_extended_state(state);
+    return evaluate_successor_metric(task, state, auxiliary_value);
+}
 }
 
 #endif

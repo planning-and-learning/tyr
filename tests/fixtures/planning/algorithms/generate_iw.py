@@ -62,6 +62,8 @@ def run_config(kind: TaskKind,
 
     brfs_solver = planning.brfs.Solver()
     brfs_solver.task = context.task
+    brfs_solver.state_repository = context.state_repository
+    brfs_solver.axiom_evaluator = context.axiom_evaluator
     brfs_solver.successor_generator = context.successor_generator
     brfs_solver.options.event_handler = planning.brfs.DefaultEventHandler()
 

@@ -34,14 +34,12 @@ template<TaskKind Kind, SearchNodeConcept<ygg::Index<State<Kind>>> SearchNode>
 NodeList<Kind> extract_node_trajectory(const ygg::SegmentedVector<SearchNode>& search_nodes,
                                        const SearchNode& final_search_node,
                                        const Node<Kind>& final_node,
-                                       SuccessorGenerator<Kind>& successor_generator)
+                                       StateRepository<Kind>& state_repository)
 {
     auto trajectory = NodeList<Kind> {};
     trajectory.push_back(final_node);
 
     auto cur_search_node = &final_search_node;
-    auto& state_repository = *successor_generator.get_state_repository();
-
     while (cur_search_node->parent_state != ygg::Index<State<Kind>>::max())
     {
         const auto parent_state_index = cur_search_node->parent_state;
@@ -58,6 +56,8 @@ NodeList<Kind> extract_node_trajectory(const ygg::SegmentedVector<SearchNode>& s
 
 template<TaskKind Kind>
 LabeledNodeList<Kind> extract_labeled_node_trajectory(const NodeList<Kind>& node_trajectory,
+                                                      StateRepository<Kind>& state_repository,
+                                                      AxiomEvaluator<Kind>& axiom_evaluator,
                                                       SuccessorGenerator<Kind>& successor_generator,
                                                       CostMode action_cost_mode = CostMode::GENERAL)
 {
@@ -74,7 +74,7 @@ LabeledNodeList<Kind> extract_labeled_node_trajectory(const NodeList<Kind>& node
 
         for (const auto action : applicable_actions)
         {
-            const auto successor = successor_generator.get_successor_node(cur_node, action);
+            const auto successor = successor_generator.get_successor_node(cur_node, action, state_repository, axiom_evaluator);
             const auto successor_g_value = compute_successor_g_value(cur_node.get_metric(), successor.get_metric(), action_cost_mode);
             const auto normalized_succ_node = Node<Kind>(successor.get_state(), successor_g_value);
 
@@ -96,12 +96,14 @@ template<TaskKind Kind, SearchNodeConcept<ygg::Index<State<Kind>>> SearchNode>
 inline Plan<Kind> extract_total_ordered_plan(const SearchNode& final_search_node,
                                              const Node<Kind>& final_node,
                                              const ygg::SegmentedVector<SearchNode>& search_nodes,
+                                             StateRepository<Kind>& state_repository,
+                                             AxiomEvaluator<Kind>& axiom_evaluator,
                                              SuccessorGenerator<Kind>& successor_generator,
                                              CostMode action_cost_mode = CostMode::GENERAL)
 {
-    const auto node_trajectory = extract_node_trajectory(search_nodes, final_search_node, final_node, successor_generator);
+    const auto node_trajectory = extract_node_trajectory(search_nodes, final_search_node, final_node, state_repository);
 
-    auto labeled_node_trajectory = extract_labeled_node_trajectory(node_trajectory, successor_generator, action_cost_mode);
+    auto labeled_node_trajectory = extract_labeled_node_trajectory(node_trajectory, state_repository, axiom_evaluator, successor_generator, action_cost_mode);
 
     return Plan<Kind>(node_trajectory.front(), std::move(labeled_node_trajectory));
 }
@@ -113,10 +115,18 @@ struct PlanReconstructionPolicy<SequentialSearch>
     static Plan<Kind> extract_total_ordered_plan(const SearchNode& final_search_node,
                                                  const Node<Kind>& final_node,
                                                  const ygg::SegmentedVector<SearchNode>& search_nodes,
+                                                 StateRepository<Kind>& state_repository,
+                                                 AxiomEvaluator<Kind>& axiom_evaluator,
                                                  SuccessorGenerator<Kind>& successor_generator,
                                                  CostMode action_cost_mode = CostMode::GENERAL)
     {
-        return planning::extract_total_ordered_plan(final_search_node, final_node, search_nodes, successor_generator, action_cost_mode);
+        return planning::extract_total_ordered_plan(final_search_node,
+                                                    final_node,
+                                                    search_nodes,
+                                                    state_repository,
+                                                    axiom_evaluator,
+                                                    successor_generator,
+                                                    action_cost_mode);
     }
 };
 

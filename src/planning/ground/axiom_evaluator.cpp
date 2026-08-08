@@ -136,6 +136,8 @@ void AxiomEvaluator<GroundTag>::compute_extended_state(ygg::Builder<State<Ground
     }
 }
 
+const TaskPtr<GroundTag>& AxiomEvaluator<GroundTag>::get_task() const noexcept { return m_impl->definition->task; }
+
 ygg::uint_t AxiomEvaluator<GroundTag>::get_index() const noexcept { return m_impl->index; }
 
 static_assert(AxiomEvaluatorConcept<AxiomEvaluator<GroundTag>, GroundTag>);

@@ -36,6 +36,7 @@ concept AxiomEvaluatorConcept = requires(T& r, const T& const_r, ygg::Builder<St
     requires TaskKind<Kind>;
     { r.compute_extended_state(state_builder) } -> std::same_as<void>;
     { const_r.make_worker(execution_context) } -> std::same_as<AxiomEvaluatorPtr<Kind>>;
+    { const_r.get_task() } -> std::same_as<const TaskPtr<Kind>&>;
     { r.get_index() } -> std::same_as<ygg::uint_t>;
 };
 

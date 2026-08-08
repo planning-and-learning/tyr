@@ -26,7 +26,6 @@
 
 #include <atomic>
 #include <memory>
-#include <span>
 #include <vector>
 
 namespace tyr::planning
@@ -36,7 +35,6 @@ template<>
 class SuccessorGenerator<LiftedTag>
 {
     friend class SuccessorGeneratorFactory<LiftedTag>;
-    friend class detail::SuccessorGeneratorAccess;
 
 private:
     struct Impl;
@@ -44,7 +42,6 @@ private:
     SuccessorGenerator(ygg::uint_t index,
                        TaskPtr<LiftedTag> task,
                        ygg::ExecutionContextPtr execution_context,
-                       StateRepositoryPtr<LiftedTag> state_repository,
                        std::shared_ptr<std::atomic<ygg::uint_t>> next_index);
 
     explicit SuccessorGenerator(std::unique_ptr<Impl> impl) noexcept;
@@ -57,21 +54,35 @@ public:
     SuccessorGenerator(SuccessorGenerator&&) noexcept;
     SuccessorGenerator& operator=(SuccessorGenerator&&) noexcept;
 
-    Node<LiftedTag> get_initial_node();
+    Node<LiftedTag> get_initial_node(StateRepository<LiftedTag>& state_repository, AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
     // Unlabeled successor API. Does not intern action bindings.
-    NodeList<LiftedTag> get_successor_nodes(const Node<LiftedTag>& node);
-    void get_successor_nodes(const Node<LiftedTag>& node, NodeList<LiftedTag>& out_nodes);
+    NodeList<LiftedTag>
+    get_successor_nodes(const Node<LiftedTag>& node, StateRepository<LiftedTag>& state_repository, AxiomEvaluator<LiftedTag>& axiom_evaluator);
+    void get_successor_nodes(const Node<LiftedTag>& node,
+                             StateRepository<LiftedTag>& state_repository,
+                             AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                             NodeList<LiftedTag>& out_nodes);
 
     // Labeled successor API. Interns action bindings.
-    LabeledNodeList<LiftedTag> get_labeled_successor_nodes(const Node<LiftedTag>& node);
-    void get_labeled_successor_nodes(const Node<LiftedTag>& node, LabeledNodeList<LiftedTag>& out_nodes);
+    LabeledNodeList<LiftedTag>
+    get_labeled_successor_nodes(const Node<LiftedTag>& node, StateRepository<LiftedTag>& state_repository, AxiomEvaluator<LiftedTag>& axiom_evaluator);
+    void get_labeled_successor_nodes(const Node<LiftedTag>& node,
+                                     StateRepository<LiftedTag>& state_repository,
+                                     AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                     LabeledNodeList<LiftedTag>& out_nodes);
 
-    Node<LiftedTag> get_successor_node(const Node<LiftedTag>& node, ::tyr::formalism::planning::GroundActionView action);
+    Node<LiftedTag> get_successor_node(const Node<LiftedTag>& node,
+                                       ::tyr::formalism::planning::GroundActionView action,
+                                       StateRepository<LiftedTag>& state_repository,
+                                       AxiomEvaluator<LiftedTag>& axiom_evaluator);
     ::tyr::formalism::planning::GroundActionView ground_action(::tyr::formalism::planning::ActionBindingView binding);
 
     // Action binding API (interning)
-    Node<LiftedTag> get_successor_node(const Node<LiftedTag>& node, ::tyr::formalism::planning::ActionBindingView binding);
+    Node<LiftedTag> get_successor_node(const Node<LiftedTag>& node,
+                                       ::tyr::formalism::planning::ActionBindingView binding,
+                                       StateRepository<LiftedTag>& state_repository,
+                                       AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
     std::vector<::tyr::formalism::planning::ActionBindingView> get_applicable_action_bindings(const Node<LiftedTag>& node);
 
@@ -81,30 +92,29 @@ public:
     PendingActionResult
     generate_successor_state(const Node<LiftedTag>& node, ::tyr::formalism::planning::ActionBindingView binding, ygg::Builder<State<LiftedTag>>& out_state);
     /// Computes axiom closure and the final metric, then interns the completed state.
-    Node<LiftedTag> finalize_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state, PendingActionResult result);
+    Node<LiftedTag> finalize_successor_state(StateRepository<LiftedTag>& state_repository,
+                                             AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                             ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state,
+                                             PendingActionResult result);
 
     // Action binding API (no interning)
     Node<LiftedTag> get_successor_node(const Node<LiftedTag>& node,
-                                       const ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action>>& binding);
+                                       const ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action>>& binding,
+                                       StateRepository<LiftedTag>& state_repository,
+                                       AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
     // Lookup
-    Node<LiftedTag> get_node(ygg::Index<State<LiftedTag>> state_index);
+    Node<LiftedTag> get_node(StateRepository<LiftedTag>& state_repository, ygg::Index<State<LiftedTag>> state_index);
     [[nodiscard]] SuccessorGeneratorPtr<LiftedTag> make_worker(ygg::ExecutionContextPtr execution_context) const;
-    /// Creates worker-local generators backed by one concurrent state repository.
-    [[nodiscard]] std::vector<SuccessorGeneratorPtr<LiftedTag>> make_shared_workers(std::span<const ygg::ExecutionContextPtr> execution_contexts) const;
 
     // Diagnostics
     void print_summary(size_t verbosity) const;
 
     const ApplicableActionProgram<LiftedTag>& get_action_program() const noexcept;
-    const StateRepositoryPtr<LiftedTag>& get_state_repository() const noexcept;
+    const TaskPtr<LiftedTag>& get_task() const noexcept;
     ygg::uint_t get_index() const noexcept;
 
 private:
-    detail::CompletedActionResult complete_successor_state(ygg::Builder<State<LiftedTag>>& state, PendingActionResult result);
-    Node<LiftedTag> register_completed_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state,
-                                                       detail::CompletedActionResult result);
-
     std::unique_ptr<Impl> m_impl;
 };
 

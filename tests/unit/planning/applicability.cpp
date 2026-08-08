@@ -68,9 +68,9 @@ void expect_effect_validity_successors(const p::TaskPtr<Kind>& task)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
     auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto state_repository = p::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
-    auto successor_generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context, state_repository);
-    const auto initial_node = successor_generator->get_initial_node();
+    auto state_repository = p::StateRepositoryFactory<Kind>().create(task);
+    auto successor_generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
     const auto count_action_bindings = [&]
     {
         auto result = size_t { 0 };
@@ -79,11 +79,11 @@ void expect_effect_validity_successors(const p::TaskPtr<Kind>& task)
         return result;
     };
     const auto num_action_bindings = count_action_bindings();
-    const auto successor_nodes = successor_generator->get_successor_nodes(initial_node);
+    const auto successor_nodes = successor_generator->get_successor_nodes(initial_node, *state_repository, *axiom_evaluator);
 
     EXPECT_EQ(count_action_bindings(), num_action_bindings);
 
-    const auto successors = successor_generator->get_labeled_successor_nodes(initial_node);
+    const auto successors = successor_generator->get_labeled_successor_nodes(initial_node, *state_repository, *axiom_evaluator);
 
     ASSERT_EQ(successor_nodes.size(), successors.size());
     for (size_t i = 0; i < successors.size(); ++i)
@@ -115,9 +115,9 @@ TEST(TyrPlanningApplicabilityTest, TppUndefinedDriveCostIsFilteredAsAnEffect)
     auto task = p::Task<::tyr::LiftedTag>::create(make_test_parser(root / "numeric/tests/tpp/domain.pddl").parse_task(root / "numeric/tests/tpp/test-1.pddl"));
     auto execution_context = ygg::ExecutionContext::create(1);
     auto axiom_evaluator = p::AxiomEvaluatorFactory<::tyr::LiftedTag>().create(task, execution_context);
-    auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(task, axiom_evaluator);
-    auto successor_generator = p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, execution_context, state_repository);
-    const auto bindings = successor_generator->get_applicable_action_bindings(successor_generator->get_initial_node());
+    auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(task);
+    auto successor_generator = p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, execution_context);
+    const auto bindings = successor_generator->get_applicable_action_bindings(successor_generator->get_initial_node(*state_repository, *axiom_evaluator));
 
     ASSERT_EQ(bindings.size(), 5);
     for (const auto binding : bindings)

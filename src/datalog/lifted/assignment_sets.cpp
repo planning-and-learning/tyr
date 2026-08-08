@@ -255,6 +255,7 @@ PredicateAssignmentSets<T>::PredicateAssignmentSets(::tyr::formalism::datalog::P
     }
 
     /* Initialize sets. */
+    m_sets.reserve(predicates.size());
     for (const auto predicate : predicates)
         m_sets.emplace_back(PredicateAssignmentSet<T>(predicate, predicate_domains.at(predicate.get_index()), num_objects));
 }
@@ -514,6 +515,7 @@ FunctionAssignmentSets<T>::FunctionAssignmentSets(::tyr::formalism::datalog::Fun
         assert(functions[i].get_index().get_value() == i);
 
     /* Initialize sets. */
+    m_sets.reserve(functions.size());
     for (const auto function : functions)
         m_sets.emplace_back(FunctionAssignmentSet<T>(function, function_domains.at(function.get_index()), num_objects));
 }

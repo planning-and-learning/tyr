@@ -107,17 +107,17 @@ void benchmark_gbfs_lazy_rpg_add(benchmark::State& state, const BenchmarkCase& b
     for (auto _ : state)
     {
         auto axiom_evaluator = p::AxiomEvaluatorFactory<::tyr::LiftedTag>().create(task, execution_context);
-        auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(task, axiom_evaluator);
-        auto successor_generator = p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, execution_context, state_repository);
+        auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(task);
+        auto successor_generator = p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, execution_context);
         auto heuristic = p::AddRPGHeuristic<::tyr::LiftedTag>::create(task, execution_context);
         auto options = p::gbfs_lazy::Options<::tyr::LiftedTag>();
-        options.start_node = successor_generator->get_initial_node();
+        options.start_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
         initial_h_value = heuristic->evaluate(options.start_node->get_state());
 
         auto result = p::SearchResult<::tyr::LiftedTag>();
         {
             const auto silence_cout = ScopedCoutSilencer();
-            result = p::gbfs_lazy::find_solution(*task, *successor_generator, *heuristic, options);
+            result = p::gbfs_lazy::find_solution(*task, *state_repository, *axiom_evaluator, *successor_generator, *heuristic, options);
         }
 
         num_expanded = result.statistics.get_num_expanded();

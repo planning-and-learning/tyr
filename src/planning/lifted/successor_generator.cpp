@@ -38,6 +38,7 @@
 
 #include <cassert>
 #include <fmt/ostream.h>
+#include <stdexcept>
 #include <utility>
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/core/itertools.hpp>
@@ -50,6 +51,26 @@ namespace df = tyr::formalism::datalog;
 
 namespace tyr::planning
 {
+namespace
+{
+void validate_task(const TaskPtr<LiftedTag>& task, const StateRepository<LiftedTag>& state_repository)
+{
+    if (state_repository.get_task() != task)
+        throw std::invalid_argument("SuccessorGenerator: state repository belongs to a different task.");
+}
+
+void validate_task(const TaskPtr<LiftedTag>& task, const AxiomEvaluator<LiftedTag>& axiom_evaluator)
+{
+    if (axiom_evaluator.get_task() != task)
+        throw std::invalid_argument("SuccessorGenerator: axiom evaluator belongs to a different task.");
+}
+
+void validate_task(const TaskPtr<LiftedTag>& task, const StateView<LiftedTag>& state)
+{
+    if (state.get_state_repository()->get_task() != task)
+        throw std::invalid_argument("SuccessorGenerator: state belongs to a different task.");
+}
+}
 
 struct SuccessorGenerator<LiftedTag>::Impl
 {
@@ -66,38 +87,32 @@ struct SuccessorGenerator<LiftedTag>::Impl
 
     struct Evaluator
     {
-        Evaluator(const Definition& definition, ygg::ExecutionContextPtr execution_context, StateRepositoryPtr<LiftedTag> state_repository);
+        Evaluator(const Definition& definition, ygg::ExecutionContextPtr execution_context);
 
         ygg::ExecutionContextPtr execution_context;
         ygg::Data<f::RelationBinding<fp::Action>> scratch_action_binding;
         ActionBindingMap action_binding_to_ground_action;
         datalog::ProgramWorkspace<LiftedTag> workspace;
         ygg::itertools::cartesian_set::Workspace<ygg::Index<f::Object>> cartesian_workspace;
-        StateRepositoryPtr<LiftedTag> state_repository;
         ActionExecutor executor;
     };
 
-    Impl(ygg::uint_t index,
-         TaskPtr<LiftedTag> task,
-         ygg::ExecutionContextPtr execution_context,
-         StateRepositoryPtr<LiftedTag> state_repository,
-         std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
+    Impl(ygg::uint_t index, TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
         index(index),
         next_index(std::move(next_index)),
         definition(std::make_shared<Definition>(std::move(task))),
-        evaluator(*definition, std::move(execution_context), std::move(state_repository))
+        evaluator(*definition, std::move(execution_context))
     {
     }
 
     Impl(ygg::uint_t index,
          std::shared_ptr<const Definition> definition,
          ygg::ExecutionContextPtr execution_context,
-         StateRepositoryPtr<LiftedTag> state_repository,
          std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
         index(index),
         next_index(std::move(next_index)),
         definition(std::move(definition)),
-        evaluator(*this->definition, std::move(execution_context), std::move(state_repository))
+        evaluator(*this->definition, std::move(execution_context))
     {
     }
 
@@ -117,15 +132,12 @@ struct SuccessorGenerator<LiftedTag>::Impl
 
 SuccessorGenerator<LiftedTag>::Impl::Definition::Definition(TaskPtr<LiftedTag> task_) : task(std::move(task_)), action_program(task->get_task()) {}
 
-SuccessorGenerator<LiftedTag>::Impl::Evaluator::Evaluator(const Definition& definition,
-                                                          ygg::ExecutionContextPtr execution_context_,
-                                                          StateRepositoryPtr<LiftedTag> state_repository_) :
+SuccessorGenerator<LiftedTag>::Impl::Evaluator::Evaluator(const Definition& definition, ygg::ExecutionContextPtr execution_context_) :
     execution_context(std::move(execution_context_)),
     scratch_action_binding(),
     action_binding_to_ground_action(),
     workspace(definition.action_program.get_datalog_program()),
     cartesian_workspace(),
-    state_repository(std::move(state_repository_)),
     executor()
 {
     assert(execution_context);
@@ -198,9 +210,8 @@ ygg::float_t SuccessorGenerator<LiftedTag>::Impl::generate_successor_state(const
 SuccessorGenerator<LiftedTag>::SuccessorGenerator(ygg::uint_t index,
                                                   TaskPtr<LiftedTag> task,
                                                   ygg::ExecutionContextPtr execution_context,
-                                                  StateRepositoryPtr<LiftedTag> state_repository,
                                                   std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
-    m_impl(std::make_unique<Impl>(index, std::move(task), std::move(execution_context), std::move(state_repository), std::move(next_index)))
+    m_impl(std::make_unique<Impl>(index, std::move(task), std::move(execution_context), std::move(next_index)))
 {
 }
 
@@ -212,66 +223,66 @@ SuccessorGenerator<LiftedTag>& SuccessorGenerator<LiftedTag>::operator=(Successo
 
 SuccessorGeneratorPtr<LiftedTag> SuccessorGenerator<LiftedTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
 {
-    auto state_repository = m_impl->evaluator.state_repository->make_worker(execution_context);
     return SuccessorGeneratorPtr<LiftedTag>(
         new SuccessorGenerator<LiftedTag>(std::make_unique<Impl>(m_impl->next_index->fetch_add(1, std::memory_order_relaxed),
                                                                  m_impl->definition,
                                                                  std::move(execution_context),
-                                                                 std::move(state_repository),
                                                                  m_impl->next_index)));
 }
 
-std::vector<SuccessorGeneratorPtr<LiftedTag>>
-SuccessorGenerator<LiftedTag>::make_shared_workers(std::span<const ygg::ExecutionContextPtr> execution_contexts) const
+Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_initial_node(StateRepository<LiftedTag>& state_repository, AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
-    auto state_repositories = m_impl->evaluator.state_repository->make_shared_workers(execution_contexts);
-    auto workers = std::vector<SuccessorGeneratorPtr<LiftedTag>> {};
-    workers.reserve(state_repositories.size());
-    for (size_t i = 0; i < state_repositories.size(); ++i)
-    {
-        workers.emplace_back(new SuccessorGenerator<LiftedTag>(std::make_unique<Impl>(m_impl->next_index->fetch_add(1, std::memory_order_relaxed),
-                                                                                      m_impl->definition,
-                                                                                      execution_contexts[i],
-                                                                                      std::move(state_repositories[i]),
-                                                                                      m_impl->next_index)));
-    }
-    return workers;
-}
-
-Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_initial_node()
-{
-    auto initial_state = m_impl->evaluator.state_repository->get_initial_state();
+    validate_task(m_impl->definition->task, state_repository);
+    validate_task(m_impl->definition->task, axiom_evaluator);
+    auto initial_state = state_repository.get_initial_state(axiom_evaluator);
     const auto state_context = StateContext<LiftedTag>(*m_impl->definition->task, initial_state.get_state_builder(), 0);
     const auto state_metric =
         evaluate_metric(m_impl->definition->task->get_task().get_metric(), m_impl->definition->task->get_task().get_auxiliary_fterm_value(), state_context);
     return Node<LiftedTag>(std::move(initial_state), state_metric);
 }
 
-NodeList<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<LiftedTag>& node)
+NodeList<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<LiftedTag>& node,
+                                                                       StateRepository<LiftedTag>& state_repository,
+                                                                       AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
     auto result = NodeList<LiftedTag> {};
-    get_successor_nodes(node, result);
+    get_successor_nodes(node, state_repository, axiom_evaluator, result);
     return result;
 }
 
-void SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<LiftedTag>& node, NodeList<LiftedTag>& out_nodes)
+void SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<LiftedTag>& node,
+                                                        StateRepository<LiftedTag>& state_repository,
+                                                        AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                                        NodeList<LiftedTag>& out_nodes)
 {
+    validate_task(m_impl->definition->task, node.get_state());
+    validate_task(m_impl->definition->task, state_repository);
+    validate_task(m_impl->definition->task, axiom_evaluator);
     out_nodes.clear();
 
     m_impl->for_each_applicable_action_binding(node,
                                                m_impl->evaluator.scratch_action_binding,
-                                               [&](const auto& binding) { out_nodes.emplace_back(get_successor_node(node, binding)); });
+                                               [&](const auto& binding)
+                                               { out_nodes.emplace_back(get_successor_node(node, binding, state_repository, axiom_evaluator)); });
 }
 
-LabeledNodeList<LiftedTag> SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<LiftedTag>& node)
+LabeledNodeList<LiftedTag> SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<LiftedTag>& node,
+                                                                                      StateRepository<LiftedTag>& state_repository,
+                                                                                      AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
     auto result = LabeledNodeList<LiftedTag> {};
-    get_labeled_successor_nodes(node, result);
+    get_labeled_successor_nodes(node, state_repository, axiom_evaluator, result);
     return result;
 }
 
-void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<LiftedTag>& node, LabeledNodeList<LiftedTag>& out_nodes)
+void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<LiftedTag>& node,
+                                                                StateRepository<LiftedTag>& state_repository,
+                                                                AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                                                LabeledNodeList<LiftedTag>& out_nodes)
 {
+    validate_task(m_impl->definition->task, node.get_state());
+    validate_task(m_impl->definition->task, state_repository);
+    validate_task(m_impl->definition->task, axiom_evaluator);
     out_nodes.clear();
 
     m_impl->for_each_applicable_action_binding(node,
@@ -279,15 +290,23 @@ void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<Lifte
                                                [&](const auto& binding)
                                                {
                                                    const auto action_binding = m_impl->definition->task->get_repository()->get_or_create(binding).first;
-                                                   out_nodes.emplace_back(action_binding, get_successor_node(node, binding));
+                                                   out_nodes.emplace_back(action_binding, get_successor_node(node, binding, state_repository, axiom_evaluator));
                                                });
 }
 
-Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag>& node, fp::GroundActionView action)
+Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag>& node,
+                                                                  fp::GroundActionView action,
+                                                                  StateRepository<LiftedTag>& state_repository,
+                                                                  AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
+    validate_task(m_impl->definition->task, node.get_state());
+    validate_task(m_impl->definition->task, state_repository);
+    validate_task(m_impl->definition->task, axiom_evaluator);
     const auto& state = node.get_state();
     const auto state_context = StateContext<LiftedTag>(*m_impl->definition->task, state.get_state_builder(), node.get_metric());
-    return m_impl->evaluator.executor.apply_action(state_context, action, *m_impl->evaluator.state_repository);
+    auto successor_state = state_repository.get_state_builder();
+    const auto result = PendingActionResult { m_impl->evaluator.executor.apply_action_unregistered(state_context, action, *successor_state) };
+    return finalize_successor_state(state_repository, axiom_evaluator, std::move(successor_state), result);
 }
 
 fp::GroundActionView SuccessorGenerator<LiftedTag>::ground_action(fp::ActionBindingView binding)
@@ -312,13 +331,16 @@ fp::GroundActionView SuccessorGenerator<LiftedTag>::ground_action(fp::ActionBind
 }
 
 // Action binding API (interning)
-Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag>& node, ::tyr::formalism::planning::ActionBindingView binding)
+Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag>& node,
+                                                                  ::tyr::formalism::planning::ActionBindingView binding,
+                                                                  StateRepository<LiftedTag>& state_repository,
+                                                                  AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
     m_impl->evaluator.scratch_action_binding.relation = binding.get_relation().get_index();
     m_impl->evaluator.scratch_action_binding.objects.clear();
     ygg::extend(binding.get_objects(), m_impl->evaluator.scratch_action_binding.objects);
 
-    return get_successor_node(node, m_impl->evaluator.scratch_action_binding);
+    return get_successor_node(node, m_impl->evaluator.scratch_action_binding, state_repository, axiom_evaluator);
 }
 
 std::vector<::tyr::formalism::planning::ActionBindingView> SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<LiftedTag>& node)
@@ -331,6 +353,7 @@ std::vector<::tyr::formalism::planning::ActionBindingView> SuccessorGenerator<Li
 void SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<LiftedTag>& node,
                                                                    std::vector<::tyr::formalism::planning::ActionBindingView>& out_bindings)
 {
+    validate_task(m_impl->definition->task, node.get_state());
     out_bindings.clear();
 
     m_impl->for_each_applicable_action_binding(node,
@@ -342,6 +365,7 @@ void SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<Li
 PendingActionResult
 SuccessorGenerator<LiftedTag>::generate_successor_state(const Node<LiftedTag>& node, fp::ActionBindingView binding, ygg::Builder<State<LiftedTag>>& out_state)
 {
+    validate_task(m_impl->definition->task, node.get_state());
     m_impl->evaluator.scratch_action_binding.relation = binding.get_relation().get_index();
     m_impl->evaluator.scratch_action_binding.objects.clear();
     ygg::extend(binding.get_objects(), m_impl->evaluator.scratch_action_binding.objects);
@@ -349,39 +373,37 @@ SuccessorGenerator<LiftedTag>::generate_successor_state(const Node<LiftedTag>& n
     return PendingActionResult { m_impl->generate_successor_state(node, m_impl->evaluator.scratch_action_binding, out_state) };
 }
 
-detail::CompletedActionResult SuccessorGenerator<LiftedTag>::complete_successor_state(ygg::Builder<State<LiftedTag>>& state, PendingActionResult result)
-{
-    m_impl->evaluator.state_repository->compute_extended_state(state);
-    return detail::CompletedActionResult { evaluate_successor_metric(*m_impl->definition->task, state, result.auxiliary_value) };
-}
-
-Node<LiftedTag> SuccessorGenerator<LiftedTag>::register_completed_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state,
-                                                                                  detail::CompletedActionResult result)
-{
-    return Node<LiftedTag>(m_impl->evaluator.state_repository->register_extended_state(std::move(state)), result.metric);
-}
-
-Node<LiftedTag> SuccessorGenerator<LiftedTag>::finalize_successor_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state,
+Node<LiftedTag> SuccessorGenerator<LiftedTag>::finalize_successor_state(StateRepository<LiftedTag>& state_repository,
+                                                                        AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                                                        ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state,
                                                                         PendingActionResult result)
 {
-    const auto completed = complete_successor_state(*state, result);
-    return register_completed_successor_state(std::move(state), completed);
+    validate_task(m_impl->definition->task, state_repository);
+    validate_task(m_impl->definition->task, axiom_evaluator);
+    const auto metric = complete_successor_state(*m_impl->definition->task, axiom_evaluator, *state, result.auxiliary_value);
+    return Node<LiftedTag>(state_repository.register_extended_state(std::move(state)), metric);
 }
 
 // Action binding API (no interning)
 Node<LiftedTag>
 SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag>& node,
-                                                  const ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action>>& binding)
+                                                  const ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action>>& binding,
+                                                  StateRepository<LiftedTag>& state_repository,
+                                                  AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
-    auto state = m_impl->evaluator.state_repository->get_state_builder();
+    validate_task(m_impl->definition->task, node.get_state());
+    validate_task(m_impl->definition->task, state_repository);
+    validate_task(m_impl->definition->task, axiom_evaluator);
+    auto state = state_repository.get_state_builder();
     const auto result = PendingActionResult { m_impl->generate_successor_state(node, binding, *state) };
-    return finalize_successor_state(std::move(state), result);
+    return finalize_successor_state(state_repository, axiom_evaluator, std::move(state), result);
 }
 
 // Lookup
-Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_node(ygg::Index<State<LiftedTag>> state_index)
+Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_node(StateRepository<LiftedTag>& state_repository, ygg::Index<State<LiftedTag>> state_index)
 {
-    auto state = m_impl->evaluator.state_repository->get_registered_state(state_index);
+    validate_task(m_impl->definition->task, state_repository);
+    auto state = state_repository.get_registered_state(state_index);
     const auto state_context = StateContext<LiftedTag>(*m_impl->definition->task, state.get_state_builder(), 0);
     const auto state_metric =
         evaluate_metric(m_impl->definition->task->get_task().get_metric(), m_impl->definition->task->get_task().get_auxiliary_fterm_value(), state_context);
@@ -390,7 +412,7 @@ Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_node(ygg::Index<State<LiftedT
 
 const ApplicableActionProgram<LiftedTag>& SuccessorGenerator<LiftedTag>::get_action_program() const noexcept { return m_impl->definition->action_program; }
 
-const StateRepositoryPtr<LiftedTag>& SuccessorGenerator<LiftedTag>::get_state_repository() const noexcept { return m_impl->evaluator.state_repository; }
+const TaskPtr<LiftedTag>& SuccessorGenerator<LiftedTag>::get_task() const noexcept { return m_impl->definition->task; }
 
 ygg::uint_t SuccessorGenerator<LiftedTag>::get_index() const noexcept { return m_impl->index; }
 

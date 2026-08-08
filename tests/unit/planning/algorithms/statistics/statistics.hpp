@@ -189,6 +189,8 @@ struct SearchContext
 {
     std::shared_ptr<ygg::ExecutionContext> execution_context;
     planning::TaskPtr<Kind> task;
+    planning::StateRepositoryPtr<Kind> state_repository;
+    planning::AxiomEvaluatorPtr<Kind> axiom_evaluator;
     planning::SuccessorGeneratorPtr<Kind> successor_generator;
 };
 
@@ -205,16 +207,20 @@ SearchContext<Kind> create_search_context(const std::filesystem::path& domain_fi
         task = lifted_task->instantiate_ground_task(*execution_context).task;
 
     auto axiom_evaluator = planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto state_repository = planning::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
-    auto successor_generator = planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context, state_repository);
+    auto state_repository = planning::StateRepositoryFactory<Kind>().create(task);
+    auto successor_generator = planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
 
-    return SearchContext<Kind> { std::move(execution_context), std::move(task), std::move(successor_generator) };
+    return SearchContext<Kind> { std::move(execution_context),
+                                 std::move(task),
+                                 std::move(state_repository),
+                                 std::move(axiom_evaluator),
+                                 std::move(successor_generator) };
 }
 
 template<TaskKind Kind>
 void expect_repository_statistics(const SearchContext<Kind>& context, const planning::Statistics& statistics)
 {
-    const auto& state_repository = *context.successor_generator->get_state_repository();
+    const auto& state_repository = *context.state_repository;
     const auto& task_repository = *context.task->get_repository();
 
     EXPECT_EQ(statistics.get_num_registered_states(), state_repository.num_states());

@@ -19,7 +19,6 @@
 #include "tyr/formalism/planning/views.hpp"
 //
 
-#include "metric.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
@@ -28,14 +27,9 @@
 #include "tyr/planning/applicability_lifted.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/state_builder.hpp"
-#include "tyr/planning/ground/state_repository.hpp"
-#include "tyr/planning/ground/state_view.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/state_builder.hpp"
-#include "tyr/planning/lifted/state_repository.hpp"
-#include "tyr/planning/lifted/state_view.hpp"
 #include "tyr/planning/lifted/task.hpp"
-#include "tyr/planning/node.hpp"
 
 #include <yggdrasil/core/types.hpp>
 
@@ -181,21 +175,6 @@ template bool ActionExecutor::is_applicable_if_fires(fp::GroundActionView action
 template bool ActionExecutor::is_applicable_if_fires(fp::GroundActionView action, const StateContext<GroundTag>& state);
 
 template<TaskKind Kind>
-Node<Kind> ActionExecutor::apply_action(const StateContext<Kind>& state_context, fp::GroundActionView action, StateRepository<Kind>& state_repository)
-{
-    auto successor_state_builder = state_repository.get_state_builder();
-    const auto auxiliary_value = apply_action_unregistered(state_context, action, *successor_state_builder);
-    auto successor_state = state_repository.register_state(std::move(successor_state_builder));
-    const auto metric = evaluate_successor_metric(*state_repository.get_task(), successor_state.get_state_builder(), auxiliary_value);
-    return Node<Kind>(std::move(successor_state), metric);
-}
-
-template Node<LiftedTag>
-ActionExecutor::apply_action(const StateContext<LiftedTag>& state_context, fp::GroundActionView action, StateRepository<LiftedTag>& state_repository);
-template Node<GroundTag>
-ActionExecutor::apply_action(const StateContext<GroundTag>& state_context, fp::GroundActionView action, StateRepository<GroundTag>& state_repository);
-
-template<TaskKind Kind>
 ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Kind>& state_context,
                                                        fp::GroundActionView action,
                                                        ygg::Builder<State<Kind>>& successor_state_builder)
@@ -239,19 +218,6 @@ bool ActionExecutor::is_applicable_if_fires(fp::ActionView action,
                                                  m_effect_families,
                                                  m_cartesian_workspace,
                                                  state_context.task.get_formalism_task().get_variable_domains().action_domains.at(action.get_index()));
-}
-
-Node<LiftedTag> ActionExecutor::apply_action(const StateContext<LiftedTag>& state_context,
-                                             fp::ActionView action,
-                                             fp::GrounderContext& grounder,
-                                             fp::FDRContext& fdr,
-                                             StateRepository<LiftedTag>& state_repository)
-{
-    auto successor_state_builder = state_repository.get_state_builder();
-    const auto auxiliary_value = apply_action_unregistered(state_context, action, grounder, fdr, *successor_state_builder);
-    auto successor_state = state_repository.register_state(std::move(successor_state_builder));
-    const auto metric = evaluate_successor_metric(*state_repository.get_task(), successor_state.get_state_builder(), auxiliary_value);
-    return Node<LiftedTag>(std::move(successor_state), metric);
 }
 
 ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<LiftedTag>& state_context,

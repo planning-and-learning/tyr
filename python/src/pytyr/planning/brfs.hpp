@@ -57,7 +57,6 @@ void bind_options(nb::module_& m, const std::string& name)
         .def_rw("max_num_states", &T::max_num_states)
         .def_rw("max_time", &T::max_time)
         .def_rw("num_search_workers", &T::num_search_workers)
-        .def_rw("state_repository_mode", &T::state_repository_mode)
         .def_rw("dist_hash_mode", &T::dist_hash_mode)
         .def_rw("collect_destination_lock_statistics", &T::collect_destination_lock_statistics)
         .def_rw("random_seed", &T::random_seed)
@@ -72,6 +71,8 @@ void bind_solver(nb::module_& m, const std::string& name)
     nb::class_<T>(m, name.c_str())
         .def(nb::init<>())
         .def_rw("task", &T::task)
+        .def_rw("state_repository", &T::state_repository)
+        .def_rw("axiom_evaluator", &T::axiom_evaluator)
         .def_rw("successor_generator", &T::successor_generator)
         .def_rw("options", &T::options)
         .def("solve", &T::solve, nb::call_guard<nb::gil_scoped_release>());
@@ -82,10 +83,15 @@ void bind_find_solution(nb::module_& m, const std::string& py_name)
 {
     m.def(
         py_name.c_str(),
-        [](Task<Kind>& task, SuccessorGenerator<Kind>& successor_generator, const Options<Kind>& options)
-        { return find_solution(task, successor_generator, options); },
+        [](Task<Kind>& task,
+           StateRepository<Kind>& state_repository,
+           AxiomEvaluator<Kind>& axiom_evaluator,
+           SuccessorGenerator<Kind>& successor_generator,
+           const Options<Kind>& options) { return find_solution(task, state_repository, axiom_evaluator, successor_generator, options); },
         nb::call_guard<nb::gil_scoped_release>(),
         "task"_a,
+        "state_repository"_a,
+        "axiom_evaluator"_a,
         "successor_generator"_a,
         "options"_a);
 }

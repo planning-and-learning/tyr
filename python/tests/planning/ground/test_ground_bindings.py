@@ -134,7 +134,7 @@ def test_goal_strategy_subclasses_can_call_super_constructor() -> None:
     task = _ground_task()
     execution_context = ExecutionContext(1)
     axiom_evaluator = planning.ground.AxiomEvaluatorFactory().create(task, execution_context)
-    state = planning.ground.StateRepositoryFactory().create(task, axiom_evaluator).get_initial_state()
+    state = planning.ground.StateRepositoryFactory().create(task).get_initial_state(axiom_evaluator)
 
     class PythonGoalStrategy(planning.ground.GoalStrategy):
         def __init__(self) -> None:
@@ -161,8 +161,8 @@ def test_heuristic_subclasses_dispatch_virtual_methods_through_base_binding() ->
     task = _ground_task()
     execution_context = ExecutionContext(1)
     axiom_evaluator = planning.ground.AxiomEvaluatorFactory().create(task, execution_context)
-    state_repository = planning.ground.StateRepositoryFactory().create(task, axiom_evaluator)
-    state = state_repository.get_initial_state()
+    state_repository = planning.ground.StateRepositoryFactory().create(task)
+    state = state_repository.get_initial_state(axiom_evaluator)
     goal = task.get_task().get_goal()
 
     class PythonHeuristic(planning.ground.Heuristic):

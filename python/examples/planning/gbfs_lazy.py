@@ -30,7 +30,9 @@ from pytyr.planning import SearchStatus
 from pytyr.planning.lifted import (
     StateIndex,
     SearchResult,
+    AxiomEvaluator,
     AxiomEvaluatorFactory,
+    StateRepository,
     StateRepositoryFactory,
     SuccessorGenerator,
     SuccessorGeneratorFactory,
@@ -62,6 +64,8 @@ class SearchNode:
 def backtrack_plan(
     goal_node: Node,
     search_nodes: dict[StateIndex, SearchNode],
+    state_repository: StateRepository,
+    axiom_evaluator: AxiomEvaluator,
     successor_generator: SuccessorGenerator,
 ) -> Plan:
     """
@@ -79,12 +83,12 @@ def backtrack_plan(
 
     assert forward_state_trajectory
 
-    start_node = successor_generator.get_node(forward_state_trajectory[0])
+    start_node = successor_generator.get_node(state_repository, forward_state_trajectory[0])
     node = start_node
     labeled_succ_nodes: list[LabeledNode] = []
 
     for i in range(len(forward_state_trajectory) - 1):
-        for labeled_succ_node in successor_generator.get_labeled_successor_nodes(node):
+        for labeled_succ_node in successor_generator.get_labeled_successor_nodes(node, state_repository, axiom_evaluator):
             succ_node = labeled_succ_node.node
             succ_state = succ_node.get_state()
             succ_state_index = succ_state.get_index()
@@ -97,10 +101,12 @@ def backtrack_plan(
 
 
 def find_solution(
-    task: Task, successor_generator: SuccessorGenerator, heuristic: Heuristic
+    task: Task,
+    state_repository: StateRepository,
+    axiom_evaluator: AxiomEvaluator,
+    successor_generator: SuccessorGenerator,
+    heuristic: Heuristic,
 ) -> SearchResult:
-
-    state_repository = successor_generator.get_state_repository()
 
     goal_strategy = ConjunctiveGoalStrategy(task)
 
@@ -112,7 +118,7 @@ def find_solution(
         search_result.status = SearchStatus.UNSOLVABLE
         return search_result
 
-    initial_node = successor_generator.get_initial_node()
+    initial_node = successor_generator.get_initial_node(state_repository, axiom_evaluator)
     initial_state = initial_node.get_state()
 
     if goal_strategy.is_dynamic_goal_satisfied(initial_state, initial_state):
@@ -150,7 +156,7 @@ def find_solution(
             search_node.status = SearchNodeStatus.DEADEND
             continue
 
-        for labeled_succ_node in successor_generator.get_labeled_successor_nodes(node):
+        for labeled_succ_node in successor_generator.get_labeled_successor_nodes(node, state_repository, axiom_evaluator):
             succ_node = labeled_succ_node.node
             succ_state = succ_node.get_state()
             succ_g_value = succ_node.get_metric()
@@ -175,7 +181,11 @@ def find_solution(
             if goal_strategy.is_dynamic_goal_satisfied(initial_state, succ_state):
                 search_result.goal_node = succ_node
                 search_result.plan = backtrack_plan(
-                    succ_node, search_nodes, successor_generator
+                    succ_node,
+                    search_nodes,
+                    state_repository,
+                    axiom_evaluator,
+                    successor_generator,
                 )
                 search_result.status = SearchStatus.SOLVED
                 return search_result
@@ -219,12 +229,10 @@ def main() -> None:
     state_repository_factory = StateRepositoryFactory()
     successor_generator_factory = SuccessorGeneratorFactory()
     axiom_evaluator = axiom_evaluator_factory.create(lifted_task, execution_context)
-    state_repository = state_repository_factory.create(lifted_task, axiom_evaluator)
-    successor_generator = successor_generator_factory.create(
-        lifted_task, execution_context, state_repository
-    )
+    state_repository = state_repository_factory.create(lifted_task)
+    successor_generator = successor_generator_factory.create(lifted_task, execution_context)
 
-    search_result = find_solution(lifted_task, successor_generator, heuristic)
+    search_result = find_solution(lifted_task, state_repository, axiom_evaluator, successor_generator, heuristic)
 
     print("Search status:", search_result.status)
 

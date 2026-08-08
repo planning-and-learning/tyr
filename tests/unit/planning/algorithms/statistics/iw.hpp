@@ -80,7 +80,11 @@ std::vector<IwCase> load_cases()
 void check_expectation(const IwExpectation& expectation, const IwCase& test_case)
 {
     auto context = create_search_context<StatisticsTaskKind>(test_case.domain_file, test_case.task_file);
-    auto brfs_solver = p::brfs::Solver<StatisticsTaskKind> { context.task, context.successor_generator, p::brfs::Options<StatisticsTaskKind> {} };
+    auto brfs_solver = p::brfs::Solver<StatisticsTaskKind> { context.task,
+                                                             context.state_repository,
+                                                             context.axiom_evaluator,
+                                                             context.successor_generator,
+                                                             p::brfs::Options<StatisticsTaskKind> {} };
     brfs_solver.options.event_handler = p::brfs::DefaultEventHandler<StatisticsTaskKind>::create();
 
     auto options = p::iw::Options<StatisticsTaskKind> {};

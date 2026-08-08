@@ -80,8 +80,10 @@ namespace tyr::planning
 template class StateRepository<GroundTag>;
 template class StateRepository<LiftedTag>;
 
-template StateView<GroundTag> materialize_state(const StateView<GroundTag>& source, StateRepository<GroundTag>& target);
-template StateView<LiftedTag> materialize_state(const StateView<LiftedTag>& source, StateRepository<LiftedTag>& target);
+template StateView<GroundTag>
+materialize_state(const StateView<GroundTag>& source, StateRepository<GroundTag>& target, AxiomEvaluator<GroundTag>& axiom_evaluator);
+template StateView<LiftedTag>
+materialize_state(const StateView<LiftedTag>& source, StateRepository<LiftedTag>& target, AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
 static_assert(StateRepositoryConcept<StateRepository<GroundTag>, GroundTag>);
 static_assert(StateRepositoryConcept<StateRepository<LiftedTag>, LiftedTag>);

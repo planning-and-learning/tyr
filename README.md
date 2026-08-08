@@ -60,14 +60,14 @@ axiom_evaluator_factory = tpl.AxiomEvaluatorFactory()
 state_repository_factory = tpl.StateRepositoryFactory()
 successor_generator_factory = tpl.SuccessorGeneratorFactory()
 axiom_evaluator = axiom_evaluator_factory.create(task, execution_context)
-state_repository = state_repository_factory.create(task, axiom_evaluator)
-successor_generator = successor_generator_factory.create(task, execution_context, state_repository)
+state_repository = state_repository_factory.create(task)
+successor_generator = successor_generator_factory.create(task, execution_context)
 
 # Get the initial node (state + metric value)
-initial_node = successor_generator.get_initial_node()
+initial_node = successor_generator.get_initial_node(state_repository, axiom_evaluator)
 
 # Get the labeled successor nodes (sequence of action binding + node)
-labeled_successor_nodes = successor_generator.get_labeled_successor_nodes(initial_node)
+labeled_successor_nodes = successor_generator.get_labeled_successor_nodes(initial_node, state_repository, axiom_evaluator)
 ```
 
 ## C++ Interface
@@ -96,14 +96,14 @@ auto state_repository_factory = tp::StateRepositoryFactory<tyr::LiftedTag>();
 auto successor_generator_factory = tp::SuccessorGeneratorFactory<tyr::LiftedTag>();
 
 auto axiom_evaluator = axiom_evaluator_factory.create(task, execution_context);
-auto state_repository = state_repository_factory.create(task, axiom_evaluator);
-auto successor_generator = successor_generator_factory.create(task, execution_context, state_repository);
+auto state_repository = state_repository_factory.create(task);
+auto successor_generator = successor_generator_factory.create(task, execution_context);
 
 // Get the initial node (state + metric value).
-auto initial_node = successor_generator->get_initial_node();
+auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
 
 // Get the labeled successor nodes (sequence of action binding + node).
-auto labeled_successor_nodes = successor_generator->get_labeled_successor_nodes(initial_node);
+auto labeled_successor_nodes = successor_generator->get_labeled_successor_nodes(initial_node, *state_repository, *axiom_evaluator);
 
 ```
 

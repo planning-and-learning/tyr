@@ -161,10 +161,8 @@ def main() -> None:
     state_repository_factory = StateRepositoryFactory()
     successor_generator_factory = SuccessorGeneratorFactory()
     axiom_evaluator = axiom_evaluator_factory.create(lifted_task, execution_context)
-    state_repository = state_repository_factory.create(lifted_task, axiom_evaluator)
-    successor_generator = successor_generator_factory.create(
-        lifted_task, execution_context, state_repository
-    )
+    state_repository = state_repository_factory.create(lifted_task)
+    successor_generator = successor_generator_factory.create(lifted_task, execution_context)
 
     options = Options()  # Search defaults to one worker; ExecutionContext controls lifted inner parallelism.
     options.event_handler = DefaultEventHandler(
@@ -175,7 +173,14 @@ def main() -> None:
     )  # Terminates the search when reaching a state that satisfies the task's goal.
     options.pruning_strategy = PruningStrategy()  # Never prunes
 
-    search_result = find_solution(lifted_task, successor_generator, heuristic, options)
+    search_result = find_solution(
+        lifted_task,
+        state_repository,
+        axiom_evaluator,
+        successor_generator,
+        heuristic,
+        options,
+    )
 
     print("Search status:", search_result.status)
     print("Search statistics:", search_result.statistics)

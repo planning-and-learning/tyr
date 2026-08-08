@@ -15,7 +15,7 @@ experiment with:
 
 ```console
 .venv/bin/python experiments/run_search.py \
-  --what experiments/configs/what/gbfs_lazy/2026-8-7-gbfs_lazy-parallel-search-4.json \
+  --what experiments/configs/what/gbfs_lazy/2026-8-7-gbfs_lazy-lifted-parallel-search-4.json \
   --how experiments/configs/how/local-build-2500m-1s.json \
   --local-processes 4 \
   --all
@@ -49,7 +49,7 @@ Submit the full experiment from a Tetralith login node with:
 
 ```console
 .venv/bin/python experiments/run_search.py \
-  --what experiments/configs/what/gbfs_lazy/2026-8-7-gbfs_lazy-parallel-search-4.json \
+  --what experiments/configs/what/gbfs_lazy/2026-8-7-gbfs_lazy-lifted-parallel-search-4.json \
   --how experiments/configs/how/tetralith-build-11360m-600s-4cpu.json \
   --all
 ```
@@ -61,8 +61,9 @@ steps to Slurm. The resolved configuration is carried into each step.
 
 | What preset | Purpose | Local how | Tetralith how |
 |---|---|---|---|
-| `2026-1-8-gbfs_lazy-parallel-datalog` | 1/2/4/8 inner Datalog threads | `local-build-2500m-1s` | `tetralith-build-16000m-600s-8cpu` |
-| `2026-8-7-gbfs_lazy-parallel-search-4` | sequential, 4-thread Datalog, shared search, random HDA*, and LM-cut HDA* | `local-build-2500m-1s` | `tetralith-build-11360m-600s-4cpu` |
+| `2026-1-8-gbfs_lazy-lifted-parallel-datalog` | lifted 1/2/4/8 inner Datalog threads | `local-build-2500m-1s` | `tetralith-build-16000m-600s-8cpu` |
+| `2026-8-7-gbfs_lazy-lifted-parallel-search-4` | lifted sequential, 4-thread Datalog, shared search, random HDA*, and LM-cut HDA* | `local-build-2500m-1s` | `tetralith-build-11360m-600s-4cpu` |
+| `2026-8-8-gbfs_lazy-ground-parallel-search-4` | ground sequential, shared search, random HDA*, and LM-cut HDA* | `local-build-2500m-1s` | `tetralith-build-11360m-600s-4cpu` |
 
 The `build_dir` in the how file must contain the selected planner executable.
 The build-specific `plain-kpkc`, `delta-kpkc`, and
@@ -81,7 +82,7 @@ A what file contains:
     "tetralith": ["autoscale-agile-strips", "htg"]
   },
   "configurations": [{
-    "name": "gbfs-lazy-hff-pref-shared-4",
+    "name": "gbfs-lazy-lifted-hff-pref-shared-4",
     "task_kind": "lifted",
     "heuristic": "rpg_ff",
     "threads": 1,

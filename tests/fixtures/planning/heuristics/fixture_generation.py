@@ -51,6 +51,8 @@ class Context:
     execution_context: ExecutionContext
     # Opaque handles: only ever passed back into pytyr, never inspected here.
     task: Any
+    state_repository: Any
+    axiom_evaluator: Any
     successor_generator: Any
 
 
@@ -74,16 +76,16 @@ def make_context(kind: TaskKind, domain_file: Path, task_file: Path) -> Context:
 
     if kind == "lifted":
         axiom_evaluator = lifted_planning.AxiomEvaluatorFactory().create(lifted_task, execution_context)
-        state_repository = lifted_planning.StateRepositoryFactory().create(lifted_task, axiom_evaluator)
-        successor_generator = lifted_planning.SuccessorGeneratorFactory().create(lifted_task, execution_context, state_repository)
-        return Context(kind, execution_context, lifted_task, successor_generator)
+        state_repository = lifted_planning.StateRepositoryFactory().create(lifted_task)
+        successor_generator = lifted_planning.SuccessorGeneratorFactory().create(lifted_task, execution_context)
+        return Context(kind, execution_context, lifted_task, state_repository, axiom_evaluator, successor_generator)
 
     instantiation = lifted_task.instantiate_ground_task(execution_context, lifted_planning.GroundTaskInstantiationOptions())
     task = instantiation.task
     axiom_evaluator = ground_planning.AxiomEvaluatorFactory().create(task, execution_context)
-    state_repository = ground_planning.StateRepositoryFactory().create(task, axiom_evaluator)
-    successor_generator = ground_planning.SuccessorGeneratorFactory().create(task, execution_context, state_repository)
-    return Context(kind, execution_context, task, successor_generator)
+    state_repository = ground_planning.StateRepositoryFactory().create(task)
+    successor_generator = ground_planning.SuccessorGeneratorFactory().create(task, execution_context)
+    return Context(kind, execution_context, task, state_repository, axiom_evaluator, successor_generator)
 
 
 def planning_module(context: Context) -> Any:
@@ -103,7 +105,7 @@ def make_heuristic(context: Context, heuristic_name: HeuristicName, cost_mode: C
 
 
 def evaluate_initial(context: Context, heuristic_name: HeuristicName, cost_mode: CostMode) -> JsonNumber:
-    state = context.successor_generator.get_initial_node().get_state()
+    state = context.successor_generator.get_initial_node(context.state_repository, context.axiom_evaluator).get_state()
     heuristic = make_heuristic(context, heuristic_name, cost_mode)
     return as_json_number(float(heuristic.evaluate(state)))
 

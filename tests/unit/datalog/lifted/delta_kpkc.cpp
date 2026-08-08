@@ -411,9 +411,9 @@ TEST(TyrDatalogLiftedDeltaKPKC, InnerParallelismMatchesSequentialRPG)
     auto sequential_context = ygg::ExecutionContext::create(1);
     auto parallel_context = ygg::ExecutionContext::create(ygg::ExecutionContext::get_max_num_threads());
     auto axiom_evaluator = p::AxiomEvaluatorFactory<::tyr::LiftedTag>().create(task, sequential_context);
-    auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(task, axiom_evaluator);
-    auto successor_generator = p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, sequential_context, state_repository);
-    const auto initial_state = successor_generator->get_initial_node().get_state();
+    auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(task);
+    auto successor_generator = p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, sequential_context);
+    const auto initial_state = successor_generator->get_initial_node(*state_repository, *axiom_evaluator).get_state();
 
     auto sequential_heuristic = p::FFRPGHeuristic<::tyr::LiftedTag>::create(task, sequential_context);
     auto parallel_heuristic = p::FFRPGHeuristic<::tyr::LiftedTag>::create(task, parallel_context);

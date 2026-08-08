@@ -13,7 +13,6 @@ from pyyggdrasil.execution import ExecutionContext
 from pypddl_datasets import fetch_task
 
 Task = planning.lifted.Task | planning.ground.Task
-StateRepository = planning.lifted.StateRepository | planning.ground.StateRepository
 
 GRIPPER = fetch_task("classical/tests/gripper/test-1.pddl")
 
@@ -35,6 +34,8 @@ def test_planning_modules_export_expected_algorithm_submodules():
             assert solver.options is not None
             if algorithm_name in ("astar_eager", "brfs", "gbfs_lazy"):
                 assert solver.task is None
+                assert solver.state_repository is None
+                assert solver.axiom_evaluator is None
                 assert solver.successor_generator is None
             if algorithm_name in ("astar_eager", "gbfs_lazy"):
                 assert solver.heuristic is None
@@ -222,6 +223,8 @@ def test_nested_width_search_solvers_expose_expected_defaults():
 
         assert isinstance(iw_solver.brfs_solver, task_module.brfs.Solver)
         assert iw_solver.brfs_solver.task is None
+        assert iw_solver.brfs_solver.state_repository is None
+        assert iw_solver.brfs_solver.axiom_evaluator is None
         assert iw_solver.brfs_solver.successor_generator is None
         assert iw_solver.max_arity == iw_max_arity
         assert iw_solver.options is not None
@@ -231,6 +234,8 @@ def test_nested_width_search_solvers_expose_expected_defaults():
         assert isinstance(siw_solver.iw_solver, task_module.iw.Solver)
         assert isinstance(siw_solver.iw_solver.brfs_solver, task_module.brfs.Solver)
         assert siw_solver.iw_solver.brfs_solver.task is None
+        assert siw_solver.iw_solver.brfs_solver.state_repository is None
+        assert siw_solver.iw_solver.brfs_solver.axiom_evaluator is None
         assert siw_solver.iw_solver.brfs_solver.successor_generator is None
         assert siw_solver.iw_solver.max_arity == iw_max_arity
         assert siw_solver.options is not None
@@ -322,7 +327,6 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "max_time": None,
             "cost_mode": planning.CostMode.GENERAL,
             "num_search_workers": 1,
-            "state_repository_mode": planning.StateRepositoryMode.HASH_DISTRIBUTED,
             "dist_hash_mode": planning.DistHashMode.LMCUT,
             "parallel_search_mode": planning.ParallelSearchMode.SYNCHRONOUS,
             "collect_destination_lock_statistics": False,
@@ -337,7 +341,6 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "max_num_states": ygg_uint_max,
             "max_time": None,
             "num_search_workers": 1,
-            "state_repository_mode": planning.StateRepositoryMode.HASH_DISTRIBUTED,
             "dist_hash_mode": planning.DistHashMode.LMCUT,
             "collect_destination_lock_statistics": False,
             "random_seed": 0,
@@ -354,7 +357,6 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "use_preferred_actions": True,
             "boost_preferred_queue": 1000,
             "num_search_workers": 1,
-            "state_repository_mode": planning.StateRepositoryMode.HASH_DISTRIBUTED,
             "dist_hash_mode": planning.DistHashMode.LMCUT,
             "collect_destination_lock_statistics": False,
             "random_seed": 0,
@@ -388,7 +390,6 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "max_time",
             "cost_mode",
             "num_search_workers",
-            "state_repository_mode",
             "dist_hash_mode",
             "parallel_search_mode",
             "collect_destination_lock_statistics",
@@ -403,7 +404,6 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "max_num_states",
             "max_time",
             "num_search_workers",
-            "state_repository_mode",
             "dist_hash_mode",
             "collect_destination_lock_statistics",
             "random_seed",
@@ -420,7 +420,6 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "use_preferred_actions",
             "boost_preferred_queue",
             "num_search_workers",
-            "state_repository_mode",
             "dist_hash_mode",
             "collect_destination_lock_statistics",
             "random_seed",
@@ -472,19 +471,17 @@ def _make_gripper_tasks():
     return result.task, lifted_task
 
 
-def _make_state_repository(task_module: ModuleType, task: Task):
+def _make_components(task_module: ModuleType, task: Task, *, concurrent: bool = False):
     execution_context = ExecutionContext(1)
     axiom_evaluator = task_module.AxiomEvaluatorFactory().create(task, execution_context)
-
-    return task_module.StateRepositoryFactory().create(task, axiom_evaluator)
-
-
-def _make_successor_generator(task_module: ModuleType, task: Task, state_repository: StateRepository):
-    return task_module.SuccessorGeneratorFactory().create(
-        task,
-        ExecutionContext(1),
-        state_repository,
+    state_repository_factory = task_module.StateRepositoryFactory()
+    state_repository = (
+        state_repository_factory.create_concurrent(task)
+        if concurrent
+        else state_repository_factory.create(task)
     )
+    successor_generator = task_module.SuccessorGeneratorFactory().create(task, execution_context)
+    return state_repository, axiom_evaluator, successor_generator
 
 
 def test_parallel_search_is_available_through_python_bindings():
@@ -514,17 +511,17 @@ def test_parallel_search_is_available_through_python_bindings():
             def on_solved(self, plan):
                 self.solved = True
 
-        state_repository = _make_state_repository(task_module, task)
-        successor_generator = _make_successor_generator(task_module, task, state_repository)
+        state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task, concurrent=True)
         event_handler = EventHandler()
         options = task_module.gbfs_lazy.Options()
         options.event_handler = event_handler
         options.num_search_workers = 2
-        options.state_repository_mode = planning.StateRepositoryMode.SHARED
         options.collect_destination_lock_statistics = True
 
         result = task_module.gbfs_lazy.find_solution(
             task,
+            state_repository,
+            axiom_evaluator,
             successor_generator,
             task_module.BlindHeuristic(),
             options,
@@ -544,9 +541,10 @@ def test_parallel_search_is_available_through_python_bindings():
 
         brfs_options = task_module.brfs.Options()
         brfs_options.num_search_workers = 2
-        brfs_options.state_repository_mode = planning.StateRepositoryMode.SHARED
         brfs_result = task_module.brfs.find_solution(
             task,
+            state_repository,
+            axiom_evaluator,
             successor_generator,
             brfs_options,
         )
@@ -556,11 +554,12 @@ def test_parallel_search_is_available_through_python_bindings():
 
         astar_options = task_module.astar_eager.Options()
         astar_options.num_search_workers = 2
-        astar_options.state_repository_mode = planning.StateRepositoryMode.SHARED
         for mode in (planning.ParallelSearchMode.SYNCHRONOUS, planning.ParallelSearchMode.ASYNCHRONOUS):
             astar_options.parallel_search_mode = mode
             astar_result = task_module.astar_eager.find_solution(
                 task,
+                state_repository,
+                axiom_evaluator,
                 successor_generator,
                 task_module.BlindHeuristic(),
                 astar_options,
@@ -589,13 +588,19 @@ def test_parallel_search_rejects_null_python_heuristic_workers():
             def make_worker(self, execution_context):
                 return None
 
-        state_repository = _make_state_repository(task_module, task)
-        successor_generator = _make_successor_generator(task_module, task, state_repository)
+        state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task)
         options = task_module.astar_eager.Options()
         options.num_search_workers = 2
 
         with pytest.raises(ValueError, match="heuristic does not support worker construction"):
-            task_module.astar_eager.find_solution(task, successor_generator, NullWorkerHeuristic(), options)
+            task_module.astar_eager.find_solution(
+                task,
+                state_repository,
+                axiom_evaluator,
+                successor_generator,
+                NullWorkerHeuristic(),
+                options,
+            )
 
 
 def test_parallel_search_constructs_python_goal_and_pruning_workers():
@@ -605,10 +610,9 @@ def test_parallel_search_constructs_python_goal_and_pruning_workers():
         (planning.ground, ground_task),
         (planning.lifted, lifted_task),
     ):
-        state_repository = _make_state_repository(task_module, task)
-        initial_state = state_repository.get_initial_state()
+        state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task, concurrent=True)
+        initial_state = state_repository.get_initial_state(axiom_evaluator)
         fluent_variables = [fact.get_variable() for fact in initial_state.fluent_facts()]
-        successor_generator = _make_successor_generator(task_module, task, state_repository)
         factory_indices = {"goal": [], "pruning": []}
         worker_ids = {"goal": set(), "pruning": set()}
         callback_indices = {"goal": [], "pruning": []}
@@ -656,17 +660,16 @@ def test_parallel_search_constructs_python_goal_and_pruning_workers():
 
         options = task_module.brfs.Options()
         options.num_search_workers = 2
-        options.state_repository_mode = planning.StateRepositoryMode.SHARED
         options.goal_strategy = PythonGoalStrategy()
         options.pruning_strategy = PythonPruningStrategy()
 
-        result = task_module.brfs.find_solution(task, successor_generator, options)
+        result = task_module.brfs.find_solution(task, state_repository, axiom_evaluator, successor_generator, options)
 
         assert result.status == planning.SearchStatus.EXHAUSTED
         for strategy in ("goal", "pruning"):
-            assert factory_indices[strategy] == [(True, 0), (True, 1)]
-            assert len(worker_ids[strategy]) == 2
-            assert set(callback_indices[strategy]) == {0, 1}
+            assert factory_indices[strategy] == [(True, 1)]
+            assert len(worker_ids[strategy]) == 1
+            assert set(callback_indices[strategy]) == {None, 1}
 
         assert "Owning read-only state snapshot" in task_module.StateBuilder.__doc__
         assert retained_snapshots
@@ -700,8 +703,7 @@ def test_parallel_search_rejects_missing_or_null_python_strategy_workers():
             def make_worker(self, worker_index):
                 return None
 
-        state_repository = _make_state_repository(task_module, task)
-        successor_generator = _make_successor_generator(task_module, task, state_repository)
+        state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task)
         cases = (
             ("goal_strategy", MissingWorkerGoalStrategy(), "goal strategy does not support worker construction"),
             ("goal_strategy", NullWorkerGoalStrategy(), "goal strategy does not support worker construction"),
@@ -714,7 +716,7 @@ def test_parallel_search_rejects_missing_or_null_python_strategy_workers():
             options.num_search_workers = 2
             setattr(options, field, strategy)
             with pytest.raises(ValueError, match=error):
-                task_module.brfs.find_solution(task, successor_generator, options)
+                task_module.brfs.find_solution(task, state_repository, axiom_evaluator, successor_generator, options)
 
 
 def test_planning_task_view_accessors_keep_temporary_owners_alive():
@@ -770,31 +772,16 @@ def test_parallel_astar_search_mode_is_bound():
         assert options.parallel_search_mode == planning.ParallelSearchMode.ASYNCHRONOUS
 
 
-def test_state_repository_mode_is_bound():
-    assert planning.StateRepositoryMode.HASH_DISTRIBUTED != planning.StateRepositoryMode.SHARED
+def test_state_repository_concurrency_is_bound():
+    ground_task, lifted_task = _make_gripper_tasks()
 
-    for task_module in (planning.ground, planning.lifted):
-        for algorithm_module in (
-            task_module.astar_eager,
-            task_module.brfs,
-            task_module.gbfs_lazy,
-        ):
-            options = algorithm_module.Options()
-            assert options.state_repository_mode == planning.StateRepositoryMode.HASH_DISTRIBUTED
-            options.state_repository_mode = planning.StateRepositoryMode.SHARED
-            assert options.state_repository_mode == planning.StateRepositoryMode.SHARED
-
-        iw_solver = task_module.iw.Solver()
-        iw_solver.brfs_solver.options.num_search_workers = 2
-        iw_solver.brfs_solver.options.state_repository_mode = planning.StateRepositoryMode.SHARED
-        assert iw_solver.brfs_solver.options.num_search_workers == 2
-        assert iw_solver.brfs_solver.options.state_repository_mode == planning.StateRepositoryMode.SHARED
-
-        siw_solver = task_module.siw.Solver()
-        siw_solver.iw_solver.brfs_solver.options.num_search_workers = 2
-        siw_solver.iw_solver.brfs_solver.options.state_repository_mode = planning.StateRepositoryMode.SHARED
-        assert siw_solver.iw_solver.brfs_solver.options.num_search_workers == 2
-        assert siw_solver.iw_solver.brfs_solver.options.state_repository_mode == planning.StateRepositoryMode.SHARED
+    for task_module, task in (
+        (planning.ground, ground_task),
+        (planning.lifted, lifted_task),
+    ):
+        factory = task_module.StateRepositoryFactory()
+        assert not factory.create(task).is_concurrent()
+        assert factory.create_concurrent(task).is_concurrent()
 
 
 def test_dist_hash_mode_is_bound():
@@ -859,7 +846,8 @@ def test_state_iterable_methods_return_stable_iterators():
         (planning.ground, ground_task),
         (planning.lifted, lifted_task),
     ):
-        state = _make_state_repository(task_module, task).get_initial_state()
+        state_repository, axiom_evaluator, _ = _make_components(task_module, task)
+        state = state_repository.get_initial_state(axiom_evaluator)
 
         static_atoms = state.static_atoms()
 
@@ -886,17 +874,19 @@ def test_state_repository_create_state_accepts_state_iterables():
         (planning.ground, ground_task),
         (planning.lifted, lifted_task),
     ):
-        state_repository = _make_state_repository(task_module, task)
+        state_repository, axiom_evaluator, _ = _make_components(task_module, task)
 
         assert state_repository.num_states() == 0
         assert state_repository.memory_usage() >= 0
 
-        initial_state = state_repository.get_initial_state()
+        initial_state = state_repository.get_initial_state(axiom_evaluator)
         recreated_state = state_repository.create_state(
+            axiom_evaluator,
             list(initial_state.fluent_facts()),
             list(initial_state.fluent_fterm_values()),
         )
         value_recreated_state = state_repository.create_state(
+            axiom_evaluator,
             [
                 formalism_planning.FluentFDRFactData(fact.get_variable(), fact.get_value())
                 for fact in initial_state.fluent_facts()
@@ -922,11 +912,10 @@ def test_planning_state_node_and_plan_repr_matches_str():
         (planning.ground, ground_task),
         (planning.lifted, lifted_task),
     ):
-        state_repository = _make_state_repository(task_module, task)
-        successor_generator = _make_successor_generator(task_module, task, state_repository)
-        state = state_repository.get_initial_state()
+        state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task)
+        state = state_repository.get_initial_state(axiom_evaluator)
         node = task_module.Node(state, 0.0)
-        labeled_node = successor_generator.get_labeled_successor_nodes(node)[0]
+        labeled_node = successor_generator.get_labeled_successor_nodes(node, state_repository, axiom_evaluator)[0]
         plan = task_module.Plan(node)
 
         assert repr(state) == str(state)
@@ -944,7 +933,8 @@ def test_node_python_equality_and_hash_follow_state_and_metric():
         (planning.ground, ground_task),
         (planning.lifted, lifted_task),
     ):
-        state = _make_state_repository(task_module, task).get_initial_state()
+        state_repository, axiom_evaluator, _ = _make_components(task_module, task)
+        state = state_repository.get_initial_state(axiom_evaluator)
 
         first_node = task_module.Node(state, 1.0)
         second_node = task_module.Node(state, 1.0)
@@ -955,20 +945,19 @@ def test_node_python_equality_and_hash_follow_state_and_metric():
         assert first_node != different_metric_node
 
 
-def test_successor_generator_exposes_repository_identity_and_node_lookup():
+def test_successor_generator_accepts_explicit_repository_for_node_lookup():
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in (
         (planning.ground, ground_task),
         (planning.lifted, lifted_task),
     ):
-        state_repository = _make_state_repository(task_module, task)
-        successor_generator = _make_successor_generator(task_module, task, state_repository)
-        initial_node = successor_generator.get_initial_node()
-        looked_up_node = successor_generator.get_node(initial_node.get_state().get_index())
+        state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task)
+        initial_node = successor_generator.get_initial_node(state_repository, axiom_evaluator)
+        looked_up_node = successor_generator.get_node(state_repository, initial_node.get_state().get_index())
 
         assert successor_generator.get_index() == 0
-        assert successor_generator.get_state_repository() == state_repository
+        assert not hasattr(successor_generator, "get_state_repository")
         assert looked_up_node == initial_node
 
 
@@ -979,20 +968,19 @@ def test_successor_generators_expose_uniform_action_binding_api():
         (planning.ground, ground_task),
         (planning.lifted, lifted_task),
     ):
-        state_repository = _make_state_repository(task_module, task)
-        successor_generator = _make_successor_generator(task_module, task, state_repository)
-        start_node = successor_generator.get_initial_node()
+        state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task)
+        start_node = successor_generator.get_initial_node(state_repository, axiom_evaluator)
 
         bindings = successor_generator.get_applicable_action_bindings(start_node)
-        labeled_successor_nodes = successor_generator.get_labeled_successor_nodes(start_node)
+        labeled_successor_nodes = successor_generator.get_labeled_successor_nodes(start_node, state_repository, axiom_evaluator)
 
         assert len(bindings) == len(labeled_successor_nodes)
         assert bindings
 
         binding = bindings[0]
         ground_action = successor_generator.ground_action(binding)
-        binding_successor = successor_generator.get_successor_node(start_node, binding)
-        ground_action_successor = successor_generator.get_successor_node(start_node, ground_action)
+        binding_successor = successor_generator.get_successor_node(start_node, binding, state_repository, axiom_evaluator)
+        ground_action_successor = successor_generator.get_successor_node(start_node, ground_action, state_repository, axiom_evaluator)
 
         assert isinstance(binding, formalism_planning.ActionBinding)
         assert successor_generator.ground_action(binding) == ground_action
@@ -1011,17 +999,29 @@ def test_labeled_node_is_constructible_for_plan_construction():
         (planning.ground, ground_task),
         (planning.lifted, lifted_task),
     ):
-        state_repository = _make_state_repository(task_module, task)
-        successor_generator = _make_successor_generator(task_module, task, state_repository)
-        start_node = successor_generator.get_initial_node()
-        labeled_successor_nodes = successor_generator.get_labeled_successor_nodes(start_node)
+        state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task)
+        start_node = successor_generator.get_initial_node(state_repository, axiom_evaluator)
+        labeled_successor_nodes = successor_generator.get_labeled_successor_nodes(start_node, state_repository, axiom_evaluator)
 
         assert labeled_successor_nodes
         first_labeled_successor = labeled_successor_nodes[0]
         assert isinstance(first_labeled_successor.label, formalism_planning.ActionBinding)
-        assert successor_generator.get_successor_node(start_node, first_labeled_successor.label) == first_labeled_successor.node
         assert (
-            successor_generator.get_successor_node(start_node, successor_generator.ground_action(first_labeled_successor.label))
+            successor_generator.get_successor_node(
+                start_node,
+                first_labeled_successor.label,
+                state_repository,
+                axiom_evaluator,
+            )
+            == first_labeled_successor.node
+        )
+        assert (
+            successor_generator.get_successor_node(
+                start_node,
+                successor_generator.ground_action(first_labeled_successor.label),
+                state_repository,
+                axiom_evaluator,
+            )
             == first_labeled_successor.node
         )
 
@@ -1051,11 +1051,11 @@ def test_state_views_from_independent_repository_factories_use_distinct_storage_
         first_axiom_evaluator = axiom_evaluator_factory.create(task, execution_context)
         second_axiom_evaluator = axiom_evaluator_factory.create(task, execution_context)
 
-        first_repository = task_module.StateRepositoryFactory().create(task, first_axiom_evaluator)
-        second_repository = task_module.StateRepositoryFactory().create(task, second_axiom_evaluator)
+        first_repository = task_module.StateRepositoryFactory().create(task)
+        second_repository = task_module.StateRepositoryFactory().create(task)
 
-        first_state = first_repository.get_initial_state()
-        second_state = second_repository.get_initial_state()
+        first_state = first_repository.get_initial_state(first_axiom_evaluator)
+        second_state = second_repository.get_initial_state(second_axiom_evaluator)
 
         assert first_repository.get_index() == 0
         assert second_repository.get_index() == 0

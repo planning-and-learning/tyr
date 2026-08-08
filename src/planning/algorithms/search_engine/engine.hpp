@@ -18,17 +18,20 @@
 #ifndef TYR_SRC_PLANNING_ALGORITHMS_SEARCH_ENGINE_ENGINE_HPP_
 #define TYR_SRC_PLANNING_ALGORITHMS_SEARCH_ENGINE_ENGINE_HPP_
 
+#include "../../metric.hpp"
 #include "../repository_statistics.hpp"
 #include "concepts.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
+#include "tyr/planning/ground/axiom_evaluator.hpp"
 #include "tyr/planning/ground/state_repository.hpp"
 #include "tyr/planning/ground/state_view.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/heuristic.hpp"
+#include "tyr/planning/lifted/axiom_evaluator.hpp"
 #include "tyr/planning/lifted/state_repository.hpp"
 #include "tyr/planning/lifted/state_view.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
@@ -94,13 +97,19 @@ public:
     struct WorkerData
     {
         WorkerData(ygg::Index<Worker> index_,
+                   StateRepository<Kind>& state_repository_,
+                   AxiomEvaluator<Kind>& axiom_evaluator_,
                    SuccessorGenerator<Kind>& successor_generator_,
                    Heuristic<Kind>& heuristic_,
+                   size_t num_state_owners_,
                    const Options& options,
                    PruningStrategyPtr<Kind> pruning_strategy_,
                    GoalStrategyPtr<Kind> goal_strategy_,
                    typename SearchPolicy::WorkerEventHandlerPtr event_handler_) :
             index(index_),
+            num_state_owners(num_state_owners_),
+            state_repository(state_repository_),
+            axiom_evaluator(axiom_evaluator_),
             successor_generator(successor_generator_),
             heuristic(heuristic_),
             search(heuristic, options),
@@ -109,9 +118,12 @@ public:
             goal_strategy(std::move(goal_strategy_)),
             event_handler(std::move(event_handler_))
         {
+            assert(num_state_owners > 0);
         }
 
         WorkerData(ygg::Index<Worker> index_,
+                   StateRepositoryPtr<Kind> state_repository_,
+                   AxiomEvaluatorPtr<Kind> axiom_evaluator_,
                    SuccessorGeneratorPtr<Kind> successor_generator_,
                    HeuristicPtr<Kind> heuristic_,
                    size_t num_state_owners_,
@@ -121,8 +133,12 @@ public:
                    typename SearchPolicy::WorkerEventHandlerPtr event_handler_) :
             index(index_),
             num_state_owners(num_state_owners_),
+            owned_state_repository(std::move(state_repository_)),
+            owned_axiom_evaluator(std::move(axiom_evaluator_)),
             owned_successor_generator(std::move(successor_generator_)),
             owned_heuristic(std::move(heuristic_)),
+            state_repository(*owned_state_repository),
+            axiom_evaluator(*owned_axiom_evaluator),
             successor_generator(*owned_successor_generator),
             heuristic(*owned_heuristic),
             search(heuristic, options),
@@ -148,8 +164,12 @@ public:
 
         ygg::Index<Worker> index;
         size_t num_state_owners { 1 };
+        StateRepositoryPtr<Kind> owned_state_repository;
+        AxiomEvaluatorPtr<Kind> owned_axiom_evaluator;
         SuccessorGeneratorPtr<Kind> owned_successor_generator;
         HeuristicPtr<Kind> owned_heuristic;
+        StateRepository<Kind>& state_repository;
+        AxiomEvaluator<Kind>& axiom_evaluator;
         SuccessorGenerator<Kind>& successor_generator;
         Heuristic<Kind>& heuristic;
         SearchPolicy search;
@@ -166,11 +186,23 @@ public:
 
     static_assert(WorkerPolicyConcept<Workers, WorkerData, Kind, SearchPolicy>);
 
-    static SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& successor_generator, Heuristic<Kind>& heuristic, const Options& options)
+    static SearchResult<Kind> find_solution(Task<Kind>& task,
+                                            StateRepository<Kind>& state_repository,
+                                            AxiomEvaluator<Kind>& axiom_evaluator,
+                                            SuccessorGenerator<Kind>& successor_generator,
+                                            Heuristic<Kind>& heuristic,
+                                            const Options& options)
     {
+        if (state_repository.get_task().get() != &task)
+            throw std::invalid_argument("find_solution(...): state repository belongs to a different task.");
+        if (axiom_evaluator.get_task().get() != &task)
+            throw std::invalid_argument("find_solution(...): axiom evaluator belongs to a different task.");
+        if (successor_generator.get_task().get() != &task)
+            throw std::invalid_argument("find_solution(...): successor generator belongs to a different task.");
+
         const auto search_start = std::chrono::steady_clock::now();
         ExecutionPolicy::validate(options);
-        return SearchEngine(task, successor_generator, heuristic, options, search_start).run();
+        return SearchEngine(task, state_repository, axiom_evaluator, successor_generator, heuristic, options, search_start).run();
     }
 
     size_t num_workers() const noexcept { return m_workers.size(); }
@@ -227,18 +259,19 @@ private:
     }
 
     SearchEngine(Task<Kind>& task,
+                 StateRepository<Kind>& state_repository,
+                 AxiomEvaluator<Kind>& axiom_evaluator,
                  SuccessorGenerator<Kind>& successor_generator,
                  Heuristic<Kind>& heuristic,
                  const Options& options,
                  std::chrono::steady_clock::time_point search_start) :
         m_task(task),
-        m_caller_successor_generator(successor_generator),
         m_options(options),
         m_event_handler(options.event_handler),
         m_search_start_time_point(search_start),
-        m_start_node(tyr::planning::normalize_start_node(task, successor_generator, options.start_node)),
+        m_start_node(tyr::planning::normalize_start_node(task, state_repository, axiom_evaluator, options.start_node)),
         m_execution(options.random_seed),
-        m_workers(task, successor_generator, heuristic, options, m_event_handler)
+        m_workers(task, state_repository, axiom_evaluator, successor_generator, heuristic, options, m_event_handler)
     {
     }
 
@@ -360,8 +393,7 @@ private:
                 if (worker.search.should_discard(entry, m_execution.incumbent_cost()))
                     return;
 
-                auto& state_repository = *worker.successor_generator.get_state_repository();
-                auto state = state_repository.get_registered_state(entry.state);
+                auto state = worker.state_repository.get_registered_state(entry.state);
                 auto& search_node = worker.get_search_node(entry.state);
                 auto node = Node<Kind>(std::move(state), search_node.g_value);
 
@@ -429,19 +461,23 @@ private:
         if (m_options.shuffle_labeled_succ_nodes)
             ygg::portable_shuffle(worker.applicable_actions.begin(), worker.applicable_actions.end(), worker.rng);
 
-        auto& state_repository = *worker.successor_generator.get_state_repository();
         for (const auto action : worker.applicable_actions)
         {
             if (!m_execution.running())
                 break;
 
-            auto successor_state = state_repository.get_state_builder();
+            auto successor_state = worker.state_repository.get_state_builder();
             const auto action_result = worker.successor_generator.generate_successor_state(node, action, *successor_state);
             auto metadata = worker.search.make_successor_metadata(worker.index, entry.state, search_node, action);
             if (m_execution.route(*this, worker, node, std::move(successor_state), action_result, action, std::move(metadata)) == AcceptanceResult::TERMINAL
                 || !m_execution.running())
                 break;
         }
+    }
+
+    ygg::float_t complete_successor_state(WorkerData& worker, ygg::Builder<State<Kind>>& state, PendingActionResult result)
+    {
+        return planning::complete_successor_state(m_task, worker.axiom_evaluator, state, result.auxiliary_value);
     }
 
     void solve(WorkerData& worker, const Node<Kind>& node)
@@ -509,7 +545,7 @@ private:
         {
             const auto goal = m_execution.goal();
             assert(goal);
-            auto [plan, goal_node] = m_workers.reconstruct_solution(*goal, m_caller_successor_generator, m_options);
+            auto [plan, goal_node] = m_workers.reconstruct_solution(*goal, m_options);
             m_result.plan = std::move(plan);
             m_result.goal_node = std::move(goal_node);
         }
@@ -535,7 +571,6 @@ private:
     }
 
     Task<Kind>& m_task;
-    SuccessorGenerator<Kind>& m_caller_successor_generator;
     const Options& m_options;
     typename SearchPolicy::EventHandlerPtr m_event_handler;
     std::chrono::steady_clock::time_point m_search_start_time_point;

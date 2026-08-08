@@ -230,11 +230,7 @@ void bind_axiom_evaluator(nb::module_& m, const std::string& name)
 {
     using T = AxiomEvaluator<Kind>;
 
-    auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def("get_index", &T::get_index);
-
-    if constexpr (std::same_as<Kind, LiftedTag>)
-        cls.def("get_axiom_program", &T::get_axiom_program, nb::rv_policy::reference_internal);
+    nb::class_<T>(m, name.c_str()).def("get_index", &T::get_index);
 }
 
 template<TaskKind Kind>
@@ -244,25 +240,29 @@ void bind_state_repository(nb::module_& m, const std::string& name)
 
     nb::class_<T>(m, name.c_str())  //
         .def("get_index", &T::get_index)
-        .def("get_initial_state", &T::get_initial_state, nb::rv_policy::move)
+        .def("get_initial_state", &T::get_initial_state, nb::rv_policy::move, "axiom_evaluator"_a)
         .def("get_registered_state", &T::get_registered_state, nb::rv_policy::move, "state_index"_a)
+        .def("is_concurrent", &T::is_concurrent)
         .def("num_states", &T::num_states)
         .def("memory_usage", &T::memory_usage)
         .def("create_state",
              nb::overload_cast<
+                 AxiomEvaluator<Kind>&,
                  const std::vector<ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>&,
                  const std::vector<std::pair<ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>>, ygg::float_t>>&>(
                  &T::create_state),
              nb::rv_policy::move,
+             "axiom_evaluator"_a,
              "fluent_facts"_a,
              "fterm_values"_a)
         .def("create_state",
-             nb::overload_cast<const std::vector<::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag>>&,
+             nb::overload_cast<AxiomEvaluator<Kind>&,
+                               const std::vector<::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag>>&,
                                const std::vector<::tyr::formalism::planning::GroundFunctionTermViewValuePair<::tyr::formalism::FluentTag>>&>(&T::create_state),
              nb::rv_policy::move,
+             "axiom_evaluator"_a,
              "fluent_facts"_a,
-             "fterm_values"_a)
-        .def("get_axiom_evaluator", &T::get_axiom_evaluator, nb::rv_policy::copy);
+             "fterm_values"_a);
 }
 
 template<TaskKind Kind>
@@ -272,18 +272,29 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
 
     auto cls = nb::class_<T>(m, name.c_str())
                    .def("get_index", &T::get_index)
-                   .def("get_initial_node", &T::get_initial_node, nb::rv_policy::move)
+                   .def("get_initial_node", &T::get_initial_node, nb::rv_policy::move, "state_repository"_a, "axiom_evaluator"_a)
                    .def("get_labeled_successor_nodes",
-                        nb::overload_cast<const Node<Kind>&>(&T::get_labeled_successor_nodes),
+                        nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::get_labeled_successor_nodes),
                         nb::rv_policy::move,
                         "node"_a,
+                        "state_repository"_a,
+                        "axiom_evaluator"_a,
                         nb::call_guard<nb::gil_scoped_release>())
                    .def("ground_action", &T::ground_action, "binding"_a)
-                   .def("get_node", &T::get_node, nb::rv_policy::move, "state_index"_a)
-                   .def("get_state_repository", &T::get_state_repository, nb::rv_policy::copy);
+                   .def("get_node", &T::get_node, nb::rv_policy::move, "state_repository"_a, "state_index"_a);
 
-    cls.def("get_successor_node", nb::overload_cast<const Node<Kind>&, fp::ActionBindingView>(&T::get_successor_node), "node"_a, "binding"_a)
-        .def("get_successor_node", nb::overload_cast<const Node<Kind>&, fp::GroundActionView>(&T::get_successor_node), "node"_a, "action"_a)
+    cls.def("get_successor_node",
+            nb::overload_cast<const Node<Kind>&, fp::ActionBindingView, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::get_successor_node),
+            "node"_a,
+            "binding"_a,
+            "state_repository"_a,
+            "axiom_evaluator"_a)
+        .def("get_successor_node",
+             nb::overload_cast<const Node<Kind>&, fp::GroundActionView, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::get_successor_node),
+             "node"_a,
+             "action"_a,
+             "state_repository"_a,
+             "axiom_evaluator"_a)
         .def("get_applicable_action_bindings",
              nb::overload_cast<const Node<Kind>&>(&T::get_applicable_action_bindings),
              nb::rv_policy::move,
@@ -311,7 +322,8 @@ void bind_state_repository_factory(nb::module_& m, const std::string& name)
 
     nb::class_<T>(m, name.c_str())  //
         .def(nb::init<>())
-        .def("create", &T::create, "task"_a, "axiom_evaluator"_a.none());
+        .def("create", &T::create, "task"_a)
+        .def("create_concurrent", &T::create_concurrent, "task"_a);
 }
 
 template<TaskKind Kind>
@@ -321,7 +333,7 @@ void bind_successor_generator_factory(nb::module_& m, const std::string& name)
 
     nb::class_<T>(m, name.c_str())  //
         .def(nb::init<>())
-        .def("create", &T::create, "task"_a, "execution_context"_a, "state_repository"_a);
+        .def("create", &T::create, "task"_a, "execution_context"_a);
 }
 
 template<TaskKind Kind>

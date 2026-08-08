@@ -48,6 +48,7 @@ public:
     void compute_extended_state(ygg::Builder<State<GroundTag>>& state_builder);
     [[nodiscard]] AxiomEvaluatorPtr<GroundTag> make_worker(ygg::ExecutionContextPtr execution_context) const;
 
+    const TaskPtr<GroundTag>& get_task() const noexcept;
     ygg::uint_t get_index() const noexcept;
 
 private:

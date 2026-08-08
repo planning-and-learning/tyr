@@ -1,5 +1,5 @@
 {
-  "name": "2026-8-7-gbfs_lazy-parallel-search-4",
+  "name": "2026-8-8-gbfs_lazy-ground-parallel-search-4",
   "planner": "gbfs_lazy",
   "suite_sets": {
     "local": [
@@ -7,13 +7,14 @@
       "ipc-satisficing-adl-test"
     ],
     "tetralith": [
-      "htg"
+      "ipc-satisficing-strips-test",
+      "ipc-satisficing-adl-test"
     ]
   },
   "configurations": [
     {
-      "name": "gbfs-lazy-hff-pref-sequential-1",
-      "task_kind": "lifted",
+      "name": "gbfs-lazy-ground-hff-pref-sequential-1",
+      "task_kind": "ground",
       "heuristic": "rpg_ff",
       "threads": 1,
       "seed": 0,
@@ -25,21 +26,8 @@
       ]
     },
     {
-      "name": "gbfs-lazy-hff-pref-datalog-4",
-      "task_kind": "lifted",
-      "heuristic": "rpg_ff",
-      "threads": 4,
-      "seed": 0,
-      "args": [
-        "--heuristic-cost-type",
-        "unit",
-        "--num-search-workers",
-        "1"
-      ]
-    },
-    {
-      "name": "gbfs-lazy-hff-pref-shared-4",
-      "task_kind": "lifted",
+      "name": "gbfs-lazy-ground-hff-pref-shared-4",
+      "task_kind": "ground",
       "heuristic": "rpg_ff",
       "threads": 1,
       "seed": 0,
@@ -53,8 +41,8 @@
       ]
     },
     {
-      "name": "gbfs-lazy-hff-pref-hash-random-4",
-      "task_kind": "lifted",
+      "name": "gbfs-lazy-ground-hff-pref-hash-random-4",
+      "task_kind": "ground",
       "heuristic": "rpg_ff",
       "threads": 1,
       "seed": 0,
@@ -70,8 +58,8 @@
       ]
     },
     {
-      "name": "gbfs-lazy-hff-pref-hash-lmcut-4",
-      "task_kind": "lifted",
+      "name": "gbfs-lazy-ground-hff-pref-hash-lmcut-4",
+      "task_kind": "ground",
       "heuristic": "rpg_ff",
       "threads": 1,
       "seed": 0,
@@ -88,7 +76,6 @@
     }
   ],
   "parsers": [
-    "search",
-    "datalog"
+    "search"
   ]
 }

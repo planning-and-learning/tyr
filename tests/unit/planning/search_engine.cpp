@@ -72,17 +72,19 @@ struct SearchContext
 {
     ygg::ExecutionContextPtr execution_context;
     p::StateRepositoryPtr<Kind> repository;
+    p::AxiomEvaluatorPtr<Kind> axiom_evaluator;
     p::SuccessorGeneratorPtr<Kind> successor_generator;
 };
 
 template<TaskKind Kind>
-SearchContext<Kind> make_search_context(const p::TaskPtr<Kind>& task)
+SearchContext<Kind> make_search_context(const p::TaskPtr<Kind>& task, bool concurrent = false)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
     auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto repository = p::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
-    auto successor_generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context, repository);
-    return { std::move(execution_context), std::move(repository), std::move(successor_generator) };
+    auto repository_factory = p::StateRepositoryFactory<Kind> {};
+    auto repository = concurrent ? repository_factory.create_concurrent(task) : repository_factory.create(task);
+    auto successor_generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    return { std::move(execution_context), std::move(repository), std::move(axiom_evaluator), std::move(successor_generator) };
 }
 
 template<TaskKind Kind>
@@ -301,24 +303,24 @@ private:
 template<typename Callback>
 void for_each_execution_mode(Callback&& callback)
 {
-    callback(size_t { 1 }, p::StateRepositoryMode::HASH_DISTRIBUTED);
-    callback(size_t { 2 }, p::StateRepositoryMode::HASH_DISTRIBUTED);
-    callback(size_t { 2 }, p::StateRepositoryMode::SHARED);
+    callback(size_t { 1 }, false);
+    callback(size_t { 2 }, false);
+    callback(size_t { 2 }, true);
 }
 
 template<TaskKind Kind>
 void expect_astar_goal_precedes_heuristic(const p::TaskPtr<Kind>& task)
 {
     for_each_execution_mode(
-        [&](size_t num_workers, p::StateRepositoryMode mode)
+        [&](size_t num_workers, bool concurrent)
         {
-            auto context = make_search_context(task);
+            auto context = make_search_context(task, concurrent);
             auto heuristic = GoalAsDeadEndHeuristic<Kind>(task);
             auto options = p::astar_eager::Options<Kind> {};
             options.num_search_workers = num_workers;
-            options.state_repository_mode = mode;
 
-            const auto result = p::astar_eager::find_solution(*task, *context.successor_generator, heuristic, options);
+            const auto result =
+                p::astar_eager::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options);
             ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
             ASSERT_TRUE(result.plan);
             EXPECT_EQ(result.plan->get_length(), 1);
@@ -329,16 +331,17 @@ template<TaskKind Kind>
 void expect_astar_duplicate_pruning_preserves_open_state(const p::TaskPtr<Kind>& task)
 {
     for_each_execution_mode(
-        [&](size_t num_workers, p::StateRepositoryMode mode)
+        [&](size_t num_workers, bool concurrent)
         {
-            auto context = make_search_context(task);
+            auto context = make_search_context(task, concurrent);
             auto heuristic = p::BlindHeuristic<Kind>::create();
             auto options = p::astar_eager::Options<Kind> {};
             options.num_search_workers = num_workers;
-            options.state_repository_mode = mode;
+
             options.pruning_strategy = std::make_shared<DuplicatePruningStrategy<Kind>>();
 
-            const auto result = p::astar_eager::find_solution(*task, *context.successor_generator, *heuristic, options);
+            const auto result =
+                p::astar_eager::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, *heuristic, options);
             ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
             ASSERT_TRUE(result.plan);
             EXPECT_EQ(result.plan->get_length(), 3);
@@ -349,16 +352,17 @@ template<TaskKind Kind>
 void expect_astar_pruned_improvement_preserves_existing_state(const p::TaskPtr<Kind>& task)
 {
     for_each_execution_mode(
-        [&](size_t num_workers, p::StateRepositoryMode mode)
+        [&](size_t num_workers, bool concurrent)
         {
-            auto context = make_search_context(task);
+            auto context = make_search_context(task, concurrent);
             auto heuristic = p::BlindHeuristic<Kind>::create();
             auto options = p::astar_eager::Options<Kind> {};
             options.num_search_workers = num_workers;
-            options.state_repository_mode = mode;
+
             options.pruning_strategy = std::make_shared<DuplicatePruningStrategy<Kind>>();
 
-            const auto result = p::astar_eager::find_solution(*task, *context.successor_generator, *heuristic, options);
+            const auto result =
+                p::astar_eager::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, *heuristic, options);
             ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
             ASSERT_TRUE(result.plan);
             EXPECT_EQ(result.plan->get_cost(), 101);
@@ -379,33 +383,36 @@ template<TaskKind Kind>
 void expect_goals_bypass_successor_pruning(const p::TaskPtr<Kind>& task)
 {
     for_each_execution_mode(
-        [&](size_t num_workers, p::StateRepositoryMode mode)
+        [&](size_t num_workers, bool concurrent)
         {
             {
-                auto context = make_search_context(task);
+                auto context = make_search_context(task, concurrent);
                 auto heuristic = p::BlindHeuristic<Kind>::create();
                 auto options = p::astar_eager::Options<Kind> {};
                 options.num_search_workers = num_workers;
-                options.state_repository_mode = mode;
+
                 options.pruning_strategy = std::make_shared<AlwaysSuccessorPruningStrategy<Kind>>();
-                expect_one_step_goal_result(p::astar_eager::find_solution(*task, *context.successor_generator, *heuristic, options));
+                expect_one_step_goal_result(
+                    p::astar_eager::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, *heuristic, options));
             }
             {
-                auto context = make_search_context(task);
+                auto context = make_search_context(task, concurrent);
                 auto options = p::brfs::Options<Kind> {};
                 options.num_search_workers = num_workers;
-                options.state_repository_mode = mode;
+
                 options.pruning_strategy = std::make_shared<AlwaysSuccessorPruningStrategy<Kind>>();
-                expect_one_step_goal_result(p::brfs::find_solution(*task, *context.successor_generator, options));
+                expect_one_step_goal_result(
+                    p::brfs::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, options));
             }
             {
-                auto context = make_search_context(task);
+                auto context = make_search_context(task, concurrent);
                 auto heuristic = p::BlindHeuristic<Kind>::create();
                 auto options = p::gbfs_lazy::Options<Kind> {};
                 options.num_search_workers = num_workers;
-                options.state_repository_mode = mode;
+
                 options.pruning_strategy = std::make_shared<AlwaysSuccessorPruningStrategy<Kind>>();
-                expect_one_step_goal_result(p::gbfs_lazy::find_solution(*task, *context.successor_generator, *heuristic, options));
+                expect_one_step_goal_result(
+                    p::gbfs_lazy::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, *heuristic, options));
             }
         });
 }
@@ -414,13 +421,12 @@ template<TaskKind Kind>
 void expect_iw_goal_bypasses_novelty_pruning(const p::TaskPtr<Kind>& task)
 {
     for_each_execution_mode(
-        [&](size_t num_workers, p::StateRepositoryMode mode)
+        [&](size_t num_workers, bool concurrent)
         {
-            auto context = make_search_context(task);
+            auto context = make_search_context(task, concurrent);
             auto brfs_options = p::brfs::Options<Kind> {};
             brfs_options.num_search_workers = num_workers;
-            brfs_options.state_repository_mode = mode;
-            auto solver = p::brfs::Solver<Kind> { task, context.successor_generator, std::move(brfs_options) };
+            auto solver = p::brfs::Solver<Kind> { task, context.repository, context.axiom_evaluator, context.successor_generator, std::move(brfs_options) };
             auto event_handler = p::iw::DefaultEventHandler<Kind>::create();
             auto options = p::iw::Options<Kind> {};
             options.event_handler = event_handler;
@@ -438,12 +444,12 @@ void expect_iw_goal_bypasses_novelty_pruning(const p::TaskPtr<Kind>& task)
 template<TaskKind Kind>
 void expect_parallel_goal_workers_receive_caller_seed(const p::TaskPtr<Kind>& task)
 {
-    for (const auto mode : { p::StateRepositoryMode::HASH_DISTRIBUTED, p::StateRepositoryMode::SHARED })
+    for (const auto concurrent : { false, true })
     {
-        auto caller = make_search_context(task);
+        auto caller = make_search_context(task, concurrent);
         auto foreign = make_search_context(task);
-        const auto foreign_start = foreign.successor_generator->get_initial_node();
-        const auto normalized_start = p::materialize_state(foreign_start.get_state(), *caller.repository);
+        const auto foreign_start = foreign.successor_generator->get_initial_node(*foreign.repository, *foreign.axiom_evaluator);
+        const auto normalized_start = p::materialize_state(foreign_start.get_state(), *caller.repository, *caller.axiom_evaluator);
         ASSERT_NE(normalized_start.identifying_members(), foreign_start.get_state().identifying_members());
 
         auto goal_strategy = std::make_shared<SeedRecordingGoalStrategy<Kind>>(*task, normalized_start.identifying_members());
@@ -451,9 +457,8 @@ void expect_parallel_goal_workers_receive_caller_seed(const p::TaskPtr<Kind>& ta
         options.start_node = foreign_start;
         options.goal_strategy = goal_strategy;
         options.num_search_workers = 2;
-        options.state_repository_mode = mode;
 
-        const auto result = p::brfs::find_solution(*task, *caller.successor_generator, options);
+        const auto result = p::brfs::find_solution(*task, *caller.repository, *caller.axiom_evaluator, *caller.successor_generator, options);
         ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
         EXPECT_TRUE(goal_strategy->observed_expected_seeds());
         EXPECT_EQ(goal_strategy->get_num_root_checks(), 1);
@@ -465,17 +470,17 @@ template<TaskKind Kind>
 void expect_root_inclusive_state_limits(const p::TaskPtr<Kind>& task)
 {
     for_each_execution_mode(
-        [&](size_t num_workers, p::StateRepositoryMode mode)
+        [&](size_t num_workers, bool concurrent)
         {
             const auto solve = [&](ygg::uint_t limit, p::GoalStrategyPtr<Kind> goal_strategy = nullptr)
             {
-                auto context = make_search_context(task);
+                auto context = make_search_context(task, concurrent);
                 auto options = p::brfs::Options<Kind> {};
                 options.num_search_workers = num_workers;
-                options.state_repository_mode = mode;
+
                 options.max_num_states = limit;
                 options.goal_strategy = std::move(goal_strategy);
-                return p::brfs::find_solution(*task, *context.successor_generator, options);
+                return p::brfs::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, options);
             };
 
             EXPECT_EQ(solve(0).status, p::SearchStatus::OUT_OF_STATES);
@@ -485,36 +490,38 @@ void expect_root_inclusive_state_limits(const p::TaskPtr<Kind>& task)
         });
 
     auto context = make_search_context(task);
-    const auto initial = context.successor_generator->get_initial_node();
-    auto successors = context.successor_generator->get_labeled_successor_nodes(initial);
+    const auto initial = context.successor_generator->get_initial_node(*context.repository, *context.axiom_evaluator);
+    auto successors = context.successor_generator->get_labeled_successor_nodes(initial, *context.repository, *context.axiom_evaluator);
     ASSERT_EQ(successors.size(), 1);
     auto options = p::brfs::Options<Kind> {};
     options.max_num_states = 2;
-    EXPECT_EQ(p::brfs::find_solution(*task, *context.successor_generator, options).status, p::SearchStatus::SOLVED);
+    EXPECT_EQ(p::brfs::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, options).status,
+              p::SearchStatus::SOLVED);
 }
 
 template<TaskKind Kind>
 void expect_foreign_start_handling(const p::TaskPtr<Kind>& task, const p::TaskPtr<Kind>& other_task)
 {
     for_each_execution_mode(
-        [&](size_t num_workers, p::StateRepositoryMode mode)
+        [&](size_t num_workers, bool concurrent)
         {
-            auto caller = make_search_context(task);
+            auto caller = make_search_context(task, concurrent);
             auto foreign = make_search_context(task);
             auto heuristic = p::BlindHeuristic<Kind>::create();
             auto options = p::astar_eager::Options<Kind> {};
-            options.start_node = p::Node<Kind>(foreign.successor_generator->get_initial_node().get_state(), 7);
+            options.start_node = p::Node<Kind>(foreign.successor_generator->get_initial_node(*foreign.repository, *foreign.axiom_evaluator).get_state(), 7);
             options.num_search_workers = num_workers;
-            options.state_repository_mode = mode;
 
-            const auto result = p::astar_eager::find_solution(*task, *caller.successor_generator, *heuristic, options);
+            const auto result =
+                p::astar_eager::find_solution(*task, *caller.repository, *caller.axiom_evaluator, *caller.successor_generator, *heuristic, options);
             ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
             ASSERT_TRUE(result.plan);
             EXPECT_EQ(result.plan->get_start_node().get_state().get_state_repository(), caller.repository);
             EXPECT_EQ(result.plan->get_start_node().get_metric(), 7);
 
             options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>();
-            const auto immediate_result = p::astar_eager::find_solution(*task, *caller.successor_generator, *heuristic, options);
+            const auto immediate_result =
+                p::astar_eager::find_solution(*task, *caller.repository, *caller.axiom_evaluator, *caller.successor_generator, *heuristic, options);
             ASSERT_TRUE(immediate_result.plan);
             EXPECT_EQ(immediate_result.plan->get_start_node().get_state().get_state_repository(), caller.repository);
         });
@@ -523,8 +530,13 @@ void expect_foreign_start_handling(const p::TaskPtr<Kind>& task, const p::TaskPt
     auto foreign = make_search_context(other_task);
     auto heuristic = p::BlindHeuristic<Kind>::create();
     auto options = p::astar_eager::Options<Kind> {};
-    options.start_node = foreign.successor_generator->get_initial_node();
-    EXPECT_THROW(p::astar_eager::find_solution(*task, *caller.successor_generator, *heuristic, options), std::invalid_argument);
+    const auto foreign_start = foreign.successor_generator->get_initial_node(*foreign.repository, *foreign.axiom_evaluator);
+    EXPECT_THROW(p::materialize_state(foreign_start.get_state(), *caller.repository, *caller.axiom_evaluator), std::invalid_argument);
+    EXPECT_THROW(caller.successor_generator->get_initial_node(*foreign.repository, *foreign.axiom_evaluator), std::invalid_argument);
+    EXPECT_THROW(caller.successor_generator->get_applicable_action_bindings(foreign_start), std::invalid_argument);
+    options.start_node = foreign_start;
+    EXPECT_THROW(p::astar_eager::find_solution(*task, *caller.repository, *caller.axiom_evaluator, *caller.successor_generator, *heuristic, options),
+                 std::invalid_argument);
 }
 
 template<TaskKind Kind>
@@ -534,23 +546,24 @@ void expect_null_heuristic_worker_is_rejected(const p::TaskPtr<Kind>& task)
     auto heuristic = NullWorkerHeuristic<Kind> {};
     auto options = p::astar_eager::Options<Kind> {};
     options.num_search_workers = 2;
-    EXPECT_THROW(p::astar_eager::find_solution(*task, *context.successor_generator, heuristic, options), std::invalid_argument);
+    EXPECT_THROW(p::astar_eager::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options),
+                 std::invalid_argument);
 }
 
 template<TaskKind Kind>
 void expect_destination_lock_statistics(const p::TaskPtr<Kind>& task)
 {
-    for (const auto mode : { p::StateRepositoryMode::HASH_DISTRIBUTED, p::StateRepositoryMode::SHARED })
+    for (const auto concurrent : { false, true })
     {
         for (const auto collect : { false, true })
         {
-            auto context = make_search_context(task);
+            auto context = make_search_context(task, concurrent);
             auto options = p::brfs::Options<Kind> {};
             options.num_search_workers = 2;
-            options.state_repository_mode = mode;
+
             options.collect_destination_lock_statistics = collect;
 
-            const auto result = p::brfs::find_solution(*task, *context.successor_generator, options);
+            const auto result = p::brfs::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, options);
             ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
 
             auto acquisitions = uint64_t { 0 };
@@ -582,32 +595,36 @@ template<TaskKind Kind>
 void expect_terminal_roots_skip_heuristic(const p::TaskPtr<Kind>& task)
 {
     for_each_execution_mode(
-        [&](size_t num_workers, p::StateRepositoryMode mode)
+        [&](size_t num_workers, bool concurrent)
         {
             const auto check_astar = [&](auto configure, p::SearchStatus expected_status)
             {
-                auto context = make_search_context(task);
+                auto context = make_search_context(task, concurrent);
                 auto heuristic = ThrowingHeuristic<Kind> {};
                 auto options = p::astar_eager::Options<Kind> {};
                 options.num_search_workers = num_workers;
-                options.state_repository_mode = mode;
+
                 configure(options);
 
                 auto result = p::SearchResult<Kind> {};
-                ASSERT_NO_THROW(result = p::astar_eager::find_solution(*task, *context.successor_generator, heuristic, options));
+                ASSERT_NO_THROW(
+                    result =
+                        p::astar_eager::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options));
                 EXPECT_EQ(result.status, expected_status);
             };
             const auto check_gbfs = [&](auto configure, p::SearchStatus expected_status)
             {
-                auto context = make_search_context(task);
+                auto context = make_search_context(task, concurrent);
                 auto heuristic = ThrowingHeuristic<Kind> {};
                 auto options = p::gbfs_lazy::Options<Kind> {};
                 options.num_search_workers = num_workers;
-                options.state_repository_mode = mode;
+
                 configure(options);
 
                 auto result = p::SearchResult<Kind> {};
-                ASSERT_NO_THROW(result = p::gbfs_lazy::find_solution(*task, *context.successor_generator, heuristic, options));
+                ASSERT_NO_THROW(
+                    result =
+                        p::gbfs_lazy::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options));
                 EXPECT_EQ(result.status, expected_status);
             };
 
@@ -631,38 +648,46 @@ template<TaskKind Kind>
 void expect_non_finite_start_metrics_are_rejected(const p::TaskPtr<Kind>& task)
 {
     for_each_execution_mode(
-        [&](size_t num_workers, p::StateRepositoryMode mode)
+        [&](size_t num_workers, bool concurrent)
         {
             for (const auto metric : { std::numeric_limits<ygg::float_t>::quiet_NaN(), std::numeric_limits<ygg::float_t>::infinity() })
             {
                 {
-                    auto context = make_search_context(task);
+                    auto context = make_search_context(task, concurrent);
                     auto heuristic = p::BlindHeuristic<Kind>::create();
                     auto options = p::astar_eager::Options<Kind> {};
-                    options.start_node = p::Node<Kind>(context.successor_generator->get_initial_node().get_state(), metric);
+                    options.start_node =
+                        p::Node<Kind>(context.successor_generator->get_initial_node(*context.repository, *context.axiom_evaluator).get_state(), metric);
                     options.num_search_workers = num_workers;
-                    options.state_repository_mode = mode;
+
                     options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>();
-                    EXPECT_THROW(p::astar_eager::find_solution(*task, *context.successor_generator, *heuristic, options), std::runtime_error);
+                    EXPECT_THROW(
+                        p::astar_eager::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, *heuristic, options),
+                        std::runtime_error);
                 }
                 {
-                    auto context = make_search_context(task);
+                    auto context = make_search_context(task, concurrent);
                     auto heuristic = p::BlindHeuristic<Kind>::create();
                     auto options = p::gbfs_lazy::Options<Kind> {};
-                    options.start_node = p::Node<Kind>(context.successor_generator->get_initial_node().get_state(), metric);
+                    options.start_node =
+                        p::Node<Kind>(context.successor_generator->get_initial_node(*context.repository, *context.axiom_evaluator).get_state(), metric);
                     options.num_search_workers = num_workers;
-                    options.state_repository_mode = mode;
+
                     options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>();
-                    EXPECT_THROW(p::gbfs_lazy::find_solution(*task, *context.successor_generator, *heuristic, options), std::runtime_error);
+                    EXPECT_THROW(
+                        p::gbfs_lazy::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, *heuristic, options),
+                        std::runtime_error);
                 }
                 {
-                    auto context = make_search_context(task);
+                    auto context = make_search_context(task, concurrent);
                     auto options = p::brfs::Options<Kind> {};
-                    options.start_node = p::Node<Kind>(context.successor_generator->get_initial_node().get_state(), metric);
+                    options.start_node =
+                        p::Node<Kind>(context.successor_generator->get_initial_node(*context.repository, *context.axiom_evaluator).get_state(), metric);
                     options.num_search_workers = num_workers;
-                    options.state_repository_mode = mode;
+
                     options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>();
-                    EXPECT_THROW(p::brfs::find_solution(*task, *context.successor_generator, options), std::runtime_error);
+                    EXPECT_THROW(p::brfs::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, options),
+                                 std::runtime_error);
                 }
             }
         });
@@ -681,49 +706,53 @@ void expect_dead_end_statistics(const p::TaskPtr<Kind>& task)
     };
 
     for_each_execution_mode(
-        [&](size_t num_workers, p::StateRepositoryMode mode)
+        [&](size_t num_workers, bool concurrent)
         {
             {
-                auto context = make_search_context(task);
+                auto context = make_search_context(task, concurrent);
                 auto heuristic = InfiniteHeuristic<Kind> {};
                 auto options = p::astar_eager::Options<Kind> {};
                 options.num_search_workers = num_workers;
-                options.state_repository_mode = mode;
+
                 options.goal_strategy = p::ExhaustiveGoalStrategy<Kind>::create();
-                const auto result = p::astar_eager::find_solution(*task, *context.successor_generator, heuristic, options);
+                const auto result =
+                    p::astar_eager::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options);
                 EXPECT_EQ(result.status, p::SearchStatus::UNSOLVABLE);
                 expect_one_dead_end(result);
             }
             {
-                auto context = make_search_context(task);
+                auto context = make_search_context(task, concurrent);
                 auto heuristic = InfiniteHeuristic<Kind> {};
                 auto options = p::gbfs_lazy::Options<Kind> {};
                 options.num_search_workers = num_workers;
-                options.state_repository_mode = mode;
+
                 options.goal_strategy = p::ExhaustiveGoalStrategy<Kind>::create();
-                const auto result = p::gbfs_lazy::find_solution(*task, *context.successor_generator, heuristic, options);
+                const auto result =
+                    p::gbfs_lazy::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options);
                 EXPECT_EQ(result.status, p::SearchStatus::UNSOLVABLE);
                 expect_one_dead_end(result);
             }
             {
-                auto context = make_search_context(task);
+                auto context = make_search_context(task, concurrent);
                 auto heuristic = GoalAsDeadEndHeuristic<Kind>(task);
                 auto options = p::astar_eager::Options<Kind> {};
                 options.num_search_workers = num_workers;
-                options.state_repository_mode = mode;
+
                 options.goal_strategy = p::ExhaustiveGoalStrategy<Kind>::create();
-                const auto result = p::astar_eager::find_solution(*task, *context.successor_generator, heuristic, options);
+                const auto result =
+                    p::astar_eager::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options);
                 EXPECT_EQ(result.status, p::SearchStatus::EXHAUSTED);
                 expect_one_dead_end(result);
             }
             {
-                auto context = make_search_context(task);
+                auto context = make_search_context(task, concurrent);
                 auto heuristic = GoalAsDeadEndHeuristic<Kind>(task);
                 auto options = p::gbfs_lazy::Options<Kind> {};
                 options.num_search_workers = num_workers;
-                options.state_repository_mode = mode;
+
                 options.goal_strategy = p::ExhaustiveGoalStrategy<Kind>::create();
-                const auto result = p::gbfs_lazy::find_solution(*task, *context.successor_generator, heuristic, options);
+                const auto result =
+                    p::gbfs_lazy::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options);
                 EXPECT_EQ(result.status, p::SearchStatus::EXHAUSTED);
                 expect_one_dead_end(result);
             }
@@ -737,7 +766,7 @@ void expect_sequential_expansion_stops_materializing_after_goal(const p::TaskPtr
     auto options = p::brfs::Options<Kind> {};
     options.goal_strategy = std::make_shared<NonRootGoalStrategy<Kind>>();
 
-    const auto result = p::brfs::find_solution(*task, *context.successor_generator, options);
+    const auto result = p::brfs::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, options);
     ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
     ASSERT_TRUE(result.plan);
     EXPECT_EQ(result.plan->get_length(), 1);
@@ -747,15 +776,16 @@ void expect_sequential_expansion_stops_materializing_after_goal(const p::TaskPtr
 template<TaskKind Kind>
 void expect_parallel_lazy_heuristic_exceptions_propagate(const p::TaskPtr<Kind>& task)
 {
-    for (const auto mode : { p::StateRepositoryMode::HASH_DISTRIBUTED, p::StateRepositoryMode::SHARED })
+    for (const auto concurrent : { false, true })
     {
-        auto context = make_search_context(task);
+        auto context = make_search_context(task, concurrent);
         auto heuristic = GoalAsThrowingHeuristic<Kind>(task);
         auto options = p::gbfs_lazy::Options<Kind> {};
         options.num_search_workers = 2;
-        options.state_repository_mode = mode;
+
         options.goal_strategy = p::ExhaustiveGoalStrategy<Kind>::create();
-        EXPECT_THROW(p::gbfs_lazy::find_solution(*task, *context.successor_generator, heuristic, options), std::runtime_error);
+        EXPECT_THROW(p::gbfs_lazy::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options),
+                     std::runtime_error);
     }
 }
 

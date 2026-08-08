@@ -28,7 +28,11 @@
 namespace tyr::planning::brfs
 {
 template<TaskKind Kind>
-SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& successor_generator, const Options<Kind>& options)
+SearchResult<Kind> find_solution(Task<Kind>& task,
+                                 StateRepository<Kind>& state_repository,
+                                 AxiomEvaluator<Kind>& axiom_evaluator,
+                                 SuccessorGenerator<Kind>& successor_generator,
+                                 const Options<Kind>& options)
 {
     static_assert(Options<Kind>::cost_mode == CostMode::UNIT);
 
@@ -39,47 +43,57 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
     if (options.num_search_workers > 1)
     {
         using Search = detail::BreadthFirstPolicy<Kind, ParallelSearch>;
-        switch (options.state_repository_mode)
+        if (!state_repository.is_concurrent())
         {
-            case StateRepositoryMode::HASH_DISTRIBUTED:
+            switch (options.dist_hash_mode)
             {
-                switch (options.dist_hash_mode)
+                case DistHashMode::RANDOM:
                 {
-                    case DistHashMode::RANDOM:
-                    {
-                        using Distribution = detail::HashDistributedStatePolicy<Kind, RandomDistHashTag>;
-                        using Execution = detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
-                        return detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
-                    }
-                    case DistHashMode::LMCUT:
-                    {
-                        using Distribution = detail::HashDistributedStatePolicy<Kind, LMCutDistHashTag>;
-                        using Execution = detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
-                        return detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
-                    }
+                    using Distribution = detail::HashDistributedStatePolicy<Kind, RandomDistHashTag>;
+                    using Execution = detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
+                    return detail::SearchEngine<Kind, Search, Execution>::find_solution(task,
+                                                                                        state_repository,
+                                                                                        axiom_evaluator,
+                                                                                        successor_generator,
+                                                                                        heuristic,
+                                                                                        options);
                 }
-                throw std::invalid_argument("brfs::find_solution(...): unknown distribution hash mode.");
+                case DistHashMode::LMCUT:
+                {
+                    using Distribution = detail::HashDistributedStatePolicy<Kind, LMCutDistHashTag>;
+                    using Execution = detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
+                    return detail::SearchEngine<Kind, Search, Execution>::find_solution(task,
+                                                                                        state_repository,
+                                                                                        axiom_evaluator,
+                                                                                        successor_generator,
+                                                                                        heuristic,
+                                                                                        options);
+                }
             }
-            case StateRepositoryMode::SHARED:
-            {
-                using Distribution = detail::SharedStatePolicy<Kind>;
-                using Execution = detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
-                return detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
-            }
+            throw std::invalid_argument("brfs::find_solution(...): unknown distribution hash mode.");
         }
-        throw std::invalid_argument("brfs::find_solution(...): unknown state repository mode.");
+
+        using Distribution = detail::SharedStatePolicy<Kind>;
+        using Execution = detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
+        return detail::SearchEngine<Kind, Search, Execution>::find_solution(task, state_repository, axiom_evaluator, successor_generator, heuristic, options);
     }
 
     using Search = detail::BreadthFirstPolicy<Kind, SequentialSearch>;
     using Execution = detail::SequentialExecutionPolicy<Kind, Search>;
-    return detail::SearchEngine<Kind, Search, Execution>::find_solution(task, successor_generator, heuristic, options);
+    return detail::SearchEngine<Kind, Search, Execution>::find_solution(task, state_repository, axiom_evaluator, successor_generator, heuristic, options);
 }
 
-template SearchResult<LiftedTag>
-find_solution<LiftedTag>(Task<LiftedTag>& task, SuccessorGenerator<LiftedTag>& successor_generator, const Options<LiftedTag>& options);
+template SearchResult<LiftedTag> find_solution<LiftedTag>(Task<LiftedTag>& task,
+                                                          StateRepository<LiftedTag>& state_repository,
+                                                          AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                                          SuccessorGenerator<LiftedTag>& successor_generator,
+                                                          const Options<LiftedTag>& options);
 
-template SearchResult<GroundTag>
-find_solution<GroundTag>(Task<GroundTag>& task, SuccessorGenerator<GroundTag>& successor_generator, const Options<GroundTag>& options);
+template SearchResult<GroundTag> find_solution<GroundTag>(Task<GroundTag>& task,
+                                                          StateRepository<GroundTag>& state_repository,
+                                                          AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                          SuccessorGenerator<GroundTag>& successor_generator,
+                                                          const Options<GroundTag>& options);
 
 static_assert(SolverConcept<Solver<LiftedTag>, LiftedTag>);
 static_assert(SolverConcept<Solver<GroundTag>, GroundTag>);

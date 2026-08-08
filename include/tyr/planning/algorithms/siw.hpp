@@ -52,6 +52,10 @@ SearchResult<Kind> find_solution(iw::Solver<Kind>& iw_solver, const Options<Kind
 {
     if (!iw_solver.brfs_solver.task)
         throw std::invalid_argument("siw::find_solution(...): IW BRFS task is required.");
+    if (!iw_solver.brfs_solver.state_repository)
+        throw std::invalid_argument("siw::find_solution(...): IW BRFS state repository is required.");
+    if (!iw_solver.brfs_solver.axiom_evaluator)
+        throw std::invalid_argument("siw::find_solution(...): IW BRFS axiom evaluator is required.");
     if (!iw_solver.brfs_solver.successor_generator)
         throw std::invalid_argument("siw::find_solution(...): IW BRFS successor generator is required.");
 

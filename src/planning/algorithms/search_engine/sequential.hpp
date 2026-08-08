@@ -171,7 +171,8 @@ public:
                            ::tyr::formalism::planning::ActionBindingView action,
                            typename SearchPolicy::SuccessorMetadata metadata)
     {
-        auto node = worker.successor_generator.finalize_successor_state(std::move(target), action_result);
+        const auto metric = engine.complete_successor_state(worker, *target, action_result);
+        auto node = Node<Kind>(worker.state_repository.register_extended_state(std::move(target)), metric);
         const auto g_value = compute_successor_g_value(metadata.source_g_value, node.get_metric(), engine.m_options.cost_mode);
         if (!std::isfinite(g_value))
             throw std::runtime_error("find_solution(...): successor path cost is not finite.");
@@ -203,7 +204,7 @@ public:
     static void snapshot_worker_state_statistics(Engine& engine)
     {
         auto& worker = engine.get_worker(ygg::Index<Worker>(0));
-        detail::snapshot_state_repository_statistics(*worker.successor_generator.get_state_repository(), worker.statistics);
+        detail::snapshot_state_repository_statistics(worker.state_repository, worker.statistics);
     }
 
     bool reserve_state(ygg::uint_t max_num_states) noexcept
@@ -234,13 +235,18 @@ class WorkerPolicy<SequentialSearch, Kind, SearchPolicy, ExecutionPolicy, Worker
 {
 public:
     WorkerPolicy(Task<Kind>& task,
+                 StateRepository<Kind>& state_repository,
+                 AxiomEvaluator<Kind>& axiom_evaluator,
                  SuccessorGenerator<Kind>& successor_generator,
                  Heuristic<Kind>& heuristic,
                  const typename SearchPolicy::Options& options,
                  const typename SearchPolicy::EventHandlerPtr& event_handler) :
         m_worker(ygg::Index<Worker>(0),
+                 state_repository,
+                 axiom_evaluator,
                  successor_generator,
                  heuristic,
+                 1,
                  options,
                  options.pruning_strategy ? options.pruning_strategy : PruningStrategy<Kind>::create(),
                  options.goal_strategy ? options.goal_strategy : ConjunctiveGoalStrategy<Kind>::create(task),
@@ -262,16 +268,17 @@ public:
         callback(m_worker);
     }
 
-    std::pair<Plan<Kind>, Node<Kind>>
-    reconstruct_solution(WorkerStateIndex<Kind> goal, SuccessorGenerator<Kind>&, const typename SearchPolicy::Options& options)
+    std::pair<Plan<Kind>, Node<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal, const typename SearchPolicy::Options& options)
     {
         auto& worker = get(goal.worker);
-        const auto state = worker.successor_generator.get_state_repository()->get_registered_state(goal.state);
+        const auto state = worker.state_repository.get_registered_state(goal.state);
         const auto& search_node = worker.get_search_node(goal.state);
         auto node = Node<Kind>(state, search_node.g_value);
         auto plan = PlanReconstructionPolicy<SequentialSearch>::extract_total_ordered_plan(search_node,
                                                                                            node,
                                                                                            worker.search.get_search_nodes(),
+                                                                                           worker.state_repository,
+                                                                                           worker.axiom_evaluator,
                                                                                            worker.successor_generator,
                                                                                            options.cost_mode);
         return { std::move(plan), std::move(node) };

@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "planning/algorithms/search_engine/successor_generator_access.hpp"
+#include "planning/metric.hpp"
 #include "planning/parser.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/planning.hpp"
@@ -47,15 +47,16 @@ void expect_state_routing(const p::TaskPtr<Kind>& task)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
     auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto repository = p::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
-    auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context, repository);
+    auto repository = p::StateRepositoryFactory<Kind>().create(task);
+    auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
 
     auto worker_context = ygg::ExecutionContext::create(1);
+    auto worker_axiom_evaluator = axiom_evaluator->make_worker(worker_context);
+    auto worker_repository = repository->make_worker();
     auto worker = generator->make_worker(worker_context);
-    const auto worker_repository = worker->get_state_repository();
 
-    const auto initial = generator->get_initial_node();
-    const auto worker_initial = worker->get_initial_node();
+    const auto initial = generator->get_initial_node(*repository, *axiom_evaluator);
+    const auto worker_initial = worker->get_initial_node(*worker_repository, *worker_axiom_evaluator);
     const auto dist_hash = p::DistHash<Kind, p::RandomDistHashTag>(17);
 
     const auto expected_source_index = initial.get_state().get_index();
@@ -72,29 +73,44 @@ void expect_state_routing(const p::TaskPtr<Kind>& task)
         });
     source_reader.join();
 
-    auto thread_release_worker = generator->make_worker(ygg::ExecutionContext::create(1));
-    auto thread_released_state = thread_release_worker->get_initial_node().get_state();
+    auto thread_release_context = ygg::ExecutionContext::create(1);
+    auto thread_release_evaluator = axiom_evaluator->make_worker(thread_release_context);
+    auto thread_release_repository = repository->make_worker();
+    auto thread_release_worker = generator->make_worker(thread_release_context);
+    auto thread_released_state = thread_release_worker->get_initial_node(*thread_release_repository, *thread_release_evaluator).get_state();
     const auto thread_release_owner = std::weak_ptr(thread_released_state.get_state_repository());
     thread_release_worker.reset();
+    thread_release_evaluator.reset();
+    thread_release_repository.reset();
     EXPECT_FALSE(thread_release_owner.expired());
     {
         auto releaser = std::jthread([state = std::move(thread_released_state)] { EXPECT_FALSE(state.get_index().is_max()); });
     }
     EXPECT_TRUE(thread_release_owner.expired());
 
-    auto copy_assignment_worker = generator->make_worker(ygg::ExecutionContext::create(1));
-    auto copy_assigned_source = copy_assignment_worker->get_initial_node().get_state();
+    auto copy_assignment_context = ygg::ExecutionContext::create(1);
+    auto copy_assignment_evaluator = axiom_evaluator->make_worker(copy_assignment_context);
+    auto copy_assignment_repository = repository->make_worker();
+    auto copy_assignment_worker = generator->make_worker(copy_assignment_context);
+    auto copy_assigned_source = copy_assignment_worker->get_initial_node(*copy_assignment_repository, *copy_assignment_evaluator).get_state();
     const auto copy_assignment_owner = std::weak_ptr(copy_assigned_source.get_state_repository());
     copy_assignment_worker.reset();
+    copy_assignment_evaluator.reset();
+    copy_assignment_repository.reset();
     EXPECT_FALSE(copy_assignment_owner.expired());
     copy_assigned_source = initial.get_state();
     EXPECT_TRUE(copy_assignment_owner.expired());
     EXPECT_EQ(copy_assigned_source.get_state_repository(), repository);
 
-    auto move_assignment_worker = generator->make_worker(ygg::ExecutionContext::create(1));
-    auto move_assigned_source = move_assignment_worker->get_initial_node().get_state();
+    auto move_assignment_context = ygg::ExecutionContext::create(1);
+    auto move_assignment_evaluator = axiom_evaluator->make_worker(move_assignment_context);
+    auto move_assignment_repository = repository->make_worker();
+    auto move_assignment_worker = generator->make_worker(move_assignment_context);
+    auto move_assigned_source = move_assignment_worker->get_initial_node(*move_assignment_repository, *move_assignment_evaluator).get_state();
     const auto move_assignment_owner = std::weak_ptr(move_assigned_source.get_state_repository());
     move_assignment_worker.reset();
+    move_assignment_evaluator.reset();
+    move_assignment_repository.reset();
     EXPECT_FALSE(move_assignment_owner.expired());
     move_assigned_source = repository->get_registered_state(expected_source_index);
     EXPECT_TRUE(move_assignment_owner.expired());
@@ -145,15 +161,16 @@ void expect_state_routing(const p::TaskPtr<Kind>& task)
 
     auto remote_state = repository->get_state_builder();
     const auto remote_result = generator->generate_successor_state(initial, action, *remote_state);
-    const auto remote_completed = p::detail::SuccessorGeneratorAccess::complete(*generator, *remote_state, remote_result);
+    axiom_evaluator->compute_extended_state(*remote_state);
+    const auto remote_metric = p::evaluate_successor_metric(*task, *remote_state, remote_result.auxiliary_value);
     const auto remote_hash = dist_hash.hash(*remote_state);
     EXPECT_EQ(repository->num_states(), source_states_before_generation);
 
     auto local_state = repository->get_state_builder();
     const auto local_result = generator->generate_successor_state(initial, action, *local_state);
-    const auto local_node = generator->finalize_successor_state(std::move(local_state), local_result);
+    const auto local_node = generator->finalize_successor_state(*repository, *axiom_evaluator, std::move(local_state), local_result);
 
-    const auto compatibility_node = generator->get_successor_node(initial, action);
+    const auto compatibility_node = generator->get_successor_node(initial, action, *repository, *axiom_evaluator);
     EXPECT_EQ(local_node, compatibility_node);
     const auto source_states_after_local_registration = repository->num_states();
 
@@ -161,7 +178,7 @@ void expect_state_routing(const p::TaskPtr<Kind>& task)
     using std::swap;
     swap(*owner_state, *remote_state);
     EXPECT_EQ(dist_hash.hash(*owner_state), remote_hash);
-    const auto owner_node = p::detail::SuccessorGeneratorAccess::register_state(*worker, std::move(owner_state), remote_completed);
+    const auto owner_node = p::Node<Kind>(worker_repository->register_extended_state(std::move(owner_state)), remote_metric);
     EXPECT_EQ(owner_node.get_metric(), compatibility_node.get_metric());
     EXPECT_EQ(repository->num_states(), source_states_after_local_registration);
     EXPECT_EQ(worker_repository->num_states(), 2);
@@ -173,9 +190,9 @@ void expect_lmcut_state_routing(const p::TaskPtr<Kind>& task)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
     auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto repository = p::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
-    auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context, repository);
-    const auto initial_node = generator->get_initial_node();
+    auto repository = p::StateRepositoryFactory<Kind>().create(task);
+    auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    const auto initial_node = generator->get_initial_node(*repository, *axiom_evaluator);
     const auto& initial = initial_node.get_state();
 
     auto heuristic = p::LMCutHeuristic<Kind>(task, ygg::ExecutionContext::create(1), ::tyr::CostMode::UNIT);

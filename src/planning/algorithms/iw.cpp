@@ -79,6 +79,10 @@ SearchResult<Kind> find_solution(brfs::Solver<Kind>& brfs_solver, ygg::uint_t ma
 {
     if (!brfs_solver.task)
         throw std::invalid_argument("iw::find_solution(...): BRFS task is required.");
+    if (!brfs_solver.state_repository)
+        throw std::invalid_argument("iw::find_solution(...): BRFS state repository is required.");
+    if (!brfs_solver.axiom_evaluator)
+        throw std::invalid_argument("iw::find_solution(...): BRFS axiom evaluator is required.");
     if (!brfs_solver.successor_generator)
         throw std::invalid_argument("iw::find_solution(...): BRFS successor generator is required.");
     if (max_arity > MaxArity)

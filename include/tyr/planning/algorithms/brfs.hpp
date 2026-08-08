@@ -38,8 +38,7 @@ struct Options
 {
     static constexpr CostMode cost_mode = CostMode::UNIT;
 
-    /// Optional initial node. It must belong to this task; search materializes its state in the caller successor generator's repository and restarts unit
-    /// depth at zero.
+    /// Optional initial node. It must belong to this task; search materializes its state in the caller repository and restarts unit depth at zero.
     std::optional<Node<Kind>> start_node = std::nullopt;
     EventHandlerPtr<Kind> event_handler = nullptr;
     PruningStrategyPtr<Kind> pruning_strategy = nullptr;
@@ -48,8 +47,8 @@ struct Options
     /// encountered, and an over-limit successor may already be interned. A satisfied start may solve even when this is zero.
     ygg::uint_t max_num_states = std::numeric_limits<ygg::uint_t>::max();
     std::optional<std::chrono::steady_clock::duration> max_time = std::nullopt;
+    /// Values above one enable parallel search. A concurrent state repository shares storage; a private one is hash-distributed.
     size_t num_search_workers = 1;
-    StateRepositoryMode state_repository_mode = StateRepositoryMode::HASH_DISTRIBUTED;
     DistHashMode dist_hash_mode = DistHashMode::LMCUT;
     bool collect_destination_lock_statistics = false;
     uint64_t random_seed = 0;
@@ -59,7 +58,11 @@ struct Options
 };
 
 template<TaskKind Kind>
-SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& successor_generator, const Options<Kind>& options = Options<Kind>());
+SearchResult<Kind> find_solution(Task<Kind>& task,
+                                 StateRepository<Kind>& state_repository,
+                                 AxiomEvaluator<Kind>& axiom_evaluator,
+                                 SuccessorGenerator<Kind>& successor_generator,
+                                 const Options<Kind>& options = Options<Kind>());
 
 /// @brief Adapter that exposes BrFS search through the generic solver interface.
 template<TaskKind Kind>
@@ -68,6 +71,8 @@ struct Solver
     using EventHandlerType = EventHandler<Kind>;
 
     TaskPtr<Kind> task;
+    StateRepositoryPtr<Kind> state_repository;
+    AxiomEvaluatorPtr<Kind> axiom_evaluator;
     SuccessorGeneratorPtr<Kind> successor_generator;
     Options<Kind> options;
 
@@ -75,22 +80,28 @@ struct Solver
     {
         if (!task)
             throw std::invalid_argument("brfs::Solver::normalize_start_node(): task is required.");
-        if (!successor_generator)
-            throw std::invalid_argument("brfs::Solver::normalize_start_node(): successor generator is required.");
+        if (!state_repository)
+            throw std::invalid_argument("brfs::Solver::normalize_start_node(): state repository is required.");
+        if (!axiom_evaluator)
+            throw std::invalid_argument("brfs::Solver::normalize_start_node(): axiom evaluator is required.");
         if (!start_node)
             start_node = options.start_node;
 
-        return tyr::planning::normalize_start_node(*task, *successor_generator, std::move(start_node));
+        return tyr::planning::normalize_start_node(*task, *state_repository, *axiom_evaluator, std::move(start_node));
     }
 
     SearchResult<Kind> solve()
     {
         if (!task)
             throw std::invalid_argument("brfs::Solver::solve(): task is required.");
+        if (!state_repository)
+            throw std::invalid_argument("brfs::Solver::solve(): state repository is required.");
+        if (!axiom_evaluator)
+            throw std::invalid_argument("brfs::Solver::solve(): axiom evaluator is required.");
         if (!successor_generator)
             throw std::invalid_argument("brfs::Solver::solve(): successor generator is required.");
 
-        return find_solution(*task, *successor_generator, options);
+        return find_solution(*task, *state_repository, *axiom_evaluator, *successor_generator, options);
     }
 };
 

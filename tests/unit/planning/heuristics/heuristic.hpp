@@ -106,6 +106,8 @@ struct HeuristicContext
 {
     std::shared_ptr<ygg::ExecutionContext> execution_context;
     p::TaskPtr<Kind> task;
+    p::StateRepositoryPtr<Kind> state_repository;
+    p::AxiomEvaluatorPtr<Kind> axiom_evaluator;
     p::SuccessorGeneratorPtr<Kind> successor_generator;
 };
 
@@ -122,10 +124,14 @@ HeuristicContext<Kind> create_heuristic_context(const std::filesystem::path& dom
         task = lifted_task->instantiate_ground_task(*execution_context).task;
 
     auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto state_repository = p::StateRepositoryFactory<Kind>().create(task, axiom_evaluator);
-    auto successor_generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context, state_repository);
+    auto state_repository = p::StateRepositoryFactory<Kind>().create(task);
+    auto successor_generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
 
-    return HeuristicContext<Kind> { std::move(execution_context), std::move(task), std::move(successor_generator) };
+    return HeuristicContext<Kind> { std::move(execution_context),
+                                    std::move(task),
+                                    std::move(state_repository),
+                                    std::move(axiom_evaluator),
+                                    std::move(successor_generator) };
 }
 
 inline bool should_check(const HeuristicExpectation& expectation) { return expectation.h.has_value(); }
@@ -142,12 +148,12 @@ void expect_preferred_actions_reset_after_dead_end()
 {
     auto context = create_preferred_action_reset_context<Kind>();
     auto heuristic = p::FFRPGHeuristic<Kind>::create(context.task, context.execution_context);
-    const auto initial_node = context.successor_generator->get_initial_node();
+    const auto initial_node = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator);
 
     EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 1);
     EXPECT_FALSE(heuristic->get_preferred_actions().empty());
 
-    const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node);
+    const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node, *context.state_repository, *context.axiom_evaluator);
     const auto dead_end = std::ranges::find_if(successors, [](const auto& successor) { return successor.label.get_relation().get_name().str() == "consume"; });
     ASSERT_NE(dead_end, successors.end());
     EXPECT_EQ(heuristic->evaluate(dead_end->node.get_state()), std::numeric_limits<ygg::float_t>::infinity());
@@ -159,11 +165,11 @@ void expect_builtin_set_goal_reconfigures_evaluator()
 {
     auto context = create_preferred_action_reset_context<Kind>();
     auto heuristic = p::AddRPGHeuristic<Kind>::create(context.task, context.execution_context);
-    const auto initial_node = context.successor_generator->get_initial_node();
+    const auto initial_node = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator);
 
     EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 1);
 
-    const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node);
+    const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node, *context.state_repository, *context.axiom_evaluator);
     const auto achieve = std::ranges::find_if(successors, [](const auto& successor) { return successor.label.get_relation().get_name().str() == "achieve"; });
     ASSERT_NE(achieve, successors.end());
     heuristic->set_goal(context.successor_generator->ground_action(achieve->label).get_condition());
@@ -176,8 +182,8 @@ void expect_worker_snapshots_configured_goal()
 {
     auto context = create_preferred_action_reset_context<Kind>();
     auto heuristic = TestedHeuristic<Kind>::create(context.task, context.execution_context);
-    const auto initial_node = context.successor_generator->get_initial_node();
-    const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node);
+    const auto initial_node = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator);
+    const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node, *context.state_repository, *context.axiom_evaluator);
     const auto achieve = std::ranges::find_if(successors, [](const auto& successor) { return successor.label.get_relation().get_name().str() == "achieve"; });
     ASSERT_NE(achieve, successors.end());
 
@@ -194,7 +200,7 @@ void expect_worker_has_independent_preferred_actions()
 {
     auto context = create_preferred_action_reset_context<Kind>();
     auto heuristic = p::FFRPGHeuristic<Kind>::create(context.task, context.execution_context);
-    const auto initial_node = context.successor_generator->get_initial_node();
+    const auto initial_node = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator);
 
     EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 1);
     ASSERT_FALSE(heuristic->get_preferred_actions().empty());
@@ -202,7 +208,7 @@ void expect_worker_has_independent_preferred_actions()
     auto worker = heuristic->make_worker(ygg::ExecutionContext::create(2));
     EXPECT_TRUE(worker->get_preferred_actions().empty());
 
-    const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node);
+    const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node, *context.state_repository, *context.axiom_evaluator);
     const auto dead_end = std::ranges::find_if(successors, [](const auto& successor) { return successor.label.get_relation().get_name().str() == "consume"; });
     ASSERT_NE(dead_end, successors.end());
     EXPECT_EQ(worker->evaluate(dead_end->node.get_state()), std::numeric_limits<ygg::float_t>::infinity());
@@ -228,7 +234,7 @@ TEST_P(HeuristicFixtureTest, InitialStateMatchesFixture)
 {
     const auto& test_case = GetParam();
     auto context = create_heuristic_context<HeuristicTaskKind>(test_case.domain_file, test_case.task_file);
-    const auto initial_state = context.successor_generator->get_initial_node().get_state();
+    const auto initial_state = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator).get_state();
 
     for (const auto& [key, expectation] : test_case.configs)
     {

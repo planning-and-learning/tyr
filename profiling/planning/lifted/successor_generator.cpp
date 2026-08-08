@@ -76,24 +76,19 @@ p::TaskPtr<::tyr::LiftedTag> create_task(const BenchmarkCase& benchmark_case)
     return p::Task<::tyr::LiftedTag>::create(fp::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
 }
 
-p::SuccessorGeneratorPtr<::tyr::LiftedTag> create_successor_generator(p::TaskPtr<::tyr::LiftedTag> task)
-{
-    auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = p::AxiomEvaluatorFactory<::tyr::LiftedTag>().create(task, execution_context);
-    auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(task, axiom_evaluator);
-    return p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, execution_context, state_repository);
-}
-
 void benchmark_initial_successors(benchmark::State& state, const BenchmarkCase& benchmark_case)
 {
     auto task = create_task(benchmark_case);
-    auto successor_generator = create_successor_generator(task);
-    const auto initial_node = successor_generator->get_initial_node();
+    auto execution_context = ygg::ExecutionContext::create(1);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<::tyr::LiftedTag>().create(task, execution_context);
+    auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(task);
+    auto successor_generator = p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, execution_context);
+    const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
     auto successors = std::vector<p::LabeledNode<::tyr::LiftedTag>>();
 
     for (auto _ : state)
     {
-        successor_generator->get_labeled_successor_nodes(initial_node, successors);
+        successor_generator->get_labeled_successor_nodes(initial_node, *state_repository, *axiom_evaluator, successors);
         benchmark::DoNotOptimize(successors.data());
         benchmark::DoNotOptimize(successors.size());
     }
@@ -104,8 +99,11 @@ void benchmark_initial_successors(benchmark::State& state, const BenchmarkCase& 
 void benchmark_interned_action_bindings(benchmark::State& state, const BenchmarkCase& benchmark_case)
 {
     auto task = create_task(benchmark_case);
-    auto successor_generator = create_successor_generator(task);
-    const auto initial_node = successor_generator->get_initial_node();
+    auto execution_context = ygg::ExecutionContext::create(1);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<::tyr::LiftedTag>().create(task, execution_context);
+    auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(task);
+    auto successor_generator = p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, execution_context);
+    const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
     auto bindings = std::vector<fp::ActionBindingView>();
 
     for (auto _ : state)

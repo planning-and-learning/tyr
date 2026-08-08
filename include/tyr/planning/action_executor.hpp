@@ -41,10 +41,6 @@ public:
     template<TaskKind Kind>
     bool is_applicable_if_fires(::tyr::formalism::planning::GroundActionView action, const StateContext<Kind>& state);
 
-    template<TaskKind Kind>
-    Node<Kind>
-    apply_action(const StateContext<Kind>& state_context, ::tyr::formalism::planning::GroundActionView action, StateRepository<Kind>& state_repository);
-
     /// Applies the action into caller-owned storage without interning the successor; returns the updated auxiliary metric value.
     template<TaskKind Kind>
     ygg::float_t apply_action_unregistered(const StateContext<Kind>& state_context,
@@ -62,12 +58,6 @@ public:
                                 const StateContext<LiftedTag>& state_context,
                                 ::tyr::formalism::planning::GrounderContext& grounder,
                                 const ::tyr::formalism::planning::FDRContext& fdr);
-
-    Node<LiftedTag> apply_action(const StateContext<LiftedTag>& state_context,
-                                 ::tyr::formalism::planning::ActionView action,
-                                 ::tyr::formalism::planning::GrounderContext& grounder,
-                                 ::tyr::formalism::planning::FDRContext& fdr,
-                                 StateRepository<LiftedTag>& state_repository);
 
     /// Applies the action into caller-owned storage without interning the successor; returns the updated auxiliary metric value.
     ygg::float_t apply_action_unregistered(const StateContext<LiftedTag>& state_context,
