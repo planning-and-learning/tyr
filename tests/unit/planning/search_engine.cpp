@@ -15,9 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "planning/algorithms/search_engine/gbfs_lazy.hpp"
 #include "planning/parser.hpp"
 #include "tyr/planning/planning.hpp"
 
+#include <array>
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
@@ -887,6 +889,41 @@ TEST(TyrPlanningSearchEngineTest, SecondarySearchWorkersInheritPrototypeInnerCon
 
     EXPECT_EQ(result.status, p::SearchStatus::SOLVED);
     EXPECT_EQ(worker_threads, (std::vector<size_t> { 2 }));
+}
+
+TEST(TyrPlanningSearchEngineTest, PreferredBoostIsDistributedExactlyAcrossSearchWorkers)
+{
+    constexpr auto boost = size_t { 1001 };
+    constexpr auto num_workers = size_t { 4 };
+    constexpr auto shares = std::array {
+        p::detail::preferred_boost_share(boost, num_workers, 0),
+        p::detail::preferred_boost_share(boost, num_workers, 1),
+        p::detail::preferred_boost_share(boost, num_workers, 2),
+        p::detail::preferred_boost_share(boost, num_workers, 3),
+    };
+
+    EXPECT_EQ(shares, (std::array<size_t, num_workers> { 251, 250, 250, 250 }));
+    EXPECT_EQ(shares[0] + shares[1] + shares[2] + shares[3], boost);
+    EXPECT_EQ(p::detail::preferred_boost_share(1000, 1, 0), 1000);
+}
+
+TEST(TyrPlanningSearchEngineTest, QueuedPreferredBoostAffectsTheNextPop)
+{
+    auto heuristic = p::BlindHeuristic<GroundTag> {};
+    auto options = p::gbfs_lazy::Options<GroundTag> {};
+    auto policy = p::detail::LazyGBFSPolicy<GroundTag, p::SequentialSearch>(heuristic, options);
+    const auto first_preferred = ygg::Index<p::State<GroundTag>>(0);
+    const auto second_preferred = ygg::Index<p::State<GroundTag>>(1);
+    const auto standard = ygg::Index<p::State<GroundTag>>(2);
+
+    policy.open_successor(first_preferred, 0, 0, p::SearchNodeStatus::OPEN, true);
+    policy.open_successor(second_preferred, 0, 0, p::SearchNodeStatus::OPEN, true);
+    policy.open_successor(standard, 0, 0, p::SearchNodeStatus::OPEN, false);
+    policy.queue_preferred_boost(2);
+
+    EXPECT_EQ(policy.pop().state, first_preferred);
+    EXPECT_EQ(policy.pop().state, second_preferred);
+    EXPECT_EQ(policy.pop().state, standard);
 }
 
 TEST(TyrPlanningSearchEngineTest, DestinationLockStatisticsAreOptInAndAggregated)

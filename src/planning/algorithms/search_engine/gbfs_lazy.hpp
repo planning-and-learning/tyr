@@ -26,6 +26,8 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
+#include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <limits>
@@ -35,6 +37,17 @@
 
 namespace tyr::planning::detail
 {
+
+constexpr size_t preferred_boost_share(size_t boost, size_t num_workers, size_t worker)
+{
+    assert(num_workers > 0);
+    assert(worker < num_workers);
+    return boost / num_workers + (worker < boost % num_workers);
+}
+
+static_assert(preferred_boost_share(1000, 4, 0) == 250);
+static_assert(preferred_boost_share(2, 4, 0) == 1);
+static_assert(preferred_boost_share(2, 4, 2) == 0);
 
 template<TaskKind Kind, SearchKind Search>
 class LazyGBFSPolicy
@@ -112,12 +125,16 @@ public:
 
     PoppedEntry pop()
     {
+        auto& weights = m_openlist.get_weights();
+        weights[0] += m_pending_preferred_boost.exchange(0, std::memory_order_relaxed);
         const auto state = m_openlist.top();
         m_openlist.pop();
-        auto& weights = m_openlist.get_weights();
         weights[0] = std::max(weights[0] - 1, size_t { 1 });
         return PoppedEntry { state };
     }
+
+    // Best-h progress is detected while another worker may own this queue, so defer the local weight update without nesting worker locks.
+    void queue_preferred_boost(size_t boost) noexcept { m_pending_preferred_boost.fetch_add(boost, std::memory_order_relaxed); }
 
     bool should_discard(const PoppedEntry&, ygg::float_t) const noexcept { return false; }
 
@@ -151,11 +168,7 @@ public:
             return ExpansionResult::SKIP;
         }
 
-        if (std::forward<ImproveBestH>(improve_best_h)(m_state_h_value, [&](auto& handler) { handler.on_new_best_h_value(m_state_h_value); }))
-        {
-            if (m_options.use_preferred_actions)
-                m_openlist.get_weights()[0] += m_options.boost_preferred_queue;
-        }
+        static_cast<void>(std::forward<ImproveBestH>(improve_best_h)(m_state_h_value, [&](auto& handler) { handler.on_new_best_h_value(m_state_h_value); }));
 
         m_preferred_actions = m_options.use_preferred_actions ? &m_heuristic.get_preferred_actions() : nullptr;
         search_node.status = SearchNodeStatus::CLOSED;
@@ -250,6 +263,20 @@ public:
     {
     }
 
+    template<typename Engine>
+    static void boost_preferred_queues(Engine& engine)
+    {
+        if (!engine.m_options.use_preferred_actions)
+            return;
+
+        const auto num_workers = engine.num_workers();
+        for (size_t i = 0; i < num_workers; ++i)
+        {
+            const auto boost = preferred_boost_share(engine.m_options.boost_preferred_queue, num_workers, i);
+            engine.get_worker(ygg::Index<Worker>(static_cast<ygg::uint_t>(i))).search.queue_preferred_boost(boost);
+        }
+    }
+
 private:
     using Queue = PriorityQueue<QueueEntry>;
 
@@ -265,6 +292,7 @@ private:
     Queue m_preferred_openlist;
     Queue m_standard_openlist;
     AlternatingOpenList<Queue, Queue> m_openlist;
+    std::atomic<size_t> m_pending_preferred_boost { 0 };
 };
 
 static_assert(sizeof(LazyGBFSPolicy<LiftedTag, SequentialSearch>::SearchNode) == 16);

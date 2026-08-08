@@ -370,6 +370,18 @@ private:
 
     std::pair<ygg::Index<Worker>, StateView<Kind>> prepare_start_state() { return m_execution.prepare_start_state(*this, m_start_node.get_state()); }
 
+    template<typename Callback>
+    bool improve_best_h(ygg::float_t h_value, Callback&& callback)
+    {
+        return m_execution.improve_best_h(h_value,
+                                          [&]
+                                          {
+                                              call_root_event(std::forward<Callback>(callback));
+                                              if constexpr (requires { SearchPolicy::boost_preferred_queues(*this); })
+                                                  SearchPolicy::boost_preferred_queues(*this);
+                                          });
+    }
+
     bool expand_one(WorkerData& worker)
     {
         struct PreparedExpansion
@@ -407,7 +419,7 @@ private:
                     worker.statistics,
                     std::forward<decltype(evaluate_unlocked)>(evaluate_unlocked),
                     [&](ygg::float_t h_value, auto&& callback)
-                    { return m_execution.improve_best_h(h_value, [&] { call_root_event(std::forward<decltype(callback)>(callback)); }); },
+                    { return improve_best_h(h_value, std::forward<decltype(callback)>(callback)); },
                     [&](auto&& callback) { call_worker_event(worker, std::forward<decltype(callback)>(callback)); },
                     [&](ygg::float_t priority) { on_finish_priority_layer(priority); });
                 if (expansion_result == ExpansionResult::GOAL)
