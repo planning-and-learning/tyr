@@ -79,7 +79,7 @@ FDRContext::FDRContext(const std::vector<GroundAtomViewList<FluentTag>>& mutexes
         m_variables.push_back(variable_view);
         for (ygg::uint_t i = 0; i < group.size(); ++i)
         {
-            const auto inserted = publish_fact(group[i], ygg::Data<FDRFact<FluentTag>>(variable_view.get_index(), FDRValue { i + 1 }));
+            [[maybe_unused]] const auto inserted = publish_fact(group[i], ygg::Data<FDRFact<FluentTag>>(variable_view.get_index(), FDRValue { i + 1 }));
             assert(inserted && "Assumes non overlapping mutex groups");
         }
     }
@@ -101,7 +101,7 @@ FDRContext::FDRContext(const GroundAtomViewList<FluentTag>& all_atoms, Repositor
         canonicalize(variable);
         const auto variable_view = m_context->get_or_create(variable).first;
         m_variables.push_back(variable_view);
-        const auto inserted = publish_fact(atom, ygg::Data<FDRFact<FluentTag>>(variable_view.get_index(), FDRValue { 1 }));
+        [[maybe_unused]] const auto inserted = publish_fact(atom, ygg::Data<FDRFact<FluentTag>>(variable_view.get_index(), FDRValue { 1 }));
         assert(inserted);
     }
 }
@@ -125,7 +125,7 @@ FDRContext::FDRContext(const FDRContext& other, Builder& builder, RepositoryPtr 
         if (!fact)
             continue;
 
-        const auto inserted = publish_fact(merge_p2p(atom, merge_context).first, merge_p2p(*fact, merge_context).get_data());
+        [[maybe_unused]] const auto inserted = publish_fact(merge_p2p(atom, merge_context).first, merge_p2p(*fact, merge_context).get_data());
         assert(inserted);
     }
 }
@@ -149,7 +149,7 @@ FDRFactView<FluentTag> FDRContext::get_fact(GroundAtomView<FluentTag> atom)
     ensure_fact_slot(atom);
     m_variables.push_back(variable);
     const auto fact = ygg::Data<FDRFact<FluentTag>>(variable.get_index(), FDRValue { 1 });
-    const auto inserted = publish_fact(atom, fact);
+    [[maybe_unused]] const auto inserted = publish_fact(atom, fact);
     assert(inserted);
 
     return ygg::make_view(fact, *m_context);

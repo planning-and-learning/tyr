@@ -537,8 +537,16 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
     numeric_and_annot.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(3));
     numeric_and_annot.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(4));
     numeric_and_annot.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(ygg::ClosedInterval<ygg::float_t>(1, 1), 3));
-    ASSERT_EQ(numeric_and_annot.find_entries(function.get_index(), function_bindings.back().get_index().row)->size(), 1);
-    EXPECT_EQ(d::get_cost(*numeric_and_annot.find(function_bindings.back(), interval)), 3);
+    numeric_and_annot.insert(function_bindings.back(), second_interval, d::BaseAnnotation<LiftedTag>(2));
+    numeric_and_annot.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(1));
+    const auto* numeric_entries = numeric_and_annot.find_entries(function.get_index(), function_bindings.back().get_index().row);
+    ASSERT_NE(numeric_entries, nullptr);
+    ASSERT_EQ(numeric_entries->size(), 2);
+    EXPECT_EQ(numeric_entries->at(0).interval, interval);
+    EXPECT_EQ(d::get_cost(numeric_entries->at(0).annotation), 1);
+    EXPECT_EQ(numeric_entries->at(1).interval, second_interval);
+    EXPECT_EQ(d::get_cost(numeric_entries->at(1).annotation), 2);
+    EXPECT_EQ(d::get_cost(*numeric_and_annot.find(function_bindings.back(), interval)), 1);
     EXPECT_EQ(d::get_metric(*numeric_and_annot.find(function_bindings.back(), interval)), ygg::ClosedInterval<ygg::float_t>());
 
     delta_and_annot.clear();

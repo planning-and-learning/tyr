@@ -27,8 +27,6 @@
 #include "tyr/planning/plan.hpp"
 
 #include <fmt/ostream.h>
-#include <iostream>
-#include <syncstream>
 #include <yggdrasil/core/chrono.hpp>
 
 namespace tyr::planning::brfs
@@ -44,9 +42,7 @@ public:
 
     void on_expand_node(const Node<Kind>& node) override
     {
-        auto out = std::osyncstream(std::cout);
-        fmt::print(out,
-                   "[BRFS][Worker {}] ----------------------------------------\n[BRFS][Worker {}] Expanding node: {}\n\n",
+        fmt::print("[BRFS][Worker {}] ----------------------------------------\n[BRFS][Worker {}] Expanding node: {}\n\n",
                    ygg::uint_t(m_index),
                    ygg::uint_t(m_index),
                    node);
@@ -57,9 +53,7 @@ public:
         if (outcome != TransitionOutcome::OPENED && outcome != TransitionOutcome::GOAL)
             return;
 
-        auto out = std::osyncstream(std::cout);
-        fmt::print(out,
-                   "[BRFS][Worker {}] Action: {}\n[BRFS][Worker {}] Successor node: {}\n\n",
+        fmt::print("[BRFS][Worker {}] Action: {}\n[BRFS][Worker {}] Successor node: {}\n\n",
                    ygg::uint_t(m_index),
                    labeled_succ_node.label,
                    ygg::uint_t(m_index),
@@ -83,8 +77,7 @@ void DefaultEventHandler<Kind>::on_start_search(const Node<Kind>& node)
     m_progress_statistics.clear();
     if (m_verbosity < 1)
         return;
-    auto out = std::osyncstream(std::cout);
-    fmt::print(out, "[BRFS] Search started.\n[BRFS] Start node: {}\n", node);
+    fmt::print("[BRFS] Search started.\n[BRFS] Start node: {}\n", node);
 }
 
 template<TaskKind Kind>
@@ -93,9 +86,7 @@ void DefaultEventHandler<Kind>::on_finish_layer(ygg::uint_t layer, const tyr::pl
     m_progress_statistics.add_snapshot(statistics);
     if (m_verbosity < 1)
         return;
-    auto out = std::osyncstream(std::cout);
-    fmt::print(out,
-               "[BRFS] Finished layer: {} with num expanded states {} and num accepted successors {} ({} ms)\n",
+    fmt::print("[BRFS] Finished layer: {} with num expanded states {} and num accepted successors {} ({} ms)\n",
                layer,
                statistics.get_num_expanded(),
                statistics.get_num_accepted_successors(),
@@ -107,8 +98,7 @@ void DefaultEventHandler<Kind>::on_end_search(tyr::planning::SearchStatus, const
 {
     if (m_verbosity < 1)
         return;
-    auto out = std::osyncstream(std::cout);
-    fmt::print(out, "[BRFS] Search ended.\n{}\n{}\n", statistics, m_progress_statistics);
+    fmt::print("[BRFS] Search ended.\n{}\n{}\n", statistics, m_progress_statistics);
 }
 
 template<TaskKind Kind>
@@ -116,8 +106,7 @@ void DefaultEventHandler<Kind>::on_solved(const Plan<Kind>& plan)
 {
     if (m_verbosity < 1)
         return;
-    auto out = std::osyncstream(std::cout);
-    fmt::print(out, "[BRFS] Plan found.\n[BRFS] Plan cost: {}\n[BRFS] Plan length: {}\n{}\n", plan.get_cost(), plan.get_length(), plan);
+    fmt::print("[BRFS] Plan found.\n[BRFS] Plan cost: {}\n[BRFS] Plan length: {}\n{}\n", plan.get_cost(), plan.get_length(), plan);
 }
 
 template<TaskKind Kind>

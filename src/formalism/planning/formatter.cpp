@@ -35,7 +35,7 @@
 #include <yggdrasil/formatting/formatter.hpp>
 #include <yggdrasil/io/iostream.hpp>
 
-namespace tyr::formalism::planning::format
+namespace tyr::formalism::planning
 {
 
 namespace detail
@@ -848,4 +848,4 @@ std::string to_string(const std::pair<GroundActionView, PlanFormatting>& value)
     return fmt::format("{}", std::make_pair(value.first.get_row(), value.second));
 }
 
-}  // namespace tyr::formalism::planning::format
+}  // namespace tyr::formalism::planning

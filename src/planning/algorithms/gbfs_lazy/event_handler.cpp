@@ -27,8 +27,6 @@
 #include "tyr/planning/plan.hpp"
 
 #include <fmt/ostream.h>
-#include <iostream>
-#include <syncstream>
 
 namespace tyr::planning::gbfs_lazy
 {
@@ -43,9 +41,7 @@ public:
 
     void on_expand_node(const Node<Kind>& node) override
     {
-        auto out = std::osyncstream(std::cout);
-        fmt::print(out,
-                   "[GBFS][Worker {}] ----------------------------------------\n[GBFS][Worker {}] Expanding node: {}\n\n",
+        fmt::print("[GBFS][Worker {}] ----------------------------------------\n[GBFS][Worker {}] Expanding node: {}\n\n",
                    ygg::uint_t(m_index),
                    ygg::uint_t(m_index),
                    node);
@@ -55,9 +51,7 @@ public:
     {
         if (outcome != TransitionOutcome::OPENED && outcome != TransitionOutcome::GOAL)
             return;
-        auto out = std::osyncstream(std::cout);
-        fmt::print(out,
-                   "[GBFS][Worker {}] Action: {}\n[GBFS][Worker {}] Successor node: {}\n\n",
+        fmt::print("[GBFS][Worker {}] Action: {}\n[GBFS][Worker {}] Successor node: {}\n\n",
                    ygg::uint_t(m_index),
                    labeled_succ_node.label,
                    ygg::uint_t(m_index),
@@ -80,8 +74,7 @@ void DefaultEventHandler<Kind>::on_start_search(const Node<Kind>&, ygg::float_t 
 {
     if (m_verbosity < 1)
         return;
-    auto out = std::osyncstream(std::cout);
-    fmt::print(out, "[GBFS] Search started.\n[GBFS] Start node h_value: {}\n", h_value);
+    fmt::print("[GBFS] Search started.\n[GBFS] Start node h_value: {}\n", h_value);
 }
 
 template<TaskKind Kind>
@@ -89,8 +82,7 @@ void DefaultEventHandler<Kind>::on_new_best_h_value(ygg::float_t h_value)
 {
     if (m_verbosity < 1)
         return;
-    auto out = std::osyncstream(std::cout);
-    fmt::print(out, "[GBFS] New best h_value: {}\n", h_value);
+    fmt::print("[GBFS] New best h_value: {}\n", h_value);
 }
 
 template<TaskKind Kind>
@@ -98,8 +90,7 @@ void DefaultEventHandler<Kind>::on_end_search(SearchStatus, const tyr::planning:
 {
     if (m_verbosity < 1)
         return;
-    auto out = std::osyncstream(std::cout);
-    fmt::print(out, "[GBFS] Search ended.\n{}\n", statistics);
+    fmt::print("[GBFS] Search ended.\n{}\n", statistics);
 }
 
 template<TaskKind Kind>
@@ -107,8 +98,7 @@ void DefaultEventHandler<Kind>::on_solved(const Plan<Kind>& plan)
 {
     if (m_verbosity < 1)
         return;
-    auto out = std::osyncstream(std::cout);
-    fmt::print(out, "[GBFS] Plan found.\n[GBFS] Plan cost: {}\n[GBFS] Plan length: {}\n{}\n", plan.get_cost(), plan.get_length(), plan);
+    fmt::print("[GBFS] Plan found.\n[GBFS] Plan cost: {}\n[GBFS] Plan length: {}\n{}\n", plan.get_cost(), plan.get_length(), plan);
 }
 
 template<TaskKind Kind>

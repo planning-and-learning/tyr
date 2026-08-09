@@ -27,8 +27,6 @@
 #include "tyr/planning/plan.hpp"
 
 #include <fmt/ostream.h>
-#include <iostream>
-#include <syncstream>
 
 namespace tyr::planning::astar_eager
 {
@@ -45,9 +43,7 @@ public:
     {
         if (!m_trace_nodes)
             return;
-        auto out = std::osyncstream(std::cout);
-        fmt::print(out,
-                   "[ASTAR][Worker {}] ----------------------------------------\n[ASTAR][Worker {}] Expanding node: {}\n\n",
+        fmt::print("[ASTAR][Worker {}] ----------------------------------------\n[ASTAR][Worker {}] Expanding node: {}\n\n",
                    ygg::uint_t(m_index),
                    ygg::uint_t(m_index),
                    node);
@@ -59,20 +55,14 @@ public:
             || (outcome != TransitionOutcome::OPENED && outcome != TransitionOutcome::RELAXED && outcome != TransitionOutcome::DEAD_END
                 && outcome != TransitionOutcome::GOAL))
             return;
-        auto out = std::osyncstream(std::cout);
-        fmt::print(out,
-                   "[ASTAR][Worker {}] Action: {}\n[ASTAR][Worker {}] Successor node: {}\n\n",
+        fmt::print("[ASTAR][Worker {}] Action: {}\n[ASTAR][Worker {}] Successor node: {}\n\n",
                    ygg::uint_t(m_index),
                    labeled_succ_node.label,
                    ygg::uint_t(m_index),
                    labeled_succ_node.node);
     }
 
-    void on_finish_f_layer(ygg::float_t f_value) override
-    {
-        auto out = std::osyncstream(std::cout);
-        fmt::print(out, "[ASTAR][Worker {}] Finished f-layer: {}\n", ygg::uint_t(m_index), f_value);
-    }
+    void on_finish_f_layer(ygg::float_t f_value) override { fmt::print("[ASTAR][Worker {}] Finished f-layer: {}\n", ygg::uint_t(m_index), f_value); }
 
 private:
     ygg::Index<Worker> m_index;
@@ -91,8 +81,7 @@ void DefaultEventHandler<Kind>::on_start_search(const Node<Kind>&, ygg::float_t 
 {
     if (m_verbosity < 1)
         return;
-    auto out = std::osyncstream(std::cout);
-    fmt::print(out, "[ASTAR] Search started.\n[ASTAR] Start node f_value: {}\n", f_value);
+    fmt::print("[ASTAR] Search started.\n[ASTAR] Start node f_value: {}\n", f_value);
 }
 
 template<TaskKind Kind>
@@ -100,8 +89,7 @@ void DefaultEventHandler<Kind>::on_end_search(SearchStatus, const tyr::planning:
 {
     if (m_verbosity < 1)
         return;
-    auto out = std::osyncstream(std::cout);
-    fmt::print(out, "[ASTAR] Search ended.\n{}\n", statistics);
+    fmt::print("[ASTAR] Search ended.\n{}\n", statistics);
 }
 
 template<TaskKind Kind>
@@ -109,8 +97,7 @@ void DefaultEventHandler<Kind>::on_solved(const Plan<Kind>& plan)
 {
     if (m_verbosity < 1)
         return;
-    auto out = std::osyncstream(std::cout);
-    fmt::print(out, "[ASTAR] Plan found.\n[ASTAR] Plan cost: {}\n[ASTAR] Plan length: {}\n{}\n", plan.get_cost(), plan.get_length(), plan);
+    fmt::print("[ASTAR] Plan found.\n[ASTAR] Plan cost: {}\n[ASTAR] Plan length: {}\n{}\n", plan.get_cost(), plan.get_length(), plan);
 }
 
 template<TaskKind Kind>

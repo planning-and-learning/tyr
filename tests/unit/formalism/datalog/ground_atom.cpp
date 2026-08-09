@@ -66,9 +66,9 @@ TEST(TyrFormalismDatalogGroundAtom, PreservesFormatting)
     const auto [ground_atom, ground_atom_created] = repository.get_or_create(ground_atom_data);
     ASSERT_TRUE(ground_atom_created);
 
-    EXPECT_EQ(fd::format::to_string(binding), "(at truck truck)");
-    EXPECT_EQ(fd::format::to_string(ground_atom), "(at truck truck)");
-    EXPECT_EQ(fd::format::to_string(ground_atom_data), fmt::format("{}", ground_atom_data));
+    EXPECT_EQ(fd::to_string(binding), "(at truck truck)");
+    EXPECT_EQ(fd::to_string(ground_atom), "(at truck truck)");
+    EXPECT_EQ(fd::to_string(ground_atom_data), fmt::format("{}", ground_atom_data));
     EXPECT_EQ(fmt::format("{}", binding), "(at truck truck)");
     EXPECT_EQ(fmt::format("{}", ground_atom), "(at truck truck)");
 }

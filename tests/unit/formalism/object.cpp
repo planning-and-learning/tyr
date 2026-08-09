@@ -40,7 +40,7 @@ TEST(TyrFormalismObject, ExposesOwnedContract)
 {
     auto data = ObjectData(std::string("truck"));
     EXPECT_EQ(data.name, "truck");
-    EXPECT_EQ(f::format::to_string(data), "truck");
+    EXPECT_EQ(f::to_string(data), "truck");
     EXPECT_EQ(fmt::format("{}", data), "truck");
 
     auto other = ObjectData(std::string("van"));

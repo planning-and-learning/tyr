@@ -32,8 +32,6 @@
 
 namespace tyr::formalism
 {
-inline namespace format
-{
 
 std::string to_string(const ygg::Data<Variable>& value);
 std::string to_string(const ygg::Data<Object>& value);
@@ -55,7 +53,6 @@ std::string to_string(const ygg::Data<RelationBinding<Function<StaticTag>>>& val
 std::string to_string(const ygg::Data<RelationBinding<Function<FluentTag>>>& value);
 std::string to_string(const ygg::Data<RelationBinding<Function<AuxiliaryTag>>>& value);
 
-}  // namespace format
 }  // namespace tyr::formalism
 
 namespace fmt

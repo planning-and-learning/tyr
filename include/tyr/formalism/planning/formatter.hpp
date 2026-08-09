@@ -32,9 +32,6 @@ struct PlanFormatting
 {
 };
 
-inline namespace format
-{
-
 std::string to_string(const ygg::Data<LiftedUnaryOperatorType>& value);
 std::string to_string(const ygg::Data<GroundUnaryOperatorType>& value);
 std::string to_string(const ygg::Data<LiftedBinaryOperatorType<ArithmeticOperatorKind>>& value);
@@ -183,8 +180,6 @@ std::string to_string(const PlanningDomain& value);
 std::string to_string(const PlanningTask& value);
 std::string to_string(const PlanningFDRTask& value);
 
-}  // namespace format
-
 }  // namespace tyr::formalism::planning
 
 namespace fmt
@@ -200,7 +195,7 @@ struct formatter<ygg::View<ygg::Index<T>, tyr::formalism::planning::Repository>,
     template<typename FormatContext>
     auto format(const View& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::format::to_string(value));
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
     }
 };
 
@@ -214,7 +209,7 @@ struct formatter<ygg::View<ygg::Data<T>, tyr::formalism::planning::Repository>, 
     template<typename FormatContext>
     auto format(const View& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::format::to_string(value));
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
     }
 };
 
@@ -250,8 +245,7 @@ struct formatter<tyr::formalism::planning::PlanningDomain, char>
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::PlanningDomain& value, FormatContext& ctx) const
     {
-        using ToString = std::string (*)(const tyr::formalism::planning::PlanningDomain&);
-        return fmt::format_to(ctx.out(), "{}", static_cast<ToString>(&tyr::formalism::planning::format::to_string)(value));
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
     }
 };
 
@@ -263,8 +257,7 @@ struct formatter<tyr::formalism::planning::PlanningTask, char>
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::PlanningTask& value, FormatContext& ctx) const
     {
-        using ToString = std::string (*)(const tyr::formalism::planning::PlanningTask&);
-        return fmt::format_to(ctx.out(), "{}", static_cast<ToString>(&tyr::formalism::planning::format::to_string)(value));
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
     }
 };
 
@@ -276,20 +269,19 @@ struct formatter<tyr::formalism::planning::PlanningFDRTask, char>
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::PlanningFDRTask& value, FormatContext& ctx) const
     {
-        using ToString = std::string (*)(const tyr::formalism::planning::PlanningFDRTask&);
-        return fmt::format_to(ctx.out(), "{}", static_cast<ToString>(&tyr::formalism::planning::format::to_string)(value));
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
     }
 };
 
 }  // namespace fmt
 
-namespace tyr::formalism::planning::format
+namespace tyr::formalism::planning
 {
 
 std::string to_string(const std::pair<ActionBindingView, PlanFormatting>& value);
 std::string to_string(const std::pair<GroundActionView, PlanFormatting>& value);
 
-}  // namespace tyr::formalism::planning::format
+}  // namespace tyr::formalism::planning
 
 namespace fmt
 {
@@ -304,7 +296,7 @@ struct formatter<std::pair<View, tyr::formalism::planning::PlanFormatting>, char
     template<typename FormatContext>
     auto format(const Value& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::format::to_string(value));
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
     }
 };
 

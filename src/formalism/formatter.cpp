@@ -24,7 +24,7 @@
 #include <yggdrasil/formatting/cista_formatters.hpp>
 #include <yggdrasil/io/iostream.hpp>
 
-namespace tyr::formalism::format
+namespace tyr::formalism
 {
 
 namespace
@@ -80,4 +80,4 @@ std::string to_string(const ygg::Data<RelationBinding<Function<FluentTag>>>& val
 
 std::string to_string(const ygg::Data<RelationBinding<Function<AuxiliaryTag>>>& value) { return to_string_impl(value); }
 
-}  // namespace tyr::formalism::format
+}  // namespace tyr::formalism

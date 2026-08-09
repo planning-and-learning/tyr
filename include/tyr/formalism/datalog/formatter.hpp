@@ -26,8 +26,6 @@
 
 namespace tyr::formalism::datalog
 {
-inline namespace format
-{
 
 std::string to_string(const ygg::Data<UnaryOperator<ygg::Data<FunctionExpression>>>& value);
 std::string to_string(const ygg::Data<UnaryOperator<ygg::Data<GroundFunctionExpression>>>& value);
@@ -151,7 +149,6 @@ std::string to_string(ProgramView<GroundTag> value);
 
 std::string to_string(const VariableDependencyGraph& value);
 
-}  // namespace format
 }  // namespace tyr::formalism::datalog
 
 namespace fmt
@@ -167,7 +164,7 @@ struct formatter<ygg::View<ygg::Index<T>, tyr::formalism::datalog::Repository>, 
     template<typename FormatContext>
     auto format(const View& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::format::to_string(value));
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value));
     }
 };
 
@@ -181,7 +178,7 @@ struct formatter<ygg::View<ygg::Data<T>, tyr::formalism::datalog::Repository>, c
     template<typename FormatContext>
     auto format(const View& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::format::to_string(value));
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value));
     }
 };
 
@@ -193,8 +190,7 @@ struct formatter<tyr::formalism::datalog::VariableDependencyGraph, char>
     template<typename FormatContext>
     auto format(const tyr::formalism::datalog::VariableDependencyGraph& value, FormatContext& ctx) const
     {
-        using ToString = std::string (*)(const tyr::formalism::datalog::VariableDependencyGraph&);
-        return fmt::format_to(ctx.out(), "{}", static_cast<ToString>(&tyr::formalism::datalog::format::to_string)(value));
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value));
     }
 };
 

@@ -29,7 +29,7 @@
 #include <yggdrasil/formatting/cista_formatters.hpp>
 #include <yggdrasil/io/iostream.hpp>
 
-namespace tyr::formalism::datalog::format
+namespace tyr::formalism::datalog
 {
 
 namespace
@@ -823,4 +823,4 @@ std::string to_string(const VariableDependencyGraph& value)
     return os.str();
 }
 
-}  // namespace tyr::formalism::datalog::format
+}  // namespace tyr::formalism::datalog

@@ -77,7 +77,7 @@ TEST(TyrFormalismPlanningAction, FormatsBinding)
     ASSERT_TRUE(binding_created);
 
     EXPECT_EQ(fmt::format("{}", binding), "(move-internal truck)");
-    EXPECT_EQ(fp::format::to_string(binding), "(move-internal truck)");
-    EXPECT_EQ(fp::format::to_string(std::make_pair(binding, fp::PlanFormatting {})), "(move)");
+    EXPECT_EQ(fp::to_string(binding), "(move-internal truck)");
+    EXPECT_EQ(fp::to_string(std::make_pair(binding, fp::PlanFormatting {})), "(move)");
     EXPECT_EQ(fmt::format("{}", std::make_pair(binding, fp::PlanFormatting {})), "(move)");
 }

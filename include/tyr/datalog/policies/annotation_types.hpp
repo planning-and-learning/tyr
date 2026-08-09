@@ -301,9 +301,9 @@ bool insert_first_best_numeric_interval_annotation(std::vector<NumericIntervalAn
         if (get_cost(incumbent->annotation) <= get_cost(entry.annotation))
             return false;
 
-        *incumbent = std::move(entry);
-        const auto pos = std::upper_bound(entries.begin(), incumbent, *incumbent, numeric_interval_key_less<Kind>);
-        std::rotate(pos, incumbent, incumbent + 1);
+        const auto pos = std::upper_bound(entries.begin(), incumbent, entry, numeric_interval_key_less<Kind>);
+        std::move_backward(pos, incumbent, incumbent + 1);
+        *pos = std::move(entry);
         return false;
     }
 
