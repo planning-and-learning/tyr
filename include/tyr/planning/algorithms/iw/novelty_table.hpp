@@ -135,6 +135,9 @@ void for_each_tuple(const AtomIndexList& atoms,
                     Callback&& callback)
     requires(Arity > 0)
 {
+    if (tuple_size > Arity || tuple_pos > tuple_size)
+        return;
+
     if (tuple_pos == tuple_size)
     {
         callback(std::span<const ygg::uint_t>(tuple.data(), tuple_size));
@@ -178,6 +181,9 @@ void for_each_tuple_with_added_atoms(const AtomIndexList& added_atoms,
                                      Callback&& callback)
     requires(Arity > 0)
 {
+    if (num_added > Arity || num_kept > Arity - num_added || added_tuple_pos > num_added)
+        return;
+
     if (added_tuple_pos == num_added)
     {
         for_each_tuple<Arity>(kept_atoms,
