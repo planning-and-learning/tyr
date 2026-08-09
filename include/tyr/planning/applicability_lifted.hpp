@@ -158,7 +158,7 @@ bool is_applicable(::tyr::formalism::planning::AxiomView element, const Applicab
  * evaluate
  */
 
-inline ygg::float_t evaluate(ygg::float_t element, const ApplicabilityContext& context) { return element; }
+inline ygg::float_t evaluate(ygg::float_t element, const ApplicabilityContext&) { return element; }
 
 inline ygg::float_t evaluate(::tyr::formalism::planning::LiftedUnaryOperatorView element, const ApplicabilityContext& context)
 {
@@ -213,7 +213,7 @@ inline ygg::float_t evaluate(::tyr::formalism::planning::FunctionTermView<::tyr:
     return context.state.state_builder.get(fterm_or_nullopt->get_index());
 }
 
-inline ygg::float_t evaluate(::tyr::formalism::planning::FunctionTermView<::tyr::formalism::AuxiliaryTag> element, const ApplicabilityContext& context)
+inline ygg::float_t evaluate(::tyr::formalism::planning::FunctionTermView<::tyr::formalism::AuxiliaryTag>, const ApplicabilityContext& context)
 {
     return context.state.auxiliary_value;
 }

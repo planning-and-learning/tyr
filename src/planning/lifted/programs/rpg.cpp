@@ -195,7 +195,6 @@ ygg::DataList<fd::NumericEffectOperator<f::FluentTag>> create_metric_effects(fp:
                                                                              CostMode cost_mode,
                                                                              const ygg::DataList<fd::NumericEffectOperator<f::FluentTag>>& unit_metric_effects,
                                                                              const MetricFunctionSet& metric_functions,
-                                                                             TranslationContext<LiftedTag>& translation_context,
                                                                              fp::MergeDatalogContext& context)
 {
     if (cost_mode == CostMode::UNIT)
@@ -294,7 +293,7 @@ void translate_action_to_delete_free_rules(fp::ActionView action,
                                            fp::MergeDatalogContext& context,
                                            RPGProgram<LiftedTag>::RuleToActionMappings& rule_to_action)
 {
-    const auto metric_effects = create_metric_effects(action, cost_mode, unit_metric_effects, metric_functions, translation_context, context);
+    const auto metric_effects = create_metric_effects(action, cost_mode, unit_metric_effects, metric_functions, context);
 
     for (const auto cond_eff : action.get_effects())
     {

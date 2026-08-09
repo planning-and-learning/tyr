@@ -122,7 +122,7 @@ public:
             m_status = status;
     }
 
-    bool consider_goal(WorkerStateIndex<Kind> goal, ygg::float_t cost, bool terminate)
+    bool consider_goal(WorkerStateIndex<Kind> goal, ygg::float_t cost, [[maybe_unused]] bool terminate)
     {
         if (!running())
             return false;
@@ -256,7 +256,7 @@ public:
 
     size_t size() const noexcept { return 1; }
 
-    WorkerData& get(ygg::Index<Worker> index) noexcept
+    WorkerData& get([[maybe_unused]] ygg::Index<Worker> index) noexcept
     {
         assert(index == ygg::Index<Worker>(0));
         return m_worker;

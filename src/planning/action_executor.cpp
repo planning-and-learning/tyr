@@ -77,7 +77,6 @@ inline void process_effects(fp::ActionView action,
                             fp::GrounderContext& grounder_context,
                             fp::FDRContext& fdr_context,
                             analysis::CompatibilityWorkspace& compatibility_workspace,
-                            ::tyr::formalism::planning::EffectFamilyList& effect_families,
                             ygg::DataList<fp::FDRFact<f::FluentTag>>& tmp_del_effects,
                             ygg::DataList<fp::FDRFact<f::FluentTag>>& tmp_add_effects)
 {
@@ -242,7 +241,6 @@ ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Lifted
                                                   grounder,
                                                   fdr,
                                                   m_compatibility_workspace,
-                                                  m_effect_families,
                                                   del_effects,
                                                   add_effects);
                                           });

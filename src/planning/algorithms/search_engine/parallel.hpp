@@ -165,7 +165,8 @@ public:
 
     static size_t search_node_divisor(size_t num_workers) noexcept { return num_workers; }
 
-    static ygg::Index<State<Kind>> search_node_index(ygg::Index<State<Kind>> state, ygg::Index<Worker> worker, size_t num_workers) noexcept
+    static ygg::Index<State<Kind>>
+    search_node_index(ygg::Index<State<Kind>> state, [[maybe_unused]] ygg::Index<Worker> worker, size_t num_workers) noexcept
     {
         assert(owner(state, num_workers) == worker);
         return ygg::Index<State<Kind>>(static_cast<ygg::uint_t>(ygg::uint_t(state) / num_workers));
@@ -595,7 +596,7 @@ public:
     }
 
     template<typename Engine, typename WorkerData, typename EmitTransition>
-    std::optional<AcceptanceResult> accept_generated_goal(Engine& engine,
+    std::optional<AcceptanceResult> accept_generated_goal([[maybe_unused]] Engine& engine,
                                                           WorkerData& worker,
                                                           typename SearchPolicy::SearchNode& search_node,
                                                           const typename Engine::RoutedSuccessor& routed_successor,

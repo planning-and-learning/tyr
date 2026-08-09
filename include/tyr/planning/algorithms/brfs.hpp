@@ -74,7 +74,7 @@ struct Solver
     StateRepositoryPtr<Kind> state_repository;
     AxiomEvaluatorPtr<Kind> axiom_evaluator;
     SuccessorGeneratorPtr<Kind> successor_generator;
-    Options<Kind> options;
+    Options<Kind> options {};
 
     Node<Kind> normalize_start_node(std::optional<Node<Kind>> start_node)
     {

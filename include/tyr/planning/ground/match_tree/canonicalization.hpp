@@ -34,58 +34,58 @@ namespace tyr::planning::match_tree
 {
 
 template<typename Tag>
-bool is_canonical(const ygg::Data<AtomSelectorNode<Tag>>& element)
+bool is_canonical(const ygg::Data<AtomSelectorNode<Tag>>&)
 {
     return true;
 };
 
 template<typename Tag>
-bool is_canonical(const ygg::Data<VariableSelectorNode<Tag>>& element)
+bool is_canonical(const ygg::Data<VariableSelectorNode<Tag>>&)
 {
     return true;
 };
 
 template<typename Tag>
-bool is_canonical(const ygg::Data<NegativeFactSelectorNode<Tag>>& element)
+bool is_canonical(const ygg::Data<NegativeFactSelectorNode<Tag>>&)
 {
     return true;
 };
 
 template<typename Tag>
-bool is_canonical(const ygg::Data<NumericConstraintSelectorNode<Tag>>& element)
+bool is_canonical(const ygg::Data<NumericConstraintSelectorNode<Tag>>&)
 {
     return true;
 };
 
 template<typename Tag>
-bool is_canonical(const ygg::Data<ElementGeneratorNode<Tag>>& element)
+bool is_canonical(const ygg::Data<ElementGeneratorNode<Tag>>&)
 {
     return true;
 };
 
 template<typename Tag>
-bool is_canonical(const ygg::Data<Node<Tag>>& element)
+bool is_canonical(const ygg::Data<Node<Tag>>&)
 {
     return true;
 };
 
 template<typename Tag>
-void canonicalize(ygg::Data<AtomSelectorNode<Tag>>& element) {};
+void canonicalize(ygg::Data<AtomSelectorNode<Tag>>&) {};
 
 template<typename Tag>
-void canonicalize(ygg::Data<VariableSelectorNode<Tag>>& element) {};
+void canonicalize(ygg::Data<VariableSelectorNode<Tag>>&) {};
 
 template<typename Tag>
-void canonicalize(ygg::Data<NegativeFactSelectorNode<Tag>>& element) {};
+void canonicalize(ygg::Data<NegativeFactSelectorNode<Tag>>&) {};
 
 template<typename Tag>
-void canonicalize(ygg::Data<NumericConstraintSelectorNode<Tag>>& element) {};
+void canonicalize(ygg::Data<NumericConstraintSelectorNode<Tag>>&) {};
 
 template<typename Tag>
-void canonicalize(ygg::Data<ElementGeneratorNode<Tag>>& element) {};
+void canonicalize(ygg::Data<ElementGeneratorNode<Tag>>&) {};
 
 template<typename Tag>
-void canonicalize(ygg::Data<Node<Tag>>& element) {};
+void canonicalize(ygg::Data<Node<Tag>>&) {};
 
 }
 

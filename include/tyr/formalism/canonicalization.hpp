@@ -33,58 +33,58 @@ namespace tyr::formalism
  * Datalog
  */
 
-inline bool is_canonical(const ygg::Data<Variable>& data) { return true; }
+inline bool is_canonical(const ygg::Data<Variable>&) { return true; }
 
-inline bool is_canonical(const ygg::Data<Object>& data) { return true; }
+inline bool is_canonical(const ygg::Data<Object>&) { return true; }
 
 template<typename Tag>
-bool is_canonical(const ygg::Data<RelationBinding<Tag>>& data)
+bool is_canonical(const ygg::Data<RelationBinding<Tag>>&)
 {
     return true;
 }
 
-inline bool is_canonical(const ygg::Data<Term>& data) { return true; }
+inline bool is_canonical(const ygg::Data<Term>&) { return true; }
 
 template<FactKind T>
-bool is_canonical(const ygg::Data<Predicate<T>>& data)
+bool is_canonical(const ygg::Data<Predicate<T>>&)
 {
     return true;
 }
 
 template<FactKind T>
-bool is_canonical(const ygg::Data<Function<T>>& data)
+bool is_canonical(const ygg::Data<Function<T>>&)
 {
     return true;
 }
 
-inline void canonicalize(ygg::Data<Variable>& data)
+inline void canonicalize(ygg::Data<Variable>&)
 {  // Trivially canonical
 }
 
-inline void canonicalize(ygg::Data<Object>& data)
+inline void canonicalize(ygg::Data<Object>&)
 {
     // Trivially canonical
 }
 
 template<typename Tag>
-void canonicalize(ygg::Data<RelationBinding<Tag>>& data)
+void canonicalize(ygg::Data<RelationBinding<Tag>>&)
 {
     // Trivially canonical
 }
 
-inline void canonicalize(ygg::Data<Term>& data)
-{
-    // Trivially canonical
-}
-
-template<FactKind T>
-void canonicalize(ygg::Data<Predicate<T>>& data)
+inline void canonicalize(ygg::Data<Term>&)
 {
     // Trivially canonical
 }
 
 template<FactKind T>
-void canonicalize(ygg::Data<Function<T>>& data)
+void canonicalize(ygg::Data<Predicate<T>>&)
+{
+    // Trivially canonical
+}
+
+template<FactKind T>
+void canonicalize(ygg::Data<Function<T>>&)
 {
     // Trivially canonical
 }

@@ -83,7 +83,7 @@ bool is_applicable(::tyr::formalism::datalog::GroundRuleView<R> element, const F
  * evaluate
  */
 
-inline ygg::ClosedInterval<ygg::float_t> evaluate(ygg::float_t element, const FactSets& fact_sets)
+inline ygg::ClosedInterval<ygg::float_t> evaluate(ygg::float_t element, const FactSets&)
 {
     return ygg::ClosedInterval<ygg::float_t>(element, element);
 }

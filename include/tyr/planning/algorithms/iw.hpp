@@ -67,7 +67,7 @@ struct Solver
 
     brfs::Solver<Kind> brfs_solver;
     ygg::uint_t max_arity = MaxArity;
-    Options<Kind> options;
+    Options<Kind> options {};
 
     Node<Kind> normalize_start_node(std::optional<Node<Kind>> start_node)
     {

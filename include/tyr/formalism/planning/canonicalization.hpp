@@ -34,7 +34,7 @@ namespace tyr::formalism::planning
  */
 
 template<typename T>
-bool is_canonical(const ygg::Data<UnaryOperator<T>>& data)
+bool is_canonical(const ygg::Data<UnaryOperator<T>>&)
 {
     return true;
 }
@@ -54,78 +54,78 @@ bool is_canonical(const ygg::Data<MultiOperator<T>>& data)
 }
 
 template<typename T>
-bool is_canonical(const ygg::Data<BooleanOperator<T>>& data)
+bool is_canonical(const ygg::Data<BooleanOperator<T>>&)
 {
     return true;
 }
 
 template<typename T>
-bool is_canonical(const ygg::Data<ArithmeticOperator<T>>& data)
+bool is_canonical(const ygg::Data<ArithmeticOperator<T>>&)
 {
     return true;
 }
 
 template<FactKind T>
-bool is_canonical(const ygg::Data<Atom<T>>& data)
+bool is_canonical(const ygg::Data<Atom<T>>&)
 {
     return true;
 }
 
 template<FactKind T>
-bool is_canonical(const ygg::Data<Literal<T>>& data)
+bool is_canonical(const ygg::Data<Literal<T>>&)
 {
     return true;
 }
 
 template<FactKind T>
-bool is_canonical(const ygg::Data<GroundAtom<T>>& data)
+bool is_canonical(const ygg::Data<GroundAtom<T>>&)
 {
     return true;
 }
 
 template<FactKind T>
-bool is_canonical(const ygg::Data<GroundLiteral<T>>& data)
+bool is_canonical(const ygg::Data<GroundLiteral<T>>&)
 {
     return true;
 }
 
 template<FactKind T>
-bool is_canonical(const ygg::Data<FunctionTerm<T>>& data)
+bool is_canonical(const ygg::Data<FunctionTerm<T>>&)
 {
     return true;
 }
 
-inline bool is_canonical(const ygg::Data<FunctionExpression>& data) { return true; }
+inline bool is_canonical(const ygg::Data<FunctionExpression>&) { return true; }
 
 template<FactKind T>
-bool is_canonical(const ygg::Data<GroundFunctionTerm<T>>& data)
+bool is_canonical(const ygg::Data<GroundFunctionTerm<T>>&)
 {
     return true;
 }
 
-inline bool is_canonical(const ygg::Data<GroundFunctionExpression>& data) { return true; }
+inline bool is_canonical(const ygg::Data<GroundFunctionExpression>&) { return true; }
 
 template<FactKind T>
-bool is_canonical(const ygg::Data<GroundFunctionTermValue<T>>& data)
-{
-    return true;
-}
-
-template<FactKind T>
-bool is_canonical(const ygg::Data<NumericEffect<T>>& data)
+bool is_canonical(const ygg::Data<GroundFunctionTermValue<T>>&)
 {
     return true;
 }
 
 template<FactKind T>
-bool is_canonical(const ygg::Data<GroundNumericEffect<T>>& data)
+bool is_canonical(const ygg::Data<NumericEffect<T>>&)
 {
     return true;
 }
 
-inline bool is_canonical(const ygg::Data<ConditionalEffect>& data) { return true; }
+template<FactKind T>
+bool is_canonical(const ygg::Data<GroundNumericEffect<T>>&)
+{
+    return true;
+}
 
-inline bool is_canonical(const ygg::Data<GroundConditionalEffect>& data) { return true; }
+inline bool is_canonical(const ygg::Data<ConditionalEffect>&) { return true; }
+
+inline bool is_canonical(const ygg::Data<GroundConditionalEffect>&) { return true; }
 
 inline bool is_canonical(const ygg::Data<ConjunctiveEffect>& data) { return is_canonical(data.literals) && is_canonical(data.numeric_effects); }
 
@@ -134,15 +134,15 @@ inline bool is_canonical(const ygg::Data<GroundConjunctiveEffect>& data)
     return is_canonical(data.add_facts) && is_canonical(data.del_facts) && is_canonical(data.numeric_effects);
 }
 
-inline bool is_canonical(const ygg::Data<Action>& data) { return true; }
+inline bool is_canonical(const ygg::Data<Action>&) { return true; }
 
-inline bool is_canonical(const ygg::Data<GroundAction>& data) { return true; }
+inline bool is_canonical(const ygg::Data<GroundAction>&) { return true; }
 
-inline bool is_canonical(const ygg::Data<Axiom>& data) { return true; }
+inline bool is_canonical(const ygg::Data<Axiom>&) { return true; }
 
-inline bool is_canonical(const ygg::Data<GroundAxiom>& data) { return true; }
+inline bool is_canonical(const ygg::Data<GroundAxiom>&) { return true; }
 
-inline bool is_canonical(const ygg::Data<Metric>& data) { return true; }
+inline bool is_canonical(const ygg::Data<Metric>&) { return true; }
 
 inline bool is_canonical(const ygg::Data<Task>& data)
 {
@@ -158,13 +158,13 @@ inline bool is_canonical(const ygg::Data<Domain>& data)
 }
 
 template<FactKind T>
-bool is_canonical(const ygg::Data<FDRVariable<T>>& data)
+bool is_canonical(const ygg::Data<FDRVariable<T>>&)
 {
     return true;
 }
 
 template<FactKind T>
-bool is_canonical(const ygg::Data<FDRFact<T>>& data)
+bool is_canonical(const ygg::Data<FDRFact<T>>&)
 {
     return true;
 }
@@ -193,7 +193,7 @@ inline bool is_canonical(const ygg::Data<FDRTask>& data)
  */
 
 template<typename T>
-void canonicalize(ygg::Data<UnaryOperator<T>>& data)
+void canonicalize(ygg::Data<UnaryOperator<T>>&)
 {
     // Trivially canonical
 }
@@ -215,75 +215,75 @@ void canonicalize(ygg::Data<MultiOperator<T>>& data)
 }
 
 template<FactKind T>
-void canonicalize(ygg::Data<NumericEffect<T>>& data)
+void canonicalize(ygg::Data<NumericEffect<T>>&)
 {
 }
 
 template<FactKind T>
-void canonicalize(ygg::Data<GroundNumericEffect<T>>& data)
+void canonicalize(ygg::Data<GroundNumericEffect<T>>&)
 {
 }
 
 template<typename T>
-void canonicalize(ygg::Data<BooleanOperator<T>>& data)
+void canonicalize(ygg::Data<BooleanOperator<T>>&)
 {
     // Trivially canonical
 }
 
 template<typename T>
-void canonicalize(ygg::Data<ArithmeticOperator<T>>& data)
+void canonicalize(ygg::Data<ArithmeticOperator<T>>&)
 {
     // Trivially canonical
 }
 
 template<FactKind T>
-void canonicalize(ygg::Data<Atom<T>>& data)
+void canonicalize(ygg::Data<Atom<T>>&)
 {
     // Trivially canonical
 }
 
 template<FactKind T>
-void canonicalize(ygg::Data<Literal<T>>& data)
+void canonicalize(ygg::Data<Literal<T>>&)
 {
     // Trivially canonical
 }
 
 template<FactKind T>
-void canonicalize(ygg::Data<GroundAtom<T>>& data)
+void canonicalize(ygg::Data<GroundAtom<T>>&)
 {
     // Trivially canonical
 }
 
 template<FactKind T>
-void canonicalize(ygg::Data<GroundLiteral<T>>& data)
+void canonicalize(ygg::Data<GroundLiteral<T>>&)
 {
     // Trivially canonical
 }
 
 template<FactKind T>
-void canonicalize(ygg::Data<FunctionTerm<T>>& data)
+void canonicalize(ygg::Data<FunctionTerm<T>>&)
 {
     // Trivially canonical
 }
 
-inline void canonicalize(ygg::Data<FunctionExpression>& data)
-{
-    // Trivially canonical
-}
-
-template<FactKind T>
-void canonicalize(ygg::Data<GroundFunctionTerm<T>>& data)
-{
-    // Trivially canonical
-}
-
-inline void canonicalize(ygg::Data<GroundFunctionExpression>& data)
+inline void canonicalize(ygg::Data<FunctionExpression>&)
 {
     // Trivially canonical
 }
 
 template<FactKind T>
-void canonicalize(ygg::Data<GroundFunctionTermValue<T>>& data)
+void canonicalize(ygg::Data<GroundFunctionTerm<T>>&)
+{
+    // Trivially canonical
+}
+
+inline void canonicalize(ygg::Data<GroundFunctionExpression>&)
+{
+    // Trivially canonical
+}
+
+template<FactKind T>
+void canonicalize(ygg::Data<GroundFunctionTermValue<T>>&)
 {
     // Trivially canonical
 }
@@ -292,9 +292,9 @@ void canonicalize(ygg::Data<GroundFunctionTermValue<T>>& data)
  * Planning
  */
 
-inline void canonicalize(ygg::Data<ConditionalEffect>& data) {}
+inline void canonicalize(ygg::Data<ConditionalEffect>&) {}
 
-inline void canonicalize(ygg::Data<GroundConditionalEffect>& data) {}
+inline void canonicalize(ygg::Data<GroundConditionalEffect>&) {}
 
 inline void canonicalize(ygg::Data<ConjunctiveEffect>& data)
 {
@@ -313,11 +313,11 @@ inline void canonicalize(ygg::Data<Action>& data) { canonicalize(data.effects); 
 
 inline void canonicalize(ygg::Data<GroundAction>& data) { canonicalize(data.effects); }
 
-inline void canonicalize(ygg::Data<Axiom>& data) {}
+inline void canonicalize(ygg::Data<Axiom>&) {}
 
-inline void canonicalize(ygg::Data<GroundAxiom>& data) {}
+inline void canonicalize(ygg::Data<GroundAxiom>&) {}
 
-inline void canonicalize(ygg::Data<Metric>& data) {}
+inline void canonicalize(ygg::Data<Metric>&) {}
 
 inline void canonicalize(ygg::Data<Task>& data)
 {
@@ -343,13 +343,13 @@ inline void canonicalize(ygg::Data<Domain>& data)
 }
 
 template<FactKind T>
-void canonicalize(ygg::Data<FDRVariable<T>>& data)
+void canonicalize(ygg::Data<FDRVariable<T>>&)
 {
     // Trivially canonical
 }
 
 template<FactKind T>
-void canonicalize(ygg::Data<FDRFact<T>>& data)
+void canonicalize(ygg::Data<FDRFact<T>>&)
 {
     // Trivially canonical
 }

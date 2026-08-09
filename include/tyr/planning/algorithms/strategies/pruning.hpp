@@ -40,9 +40,9 @@ public:
     /// logical owner in shared mode. A strategy must not re-enter the search or wait for work from the same logical worker.
     [[nodiscard]] virtual PruningStrategyPtr<Kind> make_worker(ygg::Index<Worker>) const { return nullptr; }
 
-    virtual bool should_prune_state(const StateView<Kind>& state) { return false; }
+    virtual bool should_prune_state(const StateView<Kind>&) { return false; }
 
-    virtual bool should_prune_successor_state(const StateView<Kind>& state, const StateView<Kind>& succ_state, bool is_new_succ) { return false; }
+    virtual bool should_prune_successor_state(const StateView<Kind>&, const StateView<Kind>&, bool) { return false; }
 };
 
 namespace detail

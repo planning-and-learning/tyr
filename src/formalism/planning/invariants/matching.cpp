@@ -38,7 +38,7 @@ using DefaultMatchPolicy = tyr::formalism::unification::DefaultMatchPolicy;
 
 bool is_effect_local_parameter(ParameterIndex parameter, size_t num_action_variables) { return static_cast<ygg::uint_t>(parameter) >= num_action_variables; }
 
-struct ActionAlignmentPolicy : tyr::formalism::unification::DefaultMatchPolicy
+struct ActionAlignmentPolicy
 {
     size_t num_rigid_variables;
     size_t num_action_variables;
@@ -74,7 +74,7 @@ struct ActionAlignmentPolicy : tyr::formalism::unification::DefaultMatchPolicy
     }
 };
 
-struct EffectCoverPolicy : tyr::formalism::unification::DefaultMatchPolicy
+struct EffectCoverPolicy
 {
     size_t num_rigid_variables;
     size_t num_action_variables;

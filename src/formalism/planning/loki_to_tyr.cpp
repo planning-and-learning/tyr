@@ -47,9 +47,9 @@ void LokiToTyrTranslator::prepare(loki::formalism::FunctionSkeletonView function
 void LokiToTyrTranslator::prepare(loki::formalism::ObjectView object) { prepare(object.get_types()); }
 void LokiToTyrTranslator::prepare(loki::formalism::ParameterView parameter) { prepare(parameter.get_variable()); }
 void LokiToTyrTranslator::prepare(loki::formalism::PredicateView predicate) { prepare(predicate.get_parameters()); }
-void LokiToTyrTranslator::prepare(loki::formalism::RequirementView requirements) {}
+void LokiToTyrTranslator::prepare(loki::formalism::RequirementView) {}
 void LokiToTyrTranslator::prepare(loki::formalism::TypeView type) { prepare(type.get_bases()); }
-void LokiToTyrTranslator::prepare(loki::formalism::VariableView variabl) {}
+void LokiToTyrTranslator::prepare(loki::formalism::VariableView) {}
 
 /**
  * Prepare lifted
@@ -66,7 +66,7 @@ void LokiToTyrTranslator::prepare(loki::formalism::AtomView atom)
     prepare(atom.get_terms());
 }
 void LokiToTyrTranslator::prepare(loki::formalism::LiteralView literal) { prepare(literal.get_atom()); }
-void LokiToTyrTranslator::prepare(loki::formalism::FunctionExpressionNumberView function_expression) {}
+void LokiToTyrTranslator::prepare(loki::formalism::FunctionExpressionNumberView) {}
 void LokiToTyrTranslator::prepare(loki::formalism::BinaryFunctionExpressionView function_expression)
 {
     prepare(function_expression.get_left());
@@ -383,7 +383,7 @@ LiteralViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::Litera
 }
 
 ygg::Data<FunctionExpression>
-LokiToTyrTranslator::translate_lifted(loki::formalism::FunctionExpressionNumberView element, Builder& builder, Repository& context)
+LokiToTyrTranslator::translate_lifted(loki::formalism::FunctionExpressionNumberView element, Builder&, Repository&)
 {
     return ygg::Data<FunctionExpression>(ygg::float_t(element.get_value()));
 }
@@ -1143,7 +1143,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::LiteralView element, Bu
 }
 
 ygg::Data<GroundFunctionExpression>
-LokiToTyrTranslator::translate_grounded(loki::formalism::FunctionExpressionNumberView element, Builder& builder, Repository& context)
+LokiToTyrTranslator::translate_grounded(loki::formalism::FunctionExpressionNumberView element, Builder&, Repository&)
 {
     return ygg::Data<GroundFunctionExpression>(ygg::float_t(element.get_value()));
 }

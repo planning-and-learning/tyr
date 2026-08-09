@@ -162,7 +162,7 @@ struct SearchCase
 
 inline void PrintTo(const SearchCase& test_case, std::ostream* os) { *os << test_case.name << " (" << test_case.task_file << ")"; }
 
-inline SearchCase parse_search_case(const boost::json::object& suite, const boost::json::object& object)
+inline SearchCase parse_search_case(const boost::json::object& object)
 {
     auto result = SearchCase { ygg::common::as_string(object, "name", "case"),
                                ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(object, "domain_file", "case")),
@@ -180,7 +180,7 @@ inline std::vector<SearchCase> load_search_cases(const std::filesystem::path& fi
     const auto& suite_object = ygg::common::as_object(suite, "suite");
     auto result = std::vector<SearchCase> {};
     for (const auto& case_value : ygg::common::as_array(suite_object, "cases", "suite"))
-        result.push_back(parse_search_case(suite_object, ygg::common::as_object(case_value, "case")));
+        result.push_back(parse_search_case(ygg::common::as_object(case_value, "case")));
     return result;
 }
 

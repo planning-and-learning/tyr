@@ -96,12 +96,12 @@ void collect_fterms(GroundNumericEffectOperatorView<T1> element, ygg::UnorderedS
  */
 
 template<FactKind T>
-inline void collect_fterms(ygg::float_t element, ygg::UnorderedSet<FunctionTermView<T>>& result)
+inline void collect_fterms(ygg::float_t, ygg::UnorderedSet<FunctionTermView<T>>&)
 {
 }
 
 template<FactKind T>
-inline void collect_fterms(ygg::float_t element, ygg::UnorderedSet<GroundFunctionTermView<T>>& result)
+inline void collect_fterms(ygg::float_t, ygg::UnorderedSet<GroundFunctionTermView<T>>&)
 {
 }
 

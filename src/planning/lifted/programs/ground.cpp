@@ -117,7 +117,7 @@ void append_from_condition(fp::ConjunctiveConditionView cond,
                 merge_p2d<f::DerivedTag, f::FluentTag>(literal, translation_context.p2d.derived_to_fluent_predicate, context).first.get_index());
 };
 
-auto create_applicability_literal(fp::ActionView action, const TranslationContext<LiftedTag>& translation_context, fp::MergeDatalogContext& context)
+auto create_applicability_literal(fp::ActionView action, fp::MergeDatalogContext& context)
 {
     auto literal_ptr = context.builder.get_builder<fd::Literal<f::FluentTag>>();
     auto& literal = *literal_ptr;
@@ -155,7 +155,7 @@ auto create_applicability_rule(fp::ActionView action, const TranslationContext<L
     return context.destination.get_or_create(rule);
 }
 
-auto create_applicability_literal(fp::AxiomView axiom, const TranslationContext<LiftedTag>& translation_context, fp::MergeDatalogContext& context)
+auto create_applicability_literal(fp::AxiomView axiom, fp::MergeDatalogContext& context)
 {
     auto literal_ptr = context.builder.get_builder<fd::Literal<f::FluentTag>>();
     auto& literal = *literal_ptr;
@@ -211,7 +211,7 @@ auto create_cond_effect_rule(fp::ActionView action,
         conj_cond.variables.push_back(merge_p2d(variable, context).first.get_index());
     for (const auto literal : action.get_condition().get_literals<f::StaticTag>())
         conj_cond.static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.get_index());
-    conj_cond.fluent_literals.push_back(create_applicability_literal(action, translation_context, context).first.get_index());
+    conj_cond.fluent_literals.push_back(create_applicability_literal(action, context).first.get_index());
 
     for (const auto variable : cond_eff.get_variables())
         conj_cond.variables.push_back(merge_p2d(variable, context).first.get_index());
@@ -245,7 +245,7 @@ auto create_effect_rule(fp::AxiomView axiom,
         conj_cond.variables.push_back(merge_p2d(variable, context).first.get_index());
     for (const auto literal : axiom.get_body().get_literals<f::StaticTag>())
         conj_cond.static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.get_index());
-    conj_cond.fluent_literals.push_back(create_applicability_literal(axiom, translation_context, context).first.get_index());
+    conj_cond.fluent_literals.push_back(create_applicability_literal(axiom, context).first.get_index());
 
     canonicalize(conj_cond);
     const auto new_conj_cond = context.destination.get_or_create(conj_cond).first;

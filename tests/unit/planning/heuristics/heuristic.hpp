@@ -79,7 +79,7 @@ inline HeuristicExpectation parse_expectation(const std::string& key, const boos
     return HeuristicExpectation { parse_cost_mode(key), parse_optional_float(object, "h") };
 }
 
-inline HeuristicCase parse_case(const boost::json::object& suite, const boost::json::object& object)
+inline HeuristicCase parse_case(const boost::json::object& object)
 {
     auto result = HeuristicCase { ygg::common::as_string(object, "name", "case"),
                                   ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(object, "domain_file", "case")),
@@ -97,7 +97,7 @@ inline std::vector<HeuristicCase> load_cases()
     const auto& suite_object = ygg::common::as_object(suite, "suite");
     auto result = std::vector<HeuristicCase> {};
     for (const auto& case_value : ygg::common::as_array(suite_object, "cases", "suite"))
-        result.push_back(parse_case(suite_object, ygg::common::as_object(case_value, "case")));
+        result.push_back(parse_case(ygg::common::as_object(case_value, "case")));
     return result;
 }
 

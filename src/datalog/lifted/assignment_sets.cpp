@@ -410,7 +410,7 @@ bool FunctionAssignmentSet<T>::insert(::tyr::formalism::datalog::GroundFunctionT
 }
 
 template<::tyr::formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::operator[](const EmptyAssignment& assignment) const noexcept
+ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::operator[](const EmptyAssignment&) const noexcept
 {
     return m_set[EmptyAssignment::rank];
 }
@@ -460,7 +460,7 @@ ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::operator[](::tyr::fo
 }
 
 template<::tyr::formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::at(const EmptyAssignment& assignment) const noexcept
+ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::at(const EmptyAssignment&) const noexcept
 {
     return m_set[EmptyAssignment::rank];
 }

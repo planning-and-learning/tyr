@@ -66,7 +66,7 @@ auto collect_parameters(LiftedBooleanOperatorView element);
  * Implementations
  */
 
-inline void collect_parameters(ygg::float_t element, ygg::UnorderedSet<ParameterIndex>& result) {}
+inline void collect_parameters(ygg::float_t, ygg::UnorderedSet<ParameterIndex>&) {}
 
 inline void collect_parameters(TermView element, ygg::UnorderedSet<ParameterIndex>& result)
 {
@@ -191,7 +191,7 @@ size_t max_fterm_arity(LiftedBooleanOperatorView element);
  * Implementations
  */
 
-inline size_t max_fterm_arity(ygg::float_t element) { return 0; }
+inline size_t max_fterm_arity(ygg::float_t) { return 0; }
 
 template<FactKind T>
 inline size_t max_fterm_arity(FunctionTermView<T> element)

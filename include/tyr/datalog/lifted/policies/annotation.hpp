@@ -65,7 +65,7 @@ public:
 
     void clear_achievers() noexcept {}
 
-    void record_achiever(PredicateHead head, const AndAnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context) const noexcept {}
+    void record_achiever(PredicateHead, const AndAnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>&) const noexcept {}
 
     void update_annotation(PredicateHead head,
                            const AndAnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context,

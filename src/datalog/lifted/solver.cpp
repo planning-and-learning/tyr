@@ -416,7 +416,7 @@ template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
          AndAnnotationPolicyConcept<LiftedTag> AndAP,
          TerminationPolicyConcept<LiftedTag> TP,
          RuleCostPolicyConcept<LiftedTag> CP>
-bool try_generate_parallel(fd::AtomView<f::FluentTag>, RuleExecutionContext<f::PredicateTag, OrAP, AndAP, TP, CP>& rctx)
+bool try_generate_parallel(fd::AtomView<f::FluentTag>, [[maybe_unused]] RuleExecutionContext<f::PredicateTag, OrAP, AndAP, TP, CP>& rctx)
 {
 #if defined(TYR_ENABLE_INNER_PARALLELISM) && defined(TYR_ENABLE_SEMI_NAIVE)
     constexpr size_t kNumStripes = 2;
@@ -525,7 +525,9 @@ template<f::RelationKind R,
          AndAnnotationPolicyConcept<LiftedTag> AndAP,
          TerminationPolicyConcept<LiftedTag> TP,
          RuleCostPolicyConcept<LiftedTag> CP>
-void process_clique(RuleWorkerExecutionContext<R, OrAP, AndAP, TP, CP>& wrctx, std::span<const kckp::Vertex> clique, bool require_novel_binding)
+void process_clique(RuleWorkerExecutionContext<R, OrAP, AndAP, TP, CP>& wrctx,
+                    std::span<const kckp::Vertex> clique,
+                    [[maybe_unused]] bool require_novel_binding)
 {
     auto& in = wrctx.in();
     auto& out = wrctx.out();

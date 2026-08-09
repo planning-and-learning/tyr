@@ -235,7 +235,7 @@ bool is_consistent(::tyr::formalism::planning::GroundAxiomView element,
  */
 
 template<TaskKind Kind>
-ygg::float_t evaluate(ygg::float_t element, const StateContext<Kind>& context)
+ygg::float_t evaluate(ygg::float_t element, const StateContext<Kind>&)
 {
     return element;
 }
@@ -283,7 +283,7 @@ ygg::float_t evaluate(::tyr::formalism::planning::GroundFunctionTermView<::tyr::
 }
 
 template<TaskKind Kind>
-ygg::float_t evaluate(::tyr::formalism::planning::GroundFunctionTermView<::tyr::formalism::AuxiliaryTag> element, const StateContext<Kind>& context)
+ygg::float_t evaluate(::tyr::formalism::planning::GroundFunctionTermView<::tyr::formalism::AuxiliaryTag>, const StateContext<Kind>& context)
 {
     return context.auxiliary_value;
 }

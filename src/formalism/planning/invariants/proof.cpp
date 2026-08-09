@@ -145,8 +145,7 @@ ConstraintSystem make_param_system(const MutableAction& op, const MutableConditi
     return param_system;
 }
 
-std::optional<ConstraintSystem> make_balance_system(const MutableConditionalEffect& add_effect,
-                                                    const MutableAtom<FluentTag>& add_atom,
+std::optional<ConstraintSystem> make_balance_system(const MutableAtom<FluentTag>& add_atom,
                                                     const MutableConditionalEffect& del_effect,
                                                     const MutableAtom<FluentTag>& del_atom,
                                                     const ygg::Map<PredicateView<FluentTag>, MutableLiteralList<FluentTag>>& produced_by_pred)
@@ -268,7 +267,7 @@ bool is_add_effect_unbalanced(const MutableAction& op, const MutableConditionalE
         if (del_pattern == nullptr)
             continue;
 
-        auto balance_system = make_balance_system(add_effect, add_atom, *del_ref.effect, *del_ref.atom, produced_by_pred);
+        auto balance_system = make_balance_system(add_atom, *del_ref.effect, *del_ref.atom, produced_by_pred);
         if (!balance_system.has_value())
             continue;
 

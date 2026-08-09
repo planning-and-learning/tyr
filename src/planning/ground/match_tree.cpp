@@ -385,22 +385,22 @@ void push_result(ConstraintStackEntry<Tag>& el, ygg::Data<Node<Tag>> node)
 }
 
 template<typename Tag>
-bool explored(const GeneratorStackEntry<Tag>& el) noexcept
+bool explored(const GeneratorStackEntry<Tag>&) noexcept
 {
     return true;
 }
 
 template<typename Tag>
-std::optional<StackEntry<Tag>> next_entry(const GeneratorStackEntry<Tag>& el,
-                                          const SortedPreconditions<Tag>& sorted_preconditions,
-                                          const PreconditionDetails<Tag>& details,
-                                          const ::tyr::formalism::planning::Repository& context)
+std::optional<StackEntry<Tag>> next_entry(const GeneratorStackEntry<Tag>&,
+                                          const SortedPreconditions<Tag>&,
+                                          const PreconditionDetails<Tag>&,
+                                          const ::tyr::formalism::planning::Repository&)
 {
     return std::nullopt;
 }
 
 template<typename Tag>
-void push_result(GeneratorStackEntry<Tag>& el, ygg::Data<Node<Tag>> node)
+void push_result(GeneratorStackEntry<Tag>&, ygg::Data<Node<Tag>>)
 {
     throw std::logic_error("Unexpected case.");
 }
@@ -582,7 +582,7 @@ template<typename Tag>
 static std::optional<StackEntry<Tag>> try_create_selector_stack_entry(BaseEntry<Tag> base,
                                                                       const SortedPreconditions<Tag>& sorted_preconditions,
                                                                       const PreconditionDetails<Tag>& details,
-                                                                      const ::tyr::formalism::planning::Repository& context)
+                                                                      const ::tyr::formalism::planning::Repository&)
 {
     return std::visit(
         [&](auto&& arg)
