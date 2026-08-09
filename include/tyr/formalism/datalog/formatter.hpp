@@ -19,11 +19,34 @@
 #define TYR_FORMALISM_DATALOG_FORMATTER_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/formatter.hpp"
 
 #include <fmt/format.h>
 #include <string>
+
+namespace tyr::formalism::datalog
+{
+
+std::string to_string(const VariableDependencyGraph& value);
+
+}  // namespace tyr::formalism::datalog
+
+namespace fmt
+{
+
+template<>
+struct formatter<tyr::formalism::datalog::VariableDependencyGraph, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const tyr::formalism::datalog::VariableDependencyGraph& value, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value));
+    }
+};
+
+}  // namespace fmt
 
 namespace tyr::formalism::datalog
 {
@@ -148,8 +171,6 @@ std::string to_string(GroundRuleView<FunctionTag> value);
 std::string to_string(ProgramView<LiftedTag> value);
 std::string to_string(ProgramView<GroundTag> value);
 
-std::string to_string(const VariableDependencyGraph& value);
-
 }  // namespace tyr::formalism::datalog
 
 namespace fmt
@@ -178,18 +199,6 @@ struct formatter<ygg::View<ygg::Data<T>, tyr::formalism::datalog::Repository>, c
 
     template<typename FormatContext>
     auto format(const View& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value));
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::datalog::VariableDependencyGraph, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const tyr::formalism::datalog::VariableDependencyGraph& value, FormatContext& ctx) const
     {
         return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value));
     }

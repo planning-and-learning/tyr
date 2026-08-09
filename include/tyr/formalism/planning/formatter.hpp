@@ -21,7 +21,6 @@
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
-#include "tyr/formalism/planning/repository.hpp"
 
 #include <fmt/format.h>
 #include <string>
@@ -32,6 +31,56 @@ namespace tyr::formalism::planning
 struct PlanFormatting
 {
 };
+
+std::string to_string(const PlanningDomain& value);
+std::string to_string(const PlanningTask& value);
+std::string to_string(const PlanningFDRTask& value);
+
+}  // namespace tyr::formalism::planning
+
+namespace fmt
+{
+
+template<>
+struct formatter<tyr::formalism::planning::PlanningDomain, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const tyr::formalism::planning::PlanningDomain& value, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
+    }
+};
+
+template<>
+struct formatter<tyr::formalism::planning::PlanningTask, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const tyr::formalism::planning::PlanningTask& value, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
+    }
+};
+
+template<>
+struct formatter<tyr::formalism::planning::PlanningFDRTask, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const tyr::formalism::planning::PlanningFDRTask& value, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
+    }
+};
+
+}  // namespace fmt
+
+namespace tyr::formalism::planning
+{
 
 std::string to_string(const ygg::Data<LiftedUnaryOperatorType>& value);
 std::string to_string(const ygg::Data<GroundUnaryOperatorType>& value);
@@ -177,10 +226,6 @@ std::string to_string(TaskView value);
 std::string to_string(DomainView value);
 std::string to_string(FDRTaskView value);
 
-std::string to_string(const PlanningDomain& value);
-std::string to_string(const PlanningTask& value);
-std::string to_string(const PlanningFDRTask& value);
-
 }  // namespace tyr::formalism::planning
 
 namespace fmt
@@ -235,42 +280,6 @@ struct formatter<tyr::formalism::OptimizationDirection, char>
     auto format(tyr::formalism::OptimizationDirection value, FormatContext& ctx) const
     {
         return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value));
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::PlanningDomain, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::PlanningDomain& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::PlanningTask, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::PlanningTask& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::PlanningFDRTask, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::PlanningFDRTask& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
     }
 };
 
