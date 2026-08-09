@@ -140,6 +140,10 @@ def parse_destination_lock_statistics(content, props):
         for name in aggregate_names:
             props.pop(name, None)
         return
+    if props.get("out_of_time") or props.get("out_of_memory"):
+        for name in aggregate_names:
+            props.pop(name, None)
+        return
 
     if matches:
         if unexpected_indices is not None:
@@ -313,6 +317,8 @@ class SearchParser(Parser):
         self.add_function(process_unsolvable)
         self.add_function(add_search_time_s)
         self.add_function(add_idle_time_s)
+        self.add_function(add_out_of_memory, "run.err")
+        self.add_function(add_out_of_time, "driver.log")
         self.add_function(parse_worker_statistics)
         self.add_function(parse_communication_statistics)
         self.add_function(parse_destination_lock_statistics)
@@ -321,8 +327,6 @@ class SearchParser(Parser):
         self.add_function(add_search_time_ms_per_expanded)
         self.add_function(add_memory_mb)
         self.add_function(add_coverage)
-        self.add_function(add_out_of_memory, "run.err")
-        self.add_function(add_out_of_time, "driver.log")
 
     @staticmethod
     def get_attributes():

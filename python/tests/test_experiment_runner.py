@@ -451,6 +451,31 @@ def test_search_parser_rejects_missing_enabled_destination_lock_statistics(tmp_p
     assert props["unexplained_errors"] == ["Missing destination-lock worker statistics"]
 
 
+@pytest.mark.parametrize(
+    ("filename", "message", "status"),
+    [
+        ("driver.log", "exceeded wall-clock time limit:", "out_of_time"),
+        ("run.err", "std::bad_alloc", "out_of_memory"),
+    ],
+)
+def test_search_parser_ignores_missing_destination_lock_statistics_for_interrupted_runs(
+    tmp_path, filename, message, status
+):
+    (tmp_path / "run.log").write_text(
+        """[INPUT] Num search workers: 2
+[INPUT] Collect destination lock statistics: 1
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / filename).write_text(message, encoding="utf-8")
+    props = {}
+
+    SearchParser().parse(tmp_path, props)
+
+    assert props[status] == 1
+    assert "unexplained_errors" not in props
+
+
 def test_search_parser_rejects_incomplete_destination_lock_aggregates(tmp_path):
     (tmp_path / "run.log").write_text(
         """[INPUT] Num search workers: 1
