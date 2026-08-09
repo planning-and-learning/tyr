@@ -21,6 +21,7 @@
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 
 #include <fmt/format.h>
 #include <string>

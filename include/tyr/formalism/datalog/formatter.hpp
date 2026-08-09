@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_DATALOG_FORMATTER_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/formatter.hpp"
 
 #include <fmt/format.h>
