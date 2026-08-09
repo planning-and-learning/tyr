@@ -1,0 +1,33 @@
+{
+  "name": "2026-8-7-gbfs_lazy-lifted-parallel-search-1",
+  "planner": "gbfs_lazy",
+  "suite_sets": {
+    "local": [
+      "ipc-satisficing-strips-test",
+      "ipc-satisficing-adl-test"
+    ],
+    "tetralith": [
+      "htg"
+    ]
+  },
+  "configurations": [
+    {
+      "name": "gbfs-lazy-lifted-hff-pref-sequential-1",
+      "task_kind": "lifted",
+      "heuristic": "rpg_ff",
+      "seed": 0,
+      "args": [
+        "--num-datalog-threads",
+        "1",
+        "--heuristic-cost-type",
+        "unit",
+        "--num-search-workers",
+        "1"
+      ]
+    }
+  ],
+  "parsers": [
+    "search",
+    "datalog"
+  ]
+}

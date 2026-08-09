@@ -62,8 +62,14 @@ steps to Slurm. The resolved configuration is carried into each step.
 | What preset | Purpose | Local how | Tetralith how |
 |---|---|---|---|
 | `2026-1-8-gbfs_lazy-lifted-parallel-datalog` | lifted 1/2/4/8 inner Datalog threads | `local-build-2500m-1s` | `tetralith-build-16000m-600s-8cpu` |
-| `2026-8-7-gbfs_lazy-lifted-parallel-search-4` | lifted sequential, 4-thread Datalog, shared search, random HDA*, and LM-cut HDA* | `local-build-2500m-1s` | `tetralith-build-11360m-600s-4cpu` |
+| `2026-8-7-gbfs_lazy-lifted-parallel-search-1` | lifted sequential baseline | `local-build-2500m-1s` | `tetralith-build-11360m-600s-1cpu` |
+| `2026-8-7-gbfs_lazy-lifted-parallel-search-4` | lifted 4-thread Datalog, shared search, and random HDA* | `local-build-2500m-1s` | `tetralith-build-11360m-600s-4cpu` |
+| `2026-8-7-gbfs_lazy-lifted-parallel-search-16` | lifted 16-thread Datalog, shared search, and random HDA* | `local-build-2500m-1s` | `tetralith-build-11360m-600s-16cpu` |
 | `2026-8-8-gbfs_lazy-ground-parallel-search-4` | ground sequential, shared search, random HDA*, and LM-cut HDA* | `local-build-2500m-1s` | `tetralith-build-11360m-600s-4cpu` |
+
+Use `tetralith-build-45440m-1800s-16cpu` with any of the three lifted
+parallel-search what presets for the final high-memory runs. The 11,360 MiB,
+600-second presets remain available for shorter profiling runs.
 
 The `build_dir` in the how file must contain the selected planner executable.
 The build-specific `plain-kckp`, `delta-kckp`, and
@@ -99,7 +105,7 @@ A what file contains:
 
 `heuristic` and `seed` become `-H` and `-R`. Lifted tasks need no task-kind
 flag; Ground tasks add `-G`. All other planner options are forwarded unchanged
-from `args`, so `--num-datalog-threads` and `-S` apply only when explicitly
+from `args`, so `--num-datalog-threads` and `--num-search-workers` apply only when explicitly
 present.
 `run_planner.sh` supplies the executable and input/output paths but contains no
 algorithm-specific options. Inner Datalog threads and search workers may both
