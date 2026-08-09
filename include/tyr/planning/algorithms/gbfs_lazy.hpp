@@ -50,7 +50,7 @@ struct Options
     ygg::uint_t boost_preferred_queue = 1000;
     /// Values above one enable parallel search. A concurrent state repository shares storage; a private one is hash-distributed.
     size_t num_search_workers = 1;
-    DistHashMode dist_hash_mode = DistHashMode::LMCUT;
+    DistHashMode dist_hash_mode = DistHashMode::RANDOM;
     bool collect_destination_lock_statistics = false;
     uint64_t random_seed = 0;
     bool shuffle_labeled_succ_nodes = false;

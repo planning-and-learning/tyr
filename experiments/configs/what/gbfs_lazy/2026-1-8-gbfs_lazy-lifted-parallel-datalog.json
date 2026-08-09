@@ -23,7 +23,9 @@
         "--heuristic-cost-type",
         "unit",
         "--num-search-workers",
-        "1"
+        "1",
+        "--dist-hash-mode",
+        "random"
       ]
     },
     {
@@ -37,7 +39,9 @@
         "--heuristic-cost-type",
         "unit",
         "--num-search-workers",
-        "1"
+        "1",
+        "--dist-hash-mode",
+        "random"
       ]
     },
     {
@@ -51,7 +55,9 @@
         "--heuristic-cost-type",
         "unit",
         "--num-search-workers",
-        "1"
+        "1",
+        "--dist-hash-mode",
+        "random"
       ]
     },
     {
@@ -65,7 +71,9 @@
         "--heuristic-cost-type",
         "unit",
         "--num-search-workers",
-        "1"
+        "1",
+        "--dist-hash-mode",
+        "random"
       ]
     }
   ],

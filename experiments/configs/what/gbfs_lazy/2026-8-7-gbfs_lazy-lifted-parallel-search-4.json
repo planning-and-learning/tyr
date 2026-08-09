@@ -22,7 +22,9 @@
         "--heuristic-cost-type",
         "unit",
         "--num-search-workers",
-        "1"
+        "1",
+        "--dist-hash-mode",
+        "random"
       ]
     },
     {
@@ -39,6 +41,8 @@
         "2",
         "--state-repository-mode",
         "shared",
+        "--dist-hash-mode",
+        "random",
         "--collect-destination-lock-statistics"
       ]
     },
@@ -56,6 +60,8 @@
         "4",
         "--state-repository-mode",
         "shared",
+        "--dist-hash-mode",
+        "random",
         "--collect-destination-lock-statistics"
       ]
     },

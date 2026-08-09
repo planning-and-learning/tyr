@@ -327,7 +327,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "max_time": None,
             "cost_mode": planning.CostMode.GENERAL,
             "num_search_workers": 1,
-            "dist_hash_mode": planning.DistHashMode.LMCUT,
+            "dist_hash_mode": planning.DistHashMode.RANDOM,
             "parallel_search_mode": planning.ParallelSearchMode.SYNCHRONOUS,
             "collect_destination_lock_statistics": False,
             "random_seed": 0,
@@ -341,7 +341,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "max_num_states": ygg_uint_max,
             "max_time": None,
             "num_search_workers": 1,
-            "dist_hash_mode": planning.DistHashMode.LMCUT,
+            "dist_hash_mode": planning.DistHashMode.RANDOM,
             "collect_destination_lock_statistics": False,
             "random_seed": 0,
             "shuffle_labeled_succ_nodes": False,
@@ -357,7 +357,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "use_preferred_actions": True,
             "boost_preferred_queue": 1000,
             "num_search_workers": 1,
-            "dist_hash_mode": planning.DistHashMode.LMCUT,
+            "dist_hash_mode": planning.DistHashMode.RANDOM,
             "collect_destination_lock_statistics": False,
             "random_seed": 0,
             "shuffle_labeled_succ_nodes": False,
@@ -794,9 +794,9 @@ def test_dist_hash_mode_is_bound():
             task_module.gbfs_lazy,
         ):
             options = algorithm_module.Options()
-            assert options.dist_hash_mode == planning.DistHashMode.LMCUT
-            options.dist_hash_mode = planning.DistHashMode.RANDOM
             assert options.dist_hash_mode == planning.DistHashMode.RANDOM
+            options.dist_hash_mode = planning.DistHashMode.LMCUT
+            assert options.dist_hash_mode == planning.DistHashMode.LMCUT
 
 
 def test_ground_task_instantiation_result_default_is_explicit_failure():

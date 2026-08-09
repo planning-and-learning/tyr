@@ -40,7 +40,7 @@ int main(int argc, char** argv)
         .choices("hash-distributed", "shared")
         .help("The state repository mode used by parallel search.");
     program.add_argument("--dist-hash-mode")
-        .default_value(std::string("lmcut"))
+        .default_value(std::string("random"))
         .choices("random", "lmcut")
         .help("The state hash used by hash-distributed parallel search.");
     program.add_argument("--parallel-search-mode")
