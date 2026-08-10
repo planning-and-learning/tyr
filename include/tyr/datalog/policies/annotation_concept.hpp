@@ -21,6 +21,7 @@
 #include "tyr/datalog/policies/annotation_types.hpp"
 
 #include <concepts>
+#include <type_traits>
 
 namespace tyr::datalog
 {
@@ -31,6 +32,7 @@ concept AnnotationPolicyConcept = TaskKind<Kind>
                                               const T& const_policy,
                                               PredicateAnnotationHead<Kind> head,
                                               FunctionAnnotationHead<Kind> function_head,
+                                              ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> function_binding,
                                               ygg::ClosedInterval<ygg::float_t> interval,
                                               const AnnotationContext<Kind, ::tyr::formalism::PredicateTag>& predicate_context,
                                               const AnnotationContext<Kind, ::tyr::formalism::FunctionTag>& function_context,
@@ -39,16 +41,17 @@ concept AnnotationPolicyConcept = TaskKind<Kind>
                                               DeltaPredicateAnnotations<Kind>& delta_annotations,
                                               const DeltaPredicateAnnotations<Kind>& const_delta_annotations,
                                               DeltaFunctionAnnotations<Kind>& delta_numeric_annotations) {
-                                         { T::records_propositional_achievers } -> std::convertible_to<bool>;
+                                         typename std::bool_constant<T::stores_annotations>;
+                                         typename std::bool_constant<T::records_propositional_achievers>;
                                          { const_policy.initialize_annotation(head, annotations) } -> std::same_as<void>;
-                                         { const_policy.initialize_annotation(function_head, interval, numeric_annotations) } -> std::same_as<void>;
+                                         { const_policy.initialize_annotation(function_binding, interval, numeric_annotations) } -> std::same_as<void>;
                                          { policy.clear_achievers() } -> std::same_as<void>;
                                          { policy.record_achiever(head, predicate_context) } -> std::same_as<void>;
-                                         { const_policy.update_annotation(head, predicate_context, delta_annotations) } -> std::same_as<bool>;
+                                         { const_policy.try_update_candidate(head, predicate_context, delta_annotations) } -> std::same_as<bool>;
                                          {
-                                             const_policy.update_annotation(function_head, interval, function_context, delta_numeric_annotations)
+                                             const_policy.try_update_candidate(function_head, interval, function_context, delta_numeric_annotations)
                                          } -> std::same_as<bool>;
-                                         { const_policy.update_annotation(head, const_delta_annotations, annotations) } -> std::same_as<CostUpdate<Kind>>;
+                                         { const_policy.commit_annotation(head, const_delta_annotations, annotations) } -> std::same_as<CostUpdate<Kind>>;
                                      };
 
 }

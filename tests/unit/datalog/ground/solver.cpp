@@ -122,6 +122,20 @@ struct GroundQueueFixture
         return repository.get_or_create(condition_builder).first;
     }
 
+    fd::GroundConjunctiveConditionView numeric_condition(fd::GroundFunctionTermView<f::FluentTag> term, f::BooleanOperatorKind op, ygg::float_t value)
+    {
+        auto comparison_builder = ygg::Data<fd::GroundBinaryOperatorType<f::BooleanOperatorKind>>(op,
+                                                                                                  ygg::Data<fd::GroundFunctionExpression>(term.get_index()),
+                                                                                                  ygg::Data<fd::GroundFunctionExpression>(value));
+        canonicalize(comparison_builder);
+        const auto comparison = repository.get_or_create(comparison_builder).first;
+
+        auto condition_builder = ygg::Data<fd::GroundConjunctiveCondition>();
+        condition_builder.numeric_constraints.emplace_back(op, fd::GroundBooleanOperatorData::Variant(comparison.get_index()));
+        canonicalize(condition_builder);
+        return repository.get_or_create(condition_builder).first;
+    }
+
     fd::RuleBindingView<f::PredicateTag> fresh_rule_binding()
     {
         auto predicate_builder = ygg::Data<f::Predicate<f::FluentTag>>("dummy_" + std::to_string(next_rule_id++), 0);
@@ -275,8 +289,8 @@ TEST(TyrDatalogGroundQueueTest, NoAnnotationPolicyDerivesFactsWithoutStoringAnno
     auto fixture = GroundQueueFixture();
     const auto atom = fixture.fluent_atom("a");
     const auto term = fixture.fluent_function_term("n");
-    fixture.rule(fixture.condition(), atom);
     fixture.empty_body_assign_rule(term, 3);
+    fixture.rule(fixture.numeric_condition(term, f::BooleanOperatorKind::Ge, 1), atom);
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
     auto workspace = datalog::ProgramWorkspace<GroundTag>(const_workspace);
@@ -480,6 +494,32 @@ TEST(TyrDatalogGroundQueueTest, GroundUsedCostOverrideDoesNotCreateMetricEffectC
     EXPECT_EQ(datalog::get_cost(*annotation), 0);
 }
 
+TEST(TyrDatalogGroundQueueTest, GroundTerminationSkipsWorkWhenInitialFactsSatisfyGoal)
+{
+    auto fixture = GroundQueueFixture();
+    const auto goal_atom = fixture.fluent_atom("goal");
+    const auto extra_atom = fixture.fluent_atom("extra");
+    fixture.initial_fluent_atoms.push_back(goal_atom);
+    fixture.rule(fixture.condition(), extra_atom);
+    const auto goal = fixture.condition({ fixture.fluent_literal(goal_atom) });
+
+    const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
+    auto termination_policy = datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>();
+    termination_policy.set_goals(goal);
+    using Workspace = datalog::ProgramWorkspace<GroundTag,
+                                                datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>,
+                                                datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>>;
+    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>(), termination_policy);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
+
+    ctx.initialize(fixture.initial_fluent_atoms);
+    dq::compute_model(ctx);
+
+    EXPECT_EQ(binding_views(ctx), binding_views({ goal_atom }));
+    EXPECT_EQ(ctx.out().statistics().num_rules_fired, 0);
+    EXPECT_EQ(ctx.out().statistics().num_facts_derived, 0);
+}
+
 TEST(TyrDatalogGroundQueueTest, GroundTerminationStopsAfterGoalDerived)
 {
     auto fixture = GroundQueueFixture();
@@ -505,6 +545,42 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationStopsAfterGoalDerived)
     EXPECT_EQ(binding_views(ctx), binding_views({ a }));
     EXPECT_EQ(ctx.out().statistics().num_rules_fired, 1);
     EXPECT_TRUE(ctx.out().tp().check(datalog::FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }));
+}
+
+TEST(TyrDatalogGroundQueueTest, GroundTerminationCommitsMixedLowestCostBucket)
+{
+    auto fixture = GroundQueueFixture();
+    const auto goal_atom = fixture.fluent_atom("goal");
+    const auto peer_atom = fixture.fluent_atom("peer");
+    const auto expensive_source = fixture.fluent_atom("expensive_source");
+    const auto term = fixture.fluent_function_term("n");
+    fixture.initial_fluent_atoms.push_back(expensive_source);
+    fixture.rule(fixture.condition(), goal_atom);
+    fixture.rule(fixture.condition(), peer_atom);
+    const auto expensive_goal = fixture.rule(fixture.condition({ fixture.fluent_literal(expensive_source) }), goal_atom);
+    fixture.empty_body_assign_rule(term, 3);
+
+    const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
+    auto termination_policy = datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>();
+    termination_policy.set_goals(fixture.condition({ fixture.fluent_literal(goal_atom) }));
+    using Workspace = datalog::ProgramWorkspace<GroundTag,
+                                                datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>,
+                                                datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>>;
+    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>(), termination_policy);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
+
+    ctx.initialize(fixture.initial_fluent_atoms);
+    ctx.out().annotations().insert_or_assign(expensive_source.get_row(), datalog::BaseAnnotation<GroundTag>(datalog::Cost(2)));
+    dq::compute_model(ctx);
+
+    EXPECT_TRUE(ctx.out().fact_sets().predicate.contains(goal_atom.get_row()));
+    EXPECT_TRUE(ctx.out().fact_sets().predicate.contains(peer_atom.get_row()));
+    EXPECT_EQ(ctx.out().fact_sets().function[term], ygg::ClosedInterval<ygg::float_t>(3, 3));
+    const auto* goal_annotation = ctx.out().annotations().find(goal_atom.get_row());
+    ASSERT_NE(goal_annotation, nullptr);
+    EXPECT_EQ(datalog::get_cost(*goal_annotation), 0);
+    EXPECT_FALSE(ctx.out().rule_states<f::PredicateTag>()[ygg::uint_t(expensive_goal.get_index())].fired);
+    EXPECT_EQ(ctx.out().statistics().num_rules_fired, 3);
 }
 
 TEST(TyrDatalogGroundQueueTest, AchieverPolicyGroundRecordsFiredRule)
@@ -533,6 +609,39 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyGroundRecordsFiredRule)
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
     EXPECT_EQ((*achievers)[0].get_rule_key().get_index(), derive_b.get_index());
+}
+
+TEST(TyrDatalogGroundQueueTest, DerivedNumericIntervalUnblocksRuleAndRecordsSupport)
+{
+    auto fixture = GroundQueueFixture();
+    const auto term = fixture.fluent_function_term("n");
+    const auto head = fixture.fluent_atom("a");
+    fixture.empty_body_assign_rule(term, 3);
+    const auto derive_head = fixture.rule(fixture.numeric_condition(term, f::BooleanOperatorKind::Ge, 1), head);
+
+    const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
+    using Workspace = datalog::ProgramWorkspace<GroundTag,
+                                                datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>,
+                                                datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>>;
+    auto workspace = Workspace(const_workspace,
+                               datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>(),
+                               datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>());
+    auto ctx = datalog::ProgramExecutionContext(workspace);
+
+    ctx.initialize(fixture.initial_fluent_atoms);
+    EXPECT_EQ(ctx.out().rule_states<f::PredicateTag>()[ygg::uint_t(derive_head.get_index())].unsatisfied_count, 1);
+
+    dq::compute_model(ctx);
+
+    EXPECT_TRUE(ctx.out().fact_sets().predicate.contains(head.get_row()));
+    EXPECT_EQ(ctx.out().fact_sets().function[term], ygg::ClosedInterval<ygg::float_t>(3, 3));
+    const auto* achievers = ctx.out().annotation_policy().find_achievers(head.get_row());
+    ASSERT_NE(achievers, nullptr);
+    ASSERT_EQ(achievers->size(), 1);
+    const auto& supports = achievers->front().get_numeric_supports();
+    ASSERT_EQ(supports.size(), 1);
+    EXPECT_EQ(supports.front().get_key(), term);
+    EXPECT_EQ(supports.front().get_interval(), ygg::ClosedInterval<ygg::float_t>(3, 3));
 }
 
 TEST(TyrDatalogGroundQueueTest, UnfilteredNegativeFluentLiteralDoesNotFire)

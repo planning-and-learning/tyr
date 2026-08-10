@@ -20,7 +20,6 @@
 
 #include "tyr/datalog/contexts/program.hpp"
 #include "tyr/datalog/ground/policies/annotation.hpp"
-#include "tyr/datalog/ground/policies/cost.hpp"
 #include "tyr/datalog/ground/workspaces/program.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
 #include "tyr/datalog/policies/cost_concept.hpp"
@@ -30,7 +29,6 @@
 #include <algorithm>
 #include <type_traits>
 #include <utility>
-#include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
@@ -144,24 +142,6 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
     const auto& out() const noexcept { return m_out; }
 
 private:
-    template<typename Index>
-    static size_t position(Index index) noexcept
-    {
-        return static_cast<size_t>(index.get_value());
-    }
-
-    template<typename T, typename Index>
-    static decltype(auto) at(std::vector<T>& vector, Index index) noexcept
-    {
-        return vector[position(index)];
-    }
-
-    template<typename T, typename Index>
-    static decltype(auto) at(const std::vector<T>& vector, Index index) noexcept
-    {
-        return vector[position(index)];
-    }
-
     bool is_fluent_fact_true(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> fact) const noexcept
     {
         return m_out.fact_sets().predicate.contains(fact.get_row());
@@ -200,10 +180,10 @@ private:
         for (const auto rule : m_in.program().template get_rules<R>())
         {
             const auto rule_index = rule.get_index();
-            if (position(rule_index) >= states.size())
-                states.resize(position(rule_index) + 1);
+            if (ygg::uint_t(rule_index) >= states.size())
+                states.resize(ygg::uint_t(rule_index) + 1);
 
-            auto& state = at(states, rule_index);
+            auto& state = states[ygg::uint_t(rule_index)];
 
             auto unsatisfied_count = ygg::uint_t(0);
             for (const auto literal : rule.get_body().template get_literals<::tyr::formalism::FluentTag>())

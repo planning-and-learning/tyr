@@ -208,6 +208,102 @@ AtomsByPredicate collect_atoms_by_predicate(const Workspace& workspace)
     return result;
 }
 
+struct LiftedNumericProgram
+{
+    fd::PredicateBindingView<f::FluentTag> goal;
+    fd::FunctionBindingView<f::FluentTag> source;
+    fd::FunctionBindingView<f::FluentTag> target;
+    d::Program<LiftedTag> program;
+
+    LiftedNumericProgram(fd::RepositoryFactoryPtr factory_,
+                         fd::RepositoryPtr repository_,
+                         fd::ProgramView<LiftedTag> program_view,
+                         fd::PredicateBindingView<f::FluentTag> goal_,
+                         fd::FunctionBindingView<f::FluentTag> source_,
+                         fd::FunctionBindingView<f::FluentTag> target_) :
+        goal(goal_),
+        source(source_),
+        target(target_),
+        program(program_view, std::move(repository_), std::move(factory_))
+    {
+    }
+};
+
+LiftedNumericProgram make_lifted_numeric_program()
+{
+    auto factory = std::make_shared<fd::RepositoryFactory>();
+    auto repository = factory->create_shared();
+    const auto intern = [&]<typename T>(ygg::Data<T> data)
+    {
+        if constexpr (requires { fd::canonicalize(data); })
+            fd::canonicalize(data);
+        else
+            f::canonicalize(data);
+        return repository->get_or_create(data).first;
+    };
+    const auto bind_function = [&](auto function)
+    {
+        auto data = ygg::Data<f::RelationBinding<f::Function<f::FluentTag>>>();
+        data.relation = function.get_index();
+        return intern(std::move(data));
+    };
+    const auto make_function_term = [&](auto function)
+    {
+        auto data = ygg::Data<fd::FunctionTerm<f::FluentTag>>();
+        data.function = function.get_index();
+        return intern(std::move(data));
+    };
+
+    const auto source_function = intern(ygg::Data<f::Function<f::FluentTag>>(std::string("source"), 0));
+    const auto target_function = intern(ygg::Data<f::Function<f::FluentTag>>(std::string("target"), 0));
+    const auto source = bind_function(source_function);
+    const auto target = bind_function(target_function);
+    const auto source_term = make_function_term(source_function);
+    const auto target_term = make_function_term(target_function);
+    const auto source_ground_term = intern(ygg::Data<fd::GroundFunctionTerm<f::FluentTag>>(source.get_index()));
+    const auto source_value = intern(ygg::Data<fd::GroundFunctionTermValue<f::FluentTag>>(source_ground_term.get_index(), 3));
+    const auto empty_body = intern(ygg::Data<fd::ConjunctiveCondition>());
+
+    const auto assign_effect = intern(ygg::Data<fd::NumericEffect<f::FluentTag>>(f::NumericEffectOperatorKind::Assign,
+                                                                                 target_term.get_index(),
+                                                                                 ygg::Data<fd::FunctionExpression>(source_term.get_index())));
+    auto function_rule_data = ygg::Data<fd::Rule<f::FunctionTag>>();
+    function_rule_data.body = empty_body.get_index();
+    function_rule_data.head =
+        ygg::Data<fd::NumericEffectOperator<f::FluentTag>>(f::NumericEffectOperatorKind::Assign,
+                                                           ygg::Data<fd::NumericEffectOperator<f::FluentTag>>::Variant(assign_effect.get_index()));
+    const auto function_rule = intern(std::move(function_rule_data));
+
+    const auto goal_predicate = intern(ygg::Data<f::Predicate<f::FluentTag>>(std::string("goal"), 0));
+    auto goal_binding_data = ygg::Data<f::RelationBinding<f::Predicate<f::FluentTag>>>();
+    goal_binding_data.relation = goal_predicate.get_index();
+    const auto goal = intern(std::move(goal_binding_data));
+    auto goal_atom_data = ygg::Data<fd::Atom<f::FluentTag>>();
+    goal_atom_data.predicate = goal_predicate.get_index();
+    const auto goal_atom = intern(std::move(goal_atom_data));
+
+    const auto metric_effect = intern(ygg::Data<fd::NumericEffect<f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
+                                                                                 target_term.get_index(),
+                                                                                 ygg::Data<fd::FunctionExpression>(source_term.get_index())));
+    auto predicate_rule_data = ygg::Data<fd::Rule<f::PredicateTag>>();
+    predicate_rule_data.body = empty_body.get_index();
+    predicate_rule_data.head = goal_atom.get_index();
+    predicate_rule_data.metric_effects.emplace_back(f::NumericEffectOperatorKind::Increase,
+                                                    ygg::Data<fd::NumericEffectOperator<f::FluentTag>>::Variant(metric_effect.get_index()));
+    const auto predicate_rule = intern(std::move(predicate_rule_data));
+
+    auto program_data = ygg::Data<fd::Program>();
+    program_data.fluent_predicates.push_back(goal_predicate.get_index());
+    program_data.fluent_functions.push_back(source_function.get_index());
+    program_data.fluent_functions.push_back(target_function.get_index());
+    program_data.fluent_fterm_values.push_back(source_value.get_index());
+    program_data.predicate_rules.push_back(predicate_rule.get_index());
+    program_data.function_rules.push_back(function_rule.get_index());
+    const auto program = intern(std::move(program_data));
+
+    return LiftedNumericProgram(factory, repository, program, goal, source, target);
+}
+
 class BottomUpFixtureTest : public ::testing::TestWithParam<BottomUpCase>
 {
 };
@@ -285,6 +381,21 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
 
         EXPECT_EQ(run_config(), expected);
     }
+}
+
+TEST(TyrDatalogLiftedBottomUpTest, NoAnnotationPolicyKeepsNumericSemanticsWithoutStores)
+{
+    auto fixture = make_lifted_numeric_program();
+    auto workspace = d::ProgramWorkspace<LiftedTag>(fixture.program);
+    auto context = d::ProgramExecutionContext(workspace);
+
+    d::compute_model(context);
+
+    const auto expected = ygg::ClosedInterval<ygg::float_t>(3, 3);
+    EXPECT_TRUE(workspace.facts.fact_sets.predicate.contains(fixture.goal));
+    EXPECT_EQ(workspace.facts.fact_sets.function[fixture.target], expected);
+    EXPECT_EQ(workspace.annotations.find(fixture.goal), nullptr);
+    EXPECT_EQ(workspace.numeric_annotations.size(), 0);
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindings)

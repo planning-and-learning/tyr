@@ -18,6 +18,7 @@
 #ifndef TYR_DATALOG_LIFTED_WORKSPACES_PROGRAM_HPP_
 #define TYR_DATALOG_LIFTED_WORKSPACES_PROGRAM_HPP_
 
+#include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/lifted/policies/annotation_types.hpp"
 #include "tyr/datalog/lifted/policies/cost.hpp"
 #include "tyr/datalog/lifted/policies/numeric_support.hpp"
@@ -38,137 +39,13 @@
 
 #include <cassert>
 #include <concepts>
-#include <map>
 #include <optional>
 #include <utility>
 #include <vector>
-#include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/dependent_false.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::datalog
 {
-
-class CostBuckets
-{
-public:
-    using PredicateViewType = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
-    using FunctionViewType = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
-    using PredicateBucket = ygg::UnorderedSet<PredicateViewType>;
-    using FunctionBucket = ygg::UnorderedMap<FunctionViewType, ygg::ClosedInterval<ygg::float_t>>;
-    using Cost = datalog::Cost;
-
-    struct Bucket
-    {
-        PredicateBucket predicates;
-        FunctionBucket functions;
-
-        void clear()
-        {
-            predicates.clear();
-            functions.clear();
-        }
-
-        [[nodiscard]] bool empty() const noexcept { return predicates.empty() && functions.empty(); }
-        [[nodiscard]] size_t size() const noexcept { return predicates.size() + functions.size(); }
-    };
-
-    CostBuckets() : m_current(Cost(0)), m_total_size(0) {}
-
-    void clear() noexcept
-    {
-        m_buckets.clear();
-        m_total_size = 0;
-        m_current = Cost(0);
-    }
-
-    [[nodiscard]] Cost current_cost() const noexcept { return m_current; }
-    [[nodiscard]] bool empty() const noexcept { return m_total_size == 0; }
-
-    bool insert(Cost c, PredicateViewType a)
-    {
-        auto& bucket = m_buckets[c];
-        const auto [it, inserted] = bucket.predicates.insert(a);
-        if (inserted)
-            ++m_total_size;
-        return inserted;
-    }
-
-    bool insert(Cost c, FunctionViewType f, ygg::ClosedInterval<ygg::float_t> interval)
-    {
-        auto& bucket = m_buckets[c].functions;
-        auto [it, inserted] = bucket.emplace(f, interval);
-
-        if (inserted)
-        {
-            ++m_total_size;
-        }
-        else
-        {
-            it->second = hull(it->second, interval);
-        }
-
-        return inserted;
-    }
-
-    bool erase(Cost c, PredicateViewType a)
-    {
-        const auto it = m_buckets.find(c);
-        if (it == m_buckets.end())
-            return false;
-
-        const auto erased = it->second.predicates.erase(a) > 0;
-        if (erased)
-            --m_total_size;
-        if (it->second.empty())
-            m_buckets.erase(it);
-        return erased;
-    }
-
-    void update(const CostUpdate<LiftedTag>& update, PredicateViewType a)
-    {
-        if (update.old_cost.has_value())
-            erase(*update.old_cost, a);
-        insert(update.new_cost, a);
-    }
-
-    void clear_current()
-    {
-        const auto it = m_buckets.find(m_current);
-        if (it == m_buckets.end())
-            return;
-        m_total_size -= it->second.size();
-        m_buckets.erase(it);
-    }
-
-    bool advance_to_next_nonempty()
-    {
-        if (m_buckets.empty())
-            return false;
-        m_current = m_buckets.begin()->first;
-        return true;
-    }
-
-    const PredicateBucket& get_current_bucket() const
-    {
-        static const PredicateBucket kEmpty {};
-        const auto it = m_buckets.find(m_current);
-        return it == m_buckets.end() ? kEmpty : it->second.predicates;
-    }
-
-    const FunctionBucket& get_current_function_bucket() const
-    {
-        static const FunctionBucket kEmpty {};
-        const auto it = m_buckets.find(m_current);
-        return it == m_buckets.end() ? kEmpty : it->second.functions;
-    }
-
-private:
-    std::map<Cost, Bucket> m_buckets;
-    Cost m_current = Cost(0);
-    size_t m_total_size = 0;
-};
 
 template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
 struct ProgramWorkspace<LiftedTag, AP, TP, CP>

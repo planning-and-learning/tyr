@@ -20,6 +20,7 @@
 #include "tyr/datalog/lifted/policies/numeric_support.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
+#include "tyr/datalog/policies/annotation_concept.hpp"
 #include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/datalog/builder.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
@@ -69,7 +70,7 @@ void MinCostAnnotationPolicy<LiftedTag, AggregationFunction>::initialize_annotat
 
 template<typename AggregationFunction>
 CostUpdate<LiftedTag>
-MinCostAnnotationPolicy<LiftedTag, AggregationFunction>::update_annotation(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
+MinCostAnnotationPolicy<LiftedTag, AggregationFunction>::commit_annotation(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
                                                                            const DeltaPredicateAnnotations<LiftedTag>& delta_annotations,
                                                                            PredicateAnnotations<LiftedTag>& annotations) const
 {
@@ -151,10 +152,7 @@ std::optional<WitnessAnnotation<LiftedTag, R>> try_ground_witness(const Annotati
 
     body_cost = std::max(body_cost, context.current_cost);
 
-    if (context.metric_effect_cost != Cost(0))
-        body_metric = empty(body_metric) ?
-                          ygg::ClosedInterval<ygg::float_t>(context.metric_effect_cost, context.metric_effect_cost) :
-                          ygg::ClosedInterval<ygg::float_t>(lower(body_metric) + context.metric_effect_cost, upper(body_metric) + context.metric_effect_cost);
+    body_metric = add_metric_delta(body_metric, context.metric_effect_cost);
 
     numeric_supports.insert(numeric_supports.end(), context.numeric_supports.begin(), context.numeric_supports.end());
     const auto rule_binding =
@@ -174,7 +172,7 @@ std::optional<WitnessAnnotation<LiftedTag, R>> try_ground_better_witness(Cost be
 }
 
 template<typename AggregationFunction>
-bool MinCostAnnotationPolicy<LiftedTag, AggregationFunction>::update_annotation(
+bool MinCostAnnotationPolicy<LiftedTag, AggregationFunction>::try_update_candidate(
     ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
     const AnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context,
     DeltaPredicateAnnotations<LiftedTag>& delta_annotations) const
@@ -203,7 +201,7 @@ bool MinCostAnnotationPolicy<LiftedTag, AggregationFunction>::update_annotation(
 }
 
 template<typename AggregationFunction>
-bool MinCostAnnotationPolicy<LiftedTag, AggregationFunction>::update_annotation(
+bool MinCostAnnotationPolicy<LiftedTag, AggregationFunction>::try_update_candidate(
     ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> head,
     ygg::ClosedInterval<ygg::float_t> interval,
     const AnnotationContext<LiftedTag, ::tyr::formalism::FunctionTag>& context,
@@ -260,6 +258,11 @@ void MinCostAnnotationWithAchieversPolicy<LiftedTag, AggregationFunction>::recor
                            });
     }
 }
+
+static_assert(AnnotationPolicyConcept<NoAnnotationPolicy<LiftedTag>, LiftedTag>);
+static_assert(AnnotationPolicyConcept<MinCostAnnotationPolicy<LiftedTag, SumAggregation>, LiftedTag>);
+static_assert(AnnotationPolicyConcept<MinCostAnnotationPolicy<LiftedTag, MaxAggregation>, LiftedTag>);
+static_assert(AnnotationPolicyConcept<MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>, LiftedTag>);
 
 template class MinCostAnnotationPolicy<LiftedTag, SumAggregation>;
 template class MinCostAnnotationPolicy<LiftedTag, MaxAggregation>;

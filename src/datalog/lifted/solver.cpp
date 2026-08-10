@@ -228,16 +228,10 @@ static bool collect_metric_effect_supports(const RuleUpdateInput<R, AP, CP>& inp
 template<f::RelationKind R, AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
 std::optional<Cost> metric_effect_delta(const RuleUpdateInput<R, AP, CP>& input)
 {
-    auto delta = input.pre_evaluated_metric_cost;
-    for (const auto& metric_effect : input.runtime_metric_effects)
-    {
-        const auto effect_delta = ygg::visit([&](auto&& effect) { return metric_effect_delta(effect, input); }, metric_effect.get_variant());
-        if (!effect_delta)
-            return std::nullopt;
-        delta += *effect_delta;
-    }
-
-    return delta;
+    return sum_metric_effect_deltas(input.pre_evaluated_metric_cost,
+                                    input.runtime_metric_effects,
+                                    [&](const auto& metric_effect)
+                                    { return ygg::visit([&](auto&& effect) { return metric_effect_delta(effect, input); }, metric_effect.get_variant()); });
 }
 
 template<f::RelationKind R, AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
@@ -268,9 +262,9 @@ template<AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag>
 static void insert_propositional_update(fd::PredicateBindingView<f::FluentTag> head,
                                         const RuleUpdateInput<f::PredicateTag, AP, CP>& input,
                                         PredicateHeadIteration& head_iteration,
-                                        DeltaPredicateAnnotations<LiftedTag>& delta_annotations)
+                                        [[maybe_unused]] DeltaPredicateAnnotations<LiftedTag>& delta_annotations)
 {
-    auto rule_binding = std::optional<fd::RuleBindingView<f::PredicateTag>> {};
+    [[maybe_unused]] auto rule_binding = std::optional<fd::RuleBindingView<f::PredicateTag>> {};
     auto cost = std::optional<Cost> {};
     if constexpr (std::same_as<CP, RuleCostPolicy<LiftedTag>> && !AP::records_propositional_achievers)
     {
@@ -283,17 +277,24 @@ static void insert_propositional_update(fd::PredicateBindingView<f::FluentTag> h
     }
     if (!cost)
         return;
-    auto& numeric_supports = input.effect_support_scratch;
-    numeric_supports.clear();
-    if (!collect_metric_effect_supports(input, numeric_supports))
-        return;
-    const auto context = input.make_annotation_context(rule_binding, *cost, numeric_supports);
+    if constexpr (AP::stores_annotations)
+    {
+        auto& numeric_supports = input.effect_support_scratch;
+        numeric_supports.clear();
+        if (!collect_metric_effect_supports(input, numeric_supports))
+            return;
+        const auto context = input.make_annotation_context(rule_binding, *cost, numeric_supports);
 
-    input.annotation_policy.record_achiever(head, context);
+        input.annotation_policy.record_achiever(head, context);
 
-    head_iteration.insert(head);
+        head_iteration.insert(head);
 
-    input.annotation_policy.update_annotation(head, context, delta_annotations);
+        input.annotation_policy.try_update_candidate(head, context, delta_annotations);
+    }
+    else
+    {
+        head_iteration.insert(head);
+    }
 }
 
 template<AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
@@ -301,7 +302,7 @@ static void insert_numeric_update(fd::NumericEffectOperatorView<f::FluentTag> he
                                   const FactSets& fact_sets,
                                   const RuleUpdateInput<f::FunctionTag, AP, CP>& input,
                                   FunctionHeadIteration& head_iteration,
-                                  DeltaFunctionAnnotations<LiftedTag>& delta_numeric_annotations)
+                                  [[maybe_unused]] DeltaFunctionAnnotations<LiftedTag>& delta_numeric_annotations)
 {
     const auto interval = evaluate(head, ApplicabilityContext { fact_sets, input.ground_context });
     if (empty(interval))
@@ -319,13 +320,16 @@ static void insert_numeric_update(fd::NumericEffectOperatorView<f::FluentTag> he
             const auto effect_interval = *rem_rule_cost == Cost(0) ? widen_free_growth(interval, fact_sets.get<f::FluentTag>().function[head]) : interval;
 
             const auto cost = reduce_cost(*rem_rule_cost, input.cost_policy.get_cost(rule_binding, head, effect_interval));
-            auto& numeric_supports = input.effect_support_scratch;
-            numeric_supports.clear();
-            if (!collect_metric_effect_supports(input, numeric_supports) || !collect_numeric_head_supports(effect, head, input, numeric_supports))
-                return;
-            const auto context = input.make_annotation_context(rule_binding, cost, numeric_supports);
+            if constexpr (AP::stores_annotations)
+            {
+                auto& numeric_supports = input.effect_support_scratch;
+                numeric_supports.clear();
+                if (!collect_metric_effect_supports(input, numeric_supports) || !collect_numeric_head_supports(effect, head, input, numeric_supports))
+                    return;
+                const auto context = input.make_annotation_context(rule_binding, cost, numeric_supports);
 
-            input.annotation_policy.update_annotation(head, effect_interval, context, delta_numeric_annotations);
+                input.annotation_policy.try_update_candidate(head, effect_interval, context, delta_numeric_annotations);
+            }
 
             head_iteration.insert(FunctionHeadUpdate(head, effect_interval, input.current_cost + cost));
         },
@@ -689,7 +693,7 @@ void reduce_worker_heads(PredicateHeadIteration& head_iteration, ProgramOut& pro
 {
     for (const auto head : head_iteration.bindings)
     {
-        const auto cost_update = program_out.annotation_policy().update_annotation(head, program_out.delta_annotations(), program_out.annotations());
+        const auto cost_update = program_out.annotation_policy().commit_annotation(head, program_out.delta_annotations(), program_out.annotations());
         cost_buckets.update(cost_update, head);
     }
 }

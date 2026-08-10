@@ -15,12 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_DATALOG_CONTEXTS_STRATUM_HPP_
-#define TYR_DATALOG_CONTEXTS_STRATUM_HPP_
+#ifndef TYR_DATALOG_LIFTED_CONTEXTS_STRATUM_HPP_
+#define TYR_DATALOG_LIFTED_CONTEXTS_STRATUM_HPP_
 
+#include "tyr/datalog/contexts/program.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/lifted/contexts/rule.hpp"
-#include "tyr/datalog/lifted/policies/cost.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
 #include "tyr/datalog/policies/cost_concept.hpp"
 #include "tyr/datalog/policies/termination_concept.hpp"
@@ -48,9 +48,7 @@ struct StratumExecutionContext
         Out(RuleSchedulerStratum& scheduler, ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_scheduler(scheduler), m_ctx(ctx) {}
 
         auto& scheduler() noexcept { return m_scheduler; }
-        const auto& scheduler() const noexcept { return m_scheduler; }
         auto& program() noexcept { return m_ctx.out(); }
-        const auto& program() const noexcept { return m_ctx.out(); }
 
     private:
         RuleSchedulerStratum& m_scheduler;
@@ -58,14 +56,6 @@ struct StratumExecutionContext
     };
 
     StratumExecutionContext(RuleSchedulerStratum& scheduler, ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_in(ctx), m_out(scheduler, ctx) {}
-
-    /**
-     * Initialization
-     */
-
-    /**
-     * Subcontext
-     */
 
     template<::tyr::formalism::RelationKind R>
     auto get_rule_execution_context(ygg::Index<::tyr::formalism::datalog::Rule<R>> rule)
@@ -75,7 +65,6 @@ struct StratumExecutionContext
 
     const auto& in() const noexcept { return m_in; }
     auto& out() noexcept { return m_out; }
-    const auto& out() const noexcept { return m_out; }
 
 private:
     In m_in;

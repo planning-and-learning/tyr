@@ -23,7 +23,6 @@
 #include "tyr/datalog/ground/policies/numeric_support.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
-#include "tyr/datalog/policies/annotation_concept.hpp"
 
 #include <span>
 #include <vector>
@@ -47,38 +46,64 @@ struct AnnotationContext<GroundTag, R>
     const PredicateAnnotations<GroundTag>& annotations;
 };
 
+template<::tyr::formalism::RelationKind R>
+struct GroundAnnotationCostContext
+{
+    using SelectionEntry = GroundNumericSupportSelectorWorkspace::SelectionEntry;
+    using Selection = std::vector<SelectionEntry>;
+
+    ::tyr::formalism::datalog::GroundRuleView<R> rule;
+    Cost rule_cost;
+    const GroundNumericSupportSelector& numeric_support_selector;
+    const PredicateAnnotations<GroundTag>& annotations;
+    Selection& support_selection;
+    Selection& auxiliary_selection;
+    Selection& metric_selection;
+};
+
+struct GroundNumericEffectCost
+{
+    Cost total_cost;
+    Cost remaining_metric_cost;
+};
+
 template<typename AggregationFunction>
 class MinCostAnnotationPolicy<GroundTag, AggregationFunction>
 {
 public:
     using PredicateHead = PredicateAnnotationHead<GroundTag>;
     using FunctionHead = FunctionAnnotationHead<GroundTag>;
-    using Aggregation = AggregationFunction;
+    using FunctionBinding = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
 
+    static constexpr bool stores_annotations = true;
     static constexpr bool records_propositional_achievers = false;
+
+    Cost evaluate_cost(const GroundAnnotationCostContext<::tyr::formalism::PredicateTag>& context) const;
+
+    Cost evaluate_cost(const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context) const;
+
+    GroundNumericEffectCost evaluate_cost(const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context,
+                                          ::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect) const;
 
     void initialize_annotation(PredicateHead head, PredicateAnnotations<GroundTag>& annotations) const;
 
-    void initialize_annotation(FunctionHead head, ygg::ClosedInterval<ygg::float_t> interval, FunctionAnnotations<GroundTag>& numeric_annotations) const;
-    void initialize_annotation(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> head,
-                               ygg::ClosedInterval<ygg::float_t> interval,
-                               FunctionAnnotations<GroundTag>& numeric_annotations) const;
+    void initialize_annotation(FunctionBinding head, ygg::ClosedInterval<ygg::float_t> interval, FunctionAnnotations<GroundTag>& numeric_annotations) const;
 
     CostUpdate<GroundTag>
-    update_annotation(PredicateHead head, const DeltaPredicateAnnotations<GroundTag>& delta_annotations, PredicateAnnotations<GroundTag>& annotations) const;
+    commit_annotation(PredicateHead head, const DeltaPredicateAnnotations<GroundTag>& delta_annotations, PredicateAnnotations<GroundTag>& annotations) const;
 
     void clear_achievers() noexcept {}
 
     void record_achiever(PredicateHead, const AnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>&) const noexcept {}
 
-    bool update_annotation(PredicateHead head,
-                           const AnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context,
-                           DeltaPredicateAnnotations<GroundTag>& delta_annotations) const;
+    bool try_update_candidate(PredicateHead head,
+                              const AnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context,
+                              DeltaPredicateAnnotations<GroundTag>& delta_annotations) const;
 
-    bool update_annotation(FunctionHead head,
-                           ygg::ClosedInterval<ygg::float_t> interval,
-                           const AnnotationContext<GroundTag, ::tyr::formalism::FunctionTag>& context,
-                           DeltaFunctionAnnotations<GroundTag>& delta_numeric_annotations) const;
+    bool try_update_candidate(FunctionHead head,
+                              ygg::ClosedInterval<ygg::float_t> interval,
+                              const AnnotationContext<GroundTag, ::tyr::formalism::FunctionTag>& context,
+                              DeltaFunctionAnnotations<GroundTag>& delta_numeric_annotations) const;
 };
 
 template<typename AggregationFunction>
@@ -102,10 +127,29 @@ private:
     DenseRelationMap<::tyr::formalism::PredicateTag, Achievers> m_achievers;
 };
 
-static_assert(AnnotationPolicyConcept<NoAnnotationPolicy<GroundTag>, GroundTag>);
-static_assert(AnnotationPolicyConcept<MinCostAnnotationPolicy<GroundTag, SumAggregation>, GroundTag>);
-static_assert(AnnotationPolicyConcept<MinCostAnnotationPolicy<GroundTag, MaxAggregation>, GroundTag>);
-static_assert(AnnotationPolicyConcept<MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>, GroundTag>);
+Cost evaluate_cost(const NoAnnotationPolicy<GroundTag>&, const GroundAnnotationCostContext<::tyr::formalism::PredicateTag>& context) noexcept;
+
+Cost evaluate_cost(const NoAnnotationPolicy<GroundTag>&, const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context);
+
+GroundNumericEffectCost evaluate_cost(const NoAnnotationPolicy<GroundTag>&,
+                                      const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context,
+                                      ::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect);
+
+template<typename AP, ::tyr::formalism::RelationKind R>
+    requires(AP::stores_annotations)
+Cost evaluate_cost(const AP& policy, const GroundAnnotationCostContext<R>& context)
+{
+    return policy.evaluate_cost(context);
+}
+
+template<typename AP>
+    requires(AP::stores_annotations)
+GroundNumericEffectCost evaluate_cost(const AP& policy,
+                                      const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context,
+                                      ::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect)
+{
+    return policy.evaluate_cost(context, effect);
+}
 
 }
 

@@ -410,22 +410,31 @@ inline ygg::ClosedInterval<ygg::float_t> aggregate_metric_support(ygg::ClosedInt
     return ygg::ClosedInterval<ygg::float_t>(std::max(lower(lhs), lower(rhs)), std::max(upper(lhs), upper(rhs)));
 }
 
+inline ygg::ClosedInterval<ygg::float_t> add_metric_delta(ygg::ClosedInterval<ygg::float_t> metric, Cost delta) noexcept
+{
+    if (delta == Cost(0))
+        return metric;
+    if (empty(metric))
+        return ygg::ClosedInterval<ygg::float_t>(delta, delta);
+    return ygg::ClosedInterval<ygg::float_t>(lower(metric) + delta, upper(metric) + delta);
+}
+
 template<TaskKind Kind>
 struct CostUpdate
 {
     std::optional<Cost> old_cost;
     Cost new_cost;
 
-    CostUpdate() noexcept : old_cost(std::nullopt), new_cost(Cost(0)) { assert(is_monoton()); }
-    CostUpdate(std::optional<Cost> old_cost, Cost new_cost) noexcept : old_cost(old_cost), new_cost(new_cost) { assert(is_monoton()); }
+    CostUpdate() noexcept : old_cost(std::nullopt), new_cost(Cost(0)) { assert(is_monotone()); }
+    CostUpdate(std::optional<Cost> old_cost, Cost new_cost) noexcept : old_cost(old_cost), new_cost(new_cost) { assert(is_monotone()); }
     CostUpdate(Cost old_cost, Cost new_cost) noexcept :
         old_cost(old_cost == std::numeric_limits<Cost>::max() ? std::nullopt : std::optional<Cost>(old_cost)),
         new_cost(new_cost)
     {
-        assert(is_monoton());
+        assert(is_monotone());
     }
 
-    bool is_monoton() const noexcept { return !old_cost || new_cost <= old_cost.value(); }
+    bool is_monotone() const noexcept { return !old_cost || new_cost <= old_cost.value(); }
 };
 
 }

@@ -57,7 +57,7 @@ struct GroundQueueStatistics
 struct GroundQueueScratch
 {
     using SelectionEntry = GroundNumericSupportSelectorWorkspace::SelectionEntry;
-    using Term = ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag>;
+    using Term = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
 
     std::vector<SelectionEntry> support_selection;
     std::vector<SelectionEntry> auxiliary_selection;

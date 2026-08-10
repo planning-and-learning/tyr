@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_SOLVER_POLICIES_NUMERIC_SUPPORT_HPP_
-#define TYR_SOLVER_POLICIES_NUMERIC_SUPPORT_HPP_
+#ifndef TYR_DATALOG_LIFTED_POLICIES_NUMERIC_SUPPORT_HPP_
+#define TYR_DATALOG_LIFTED_POLICIES_NUMERIC_SUPPORT_HPP_
 
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/lifted/policies/annotation_types.hpp"

@@ -20,6 +20,7 @@
 
 #include "tyr/datalog/ground/policies/annotation_types.hpp"
 #include "tyr/datalog/ground/workspaces/facts.hpp"
+#include "tyr/datalog/numeric_utils.hpp"
 #include "tyr/datalog/policies/numeric_support_core.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
@@ -102,6 +103,16 @@ private:
 };
 
 using GroundNumericSupportSelector = NumericSupportSelector<GroundTag>;
+
+inline std::optional<Cost> metric_effect_delta(::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect,
+                                               const GroundNumericSupportSelector& selector,
+                                               std::vector<GroundNumericSupportSelectorWorkspace::SelectionEntry>& selection)
+{
+    return metric_effect_delta(
+        effect.get_operator(),
+        [&] { return selector.select_fluent_interval(effect.get_fterm(), selection); },
+        [&] { return selector.evaluate_effect_expression(effect.get_fexpr(), selection); });
+}
 
 }
 

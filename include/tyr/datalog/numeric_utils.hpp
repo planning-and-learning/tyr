@@ -75,6 +75,19 @@ std::optional<Cost> metric_effect_delta(::tyr::formalism::NumericEffectOperatorK
     return clamp_metric_delta(lower(next) - upper(lhs));
 }
 
+template<typename Range, typename Evaluate>
+std::optional<Cost> sum_metric_effect_deltas(Cost initial, const Range& effects, Evaluate&& evaluate)
+{
+    for (const auto& effect : effects)
+    {
+        const auto delta = evaluate(effect);
+        if (!delta)
+            return std::nullopt;
+        initial += *delta;
+    }
+    return initial;
+}
+
 /// Closure of repeated free growth: a zero-cost rule that strictly grows a bound beyond `current` can be
 /// repeated for free (fact intervals are hull-monotone), so that bound diverges. Widening it to its exact
 /// limit immediately keeps cost-ordered fixpoints terminating without changing any derivable cost.

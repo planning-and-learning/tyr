@@ -15,13 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_DATALOG_CONTEXTS_RULE_HPP_
-#define TYR_DATALOG_CONTEXTS_RULE_HPP_
+#ifndef TYR_DATALOG_LIFTED_CONTEXTS_RULE_HPP_
+#define TYR_DATALOG_LIFTED_CONTEXTS_RULE_HPP_
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/lifted/assignment_sets.hpp"
-#include "tyr/datalog/lifted/policies/cost.hpp"
 #include "tyr/datalog/lifted/workspaces/rule.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
 #include "tyr/datalog/policies/cost_concept.hpp"
@@ -49,36 +48,24 @@ public:
     public:
         explicit In(RuleExecutionContext<R, AP, TP, CP>& rctx) :
             m_rctx(rctx),
-            m_ws_rule(rctx.out().ws_rule()),
             m_cws_rule(rctx.in().cws_rule()),
             m_fact_sets(rctx.stratum_in().program().facts().fact_sets, rctx.stratum_out().program().facts().fact_sets)
         {
         }
 
-        const auto& ws_rule() noexcept { return m_ws_rule; }
-        const auto& ws_rule() const noexcept { return m_ws_rule; }
-        const auto& cws_rule() noexcept { return m_cws_rule; }
         const auto& cws_rule() const noexcept { return m_cws_rule; }
 
         auto& annotation_policy() noexcept { return m_rctx.stratum_out().program().annotation_policy(); }
-        const auto& annotation_policy() const noexcept { return m_rctx.stratum_out().program().annotation_policy(); }
-        const auto& annotations() noexcept { return m_rctx.stratum_out().program().annotations(); }
         const auto& annotations() const noexcept { return m_rctx.stratum_out().program().annotations(); }
-        const auto& numeric_annotations() noexcept { return m_rctx.stratum_out().program().numeric_annotations(); }
         const auto& numeric_annotations() const noexcept { return m_rctx.stratum_out().program().numeric_annotations(); }
-        const auto& numeric_support_selector() noexcept { return m_rctx.stratum_out().program().numeric_support_selector(); }
         const auto& numeric_support_selector() const noexcept { return m_rctx.stratum_out().program().numeric_support_selector(); }
-        const auto& cost_buckets() noexcept { return m_rctx.stratum_out().program().cost_buckets(); }
         const auto& cost_buckets() const noexcept { return m_rctx.stratum_out().program().cost_buckets(); }
-        const auto& cost_policy() noexcept { return m_rctx.stratum_out().program().cost_policy(); }
         const auto& cost_policy() const noexcept { return m_rctx.stratum_out().program().cost_policy(); }
-        const auto& fact_sets() noexcept { return m_fact_sets; }
         const auto& fact_sets() const noexcept { return m_fact_sets; }
 
     private:
         RuleExecutionContext<R, AP, TP, CP>& m_rctx;
 
-        const RuleWorkspace<LiftedTag, R>& m_ws_rule;
         const ConstRuleWorkspace<LiftedTag, R>& m_cws_rule;
 
         const FactSets m_fact_sets;
@@ -122,28 +109,10 @@ public:
     };
 
     RuleWorkerExecutionContext(RuleExecutionContext<R, AP, TP, CP>& rctx, typename RuleWorkspace<LiftedTag, R>::Worker& ws_worker) :
-        m_rctx(rctx),
-        m_ws_worker(ws_worker),
         m_in(rctx),
         m_out(rctx, ws_worker)
     {
     }
-
-    /**
-     * Initialization
-     */
-
-    void clear_iteration() noexcept { m_ws_worker.iteration.clear(); }
-    void clear_solve() noexcept { m_ws_worker.solve.clear(); }
-    void clear() noexcept
-    {
-        clear_iteration();
-        clear_solve();
-    }
-
-    /**
-     * Getters
-     */
 
     auto& in() noexcept { return m_in; }
     const auto& in() const noexcept { return m_in; }
@@ -152,9 +121,6 @@ public:
     const auto& out() const noexcept { return m_out; }
 
 private:
-    RuleExecutionContext<R, AP, TP, CP>& m_rctx;
-    typename RuleWorkspace<LiftedTag, R>::Worker& m_ws_worker;
-
     In m_in;
     Out m_out;
 };
@@ -165,13 +131,11 @@ struct RuleExecutionContext
     class In
     {
     public:
-        In(ygg::Index<::tyr::formalism::datalog::Rule<R>> rule, const ConstRuleWorkspace<LiftedTag, R>& cws_rule) : m_rule(rule), m_cws_rule(cws_rule) {}
+        explicit In(const ConstRuleWorkspace<LiftedTag, R>& cws_rule) : m_cws_rule(cws_rule) {}
 
-        auto rule() const noexcept { return m_rule; }
         const auto& cws_rule() const noexcept { return m_cws_rule; }
 
     private:
-        ygg::Index<::tyr::formalism::datalog::Rule<R>> m_rule;
         const ConstRuleWorkspace<LiftedTag, R>& m_cws_rule;
     };
 
@@ -180,8 +144,6 @@ struct RuleExecutionContext
     public:
         explicit Out(RuleWorkspace<LiftedTag, R>& ws_rule) : m_ws_rule(ws_rule) {}
 
-        auto& ws_rule() noexcept { return m_ws_rule; }
-        const auto& ws_rule() const noexcept { return m_ws_rule; }
         auto& common() noexcept { return m_ws_rule.common; }
         const auto& common() const noexcept { return m_ws_rule.common; }
         auto& kckp() noexcept { return m_ws_rule.common.kckp; }
@@ -197,47 +159,21 @@ struct RuleExecutionContext
 
     RuleExecutionContext(ygg::Index<::tyr::formalism::datalog::Rule<R>> rule, StratumExecutionContext<AP, TP, CP>& ctx) :
         m_ctx(ctx),
-        m_in(rule, *ctx.in().program().template get_rules<R>()[ygg::uint_t(rule)]),
+        m_in(*ctx.in().program().template get_rules<R>()[ygg::uint_t(rule)]),
         m_out(*ctx.out().program().template get_rules<R>()[ygg::uint_t(rule)])
     {
     }
 
-    /**
-     * Initialization
-     */
-
     void initialize()
     {
-        // std::cout << cws_rule.get_rule() << std::endl;
-
         out().common().initialize_iteration(AssignmentSets { stratum_in().program().facts().assignment_sets, stratum_out().program().facts().assignment_sets });
     }
 
-    void clear_common() noexcept { out().common().clear(); }
-    void clear_worker() noexcept
-    {
-        for (auto& worker : out().workers())
-            worker.clear();
-    }
     void clear_iteration() noexcept
     {
         for (auto& worker : out().workers())
             worker.iteration.clear();
     }
-    void clear_solve() noexcept
-    {
-        for (auto& worker : out().workers())
-            worker.solve.clear();
-    }
-    void clear() noexcept
-    {
-        clear_common();
-        clear_worker();
-    }
-
-    /**
-     * Subcontext
-     */
 
     auto get_rule_worker_execution_context(std::size_t worker_index = 0)
     {
