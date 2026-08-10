@@ -18,10 +18,9 @@
 #include "tyr/analysis/stratification.hpp"
 
 #include "stratification_utils.hpp"
+#include "tyr/formalism/datalog/expression_properties.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
-
-#include <type_traits>
 
 namespace f = tyr::formalism;
 namespace fd = tyr::formalism::datalog;
@@ -40,96 +39,6 @@ struct RelationVertexMap
     size_t size() const { return num_predicates + num_functions; }
 };
 
-void add_function_dependencies(fd::FunctionExpressionView expression,
-                               ygg::uint_t head_vertex,
-                               const RelationVertexMap& vertices,
-                               stratification::DepGraph& graph);
-
-void add_function_dependencies(ygg::float_t, ygg::uint_t, const RelationVertexMap&, stratification::DepGraph&) {}
-
-void add_function_dependencies(fd::LiftedUnaryOperatorView expression,
-                               ygg::uint_t head_vertex,
-                               const RelationVertexMap& vertices,
-                               stratification::DepGraph& graph)
-{
-    add_function_dependencies(expression.get_arg(), head_vertex, vertices, graph);
-}
-
-template<f::BinaryOperatorKind O>
-void add_function_dependencies(fd::LiftedBinaryOperatorView<O> expression,
-                               ygg::uint_t head_vertex,
-                               const RelationVertexMap& vertices,
-                               stratification::DepGraph& graph)
-{
-    add_function_dependencies(expression.get_lhs(), head_vertex, vertices, graph);
-    add_function_dependencies(expression.get_rhs(), head_vertex, vertices, graph);
-}
-
-void add_function_dependencies(fd::LiftedMultiOperatorView expression,
-                               ygg::uint_t head_vertex,
-                               const RelationVertexMap& vertices,
-                               stratification::DepGraph& graph)
-{
-    for (const auto arg : expression.get_args())
-        add_function_dependencies(arg, head_vertex, vertices, graph);
-}
-
-template<f::FactKind T>
-void add_function_dependencies(fd::FunctionTermView<T>, ygg::uint_t, const RelationVertexMap&, stratification::DepGraph&)
-{
-}
-
-void add_function_dependencies(fd::FunctionTermView<f::FluentTag> term,
-                               ygg::uint_t head_vertex,
-                               const RelationVertexMap& vertices,
-                               stratification::DepGraph& graph)
-{
-    stratification::EdgeProps ep;
-    ep.kind = stratification::EdgeKind::NonStrict;
-    boost::add_edge(vertices.get_vertex(term.get_function().get_index()), head_vertex, ep, graph);
-}
-
-void add_function_dependencies(fd::LiftedArithmeticOperatorView expression,
-                               ygg::uint_t head_vertex,
-                               const RelationVertexMap& vertices,
-                               stratification::DepGraph& graph)
-{
-    visit([&](auto&& arg) { add_function_dependencies(arg, head_vertex, vertices, graph); }, expression.get_variant());
-}
-
-void add_function_dependencies(fd::FunctionExpressionView expression,
-                               ygg::uint_t head_vertex,
-                               const RelationVertexMap& vertices,
-                               stratification::DepGraph& graph)
-{
-    visit([&](auto&& arg) { add_function_dependencies(arg, head_vertex, vertices, graph); }, expression.get_variant());
-}
-
-void add_function_dependencies(fd::LiftedBooleanOperatorView expression,
-                               ygg::uint_t head_vertex,
-                               const RelationVertexMap& vertices,
-                               stratification::DepGraph& graph)
-{
-    visit(
-        [&](auto&& arg)
-        {
-            add_function_dependencies(arg.get_lhs(), head_vertex, vertices, graph);
-            add_function_dependencies(arg.get_rhs(), head_vertex, vertices, graph);
-        },
-        expression.get_variant());
-}
-
-void add_numeric_effect_head_dependencies(fd::NumericEffectView<f::FluentTag> effect,
-                                          ygg::uint_t head_vertex,
-                                          const RelationVertexMap& vertices,
-                                          stratification::DepGraph& graph)
-{
-    if (effect.get_operator() != f::NumericEffectOperatorKind::Assign)
-        add_function_dependencies(effect.get_fterm(), head_vertex, vertices, graph);
-
-    add_function_dependencies(effect.get_fexpr(), head_vertex, vertices, graph);
-}
-
 template<f::RelationKind R>
 void add_body_dependencies(fd::RuleView<R> rule, ygg::uint_t head_vertex, const RelationVertexMap& vertices, stratification::DepGraph& graph)
 {
@@ -142,8 +51,12 @@ void add_body_dependencies(fd::RuleView<R> rule, ygg::uint_t head_vertex, const 
         boost::add_edge(body_vertex, head_vertex, ep, graph);
     }
 
-    for (const auto constraint : rule.get_body().get_numeric_constraints())
-        add_function_dependencies(constraint, head_vertex, vertices, graph);
+    for (const auto term : fd::collect_fluent_reads(rule))
+    {
+        auto ep = stratification::EdgeProps {};
+        ep.kind = stratification::EdgeKind::NonStrict;
+        boost::add_edge(vertices.get_vertex(term.get_function().get_index()), head_vertex, ep, graph);
+    }
 }
 
 ygg::uint_t get_head_vertex(fd::AtomView<f::FluentTag> head, const RelationVertexMap& vertices)
@@ -156,9 +69,6 @@ ygg::uint_t get_head_vertex(fd::NumericEffectOperatorView<f::FluentTag> head, co
     return visit([&](auto&& effect) { return vertices.get_vertex(effect.get_fterm().get_function().get_index()); }, head.get_variant());
 }
 
-void add_head_dependencies(fd::AtomView<f::FluentTag>, ygg::uint_t, const RelationVertexMap&, stratification::DepGraph&);
-void add_head_dependencies(fd::NumericEffectOperatorView<f::FluentTag>, ygg::uint_t, const RelationVertexMap&, stratification::DepGraph&);
-
 template<f::RelationKind R>
 void add_rule_dependencies(fd::ProgramView<LiftedTag> program, const RelationVertexMap& vertices, stratification::DepGraph& graph)
 {
@@ -168,18 +78,7 @@ void add_rule_dependencies(fd::ProgramView<LiftedTag> program, const RelationVer
         const auto head_vertex = get_head_vertex(head, vertices);
 
         add_body_dependencies(rule, head_vertex, vertices, graph);
-        add_head_dependencies(head, head_vertex, vertices, graph);
     }
-}
-
-void add_head_dependencies(fd::AtomView<f::FluentTag>, ygg::uint_t, const RelationVertexMap&, stratification::DepGraph&) {}
-
-void add_head_dependencies(fd::NumericEffectOperatorView<f::FluentTag> head,
-                           ygg::uint_t head_vertex,
-                           const RelationVertexMap& vertices,
-                           stratification::DepGraph& graph)
-{
-    visit([&](auto&& effect) { add_numeric_effect_head_dependencies(effect, head_vertex, vertices, graph); }, head.get_variant());
 }
 
 template<f::RelationKind R>

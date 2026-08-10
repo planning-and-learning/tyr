@@ -15,16 +15,17 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_DATALOG_DATALOG_HPP_
-#define TYR_FORMALISM_DATALOG_DATALOG_HPP_
+#ifndef TYR_DATALOG_STATIC_RULE_FILTER_HPP_
+#define TYR_DATALOG_STATIC_RULE_FILTER_HPP_
 
-#include "tyr/formalism/datalog/builder.hpp"
-#include "tyr/formalism/datalog/canonicalization.hpp"
-#include "tyr/formalism/datalog/datas.hpp"
-#include "tyr/formalism/datalog/grounder.hpp"
-#include "tyr/formalism/datalog/indices.hpp"
-#include "tyr/formalism/datalog/merge.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/datalog/views.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
+
+namespace tyr::datalog
+{
+
+::tyr::formalism::datalog::GroundProgramView remove_statically_inapplicable_rules(::tyr::formalism::datalog::GroundProgramView program,
+                                                                                  ::tyr::formalism::datalog::Repository& repository);
+
+}
 
 #endif

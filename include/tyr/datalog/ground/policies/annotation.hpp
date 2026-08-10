@@ -24,6 +24,7 @@
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 
+#include <concepts>
 #include <span>
 #include <vector>
 
@@ -36,7 +37,8 @@ struct AnnotationContext<GroundTag, R>
     using SelectionEntry = GroundNumericSupportSelectorWorkspace::SelectionEntry;
     using Selection = std::vector<SelectionEntry>;
 
-    Cost current_cost;
+    Cost head_cost;
+    Cost local_edge;
     ::tyr::formalism::datalog::GroundRuleView<R> rule;
     Cost rule_cost;
     const GroundNumericSupportSelector& numeric_support_selector;
@@ -61,10 +63,12 @@ struct GroundAnnotationCostContext
     Selection& metric_selection;
 };
 
-struct GroundNumericEffectCost
+struct GroundAnnotationCost
 {
-    Cost total_cost;
-    Cost remaining_metric_cost;
+    Cost support_cost;
+    Cost local_edge;
+
+    Cost total_cost() const noexcept { return support_cost + local_edge; }
 };
 
 template<typename AggregationFunction>
@@ -78,12 +82,19 @@ public:
     static constexpr bool stores_annotations = true;
     static constexpr bool records_propositional_achievers = false;
 
-    Cost evaluate_cost(const GroundAnnotationCostContext<::tyr::formalism::PredicateTag>& context) const;
+    bool is_widening_label_preserving(Cost candidate_label, Cost current_target_label) const noexcept
+    {
+        if constexpr (std::same_as<AggregationFunction, MaxAggregation>)
+            return true;
+        return candidate_label == current_target_label;
+    }
+
+    GroundAnnotationCost evaluate_cost(const GroundAnnotationCostContext<::tyr::formalism::PredicateTag>& context) const;
 
     Cost evaluate_cost(const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context) const;
 
-    GroundNumericEffectCost evaluate_cost(const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context,
-                                          ::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect) const;
+    GroundAnnotationCost evaluate_cost(const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context,
+                                       ::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect) const;
 
     void initialize_annotation(PredicateHead head, PredicateAnnotations<GroundTag>& annotations) const;
 
@@ -127,26 +138,26 @@ private:
     DenseRelationMap<::tyr::formalism::PredicateTag, Achievers> m_achievers;
 };
 
-Cost evaluate_cost(const NoAnnotationPolicy<GroundTag>&, const GroundAnnotationCostContext<::tyr::formalism::PredicateTag>& context) noexcept;
+GroundAnnotationCost evaluate_cost(const NoAnnotationPolicy<GroundTag>&, const GroundAnnotationCostContext<::tyr::formalism::PredicateTag>& context) noexcept;
 
 Cost evaluate_cost(const NoAnnotationPolicy<GroundTag>&, const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context);
 
-GroundNumericEffectCost evaluate_cost(const NoAnnotationPolicy<GroundTag>&,
-                                      const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context,
-                                      ::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect);
+GroundAnnotationCost evaluate_cost(const NoAnnotationPolicy<GroundTag>&,
+                                   const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context,
+                                   ::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect);
 
 template<typename AP, ::tyr::formalism::RelationKind R>
     requires(AP::stores_annotations)
-Cost evaluate_cost(const AP& policy, const GroundAnnotationCostContext<R>& context)
+auto evaluate_cost(const AP& policy, const GroundAnnotationCostContext<R>& context)
 {
     return policy.evaluate_cost(context);
 }
 
 template<typename AP>
     requires(AP::stores_annotations)
-GroundNumericEffectCost evaluate_cost(const AP& policy,
-                                      const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context,
-                                      ::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect)
+GroundAnnotationCost evaluate_cost(const AP& policy,
+                                   const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context,
+                                   ::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect)
 {
     return policy.evaluate_cost(context, effect);
 }

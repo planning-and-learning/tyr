@@ -99,15 +99,29 @@ MinCostAnnotationPolicy<LiftedTag, AggregationFunction>::commit_annotation(::tyr
 
 namespace
 {
-template<typename AggregationFunction, ::tyr::formalism::RelationKind R, typename CanWin>
-std::optional<WitnessAnnotation<LiftedTag, R>> try_ground_witness(const AnnotationContext<LiftedTag, R>& context, CanWin&& can_win)
-{
-    auto body_metric = ygg::ClosedInterval<ygg::float_t>();
-    auto body_cost = AggregationFunction::identity();
-    const auto lower_bound = [&] { return std::max(body_cost, context.current_cost) + context.metric_effect_cost; };
-    if (!can_win(lower_bound()))
-        return std::nullopt;
+using Metric = ygg::ClosedInterval<ygg::float_t>;
+using SelectionEntry = NumericSupportSelectorWorkspace<LiftedTag>::SelectionEntry;
 
+template<::tyr::formalism::RelationKind R>
+bool append_backing_supports(const SelectionEntry& entry,
+                             const AnnotationContext<LiftedTag, R>& context,
+                             Metric& support_metric,
+                             std::vector<NumericSupport<LiftedTag>>& numeric_supports)
+{
+    return context.numeric_support_selector.for_each_entry_support(entry,
+                                                                   [&](const auto key, const auto interval, const auto& annotation)
+                                                                   {
+                                                                       support_metric = aggregate_metric_support(support_metric, get_metric(annotation));
+                                                                       numeric_supports.emplace_back(key, interval, get_cost(annotation));
+                                                                   });
+}
+
+template<typename AggregationFunction, ::tyr::formalism::RelationKind R>
+bool collect_priced_supports(const AnnotationContext<LiftedTag, R>& context, Cost& support_cost, Metric& support_metric)
+{
+    const auto agg = AggregationFunction {};
+    support_cost = AggregationFunction::identity();
+    support_metric = Metric {};
     auto& numeric_supports = context.witness_support_scratch;
     numeric_supports.clear();
 
@@ -119,14 +133,14 @@ std::optional<WitnessAnnotation<LiftedTag, R>> try_ground_witness(const Annotati
         assert(!inserted);  ///< must exist in program because the precondition is applicable in program fact set.
 
         const auto* annotation = context.annotations.find(program_binding);
-        assert(annotation && "applicable lifted rule has a positive fluent body atom without an annotation");
+        if (!annotation)
+            return false;
         const auto program_binding_cost = get_cost(*annotation);
-        assert(program_binding_cost != std::numeric_limits<Cost>::max());
+        if (program_binding_cost == std::numeric_limits<Cost>::max())
+            return false;
 
-        body_cost = AggregationFunction()(body_cost, program_binding_cost);
-        if (!can_win(lower_bound()))
-            return std::nullopt;
-        body_metric = aggregate_metric_support(body_metric, get_metric(*annotation));
+        support_cost = agg(support_cost, program_binding_cost);
+        support_metric = aggregate_metric_support(support_metric, get_metric(*annotation));
     }
 
     for (const auto numeric_constraint : context.witness_condition.get_numeric_constraints())
@@ -136,31 +150,44 @@ std::optional<WitnessAnnotation<LiftedTag, R>> try_ground_witness(const Annotati
             context.numeric_support_selector.get_constraint_cost(ground_constraint, context.numeric_support_selector_workspace, AggregationFunction {});
 
         if (constraint_cost == std::numeric_limits<Cost>::max())
-            return std::nullopt;
+            return false;
 
-        body_cost = AggregationFunction()(body_cost, constraint_cost);
-        if (!can_win(lower_bound()))
-            return std::nullopt;
+        support_cost = agg(support_cost, constraint_cost);
 
         for (const auto& entry : context.numeric_support_selector_workspace.selection)
-        {
-            if (entry.annotation)
-                body_metric = aggregate_metric_support(body_metric, get_metric(entry.annotation->annotation));
-            numeric_supports.push_back(NumericSupport<LiftedTag> { entry.key, entry.interval, entry.cost });
-        }
+            if (!append_backing_supports(entry, context, support_metric, numeric_supports))
+                return false;
     }
 
-    body_cost = std::max(body_cost, context.current_cost);
+    for (const auto& support : context.numeric_supports)
+    {
+        support_cost = agg(support_cost, support.get_cost());
+        const auto entry = SelectionEntry { support.get_key(), support.get_interval(), nullptr, support.get_cost() };
+        if (!append_backing_supports(entry, context, support_metric, numeric_supports))
+            return false;
+    }
 
-    body_metric = add_metric_delta(body_metric, context.metric_effect_cost);
+    return true;
+}
 
-    numeric_supports.insert(numeric_supports.end(), context.numeric_supports.begin(), context.numeric_supports.end());
+template<typename AggregationFunction, ::tyr::formalism::RelationKind R, typename CanWin>
+std::optional<WitnessAnnotation<LiftedTag, R>> try_ground_witness(const AnnotationContext<LiftedTag, R>& context, CanWin&& can_win)
+{
+    auto support_cost = Cost {};
+    auto support_metric = Metric {};
+    if (!collect_priced_supports<AggregationFunction>(context, support_cost, support_metric))
+        return std::nullopt;
+
+    const auto final_cost = support_cost + context.local_edge_cost;
+    if (!can_win(final_cost))
+        return std::nullopt;
+
     const auto rule_binding =
         context.rule_binding ? *context.rule_binding : ::tyr::formalism::datalog::ground_binding(context.rule, context.ground_context).first;
     return WitnessAnnotation<LiftedTag, R>(rule_binding,
-                                           body_metric,
-                                           body_cost + context.metric_effect_cost,
-                                           std::span<const NumericSupport<LiftedTag>>(numeric_supports));
+                                           add_metric_delta(support_metric, context.local_edge_cost),
+                                           final_cost,
+                                           std::span<const NumericSupport<LiftedTag>>(context.witness_support_scratch));
 }
 
 template<typename AggregationFunction, ::tyr::formalism::RelationKind R>
@@ -169,6 +196,26 @@ std::optional<WitnessAnnotation<LiftedTag, R>> try_ground_better_witness(Cost be
     return try_ground_witness<AggregationFunction>(context, [best_cost](Cost lower_bound) { return lower_bound < best_cost; });
 }
 
+}
+
+template<typename AggregationFunction>
+std::optional<Cost> MinCostAnnotationPolicy<LiftedTag, AggregationFunction>::evaluate_candidate_label(
+    const AnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context) const
+{
+    auto support_cost = Cost {};
+    auto support_metric = Metric {};
+    return collect_priced_supports<AggregationFunction>(context, support_cost, support_metric) ? std::optional(support_cost + context.local_edge_cost) :
+                                                                                                 std::nullopt;
+}
+
+template<typename AggregationFunction>
+std::optional<Cost> MinCostAnnotationPolicy<LiftedTag, AggregationFunction>::evaluate_candidate_label(
+    const AnnotationContext<LiftedTag, ::tyr::formalism::FunctionTag>& context) const
+{
+    auto support_cost = Cost {};
+    auto support_metric = Metric {};
+    return collect_priced_supports<AggregationFunction>(context, support_cost, support_metric) ? std::optional(support_cost + context.local_edge_cost) :
+                                                                                                 std::nullopt;
 }
 
 template<typename AggregationFunction>
@@ -181,7 +228,6 @@ bool MinCostAnnotationPolicy<LiftedTag, AggregationFunction>::try_update_candida
     const auto best_global_cost = fetch_annotation_cost<LiftedTag>(head, context.annotations);
     const auto best_local_cost = delta_annotations.fetch_cost(head);
     const auto best_cost = std::min(best_global_cost, best_local_cost);
-    const auto cur_cost_lower_bound = context.current_cost + context.metric_effect_cost;
 
     /// Only strict improvements update the annotation, so the first witness of a given cost wins.
     /// Which witness that is depends on the clique enumeration order, hence changing that order (or the
@@ -189,9 +235,6 @@ bool MinCostAnnotationPolicy<LiftedTag, AggregationFunction>::try_update_candida
     /// expected, not a defect. Determinism at one worker rests on run_active_rules pinning the sorted
     /// rule order while worker-local updates retain their production order. Under
     /// inner parallelism it would need deterministic key ownership per stripe, not a tie-break.
-    if (best_cost <= cur_cost_lower_bound)
-        return false;  ///< No local or global improvement
-
     auto witness = try_ground_better_witness<AggregationFunction>(best_cost, context);
     if (!witness)
         return false;  ///< No local or global improvement
@@ -208,10 +251,6 @@ bool MinCostAnnotationPolicy<LiftedTag, AggregationFunction>::try_update_candida
     DeltaFunctionAnnotations<LiftedTag>& delta_numeric_annotations) const
 {
     const auto best_cost = std::numeric_limits<Cost>::max();
-    const auto cur_cost_lower_bound = context.current_cost + context.metric_effect_cost;
-
-    if (best_cost <= cur_cost_lower_bound)
-        return false;
 
     auto witness = try_ground_better_witness<AggregationFunction>(best_cost, context);
     if (!witness)
@@ -246,17 +285,17 @@ void MinCostAnnotationWithAchieversPolicy<LiftedTag, AggregationFunction>::recor
     const AnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context)
 {
     auto witness = try_ground_witness<AggregationFunction>(context, [](Cost) { return true; });
-    if (witness)
-    {
-        m_achievers.update(head,
-                           [&](auto& achievers, bool initialized)
-                           {
-                               if (!initialized)
-                                   achievers.clear();
-                               if (std::find(achievers.begin(), achievers.end(), *witness) == achievers.end())
-                                   achievers.push_back(std::move(*witness));
-                           });
-    }
+    if (!witness)
+        return;
+
+    m_achievers.update(head,
+                       [&](auto& achievers, bool initialized)
+                       {
+                           if (!initialized)
+                               achievers.clear();
+                           if (std::find(achievers.begin(), achievers.end(), *witness) == achievers.end())
+                               achievers.push_back(std::move(*witness));
+                       });
 }
 
 static_assert(AnnotationPolicyConcept<NoAnnotationPolicy<LiftedTag>, LiftedTag>);

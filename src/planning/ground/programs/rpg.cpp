@@ -18,8 +18,11 @@
 #include "tyr/planning/ground/programs/rpg.hpp"
 
 #include "../../programs/common.hpp"
+#include "tyr/datalog/applicability.hpp"
+#include "tyr/datalog/static_rule_filter.hpp"
 #include "tyr/formalism/datalog/builder.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
+#include "tyr/formalism/datalog/merge.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -551,14 +554,81 @@ fd::ProgramView<GroundTag> create_rpg_ground_program(fp::FDRTaskView task,
     return finish_program(context);
 }
 
+TranslationContext<GroundTag> remap_translation_context(const TranslationContext<GroundTag>& source, fd::MergeContext& context)
+{
+    auto result = TranslationContext<GroundTag> {};
+    const auto remap_keys = [&](const auto& source_mapping, auto& result_mapping)
+    {
+        for (const auto& [key, value] : source_mapping)
+            result_mapping.emplace(fd::merge_d2d(key, context).first, value);
+    };
+    const auto remap_values = [&](const auto& source_mapping, auto& result_mapping)
+    {
+        for (const auto& [key, value] : source_mapping)
+            result_mapping.emplace(key, fd::merge_d2d(value, context).first);
+    };
+
+    remap_keys(source.d2p.static_to_static_atom, result.d2p.static_to_static_atom);
+    remap_keys(source.d2p.fluent_to_fluent_atom, result.d2p.fluent_to_fluent_atom);
+    remap_keys(source.d2p.fluent_to_derived_atom, result.d2p.fluent_to_derived_atom);
+    remap_keys(source.d2p.static_to_static_fterm, result.d2p.static_to_static_fterm);
+    remap_keys(source.d2p.fluent_to_fluent_fterm, result.d2p.fluent_to_fluent_fterm);
+    remap_values(source.p2d.static_to_static_atom, result.p2d.static_to_static_atom);
+    remap_values(source.p2d.fluent_to_fluent_atom, result.p2d.fluent_to_fluent_atom);
+    remap_values(source.p2d.derived_to_fluent_atom, result.p2d.derived_to_fluent_atom);
+    remap_values(source.p2d.static_to_static_fterm, result.p2d.static_to_static_fterm);
+    remap_values(source.p2d.fluent_to_fluent_fterm, result.p2d.fluent_to_fluent_fterm);
+    return result;
+}
+
+template<f::RelationKind R>
+void remap_rule_to_action(const RPGProgram<GroundTag>::RuleToActionMapping<R>& source_mapping,
+                          RPGProgram<GroundTag>::RuleToActionMapping<R>& result_mapping,
+                          fd::MergeContext& context,
+                          const d::FactSets& fact_sets)
+{
+    for (const auto& [source_rule, action] : source_mapping)
+    {
+        if (!d::is_statically_applicable(source_rule, fact_sets))
+            continue;
+
+        const auto [result_rule, inserted] = fd::merge_d2d(source_rule, context);
+        if (inserted)
+            throw std::logic_error("Static rule filtering omitted a retained rule");
+        result_mapping.emplace(result_rule, action);
+    }
+}
+
 d::Program<GroundTag> create_rpg_datalog_program(fp::FDRTaskView task,
                                                  CostMode cost_mode,
                                                  TranslationContext<GroundTag>& translation_context,
                                                  RPGProgram<GroundTag>::RuleToActionMappings& mapping)
 {
     auto factory = std::make_shared<fd::RepositoryFactory>();
-    auto repository = factory->create_shared(task.get_domain().get_constants().size() + task.get_objects().size());
-    auto program = create_rpg_ground_program(task, cost_mode, translation_context, mapping, *repository);
+    const auto num_objects = task.get_domain().get_constants().size() + task.get_objects().size();
+    auto source_repository = factory->create(num_objects);
+    auto source_translation_context = TranslationContext<GroundTag> {};
+    auto source_mapping = RPGProgram<GroundTag>::RuleToActionMappings {};
+    const auto source_program = create_rpg_ground_program(task, cost_mode, source_translation_context, source_mapping, source_repository);
+    const auto source_static_fact_sets = d::TaggedFactSets<f::StaticTag>(source_program.get_predicates<f::StaticTag>(),
+                                                                         source_program.get_functions<f::StaticTag>(),
+                                                                         source_program.get_atoms<f::StaticTag>(),
+                                                                         source_program.get_fterm_values<f::StaticTag>(),
+                                                                         source_program.get_context());
+    const auto source_fluent_fact_sets = d::TaggedFactSets<f::FluentTag>(source_program.get_predicates<f::FluentTag>(),
+                                                                         source_program.get_functions<f::FluentTag>(),
+                                                                         source_program.get_atoms<f::FluentTag>(),
+                                                                         source_program.get_fterm_values<f::FluentTag>(),
+                                                                         source_program.get_context());
+    const auto source_fact_sets = d::FactSets { source_static_fact_sets, source_fluent_fact_sets };
+
+    auto repository = factory->create_shared(num_objects);
+    const auto program = d::remove_statically_inapplicable_rules(source_program, *repository);
+    auto builder = fd::Builder {};
+    auto merge_context = fd::MergeContext { builder, *repository };
+    translation_context = remap_translation_context(source_translation_context, merge_context);
+    remap_rule_to_action<f::PredicateTag>(source_mapping.predicate, mapping.predicate, merge_context, source_fact_sets);
+    remap_rule_to_action<f::FunctionTag>(source_mapping.function, mapping.function, merge_context, source_fact_sets);
     return d::Program<GroundTag>(program, std::move(repository), std::move(factory));
 }
 

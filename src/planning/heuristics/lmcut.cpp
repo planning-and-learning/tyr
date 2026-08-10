@@ -63,7 +63,7 @@ struct LMCutNumericNode : ygg::comparison::Mixin<LMCutNumericNode<Kind>>
 };
 
 template<TaskKind Kind>
-bool needs_expanded_lmcut(fd::ProgramView<Kind> program)
+bool requires_numeric_edge_cuts(fd::ProgramView<Kind> program)
 {
     for (const auto rule : program.template get_rules<f::PredicateTag>())
         if (!rule.get_body().get_numeric_constraints().empty())
@@ -71,20 +71,18 @@ bool needs_expanded_lmcut(fd::ProgramView<Kind> program)
     return !program.template get_rules<f::FunctionTag>().empty();
 }
 
-}
-
-template<TaskKind Kind>
-struct LMCutHeuristic<Kind>::Impl :
-    detail::RPGEvaluator<Impl,
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+struct LMCutImplementation :
+    detail::RPGEvaluator<LMCutImplementation<Kind, TP>,
                          Kind,
                          datalog::MinCostAnnotationWithAchieversPolicy<Kind, datalog::MaxAggregation>,
-                         datalog::TerminationPolicy<Kind, datalog::MaxAggregation>,
+                         TP,
                          datalog::RuleCostOverridePolicy<Kind>>
 {
-    using Base = detail::RPGEvaluator<Impl,
+    using Base = detail::RPGEvaluator<LMCutImplementation<Kind, TP>,
                                       Kind,
                                       datalog::MinCostAnnotationWithAchieversPolicy<Kind, datalog::MaxAggregation>,
-                                      datalog::TerminationPolicy<Kind, datalog::MaxAggregation>,
+                                      TP,
                                       datalog::RuleCostOverridePolicy<Kind>>;
     using ActionBinding = ::tyr::formalism::planning::ActionBindingView;
     using PredicateHead = datalog::PredicateAnnotationHead<Kind>;
@@ -94,8 +92,8 @@ struct LMCutHeuristic<Kind>::Impl :
     using Precondition = std::variant<PredicateHead, NumericNode>;
     using CutFrontierAtoms = f::planning::GroundAtomViewList<f::FluentTag>;
 
-    Impl(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode);
-    Impl(const Impl& source, ygg::ExecutionContextPtr execution_context);
+    LMCutImplementation(std::shared_ptr<detail::RPGDefinition<Kind>> definition, ygg::ExecutionContextPtr execution_context, CostMode cost_mode);
+    LMCutImplementation(const LMCutImplementation& source, ygg::ExecutionContextPtr execution_context);
     ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state, CutFrontierAtoms* cut_frontier_atoms = nullptr);
 
 private:
@@ -132,11 +130,10 @@ private:
     void append_cut_frontier_atom(PredicateHead head, CutFrontierAtoms* cut_frontier_atoms);
     void extract_cut(CutFrontierAtoms* cut_frontier_atoms);
     void extract_expanded_cut(CutFrontierAtoms* cut_frontier_atoms);
-    bool use_expanded_edges() const noexcept { return m_use_expanded_edges; }
-    bool use_expanded_numeric_target() const noexcept { return use_expanded_edges() && m_cost_mode == CostMode::GENERAL; }
+    static constexpr bool use_numeric_edge_cuts() noexcept { return std::same_as<TP, datalog::TerminationPolicy<Kind, datalog::MaxAggregation>>; }
+    bool use_expanded_numeric_target() const noexcept { return use_numeric_edge_cuts() && m_cost_mode == CostMode::GENERAL; }
 
     CostMode m_cost_mode;
-    bool m_use_expanded_edges;
     ygg::UnorderedMap<ActionBinding, datalog::Cost> m_action_used_costs;
     ygg::UnorderedMap<RuleEdge, datalog::Cost> m_rule_edge_used_costs;
     ygg::UnorderedMap<NumericEdge, datalog::Cost> m_numeric_edge_used_costs;
@@ -153,27 +150,24 @@ private:
     datalog::NumericSupportSelectorWorkspace<Kind> m_numeric_support_selector_workspace;
 };
 
-template<TaskKind Kind>
-LMCutHeuristic<Kind>::Impl::Impl(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
-    Base(std::move(task), std::move(execution_context), cost_mode),
-    m_cost_mode(cost_mode),
-    m_use_expanded_edges(needs_expanded_lmcut(this->m_definition->rpg_program.get_datalog_program().get_program()))
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+LMCutImplementation<Kind, TP>::LMCutImplementation(std::shared_ptr<detail::RPGDefinition<Kind>> definition,
+                                                   ygg::ExecutionContextPtr execution_context,
+                                                   CostMode cost_mode) :
+    Base(std::move(definition), std::move(execution_context)),
+    m_cost_mode(cost_mode)
 {
-    // The propositional justification graph contains every reachable operator arc, including arcs discovered after the goal first becomes reachable.
-    this->m_workspace.tp.set_early_termination(use_expanded_edges());
 }
 
-template<TaskKind Kind>
-LMCutHeuristic<Kind>::Impl::Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) :
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+LMCutImplementation<Kind, TP>::LMCutImplementation(const LMCutImplementation& source, ygg::ExecutionContextPtr execution_context) :
     Base(source, std::move(execution_context)),
-    m_cost_mode(source.m_cost_mode),
-    m_use_expanded_edges(source.m_use_expanded_edges)
+    m_cost_mode(source.m_cost_mode)
 {
-    this->m_workspace.tp.set_early_termination(use_expanded_edges());
 }
 
-template<TaskKind Kind>
-ygg::float_t LMCutHeuristic<Kind>::Impl::evaluate(const ygg::Builder<State<Kind>>& state, CutFrontierAtoms* cut_frontier_atoms)
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+ygg::float_t LMCutImplementation<Kind, TP>::evaluate(const ygg::Builder<State<Kind>>& state, CutFrontierAtoms* cut_frontier_atoms)
 {
     auto value = datalog::Cost(0);
     clear_evaluation_views();
@@ -191,7 +185,7 @@ ygg::float_t LMCutHeuristic<Kind>::Impl::evaluate(const ygg::Builder<State<Kind>
             return ygg::float_t(value);
 
         auto cut_cost = std::numeric_limits<datalog::Cost>::max();
-        if (use_expanded_edges())
+        if constexpr (use_numeric_edge_cuts())
         {
             extract_expanded_cut(cut_frontier_atoms);
             if (m_rule_cut.empty() && m_numeric_cut.empty())
@@ -228,15 +222,15 @@ ygg::float_t LMCutHeuristic<Kind>::Impl::evaluate(const ygg::Builder<State<Kind>
     }
 }
 
-template<TaskKind Kind>
-void LMCutHeuristic<Kind>::Impl::use_action_cost(ActionBinding action_binding, datalog::Cost cost)
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+void LMCutImplementation<Kind, TP>::use_action_cost(ActionBinding action_binding, datalog::Cost cost)
 {
     m_action_used_costs[action_binding] += cost;
 }
 
-template<TaskKind Kind>
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
 template<f::RelationKind R>
-datalog::Cost LMCutHeuristic<Kind>::Impl::get_witness_body_cost(const datalog::WitnessAnnotation<Kind, R>& witness)
+datalog::Cost LMCutImplementation<Kind, TP>::get_witness_body_cost(const datalog::WitnessAnnotation<Kind, R>& witness)
 {
     auto body_cost = datalog::Cost(0);
     this->for_each_witness_precondition(witness, [&](const auto precondition) { body_cost = std::max(body_cost, this->get_predicate_cost(precondition)); });
@@ -247,32 +241,32 @@ datalog::Cost LMCutHeuristic<Kind>::Impl::get_witness_body_cost(const datalog::W
     return body_cost;
 }
 
-template<TaskKind Kind>
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
 template<f::RelationKind R>
-datalog::Cost LMCutHeuristic<Kind>::Impl::get_witness_edge_residual_cost(const datalog::WitnessAnnotation<Kind, R>& witness)
+datalog::Cost LMCutImplementation<Kind, TP>::get_witness_edge_residual_cost(const datalog::WitnessAnnotation<Kind, R>& witness)
 {
     const auto body_cost = get_witness_body_cost(witness);
     return witness.get_cost() <= body_cost ? datalog::Cost(0) : witness.get_cost() - body_cost;
 }
 
-template<TaskKind Kind>
-bool LMCutHeuristic<Kind>::Impl::is_target_support(const datalog::NumericSupport<Kind>& support, NumericNode node) const noexcept
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+bool LMCutImplementation<Kind, TP>::is_target_support(const datalog::NumericSupport<Kind>& support, NumericNode node) const noexcept
 {
     return support.get_key() == node.key && support.get_interval() == node.interval;
 }
 
-template<TaskKind Kind>
-datalog::Cost LMCutHeuristic<Kind>::Impl::get_numeric_support_cost(const datalog::NumericSupport<Kind>& support)
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+datalog::Cost LMCutImplementation<Kind, TP>::get_numeric_support_cost(const datalog::NumericSupport<Kind>& support)
 {
     auto cost = datalog::Cost(0);
     this->for_each_numeric_predecessor(support, [&](const auto, const auto, const auto predecessor_cost) { cost = std::max(cost, predecessor_cost); });
     return cost;
 }
 
-template<TaskKind Kind>
-void LMCutHeuristic<Kind>::Impl::append_numeric_support_preconditions(const datalog::NumericSupport<Kind>& support,
-                                                                      datalog::Cost body_cost,
-                                                                      std::vector<Precondition>& result)
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+void LMCutImplementation<Kind, TP>::append_numeric_support_preconditions(const datalog::NumericSupport<Kind>& support,
+                                                                         datalog::Cost body_cost,
+                                                                         std::vector<Precondition>& result)
 {
     this->for_each_numeric_predecessor(support,
                                        [&](const auto key, const auto interval, const auto cost)
@@ -282,8 +276,8 @@ void LMCutHeuristic<Kind>::Impl::append_numeric_support_preconditions(const data
                                        });
 }
 
-template<TaskKind Kind>
-datalog::Cost LMCutHeuristic<Kind>::Impl::get_numeric_witness_body_cost(const datalog::WitnessAnnotation<Kind, f::FunctionTag>& witness, NumericNode node)
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+datalog::Cost LMCutImplementation<Kind, TP>::get_numeric_witness_body_cost(const datalog::WitnessAnnotation<Kind, f::FunctionTag>& witness, NumericNode node)
 {
     auto body_cost = datalog::Cost(0);
     this->for_each_witness_precondition(witness, [&](const auto precondition) { body_cost = std::max(body_cost, this->get_predicate_cost(precondition)); });
@@ -295,30 +289,30 @@ datalog::Cost LMCutHeuristic<Kind>::Impl::get_numeric_witness_body_cost(const da
     return body_cost;
 }
 
-template<TaskKind Kind>
-datalog::Cost LMCutHeuristic<Kind>::Impl::get_numeric_witness_edge_residual_cost(const datalog::WitnessAnnotation<Kind, f::FunctionTag>& witness,
-                                                                                 NumericNode node)
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+datalog::Cost LMCutImplementation<Kind, TP>::get_numeric_witness_edge_residual_cost(const datalog::WitnessAnnotation<Kind, f::FunctionTag>& witness,
+                                                                                    NumericNode node)
 {
     const auto body_cost = get_numeric_witness_body_cost(witness, node);
     return witness.get_cost() <= body_cost ? datalog::Cost(0) : witness.get_cost() - body_cost;
 }
 
-template<TaskKind Kind>
-void LMCutHeuristic<Kind>::Impl::use_rule_edge_cost(RuleEdge edge, datalog::Cost cost)
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+void LMCutImplementation<Kind, TP>::use_rule_edge_cost(RuleEdge edge, datalog::Cost cost)
 {
     auto& used = m_rule_edge_used_costs[edge];
     used += cost;
 }
 
-template<TaskKind Kind>
-void LMCutHeuristic<Kind>::Impl::use_numeric_edge_cost(NumericEdge edge, datalog::Cost cost)
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+void LMCutImplementation<Kind, TP>::use_numeric_edge_cost(NumericEdge edge, datalog::Cost cost)
 {
     auto& used = m_numeric_edge_used_costs[edge];
     used += cost;
 }
 
-template<TaskKind Kind>
-void LMCutHeuristic<Kind>::Impl::apply_residual_costs()
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+void LMCutImplementation<Kind, TP>::apply_residual_costs()
 {
     this->m_workspace.clear_costs();
     for (const auto& [action_binding, used_cost] : m_action_used_costs)
@@ -330,24 +324,24 @@ void LMCutHeuristic<Kind>::Impl::apply_residual_costs()
         this->m_workspace.cost_policy.set_cost(edge.rule_key, edge.numeric_key, edge.interval, used_cost);
 }
 
-template<TaskKind Kind>
-datalog::Cost LMCutHeuristic<Kind>::Impl::get_numeric_cost(NumericNode node) const noexcept
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+datalog::Cost LMCutImplementation<Kind, TP>::get_numeric_cost(NumericNode node) const noexcept
 {
     const auto* annotation = this->m_workspace.numeric_annotations.find(node.key, node.interval);
     return annotation ? datalog::get_cost(*annotation) : datalog::Cost(0);
 }
 
-template<TaskKind Kind>
-const datalog::WitnessAnnotation<Kind, f::FunctionTag>* LMCutHeuristic<Kind>::Impl::get_numeric_witness(NumericNode node) const noexcept
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+const datalog::WitnessAnnotation<Kind, f::FunctionTag>* LMCutImplementation<Kind, TP>::get_numeric_witness(NumericNode node) const noexcept
 {
     const auto* annotation = this->m_workspace.numeric_annotations.find(node.key, node.interval);
     return annotation ? std::get_if<datalog::WitnessAnnotation<Kind, f::FunctionTag>>(annotation) : nullptr;
 }
 
-template<TaskKind Kind>
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
 template<f::RelationKind R>
-const std::vector<typename LMCutHeuristic<Kind>::Impl::Precondition>&
-LMCutHeuristic<Kind>::Impl::get_witness_max_preconditions(const datalog::WitnessAnnotation<Kind, R>& witness, datalog::Cost edge_cost, size_t depth)
+const std::vector<typename LMCutImplementation<Kind, TP>::Precondition>&
+LMCutImplementation<Kind, TP>::get_witness_max_preconditions(const datalog::WitnessAnnotation<Kind, R>& witness, datalog::Cost edge_cost, size_t depth)
 {
     if (m_max_precondition_buffers.size() <= depth)
         m_max_precondition_buffers.emplace_back();
@@ -371,12 +365,12 @@ LMCutHeuristic<Kind>::Impl::get_witness_max_preconditions(const datalog::Witness
     return result;
 }
 
-template<TaskKind Kind>
-const std::vector<typename LMCutHeuristic<Kind>::Impl::Precondition>&
-LMCutHeuristic<Kind>::Impl::get_numeric_witness_max_preconditions(const datalog::WitnessAnnotation<Kind, f::FunctionTag>& witness,
-                                                                  NumericNode node,
-                                                                  datalog::Cost edge_cost,
-                                                                  size_t depth)
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+const std::vector<typename LMCutImplementation<Kind, TP>::Precondition>&
+LMCutImplementation<Kind, TP>::get_numeric_witness_max_preconditions(const datalog::WitnessAnnotation<Kind, f::FunctionTag>& witness,
+                                                                     NumericNode node,
+                                                                     datalog::Cost edge_cost,
+                                                                     size_t depth)
 {
     if (m_max_precondition_buffers.size() <= depth)
         m_max_precondition_buffers.emplace_back();
@@ -401,14 +395,14 @@ LMCutHeuristic<Kind>::Impl::get_numeric_witness_max_preconditions(const datalog:
     return result;
 }
 
-template<TaskKind Kind>
-void LMCutHeuristic<Kind>::Impl::mark_goal_zone(Precondition precondition, size_t depth)
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+void LMCutImplementation<Kind, TP>::mark_goal_zone(Precondition precondition, size_t depth)
 {
     std::visit([&](auto node) { mark_goal_zone(node, depth); }, precondition);
 }
 
-template<TaskKind Kind>
-void LMCutHeuristic<Kind>::Impl::mark_goal_zone(PredicateHead head, size_t depth)
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+void LMCutImplementation<Kind, TP>::mark_goal_zone(PredicateHead head, size_t depth)
 {
     if (!m_goal_zone.insert(head).second)
         return;
@@ -417,7 +411,7 @@ void LMCutHeuristic<Kind>::Impl::mark_goal_zone(PredicateHead head, size_t depth
     this->for_each_achiever(head,
                             [&](const auto& witness)
                             {
-                                if (use_expanded_edges() && witness.get_cost() != head_cost)
+                                if (use_numeric_edge_cuts() && witness.get_cost() != head_cost)
                                     return;
 
                                 const auto action_binding = this->get_action_binding(witness);
@@ -431,8 +425,8 @@ void LMCutHeuristic<Kind>::Impl::mark_goal_zone(PredicateHead head, size_t depth
                             });
 }
 
-template<TaskKind Kind>
-void LMCutHeuristic<Kind>::Impl::mark_goal_zone(NumericNode node, size_t depth)
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+void LMCutImplementation<Kind, TP>::mark_goal_zone(NumericNode node, size_t depth)
 {
     if (!m_numeric_goal_zone.insert(node).second)
         return;
@@ -455,14 +449,14 @@ void LMCutHeuristic<Kind>::Impl::mark_goal_zone(NumericNode node, size_t depth)
         mark_goal_zone(precondition, depth + 1);
 }
 
-template<TaskKind Kind>
-bool LMCutHeuristic<Kind>::Impl::is_before_goal_zone(Precondition precondition, size_t depth)
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+bool LMCutImplementation<Kind, TP>::is_before_goal_zone(Precondition precondition, size_t depth)
 {
     return std::visit([&](auto node) { return is_before_goal_zone(node, depth); }, precondition);
 }
 
-template<TaskKind Kind>
-bool LMCutHeuristic<Kind>::Impl::is_before_goal_zone(PredicateHead head, size_t depth)
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+bool LMCutImplementation<Kind, TP>::is_before_goal_zone(PredicateHead head, size_t depth)
 {
     if (m_goal_zone.contains(head))
         return false;
@@ -479,7 +473,7 @@ bool LMCutHeuristic<Kind>::Impl::is_before_goal_zone(PredicateHead head, size_t 
     this->for_each_achiever(head,
                             [&](const auto& witness)
                             {
-                                if (before || (use_expanded_edges() && witness.get_cost() != head_cost))
+                                if (before || (use_numeric_edge_cuts() && witness.get_cost() != head_cost))
                                     return;
 
                                 has_achiever = true;
@@ -504,8 +498,8 @@ bool LMCutHeuristic<Kind>::Impl::is_before_goal_zone(PredicateHead head, size_t 
     return false;
 }
 
-template<TaskKind Kind>
-bool LMCutHeuristic<Kind>::Impl::is_before_goal_zone(NumericNode node, size_t depth)
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+bool LMCutImplementation<Kind, TP>::is_before_goal_zone(NumericNode node, size_t depth)
 {
     if (m_numeric_goal_zone.contains(node))
         return false;
@@ -545,8 +539,8 @@ bool LMCutHeuristic<Kind>::Impl::is_before_goal_zone(NumericNode node, size_t de
     return false;
 }
 
-template<TaskKind Kind>
-void LMCutHeuristic<Kind>::Impl::clear_zones() noexcept
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+void LMCutImplementation<Kind, TP>::clear_zones() noexcept
 {
     m_goal_zone.clear();
     m_numeric_goal_zone.clear();
@@ -556,8 +550,8 @@ void LMCutHeuristic<Kind>::Impl::clear_zones() noexcept
     m_numeric_not_before_goal_zone.clear();
 }
 
-template<TaskKind Kind>
-void LMCutHeuristic<Kind>::Impl::seed_goal_zone()
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+void LMCutImplementation<Kind, TP>::seed_goal_zone()
 {
     const auto goal_cost = this->get_goal_cost();
     if (const auto& goal = this->m_workspace.tp.get_goal())
@@ -585,8 +579,8 @@ void LMCutHeuristic<Kind>::Impl::seed_goal_zone()
     }
 }
 
-template<TaskKind Kind>
-void LMCutHeuristic<Kind>::Impl::clear_evaluation_views() noexcept
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+void LMCutImplementation<Kind, TP>::clear_evaluation_views() noexcept
 {
     clear_zones();
     m_action_used_costs.clear();
@@ -600,15 +594,15 @@ void LMCutHeuristic<Kind>::Impl::clear_evaluation_views() noexcept
     m_numeric_support_selector_workspace.clear();
 }
 
-template<TaskKind Kind>
-void LMCutHeuristic<Kind>::Impl::append_cut_frontier_atom(PredicateHead head, CutFrontierAtoms* cut_frontier_atoms)
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+void LMCutImplementation<Kind, TP>::append_cut_frontier_atom(PredicateHead head, CutFrontierAtoms* cut_frontier_atoms)
 {
     if (cut_frontier_atoms)
         this->append_planning_cut_frontier_atom(head, *cut_frontier_atoms);
 }
 
-template<TaskKind Kind>
-void LMCutHeuristic<Kind>::Impl::extract_cut(CutFrontierAtoms* cut_frontier_atoms)
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+void LMCutImplementation<Kind, TP>::extract_cut(CutFrontierAtoms* cut_frontier_atoms)
 {
     clear_zones();
     m_cut.clear();
@@ -645,8 +639,8 @@ void LMCutHeuristic<Kind>::Impl::extract_cut(CutFrontierAtoms* cut_frontier_atom
             inspect_witness(*witness, nullptr);
 }
 
-template<TaskKind Kind>
-void LMCutHeuristic<Kind>::Impl::extract_expanded_cut(CutFrontierAtoms* cut_frontier_atoms)
+template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
+void LMCutImplementation<Kind, TP>::extract_expanded_cut(CutFrontierAtoms* cut_frontier_atoms)
 {
     clear_zones();
     m_rule_cut.clear();
@@ -709,6 +703,59 @@ void LMCutHeuristic<Kind>::Impl::extract_expanded_cut(CutFrontierAtoms* cut_fron
         if (const auto* witness = get_numeric_witness(node); witness && witness->get_cost() == get_numeric_cost(node))
             inspect_numeric_witness(node, *witness);
 }
+
+}
+
+template<TaskKind Kind>
+struct LMCutHeuristic<Kind>::Impl
+{
+    using FullModelImplementation = LMCutImplementation<Kind, datalog::FullModelGoalPolicy<Kind, datalog::MaxAggregation>>;
+    using GoalDirectedImplementation = LMCutImplementation<Kind, datalog::TerminationPolicy<Kind, datalog::MaxAggregation>>;
+    using Implementation = std::variant<FullModelImplementation, GoalDirectedImplementation>;
+    using CutFrontierAtoms = f::planning::GroundAtomViewList<f::FluentTag>;
+
+    Impl(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
+        m_implementation(make_implementation(std::move(task), std::move(execution_context), cost_mode))
+    {
+    }
+
+    Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) :
+        m_implementation(std::visit(
+            [&](const auto& implementation) -> Implementation
+            {
+                using T = std::decay_t<decltype(implementation)>;
+                return Implementation(std::in_place_type<T>, implementation, std::move(execution_context));
+            },
+            source.m_implementation))
+    {
+    }
+
+    void set_goal(f::planning::GroundConjunctiveConditionView goal)
+    {
+        std::visit([&](auto& implementation) { implementation.set_goal(goal); }, m_implementation);
+    }
+
+    ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state, CutFrontierAtoms* cut_frontier_atoms = nullptr)
+    {
+        return std::visit([&](auto& implementation) { return implementation.evaluate(state, cut_frontier_atoms); }, m_implementation);
+    }
+
+    void print_summary(size_t verbosity) const
+    {
+        std::visit([&](const auto& implementation) { implementation.print_summary(verbosity); }, m_implementation);
+    }
+
+private:
+    static Implementation make_implementation(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
+    {
+        auto definition = std::make_shared<detail::RPGDefinition<Kind>>(std::move(task), cost_mode);
+        if (requires_numeric_edge_cuts(definition->rpg_program.get_datalog_program().get_program()))
+            return Implementation(std::in_place_type<GoalDirectedImplementation>, std::move(definition), std::move(execution_context), cost_mode);
+        return Implementation(std::in_place_type<FullModelImplementation>, std::move(definition), std::move(execution_context), cost_mode);
+    }
+
+    Implementation m_implementation;
+};
 
 template<TaskKind Kind>
 LMCutHeuristic<Kind>::LMCutHeuristic(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :

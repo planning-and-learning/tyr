@@ -82,6 +82,7 @@ add_library(
     formalism/planning/parser.cpp
     formalism/planning/planning_task.cpp
 
+    datalog/static_rule_filter.cpp
     datalog/lifted/policies/annotation.cpp
     datalog/lifted/policies/cost.cpp
     datalog/lifted/policies/numeric_support.cpp

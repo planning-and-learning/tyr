@@ -18,6 +18,7 @@
 #ifndef TYR_DATALOG_GROUND_CONTEXTS_PROGRAM_HPP_
 #define TYR_DATALOG_GROUND_CONTEXTS_PROGRAM_HPP_
 
+#include "tyr/datalog/applicability.hpp"
 #include "tyr/datalog/contexts/program.hpp"
 #include "tyr/datalog/ground/policies/annotation.hpp"
 #include "tyr/datalog/ground/workspaces/program.hpp"
@@ -132,6 +133,7 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
     void initialize(const Range& fluent_atoms)
     {
         m_out.facts().reset();
+        m_out.fact_sets().function.insert(m_in.program().template get_fterm_values<::tyr::formalism::FluentTag>());
         for (const auto atom : fluent_atoms)
             m_out.fact_sets().predicate.insert(atom);
         initialize();
@@ -142,11 +144,6 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
     const auto& out() const noexcept { return m_out; }
 
 private:
-    bool is_fluent_fact_true(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> fact) const noexcept
-    {
-        return m_out.fact_sets().predicate.contains(fact.get_row());
-    }
-
     void initialize_annotations()
     {
         m_out.annotations().clear();
@@ -166,33 +163,27 @@ private:
     void reset_from_current_facts()
     {
         initialize_annotations();
-        m_out.template rule_states<::tyr::formalism::PredicateTag>().clear();
-        m_out.template rule_states<::tyr::formalism::FunctionTag>().clear();
         m_out.queue().clear();
-        initialize_rule_states<::tyr::formalism::PredicateTag>();
-        initialize_rule_states<::tyr::formalism::FunctionTag>();
+        const auto fact_sets = FactSets { m_in.facts().fact_sets, m_out.fact_sets() };
+        initialize_rule_states<::tyr::formalism::PredicateTag>(fact_sets);
+        initialize_rule_states<::tyr::formalism::FunctionTag>(fact_sets);
     }
 
     template<::tyr::formalism::RelationKind R>
-    void initialize_rule_states()
+    void initialize_rule_states(const FactSets& fact_sets)
     {
+        const auto rules = m_in.program().template get_rules<R>();
         auto& states = m_out.template rule_states<R>();
-        for (const auto rule : m_in.program().template get_rules<R>())
+        states.resize(rules.size());
+        for (ygg::uint_t rule_index = 0; rule_index < rules.size(); ++rule_index)
         {
-            const auto rule_index = rule.get_index();
-            if (ygg::uint_t(rule_index) >= states.size())
-                states.resize(ygg::uint_t(rule_index) + 1);
-
-            auto& state = states[ygg::uint_t(rule_index)];
+            const auto rule = rules[rule_index];
+            auto& state = states[rule_index];
 
             auto unsatisfied_count = ygg::uint_t(0);
             for (const auto literal : rule.get_body().template get_literals<::tyr::formalism::FluentTag>())
-            {
-                if (!literal.get_polarity())
+                if (!is_applicable(literal, fact_sets))
                     ++unsatisfied_count;
-                else if (!is_fluent_fact_true(literal.get_atom()))
-                    ++unsatisfied_count;
-            }
             const auto numeric_constraints = rule.get_body().get_numeric_constraints();
             state.numeric_constraint_satisfied.assign(numeric_constraints.size(), false);
             for (ygg::uint_t i = 0; i < numeric_constraints.size(); ++i)

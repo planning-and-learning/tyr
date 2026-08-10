@@ -23,6 +23,7 @@
 
 #include <cassert>
 #include <limits>
+#include <stdexcept>
 
 namespace tyr::datalog
 {
@@ -33,10 +34,16 @@ static_assert(TerminationPolicyConcept<TerminationPolicy<GroundTag, SumAggregati
 static_assert(TerminationPolicyConcept<TerminationPolicy<GroundTag, MaxAggregation>, GroundTag>);
 static_assert(TerminationPolicyConcept<TerminationPolicy<LiftedTag, SumAggregation>, LiftedTag>);
 static_assert(TerminationPolicyConcept<TerminationPolicy<LiftedTag, MaxAggregation>, LiftedTag>);
+static_assert(TerminationPolicyConcept<FullModelGoalPolicy<GroundTag, MaxAggregation>, GroundTag>);
+static_assert(TerminationPolicyConcept<FullModelGoalPolicy<LiftedTag, MaxAggregation>, LiftedTag>);
 
 template<TaskKind Kind, typename AggregationFunction>
 void TerminationPolicy<Kind, AggregationFunction>::set_goals(::tyr::formalism::datalog::GroundConjunctiveConditionView goals_)
 {
+    for (const auto literal : goals_.template get_literals<::tyr::formalism::FluentTag>())
+        if (!literal.get_polarity())
+            throw std::invalid_argument("TerminationPolicy requires positive fluent goals");
+
     clear();
     goals = goals_;
 }
@@ -53,7 +60,7 @@ bool TerminationPolicy<Kind, AggregationFunction>::check(const FactSets& fact_se
 template<TaskKind Kind, typename AggregationFunction>
 bool TerminationPolicy<Kind, AggregationFunction>::should_terminate(const FactSets& fact_sets) const noexcept
 {
-    return early_termination && check(fact_sets);
+    return check(fact_sets);
 }
 
 template<TaskKind Kind, typename AggregationFunction>
@@ -68,9 +75,6 @@ Cost TerminationPolicy<Kind, AggregationFunction>::get_total_cost(const FactSets
     auto total = AggregationFunction::identity();
     for (const auto literal : goals->template get_literals<::tyr::formalism::FluentTag>())
     {
-        if (!literal.get_polarity())
-            continue;
-
         const auto* annotation = annotations.find(literal.get_atom().get_row());
         assert(annotation);
         if (!annotation)

@@ -47,6 +47,7 @@ WitnessAnnotation<Kind, R>::WitnessAnnotation(WitnessRuleKeyT<Kind, R> rule_key_
     numeric_supports(std::move(numeric_supports_))
 {
     std::sort(numeric_supports.begin(), numeric_supports.end());
+    numeric_supports.erase(std::unique(numeric_supports.begin(), numeric_supports.end()), numeric_supports.end());
 }
 
 template<TaskKind Kind, ::tyr::formalism::RelationKind R>

@@ -60,6 +60,8 @@ template<TaskKind Kind>
 class NoTerminationPolicy;
 template<TaskKind Kind, typename AggregationFunction>
 class TerminationPolicy;
+template<TaskKind Kind, typename AggregationFunction>
+class FullModelGoalPolicy;
 template<TaskKind Kind>
 class RuleCostPolicy;
 template<TaskKind Kind>

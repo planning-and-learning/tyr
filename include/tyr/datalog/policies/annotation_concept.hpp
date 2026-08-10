@@ -43,6 +43,7 @@ concept AnnotationPolicyConcept = TaskKind<Kind>
                                               DeltaFunctionAnnotations<Kind>& delta_numeric_annotations) {
                                          typename std::bool_constant<T::stores_annotations>;
                                          typename std::bool_constant<T::records_propositional_achievers>;
+                                         { const_policy.is_widening_label_preserving(Cost {}, Cost {}) } -> std::same_as<bool>;
                                          { const_policy.initialize_annotation(head, annotations) } -> std::same_as<void>;
                                          { const_policy.initialize_annotation(function_binding, interval, numeric_annotations) } -> std::same_as<void>;
                                          { policy.clear_achievers() } -> std::same_as<void>;

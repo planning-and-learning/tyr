@@ -105,12 +105,26 @@ std::pair<NumericEffectView<T>, bool> merge_d2d(NumericEffectView<T> element, Me
 template<FactKind T>
 NumericEffectOperatorView<T> merge_d2d(NumericEffectOperatorView<T> element, MergeContext& context);
 
+template<FactKind T>
+std::pair<GroundNumericEffectView<T>, bool> merge_d2d(GroundNumericEffectView<T> element, MergeContext& context);
+
+template<FactKind T>
+GroundNumericEffectOperatorView<T> merge_d2d(GroundNumericEffectOperatorView<T> element, MergeContext& context);
+
 std::pair<ConjunctiveConditionView, bool> merge_d2d(ConjunctiveConditionView element, MergeContext& context);
 
 std::pair<GroundConjunctiveConditionView, bool> merge_d2d(GroundConjunctiveConditionView element, MergeContext& context);
 
+std::pair<MetricView, bool> merge_d2d(MetricView element, MergeContext& context);
+
 template<RelationKind R>
 std::pair<RuleView<R>, bool> merge_d2d(RuleView<R> element, MergeContext& context);
+
+template<RelationKind R>
+std::pair<RuleBindingView<R>, bool> merge_d2d(RuleBindingView<R> element, MergeContext& context);
+
+template<RelationKind R>
+std::pair<GroundRuleView<R>, bool> merge_d2d(GroundRuleView<R> element, MergeContext& context);
 
 // Common
 
@@ -179,7 +193,7 @@ std::pair<AtomView<T>, bool> merge_d2d(AtomView<T> element, MergeContext& contex
     auto& atom = *atom_ptr;
     atom.clear();
 
-    atom.predicate = element.get_predicate().get_index();
+    atom.predicate = merge_d2d(element.get_predicate(), context).first.get_index();
     for (const auto term : element.get_terms())
         atom.terms.push_back(merge_d2d(term, context).get_data());
 
@@ -266,7 +280,7 @@ std::pair<FunctionTermView<T>, bool> merge_d2d(FunctionTermView<T> element, Merg
     auto& fterm = *fterm_ptr;
     fterm.clear();
 
-    fterm.function = element.get_function().get_index();
+    fterm.function = merge_d2d(element.get_function(), context).first.get_index();
     for (const auto term : element.get_terms())
         fterm.terms.push_back(merge_d2d(term, context).get_data());
 
@@ -399,16 +413,16 @@ std::pair<MultiOperatorView<T>, bool> merge_d2d(MultiOperatorView<T> element, Me
 template<typename T>
 ArithmeticOperatorView<T> merge_d2d(ArithmeticOperatorView<T> element, MergeContext& context)
 {
-    const auto data = visit(
-        [&](auto&& arg) { return ygg::Data<ArithmeticOperator<T>>(arg.get_operator(), merge_d2d(arg, context).first.get_index()); }, element.get_variant());
+    const auto data = visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<T>>(arg.get_operator(), merge_d2d(arg, context).first.get_index()); },
+                            element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
 template<typename T>
 BooleanOperatorView<T> merge_d2d(BooleanOperatorView<T> element, MergeContext& context)
 {
-    const auto data = visit(
-        [&](auto&& arg) { return ygg::Data<BooleanOperator<T>>(arg.get_operator(), merge_d2d(arg, context).first.get_index()); }, element.get_variant());
+    const auto data =
+        visit([&](auto&& arg) { return ygg::Data<BooleanOperator<T>>(arg.get_operator(), merge_d2d(arg, context).first.get_index()); }, element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
@@ -430,8 +444,32 @@ std::pair<NumericEffectView<T>, bool> merge_d2d(NumericEffectView<T> element, Me
 template<FactKind T>
 NumericEffectOperatorView<T> merge_d2d(NumericEffectOperatorView<T> element, MergeContext& context)
 {
-    const auto data = visit(
-        [&](auto&& arg) { return ygg::Data<NumericEffectOperator<T>>(arg.get_operator(), merge_d2d(arg, context).first.get_index()); }, element.get_variant());
+    const auto data = visit([&](auto&& arg) { return ygg::Data<NumericEffectOperator<T>>(arg.get_operator(), merge_d2d(arg, context).first.get_index()); },
+                            element.get_variant());
+    return ygg::make_view(data, context.destination);
+}
+
+template<FactKind T>
+std::pair<GroundNumericEffectView<T>, bool> merge_d2d(GroundNumericEffectView<T> element, MergeContext& context)
+{
+    auto numeric_effect_ptr = context.builder.template get_builder<GroundNumericEffect<T>>();
+    auto& numeric_effect = *numeric_effect_ptr;
+    numeric_effect.clear();
+
+    numeric_effect.operator_kind = element.get_operator();
+    numeric_effect.fterm = merge_d2d(element.get_fterm(), context).first.get_index();
+    numeric_effect.fexpr = merge_d2d(element.get_fexpr(), context).get_data();
+
+    canonicalize(numeric_effect);
+    return context.destination.get_or_create(numeric_effect);
+}
+
+template<FactKind T>
+GroundNumericEffectOperatorView<T> merge_d2d(GroundNumericEffectOperatorView<T> element, MergeContext& context)
+{
+    const auto data =
+        visit([&](auto&& arg) { return ygg::Data<GroundNumericEffectOperator<T>>(arg.get_operator(), merge_d2d(arg, context).first.get_index()); },
+              element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
@@ -441,6 +479,8 @@ inline std::pair<ConjunctiveConditionView, bool> merge_d2d(ConjunctiveConditionV
     auto& conj_cond = *conj_cond_ptr;
     conj_cond.clear();
 
+    for (const auto variable : element.get_variables())
+        conj_cond.variables.push_back(merge_d2d(variable, context).first.get_index());
     for (const auto literal : element.template get_literals<StaticTag>())
         conj_cond.static_literals.push_back(merge_d2d(literal, context).first.get_index());
     for (const auto literal : element.template get_literals<FluentTag>())
@@ -469,6 +509,18 @@ inline std::pair<GroundConjunctiveConditionView, bool> merge_d2d(GroundConjuncti
     return context.destination.get_or_create(conj_cond);
 }
 
+inline std::pair<MetricView, bool> merge_d2d(MetricView element, MergeContext& context)
+{
+    auto metric_ptr = context.builder.template get_builder<Metric>();
+    auto& metric = *metric_ptr;
+    metric.clear();
+
+    metric.fexpr = merge_d2d(element.get_fexpr(), context).get_data();
+
+    canonicalize(metric);
+    return context.destination.get_or_create(metric);
+}
+
 inline auto merge_rule_head(AtomView<FluentTag> head, MergeContext& context) { return merge_d2d(head, context).first.get_index(); }
 
 inline auto merge_rule_head(NumericEffectOperatorView<FluentTag> head, MergeContext& context) { return merge_d2d(head, context).get_data(); }
@@ -484,6 +536,42 @@ std::pair<RuleView<R>, bool> merge_d2d(RuleView<R> element, MergeContext& contex
         rule.variables.push_back(merge_d2d(variable, context).first.get_index());
     rule.body = merge_d2d(element.get_body(), context).first.get_index();
     rule.head = merge_rule_head(element.get_head(), context);
+    for (const auto metric_effect : element.get_metric_effects())
+        rule.metric_effects.push_back(merge_d2d(metric_effect, context).get_data());
+
+    canonicalize(rule);
+    return context.destination.get_or_create(rule);
+}
+
+template<RelationKind R>
+std::pair<RuleBindingView<R>, bool> merge_d2d(RuleBindingView<R> element, MergeContext& context)
+{
+    auto binding_ptr = context.builder.template get_builder<RelationBinding<Rule<R>>>();
+    auto& binding = *binding_ptr;
+    binding.clear();
+
+    binding.relation = merge_d2d(element.get_relation(), context).first.get_index();
+    for (const auto object : element.get_objects())
+        binding.objects.push_back(merge_d2d(object, context).first.get_index());
+
+    canonicalize(binding);
+    return context.destination.get_or_create(binding);
+}
+
+inline auto merge_ground_rule_head(GroundAtomView<FluentTag> head, MergeContext& context) { return merge_d2d(head, context).first.get_index(); }
+
+inline auto merge_ground_rule_head(GroundNumericEffectOperatorView<FluentTag> head, MergeContext& context) { return merge_d2d(head, context).get_data(); }
+
+template<RelationKind R>
+std::pair<GroundRuleView<R>, bool> merge_d2d(GroundRuleView<R> element, MergeContext& context)
+{
+    auto rule_ptr = context.builder.template get_builder<GroundRule<R>>();
+    auto& rule = *rule_ptr;
+    rule.clear();
+
+    rule.binding = merge_d2d(element.get_row(), context).first.get_index();
+    rule.body = merge_d2d(element.get_body(), context).first.get_index();
+    rule.head = merge_ground_rule_head(element.get_head(), context);
     for (const auto metric_effect : element.get_metric_effects())
         rule.metric_effects.push_back(merge_d2d(metric_effect, context).get_data());
 
@@ -557,8 +645,17 @@ extern template ArithmeticOperatorView<ygg::Data<GroundFunctionExpression>> merg
 extern template std::pair<NumericEffectView<FluentTag>, bool> merge_d2d(NumericEffectView<FluentTag> element, MergeContext& context);
 extern template NumericEffectOperatorView<FluentTag> merge_d2d(NumericEffectOperatorView<FluentTag> element, MergeContext& context);
 
+extern template std::pair<GroundNumericEffectView<FluentTag>, bool> merge_d2d(GroundNumericEffectView<FluentTag> element, MergeContext& context);
+extern template GroundNumericEffectOperatorView<FluentTag> merge_d2d(GroundNumericEffectOperatorView<FluentTag> element, MergeContext& context);
+
 extern template std::pair<RuleView<PredicateTag>, bool> merge_d2d(RuleView<PredicateTag> element, MergeContext& context);
 extern template std::pair<RuleView<FunctionTag>, bool> merge_d2d(RuleView<FunctionTag> element, MergeContext& context);
+
+extern template std::pair<RuleBindingView<PredicateTag>, bool> merge_d2d(RuleBindingView<PredicateTag> element, MergeContext& context);
+extern template std::pair<RuleBindingView<FunctionTag>, bool> merge_d2d(RuleBindingView<FunctionTag> element, MergeContext& context);
+
+extern template std::pair<GroundRuleView<PredicateTag>, bool> merge_d2d(GroundRuleView<PredicateTag> element, MergeContext& context);
+extern template std::pair<GroundRuleView<FunctionTag>, bool> merge_d2d(GroundRuleView<FunctionTag> element, MergeContext& context);
 }
 
 #endif

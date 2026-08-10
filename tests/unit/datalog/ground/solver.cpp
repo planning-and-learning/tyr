@@ -17,6 +17,7 @@
 
 #include "tyr/datalog/ground/solver.hpp"
 
+#include "tyr/datalog/static_rule_filter.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -37,6 +38,7 @@ namespace tyr::tests
 namespace
 {
 using GroundAtomViews = std::vector<fd::GroundAtomView<f::FluentTag>>;
+using StaticGroundAtomViews = std::vector<fd::GroundAtomView<f::StaticTag>>;
 using PredicateBindingViews = std::vector<fd::PredicateBindingView<f::FluentTag>>;
 
 static_assert(std::same_as<datalog::PredicateAnnotationHead<GroundTag>, fd::PredicateBindingView<f::FluentTag>>);
@@ -63,9 +65,12 @@ struct GroundQueueFixture
 {
     fd::RepositoryFactory factory;
     fd::Repository repository = factory.create();
+    std::vector<ygg::Index<f::Predicate<f::StaticTag>>> static_predicates;
     std::vector<ygg::Index<f::Predicate<f::FluentTag>>> fluent_predicates;
     std::vector<ygg::Index<f::Function<f::FluentTag>>> fluent_functions;
+    StaticGroundAtomViews initial_static_atoms;
     GroundAtomViews initial_fluent_atoms;
+    std::vector<ygg::Index<fd::GroundFunctionTermValue<f::FluentTag>>> initial_fluent_fterm_values;
     std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>> ground_rules;
     std::vector<ygg::Index<fd::GroundRule<f::FunctionTag>>> ground_function_rules;
     ygg::uint_t next_rule_id = 0;
@@ -96,6 +101,31 @@ struct GroundQueueFixture
         return repository.get_or_create(literal_builder).first;
     }
 
+    fd::GroundAtomView<f::StaticTag> static_atom(const std::string& name)
+    {
+        auto predicate_builder = ygg::Data<f::Predicate<f::StaticTag>>(name, 0);
+        canonicalize(predicate_builder);
+        const auto [predicate, predicate_inserted] = repository.get_or_create(predicate_builder);
+        if (predicate_inserted)
+            static_predicates.push_back(predicate.get_index());
+
+        auto binding_builder = ygg::Data<f::RelationBinding<f::Predicate<f::StaticTag>>>();
+        binding_builder.relation = predicate.get_index();
+        canonicalize(binding_builder);
+        const auto binding = repository.get_or_create(binding_builder).first;
+
+        auto atom_builder = ygg::Data<fd::GroundAtom<f::StaticTag>>(binding.get_index());
+        canonicalize(atom_builder);
+        return repository.get_or_create(atom_builder).first;
+    }
+
+    fd::GroundLiteralView<f::StaticTag> static_literal(fd::GroundAtomView<f::StaticTag> atom, bool polarity = true)
+    {
+        auto literal_builder = ygg::Data<fd::GroundLiteral<f::StaticTag>>(atom.get_index(), polarity);
+        canonicalize(literal_builder);
+        return repository.get_or_create(literal_builder).first;
+    }
+
     fd::GroundFunctionTermView<f::FluentTag> fluent_function_term(const std::string& name)
     {
         auto function_builder = ygg::Data<f::Function<f::FluentTag>>(name, 0);
@@ -113,11 +143,21 @@ struct GroundQueueFixture
         return repository.get_or_create(term_builder).first;
     }
 
-    fd::GroundConjunctiveConditionView condition(std::initializer_list<fd::GroundLiteralView<f::FluentTag>> fluent_literals = {})
+    void initial_fluent_function_value(fd::GroundFunctionTermView<f::FluentTag> term, ygg::float_t value)
+    {
+        auto value_builder = ygg::Data<fd::GroundFunctionTermValue<f::FluentTag>>(term.get_index(), value);
+        canonicalize(value_builder);
+        initial_fluent_fterm_values.push_back(repository.get_or_create(value_builder).first.get_index());
+    }
+
+    fd::GroundConjunctiveConditionView condition(std::initializer_list<fd::GroundLiteralView<f::FluentTag>> fluent_literals = {},
+                                                 std::initializer_list<fd::GroundLiteralView<f::StaticTag>> static_literals = {})
     {
         auto condition_builder = ygg::Data<fd::GroundConjunctiveCondition>();
         for (const auto literal : fluent_literals)
             condition_builder.fluent_literals.push_back(literal.get_index());
+        for (const auto literal : static_literals)
+            condition_builder.static_literals.push_back(literal.get_index());
         canonicalize(condition_builder);
         return repository.get_or_create(condition_builder).first;
     }
@@ -175,15 +215,18 @@ struct GroundQueueFixture
         return ground_rule;
     }
 
-    fd::GroundRuleView<f::FunctionTag> empty_body_assign_rule(fd::GroundFunctionTermView<f::FluentTag> head, ygg::float_t value)
+    fd::GroundRuleView<f::FunctionTag> numeric_rule(fd::GroundConjunctiveConditionView body,
+                                                    fd::GroundFunctionTermView<f::FluentTag> head,
+                                                    f::NumericEffectOperatorKind op,
+                                                    ygg::float_t value,
+                                                    ygg::float_t metric_delta = 0)
     {
         auto lifted_term_builder = ygg::Data<fd::FunctionTerm<f::FluentTag>>();
         lifted_term_builder.function = head.get_function().get_index();
         canonicalize(lifted_term_builder);
         const auto lifted_term = repository.get_or_create(lifted_term_builder).first;
 
-        auto lifted_effect_builder =
-            ygg::Data<fd::NumericEffect<f::FluentTag>>(f::NumericEffectOperatorKind::Assign, lifted_term.get_index(), ygg::Data<fd::FunctionExpression>(value));
+        auto lifted_effect_builder = ygg::Data<fd::NumericEffect<f::FluentTag>>(op, lifted_term.get_index(), ygg::Data<fd::FunctionExpression>(value));
         canonicalize(lifted_effect_builder);
         const auto lifted_effect = repository.get_or_create(lifted_effect_builder).first;
 
@@ -193,7 +236,17 @@ struct GroundQueueFixture
 
         auto lifted_rule_builder = ygg::Data<fd::Rule<f::FunctionTag>>();
         lifted_rule_builder.body = lifted_condition.get_index();
-        lifted_rule_builder.head = ygg::Data<fd::NumericEffectOperator<f::FluentTag>>(f::NumericEffectOperatorKind::Assign, lifted_effect.get_index());
+        lifted_rule_builder.head = ygg::Data<fd::NumericEffectOperator<f::FluentTag>>(op, lifted_effect.get_index());
+        if (metric_delta != 0)
+        {
+            auto metric_effect_builder = ygg::Data<fd::NumericEffect<f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
+                                                                                    lifted_term.get_index(),
+                                                                                    ygg::Data<fd::FunctionExpression>(metric_delta));
+            canonicalize(metric_effect_builder);
+            const auto metric_effect = repository.get_or_create(metric_effect_builder).first;
+            lifted_rule_builder.metric_effects.emplace_back(f::NumericEffectOperatorKind::Increase,
+                                                            ygg::Data<fd::NumericEffectOperator<f::FluentTag>>::Variant(metric_effect.get_index()));
+        }
         canonicalize(lifted_rule_builder);
         const auto lifted_rule = repository.get_or_create(lifted_rule_builder).first;
 
@@ -202,29 +255,54 @@ struct GroundQueueFixture
         canonicalize(binding_builder);
         const auto binding = repository.get_or_create(binding_builder).first;
 
-        auto effect_builder = ygg::Data<fd::GroundNumericEffect<f::FluentTag>>(f::NumericEffectOperatorKind::Assign,
-                                                                               head.get_index(),
-                                                                               ygg::Data<fd::GroundFunctionExpression>(value));
+        auto effect_builder = ygg::Data<fd::GroundNumericEffect<f::FluentTag>>(op, head.get_index(), ygg::Data<fd::GroundFunctionExpression>(value));
         canonicalize(effect_builder);
         const auto effect = repository.get_or_create(effect_builder).first;
 
         auto rule_builder = ygg::Data<fd::GroundRule<f::FunctionTag>>();
         rule_builder.binding = binding.get_index();
-        rule_builder.body = condition().get_index();
-        rule_builder.head = ygg::Data<fd::GroundNumericEffectOperator<f::FluentTag>>(f::NumericEffectOperatorKind::Assign, effect.get_index());
+        rule_builder.body = body.get_index();
+        rule_builder.head = ygg::Data<fd::GroundNumericEffectOperator<f::FluentTag>>(op, effect.get_index());
+        if (metric_delta != 0)
+        {
+            auto metric_effect_builder = ygg::Data<fd::GroundNumericEffect<f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
+                                                                                          head.get_index(),
+                                                                                          ygg::Data<fd::GroundFunctionExpression>(metric_delta));
+            canonicalize(metric_effect_builder);
+            const auto metric_effect = repository.get_or_create(metric_effect_builder).first;
+            rule_builder.metric_effects.emplace_back(f::NumericEffectOperatorKind::Increase,
+                                                     ygg::Data<fd::GroundNumericEffectOperator<f::FluentTag>>::Variant(metric_effect.get_index()));
+        }
         canonicalize(rule_builder);
         const auto ground_rule = repository.get_or_create(rule_builder).first;
         ground_function_rules.push_back(ground_rule.get_index());
         return ground_rule;
     }
 
+    fd::GroundRuleView<f::FunctionTag>
+    assign_rule(fd::GroundConjunctiveConditionView body, fd::GroundFunctionTermView<f::FluentTag> head, ygg::float_t value, ygg::float_t metric_delta = 0)
+    {
+        return numeric_rule(body, head, f::NumericEffectOperatorKind::Assign, value, metric_delta);
+    }
+
+    fd::GroundRuleView<f::FunctionTag> empty_body_assign_rule(fd::GroundFunctionTermView<f::FluentTag> head, ygg::float_t value)
+    {
+        return assign_rule(condition(), head, value);
+    }
+
     fd::ProgramView<GroundTag> program()
     {
         auto program_builder = ygg::Data<fd::GroundProgram>();
+        program_builder.static_predicates.insert(program_builder.static_predicates.end(), static_predicates.begin(), static_predicates.end());
         program_builder.fluent_predicates.insert(program_builder.fluent_predicates.end(), fluent_predicates.begin(), fluent_predicates.end());
         program_builder.fluent_functions.insert(program_builder.fluent_functions.end(), fluent_functions.begin(), fluent_functions.end());
+        for (const auto atom : initial_static_atoms)
+            program_builder.static_atoms.push_back(atom.get_index());
         for (const auto atom : initial_fluent_atoms)
             program_builder.fluent_atoms.push_back(atom.get_index());
+        program_builder.fluent_fterm_values.insert(program_builder.fluent_fterm_values.end(),
+                                                   initial_fluent_fterm_values.begin(),
+                                                   initial_fluent_fterm_values.end());
         program_builder.predicate_ground_rules.insert(program_builder.predicate_ground_rules.end(), ground_rules.begin(), ground_rules.end());
         program_builder.function_ground_rules.insert(program_builder.function_ground_rules.end(), ground_function_rules.begin(), ground_function_rules.end());
         canonicalize(program_builder);
@@ -547,6 +625,16 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationStopsAfterGoalDerived)
     EXPECT_TRUE(ctx.out().tp().check(datalog::FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }));
 }
 
+TEST(TyrDatalogGroundQueueTest, NegativeFluentGoalIsRejected)
+{
+    auto fixture = GroundQueueFixture();
+    const auto atom = fixture.fluent_atom("a");
+    const auto goal = fixture.condition({ fixture.fluent_literal(atom, false) });
+
+    auto termination_policy = datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>();
+    EXPECT_THROW(termination_policy.set_goals(goal), std::invalid_argument);
+}
+
 TEST(TyrDatalogGroundQueueTest, GroundTerminationCommitsMixedLowestCostBucket)
 {
     auto fixture = GroundQueueFixture();
@@ -644,16 +732,147 @@ TEST(TyrDatalogGroundQueueTest, DerivedNumericIntervalUnblocksRuleAndRecordsSupp
     EXPECT_EQ(supports.front().get_interval(), ygg::ClosedInterval<ygg::float_t>(3, 3));
 }
 
-TEST(TyrDatalogGroundQueueTest, UnfilteredNegativeFluentLiteralDoesNotFire)
+TEST(TyrDatalogGroundQueueTest, NumericTransitionCreditOnlyReducesTheLocalEdge)
+{
+    auto fixture = GroundQueueFixture();
+    const auto prerequisite = fixture.fluent_atom("prerequisite");
+    fixture.initial_fluent_atoms.push_back(prerequisite);
+    const auto term = fixture.fluent_function_term("n");
+    const auto rule = fixture.assign_rule(fixture.condition({ fixture.fluent_literal(prerequisite) }), term, 2, 3);
+    const auto interval = ygg::ClosedInterval<ygg::float_t>(2, 2);
+
+    const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
+    auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
+    cost_policy.set_cost(rule, term, interval, datalog::Cost(3));
+    using Workspace = datalog::ProgramWorkspace<GroundTag,
+                                                datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>,
+                                                datalog::NoTerminationPolicy<GroundTag>,
+                                                datalog::RuleCostOverridePolicy<GroundTag>>;
+    auto workspace = Workspace(const_workspace,
+                               datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>(),
+                               datalog::NoTerminationPolicy<GroundTag>(),
+                               cost_policy);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
+    ctx.initialize(fixture.initial_fluent_atoms);
+    ctx.out().annotations().insert_or_assign(prerequisite.get_row(),
+                                             datalog::BaseAnnotation<GroundTag>(ygg::ClosedInterval<ygg::float_t>(5, 5), datalog::Cost(5)));
+
+    dq::compute_model(ctx);
+
+    EXPECT_EQ(ctx.out().fact_sets().function[term], interval);
+    const auto* annotation = ctx.out().numeric_annotations().find(term, interval);
+    ASSERT_NE(annotation, nullptr);
+    EXPECT_EQ(datalog::get_cost(*annotation), 5);
+    EXPECT_EQ(datalog::get_metric(*annotation), ygg::ClosedInterval<ygg::float_t>(5, 5));
+}
+
+TEST(TyrDatalogGroundQueueTest, TransitionCreditDoesNotTurnRawPositiveEdgeIntoFreeWidening)
+{
+    auto fixture = GroundQueueFixture();
+    const auto term = fixture.fluent_function_term("n");
+    fixture.initial_fluent_function_value(term, 0);
+    const auto rule = fixture.numeric_rule(fixture.condition(), term, f::NumericEffectOperatorKind::Increase, 1, 1);
+    const auto raw_interval = ygg::ClosedInterval<ygg::float_t>(1, 1);
+    const auto goal = fixture.numeric_condition(term, f::BooleanOperatorKind::Ge, 1);
+
+    const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
+    auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
+    cost_policy.set_cost(rule, term, raw_interval, datalog::Cost(1));
+    auto termination_policy = datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>();
+    termination_policy.set_goals(goal);
+    using Workspace = datalog::ProgramWorkspace<GroundTag,
+                                                datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>,
+                                                datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>,
+                                                datalog::RuleCostOverridePolicy<GroundTag>>;
+    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>(), termination_policy, cost_policy);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
+
+    ctx.initialize(fixture.initial_fluent_atoms);
+    dq::compute_model(ctx);
+
+    EXPECT_EQ(ctx.out().fact_sets().function[term], ygg::ClosedInterval<ygg::float_t>(0, 1));
+    EXPECT_TRUE(ctx.out().tp().check(datalog::FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }));
+}
+
+TEST(TyrDatalogGroundQueueTest, WideningPolicyRequiresLabelPreservationForSum)
+{
+    const auto sum_policy = datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>();
+    const auto max_policy = datalog::MinCostAnnotationPolicy<GroundTag, datalog::MaxAggregation>();
+
+    EXPECT_TRUE(sum_policy.is_widening_label_preserving(5, 5));
+    EXPECT_FALSE(sum_policy.is_widening_label_preserving(6, 5));
+    EXPECT_TRUE(max_policy.is_widening_label_preserving(6, 5));
+}
+
+TEST(TyrDatalogGroundQueueTest, StaticLiteralsUseTheirPolarityAndInitialTruth)
+{
+    auto fixture = GroundQueueFixture();
+    const auto present = fixture.static_atom("present");
+    const auto absent = fixture.static_atom("absent");
+    fixture.initial_static_atoms.push_back(present);
+
+    const auto positive_present = fixture.fluent_atom("positive_present");
+    const auto positive_absent = fixture.fluent_atom("positive_absent");
+    const auto negative_present = fixture.fluent_atom("negative_present");
+    const auto negative_absent = fixture.fluent_atom("negative_absent");
+    fixture.rule(fixture.condition({}, { fixture.static_literal(present) }), positive_present);
+    fixture.rule(fixture.condition({}, { fixture.static_literal(absent) }), positive_absent);
+    fixture.rule(fixture.condition({}, { fixture.static_literal(present, false) }), negative_present);
+    fixture.rule(fixture.condition({}, { fixture.static_literal(absent, false) }), negative_absent);
+
+    const auto source_program = fixture.program();
+    EXPECT_THROW(static_cast<void>(datalog::ConstProgramWorkspace<GroundTag> { source_program }), std::invalid_argument);
+
+    auto repository = fixture.factory.create();
+    const auto program = dq::remove_statically_inapplicable_rules(source_program, repository);
+    const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(program);
+    EXPECT_EQ(const_workspace.program.get_rules<f::PredicateTag>().size(), 2);
+    auto workspace = datalog::ProgramWorkspace<GroundTag>(const_workspace);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
+    ctx.initialize(fixture.initial_fluent_atoms);
+    dq::compute_model(ctx);
+
+    auto expected = PredicateBindingViews {};
+    for (const auto rule : program.get_rules<f::PredicateTag>())
+        expected.push_back(rule.get_head().get_row());
+    EXPECT_EQ(binding_views(ctx), expected);
+    EXPECT_EQ(ctx.out().statistics().num_rules_fired, 2);
+}
+
+TEST(TyrDatalogGroundQueueTest, ExplicitFluentAtomsRestoreDeclaredInitialFunctionValues)
+{
+    auto fixture = GroundQueueFixture();
+    const auto term = fixture.fluent_function_term("n");
+    fixture.initial_fluent_function_value(term, 3);
+
+    const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
+    auto workspace = datalog::ProgramWorkspace<GroundTag>(const_workspace);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
+    ctx.out().fact_sets().function.insert(term, 9);
+
+    ctx.initialize(fixture.initial_fluent_atoms);
+
+    EXPECT_EQ(ctx.out().fact_sets().function[term], ygg::ClosedInterval<ygg::float_t>(3, 3));
+}
+
+TEST(TyrDatalogGroundQueueTest, PredicateRuleWithNegativeFluentLiteralIsRejected)
 {
     auto fixture = GroundQueueFixture();
     const auto a = fixture.fluent_atom("a");
     const auto b = fixture.fluent_atom("b");
     fixture.rule(fixture.condition({ fixture.fluent_literal(a, false) }), b);
 
-    const auto result = solve_default_state(fixture);
+    EXPECT_THROW(datalog::ConstProgramWorkspace<GroundTag>(fixture.program()), std::invalid_argument);
+}
 
-    EXPECT_TRUE(result.fluent_bindings.empty());
+TEST(TyrDatalogGroundQueueTest, FunctionRuleWithNegativeFluentLiteralIsRejected)
+{
+    auto fixture = GroundQueueFixture();
+    const auto a = fixture.fluent_atom("a");
+    const auto term = fixture.fluent_function_term("n");
+    fixture.assign_rule(fixture.condition({ fixture.fluent_literal(a, false) }), term, 3);
+
+    EXPECT_THROW(datalog::ConstProgramWorkspace<GroundTag>(fixture.program()), std::invalid_argument);
 }
 
 }

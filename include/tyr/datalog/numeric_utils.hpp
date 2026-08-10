@@ -88,9 +88,8 @@ std::optional<Cost> sum_metric_effect_deltas(Cost initial, const Range& effects,
     return initial;
 }
 
-/// Closure of repeated free growth: a zero-cost rule that strictly grows a bound beyond `current` can be
-/// repeated for free (fact intervals are hull-monotone), so that bound diverges. Widening it to its exact
-/// limit immediately keeps cost-ordered fixpoints terminating without changing any derivable cost.
+/// Conservative closure acceleration for detected label-preserving zero-edge bound growth.
+/// This does not imply exact numeric closure or global termination.
 inline ygg::ClosedInterval<ygg::float_t> widen_free_growth(ygg::ClosedInterval<ygg::float_t> next, ygg::ClosedInterval<ygg::float_t> current)
 {
     if (empty(current))

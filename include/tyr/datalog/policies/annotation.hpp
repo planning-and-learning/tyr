@@ -50,6 +50,7 @@ bool witness_wins_tie(const WitnessAnnotation<Kind, R>& witness, const Annotatio
     return witness_wins_tie(witness, incumbent, ygg::Less<> {});
 }
 
+/// Zero-cost conservative reachability: solvers ignore annotation-only metric effects and cost credits.
 template<TaskKind Kind>
 class NoAnnotationPolicy
 {
@@ -60,6 +61,8 @@ public:
 
     static constexpr bool stores_annotations = false;
     static constexpr bool records_propositional_achievers = false;
+
+    bool is_widening_label_preserving(Cost, Cost) const noexcept { return true; }
 
     void initialize_annotation(PredicateHead, PredicateAnnotations<Kind>&) const noexcept {}
     void initialize_annotation(FunctionBinding, ygg::ClosedInterval<ygg::float_t>, FunctionAnnotations<Kind>&) const noexcept {}

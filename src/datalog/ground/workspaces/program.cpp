@@ -17,10 +17,12 @@
 
 #include "tyr/datalog/ground/workspaces/program.hpp"
 
+#include "tyr/datalog/applicability.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
 
+#include <stdexcept>
+#include <string>
 #include <type_traits>
-#include <yggdrasil/containers/variant.hpp>
 
 namespace f = tyr::formalism;
 namespace fd = tyr::formalism::datalog;
@@ -29,11 +31,27 @@ namespace tyr::datalog
 {
 namespace
 {
-void collect_head_terms(fd::GroundAtomView<f::FluentTag>, ygg::UnorderedSet<fd::GroundFunctionTermView<f::FluentTag>>&) {}
-
-void collect_head_terms(fd::GroundNumericEffectOperatorView<f::FluentTag> head, ygg::UnorderedSet<fd::GroundFunctionTermView<f::FluentTag>>& terms)
+template<f::RelationKind R>
+void validate_rules(fd::ProgramView<GroundTag> program, const FactSets& fact_sets)
 {
-    fd::collect_fterms<f::FluentTag>(head, terms);
+    for (const auto rule : program.template get_rules<R>())
+    {
+        if (!is_statically_applicable(rule, fact_sets))
+            throw std::invalid_argument("Ground Datalog programs must remove statically inapplicable rules before execution");
+        for (const auto literal : rule.get_body().template get_literals<f::FluentTag>())
+            if (!literal.get_polarity())
+            {
+                const auto kind = std::is_same_v<R, f::PredicateTag> ? "predicate" : "function";
+                throw std::invalid_argument("Ground Datalog " + std::string(kind) + " rule " + std::to_string(ygg::uint_t(rule.get_index()))
+                                            + " contains a negative fluent literal; only positive fluent rule bodies are supported");
+            }
+    }
+}
+
+void validate_program(fd::ProgramView<GroundTag> program, const FactSets& fact_sets)
+{
+    validate_rules<f::PredicateTag>(program, fact_sets);
+    validate_rules<f::FunctionTag>(program, fact_sets);
 }
 
 template<f::RelationKind R>
@@ -46,12 +64,7 @@ void initialize_dependencies(fd::ProgramView<GroundTag> program, GroundRuleDepen
             if (literal.get_polarity())
                 dependencies.fluent_precondition_to_rules.update(literal.get_atom().get_row(), [&](auto& rules, bool) { rules.push_back(rule); });
 
-        auto fluent_terms = ygg::UnorderedSet<fd::GroundFunctionTermView<f::FluentTag>>();
-        for (const auto numeric_constraint : body.get_numeric_constraints())
-            fd::collect_fterms<f::FluentTag>(numeric_constraint, fluent_terms);
-        collect_head_terms(rule.get_head(), fluent_terms);
-
-        for (const auto term : fluent_terms)
+        for (const auto term : fd::collect_fluent_reads(rule))
             dependencies.fluent_function_term_to_rules.update(term.get_row(), [&](auto& rules, bool) { rules.push_back(rule); });
     }
 }
@@ -67,6 +80,12 @@ ConstProgramWorkspace<GroundTag>::ConstProgramWorkspace(fd::ProgramView<GroundTa
     predicate_rules(program.template get_predicates<f::FluentTag>().size(), program.template get_functions<f::FluentTag>().size()),
     function_rules(program.template get_predicates<f::FluentTag>().size(), program.template get_functions<f::FluentTag>().size())
 {
+    const auto fluent_fact_sets = TaggedFactSets<f::FluentTag>(program.template get_predicates<f::FluentTag>(),
+                                                               program.template get_functions<f::FluentTag>(),
+                                                               program.template get_atoms<f::FluentTag>(),
+                                                               program.template get_fterm_values<f::FluentTag>(),
+                                                               program.get_context());
+    validate_program(program, FactSets { facts.fact_sets, fluent_fact_sets });
     initialize_dependencies(program, predicate_rules);
     initialize_dependencies(program, function_rules);
 }

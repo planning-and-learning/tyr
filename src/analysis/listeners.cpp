@@ -20,6 +20,7 @@
 #include "tyr/analysis/stratification.hpp"
 #include "tyr/formalism/datalog/atom_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/expression_properties.hpp"
 #include "tyr/formalism/datalog/literal_index.hpp"
 #include "tyr/formalism/datalog/literal_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -42,89 +43,6 @@ namespace tyr::analysis
 namespace
 {
 template<f::RelationKind R>
-void add_function_listeners(fd::FunctionExpressionView expression, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners);
-
-template<f::RelationKind R>
-void add_function_listeners(ygg::float_t, ygg::Index<fd::Rule<R>>, TypedListenerStratum<R>&)
-{
-}
-
-template<f::RelationKind R>
-void add_function_listeners(fd::LiftedUnaryOperatorView expression, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
-{
-    add_function_listeners(expression.get_arg(), rule, listeners);
-}
-
-template<f::BinaryOperatorKind O, f::RelationKind R>
-void add_function_listeners(fd::LiftedBinaryOperatorView<O> expression, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
-{
-    add_function_listeners(expression.get_lhs(), rule, listeners);
-    add_function_listeners(expression.get_rhs(), rule, listeners);
-}
-
-template<f::RelationKind R>
-void add_function_listeners(fd::LiftedMultiOperatorView expression, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
-{
-    for (const auto arg : expression.get_args())
-        add_function_listeners(arg, rule, listeners);
-}
-
-template<f::FactKind T, f::RelationKind R>
-void add_function_listeners(fd::FunctionTermView<T>, ygg::Index<fd::Rule<R>>, TypedListenerStratum<R>&)
-{
-}
-
-template<f::RelationKind R>
-void add_function_listeners(fd::FunctionTermView<f::FluentTag> term, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
-{
-    listeners.functions[term.get_function().get_index()].insert(rule);
-}
-
-template<f::RelationKind R>
-void add_function_listeners(fd::LiftedArithmeticOperatorView expression, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
-{
-    visit([&](auto&& arg) { add_function_listeners(arg, rule, listeners); }, expression.get_variant());
-}
-
-template<f::RelationKind R>
-void add_function_listeners(fd::FunctionExpressionView expression, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
-{
-    visit([&](auto&& arg) { add_function_listeners(arg, rule, listeners); }, expression.get_variant());
-}
-
-template<f::RelationKind R>
-void add_function_listeners(fd::LiftedBooleanOperatorView expression, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
-{
-    visit(
-        [&](auto&& arg)
-        {
-            add_function_listeners(arg.get_lhs(), rule, listeners);
-            add_function_listeners(arg.get_rhs(), rule, listeners);
-        },
-        expression.get_variant());
-}
-
-template<f::RelationKind R>
-void add_numeric_effect_head_listeners(fd::NumericEffectView<f::FluentTag> effect, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
-{
-    if (effect.get_operator() != f::NumericEffectOperatorKind::Assign)
-        add_function_listeners(effect.get_fterm(), rule, listeners);
-
-    add_function_listeners(effect.get_fexpr(), rule, listeners);
-}
-
-template<f::RelationKind R>
-void add_head_listeners(fd::AtomView<f::FluentTag>, ygg::Index<fd::Rule<R>>, TypedListenerStratum<R>&)
-{
-}
-
-template<f::RelationKind R>
-void add_head_listeners(fd::NumericEffectOperatorView<f::FluentTag> head, ygg::Index<fd::Rule<R>> rule, TypedListenerStratum<R>& listeners)
-{
-    visit([&](auto&& effect) { add_numeric_effect_head_listeners(effect, rule, listeners); }, head.get_variant());
-}
-
-template<f::RelationKind R>
 void add_stratum_listeners(const TypedRuleStratum<R>& stratum, const fd::Repository& context, TypedListenerStratum<R>& listeners)
 {
     for (const auto rule : stratum)
@@ -135,10 +53,8 @@ void add_stratum_listeners(const TypedRuleStratum<R>& stratum, const fd::Reposit
             if (literal.get_polarity())
                 listeners.predicates[literal.get_atom().get_predicate().get_index()].insert(rule);
 
-        for (const auto constraint : rule_view.get_body().get_numeric_constraints())
-            add_function_listeners(constraint, rule, listeners);
-
-        add_head_listeners(rule_view.get_head(), rule, listeners);
+        for (const auto term : fd::collect_fluent_reads(rule_view))
+            listeners.functions[term.get_function().get_index()].insert(rule);
     }
 }
 }

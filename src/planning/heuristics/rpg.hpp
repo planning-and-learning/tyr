@@ -125,7 +125,12 @@ public:
     using Workspace = datalog::ProgramWorkspace<Kind, AP, TP, CP>;
 
     RPGEvaluator(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL) :
-        m_definition(std::make_shared<Definition>(std::move(task), cost_mode)),
+        RPGEvaluator(std::make_shared<Definition>(std::move(task), cost_mode), std::move(execution_context))
+    {
+    }
+
+    RPGEvaluator(std::shared_ptr<Definition> definition, ygg::ExecutionContextPtr execution_context) :
+        m_definition(std::move(definition)),
         m_execution_context(std::move(execution_context)),
         m_source_goal(m_definition->task->get_task().get_goal()),
         m_workspace(m_definition->rpg_program.get_datalog_program(), AP {}, TP {}, make_cost_policy(*m_definition))

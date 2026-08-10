@@ -1123,16 +1123,20 @@ create_overapproximation_conjunctive_condition(size_t k, fd::ConjunctiveConditio
     for (const auto variable : condition.get_variables())
         conj_cond.variables.push_back(variable.get_index());
 
+    const auto literal_belongs_to_k_overapproximation = [k](const auto literal)
+    { return literal.get_polarity() ? kckp_arity(literal) >= k : kckp_arity(literal) == k; };
+    const auto numeric_constraint_belongs_to_k_overapproximation = [k](const auto numeric_constraint) { return kckp_arity(numeric_constraint) >= k; };
+
     for (const auto literal : condition.get_literals<f::StaticTag>())
-        if ((!literal.get_polarity() && kckp_arity(literal) == k) || (literal.get_polarity() && kckp_arity(literal) >= k))
+        if (literal_belongs_to_k_overapproximation(literal))
             conj_cond.static_literals.push_back(literal.get_index());
 
     for (const auto literal : condition.get_literals<f::FluentTag>())
-        if ((!literal.get_polarity() && kckp_arity(literal) == k) || (literal.get_polarity() && kckp_arity(literal) >= k))
+        if (literal_belongs_to_k_overapproximation(literal))
             conj_cond.fluent_literals.push_back(literal.get_index());
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
-        if (kckp_arity(numeric_constraint) >= k)
+        if (numeric_constraint_belongs_to_k_overapproximation(numeric_constraint))
             conj_cond.numeric_constraints.push_back(numeric_constraint.get_data());
 
     canonicalize(conj_cond);
@@ -1150,16 +1154,18 @@ create_overapproximation_conflicting_conjunctive_condition(size_t k, fd::Conjunc
     for (const auto variable : condition.get_variables())
         conj_cond.variables.push_back(variable.get_index());
 
+    const auto requires_exact_check = [k](const auto element) { return kckp_arity(element) > k || (k == 2 && kckp_arity(element) == 2); };
+
     for (const auto literal : condition.get_literals<f::StaticTag>())
-        if (kckp_arity(literal) > k)
+        if (requires_exact_check(literal))
             conj_cond.static_literals.push_back(literal.get_index());
 
     for (const auto literal : condition.get_literals<f::FluentTag>())
-        if (kckp_arity(literal) > k)
+        if (requires_exact_check(literal))
             conj_cond.fluent_literals.push_back(literal.get_index());
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
-        if (kckp_arity(numeric_constraint) > k)
+        if (requires_exact_check(numeric_constraint))
             conj_cond.numeric_constraints.push_back(numeric_constraint.get_data());
 
     canonicalize(conj_cond);
@@ -1177,16 +1183,18 @@ std::pair<fd::GroundConjunctiveConditionView, bool> create_ground_nullary_conjun
     auto binding_empty = ygg::IndexList<f::Object> {};
     auto grounder_context = fd::GrounderContext { builder, context, binding_empty };
 
+    const auto is_nullary = [](const auto element) { return parameter_arity(element) == 0; };
+
     for (const auto literal : condition.get_literals<f::StaticTag>())
-        if (parameter_arity(literal) == 0)
+        if (is_nullary(literal))
             conj_cond.static_literals.push_back(ground(literal, grounder_context).first.get_index());
 
     for (const auto literal : condition.get_literals<f::FluentTag>())
-        if (parameter_arity(literal) == 0)
+        if (is_nullary(literal))
             conj_cond.fluent_literals.push_back(ground(literal, grounder_context).first.get_index());
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
-        if (parameter_arity(numeric_constraint) == 0)
+        if (is_nullary(numeric_constraint))
             conj_cond.numeric_constraints.push_back(ground(numeric_constraint, grounder_context).get_data());
 
     canonicalize(conj_cond);

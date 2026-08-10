@@ -23,6 +23,8 @@
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 
+#include <concepts>
+#include <optional>
 #include <vector>
 
 namespace tyr::datalog
@@ -57,6 +59,18 @@ public:
                               ygg::ClosedInterval<ygg::float_t> interval,
                               const AnnotationContext<LiftedTag, ::tyr::formalism::FunctionTag>& context,
                               DeltaFunctionAnnotations<LiftedTag>& delta_numeric_annotations) const;
+
+    std::optional<Cost> evaluate_candidate_label(const AnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context) const;
+
+    std::optional<Cost> evaluate_candidate_label(const AnnotationContext<LiftedTag, ::tyr::formalism::FunctionTag>& context) const;
+
+    bool is_widening_label_preserving(Cost candidate_label, Cost current_target_label) const noexcept
+    {
+        if constexpr (std::same_as<AggregationFunction, MaxAggregation>)
+            return true;
+        else
+            return candidate_label == current_target_label;
+    }
 };
 
 template<typename AggregationFunction>

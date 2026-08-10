@@ -152,8 +152,12 @@ Cost aggregate_metric_effect_cost(const GroundAnnotationCostContext<R>& context)
         context.rule.get_metric_effects(),
         [&](const auto& metric_effect)
         {
-            return ygg::visit([&](auto&& effect) { return metric_effect_delta(effect, context.numeric_support_selector, context.metric_selection); },
-                              metric_effect.get_variant());
+            context.auxiliary_selection.clear();
+            const auto effect_delta =
+                ygg::visit([&](auto&& effect) { return metric_effect_delta(effect, context.numeric_support_selector, context.auxiliary_selection); },
+                           metric_effect.get_variant());
+            context.metric_selection.insert(context.metric_selection.end(), context.auxiliary_selection.begin(), context.auxiliary_selection.end());
+            return effect_delta;
         });
     return delta ? reduce_cost(*delta, context.rule_cost) : std::numeric_limits<Cost>::max();
 }
@@ -236,7 +240,7 @@ Metric aggregate_body_metric(const AnnotationContext<GroundTag, R>& context)
 }
 
 template<f::RelationKind R>
-Cost aggregate_metric_effect_cost(const AnnotationContext<GroundTag, R>& context)
+bool collect_metric_effect_supports(const AnnotationContext<GroundTag, R>& context)
 {
     context.selection_scratch.clear();
 
@@ -248,7 +252,7 @@ Cost aggregate_metric_effect_cost(const AnnotationContext<GroundTag, R>& context
             return ygg::visit([&](auto&& effect) { return metric_effect_delta(effect, context.numeric_support_selector, context.selection_scratch); },
                               metric_effect.get_variant());
         });
-    return delta ? reduce_cost(*delta, context.rule_cost) : std::numeric_limits<Cost>::max();
+    return delta.has_value();
 }
 
 template<typename AggregationFunction, f::RelationKind R>
@@ -263,80 +267,71 @@ WitnessAnnotation<GroundTag, R> make_witness(const AnnotationContext<GroundTag, 
         append_numeric_supports(context.witness_support_scratch, context.numeric_support_selection, context.numeric_support_selector);
     }
 
-    const auto metric_cost = aggregate_metric_effect_cost(context);
-    if constexpr (std::same_as<R, f::PredicateTag>)
+    const auto inputs_available = collect_metric_effect_supports(context);
+    assert(inputs_available && "annotated ground rule has an unavailable metric-effect input");
+    if (inputs_available)
     {
-        if (metric_cost != std::numeric_limits<Cost>::max())
-        {
-            metric = add_metric_delta(metric, metric_cost);
-            metric = aggregate_numeric_selection_metric(metric, context.selection_scratch, context.numeric_support_selector);
-            append_numeric_supports(context.witness_support_scratch, context.selection_scratch, context.numeric_support_selector);
-        }
-    }
-    else
-    {
-        metric = add_metric_delta(metric, metric_cost);
         metric = aggregate_numeric_selection_metric(metric, context.selection_scratch, context.numeric_support_selector);
         append_numeric_supports(context.witness_support_scratch, context.selection_scratch, context.numeric_support_selector);
     }
+    metric = add_metric_delta(metric, context.local_edge);
 
     return WitnessAnnotation<GroundTag, R>(context.rule,
                                            metric,
-                                           context.current_cost,
+                                           context.head_cost,
                                            std::span<const NumericSupport<GroundTag>>(context.witness_support_scratch));
 }
 
 }
 
-Cost evaluate_cost(const NoAnnotationPolicy<GroundTag>&, const GroundAnnotationCostContext<::tyr::formalism::PredicateTag>&) noexcept { return Cost(0); }
+GroundAnnotationCost evaluate_cost(const NoAnnotationPolicy<GroundTag>&, const GroundAnnotationCostContext<::tyr::formalism::PredicateTag>&) noexcept
+{
+    return { Cost(0), Cost(0) };
+}
 
 Cost evaluate_cost(const NoAnnotationPolicy<GroundTag>& policy, const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context)
 {
     auto best_cost = std::numeric_limits<Cost>::max();
-    ygg::visit([&](auto&& effect) { best_cost = std::min(best_cost, evaluate_cost(policy, context, effect).total_cost); },
+    ygg::visit([&](auto&& effect) { best_cost = std::min(best_cost, evaluate_cost(policy, context, effect).support_cost); },
                context.rule.get_head().get_variant());
     return best_cost;
 }
 
-GroundNumericEffectCost evaluate_cost(const NoAnnotationPolicy<GroundTag>&,
-                                      const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context,
-                                      ::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect)
+GroundAnnotationCost evaluate_cost(const NoAnnotationPolicy<GroundTag>&,
+                                   const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context,
+                                   ::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect)
 {
     const auto support_cost = evaluate_numeric_effect_support(context, effect);
     if (support_cost == std::numeric_limits<Cost>::max())
-        return { support_cost, support_cost };
-
-    const auto metric_cost = aggregate_metric_effect_cost(context);
-    if (metric_cost == std::numeric_limits<Cost>::max())
-        return { metric_cost, metric_cost };
-
-    return { support_cost + metric_cost, metric_cost };
+        return { support_cost, Cost(0) };
+    return { Cost(0), Cost(0) };
 }
 
 template<typename AggregationFunction>
-Cost MinCostAnnotationPolicy<GroundTag, AggregationFunction>::evaluate_cost(const GroundAnnotationCostContext<::tyr::formalism::PredicateTag>& context) const
+GroundAnnotationCost
+MinCostAnnotationPolicy<GroundTag, AggregationFunction>::evaluate_cost(const GroundAnnotationCostContext<::tyr::formalism::PredicateTag>& context) const
 {
     const auto support_cost = aggregate_rule_support_cost<AggregationFunction>(context, [](const auto&, auto&) { return true; });
     if (support_cost == std::numeric_limits<Cost>::max())
-        return support_cost;
+        return { support_cost, Cost(0) };
 
     const auto metric_cost = aggregate_metric_effect_cost(context);
     if (metric_cost == std::numeric_limits<Cost>::max())
-        return metric_cost;
+        return { metric_cost, Cost(0) };
 
-    return aggregate_selection_cost<AggregationFunction>(support_cost, context.metric_selection) + metric_cost;
+    return { aggregate_selection_cost<AggregationFunction>(support_cost, context.metric_selection), metric_cost };
 }
 
 template<typename AggregationFunction>
 Cost MinCostAnnotationPolicy<GroundTag, AggregationFunction>::evaluate_cost(const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context) const
 {
     auto best_cost = std::numeric_limits<Cost>::max();
-    ygg::visit([&](auto&& effect) { best_cost = std::min(best_cost, evaluate_cost(context, effect).total_cost); }, context.rule.get_head().get_variant());
+    ygg::visit([&](auto&& effect) { best_cost = std::min(best_cost, evaluate_cost(context, effect).support_cost); }, context.rule.get_head().get_variant());
     return best_cost;
 }
 
 template<typename AggregationFunction>
-GroundNumericEffectCost MinCostAnnotationPolicy<GroundTag, AggregationFunction>::evaluate_cost(
+GroundAnnotationCost MinCostAnnotationPolicy<GroundTag, AggregationFunction>::evaluate_cost(
     const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context,
     ::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect) const
 {
@@ -350,13 +345,13 @@ GroundNumericEffectCost MinCostAnnotationPolicy<GroundTag, AggregationFunction>:
                                                              return !empty(support_selector.evaluate_effect_expression(effect.get_fexpr(), selected));
                                                          });
     if (support_cost == std::numeric_limits<Cost>::max())
-        return { support_cost, support_cost };
+        return { support_cost, Cost(0) };
 
     const auto metric_cost = aggregate_metric_effect_cost(context);
     if (metric_cost == std::numeric_limits<Cost>::max())
-        return { metric_cost, metric_cost };
+        return { metric_cost, Cost(0) };
 
-    return { aggregate_selection_cost<AggregationFunction>(support_cost, context.metric_selection) + metric_cost, metric_cost };
+    return { aggregate_selection_cost<AggregationFunction>(support_cost, context.metric_selection), metric_cost };
 }
 
 template<typename AggregationFunction>
@@ -368,11 +363,11 @@ bool MinCostAnnotationPolicy<GroundTag, AggregationFunction>::try_update_candida
     const auto best_global_cost = fetch_annotation_cost<GroundTag>(head, context.annotations);
     const auto best_local_cost = fetch_annotation_cost(head, delta_annotations);
     const auto best_cost = std::min(best_global_cost, best_local_cost);
-    if (best_cost < context.current_cost)
+    if (best_cost < context.head_cost)
         return false;
 
     auto witness = make_witness<AggregationFunction>(context);
-    if (best_cost == context.current_cost
+    if (best_cost == context.head_cost
         && !witness_wins_tie<GroundTag>(witness, select_incumbent(head, best_global_cost, best_local_cost, context.annotations, delta_annotations)))
         return false;
 

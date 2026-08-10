@@ -80,13 +80,23 @@ template<::tyr::formalism::RelationKind R>
 bool is_applicable(::tyr::formalism::datalog::GroundRuleView<R> element, const FactSets& fact_sets);
 
 /**
+ * is_statically_applicable
+ */
+
+// GroundConjunctiveCondition
+
+bool is_statically_applicable(::tyr::formalism::datalog::GroundConjunctiveConditionView element, const FactSets& fact_sets);
+
+// GroundRule
+
+template<::tyr::formalism::RelationKind R>
+bool is_statically_applicable(::tyr::formalism::datalog::GroundRuleView<R> element, const FactSets& fact_sets);
+
+/**
  * evaluate
  */
 
-inline ygg::ClosedInterval<ygg::float_t> evaluate(ygg::float_t element, const FactSets&)
-{
-    return ygg::ClosedInterval<ygg::float_t>(element, element);
-}
+inline ygg::ClosedInterval<ygg::float_t> evaluate(ygg::float_t element, const FactSets&) { return ygg::ClosedInterval<ygg::float_t>(element, element); }
 
 inline ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundUnaryOperatorView element, const FactSets& fact_sets)
 {
@@ -183,6 +193,25 @@ template<::tyr::formalism::RelationKind R>
 inline bool is_applicable(::tyr::formalism::datalog::GroundRuleView<R> element, const FactSets& fact_sets)
 {
     return is_applicable(element.get_body(), fact_sets);
+}
+
+/**
+ * is_statically_applicable
+ */
+
+// GroundConjunctiveCondition
+
+inline bool is_statically_applicable(::tyr::formalism::datalog::GroundConjunctiveConditionView element, const FactSets& fact_sets)
+{
+    return is_applicable(element.template get_literals<::tyr::formalism::StaticTag>(), fact_sets);
+}
+
+// GroundRule
+
+template<::tyr::formalism::RelationKind R>
+inline bool is_statically_applicable(::tyr::formalism::datalog::GroundRuleView<R> element, const FactSets& fact_sets)
+{
+    return is_statically_applicable(element.get_body(), fact_sets);
 }
 
 }

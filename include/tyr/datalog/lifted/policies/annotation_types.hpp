@@ -239,12 +239,11 @@ private:
 template<::tyr::formalism::RelationKind R>
 struct AnnotationContext<LiftedTag, R>
 {
-    Cost current_cost;
     std::span<const NumericSupport<LiftedTag>> numeric_supports;
     std::vector<NumericSupport<LiftedTag>>& witness_support_scratch;
     ::tyr::formalism::datalog::RuleView<R> rule;
     std::optional<::tyr::formalism::datalog::RuleBindingView<R>> rule_binding;
-    Cost metric_effect_cost;
+    Cost local_edge_cost;
     ::tyr::formalism::datalog::ConjunctiveConditionView witness_condition;
     const NumericSupportSelector<LiftedTag>& numeric_support_selector;
     NumericSupportSelectorWorkspace<LiftedTag>& numeric_support_selector_workspace;

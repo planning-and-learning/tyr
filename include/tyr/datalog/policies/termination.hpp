@@ -58,7 +58,6 @@ public:
 
     bool check(const FactSets& fact_sets) const noexcept;
     bool should_terminate(const FactSets& fact_sets) const noexcept;
-    void set_early_termination(bool enabled) noexcept { early_termination = enabled; }
 
     Cost get_total_cost(const FactSets& fact_sets,
                         const PredicateAnnotations<Kind>& annotations,
@@ -75,7 +74,13 @@ private:
     std::optional<::tyr::formalism::datalog::GroundConjunctiveConditionView> goals;
     mutable NumericSupportSelectorWorkspace<Kind> numeric_support_selector_workspace;
     AggregationFunction agg;
-    bool early_termination { true };
+};
+
+template<TaskKind Kind, typename AggregationFunction>
+class FullModelGoalPolicy : public TerminationPolicy<Kind, AggregationFunction>
+{
+public:
+    bool should_terminate(const FactSets&) const noexcept { return false; }
 };
 
 }

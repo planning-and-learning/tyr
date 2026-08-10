@@ -120,7 +120,7 @@ template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<LiftedTag, S
 template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<LiftedTag, SumAggregation>, TerminationPolicy<LiftedTag, SumAggregation>>;
 template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<LiftedTag, MaxAggregation>, NoTerminationPolicy<LiftedTag>>;
 template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<LiftedTag, MaxAggregation>, TerminationPolicy<LiftedTag, MaxAggregation>>;
-template struct ProgramWorkspace<LiftedTag, NoAnnotationPolicy<LiftedTag>, NoTerminationPolicy<LiftedTag>, RuleCostOverridePolicy<LiftedTag>>;
+template struct ProgramWorkspace<LiftedTag, MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>, TerminationPolicy<LiftedTag, MaxAggregation>>;
 template struct ProgramWorkspace<LiftedTag,
                                  MinCostAnnotationPolicy<LiftedTag, SumAggregation>,
                                  NoTerminationPolicy<LiftedTag>,
@@ -140,6 +140,10 @@ template struct ProgramWorkspace<LiftedTag,
 template struct ProgramWorkspace<LiftedTag,
                                  MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>,
                                  TerminationPolicy<LiftedTag, MaxAggregation>,
+                                 RuleCostOverridePolicy<LiftedTag>>;
+template struct ProgramWorkspace<LiftedTag,
+                                 MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>,
+                                 FullModelGoalPolicy<LiftedTag, MaxAggregation>,
                                  RuleCostOverridePolicy<LiftedTag>>;
 
 ConstProgramWorkspace<LiftedTag>::ConstProgramWorkspace(Program<LiftedTag>& program) :

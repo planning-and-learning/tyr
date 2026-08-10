@@ -99,7 +99,6 @@ struct RuleUpdateInput
     NumericSupportSelectorWorkspace<LiftedTag>& numeric_support_selector_workspace;
     std::vector<NumericSupport<LiftedTag>>& effect_support_scratch;
     std::vector<NumericSupport<LiftedTag>>& witness_support_scratch;
-    Cost current_cost;
     const PredicateAnnotations<LiftedTag>& annotations;
     const FunctionAnnotations<LiftedTag>& numeric_annotations;
     const FactSets& fact_sets;
@@ -108,15 +107,14 @@ struct RuleUpdateInput
     fd::GrounderContext& ground_context;
 
     AnnotationContext<LiftedTag, R> make_annotation_context(std::optional<fd::RuleBindingView<R>> rule_binding,
-                                                            Cost metric_effect_cost,
+                                                            Cost local_edge_cost,
                                                             std::span<const NumericSupport<LiftedTag>> numeric_supports = {}) const
     {
-        return AnnotationContext<LiftedTag, R> { current_cost,
-                                                 numeric_supports,
+        return AnnotationContext<LiftedTag, R> { numeric_supports,
                                                  witness_support_scratch,
                                                  rule,
                                                  rule_binding,
-                                                 metric_effect_cost,
+                                                 local_edge_cost,
                                                  witness_condition,
                                                  numeric_support_selector,
                                                  numeric_support_selector_workspace,
@@ -138,7 +136,6 @@ static auto make_rule_update_input(In& in, Out& out)
         out.numeric_support_selector_workspace(),
         out.effect_support_scratch(),
         out.witness_support_scratch(),
-        in.cost_buckets().current_cost(),
         in.annotations(),
         in.numeric_annotations(),
         in.fact_sets(),
@@ -242,63 +239,70 @@ std::optional<Cost> metric_effect_cost(fd::RuleBindingView<R> rule_binding, cons
 }
 
 template<AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
-static void record_propositional_achiever(fd::PredicateBindingView<f::FluentTag> head, const RuleUpdateInput<f::PredicateTag, AP, CP>& input)
+static bool record_propositional_achiever(fd::PredicateBindingView<f::FluentTag> head, const RuleUpdateInput<f::PredicateTag, AP, CP>& input)
     requires AP::records_propositional_achievers
 {
     const auto rule_binding = fd::ground_binding(input.rule, input.ground_context).first;
     const auto cost = metric_effect_cost(rule_binding, input);
     if (!cost)
-        return;
+        return false;
     auto& numeric_supports = input.effect_support_scratch;
     numeric_supports.clear();
     if (!collect_metric_effect_supports(input, numeric_supports))
-        return;
+        return false;
     const auto context = input.make_annotation_context(rule_binding, *cost, numeric_supports);
+    if (!input.annotation_policy.evaluate_candidate_label(context))
+        return false;
 
     input.annotation_policy.record_achiever(head, context);
+    return true;
 }
 
 template<AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
-static void insert_propositional_update(fd::PredicateBindingView<f::FluentTag> head,
+static bool insert_propositional_update(fd::PredicateBindingView<f::FluentTag> head,
                                         const RuleUpdateInput<f::PredicateTag, AP, CP>& input,
                                         PredicateHeadIteration& head_iteration,
                                         [[maybe_unused]] DeltaPredicateAnnotations<LiftedTag>& delta_annotations)
 {
-    [[maybe_unused]] auto rule_binding = std::optional<fd::RuleBindingView<f::PredicateTag>> {};
-    auto cost = std::optional<Cost> {};
-    if constexpr (std::same_as<CP, RuleCostPolicy<LiftedTag>> && !AP::records_propositional_achievers)
+    if constexpr (!AP::stores_annotations)
     {
-        cost = metric_effect_delta(input);
+        head_iteration.insert(head);
+        return true;
     }
     else
     {
-        rule_binding = fd::ground_binding(input.rule, input.ground_context).first;
-        cost = metric_effect_cost(*rule_binding, input);
-    }
-    if (!cost)
-        return;
-    if constexpr (AP::stores_annotations)
-    {
+        [[maybe_unused]] auto rule_binding = std::optional<fd::RuleBindingView<f::PredicateTag>> {};
+        auto cost = std::optional<Cost> {};
+        if constexpr (std::same_as<CP, RuleCostPolicy<LiftedTag>> && !AP::records_propositional_achievers)
+        {
+            cost = metric_effect_delta(input);
+        }
+        else
+        {
+            rule_binding = fd::ground_binding(input.rule, input.ground_context).first;
+            cost = metric_effect_cost(*rule_binding, input);
+        }
+        if (!cost)
+            return false;
+
         auto& numeric_supports = input.effect_support_scratch;
         numeric_supports.clear();
         if (!collect_metric_effect_supports(input, numeric_supports))
-            return;
+            return false;
         const auto context = input.make_annotation_context(rule_binding, *cost, numeric_supports);
+        if (!input.annotation_policy.evaluate_candidate_label(context))
+            return false;
 
         input.annotation_policy.record_achiever(head, context);
 
         head_iteration.insert(head);
-
         input.annotation_policy.try_update_candidate(head, context, delta_annotations);
-    }
-    else
-    {
-        head_iteration.insert(head);
+        return true;
     }
 }
 
 template<AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
-static void insert_numeric_update(fd::NumericEffectOperatorView<f::FluentTag> head,
+static bool insert_numeric_update(fd::NumericEffectOperatorView<f::FluentTag> head,
                                   const FactSets& fact_sets,
                                   const RuleUpdateInput<f::FunctionTag, AP, CP>& input,
                                   FunctionHeadIteration& head_iteration,
@@ -306,32 +310,57 @@ static void insert_numeric_update(fd::NumericEffectOperatorView<f::FluentTag> he
 {
     const auto interval = evaluate(head, ApplicabilityContext { fact_sets, input.ground_context });
     if (empty(interval))
-        return;
+        return false;
 
-    visit(
-        [&](auto&& effect)
+    return visit(
+        [&](auto&& effect) -> bool
         {
             const auto head = fd::ground_binding(effect.get_fterm(), input.ground_context).first;
-            const auto rule_binding = fd::ground_binding(input.rule, input.ground_context).first;
-            const auto rem_rule_cost = metric_effect_cost(rule_binding, input);
-            if (!rem_rule_cost)
-                return;
+            const auto current = fact_sets.get<f::FluentTag>().function[head];
 
-            const auto effect_interval = *rem_rule_cost == Cost(0) ? widen_free_growth(interval, fact_sets.get<f::FluentTag>().function[head]) : interval;
-
-            const auto cost = reduce_cost(*rem_rule_cost, input.cost_policy.get_cost(rule_binding, head, effect_interval));
-            if constexpr (AP::stores_annotations)
+            if constexpr (!AP::stores_annotations)
             {
+                const auto effect_interval =
+                    !empty(current) && input.annotation_policy.is_widening_label_preserving(Cost(0), Cost(0)) ? widen_free_growth(interval, current) : interval;
+                head_iteration.insert(FunctionHeadUpdate(head, effect_interval));
+                return true;
+            }
+            else
+            {
+                const auto rule_binding = fd::ground_binding(input.rule, input.ground_context).first;
+                const auto remaining_rule_edge = metric_effect_cost(rule_binding, input);
+                if (!remaining_rule_edge)
+                    return false;
+
                 auto& numeric_supports = input.effect_support_scratch;
                 numeric_supports.clear();
                 if (!collect_metric_effect_supports(input, numeric_supports) || !collect_numeric_head_supports(effect, head, input, numeric_supports))
-                    return;
-                const auto context = input.make_annotation_context(rule_binding, cost, numeric_supports);
+                    return false;
+
+                const auto pre_transition_context = input.make_annotation_context(rule_binding, *remaining_rule_edge, numeric_supports);
+                const auto candidate_label = input.annotation_policy.evaluate_candidate_label(pre_transition_context);
+                if (!candidate_label)
+                    return false;
+
+                auto effect_interval = interval;
+                auto final_edge = *remaining_rule_edge;
+                if (*remaining_rule_edge == Cost(0) && !empty(current)
+                    && input.annotation_policy.is_widening_label_preserving(*candidate_label,
+                                                                            input.numeric_support_selector.get_current_interval_cost(head, current)))
+                {
+                    effect_interval = widen_free_growth(effect_interval, current);
+                }
+                else
+                {
+                    final_edge = reduce_cost(final_edge, input.cost_policy.get_cost(rule_binding, head, effect_interval));
+                }
+
+                const auto context = input.make_annotation_context(rule_binding, final_edge, numeric_supports);
 
                 input.annotation_policy.try_update_candidate(head, effect_interval, context, delta_numeric_annotations);
+                head_iteration.insert(FunctionHeadUpdate(head, effect_interval));
+                return true;
             }
-
-            head_iteration.insert(FunctionHeadUpdate(head, effect_interval, input.current_cost + cost));
         },
         head.get_variant());
 }
@@ -465,16 +494,7 @@ void process_clique_head(fd::AtomView<f::FluentTag> head_atom,
 {
     auto& in = wrctx.in();
     auto& out = wrctx.out();
-    auto head = fd::try_ground_binding(head_atom, out.ground_context());
-    if (head && in.fact_sets().template get<f::FluentTag>().predicate.contains(*head))
-    {
-        if constexpr (AP::records_propositional_achievers)
-            if (dynamically_applicable())
-                record_propositional_achiever(*head, input);
-        return;
-    }
-
-    if (!dynamically_applicable())
+    const auto retain_pending = [&]()
     {
         ++out.statistics().num_pending_rules;
         const auto rule_binding = fd::ground_binding(in.cws_rule().get_conflicting_overapproximation_rule(), out.ground_context()).first;
@@ -484,13 +504,35 @@ void process_clique_head(fd::AtomView<f::FluentTag> head_atom,
         if (out.seen_pending_rule_bindings().emplace(rule_binding).second)
             out.pending_rule_bindings().push_back(rule_binding);
 #endif
+    };
+    auto head = fd::try_ground_binding(head_atom, out.ground_context());
+    if (head && in.fact_sets().template get<f::FluentTag>().predicate.contains(*head))
+    {
+        if constexpr (AP::records_propositional_achievers)
+        {
+            if (!dynamically_applicable())
+                retain_pending();
+            else
+            {
+                assert(is_applicable(in.cws_rule().get_rule(), ApplicabilityContext { in.fact_sets(), out.ground_context() }));
+                if (!record_propositional_achiever(*head, input))
+                    retain_pending();
+            }
+        }
+        return;
+    }
+
+    if (!dynamically_applicable())
+    {
+        retain_pending();
         return;
     }
 
     if (!head)
         head = fd::ground_binding(head_atom, out.ground_context()).first;
     assert(is_applicable(in.cws_rule().get_rule(), ApplicabilityContext { in.fact_sets(), out.ground_context() }));
-    insert_propositional_update(*head, input, out.head_updates(), out.delta_annotations());
+    if (!insert_propositional_update(*head, input, out.head_updates(), out.delta_annotations()))
+        retain_pending();
 }
 
 template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP, typename DynamicallyApplicable>
@@ -609,7 +651,7 @@ void process_pending_rule_bindings(RuleExecutionContext<f::PredicateTag, AP, TP,
                                       return false;
 
                                   assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
-                                  record_propositional_achiever(*head, input);
+                                  return record_propositional_achiever(*head, input);
                               }
                               return true;
                           }
@@ -620,8 +662,7 @@ void process_pending_rule_bindings(RuleExecutionContext<f::PredicateTag, AP, TP,
                           if (!head)
                               head = fd::ground_binding(in.cws_rule().get_rule().get_head(), out.ground_context()).first;
                           assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
-                          insert_propositional_update(*head, input, out.head_updates(), out.delta_annotations());
-                          return true;
+                          return insert_propositional_update(*head, input, out.head_updates(), out.delta_annotations());
                       });
     }
 }
@@ -691,21 +732,42 @@ void run_active_rules(StratumExecutionContext<AP, TP, CP>& ctx)
 template<typename ProgramOut>
 void reduce_worker_heads(PredicateHeadIteration& head_iteration, ProgramOut& program_out, CostBuckets& cost_buckets)
 {
+    using AnnotationPolicy = std::remove_cvref_t<decltype(program_out.annotation_policy())>;
     for (const auto head : head_iteration.bindings)
     {
-        const auto cost_update = program_out.annotation_policy().commit_annotation(head, program_out.delta_annotations(), program_out.annotations());
-        cost_buckets.update(cost_update, head);
+        if constexpr (AnnotationPolicy::stores_annotations)
+        {
+            if (!program_out.delta_annotations().find(head))
+                continue;
+            const auto cost_update = program_out.annotation_policy().commit_annotation(head, program_out.delta_annotations(), program_out.annotations());
+            cost_buckets.update(cost_update, head);
+        }
+        else
+        {
+            cost_buckets.insert(Cost(0), head);
+        }
     }
 }
 
 template<typename ProgramOut>
 void reduce_worker_heads(FunctionHeadIteration& head_iteration, ProgramOut& program_out, CostBuckets& cost_buckets)
 {
+    using AnnotationPolicy = std::remove_cvref_t<decltype(program_out.annotation_policy())>;
     for (const auto& update : head_iteration.updates)
     {
-        if (const auto* annotation = program_out.delta_numeric_annotations().find(update.binding, update.interval))
-            program_out.numeric_annotations().insert(update.binding, update.interval, *annotation);
-        cost_buckets.insert(update.cost, update.binding, update.interval);
+        if constexpr (AnnotationPolicy::stores_annotations)
+        {
+            if (const auto* annotation = program_out.delta_numeric_annotations().find(update.binding, update.interval))
+            {
+                const auto cost = get_cost(*annotation);
+                program_out.numeric_annotations().insert(update.binding, update.interval, *annotation);
+                cost_buckets.insert(cost, update.binding, update.interval);
+            }
+        }
+        else
+        {
+            cost_buckets.insert(Cost(0), update.binding, update.interval);
+        }
     }
 }
 
@@ -834,8 +896,8 @@ compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<LiftedT
 template void compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<LiftedTag, MaxAggregation>, NoTerminationPolicy<LiftedTag>>& ctx);
 template void
 compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<LiftedTag, MaxAggregation>, TerminationPolicy<LiftedTag, MaxAggregation>>& ctx);
-template void
-compute_model(ProgramExecutionContext<LiftedTag, NoAnnotationPolicy<LiftedTag>, NoTerminationPolicy<LiftedTag>, RuleCostOverridePolicy<LiftedTag>>& ctx);
+template void compute_model(
+    ProgramExecutionContext<LiftedTag, MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>, TerminationPolicy<LiftedTag, MaxAggregation>>& ctx);
 template void compute_model(
     ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<LiftedTag, SumAggregation>, NoTerminationPolicy<LiftedTag>, RuleCostOverridePolicy<LiftedTag>>&
         ctx);
@@ -853,5 +915,9 @@ template void compute_model(ProgramExecutionContext<LiftedTag,
 template void compute_model(ProgramExecutionContext<LiftedTag,
                                                     MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>,
                                                     TerminationPolicy<LiftedTag, MaxAggregation>,
+                                                    RuleCostOverridePolicy<LiftedTag>>& ctx);
+template void compute_model(ProgramExecutionContext<LiftedTag,
+                                                    MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>,
+                                                    FullModelGoalPolicy<LiftedTag, MaxAggregation>,
                                                     RuleCostOverridePolicy<LiftedTag>>& ctx);
 }

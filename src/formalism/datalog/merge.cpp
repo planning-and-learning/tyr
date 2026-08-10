@@ -80,8 +80,17 @@ template ArithmeticOperatorView<ygg::Data<GroundFunctionExpression>> merge_d2d(A
 template std::pair<NumericEffectView<FluentTag>, bool> merge_d2d(NumericEffectView<FluentTag> element, MergeContext& context);
 template NumericEffectOperatorView<FluentTag> merge_d2d(NumericEffectOperatorView<FluentTag> element, MergeContext& context);
 
+template std::pair<GroundNumericEffectView<FluentTag>, bool> merge_d2d(GroundNumericEffectView<FluentTag> element, MergeContext& context);
+template GroundNumericEffectOperatorView<FluentTag> merge_d2d(GroundNumericEffectOperatorView<FluentTag> element, MergeContext& context);
+
 template std::pair<RuleView<PredicateTag>, bool> merge_d2d(RuleView<PredicateTag> element, MergeContext& context);
 template std::pair<RuleView<FunctionTag>, bool> merge_d2d(RuleView<FunctionTag> element, MergeContext& context);
+
+template std::pair<RuleBindingView<PredicateTag>, bool> merge_d2d(RuleBindingView<PredicateTag> element, MergeContext& context);
+template std::pair<RuleBindingView<FunctionTag>, bool> merge_d2d(RuleBindingView<FunctionTag> element, MergeContext& context);
+
+template std::pair<GroundRuleView<PredicateTag>, bool> merge_d2d(GroundRuleView<PredicateTag> element, MergeContext& context);
+template std::pair<GroundRuleView<FunctionTag>, bool> merge_d2d(GroundRuleView<FunctionTag> element, MergeContext& context);
 }
 
 #endif

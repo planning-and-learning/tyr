@@ -22,6 +22,7 @@
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 
+#include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/semantics/equal_to.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 
@@ -90,6 +91,12 @@ void collect_fterms(NumericEffectOperatorView<T1> element, ygg::UnorderedSet<Fun
 
 template<FactKind T1, FactKind T2>
 void collect_fterms(GroundNumericEffectOperatorView<T1> element, ygg::UnorderedSet<GroundFunctionTermView<T2>>& result);
+
+template<RelationKind R>
+auto collect_fluent_reads(RuleView<R> rule);
+
+template<RelationKind R>
+auto collect_fluent_reads(GroundRuleView<R> rule);
 
 /**
  * Implementations
@@ -219,6 +226,75 @@ template<FactKind T1, FactKind T2>
 inline void collect_fterms(GroundNumericEffectOperatorView<T1> element, ygg::UnorderedSet<GroundFunctionTermView<T2>>& result)
 {
     visit([&](auto&& arg) { collect_fterms(arg, result); }, element.get_variant());
+}
+
+namespace detail
+{
+template<typename Effect, typename Result>
+void collect_effect_reads(Effect effect, bool reads_target, Result& result)
+{
+    collect_fterms(effect.get_fexpr(), result);
+    if (reads_target)
+        collect_fterms(effect.get_fterm(), result);
+}
+
+template<typename Result>
+void collect_semantic_head_reads(AtomView<FluentTag>, Result&)
+{
+}
+
+template<typename Result>
+void collect_semantic_head_reads(GroundAtomView<FluentTag>, Result&)
+{
+}
+
+template<typename Result>
+void collect_semantic_head_reads(NumericEffectOperatorView<FluentTag> head, Result& result)
+{
+    visit([&](auto effect) { collect_effect_reads(effect, effect.get_operator() != NumericEffectOperatorKind::Assign, result); }, head.get_variant());
+}
+
+template<typename Result>
+void collect_semantic_head_reads(GroundNumericEffectOperatorView<FluentTag> head, Result& result)
+{
+    visit([&](auto effect) { collect_effect_reads(effect, effect.get_operator() != NumericEffectOperatorKind::Assign, result); }, head.get_variant());
+}
+
+template<typename Rule, typename Result>
+void collect_rule_fluent_reads(Rule rule, Result& result)
+{
+    for (const auto constraint : rule.get_body().get_numeric_constraints())
+        collect_fterms(constraint, result);
+
+    collect_semantic_head_reads(rule.get_head(), result);
+
+    for (const auto metric_effect : rule.get_metric_effects())
+        visit(
+            [&](auto effect)
+            {
+                const auto op = effect.get_operator();
+                const auto reads_target =
+                    op == NumericEffectOperatorKind::Assign || op == NumericEffectOperatorKind::ScaleUp || op == NumericEffectOperatorKind::ScaleDown;
+                collect_effect_reads(effect, reads_target, result);
+            },
+            metric_effect.get_variant());
+}
+}
+
+template<RelationKind R>
+inline auto collect_fluent_reads(RuleView<R> rule)
+{
+    auto result = ygg::UnorderedSet<FunctionTermView<FluentTag>> {};
+    detail::collect_rule_fluent_reads(rule, result);
+    return result;
+}
+
+template<RelationKind R>
+inline auto collect_fluent_reads(GroundRuleView<R> rule)
+{
+    auto result = ygg::UnorderedSet<GroundFunctionTermView<FluentTag>> {};
+    detail::collect_rule_fluent_reads(rule, result);
+    return result;
 }
 
 template<FactKind T>

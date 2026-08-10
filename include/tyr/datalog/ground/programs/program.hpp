@@ -33,14 +33,13 @@ public:
             ::tyr::formalism::datalog::RepositoryPtr program_repository,
             ::tyr::formalism::datalog::RepositoryFactoryPtr repository_factory);
 
-    auto get_program() const noexcept { return m_program; }
+    auto get_program() const noexcept { return m_const_program_workspace.program; }
     auto& get_program_repository() noexcept { return *m_program_repository; }
     const auto& get_program_repository() const noexcept { return *m_program_repository; }
     auto& get_repository_factory() noexcept { return *m_repository_factory; }
     const auto& get_const_program_workspace() const noexcept { return m_const_program_workspace; }
 
 private:
-    ::tyr::formalism::datalog::ProgramView<GroundTag> m_program;
     ::tyr::formalism::datalog::RepositoryPtr m_program_repository;
     ::tyr::formalism::datalog::RepositoryFactoryPtr m_repository_factory;
     ConstProgramWorkspace<GroundTag> m_const_program_workspace;

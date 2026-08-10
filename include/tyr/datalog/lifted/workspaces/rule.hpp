@@ -69,18 +69,14 @@ struct FunctionHeadUpdate : ygg::comparison::Mixin<FunctionHeadUpdate>
 {
     ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding;
     ygg::ClosedInterval<ygg::float_t> interval;
-    Cost cost;
 
-    FunctionHeadUpdate(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding,
-                       ygg::ClosedInterval<ygg::float_t> interval,
-                       Cost cost) :
+    FunctionHeadUpdate(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding, ygg::ClosedInterval<ygg::float_t> interval) :
         binding(binding),
-        interval(interval),
-        cost(cost)
+        interval(interval)
     {
     }
 
-    auto identifying_members() const noexcept { return std::tie(binding, interval, cost); }
+    auto identifying_members() const noexcept { return std::tie(binding, interval); }
 };
 
 struct FunctionHeadIteration
