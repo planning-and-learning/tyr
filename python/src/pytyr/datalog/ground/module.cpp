@@ -51,8 +51,7 @@ void bind_ground_module_definitions(nb::module_& m)
 
     bind_common_configurations<GroundTag>(m);
     bind_configuration<GroundTag,
-                       OrAnnotationPolicy<GroundTag>,
-                       AchieverAndAnnotationPolicy<GroundTag, MaxAggregation>,
+                       MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>,
                        TerminationPolicy<GroundTag, MaxAggregation>,
                        RuleCostPolicy<GroundTag>>(m, "MaxAchieverGoal");
 }

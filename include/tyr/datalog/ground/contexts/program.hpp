@@ -39,11 +39,8 @@
 namespace tyr::datalog
 {
 
-template<OrAnnotationPolicyConcept<GroundTag> OrAP,
-         AndAnnotationPolicyConcept<GroundTag> AndAP,
-         TerminationPolicyConcept<GroundTag> TP,
-         RuleCostPolicyConcept<GroundTag> CP>
-struct ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>
+template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+struct ProgramExecutionContext<GroundTag, AP, TP, CP>
 {
     class In
     {
@@ -65,18 +62,16 @@ struct ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>
     class Out
     {
     public:
-        explicit Out(ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>& ws) : m_ws(ws) {}
+        explicit Out(ProgramWorkspace<GroundTag, AP, TP, CP>& ws) : m_ws(ws) {}
 
         auto& facts() noexcept { return m_ws.facts; }
         const auto& facts() const noexcept { return m_ws.facts; }
-        auto& or_ap() noexcept { return m_ws.or_ap; }
-        const auto& or_ap() const noexcept { return m_ws.or_ap; }
-        auto& and_ap() noexcept { return m_ws.and_ap; }
-        const auto& and_ap() const noexcept { return m_ws.and_ap; }
-        auto& and_annot() noexcept { return m_ws.and_annot; }
-        const auto& and_annot() const noexcept { return m_ws.and_annot; }
-        auto& numeric_and_annot() noexcept { return m_ws.numeric_and_annot; }
-        const auto& numeric_and_annot() const noexcept { return m_ws.numeric_and_annot; }
+        auto& annotation_policy() noexcept { return m_ws.annotation_policy; }
+        const auto& annotation_policy() const noexcept { return m_ws.annotation_policy; }
+        auto& annotations() noexcept { return m_ws.annotations; }
+        const auto& annotations() const noexcept { return m_ws.annotations; }
+        auto& numeric_annotations() noexcept { return m_ws.numeric_annotations; }
+        const auto& numeric_annotations() const noexcept { return m_ws.numeric_annotations; }
         auto& tp() noexcept { return m_ws.tp; }
         const auto& tp() const noexcept { return m_ws.tp; }
         auto& cost_policy() noexcept { return m_ws.cost_policy; }
@@ -126,10 +121,10 @@ struct ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>
                 return m_ws.function_rules;
         }
 
-        ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>& m_ws;
+        ProgramWorkspace<GroundTag, AP, TP, CP>& m_ws;
     };
 
-    explicit ProgramExecutionContext(ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>& ws) : m_in(ws.const_workspace), m_out(ws) { clear(); }
+    explicit ProgramExecutionContext(ProgramWorkspace<GroundTag, AP, TP, CP>& ws) : m_in(ws.const_workspace), m_out(ws) { clear(); }
 
     void clear() { reset_from_current_facts(); }
 
@@ -174,18 +169,18 @@ private:
 
     void initialize_annotations()
     {
-        m_out.and_annot().clear();
-        m_out.numeric_and_annot().clear();
-        m_out.and_ap().clear_achievers();
+        m_out.annotations().clear();
+        m_out.numeric_annotations().clear();
+        m_out.annotation_policy().clear_achievers();
         m_out.tp().reset();
 
         for (const auto& set : m_out.fact_sets().predicate.get_sets())
             for (const auto binding : set.get_bindings())
-                m_out.or_ap().initialize_annotation(binding, m_out.and_annot());
+                m_out.annotation_policy().initialize_annotation(binding, m_out.annotations());
 
         for (const auto& set : m_out.fact_sets().function.get_sets())
             for (const auto [binding, interval] : set.get_binding_values())
-                m_out.or_ap().initialize_annotation(binding, interval, m_out.numeric_and_annot());
+                m_out.annotation_policy().initialize_annotation(binding, interval, m_out.numeric_annotations());
     }
 
     void reset_from_current_facts()
@@ -233,11 +228,8 @@ private:
     Out m_out;
 };
 
-template<OrAnnotationPolicyConcept<GroundTag> OrAP,
-         AndAnnotationPolicyConcept<GroundTag> AndAP,
-         TerminationPolicyConcept<GroundTag> TP,
-         RuleCostPolicyConcept<GroundTag> CP>
-ProgramExecutionContext(ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>&) -> ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>;
+template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+ProgramExecutionContext(ProgramWorkspace<GroundTag, AP, TP, CP>&) -> ProgramExecutionContext<GroundTag, AP, TP, CP>;
 
 }
 

@@ -27,8 +27,7 @@ namespace tyr::datalog
 {
 
 template<TaskKind Kind,
-         OrAnnotationPolicyConcept<Kind> OrAP = NoOrAnnotationPolicy<Kind>,
-         AndAnnotationPolicyConcept<Kind> AndAP = NoAndAnnotationPolicy<Kind>,
+         AnnotationPolicyConcept<Kind> AP = NoAnnotationPolicy<Kind>,
          TerminationPolicyConcept<Kind> TP = NoTerminationPolicy<Kind>,
          RuleCostPolicyConcept<Kind> CP = RuleCostPolicy<Kind>>
 struct ProgramWorkspace;

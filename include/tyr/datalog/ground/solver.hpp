@@ -27,11 +27,8 @@
 namespace tyr::datalog
 {
 
-template<OrAnnotationPolicyConcept<GroundTag> OrAP,
-         AndAnnotationPolicyConcept<GroundTag> AndAP,
-         TerminationPolicyConcept<GroundTag> TP,
-         RuleCostPolicyConcept<GroundTag> CP>
-void compute_model(ProgramExecutionContext<GroundTag, OrAP, AndAP, TP, CP>& ctx);
+template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+void compute_model(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
 }
 

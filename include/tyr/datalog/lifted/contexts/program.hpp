@@ -35,11 +35,8 @@
 namespace tyr::datalog
 {
 
-template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP>
-struct ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>
+template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
+struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
 {
     class In
     {
@@ -60,26 +57,24 @@ struct ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>
     class Out
     {
     public:
-        explicit Out(ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>& ws) : m_ws(ws) {}
+        explicit Out(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws) : m_ws(ws) {}
 
         auto& facts() noexcept { return m_ws.facts; }
         const auto& facts() const noexcept { return m_ws.facts; }
-        auto& and_ap() noexcept { return m_ws.and_ap; }
-        const auto& and_ap() const noexcept { return m_ws.and_ap; }
-        auto& or_ap() noexcept { return m_ws.or_ap; }
-        const auto& or_ap() const noexcept { return m_ws.or_ap; }
-        auto& and_annot() noexcept { return m_ws.and_annot; }
-        const auto& and_annot() const noexcept { return m_ws.and_annot; }
-        auto& numeric_and_annot() noexcept { return m_ws.numeric_and_annot; }
-        const auto& numeric_and_annot() const noexcept { return m_ws.numeric_and_annot; }
-        auto& delta_and_annot() noexcept { return m_ws.delta_and_annot; }
-        const auto& delta_and_annot() const noexcept { return m_ws.delta_and_annot; }
-        auto& delta_numeric_and_annot() noexcept { return m_ws.delta_numeric_and_annot; }
-        const auto& delta_numeric_and_annot() const noexcept { return m_ws.delta_numeric_and_annot; }
+        auto& annotation_policy() noexcept { return m_ws.annotation_policy; }
+        const auto& annotation_policy() const noexcept { return m_ws.annotation_policy; }
+        auto& annotations() noexcept { return m_ws.annotations; }
+        const auto& annotations() const noexcept { return m_ws.annotations; }
+        auto& numeric_annotations() noexcept { return m_ws.numeric_annotations; }
+        const auto& numeric_annotations() const noexcept { return m_ws.numeric_annotations; }
+        auto& delta_annotations() noexcept { return m_ws.delta_annotations; }
+        const auto& delta_annotations() const noexcept { return m_ws.delta_annotations; }
+        auto& delta_numeric_annotations() noexcept { return m_ws.delta_numeric_annotations; }
+        const auto& delta_numeric_annotations() const noexcept { return m_ws.delta_numeric_annotations; }
         const auto& numeric_support_selector() const noexcept { return m_ws.get_numeric_support_selector(); }
         void rebuild_numeric_support_selector(const TaggedFactSets<::tyr::formalism::StaticTag>& static_fact_sets)
         {
-            m_ws.numeric_support_selector.emplace(FactSets { static_fact_sets, m_ws.facts.fact_sets }, m_ws.numeric_and_annot);
+            m_ws.numeric_support_selector.emplace(FactSets { static_fact_sets, m_ws.facts.fact_sets }, m_ws.numeric_annotations);
         }
         void reset_numeric_support_selector() noexcept { m_ws.numeric_support_selector.reset(); }
         auto& tp() noexcept { return m_ws.tp; }
@@ -108,10 +103,10 @@ struct ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>
         const auto& statistics() const noexcept { return m_ws.statistics; }
 
     private:
-        ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>& m_ws;
+        ProgramWorkspace<LiftedTag, AP, TP, CP>& m_ws;
     };
 
-    explicit ProgramExecutionContext(ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>& ws) : m_in(ws.const_workspace), m_out(ws) { clear(); }
+    explicit ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws) : m_in(ws.const_workspace), m_out(ws) { clear(); }
 
     void clear() noexcept
     {
@@ -128,17 +123,17 @@ struct ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>
 
         out.tp().reset();
         out.reset_numeric_support_selector();
-        out.and_annot().clear();
-        out.numeric_and_annot().clear();
-        out.delta_and_annot().clear();
-        out.delta_numeric_and_annot().clear();
-        out.and_ap().clear_achievers();
+        out.annotations().clear();
+        out.numeric_annotations().clear();
+        out.delta_annotations().clear();
+        out.delta_numeric_annotations().clear();
+        out.annotation_policy().clear_achievers();
 
         for (const auto& set : out.facts().fact_sets.predicate.get_sets())
         {
             for (const auto binding : set.get_bindings())
             {
-                out.or_ap().initialize_annotation(binding, out.and_annot());
+                out.annotation_policy().initialize_annotation(binding, out.annotations());
                 out.facts().assignment_sets.predicate.insert(binding);
             }
         }
@@ -147,7 +142,7 @@ struct ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>
         {
             for (const auto [binding, interval] : set.get_binding_values())
             {
-                out.or_ap().initialize_annotation(binding, interval, out.numeric_and_annot());
+                out.annotation_policy().initialize_annotation(binding, interval, out.numeric_annotations());
                 out.facts().assignment_sets.function.insert(binding, interval);
             }
         }
@@ -159,7 +154,7 @@ struct ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>
     auto get_stratum_execution_contexts()
     {
         return out().schedulers().data
-               | std::views::transform([this](RuleSchedulerStratum& scheduler) { return StratumExecutionContext<OrAP, AndAP, TP, CP> { scheduler, *this }; });
+               | std::views::transform([this](RuleSchedulerStratum& scheduler) { return StratumExecutionContext<AP, TP, CP> { scheduler, *this }; });
     }
 
     const auto& in() const noexcept { return m_in; }
@@ -171,11 +166,8 @@ private:
     Out m_out;
 };
 
-template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP>
-ProgramExecutionContext(ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>&) -> ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>;
+template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
+ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>&) -> ProgramExecutionContext<LiftedTag, AP, TP, CP>;
 
 }
 

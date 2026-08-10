@@ -206,18 +206,18 @@ public:
     /// Evaluation is quiescent here; old slots and entry buffers remain allocated for reuse.
     void clear() noexcept { m_annotations.clear(); }
 
-    void insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<LiftedTag, ::tyr::formalism::FunctionTag> annotation)
+    bool insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<LiftedTag, ::tyr::formalism::FunctionTag> annotation)
     {
         if (empty(interval))
-            return;
+            return false;
 
-        m_annotations.update(binding,
-                             [&](auto& entries, bool initialized)
-                             {
-                                 if (!initialized)
-                                     entries.clear();
-                                 insert_first_best_numeric_interval_annotation(entries, Entry { interval, std::move(annotation) });
-                             });
+        return m_annotations.update(binding,
+                                    [&](auto& entries, bool initialized)
+                                    {
+                                        if (!initialized)
+                                            entries.clear();
+                                        return insert_first_best_numeric_interval_annotation(entries, Entry { interval, std::move(annotation) });
+                                    });
     }
 
     /// Concurrent writers must have completed before calling find.
@@ -237,7 +237,7 @@ private:
 };
 
 template<::tyr::formalism::RelationKind R>
-struct AndAnnotationContext<LiftedTag, R>
+struct AnnotationContext<LiftedTag, R>
 {
     Cost current_cost;
     std::span<const NumericSupport<LiftedTag>> numeric_supports;
@@ -248,8 +248,8 @@ struct AndAnnotationContext<LiftedTag, R>
     ::tyr::formalism::datalog::ConjunctiveConditionView witness_condition;
     const NumericSupportSelector<LiftedTag>& numeric_support_selector;
     NumericSupportSelectorWorkspace<LiftedTag>& numeric_support_selector_workspace;
-    const PredicateAnnotations<LiftedTag>& and_annot;
-    const FunctionAnnotations<LiftedTag>& numeric_and_annot;
+    const PredicateAnnotations<LiftedTag>& annotations;
+    const FunctionAnnotations<LiftedTag>& numeric_annotations;
     ::tyr::formalism::datalog::GrounderContext& ground_context;
 };
 

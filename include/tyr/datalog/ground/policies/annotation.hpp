@@ -20,59 +20,69 @@
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/ground/policies/annotation_types.hpp"
+#include "tyr/datalog/ground/policies/numeric_support.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
 
+#include <span>
 #include <vector>
 
 namespace tyr::datalog
 {
 
-template<>
-class OrAnnotationPolicy<GroundTag>
+template<::tyr::formalism::RelationKind R>
+struct AnnotationContext<GroundTag, R>
 {
-public:
-    using PredicateHead = PredicateAnnotationHead<GroundTag>;
-    using FunctionHead = FunctionAnnotationHead<GroundTag>;
+    using SelectionEntry = GroundNumericSupportSelectorWorkspace::SelectionEntry;
+    using Selection = std::vector<SelectionEntry>;
 
-    void initialize_annotation(PredicateHead head, PredicateAnnotations<GroundTag>& and_annot) const;
-
-    void initialize_annotation(FunctionHead head, ygg::ClosedInterval<ygg::float_t> interval, FunctionAnnotations<GroundTag>& numeric_and_annot) const;
-    void initialize_annotation(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> head,
-                               ygg::ClosedInterval<ygg::float_t> interval,
-                               FunctionAnnotations<GroundTag>& numeric_and_annot) const;
-
-    CostUpdate<GroundTag>
-    update_annotation(PredicateHead head, const DeltaPredicateAnnotations<GroundTag>& delta_and_annot, PredicateAnnotations<GroundTag>& and_annot) const;
+    Cost current_cost;
+    ::tyr::formalism::datalog::GroundRuleView<R> rule;
+    Cost rule_cost;
+    const GroundNumericSupportSelector& numeric_support_selector;
+    Selection& selection_scratch;
+    std::span<const SelectionEntry> numeric_support_selection;
+    std::vector<NumericSupport<GroundTag>>& witness_support_scratch;
+    const PredicateAnnotations<GroundTag>& annotations;
 };
 
 template<typename AggregationFunction>
-class AndAnnotationPolicy<GroundTag, AggregationFunction>
+class MinCostAnnotationPolicy<GroundTag, AggregationFunction>
 {
 public:
     using PredicateHead = PredicateAnnotationHead<GroundTag>;
     using FunctionHead = FunctionAnnotationHead<GroundTag>;
+    using Aggregation = AggregationFunction;
 
-    static constexpr AggregationFunction agg = AggregationFunction {};
     static constexpr bool records_propositional_achievers = false;
 
-    void clear_achievers() noexcept;
+    void initialize_annotation(PredicateHead head, PredicateAnnotations<GroundTag>& annotations) const;
 
-    void record_achiever(PredicateHead, const AndAnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>&) const noexcept;
+    void initialize_annotation(FunctionHead head, ygg::ClosedInterval<ygg::float_t> interval, FunctionAnnotations<GroundTag>& numeric_annotations) const;
+    void initialize_annotation(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> head,
+                               ygg::ClosedInterval<ygg::float_t> interval,
+                               FunctionAnnotations<GroundTag>& numeric_annotations) const;
 
-    void update_annotation(PredicateHead head,
-                           const AndAnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context,
-                           DeltaPredicateAnnotations<GroundTag>& delta_and_annot) const;
+    CostUpdate<GroundTag>
+    update_annotation(PredicateHead head, const DeltaPredicateAnnotations<GroundTag>& delta_annotations, PredicateAnnotations<GroundTag>& annotations) const;
 
-    void update_annotation(FunctionHead head,
+    void clear_achievers() noexcept {}
+
+    void record_achiever(PredicateHead, const AnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>&) const noexcept {}
+
+    bool update_annotation(PredicateHead head,
+                           const AnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context,
+                           DeltaPredicateAnnotations<GroundTag>& delta_annotations) const;
+
+    bool update_annotation(FunctionHead head,
                            ygg::ClosedInterval<ygg::float_t> interval,
-                           const AndAnnotationContext<GroundTag, ::tyr::formalism::FunctionTag>& context,
-                           DeltaFunctionAnnotations<GroundTag>& delta_numeric_and_annot) const;
+                           const AnnotationContext<GroundTag, ::tyr::formalism::FunctionTag>& context,
+                           DeltaFunctionAnnotations<GroundTag>& delta_numeric_annotations) const;
 };
 
 template<typename AggregationFunction>
-class AchieverAndAnnotationPolicy<GroundTag, AggregationFunction> : public AndAnnotationPolicy<GroundTag, AggregationFunction>
+class MinCostAnnotationWithAchieversPolicy<GroundTag, AggregationFunction> : public MinCostAnnotationPolicy<GroundTag, AggregationFunction>
 {
 public:
     using PredicateHead = PredicateAnnotationHead<GroundTag>;
@@ -86,17 +96,16 @@ public:
 
     const Achievers* find_achievers(PredicateHead head) const noexcept;
 
-    void record_achiever(PredicateHead head, const AndAnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context);
+    void record_achiever(PredicateHead head, const AnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context);
 
 private:
     DenseRelationMap<::tyr::formalism::PredicateTag, Achievers> m_achievers;
 };
 
-static_assert(OrAnnotationPolicyConcept<NoOrAnnotationPolicy<GroundTag>, GroundTag>);
-static_assert(AndAnnotationPolicyConcept<NoAndAnnotationPolicy<GroundTag>, GroundTag>);
-static_assert(OrAnnotationPolicyConcept<OrAnnotationPolicy<GroundTag>, GroundTag>);
-static_assert(AndAnnotationPolicyConcept<AndAnnotationPolicy<GroundTag, SumAggregation>, GroundTag>);
-static_assert(AndAnnotationPolicyConcept<AchieverAndAnnotationPolicy<GroundTag, MaxAggregation>, GroundTag>);
+static_assert(AnnotationPolicyConcept<NoAnnotationPolicy<GroundTag>, GroundTag>);
+static_assert(AnnotationPolicyConcept<MinCostAnnotationPolicy<GroundTag, SumAggregation>, GroundTag>);
+static_assert(AnnotationPolicyConcept<MinCostAnnotationPolicy<GroundTag, MaxAggregation>, GroundTag>);
+static_assert(AnnotationPolicyConcept<MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>, GroundTag>);
 
 }
 

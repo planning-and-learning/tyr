@@ -28,27 +28,24 @@
 
 namespace tyr::datalog
 {
-template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP>
+template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
 struct StratumExecutionContext
 {
     class In
     {
     public:
-        explicit In(const ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>& ctx) : m_ctx(ctx) {}
+        explicit In(const ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_ctx(ctx) {}
 
         const auto& program() const noexcept { return m_ctx.in(); }
 
     private:
-        const ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>& m_ctx;
+        const ProgramExecutionContext<LiftedTag, AP, TP, CP>& m_ctx;
     };
 
     class Out
     {
     public:
-        Out(RuleSchedulerStratum& scheduler, ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>& ctx) : m_scheduler(scheduler), m_ctx(ctx) {}
+        Out(RuleSchedulerStratum& scheduler, ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_scheduler(scheduler), m_ctx(ctx) {}
 
         auto& scheduler() noexcept { return m_scheduler; }
         const auto& scheduler() const noexcept { return m_scheduler; }
@@ -57,10 +54,10 @@ struct StratumExecutionContext
 
     private:
         RuleSchedulerStratum& m_scheduler;
-        ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>& m_ctx;
+        ProgramExecutionContext<LiftedTag, AP, TP, CP>& m_ctx;
     };
 
-    StratumExecutionContext(RuleSchedulerStratum& scheduler, ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>& ctx) : m_in(ctx), m_out(scheduler, ctx) {}
+    StratumExecutionContext(RuleSchedulerStratum& scheduler, ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_in(ctx), m_out(scheduler, ctx) {}
 
     /**
      * Initialization
@@ -73,7 +70,7 @@ struct StratumExecutionContext
     template<::tyr::formalism::RelationKind R>
     auto get_rule_execution_context(ygg::Index<::tyr::formalism::datalog::Rule<R>> rule)
     {
-        return RuleExecutionContext<R, OrAP, AndAP, TP, CP> { rule, *this };
+        return RuleExecutionContext<R, AP, TP, CP> { rule, *this };
     }
 
     const auto& in() const noexcept { return m_in; }

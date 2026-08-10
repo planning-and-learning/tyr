@@ -275,28 +275,25 @@ void bind_termination_policy(nb::module_& m, const char* name)
 template<TaskKind Kind>
 void bind_policies(nb::module_& m)
 {
-    using NoOr = NoOrAnnotationPolicy<Kind>;
-    using Or = OrAnnotationPolicy<Kind>;
-    using NoAnd = NoAndAnnotationPolicy<Kind>;
-    using SumAnd = AndAnnotationPolicy<Kind, SumAggregation>;
-    using MaxAnd = AndAnnotationPolicy<Kind, MaxAggregation>;
-    using AchieverAnd = AchieverAndAnnotationPolicy<Kind, MaxAggregation>;
+    using NoAnnotation = NoAnnotationPolicy<Kind>;
+    using SumMinCostAnnotation = MinCostAnnotationPolicy<Kind, SumAggregation>;
+    using MaxMinCostAnnotation = MinCostAnnotationPolicy<Kind, MaxAggregation>;
+    using MaxMinCostAnnotationWithAchievers = MinCostAnnotationWithAchieversPolicy<Kind, MaxAggregation>;
     using NoTermination = NoTerminationPolicy<Kind>;
 
-    nb::class_<NoOr>(m, "NoOrAnnotationPolicy").def(nb::init<>());
-    nb::class_<Or>(m, "OrAnnotationPolicy").def(nb::init<>());
-    nb::class_<NoAnd>(m, "NoAndAnnotationPolicy").def(nb::init<>());
-    nb::class_<SumAnd>(m, "SumAndAnnotationPolicy").def(nb::init<>());
-    nb::class_<MaxAnd>(m, "MaxAndAnnotationPolicy").def(nb::init<>());
-    nb::class_<AchieverAnd, MaxAnd>(m, "MaxAchieverAndAnnotationPolicy")
+    nb::class_<NoAnnotation>(m, "NoAnnotationPolicy").def(nb::init<>());
+    nb::class_<SumMinCostAnnotation>(m, "SumMinCostAnnotationPolicy").def(nb::init<>());
+    nb::class_<MaxMinCostAnnotation>(m, "MaxMinCostAnnotationPolicy").def(nb::init<>());
+    nb::class_<MaxMinCostAnnotationWithAchievers, MaxMinCostAnnotation>(m, "MaxMinCostAnnotationWithAchieversPolicy")
         .def(nb::init<>())
-        .def("clear_achievers", &AchieverAnd::clear_achievers)
+        .def("clear_achievers", &MaxMinCostAnnotationWithAchievers::clear_achievers)
         .def(
             "find_achievers",
-            [](const AchieverAnd& self, PredicateAnnotationHead<Kind> binding) -> std::optional<typename AchieverAnd::Achievers>
+            [](const MaxMinCostAnnotationWithAchievers& self,
+               PredicateAnnotationHead<Kind> binding) -> std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>
             {
                 const auto* achievers = self.find_achievers(binding);
-                return achievers ? std::optional<typename AchieverAnd::Achievers>(*achievers) : std::nullopt;
+                return achievers ? std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>(*achievers) : std::nullopt;
             },
             "binding"_a);
 
@@ -326,16 +323,16 @@ void bind_workspace(nb::module_& m, const std::string& name)
                        [](const Workspace& self) -> const TaggedFactSets<::tyr::formalism::FluentTag>& { return self.facts.fact_sets; },
                        nb::rv_policy::reference_internal)
                    .def(
-                       "get_and_annot",
-                       [](Workspace& self) -> auto& { return self.and_annot; },
+                       "get_annotations",
+                       [](Workspace& self) -> auto& { return self.annotations; },
                        nb::rv_policy::reference_internal)
                    .def(
-                       "get_numeric_and_annot",
-                       [](Workspace& self) -> auto& { return self.numeric_and_annot; },
+                       "get_numeric_annotations",
+                       [](Workspace& self) -> auto& { return self.numeric_annotations; },
                        nb::rv_policy::reference_internal)
                    .def(
-                       "get_or_annotation_policy",
-                       [](Workspace& self) -> auto& { return self.or_ap; },
+                       "get_annotation_policy",
+                       [](Workspace& self) -> auto& { return self.annotation_policy; },
                        nb::rv_policy::reference_internal)
                    .def(
                        "get_termination_policy",
@@ -352,11 +349,7 @@ void bind_workspace(nb::module_& m, const std::string& name)
         using Atom = ::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag>;
         using FunctionTerm = ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag>;
 
-        cls.def(
-               "get_and_annotation_policy",
-               [](Workspace& self) -> auto& { return self.and_ap; },
-               nb::rv_policy::reference_internal)
-            .def("clear_fluent_facts", [](Workspace& self) { self.facts.reset(); })
+        cls.def("clear_fluent_facts", [](Workspace& self) { self.facts.reset(); })
             .def(
                 "insert_fluent_atom",
                 [](Workspace& self, Atom atom) { return self.facts.fact_sets.predicate.insert(atom); },
@@ -438,51 +431,33 @@ void bind_configuration(nb::module_& m, const char* prefix)
         nb::call_guard<nb::gil_scoped_release>());
 }
 
-template<TaskKind Kind, typename OrAP, typename AndAP, typename TP, typename CP>
+template<TaskKind Kind, typename AP, typename TP, typename CP>
 void bind_configuration(nb::module_& m, const char* prefix)
 {
-    using Workspace = ProgramWorkspace<Kind, OrAP, AndAP, TP, CP>;
-    using Context = ProgramExecutionContext<Kind, OrAP, AndAP, TP, CP>;
+    using Workspace = ProgramWorkspace<Kind, AP, TP, CP>;
+    using Context = ProgramExecutionContext<Kind, AP, TP, CP>;
     bind_configuration<Kind, Workspace, Context>(m, prefix);
 }
 
 template<TaskKind Kind>
 void bind_common_configurations(nb::module_& m)
 {
-    bind_configuration<Kind, NoOrAnnotationPolicy<Kind>, NoAndAnnotationPolicy<Kind>, NoTerminationPolicy<Kind>, RuleCostPolicy<Kind>>(m, "Unannotated");
-    bind_configuration<Kind, OrAnnotationPolicy<Kind>, AndAnnotationPolicy<Kind, SumAggregation>, NoTerminationPolicy<Kind>, RuleCostPolicy<Kind>>(m, "Sum");
-    bind_configuration<Kind,
-                       OrAnnotationPolicy<Kind>,
-                       AndAnnotationPolicy<Kind, SumAggregation>,
-                       TerminationPolicy<Kind, SumAggregation>,
-                       RuleCostPolicy<Kind>>(m, "SumGoal");
-    bind_configuration<Kind, OrAnnotationPolicy<Kind>, AndAnnotationPolicy<Kind, MaxAggregation>, NoTerminationPolicy<Kind>, RuleCostPolicy<Kind>>(m, "Max");
-    bind_configuration<Kind,
-                       OrAnnotationPolicy<Kind>,
-                       AndAnnotationPolicy<Kind, MaxAggregation>,
-                       TerminationPolicy<Kind, MaxAggregation>,
-                       RuleCostPolicy<Kind>>(m, "MaxGoal");
-    bind_configuration<Kind, OrAnnotationPolicy<Kind>, AndAnnotationPolicy<Kind, SumAggregation>, NoTerminationPolicy<Kind>, RuleCostOverridePolicy<Kind>>(
+    bind_configuration<Kind, NoAnnotationPolicy<Kind>, NoTerminationPolicy<Kind>, RuleCostPolicy<Kind>>(m, "Unannotated");
+    bind_configuration<Kind, MinCostAnnotationPolicy<Kind, SumAggregation>, NoTerminationPolicy<Kind>, RuleCostPolicy<Kind>>(m, "Sum");
+    bind_configuration<Kind, MinCostAnnotationPolicy<Kind, SumAggregation>, TerminationPolicy<Kind, SumAggregation>, RuleCostPolicy<Kind>>(m, "SumGoal");
+    bind_configuration<Kind, MinCostAnnotationPolicy<Kind, MaxAggregation>, NoTerminationPolicy<Kind>, RuleCostPolicy<Kind>>(m, "Max");
+    bind_configuration<Kind, MinCostAnnotationPolicy<Kind, MaxAggregation>, TerminationPolicy<Kind, MaxAggregation>, RuleCostPolicy<Kind>>(m, "MaxGoal");
+    bind_configuration<Kind, MinCostAnnotationPolicy<Kind, SumAggregation>, NoTerminationPolicy<Kind>, RuleCostOverridePolicy<Kind>>(m, "SumOverride");
+    bind_configuration<Kind, MinCostAnnotationPolicy<Kind, SumAggregation>, TerminationPolicy<Kind, SumAggregation>, RuleCostOverridePolicy<Kind>>(
         m,
-        "SumOverride");
-    bind_configuration<Kind,
-                       OrAnnotationPolicy<Kind>,
-                       AndAnnotationPolicy<Kind, SumAggregation>,
-                       TerminationPolicy<Kind, SumAggregation>,
-                       RuleCostOverridePolicy<Kind>>(m, "SumGoalOverride");
-    bind_configuration<Kind, OrAnnotationPolicy<Kind>, AndAnnotationPolicy<Kind, MaxAggregation>, NoTerminationPolicy<Kind>, RuleCostOverridePolicy<Kind>>(
+        "SumGoalOverride");
+    bind_configuration<Kind, MinCostAnnotationPolicy<Kind, MaxAggregation>, NoTerminationPolicy<Kind>, RuleCostOverridePolicy<Kind>>(m, "MaxOverride");
+    bind_configuration<Kind, MinCostAnnotationPolicy<Kind, MaxAggregation>, TerminationPolicy<Kind, MaxAggregation>, RuleCostOverridePolicy<Kind>>(
         m,
-        "MaxOverride");
-    bind_configuration<Kind,
-                       OrAnnotationPolicy<Kind>,
-                       AndAnnotationPolicy<Kind, MaxAggregation>,
-                       TerminationPolicy<Kind, MaxAggregation>,
-                       RuleCostOverridePolicy<Kind>>(m, "MaxGoalOverride");
-    bind_configuration<Kind,
-                       OrAnnotationPolicy<Kind>,
-                       AchieverAndAnnotationPolicy<Kind, MaxAggregation>,
-                       TerminationPolicy<Kind, MaxAggregation>,
-                       RuleCostOverridePolicy<Kind>>(m, "MaxAchieverGoalOverride");
+        "MaxGoalOverride");
+    bind_configuration<Kind, MinCostAnnotationWithAchieversPolicy<Kind, MaxAggregation>, TerminationPolicy<Kind, MaxAggregation>, RuleCostOverridePolicy<Kind>>(
+        m,
+        "MaxAchieverGoalOverride");
 }
 
 }

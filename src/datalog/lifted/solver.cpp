@@ -88,7 +88,7 @@ static void create_general_binding(std::span<const kckp::Vertex> clique, const S
     }
 }
 
-template<f::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
+template<f::RelationKind R, AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
 struct RuleUpdateInput
 {
     fd::RuleView<R> rule;
@@ -100,54 +100,56 @@ struct RuleUpdateInput
     std::vector<NumericSupport<LiftedTag>>& effect_support_scratch;
     std::vector<NumericSupport<LiftedTag>>& witness_support_scratch;
     Cost current_cost;
-    const PredicateAnnotations<LiftedTag>& and_annot;
-    const FunctionAnnotations<LiftedTag>& numeric_and_annot;
+    const PredicateAnnotations<LiftedTag>& annotations;
+    const FunctionAnnotations<LiftedTag>& numeric_annotations;
     const FactSets& fact_sets;
-    AndAP& and_ap;
+    AP& annotation_policy;
     const CP& cost_policy;
     fd::GrounderContext& ground_context;
 
-    AndAnnotationContext<LiftedTag, R> make_annotation_context(std::optional<fd::RuleBindingView<R>> rule_binding,
-                                                               Cost metric_effect_cost,
-                                                               std::span<const NumericSupport<LiftedTag>> numeric_supports = {}) const
+    AnnotationContext<LiftedTag, R> make_annotation_context(std::optional<fd::RuleBindingView<R>> rule_binding,
+                                                            Cost metric_effect_cost,
+                                                            std::span<const NumericSupport<LiftedTag>> numeric_supports = {}) const
     {
-        return AndAnnotationContext<LiftedTag, R> { current_cost,
-                                                    numeric_supports,
-                                                    witness_support_scratch,
-                                                    rule,
-                                                    rule_binding,
-                                                    metric_effect_cost,
-                                                    witness_condition,
-                                                    numeric_support_selector,
-                                                    numeric_support_selector_workspace,
-                                                    and_annot,
-                                                    numeric_and_annot,
-                                                    ground_context };
+        return AnnotationContext<LiftedTag, R> { current_cost,
+                                                 numeric_supports,
+                                                 witness_support_scratch,
+                                                 rule,
+                                                 rule_binding,
+                                                 metric_effect_cost,
+                                                 witness_condition,
+                                                 numeric_support_selector,
+                                                 numeric_support_selector_workspace,
+                                                 annotations,
+                                                 numeric_annotations,
+                                                 ground_context };
     }
 };
 
 template<f::RelationKind R, typename In, typename Out>
 static auto make_rule_update_input(In& in, Out& out)
 {
-    return RuleUpdateInput<R, std::decay_t<decltype(in.and_ap())>, std::decay_t<decltype(in.cost_policy())>> { in.cws_rule().get_rule(),
-                                                                                                               in.cws_rule().get_pre_evaluated_metric_cost(),
-                                                                                                               in.cws_rule().get_runtime_metric_effects(),
-                                                                                                               in.cws_rule().get_witness_rule().get_body(),
-                                                                                                               in.numeric_support_selector(),
-                                                                                                               out.numeric_support_selector_workspace(),
-                                                                                                               out.effect_support_scratch(),
-                                                                                                               out.witness_support_scratch(),
-                                                                                                               in.cost_buckets().current_cost(),
-                                                                                                               in.and_annot(),
-                                                                                                               in.numeric_and_annot(),
-                                                                                                               in.fact_sets(),
-                                                                                                               in.and_ap(),
-                                                                                                               in.cost_policy(),
-                                                                                                               out.ground_context() };
+    return RuleUpdateInput<R, std::decay_t<decltype(in.annotation_policy())>, std::decay_t<decltype(in.cost_policy())>> {
+        in.cws_rule().get_rule(),
+        in.cws_rule().get_pre_evaluated_metric_cost(),
+        in.cws_rule().get_runtime_metric_effects(),
+        in.cws_rule().get_witness_rule().get_body(),
+        in.numeric_support_selector(),
+        out.numeric_support_selector_workspace(),
+        out.effect_support_scratch(),
+        out.witness_support_scratch(),
+        in.cost_buckets().current_cost(),
+        in.annotations(),
+        in.numeric_annotations(),
+        in.fact_sets(),
+        in.annotation_policy(),
+        in.cost_policy(),
+        out.ground_context()
+    };
 }
 
-template<f::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
-std::optional<Cost> metric_effect_delta(fd::NumericEffectView<f::FluentTag> effect, const RuleUpdateInput<R, AndAP, CP>& input)
+template<f::RelationKind R, AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
+std::optional<Cost> metric_effect_delta(fd::NumericEffectView<f::FluentTag> effect, const RuleUpdateInput<R, AP, CP>& input)
 {
     const auto context = ApplicabilityContext { input.fact_sets, input.ground_context };
     return metric_effect_delta(
@@ -163,9 +165,9 @@ static void append_numeric_supports(const std::vector<NumericSupportSelectorWork
         supports.push_back(NumericSupport<LiftedTag> { entry.key, entry.interval, entry.cost });
 }
 
-template<f::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
+template<f::RelationKind R, AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
 static bool collect_expression_supports(fd::FunctionExpressionView expression,
-                                        const RuleUpdateInput<R, AndAP, CP>& input,
+                                        const RuleUpdateInput<R, AP, CP>& input,
                                         std::vector<NumericSupport<LiftedTag>>& supports,
                                         std::vector<NumericSupportSelectorWorkspace<LiftedTag>::SelectionEntry>& selection)
 {
@@ -178,10 +180,10 @@ static bool collect_expression_supports(fd::FunctionExpressionView expression,
     return true;
 }
 
-template<f::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
+template<f::RelationKind R, AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
 static bool collect_numeric_head_supports(fd::NumericEffectView<f::FluentTag> effect,
                                           fd::FunctionBindingView<f::FluentTag> head,
-                                          const RuleUpdateInput<R, AndAP, CP>& input,
+                                          const RuleUpdateInput<R, AP, CP>& input,
                                           std::vector<NumericSupport<LiftedTag>>& supports)
 {
     auto& selection = input.numeric_support_selector_workspace.selection;
@@ -196,9 +198,9 @@ static bool collect_numeric_head_supports(fd::NumericEffectView<f::FluentTag> ef
     return collect_expression_supports(effect.get_fexpr(), input, supports, selection);
 }
 
-template<f::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
+template<f::RelationKind R, AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
 static bool collect_metric_effect_supports(fd::NumericEffectView<f::FluentTag> effect,
-                                           const RuleUpdateInput<R, AndAP, CP>& input,
+                                           const RuleUpdateInput<R, AP, CP>& input,
                                            std::vector<NumericSupport<LiftedTag>>& supports)
 {
     auto& selection = input.numeric_support_selector_workspace.selection;
@@ -214,8 +216,8 @@ static bool collect_metric_effect_supports(fd::NumericEffectView<f::FluentTag> e
     return collect_expression_supports(effect.get_fexpr(), input, supports, selection);
 }
 
-template<f::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
-static bool collect_metric_effect_supports(const RuleUpdateInput<R, AndAP, CP>& input, std::vector<NumericSupport<LiftedTag>>& supports)
+template<f::RelationKind R, AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
+static bool collect_metric_effect_supports(const RuleUpdateInput<R, AP, CP>& input, std::vector<NumericSupport<LiftedTag>>& supports)
 {
     for (const auto& metric_effect : input.runtime_metric_effects)
         if (!ygg::visit([&](auto&& effect) { return collect_metric_effect_supports(effect, input, supports); }, metric_effect.get_variant()))
@@ -223,8 +225,8 @@ static bool collect_metric_effect_supports(const RuleUpdateInput<R, AndAP, CP>& 
     return true;
 }
 
-template<f::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
-std::optional<Cost> metric_effect_delta(const RuleUpdateInput<R, AndAP, CP>& input)
+template<f::RelationKind R, AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
+std::optional<Cost> metric_effect_delta(const RuleUpdateInput<R, AP, CP>& input)
 {
     auto delta = input.pre_evaluated_metric_cost;
     for (const auto& metric_effect : input.runtime_metric_effects)
@@ -238,16 +240,16 @@ std::optional<Cost> metric_effect_delta(const RuleUpdateInput<R, AndAP, CP>& inp
     return delta;
 }
 
-template<f::RelationKind R, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
-std::optional<Cost> metric_effect_cost(fd::RuleBindingView<R> rule_binding, const RuleUpdateInput<R, AndAP, CP>& input)
+template<f::RelationKind R, AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
+std::optional<Cost> metric_effect_cost(fd::RuleBindingView<R> rule_binding, const RuleUpdateInput<R, AP, CP>& input)
 {
     const auto delta = metric_effect_delta(input);
     return delta ? std::optional(reduce_cost(*delta, input.cost_policy.get_cost(rule_binding))) : std::nullopt;
 }
 
-template<AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
-static void record_propositional_achiever(fd::PredicateBindingView<f::FluentTag> head, const RuleUpdateInput<f::PredicateTag, AndAP, CP>& input)
-    requires AndAP::records_propositional_achievers
+template<AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
+static void record_propositional_achiever(fd::PredicateBindingView<f::FluentTag> head, const RuleUpdateInput<f::PredicateTag, AP, CP>& input)
+    requires AP::records_propositional_achievers
 {
     const auto rule_binding = fd::ground_binding(input.rule, input.ground_context).first;
     const auto cost = metric_effect_cost(rule_binding, input);
@@ -259,18 +261,18 @@ static void record_propositional_achiever(fd::PredicateBindingView<f::FluentTag>
         return;
     const auto context = input.make_annotation_context(rule_binding, *cost, numeric_supports);
 
-    input.and_ap.record_achiever(head, context);
+    input.annotation_policy.record_achiever(head, context);
 }
 
-template<AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
+template<AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
 static void insert_propositional_update(fd::PredicateBindingView<f::FluentTag> head,
-                                        const RuleUpdateInput<f::PredicateTag, AndAP, CP>& input,
+                                        const RuleUpdateInput<f::PredicateTag, AP, CP>& input,
                                         PredicateHeadIteration& head_iteration,
-                                        DeltaPredicateAnnotations<LiftedTag>& delta_and_annot)
+                                        DeltaPredicateAnnotations<LiftedTag>& delta_annotations)
 {
     auto rule_binding = std::optional<fd::RuleBindingView<f::PredicateTag>> {};
     auto cost = std::optional<Cost> {};
-    if constexpr (std::same_as<CP, RuleCostPolicy<LiftedTag>> && !AndAP::records_propositional_achievers)
+    if constexpr (std::same_as<CP, RuleCostPolicy<LiftedTag>> && !AP::records_propositional_achievers)
     {
         cost = metric_effect_delta(input);
     }
@@ -287,19 +289,19 @@ static void insert_propositional_update(fd::PredicateBindingView<f::FluentTag> h
         return;
     const auto context = input.make_annotation_context(rule_binding, *cost, numeric_supports);
 
-    input.and_ap.record_achiever(head, context);
+    input.annotation_policy.record_achiever(head, context);
 
     head_iteration.insert(head);
 
-    input.and_ap.update_annotation(head, context, delta_and_annot);
+    input.annotation_policy.update_annotation(head, context, delta_annotations);
 }
 
-template<AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
+template<AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
 static void insert_numeric_update(fd::NumericEffectOperatorView<f::FluentTag> head,
                                   const FactSets& fact_sets,
-                                  const RuleUpdateInput<f::FunctionTag, AndAP, CP>& input,
+                                  const RuleUpdateInput<f::FunctionTag, AP, CP>& input,
                                   FunctionHeadIteration& head_iteration,
-                                  DeltaFunctionAnnotations<LiftedTag>& delta_numeric_and_annot)
+                                  DeltaFunctionAnnotations<LiftedTag>& delta_numeric_annotations)
 {
     const auto interval = evaluate(head, ApplicabilityContext { fact_sets, input.ground_context });
     if (empty(interval))
@@ -323,33 +325,29 @@ static void insert_numeric_update(fd::NumericEffectOperatorView<f::FluentTag> he
                 return;
             const auto context = input.make_annotation_context(rule_binding, cost, numeric_supports);
 
-            input.and_ap.update_annotation(head, effect_interval, context, delta_numeric_and_annot);
+            input.annotation_policy.update_annotation(head, effect_interval, context, delta_numeric_annotations);
 
             head_iteration.insert(FunctionHeadUpdate(head, effect_interval, input.current_cost + cost));
         },
         head.get_variant());
 }
 
-template<typename In, typename Out, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
-void insert_nullary_update(fd::AtomView<f::FluentTag> head_atom, const RuleUpdateInput<f::PredicateTag, AndAP, CP>& input, const In&, Out& out)
+template<typename In, typename Out, AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
+void insert_nullary_update(fd::AtomView<f::FluentTag> head_atom, const RuleUpdateInput<f::PredicateTag, AP, CP>& input, const In&, Out& out)
 {
     const auto head = fd::ground_binding(head_atom, out.ground_context()).first;
-    insert_propositional_update(head, input, out.head_updates(), out.delta_and_annot());
+    insert_propositional_update(head, input, out.head_updates(), out.delta_annotations());
 }
 
-template<typename In, typename Out, AndAnnotationPolicyConcept<LiftedTag> AndAP, RuleCostPolicyConcept<LiftedTag> CP>
-void insert_nullary_update(fd::NumericEffectOperatorView<f::FluentTag> head, const RuleUpdateInput<f::FunctionTag, AndAP, CP>& input, const In& in, Out& out)
+template<typename In, typename Out, AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
+void insert_nullary_update(fd::NumericEffectOperatorView<f::FluentTag> head, const RuleUpdateInput<f::FunctionTag, AP, CP>& input, const In& in, Out& out)
 {
     assert(is_applicable(in.cws_rule().get_rule(), ApplicabilityContext { in.fact_sets(), out.ground_context() }));
-    insert_numeric_update(head, in.fact_sets(), input, out.head_updates(), out.delta_numeric_and_annot());
+    insert_numeric_update(head, in.fact_sets(), input, out.head_updates(), out.delta_numeric_annotations());
 }
 
-template<f::RelationKind R,
-         OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP>
-void generate_nullary_case(RuleExecutionContext<R, OrAP, AndAP, TP, CP>& rctx)
+template<f::RelationKind R, AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
+void generate_nullary_case(RuleExecutionContext<R, AP, TP, CP>& rctx)
 {
     auto wrctx = rctx.get_rule_worker_execution_context();
 
@@ -412,11 +410,8 @@ inline bool require_novel_binding(fd::AtomView<f::FluentTag>) noexcept
 
 inline bool require_novel_binding(fd::NumericEffectOperatorView<f::FluentTag>) noexcept { return false; }
 
-template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP>
-bool try_generate_parallel(fd::AtomView<f::FluentTag>, [[maybe_unused]] RuleExecutionContext<f::PredicateTag, OrAP, AndAP, TP, CP>& rctx)
+template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
+bool try_generate_parallel(fd::AtomView<f::FluentTag>, [[maybe_unused]] RuleExecutionContext<f::PredicateTag, AP, TP, CP>& rctx)
 {
 #if defined(TYR_ENABLE_INNER_PARALLELISM) && defined(TYR_ENABLE_SEMI_NAIVE)
     constexpr size_t kNumStripes = 2;
@@ -452,23 +447,16 @@ bool try_generate_parallel(fd::AtomView<f::FluentTag>, [[maybe_unused]] RuleExec
     return false;
 }
 
-template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP>
-bool try_generate_parallel(fd::NumericEffectOperatorView<f::FluentTag>, RuleExecutionContext<f::FunctionTag, OrAP, AndAP, TP, CP>&)
+template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
+bool try_generate_parallel(fd::NumericEffectOperatorView<f::FluentTag>, RuleExecutionContext<f::FunctionTag, AP, TP, CP>&)
 {
     return false;
 }
 
-template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP,
-         typename DynamicallyApplicable>
+template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP, typename DynamicallyApplicable>
 void process_clique_head(fd::AtomView<f::FluentTag> head_atom,
-                         RuleWorkerExecutionContext<f::PredicateTag, OrAP, AndAP, TP, CP>& wrctx,
-                         const RuleUpdateInput<f::PredicateTag, AndAP, CP>& input,
+                         RuleWorkerExecutionContext<f::PredicateTag, AP, TP, CP>& wrctx,
+                         const RuleUpdateInput<f::PredicateTag, AP, CP>& input,
                          DynamicallyApplicable&& dynamically_applicable)
 {
     auto& in = wrctx.in();
@@ -476,7 +464,7 @@ void process_clique_head(fd::AtomView<f::FluentTag> head_atom,
     auto head = fd::try_ground_binding(head_atom, out.ground_context());
     if (head && in.fact_sets().template get<f::FluentTag>().predicate.contains(*head))
     {
-        if constexpr (AndAP::records_propositional_achievers)
+        if constexpr (AP::records_propositional_achievers)
             if (dynamically_applicable())
                 record_propositional_achiever(*head, input);
         return;
@@ -498,17 +486,13 @@ void process_clique_head(fd::AtomView<f::FluentTag> head_atom,
     if (!head)
         head = fd::ground_binding(head_atom, out.ground_context()).first;
     assert(is_applicable(in.cws_rule().get_rule(), ApplicabilityContext { in.fact_sets(), out.ground_context() }));
-    insert_propositional_update(*head, input, out.head_updates(), out.delta_and_annot());
+    insert_propositional_update(*head, input, out.head_updates(), out.delta_annotations());
 }
 
-template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP,
-         typename DynamicallyApplicable>
+template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP, typename DynamicallyApplicable>
 void process_clique_head(fd::NumericEffectOperatorView<f::FluentTag> head,
-                         RuleWorkerExecutionContext<f::FunctionTag, OrAP, AndAP, TP, CP>& wrctx,
-                         const RuleUpdateInput<f::FunctionTag, AndAP, CP>& input,
+                         RuleWorkerExecutionContext<f::FunctionTag, AP, TP, CP>& wrctx,
+                         const RuleUpdateInput<f::FunctionTag, AP, CP>& input,
                          DynamicallyApplicable&& dynamically_applicable)
 {
     const auto& in = wrctx.in();
@@ -517,17 +501,11 @@ void process_clique_head(fd::NumericEffectOperatorView<f::FluentTag> head,
         return;
 
     assert(is_applicable(in.cws_rule().get_rule(), ApplicabilityContext { in.fact_sets(), out.ground_context() }));
-    insert_numeric_update(head, in.fact_sets(), input, out.head_updates(), out.delta_numeric_and_annot());
+    insert_numeric_update(head, in.fact_sets(), input, out.head_updates(), out.delta_numeric_annotations());
 }
 
-template<f::RelationKind R,
-         OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP>
-void process_clique(RuleWorkerExecutionContext<R, OrAP, AndAP, TP, CP>& wrctx,
-                    std::span<const kckp::Vertex> clique,
-                    [[maybe_unused]] bool require_novel_binding)
+template<f::RelationKind R, AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
+void process_clique(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, std::span<const kckp::Vertex> clique, [[maybe_unused]] bool require_novel_binding)
 {
     auto& in = wrctx.in();
     auto& out = wrctx.out();
@@ -559,12 +537,8 @@ void process_clique(RuleWorkerExecutionContext<R, OrAP, AndAP, TP, CP>& wrctx,
     process_clique_head(in.cws_rule().get_rule().get_head(), wrctx, input, dynamically_applicable);
 }
 
-template<f::RelationKind R,
-         OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP>
-void generate_general_case(RuleExecutionContext<R, OrAP, AndAP, TP, CP>& rctx)
+template<f::RelationKind R, AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
+void generate_general_case(RuleExecutionContext<R, AP, TP, CP>& rctx)
 {
     auto& rule_out = rctx.out();
     auto& kckp_algorithm = rule_out.kckp();
@@ -580,12 +554,8 @@ void generate_general_case(RuleExecutionContext<R, OrAP, AndAP, TP, CP>& rctx)
     for_each_relevant_clique(head, kckp_algorithm, [&](auto&& clique) { process_clique(wrctx, clique, require_novel_binding(head)); }, kckp_workspace);
 }
 
-template<f::RelationKind R,
-         OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP>
-void generate(RuleExecutionContext<R, OrAP, AndAP, TP, CP>& rctx)
+template<f::RelationKind R, AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
+void generate(RuleExecutionContext<R, AP, TP, CP>& rctx)
 {
     const auto arity = rctx.in().cws_rule().get_rule().get_arity();
 
@@ -595,11 +565,8 @@ void generate(RuleExecutionContext<R, OrAP, AndAP, TP, CP>& rctx)
         generate_general_case(rctx);
 }
 
-template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP>
-void process_pending_rule_bindings(RuleExecutionContext<f::PredicateTag, OrAP, AndAP, TP, CP>& rctx)
+template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
+void process_pending_rule_bindings(RuleExecutionContext<f::PredicateTag, AP, TP, CP>& rctx)
 {
     for (auto& worker : rctx.out().workers())
     {
@@ -632,7 +599,7 @@ void process_pending_rule_bindings(RuleExecutionContext<f::PredicateTag, OrAP, A
                           auto head = fd::try_ground_binding(in.cws_rule().get_rule().get_head(), out.ground_context());
                           if (head && in.fact_sets().template get<f::FluentTag>().predicate.contains(*head))
                           {
-                              if constexpr (AndAP::records_propositional_achievers)
+                              if constexpr (AP::records_propositional_achievers)
                               {
                                   if (!dynamically_applicable())
                                       return false;
@@ -649,27 +616,20 @@ void process_pending_rule_bindings(RuleExecutionContext<f::PredicateTag, OrAP, A
                           if (!head)
                               head = fd::ground_binding(in.cws_rule().get_rule().get_head(), out.ground_context()).first;
                           assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
-                          insert_propositional_update(*head, input, out.head_updates(), out.delta_and_annot());
+                          insert_propositional_update(*head, input, out.head_updates(), out.delta_annotations());
                           return true;
                       });
     }
 }
 
-template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP>
-void process_pending_rule_bindings(RuleExecutionContext<f::FunctionTag, OrAP, AndAP, TP, CP>&)
+template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
+void process_pending_rule_bindings(RuleExecutionContext<f::FunctionTag, AP, TP, CP>&)
 {
 }
 
-template<f::RelationKind R,
-         OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP>
+template<f::RelationKind R, AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
 /// Parallel phase: recheck pending rule bindings and generate new ground witnesses for all active rules.
-void run_active_rules(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx)
+void run_active_rules(StratumExecutionContext<AP, TP, CP>& ctx)
 {
     auto& program_out = ctx.out().program();
     const auto& active_rules = ctx.out().scheduler().template get<R>().get_active_rules();
@@ -729,7 +689,7 @@ void reduce_worker_heads(PredicateHeadIteration& head_iteration, ProgramOut& pro
 {
     for (const auto head : head_iteration.bindings)
     {
-        const auto cost_update = program_out.or_ap().update_annotation(head, program_out.delta_and_annot(), program_out.and_annot());
+        const auto cost_update = program_out.annotation_policy().update_annotation(head, program_out.delta_annotations(), program_out.annotations());
         cost_buckets.update(cost_update, head);
     }
 }
@@ -739,19 +699,15 @@ void reduce_worker_heads(FunctionHeadIteration& head_iteration, ProgramOut& prog
 {
     for (const auto& update : head_iteration.updates)
     {
-        if (const auto* annotation = program_out.delta_numeric_and_annot().find(update.binding, update.interval))
-            program_out.numeric_and_annot().insert(update.binding, update.interval, *annotation);
+        if (const auto* annotation = program_out.delta_numeric_annotations().find(update.binding, update.interval))
+            program_out.numeric_annotations().insert(update.binding, update.interval, *annotation);
         cost_buckets.insert(update.cost, update.binding, update.interval);
     }
 }
 
-template<f::RelationKind R,
-         OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP>
+template<f::RelationKind R, AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
 /// Sequential phase: reduce worker annotations and bucket their already-canonical heads by cost.
-void reduce_worker_results(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx)
+void reduce_worker_results(StratumExecutionContext<AP, TP, CP>& ctx)
 {
     auto& program_out = ctx.out().program();
     auto& cost_buckets = program_out.cost_buckets();
@@ -766,12 +722,9 @@ void reduce_worker_results(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx)
     }
 }
 
-template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP>
+template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
 /// Commit the cheapest bucket: insert its heads into the fact and assignment sets and notify the scheduler.
-bool commit_current_bucket(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx)
+bool commit_current_bucket(StratumExecutionContext<AP, TP, CP>& ctx)
 {
     auto& program_out = ctx.out().program();
     auto& scheduler = ctx.out().scheduler();
@@ -805,11 +758,8 @@ bool commit_current_bucket(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx)
     return changed;
 }
 
-template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP>
-void compute_model_for_stratum(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx)
+template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
+void compute_model_for_stratum(StratumExecutionContext<AP, TP, CP>& ctx)
 {
     auto& out = ctx.out();
     auto& scheduler = out.scheduler();
@@ -827,8 +777,8 @@ void compute_model_for_stratum(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx
 
         scheduler.on_start_iteration();
 
-        program_out.delta_and_annot().clear();
-        program_out.delta_numeric_and_annot().clear();
+        program_out.delta_annotations().clear();
+        program_out.delta_numeric_annotations().clear();
 
         run_active_rules<f::PredicateTag>(ctx);
         run_active_rules<f::FunctionTag>(ctx);
@@ -860,11 +810,8 @@ void compute_model_for_stratum(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx
     }
 }
 
-template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP>
-void compute_model(ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>& ctx)
+template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
+void compute_model(ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
 {
     auto& out = ctx.out();
     const auto program_stopwatch = ygg::StopwatchScope(out.statistics().total_time);
@@ -876,48 +823,31 @@ void compute_model(ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>& ctx)
     }
 }
 
+template void compute_model(ProgramExecutionContext<LiftedTag, NoAnnotationPolicy<LiftedTag>, NoTerminationPolicy<LiftedTag>>& ctx);
+template void compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<LiftedTag, SumAggregation>, NoTerminationPolicy<LiftedTag>>& ctx);
 template void
-compute_model(ProgramExecutionContext<LiftedTag, NoOrAnnotationPolicy<LiftedTag>, NoAndAnnotationPolicy<LiftedTag>, NoTerminationPolicy<LiftedTag>>& ctx);
+compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<LiftedTag, SumAggregation>, TerminationPolicy<LiftedTag, SumAggregation>>& ctx);
+template void compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<LiftedTag, MaxAggregation>, NoTerminationPolicy<LiftedTag>>& ctx);
+template void
+compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<LiftedTag, MaxAggregation>, TerminationPolicy<LiftedTag, MaxAggregation>>& ctx);
+template void
+compute_model(ProgramExecutionContext<LiftedTag, NoAnnotationPolicy<LiftedTag>, NoTerminationPolicy<LiftedTag>, RuleCostOverridePolicy<LiftedTag>>& ctx);
 template void compute_model(
-    ProgramExecutionContext<LiftedTag, OrAnnotationPolicy<LiftedTag>, AndAnnotationPolicy<LiftedTag, SumAggregation>, NoTerminationPolicy<LiftedTag>>& ctx);
+    ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<LiftedTag, SumAggregation>, NoTerminationPolicy<LiftedTag>, RuleCostOverridePolicy<LiftedTag>>&
+        ctx);
 template void compute_model(ProgramExecutionContext<LiftedTag,
-                                                    OrAnnotationPolicy<LiftedTag>,
-                                                    AndAnnotationPolicy<LiftedTag, SumAggregation>,
-                                                    TerminationPolicy<LiftedTag, SumAggregation>>& ctx);
-template void compute_model(
-    ProgramExecutionContext<LiftedTag, OrAnnotationPolicy<LiftedTag>, AndAnnotationPolicy<LiftedTag, MaxAggregation>, NoTerminationPolicy<LiftedTag>>& ctx);
-template void compute_model(ProgramExecutionContext<LiftedTag,
-                                                    OrAnnotationPolicy<LiftedTag>,
-                                                    AndAnnotationPolicy<LiftedTag, MaxAggregation>,
-                                                    TerminationPolicy<LiftedTag, MaxAggregation>>& ctx);
-template void compute_model(ProgramExecutionContext<LiftedTag,
-                                                    NoOrAnnotationPolicy<LiftedTag>,
-                                                    NoAndAnnotationPolicy<LiftedTag>,
-                                                    NoTerminationPolicy<LiftedTag>,
-                                                    RuleCostOverridePolicy<LiftedTag>>& ctx);
-template void compute_model(ProgramExecutionContext<LiftedTag,
-                                                    OrAnnotationPolicy<LiftedTag>,
-                                                    AndAnnotationPolicy<LiftedTag, SumAggregation>,
-                                                    NoTerminationPolicy<LiftedTag>,
-                                                    RuleCostOverridePolicy<LiftedTag>>& ctx);
-template void compute_model(ProgramExecutionContext<LiftedTag,
-                                                    OrAnnotationPolicy<LiftedTag>,
-                                                    AndAnnotationPolicy<LiftedTag, SumAggregation>,
+                                                    MinCostAnnotationPolicy<LiftedTag, SumAggregation>,
                                                     TerminationPolicy<LiftedTag, SumAggregation>,
                                                     RuleCostOverridePolicy<LiftedTag>>& ctx);
+template void compute_model(
+    ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<LiftedTag, MaxAggregation>, NoTerminationPolicy<LiftedTag>, RuleCostOverridePolicy<LiftedTag>>&
+        ctx);
 template void compute_model(ProgramExecutionContext<LiftedTag,
-                                                    OrAnnotationPolicy<LiftedTag>,
-                                                    AndAnnotationPolicy<LiftedTag, MaxAggregation>,
-                                                    NoTerminationPolicy<LiftedTag>,
-                                                    RuleCostOverridePolicy<LiftedTag>>& ctx);
-template void compute_model(ProgramExecutionContext<LiftedTag,
-                                                    OrAnnotationPolicy<LiftedTag>,
-                                                    AndAnnotationPolicy<LiftedTag, MaxAggregation>,
+                                                    MinCostAnnotationPolicy<LiftedTag, MaxAggregation>,
                                                     TerminationPolicy<LiftedTag, MaxAggregation>,
                                                     RuleCostOverridePolicy<LiftedTag>>& ctx);
 template void compute_model(ProgramExecutionContext<LiftedTag,
-                                                    OrAnnotationPolicy<LiftedTag>,
-                                                    AchieverAndAnnotationPolicy<LiftedTag, MaxAggregation>,
+                                                    MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>,
                                                     TerminationPolicy<LiftedTag, MaxAggregation>,
                                                     RuleCostOverridePolicy<LiftedTag>>& ctx);
 }

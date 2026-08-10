@@ -33,17 +33,10 @@ namespace tyr::planning
 
 template<TaskKind Kind>
 struct AddRPGHeuristic<Kind>::Impl :
-    detail::RPGEvaluator<Impl,
-                         Kind,
-                         datalog::OrAnnotationPolicy<Kind>,
-                         datalog::AndAnnotationPolicy<Kind, datalog::SumAggregation>,
-                         datalog::TerminationPolicy<Kind, datalog::SumAggregation>>
+    detail::RPGEvaluator<Impl, Kind, datalog::MinCostAnnotationPolicy<Kind, datalog::SumAggregation>, datalog::TerminationPolicy<Kind, datalog::SumAggregation>>
 {
-    using Base = detail::RPGEvaluator<Impl,
-                                      Kind,
-                                      datalog::OrAnnotationPolicy<Kind>,
-                                      datalog::AndAnnotationPolicy<Kind, datalog::SumAggregation>,
-                                      datalog::TerminationPolicy<Kind, datalog::SumAggregation>>;
+    using Base = detail::
+        RPGEvaluator<Impl, Kind, datalog::MinCostAnnotationPolicy<Kind, datalog::SumAggregation>, datalog::TerminationPolicy<Kind, datalog::SumAggregation>>;
 
     using Base::Base;
 };

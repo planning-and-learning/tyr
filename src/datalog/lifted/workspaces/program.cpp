@@ -49,11 +49,8 @@ void initialize_const_rule_workspaces(Program<LiftedTag>& program,
 }
 }
 
-template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP>
-ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>::ProgramWorkspace(const Program<LiftedTag>& program, OrAP or_ap, AndAP and_ap, TP tp, CP cost_policy) :
+template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
+ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTag>& program, AP annotation_policy, TP tp, CP cost_policy) :
     const_workspace(program.get_const_program_workspace()),
     program_repository(program.get_program_repository()),
     m_workspace_repository(program.get_repository_factory().create_shared(program.get_program().get_objects().size(), &program_repository)),
@@ -66,12 +63,11 @@ ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>::ProgramWorkspace(const Program
           program.get_program().get_atoms<::tyr::formalism::FluentTag>(),
           program.get_program().get_fterm_values<::tyr::formalism::FluentTag>(),
           workspace_repository),
-    and_ap(std::move(and_ap)),
-    or_ap(std::move(or_ap)),
-    and_annot(program.get_program().get_predicates<::tyr::formalism::FluentTag>().size()),
-    numeric_and_annot(program.get_program().get_functions<::tyr::formalism::FluentTag>().size()),
-    delta_and_annot(program.get_program().get_predicates<::tyr::formalism::FluentTag>().size()),
-    delta_numeric_and_annot(program.get_program().get_functions<::tyr::formalism::FluentTag>().size()),
+    annotation_policy(std::move(annotation_policy)),
+    annotations(program.get_program().get_predicates<::tyr::formalism::FluentTag>().size()),
+    numeric_annotations(program.get_program().get_functions<::tyr::formalism::FluentTag>().size()),
+    delta_annotations(program.get_program().get_predicates<::tyr::formalism::FluentTag>().size()),
+    delta_numeric_annotations(program.get_program().get_functions<::tyr::formalism::FluentTag>().size()),
     numeric_support_selector(),
     tp(tp),
     cost_policy(std::move(cost_policy)),
@@ -87,18 +83,15 @@ ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>::ProgramWorkspace(const Program
     cost_buckets(),
     statistics()
 {
-    if constexpr (AndAP::records_propositional_achievers)
-        this->and_ap.initialize(program.get_program().get_predicates<::tyr::formalism::FluentTag>().size());
+    if constexpr (AP::records_propositional_achievers)
+        this->annotation_policy.initialize(program.get_program().get_predicates<::tyr::formalism::FluentTag>().size());
 
     initialize_rule_workspaces<::tyr::formalism::PredicateTag>(const_workspace, predicate_rules);
     initialize_rule_workspaces<::tyr::formalism::FunctionTag>(const_workspace, function_rules);
 }
 
-template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP>
-void ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>::reset_evaluation()
+template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
+void ProgramWorkspace<LiftedTag, AP, TP, CP>::reset_evaluation()
 {
     const auto clear_rules = [](auto& rules)
     {
@@ -113,54 +106,39 @@ void ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>::reset_evaluation()
     cost_policy.clear();
     cost_buckets.clear();
     numeric_support_selector.reset();
-    and_annot.clear();
-    numeric_and_annot.clear();
-    delta_and_annot.clear();
-    delta_numeric_and_annot.clear();
-    and_ap.clear_achievers();
+    annotations.clear();
+    numeric_annotations.clear();
+    delta_annotations.clear();
+    delta_numeric_annotations.clear();
+    annotation_policy.clear_achievers();
     facts.reset();
     workspace_repository.clear();
 }
 
-template struct ProgramWorkspace<LiftedTag, NoOrAnnotationPolicy<LiftedTag>, NoAndAnnotationPolicy<LiftedTag>, NoTerminationPolicy<LiftedTag>>;
-template struct ProgramWorkspace<LiftedTag, OrAnnotationPolicy<LiftedTag>, AndAnnotationPolicy<LiftedTag, SumAggregation>, NoTerminationPolicy<LiftedTag>>;
+template struct ProgramWorkspace<LiftedTag, NoAnnotationPolicy<LiftedTag>, NoTerminationPolicy<LiftedTag>>;
+template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<LiftedTag, SumAggregation>, NoTerminationPolicy<LiftedTag>>;
+template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<LiftedTag, SumAggregation>, TerminationPolicy<LiftedTag, SumAggregation>>;
+template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<LiftedTag, MaxAggregation>, NoTerminationPolicy<LiftedTag>>;
+template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<LiftedTag, MaxAggregation>, TerminationPolicy<LiftedTag, MaxAggregation>>;
+template struct ProgramWorkspace<LiftedTag, NoAnnotationPolicy<LiftedTag>, NoTerminationPolicy<LiftedTag>, RuleCostOverridePolicy<LiftedTag>>;
 template struct ProgramWorkspace<LiftedTag,
-                                 OrAnnotationPolicy<LiftedTag>,
-                                 AndAnnotationPolicy<LiftedTag, SumAggregation>,
-                                 TerminationPolicy<LiftedTag, SumAggregation>>;
-template struct ProgramWorkspace<LiftedTag, OrAnnotationPolicy<LiftedTag>, AndAnnotationPolicy<LiftedTag, MaxAggregation>, NoTerminationPolicy<LiftedTag>>;
-template struct ProgramWorkspace<LiftedTag,
-                                 OrAnnotationPolicy<LiftedTag>,
-                                 AndAnnotationPolicy<LiftedTag, MaxAggregation>,
-                                 TerminationPolicy<LiftedTag, MaxAggregation>>;
-template struct ProgramWorkspace<LiftedTag,
-                                 NoOrAnnotationPolicy<LiftedTag>,
-                                 NoAndAnnotationPolicy<LiftedTag>,
+                                 MinCostAnnotationPolicy<LiftedTag, SumAggregation>,
                                  NoTerminationPolicy<LiftedTag>,
                                  RuleCostOverridePolicy<LiftedTag>>;
 template struct ProgramWorkspace<LiftedTag,
-                                 OrAnnotationPolicy<LiftedTag>,
-                                 AndAnnotationPolicy<LiftedTag, SumAggregation>,
-                                 NoTerminationPolicy<LiftedTag>,
-                                 RuleCostOverridePolicy<LiftedTag>>;
-template struct ProgramWorkspace<LiftedTag,
-                                 OrAnnotationPolicy<LiftedTag>,
-                                 AndAnnotationPolicy<LiftedTag, SumAggregation>,
+                                 MinCostAnnotationPolicy<LiftedTag, SumAggregation>,
                                  TerminationPolicy<LiftedTag, SumAggregation>,
                                  RuleCostOverridePolicy<LiftedTag>>;
 template struct ProgramWorkspace<LiftedTag,
-                                 OrAnnotationPolicy<LiftedTag>,
-                                 AndAnnotationPolicy<LiftedTag, MaxAggregation>,
+                                 MinCostAnnotationPolicy<LiftedTag, MaxAggregation>,
                                  NoTerminationPolicy<LiftedTag>,
                                  RuleCostOverridePolicy<LiftedTag>>;
 template struct ProgramWorkspace<LiftedTag,
-                                 OrAnnotationPolicy<LiftedTag>,
-                                 AndAnnotationPolicy<LiftedTag, MaxAggregation>,
+                                 MinCostAnnotationPolicy<LiftedTag, MaxAggregation>,
                                  TerminationPolicy<LiftedTag, MaxAggregation>,
                                  RuleCostOverridePolicy<LiftedTag>>;
 template struct ProgramWorkspace<LiftedTag,
-                                 OrAnnotationPolicy<LiftedTag>,
-                                 AchieverAndAnnotationPolicy<LiftedTag, MaxAggregation>,
+                                 MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>,
                                  TerminationPolicy<LiftedTag, MaxAggregation>,
                                  RuleCostOverridePolicy<LiftedTag>>;
 

@@ -17,8 +17,8 @@
 
 #include "tyr/datalog/policies/termination.hpp"
 
-#include "tyr/datalog/ground/policies/numeric_support.hpp"
 #include "tyr/datalog/applicability.hpp"
+#include "tyr/datalog/ground/policies/numeric_support.hpp"
 #include "tyr/datalog/lifted/policies/numeric_support.hpp"
 
 #include <cassert>
@@ -58,7 +58,7 @@ bool TerminationPolicy<Kind, AggregationFunction>::should_terminate(const FactSe
 
 template<TaskKind Kind, typename AggregationFunction>
 Cost TerminationPolicy<Kind, AggregationFunction>::get_total_cost(const FactSets&,
-                                                                  const PredicateAnnotations<Kind>& and_annot,
+                                                                  const PredicateAnnotations<Kind>& annotations,
                                                                   const FunctionAnnotations<Kind>&,
                                                                   const NumericSupportSelector<Kind>& numeric_support_selector) const noexcept
 {
@@ -71,7 +71,7 @@ Cost TerminationPolicy<Kind, AggregationFunction>::get_total_cost(const FactSets
         if (!literal.get_polarity())
             continue;
 
-        const auto* annotation = and_annot.find(literal.get_atom().get_row());
+        const auto* annotation = annotations.find(literal.get_atom().get_row());
         assert(annotation);
         if (!annotation)
             return std::numeric_limits<Cost>::max();

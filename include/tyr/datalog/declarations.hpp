@@ -51,15 +51,11 @@ class StaticConsistencyGraph;
 template<TaskKind Kind>
 class Program;
 template<TaskKind Kind>
-class NoOrAnnotationPolicy;
-template<TaskKind Kind>
-class NoAndAnnotationPolicy;
-template<TaskKind Kind>
-class OrAnnotationPolicy;
+class NoAnnotationPolicy;
 template<TaskKind Kind, typename AggregationFunction>
-class AndAnnotationPolicy;
+class MinCostAnnotationPolicy;
 template<TaskKind Kind, typename AggregationFunction>
-class AchieverAndAnnotationPolicy;
+class MinCostAnnotationWithAchieversPolicy;
 template<TaskKind Kind>
 class NoTerminationPolicy;
 template<TaskKind Kind, typename AggregationFunction>

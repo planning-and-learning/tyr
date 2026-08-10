@@ -22,7 +22,6 @@
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <optional>
-#include <span>
 #include <utility>
 
 namespace tyr::datalog
@@ -89,16 +88,6 @@ public:
 
 private:
     std::optional<std::pair<Binding, Entry>> m_entry;
-};
-
-template<::tyr::formalism::RelationKind R>
-struct AndAnnotationContext<GroundTag, R>
-{
-    ygg::ClosedInterval<ygg::float_t> metric;
-    Cost current_cost;
-    std::span<const NumericSupport<GroundTag>> numeric_supports;
-    ::tyr::formalism::datalog::GroundRuleView<R> rule;
-    const PredicateAnnotations<GroundTag>& and_annot;
 };
 
 }

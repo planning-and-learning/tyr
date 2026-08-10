@@ -346,10 +346,9 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindi
     const auto& const_rule_workspace = program.get_const_program_workspace().get_rules<f::PredicateTag>().front().value();
     EXPECT_EQ(&const_rule_workspace.get_nullary_condition().get_context(), &program.get_program_repository());
 
-    using OrPolicy = d::OrAnnotationPolicy<LiftedTag>;
-    using AndPolicy = d::AndAnnotationPolicy<LiftedTag, d::SumAggregation>;
+    using AnnotationPolicy = d::MinCostAnnotationPolicy<LiftedTag, d::SumAggregation>;
     using Termination = d::NoTerminationPolicy<LiftedTag>;
-    auto workspace = d::ProgramWorkspace<LiftedTag, OrPolicy, AndPolicy, Termination>(program);
+    auto workspace = d::ProgramWorkspace<LiftedTag, AnnotationPolicy, Termination>(program);
     auto context = d::ProgramExecutionContext(workspace);
     d::compute_model(context);
 
@@ -395,7 +394,7 @@ TEST(TyrDatalogLiftedBottomUpTest, ProgramWorkspacesOwnIndependentRepositories)
     binding_data.objects.push_back(object.get_index());
     const auto binding = first.workspace_repository.get_or_create(binding_data).first;
     const auto binding_index = binding.get_index();
-    first.and_annot.insert_or_assign(binding, d::BaseAnnotation<LiftedTag>(3));
+    first.annotations.insert_or_assign(binding, d::BaseAnnotation<LiftedTag>(3));
 
     first.reset_evaluation();
 
@@ -408,7 +407,7 @@ TEST(TyrDatalogLiftedBottomUpTest, ProgramWorkspacesOwnIndependentRepositories)
     reused_binding_data.objects.push_back(object.get_index());
     const auto reused_binding = first.workspace_repository.get_or_create(reused_binding_data).first;
     EXPECT_EQ(reused_binding.get_index(), binding_index);
-    EXPECT_EQ(first.and_annot.find(reused_binding), nullptr);
+    EXPECT_EQ(first.annotations.find(reused_binding), nullptr);
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, PredicateAnnotationsUseRelationAndRowIndices)
@@ -436,20 +435,20 @@ TEST(TyrDatalogLiftedBottomUpTest, PredicateAnnotationsUseRelationAndRowIndices)
     const auto first = make_binding(first_predicate, first_object);
     const auto hole = make_binding(first_predicate, second_object);
     const auto second = make_binding(second_predicate, first_object);
-    auto and_annot = d::PredicateAnnotations<LiftedTag>();
+    auto annotations = d::PredicateAnnotations<LiftedTag>();
 
-    and_annot.insert_or_assign(first, d::BaseAnnotation<LiftedTag>(3));
-    and_annot.insert_or_assign(second, d::BaseAnnotation<LiftedTag>(5));
-    EXPECT_EQ(d::get_cost(*and_annot.find(first)), 3);
-    EXPECT_EQ(d::get_cost(*std::as_const(and_annot).find(second)), 5);
-    EXPECT_EQ(and_annot.find(hole), nullptr);
+    annotations.insert_or_assign(first, d::BaseAnnotation<LiftedTag>(3));
+    annotations.insert_or_assign(second, d::BaseAnnotation<LiftedTag>(5));
+    EXPECT_EQ(d::get_cost(*annotations.find(first)), 3);
+    EXPECT_EQ(d::get_cost(*std::as_const(annotations).find(second)), 5);
+    EXPECT_EQ(annotations.find(hole), nullptr);
 
-    and_annot.insert_or_assign(first, d::BaseAnnotation<LiftedTag>(2));
-    EXPECT_EQ(d::get_cost(*and_annot.find(first)), 2);
+    annotations.insert_or_assign(first, d::BaseAnnotation<LiftedTag>(2));
+    EXPECT_EQ(d::get_cost(*annotations.find(first)), 2);
 
-    and_annot.clear();
-    EXPECT_EQ(and_annot.find(first), nullptr);
-    EXPECT_EQ(and_annot.find(second), nullptr);
+    annotations.clear();
+    EXPECT_EQ(annotations.find(first), nullptr);
+    EXPECT_EQ(annotations.find(second), nullptr);
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
@@ -491,8 +490,8 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
         function_bindings.push_back(make_function_binding(function));
     }
 
-    auto delta_and_annot = d::DeltaPredicateAnnotations<LiftedTag>(2);
-    auto delta_numeric_and_annot = d::DeltaFunctionAnnotations<LiftedTag>(1);
+    auto delta_annotations = d::DeltaPredicateAnnotations<LiftedTag>(2);
+    auto delta_numeric_annotations = d::DeltaFunctionAnnotations<LiftedTag>(1);
     const auto interval = ygg::ClosedInterval<ygg::float_t>(0, 1);
     auto arena = oneapi::tbb::task_arena(8);
     arena.execute(
@@ -506,59 +505,61 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
                                           const auto function_cost = d::Cost(worker < 4 ? 3 : 5);
                                           for (size_t i = first_bindings.size(); i-- > 0;)
                                           {
-                                              delta_and_annot.insert_if_better(first_bindings[i], d::BaseAnnotation<LiftedTag>(predicate_cost));
-                                              delta_and_annot.insert_if_better(second_bindings[i], d::BaseAnnotation<LiftedTag>(predicate_cost));
-                                              delta_numeric_and_annot.insert(function_bindings[i], interval, d::BaseAnnotation<LiftedTag>(function_cost));
+                                              delta_annotations.insert_if_better(first_bindings[i], d::BaseAnnotation<LiftedTag>(predicate_cost));
+                                              delta_annotations.insert_if_better(second_bindings[i], d::BaseAnnotation<LiftedTag>(predicate_cost));
+                                              delta_numeric_annotations.insert(function_bindings[i], interval, d::BaseAnnotation<LiftedTag>(function_cost));
                                           }
                                       });
         });
 
     for (size_t i = 0; i < first_bindings.size(); ++i)
     {
-        ASSERT_NE(delta_and_annot.find(first_bindings[i]), nullptr);
-        ASSERT_NE(delta_and_annot.find(second_bindings[i]), nullptr);
-        EXPECT_EQ(d::get_cost(*delta_and_annot.find(first_bindings[i])), 1);
-        EXPECT_EQ(d::get_cost(*delta_and_annot.find(second_bindings[i])), 1);
+        ASSERT_NE(delta_annotations.find(first_bindings[i]), nullptr);
+        ASSERT_NE(delta_annotations.find(second_bindings[i]), nullptr);
+        EXPECT_EQ(d::get_cost(*delta_annotations.find(first_bindings[i])), 1);
+        EXPECT_EQ(d::get_cost(*delta_annotations.find(second_bindings[i])), 1);
 
-        const auto* entries = delta_numeric_and_annot.find_entries(function_bindings[i]);
+        const auto* entries = delta_numeric_annotations.find_entries(function_bindings[i]);
         ASSERT_NE(entries, nullptr);
         ASSERT_EQ(entries->size(), 1);
         EXPECT_EQ(d::get_cost(entries->at(0).annotation), 3);
     }
 
     const auto second_interval = ygg::ClosedInterval<ygg::float_t>(1, 2);
-    delta_numeric_and_annot.insert(function_bindings.back(), second_interval, d::BaseAnnotation<LiftedTag>(4));
-    ASSERT_EQ(delta_numeric_and_annot.find_entries(function_bindings.back())->size(), 2);
-    ASSERT_NE(delta_numeric_and_annot.find(function_bindings.back(), second_interval), nullptr);
-    EXPECT_EQ(d::get_cost(*delta_numeric_and_annot.find(function_bindings.back(), second_interval)), 4);
+    EXPECT_TRUE(delta_numeric_annotations.insert(function_bindings.back(), second_interval, d::BaseAnnotation<LiftedTag>(4)));
+    EXPECT_FALSE(delta_numeric_annotations.insert(function_bindings.back(), second_interval, d::BaseAnnotation<LiftedTag>(5)));
+    EXPECT_TRUE(delta_numeric_annotations.insert(function_bindings.back(), second_interval, d::BaseAnnotation<LiftedTag>(2)));
+    ASSERT_EQ(delta_numeric_annotations.find_entries(function_bindings.back())->size(), 2);
+    ASSERT_NE(delta_numeric_annotations.find(function_bindings.back(), second_interval), nullptr);
+    EXPECT_EQ(d::get_cost(*delta_numeric_annotations.find(function_bindings.back(), second_interval)), 2);
 
-    auto numeric_and_annot = d::FunctionAnnotations<LiftedTag>();
-    numeric_and_annot.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(5));
-    numeric_and_annot.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(3));
-    numeric_and_annot.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(4));
-    numeric_and_annot.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(ygg::ClosedInterval<ygg::float_t>(1, 1), 3));
-    numeric_and_annot.insert(function_bindings.back(), second_interval, d::BaseAnnotation<LiftedTag>(2));
-    numeric_and_annot.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(1));
-    const auto* numeric_entries = numeric_and_annot.find_entries(function.get_index(), function_bindings.back().get_index().row);
+    auto numeric_annotations = d::FunctionAnnotations<LiftedTag>();
+    numeric_annotations.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(5));
+    numeric_annotations.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(3));
+    numeric_annotations.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(4));
+    numeric_annotations.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(ygg::ClosedInterval<ygg::float_t>(1, 1), 3));
+    numeric_annotations.insert(function_bindings.back(), second_interval, d::BaseAnnotation<LiftedTag>(2));
+    numeric_annotations.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(1));
+    const auto* numeric_entries = numeric_annotations.find_entries(function.get_index(), function_bindings.back().get_index().row);
     ASSERT_NE(numeric_entries, nullptr);
     ASSERT_EQ(numeric_entries->size(), 2);
     EXPECT_EQ(numeric_entries->at(0).interval, interval);
     EXPECT_EQ(d::get_cost(numeric_entries->at(0).annotation), 1);
     EXPECT_EQ(numeric_entries->at(1).interval, second_interval);
     EXPECT_EQ(d::get_cost(numeric_entries->at(1).annotation), 2);
-    EXPECT_EQ(d::get_cost(*numeric_and_annot.find(function_bindings.back(), interval)), 1);
-    EXPECT_EQ(d::get_metric(*numeric_and_annot.find(function_bindings.back(), interval)), ygg::ClosedInterval<ygg::float_t>());
+    EXPECT_EQ(d::get_cost(*numeric_annotations.find(function_bindings.back(), interval)), 1);
+    EXPECT_EQ(d::get_metric(*numeric_annotations.find(function_bindings.back(), interval)), ygg::ClosedInterval<ygg::float_t>());
 
-    delta_and_annot.clear();
-    delta_numeric_and_annot.clear();
-    EXPECT_EQ(delta_and_annot.find(first_bindings.back()), nullptr);
-    EXPECT_EQ(delta_numeric_and_annot.find_entries(function_bindings.back()), nullptr);
+    delta_annotations.clear();
+    delta_numeric_annotations.clear();
+    EXPECT_EQ(delta_annotations.find(first_bindings.back()), nullptr);
+    EXPECT_EQ(delta_numeric_annotations.find_entries(function_bindings.back()), nullptr);
 
-    delta_and_annot.insert_if_better(first_bindings.back(), d::BaseAnnotation<LiftedTag>(7));
-    delta_numeric_and_annot.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(7));
-    EXPECT_EQ(d::get_cost(*delta_and_annot.find(first_bindings.back())), 7);
-    ASSERT_NE(delta_numeric_and_annot.find_entries(function_bindings.back()), nullptr);
-    EXPECT_EQ(delta_numeric_and_annot.find_entries(function_bindings.back())->size(), 1);
+    delta_annotations.insert_if_better(first_bindings.back(), d::BaseAnnotation<LiftedTag>(7));
+    delta_numeric_annotations.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(7));
+    EXPECT_EQ(d::get_cost(*delta_annotations.find(first_bindings.back())), 7);
+    ASSERT_NE(delta_numeric_annotations.find_entries(function_bindings.back()), nullptr);
+    EXPECT_EQ(delta_numeric_annotations.find_entries(function_bindings.back())->size(), 1);
 }
 
 INSTANTIATE_TEST_SUITE_P(TyrDatalogLiftedBottomUpFixture,

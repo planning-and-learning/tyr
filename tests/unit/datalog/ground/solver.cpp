@@ -64,8 +64,10 @@ struct GroundQueueFixture
     fd::RepositoryFactory factory;
     fd::Repository repository = factory.create();
     std::vector<ygg::Index<f::Predicate<f::FluentTag>>> fluent_predicates;
+    std::vector<ygg::Index<f::Function<f::FluentTag>>> fluent_functions;
     GroundAtomViews initial_fluent_atoms;
     std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>> ground_rules;
+    std::vector<ygg::Index<fd::GroundRule<f::FunctionTag>>> ground_function_rules;
     ygg::uint_t next_rule_id = 0;
 
     fd::GroundAtomView<f::FluentTag> fluent_atom(const std::string& name)
@@ -92,6 +94,23 @@ struct GroundQueueFixture
         auto literal_builder = ygg::Data<fd::GroundLiteral<f::FluentTag>>(atom.get_index(), polarity);
         canonicalize(literal_builder);
         return repository.get_or_create(literal_builder).first;
+    }
+
+    fd::GroundFunctionTermView<f::FluentTag> fluent_function_term(const std::string& name)
+    {
+        auto function_builder = ygg::Data<f::Function<f::FluentTag>>(name, 0);
+        canonicalize(function_builder);
+        const auto function = repository.get_or_create(function_builder).first;
+        fluent_functions.push_back(function.get_index());
+
+        auto binding_builder = ygg::Data<f::RelationBinding<f::Function<f::FluentTag>>>();
+        binding_builder.relation = function.get_index();
+        canonicalize(binding_builder);
+        const auto binding = repository.get_or_create(binding_builder).first;
+
+        auto term_builder = ygg::Data<fd::GroundFunctionTerm<f::FluentTag>>(binding.get_index());
+        canonicalize(term_builder);
+        return repository.get_or_create(term_builder).first;
     }
 
     fd::GroundConjunctiveConditionView condition(std::initializer_list<fd::GroundLiteralView<f::FluentTag>> fluent_literals = {})
@@ -142,13 +161,58 @@ struct GroundQueueFixture
         return ground_rule;
     }
 
+    fd::GroundRuleView<f::FunctionTag> empty_body_assign_rule(fd::GroundFunctionTermView<f::FluentTag> head, ygg::float_t value)
+    {
+        auto lifted_term_builder = ygg::Data<fd::FunctionTerm<f::FluentTag>>();
+        lifted_term_builder.function = head.get_function().get_index();
+        canonicalize(lifted_term_builder);
+        const auto lifted_term = repository.get_or_create(lifted_term_builder).first;
+
+        auto lifted_effect_builder =
+            ygg::Data<fd::NumericEffect<f::FluentTag>>(f::NumericEffectOperatorKind::Assign, lifted_term.get_index(), ygg::Data<fd::FunctionExpression>(value));
+        canonicalize(lifted_effect_builder);
+        const auto lifted_effect = repository.get_or_create(lifted_effect_builder).first;
+
+        auto lifted_condition_builder = ygg::Data<fd::ConjunctiveCondition>();
+        canonicalize(lifted_condition_builder);
+        const auto lifted_condition = repository.get_or_create(lifted_condition_builder).first;
+
+        auto lifted_rule_builder = ygg::Data<fd::Rule<f::FunctionTag>>();
+        lifted_rule_builder.body = lifted_condition.get_index();
+        lifted_rule_builder.head = ygg::Data<fd::NumericEffectOperator<f::FluentTag>>(f::NumericEffectOperatorKind::Assign, lifted_effect.get_index());
+        canonicalize(lifted_rule_builder);
+        const auto lifted_rule = repository.get_or_create(lifted_rule_builder).first;
+
+        auto binding_builder = ygg::Data<f::RelationBinding<fd::Rule<f::FunctionTag>>>();
+        binding_builder.relation = lifted_rule.get_index();
+        canonicalize(binding_builder);
+        const auto binding = repository.get_or_create(binding_builder).first;
+
+        auto effect_builder = ygg::Data<fd::GroundNumericEffect<f::FluentTag>>(f::NumericEffectOperatorKind::Assign,
+                                                                               head.get_index(),
+                                                                               ygg::Data<fd::GroundFunctionExpression>(value));
+        canonicalize(effect_builder);
+        const auto effect = repository.get_or_create(effect_builder).first;
+
+        auto rule_builder = ygg::Data<fd::GroundRule<f::FunctionTag>>();
+        rule_builder.binding = binding.get_index();
+        rule_builder.body = condition().get_index();
+        rule_builder.head = ygg::Data<fd::GroundNumericEffectOperator<f::FluentTag>>(f::NumericEffectOperatorKind::Assign, effect.get_index());
+        canonicalize(rule_builder);
+        const auto ground_rule = repository.get_or_create(rule_builder).first;
+        ground_function_rules.push_back(ground_rule.get_index());
+        return ground_rule;
+    }
+
     fd::ProgramView<GroundTag> program()
     {
         auto program_builder = ygg::Data<fd::GroundProgram>();
         program_builder.fluent_predicates.insert(program_builder.fluent_predicates.end(), fluent_predicates.begin(), fluent_predicates.end());
+        program_builder.fluent_functions.insert(program_builder.fluent_functions.end(), fluent_functions.begin(), fluent_functions.end());
         for (const auto atom : initial_fluent_atoms)
             program_builder.fluent_atoms.push_back(atom.get_index());
         program_builder.predicate_ground_rules.insert(program_builder.predicate_ground_rules.end(), ground_rules.begin(), ground_rules.end());
+        program_builder.function_ground_rules.insert(program_builder.function_ground_rules.end(), ground_function_rules.begin(), ground_function_rules.end());
         canonicalize(program_builder);
         return repository.get_or_create(program_builder).first;
     }
@@ -204,6 +268,26 @@ TEST(TyrDatalogGroundQueueTest, EmptyBodyRuleFires)
     EXPECT_EQ(result.fluent_bindings, binding_views({ atom }));
     EXPECT_EQ(result.statistics.num_rules_fired, 1);
     EXPECT_EQ(result.statistics.num_facts_derived, 1);
+}
+
+TEST(TyrDatalogGroundQueueTest, NoAnnotationPolicyDerivesFactsWithoutStoringAnnotations)
+{
+    auto fixture = GroundQueueFixture();
+    const auto atom = fixture.fluent_atom("a");
+    const auto term = fixture.fluent_function_term("n");
+    fixture.rule(fixture.condition(), atom);
+    fixture.empty_body_assign_rule(term, 3);
+
+    const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
+    auto workspace = datalog::ProgramWorkspace<GroundTag>(const_workspace);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
+    ctx.initialize(fixture.initial_fluent_atoms);
+    dq::compute_model(ctx);
+
+    EXPECT_TRUE(ctx.out().fact_sets().predicate.contains(atom.get_row()));
+    EXPECT_EQ(ctx.out().fact_sets().function[term], ygg::ClosedInterval<ygg::float_t>(3, 3));
+    EXPECT_EQ(ctx.out().annotations().find(atom.get_row()), nullptr);
+    EXPECT_EQ(ctx.out().numeric_annotations().size(), 0);
 }
 
 TEST(TyrDatalogGroundQueueTest, ChainedRulesDeriveFixpoint)
@@ -378,13 +462,11 @@ TEST(TyrDatalogGroundQueueTest, GroundUsedCostOverrideDoesNotCreateMetricEffectC
     auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
     cost_policy.set_cost(derive_a, datalog::Cost(7));
     using Workspace = datalog::ProgramWorkspace<GroundTag,
-                                                datalog::OrAnnotationPolicy<GroundTag>,
-                                                datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>,
+                                                datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>,
                                                 datalog::NoTerminationPolicy<GroundTag>,
                                                 datalog::RuleCostOverridePolicy<GroundTag>>;
     auto workspace = Workspace(const_workspace,
-                               datalog::OrAnnotationPolicy<GroundTag>(),
-                               datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>(),
+                               datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>(),
                                datalog::NoTerminationPolicy<GroundTag>(),
                                cost_policy);
     auto ctx = datalog::ProgramExecutionContext(workspace);
@@ -393,7 +475,7 @@ TEST(TyrDatalogGroundQueueTest, GroundUsedCostOverrideDoesNotCreateMetricEffectC
     dq::compute_model(ctx);
 
     EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
-    const auto* annotation = ctx.out().and_annot().find(a.get_row());
+    const auto* annotation = ctx.out().annotations().find(a.get_row());
     ASSERT_NE(annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*annotation), 0);
 }
@@ -412,13 +494,9 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationStopsAfterGoalDerived)
     auto termination_policy = datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>();
     termination_policy.set_goals(goal);
     using Workspace = datalog::ProgramWorkspace<GroundTag,
-                                                datalog::OrAnnotationPolicy<GroundTag>,
-                                                datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>,
+                                                datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>,
                                                 datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>>;
-    auto workspace = Workspace(const_workspace,
-                               datalog::OrAnnotationPolicy<GroundTag>(),
-                               datalog::AndAnnotationPolicy<GroundTag, datalog::SumAggregation>(),
-                               termination_policy);
+    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>(), termination_policy);
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
@@ -440,12 +518,10 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyGroundRecordsFiredRule)
     const auto program = fixture.program();
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(program);
     using Workspace = datalog::ProgramWorkspace<GroundTag,
-                                                datalog::OrAnnotationPolicy<GroundTag>,
-                                                datalog::AchieverAndAnnotationPolicy<GroundTag, datalog::MaxAggregation>,
+                                                datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>,
                                                 datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>>;
     auto workspace = Workspace(const_workspace,
-                               datalog::OrAnnotationPolicy<GroundTag>(),
-                               datalog::AchieverAndAnnotationPolicy<GroundTag, datalog::MaxAggregation>(),
+                               datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>(),
                                datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>());
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
@@ -453,7 +529,7 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyGroundRecordsFiredRule)
     dq::compute_model(ctx);
 
     EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
-    const auto* achievers = ctx.out().and_ap().find_achievers(b.get_row());
+    const auto* achievers = ctx.out().annotation_policy().find_achievers(b.get_row());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
     EXPECT_EQ((*achievers)[0].get_rule_key().get_index(), derive_b.get_index());

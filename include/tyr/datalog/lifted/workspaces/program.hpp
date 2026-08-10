@@ -170,11 +170,8 @@ private:
     size_t m_total_size = 0;
 };
 
-template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP>
-struct ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>
+template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
+struct ProgramWorkspace<LiftedTag, AP, TP, CP>
 {
     const ConstProgramWorkspace<LiftedTag>& const_workspace;
     const ::tyr::formalism::datalog::Repository& program_repository;
@@ -187,12 +184,11 @@ public:
 
     FactsWorkspace<LiftedTag> facts;
 
-    AndAP and_ap;
-    OrAP or_ap;
-    PredicateAnnotations<LiftedTag> and_annot;
-    FunctionAnnotations<LiftedTag> numeric_and_annot;
-    DeltaPredicateAnnotations<LiftedTag> delta_and_annot;
-    DeltaFunctionAnnotations<LiftedTag> delta_numeric_and_annot;
+    AP annotation_policy;
+    PredicateAnnotations<LiftedTag> annotations;
+    FunctionAnnotations<LiftedTag> numeric_annotations;
+    DeltaPredicateAnnotations<LiftedTag> delta_annotations;
+    DeltaFunctionAnnotations<LiftedTag> delta_numeric_annotations;
     std::optional<NumericSupportSelector<LiftedTag>> numeric_support_selector;
 
     TP tp;
@@ -234,8 +230,8 @@ public:
 
     ProgramStatistics statistics;
 
-    explicit ProgramWorkspace(const Program<LiftedTag>& program, OrAP or_ap = OrAP(), AndAP and_ap = AndAP(), TP tp = TP(), CP cost_policy = CP());
-    ProgramWorkspace(Program<LiftedTag>&&, OrAP = OrAP(), AndAP = AndAP(), TP = TP(), CP = CP()) = delete;
+    explicit ProgramWorkspace(const Program<LiftedTag>& program, AP annotation_policy = AP(), TP tp = TP(), CP cost_policy = CP());
+    ProgramWorkspace(Program<LiftedTag>&&, AP = AP(), TP = TP(), CP = CP()) = delete;
 
     /// Discards all evaluation-local views before clearing their repository. Call only while no
     /// evaluation is active.

@@ -40,17 +40,10 @@ namespace tyr::planning
 
 template<TaskKind Kind>
 struct FFRPGHeuristic<Kind>::Impl :
-    detail::RPGEvaluator<Impl,
-                         Kind,
-                         datalog::OrAnnotationPolicy<Kind>,
-                         datalog::AndAnnotationPolicy<Kind, datalog::SumAggregation>,
-                         datalog::TerminationPolicy<Kind, datalog::SumAggregation>>
+    detail::RPGEvaluator<Impl, Kind, datalog::MinCostAnnotationPolicy<Kind, datalog::SumAggregation>, datalog::TerminationPolicy<Kind, datalog::SumAggregation>>
 {
-    using Base = detail::RPGEvaluator<Impl,
-                                      Kind,
-                                      datalog::OrAnnotationPolicy<Kind>,
-                                      datalog::AndAnnotationPolicy<Kind, datalog::SumAggregation>,
-                                      datalog::TerminationPolicy<Kind, datalog::SumAggregation>>;
+    using Base = detail::
+        RPGEvaluator<Impl, Kind, datalog::MinCostAnnotationPolicy<Kind, datalog::SumAggregation>, datalog::TerminationPolicy<Kind, datalog::SumAggregation>>;
     using PredicateHead = datalog::PredicateAnnotationHead<Kind>;
     using FunctionHead = datalog::FunctionAnnotationHead<Kind>;
     using NumericAnnotation = datalog::Annotation<Kind, ::tyr::formalism::FunctionTag>;
@@ -117,7 +110,7 @@ private:
         if (mark(m_predicate_markings, head.get_index().relation, head.get_index().row))
             return;
 
-        const auto* annotation = this->m_workspace.and_annot.find(head);
+        const auto* annotation = this->m_workspace.annotations.find(head);
         if (!annotation)
             return;
 
@@ -128,7 +121,7 @@ private:
 
     void extract_relaxed_plan(FunctionHead head, const StateContext<Kind>& state_context, size_t numeric_support_depth)
     {
-        const auto* annotation = this->m_workspace.numeric_and_annot.find(head);
+        const auto* annotation = this->m_workspace.numeric_annotations.find(head);
         if (annotation)
             extract_relaxed_plan(head, *annotation, state_context, numeric_support_depth);
     }

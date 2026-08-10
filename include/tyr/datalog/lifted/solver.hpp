@@ -36,11 +36,8 @@
 namespace tyr::datalog
 {
 
-template<OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         TerminationPolicyConcept<LiftedTag> TP,
-         RuleCostPolicyConcept<LiftedTag> CP>
-void compute_model(ProgramExecutionContext<LiftedTag, OrAP, AndAP, TP, CP>& ctx);
+template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
+void compute_model(ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx);
 
 }
 

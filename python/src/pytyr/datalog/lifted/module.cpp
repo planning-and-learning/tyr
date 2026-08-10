@@ -48,11 +48,7 @@ void bind_lifted_module_definitions(nb::module_& m)
         .def("get_const_program_workspace", &ProgramT::get_const_program_workspace, nb::rv_policy::reference_internal);
 
     bind_common_configurations<LiftedTag>(m);
-    bind_configuration<LiftedTag,
-                       NoOrAnnotationPolicy<LiftedTag>,
-                       NoAndAnnotationPolicy<LiftedTag>,
-                       NoTerminationPolicy<LiftedTag>,
-                       RuleCostOverridePolicy<LiftedTag>>(m, "UnannotatedOverride");
+    bind_configuration<LiftedTag, NoAnnotationPolicy<LiftedTag>, NoTerminationPolicy<LiftedTag>, RuleCostOverridePolicy<LiftedTag>>(m, "UnannotatedOverride");
 }
 
 }

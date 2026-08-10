@@ -304,7 +304,7 @@ bool insert_first_best_numeric_interval_annotation(std::vector<NumericIntervalAn
         const auto pos = std::upper_bound(entries.begin(), incumbent, entry, numeric_interval_key_less<Kind>);
         std::move_backward(pos, incumbent, incumbent + 1);
         *pos = std::move(entry);
-        return false;
+        return true;
     }
 
     const auto pos = std::upper_bound(entries.begin(), entries.end(), entry, numeric_interval_key_less<Kind>);
@@ -367,7 +367,9 @@ public:
 
         auto entry = Entry { interval, std::move(annotation) };
         auto& entries = entries_for_write(relation, key);
-        m_size += insert_first_best_numeric_interval_annotation(entries, std::move(entry));
+        const auto old_size = entries.size();
+        insert_first_best_numeric_interval_annotation(entries, std::move(entry));
+        m_size += entries.size() - old_size;
     }
 
 private:
@@ -397,7 +399,7 @@ template<TaskKind Kind>
 using FunctionAnnotations = NumericIntervalAnnotations<Kind>;
 
 template<TaskKind Kind, ::tyr::formalism::RelationKind R>
-struct AndAnnotationContext;
+struct AnnotationContext;
 
 inline ygg::ClosedInterval<ygg::float_t> aggregate_metric_support(ygg::ClosedInterval<ygg::float_t> lhs, ygg::ClosedInterval<ygg::float_t> rhs) noexcept
 {

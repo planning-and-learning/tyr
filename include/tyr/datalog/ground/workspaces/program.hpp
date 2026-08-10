@@ -69,18 +69,14 @@ struct ConstProgramWorkspace<GroundTag>
     explicit ConstProgramWorkspace(::tyr::formalism::datalog::ProgramView<GroundTag> program);
 };
 
-template<OrAnnotationPolicyConcept<GroundTag> OrAP,
-         AndAnnotationPolicyConcept<GroundTag> AndAP,
-         TerminationPolicyConcept<GroundTag> TP,
-         RuleCostPolicyConcept<GroundTag> CP>
-struct ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>
+template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+struct ProgramWorkspace<GroundTag, AP, TP, CP>
 {
     const ConstProgramWorkspace<GroundTag>& const_workspace;
     FactsWorkspace<GroundTag> facts;
-    OrAP or_ap;
-    AndAP and_ap;
-    PredicateAnnotations<GroundTag> and_annot;
-    FunctionAnnotations<GroundTag> numeric_and_annot;
+    AP annotation_policy;
+    PredicateAnnotations<GroundTag> annotations;
+    FunctionAnnotations<GroundTag> numeric_annotations;
     TP tp;
     CP cost_policy;
     RuleWorkspace<GroundTag, ::tyr::formalism::PredicateTag> predicate_rules;
@@ -88,21 +84,16 @@ struct ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>
     QueueWorkspace<GroundTag> queue;
     ::tyr::formalism::datalog::Builder datalog_builder;
 
-    explicit ProgramWorkspace(const ConstProgramWorkspace<GroundTag>& cws,
-                              OrAP or_ap_ = OrAP(),
-                              AndAP and_ap_ = AndAP(),
-                              TP tp_ = TP(),
-                              CP cost_policy_ = CP()) :
+    explicit ProgramWorkspace(const ConstProgramWorkspace<GroundTag>& cws, AP annotation_policy_ = AP(), TP tp_ = TP(), CP cost_policy_ = CP()) :
         const_workspace(cws),
         facts(cws.program.template get_predicates<::tyr::formalism::FluentTag>(),
               cws.program.template get_functions<::tyr::formalism::FluentTag>(),
               cws.program.template get_atoms<::tyr::formalism::FluentTag>(),
               cws.program.template get_fterm_values<::tyr::formalism::FluentTag>(),
               cws.program.get_context()),
-        or_ap(std::move(or_ap_)),
-        and_ap(std::move(and_ap_)),
-        and_annot(cws.program.template get_predicates<::tyr::formalism::FluentTag>().size()),
-        numeric_and_annot(cws.program.template get_functions<::tyr::formalism::FluentTag>().size()),
+        annotation_policy(std::move(annotation_policy_)),
+        annotations(cws.program.template get_predicates<::tyr::formalism::FluentTag>().size()),
+        numeric_annotations(cws.program.template get_functions<::tyr::formalism::FluentTag>().size()),
         tp(std::move(tp_)),
         cost_policy(std::move(cost_policy_)),
         predicate_rules(cws.program),
@@ -110,15 +101,15 @@ struct ProgramWorkspace<GroundTag, OrAP, AndAP, TP, CP>
         queue(cws.program),
         datalog_builder()
     {
-        if constexpr (AndAP::records_propositional_achievers)
-            and_ap.initialize(cws.program.template get_predicates<::tyr::formalism::FluentTag>().size());
+        if constexpr (AP::records_propositional_achievers)
+            annotation_policy.initialize(cws.program.template get_predicates<::tyr::formalism::FluentTag>().size());
     }
 
-    explicit ProgramWorkspace(Program<GroundTag>& program, OrAP or_ap_ = OrAP(), AndAP and_ap_ = AndAP(), TP tp_ = TP(), CP cost_policy_ = CP());
+    explicit ProgramWorkspace(Program<GroundTag>& program, AP annotation_policy_ = AP(), TP tp_ = TP(), CP cost_policy_ = CP());
 
     void clear_costs() { cost_policy.clear(); }
 
-    auto get_numeric_support_selector() const noexcept { return GroundNumericSupportSelector(const_workspace.facts, facts, numeric_and_annot); }
+    auto get_numeric_support_selector() const noexcept { return GroundNumericSupportSelector(const_workspace.facts, facts, numeric_annotations); }
 
     template<typename Callback>
     void for_each_numeric_support(const NumericSupport<GroundTag>& support, Callback&& callback) const

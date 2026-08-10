@@ -38,47 +38,39 @@
 namespace tyr::datalog
 {
 
-template<>
-class OrAnnotationPolicy<LiftedTag>
+template<typename AggregationFunction>
+class MinCostAnnotationPolicy<LiftedTag, AggregationFunction>
 {
 public:
     using PredicateHead = PredicateAnnotationHead<LiftedTag>;
     using FunctionHead = FunctionAnnotationHead<LiftedTag>;
+    using Aggregation = AggregationFunction;
 
-    void initialize_annotation(PredicateHead head, PredicateAnnotations<LiftedTag>& and_annot) const;
+    static constexpr bool records_propositional_achievers = false;
 
-    void initialize_annotation(FunctionHead head, ygg::ClosedInterval<ygg::float_t> interval, FunctionAnnotations<LiftedTag>& numeric_and_annot) const;
+    void initialize_annotation(PredicateHead head, PredicateAnnotations<LiftedTag>& annotations) const;
+
+    void initialize_annotation(FunctionHead head, ygg::ClosedInterval<ygg::float_t> interval, FunctionAnnotations<LiftedTag>& numeric_annotations) const;
 
     CostUpdate<LiftedTag>
-    update_annotation(PredicateHead head, const DeltaPredicateAnnotations<LiftedTag>& delta_and_annot, PredicateAnnotations<LiftedTag>& and_annot) const;
-};
-
-template<typename AggregationFunction>
-class AndAnnotationPolicy<LiftedTag, AggregationFunction>
-{
-public:
-    using PredicateHead = PredicateAnnotationHead<LiftedTag>;
-    using FunctionHead = FunctionAnnotationHead<LiftedTag>;
-
-    static constexpr AggregationFunction agg = AggregationFunction {};
-    static constexpr bool records_propositional_achievers = false;
+    update_annotation(PredicateHead head, const DeltaPredicateAnnotations<LiftedTag>& delta_annotations, PredicateAnnotations<LiftedTag>& annotations) const;
 
     void clear_achievers() noexcept {}
 
-    void record_achiever(PredicateHead, const AndAnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>&) const noexcept {}
+    void record_achiever(PredicateHead, const AnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>&) const noexcept {}
 
-    void update_annotation(PredicateHead head,
-                           const AndAnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context,
-                           DeltaPredicateAnnotations<LiftedTag>& delta_and_annot) const;
+    bool update_annotation(PredicateHead head,
+                           const AnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context,
+                           DeltaPredicateAnnotations<LiftedTag>& delta_annotations) const;
 
-    void update_annotation(FunctionHead head,
+    bool update_annotation(FunctionHead head,
                            ygg::ClosedInterval<ygg::float_t> interval,
-                           const AndAnnotationContext<LiftedTag, ::tyr::formalism::FunctionTag>& context,
-                           DeltaFunctionAnnotations<LiftedTag>& delta_numeric_and_annot) const;
+                           const AnnotationContext<LiftedTag, ::tyr::formalism::FunctionTag>& context,
+                           DeltaFunctionAnnotations<LiftedTag>& delta_numeric_annotations) const;
 };
 
 template<typename AggregationFunction>
-class AchieverAndAnnotationPolicy<LiftedTag, AggregationFunction> : public AndAnnotationPolicy<LiftedTag, AggregationFunction>
+class MinCostAnnotationWithAchieversPolicy<LiftedTag, AggregationFunction> : public MinCostAnnotationPolicy<LiftedTag, AggregationFunction>
 {
 public:
     using PredicateBinding = PredicateAnnotationHead<LiftedTag>;
@@ -92,17 +84,16 @@ public:
 
     const Achievers* find_achievers(PredicateBinding head) const noexcept;
 
-    void record_achiever(PredicateBinding head, const AndAnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context);
+    void record_achiever(PredicateBinding head, const AnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context);
 
 private:
     ConcurrentRelationMap<::tyr::formalism::PredicateTag, Achievers> m_achievers;
 };
 
-static_assert(OrAnnotationPolicyConcept<NoOrAnnotationPolicy<LiftedTag>, LiftedTag>);
-static_assert(AndAnnotationPolicyConcept<NoAndAnnotationPolicy<LiftedTag>, LiftedTag>);
-static_assert(OrAnnotationPolicyConcept<OrAnnotationPolicy<LiftedTag>, LiftedTag>);
-static_assert(AndAnnotationPolicyConcept<AndAnnotationPolicy<LiftedTag, SumAggregation>, LiftedTag>);
-static_assert(AndAnnotationPolicyConcept<AchieverAndAnnotationPolicy<LiftedTag, MaxAggregation>, LiftedTag>);
+static_assert(AnnotationPolicyConcept<NoAnnotationPolicy<LiftedTag>, LiftedTag>);
+static_assert(AnnotationPolicyConcept<MinCostAnnotationPolicy<LiftedTag, SumAggregation>, LiftedTag>);
+static_assert(AnnotationPolicyConcept<MinCostAnnotationPolicy<LiftedTag, MaxAggregation>, LiftedTag>);
+static_assert(AnnotationPolicyConcept<MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>, LiftedTag>);
 
 }
 

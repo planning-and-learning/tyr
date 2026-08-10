@@ -114,8 +114,7 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, ::t
 
 template<typename Derived,
          TaskKind Kind,
-         datalog::OrAnnotationPolicyConcept<Kind> OrAP,
-         datalog::AndAnnotationPolicyConcept<Kind> AndAP,
+         datalog::AnnotationPolicyConcept<Kind> AP,
          datalog::TerminationPolicyConcept<Kind> TP,
          datalog::RuleCostPolicyConcept<Kind> CP = datalog::RuleCostPolicy<Kind>>
 class RPGEvaluator
@@ -123,13 +122,13 @@ class RPGEvaluator
 public:
     using Definition = RPGDefinition<Kind>;
     using Policy = RPGPolicy<Kind>;
-    using Workspace = datalog::ProgramWorkspace<Kind, OrAP, AndAP, TP, CP>;
+    using Workspace = datalog::ProgramWorkspace<Kind, AP, TP, CP>;
 
     RPGEvaluator(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL) :
         m_definition(std::make_shared<Definition>(std::move(task), cost_mode)),
         m_execution_context(std::move(execution_context)),
         m_source_goal(m_definition->task->get_task().get_goal()),
-        m_workspace(m_definition->rpg_program.get_datalog_program(), OrAP {}, AndAP {}, TP {}, make_cost_policy(*m_definition))
+        m_workspace(m_definition->rpg_program.get_datalog_program(), AP {}, TP {}, make_cost_policy(*m_definition))
     {
         Policy::set_goal(*m_definition, m_workspace, m_source_goal);
     }
@@ -138,7 +137,7 @@ public:
         m_definition(source.m_definition),
         m_execution_context(std::move(execution_context)),
         m_source_goal(source.m_source_goal),
-        m_workspace(m_definition->rpg_program.get_datalog_program(), OrAP {}, AndAP {}, TP {}, make_cost_policy(*m_definition))
+        m_workspace(m_definition->rpg_program.get_datalog_program(), AP {}, TP {}, make_cost_policy(*m_definition))
     {
         Policy::set_goal(*m_definition, m_workspace, m_source_goal);
     }
@@ -183,7 +182,7 @@ protected:
 
     datalog::Cost get_predicate_cost(datalog::PredicateAnnotationHead<Kind> head) const noexcept
     {
-        const auto* annotation = m_workspace.and_annot.find(head);
+        const auto* annotation = m_workspace.annotations.find(head);
         return annotation ? datalog::get_cost(*annotation) : datalog::Cost(0);
     }
 
@@ -191,8 +190,8 @@ protected:
     {
         const auto& numeric_support_selector = m_workspace.get_numeric_support_selector();
         return m_workspace.tp.get_total_cost(datalog::FactSets { m_workspace.const_workspace.facts.fact_sets, m_workspace.facts.fact_sets },
-                                             m_workspace.and_annot,
-                                             m_workspace.numeric_and_annot,
+                                             m_workspace.annotations,
+                                             m_workspace.numeric_annotations,
                                              numeric_support_selector);
     }
 
@@ -257,9 +256,9 @@ protected:
 
     template<typename Callback>
     void for_each_achiever(datalog::PredicateAnnotationHead<Kind> head, Callback&& callback)
-        requires AndAP::records_propositional_achievers
+        requires AP::records_propositional_achievers
     {
-        const auto* achievers = m_workspace.and_ap.find_achievers(head);
+        const auto* achievers = m_workspace.annotation_policy.find_achievers(head);
         if (!achievers)
             return;
 

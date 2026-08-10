@@ -61,7 +61,7 @@ public:
     void set_early_termination(bool enabled) noexcept { early_termination = enabled; }
 
     Cost get_total_cost(const FactSets& fact_sets,
-                        const PredicateAnnotations<Kind>& and_annot,
+                        const PredicateAnnotations<Kind>& annotations,
                         const FunctionAnnotations<Kind>&,
                         const NumericSupportSelector<Kind>& numeric_support_selector) const noexcept;
 

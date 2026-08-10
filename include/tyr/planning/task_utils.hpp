@@ -77,15 +77,11 @@ void read_derived_atoms_from_fact_set(ygg::Builder<State<LiftedTag>>& state,
 
 }
 
-template<TaskKind Kind,
-         datalog::OrAnnotationPolicyConcept<Kind> OrAP,
-         datalog::AndAnnotationPolicyConcept<Kind> AndAP,
-         datalog::TerminationPolicyConcept<Kind> TP,
-         datalog::RuleCostPolicyConcept<Kind> CP>
+template<TaskKind Kind, datalog::AnnotationPolicyConcept<Kind> AP, datalog::TerminationPolicyConcept<Kind> TP, datalog::RuleCostPolicyConcept<Kind> CP>
 void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<Kind>>& state,
                                      const ::tyr::formalism::planning::Repository& repository,
                                      const P2DTranslationContext<Kind>& translation_context,
-                                     datalog::ProgramWorkspace<Kind, OrAP, AndAP, TP, CP>& workspace)
+                                     datalog::ProgramWorkspace<Kind, AP, TP, CP>& workspace)
 {
     if constexpr (std::same_as<Kind, GroundTag>)
     {
@@ -98,15 +94,11 @@ void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<Kind>>& state,
     }
 }
 
-template<TaskKind Kind,
-         datalog::OrAnnotationPolicyConcept<Kind> OrAP,
-         datalog::AndAnnotationPolicyConcept<Kind> AndAP,
-         datalog::TerminationPolicyConcept<Kind> TP,
-         datalog::RuleCostPolicyConcept<Kind> CP>
+template<TaskKind Kind, datalog::AnnotationPolicyConcept<Kind> AP, datalog::TerminationPolicyConcept<Kind> TP, datalog::RuleCostPolicyConcept<Kind> CP>
 void insert_numeric_variables_to_fact_set(const ygg::Builder<State<Kind>>& state,
                                           const ::tyr::formalism::planning::Repository& repository,
                                           const P2DTranslationContext<Kind>& translation_context,
-                                          datalog::ProgramWorkspace<Kind, OrAP, AndAP, TP, CP>& workspace)
+                                          datalog::ProgramWorkspace<Kind, AP, TP, CP>& workspace)
 {
     if constexpr (std::same_as<Kind, GroundTag>)
     {
@@ -119,27 +111,21 @@ void insert_numeric_variables_to_fact_set(const ygg::Builder<State<Kind>>& state
     }
 }
 
-template<datalog::OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         datalog::AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         datalog::TerminationPolicyConcept<LiftedTag> TP,
-         datalog::RuleCostPolicyConcept<LiftedTag> CP>
+template<datalog::AnnotationPolicyConcept<LiftedTag> AP, datalog::TerminationPolicyConcept<LiftedTag> TP, datalog::RuleCostPolicyConcept<LiftedTag> CP>
 void insert_derived_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
                                       const ::tyr::formalism::planning::Repository& repository,
                                       const P2DTranslationContext<LiftedTag>& translation_context,
-                                      datalog::ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>& workspace)
+                                      datalog::ProgramWorkspace<LiftedTag, AP, TP, CP>& workspace)
 {
     auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { workspace.datalog_builder, workspace.workspace_repository };
     detail::insert_derived_atoms_to_fact_set(state, repository, translation_context.derived_to_fluent_predicate, merge_context, workspace.facts.fact_sets);
 }
 
-template<datalog::OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         datalog::AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         datalog::TerminationPolicyConcept<LiftedTag> TP,
-         datalog::RuleCostPolicyConcept<LiftedTag> CP>
+template<datalog::AnnotationPolicyConcept<LiftedTag> AP, datalog::TerminationPolicyConcept<LiftedTag> TP, datalog::RuleCostPolicyConcept<LiftedTag> CP>
 void insert_extended_state(const ygg::Builder<State<LiftedTag>>& state,
                            const ::tyr::formalism::planning::Repository& repository,
                            const P2DTranslationContext<LiftedTag>& translation_context,
-                           datalog::ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>& workspace)
+                           datalog::ProgramWorkspace<LiftedTag, AP, TP, CP>& workspace)
 {
     workspace.facts.reset();
     insert_fluent_atoms_to_fact_set(state, repository, translation_context, workspace);
@@ -148,15 +134,11 @@ void insert_extended_state(const ygg::Builder<State<LiftedTag>>& state,
     workspace.facts.assignment_sets.insert(workspace.facts.fact_sets);
 }
 
-template<TaskKind Kind,
-         datalog::OrAnnotationPolicyConcept<Kind> OrAP,
-         datalog::AndAnnotationPolicyConcept<Kind> AndAP,
-         datalog::TerminationPolicyConcept<Kind> TP,
-         datalog::RuleCostPolicyConcept<Kind> CP>
+template<TaskKind Kind, datalog::AnnotationPolicyConcept<Kind> AP, datalog::TerminationPolicyConcept<Kind> TP, datalog::RuleCostPolicyConcept<Kind> CP>
 void insert_unextended_state(const ygg::Builder<State<Kind>>& state,
                              const ::tyr::formalism::planning::Repository& repository,
                              const P2DTranslationContext<Kind>& translation_context,
-                             datalog::ProgramWorkspace<Kind, OrAP, AndAP, TP, CP>& workspace)
+                             datalog::ProgramWorkspace<Kind, AP, TP, CP>& workspace)
 {
     workspace.facts.reset();
     insert_fluent_atoms_to_fact_set(state, repository, translation_context, workspace);
@@ -165,14 +147,11 @@ void insert_unextended_state(const ygg::Builder<State<Kind>>& state,
         workspace.facts.assignment_sets.insert(workspace.facts.fact_sets);
 }
 
-template<datalog::OrAnnotationPolicyConcept<LiftedTag> OrAP,
-         datalog::AndAnnotationPolicyConcept<LiftedTag> AndAP,
-         datalog::TerminationPolicyConcept<LiftedTag> TP,
-         datalog::RuleCostPolicyConcept<LiftedTag> CP>
+template<datalog::AnnotationPolicyConcept<LiftedTag> AP, datalog::TerminationPolicyConcept<LiftedTag> TP, datalog::RuleCostPolicyConcept<LiftedTag> CP>
 void read_derived_atoms_from_fact_set(ygg::Builder<State<LiftedTag>>& state,
                                       ::tyr::formalism::planning::Repository& repository,
                                       const D2PTranslationContext<LiftedTag>& translation_context,
-                                      datalog::ProgramWorkspace<LiftedTag, OrAP, AndAP, TP, CP>& workspace,
+                                      datalog::ProgramWorkspace<LiftedTag, AP, TP, CP>& workspace,
                                       std::vector<::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>>& derived_bindings)
 {
     detail::read_derived_atoms_from_fact_set(state,

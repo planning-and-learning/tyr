@@ -463,14 +463,13 @@ TEST(TyrKCKPDelta, InnerParallelismMatchesSequentialRPG)
     EXPECT_EQ(parallel_value, sequential_value);
     EXPECT_EQ(parallel_heuristic->get_preferred_actions(), sequential_heuristic->get_preferred_actions());
 
-    using OrPolicy = d::OrAnnotationPolicy<LiftedTag>;
-    using AndPolicy = d::AndAnnotationPolicy<LiftedTag, d::SumAggregation>;
+    using AnnotationPolicy = d::MinCostAnnotationPolicy<LiftedTag, d::SumAggregation>;
     using Termination = d::TerminationPolicy<LiftedTag, d::SumAggregation>;
-    using Workspace = d::ProgramWorkspace<LiftedTag, OrPolicy, AndPolicy, Termination>;
+    using Workspace = d::ProgramWorkspace<LiftedTag, AnnotationPolicy, Termination>;
 
     auto program = p::RPGProgram<LiftedTag>(task->get_task());
-    auto sequential = Workspace(program.get_datalog_program(), OrPolicy {}, AndPolicy {}, Termination {});
-    auto parallel = Workspace(program.get_datalog_program(), OrPolicy {}, AndPolicy {}, Termination {});
+    auto sequential = Workspace(program.get_datalog_program(), AnnotationPolicy {}, Termination {});
+    auto parallel = Workspace(program.get_datalog_program(), AnnotationPolicy {}, Termination {});
 
     const auto solve = [&](Workspace& workspace, const ygg::ExecutionContextPtr& execution_context)
     {
@@ -495,7 +494,7 @@ TEST(TyrKCKPDelta, InnerParallelismMatchesSequentialRPG)
                 for (const auto object : binding.get_objects())
                     objects.push_back(ygg::uint_t(object.get_index()));
 
-                const auto* annotation = workspace.and_annot.find(binding);
+                const auto* annotation = workspace.annotations.find(binding);
                 result.emplace_back(ygg::uint_t(binding.get_relation().get_index()),
                                     std::move(objects),
                                     annotation ? std::optional<d::Cost>(d::get_cost(*annotation)) : std::nullopt);

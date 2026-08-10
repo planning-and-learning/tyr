@@ -77,15 +77,13 @@ template<TaskKind Kind>
 struct LMCutHeuristic<Kind>::Impl :
     detail::RPGEvaluator<Impl,
                          Kind,
-                         datalog::OrAnnotationPolicy<Kind>,
-                         datalog::AchieverAndAnnotationPolicy<Kind, datalog::MaxAggregation>,
+                         datalog::MinCostAnnotationWithAchieversPolicy<Kind, datalog::MaxAggregation>,
                          datalog::TerminationPolicy<Kind, datalog::MaxAggregation>,
                          datalog::RuleCostOverridePolicy<Kind>>
 {
     using Base = detail::RPGEvaluator<Impl,
                                       Kind,
-                                      datalog::OrAnnotationPolicy<Kind>,
-                                      datalog::AchieverAndAnnotationPolicy<Kind, datalog::MaxAggregation>,
+                                      datalog::MinCostAnnotationWithAchieversPolicy<Kind, datalog::MaxAggregation>,
                                       datalog::TerminationPolicy<Kind, datalog::MaxAggregation>,
                                       datalog::RuleCostOverridePolicy<Kind>>;
     using ActionBinding = ::tyr::formalism::planning::ActionBindingView;
@@ -335,14 +333,14 @@ void LMCutHeuristic<Kind>::Impl::apply_residual_costs()
 template<TaskKind Kind>
 datalog::Cost LMCutHeuristic<Kind>::Impl::get_numeric_cost(NumericNode node) const noexcept
 {
-    const auto* annotation = this->m_workspace.numeric_and_annot.find(node.key, node.interval);
+    const auto* annotation = this->m_workspace.numeric_annotations.find(node.key, node.interval);
     return annotation ? datalog::get_cost(*annotation) : datalog::Cost(0);
 }
 
 template<TaskKind Kind>
 const datalog::WitnessAnnotation<Kind, f::FunctionTag>* LMCutHeuristic<Kind>::Impl::get_numeric_witness(NumericNode node) const noexcept
 {
-    const auto* annotation = this->m_workspace.numeric_and_annot.find(node.key, node.interval);
+    const auto* annotation = this->m_workspace.numeric_annotations.find(node.key, node.interval);
     return annotation ? std::get_if<datalog::WitnessAnnotation<Kind, f::FunctionTag>>(annotation) : nullptr;
 }
 
