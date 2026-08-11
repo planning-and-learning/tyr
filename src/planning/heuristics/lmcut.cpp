@@ -524,12 +524,12 @@ void LMCutImplementation<Kind>::seed_goal_zone()
                 if (entry.cost != goal_cost)
                     continue;
 
-                const auto found = selector.for_each_entry_support(entry,
-                                                                   [&](const auto key, const auto interval, const auto& annotation)
-                                                                   {
-                                                                       if (datalog::get_cost(annotation) == goal_cost)
-                                                                           mark_goal_zone(NumericNode { key, interval }, 0);
-                                                                   });
+                [[maybe_unused]] const auto found = selector.for_each_entry_support(entry,
+                                                                                    [&](const auto key, const auto interval, const auto& annotation)
+                                                                                    {
+                                                                                        if (datalog::get_cost(annotation) == goal_cost)
+                                                                                            mark_goal_zone(NumericNode { key, interval }, 0);
+                                                                                    });
                 assert(found);
             }
         }

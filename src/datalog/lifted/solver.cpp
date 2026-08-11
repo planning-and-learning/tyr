@@ -173,7 +173,7 @@ void insert_nullary_update(fd::AtomView<f::FluentTag> head_atom, RuleUpdateInput
 }
 
 template<typename In, typename Out, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
-void insert_nullary_update(fd::NumericEffectOperatorView<f::FluentTag>, RuleUpdateInput<f::FunctionTag, AP, CP>& input, const In& in, Out& out)
+void insert_nullary_update(fd::NumericEffectOperatorView<f::FluentTag>, RuleUpdateInput<f::FunctionTag, AP, CP>& input, [[maybe_unused]] const In& in, Out& out)
 {
     assert(is_applicable(in.cws_rule().get_rule(), ApplicabilityContext { in.fact_sets(), out.ground_context() }));
     insert_numeric_update(input, out.head_updates(), out.delta_numeric_annotations());
@@ -348,7 +348,7 @@ void process_clique_head(fd::NumericEffectOperatorView<f::FluentTag>,
                          RuleUpdateInput<f::FunctionTag, AP, CP>& input,
                          DynamicallyApplicable&& dynamically_applicable)
 {
-    const auto& in = wrctx.in();
+    [[maybe_unused]] const auto& in = wrctx.in();
     auto& out = wrctx.out();
     if (!dynamically_applicable())
         return;
