@@ -55,7 +55,7 @@ public:
     ygg::ClosedInterval<ygg::float_t> lookup_static(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::StaticTag> term) const;
     ygg::ClosedInterval<ygg::float_t> current_interval(Key key) const;
     const NumericIntervalAnnotations<GroundTag>::Entries* find_entries(Key key) const;
-    bool keys_equal(Key lhs, Key rhs) const noexcept { return lhs.get_index() == rhs.get_index(); }
+    bool keys_equal(Key lhs, Key rhs) const noexcept { return lhs == rhs; }
     /// Runs without annotations price initial intervals at zero instead of treating them as unreachable.
     Cost missing_entries_cost() const noexcept { return m_initial_intervals_cost_zero ? Cost(0) : std::numeric_limits<Cost>::max(); }
 

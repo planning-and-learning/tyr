@@ -235,6 +235,7 @@ public:
 
             if (candidate.interval == entry.interval)
             {
+                assert(cost == entry.cost);
                 callback(key, candidate.interval, candidate.annotation);
                 return true;
             }

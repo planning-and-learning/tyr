@@ -239,8 +239,7 @@ struct LiftedNumericProgram
     }
 };
 
-LiftedNumericProgram make_lifted_numeric_program(bool include_source_rule = true,
-                                                 std::initializer_list<ygg::float_t> initial_source_values = {})
+LiftedNumericProgram make_lifted_numeric_program(bool include_source_rule = true, std::initializer_list<ygg::float_t> initial_source_values = {})
 {
     auto factory = std::make_shared<fd::RepositoryFactory>();
     auto repository = factory->create_shared();
@@ -271,7 +270,6 @@ LiftedNumericProgram make_lifted_numeric_program(bool include_source_rule = true
     const auto target = bind_function(target_function);
     const auto source_term = make_function_term(source_function);
     const auto target_term = make_function_term(target_function);
-    const auto ground_source_term = intern(ygg::Data<fd::GroundFunctionTerm<f::FluentTag>>(source));
     const auto empty_body = intern(ygg::Data<fd::ConjunctiveCondition>());
 
     const auto source_assign_effect = intern(ygg::Data<fd::NumericEffect<f::FluentTag>>(f::NumericEffectOperatorKind::Assign,
@@ -323,9 +321,12 @@ LiftedNumericProgram make_lifted_numeric_program(bool include_source_rule = true
     program_data.fluent_predicates.push_back(goal_predicate.get_index());
     program_data.fluent_functions.push_back(source_function.get_index());
     program_data.fluent_functions.push_back(target_function.get_index());
-    for (const auto value : initial_source_values)
-        program_data.fluent_fterm_values.push_back(
-            intern(ygg::Data<fd::GroundFunctionTermValue<f::FluentTag>>(ground_source_term, value)).get_index());
+    if (initial_source_values.size() != 0)
+    {
+        const auto ground_source_term = intern(ygg::Data<fd::GroundFunctionTerm<f::FluentTag>>(source));
+        for (const auto value : initial_source_values)
+            program_data.fluent_fterm_values.push_back(intern(ygg::Data<fd::GroundFunctionTermValue<f::FluentTag>>(ground_source_term, value)).get_index());
+    }
     program_data.predicate_rules.push_back(predicate_rule.get_index());
     if (include_source_rule)
         program_data.function_rules.push_back(source_rule.get_index());
@@ -496,8 +497,11 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
         ASSERT_NE(entries, nullptr);
         ASSERT_EQ(entries->size(), 3);
         EXPECT_EQ(entries->at(0).interval, interior_support_interval);
+        EXPECT_EQ(d::get_cost(entries->at(0).annotation), 1);
         EXPECT_EQ(entries->at(1).interval, low_support_interval);
+        EXPECT_EQ(d::get_cost(entries->at(1).annotation), 2);
         EXPECT_EQ(entries->at(2).interval, high_support_interval);
+        EXPECT_EQ(d::get_cost(entries->at(2).annotation), 2);
     };
 
     using LiftedAnnotationPolicy = d::MinCostAnnotationPolicy<LiftedTag, d::SumAggregation>;
@@ -505,14 +509,10 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     auto lifted_workspace = LiftedWorkspace(fixture.program);
     auto lifted_context = d::ProgramExecutionContext(lifted_workspace);
     lifted_workspace.numeric_annotations.clear();
-    lifted_workspace.numeric_annotations.insert(
-        fixture.source, high_support_interval, d::BaseAnnotation<LiftedTag>(high_support_metric, d::Cost(2)));
-    lifted_workspace.numeric_annotations.insert(
-        fixture.source, interior_support_interval, d::BaseAnnotation<LiftedTag>(interior_support_metric, d::Cost(1)));
-    lifted_workspace.numeric_annotations.insert(
-        fixture.source, low_support_interval, d::BaseAnnotation<LiftedTag>(low_support_metric, d::Cost(2)));
-    expect_source_annotation_order(
-        lifted_workspace.numeric_annotations.find_entries(fixture.source.get_index().relation, fixture.source.get_index().row));
+    lifted_workspace.numeric_annotations.insert(fixture.source, high_support_interval, d::BaseAnnotation<LiftedTag>(high_support_metric, d::Cost(2)));
+    lifted_workspace.numeric_annotations.insert(fixture.source, interior_support_interval, d::BaseAnnotation<LiftedTag>(interior_support_metric, d::Cost(1)));
+    lifted_workspace.numeric_annotations.insert(fixture.source, low_support_interval, d::BaseAnnotation<LiftedTag>(low_support_metric, d::Cost(2)));
+    expect_source_annotation_order(lifted_workspace.numeric_annotations.find_entries(fixture.source.get_index().relation, fixture.source.get_index().row));
 
     d::compute_model(lifted_context);
 
@@ -548,14 +548,11 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     const auto ground_source = fixture.repository->get_or_create(ground_source_data).first;
     const auto ground_target = fixture.repository->get_or_create(ground_target_data).first;
     ground_workspace.numeric_annotations.clear();
-    ground_workspace.numeric_annotations.insert(
-        ground_source, high_support_interval, d::BaseAnnotation<GroundTag>(high_support_metric, d::Cost(2)));
-    ground_workspace.numeric_annotations.insert(
-        ground_source, interior_support_interval, d::BaseAnnotation<GroundTag>(interior_support_metric, d::Cost(1)));
-    ground_workspace.numeric_annotations.insert(
-        ground_source, low_support_interval, d::BaseAnnotation<GroundTag>(low_support_metric, d::Cost(2)));
-    expect_source_annotation_order(ground_workspace.numeric_annotations.find_entries(ground_source.get_function().get_index(),
-                                                                                      ground_source.get_row().get_index().row));
+    ground_workspace.numeric_annotations.insert(ground_source, high_support_interval, d::BaseAnnotation<GroundTag>(high_support_metric, d::Cost(2)));
+    ground_workspace.numeric_annotations.insert(ground_source, interior_support_interval, d::BaseAnnotation<GroundTag>(interior_support_metric, d::Cost(1)));
+    ground_workspace.numeric_annotations.insert(ground_source, low_support_interval, d::BaseAnnotation<GroundTag>(low_support_metric, d::Cost(2)));
+    expect_source_annotation_order(
+        ground_workspace.numeric_annotations.find_entries(ground_source.get_function().get_index(), ground_source.get_row().get_index().row));
 
     d::compute_model(ground_context);
 
@@ -584,6 +581,8 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     {
         const auto& ground_support = ground_witness->get_numeric_supports()[i];
         const auto& lifted_support = lifted_witness->get_numeric_supports()[i];
+        EXPECT_EQ(ground_support.get_key(), ground_source);
+        EXPECT_EQ(lifted_support.get_key(), fixture.source);
         EXPECT_EQ(ground_support.get_key().get_function().get_name(), lifted_support.get_key().get_relation().get_name());
         EXPECT_EQ(ground_support.get_key().get_row().get_objects().size(), lifted_support.get_key().get_objects().size());
         EXPECT_EQ(ground_support.get_interval(), lifted_support.get_interval());
