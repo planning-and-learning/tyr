@@ -73,7 +73,7 @@ void LokiToTyrTranslator::prepare(loki::formalism::BinaryFunctionExpressionView 
     prepare(function_expression.get_left());
     prepare(function_expression.get_right());
 }
-void LokiToTyrTranslator::prepare(loki::formalism::MultiFunctionExpressionView function_expression) { this->prepare(function_expression.get_expressions()); }
+void LokiToTyrTranslator::prepare(loki::formalism::MultiFunctionExpressionView function_expression) { this->prepare(function_expression.get_args()); }
 void LokiToTyrTranslator::prepare(loki::formalism::UnaryFunctionExpressionView function_expression) { this->prepare(function_expression.get_expression()); }
 void LokiToTyrTranslator::prepare(loki::formalism::FunctionTermView function_expression)
 {
@@ -144,7 +144,7 @@ void LokiToTyrTranslator::prepare(loki::formalism::EffectView effect)
                 }
                 else if constexpr (std::is_same_v<T, loki::formalism::EffectNumericView>)
                 {
-                    m_effect_function_skeletons.insert(part.get_function().get_name().str());
+                    m_effect_function_skeletons.insert(part.get_function().get_function().get_name().str());
                     prepare(part.get_expression());
                 }
                 else
@@ -413,7 +413,7 @@ ygg::Data<FunctionExpression> LokiToTyrTranslator::translate_lifted(loki::formal
     {
         auto multi = ::tyr::formalism::planning::checkout<MultiOperator<ygg::Data<FunctionExpression>>>(builder);
         multi->operator_kind = operator_kind;
-        translate_lifted(element.get_expressions(), builder, context, multi->args);
+        translate_lifted(element.get_args(), builder, context, multi->args);
         return ygg::Data<FunctionExpression>(
             ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>(operator_kind,
                                                                          ::tyr::formalism::planning::get_or_create(context, *multi).first.get_index()));
@@ -627,32 +627,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionView element, co
 
 NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::EffectNumericView element, Builder& builder, Repository& context)
 {
-    auto function_view_variant = translate_common(element.get_function(), builder, context);
-
-    auto build_function_term_for_effect = [&](auto fact_tag, auto function) -> FunctionTermViewVariant
-    {
-        using Tag = std::decay_t<decltype(fact_tag)>;
-
-        auto fterm = ::tyr::formalism::planning::checkout<FunctionTerm<Tag>>(builder);
-        fterm->function = function.get_index();
-        this->translate_lifted(element.get_terms(), builder, context, fterm->terms);
-        return ::tyr::formalism::planning::get_or_create(context, *fterm).first;
-    };
-
-    auto fterm_view_variant = std::visit(
-        [&](auto&& function) -> FunctionTermViewVariant
-        {
-            using FunctionT = std::decay_t<decltype(function)>;
-            if constexpr (std::is_same_v<FunctionT, FunctionView<StaticTag>>)
-                return build_function_term_for_effect(StaticTag {}, function);
-            else if constexpr (std::is_same_v<FunctionT, FunctionView<FluentTag>>)
-                return build_function_term_for_effect(FluentTag {}, function);
-            else if constexpr (std::is_same_v<FunctionT, FunctionView<AuxiliaryTag>>)
-                return build_function_term_for_effect(AuxiliaryTag {}, function);
-            else
-                static_assert(ygg::dependent_false<FunctionT>::value, "Missing case for type");
-        },
-        function_view_variant);
+    auto fterm_view_variant = translate_lifted(element.get_function(), builder, context);
 
     auto build_numeric_effect_term_helper = [&](auto fact_tag, NumericEffectOperatorKind operator_kind, auto fterm) -> NumericEffectViewVariant
     {
@@ -1123,7 +1098,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::MultiFunctionExpression
     {
         auto multi = ::tyr::formalism::planning::checkout<MultiOperator<ygg::Data<GroundFunctionExpression>>>(builder);
         multi->operator_kind = operator_kind;
-        translate_grounded(element.get_expressions(), builder, context, multi->args);
+        translate_grounded(element.get_args(), builder, context, multi->args);
         return ygg::Data<GroundFunctionExpression>(
             ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>(operator_kind,
                                                                                ::tyr::formalism::planning::get_or_create(context, *multi).first.get_index()));

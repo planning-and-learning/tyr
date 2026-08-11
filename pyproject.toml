@@ -3,7 +3,7 @@ requires = [
     # nanobind 2.12 stubgen requires scikit-build-core's pre-1.0 editable loader.
     "scikit-build-core>=0.10,<1",
     "pyyggdrasil>=0.0.27,<0.1",
-    "pypddl>=1.0.26,<1.1",
+    "pypddl>=1.0.27,<1.1",
 ]
 build-backend = "pytyr_build_backend"
 backend-path = ["python"]
@@ -20,7 +20,7 @@ authors = [
 ]
 dependencies = [
     "pyyggdrasil>=0.0.27,<0.1",
-    "pypddl>=1.0.26,<1.1",
+    "pypddl>=1.0.27,<1.1",
 ]
 
 [project.urls]
@@ -83,7 +83,7 @@ container-engine = "docker"
 # Because --no-isolation also skips scikit-build-core's dynamic build tools,
 # cmake/ninja must be installed here too (manylinux ships cmake but not ninja).
 build-frontend = { name = "build", args = ["--no-isolation"] }
-before-build = "n=0; until python -m pip install --no-cache-dir 'scikit-build-core>=0.10,<1' 'cmake>=3.21' 'ninja>=1.5' 'pyyggdrasil>=0.0.27,<0.1' 'pypddl>=1.0.26,<1.1'; do n=$((n+1)); [ $n -ge 30 ] && exit 1; echo 'provider wheels not on the index yet; retrying in 60s'; sleep 60; done"
+before-build = "n=0; until python -m pip install --no-cache-dir 'scikit-build-core>=0.10,<1' 'cmake>=3.21' 'ninja>=1.5' 'pyyggdrasil>=0.0.27,<0.1' 'pypddl>=1.0.27,<1.1'; do n=$((n+1)); [ $n -ge 30 ] && exit 1; echo 'provider wheels not on the index yet; retrying in 60s'; sleep 60; done"
 
 [tool.cibuildwheel.linux]
 repair-wheel-command = "python -m pyyggdrasil.repair --providers pypddl,pyyggdrasil --dest-dir {dest_dir} {wheel}"
