@@ -40,10 +40,10 @@
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 
+#include <algorithm>
 #include <assert.h>
 #include <oneapi/tbb/parallel_for.h>
 #include <oneapi/tbb/parallel_for_each.h>
-#include <oneapi/tbb/task_arena.h>
 #include <span>
 #include <type_traits>
 #include <utility>
@@ -62,16 +62,55 @@ namespace fd = tyr::formalism::datalog;
 namespace tyr::datalog
 {
 
-using PendingPredicateAchievers = ygg::Map<Cost, std::vector<PredicateHeadIteration::Achiever>>;
+using PredicateRuleBinding = fd::RuleBindingView<f::PredicateTag>;
+using PendingPredicateAchieverBuckets = ygg::Map<Cost, std::vector<PredicateRuleBinding>>;
+
+struct PendingPredicateAchiever
+{
+    Cost cost;
+    PredicateHeadIteration::Achiever achiever;
+    bool pending;
+};
+
+struct PendingPredicateAchievers
+{
+    PendingPredicateAchieverBuckets buckets;
+    ygg::UnorderedMap<PredicateRuleBinding, PendingPredicateAchiever> by_rule;
+};
+
+void insert_pending_achiever(PendingPredicateAchievers& pending, PredicateHeadIteration::Achiever achiever)
+{
+    const auto cost = achiever.witness.get_cost();
+    const auto rule_key = achiever.witness.get_rule_key();
+    const auto it = pending.by_rule.find(rule_key);
+    if (it == pending.by_rule.end())
+    {
+        pending.by_rule.emplace(rule_key, PendingPredicateAchiever { cost, std::move(achiever), true });
+    }
+    else
+    {
+        auto& incumbent = it->second;
+        if (incumbent.cost <= cost)
+            return;
+        incumbent = PendingPredicateAchiever { cost, std::move(achiever), true };
+    }
+    pending.buckets[cost].push_back(rule_key);
+}
 
 template<AnnotationPolicyConcept AP>
-void publish_pending_achievers(PendingPredicateAchievers& pending, PendingPredicateAchievers::iterator end, AP& annotation_policy)
+void publish_pending_achievers(PendingPredicateAchievers& pending, PendingPredicateAchieverBuckets::iterator end, AP& annotation_policy)
 {
     if constexpr (AP::records_propositional_achievers)
-        for (auto it = pending.begin(); it != end; ++it)
-            for (auto& achiever : it->second)
-                annotation_policy.record_achiever(achiever.head, std::move(achiever.witness));
-    pending.erase(pending.begin(), end);
+        for (auto bucket = pending.buckets.begin(); bucket != end; ++bucket)
+            for (const auto rule_key : bucket->second)
+            {
+                auto& entry = pending.by_rule.at(rule_key);
+                if (!entry.pending || entry.cost != bucket->first)
+                    continue;
+                annotation_policy.record_achiever(entry.achiever.head, std::move(entry.achiever.witness));
+                entry.pending = false;
+            }
+    pending.buckets.erase(pending.buckets.begin(), end);
 }
 
 static void create_nullary_binding(ygg::IndexList<f::Object>& binding) { binding.clear(); }
@@ -267,7 +306,7 @@ bool try_generate_parallel(fd::AtomView<f::FluentTag>, [[maybe_unused]] RuleExec
     constexpr size_t kNumStripes = 2;
     constexpr size_t kParallelThreshold = 1024;
     auto& kckp_algorithm = rctx.out().kckp();
-    if (kckp_algorithm.get_iteration() > 1 && rctx.in().cws_rule().get_rule().get_arity() > 2 && oneapi::tbb::this_task_arena::max_concurrency() >= 2)
+    if (kckp_algorithm.get_iteration() > 1 && rctx.in().cws_rule().get_rule().get_arity() > 2 && !rctx.stratum_in().is_single_threaded())
     {
         const auto& delta_edges = kckp_algorithm.materialize_delta_edges();
         if (delta_edges.size() >= kParallelThreshold)
@@ -376,7 +415,10 @@ void process_clique(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, std::span<
 
     create_general_binding(clique, in.cws_rule().get_static_consistency_graph(), out.ground_context().binding);
 
-    assert((!require_novel_binding || ensure_novel_binding(out.ground_context().binding, out.seen_bindings())) && "Delta-KCKP generated duplicate binding.");
+#ifndef NDEBUG
+    const auto novel_binding = ensure_novel_binding(out.ground_context().binding, out.seen_bindings());
+    assert((!require_novel_binding || novel_binding) && "Delta-KCKP generated duplicate binding.");
+#endif
 
     ++out.statistics().num_generated_rules;
 
@@ -528,6 +570,7 @@ void run_active_rules(StratumExecutionContext<AP, TP, CP>& ctx, bool replay_all)
         {
             const auto process_pending_time = ygg::StopwatchScope(rule_out.statistics().process_pending_time);
 
+#ifdef TYR_ENABLE_SEMI_NAIVE
             if (replay_all)
             {
                 // Full enumeration reconstructs the pending set; retaining it would duplicate old bindings.
@@ -538,6 +581,9 @@ void run_active_rules(StratumExecutionContext<AP, TP, CP>& ctx, bool replay_all)
             {
                 process_pending_rule_bindings(rctx);
             }
+#else
+            process_pending_rule_bindings(rctx);
+#endif
         }
 
         {
@@ -547,9 +593,9 @@ void run_active_rules(StratumExecutionContext<AP, TP, CP>& ctx, bool replay_all)
         }
     };
 
-    // With a single-threaded arena, run sequentially to pin the execution order to the scheduler's
+    // With one requested Datalog thread, run sequentially to pin the execution order to the scheduler's
     // sorted rule order (TBB task order is unspecified even at concurrency 1).
-    if (oneapi::tbb::this_task_arena::max_concurrency() == 1)
+    if (ctx.in().is_single_threaded())
     {
         for (const auto rule_index : active_rules)
             process_rule(rule_index);
@@ -573,7 +619,7 @@ bool reduce_worker_heads(PredicateHeadIteration& head_iteration,
     auto annotation_improved = false;
     if constexpr (AP::records_propositional_achievers)
         for (auto& achiever : head_iteration.achievers)
-            pending_achievers[achiever.witness.get_cost()].push_back(std::move(achiever));
+            insert_pending_achiever(pending_achievers, std::move(achiever));
 
     for (const auto head : head_iteration.bindings)
     {
@@ -723,14 +769,12 @@ void compute_model_for_stratum(StratumExecutionContext<AP, TP, CP>& ctx)
     scheduler.activate_all();
     cost_buckets.clear();
     auto pending_achievers = PendingPredicateAchievers {};
-    const auto defer_achievers_until_frontier = oneapi::tbb::this_task_arena::max_concurrency() == 1;
     auto replay_predicate_bindings = false;
 
     while (true)
     {
         // Facts are committed in cost order, so the goal cost is proven minimal once the goal holds.
-        if (!replay_predicate_bindings
-            && program_out.tp().should_terminate(FactSets { ctx.in().program().facts().fact_sets, program_out.facts().fact_sets }))
+        if (program_out.tp().should_terminate(FactSets { ctx.in().program().facts().fact_sets, program_out.facts().fact_sets }))
             return;
 
         scheduler.on_start_iteration();
@@ -744,27 +788,24 @@ void compute_model_for_stratum(StratumExecutionContext<AP, TP, CP>& ctx)
         auto annotation_improved = reduce_worker_results<f::PredicateTag>(ctx, pending_achievers);
         annotation_improved |= reduce_worker_results<f::FunctionTag>(ctx, pending_achievers);
 
-        if (!defer_achievers_until_frontier)
-            publish_pending_achievers(pending_achievers, pending_achievers.end(), program_out.annotation_policy());
+        if (annotation_improved)
+        {
+            scheduler.on_finish_iteration();
+            replay_predicate_bindings = true;
+            continue;
+        }
 
 #ifdef TYR_ENABLE_SEMI_NAIVE
         if (cost_buckets.is_empty())
         {
-            if (annotation_improved)
-            {
-                scheduler.on_finish_iteration();
-                replay_predicate_bindings = true;
-                continue;
-            }
-            publish_pending_achievers(pending_achievers, pending_achievers.end(), program_out.annotation_policy());
+            publish_pending_achievers(pending_achievers, pending_achievers.buckets.end(), program_out.annotation_policy());
             return;  ///< All reachable heads are committed.
         }
         const auto cost = cost_buckets.min_cost();
         const auto function_changed = commit_bucket(ctx, cost).second;
-        if (defer_achievers_until_frontier)
-            publish_pending_achievers(pending_achievers, pending_achievers.upper_bound(cost), program_out.annotation_policy());
+        publish_pending_achievers(pending_achievers, pending_achievers.buckets.upper_bound(cost), program_out.annotation_policy());
         scheduler.on_finish_iteration();
-        replay_predicate_bindings = annotation_improved || function_changed;
+        replay_predicate_bindings = function_changed;
 #else
         auto fact_changed = false;
         auto function_changed = false;
@@ -773,24 +814,20 @@ void compute_model_for_stratum(StratumExecutionContext<AP, TP, CP>& ctx)
             const auto cost = cost_buckets.min_cost();
             const auto [bucket_changed, bucket_function_changed] = commit_bucket(ctx, cost);
             function_changed |= bucket_function_changed;
-            if (defer_achievers_until_frontier)
-                publish_pending_achievers(pending_achievers, pending_achievers.upper_bound(cost), program_out.annotation_policy());
+            publish_pending_achievers(pending_achievers, pending_achievers.buckets.upper_bound(cost), program_out.annotation_policy());
             if (bucket_changed)
             {
                 fact_changed = true;
                 break;
             }
         }
-        if (!fact_changed && !annotation_improved)
+        if (!fact_changed)
         {
-            publish_pending_achievers(pending_achievers, pending_achievers.end(), program_out.annotation_policy());
+            publish_pending_achievers(pending_achievers, pending_achievers.buckets.end(), program_out.annotation_policy());
             return;  ///< All reachable heads are committed.
         }
-        if (fact_changed)
-            scheduler.activate_all();
-        else
-            scheduler.on_finish_iteration();
-        replay_predicate_bindings = annotation_improved || function_changed;
+        scheduler.activate_all();
+        replay_predicate_bindings = function_changed;
 #endif
     }
 }

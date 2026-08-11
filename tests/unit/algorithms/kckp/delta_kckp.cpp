@@ -476,7 +476,7 @@ TEST(TyrKCKPDelta, InnerParallelismMatchesSequentialRPG)
         workspace.tp.set_goals(program.get_goal());
         p::insert_unextended_state(initial_state.get_state_builder(), *task->get_repository(), program.get_translation_context().p2d, workspace);
 
-        auto context = d::ProgramExecutionContext(workspace);
+        auto context = d::ProgramExecutionContext(workspace, execution_context->get_num_threads());
         execution_context->arena().execute([&] { d::compute_model(context); });
     };
     solve(sequential, sequential_context);

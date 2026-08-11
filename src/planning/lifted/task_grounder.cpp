@@ -413,7 +413,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
     auto ground_program = GroundTaskProgram(lifted_task.get_task());
     auto workspace = d::ProgramWorkspace<LiftedTag>(ground_program.get_datalog_program());
-    auto ctx = d::ProgramExecutionContext(workspace);
+    auto ctx = d::ProgramExecutionContext(workspace, execution_context.get_num_threads());
 
     execution_context.arena().execute([&] { d::compute_model(ctx); });
 

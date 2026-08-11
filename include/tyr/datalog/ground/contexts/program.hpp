@@ -193,7 +193,10 @@ private:
             state.fired = false;
             state.queued_cost = std::nullopt;
             if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
+            {
                 state.pending_cost.reset();
+                state.pending_witness_index = 0;
+            }
         }
     }
 

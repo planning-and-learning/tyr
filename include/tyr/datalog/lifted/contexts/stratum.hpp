@@ -37,6 +37,7 @@ struct StratumExecutionContext
         explicit In(const ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_ctx(ctx) {}
 
         const auto& program() const noexcept { return m_ctx.in(); }
+        bool is_single_threaded() const noexcept { return m_ctx.is_single_threaded(); }
 
     private:
         const ProgramExecutionContext<LiftedTag, AP, TP, CP>& m_ctx;

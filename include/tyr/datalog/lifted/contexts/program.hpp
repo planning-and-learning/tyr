@@ -29,6 +29,7 @@
 #include "tyr/datalog/policies/termination_concept.hpp"
 
 #include <cassert>
+#include <cstddef>
 #include <ranges>
 #include <yggdrasil/execution/onetbb.hpp>
 
@@ -106,7 +107,14 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         ProgramWorkspace<LiftedTag, AP, TP, CP>& m_ws;
     };
 
-    explicit ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws) : m_in(ws.const_workspace), m_out(ws) { clear(); }
+    explicit ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, size_t num_threads = 1) :
+        m_in(ws.const_workspace),
+        m_out(ws),
+        m_num_threads(num_threads)
+    {
+        assert(num_threads > 0);
+        clear();
+    }
 
     void clear() noexcept
     {
@@ -160,14 +168,24 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
     const auto& in() const noexcept { return m_in; }
     auto& out() noexcept { return m_out; }
     const auto& out() const noexcept { return m_out; }
+    bool is_single_threaded() const noexcept { return m_num_threads == 1; }
+    void set_num_threads(size_t num_threads) noexcept
+    {
+        assert(num_threads > 0);
+        m_num_threads = num_threads;
+    }
 
 private:
     In m_in;
     Out m_out;
+    size_t m_num_threads;
 };
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>&) -> ProgramExecutionContext<LiftedTag, AP, TP, CP>;
+
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>&, size_t) -> ProgramExecutionContext<LiftedTag, AP, TP, CP>;
 
 }
 

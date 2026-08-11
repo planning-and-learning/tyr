@@ -141,7 +141,7 @@ void AxiomEvaluator<LiftedTag>::compute_extended_state(ygg::Builder<State<Lifted
 
     insert_unextended_state(state_builder, *m_impl->definition->task->get_repository(), program.get_translation_context().p2d, workspace);
 
-    auto ctx = d::ProgramExecutionContext(workspace);
+    auto ctx = d::ProgramExecutionContext(workspace, evaluator.execution_context->get_num_threads());
 
     evaluator.execution_context->arena().execute([&] { d::compute_model(ctx); });
 

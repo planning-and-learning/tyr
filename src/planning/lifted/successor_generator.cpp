@@ -153,7 +153,7 @@ void SuccessorGenerator<LiftedTag>::Impl::compute_action_facts(const Node<Lifted
 
     insert_extended_state(state.get_state_builder(), *definition->task->get_repository(), program.get_translation_context().p2d, evaluator.workspace);
 
-    auto ctx = d::ProgramExecutionContext(evaluator.workspace);
+    auto ctx = d::ProgramExecutionContext(evaluator.workspace, evaluator.execution_context->get_num_threads());
     evaluator.execution_context->arena().execute([&] { d::compute_model(ctx); });
 }
 

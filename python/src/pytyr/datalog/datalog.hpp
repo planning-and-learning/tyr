@@ -428,7 +428,12 @@ void bind_configuration(nb::module_& m, const char* prefix)
 
     m.def(
         "compute_model",
-        [](Context& context, ygg::ExecutionContext& execution_context) { execution_context.arena().execute([&] { compute_model(context); }); },
+        [](Context& context, ygg::ExecutionContext& execution_context)
+        {
+            if constexpr (std::same_as<Kind, LiftedTag>)
+                context.set_num_threads(execution_context.get_num_threads());
+            execution_context.arena().execute([&] { compute_model(context); });
+        },
         "context"_a,
         "execution_context"_a,
         nb::call_guard<nb::gil_scoped_release>());

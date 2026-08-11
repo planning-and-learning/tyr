@@ -779,6 +779,32 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyGroundRecordsDistinctRuleBindings)
                 || (first_key == second_derive_b.get_row() && second_key == first_derive_b.get_row()));
 }
 
+TEST(TyrDatalogGroundQueueTest, AchieverPolicyKeepsFirstEqualAndReplacesStrictlyCheaperWitness)
+{
+    auto fixture = GroundQueueFixture();
+    const auto head = fixture.fluent_atom("head").get_row();
+    const auto rule = fixture.fresh_rule_binding();
+    auto policy = datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>();
+    policy.initialize(ygg::uint_t(head.get_index().relation) + 1);
+
+    const auto first_metric = ygg::ClosedInterval<ygg::float_t>(1, 1);
+    const auto equal_metric = ygg::ClosedInterval<ygg::float_t>(2, 2);
+    const auto cheaper_metric = ygg::ClosedInterval<ygg::float_t>(3, 3);
+    policy.record_achiever(head, datalog::WitnessAnnotation<f::PredicateTag>(rule, first_metric, datalog::Cost(2)));
+    policy.record_achiever(head, datalog::WitnessAnnotation<f::PredicateTag>(rule, equal_metric, datalog::Cost(2)));
+
+    const auto* achievers = policy.find_achievers(head);
+    ASSERT_NE(achievers, nullptr);
+    ASSERT_EQ(achievers->size(), 1);
+    EXPECT_EQ(achievers->front().get_metric(), first_metric);
+
+    policy.record_achiever(head, datalog::WitnessAnnotation<f::PredicateTag>(rule, cheaper_metric, datalog::Cost(1)));
+    achievers = policy.find_achievers(head);
+    ASSERT_NE(achievers, nullptr);
+    ASSERT_EQ(achievers->size(), 1);
+    EXPECT_EQ(achievers->front().get_metric(), cheaper_metric);
+}
+
 TEST(TyrDatalogGroundQueueTest, DerivedNumericIntervalUnblocksRuleAndRecordsSupport)
 {
     auto fixture = GroundQueueFixture();

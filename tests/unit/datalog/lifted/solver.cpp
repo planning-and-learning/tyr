@@ -218,6 +218,7 @@ AtomsByPredicate collect_atoms_by_predicate(const Workspace& workspace)
 struct LiftedNumericProgram
 {
     fd::PredicateBindingView<f::FluentTag> goal;
+    fd::GroundConjunctiveConditionView goals;
     fd::FunctionBindingView<f::FluentTag> source;
     fd::FunctionBindingView<f::FluentTag> target;
     fd::RepositoryFactoryPtr factory;
@@ -228,9 +229,11 @@ struct LiftedNumericProgram
                          fd::RepositoryPtr repository_,
                          fd::ProgramView<LiftedTag> program_view,
                          fd::PredicateBindingView<f::FluentTag> goal_,
+                         fd::GroundConjunctiveConditionView goals_,
                          fd::FunctionBindingView<f::FluentTag> source_,
                          fd::FunctionBindingView<f::FluentTag> target_) :
         goal(goal_),
+        goals(goals_),
         source(source_),
         target(target_),
         factory(std::move(factory_)),
@@ -240,7 +243,8 @@ struct LiftedNumericProgram
     }
 };
 
-LiftedNumericProgram make_lifted_numeric_program(bool include_source_rule = true, std::initializer_list<ygg::float_t> initial_source_values = {})
+LiftedNumericProgram
+make_lifted_numeric_program(bool include_source_rule = true, std::initializer_list<ygg::float_t> initial_source_values = {}, bool general_goal_rule = false)
 {
     auto factory = std::make_shared<fd::RepositoryFactory>();
     auto repository = factory->create_shared();
@@ -310,9 +314,34 @@ LiftedNumericProgram make_lifted_numeric_program(bool include_source_rule = true
     auto goal_atom_data = ygg::Data<fd::Atom<f::FluentTag>>();
     goal_atom_data.predicate = goal_predicate.get_index();
     const auto goal_atom = intern(std::move(goal_atom_data));
+    const auto ground_goal = intern(ygg::Data<fd::GroundAtom<f::FluentTag>>(goal.get_index()));
+    const auto goal_literal = intern(ygg::Data<fd::GroundLiteral<f::FluentTag>>(ground_goal.get_index(), true));
+    auto goals_data = ygg::Data<fd::GroundConjunctiveCondition>();
+    goals_data.fluent_literals.push_back(goal_literal.get_index());
+    const auto goals = intern(std::move(goals_data));
+
+    const auto seed_predicate = intern(ygg::Data<f::Predicate<f::FluentTag>>(std::string("seed"), 1));
+    const auto object = intern(ygg::Data<f::Object>(std::string("a")));
+    const auto variable = intern(ygg::Data<f::Variable>(std::string("x")));
+    auto seed_atom_data = ygg::Data<fd::Atom<f::FluentTag>>();
+    seed_atom_data.predicate = seed_predicate.get_index();
+    seed_atom_data.terms.emplace_back(f::ParameterIndex(0));
+    const auto seed_atom = intern(std::move(seed_atom_data));
+    const auto seed_literal = intern(ygg::Data<fd::Literal<f::FluentTag>>(seed_atom.get_index(), true));
+    auto seed_body_data = ygg::Data<fd::ConjunctiveCondition>();
+    seed_body_data.variables.push_back(variable.get_index());
+    seed_body_data.fluent_literals.push_back(seed_literal.get_index());
+    const auto seed_body = intern(std::move(seed_body_data));
+    auto seed_binding_data = ygg::Data<f::RelationBinding<f::Predicate<f::FluentTag>>>();
+    seed_binding_data.relation = seed_predicate.get_index();
+    seed_binding_data.objects.push_back(object.get_index());
+    const auto seed_binding = intern(std::move(seed_binding_data));
+    const auto ground_seed = intern(ygg::Data<fd::GroundAtom<f::FluentTag>>(seed_binding.get_index()));
 
     auto predicate_rule_data = ygg::Data<fd::Rule<f::PredicateTag>>();
-    predicate_rule_data.body = empty_body.get_index();
+    if (general_goal_rule)
+        predicate_rule_data.variables.push_back(variable.get_index());
+    predicate_rule_data.body = (general_goal_rule ? seed_body : empty_body).get_index();
     predicate_rule_data.head = goal_atom.get_index();
     predicate_rule_data.metric_effects.emplace_back(f::NumericEffectOperatorKind::Increase,
                                                     ygg::Data<fd::NumericEffectOperator<f::FluentTag>>::Variant(target_metric_effect.get_index()));
@@ -320,6 +349,12 @@ LiftedNumericProgram make_lifted_numeric_program(bool include_source_rule = true
 
     auto program_data = ygg::Data<fd::Program>();
     program_data.fluent_predicates.push_back(goal_predicate.get_index());
+    if (general_goal_rule)
+    {
+        program_data.objects.push_back(object.get_index());
+        program_data.fluent_predicates.push_back(seed_predicate.get_index());
+        program_data.fluent_atoms.push_back(ground_seed.get_index());
+    }
     program_data.fluent_functions.push_back(source_function.get_index());
     program_data.fluent_functions.push_back(target_function.get_index());
     if (initial_source_values.size() != 0)
@@ -334,7 +369,7 @@ LiftedNumericProgram make_lifted_numeric_program(bool include_source_rule = true
     program_data.function_rules.push_back(target_rule.get_index());
     const auto program = intern(std::move(program_data));
 
-    return LiftedNumericProgram(factory, repository, program, goal, source, target);
+    return LiftedNumericProgram(factory, repository, program, goal, goals, source, target);
 }
 
 struct LiftedPredicateProgram
@@ -462,7 +497,7 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
 
     const auto solve_workspace = [&](auto& workspace)
     {
-        auto context = d::ProgramExecutionContext(workspace);
+        auto context = d::ProgramExecutionContext(workspace, execution_context->get_num_threads());
         execution_context->arena().execute([&] { d::compute_model(context); });
     };
 
@@ -517,7 +552,7 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
             {
                 auto program = p::GroundTaskProgram(task->get_task());
                 auto workspace = d::ProgramWorkspace<::tyr::LiftedTag>(program.get_datalog_program());
-                auto context = d::ProgramExecutionContext(workspace);
+                auto context = d::ProgramExecutionContext(workspace, execution_context->get_num_threads());
                 execution_context->arena().execute([&] { d::compute_model(context); });
                 return collect_atoms_by_predicate(workspace);
             }
@@ -660,6 +695,32 @@ TEST(TyrDatalogLiftedBottomUpTest, StoredNumericCertificateCanStillBecomeAvailab
 
     EXPECT_EQ(workspace.facts.fact_sets.function[fixture.source], source_interval);
     EXPECT_EQ(workspace.facts.fact_sets.function[fixture.target], source_interval);
+}
+
+TEST(TyrDatalogLiftedBottomUpTest, ReplaysPredicateAfterAvailableNumericCertificateImproves)
+{
+    auto fixture = make_lifted_numeric_program(true, { 3 }, true);
+    ASSERT_EQ(fixture.program.get_program().get_rules<f::PredicateTag>().front().get_arity(), 1);
+    using AnnotationPolicy = d::MinCostAnnotationPolicy<d::SumAggregation>;
+    using TerminationPolicy = d::TerminationPolicy<d::SumAggregation>;
+    using Workspace = d::ProgramWorkspace<LiftedTag, AnnotationPolicy, TerminationPolicy>;
+    auto termination_policy = TerminationPolicy();
+    termination_policy.set_goals(fixture.goals);
+    auto workspace = Workspace(fixture.program, AnnotationPolicy(), termination_policy);
+    auto context = d::ProgramExecutionContext(workspace);
+    const auto source_interval = ygg::ClosedInterval<ygg::float_t>(3, 3);
+    workspace.numeric_annotations.clear();
+    workspace.numeric_annotations.insert(fixture.source, source_interval, d::BaseAnnotation(5));
+
+    d::compute_model(context);
+
+    const auto* source = workspace.numeric_annotations.find(fixture.source, source_interval);
+    const auto* goal = workspace.annotations.find(fixture.goal);
+    ASSERT_NE(source, nullptr);
+    ASSERT_NE(goal, nullptr);
+    EXPECT_TRUE(workspace.facts.fact_sets.predicate.contains(fixture.goal));
+    EXPECT_EQ(d::get_cost(*source), 2);
+    EXPECT_EQ(d::get_cost(*goal), 5);
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateSemantics)

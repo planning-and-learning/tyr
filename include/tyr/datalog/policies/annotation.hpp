@@ -25,6 +25,7 @@
 #include <optional>
 #include <utility>
 #include <vector>
+#include <yggdrasil/containers/associative_containers.hpp>
 
 namespace tyr::datalog
 {
@@ -127,7 +128,15 @@ public:
     void record_achiever(PredicateHead head, PredicateWitness witness);
 
 private:
-    DenseRelationMap<::tyr::formalism::PredicateTag, Achievers> m_achievers;
+    using RuleBinding = ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::PredicateTag>;
+
+    struct IndexedAchievers
+    {
+        Achievers achievers;
+        ygg::UnorderedMap<RuleBinding, size_t> indices;
+    };
+
+    DenseRelationMap<::tyr::formalism::PredicateTag, IndexedAchievers> m_achievers;
 };
 
 }

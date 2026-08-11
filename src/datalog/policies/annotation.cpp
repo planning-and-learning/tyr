@@ -80,24 +80,27 @@ template<typename AggregationFunction>
 const typename MinCostAnnotationWithAchieversPolicy<AggregationFunction>::Achievers*
 MinCostAnnotationWithAchieversPolicy<AggregationFunction>::find_achievers(PredicateHead head) const noexcept
 {
-    return m_achievers.find(head);
+    const auto* entry = m_achievers.find(head);
+    return entry ? &entry->achievers : nullptr;
 }
 
 template<typename AggregationFunction>
 void MinCostAnnotationWithAchieversPolicy<AggregationFunction>::record_achiever(PredicateHead head, PredicateWitness witness)
 {
     m_achievers.update(head,
-                       [&](auto& achievers, bool initialized)
+                       [&](auto& entry, bool initialized)
                        {
                            if (!initialized)
-                               achievers.clear();
-                           const auto incumbent = std::find_if(achievers.begin(),
-                                                               achievers.end(),
-                                                               [&](const auto& achiever) { return achiever.get_rule_key() == witness.get_rule_key(); });
-                           if (incumbent == achievers.end())
-                               achievers.push_back(std::move(witness));
-                           else if (witness.get_cost() < incumbent->get_cost())
-                               *incumbent = std::move(witness);
+                           {
+                               entry.achievers.clear();
+                               entry.indices.clear();
+                           }
+
+                           const auto [it, inserted] = entry.indices.try_emplace(witness.get_rule_key(), entry.achievers.size());
+                           if (inserted)
+                               entry.achievers.push_back(std::move(witness));
+                           else if (witness.get_cost() < entry.achievers[it->second].get_cost())
+                               entry.achievers[it->second] = std::move(witness);
                        });
 }
 

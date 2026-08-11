@@ -164,6 +164,8 @@ protected:
         const auto& translation_context = m_definition->rpg_program.get_translation_context().p2d;
         insert_unextended_state(state, repository, translation_context, m_workspace);
         auto ctx = datalog::ProgramExecutionContext(m_workspace);
+        if constexpr (std::same_as<Kind, LiftedTag>)
+            ctx.set_num_threads(m_execution_context->get_num_threads());
         m_execution_context->arena().execute([&] { datalog::compute_model(ctx); });
 
         return m_workspace.tp.check(datalog::FactSets { m_workspace.const_workspace.facts.fact_sets, m_workspace.facts.fact_sets }) ?
