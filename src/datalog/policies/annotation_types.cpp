@@ -54,7 +54,7 @@ template<TaskKind Kind, ::tyr::formalism::RelationKind R>
 WitnessAnnotation<Kind, R>::WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key_,
                                               Metric metric_,
                                               Cost cost_,
-                                              std::span<const NumericSupport<Kind>> numeric_supports_) :
+                                              std::span<const NumericSupport> numeric_supports_) :
     WitnessAnnotation(rule_key_, metric_, cost_, NumericSupports(numeric_supports_.begin(), numeric_supports_.end()))
 {
 }

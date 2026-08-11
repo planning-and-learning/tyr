@@ -25,8 +25,8 @@
 #include "tyr/planning/factory.hpp"
 #include "tyr/planning/heuristics/rpg_ff.hpp"
 #include "tyr/planning/lifted/programs/action.hpp"
-#include "tyr/planning/lifted/programs/rpg.hpp"
 #include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/programs/rpg.hpp"
 #include "tyr/planning/task_utils.hpp"
 
 #include <algorithm>

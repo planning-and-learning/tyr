@@ -47,8 +47,7 @@ namespace
 namespace f = ::tyr::formalism;
 namespace fd = ::tyr::formalism::datalog;
 
-template<TaskKind Kind>
-struct LMCutNumericNode : ygg::comparison::Mixin<LMCutNumericNode<Kind>>
+struct LMCutNumericNode : ygg::comparison::Mixin<LMCutNumericNode>
 {
     fd::FunctionBindingView<f::FluentTag> key;
     ygg::ClosedInterval<ygg::float_t> interval;
@@ -83,7 +82,7 @@ struct LMCutImplementation :
                                       datalog::RuleCostOverridePolicy<Kind>>;
     using ActionBinding = ::tyr::formalism::planning::ActionBindingView;
     using PredicateHead = fd::PredicateBindingView<f::FluentTag>;
-    using NumericNode = LMCutNumericNode<Kind>;
+    using NumericNode = LMCutNumericNode;
     using RuleEdge = fd::RuleBindingView<f::PredicateTag>;
     using NumericEdge = datalog::NumericTransitionCostKey<f::FunctionTag>;
     using Precondition = std::variant<PredicateHead, NumericNode>;
@@ -98,9 +97,9 @@ private:
     datalog::Cost get_witness_body_cost(const datalog::WitnessAnnotation<Kind, R>& witness);
     template<f::RelationKind R>
     datalog::Cost get_witness_edge_residual_cost(const datalog::WitnessAnnotation<Kind, R>& witness);
-    bool is_target_support(const datalog::NumericSupport<Kind>& support, NumericNode node) const noexcept;
-    datalog::Cost get_numeric_support_cost(const datalog::NumericSupport<Kind>& support);
-    void append_numeric_support_preconditions(const datalog::NumericSupport<Kind>& support, datalog::Cost body_cost, std::vector<Precondition>& result);
+    bool is_target_support(const datalog::NumericSupport& support, NumericNode node) const noexcept;
+    datalog::Cost get_numeric_support_cost(const datalog::NumericSupport& support);
+    void append_numeric_support_preconditions(const datalog::NumericSupport& support, datalog::Cost body_cost, std::vector<Precondition>& result);
     datalog::Cost get_numeric_witness_body_cost(const datalog::WitnessAnnotation<Kind, f::FunctionTag>& witness, NumericNode node);
     datalog::Cost get_numeric_witness_edge_residual_cost(const datalog::WitnessAnnotation<Kind, f::FunctionTag>& witness, NumericNode node);
     void use_action_cost(ActionBinding action_binding, datalog::Cost cost);
@@ -247,30 +246,24 @@ datalog::Cost LMCutImplementation<Kind, TP>::get_witness_edge_residual_cost(cons
 }
 
 template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
-bool LMCutImplementation<Kind, TP>::is_target_support(const datalog::NumericSupport<Kind>& support, NumericNode node) const noexcept
+bool LMCutImplementation<Kind, TP>::is_target_support(const datalog::NumericSupport& support, NumericNode node) const noexcept
 {
     return support.get_key() == node.key && support.get_interval() == node.interval;
 }
 
 template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
-datalog::Cost LMCutImplementation<Kind, TP>::get_numeric_support_cost(const datalog::NumericSupport<Kind>& support)
+datalog::Cost LMCutImplementation<Kind, TP>::get_numeric_support_cost(const datalog::NumericSupport& support)
 {
-    auto cost = datalog::Cost(0);
-    this->for_each_numeric_predecessor(support, [&](const auto, const auto, const auto predecessor_cost) { cost = std::max(cost, predecessor_cost); });
-    return cost;
+    return support.get_cost();
 }
 
 template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>
-void LMCutImplementation<Kind, TP>::append_numeric_support_preconditions(const datalog::NumericSupport<Kind>& support,
+void LMCutImplementation<Kind, TP>::append_numeric_support_preconditions(const datalog::NumericSupport& support,
                                                                          datalog::Cost body_cost,
                                                                          std::vector<Precondition>& result)
 {
-    this->for_each_numeric_predecessor(support,
-                                       [&](const auto key, const auto interval, const auto cost)
-                                       {
-                                           if (cost == body_cost)
-                                               result.emplace_back(NumericNode { key, interval });
-                                       });
+    if (support.get_cost() == body_cost)
+        result.emplace_back(NumericNode { support.get_key(), support.get_interval() });
 }
 
 template<TaskKind Kind, datalog::TerminationPolicyConcept<Kind> TP>

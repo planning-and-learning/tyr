@@ -21,20 +21,22 @@
 #include "../../heuristics/rpg.hpp"
 #include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
+#include "tyr/datalog/lifted/rule_instance.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/policies/cost.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/merge_planning.hpp"
-#include "tyr/planning/lifted/programs/rpg.hpp"
 #include "tyr/planning/lifted/state_builder.hpp"
 #include "tyr/planning/lifted/state_data.hpp"
 #include "tyr/planning/lifted/state_view.hpp"
 #include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/programs/rpg.hpp"
 
 #include <cassert>
 #include <fmt/ostream.h>
 #include <optional>
+#include <utility>
 #include <vector>
 
 namespace tyr::planning::detail
@@ -107,34 +109,16 @@ struct RPGPolicy<LiftedTag>
         return executor.is_applicable(action.get_relation(), state_context, grounder_context, *definition.task->get_fdr_context());
     }
 
-    template<::tyr::formalism::RelationKind R, typename Workspace, typename PredicateCallback, typename NumericCallback>
-    static void for_each_witness_precondition(Workspace& workspace,
-                                              const datalog::WitnessAnnotation<LiftedTag, R>& witness,
-                                              PredicateCallback&& predicate_callback,
-                                              NumericCallback&& numeric_callback)
+    template<::tyr::formalism::RelationKind R, typename Workspace, typename Callback>
+    static void visit_witness_rule_instance(Workspace& workspace, const datalog::WitnessAnnotation<LiftedTag, R>& witness, Callback&& callback)
     {
         const auto rule_binding = witness.get_rule_key();
-        const auto row = rule_binding.get_objects();
         const auto& const_rule_workspace = *workspace.const_workspace.template get_rules<R>()[ygg::uint_t(rule_binding.get_relation().get_index())];
-        const auto witness_condition = const_rule_workspace.get_rule().get_body();
-        auto grounder_context = ::tyr::formalism::datalog::GrounderContext { workspace.datalog_builder, workspace.workspace_repository, workspace.binding };
-
-        for (const auto literal : witness_condition.template get_literals<::tyr::formalism::FluentTag>())
-        {
-            if (!literal.get_polarity())
-                continue;
-
-            workspace.binding.clear();
-            ygg::extend(row, workspace.binding);
-            predicate_callback(::tyr::formalism::datalog::ground(literal.get_atom(), grounder_context).first.get_row());
-        }
-
-        for (const auto constraint : witness_condition.get_numeric_constraints())
-        {
-            workspace.binding.clear();
-            ygg::extend(row, workspace.binding);
-            numeric_callback(::tyr::formalism::datalog::ground(constraint, grounder_context));
-        }
+        auto binding = ygg::IndexList<::tyr::formalism::Object> {};
+        ygg::extend(rule_binding.get_objects(), binding);
+        auto grounder_context = ::tyr::formalism::datalog::GrounderContext { workspace.datalog_builder, workspace.workspace_repository, binding };
+        const auto instance = datalog::RuleInstance<LiftedTag, R>(const_rule_workspace.get_rule(), grounder_context);
+        std::forward<Callback>(callback)(instance);
     }
 
     template<typename Workspace>

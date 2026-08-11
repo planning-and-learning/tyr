@@ -112,12 +112,6 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
     {
         return GroundNumericSupportSelector(FactSets { const_workspace.facts.fact_sets, facts.fact_sets }, numeric_annotations);
     }
-
-    template<typename Callback>
-    void for_each_numeric_support(const NumericSupport<GroundTag>& support, Callback&& callback) const
-    {
-        std::forward<Callback>(callback)(support.get_key(), support.get_interval(), support.get_cost());
-    }
 };
 
 template<>

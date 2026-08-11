@@ -27,6 +27,7 @@ namespace tyr::datalog
 void bind_module_definitions(nb::module_& m)
 {
     bind_fact_sets(m);
+    bind_numeric_support(m);
 
     nb::class_<ProgramStatistics>(m, "ProgramStatistics")
         .def(nb::init<>())
@@ -44,9 +45,11 @@ void bind_module_definitions(nb::module_& m)
         .def_rw("max_queue_size", &GroundQueueStatistics::max_queue_size);
 
     auto ground_module = m.def_submodule("ground");
+    ground_module.attr("NumericSupport") = m.attr("NumericSupport");
     bind_ground_module_definitions(ground_module);
 
     auto lifted_module = m.def_submodule("lifted");
+    lifted_module.attr("NumericSupport") = m.attr("NumericSupport");
     bind_lifted_module_definitions(lifted_module);
 }
 

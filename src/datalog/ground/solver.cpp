@@ -279,7 +279,7 @@ template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundT
 void fire_rule(GroundCtx<AP, TP, CP>& ctx,
                fd::GroundRuleView<f::PredicateTag> rule,
                RuleInstance<GroundTag, f::PredicateTag>& instance,
-               const PredicateCandidate<GroundTag>& candidate,
+               const PredicateCandidate& candidate,
                CostBuckets& pending_heads)
 {
     auto& out = ctx.out();
@@ -312,7 +312,7 @@ template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundT
 void fire_rule(GroundCtx<AP, TP, CP>& ctx,
                fd::GroundRuleView<f::FunctionTag>,
                RuleInstance<GroundTag, f::FunctionTag>& instance,
-               const FunctionCandidate<GroundTag>& candidate,
+               const FunctionCandidate& candidate,
                CostBuckets& pending_heads)
 {
     ++ctx.out().statistics().num_rules_fired;

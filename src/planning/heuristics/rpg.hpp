@@ -220,12 +220,6 @@ protected:
         return Policy::is_action_applicable(*m_definition, m_workspace, executor, action, state_context);
     }
 
-    template<typename Callback>
-    void for_each_numeric_predecessor(const datalog::NumericSupport<Kind>& support, Callback&& callback)
-    {
-        m_workspace.for_each_numeric_support(support, std::forward<Callback>(callback));
-    }
-
     void append_planning_cut_frontier_atom(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
                                            ::tyr::formalism::planning::GroundAtomViewList<::tyr::formalism::FluentTag>& atoms)
     {
@@ -236,21 +230,14 @@ protected:
     template<::tyr::formalism::RelationKind R, typename Callback>
     void for_each_witness_precondition(const datalog::WitnessAnnotation<Kind, R>& witness, Callback&& callback)
     {
-        Policy::for_each_witness_precondition(m_workspace,
-                                              witness,
-                                              std::forward<Callback>(callback),
-                                              [](::tyr::formalism::datalog::GroundBooleanOperatorView) {});
-    }
-
-    template<::tyr::formalism::RelationKind R, typename PredicateCallback, typename NumericCallback>
-    void for_each_witness_precondition(const datalog::WitnessAnnotation<Kind, R>& witness,
-                                       PredicateCallback&& predicate_callback,
-                                       NumericCallback&& numeric_callback)
-    {
-        Policy::for_each_witness_precondition(m_workspace,
-                                              witness,
-                                              std::forward<PredicateCallback>(predicate_callback),
-                                              std::forward<NumericCallback>(numeric_callback));
+        Policy::visit_witness_rule_instance(m_workspace,
+                                            witness,
+                                            [&](const auto& instance)
+                                            {
+                                                for (const auto literal : instance.get_body().template get_literals<::tyr::formalism::FluentTag>())
+                                                    if (literal.get_polarity())
+                                                        callback(instance.resolve(literal.get_atom()));
+                                            });
     }
 
     template<typename Callback>

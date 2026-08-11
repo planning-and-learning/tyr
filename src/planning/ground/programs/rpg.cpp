@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/ground/programs/rpg.hpp"
+#include "tyr/planning/programs/rpg.hpp"
 
 #include "../../programs/common.hpp"
 #include "tyr/datalog/applicability.hpp"
@@ -559,31 +559,12 @@ d::Program<GroundTag> create_rpg_datalog_program(fp::FDRTaskView task,
 
 }  // namespace
 
+template<>
 RPGProgram<GroundTag>::RPGProgram(fp::FDRTaskView task, CostMode cost_mode) :
     m_translation_context(),
     m_rule_to_action(),
     m_datalog_program(create_rpg_datalog_program(task, cost_mode, m_translation_context, m_rule_to_action))
 {
 }
-
-const TranslationContext<GroundTag>& RPGProgram<GroundTag>::get_translation_context() const noexcept { return m_translation_context; }
-
-template<>
-const RPGProgram<GroundTag>::RuleToActionMapping<f::PredicateTag>& RPGProgram<GroundTag>::get_rule_to_action_mapping<f::PredicateTag>() const noexcept
-{
-    return m_rule_to_action.predicate;
-}
-
-template<>
-const RPGProgram<GroundTag>::RuleToActionMapping<f::FunctionTag>& RPGProgram<GroundTag>::get_rule_to_action_mapping<f::FunctionTag>() const noexcept
-{
-    return m_rule_to_action.function;
-}
-
-datalog::Program<GroundTag>& RPGProgram<GroundTag>::get_datalog_program() noexcept { return m_datalog_program; }
-
-const datalog::Program<GroundTag>& RPGProgram<GroundTag>::get_datalog_program() const noexcept { return m_datalog_program; }
-
-fd::GroundConjunctiveConditionView RPGProgram<GroundTag>::get_goal() const noexcept { return m_datalog_program.get_program().get_goal().value(); }
 
 }  // namespace tyr::planning

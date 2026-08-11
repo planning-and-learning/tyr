@@ -99,6 +99,8 @@ class GoalCountHeuristic;
 template<TaskKind Kind>
 using GoalCountHeuristicPtr = std::shared_ptr<GoalCountHeuristic<Kind>>;
 template<TaskKind Kind>
+class RPGProgram;
+template<TaskKind Kind>
 class AddRPGHeuristic;
 template<TaskKind Kind>
 using AddRPGHeuristicPtr = std::shared_ptr<AddRPGHeuristic<Kind>>;

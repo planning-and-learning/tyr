@@ -46,26 +46,23 @@ template<TaskKind Kind>
 struct RuleEvaluationWorkspace
 {
     NumericSupportSelectorWorkspace<Kind> selector;
-    std::vector<NumericSupport<Kind>> exact_supports;
+    std::vector<NumericSupport> exact_supports;
 };
 
-template<TaskKind Kind>
 struct CandidateEvidence
 {
     ygg::ClosedInterval<ygg::float_t> metric;
-    std::span<const NumericSupport<Kind>> numeric_supports;
+    std::span<const NumericSupport> numeric_supports;
 };
 
-template<TaskKind Kind>
 struct PredicateCandidate
 {
     ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head;
     Cost cost;
     Cost queue_label;
-    std::optional<CandidateEvidence<Kind>> evidence;
+    std::optional<CandidateEvidence> evidence;
 };
 
-template<TaskKind Kind>
 struct FunctionCandidate
 {
     ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> head;
@@ -73,20 +70,16 @@ struct FunctionCandidate
     Cost cost;
     Cost queue_label;
     bool grows_fact;
-    std::optional<CandidateEvidence<Kind>> evidence;
+    std::optional<CandidateEvidence> evidence;
 };
 
 namespace rule_evaluation_detail
 {
 
-template<TaskKind Kind>
-using Metric = ygg::ClosedInterval<ygg::float_t>;
-
-template<TaskKind Kind>
 struct EvaluationState
 {
     Cost support_cost;
-    Metric<Kind> support_metric;
+    ygg::ClosedInterval<ygg::float_t> support_metric;
     Cost raw_edge;
     std::optional<ResolvedNumericEffect> numeric_effect;
     ygg::ClosedInterval<ygg::float_t> raw_interval;
@@ -102,7 +95,7 @@ void aggregate_selection_cost(Cost& cost, const NumericSupportSelectorWorkspace<
 }
 
 template<bool CollectEvidence, TaskKind Kind>
-bool append_selection_evidence(const RuleEvaluationInput<Kind>& input, RuleEvaluationWorkspace<Kind>& workspace, Metric<Kind>& metric)
+bool append_selection_evidence(const RuleEvaluationInput<Kind>& input, RuleEvaluationWorkspace<Kind>& workspace, ygg::ClosedInterval<ygg::float_t>& metric)
 {
     if constexpr (!CollectEvidence)
     {
@@ -150,12 +143,12 @@ Cost get_transition_credit(const CP& policy,
 }
 
 template<bool CollectEvidence, TaskKind Kind, ::tyr::formalism::RelationKind R, typename AP, typename CP>
-std::optional<EvaluationState<Kind>>
+std::optional<EvaluationState>
 evaluate_annotated_rule(RuleInstance<Kind, R>& instance, const AP&, const CP&, const RuleEvaluationInput<Kind>& input, RuleEvaluationWorkspace<Kind>& workspace)
 {
     using Aggregation = typename AP::Aggregation;
     const auto aggregate = Aggregation {};
-    auto state = EvaluationState<Kind> { Aggregation::identity(), {}, Cost(0), std::nullopt, {}, {} };
+    auto state = EvaluationState { Aggregation::identity(), {}, Cost(0), std::nullopt, {}, {} };
 
     workspace.exact_supports.clear();
 
@@ -243,10 +236,10 @@ evaluate_annotated_rule(RuleInstance<Kind, R>& instance, const AP&, const CP&, c
 }
 
 template<TaskKind Kind, typename AP>
-std::optional<FunctionCandidate<Kind>> evaluate_unannotated_function(RuleInstance<Kind, ::tyr::formalism::FunctionTag>& instance,
-                                                                     const AP& policy,
-                                                                     const RuleEvaluationInput<Kind>& input,
-                                                                     RuleEvaluationWorkspace<Kind>& workspace)
+std::optional<FunctionCandidate> evaluate_unannotated_function(RuleInstance<Kind, ::tyr::formalism::FunctionTag>& instance,
+                                                               const AP& policy,
+                                                               const RuleEvaluationInput<Kind>& input,
+                                                               RuleEvaluationWorkspace<Kind>& workspace)
 {
     const auto effect = ygg::visit([&](const auto source) { return instance.resolve(source); }, instance.get_head().get_variant());
     workspace.selector.clear();
@@ -272,7 +265,7 @@ std::optional<FunctionCandidate<Kind>> evaluate_unannotated_function(RuleInstanc
     if (!empty(current) && policy.is_widening_label_preserving(Cost(0), Cost(0)))
         interval = widen_free_growth(raw_interval, current);
 
-    return FunctionCandidate<Kind> { effect.head, interval, Cost(0), Cost(0), empty(current) || !subset(interval, current), std::nullopt };
+    return FunctionCandidate { effect.head, interval, Cost(0), Cost(0), empty(current) || !subset(interval, current), std::nullopt };
 }
 
 }
@@ -312,16 +305,16 @@ std::optional<Cost> evaluate_rule_priority(RuleInstance<Kind, R>& instance,
 }
 
 template<TaskKind Kind, typename AP, typename CP>
-std::optional<PredicateCandidate<Kind>> evaluate_predicate_candidate(RuleInstance<Kind, ::tyr::formalism::PredicateTag>& instance,
-                                                                     const AP& annotation_policy,
-                                                                     const CP& cost_policy,
-                                                                     const RuleEvaluationInput<Kind>& input,
-                                                                     RuleEvaluationWorkspace<Kind>& workspace)
+std::optional<PredicateCandidate> evaluate_predicate_candidate(RuleInstance<Kind, ::tyr::formalism::PredicateTag>& instance,
+                                                               const AP& annotation_policy,
+                                                               const CP& cost_policy,
+                                                               const RuleEvaluationInput<Kind>& input,
+                                                               RuleEvaluationWorkspace<Kind>& workspace)
 {
     const auto head = instance.resolve(instance.get_head());
     if constexpr (!AP::stores_annotations)
     {
-        return PredicateCandidate<Kind> { head, Cost(0), Cost(0), std::nullopt };
+        return PredicateCandidate { head, Cost(0), Cost(0), std::nullopt };
     }
     else
     {
@@ -331,19 +324,16 @@ std::optional<PredicateCandidate<Kind>> evaluate_predicate_candidate(RuleInstanc
 
         const auto edge = reduce_cost(state->raw_edge, rule_evaluation_detail::get_rule_credit<Kind, ::tyr::formalism::PredicateTag>(cost_policy, instance));
         const auto cost = state->support_cost + edge;
-        return PredicateCandidate<Kind> { head,
-                                          cost,
-                                          cost,
-                                          CandidateEvidence<Kind> { add_metric_delta(state->support_metric, edge), workspace.exact_supports } };
+        return PredicateCandidate { head, cost, cost, CandidateEvidence { add_metric_delta(state->support_metric, edge), workspace.exact_supports } };
     }
 }
 
 template<TaskKind Kind, typename AP, typename CP>
-std::optional<FunctionCandidate<Kind>> evaluate_function_candidate(RuleInstance<Kind, ::tyr::formalism::FunctionTag>& instance,
-                                                                   const AP& annotation_policy,
-                                                                   const CP& cost_policy,
-                                                                   const RuleEvaluationInput<Kind>& input,
-                                                                   RuleEvaluationWorkspace<Kind>& workspace)
+std::optional<FunctionCandidate> evaluate_function_candidate(RuleInstance<Kind, ::tyr::formalism::FunctionTag>& instance,
+                                                             const AP& annotation_policy,
+                                                             const CP& cost_policy,
+                                                             const RuleEvaluationInput<Kind>& input,
+                                                             RuleEvaluationWorkspace<Kind>& workspace)
 {
     if constexpr (!AP::stores_annotations)
     {
@@ -370,12 +360,12 @@ std::optional<FunctionCandidate<Kind>> evaluate_function_candidate(RuleInstance<
             edge = reduce_cost(edge, rule_evaluation_detail::get_transition_credit<Kind>(cost_policy, instance, effect.head, interval));
 
         const auto cost = state->support_cost + edge;
-        return FunctionCandidate<Kind> { effect.head,
-                                         interval,
-                                         cost,
-                                         state->support_cost,
-                                         empty(state->current_interval) || !subset(interval, state->current_interval),
-                                         CandidateEvidence<Kind> { add_metric_delta(state->support_metric, edge), workspace.exact_supports } };
+        return FunctionCandidate { effect.head,
+                                   interval,
+                                   cost,
+                                   state->support_cost,
+                                   empty(state->current_interval) || !subset(interval, state->current_interval),
+                                   CandidateEvidence { add_metric_delta(state->support_metric, edge), workspace.exact_supports } };
     }
 }
 

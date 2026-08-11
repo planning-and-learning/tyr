@@ -112,10 +112,9 @@ struct HeuristicContext
 };
 
 template<::tyr::TaskKind Kind>
-HeuristicContext<Kind> create_heuristic_context(const std::filesystem::path& domain_file, const std::filesystem::path& task_file)
+HeuristicContext<Kind> create_heuristic_context(p::TaskPtr<::tyr::LiftedTag> lifted_task)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto lifted_task = p::Task<::tyr::LiftedTag>::create(make_test_parser(domain_file).parse_task(task_file));
 
     auto task = p::TaskPtr<Kind> {};
     if constexpr (std::is_same_v<Kind, ::tyr::LiftedTag>)
@@ -132,6 +131,12 @@ HeuristicContext<Kind> create_heuristic_context(const std::filesystem::path& dom
                                     std::move(state_repository),
                                     std::move(axiom_evaluator),
                                     std::move(successor_generator) };
+}
+
+template<::tyr::TaskKind Kind>
+HeuristicContext<Kind> create_heuristic_context(const std::filesystem::path& domain_file, const std::filesystem::path& task_file)
+{
+    return create_heuristic_context<Kind>(p::Task<::tyr::LiftedTag>::create(make_test_parser(domain_file).parse_task(task_file)));
 }
 
 inline bool should_check(const HeuristicExpectation& expectation) { return expectation.h.has_value(); }
@@ -214,6 +219,49 @@ void expect_worker_has_independent_preferred_actions()
     EXPECT_EQ(worker->evaluate(dead_end->node.get_state()), std::numeric_limits<ygg::float_t>::infinity());
     EXPECT_TRUE(worker->get_preferred_actions().empty());
     EXPECT_FALSE(heuristic->get_preferred_actions().empty());
+}
+
+template<::tyr::TaskKind Kind>
+void expect_ff_traverses_exact_numeric_head_supports()
+{
+    static constexpr auto domain = std::string_view { R"(
+(define (domain ff-numeric-witness)
+  (:requirements :strips :numeric-fluents)
+  (:predicates (done))
+  (:functions (source) (target))
+
+  (:action set-source
+    :parameters ()
+    :precondition ()
+    :effect (assign (source) 1))
+
+  (:action copy-source
+    :parameters ()
+    :precondition ()
+    :effect (assign (target) (source)))
+
+  (:action finish
+    :parameters ()
+    :precondition (>= (target) 1)
+    :effect (done))
+)
+)" };
+    static constexpr auto problem = std::string_view { R"(
+(define (problem ff-numeric-witness-problem)
+  (:domain ff-numeric-witness)
+  (:init (= (source) 0) (= (target) 0))
+  (:goal (done))
+)
+)" };
+
+    auto parser = ::tyr::formalism::planning::Parser(std::string(domain), "ff-numeric-witness-domain.pddl");
+    auto context =
+        create_heuristic_context<Kind>(p::Task<::tyr::LiftedTag>::create(parser.parse_task(std::string(problem), "ff-numeric-witness-problem.pddl")));
+    const auto initial_state = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator).get_state();
+    auto heuristic = p::FFRPGHeuristic<Kind>::create(context.task, context.execution_context, ::tyr::CostMode::UNIT);
+
+    // copy-source records both [0, 0] and [1, 1] certificates for the same source binding.
+    EXPECT_EQ(heuristic->evaluate(initial_state), 3);
 }
 
 inline void expect_optional_eq(ygg::float_t actual, std::optional<ygg::float_t> expected)

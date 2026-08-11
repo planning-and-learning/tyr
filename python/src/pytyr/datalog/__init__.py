@@ -5,6 +5,7 @@ from .._pytyr.datalog import (
     FluentFunctionFactSet,
     FluentPredicateFactSet,
     GroundQueueStatistics,
+    NumericSupport,
     ProgramStatistics,
     StaticFactSets,
     StaticFunctionFactSet,

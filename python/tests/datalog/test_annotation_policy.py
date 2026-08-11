@@ -3,6 +3,10 @@ import pytest
 from pytyr import datalog
 
 
+def test_numeric_support_type_is_shared() -> None:
+    assert datalog.NumericSupport is datalog.ground.NumericSupport is datalog.lifted.NumericSupport
+
+
 @pytest.mark.parametrize("module", [datalog.ground, datalog.lifted])
 def test_annotation_policy_api_is_unified(module) -> None:
     for name in (

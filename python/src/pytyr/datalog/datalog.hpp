@@ -135,10 +135,22 @@ inline void bind_fact_sets(nb::module_& m)
     bind_tagged_fact_sets<::tyr::formalism::FluentTag>(m, "FluentFactSets");
 }
 
+inline void bind_numeric_support(nb::module_& m)
+{
+    using NumericKey = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
+
+    auto cls = nb::class_<NumericSupport>(m, "NumericSupport")
+                   .def(nb::init<NumericKey, Interval, Cost>(), "key"_a, "interval"_a, "cost"_a)
+                   .def("get_key", &NumericSupport::get_key, nb::keep_alive<0, 1>())
+                   .def("get_interval", &NumericSupport::get_interval)
+                   .def("get_cost", &NumericSupport::get_cost);
+    ygg::add_comparison(cls);
+}
+
 template<TaskKind Kind>
 void bind_annotations(nb::module_& m)
 {
-    using NumericSupportT = NumericSupport<Kind>;
+    using NumericSupportT = NumericSupport;
     using BaseAnnotationT = BaseAnnotation<Kind>;
     using WitnessAnnotationT = WitnessAnnotation<Kind, ::tyr::formalism::PredicateTag>;
     using FunctionWitnessAnnotationT = WitnessAnnotation<Kind, ::tyr::formalism::FunctionTag>;
@@ -148,13 +160,6 @@ void bind_annotations(nb::module_& m)
     using FunctionRuleKey = ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::FunctionTag>;
     using NumericKey = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
     using PredicateKey = typename PredicateAnnotationStore::Key;
-
-    auto numeric_support_cls = nb::class_<NumericSupportT>(m, "NumericSupport")
-                                   .def(nb::init<NumericKey, Interval, Cost>(), "key"_a, "interval"_a, "cost"_a)
-                                   .def("get_key", &NumericSupportT::get_key, nb::keep_alive<0, 1>())
-                                   .def("get_interval", &NumericSupportT::get_interval)
-                                   .def("get_cost", &NumericSupportT::get_cost);
-    ygg::add_comparison(numeric_support_cls);
 
     auto base_annotation_cls = nb::class_<BaseAnnotationT>(m, "BaseAnnotation")
                                    .def(nb::init<>())

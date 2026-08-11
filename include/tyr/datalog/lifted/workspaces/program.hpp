@@ -119,12 +119,6 @@ public:
         assert(numeric_support_selector.has_value());
         return *numeric_support_selector;
     }
-
-    template<typename Callback>
-    void for_each_numeric_support(const NumericSupport<LiftedTag>& support, Callback&& callback) const
-    {
-        std::forward<Callback>(callback)(support.get_key(), support.get_interval(), support.get_cost());
-    }
 };
 
 template<>

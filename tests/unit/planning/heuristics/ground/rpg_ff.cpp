@@ -31,4 +31,5 @@ namespace tyr::tests
 {
 TEST(TyrPlanningGroundFFRPGHeuristicTest, PreferredActionsDescribeLatestEvaluation) { expect_preferred_actions_reset_after_dead_end<GroundTag>(); }
 TEST(TyrPlanningGroundFFRPGHeuristicTest, WorkerPreferredActionsAreIndependent) { expect_worker_has_independent_preferred_actions<GroundTag>(); }
+TEST(TyrPlanningGroundFFRPGHeuristicTest, TraversesExactNumericHeadSupports) { expect_ff_traverses_exact_numeric_head_supports<GroundTag>(); }
 }

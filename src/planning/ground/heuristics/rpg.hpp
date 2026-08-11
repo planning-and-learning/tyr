@@ -20,14 +20,16 @@
 
 #include "../../heuristics/rpg.hpp"
 #include "tyr/datalog/ground/contexts/program.hpp"
+#include "tyr/datalog/ground/rule_instance.hpp"
 #include "tyr/datalog/ground/workspaces/program.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/planning/ground/programs/rpg.hpp"
 #include "tyr/planning/ground/state_builder.hpp"
 #include "tyr/planning/ground/task.hpp"
+#include "tyr/planning/programs/rpg.hpp"
 
 #include <optional>
 #include <stdexcept>
+#include <utility>
 
 namespace tyr::planning::detail
 {
@@ -76,22 +78,15 @@ struct RPGPolicy<GroundTag>
         return executor.is_applicable(action, state_context);
     }
 
-    template<::tyr::formalism::RelationKind R, typename Workspace, typename PredicateCallback, typename NumericCallback>
-    static void for_each_witness_precondition(Workspace&,
-                                              const datalog::WitnessAnnotation<GroundTag, R>& witness,
-                                              PredicateCallback&& predicate_callback,
-                                              NumericCallback&& numeric_callback)
+    template<::tyr::formalism::RelationKind R, typename Workspace, typename Callback>
+    static void visit_witness_rule_instance(Workspace&, const datalog::WitnessAnnotation<GroundTag, R>& witness, Callback&& callback)
     {
         const auto rule = ::tyr::formalism::datalog::find_ground_rule(witness.get_rule_key());
         if (!rule)
             throw std::logic_error("Ground witness binding has no rule");
-        const auto body = rule->get_body();
-        for (const auto literal : body.template get_literals<::tyr::formalism::FluentTag>())
-            if (literal.get_polarity())
-                predicate_callback(literal.get_atom().get_row());
 
-        for (const auto constraint : body.get_numeric_constraints())
-            numeric_callback(constraint);
+        const auto instance = datalog::RuleInstance<GroundTag, R>(*rule);
+        std::forward<Callback>(callback)(instance);
     }
 
     template<typename Workspace>

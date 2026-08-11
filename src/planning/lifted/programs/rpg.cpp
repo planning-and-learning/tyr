@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/lifted/programs/rpg.hpp"
+#include "tyr/planning/programs/rpg.hpp"
 
 #include "../../programs/common.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
@@ -372,35 +372,13 @@ auto create_datalog_program(fp::TaskView task,
 
 }
 
+template<>
 RPGProgram<LiftedTag>::RPGProgram(fp::TaskView task, CostMode cost_mode) :
     m_translation_context(),
     m_rule_to_action(),
     m_datalog_program(create_datalog_program(task, cost_mode, m_translation_context, m_rule_to_action))
 {
     // std::cout << m_datalog_program.get_program() << std::endl;
-}
-
-const TranslationContext<LiftedTag>& RPGProgram<LiftedTag>::get_translation_context() const noexcept { return m_translation_context; }
-
-template<>
-const RPGProgram<LiftedTag>::RuleToActionMapping<f::PredicateTag>& RPGProgram<LiftedTag>::get_rule_to_action_mapping<f::PredicateTag>() const noexcept
-{
-    return m_rule_to_action.predicate;
-}
-
-template<>
-const RPGProgram<LiftedTag>::RuleToActionMapping<f::FunctionTag>& RPGProgram<LiftedTag>::get_rule_to_action_mapping<f::FunctionTag>() const noexcept
-{
-    return m_rule_to_action.function;
-}
-
-datalog::Program<LiftedTag>& RPGProgram<LiftedTag>::get_datalog_program() noexcept { return m_datalog_program; }
-
-const datalog::Program<LiftedTag>& RPGProgram<LiftedTag>::get_datalog_program() const noexcept { return m_datalog_program; }
-
-::tyr::formalism::datalog::GroundConjunctiveConditionView RPGProgram<LiftedTag>::get_goal() const noexcept
-{
-    return m_datalog_program.get_program().get_goal().value();
 }
 
 }
