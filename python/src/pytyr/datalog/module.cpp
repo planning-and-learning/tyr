@@ -24,10 +24,39 @@
 namespace tyr::datalog
 {
 
+namespace
+{
+
+void alias_common_api(nb::module_& source, nb::module_& target)
+{
+    static constexpr const char* names[] = {
+        "NumericSupport",
+        "BaseAnnotation",
+        "WitnessAnnotation",
+        "FunctionWitnessAnnotation",
+        "PredicateAnnotations",
+        "FunctionAnnotations",
+        "NoAnnotationPolicy",
+        "SumMinCostAnnotationPolicy",
+        "MaxMinCostAnnotationPolicy",
+        "MaxMinCostAnnotationWithAchieversPolicy",
+        "NoTerminationPolicy",
+        "SumTerminationPolicy",
+        "MaxTerminationPolicy",
+        "RuleCostPolicy",
+    };
+    for (const auto* name : names)
+        target.attr(name) = source.attr(name);
+}
+
+}
+
 void bind_module_definitions(nb::module_& m)
 {
     bind_fact_sets(m);
     bind_numeric_support(m);
+    bind_annotations(m);
+    bind_policies(m);
 
     nb::class_<ProgramStatistics>(m, "ProgramStatistics")
         .def(nb::init<>())
@@ -45,11 +74,11 @@ void bind_module_definitions(nb::module_& m)
         .def_rw("max_queue_size", &GroundQueueStatistics::max_queue_size);
 
     auto ground_module = m.def_submodule("ground");
-    ground_module.attr("NumericSupport") = m.attr("NumericSupport");
+    alias_common_api(m, ground_module);
     bind_ground_module_definitions(ground_module);
 
     auto lifted_module = m.def_submodule("lifted");
-    lifted_module.attr("NumericSupport") = m.attr("NumericSupport");
+    alias_common_api(m, lifted_module);
     bind_lifted_module_definitions(lifted_module);
 }
 

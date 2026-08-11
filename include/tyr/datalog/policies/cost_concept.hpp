@@ -25,26 +25,22 @@
 namespace tyr::datalog
 {
 
-template<typename T, typename Kind>
-concept RuleCostPolicyConcept = TaskKind<Kind>
-                                && requires(T& policy,
-                                            const T& const_policy,
-                                            ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::PredicateTag> predicate_rule_key,
-                                            ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::FunctionTag> function_rule_key,
-                                            ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> numeric_key,
-                                            ygg::ClosedInterval<ygg::float_t> interval,
-                                            Cost cost) {
-                                       { const_policy.get_cost(predicate_rule_key) } -> std::same_as<Cost>;
-                                       { const_policy.get_cost(function_rule_key) } -> std::same_as<Cost>;
-                                       { const_policy.get_cost(function_rule_key, numeric_key, interval) } -> std::same_as<Cost>;
-                                       { policy.clear() } -> std::same_as<void>;
-                                       { policy.set_cost(predicate_rule_key, cost) } -> std::same_as<void>;
-                                       { policy.set_cost(function_rule_key, cost) } -> std::same_as<void>;
-                                       { policy.set_cost(function_rule_key, numeric_key, interval, cost) } -> std::same_as<void>;
-                                   };
-
-template<typename T, typename Kind>
-concept MutableRuleCostPolicyConcept = RuleCostPolicyConcept<T, Kind>;
+template<typename T>
+concept RuleCostPolicyConcept = requires(T& policy,
+                                         const T& const_policy,
+                                         ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::PredicateTag> predicate_rule_key,
+                                         ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::FunctionTag> function_rule_key,
+                                         ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> numeric_key,
+                                         ygg::ClosedInterval<ygg::float_t> interval,
+                                         Cost cost) {
+    { const_policy.get_cost(predicate_rule_key) } -> std::same_as<Cost>;
+    { const_policy.get_cost(function_rule_key) } -> std::same_as<Cost>;
+    { const_policy.get_cost(function_rule_key, numeric_key, interval) } -> std::same_as<Cost>;
+    { policy.clear() } -> std::same_as<void>;
+    { policy.set_cost(predicate_rule_key, cost) } -> std::same_as<void>;
+    { policy.set_cost(function_rule_key, cost) } -> std::same_as<void>;
+    { policy.set_cost(function_rule_key, numeric_key, interval, cost) } -> std::same_as<void>;
+};
 
 }
 

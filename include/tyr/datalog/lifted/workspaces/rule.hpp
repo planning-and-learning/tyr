@@ -47,7 +47,7 @@ namespace tyr::datalog
 struct PredicateHeadIteration
 {
     using Binding = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
-    using Witness = WitnessAnnotation<LiftedTag, ::tyr::formalism::PredicateTag>;
+    using Witness = WitnessAnnotation<::tyr::formalism::PredicateTag>;
 
     struct Achiever
     {
@@ -193,7 +193,7 @@ struct RuleWorkspace<LiftedTag, R>
 #endif
         std::vector<::tyr::formalism::datalog::RuleBindingView<R>> pending_rule_bindings;
 
-        RuleEvaluationWorkspace<LiftedTag> rule_evaluation_workspace;
+        RuleEvaluationWorkspace rule_evaluation_workspace;
         ApplicabilityCache applicability_cache;
 
         /// Statistics

@@ -40,13 +40,13 @@ namespace tyr::planning
 
 template<TaskKind Kind>
 struct FFRPGHeuristic<Kind>::Impl :
-    detail::RPGEvaluator<Impl, Kind, datalog::MinCostAnnotationPolicy<Kind, datalog::SumAggregation>, datalog::TerminationPolicy<Kind, datalog::SumAggregation>>
+    detail::RPGEvaluator<Impl, Kind, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>, datalog::TerminationPolicy<datalog::SumAggregation>>
 {
-    using Base = detail::
-        RPGEvaluator<Impl, Kind, datalog::MinCostAnnotationPolicy<Kind, datalog::SumAggregation>, datalog::TerminationPolicy<Kind, datalog::SumAggregation>>;
+    using Base =
+        detail::RPGEvaluator<Impl, Kind, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>, datalog::TerminationPolicy<datalog::SumAggregation>>;
     using PredicateHead = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
     using FunctionHead = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
-    using NumericSupportWorkspace = datalog::NumericSupportSelectorWorkspace<Kind>;
+    using NumericSupportWorkspace = datalog::NumericSupportSelectorWorkspace;
 
     struct NumericCertificate : ygg::comparison::Mixin<NumericCertificate>
     {
@@ -119,7 +119,7 @@ private:
         if (!annotation)
             return;
 
-        const auto* witness = std::get_if<datalog::WitnessAnnotation<Kind>>(annotation);
+        const auto* witness = std::get_if<datalog::WitnessAnnotation<>>(annotation);
         if (witness)
             extract_relaxed_plan(*witness, state_context);
     }
@@ -133,7 +133,7 @@ private:
         if (!annotation)
             return;
 
-        const auto* witness = std::get_if<datalog::WitnessAnnotation<Kind, ::tyr::formalism::FunctionTag>>(annotation);
+        const auto* witness = std::get_if<datalog::WitnessAnnotation<::tyr::formalism::FunctionTag>>(annotation);
         if (witness)
             extract_relaxed_plan(*witness, state_context);
     }
@@ -148,7 +148,7 @@ private:
     }
 
     template<::tyr::formalism::RelationKind R>
-    void extract_relaxed_plan(const datalog::WitnessAnnotation<Kind, R>& witness, const StateContext<Kind>& state_context)
+    void extract_relaxed_plan(const datalog::WitnessAnnotation<R>& witness, const StateContext<Kind>& state_context)
     {
         if (const auto action = this->get_action(witness))
         {

@@ -50,25 +50,18 @@ struct FactSets;
 class StaticConsistencyGraph;
 template<TaskKind Kind>
 class Program;
-template<TaskKind Kind>
 class NoAnnotationPolicy;
-template<TaskKind Kind, typename AggregationFunction>
+template<typename AggregationFunction>
 class MinCostAnnotationPolicy;
-template<TaskKind Kind, typename AggregationFunction>
+template<typename AggregationFunction>
 class MinCostAnnotationWithAchieversPolicy;
-template<TaskKind Kind>
 class NoTerminationPolicy;
-template<TaskKind Kind, typename AggregationFunction>
+template<typename AggregationFunction>
 class TerminationPolicy;
-template<TaskKind Kind, typename AggregationFunction>
-class FullModelGoalPolicy;
-template<TaskKind Kind>
 class RuleCostPolicy;
 template<TaskKind Kind>
 class RuleCostOverridePolicy;
-template<TaskKind Kind>
 class NumericSupportSelectorWorkspace;
-template<TaskKind Kind>
 class NumericSupportSelector;
 
 struct D2PWorkspace;

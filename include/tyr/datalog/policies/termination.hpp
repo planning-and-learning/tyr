@@ -30,7 +30,6 @@
 namespace tyr::datalog
 {
 
-template<TaskKind Kind>
 class NoTerminationPolicy
 {
 public:
@@ -39,8 +38,7 @@ public:
     void set_goals(::tyr::formalism::datalog::GroundConjunctiveConditionView) {}
     bool check(const FactSets&) const noexcept { return false; }
     bool should_terminate(const FactSets&) const noexcept { return false; }
-    Cost
-    get_total_cost(const FactSets&, const PredicateAnnotations<Kind>&, const FunctionAnnotations<Kind>&, const NumericSupportSelector<Kind>&) const noexcept
+    Cost get_total_cost(const FactSets&, const PredicateAnnotations<>&, const FunctionAnnotations<>&, const NumericSupportSelector&) const noexcept
     {
         return Cost(0);
     }
@@ -48,7 +46,7 @@ public:
     void clear() noexcept {}
 };
 
-template<TaskKind Kind, typename AggregationFunction>
+template<typename AggregationFunction>
 class TerminationPolicy
 {
 public:
@@ -59,10 +57,12 @@ public:
     bool check(const FactSets& fact_sets) const noexcept;
     bool should_terminate(const FactSets& fact_sets) const noexcept;
 
+    void set_early_termination(bool value) noexcept { early_termination = value; }
+
     Cost get_total_cost(const FactSets& fact_sets,
-                        const PredicateAnnotations<Kind>& annotations,
-                        const FunctionAnnotations<Kind>&,
-                        const NumericSupportSelector<Kind>& numeric_support_selector) const noexcept;
+                        const PredicateAnnotations<>& annotations,
+                        const FunctionAnnotations<>&,
+                        const NumericSupportSelector& numeric_support_selector) const noexcept;
 
     const auto& get_goal() const noexcept { return goals; }
 
@@ -72,15 +72,9 @@ public:
 
 private:
     std::optional<::tyr::formalism::datalog::GroundConjunctiveConditionView> goals;
-    mutable NumericSupportSelectorWorkspace<Kind> numeric_support_selector_workspace;
+    mutable NumericSupportSelectorWorkspace numeric_support_selector_workspace;
     AggregationFunction agg;
-};
-
-template<TaskKind Kind, typename AggregationFunction>
-class FullModelGoalPolicy : public TerminationPolicy<Kind, AggregationFunction>
-{
-public:
-    bool should_terminate(const FactSets&) const noexcept { return false; }
+    bool early_termination { true };
 };
 
 }

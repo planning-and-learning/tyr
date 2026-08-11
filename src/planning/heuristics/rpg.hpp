@@ -108,9 +108,9 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, ::t
 
 template<typename Derived,
          TaskKind Kind,
-         datalog::AnnotationPolicyConcept<Kind> AP,
-         datalog::TerminationPolicyConcept<Kind> TP,
-         datalog::RuleCostPolicyConcept<Kind> CP = datalog::RuleCostPolicy<Kind>>
+         datalog::AnnotationPolicyConcept AP,
+         datalog::TerminationPolicyConcept TP,
+         datalog::RuleCostPolicyConcept CP = datalog::RuleCostPolicy>
 class RPGEvaluator
 {
 public:
@@ -195,13 +195,13 @@ protected:
     }
 
     template<::tyr::formalism::RelationKind R>
-    auto get_action(const datalog::WitnessAnnotation<Kind, R>& witness)
+    auto get_action(const datalog::WitnessAnnotation<R>& witness)
     {
         return Policy::get_action(*m_definition, m_workspace, witness);
     }
 
     template<::tyr::formalism::RelationKind R>
-    std::optional<::tyr::formalism::planning::ActionBindingView> get_action_binding(const datalog::WitnessAnnotation<Kind, R>& witness)
+    std::optional<::tyr::formalism::planning::ActionBindingView> get_action_binding(const datalog::WitnessAnnotation<R>& witness)
     {
         const auto action = get_action(witness);
         if (!action)
@@ -228,7 +228,7 @@ protected:
     }
 
     template<::tyr::formalism::RelationKind R, typename Callback>
-    void for_each_witness_precondition(const datalog::WitnessAnnotation<Kind, R>& witness, Callback&& callback)
+    void for_each_witness_precondition(const datalog::WitnessAnnotation<R>& witness, Callback&& callback)
     {
         Policy::visit_witness_rule_instance(m_workspace,
                                             witness,

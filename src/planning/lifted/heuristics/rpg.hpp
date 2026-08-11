@@ -78,8 +78,7 @@ struct RPGPolicy<LiftedTag>
     }
 
     template<::tyr::formalism::RelationKind R, typename Workspace>
-    static std::optional<Action>
-    get_action(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, const datalog::WitnessAnnotation<LiftedTag, R>& witness)
+    static std::optional<Action> get_action(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, const datalog::WitnessAnnotation<R>& witness)
     {
         const auto rule_binding = witness.get_rule_key();
         const auto& mapping = definition.rpg_program.template get_rule_to_action_mapping<R>();
@@ -110,7 +109,7 @@ struct RPGPolicy<LiftedTag>
     }
 
     template<::tyr::formalism::RelationKind R, typename Workspace, typename Callback>
-    static void visit_witness_rule_instance(Workspace& workspace, const datalog::WitnessAnnotation<LiftedTag, R>& witness, Callback&& callback)
+    static void visit_witness_rule_instance(Workspace& workspace, const datalog::WitnessAnnotation<R>& witness, Callback&& callback)
     {
         const auto rule_binding = witness.get_rule_key();
         const auto& const_rule_workspace = *workspace.const_workspace.template get_rules<R>()[ygg::uint_t(rule_binding.get_relation().get_index())];

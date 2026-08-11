@@ -35,17 +35,15 @@
 namespace tyr::datalog
 {
 
-template<TaskKind Kind>
 struct RuleEvaluationInput
 {
-    const NumericSupportSelector<Kind>& selector;
-    const PredicateAnnotations<Kind>& predicate_annotations;
+    const NumericSupportSelector& selector;
+    const PredicateAnnotations<>& predicate_annotations;
 };
 
-template<TaskKind Kind>
 struct RuleEvaluationWorkspace
 {
-    NumericSupportSelectorWorkspace<Kind> selector;
+    NumericSupportSelectorWorkspace selector;
     std::vector<NumericSupport> exact_supports;
 };
 
@@ -86,16 +84,16 @@ struct EvaluationState
     ygg::ClosedInterval<ygg::float_t> current_interval;
 };
 
-template<typename Aggregation, TaskKind Kind>
-void aggregate_selection_cost(Cost& cost, const NumericSupportSelectorWorkspace<Kind>& workspace)
+template<typename Aggregation>
+void aggregate_selection_cost(Cost& cost, const NumericSupportSelectorWorkspace& workspace)
 {
     const auto aggregate = Aggregation {};
     for (const auto& entry : workspace.selection)
         cost = aggregate(cost, entry.cost);
 }
 
-template<bool CollectEvidence, TaskKind Kind>
-bool append_selection_evidence(const RuleEvaluationInput<Kind>& input, RuleEvaluationWorkspace<Kind>& workspace, ygg::ClosedInterval<ygg::float_t>& metric)
+template<bool CollectEvidence>
+bool append_selection_evidence(const RuleEvaluationInput& input, RuleEvaluationWorkspace& workspace, ygg::ClosedInterval<ygg::float_t>& metric)
 {
     if constexpr (!CollectEvidence)
     {
@@ -124,7 +122,7 @@ bool append_selection_evidence(const RuleEvaluationInput<Kind>& input, RuleEvalu
 template<TaskKind Kind, ::tyr::formalism::RelationKind R, typename CP>
 Cost get_rule_credit(const CP& policy, RuleInstance<Kind, R>& instance)
 {
-    if constexpr (std::same_as<std::remove_cvref_t<CP>, RuleCostPolicy<Kind>>)
+    if constexpr (std::same_as<std::remove_cvref_t<CP>, RuleCostPolicy>)
         return Cost(0);
     else
         return policy.get_cost(instance.witness_key());
@@ -136,7 +134,7 @@ Cost get_transition_credit(const CP& policy,
                            ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> head,
                            ygg::ClosedInterval<ygg::float_t> interval)
 {
-    if constexpr (std::same_as<std::remove_cvref_t<CP>, RuleCostPolicy<Kind>>)
+    if constexpr (std::same_as<std::remove_cvref_t<CP>, RuleCostPolicy>)
         return Cost(0);
     else
         return policy.get_cost(instance.witness_key(), head, interval);
@@ -144,7 +142,7 @@ Cost get_transition_credit(const CP& policy,
 
 template<bool CollectEvidence, TaskKind Kind, ::tyr::formalism::RelationKind R, typename AP, typename CP>
 std::optional<EvaluationState>
-evaluate_annotated_rule(RuleInstance<Kind, R>& instance, const AP&, const CP&, const RuleEvaluationInput<Kind>& input, RuleEvaluationWorkspace<Kind>& workspace)
+evaluate_annotated_rule(RuleInstance<Kind, R>& instance, const AP&, const CP&, const RuleEvaluationInput& input, RuleEvaluationWorkspace& workspace)
 {
     using Aggregation = typename AP::Aggregation;
     const auto aggregate = Aggregation {};
@@ -238,8 +236,8 @@ evaluate_annotated_rule(RuleInstance<Kind, R>& instance, const AP&, const CP&, c
 template<TaskKind Kind, typename AP>
 std::optional<FunctionCandidate> evaluate_unannotated_function(RuleInstance<Kind, ::tyr::formalism::FunctionTag>& instance,
                                                                const AP& policy,
-                                                               const RuleEvaluationInput<Kind>& input,
-                                                               RuleEvaluationWorkspace<Kind>& workspace)
+                                                               const RuleEvaluationInput& input,
+                                                               RuleEvaluationWorkspace& workspace)
 {
     const auto effect = ygg::visit([&](const auto source) { return instance.resolve(source); }, instance.get_head().get_variant());
     workspace.selector.clear();
@@ -274,8 +272,8 @@ template<TaskKind Kind, ::tyr::formalism::RelationKind R, typename AP, typename 
 std::optional<Cost> evaluate_rule_priority(RuleInstance<Kind, R>& instance,
                                            const AP& annotation_policy,
                                            const CP& cost_policy,
-                                           const RuleEvaluationInput<Kind>& input,
-                                           RuleEvaluationWorkspace<Kind>& workspace)
+                                           const RuleEvaluationInput& input,
+                                           RuleEvaluationWorkspace& workspace)
 {
     if constexpr (!AP::stores_annotations)
     {
@@ -308,8 +306,8 @@ template<TaskKind Kind, typename AP, typename CP>
 std::optional<PredicateCandidate> evaluate_predicate_candidate(RuleInstance<Kind, ::tyr::formalism::PredicateTag>& instance,
                                                                const AP& annotation_policy,
                                                                const CP& cost_policy,
-                                                               const RuleEvaluationInput<Kind>& input,
-                                                               RuleEvaluationWorkspace<Kind>& workspace)
+                                                               const RuleEvaluationInput& input,
+                                                               RuleEvaluationWorkspace& workspace)
 {
     const auto head = instance.resolve(instance.get_head());
     if constexpr (!AP::stores_annotations)
@@ -332,8 +330,8 @@ template<TaskKind Kind, typename AP, typename CP>
 std::optional<FunctionCandidate> evaluate_function_candidate(RuleInstance<Kind, ::tyr::formalism::FunctionTag>& instance,
                                                              const AP& annotation_policy,
                                                              const CP& cost_policy,
-                                                             const RuleEvaluationInput<Kind>& input,
-                                                             RuleEvaluationWorkspace<Kind>& workspace)
+                                                             const RuleEvaluationInput& input,
+                                                             RuleEvaluationWorkspace& workspace)
 {
     if constexpr (!AP::stores_annotations)
     {
@@ -370,10 +368,10 @@ std::optional<FunctionCandidate> evaluate_function_candidate(RuleInstance<Kind, 
 }
 
 template<TaskKind Kind, ::tyr::formalism::RelationKind R, typename Candidate>
-WitnessAnnotation<Kind, R> materialize_witness(RuleInstance<Kind, R>& instance, const Candidate& candidate)
+WitnessAnnotation<R> materialize_witness(RuleInstance<Kind, R>& instance, const Candidate& candidate)
 {
     assert(candidate.evidence);
-    return WitnessAnnotation<Kind, R>(instance.witness_key(), candidate.evidence->metric, candidate.cost, candidate.evidence->numeric_supports);
+    return WitnessAnnotation<R>(instance.witness_key(), candidate.evidence->metric, candidate.cost, candidate.evidence->numeric_supports);
 }
 
 }

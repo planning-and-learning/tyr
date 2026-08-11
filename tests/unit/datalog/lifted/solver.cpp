@@ -18,6 +18,7 @@
 #include "tyr/datalog/lifted/solver.hpp"
 
 #include "planning/parser.hpp"
+#include "tyr/datalog/applicability_lifted.hpp"
 #include "tyr/datalog/ground/program.hpp"
 #include "tyr/datalog/ground/solver.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
@@ -558,15 +559,15 @@ TEST(TyrDatalogLiftedBottomUpTest, NoAnnotationPolicyIgnoresUnavailableMetricInp
 TEST(TyrDatalogLiftedBottomUpTest, SingleCoreTerminationExposesOnlyOptimalGoalFrontierAchievers)
 {
     auto fixture = make_lifted_predicate_program();
-    auto termination_policy = d::TerminationPolicy<LiftedTag, d::MaxAggregation>();
+    auto termination_policy = d::TerminationPolicy<d::MaxAggregation>();
     termination_policy.set_goals(fixture.goals);
     auto cost_policy = d::RuleCostOverridePolicy<LiftedTag>();
     cost_policy.set_cost(fixture.first_binding, d::Cost(1));
     using Workspace = d::ProgramWorkspace<LiftedTag,
-                                          d::MinCostAnnotationWithAchieversPolicy<LiftedTag, d::MaxAggregation>,
-                                          d::TerminationPolicy<LiftedTag, d::MaxAggregation>,
+                                          d::MinCostAnnotationWithAchieversPolicy<d::MaxAggregation>,
+                                          d::TerminationPolicy<d::MaxAggregation>,
                                           d::RuleCostOverridePolicy<LiftedTag>>;
-    auto workspace = Workspace(fixture.program, d::MinCostAnnotationWithAchieversPolicy<LiftedTag, d::MaxAggregation>(), termination_policy, cost_policy);
+    auto workspace = Workspace(fixture.program, d::MinCostAnnotationWithAchieversPolicy<d::MaxAggregation>(), termination_policy, cost_policy);
     auto context = d::ProgramExecutionContext(workspace);
     auto execution_context = ygg::ExecutionContext::create(1);
 
@@ -582,7 +583,7 @@ TEST(TyrDatalogLiftedBottomUpTest, SingleCoreTerminationExposesOnlyOptimalGoalFr
 TEST(TyrDatalogLiftedBottomUpTest, SingleCoreRetainsFirstEqualCostWitness)
 {
     auto fixture = make_lifted_predicate_program();
-    using Workspace = d::ProgramWorkspace<LiftedTag, d::MinCostAnnotationPolicy<LiftedTag, d::MaxAggregation>, d::NoTerminationPolicy<LiftedTag>>;
+    using Workspace = d::ProgramWorkspace<LiftedTag, d::MinCostAnnotationPolicy<d::MaxAggregation>, d::NoTerminationPolicy>;
     auto workspace = Workspace(fixture.program);
     auto context = d::ProgramExecutionContext(workspace);
     auto execution_context = ygg::ExecutionContext::create(1);
@@ -591,16 +592,42 @@ TEST(TyrDatalogLiftedBottomUpTest, SingleCoreRetainsFirstEqualCostWitness)
 
     const auto* annotation = workspace.annotations.find(fixture.goal);
     ASSERT_NE(annotation, nullptr);
-    const auto* witness = std::get_if<d::WitnessAnnotation<LiftedTag, f::PredicateTag>>(annotation);
+    const auto* witness = std::get_if<d::WitnessAnnotation<f::PredicateTag>>(annotation);
     ASSERT_NE(witness, nullptr);
     EXPECT_EQ(witness->get_rule_key().get_index(), fixture.first_binding.get_index());
+}
+
+TEST(TyrDatalogLiftedBottomUpTest, MissingLiteralBindingUsesClosedWorldPolarityWithoutInterning)
+{
+    auto fixture = make_lifted_predicate_program();
+    auto object_data = ygg::Data<f::Object>(std::string("missing"));
+    f::canonicalize(object_data);
+    const auto object = fixture.repository->get_or_create(object_data).first;
+
+    const auto rule = fixture.program.get_program().get_rules<f::PredicateTag>().front();
+    const auto positive = rule.get_body().get_literals<f::FluentTag>().front();
+    auto negative_data = ygg::Data<fd::Literal<f::FluentTag>>(positive.get_atom().get_index(), false);
+    fd::canonicalize(negative_data);
+    const auto negative = fixture.repository->get_or_create(negative_data).first;
+
+    auto workspace = d::ProgramWorkspace<LiftedTag>(fixture.program);
+    workspace.binding.push_back(object.get_index());
+    auto grounder = fd::GrounderContext { workspace.datalog_builder, workspace.workspace_repository, workspace.binding };
+    const auto fact_sets = d::FactSets { workspace.const_workspace.facts.fact_sets, workspace.facts.fact_sets };
+    const auto applicability_context = d::ApplicabilityContext { fact_sets, grounder };
+    const auto relation = positive.get_atom().get_predicate().get_index();
+    const auto num_bindings = workspace.workspace_repository.size(relation);
+
+    EXPECT_FALSE(d::is_applicable(positive, applicability_context));
+    EXPECT_TRUE(d::is_applicable(negative, applicability_context));
+    EXPECT_EQ(workspace.workspace_repository.size(relation), num_bindings);
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, SumAnnotationPricesEachNumericSupportOccurrence)
 {
     auto fixture = make_lifted_numeric_program();
-    using AnnotationPolicy = d::MinCostAnnotationPolicy<LiftedTag, d::SumAggregation>;
-    using Workspace = d::ProgramWorkspace<LiftedTag, AnnotationPolicy, d::NoTerminationPolicy<LiftedTag>>;
+    using AnnotationPolicy = d::MinCostAnnotationPolicy<d::SumAggregation>;
+    using Workspace = d::ProgramWorkspace<LiftedTag, AnnotationPolicy, d::NoTerminationPolicy>;
     auto workspace = Workspace(fixture.program);
     auto context = d::ProgramExecutionContext(workspace);
 
@@ -609,7 +636,7 @@ TEST(TyrDatalogLiftedBottomUpTest, SumAnnotationPricesEachNumericSupportOccurren
     const auto interval = ygg::ClosedInterval<ygg::float_t>(3, 3);
     const auto* annotation = workspace.numeric_annotations.find(fixture.target, interval);
     ASSERT_NE(annotation, nullptr);
-    const auto* witness = std::get_if<d::WitnessAnnotation<LiftedTag, f::FunctionTag>>(annotation);
+    const auto* witness = std::get_if<d::WitnessAnnotation<f::FunctionTag>>(annotation);
     ASSERT_NE(witness, nullptr);
     EXPECT_EQ(witness->get_cost(), 7);
     EXPECT_EQ(witness->get_metric(), ygg::ClosedInterval<ygg::float_t>(5, 5));
@@ -622,12 +649,12 @@ TEST(TyrDatalogLiftedBottomUpTest, SumAnnotationPricesEachNumericSupportOccurren
 TEST(TyrDatalogLiftedBottomUpTest, StoredNumericCertificateCanStillBecomeAvailable)
 {
     auto fixture = make_lifted_numeric_program();
-    using AnnotationPolicy = d::MinCostAnnotationPolicy<LiftedTag, d::SumAggregation>;
-    using Workspace = d::ProgramWorkspace<LiftedTag, AnnotationPolicy, d::NoTerminationPolicy<LiftedTag>>;
+    using AnnotationPolicy = d::MinCostAnnotationPolicy<d::SumAggregation>;
+    using Workspace = d::ProgramWorkspace<LiftedTag, AnnotationPolicy, d::NoTerminationPolicy>;
     auto workspace = Workspace(fixture.program);
     auto context = d::ProgramExecutionContext(workspace);
     const auto source_interval = ygg::ClosedInterval<ygg::float_t>(3, 3);
-    workspace.numeric_annotations.insert(fixture.source, source_interval, d::BaseAnnotation<LiftedTag>(2));
+    workspace.numeric_annotations.insert(fixture.source, source_interval, d::BaseAnnotation(2));
 
     d::compute_model(context);
 
@@ -658,14 +685,14 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
         EXPECT_EQ(d::get_cost(entries->at(2).annotation), 2);
     };
 
-    using LiftedAnnotationPolicy = d::MinCostAnnotationPolicy<LiftedTag, d::SumAggregation>;
-    using LiftedWorkspace = d::ProgramWorkspace<LiftedTag, LiftedAnnotationPolicy, d::NoTerminationPolicy<LiftedTag>>;
+    using LiftedAnnotationPolicy = d::MinCostAnnotationPolicy<d::SumAggregation>;
+    using LiftedWorkspace = d::ProgramWorkspace<LiftedTag, LiftedAnnotationPolicy, d::NoTerminationPolicy>;
     auto lifted_workspace = LiftedWorkspace(fixture.program);
     auto lifted_context = d::ProgramExecutionContext(lifted_workspace);
     lifted_workspace.numeric_annotations.clear();
-    lifted_workspace.numeric_annotations.insert(fixture.source, high_support_interval, d::BaseAnnotation<LiftedTag>(high_support_metric, d::Cost(2)));
-    lifted_workspace.numeric_annotations.insert(fixture.source, interior_support_interval, d::BaseAnnotation<LiftedTag>(interior_support_metric, d::Cost(1)));
-    lifted_workspace.numeric_annotations.insert(fixture.source, low_support_interval, d::BaseAnnotation<LiftedTag>(low_support_metric, d::Cost(2)));
+    lifted_workspace.numeric_annotations.insert(fixture.source, high_support_interval, d::BaseAnnotation(high_support_metric, d::Cost(2)));
+    lifted_workspace.numeric_annotations.insert(fixture.source, interior_support_interval, d::BaseAnnotation(interior_support_metric, d::Cost(1)));
+    lifted_workspace.numeric_annotations.insert(fixture.source, low_support_interval, d::BaseAnnotation(low_support_metric, d::Cost(2)));
     expect_source_annotation_order(lifted_workspace.numeric_annotations.find_entries(fixture.source.get_index().relation, fixture.source.get_index().row));
 
     d::compute_model(lifted_context);
@@ -692,8 +719,8 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     const auto ground_program_view = fixture.repository->get_or_create(ground_program_data).first;
     auto ground_program = d::Program<GroundTag>(ground_program_view, fixture.repository, fixture.factory);
 
-    using GroundAnnotationPolicy = d::MinCostAnnotationPolicy<GroundTag, d::SumAggregation>;
-    using GroundWorkspace = d::ProgramWorkspace<GroundTag, GroundAnnotationPolicy, d::NoTerminationPolicy<GroundTag>>;
+    using GroundAnnotationPolicy = d::MinCostAnnotationPolicy<d::SumAggregation>;
+    using GroundWorkspace = d::ProgramWorkspace<GroundTag, GroundAnnotationPolicy, d::NoTerminationPolicy>;
     auto ground_workspace = GroundWorkspace(ground_program);
     auto ground_context = d::ProgramExecutionContext(ground_workspace);
 
@@ -702,11 +729,9 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     const auto ground_source = fixture.repository->get_or_create(ground_source_data).first;
     const auto ground_target = fixture.repository->get_or_create(ground_target_data).first;
     ground_workspace.numeric_annotations.clear();
-    ground_workspace.numeric_annotations.insert(ground_source.get_row(), high_support_interval, d::BaseAnnotation<GroundTag>(high_support_metric, d::Cost(2)));
-    ground_workspace.numeric_annotations.insert(ground_source.get_row(),
-                                                interior_support_interval,
-                                                d::BaseAnnotation<GroundTag>(interior_support_metric, d::Cost(1)));
-    ground_workspace.numeric_annotations.insert(ground_source.get_row(), low_support_interval, d::BaseAnnotation<GroundTag>(low_support_metric, d::Cost(2)));
+    ground_workspace.numeric_annotations.insert(ground_source.get_row(), high_support_interval, d::BaseAnnotation(high_support_metric, d::Cost(2)));
+    ground_workspace.numeric_annotations.insert(ground_source.get_row(), interior_support_interval, d::BaseAnnotation(interior_support_metric, d::Cost(1)));
+    ground_workspace.numeric_annotations.insert(ground_source.get_row(), low_support_interval, d::BaseAnnotation(low_support_metric, d::Cost(2)));
     expect_source_annotation_order(ground_workspace.numeric_annotations.find_entries(ground_source.get_row()));
 
     d::compute_model(ground_context);
@@ -722,8 +747,8 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     const auto* ground_annotation = ground_workspace.numeric_annotations.find(ground_target.get_row(), source_interval);
     ASSERT_NE(lifted_annotation, nullptr);
     ASSERT_NE(ground_annotation, nullptr);
-    const auto* lifted_witness = std::get_if<d::WitnessAnnotation<LiftedTag, f::FunctionTag>>(lifted_annotation);
-    const auto* ground_witness = std::get_if<d::WitnessAnnotation<GroundTag, f::FunctionTag>>(ground_annotation);
+    const auto* lifted_witness = std::get_if<d::WitnessAnnotation<f::FunctionTag>>(lifted_annotation);
+    const auto* ground_witness = std::get_if<d::WitnessAnnotation<f::FunctionTag>>(ground_annotation);
     ASSERT_NE(lifted_witness, nullptr);
     ASSERT_NE(ground_witness, nullptr);
     EXPECT_EQ(lifted_witness->get_cost(), 5);
@@ -830,8 +855,8 @@ TEST(TyrDatalogLiftedBottomUpTest, RepeatedArgumentsRetryPendingExistingHeadAchi
     const auto program_view = intern(std::move(program_data));
     auto program = d::Program<LiftedTag>(program_view, repository, factory);
 
-    using AnnotationPolicy = d::MinCostAnnotationWithAchieversPolicy<LiftedTag, d::MaxAggregation>;
-    using TerminationPolicy = d::TerminationPolicy<LiftedTag, d::MaxAggregation>;
+    using AnnotationPolicy = d::MinCostAnnotationWithAchieversPolicy<d::MaxAggregation>;
+    using TerminationPolicy = d::TerminationPolicy<d::MaxAggregation>;
     auto workspace = d::ProgramWorkspace<LiftedTag, AnnotationPolicy, TerminationPolicy>(program);
     auto context = d::ProgramExecutionContext(workspace);
     d::compute_model(context);
@@ -913,8 +938,8 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindi
     const auto& const_rule_workspace = program.get_const_program_workspace().get_rules<f::PredicateTag>().front().value();
     EXPECT_EQ(&const_rule_workspace.get_nullary_condition().get_context(), &program.get_program_repository());
 
-    using AnnotationPolicy = d::MinCostAnnotationPolicy<LiftedTag, d::SumAggregation>;
-    using Termination = d::NoTerminationPolicy<LiftedTag>;
+    using AnnotationPolicy = d::MinCostAnnotationPolicy<d::SumAggregation>;
+    using Termination = d::NoTerminationPolicy;
     auto workspace = d::ProgramWorkspace<LiftedTag, AnnotationPolicy, Termination>(program);
     auto context = d::ProgramExecutionContext(workspace);
     d::compute_model(context);
@@ -961,7 +986,7 @@ TEST(TyrDatalogLiftedBottomUpTest, ProgramWorkspacesOwnIndependentRepositories)
     binding_data.objects.push_back(object.get_index());
     const auto binding = first.workspace_repository.get_or_create(binding_data).first;
     const auto binding_index = binding.get_index();
-    first.annotations.insert_or_assign(binding, d::BaseAnnotation<LiftedTag>(3));
+    first.annotations.insert_or_assign(binding, d::BaseAnnotation(3));
 
     first.reset_evaluation();
 
@@ -1002,15 +1027,15 @@ TEST(TyrDatalogLiftedBottomUpTest, PredicateAnnotationsUseRelationAndRowIndices)
     const auto first = make_binding(first_predicate, first_object);
     const auto hole = make_binding(first_predicate, second_object);
     const auto second = make_binding(second_predicate, first_object);
-    auto annotations = d::PredicateAnnotations<LiftedTag>();
+    auto annotations = d::PredicateAnnotations<>();
 
-    annotations.insert_or_assign(first, d::BaseAnnotation<LiftedTag>(3));
-    annotations.insert_or_assign(second, d::BaseAnnotation<LiftedTag>(5));
+    annotations.insert_or_assign(first, d::BaseAnnotation(3));
+    annotations.insert_or_assign(second, d::BaseAnnotation(5));
     EXPECT_EQ(d::get_cost(*annotations.find(first)), 3);
     EXPECT_EQ(d::get_cost(*std::as_const(annotations).find(second)), 5);
     EXPECT_EQ(annotations.find(hole), nullptr);
 
-    annotations.insert_or_assign(first, d::BaseAnnotation<LiftedTag>(2));
+    annotations.insert_or_assign(first, d::BaseAnnotation(2));
     EXPECT_EQ(d::get_cost(*annotations.find(first)), 2);
 
     annotations.clear();
@@ -1061,14 +1086,14 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
     using ConcurrentMap = d::DenseRelationMap<f::PredicateTag, d::Cost, true>;
     static_assert(!SequentialMap::thread_safe);
     static_assert(ConcurrentMap::thread_safe);
-    static_assert(!d::PredicateAnnotations<LiftedTag>::thread_safe);
-    static_assert(d::PredicateAnnotations<LiftedTag, true>::thread_safe);
-    static_assert(!d::FunctionAnnotations<LiftedTag>::thread_safe);
-    static_assert(d::FunctionAnnotations<LiftedTag, true>::thread_safe);
-    static_assert(std::is_default_constructible_v<d::PredicateAnnotations<LiftedTag>>);
-    static_assert(!std::is_default_constructible_v<d::PredicateAnnotations<LiftedTag, true>>);
-    static_assert(std::is_default_constructible_v<d::FunctionAnnotations<LiftedTag>>);
-    static_assert(!std::is_default_constructible_v<d::FunctionAnnotations<LiftedTag, true>>);
+    static_assert(!d::PredicateAnnotations<>::thread_safe);
+    static_assert(d::PredicateAnnotations<true>::thread_safe);
+    static_assert(!d::FunctionAnnotations<>::thread_safe);
+    static_assert(d::FunctionAnnotations<true>::thread_safe);
+    static_assert(std::is_default_constructible_v<d::PredicateAnnotations<>>);
+    static_assert(!std::is_default_constructible_v<d::PredicateAnnotations<true>>);
+    static_assert(std::is_default_constructible_v<d::FunctionAnnotations<>>);
+    static_assert(!std::is_default_constructible_v<d::FunctionAnnotations<true>>);
     static_assert(std::is_copy_constructible_v<SequentialMap>);
     static_assert(!std::is_copy_constructible_v<ConcurrentMap>);
     static_assert(std::is_nothrow_move_constructible_v<ConcurrentMap>);
@@ -1087,8 +1112,8 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
     for (size_t worker = 0; worker < 8; ++worker)
         retain_min(sequential_map, first_bindings.front(), d::Cost(8 - worker));
 
-    auto delta_annotations = d::PredicateAnnotations<LiftedTag, true>(2);
-    auto delta_numeric_annotations = d::FunctionAnnotations<LiftedTag, true>(1);
+    auto delta_annotations = d::PredicateAnnotations<true>(2);
+    auto delta_numeric_annotations = d::FunctionAnnotations<true>(1);
     const auto interval = ygg::ClosedInterval<ygg::float_t>(0, 1);
     auto arena = oneapi::tbb::task_arena(8);
     arena.execute(
@@ -1103,9 +1128,9 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
                                           retain_min(concurrent_map, first_bindings.front(), predicate_cost);
                                           for (size_t i = first_bindings.size(); i-- > 0;)
                                           {
-                                              delta_annotations.insert_if_better(first_bindings[i], d::BaseAnnotation<LiftedTag>(predicate_cost));
-                                              delta_annotations.insert_if_better(second_bindings[i], d::BaseAnnotation<LiftedTag>(predicate_cost));
-                                              delta_numeric_annotations.insert(function_bindings[i], interval, d::BaseAnnotation<LiftedTag>(function_cost));
+                                              delta_annotations.insert_if_better(first_bindings[i], d::BaseAnnotation(predicate_cost));
+                                              delta_annotations.insert_if_better(second_bindings[i], d::BaseAnnotation(predicate_cost));
+                                              delta_numeric_annotations.insert(function_bindings[i], interval, d::BaseAnnotation(function_cost));
                                           }
                                       });
         });
@@ -1128,20 +1153,20 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
     }
 
     const auto second_interval = ygg::ClosedInterval<ygg::float_t>(1, 2);
-    EXPECT_TRUE(delta_numeric_annotations.insert(function_bindings.back(), second_interval, d::BaseAnnotation<LiftedTag>(4)));
-    EXPECT_FALSE(delta_numeric_annotations.insert(function_bindings.back(), second_interval, d::BaseAnnotation<LiftedTag>(5)));
-    EXPECT_TRUE(delta_numeric_annotations.insert(function_bindings.back(), second_interval, d::BaseAnnotation<LiftedTag>(2)));
+    EXPECT_TRUE(delta_numeric_annotations.insert(function_bindings.back(), second_interval, d::BaseAnnotation(4)));
+    EXPECT_FALSE(delta_numeric_annotations.insert(function_bindings.back(), second_interval, d::BaseAnnotation(5)));
+    EXPECT_TRUE(delta_numeric_annotations.insert(function_bindings.back(), second_interval, d::BaseAnnotation(2)));
     ASSERT_EQ(delta_numeric_annotations.find_entries(function_bindings.back())->size(), 2);
     ASSERT_NE(delta_numeric_annotations.find(function_bindings.back(), second_interval), nullptr);
     EXPECT_EQ(d::get_cost(*delta_numeric_annotations.find(function_bindings.back(), second_interval)), 2);
 
-    auto numeric_annotations = d::FunctionAnnotations<LiftedTag>();
-    numeric_annotations.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(5));
-    numeric_annotations.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(3));
-    numeric_annotations.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(4));
-    numeric_annotations.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(ygg::ClosedInterval<ygg::float_t>(1, 1), 3));
-    numeric_annotations.insert(function_bindings.back(), second_interval, d::BaseAnnotation<LiftedTag>(2));
-    numeric_annotations.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(1));
+    auto numeric_annotations = d::FunctionAnnotations<>();
+    numeric_annotations.insert(function_bindings.back(), interval, d::BaseAnnotation(5));
+    numeric_annotations.insert(function_bindings.back(), interval, d::BaseAnnotation(3));
+    numeric_annotations.insert(function_bindings.back(), interval, d::BaseAnnotation(4));
+    numeric_annotations.insert(function_bindings.back(), interval, d::BaseAnnotation(ygg::ClosedInterval<ygg::float_t>(1, 1), 3));
+    numeric_annotations.insert(function_bindings.back(), second_interval, d::BaseAnnotation(2));
+    numeric_annotations.insert(function_bindings.back(), interval, d::BaseAnnotation(1));
     const auto* numeric_entries = numeric_annotations.find_entries(function.get_index(), function_bindings.back().get_index().row);
     ASSERT_NE(numeric_entries, nullptr);
     ASSERT_EQ(numeric_entries->size(), 2);
@@ -1161,8 +1186,8 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
     EXPECT_EQ(sequential_map.find(first_bindings.front()), nullptr);
     EXPECT_EQ(concurrent_map.find(first_bindings.front()), nullptr);
 
-    delta_annotations.insert_if_better(first_bindings.back(), d::BaseAnnotation<LiftedTag>(7));
-    delta_numeric_annotations.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(7));
+    delta_annotations.insert_if_better(first_bindings.back(), d::BaseAnnotation(7));
+    delta_numeric_annotations.insert(function_bindings.back(), interval, d::BaseAnnotation(7));
     retain_min(sequential_map, first_bindings.front(), d::Cost(7));
     retain_min(concurrent_map, first_bindings.front(), d::Cost(7));
     EXPECT_EQ(d::get_cost(*delta_annotations.find(first_bindings.back())), 7);

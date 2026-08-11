@@ -27,8 +27,7 @@ void bind_lifted_module_definitions(nb::module_& m)
     using ProgramT = Program<LiftedTag>;
     using ConstWorkspace = ConstProgramWorkspace<LiftedTag>;
 
-    bind_annotations<LiftedTag>(m);
-    bind_policies<LiftedTag>(m);
+    bind_task_policies<LiftedTag>(m);
 
     nb::class_<ConstWorkspace>(m, "ConstProgramWorkspace")
         .def(

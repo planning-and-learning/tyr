@@ -3,6 +3,8 @@
 from ..._pytyr.datalog.ground import (
     BaseAnnotation,
     ConstProgramWorkspace,
+    FunctionAnnotations,
+    FunctionWitnessAnnotation,
     MaxMinCostAnnotationPolicy,
     MaxMinCostAnnotationWithAchieversPolicy,
     MaxTerminationPolicy,
@@ -13,7 +15,6 @@ from ..._pytyr.datalog.ground import (
     QueueWorkspace,
     RuleCostOverridePolicy,
     RuleCostPolicy,
-    FunctionAnnotations,
     PredicateAnnotations,
     SumMinCostAnnotationPolicy,
     SumTerminationPolicy,

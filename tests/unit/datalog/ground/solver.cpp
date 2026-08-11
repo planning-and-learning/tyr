@@ -582,13 +582,10 @@ TEST(TyrDatalogGroundQueueTest, GroundUsedCostOverrideDoesNotCreateMetricEffectC
     auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
     cost_policy.set_cost(derive_a.get_row(), datalog::Cost(7));
     using Workspace = datalog::ProgramWorkspace<GroundTag,
-                                                datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>,
-                                                datalog::NoTerminationPolicy<GroundTag>,
+                                                datalog::MinCostAnnotationPolicy<datalog::SumAggregation>,
+                                                datalog::NoTerminationPolicy,
                                                 datalog::RuleCostOverridePolicy<GroundTag>>;
-    auto workspace = Workspace(const_workspace,
-                               datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>(),
-                               datalog::NoTerminationPolicy<GroundTag>(),
-                               cost_policy);
+    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>(), datalog::NoTerminationPolicy(), cost_policy);
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
@@ -610,12 +607,11 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationSkipsWorkWhenInitialFactsSatisf
     const auto goal = fixture.condition({ fixture.fluent_literal(goal_atom) });
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
-    auto termination_policy = datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>();
+    auto termination_policy = datalog::TerminationPolicy<datalog::SumAggregation>();
     termination_policy.set_goals(goal);
-    using Workspace = datalog::ProgramWorkspace<GroundTag,
-                                                datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>,
-                                                datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>>;
-    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>(), termination_policy);
+    using Workspace =
+        datalog::ProgramWorkspace<GroundTag, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>, datalog::TerminationPolicy<datalog::SumAggregation>>;
+    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>(), termination_policy);
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
@@ -637,12 +633,11 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationStopsAfterGoalDerived)
 
     const auto program = fixture.program();
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(program);
-    auto termination_policy = datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>();
+    auto termination_policy = datalog::TerminationPolicy<datalog::SumAggregation>();
     termination_policy.set_goals(goal);
-    using Workspace = datalog::ProgramWorkspace<GroundTag,
-                                                datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>,
-                                                datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>>;
-    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>(), termination_policy);
+    using Workspace =
+        datalog::ProgramWorkspace<GroundTag, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>, datalog::TerminationPolicy<datalog::SumAggregation>>;
+    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>(), termination_policy);
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
@@ -659,7 +654,7 @@ TEST(TyrDatalogGroundQueueTest, NegativeFluentGoalIsRejected)
     const auto atom = fixture.fluent_atom("a");
     const auto goal = fixture.condition({ fixture.fluent_literal(atom, false) });
 
-    auto termination_policy = datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>();
+    auto termination_policy = datalog::TerminationPolicy<datalog::SumAggregation>();
     EXPECT_THROW(termination_policy.set_goals(goal), std::invalid_argument);
 }
 
@@ -677,16 +672,15 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationCommitsMixedLowestCostBucket)
     fixture.empty_body_assign_rule(term, 3);
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
-    auto termination_policy = datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>();
+    auto termination_policy = datalog::TerminationPolicy<datalog::SumAggregation>();
     termination_policy.set_goals(fixture.condition({ fixture.fluent_literal(goal_atom) }));
-    using Workspace = datalog::ProgramWorkspace<GroundTag,
-                                                datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>,
-                                                datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>>;
-    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>(), termination_policy);
+    using Workspace =
+        datalog::ProgramWorkspace<GroundTag, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>, datalog::TerminationPolicy<datalog::SumAggregation>>;
+    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>(), termination_policy);
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
-    ctx.out().annotations().insert_or_assign(expensive_source.get_row(), datalog::BaseAnnotation<GroundTag>(datalog::Cost(2)));
+    ctx.out().annotations().insert_or_assign(expensive_source.get_row(), datalog::BaseAnnotation(datalog::Cost(2)));
     dq::compute_model(ctx);
 
     EXPECT_TRUE(ctx.out().fact_sets().predicate.contains(goal_atom.get_row()));
@@ -707,17 +701,16 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationExposesOnlyOptimalGoalFrontierA
     const auto cheap = fixture.rule(fixture.condition(), goal, fixture.fresh_rule_binding(), metric, 2);
     const auto expensive = fixture.rule(fixture.condition(), goal, fixture.fresh_rule_binding(), metric, 2);
 
-    auto termination_policy = datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>();
+    auto termination_policy = datalog::TerminationPolicy<datalog::MaxAggregation>();
     termination_policy.set_goals(fixture.condition({ fixture.fluent_literal(goal) }));
     auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
     cost_policy.set_cost(cheap.get_row(), datalog::Cost(1));
     using Workspace = datalog::ProgramWorkspace<GroundTag,
-                                                datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>,
-                                                datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>,
+                                                datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>,
+                                                datalog::TerminationPolicy<datalog::MaxAggregation>,
                                                 datalog::RuleCostOverridePolicy<GroundTag>>;
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
-    auto workspace =
-        Workspace(const_workspace, datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>(), termination_policy, cost_policy);
+    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>(), termination_policy, cost_policy);
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
@@ -740,8 +733,7 @@ TEST(TyrDatalogGroundQueueTest, GroundRetainsFirstEqualCostWitness)
     fixture.rule(fixture.condition(), goal, canonical_first);
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
-    using Workspace =
-        datalog::ProgramWorkspace<GroundTag, datalog::MinCostAnnotationPolicy<GroundTag, datalog::MaxAggregation>, datalog::NoTerminationPolicy<GroundTag>>;
+    using Workspace = datalog::ProgramWorkspace<GroundTag, datalog::MinCostAnnotationPolicy<datalog::MaxAggregation>, datalog::NoTerminationPolicy>;
     auto workspace = Workspace(const_workspace);
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
@@ -750,7 +742,7 @@ TEST(TyrDatalogGroundQueueTest, GroundRetainsFirstEqualCostWitness)
 
     const auto* annotation = ctx.out().annotations().find(goal.get_row());
     ASSERT_NE(annotation, nullptr);
-    const auto* witness = std::get_if<datalog::WitnessAnnotation<GroundTag, f::PredicateTag>>(annotation);
+    const auto* witness = std::get_if<datalog::WitnessAnnotation<f::PredicateTag>>(annotation);
     ASSERT_NE(witness, nullptr);
     EXPECT_EQ(witness->get_rule_key(), scheduled_first);
 }
@@ -767,11 +759,11 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyGroundRecordsDistinctRuleBindings)
     const auto program = fixture.program();
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(program);
     using Workspace = datalog::ProgramWorkspace<GroundTag,
-                                                datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>,
-                                                datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>>;
+                                                datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>,
+                                                datalog::TerminationPolicy<datalog::MaxAggregation>>;
     auto workspace = Workspace(const_workspace,
-                               datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>(),
-                               datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>());
+                               datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>(),
+                               datalog::TerminationPolicy<datalog::MaxAggregation>());
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
@@ -798,11 +790,11 @@ TEST(TyrDatalogGroundQueueTest, DerivedNumericIntervalUnblocksRuleAndRecordsSupp
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
     using Workspace = datalog::ProgramWorkspace<GroundTag,
-                                                datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>,
-                                                datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>>;
+                                                datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>,
+                                                datalog::TerminationPolicy<datalog::MaxAggregation>>;
     auto workspace = Workspace(const_workspace,
-                               datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>(),
-                               datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>());
+                               datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>(),
+                               datalog::TerminationPolicy<datalog::MaxAggregation>());
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
@@ -831,12 +823,11 @@ TEST(TyrDatalogGroundQueueTest, SameCostBroadAndContainedNumericIntervalsRetainE
     fixture.assign_rule(fixture.condition(), term, 3, 1);
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
-    auto termination_policy = datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>();
+    auto termination_policy = datalog::TerminationPolicy<datalog::SumAggregation>();
     termination_policy.set_goals(fixture.numeric_condition(term, f::BooleanOperatorKind::Ge, 3));
-    using Workspace = datalog::ProgramWorkspace<GroundTag,
-                                                datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>,
-                                                datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>>;
-    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>(), termination_policy);
+    using Workspace =
+        datalog::ProgramWorkspace<GroundTag, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>, datalog::TerminationPolicy<datalog::SumAggregation>>;
+    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>(), termination_policy);
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
@@ -859,15 +850,14 @@ TEST(TyrDatalogGroundQueueTest, RevalidatesQueuedRuleAfterContainedNumericCertif
     fixture.rule(fixture.numeric_condition(term, f::BooleanOperatorKind::Ge, 1), head);
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
-    using Workspace =
-        datalog::ProgramWorkspace<GroundTag, datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>, datalog::NoTerminationPolicy<GroundTag>>;
+    using Workspace = datalog::ProgramWorkspace<GroundTag, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>, datalog::NoTerminationPolicy>;
     auto workspace = Workspace(const_workspace);
     auto ctx = datalog::ProgramExecutionContext(workspace);
     ctx.initialize(fixture.initial_fluent_atoms);
 
     const auto interval = ygg::ClosedInterval<ygg::float_t>(1, 1);
     ctx.out().numeric_annotations().clear();
-    ctx.out().numeric_annotations().insert(term.get_row(), interval, datalog::BaseAnnotation<GroundTag>(datalog::Cost(5)));
+    ctx.out().numeric_annotations().insert(term.get_row(), interval, datalog::BaseAnnotation(datalog::Cost(5)));
 
     dq::compute_model(ctx);
 
@@ -890,17 +880,13 @@ TEST(TyrDatalogGroundQueueTest, NumericTransitionCreditOnlyReducesTheLocalEdge)
     auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
     cost_policy.set_cost(rule.get_row(), term.get_row(), interval, datalog::Cost(3));
     using Workspace = datalog::ProgramWorkspace<GroundTag,
-                                                datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>,
-                                                datalog::NoTerminationPolicy<GroundTag>,
+                                                datalog::MinCostAnnotationPolicy<datalog::SumAggregation>,
+                                                datalog::NoTerminationPolicy,
                                                 datalog::RuleCostOverridePolicy<GroundTag>>;
-    auto workspace = Workspace(const_workspace,
-                               datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>(),
-                               datalog::NoTerminationPolicy<GroundTag>(),
-                               cost_policy);
+    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>(), datalog::NoTerminationPolicy(), cost_policy);
     auto ctx = datalog::ProgramExecutionContext(workspace);
     ctx.initialize(fixture.initial_fluent_atoms);
-    ctx.out().annotations().insert_or_assign(prerequisite.get_row(),
-                                             datalog::BaseAnnotation<GroundTag>(ygg::ClosedInterval<ygg::float_t>(5, 5), datalog::Cost(5)));
+    ctx.out().annotations().insert_or_assign(prerequisite.get_row(), datalog::BaseAnnotation(ygg::ClosedInterval<ygg::float_t>(5, 5), datalog::Cost(5)));
 
     dq::compute_model(ctx);
 
@@ -923,13 +909,13 @@ TEST(TyrDatalogGroundQueueTest, TransitionCreditDoesNotTurnRawPositiveEdgeIntoFr
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
     auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
     cost_policy.set_cost(rule.get_row(), term.get_row(), raw_interval, datalog::Cost(1));
-    auto termination_policy = datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>();
+    auto termination_policy = datalog::TerminationPolicy<datalog::SumAggregation>();
     termination_policy.set_goals(goal);
     using Workspace = datalog::ProgramWorkspace<GroundTag,
-                                                datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>,
-                                                datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>,
+                                                datalog::MinCostAnnotationPolicy<datalog::SumAggregation>,
+                                                datalog::TerminationPolicy<datalog::SumAggregation>,
                                                 datalog::RuleCostOverridePolicy<GroundTag>>;
-    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>(), termination_policy, cost_policy);
+    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>(), termination_policy, cost_policy);
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
@@ -941,8 +927,8 @@ TEST(TyrDatalogGroundQueueTest, TransitionCreditDoesNotTurnRawPositiveEdgeIntoFr
 
 TEST(TyrDatalogGroundQueueTest, WideningPolicyRequiresLabelPreservationForSum)
 {
-    const auto sum_policy = datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>();
-    const auto max_policy = datalog::MinCostAnnotationPolicy<GroundTag, datalog::MaxAggregation>();
+    const auto sum_policy = datalog::MinCostAnnotationPolicy<datalog::SumAggregation>();
+    const auto max_policy = datalog::MinCostAnnotationPolicy<datalog::MaxAggregation>();
 
     EXPECT_TRUE(sum_policy.is_widening_label_preserving(5, 5));
     EXPECT_FALSE(sum_policy.is_widening_label_preserving(6, 5));

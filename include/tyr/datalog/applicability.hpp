@@ -19,15 +19,12 @@
 #define TYR_DATALOG_APPLICABILITY_HPP_
 
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/formalism/arithmetic_operator_utils.hpp"
-#include "tyr/formalism/boolean_operator_utils.hpp"
+#include "tyr/datalog/numeric_utils.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/declarations.hpp"
 
 #include <algorithm>
-#include <iterator>
-#include <numeric>
 #include <stdexcept>
 #include <yggdrasil/core/closed_interval.hpp>
 
@@ -38,23 +35,10 @@ namespace tyr::datalog
  * evaluate
  */
 
-ygg::ClosedInterval<ygg::float_t> evaluate(ygg::float_t element, const FactSets& fact_sets);
-
-ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundUnaryOperatorView element, const FactSets& fact_sets);
-
-ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundBinaryOperatorView<::tyr::formalism::ArithmeticOperatorKind> element,
-                                           const FactSets& fact_sets);
-
-bool evaluate(::tyr::formalism::datalog::GroundBinaryOperatorView<::tyr::formalism::BooleanOperatorKind> element, const FactSets& fact_sets);
-
-ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundMultiOperatorView element, const FactSets& fact_sets);
-
 template<::tyr::formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundFunctionTermView<T> element, const FactSets& fact_sets);
 
 ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundFunctionExpressionView element, const FactSets& fact_sets);
-
-ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundArithmeticOperatorView element, const FactSets& fact_sets);
 
 bool evaluate(::tyr::formalism::datalog::GroundBooleanOperatorView element, const FactSets& fact_sets);
 
@@ -96,35 +80,6 @@ bool is_statically_applicable(::tyr::formalism::datalog::GroundRuleView<R> eleme
  * evaluate
  */
 
-inline ygg::ClosedInterval<ygg::float_t> evaluate(ygg::float_t element, const FactSets&) { return ygg::ClosedInterval<ygg::float_t>(element, element); }
-
-inline ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundUnaryOperatorView element, const FactSets& fact_sets)
-{
-    return ::tyr::formalism::apply(element.get_operator(), evaluate(element.get_arg(), fact_sets));
-}
-
-inline ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundBinaryOperatorView<::tyr::formalism::ArithmeticOperatorKind> element,
-                                                  const FactSets& fact_sets)
-{
-    return ::tyr::formalism::apply(element.get_operator(), evaluate(element.get_lhs(), fact_sets), evaluate(element.get_rhs(), fact_sets));
-}
-
-inline bool evaluate(::tyr::formalism::datalog::GroundBinaryOperatorView<::tyr::formalism::BooleanOperatorKind> element, const FactSets& fact_sets)
-{
-    return ::tyr::formalism::apply_existential(element.get_operator(), evaluate(element.get_lhs(), fact_sets), evaluate(element.get_rhs(), fact_sets));
-}
-
-inline ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundMultiOperatorView element, const FactSets& fact_sets)
-{
-    const auto child_fexprs = element.get_args();
-
-    return std::accumulate(std::next(child_fexprs.begin()),  // Start from the second expression
-                           child_fexprs.end(),
-                           evaluate(child_fexprs.front(), fact_sets),
-                           [&](const auto& value, const auto& child_expr)
-                           { return ::tyr::formalism::apply(element.get_operator(), value, evaluate(child_expr, fact_sets)); });
-}
-
 template<::tyr::formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundFunctionTermView<T> element, const FactSets& fact_sets)
 {
@@ -138,17 +93,12 @@ inline ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::Gro
 
 inline ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundFunctionExpressionView element, const FactSets& fact_sets)
 {
-    return visit([&](auto&& arg) { return evaluate(arg, fact_sets); }, element.get_variant());
-}
-
-inline ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundArithmeticOperatorView element, const FactSets& fact_sets)
-{
-    return visit([&](auto&& arg) { return evaluate(arg, fact_sets); }, element.get_variant());
+    return evaluate_numeric_expression(element, [&](const auto term) { return evaluate(term, fact_sets); });
 }
 
 inline bool evaluate(::tyr::formalism::datalog::GroundBooleanOperatorView element, const FactSets& fact_sets)
 {
-    return visit([&](auto&& arg) { return evaluate(arg, fact_sets); }, element.get_variant());
+    return evaluate_numeric_expression(element, [&](const auto term) { return evaluate(term, fact_sets); });
 }
 
 /**

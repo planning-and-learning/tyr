@@ -45,7 +45,7 @@
 namespace tyr::datalog
 {
 
-template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 struct ProgramWorkspace<LiftedTag, AP, TP, CP>
 {
     const ConstProgramWorkspace<LiftedTag>& const_workspace;
@@ -60,11 +60,11 @@ public:
     FactsWorkspace<LiftedTag> facts;
 
     AP annotation_policy;
-    PredicateAnnotations<LiftedTag> annotations;
-    FunctionAnnotations<LiftedTag> numeric_annotations;
-    PredicateAnnotations<LiftedTag, true> delta_annotations;
-    FunctionAnnotations<LiftedTag, true> delta_numeric_annotations;
-    std::optional<NumericSupportSelector<LiftedTag>> numeric_support_selector;
+    PredicateAnnotations<> annotations;
+    FunctionAnnotations<> numeric_annotations;
+    PredicateAnnotations<true> delta_annotations;
+    FunctionAnnotations<true> delta_numeric_annotations;
+    std::optional<NumericSupportSelector> numeric_support_selector;
 
     TP tp;
     CP cost_policy;

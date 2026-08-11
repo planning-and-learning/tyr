@@ -77,19 +77,19 @@ RuleBindingFixture make_nullary_rule_binding(fd::Repository& repository)
 TEST(TyrDatalogCostPolicyTest, AnnotationStoresMetricAndCost)
 {
     const auto metric = ygg::ClosedInterval<ygg::float_t>(2.5, 4.5);
-    const auto annotation = d::Annotation<LiftedTag>(d::BaseAnnotation<LiftedTag>(metric, d::Cost(7.5)));
+    const auto annotation = d::Annotation<>(d::BaseAnnotation(metric, d::Cost(7.5)));
 
     EXPECT_EQ(d::get_metric(annotation), metric);
     EXPECT_DOUBLE_EQ(d::get_cost(annotation), 7.5);
 }
 
-TEST(TyrDatalogCostPolicyTest, RuleCostPolicyLiftedDefaultsToZero)
+TEST(TyrDatalogCostPolicyTest, RuleCostPolicyDefaultsToZero)
 {
     auto factory = fd::RepositoryFactory();
     auto repository = factory.create();
     const auto fixture = make_nullary_rule_binding(repository);
 
-    const auto policy = d::RuleCostPolicy<LiftedTag>();
+    const auto policy = d::RuleCostPolicy();
 
     EXPECT_EQ(policy.get_cost(fixture.binding), 0);
 }

@@ -64,8 +64,8 @@ struct NumericSupport : ygg::comparison::Mixin<NumericSupport>
     auto identifying_members() const noexcept { return std::tie(key, interval, cost); }
 };
 
-template<TaskKind Kind, ::tyr::formalism::RelationKind R = ::tyr::formalism::PredicateTag>
-struct WitnessAnnotation : ygg::comparison::Mixin<WitnessAnnotation<Kind, R>>
+template<::tyr::formalism::RelationKind R = ::tyr::formalism::PredicateTag>
+struct WitnessAnnotation : ygg::comparison::Mixin<WitnessAnnotation<R>>
 {
     using Relation = R;
     using Metric = ygg::ClosedInterval<ygg::float_t>;
@@ -90,8 +90,7 @@ private:
     NumericSupports numeric_supports;
 };
 
-template<TaskKind Kind>
-struct BaseAnnotation : ygg::comparison::Mixin<BaseAnnotation<Kind>>
+struct BaseAnnotation : ygg::comparison::Mixin<BaseAnnotation>
 {
 public:
     using Metric = ygg::ClosedInterval<ygg::float_t>;
@@ -110,22 +109,21 @@ private:
     Cost m_cost;
 };
 
-template<TaskKind Kind, ::tyr::formalism::RelationKind R = ::tyr::formalism::PredicateTag>
-using Annotation = std::variant<BaseAnnotation<Kind>, WitnessAnnotation<Kind, R>>;
+template<::tyr::formalism::RelationKind R = ::tyr::formalism::PredicateTag>
+using Annotation = std::variant<BaseAnnotation, WitnessAnnotation<R>>;
 
-template<TaskKind Kind, ::tyr::formalism::RelationKind R>
-inline auto get_metric(const Annotation<Kind, R>& annotation) noexcept
+template<::tyr::formalism::RelationKind R>
+inline auto get_metric(const Annotation<R>& annotation) noexcept
 {
     return std::visit([](const auto& value) { return value.get_metric(); }, annotation);
 }
 
-template<TaskKind Kind, ::tyr::formalism::RelationKind R>
-inline Cost get_cost(const Annotation<Kind, R>& annotation) noexcept
+template<::tyr::formalism::RelationKind R>
+inline Cost get_cost(const Annotation<R>& annotation) noexcept
 {
     return std::visit([](const auto& value) { return value.get_cost(); }, annotation);
 }
 
-template<TaskKind Kind>
 struct CostUpdate
 {
     std::optional<Cost> old_cost;
@@ -304,7 +302,7 @@ private:
 
 /// ThreadSafe permits concurrent insertions and cost reads; clear(), find(), moves,
 /// and destruction require quiescence.
-template<TaskKind Kind, bool ThreadSafe = false>
+template<bool ThreadSafe = false>
 class PredicateAnnotationMap
 {
 public:
@@ -322,7 +320,7 @@ public:
     /// generations read as absent and retain their annotation storage for reuse.
     void clear() noexcept { m_annotations.clear(); }
 
-    void insert_or_assign(Key key, Annotation<Kind> annotation)
+    void insert_or_assign(Key key, Annotation<> annotation)
     {
         m_annotations.update(key, [&](auto& incumbent, bool) { incumbent = std::move(annotation); });
     }
@@ -332,7 +330,7 @@ public:
         return m_annotations.read(key, [](const auto& annotation) { return get_cost(annotation); }, std::numeric_limits<Cost>::max());
     }
 
-    std::optional<CostUpdate<Kind>> insert_if_better(Key key, Annotation<Kind> annotation)
+    std::optional<CostUpdate> insert_if_better(Key key, Annotation<> annotation)
     {
         return m_annotations.update(key,
                                     [&](auto& incumbent, bool initialized)
@@ -340,60 +338,56 @@ public:
                                         const auto new_cost = get_cost(annotation);
                                         const auto old_cost = initialized ? std::optional<Cost>(get_cost(incumbent)) : std::nullopt;
                                         if (old_cost && *old_cost <= new_cost)
-                                            return std::optional<CostUpdate<Kind>> {};
+                                            return std::optional<CostUpdate> {};
 
                                         incumbent = std::move(annotation);
-                                        return std::optional<CostUpdate<Kind>>(std::in_place, old_cost, new_cost);
+                                        return std::optional<CostUpdate>(std::in_place, old_cost, new_cost);
                                     });
     }
 
-    const Annotation<Kind>* find(Key key) const noexcept { return m_annotations.find(key); }
+    const Annotation<>* find(Key key) const noexcept { return m_annotations.find(key); }
 
-    Annotation<Kind>* find(Key key) noexcept
+    Annotation<>* find(Key key) noexcept
         requires(!ThreadSafe)
     {
-        return const_cast<Annotation<Kind>*>(std::as_const(*this).find(key));
+        return const_cast<Annotation<>*>(std::as_const(*this).find(key));
     }
 
 private:
-    DenseRelationMap<::tyr::formalism::PredicateTag, Annotation<Kind>, ThreadSafe> m_annotations;
+    DenseRelationMap<::tyr::formalism::PredicateTag, Annotation<>, ThreadSafe> m_annotations;
 };
 
-template<TaskKind Kind, bool ThreadSafe = false>
-using PredicateAnnotations = PredicateAnnotationMap<Kind, ThreadSafe>;
+template<bool ThreadSafe = false>
+using PredicateAnnotations = PredicateAnnotationMap<ThreadSafe>;
 
-template<TaskKind Kind>
 struct NumericIntervalAnnotation
 {
     ygg::ClosedInterval<ygg::float_t> interval;
-    Annotation<Kind, ::tyr::formalism::FunctionTag> annotation;
+    Annotation<::tyr::formalism::FunctionTag> annotation;
 
     NumericIntervalAnnotation() = default;
-    NumericIntervalAnnotation(ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind, ::tyr::formalism::FunctionTag> annotation) :
+    NumericIntervalAnnotation(ygg::ClosedInterval<ygg::float_t> interval, Annotation<::tyr::formalism::FunctionTag> annotation) :
         interval(interval),
         annotation(std::move(annotation))
     {
     }
 };
 
-template<TaskKind Kind>
-bool numeric_interval_key_less(const NumericIntervalAnnotation<Kind>& lhs, const NumericIntervalAnnotation<Kind>& rhs) noexcept
+inline bool numeric_interval_key_less(const NumericIntervalAnnotation& lhs, const NumericIntervalAnnotation& rhs) noexcept
 {
     return ygg::Less<> {}(std::tuple(get_cost(lhs.annotation), lower(lhs.interval), upper(lhs.interval)),
                           std::tuple(get_cost(rhs.annotation), lower(rhs.interval), upper(rhs.interval)));
 }
 
-template<TaskKind Kind>
-const Annotation<Kind, ::tyr::formalism::FunctionTag>* find_numeric_interval_annotation(const std::vector<NumericIntervalAnnotation<Kind>>& entries,
-                                                                                        ygg::ClosedInterval<ygg::float_t> interval) noexcept
+inline const Annotation<::tyr::formalism::FunctionTag>* find_numeric_interval_annotation(const std::vector<NumericIntervalAnnotation>& entries,
+                                                                                         ygg::ClosedInterval<ygg::float_t> interval) noexcept
 {
     const auto it = std::find_if(entries.begin(), entries.end(), [&](const auto& entry) { return entry.interval == interval; });
     return it == entries.end() ? nullptr : &it->annotation;
 }
 
 /// Retains the first cheapest witness for each exact interval.
-template<TaskKind Kind>
-bool insert_first_best_numeric_interval_annotation(std::vector<NumericIntervalAnnotation<Kind>>& entries, NumericIntervalAnnotation<Kind> entry)
+inline bool insert_first_best_numeric_interval_annotation(std::vector<NumericIntervalAnnotation>& entries, NumericIntervalAnnotation entry)
 {
     const auto incumbent = std::find_if(entries.begin(), entries.end(), [&](const auto& candidate) { return candidate.interval == entry.interval; });
     if (incumbent != entries.end())
@@ -401,27 +395,27 @@ bool insert_first_best_numeric_interval_annotation(std::vector<NumericIntervalAn
         if (get_cost(incumbent->annotation) <= get_cost(entry.annotation))
             return false;
 
-        const auto pos = std::upper_bound(entries.begin(), incumbent, entry, numeric_interval_key_less<Kind>);
+        const auto pos = std::upper_bound(entries.begin(), incumbent, entry, numeric_interval_key_less);
         std::move_backward(pos, incumbent, incumbent + 1);
         *pos = std::move(entry);
         return true;
     }
 
-    const auto pos = std::upper_bound(entries.begin(), entries.end(), entry, numeric_interval_key_less<Kind>);
+    const auto pos = std::upper_bound(entries.begin(), entries.end(), entry, numeric_interval_key_less);
     entries.insert(pos, std::move(entry));
     return true;
 }
 
 /// ThreadSafe permits concurrent insertions and cost reads; clear(), find(), moves,
 /// and destruction require quiescence.
-template<TaskKind Kind, bool ThreadSafe = false>
+template<bool ThreadSafe = false>
 class NumericIntervalAnnotations
 {
 public:
     static constexpr bool thread_safe = ThreadSafe;
 
     using Binding = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
-    using Entry = NumericIntervalAnnotation<Kind>;
+    using Entry = NumericIntervalAnnotation;
     using Entries = std::vector<Entry>;
     using Storage = DenseRelationMap<::tyr::formalism::FunctionTag, Entries, ThreadSafe>;
     using Relation = typename Storage::Relation;
@@ -450,7 +444,7 @@ public:
             binding,
             [&](const auto& entries)
             {
-                const auto* annotation = find_numeric_interval_annotation<Kind>(entries, interval);
+                const auto* annotation = find_numeric_interval_annotation(entries, interval);
                 return annotation ? get_cost(*annotation) : std::numeric_limits<Cost>::max();
             },
             std::numeric_limits<Cost>::max());
@@ -460,32 +454,32 @@ public:
 
     const Entries* find_entries(Relation relation, Key key) const noexcept { return m_slots.find(relation, key); }
 
-    const Annotation<Kind, ::tyr::formalism::FunctionTag>* find(Binding binding) const noexcept
+    const Annotation<::tyr::formalism::FunctionTag>* find(Binding binding) const noexcept
     {
         const auto* entries = find_entries(binding);
         return (!entries || entries->empty()) ? nullptr : &entries->back().annotation;
     }
 
-    Annotation<Kind, ::tyr::formalism::FunctionTag>* find(Binding binding) noexcept
+    Annotation<::tyr::formalism::FunctionTag>* find(Binding binding) noexcept
         requires(!ThreadSafe)
     {
         auto* entries = m_slots.find(binding);
         return (!entries || entries->empty()) ? nullptr : &entries->back().annotation;
     }
 
-    const Annotation<Kind, ::tyr::formalism::FunctionTag>* find(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
+    const Annotation<::tyr::formalism::FunctionTag>* find(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
     {
         const auto* entries = find_entries(binding);
-        return entries ? find_numeric_interval_annotation<Kind>(*entries, interval) : nullptr;
+        return entries ? find_numeric_interval_annotation(*entries, interval) : nullptr;
     }
 
-    bool insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind, ::tyr::formalism::FunctionTag> annotation)
+    bool insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<::tyr::formalism::FunctionTag> annotation)
     {
         const auto index = binding.get_index();
         return insert(index.relation, index.row, interval, std::move(annotation));
     }
 
-    bool insert(Relation relation, Key key, ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind, ::tyr::formalism::FunctionTag> annotation)
+    bool insert(Relation relation, Key key, ygg::ClosedInterval<ygg::float_t> interval, Annotation<::tyr::formalism::FunctionTag> annotation)
     {
         if (empty(interval))
             return false;
@@ -510,8 +504,8 @@ private:
     size_t m_size { 0 };
 };
 
-template<TaskKind Kind, bool ThreadSafe = false>
-using FunctionAnnotations = NumericIntervalAnnotations<Kind, ThreadSafe>;
+template<bool ThreadSafe = false>
+using FunctionAnnotations = NumericIntervalAnnotations<ThreadSafe>;
 
 inline ygg::ClosedInterval<ygg::float_t> aggregate_metric_support(ygg::ClosedInterval<ygg::float_t> lhs, ygg::ClosedInterval<ygg::float_t> rhs) noexcept
 {

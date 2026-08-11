@@ -26,17 +26,12 @@
 namespace tyr::datalog
 {
 
-static_assert(TerminationPolicyConcept<NoTerminationPolicy<GroundTag>, GroundTag>);
-static_assert(TerminationPolicyConcept<NoTerminationPolicy<LiftedTag>, LiftedTag>);
-static_assert(TerminationPolicyConcept<TerminationPolicy<GroundTag, SumAggregation>, GroundTag>);
-static_assert(TerminationPolicyConcept<TerminationPolicy<GroundTag, MaxAggregation>, GroundTag>);
-static_assert(TerminationPolicyConcept<TerminationPolicy<LiftedTag, SumAggregation>, LiftedTag>);
-static_assert(TerminationPolicyConcept<TerminationPolicy<LiftedTag, MaxAggregation>, LiftedTag>);
-static_assert(TerminationPolicyConcept<FullModelGoalPolicy<GroundTag, MaxAggregation>, GroundTag>);
-static_assert(TerminationPolicyConcept<FullModelGoalPolicy<LiftedTag, MaxAggregation>, LiftedTag>);
+static_assert(TerminationPolicyConcept<NoTerminationPolicy>);
+static_assert(TerminationPolicyConcept<TerminationPolicy<SumAggregation>>);
+static_assert(TerminationPolicyConcept<TerminationPolicy<MaxAggregation>>);
 
-template<TaskKind Kind, typename AggregationFunction>
-void TerminationPolicy<Kind, AggregationFunction>::set_goals(::tyr::formalism::datalog::GroundConjunctiveConditionView goals_)
+template<typename AggregationFunction>
+void TerminationPolicy<AggregationFunction>::set_goals(::tyr::formalism::datalog::GroundConjunctiveConditionView goals_)
 {
     for (const auto literal : goals_.template get_literals<::tyr::formalism::FluentTag>())
         if (!literal.get_polarity())
@@ -46,8 +41,8 @@ void TerminationPolicy<Kind, AggregationFunction>::set_goals(::tyr::formalism::d
     goals = goals_;
 }
 
-template<TaskKind Kind, typename AggregationFunction>
-bool TerminationPolicy<Kind, AggregationFunction>::check(const FactSets& fact_sets) const noexcept
+template<typename AggregationFunction>
+bool TerminationPolicy<AggregationFunction>::check(const FactSets& fact_sets) const noexcept
 {
     if (!goals)
         return false;
@@ -55,17 +50,17 @@ bool TerminationPolicy<Kind, AggregationFunction>::check(const FactSets& fact_se
     return is_applicable(*goals, fact_sets);
 }
 
-template<TaskKind Kind, typename AggregationFunction>
-bool TerminationPolicy<Kind, AggregationFunction>::should_terminate(const FactSets& fact_sets) const noexcept
+template<typename AggregationFunction>
+bool TerminationPolicy<AggregationFunction>::should_terminate(const FactSets& fact_sets) const noexcept
 {
-    return check(fact_sets);
+    return early_termination && check(fact_sets);
 }
 
-template<TaskKind Kind, typename AggregationFunction>
-Cost TerminationPolicy<Kind, AggregationFunction>::get_total_cost(const FactSets&,
-                                                                  const PredicateAnnotations<Kind>& annotations,
-                                                                  const FunctionAnnotations<Kind>&,
-                                                                  const NumericSupportSelector<Kind>& numeric_support_selector) const noexcept
+template<typename AggregationFunction>
+Cost TerminationPolicy<AggregationFunction>::get_total_cost(const FactSets&,
+                                                            const PredicateAnnotations<>& annotations,
+                                                            const FunctionAnnotations<>&,
+                                                            const NumericSupportSelector& numeric_support_selector) const noexcept
 {
     if (!goals)
         return AggregationFunction::identity();
@@ -95,22 +90,20 @@ Cost TerminationPolicy<Kind, AggregationFunction>::get_total_cost(const FactSets
     return total;
 }
 
-template<TaskKind Kind, typename AggregationFunction>
-void TerminationPolicy<Kind, AggregationFunction>::reset() noexcept
+template<typename AggregationFunction>
+void TerminationPolicy<AggregationFunction>::reset() noexcept
 {
     numeric_support_selector_workspace.clear();
 }
 
-template<TaskKind Kind, typename AggregationFunction>
-void TerminationPolicy<Kind, AggregationFunction>::clear() noexcept
+template<typename AggregationFunction>
+void TerminationPolicy<AggregationFunction>::clear() noexcept
 {
     goals = std::nullopt;
     reset();
 }
 
-template class TerminationPolicy<GroundTag, SumAggregation>;
-template class TerminationPolicy<GroundTag, MaxAggregation>;
-template class TerminationPolicy<LiftedTag, SumAggregation>;
-template class TerminationPolicy<LiftedTag, MaxAggregation>;
+template class TerminationPolicy<SumAggregation>;
+template class TerminationPolicy<MaxAggregation>;
 
 }

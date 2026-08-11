@@ -92,7 +92,6 @@ struct NumericTransitionCostKey : ygg::comparison::Mixin<NumericTransitionCostKe
     auto identifying_members() const noexcept { return std::make_tuple(rule_key, numeric_key, lower(interval), upper(interval)); }
 };
 
-template<TaskKind Kind>
 class RuleCostPolicy
 {
 public:

@@ -27,7 +27,7 @@
 namespace tyr::datalog
 {
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void compute_model(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
 }

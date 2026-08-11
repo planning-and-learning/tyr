@@ -68,14 +68,14 @@ struct ConstProgramWorkspace<GroundTag>
     explicit ConstProgramWorkspace(::tyr::formalism::datalog::ProgramView<GroundTag> program);
 };
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 struct ProgramWorkspace<GroundTag, AP, TP, CP>
 {
     const ConstProgramWorkspace<GroundTag>& const_workspace;
     FactsWorkspace<GroundTag> facts;
     AP annotation_policy;
-    PredicateAnnotations<GroundTag> annotations;
-    FunctionAnnotations<GroundTag> numeric_annotations;
+    PredicateAnnotations<> annotations;
+    FunctionAnnotations<> numeric_annotations;
     TP tp;
     CP cost_policy;
     RuleWorkspace<GroundTag, ::tyr::formalism::PredicateTag> predicate_rules;
@@ -110,7 +110,7 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
 
     auto get_numeric_support_selector() const noexcept
     {
-        return GroundNumericSupportSelector(FactSets { const_workspace.facts.fact_sets, facts.fact_sets }, numeric_annotations);
+        return NumericSupportSelector(FactSets { const_workspace.facts.fact_sets, facts.fact_sets }, numeric_annotations);
     }
 };
 

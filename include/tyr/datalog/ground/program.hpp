@@ -44,7 +44,7 @@ private:
     ConstProgramWorkspace<GroundTag> m_const_program_workspace;
 };
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 ProgramWorkspace<GroundTag, AP, TP, CP>::ProgramWorkspace(Program<GroundTag>& program, AP annotation_policy, TP tp, CP cost_policy) :
     ProgramWorkspace(program.get_const_program_workspace(), std::move(annotation_policy), std::move(tp), std::move(cost_policy))
 {

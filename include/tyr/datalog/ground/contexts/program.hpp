@@ -38,7 +38,7 @@
 namespace tyr::datalog
 {
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 struct ProgramExecutionContext<GroundTag, AP, TP, CP>
 {
     class In
@@ -199,7 +199,7 @@ private:
     Out m_out;
 };
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 ProgramExecutionContext(ProgramWorkspace<GroundTag, AP, TP, CP>&) -> ProgramExecutionContext<GroundTag, AP, TP, CP>;
 
 }

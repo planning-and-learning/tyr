@@ -57,7 +57,7 @@ struct GroundQueueScratch
 {
     using Term = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
 
-    RuleEvaluationWorkspace<GroundTag> rule_evaluation;
+    RuleEvaluationWorkspace rule_evaluation;
     std::vector<Term> changed_terms;
 
     void clear() noexcept

@@ -41,24 +41,24 @@ namespace
 namespace f = ::tyr::formalism;
 namespace fd = ::tyr::formalism::datalog;
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 using GroundCtx = ProgramExecutionContext<GroundTag, AP, TP, CP>;
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     requires(!AP::stores_annotations)
-GroundNumericSupportSelector make_numeric_support_selector(const GroundCtx<AP, TP, CP>& ctx)
+NumericSupportSelector make_numeric_support_selector(const GroundCtx<AP, TP, CP>& ctx)
 {
-    return GroundNumericSupportSelector(FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }, ctx.out().numeric_annotations(), true);
+    return NumericSupportSelector(FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }, ctx.out().numeric_annotations(), true);
 }
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     requires(AP::stores_annotations)
-GroundNumericSupportSelector make_numeric_support_selector(const GroundCtx<AP, TP, CP>& ctx)
+NumericSupportSelector make_numeric_support_selector(const GroundCtx<AP, TP, CP>& ctx)
 {
-    return GroundNumericSupportSelector(FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }, ctx.out().numeric_annotations());
+    return NumericSupportSelector(FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }, ctx.out().numeric_annotations());
 }
 
-template<f::RelationKind R, AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void enqueue_rule(GroundCtx<AP, TP, CP>& ctx, fd::GroundRuleView<R> rule, Cost queue_label)
 {
     auto& out = ctx.out();
@@ -82,7 +82,7 @@ void enqueue_rule(GroundCtx<AP, TP, CP>& ctx, fd::GroundRuleView<R> rule, Cost q
                  static_cast<ygg::uint_t>(out.template queue_storage<f::PredicateTag>().size() + out.template queue_storage<f::FunctionTag>().size()));
 }
 
-template<f::RelationKind R, AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void push_rule(GroundCtx<AP, TP, CP>& ctx, fd::GroundRuleView<R> rule)
 {
     const auto& state = ctx.out().template rule_states<R>()[ygg::uint_t(rule.get_index())];
@@ -95,13 +95,13 @@ void push_rule(GroundCtx<AP, TP, CP>& ctx, fd::GroundRuleView<R> rule)
     const auto priority = evaluate_rule_priority(instance,
                                                  ctx.out().annotation_policy(),
                                                  ctx.out().cost_policy(),
-                                                 RuleEvaluationInput<GroundTag> { selector, ctx.out().annotations() },
+                                                 RuleEvaluationInput { selector, ctx.out().annotations() },
                                                  workspace);
     if (priority)
         enqueue_rule(ctx, rule, *priority);
 }
 
-template<f::RelationKind R, AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void update_numeric_constraint_satisfaction(GroundCtx<AP, TP, CP>& ctx, fd::GroundRuleView<R> rule)
 {
     auto& out = ctx.out();
@@ -128,35 +128,35 @@ void update_numeric_constraint_satisfaction(GroundCtx<AP, TP, CP>& ctx, fd::Grou
     }
 }
 
-template<f::RelationKind R, AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void initialize_numeric_constraint_satisfaction_for(GroundCtx<AP, TP, CP>& ctx)
 {
     for (const auto rule : ctx.in().program().template get_rules<R>())
         update_numeric_constraint_satisfaction(ctx, rule);
 }
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void initialize_numeric_constraint_satisfaction(GroundCtx<AP, TP, CP>& ctx)
 {
     initialize_numeric_constraint_satisfaction_for<f::PredicateTag>(ctx);
     initialize_numeric_constraint_satisfaction_for<f::FunctionTag>(ctx);
 }
 
-template<f::RelationKind R, AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void seed_queue_for(GroundCtx<AP, TP, CP>& ctx)
 {
     for (const auto rule : ctx.in().program().template get_rules<R>())
         push_rule(ctx, rule);
 }
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void seed_queue(GroundCtx<AP, TP, CP>& ctx)
 {
     seed_queue_for<f::PredicateTag>(ctx);
     seed_queue_for<f::FunctionTag>(ctx);
 }
 
-template<f::RelationKind R, AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 std::optional<GroundQueueEntry<R>> pop_next_entry(GroundCtx<AP, TP, CP>& ctx)
 {
     auto& queue = ctx.out().template queue_storage<R>();
@@ -170,7 +170,7 @@ std::optional<GroundQueueEntry<R>> pop_next_entry(GroundCtx<AP, TP, CP>& ctx)
     return entry;
 }
 
-template<f::RelationKind R, AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 bool is_stale_entry(const GroundCtx<AP, TP, CP>& ctx, const GroundQueueEntry<R>& entry) noexcept
 {
     const auto& out = ctx.out();
@@ -178,7 +178,7 @@ bool is_stale_entry(const GroundCtx<AP, TP, CP>& ctx, const GroundQueueEntry<R>&
     return state.fired || state.unsatisfied_count != 0;
 }
 
-template<f::RelationKind R, AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void notify_fact_inserted_for(GroundCtx<AP, TP, CP>& ctx, fd::PredicateBindingView<f::FluentTag> fact)
 {
     auto& out = ctx.out();
@@ -198,14 +198,14 @@ void notify_fact_inserted_for(GroundCtx<AP, TP, CP>& ctx, fd::PredicateBindingVi
     }
 }
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void notify_fact_inserted(GroundCtx<AP, TP, CP>& ctx, fd::PredicateBindingView<f::FluentTag> fact)
 {
     notify_fact_inserted_for<f::PredicateTag>(ctx, fact);
     notify_fact_inserted_for<f::FunctionTag>(ctx, fact);
 }
 
-template<f::RelationKind R, AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void notify_fact_annotation_improved_for(GroundCtx<AP, TP, CP>& ctx, fd::PredicateBindingView<f::FluentTag> fact)
 {
     auto& out = ctx.out();
@@ -219,14 +219,14 @@ void notify_fact_annotation_improved_for(GroundCtx<AP, TP, CP>& ctx, fd::Predica
             push_rule(ctx, dependent_rule);
 }
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void notify_fact_annotation_improved(GroundCtx<AP, TP, CP>& ctx, fd::PredicateBindingView<f::FluentTag> fact)
 {
     notify_fact_annotation_improved_for<f::PredicateTag>(ctx, fact);
     notify_fact_annotation_improved_for<f::FunctionTag>(ctx, fact);
 }
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 bool derive_fact(GroundCtx<AP, TP, CP>& ctx, fd::PredicateBindingView<f::FluentTag> fact)
 {
     auto& out = ctx.out();
@@ -238,7 +238,7 @@ bool derive_fact(GroundCtx<AP, TP, CP>& ctx, fd::PredicateBindingView<f::FluentT
     return inserted;
 }
 
-template<f::RelationKind R, AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void notify_numeric_interval_changed_for(GroundCtx<AP, TP, CP>& ctx, fd::FunctionBindingView<f::FluentTag> term)
 {
     const auto& dependencies = ctx.in().template dependencies<R>().fluent_function_term_to_rules;
@@ -254,14 +254,14 @@ void notify_numeric_interval_changed_for(GroundCtx<AP, TP, CP>& ctx, fd::Functio
     }
 }
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void notify_numeric_interval_changed(GroundCtx<AP, TP, CP>& ctx, fd::FunctionBindingView<f::FluentTag> term)
 {
     notify_numeric_interval_changed_for<f::PredicateTag>(ctx, term);
     notify_numeric_interval_changed_for<f::FunctionTag>(ctx, term);
 }
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 bool derive_interval(GroundCtx<AP, TP, CP>& ctx, fd::FunctionBindingView<f::FluentTag> term, ygg::ClosedInterval<ygg::float_t> interval)
 {
     if (empty(interval))
@@ -270,12 +270,12 @@ bool derive_interval(GroundCtx<AP, TP, CP>& ctx, fd::FunctionBindingView<f::Flue
     return ctx.out().fact_sets().function.insert(term, interval);
 }
 
-bool is_annotation_improvement(const std::optional<CostUpdate<GroundTag>>& update) noexcept
+bool is_annotation_improvement(const std::optional<CostUpdate>& update) noexcept
 {
     return update && (!update->old_cost || update->new_cost < *update->old_cost);
 }
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void fire_rule(GroundCtx<AP, TP, CP>& ctx,
                fd::GroundRuleView<f::PredicateTag> rule,
                RuleInstance<GroundTag, f::PredicateTag>& instance,
@@ -308,7 +308,7 @@ void fire_rule(GroundCtx<AP, TP, CP>& ctx,
     }
 }
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void fire_rule(GroundCtx<AP, TP, CP>& ctx,
                fd::GroundRuleView<f::FunctionTag>,
                RuleInstance<GroundTag, f::FunctionTag>& instance,
@@ -327,20 +327,20 @@ void fire_rule(GroundCtx<AP, TP, CP>& ctx,
         pending_heads.insert(candidate.cost, candidate.head, candidate.interval);
 }
 
-template<f::RelationKind R, AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 Cost next_rule_cost_for(const GroundCtx<AP, TP, CP>& ctx) noexcept
 {
     const auto& queue = ctx.out().template queue_storage<R>();
     return queue.empty() ? std::numeric_limits<Cost>::max() : queue.front().cost;
 }
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 Cost next_rule_cost(const GroundCtx<AP, TP, CP>& ctx) noexcept
 {
     return std::min(next_rule_cost_for<f::PredicateTag>(ctx), next_rule_cost_for<f::FunctionTag>(ctx));
 }
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void commit_head_bucket(GroundCtx<AP, TP, CP>& ctx, CostBuckets& pending_heads, Cost cost)
 {
     auto bucket = pending_heads.take(cost);
@@ -368,7 +368,7 @@ void commit_head_bucket(GroundCtx<AP, TP, CP>& ctx, CostBuckets& pending_heads, 
         notify_numeric_interval_changed(ctx, term);
 }
 
-template<f::RelationKind R, AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void process_next_rule(GroundCtx<AP, TP, CP>& ctx, CostBuckets& pending_heads)
 {
     auto entry = pop_next_entry<R>(ctx);
@@ -393,7 +393,7 @@ void process_next_rule(GroundCtx<AP, TP, CP>& ctx, CostBuckets& pending_heads)
     auto instance = RuleInstance<GroundTag, R>(entry->rule);
     auto selector = make_numeric_support_selector(ctx);
     auto& workspace = out.queue().scratch.rule_evaluation;
-    const auto input = RuleEvaluationInput<GroundTag> { selector, out.annotations() };
+    const auto input = RuleEvaluationInput { selector, out.annotations() };
     const auto candidate = [&]
     {
         if constexpr (std::same_as<R, f::PredicateTag>)
@@ -412,7 +412,7 @@ void process_next_rule(GroundCtx<AP, TP, CP>& ctx, CostBuckets& pending_heads)
     fire_rule(ctx, entry->rule, instance, *candidate, pending_heads);
 }
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void process_rule_frontier(GroundCtx<AP, TP, CP>& ctx, CostBuckets& pending_heads, Cost cost)
 {
     while (next_rule_cost(ctx) == cost)
@@ -430,7 +430,7 @@ void process_rule_frontier(GroundCtx<AP, TP, CP>& ctx, CostBuckets& pending_head
 
 }
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void compute_model(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     initialize_numeric_constraint_satisfaction(ctx);
@@ -451,43 +451,25 @@ void compute_model(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
     }
 }
 
-template void compute_model(ProgramExecutionContext<GroundTag, NoAnnotationPolicy<GroundTag>, NoTerminationPolicy<GroundTag>, RuleCostPolicy<GroundTag>>& ctx);
+template void compute_model(ProgramExecutionContext<GroundTag, NoAnnotationPolicy, NoTerminationPolicy, RuleCostPolicy>& ctx);
+template void compute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy, RuleCostPolicy>& ctx);
+template void
+compute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>, RuleCostPolicy>& ctx);
+template void compute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy, RuleCostPolicy>& ctx);
+template void
+compute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>& ctx);
+template void
+compute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationWithAchieversPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>& ctx);
+template void
+compute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<GroundTag>>& ctx);
 template void compute_model(
-    ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<GroundTag, SumAggregation>, NoTerminationPolicy<GroundTag>, RuleCostPolicy<GroundTag>>& ctx);
-template void compute_model(ProgramExecutionContext<GroundTag,
-                                                    MinCostAnnotationPolicy<GroundTag, SumAggregation>,
-                                                    TerminationPolicy<GroundTag, SumAggregation>,
-                                                    RuleCostPolicy<GroundTag>>& ctx);
+    ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>, RuleCostOverridePolicy<GroundTag>>& ctx);
+template void
+compute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<GroundTag>>& ctx);
 template void compute_model(
-    ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<GroundTag, MaxAggregation>, NoTerminationPolicy<GroundTag>, RuleCostPolicy<GroundTag>>& ctx);
+    ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostOverridePolicy<GroundTag>>& ctx);
 template void compute_model(ProgramExecutionContext<GroundTag,
-                                                    MinCostAnnotationPolicy<GroundTag, MaxAggregation>,
-                                                    TerminationPolicy<GroundTag, MaxAggregation>,
-                                                    RuleCostPolicy<GroundTag>>& ctx);
-template void compute_model(ProgramExecutionContext<GroundTag,
-                                                    MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>,
-                                                    TerminationPolicy<GroundTag, MaxAggregation>,
-                                                    RuleCostPolicy<GroundTag>>& ctx);
-template void compute_model(
-    ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<GroundTag, SumAggregation>, NoTerminationPolicy<GroundTag>, RuleCostOverridePolicy<GroundTag>>&
-        ctx);
-template void compute_model(ProgramExecutionContext<GroundTag,
-                                                    MinCostAnnotationPolicy<GroundTag, SumAggregation>,
-                                                    TerminationPolicy<GroundTag, SumAggregation>,
-                                                    RuleCostOverridePolicy<GroundTag>>& ctx);
-template void compute_model(
-    ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<GroundTag, MaxAggregation>, NoTerminationPolicy<GroundTag>, RuleCostOverridePolicy<GroundTag>>&
-        ctx);
-template void compute_model(ProgramExecutionContext<GroundTag,
-                                                    MinCostAnnotationPolicy<GroundTag, MaxAggregation>,
-                                                    TerminationPolicy<GroundTag, MaxAggregation>,
-                                                    RuleCostOverridePolicy<GroundTag>>& ctx);
-template void compute_model(ProgramExecutionContext<GroundTag,
-                                                    MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>,
-                                                    TerminationPolicy<GroundTag, MaxAggregation>,
-                                                    RuleCostOverridePolicy<GroundTag>>& ctx);
-template void compute_model(ProgramExecutionContext<GroundTag,
-                                                    MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>,
-                                                    FullModelGoalPolicy<GroundTag, MaxAggregation>,
+                                                    MinCostAnnotationWithAchieversPolicy<MaxAggregation>,
+                                                    TerminationPolicy<MaxAggregation>,
                                                     RuleCostOverridePolicy<GroundTag>>& ctx);
 }

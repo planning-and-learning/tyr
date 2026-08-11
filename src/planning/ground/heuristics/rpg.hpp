@@ -64,7 +64,7 @@ struct RPGPolicy<GroundTag>
     }
 
     template<::tyr::formalism::RelationKind R, typename Workspace>
-    static std::optional<Action> get_action(const RPGDefinition<GroundTag>& definition, Workspace&, const datalog::WitnessAnnotation<GroundTag, R>& witness)
+    static std::optional<Action> get_action(const RPGDefinition<GroundTag>& definition, Workspace&, const datalog::WitnessAnnotation<R>& witness)
     {
         const auto& mapping = definition.rpg_program.template get_rule_to_action_mapping<R>();
         const auto it = mapping.find(witness.get_rule_key());
@@ -79,7 +79,7 @@ struct RPGPolicy<GroundTag>
     }
 
     template<::tyr::formalism::RelationKind R, typename Workspace, typename Callback>
-    static void visit_witness_rule_instance(Workspace&, const datalog::WitnessAnnotation<GroundTag, R>& witness, Callback&& callback)
+    static void visit_witness_rule_instance(Workspace&, const datalog::WitnessAnnotation<R>& witness, Callback&& callback)
     {
         const auto rule = ::tyr::formalism::datalog::find_ground_rule(witness.get_rule_key());
         if (!rule)

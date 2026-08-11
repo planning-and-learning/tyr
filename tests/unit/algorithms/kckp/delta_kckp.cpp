@@ -463,8 +463,8 @@ TEST(TyrKCKPDelta, InnerParallelismMatchesSequentialRPG)
     EXPECT_EQ(parallel_value, sequential_value);
     EXPECT_EQ(parallel_heuristic->get_preferred_actions(), sequential_heuristic->get_preferred_actions());
 
-    using AnnotationPolicy = d::MinCostAnnotationPolicy<LiftedTag, d::SumAggregation>;
-    using Termination = d::TerminationPolicy<LiftedTag, d::SumAggregation>;
+    using AnnotationPolicy = d::MinCostAnnotationPolicy<d::SumAggregation>;
+    using Termination = d::TerminationPolicy<d::SumAggregation>;
     using Workspace = d::ProgramWorkspace<LiftedTag, AnnotationPolicy, Termination>;
 
     auto program = p::RPGProgram<LiftedTag>(task->get_task());

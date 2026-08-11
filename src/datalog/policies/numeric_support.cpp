@@ -23,41 +23,22 @@ namespace f = tyr::formalism;
 namespace tyr::datalog
 {
 
-template<TaskKind Kind>
-NumericSupportSelector<Kind>::NumericSupportSelector(const FactSets& fact_sets,
-                                                     const NumericIntervalAnnotations<Kind>& annotations,
-                                                     bool initial_intervals_cost_zero) :
+NumericSupportSelector::NumericSupportSelector(const FactSets& fact_sets, const NumericIntervalAnnotations<>& annotations, bool initial_intervals_cost_zero) :
     m_fact_sets(fact_sets),
     m_annotations(annotations),
     m_initial_intervals_cost_zero(initial_intervals_cost_zero)
 {
 }
 
-template<TaskKind Kind>
-typename NumericSupportSelector<Kind>::Key NumericSupportSelector<Kind>::fluent_key(fd::GroundFunctionTermView<f::FluentTag> term) const noexcept
-{
-    return term.get_row();
-}
+NumericSupportSelector::Key NumericSupportSelector::fluent_key(fd::GroundFunctionTermView<f::FluentTag> term) const noexcept { return term.get_row(); }
 
-template<TaskKind Kind>
-ygg::ClosedInterval<ygg::float_t> NumericSupportSelector<Kind>::lookup_static(fd::GroundFunctionTermView<f::StaticTag> term) const
+ygg::ClosedInterval<ygg::float_t> NumericSupportSelector::lookup_static(fd::GroundFunctionTermView<f::StaticTag> term) const
 {
     return m_fact_sets.static_sets.function[term];
 }
 
-template<TaskKind Kind>
-ygg::ClosedInterval<ygg::float_t> NumericSupportSelector<Kind>::current_interval(Key key) const
-{
-    return m_fact_sets.fluent_sets.function[key];
-}
+ygg::ClosedInterval<ygg::float_t> NumericSupportSelector::current_interval(Key key) const { return m_fact_sets.fluent_sets.function[key]; }
 
-template<TaskKind Kind>
-const typename NumericIntervalAnnotations<Kind>::Entries* NumericSupportSelector<Kind>::find_entries(Key key) const
-{
-    return m_annotations.find_entries(key);
-}
-
-template class NumericSupportSelector<GroundTag>;
-template class NumericSupportSelector<LiftedTag>;
+const NumericIntervalAnnotations<>::Entries* NumericSupportSelector::find_entries(Key key) const { return m_annotations.find_entries(key); }
 
 }

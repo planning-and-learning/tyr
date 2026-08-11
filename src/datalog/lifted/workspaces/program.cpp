@@ -48,7 +48,7 @@ void initialize_const_rule_workspaces(Program<LiftedTag>& program,
 }
 }
 
-template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTag>& program, AP annotation_policy, TP tp, CP cost_policy) :
     const_workspace(program.get_const_program_workspace()),
     program_repository(program.get_program_repository()),
@@ -89,7 +89,7 @@ ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTa
     initialize_rule_workspaces<::tyr::formalism::FunctionTag>(const_workspace, function_rules);
 }
 
-template<AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void ProgramWorkspace<LiftedTag, AP, TP, CP>::reset_evaluation()
 {
     const auto clear_rules = [](auto& rules)
@@ -114,35 +114,19 @@ void ProgramWorkspace<LiftedTag, AP, TP, CP>::reset_evaluation()
     workspace_repository.clear();
 }
 
-template struct ProgramWorkspace<LiftedTag, NoAnnotationPolicy<LiftedTag>, NoTerminationPolicy<LiftedTag>>;
-template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<LiftedTag, SumAggregation>, NoTerminationPolicy<LiftedTag>>;
-template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<LiftedTag, SumAggregation>, TerminationPolicy<LiftedTag, SumAggregation>>;
-template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<LiftedTag, MaxAggregation>, NoTerminationPolicy<LiftedTag>>;
-template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<LiftedTag, MaxAggregation>, TerminationPolicy<LiftedTag, MaxAggregation>>;
-template struct ProgramWorkspace<LiftedTag, MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>, TerminationPolicy<LiftedTag, MaxAggregation>>;
+template struct ProgramWorkspace<LiftedTag, NoAnnotationPolicy, NoTerminationPolicy>;
+template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy>;
+template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>>;
+template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy>;
+template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>>;
+template struct ProgramWorkspace<LiftedTag, MinCostAnnotationWithAchieversPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>>;
+template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<LiftedTag>>;
+template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>, RuleCostOverridePolicy<LiftedTag>>;
+template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<LiftedTag>>;
+template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostOverridePolicy<LiftedTag>>;
 template struct ProgramWorkspace<LiftedTag,
-                                 MinCostAnnotationPolicy<LiftedTag, SumAggregation>,
-                                 NoTerminationPolicy<LiftedTag>,
-                                 RuleCostOverridePolicy<LiftedTag>>;
-template struct ProgramWorkspace<LiftedTag,
-                                 MinCostAnnotationPolicy<LiftedTag, SumAggregation>,
-                                 TerminationPolicy<LiftedTag, SumAggregation>,
-                                 RuleCostOverridePolicy<LiftedTag>>;
-template struct ProgramWorkspace<LiftedTag,
-                                 MinCostAnnotationPolicy<LiftedTag, MaxAggregation>,
-                                 NoTerminationPolicy<LiftedTag>,
-                                 RuleCostOverridePolicy<LiftedTag>>;
-template struct ProgramWorkspace<LiftedTag,
-                                 MinCostAnnotationPolicy<LiftedTag, MaxAggregation>,
-                                 TerminationPolicy<LiftedTag, MaxAggregation>,
-                                 RuleCostOverridePolicy<LiftedTag>>;
-template struct ProgramWorkspace<LiftedTag,
-                                 MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>,
-                                 TerminationPolicy<LiftedTag, MaxAggregation>,
-                                 RuleCostOverridePolicy<LiftedTag>>;
-template struct ProgramWorkspace<LiftedTag,
-                                 MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>,
-                                 FullModelGoalPolicy<LiftedTag, MaxAggregation>,
+                                 MinCostAnnotationWithAchieversPolicy<MaxAggregation>,
+                                 TerminationPolicy<MaxAggregation>,
                                  RuleCostOverridePolicy<LiftedTag>>;
 
 ConstProgramWorkspace<LiftedTag>::ConstProgramWorkspace(Program<LiftedTag>& program) :

@@ -23,24 +23,24 @@
 namespace tyr::datalog
 {
 
-template<TaskKind Kind, ::tyr::formalism::RelationKind R>
-WitnessAnnotation<Kind, R>::WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key_, Cost cost_) : rule_key(rule_key_), metric(), cost(cost_)
+template<::tyr::formalism::RelationKind R>
+WitnessAnnotation<R>::WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key_, Cost cost_) : rule_key(rule_key_), metric(), cost(cost_)
 {
 }
 
-template<TaskKind Kind, ::tyr::formalism::RelationKind R>
-WitnessAnnotation<Kind, R>::WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key_, Metric metric_, Cost cost_) :
+template<::tyr::formalism::RelationKind R>
+WitnessAnnotation<R>::WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key_, Metric metric_, Cost cost_) :
     rule_key(rule_key_),
     metric(metric_),
     cost(cost_)
 {
 }
 
-template<TaskKind Kind, ::tyr::formalism::RelationKind R>
-WitnessAnnotation<Kind, R>::WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key_,
-                                              Metric metric_,
-                                              Cost cost_,
-                                              NumericSupports numeric_supports_) :
+template<::tyr::formalism::RelationKind R>
+WitnessAnnotation<R>::WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key_,
+                                        Metric metric_,
+                                        Cost cost_,
+                                        NumericSupports numeric_supports_) :
     rule_key(rule_key_),
     metric(metric_),
     cost(cost_),
@@ -50,18 +50,16 @@ WitnessAnnotation<Kind, R>::WitnessAnnotation(::tyr::formalism::datalog::RuleBin
     numeric_supports.erase(std::unique(numeric_supports.begin(), numeric_supports.end()), numeric_supports.end());
 }
 
-template<TaskKind Kind, ::tyr::formalism::RelationKind R>
-WitnessAnnotation<Kind, R>::WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key_,
-                                              Metric metric_,
-                                              Cost cost_,
-                                              std::span<const NumericSupport> numeric_supports_) :
+template<::tyr::formalism::RelationKind R>
+WitnessAnnotation<R>::WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key_,
+                                        Metric metric_,
+                                        Cost cost_,
+                                        std::span<const NumericSupport> numeric_supports_) :
     WitnessAnnotation(rule_key_, metric_, cost_, NumericSupports(numeric_supports_.begin(), numeric_supports_.end()))
 {
 }
 
-template struct WitnessAnnotation<GroundTag, ::tyr::formalism::PredicateTag>;
-template struct WitnessAnnotation<GroundTag, ::tyr::formalism::FunctionTag>;
-template struct WitnessAnnotation<LiftedTag, ::tyr::formalism::PredicateTag>;
-template struct WitnessAnnotation<LiftedTag, ::tyr::formalism::FunctionTag>;
+template struct WitnessAnnotation<::tyr::formalism::PredicateTag>;
+template struct WitnessAnnotation<::tyr::formalism::FunctionTag>;
 
 }

@@ -147,33 +147,30 @@ inline void bind_numeric_support(nb::module_& m)
     ygg::add_comparison(cls);
 }
 
-template<TaskKind Kind>
-void bind_annotations(nb::module_& m)
+inline void bind_annotations(nb::module_& m)
 {
-    using NumericSupportT = NumericSupport;
-    using BaseAnnotationT = BaseAnnotation<Kind>;
-    using WitnessAnnotationT = WitnessAnnotation<Kind, ::tyr::formalism::PredicateTag>;
-    using FunctionWitnessAnnotationT = WitnessAnnotation<Kind, ::tyr::formalism::FunctionTag>;
-    using PredicateAnnotationStore = PredicateAnnotations<Kind>;
-    using FunctionAnnotationStore = FunctionAnnotations<Kind>;
+    using WitnessAnnotationT = WitnessAnnotation<::tyr::formalism::PredicateTag>;
+    using FunctionWitnessAnnotationT = WitnessAnnotation<::tyr::formalism::FunctionTag>;
+    using PredicateAnnotationStore = PredicateAnnotations<>;
+    using FunctionAnnotationStore = FunctionAnnotations<>;
     using RuleKey = ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::PredicateTag>;
     using FunctionRuleKey = ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::FunctionTag>;
     using NumericKey = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
     using PredicateKey = typename PredicateAnnotationStore::Key;
 
-    auto base_annotation_cls = nb::class_<BaseAnnotationT>(m, "BaseAnnotation")
+    auto base_annotation_cls = nb::class_<BaseAnnotation>(m, "BaseAnnotation")
                                    .def(nb::init<>())
                                    .def(nb::init<Cost>(), "cost"_a)
                                    .def(nb::init<Interval, Cost>(), "metric"_a, "cost"_a)
-                                   .def("get_metric", &BaseAnnotationT::get_metric)
-                                   .def("get_cost", &BaseAnnotationT::get_cost);
+                                   .def("get_metric", &BaseAnnotation::get_metric)
+                                   .def("get_cost", &BaseAnnotation::get_cost);
     ygg::add_comparison(base_annotation_cls);
 
     auto witness_annotation_cls =
         nb::class_<WitnessAnnotationT>(m, "WitnessAnnotation")
             .def(nb::init<RuleKey, Cost>(), "rule_key"_a, "cost"_a)
             .def(nb::init<RuleKey, Interval, Cost>(), "rule_key"_a, "metric"_a, "cost"_a)
-            .def(nb::init<RuleKey, Interval, Cost, std::vector<NumericSupportT>>(), "rule_key"_a, "metric"_a, "cost"_a, "numeric_supports"_a)
+            .def(nb::init<RuleKey, Interval, Cost, std::vector<NumericSupport>>(), "rule_key"_a, "metric"_a, "cost"_a, "numeric_supports"_a)
             .def("get_rule_key", &WitnessAnnotationT::get_rule_key, nb::keep_alive<0, 1>())
             .def("get_metric", &WitnessAnnotationT::get_metric)
             .def("get_cost", &WitnessAnnotationT::get_cost)
@@ -184,7 +181,7 @@ void bind_annotations(nb::module_& m)
         nb::class_<FunctionWitnessAnnotationT>(m, "FunctionWitnessAnnotation")
             .def(nb::init<FunctionRuleKey, Cost>(), "rule_key"_a, "cost"_a)
             .def(nb::init<FunctionRuleKey, Interval, Cost>(), "rule_key"_a, "metric"_a, "cost"_a)
-            .def(nb::init<FunctionRuleKey, Interval, Cost, std::vector<NumericSupportT>>(), "rule_key"_a, "metric"_a, "cost"_a, "numeric_supports"_a)
+            .def(nb::init<FunctionRuleKey, Interval, Cost, std::vector<NumericSupport>>(), "rule_key"_a, "metric"_a, "cost"_a, "numeric_supports"_a)
             .def("get_rule_key", &FunctionWitnessAnnotationT::get_rule_key, nb::keep_alive<0, 1>())
             .def("get_metric", &FunctionWitnessAnnotationT::get_metric)
             .def("get_cost", &FunctionWitnessAnnotationT::get_cost)
@@ -196,10 +193,10 @@ void bind_annotations(nb::module_& m)
         .def("clear", &PredicateAnnotationStore::clear)
         .def(
             "find",
-            [](const PredicateAnnotationStore& self, PredicateKey key) -> std::optional<Annotation<Kind>>
+            [](const PredicateAnnotationStore& self, PredicateKey key) -> std::optional<Annotation<>>
             {
                 const auto* annotation = self.find(key);
-                return annotation ? std::optional<Annotation<Kind>>(*annotation) : std::nullopt;
+                return annotation ? std::optional<Annotation<>>(*annotation) : std::nullopt;
             },
             "binding"_a);
 
@@ -209,24 +206,24 @@ void bind_annotations(nb::module_& m)
         .def("size", &FunctionAnnotationStore::size)
         .def(
             "find",
-            [](const FunctionAnnotationStore& self, NumericKey key) -> std::optional<Annotation<Kind, ::tyr::formalism::FunctionTag>>
+            [](const FunctionAnnotationStore& self, NumericKey key) -> std::optional<Annotation<::tyr::formalism::FunctionTag>>
             {
                 const auto* annotation = self.find(key);
-                return annotation ? std::optional<Annotation<Kind, ::tyr::formalism::FunctionTag>>(*annotation) : std::nullopt;
+                return annotation ? std::optional<Annotation<::tyr::formalism::FunctionTag>>(*annotation) : std::nullopt;
             },
             "binding"_a)
         .def(
             "find",
-            [](const FunctionAnnotationStore& self, NumericKey key, const Interval& interval) -> std::optional<Annotation<Kind, ::tyr::formalism::FunctionTag>>
+            [](const FunctionAnnotationStore& self, NumericKey key, const Interval& interval) -> std::optional<Annotation<::tyr::formalism::FunctionTag>>
             {
                 const auto* annotation = self.find(key, interval);
-                return annotation ? std::optional<Annotation<Kind, ::tyr::formalism::FunctionTag>>(*annotation) : std::nullopt;
+                return annotation ? std::optional<Annotation<::tyr::formalism::FunctionTag>>(*annotation) : std::nullopt;
             },
             "binding"_a,
             "interval"_a);
 }
 
-template<TaskKind Kind, typename CostPolicy>
+template<typename CostPolicy>
 void bind_cost_policy(nb::module_& m, const char* name)
 {
     using NumericKey = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
@@ -263,10 +260,10 @@ void bind_cost_policy(nb::module_& m, const char* name)
     bind_rule_costs.template operator()<::tyr::formalism::FunctionTag>();
 }
 
-template<TaskKind Kind, typename Aggregation>
+template<typename Aggregation>
 void bind_termination_policy(nb::module_& m, const char* name)
 {
-    using Policy = TerminationPolicy<Kind, Aggregation>;
+    using Policy = TerminationPolicy<Aggregation>;
 
     nb::class_<Policy>(m, name)
         .def(nb::init<>())
@@ -276,16 +273,13 @@ void bind_termination_policy(nb::module_& m, const char* name)
         .def("clear", &Policy::clear);
 }
 
-template<TaskKind Kind>
-void bind_policies(nb::module_& m)
+inline void bind_policies(nb::module_& m)
 {
-    using NoAnnotation = NoAnnotationPolicy<Kind>;
-    using SumMinCostAnnotation = MinCostAnnotationPolicy<Kind, SumAggregation>;
-    using MaxMinCostAnnotation = MinCostAnnotationPolicy<Kind, MaxAggregation>;
-    using MaxMinCostAnnotationWithAchievers = MinCostAnnotationWithAchieversPolicy<Kind, MaxAggregation>;
-    using NoTermination = NoTerminationPolicy<Kind>;
+    using SumMinCostAnnotation = MinCostAnnotationPolicy<SumAggregation>;
+    using MaxMinCostAnnotation = MinCostAnnotationPolicy<MaxAggregation>;
+    using MaxMinCostAnnotationWithAchievers = MinCostAnnotationWithAchieversPolicy<MaxAggregation>;
 
-    nb::class_<NoAnnotation>(m, "NoAnnotationPolicy").def(nb::init<>());
+    nb::class_<NoAnnotationPolicy>(m, "NoAnnotationPolicy").def(nb::init<>());
     nb::class_<SumMinCostAnnotation>(m, "SumMinCostAnnotationPolicy").def(nb::init<>());
     nb::class_<MaxMinCostAnnotation>(m, "MaxMinCostAnnotationPolicy").def(nb::init<>());
     nb::class_<MaxMinCostAnnotationWithAchievers, MaxMinCostAnnotation>(m, "MaxMinCostAnnotationWithAchieversPolicy")
@@ -301,16 +295,21 @@ void bind_policies(nb::module_& m)
             },
             "binding"_a);
 
-    nb::class_<NoTermination>(m, "NoTerminationPolicy")
+    nb::class_<NoTerminationPolicy>(m, "NoTerminationPolicy")
         .def(nb::init<>())
-        .def("set_goals", &NoTermination::set_goals, "goals"_a)
-        .def("reset", &NoTermination::reset)
-        .def("clear", &NoTermination::clear);
-    bind_termination_policy<Kind, SumAggregation>(m, "SumTerminationPolicy");
-    bind_termination_policy<Kind, MaxAggregation>(m, "MaxTerminationPolicy");
+        .def("set_goals", &NoTerminationPolicy::set_goals, "goals"_a)
+        .def("reset", &NoTerminationPolicy::reset)
+        .def("clear", &NoTerminationPolicy::clear);
+    bind_termination_policy<SumAggregation>(m, "SumTerminationPolicy");
+    bind_termination_policy<MaxAggregation>(m, "MaxTerminationPolicy");
 
-    bind_cost_policy<Kind, RuleCostPolicy<Kind>>(m, "RuleCostPolicy");
-    bind_cost_policy<Kind, RuleCostOverridePolicy<Kind>>(m, "RuleCostOverridePolicy");
+    bind_cost_policy<RuleCostPolicy>(m, "RuleCostPolicy");
+}
+
+template<TaskKind Kind>
+void bind_task_policies(nb::module_& m)
+{
+    bind_cost_policy<RuleCostOverridePolicy<Kind>>(m, "RuleCostOverridePolicy");
 }
 
 template<TaskKind Kind, typename Workspace>
@@ -446,23 +445,17 @@ void bind_configuration(nb::module_& m, const char* prefix)
 template<TaskKind Kind>
 void bind_common_configurations(nb::module_& m)
 {
-    bind_configuration<Kind, NoAnnotationPolicy<Kind>, NoTerminationPolicy<Kind>, RuleCostPolicy<Kind>>(m, "Unannotated");
-    bind_configuration<Kind, MinCostAnnotationPolicy<Kind, SumAggregation>, NoTerminationPolicy<Kind>, RuleCostPolicy<Kind>>(m, "Sum");
-    bind_configuration<Kind, MinCostAnnotationPolicy<Kind, SumAggregation>, TerminationPolicy<Kind, SumAggregation>, RuleCostPolicy<Kind>>(m, "SumGoal");
-    bind_configuration<Kind, MinCostAnnotationPolicy<Kind, MaxAggregation>, NoTerminationPolicy<Kind>, RuleCostPolicy<Kind>>(m, "Max");
-    bind_configuration<Kind, MinCostAnnotationPolicy<Kind, MaxAggregation>, TerminationPolicy<Kind, MaxAggregation>, RuleCostPolicy<Kind>>(m, "MaxGoal");
-    bind_configuration<Kind, MinCostAnnotationPolicy<Kind, SumAggregation>, NoTerminationPolicy<Kind>, RuleCostOverridePolicy<Kind>>(m, "SumOverride");
-    bind_configuration<Kind, MinCostAnnotationPolicy<Kind, SumAggregation>, TerminationPolicy<Kind, SumAggregation>, RuleCostOverridePolicy<Kind>>(
-        m,
-        "SumGoalOverride");
-    bind_configuration<Kind, MinCostAnnotationPolicy<Kind, MaxAggregation>, NoTerminationPolicy<Kind>, RuleCostOverridePolicy<Kind>>(m, "MaxOverride");
-    bind_configuration<Kind, MinCostAnnotationPolicy<Kind, MaxAggregation>, TerminationPolicy<Kind, MaxAggregation>, RuleCostOverridePolicy<Kind>>(
-        m,
-        "MaxGoalOverride");
-    bind_configuration<Kind, MinCostAnnotationWithAchieversPolicy<Kind, MaxAggregation>, TerminationPolicy<Kind, MaxAggregation>, RuleCostPolicy<Kind>>(
-        m,
-        "MaxAchieverGoal");
-    bind_configuration<Kind, MinCostAnnotationWithAchieversPolicy<Kind, MaxAggregation>, TerminationPolicy<Kind, MaxAggregation>, RuleCostOverridePolicy<Kind>>(
+    bind_configuration<Kind, NoAnnotationPolicy, NoTerminationPolicy, RuleCostPolicy>(m, "Unannotated");
+    bind_configuration<Kind, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy, RuleCostPolicy>(m, "Sum");
+    bind_configuration<Kind, MinCostAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>, RuleCostPolicy>(m, "SumGoal");
+    bind_configuration<Kind, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy, RuleCostPolicy>(m, "Max");
+    bind_configuration<Kind, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>(m, "MaxGoal");
+    bind_configuration<Kind, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<Kind>>(m, "SumOverride");
+    bind_configuration<Kind, MinCostAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>, RuleCostOverridePolicy<Kind>>(m, "SumGoalOverride");
+    bind_configuration<Kind, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<Kind>>(m, "MaxOverride");
+    bind_configuration<Kind, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostOverridePolicy<Kind>>(m, "MaxGoalOverride");
+    bind_configuration<Kind, MinCostAnnotationWithAchieversPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>(m, "MaxAchieverGoal");
+    bind_configuration<Kind, MinCostAnnotationWithAchieversPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostOverridePolicy<Kind>>(
         m,
         "MaxAchieverGoalOverride");
 }

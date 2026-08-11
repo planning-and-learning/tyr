@@ -28,22 +28,21 @@
 namespace tyr::datalog
 {
 
-template<typename T, typename Kind>
-concept TerminationPolicyConcept = TaskKind<Kind>
-                                   && requires(T& p,
-                                               const T& cp,
-                                               ::tyr::formalism::datalog::GroundConjunctiveConditionView goals,
-                                               const FactSets& fact_sets,
-                                               const PredicateAnnotations<Kind>& annotations,
-                                               const FunctionAnnotations<Kind>& numeric_annotations,
-                                               const NumericSupportSelector<Kind>& numeric_support_selector) {
-                                          { p.set_goals(goals) } -> std::same_as<void>;
-                                          { cp.check(fact_sets) } -> std::same_as<bool>;
-                                          { cp.should_terminate(fact_sets) } -> std::same_as<bool>;
-                                          { cp.get_total_cost(fact_sets, annotations, numeric_annotations, numeric_support_selector) } -> std::same_as<Cost>;
-                                          { p.reset() } -> std::same_as<void>;
-                                          { p.clear() } -> std::same_as<void>;
-                                      };
+template<typename T>
+concept TerminationPolicyConcept = requires(T& p,
+                                            const T& cp,
+                                            ::tyr::formalism::datalog::GroundConjunctiveConditionView goals,
+                                            const FactSets& fact_sets,
+                                            const PredicateAnnotations<>& annotations,
+                                            const FunctionAnnotations<>& numeric_annotations,
+                                            const NumericSupportSelector& numeric_support_selector) {
+    { p.set_goals(goals) } -> std::same_as<void>;
+    { cp.check(fact_sets) } -> std::same_as<bool>;
+    { cp.should_terminate(fact_sets) } -> std::same_as<bool>;
+    { cp.get_total_cost(fact_sets, annotations, numeric_annotations, numeric_support_selector) } -> std::same_as<Cost>;
+    { p.reset() } -> std::same_as<void>;
+    { p.clear() } -> std::same_as<void>;
+};
 
 }
 

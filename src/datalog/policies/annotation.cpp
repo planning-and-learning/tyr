@@ -24,67 +24,67 @@
 namespace tyr::datalog
 {
 
-template<TaskKind Kind, typename AggregationFunction>
-void MinCostAnnotationPolicy<Kind, AggregationFunction>::initialize_annotation(PredicateHead head, PredicateAnnotations<Kind>& annotations) const
+template<typename AggregationFunction>
+void MinCostAnnotationPolicy<AggregationFunction>::initialize_annotation(PredicateHead head, PredicateAnnotations<>& annotations) const
 {
-    annotations.insert_or_assign(head, BaseAnnotation<Kind>(Cost(0)));
+    annotations.insert_or_assign(head, BaseAnnotation(Cost(0)));
 }
 
-template<TaskKind Kind, typename AggregationFunction>
-void MinCostAnnotationPolicy<Kind, AggregationFunction>::initialize_annotation(FunctionBinding head,
-                                                                               ygg::ClosedInterval<ygg::float_t> interval,
-                                                                               FunctionAnnotations<Kind>& numeric_annotations) const
+template<typename AggregationFunction>
+void MinCostAnnotationPolicy<AggregationFunction>::initialize_annotation(FunctionBinding head,
+                                                                         ygg::ClosedInterval<ygg::float_t> interval,
+                                                                         FunctionAnnotations<>& numeric_annotations) const
 {
-    numeric_annotations.insert(head, interval, BaseAnnotation<Kind>(Cost(0)));
+    numeric_annotations.insert(head, interval, BaseAnnotation(Cost(0)));
 }
 
-template<TaskKind Kind, typename AggregationFunction>
-CostUpdate<Kind> MinCostAnnotationPolicy<Kind, AggregationFunction>::commit_annotation(PredicateHead head,
-                                                                                       const PredicateAnnotations<Kind, true>& delta_annotations,
-                                                                                       PredicateAnnotations<Kind>& annotations) const
+template<typename AggregationFunction>
+CostUpdate MinCostAnnotationPolicy<AggregationFunction>::commit_annotation(PredicateHead head,
+                                                                           const PredicateAnnotations<true>& delta_annotations,
+                                                                           PredicateAnnotations<>& annotations) const
 {
     const auto old_cost = annotations.fetch_cost(head);
     const auto* delta_annotation = delta_annotations.find(head);
     if (delta_annotation)
         if (auto update = annotations.insert_if_better(head, *delta_annotation))
             return *update;
-    return CostUpdate<Kind>(old_cost, old_cost);
+    return CostUpdate(old_cost, old_cost);
 }
 
-template<TaskKind Kind, typename AggregationFunction>
-bool MinCostAnnotationPolicy<Kind, AggregationFunction>::can_update(PredicateHead head,
-                                                                    Cost cost,
-                                                                    const PredicateAnnotations<Kind>& annotations,
-                                                                    const PredicateAnnotations<Kind, true>& delta_annotations) const noexcept
+template<typename AggregationFunction>
+bool MinCostAnnotationPolicy<AggregationFunction>::can_update(PredicateHead head,
+                                                              Cost cost,
+                                                              const PredicateAnnotations<>& annotations,
+                                                              const PredicateAnnotations<true>& delta_annotations) const noexcept
 {
     return cost < std::min(annotations.fetch_cost(head), delta_annotations.fetch_cost(head));
 }
 
-template<TaskKind Kind, typename AggregationFunction>
-bool MinCostAnnotationPolicy<Kind, AggregationFunction>::can_update(FunctionBinding head,
-                                                                    ygg::ClosedInterval<ygg::float_t> interval,
-                                                                    Cost cost,
-                                                                    const FunctionAnnotations<Kind>& numeric_annotations,
-                                                                    const FunctionAnnotations<Kind, true>& delta_numeric_annotations) const noexcept
+template<typename AggregationFunction>
+bool MinCostAnnotationPolicy<AggregationFunction>::can_update(FunctionBinding head,
+                                                              ygg::ClosedInterval<ygg::float_t> interval,
+                                                              Cost cost,
+                                                              const FunctionAnnotations<>& numeric_annotations,
+                                                              const FunctionAnnotations<true>& delta_numeric_annotations) const noexcept
 {
     return cost < std::min(numeric_annotations.fetch_cost(head, interval), delta_numeric_annotations.fetch_cost(head, interval));
 }
 
-template<TaskKind Kind, typename AggregationFunction>
-void MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::clear_achievers() noexcept
+template<typename AggregationFunction>
+void MinCostAnnotationWithAchieversPolicy<AggregationFunction>::clear_achievers() noexcept
 {
     m_achievers.clear();
 }
 
-template<TaskKind Kind, typename AggregationFunction>
-const typename MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::Achievers*
-MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::find_achievers(PredicateHead head) const noexcept
+template<typename AggregationFunction>
+const typename MinCostAnnotationWithAchieversPolicy<AggregationFunction>::Achievers*
+MinCostAnnotationWithAchieversPolicy<AggregationFunction>::find_achievers(PredicateHead head) const noexcept
 {
     return m_achievers.find(head);
 }
 
-template<TaskKind Kind, typename AggregationFunction>
-void MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::record_achiever(PredicateHead head, const PredicateWitness& witness)
+template<typename AggregationFunction>
+void MinCostAnnotationWithAchieversPolicy<AggregationFunction>::record_achiever(PredicateHead head, const PredicateWitness& witness)
 {
     m_achievers.update(head,
                        [&](auto& achievers, bool initialized)
@@ -96,20 +96,13 @@ void MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::record_ach
                        });
 }
 
-static_assert(AnnotationPolicyConcept<NoAnnotationPolicy<GroundTag>, GroundTag>);
-static_assert(AnnotationPolicyConcept<NoAnnotationPolicy<LiftedTag>, LiftedTag>);
-static_assert(AnnotationPolicyConcept<MinCostAnnotationPolicy<GroundTag, SumAggregation>, GroundTag>);
-static_assert(AnnotationPolicyConcept<MinCostAnnotationPolicy<GroundTag, MaxAggregation>, GroundTag>);
-static_assert(AnnotationPolicyConcept<MinCostAnnotationPolicy<LiftedTag, SumAggregation>, LiftedTag>);
-static_assert(AnnotationPolicyConcept<MinCostAnnotationPolicy<LiftedTag, MaxAggregation>, LiftedTag>);
-static_assert(AnnotationPolicyConcept<MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>, GroundTag>);
-static_assert(AnnotationPolicyConcept<MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>, LiftedTag>);
+static_assert(AnnotationPolicyConcept<NoAnnotationPolicy>);
+static_assert(AnnotationPolicyConcept<MinCostAnnotationPolicy<SumAggregation>>);
+static_assert(AnnotationPolicyConcept<MinCostAnnotationPolicy<MaxAggregation>>);
+static_assert(AnnotationPolicyConcept<MinCostAnnotationWithAchieversPolicy<MaxAggregation>>);
 
-template class MinCostAnnotationPolicy<GroundTag, SumAggregation>;
-template class MinCostAnnotationPolicy<GroundTag, MaxAggregation>;
-template class MinCostAnnotationPolicy<LiftedTag, SumAggregation>;
-template class MinCostAnnotationPolicy<LiftedTag, MaxAggregation>;
-template class MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>;
-template class MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>;
+template class MinCostAnnotationPolicy<SumAggregation>;
+template class MinCostAnnotationPolicy<MaxAggregation>;
+template class MinCostAnnotationWithAchieversPolicy<MaxAggregation>;
 
 }

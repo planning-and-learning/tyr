@@ -28,8 +28,7 @@ void bind_ground_module_definitions(nb::module_& m)
     using ConstWorkspace = ConstProgramWorkspace<GroundTag>;
     using Queue = QueueWorkspace<GroundTag>;
 
-    bind_annotations<GroundTag>(m);
-    bind_policies<GroundTag>(m);
+    bind_task_policies<GroundTag>(m);
 
     nb::class_<ConstWorkspace>(m, "ConstProgramWorkspace").def("get_program", [](const ConstWorkspace& self) { return self.program; }, nb::keep_alive<0, 1>());
 
