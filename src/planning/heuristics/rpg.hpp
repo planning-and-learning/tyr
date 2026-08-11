@@ -77,9 +77,7 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, ::t
             return workspace.workspace_repository;
     }();
     auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { workspace.datalog_builder, destination };
-    auto condition_ptr = merge_context.builder.template get_builder<fd::GroundConjunctiveCondition>();
-    auto& condition = *condition_ptr;
-    condition.clear();
+    auto condition = fd::checkout<fd::GroundConjunctiveCondition>(merge_context.builder);
 
     const auto translate_atom = [&](const auto atom)
     {
@@ -96,20 +94,16 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, ::t
         if (!atom)
             continue;
 
-        auto literal_ptr = merge_context.builder.template get_builder<fd::GroundLiteral<::tyr::formalism::FluentTag>>();
-        auto& literal = *literal_ptr;
-        literal.clear();
-        literal.atom = translate_atom(*atom).get_index();
-        literal.polarity = true;
-        fd::canonicalize(literal);
-        condition.fluent_literals.push_back(merge_context.destination.get_or_create(literal).first.get_index());
+        auto literal = fd::checkout<fd::GroundLiteral<::tyr::formalism::FluentTag>>(merge_context.builder);
+        literal->atom = translate_atom(*atom).get_index();
+        literal->polarity = true;
+        condition->fluent_literals.push_back(fd::get_or_create(merge_context.destination, *literal).first.get_index());
     }
 
     for (const auto numeric_constraint : source_goal.get_numeric_constraints())
-        condition.numeric_constraints.push_back(::tyr::formalism::planning::merge_p2d(numeric_constraint, merge_context));
+        condition->numeric_constraints.push_back(::tyr::formalism::planning::merge_p2d(numeric_constraint, merge_context));
 
-    fd::canonicalize(condition);
-    workspace.tp.set_goals(merge_context.destination.get_or_create(condition).first);
+    workspace.tp.set_goals(fd::get_or_create(merge_context.destination, *condition).first);
 }
 
 template<typename Derived,

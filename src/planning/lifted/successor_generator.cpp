@@ -89,7 +89,8 @@ struct SuccessorGenerator<LiftedTag>::Impl
         Evaluator(const Definition& definition, ygg::ExecutionContextPtr execution_context);
 
         ygg::ExecutionContextPtr execution_context;
-        ygg::Data<f::RelationBinding<fp::Action>> scratch_action_binding;
+        fp::Builder scratch_builder;
+        ygg::UniqueObjectPoolPtr<ygg::Data<f::RelationBinding<fp::Action>>> scratch_action_binding;
         ActionBindingMap action_binding_to_ground_action;
         datalog::ProgramWorkspace<LiftedTag> workspace;
         analysis::CompatibilityWorkspace compatibility_workspace;
@@ -133,7 +134,8 @@ SuccessorGenerator<LiftedTag>::Impl::Definition::Definition(TaskPtr<LiftedTag> t
 
 SuccessorGenerator<LiftedTag>::Impl::Evaluator::Evaluator(const Definition& definition, ygg::ExecutionContextPtr execution_context_) :
     execution_context(std::move(execution_context_)),
-    scratch_action_binding(),
+    scratch_builder(),
+    scratch_action_binding(fp::checkout<f::RelationBinding<fp::Action>>(scratch_builder)),
     action_binding_to_ground_action(),
     workspace(definition.action_program.get_datalog_program()),
     compatibility_workspace(),
@@ -260,7 +262,7 @@ void SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<LiftedTag>& n
     out_nodes.clear();
 
     m_impl->for_each_applicable_action_binding(node,
-                                               m_impl->evaluator.scratch_action_binding,
+                                               *m_impl->evaluator.scratch_action_binding,
                                                [&](const auto& binding)
                                                { out_nodes.emplace_back(get_successor_node(node, binding, state_repository, axiom_evaluator)); });
 }
@@ -285,10 +287,10 @@ void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<Lifte
     out_nodes.clear();
 
     m_impl->for_each_applicable_action_binding(node,
-                                               m_impl->evaluator.scratch_action_binding,
-                                               [&](const auto& binding)
+                                               *m_impl->evaluator.scratch_action_binding,
+                                               [&](auto& binding)
                                                {
-                                                   const auto action_binding = m_impl->definition->task->get_repository()->get_or_create(binding).first;
+                                                   const auto action_binding = fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
                                                    out_nodes.emplace_back(action_binding, get_successor_node(node, binding, state_repository, axiom_evaluator));
                                                });
 }
@@ -335,11 +337,11 @@ Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<Lif
                                                                   StateRepository<LiftedTag>& state_repository,
                                                                   AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
-    m_impl->evaluator.scratch_action_binding.relation = binding.get_relation().get_index();
-    m_impl->evaluator.scratch_action_binding.objects.clear();
-    ygg::extend(binding.get_objects(), m_impl->evaluator.scratch_action_binding.objects);
+    m_impl->evaluator.scratch_action_binding->relation = binding.get_relation().get_index();
+    m_impl->evaluator.scratch_action_binding->objects.clear();
+    ygg::extend(binding.get_objects(), m_impl->evaluator.scratch_action_binding->objects);
 
-    return get_successor_node(node, m_impl->evaluator.scratch_action_binding, state_repository, axiom_evaluator);
+    return get_successor_node(node, *m_impl->evaluator.scratch_action_binding, state_repository, axiom_evaluator);
 }
 
 std::vector<::tyr::formalism::planning::ActionBindingView> SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<LiftedTag>& node)
@@ -356,20 +358,20 @@ void SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<Li
     out_bindings.clear();
 
     m_impl->for_each_applicable_action_binding(node,
-                                               m_impl->evaluator.scratch_action_binding,
-                                               [&](const auto& binding)
-                                               { out_bindings.emplace_back(m_impl->definition->task->get_repository()->get_or_create(binding).first); });
+                                               *m_impl->evaluator.scratch_action_binding,
+                                               [&](auto& binding)
+                                               { out_bindings.emplace_back(fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first); });
 }
 
 PendingActionResult
 SuccessorGenerator<LiftedTag>::generate_successor_state(const Node<LiftedTag>& node, fp::ActionBindingView binding, ygg::Builder<State<LiftedTag>>& out_state)
 {
     validate_task(m_impl->definition->task, node.get_state());
-    m_impl->evaluator.scratch_action_binding.relation = binding.get_relation().get_index();
-    m_impl->evaluator.scratch_action_binding.objects.clear();
-    ygg::extend(binding.get_objects(), m_impl->evaluator.scratch_action_binding.objects);
+    m_impl->evaluator.scratch_action_binding->relation = binding.get_relation().get_index();
+    m_impl->evaluator.scratch_action_binding->objects.clear();
+    ygg::extend(binding.get_objects(), m_impl->evaluator.scratch_action_binding->objects);
 
-    return PendingActionResult { m_impl->generate_successor_state(node, m_impl->evaluator.scratch_action_binding, out_state) };
+    return PendingActionResult { m_impl->generate_successor_state(node, *m_impl->evaluator.scratch_action_binding, out_state) };
 }
 
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::finalize_successor_state(StateRepository<LiftedTag>& state_repository,

@@ -22,7 +22,6 @@
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
 #include "tyr/formalism/binding_index.hpp"
-#include "tyr/formalism/datalog/builder.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"

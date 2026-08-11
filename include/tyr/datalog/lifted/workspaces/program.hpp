@@ -33,9 +33,8 @@
 #include "tyr/datalog/programs/program.hpp"
 #include "tyr/datalog/statistics/program.hpp"
 #include "tyr/datalog/workspaces/program.hpp"
-#include "tyr/formalism/datalog/builder.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/planning/builder.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 
 #include <cassert>
 #include <concepts>

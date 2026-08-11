@@ -18,7 +18,6 @@
 #ifndef TYR_FORMALISM_FDR_CONTEXT_HPP_
 #define TYR_FORMALISM_FDR_CONTEXT_HPP_
 
-#include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
@@ -69,7 +68,7 @@ private:
     // Facts are append-only and lock-free to read; only first registration serializes the reusable builder and variable list.
     ygg::SegmentedVector<FactSlot, 32, true> m_facts;
     std::mutex m_registration_mutex;
-    ygg::Data<FDRVariable<FluentTag>> m_builder;
+    Builder m_builder;
     FDRVariableViewList<FluentTag> m_variables;
 };
 

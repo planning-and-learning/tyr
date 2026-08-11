@@ -22,6 +22,7 @@
 #include "tyr/formalism/planning/ground_action_index.hpp"
 #include "tyr/formalism/planning/ground_axiom_index.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/planning/ground/match_tree/canonicalization.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/atom_data.hpp"
 #include "tyr/planning/ground/match_tree/nodes/atom_index.hpp"
@@ -46,10 +47,30 @@
 #include <utility>
 #include <yggdrasil/core/type_list.hpp>
 #include <yggdrasil/core/types.hpp>
+#include <yggdrasil/formalism/builder.hpp>
 #include <yggdrasil/formalism/symbol_repository.hpp>
 
 namespace tyr::planning::match_tree
 {
+
+using GroundActionBuilder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, RepositoryTypes<::tyr::formalism::planning::GroundAction>>;
+using GroundAxiomBuilder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, RepositoryTypes<::tyr::formalism::planning::GroundAxiom>>;
+
+template<typename T>
+[[nodiscard]] auto checkout(GroundActionBuilder& builder)
+{
+    auto data = builder.template get_builder<T>();
+    data->clear();
+    return data;
+}
+
+template<typename T>
+[[nodiscard]] auto checkout(GroundAxiomBuilder& builder)
+{
+    auto data = builder.template get_builder<T>();
+    data->clear();
+    return data;
+}
 
 template<typename Tag>
 class Repository
@@ -115,15 +136,19 @@ public:
     }
 
     /// @brief Clear the repository but keep memory allocated.
-    void clear() noexcept
-    {
-        m_repository.clear();
-    }
+    void clear() noexcept { m_repository.clear(); }
 };
 
 static_assert(RepositoryConcept<Repository<::tyr::formalism::planning::GroundAction>, ::tyr::formalism::planning::GroundAction>);
 
 static_assert(Context<Repository<::tyr::formalism::planning::GroundAction>, ::tyr::formalism::planning::GroundAction>);
+
+template<typename Tag, typename T>
+[[nodiscard]] auto get_or_create(Repository<Tag>& repository, ygg::Data<T>& data)
+{
+    canonicalize(data);
+    return repository.get_or_create(data);
+}
 
 }
 

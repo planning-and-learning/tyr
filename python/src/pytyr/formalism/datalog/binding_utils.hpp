@@ -39,14 +39,13 @@ using Data = ygg::Data<T>;
 template<typename T>
 ygg::View<ygg::Index<T>, Repository> get_or_create_data(Repository& repository, Data<T>& data)
 {
-    canonicalize(data);
-    return repository.template get_or_create<T>(data).first;
+    return ::tyr::formalism::datalog::get_or_create(repository, data).first;
 }
 
 template<typename T>
-ygg::View<ygg::Index<RelationBinding<T>>, Repository> get_or_create_relation_data(Repository& repository, const Data<RelationBinding<T>>& data)
+ygg::View<ygg::Index<RelationBinding<T>>, Repository> get_or_create_relation_data(Repository& repository, Data<RelationBinding<T>>& data)
 {
-    return repository.template get_or_create<T>(data).first;
+    return ::tyr::formalism::datalog::get_or_create(repository, data).first;
 }
 
 template<typename T>

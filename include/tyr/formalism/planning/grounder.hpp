@@ -19,7 +19,6 @@
 #define TYR_FORMALISM_PLANNING_GROUNDER_HPP_
 
 #include "tyr/analysis/domains.hpp"
-#include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
@@ -111,11 +110,9 @@ std::optional<GroundAtomView<T>> try_ground(AtomView<T> element, GrounderContext
 template<FactKind T>
 std::pair<FunctionBindingView<T>, bool> ground(TermListView terms, FunctionView<T> function, GrounderContext& context)
 {
-    auto binding_ptr = context.builder.template get_builder<RelationBinding<Function<T>>>();
-    auto& binding = *binding_ptr;
-    binding.clear();
+    auto binding = ::tyr::formalism::planning::checkout<RelationBinding<Function<T>>>(context.builder);
 
-    binding.relation = function.get_index();
+    binding->relation = function.get_index();
     for (const auto term : terms)
     {
         visit(
@@ -124,9 +121,9 @@ std::pair<FunctionBindingView<T>, bool> ground(TermListView terms, FunctionView<
                 using Alternative = std::decay_t<decltype(arg)>;
 
                 if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    binding.objects.push_back(context.binding[ygg::uint_t(arg)]);
+                    binding->objects.push_back(context.binding[ygg::uint_t(arg)]);
                 else if constexpr (std::is_same_v<Alternative, ObjectView>)
-                    binding.objects.push_back(arg.get_index());
+                    binding->objects.push_back(arg.get_index());
                 else
                     static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
             },
@@ -134,24 +131,20 @@ std::pair<FunctionBindingView<T>, bool> ground(TermListView terms, FunctionView<
     }
 
     // Canonicalize and Serialize
-    canonicalize(binding);
-    return context.destination.get_or_create(binding);
+    return ::tyr::formalism::planning::get_or_create(context.destination, *binding);
 }
 
 template<FactKind T>
 std::pair<GroundFunctionTermView<T>, bool> ground(FunctionTermView<T> element, GrounderContext& context)
 {
     // Fetch and clear
-    auto fterm_ptr = context.builder.template get_builder<GroundFunctionTerm<T>>();
-    auto& fterm = *fterm_ptr;
-    fterm.clear();
+    auto fterm = ::tyr::formalism::planning::checkout<GroundFunctionTerm<T>>(context.builder);
 
     // Fill data
-    fterm.binding = ground(element.get_terms(), element.get_function(), context).first.get_index();
+    fterm->binding = ground(element.get_terms(), element.get_function(), context).first.get_index();
 
     // Canonicalize and Serialize
-    canonicalize(fterm);
-    return context.destination.get_or_create(fterm);
+    return ::tyr::formalism::planning::get_or_create(context.destination, *fterm);
 }
 
 inline GroundFunctionExpressionView ground(FunctionExpressionView element, GrounderContext& context)
@@ -175,52 +168,43 @@ inline GroundFunctionExpressionView ground(FunctionExpressionView element, Groun
 inline std::pair<GroundUnaryOperatorView, bool> ground(LiftedUnaryOperatorView element, GrounderContext& context)
 {
     // Fetch and clear
-    auto unary_ptr = context.builder.template get_builder<UnaryOperator<ygg::Data<GroundFunctionExpression>>>();
-    auto& unary = *unary_ptr;
-    unary.clear();
+    auto unary = ::tyr::formalism::planning::checkout<UnaryOperator<ygg::Data<GroundFunctionExpression>>>(context.builder);
 
     // Fill data
-    unary.operator_kind = element.get_operator();
-    unary.arg = ground(element.get_arg(), context).get_data();
+    unary->operator_kind = element.get_operator();
+    unary->arg = ground(element.get_arg(), context).get_data();
 
     // Canonicalize and Serialize
-    canonicalize(unary);
-    return context.destination.get_or_create(unary);
+    return ::tyr::formalism::planning::get_or_create(context.destination, *unary);
 }
 
 template<BinaryOperatorKind O>
 std::pair<GroundBinaryOperatorView<O>, bool> ground(LiftedBinaryOperatorView<O> element, GrounderContext& context)
 {
     // Fetch and clear
-    auto binary_ptr = context.builder.template get_builder<BinaryOperator<O, ygg::Data<GroundFunctionExpression>>>();
-    auto& binary = *binary_ptr;
-    binary.clear();
+    auto binary = ::tyr::formalism::planning::checkout<BinaryOperator<O, ygg::Data<GroundFunctionExpression>>>(context.builder);
 
     // Fill data
-    binary.operator_kind = element.get_operator();
-    binary.lhs = ground(element.get_lhs(), context).get_data();
-    binary.rhs = ground(element.get_rhs(), context).get_data();
+    binary->operator_kind = element.get_operator();
+    binary->lhs = ground(element.get_lhs(), context).get_data();
+    binary->rhs = ground(element.get_rhs(), context).get_data();
 
     // Canonicalize and Serialize
-    canonicalize(binary);
-    return context.destination.get_or_create(binary);
+    return ::tyr::formalism::planning::get_or_create(context.destination, *binary);
 }
 
 inline std::pair<GroundMultiOperatorView, bool> ground(LiftedMultiOperatorView element, GrounderContext& context)
 {
     // Fetch and clear
-    auto multi_ptr = context.builder.template get_builder<MultiOperator<ygg::Data<GroundFunctionExpression>>>();
-    auto& multi = *multi_ptr;
-    multi.clear();
+    auto multi = ::tyr::formalism::planning::checkout<MultiOperator<ygg::Data<GroundFunctionExpression>>>(context.builder);
 
     // Fill data
-    multi.operator_kind = element.get_operator();
+    multi->operator_kind = element.get_operator();
     for (const auto arg : element.get_args())
-        multi.args.push_back(ground(arg, context).get_data());
+        multi->args.push_back(ground(arg, context).get_data());
 
     // Canonicalize and Serialize
-    canonicalize(multi);
-    return context.destination.get_or_create(multi);
+    return ::tyr::formalism::planning::get_or_create(context.destination, *multi);
 }
 
 inline GroundBooleanOperatorView ground(LiftedBooleanOperatorView element, GrounderContext& context)
@@ -243,11 +227,9 @@ inline GroundArithmeticOperatorView ground(LiftedArithmeticOperatorView element,
 template<FactKind T>
 std::pair<PredicateBindingView<T>, bool> ground(TermListView terms, PredicateView<T> predicate, GrounderContext& context)
 {
-    auto binding_ptr = context.builder.template get_builder<RelationBinding<Predicate<T>>>();
-    auto& binding = *binding_ptr;
-    binding.clear();
+    auto binding = ::tyr::formalism::planning::checkout<RelationBinding<Predicate<T>>>(context.builder);
 
-    binding.relation = predicate.get_index();
+    binding->relation = predicate.get_index();
     for (const auto term : terms)
     {
         visit(
@@ -256,9 +238,9 @@ std::pair<PredicateBindingView<T>, bool> ground(TermListView terms, PredicateVie
                 using Alternative = std::decay_t<decltype(arg)>;
 
                 if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    binding.objects.push_back(context.binding[ygg::uint_t(arg)]);
+                    binding->objects.push_back(context.binding[ygg::uint_t(arg)]);
                 else if constexpr (std::is_same_v<Alternative, ObjectView>)
-                    binding.objects.push_back(arg.get_index());
+                    binding->objects.push_back(arg.get_index());
                 else
                     static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
             },
@@ -266,24 +248,20 @@ std::pair<PredicateBindingView<T>, bool> ground(TermListView terms, PredicateVie
     }
 
     // Canonicalize and Serialize
-    canonicalize(binding);
-    return context.destination.get_or_create(binding);
+    return ::tyr::formalism::planning::get_or_create(context.destination, *binding);
 }
 
 template<FactKind T>
 std::pair<GroundAtomView<T>, bool> ground(AtomView<T> element, GrounderContext& context)
 {
     // Fetch and clear
-    auto atom_ptr = context.builder.template get_builder<GroundAtom<T>>();
-    auto& atom = *atom_ptr;
-    atom.clear();
+    auto atom = ::tyr::formalism::planning::checkout<GroundAtom<T>>(context.builder);
 
     // Fill data
-    atom.binding = ground(element.get_terms(), element.get_predicate(), context).first.get_index();
+    atom->binding = ground(element.get_terms(), element.get_predicate(), context).first.get_index();
 
     // Canonicalize and Serialize
-    canonicalize(atom);
-    return context.destination.get_or_create(atom);
+    return ::tyr::formalism::planning::get_or_create(context.destination, *atom);
 }
 
 inline ygg::Data<FDRFact<FluentTag>> ground(AtomView<FluentTag> element, GrounderContext& context, FDRContext& fdr)
@@ -295,17 +273,14 @@ template<FactKind T>
 std::pair<GroundLiteralView<T>, bool> ground(LiteralView<T> element, GrounderContext& context)
 {
     // Fetch and clear
-    auto ground_literal_ptr = context.builder.template get_builder<GroundLiteral<T>>();
-    auto& ground_literal = *ground_literal_ptr;
-    ground_literal.clear();
+    auto ground_literal = ::tyr::formalism::planning::checkout<GroundLiteral<T>>(context.builder);
 
     // Fill data
-    ground_literal.polarity = element.get_polarity();
-    ground_literal.atom = ground(element.get_atom(), context).first.get_index();
+    ground_literal->polarity = element.get_polarity();
+    ground_literal->atom = ground(element.get_atom(), context).first.get_index();
 
     // Canonicalize and Serialize
-    canonicalize(ground_literal);
-    return context.destination.get_or_create(ground_literal);
+    return ::tyr::formalism::planning::get_or_create(context.destination, *ground_literal);
 }
 
 inline ygg::Data<FDRFact<FluentTag>> ground(LiteralView<FluentTag> element, GrounderContext& context, FDRContext& fdr)
@@ -320,46 +295,40 @@ inline ygg::Data<FDRFact<FluentTag>> ground(LiteralView<FluentTag> element, Grou
 inline std::pair<GroundConjunctiveConditionView, bool> ground(ConjunctiveConditionView element, GrounderContext& context, FDRContext& fdr)
 {
     // Fetch and clear
-    auto conj_cond_ptr = context.builder.template get_builder<GroundConjunctiveCondition>();
-    auto& conj_cond = *conj_cond_ptr;
-    conj_cond.clear();
+    auto conj_cond = ::tyr::formalism::planning::checkout<GroundConjunctiveCondition>(context.builder);
 
     // Fill data
     for (const auto literal : element.template get_literals<StaticTag>())
-        conj_cond.static_literals.push_back(ground(literal, context).first.get_index());
+        conj_cond->static_literals.push_back(ground(literal, context).first.get_index());
     for (const auto literal : element.template get_literals<FluentTag>())
     {
         if (literal.get_polarity())
-            conj_cond.positive_facts.push_back(ground(literal.get_atom(), context, fdr));
+            conj_cond->positive_facts.push_back(ground(literal.get_atom(), context, fdr));
         else
-            conj_cond.negative_facts.push_back(ground(literal.get_atom(), context, fdr));
+            conj_cond->negative_facts.push_back(ground(literal.get_atom(), context, fdr));
     }
     for (const auto literal : element.template get_literals<DerivedTag>())
-        conj_cond.derived_literals.push_back(ground(literal, context).first.get_index());
+        conj_cond->derived_literals.push_back(ground(literal, context).first.get_index());
     for (const auto numeric_constraint : element.get_numeric_constraints())
-        conj_cond.numeric_constraints.push_back(ground(numeric_constraint, context).get_data());
+        conj_cond->numeric_constraints.push_back(ground(numeric_constraint, context).get_data());
 
     // Canonicalize and Serialize
-    canonicalize(conj_cond);
-    return context.destination.get_or_create(conj_cond);
+    return ::tyr::formalism::planning::get_or_create(context.destination, *conj_cond);
 }
 
 template<FactKind T>
 std::pair<GroundNumericEffectView<T>, bool> ground(NumericEffectView<T> element, GrounderContext& context)
 {
     // Fetch and clear
-    auto numeric_effect_ptr = context.builder.template get_builder<GroundNumericEffect<T>>();
-    auto& numeric_effect = *numeric_effect_ptr;
-    numeric_effect.clear();
+    auto numeric_effect = ::tyr::formalism::planning::checkout<GroundNumericEffect<T>>(context.builder);
 
     // Fill data
-    numeric_effect.operator_kind = element.get_operator();
-    numeric_effect.fterm = ground(element.get_fterm(), context).first.get_index();
-    numeric_effect.fexpr = ground(element.get_fexpr(), context).get_data();
+    numeric_effect->operator_kind = element.get_operator();
+    numeric_effect->fterm = ground(element.get_fterm(), context).first.get_index();
+    numeric_effect->fexpr = ground(element.get_fexpr(), context).get_data();
 
     // Canonicalize and Serialize
-    canonicalize(numeric_effect);
-    return context.destination.get_or_create(numeric_effect);
+    return ::tyr::formalism::planning::get_or_create(context.destination, *numeric_effect);
 }
 
 template<FactKind T>
@@ -373,57 +342,48 @@ GroundNumericEffectOperatorView<T> ground(NumericEffectOperatorView<T> element, 
 inline std::pair<GroundConjunctiveEffectView, bool> ground(ConjunctiveEffectView element, GrounderContext& context, FDRContext& fdr)
 {
     // Fetch and clear
-    auto conj_effect_ptr = context.builder.template get_builder<GroundConjunctiveEffect>();
-    auto& conj_eff = *conj_effect_ptr;
-    conj_eff.clear();
+    auto conj_eff = ::tyr::formalism::planning::checkout<GroundConjunctiveEffect>(context.builder);
 
     for (const auto literal : element.get_literals())
     {
         const auto new_fact = ground(literal.get_atom(), context, fdr);
         if (literal.get_polarity())
-            conj_eff.add_facts.push_back(new_fact);
+            conj_eff->add_facts.push_back(new_fact);
         else
-            conj_eff.del_facts.push_back(new_fact);
+            conj_eff->del_facts.push_back(new_fact);
     }
     for (const auto numeric_effect : element.get_numeric_effects())
-        conj_eff.numeric_effects.push_back(ground(numeric_effect, context).get_data());
+        conj_eff->numeric_effects.push_back(ground(numeric_effect, context).get_data());
     if (element.get_auxiliary_numeric_effect().has_value())
-        conj_eff.auxiliary_numeric_effect = ground(element.get_auxiliary_numeric_effect().value(), context).get_data();
+        conj_eff->auxiliary_numeric_effect = ground(element.get_auxiliary_numeric_effect().value(), context).get_data();
 
     // Canonicalize and Serialize
-    canonicalize(conj_eff);
-    return context.destination.get_or_create(conj_eff);
+    return ::tyr::formalism::planning::get_or_create(context.destination, *conj_eff);
 }
 
 inline std::pair<GroundConditionalEffectView, bool> ground(ConditionalEffectView element, GrounderContext& context, FDRContext& fdr)
 {
     // Fetch and clear
-    auto cond_effect_ptr = context.builder.template get_builder<GroundConditionalEffect>();
-    auto& cond_effect = *cond_effect_ptr;
-    cond_effect.clear();
+    auto cond_effect = ::tyr::formalism::planning::checkout<GroundConditionalEffect>(context.builder);
 
     // Fill data
-    cond_effect.condition = ground(element.get_condition(), context, fdr).first.get_index();
-    cond_effect.effect = ground(element.get_effect(), context, fdr).first.get_index();
+    cond_effect->condition = ground(element.get_condition(), context, fdr).first.get_index();
+    cond_effect->effect = ground(element.get_effect(), context, fdr).first.get_index();
 
     // Canonicalize and Serialize
-    canonicalize(cond_effect);
-    return context.destination.get_or_create(cond_effect);
+    return ::tyr::formalism::planning::get_or_create(context.destination, *cond_effect);
 }
 
 inline std::pair<ActionBindingView, bool> ground(ActionView action, GrounderContext& context)
 {
-    auto binding_ptr = context.builder.template get_builder<RelationBinding<Action>>();
-    auto& binding = *binding_ptr;
-    binding.clear();
+    auto binding = ::tyr::formalism::planning::checkout<RelationBinding<Action>>(context.builder);
 
-    binding.relation = action.get_index();
+    binding->relation = action.get_index();
     for (ygg::uint_t i = 0; i < action.get_arity(); ++i)
-        binding.objects.push_back(context.binding[i]);
+        binding->objects.push_back(context.binding[i]);
 
     // Canonicalize and Serialize
-    canonicalize(binding);
-    return context.destination.get_or_create(binding);
+    return ::tyr::formalism::planning::get_or_create(context.destination, *binding);
 }
 
 inline std::pair<GroundActionView, bool> ground(ActionView element,
@@ -434,12 +394,10 @@ inline std::pair<GroundActionView, bool> ground(ActionView element,
 {
     const auto binding = ground(element, context).first.get_index();
 
-    auto action_ptr = context.builder.template get_builder<GroundAction>();
-    auto& action = *action_ptr;
-    action.clear();
+    auto action = ::tyr::formalism::planning::checkout<GroundAction>(context.builder);
 
-    action.binding = binding;
-    action.condition = ground(element.get_condition(), context, fdr).first.get_index();
+    action->binding = binding;
+    action->condition = ground(element.get_condition(), context, fdr).first.get_index();
 
     const auto binding_size = context.binding.size();
 
@@ -457,29 +415,25 @@ inline std::pair<GroundActionView, bool> ground(ActionView element,
                                                 {
                                                     context.binding.resize(binding_size);
                                                     context.binding.insert(context.binding.end(), extension.begin(), extension.end());
-                                                    action.effects.push_back(ground(cond_effect, context, fdr).first.get_index());
+                                                    action->effects.push_back(ground(cond_effect, context, fdr).first.get_index());
                                                 });
     }
 
     context.binding.resize(binding_size);
 
-    canonicalize(action);
-    return context.destination.get_or_create(action);
+    return ::tyr::formalism::planning::get_or_create(context.destination, *action);
 }
 
 inline std::pair<AxiomBindingView, bool> ground(AxiomView axiom, GrounderContext& context)
 {
-    auto binding_ptr = context.builder.template get_builder<RelationBinding<Axiom>>();
-    auto& binding = *binding_ptr;
-    binding.clear();
+    auto binding = ::tyr::formalism::planning::checkout<RelationBinding<Axiom>>(context.builder);
 
-    binding.relation = axiom.get_index();
+    binding->relation = axiom.get_index();
     for (ygg::uint_t i = 0; i < axiom.get_arity(); ++i)
-        binding.objects.push_back(context.binding[i]);
+        binding->objects.push_back(context.binding[i]);
 
     // Canonicalize and Serialize
-    canonicalize(binding);
-    return context.destination.get_or_create(binding);
+    return ::tyr::formalism::planning::get_or_create(context.destination, *binding);
 }
 
 inline std::pair<GroundAxiomView, bool> ground(AxiomView element, GrounderContext& context, GrounderCacheEntry<Axiom>& cache, FDRContext& fdr)
@@ -490,16 +444,13 @@ inline std::pair<GroundAxiomView, bool> ground(AxiomView element, GrounderContex
     if (auto it = axiom_cache.find(binding); it != axiom_cache.end())
         return { ygg::make_view(it->second, context.destination), false };
 
-    auto axiom_ptr = context.builder.template get_builder<GroundAxiom>();
-    auto& axiom = *axiom_ptr;
-    axiom.clear();
+    auto axiom = ::tyr::formalism::planning::checkout<GroundAxiom>(context.builder);
 
-    axiom.binding = binding;
-    axiom.body = ground(element.get_body(), context, fdr).first.get_index();
-    axiom.head = ground(element.get_head(), context).first.get_index();
+    axiom->binding = binding;
+    axiom->body = ground(element.get_body(), context, fdr).first.get_index();
+    axiom->head = ground(element.get_head(), context).first.get_index();
 
-    canonicalize(axiom);
-    const auto result = context.destination.get_or_create(axiom);
+    const auto result = ::tyr::formalism::planning::get_or_create(context.destination, *axiom);
 
     axiom_cache.emplace(binding, result.first.get_index());
 
@@ -513,11 +464,9 @@ inline std::pair<GroundAxiomView, bool> ground(AxiomView element, GrounderContex
 template<FactKind T>
 std::optional<GroundFunctionTermView<T>> try_ground(FunctionTermView<T> element, GrounderContext& context)
 {
-    auto binding_ptr = context.builder.get_builder<RelationBinding<Function<T>>>();
-    auto& binding = *binding_ptr;
-    binding.clear();
+    auto binding = ::tyr::formalism::planning::checkout<RelationBinding<Function<T>>>(context.builder);
 
-    binding.relation = element.get_function().get_index();
+    binding->relation = element.get_function().get_index();
     for (const auto term : element.get_terms())
     {
         visit(
@@ -526,37 +475,33 @@ std::optional<GroundFunctionTermView<T>> try_ground(FunctionTermView<T> element,
                 using Alternative = std::decay_t<decltype(arg)>;
 
                 if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    binding.objects.push_back(context.binding[ygg::uint_t(arg)]);
+                    binding->objects.push_back(context.binding[ygg::uint_t(arg)]);
                 else if constexpr (std::is_same_v<Alternative, ObjectView>)
-                    binding.objects.push_back(arg.get_index());
+                    binding->objects.push_back(arg.get_index());
                 else
                     static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
             },
             term.get_variant());
     }
 
-    canonicalize(binding);
-    const auto binding_or_nullopt = context.destination.find(binding);
+    canonicalize(*binding);
+    const auto binding_or_nullopt = context.destination.find(*binding);
     if (!binding_or_nullopt.has_value())
         return std::nullopt;
 
-    auto fterm_ptr = context.builder.get_builder<GroundFunctionTerm<T>>();
-    auto& fterm = *fterm_ptr;
-    fterm.clear();
+    auto fterm = ::tyr::formalism::planning::checkout<GroundFunctionTerm<T>>(context.builder);
 
-    fterm.binding = binding_or_nullopt->get_index();
+    fterm->binding = binding_or_nullopt->get_index();
 
-    return context.destination.find(fterm);
+    return context.destination.find(*fterm);
 }
 
 template<FactKind T>
 std::optional<GroundAtomView<T>> try_ground(AtomView<T> element, GrounderContext& context)
 {
-    auto binding_ptr = context.builder.get_builder<RelationBinding<Predicate<T>>>();
-    auto& binding = *binding_ptr;
-    binding.clear();
+    auto binding = ::tyr::formalism::planning::checkout<RelationBinding<Predicate<T>>>(context.builder);
 
-    binding.relation = element.get_predicate().get_index();
+    binding->relation = element.get_predicate().get_index();
     for (const auto term : element.get_terms())
     {
         visit(
@@ -565,27 +510,25 @@ std::optional<GroundAtomView<T>> try_ground(AtomView<T> element, GrounderContext
                 using Alternative = std::decay_t<decltype(arg)>;
 
                 if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    binding.objects.push_back(context.binding[ygg::uint_t(arg)]);
+                    binding->objects.push_back(context.binding[ygg::uint_t(arg)]);
                 else if constexpr (std::is_same_v<Alternative, ObjectView>)
-                    binding.objects.push_back(arg.get_index());
+                    binding->objects.push_back(arg.get_index());
                 else
                     static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
             },
             term.get_variant());
     }
 
-    canonicalize(binding);
-    const auto binding_or_nullopt = context.destination.find(binding);
+    canonicalize(*binding);
+    const auto binding_or_nullopt = context.destination.find(*binding);
     if (!binding_or_nullopt.has_value())
         return std::nullopt;
 
-    auto atom_ptr = context.builder.get_builder<GroundAtom<T>>();
-    auto& atom = *atom_ptr;
-    atom.clear();
+    auto atom = ::tyr::formalism::planning::checkout<GroundAtom<T>>(context.builder);
 
-    atom.binding = binding_or_nullopt->get_index();
+    atom->binding = binding_or_nullopt->get_index();
 
-    return context.destination.find(atom);
+    return context.destination.find(*atom);
 }
 
 }

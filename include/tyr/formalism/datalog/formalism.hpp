@@ -18,7 +18,6 @@
 #ifndef TYR_FORMALISM_DATALOG_FORMALISM_HPP_
 #define TYR_FORMALISM_DATALOG_FORMALISM_HPP_
 
-#include "tyr/formalism/datalog/builder.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/datas.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"

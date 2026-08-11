@@ -18,14 +18,6 @@
 #ifndef TYR_FORMALISM_PLANNING_REPOSITORY_HPP_
 #define TYR_FORMALISM_PLANNING_REPOSITORY_HPP_
 
-#include <yggdrasil/buffer/declarations.hpp>
-#include <yggdrasil/buffer/indexed_hash_set.hpp>
-#include <yggdrasil/buffer/segmented_buffer.hpp>
-#include <yggdrasil/containers/tuple.hpp>
-#include <yggdrasil/formalism/relation_repository.hpp>
-#include <yggdrasil/formalism/repository.hpp>
-#include <yggdrasil/formalism/repository_factory.hpp>
-#include <yggdrasil/formalism/symbol_repository.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/datas.hpp"
@@ -40,5 +32,36 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <yggdrasil/buffer/declarations.hpp>
+#include <yggdrasil/buffer/indexed_hash_set.hpp>
+#include <yggdrasil/buffer/segmented_buffer.hpp>
+#include <yggdrasil/containers/tuple.hpp>
+#include <yggdrasil/formalism/builder.hpp>
+#include <yggdrasil/formalism/relation_repository.hpp>
+#include <yggdrasil/formalism/repository.hpp>
+#include <yggdrasil/formalism/repository_factory.hpp>
+#include <yggdrasil/formalism/symbol_repository.hpp>
+
+namespace tyr::formalism::planning
+{
+
+using Builder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, BuilderTypes>;
+
+template<typename T>
+[[nodiscard]] auto checkout(Builder& builder)
+{
+    auto data = builder.template get_builder<T>();
+    data->clear();
+    return data;
+}
+
+template<typename T>
+[[nodiscard]] auto get_or_create(Repository& repository, ygg::Data<T>& data)
+{
+    canonicalize(data);
+    return repository.get_or_create(data);
+}
+
+}
 
 #endif

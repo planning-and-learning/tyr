@@ -17,7 +17,6 @@
 
 #include "tyr/formalism/planning/fdr_context.hpp"
 
-#include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
@@ -40,15 +39,12 @@ namespace
 {
 std::pair<FDRVariableView<FluentTag>, bool> merge_p2p(FDRVariableView<FluentTag> element, MergeContext& context)
 {
-    auto variable_ptr = context.builder.template get_builder<FDRVariable<FluentTag>>();
-    auto& variable = *variable_ptr;
-    variable.clear();
+    auto variable = ::tyr::formalism::planning::checkout<FDRVariable<FluentTag>>(context.builder);
 
     for (const auto atom : element.get_atoms())
-        variable.atoms.push_back(merge_p2p(atom, context).first.get_index());
+        variable->atoms.push_back(merge_p2p(atom, context).first.get_index());
 
-    canonicalize(variable);
-    return context.destination.get_or_create(variable);
+    return ::tyr::formalism::planning::get_or_create(context.destination, *variable);
 }
 
 FDRFactView<FluentTag> merge_p2p(FDRFactView<FluentTag> element, MergeContext& context)
@@ -67,15 +63,12 @@ FDRContext::FDRContext(const std::vector<GroundAtomViewList<FluentTag>>& mutexes
     m_builder(),
     m_variables()
 {
-    auto variable = ygg::Data<FDRVariable<FluentTag>>();
-
     for (const auto& group : mutexes)
     {
-        variable.clear();
+        auto variable = ::tyr::formalism::planning::checkout<FDRVariable<FluentTag>>(m_builder);
         for (const auto& atom : group)
-            variable.atoms.push_back(atom.get_index());
-        canonicalize(variable);
-        const auto variable_view = m_context->get_or_create(variable).first;
+            variable->atoms.push_back(atom.get_index());
+        const auto variable_view = ::tyr::formalism::planning::get_or_create(*m_context, *variable).first;
         m_variables.push_back(variable_view);
         for (ygg::uint_t i = 0; i < group.size(); ++i)
         {
@@ -92,14 +85,11 @@ FDRContext::FDRContext(const GroundAtomViewList<FluentTag>& all_atoms, Repositor
     m_builder(),
     m_variables()
 {
-    auto variable = ygg::Data<FDRVariable<FluentTag>>();
-
     for (const auto& atom : all_atoms)
     {
-        variable.clear();
-        variable.atoms.push_back(atom.get_index());
-        canonicalize(variable);
-        const auto variable_view = m_context->get_or_create(variable).first;
+        auto variable = ::tyr::formalism::planning::checkout<FDRVariable<FluentTag>>(m_builder);
+        variable->atoms.push_back(atom.get_index());
+        const auto variable_view = ::tyr::formalism::planning::get_or_create(*m_context, *variable).first;
         m_variables.push_back(variable_view);
         [[maybe_unused]] const auto inserted = publish_fact(atom, ygg::Data<FDRFact<FluentTag>>(variable_view.get_index(), FDRValue { 1 }));
         assert(inserted);
@@ -140,10 +130,9 @@ FDRFactView<FluentTag> FDRContext::get_fact(GroundAtomView<FluentTag> atom)
         return *fact;
 
     // Construct a new binary FDR variable
-    m_builder.clear();
-    m_builder.atoms.push_back(atom.get_index());
-    canonicalize(m_builder);
-    const auto variable = m_context->get_or_create(m_builder).first;
+    auto variable_data = ::tyr::formalism::planning::checkout<FDRVariable<FluentTag>>(m_builder);
+    variable_data->atoms.push_back(atom.get_index());
+    const auto variable = ::tyr::formalism::planning::get_or_create(*m_context, *variable_data).first;
 
     // Grow before changing the variable list so allocation failure leaves this registration retryable.
     ensure_fact_slot(atom);

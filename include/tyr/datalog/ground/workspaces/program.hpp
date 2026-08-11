@@ -29,7 +29,6 @@
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/policies/termination_concept.hpp"
 #include "tyr/datalog/workspaces/program.hpp"
-#include "tyr/formalism/datalog/builder.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <type_traits>

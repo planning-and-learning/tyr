@@ -18,7 +18,6 @@
 #ifndef TYR_FORMALISM_PLANNING_MERGE_DATALOG_HPP_
 #define TYR_FORMALISM_PLANNING_MERGE_DATALOG_HPP_
 
-#include "tyr/formalism/datalog/builder.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -189,26 +188,20 @@ ygg::Data<::tyr::formalism::datalog::BooleanOperator<to_datalog_payload_t<T>>> m
 
 inline std::pair<::tyr::formalism::datalog::VariableView, bool> merge_p2d(VariableView element, MergeDatalogContext& context)
 {
-    auto variable_ptr = context.builder.template get_builder<Variable>();
-    auto& variable = *variable_ptr;
-    variable.clear();
+    auto variable = ::tyr::formalism::datalog::checkout<Variable>(context.builder);
 
-    variable.name = element.get_name();
+    variable->name = element.get_name();
 
-    canonicalize(variable);
-    return context.destination.get_or_create(variable);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *variable);
 }
 
 inline std::pair<::tyr::formalism::datalog::ObjectView, bool> merge_p2d(ObjectView element, MergeDatalogContext& context)
 {
-    auto object_ptr = context.builder.template get_builder<Object>();
-    auto& object = *object_ptr;
-    object.clear();
+    auto object = ::tyr::formalism::datalog::checkout<Object>(context.builder);
 
-    object.name = element.get_name();
+    object->name = element.get_name();
 
-    canonicalize(object);
-    return context.destination.get_or_create(object);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *object);
 }
 
 inline ygg::Data<Term> merge_p2d(TermView element, MergeDatalogContext& context)
@@ -233,15 +226,12 @@ inline ygg::Data<Term> merge_p2d(TermView element, MergeDatalogContext& context)
 template<FactKind T_SRC, FactKind T_DST>
 std::pair<::tyr::formalism::datalog::PredicateView<T_DST>, bool> merge_p2d(PredicateView<T_SRC> element, MergeDatalogContext& context)
 {
-    auto predicate_ptr = context.builder.template get_builder<Predicate<T_DST>>();
-    auto& predicate = *predicate_ptr;
-    predicate.clear();
+    auto predicate = ::tyr::formalism::datalog::checkout<Predicate<T_DST>>(context.builder);
 
-    predicate.name = element.get_name();
-    predicate.arity = element.get_arity();
+    predicate->name = element.get_name();
+    predicate->arity = element.get_arity();
 
-    canonicalize(predicate);
-    return context.destination.get_or_create(predicate);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *predicate);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -250,16 +240,13 @@ merge_p2d(AtomView<T_SRC> element,  //
           const ygg::UnorderedMap<PredicateView<T_SRC>, ::tyr::formalism::datalog::PredicateView<T_DST>>& predicate_mapping,
           MergeDatalogContext& context)
 {
-    auto atom_ptr = context.builder.template get_builder<::tyr::formalism::datalog::Atom<T_DST>>();
-    auto& atom = *atom_ptr;
-    atom.clear();
+    auto atom = ::tyr::formalism::datalog::checkout<::tyr::formalism::datalog::Atom<T_DST>>(context.builder);
 
-    atom.predicate = predicate_mapping.at(element.get_predicate()).get_index();
+    atom->predicate = predicate_mapping.at(element.get_predicate()).get_index();
     for (const auto term : element.get_terms())
-        atom.terms.push_back(merge_p2d(term, context));
+        atom->terms.push_back(merge_p2d(term, context));
 
-    canonicalize(atom);
-    return context.destination.get_or_create(atom);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *atom);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -268,16 +255,13 @@ merge_p2d(PredicateBindingView<T_SRC> element,  //
           const ygg::UnorderedMap<PredicateView<T_SRC>, ::tyr::formalism::datalog::PredicateView<T_DST>>& predicate_mapping,
           MergeDatalogContext& context)
 {
-    auto binding_ptr = context.builder.template get_builder<RelationBinding<Predicate<T_DST>>>();
-    auto& binding = *binding_ptr;
-    binding.clear();
+    auto binding = ::tyr::formalism::datalog::checkout<RelationBinding<Predicate<T_DST>>>(context.builder);
 
-    binding.relation = predicate_mapping.at(element.get_relation()).get_index();
+    binding->relation = predicate_mapping.at(element.get_relation()).get_index();
     for (const auto object : element.get_objects())
-        binding.objects.push_back(object.get_index());
+        binding->objects.push_back(object.get_index());
 
-    canonicalize(binding);
-    return context.destination.get_or_create(binding);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *binding);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -286,14 +270,11 @@ merge_p2d(GroundAtomView<T_SRC> element,  //
           const ygg::UnorderedMap<PredicateView<T_SRC>, ::tyr::formalism::datalog::PredicateView<T_DST>>& predicate_mapping,
           MergeDatalogContext& context)
 {
-    auto atom_ptr = context.builder.template get_builder<::tyr::formalism::datalog::GroundAtom<T_DST>>();
-    auto& atom = *atom_ptr;
-    atom.clear();
+    auto atom = ::tyr::formalism::datalog::checkout<::tyr::formalism::datalog::GroundAtom<T_DST>>(context.builder);
 
-    atom.binding = merge_p2d<T_SRC, T_DST>(element.get_row(), predicate_mapping, context).first.get_index();
+    atom->binding = merge_p2d<T_SRC, T_DST>(element.get_row(), predicate_mapping, context).first.get_index();
 
-    canonicalize(atom);
-    return context.destination.get_or_create(atom);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *atom);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -317,15 +298,12 @@ merge_p2d(LiteralView<T_SRC> element,  //
           const ygg::UnorderedMap<PredicateView<T_SRC>, ::tyr::formalism::datalog::PredicateView<T_DST>>& predicate_mapping,
           MergeDatalogContext& context)
 {
-    auto literal_ptr = context.builder.template get_builder<::tyr::formalism::datalog::Literal<T_DST>>();
-    auto& literal = *literal_ptr;
-    literal.clear();
+    auto literal = ::tyr::formalism::datalog::checkout<::tyr::formalism::datalog::Literal<T_DST>>(context.builder);
 
-    literal.polarity = element.get_polarity();
-    literal.atom = merge_p2d<T_SRC, T_DST>(element.get_atom(), predicate_mapping, context).first.get_index();
+    literal->polarity = element.get_polarity();
+    literal->atom = merge_p2d<T_SRC, T_DST>(element.get_atom(), predicate_mapping, context).first.get_index();
 
-    canonicalize(literal);
-    return context.destination.get_or_create(literal);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *literal);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -334,15 +312,12 @@ merge_p2d(GroundLiteralView<T_SRC> element,  //
           const ygg::UnorderedMap<PredicateView<T_SRC>, ::tyr::formalism::datalog::PredicateView<T_DST>>& predicate_mapping,
           MergeDatalogContext& context)
 {
-    auto literal_ptr = context.builder.template get_builder<::tyr::formalism::datalog::GroundLiteral<T_DST>>();
-    auto& literal = *literal_ptr;
-    literal.clear();
+    auto literal = ::tyr::formalism::datalog::checkout<::tyr::formalism::datalog::GroundLiteral<T_DST>>(context.builder);
 
-    literal.polarity = element.get_polarity();
-    literal.atom = merge_p2d<T_SRC, T_DST>(element.get_atom(), predicate_mapping, context).first.get_index();
+    literal->polarity = element.get_polarity();
+    literal->atom = merge_p2d<T_SRC, T_DST>(element.get_atom(), predicate_mapping, context).first.get_index();
 
-    canonicalize(literal);
-    return context.destination.get_or_create(literal);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *literal);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -352,15 +327,12 @@ merge_p2d(GroundLiteralView<T_SRC> element,  //
           const ygg::UnorderedMap<PredicateView<T_SRC>, ::tyr::formalism::datalog::PredicateView<T_DST>>& predicate_mapping,
           MergeDatalogContext& context)
 {
-    auto literal_ptr = context.builder.template get_builder<::tyr::formalism::datalog::GroundLiteral<T_DST>>();
-    auto& literal = *literal_ptr;
-    literal.clear();
+    auto literal = ::tyr::formalism::datalog::checkout<::tyr::formalism::datalog::GroundLiteral<T_DST>>(context.builder);
 
-    literal.polarity = element.get_polarity();
-    literal.atom = merge_p2d<T_SRC, T_DST>(element.get_atom(), atom_mapping, predicate_mapping, context).first.get_index();
+    literal->polarity = element.get_polarity();
+    literal->atom = merge_p2d<T_SRC, T_DST>(element.get_atom(), atom_mapping, predicate_mapping, context).first.get_index();
 
-    canonicalize(literal);
-    return context.destination.get_or_create(literal);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *literal);
 }
 
 inline std::optional<::tyr::formalism::datalog::GroundLiteralView<FluentTag>>
@@ -372,14 +344,11 @@ merge_p2d(FDRFactView<FluentTag> element,
     if (!element.has_value())
         return std::nullopt;
 
-    auto literal_ptr = context.builder.template get_builder<::tyr::formalism::datalog::GroundLiteral<FluentTag>>();
-    auto& literal = *literal_ptr;
-    literal.clear();
-    literal.polarity = polarity;
-    literal.atom = merge_p2d(element.get_atom().value(), predicate_mapping, context).first.get_index();
+    auto literal = ::tyr::formalism::datalog::checkout<::tyr::formalism::datalog::GroundLiteral<FluentTag>>(context.builder);
+    literal->polarity = polarity;
+    literal->atom = merge_p2d(element.get_atom().value(), predicate_mapping, context).first.get_index();
 
-    ::tyr::formalism::datalog::canonicalize(literal);
-    return context.destination.get_or_create(literal).first;
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *literal).first;
 }
 
 inline std::optional<::tyr::formalism::datalog::GroundLiteralView<FluentTag>>
@@ -392,14 +361,11 @@ merge_p2d(FDRFactView<FluentTag> element,
     if (!element.has_value())
         return std::nullopt;
 
-    auto literal_ptr = context.builder.template get_builder<::tyr::formalism::datalog::GroundLiteral<FluentTag>>();
-    auto& literal = *literal_ptr;
-    literal.clear();
-    literal.polarity = polarity;
-    literal.atom = merge_p2d(element.get_atom().value(), atom_mapping, predicate_mapping, context).first.get_index();
+    auto literal = ::tyr::formalism::datalog::checkout<::tyr::formalism::datalog::GroundLiteral<FluentTag>>(context.builder);
+    literal->polarity = polarity;
+    literal->atom = merge_p2d(element.get_atom().value(), atom_mapping, predicate_mapping, context).first.get_index();
 
-    ::tyr::formalism::datalog::canonicalize(literal);
-    return context.destination.get_or_create(literal).first;
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *literal).first;
 }
 
 inline std::pair<::tyr::formalism::datalog::GroundConjunctiveConditionView, bool>
@@ -408,26 +374,23 @@ merge_p2d(GroundConjunctiveConditionView element,
           const ygg::UnorderedMap<PredicateView<DerivedTag>, ::tyr::formalism::datalog::PredicateView<FluentTag>>& derived_predicate_mapping,
           MergeDatalogContext& context)
 {
-    auto condition_ptr = context.builder.template get_builder<::tyr::formalism::datalog::GroundConjunctiveCondition>();
-    auto& condition = *condition_ptr;
-    condition.clear();
+    auto condition = ::tyr::formalism::datalog::checkout<::tyr::formalism::datalog::GroundConjunctiveCondition>(context.builder);
 
     for (const auto fact : element.template get_facts<PositiveTag>())
         if (const auto literal = merge_p2d(fact, true, fluent_predicate_mapping, context))
-            condition.fluent_literals.push_back(literal->get_index());
+            condition->fluent_literals.push_back(literal->get_index());
 
     for (const auto fact : element.template get_facts<NegativeTag>())
         if (const auto literal = merge_p2d(fact, false, fluent_predicate_mapping, context))
-            condition.fluent_literals.push_back(literal->get_index());
+            condition->fluent_literals.push_back(literal->get_index());
 
     for (const auto literal : element.template get_literals<DerivedTag>())
-        condition.fluent_literals.push_back(merge_p2d(literal, derived_predicate_mapping, context).first.get_index());
+        condition->fluent_literals.push_back(merge_p2d(literal, derived_predicate_mapping, context).first.get_index());
 
     for (const auto numeric_constraint : element.get_numeric_constraints())
-        condition.numeric_constraints.push_back(merge_p2d(numeric_constraint, context));
+        condition->numeric_constraints.push_back(merge_p2d(numeric_constraint, context));
 
-    ::tyr::formalism::datalog::canonicalize(condition);
-    return context.destination.get_or_create(condition);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *condition);
 }
 
 inline std::pair<::tyr::formalism::datalog::GroundConjunctiveConditionView, bool>
@@ -438,26 +401,23 @@ merge_p2d(GroundConjunctiveConditionView element,
           const ygg::UnorderedMap<PredicateView<DerivedTag>, ::tyr::formalism::datalog::PredicateView<FluentTag>>& derived_predicate_mapping,
           MergeDatalogContext& context)
 {
-    auto condition_ptr = context.builder.template get_builder<::tyr::formalism::datalog::GroundConjunctiveCondition>();
-    auto& condition = *condition_ptr;
-    condition.clear();
+    auto condition = ::tyr::formalism::datalog::checkout<::tyr::formalism::datalog::GroundConjunctiveCondition>(context.builder);
 
     for (const auto fact : element.template get_facts<PositiveTag>())
         if (const auto literal = merge_p2d(fact, true, fluent_atom_mapping, fluent_predicate_mapping, context))
-            condition.fluent_literals.push_back(literal->get_index());
+            condition->fluent_literals.push_back(literal->get_index());
 
     for (const auto fact : element.template get_facts<NegativeTag>())
         if (const auto literal = merge_p2d(fact, false, fluent_atom_mapping, fluent_predicate_mapping, context))
-            condition.fluent_literals.push_back(literal->get_index());
+            condition->fluent_literals.push_back(literal->get_index());
 
     for (const auto literal : element.template get_literals<DerivedTag>())
-        condition.fluent_literals.push_back(merge_p2d(literal, derived_atom_mapping, derived_predicate_mapping, context).first.get_index());
+        condition->fluent_literals.push_back(merge_p2d(literal, derived_atom_mapping, derived_predicate_mapping, context).first.get_index());
 
     for (const auto numeric_constraint : element.get_numeric_constraints())
-        condition.numeric_constraints.push_back(merge_p2d(numeric_constraint, context));
+        condition->numeric_constraints.push_back(merge_p2d(numeric_constraint, context));
 
-    ::tyr::formalism::datalog::canonicalize(condition);
-    return context.destination.get_or_create(condition);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *condition);
 }
 
 inline std::pair<::tyr::formalism::datalog::GroundConjunctiveConditionView, bool>
@@ -466,23 +426,20 @@ merge_p2d(GroundConjunctiveConditionView element,
           const ygg::UnorderedMap<PredicateView<FluentTag>, ::tyr::formalism::datalog::PredicateView<FluentTag>>& fluent_predicate_mapping,
           MergeDatalogContext& context)
 {
-    auto condition_ptr = context.builder.template get_builder<::tyr::formalism::datalog::GroundConjunctiveCondition>();
-    auto& condition = *condition_ptr;
-    condition.clear();
+    auto condition = ::tyr::formalism::datalog::checkout<::tyr::formalism::datalog::GroundConjunctiveCondition>(context.builder);
 
     for (const auto fact : element.template get_facts<PositiveTag>())
         if (const auto literal = merge_p2d(fact, true, fluent_atom_mapping, fluent_predicate_mapping, context))
-            condition.fluent_literals.push_back(literal->get_index());
+            condition->fluent_literals.push_back(literal->get_index());
 
     for (const auto fact : element.template get_facts<NegativeTag>())
         if (const auto literal = merge_p2d(fact, false, fluent_atom_mapping, fluent_predicate_mapping, context))
-            condition.fluent_literals.push_back(literal->get_index());
+            condition->fluent_literals.push_back(literal->get_index());
 
     for (const auto numeric_constraint : element.get_numeric_constraints())
-        condition.numeric_constraints.push_back(merge_p2d(numeric_constraint, context));
+        condition->numeric_constraints.push_back(merge_p2d(numeric_constraint, context));
 
-    ::tyr::formalism::datalog::canonicalize(condition);
-    return context.destination.get_or_create(condition);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *condition);
 }
 
 // Numeric
@@ -490,88 +447,70 @@ merge_p2d(GroundConjunctiveConditionView element,
 template<FactKind T_SRC, FactKind T_DST>
 std::pair<::tyr::formalism::datalog::FunctionView<T_DST>, bool> merge_p2d(FunctionView<T_SRC> element, MergeDatalogContext& context)
 {
-    auto function_ptr = context.builder.template get_builder<::tyr::formalism::Function<T_DST>>();
-    auto& function = *function_ptr;
-    function.clear();
+    auto function = ::tyr::formalism::datalog::checkout<::tyr::formalism::Function<T_DST>>(context.builder);
 
-    function.name = element.get_name();
-    function.arity = element.get_arity();
+    function->name = element.get_name();
+    function->arity = element.get_arity();
 
-    canonicalize(function);
-    return context.destination.get_or_create(function);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *function);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
 std::pair<::tyr::formalism::datalog::FunctionTermView<T_DST>, bool> merge_p2d(FunctionTermView<T_SRC> element, MergeDatalogContext& context)
 {
-    auto fterm_ptr = context.builder.template get_builder<::tyr::formalism::datalog::FunctionTerm<T_DST>>();
-    auto& fterm = *fterm_ptr;
-    fterm.clear();
+    auto fterm = ::tyr::formalism::datalog::checkout<::tyr::formalism::datalog::FunctionTerm<T_DST>>(context.builder);
 
-    fterm.function = merge_p2d<T_SRC, T_DST>(element.get_function(), context).first.get_index();
+    fterm->function = merge_p2d<T_SRC, T_DST>(element.get_function(), context).first.get_index();
     for (const auto term : element.get_terms())
-        fterm.terms.push_back(merge_p2d(term, context));
+        fterm->terms.push_back(merge_p2d(term, context));
 
-    canonicalize(fterm);
-    return context.destination.get_or_create(fterm);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *fterm);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
 std::pair<::tyr::formalism::datalog::FunctionBindingView<T_DST>, bool> merge_p2d(FunctionBindingView<T_SRC> element, MergeDatalogContext& context)
 {
-    auto binding_ptr = context.builder.template get_builder<RelationBinding<Function<T_DST>>>();
-    auto& binding = *binding_ptr;
-    binding.clear();
+    auto binding = ::tyr::formalism::datalog::checkout<RelationBinding<Function<T_DST>>>(context.builder);
 
-    binding.relation = merge_p2d<T_SRC, T_DST>(element.get_relation(), context).first.get_index();
+    binding->relation = merge_p2d<T_SRC, T_DST>(element.get_relation(), context).first.get_index();
     for (const auto object : element.get_objects())
-        binding.objects.push_back(object.get_index());
+        binding->objects.push_back(object.get_index());
 
-    canonicalize(binding);
-    return context.destination.get_or_create(binding);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *binding);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
 std::pair<::tyr::formalism::datalog::GroundFunctionTermView<T_DST>, bool> merge_p2d(GroundFunctionTermView<T_SRC> element, MergeDatalogContext& context)
 {
-    auto fterm_ptr = context.builder.template get_builder<::tyr::formalism::datalog::GroundFunctionTerm<T_DST>>();
-    auto& fterm = *fterm_ptr;
-    fterm.clear();
+    auto fterm = ::tyr::formalism::datalog::checkout<::tyr::formalism::datalog::GroundFunctionTerm<T_DST>>(context.builder);
 
-    fterm.binding = merge_p2d<T_SRC, T_DST>(element.get_row(), context).first.get_index();
+    fterm->binding = merge_p2d<T_SRC, T_DST>(element.get_row(), context).first.get_index();
 
-    canonicalize(fterm);
-    return context.destination.get_or_create(fterm);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *fterm);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
 std::pair<::tyr::formalism::datalog::GroundFunctionTermValueView<T_DST>, bool> merge_p2d(GroundFunctionTermValueView<T_SRC> element,
                                                                                          MergeDatalogContext& context)
 {
-    auto fterm_value_ptr = context.builder.template get_builder<::tyr::formalism::datalog::GroundFunctionTermValue<T_DST>>();
-    auto& fterm_value = *fterm_value_ptr;
-    fterm_value.clear();
+    auto fterm_value = ::tyr::formalism::datalog::checkout<::tyr::formalism::datalog::GroundFunctionTermValue<T_DST>>(context.builder);
 
-    fterm_value.fterm = merge_p2d<T_SRC, T_DST>(element.get_fterm(), context).first.get_index();
-    fterm_value.value = element.get_value();
+    fterm_value->fterm = merge_p2d<T_SRC, T_DST>(element.get_fterm(), context).first.get_index();
+    fterm_value->value = element.get_value();
 
-    canonicalize(fterm_value);
-    return context.destination.get_or_create(fterm_value);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *fterm_value);
 }
 
 template<FactKind T_SRC, FactKind T_DST, typename>
 std::pair<::tyr::formalism::datalog::NumericEffectView<T_DST>, bool> merge_p2d(NumericEffectView<T_SRC> element, MergeDatalogContext& context)
 {
-    auto numeric_effect_ptr = context.builder.template get_builder<::tyr::formalism::datalog::NumericEffect<T_DST>>();
-    auto& numeric_effect = *numeric_effect_ptr;
-    numeric_effect.clear();
+    auto numeric_effect = ::tyr::formalism::datalog::checkout<::tyr::formalism::datalog::NumericEffect<T_DST>>(context.builder);
 
-    numeric_effect.operator_kind = element.get_operator();
-    numeric_effect.fterm = merge_p2d<T_SRC, T_DST>(element.get_fterm(), context).first.get_index();
-    numeric_effect.fexpr = merge_p2d(element.get_fexpr(), context);
+    numeric_effect->operator_kind = element.get_operator();
+    numeric_effect->fterm = merge_p2d<T_SRC, T_DST>(element.get_fterm(), context).first.get_index();
+    numeric_effect->fexpr = merge_p2d(element.get_fexpr(), context);
 
-    canonicalize(numeric_effect);
-    return context.destination.get_or_create(numeric_effect);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *numeric_effect);
 }
 
 template<FactKind T_SRC, FactKind T_DST, typename>
@@ -587,16 +526,13 @@ ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T_DST>> merge_p2d(Num
 template<FactKind T_SRC, FactKind T_DST, typename>
 std::pair<::tyr::formalism::datalog::GroundNumericEffectView<T_DST>, bool> merge_p2d(GroundNumericEffectView<T_SRC> element, MergeDatalogContext& context)
 {
-    auto numeric_effect_ptr = context.builder.template get_builder<::tyr::formalism::datalog::GroundNumericEffect<T_DST>>();
-    auto& numeric_effect = *numeric_effect_ptr;
-    numeric_effect.clear();
+    auto numeric_effect = ::tyr::formalism::datalog::checkout<::tyr::formalism::datalog::GroundNumericEffect<T_DST>>(context.builder);
 
-    numeric_effect.operator_kind = element.get_operator();
-    numeric_effect.fterm = merge_p2d<T_SRC, T_DST>(element.get_fterm(), context).first.get_index();
-    numeric_effect.fexpr = merge_p2d(element.get_fexpr(), context);
+    numeric_effect->operator_kind = element.get_operator();
+    numeric_effect->fterm = merge_p2d<T_SRC, T_DST>(element.get_fterm(), context).first.get_index();
+    numeric_effect->fexpr = merge_p2d(element.get_fexpr(), context);
 
-    canonicalize(numeric_effect);
-    return context.destination.get_or_create(numeric_effect);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *numeric_effect);
 }
 
 template<FactKind T_SRC, FactKind T_DST, typename>
@@ -652,15 +588,12 @@ std::pair<::tyr::formalism::datalog::UnaryOperatorView<to_datalog_payload_t<T>>,
 {
     using T_DST = to_datalog_payload_t<T>;
 
-    auto unary_ptr = context.builder.template get_builder<::tyr::formalism::datalog::UnaryOperator<T_DST>>();
-    auto& unary = *unary_ptr;
-    unary.clear();
+    auto unary = ::tyr::formalism::datalog::checkout<::tyr::formalism::datalog::UnaryOperator<T_DST>>(context.builder);
 
-    unary.operator_kind = element.get_operator();
-    unary.arg = merge_p2d(element.get_arg(), context);
+    unary->operator_kind = element.get_operator();
+    unary->arg = merge_p2d(element.get_arg(), context);
 
-    canonicalize(unary);
-    return context.destination.get_or_create(unary);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *unary);
 }
 
 template<BinaryOperatorKind O, typename T>
@@ -669,16 +602,13 @@ std::pair<::tyr::formalism::datalog::BinaryOperatorView<O, to_datalog_payload_t<
 {
     using T_DST = to_datalog_payload_t<T>;
 
-    auto binary_ptr = context.builder.template get_builder<::tyr::formalism::datalog::BinaryOperator<O, T_DST>>();
-    auto& binary = *binary_ptr;
-    binary.clear();
+    auto binary = ::tyr::formalism::datalog::checkout<::tyr::formalism::datalog::BinaryOperator<O, T_DST>>(context.builder);
 
-    binary.operator_kind = element.get_operator();
-    binary.lhs = merge_p2d(element.get_lhs(), context);
-    binary.rhs = merge_p2d(element.get_rhs(), context);
+    binary->operator_kind = element.get_operator();
+    binary->lhs = merge_p2d(element.get_lhs(), context);
+    binary->rhs = merge_p2d(element.get_rhs(), context);
 
-    canonicalize(binary);
-    return context.destination.get_or_create(binary);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *binary);
 }
 
 template<typename T>
@@ -686,16 +616,13 @@ std::pair<::tyr::formalism::datalog::MultiOperatorView<to_datalog_payload_t<T>>,
 {
     using T_DST = to_datalog_payload_t<T>;
 
-    auto multi_ptr = context.builder.template get_builder<::tyr::formalism::datalog::MultiOperator<T_DST>>();
-    auto& multi = *multi_ptr;
-    multi.clear();
+    auto multi = ::tyr::formalism::datalog::checkout<::tyr::formalism::datalog::MultiOperator<T_DST>>(context.builder);
 
-    multi.operator_kind = element.get_operator();
+    multi->operator_kind = element.get_operator();
     for (const auto arg : element.get_args())
-        multi.args.push_back(merge_p2d(arg, context));
+        multi->args.push_back(merge_p2d(arg, context));
 
-    canonicalize(multi);
-    return context.destination.get_or_create(multi);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *multi);
 }
 
 template<typename T>
@@ -704,10 +631,7 @@ ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<to_datalog_payload_t<T>>
     using T_DST = to_datalog_payload_t<T>;
 
     return visit([&](auto&& arg)
-                 {
-                     return ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<T_DST>>(arg.get_operator(),
-                                                                                           merge_p2d(arg, context).first.get_index());
-                 },
+                 { return ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<T_DST>>(arg.get_operator(), merge_p2d(arg, context).first.get_index()); },
                  element.get_variant());
 }
 
@@ -717,10 +641,7 @@ ygg::Data<::tyr::formalism::datalog::BooleanOperator<to_datalog_payload_t<T>>> m
     using T_DST = to_datalog_payload_t<T>;
 
     return visit([&](auto&& arg)
-                 {
-                     return ygg::Data<::tyr::formalism::datalog::BooleanOperator<T_DST>>(arg.get_operator(),
-                                                                                        merge_p2d(arg, context).first.get_index());
-                 },
+                 { return ygg::Data<::tyr::formalism::datalog::BooleanOperator<T_DST>>(arg.get_operator(), merge_p2d(arg, context).first.get_index()); },
                  element.get_variant());
 }
 

@@ -24,7 +24,6 @@
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/formalism/canonicalization.hpp"
-#include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/invariants/mutexes.hpp"
 #include "tyr/formalism/planning/invariants/synthesis.hpp"
@@ -147,9 +146,7 @@ create_ground_fdr_conjunctive_condition(fp::GroundConjunctiveConditionView eleme
                                         const fp::FDRContext& fdr_context,
                                         fp::MergeContext& context)
 {
-    auto fdr_conj_cond_ptr = context.builder.get_builder<fp::GroundConjunctiveCondition>();
-    auto& fdr_conj_cond = *fdr_conj_cond_ptr;
-    fdr_conj_cond.clear();
+    auto fdr_conj_cond = fp::checkout<fp::GroundConjunctiveCondition>(context.builder);
 
     for (const auto literal : element.get_literals<f::StaticTag>())
     {
@@ -168,7 +165,7 @@ create_ground_fdr_conjunctive_condition(fp::GroundConjunctiveConditionView eleme
         if (remapped.status == RemapStatus::tautology)
             continue;
 
-        fdr_conj_cond.derived_literals.push_back(remapped.literal->get_index());
+        fdr_conj_cond->derived_literals.push_back(remapped.literal->get_index());
     }
 
     for (const auto fact : element.get_facts<f::PositiveTag>())
@@ -181,7 +178,7 @@ create_ground_fdr_conjunctive_condition(fp::GroundConjunctiveConditionView eleme
         if (remapped_fdr_fact.status == RemapStatus::tautology)
             continue;
 
-        fdr_conj_cond.positive_facts.push_back(remapped_fdr_fact.fact->get_data());
+        fdr_conj_cond->positive_facts.push_back(remapped_fdr_fact.fact->get_data());
     }
 
     for (const auto fact : element.get_facts<f::NegativeTag>())
@@ -194,14 +191,13 @@ create_ground_fdr_conjunctive_condition(fp::GroundConjunctiveConditionView eleme
         if (remapped_fdr_fact.status == RemapStatus::tautology)
             continue;
 
-        fdr_conj_cond.negative_facts.push_back(remapped_fdr_fact.fact->get_data());
+        fdr_conj_cond->negative_facts.push_back(remapped_fdr_fact.fact->get_data());
     }
 
     for (const auto numeric_constraint : element.get_numeric_constraints())
-        fdr_conj_cond.numeric_constraints.push_back(merge_p2p(numeric_constraint, context).get_data());
+        fdr_conj_cond->numeric_constraints.push_back(merge_p2p(numeric_constraint, context).get_data());
 
-    canonicalize(fdr_conj_cond);
-    return context.destination.get_or_create(fdr_conj_cond).first;
+    return fp::get_or_create(context.destination, *fdr_conj_cond).first;
 }
 
 std::optional<fp::GroundConjunctiveConditionView> ground_pruned(fp::ConjunctiveConditionView element,
@@ -211,9 +207,7 @@ std::optional<fp::GroundConjunctiveConditionView> ground_pruned(fp::ConjunctiveC
                                                                 fp::GrounderContext& context,
                                                                 const fp::FDRContext& fdr_context)
 {
-    auto conj_cond_ptr = context.builder.template get_builder<fp::GroundConjunctiveCondition>();
-    auto& conj_cond = *conj_cond_ptr;
-    conj_cond.clear();
+    auto conj_cond = fp::checkout<fp::GroundConjunctiveCondition>(context.builder);
 
     for (const auto literal : element.template get_literals<f::StaticTag>())
     {
@@ -238,9 +232,9 @@ std::optional<fp::GroundConjunctiveConditionView> ground_pruned(fp::ConjunctiveC
             return std::nullopt;
 
         if (literal.get_polarity())
-            conj_cond.positive_facts.push_back(new_fact->get_data());
+            conj_cond->positive_facts.push_back(new_fact->get_data());
         else
-            conj_cond.negative_facts.push_back(new_fact->get_data());
+            conj_cond->negative_facts.push_back(new_fact->get_data());
     }
 
     for (const auto literal : element.template get_literals<f::DerivedTag>())
@@ -254,14 +248,13 @@ std::optional<fp::GroundConjunctiveConditionView> ground_pruned(fp::ConjunctiveC
         if (remapped.status == RemapStatus::tautology)
             continue;
 
-        conj_cond.derived_literals.push_back(remapped.literal->get_index());
+        conj_cond->derived_literals.push_back(remapped.literal->get_index());
     }
 
     for (const auto numeric_constraint : element.get_numeric_constraints())
-        conj_cond.numeric_constraints.push_back(ground(numeric_constraint, context).get_data());
+        conj_cond->numeric_constraints.push_back(ground(numeric_constraint, context).get_data());
 
-    canonicalize(conj_cond);
-    return context.destination.get_or_create(conj_cond).first;
+    return fp::get_or_create(context.destination, *conj_cond).first;
 }
 
 std::optional<fp::GroundConjunctiveEffectView> ground_pruned(fp::ConjunctiveEffectView element,
@@ -270,9 +263,7 @@ std::optional<fp::GroundConjunctiveEffectView> ground_pruned(fp::ConjunctiveEffe
                                                              const fp::FDRContext& fdr)
 {
     // Fetch and clear
-    auto conj_effect_ptr = context.builder.template get_builder<fp::GroundConjunctiveEffect>();
-    auto& conj_eff = *conj_effect_ptr;
-    conj_eff.clear();
+    auto conj_eff = fp::checkout<fp::GroundConjunctiveEffect>(context.builder);
 
     for (const auto literal : element.get_literals())
     {
@@ -285,22 +276,21 @@ std::optional<fp::GroundConjunctiveEffectView> ground_pruned(fp::ConjunctiveEffe
             return std::nullopt;
 
         if (literal.get_polarity())
-            conj_eff.add_facts.push_back(new_fact->get_data());
+            conj_eff->add_facts.push_back(new_fact->get_data());
         else
-            conj_eff.del_facts.push_back(new_fact->get_data());
+            conj_eff->del_facts.push_back(new_fact->get_data());
     }
     for (const auto numeric_effect : element.get_numeric_effects())
-        conj_eff.numeric_effects.push_back(ground(numeric_effect, context).get_data());
+        conj_eff->numeric_effects.push_back(ground(numeric_effect, context).get_data());
     if (element.get_auxiliary_numeric_effect().has_value())
-        conj_eff.auxiliary_numeric_effect = ground(element.get_auxiliary_numeric_effect().value(), context).get_data();
+        conj_eff->auxiliary_numeric_effect = ground(element.get_auxiliary_numeric_effect().value(), context).get_data();
 
     // Prune no-op effects
-    if (conj_eff.add_facts.empty() && conj_eff.del_facts.empty() && conj_eff.numeric_effects.empty() && !conj_eff.auxiliary_numeric_effect)
+    if (conj_eff->add_facts.empty() && conj_eff->del_facts.empty() && conj_eff->numeric_effects.empty() && !conj_eff->auxiliary_numeric_effect)
         return std::nullopt;  // no-op
 
     // Canonicalize and Serialize
-    canonicalize(conj_eff);
-    return context.destination.get_or_create(conj_eff).first;
+    return fp::get_or_create(context.destination, *conj_eff).first;
 }
 
 std::optional<fp::GroundConditionalEffectView> ground_pruned(fp::ConditionalEffectView element,
@@ -311,26 +301,23 @@ std::optional<fp::GroundConditionalEffectView> ground_pruned(fp::ConditionalEffe
                                                              const fp::FDRContext& fdr_context)
 {
     // Fetch and clear
-    auto cond_effect_ptr = context.builder.template get_builder<fp::GroundConditionalEffect>();
-    auto& cond_effect = *cond_effect_ptr;
-    cond_effect.clear();
+    auto cond_effect = fp::checkout<fp::GroundConditionalEffect>(context.builder);
 
     // Fill data
     const auto new_condition_or_nullopt = ground_pruned(element.get_condition(), fluent_atoms, derived_atoms, static_atoms_bitset, context, fdr_context);
     if (!new_condition_or_nullopt)
         return std::nullopt;
 
-    cond_effect.condition = new_condition_or_nullopt->get_index();
+    cond_effect->condition = new_condition_or_nullopt->get_index();
 
     const auto new_effect_or_nullopt = ground_pruned(element.get_effect(), fluent_atoms, context, fdr_context);
     if (!new_effect_or_nullopt)
         return std::nullopt;
 
-    cond_effect.effect = new_effect_or_nullopt->get_index();
+    cond_effect->effect = new_effect_or_nullopt->get_index();
 
     // Canonicalize and Serialize
-    canonicalize(cond_effect);
-    return context.destination.get_or_create(cond_effect).first;
+    return fp::get_or_create(context.destination, *cond_effect).first;
 }
 
 std::optional<fp::GroundActionView> ground_pruned(fp::ActionView element,
@@ -343,18 +330,16 @@ std::optional<fp::GroundActionView> ground_pruned(fp::ActionView element,
                                                   const fp::FDRContext& fdr_context)
 {
     // Fetch and clear
-    auto action_ptr = context.builder.template get_builder<fp::GroundAction>();
-    auto& action = *action_ptr;
-    action.clear();
+    auto action = fp::checkout<fp::GroundAction>(context.builder);
 
     // Fill data
-    action.binding = ground(element, context).first.get_index();
+    action->binding = ground(element, context).first.get_index();
 
     const auto new_condition_or_nullopt = ground_pruned(element.get_condition(), fluent_atoms, derived_atoms, static_atoms_bitset, context, fdr_context);
     if (!new_condition_or_nullopt)
         return std::nullopt;
 
-    action.condition = new_condition_or_nullopt->get_index();
+    action->condition = new_condition_or_nullopt->get_index();
 
     auto binding_size = context.binding.size();
 
@@ -376,17 +361,16 @@ std::optional<fp::GroundActionView> ground_pruned(fp::ActionView element,
                                                     const auto ground_cond_effect_or_nullopt =
                                                         ground_pruned(cond_effect, fluent_atoms, derived_atoms, static_atoms_bitset, context, fdr_context);
                                                     if (ground_cond_effect_or_nullopt.has_value())
-                                                        action.effects.push_back(ground_cond_effect_or_nullopt->get_index());
+                                                        action->effects.push_back(ground_cond_effect_or_nullopt->get_index());
                                                 });
     }
     context.binding.resize(binding_size);  ///< important to restore the binding in case of grounding other actions
 
-    if (action.effects.empty())
+    if (action->effects.empty())
         return std::nullopt;
 
     // Canonicalize and Serialize
-    canonicalize(action);
-    return context.destination.get_or_create(action).first;
+    return fp::get_or_create(context.destination, *action).first;
 }
 
 std::optional<fp::GroundAxiomView> ground_pruned(fp::AxiomView element,
@@ -397,28 +381,25 @@ std::optional<fp::GroundAxiomView> ground_pruned(fp::AxiomView element,
                                                  const fp::FDRContext& fdr_context)
 {
     // Fetch and clear
-    auto axiom_ptr = context.builder.template get_builder<fp::GroundAxiom>();
-    auto& axiom = *axiom_ptr;
-    axiom.clear();
+    auto axiom = fp::checkout<fp::GroundAxiom>(context.builder);
 
     // Fill data
-    axiom.binding = ground(element, context).first.get_index();
+    axiom->binding = ground(element, context).first.get_index();
 
     const auto new_body_or_nullopt = ground_pruned(element.get_body(), fluent_atoms, derived_atoms, static_atoms_bitset, context, fdr_context);
     if (!new_body_or_nullopt.has_value())
         return std::nullopt;  // body is false in all reachable states -> axiom is irrelevant
 
-    axiom.body = new_body_or_nullopt->get_index();
+    axiom->body = new_body_or_nullopt->get_index();
 
     const auto new_head = ground(element.get_head(), context).first;
     if (!derived_atoms.contains(new_head))
         return std::nullopt;  // head is false in all reachable states -> axiom is irrelevant
 
-    axiom.head = new_head.get_index();
+    axiom->head = new_head.get_index();
 
     // Canonicalize and Serialize
-    canonicalize(axiom);
-    return context.destination.get_or_create(axiom).first;
+    return fp::get_or_create(context.destination, *axiom).first;
 }
 }
 
@@ -452,18 +433,16 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
                                                                               planning_domain.get_repository().get());
     auto builder = fp::Builder();
 
-    auto fdr_task_ptr = builder.get_builder<fp::FDRTask>();
-    auto& fdr_task = *fdr_task_ptr;
-    fdr_task.clear();
+    auto fdr_task = fp::checkout<fp::FDRTask>(builder);
 
     auto merge_context = fp::MergeContext { builder, *repository };
 
-    fdr_task.name = task.get_name();
-    fdr_task.domain = task.get_domain().get_index();
+    fdr_task->name = task.get_name();
+    fdr_task->domain = task.get_domain().get_index();
     for (const auto predicate : task.get_derived_predicates())
-        fdr_task.derived_predicates.push_back(merge_p2p(predicate, merge_context).first.get_index());
+        fdr_task->derived_predicates.push_back(merge_p2p(predicate, merge_context).first.get_index());
     for (const auto object : task.get_objects())
-        fdr_task.objects.push_back(merge_p2p(object, merge_context).first.get_index());
+        fdr_task->objects.push_back(merge_p2p(object, merge_context).first.get_index());
 
     auto initial_atoms = fp::GroundAtomViewList<f::FluentTag> {};
     for (const auto atom : task.get_atoms<f::FluentTag>())
@@ -483,32 +462,26 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     auto derived_atoms = fp::GroundAtomViewList<f::DerivedTag> {};
     {
         auto merge_planning_context = fp::MergePlanningContext { builder, *repository };
-        auto fluent_atom_ptr = builder.get_builder<fp::GroundAtom<f::FluentTag>>();
-        auto& fluent_atom = *fluent_atom_ptr;
-        auto derived_atom_ptr = builder.get_builder<fp::GroundAtom<f::DerivedTag>>();
-        auto& derived_atom = *derived_atom_ptr;
         for_each_predicate_binding(
             [&](const auto binding)
             {
                 if (ground_program.get_translation_context().d2p.fluent_to_fluent_predicate.contains(binding.get_relation()))
                 {
-                    fluent_atom.clear();
-                    fluent_atom.binding = fp::merge_d2p<f::FluentTag, f::FluentTag>(binding,
-                                                                                    ground_program.get_translation_context().d2p.fluent_to_fluent_predicate,
-                                                                                    merge_planning_context)
-                                              .first.get_index();
-                    canonicalize(fluent_atom);
-                    fluent_atoms.push_back(repository->get_or_create(fluent_atom).first);
+                    auto fluent_atom = fp::checkout<fp::GroundAtom<f::FluentTag>>(builder);
+                    fluent_atom->binding = fp::merge_d2p<f::FluentTag, f::FluentTag>(binding,
+                                                                                     ground_program.get_translation_context().d2p.fluent_to_fluent_predicate,
+                                                                                     merge_planning_context)
+                                               .first.get_index();
+                    fluent_atoms.push_back(fp::get_or_create(*repository, *fluent_atom).first);
                 }
                 else if (ground_program.get_translation_context().d2p.fluent_to_derived_predicate.contains(binding.get_relation()))
                 {
-                    derived_atom.clear();
-                    derived_atom.binding = fp::merge_d2p<f::FluentTag, f::DerivedTag>(binding,
-                                                                                      ground_program.get_translation_context().d2p.fluent_to_derived_predicate,
-                                                                                      merge_planning_context)
-                                               .first.get_index();
-                    canonicalize(derived_atom);
-                    derived_atoms.push_back(repository->get_or_create(derived_atom).first);
+                    auto derived_atom = fp::checkout<fp::GroundAtom<f::DerivedTag>>(builder);
+                    derived_atom->binding = fp::merge_d2p<f::FluentTag, f::DerivedTag>(binding,
+                                                                                       ground_program.get_translation_context().d2p.fluent_to_derived_predicate,
+                                                                                       merge_planning_context)
+                                                .first.get_index();
+                    derived_atoms.push_back(fp::get_or_create(*repository, *derived_atom).first);
                 }
             });
     }
@@ -545,30 +518,30 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     }
 
     for (const auto atom : task.get_atoms<f::StaticTag>())
-        fdr_task.static_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
+        fdr_task->static_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
     for (const auto atom : fluent_atoms)
-        fdr_task.fluent_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
+        fdr_task->fluent_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
     for (const auto atom : derived_atoms)
-        fdr_task.derived_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
+        fdr_task->derived_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
     for (const auto fterm_value : task.get_fterm_values<f::StaticTag>())
-        fdr_task.static_fterm_values.push_back(merge_p2p(fterm_value, merge_context).first.get_index());
+        fdr_task->static_fterm_values.push_back(merge_p2p(fterm_value, merge_context).first.get_index());
     for (const auto fterm_value : task.get_fterm_values<f::FluentTag>())
-        fdr_task.fluent_fterm_values.push_back(merge_p2p(fterm_value, merge_context).first.get_index());
+        fdr_task->fluent_fterm_values.push_back(merge_p2p(fterm_value, merge_context).first.get_index());
     if (task.get_auxiliary_fterm_value().has_value())
-        fdr_task.auxiliary_fterm_value = merge_p2p(task.get_auxiliary_fterm_value().value(), merge_context).first.get_index();
+        fdr_task->auxiliary_fterm_value = merge_p2p(task.get_auxiliary_fterm_value().value(), merge_context).first.get_index();
     if (task.get_metric())
-        fdr_task.metric = merge_p2p(task.get_metric().value(), merge_context).first.get_index();
+        fdr_task->metric = merge_p2p(task.get_metric().value(), merge_context).first.get_index();
     for (const auto axiom : task.get_axioms())
-        fdr_task.axioms.push_back(merge_p2p(axiom, merge_context).first.get_index());
+        fdr_task->axioms.push_back(merge_p2p(axiom, merge_context).first.get_index());
 
     /// --- Create FDR variables
     for (const auto variable : fdr_context->get_variables())
-        fdr_task.fluent_variables.push_back(variable.get_index());
+        fdr_task->fluent_variables.push_back(variable.get_index());
 
     /// --- Create FDR fluent facts
     for (const auto atom : task.get_atoms<f::FluentTag>())
         if (const auto fact = std::as_const(*fdr_context).get_fact(merge_p2p(atom, merge_context).first))
-            fdr_task.fluent_facts.push_back(fact->get_data());
+            fdr_task->fluent_facts.push_back(fact->get_data());
 
     auto static_atoms_bitset = boost::dynamic_bitset<>();
     for (const auto atom : task.get_atoms<f::StaticTag>())
@@ -578,7 +551,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     const auto goal_or_nullopt =
         create_ground_fdr_conjunctive_condition(task.get_goal(), fluent_atoms_set, derived_atoms_set, static_atoms_bitset, *fdr_context, merge_context);
     if (goal_or_nullopt.has_value())
-        fdr_task.goal = goal_or_nullopt->get_index();
+        fdr_task->goal = goal_or_nullopt->get_index();
     else
         return GroundTaskInstantiationResult { nullptr, GroundTaskInstantiationStatus::PROVEN_UNSOLVABLE };
 
@@ -621,7 +594,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
                 if (is_consistent(ground_action, fluent_assign, derived_assign))
                 {
-                    fdr_task.ground_actions.push_back(ground_action.get_index());
+                    fdr_task->ground_actions.push_back(ground_action.get_index());
                 }
             }
         });
@@ -654,17 +627,15 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
                     if (is_consistent(ground_axiom, fluent_assign, derived_assign))
                     {
-                        fdr_task.ground_axioms.push_back(ground_axiom.get_index());
+                        fdr_task->ground_axioms.push_back(ground_axiom.get_index());
                     }
                 }
             }
         });
 
-    canonicalize(fdr_task);
-
     return GroundTaskInstantiationResult {
         std::make_shared<Task<GroundTag>>(
-            fp::PlanningFDRTask(repository->get_or_create(fdr_task).first, std::move(fdr_context), repository, planning_task.get_domain())),
+            fp::PlanningFDRTask(fp::get_or_create(*repository, *fdr_task).first, std::move(fdr_context), repository, planning_task.get_domain())),
         GroundTaskInstantiationStatus::SUCCESS
     };
 }

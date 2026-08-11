@@ -18,8 +18,8 @@
 #ifndef TYR_SRC_FORMALISM_PLANNING_LOKI_TO_TYR_HPP_
 #define TYR_SRC_FORMALISM_PLANNING_LOKI_TO_TYR_HPP_
 
-#include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 
 #include <algorithm>
 #include <iterator>
@@ -141,18 +141,13 @@ private:
 
     ParameterIndexMapping m_param_map;
 
-    template<std::ranges::input_range Range>
-    auto translate_common(const Range& input, Builder& builder, Repository& context)
+    template<std::ranges::input_range Range, typename Output>
+    void translate_common(const Range& input, Builder& builder, Repository& context, Output& output)
     {
-        using Element = std::ranges::range_value_t<Range>;
-        using ReturnType = decltype(this->translate_common(std::declval<Element>(), builder, context));
-        auto output = ::cista::offset::vector<ReturnType> {};
-        output.reserve(std::ranges::size(input));
-        std::transform(std::begin(input),
-                       std::end(input),
-                       std::back_inserter(output),
-                       [&](auto&& arg) { return this->translate_common(arg, builder, context); });
-        return output;
+        if constexpr (std::ranges::sized_range<Range>)
+            output.reserve(output.size() + std::ranges::size(input));
+        for (auto&& element : input)
+            output.push_back(this->translate_common(element, builder, context));
     }
 
     FunctionViewVariant translate_common(loki::formalism::FunctionSkeletonView element, Builder& builder, Repository& context);
@@ -169,18 +164,13 @@ private:
      * Lifted translation.
      */
 
-    template<std::ranges::input_range Range>
-    auto translate_lifted(const Range& input, Builder& builder, Repository& context)
+    template<std::ranges::input_range Range, typename Output>
+    void translate_lifted(const Range& input, Builder& builder, Repository& context, Output& output)
     {
-        using Element = std::ranges::range_value_t<Range>;
-        using ReturnType = decltype(this->translate_lifted(std::declval<Element>(), builder, context));
-        auto output = ::cista::offset::vector<ReturnType> {};
-        output.reserve(std::ranges::size(input));
-        std::transform(std::begin(input),
-                       std::end(input),
-                       std::back_inserter(output),
-                       [&](auto&& arg) { return this->translate_lifted(arg, builder, context); });
-        return output;
+        if constexpr (std::ranges::sized_range<Range>)
+            output.reserve(output.size() + std::ranges::size(input));
+        for (auto&& element : input)
+            output.push_back(this->translate_lifted(element, builder, context));
     }
 
     ygg::Data<Term> translate_lifted(loki::formalism::TermView element, Builder& builder, Repository& context);
@@ -209,8 +199,11 @@ private:
 
     NumericEffectViewVariant translate_lifted(loki::formalism::EffectNumericView element, Builder& builder, Repository& context);
 
-    ygg::IndexList<ConditionalEffect>
-    translate_lifted(loki::formalism::EffectView element, const ygg::IndexList<Variable>& parameters, Builder& builder, Repository& context);
+    void translate_lifted(loki::formalism::EffectView element,
+                          const ygg::IndexList<Variable>& parameters,
+                          Builder& builder,
+                          Repository& context,
+                          ygg::IndexList<ConditionalEffect>& output);
 
     ygg::Index<Action> translate_lifted(loki::formalism::ActionView element, Builder& builder, Repository& context);
 
@@ -220,18 +213,13 @@ private:
      * Grounded translation
      */
 
-    template<std::ranges::input_range Range>
-    auto translate_grounded(const Range& input, Builder& builder, Repository& context)
+    template<std::ranges::input_range Range, typename Output>
+    void translate_grounded(const Range& input, Builder& builder, Repository& context, Output& output)
     {
-        using Element = std::ranges::range_value_t<Range>;
-        using ReturnType = decltype(this->translate_grounded(std::declval<Element>(), builder, context));
-        auto output = ::cista::offset::vector<ReturnType> {};
-        output.reserve(std::ranges::size(input));
-        std::transform(std::begin(input),
-                       std::end(input),
-                       std::back_inserter(output),
-                       [&](auto&& arg) { return this->translate_grounded(arg, builder, context); });
-        return output;
+        if constexpr (std::ranges::sized_range<Range>)
+            output.reserve(output.size() + std::ranges::size(input));
+        for (auto&& element : input)
+            output.push_back(this->translate_grounded(element, builder, context));
     }
 
     ygg::Index<Object> translate_grounded(loki::formalism::TermView element, Builder& builder, Repository& context);

@@ -24,7 +24,6 @@
 #include "tyr/datalog/statistics/rule.hpp"
 #include "tyr/datalog/workspaces/rule.hpp"
 #include "tyr/formalism/binding_index.hpp"
-#include "tyr/formalism/datalog/builder.hpp"
 #include "tyr/formalism/datalog/ground_atom_index.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"

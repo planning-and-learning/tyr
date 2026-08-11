@@ -18,7 +18,6 @@
 #ifndef TYR_FORMALISM_PLANNING_PLANNING_HPP_
 #define TYR_FORMALISM_PLANNING_PLANNING_HPP_
 
-#include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/datas.hpp"
 #include "tyr/formalism/planning/grounder.hpp"

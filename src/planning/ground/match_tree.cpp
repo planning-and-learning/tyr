@@ -68,6 +68,9 @@ template<typename Tag>
 using MatchNodeView = ygg::View<ygg::Data<Node<Tag>>, Repository<Tag>>;
 
 template<typename Tag>
+using Builder = std::conditional_t<std::same_as<Tag, ::tyr::formalism::planning::GroundAction>, GroundActionBuilder, GroundAxiomBuilder>;
+
+template<typename Tag>
 using SortedPreconditions = std::vector<std::pair<PreconditionVariant, ElementViews<Tag>>>;
 
 template<typename Tag>
@@ -108,7 +111,7 @@ template<typename Tag>
 static std::optional<StackEntry<Tag>> try_create_stack_entry(BaseEntry<Tag> base,
                                                              const SortedPreconditions<Tag>& sorted_preconditions,
                                                              const PreconditionDetails<Tag>& details,
-                                                             const ::tyr::formalism::planning::Repository& context);
+                                                             Builder<Tag>& builder);
 
 template<typename Tag>
 struct AtomStackEntry
@@ -119,9 +122,10 @@ struct AtomStackEntry
     ElementSpan<Tag> false_elements;
     ElementSpan<Tag> dontcare_elements;
 
-    ygg::Data<AtomSelectorNode<Tag>> result;
+    ygg::UniqueObjectPoolPtr<ygg::Data<AtomSelectorNode<Tag>>> result;
 
-    AtomStackEntry(BaseEntry<Tag> base,
+    AtomStackEntry(Builder<Tag>& builder,
+                   BaseEntry<Tag> base,
                    ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> atom,
                    ElementSpan<Tag> true_elements,
                    ElementSpan<Tag> false_elements,
@@ -130,14 +134,14 @@ struct AtomStackEntry
         true_elements(true_elements),
         false_elements(false_elements),
         dontcare_elements(dontcare_elements),
-        result()
+        result(::tyr::planning::match_tree::checkout<AtomSelectorNode<Tag>>(builder))
     {
-        result.atom = atom;
+        result->atom = atom;
     }
 
-    bool explored_true_child() const noexcept { return (true_elements.empty() || result.true_child.has_value()); }
-    bool explored_false_child() const noexcept { return (false_elements.empty() || result.false_child.has_value()); }
-    bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result.dontcare_child.has_value()); }
+    bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
+    bool explored_false_child() const noexcept { return (false_elements.empty() || result->false_child.has_value()); }
+    bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
 };
 
 template<typename Tag>
@@ -150,9 +154,10 @@ struct VariableStackEntry
     ElementSpan<Tag> dontcare_elements;
     size_t forward_pos;
 
-    ygg::Data<VariableSelectorNode<Tag>> result;
+    ygg::UniqueObjectPoolPtr<ygg::Data<VariableSelectorNode<Tag>>> result;
 
-    VariableStackEntry(BaseEntry<Tag> base,
+    VariableStackEntry(Builder<Tag>& builder,
+                       BaseEntry<Tag> base,
                        ::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> variable,
                        std::vector<ElementSpan<Tag>> domain_elements_,
                        std::vector<ygg::uint_t> forward_,
@@ -162,14 +167,14 @@ struct VariableStackEntry
         forward(std::move(forward_)),
         dontcare_elements(dontcare_elements),
         forward_pos(0),
-        result()
+        result(::tyr::planning::match_tree::checkout<VariableSelectorNode<Tag>>(builder))
     {
-        result.variable = variable.get_index();
-        result.domain_children.resize(domain_elements.size());
+        result->variable = variable.get_index();
+        result->domain_children.resize(domain_elements.size());
     }
 
     bool explored_children() const noexcept { return forward_pos == forward.size(); }
-    bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result.dontcare_child.has_value()); }
+    bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
 };
 
 template<typename Tag>
@@ -180,22 +185,23 @@ struct NegativeFactStackEntry
     ElementSpan<Tag> true_elements;
     ElementSpan<Tag> dontcare_elements;
 
-    ygg::Data<NegativeFactSelectorNode<Tag>> result;
+    ygg::UniqueObjectPoolPtr<ygg::Data<NegativeFactSelectorNode<Tag>>> result;
 
-    NegativeFactStackEntry(BaseEntry<Tag> base,
+    NegativeFactStackEntry(Builder<Tag>& builder,
+                           BaseEntry<Tag> base,
                            ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact,
                            ElementSpan<Tag> true_elements,
                            ElementSpan<Tag> dontcare_elements) :
         base(base),
         true_elements(true_elements),
         dontcare_elements(dontcare_elements),
-        result()
+        result(::tyr::planning::match_tree::checkout<NegativeFactSelectorNode<Tag>>(builder))
     {
-        result.fact = fact;
+        result->fact = fact;
     }
 
-    bool explored_true_child() const noexcept { return (true_elements.empty() || result.true_child.has_value()); }
-    bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result.dontcare_child.has_value()); }
+    bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
+    bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
 };
 
 template<typename Tag>
@@ -203,27 +209,26 @@ struct ConstraintStackEntry
 {
     BaseEntry<Tag> base;
 
-    ygg::Data<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::GroundFunctionExpression>>> constraint;
     ElementSpan<Tag> true_elements;
     ElementSpan<Tag> dontcare_elements;
 
-    ygg::Data<NumericConstraintSelectorNode<Tag>> result;
+    ygg::UniqueObjectPoolPtr<ygg::Data<NumericConstraintSelectorNode<Tag>>> result;
 
-    ConstraintStackEntry(BaseEntry<Tag> base,
+    ConstraintStackEntry(Builder<Tag>& builder,
+                         BaseEntry<Tag> base,
                          ygg::Data<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::GroundFunctionExpression>>> constraint,
                          ElementSpan<Tag> true_elements,
                          ElementSpan<Tag> dontcare_elements) :
         base(base),
-        constraint(constraint),
         true_elements(true_elements),
         dontcare_elements(dontcare_elements),
-        result()
+        result(::tyr::planning::match_tree::checkout<NumericConstraintSelectorNode<Tag>>(builder))
     {
-        result.constraint = constraint;
+        result->constraint = constraint;
     }
 
-    bool explored_true_child() const noexcept { return (true_elements.empty() || result.true_child.has_value()); }
-    bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result.dontcare_child.has_value()); }
+    bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
+    bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
 };
 
 template<typename Tag>
@@ -231,22 +236,23 @@ struct GeneratorStackEntry
 {
     BaseEntry<Tag> base;
 
-    ygg::Data<planning::match_tree::ElementGeneratorNode<Tag>> result;
+    ygg::UniqueObjectPoolPtr<ygg::Data<planning::match_tree::ElementGeneratorNode<Tag>>> result;
 
-    explicit GeneratorStackEntry(BaseEntry<Tag> base) : base(base), result()
+    GeneratorStackEntry(Builder<Tag>& builder, BaseEntry<Tag> base) :
+        base(base),
+        result(::tyr::planning::match_tree::checkout<planning::match_tree::ElementGeneratorNode<Tag>>(builder))
     {
         for (const auto element : base.elements)
-            result.elements.push_back(element.get_index());
+            result->elements.push_back(element.get_index());
 
-        // std::cout << "Num elements in generator node: " << result.elements.size() << std::endl;
+        // std::cout << "Num elements in generator node: " << result->elements.size() << std::endl;
     }
 };
 
 template<typename Entry, typename Tag>
 auto store_result(Entry& entry, Repository<Tag>& repository)
 {
-    canonicalize(entry.result);
-    const auto stored = repository.get_or_create(entry.result).first;
+    const auto stored = ::tyr::planning::match_tree::get_or_create(repository, *entry.result).first;
     return make_view(ygg::Data<Node<Tag>>(stored.get_handle()), repository);
 }
 
@@ -257,17 +263,15 @@ bool explored(const AtomStackEntry<Tag>& el) noexcept
 }
 
 template<typename Tag>
-std::optional<StackEntry<Tag>> next_entry(const AtomStackEntry<Tag>& el,
-                                          const SortedPreconditions<Tag>& sorted_preconditions,
-                                          const PreconditionDetails<Tag>& details,
-                                          const ::tyr::formalism::planning::Repository& context)
+std::optional<StackEntry<Tag>>
+next_entry(const AtomStackEntry<Tag>& el, const SortedPreconditions<Tag>& sorted_preconditions, const PreconditionDetails<Tag>& details, Builder<Tag>& builder)
 {
     if (!el.explored_true_child())
-        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.true_elements }, sorted_preconditions, details, context);
+        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.true_elements }, sorted_preconditions, details, builder);
     else if (!el.explored_false_child())
-        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.false_elements }, sorted_preconditions, details, context);
+        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.false_elements }, sorted_preconditions, details, builder);
     else if (!el.explored_dontcare_child())
-        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.dontcare_elements }, sorted_preconditions, details, context);
+        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.dontcare_elements }, sorted_preconditions, details, builder);
     else
         throw std::logic_error("Unexpected case.");
 }
@@ -276,11 +280,11 @@ template<typename Tag>
 void push_result(AtomStackEntry<Tag>& el, ygg::Data<Node<Tag>> node)
 {
     if (!el.explored_true_child())
-        el.result.true_child = node;
+        el.result->true_child = node;
     else if (!el.explored_false_child())
-        el.result.false_child = node;
+        el.result->false_child = node;
     else if (!el.explored_dontcare_child())
-        el.result.dontcare_child = node;
+        el.result->dontcare_child = node;
     else
         throw std::logic_error("Unexpected case.");
 }
@@ -295,15 +299,15 @@ template<typename Tag>
 std::optional<StackEntry<Tag>> next_entry(const VariableStackEntry<Tag>& el,
                                           const SortedPreconditions<Tag>& sorted_preconditions,
                                           const PreconditionDetails<Tag>& details,
-                                          const ::tyr::formalism::planning::Repository& context)
+                                          Builder<Tag>& builder)
 {
     if (!el.explored_children())
         return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.domain_elements.at(el.forward.at(el.forward_pos)) },
                                       sorted_preconditions,
                                       details,
-                                      context);
+                                      builder);
     else if (!el.explored_dontcare_child())
-        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.dontcare_elements }, sorted_preconditions, details, context);
+        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.dontcare_elements }, sorted_preconditions, details, builder);
     else
         throw std::logic_error("Unexpected case.");
 }
@@ -313,11 +317,11 @@ void push_result(VariableStackEntry<Tag>& el, ygg::Data<Node<Tag>> node)
 {
     if (!el.explored_children())
     {
-        el.result.domain_children.at(el.forward.at(el.forward_pos)) = node;
+        el.result->domain_children.at(el.forward.at(el.forward_pos)) = node;
         ++el.forward_pos;
     }
     else if (!el.explored_dontcare_child())
-        el.result.dontcare_child = node;
+        el.result->dontcare_child = node;
     else
         throw std::logic_error("Unexpected case.");
 }
@@ -332,12 +336,12 @@ template<typename Tag>
 std::optional<StackEntry<Tag>> next_entry(const NegativeFactStackEntry<Tag>& el,
                                           const SortedPreconditions<Tag>& sorted_preconditions,
                                           const PreconditionDetails<Tag>& details,
-                                          const ::tyr::formalism::planning::Repository& context)
+                                          Builder<Tag>& builder)
 {
     if (!el.explored_true_child())
-        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.true_elements }, sorted_preconditions, details, context);
+        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.true_elements }, sorted_preconditions, details, builder);
     else if (!el.explored_dontcare_child())
-        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.dontcare_elements }, sorted_preconditions, details, context);
+        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.dontcare_elements }, sorted_preconditions, details, builder);
     else
         throw std::logic_error("Unexpected case.");
 }
@@ -346,9 +350,9 @@ template<typename Tag>
 void push_result(NegativeFactStackEntry<Tag>& el, ygg::Data<Node<Tag>> node)
 {
     if (!el.explored_true_child())
-        el.result.true_child = node;
+        el.result->true_child = node;
     else if (!el.explored_dontcare_child())
-        el.result.dontcare_child = node;
+        el.result->dontcare_child = node;
     else
         throw std::logic_error("Unexpected case.");
 }
@@ -363,12 +367,12 @@ template<typename Tag>
 std::optional<StackEntry<Tag>> next_entry(const ConstraintStackEntry<Tag>& el,
                                           const SortedPreconditions<Tag>& sorted_preconditions,
                                           const PreconditionDetails<Tag>& details,
-                                          const ::tyr::formalism::planning::Repository& context)
+                                          Builder<Tag>& builder)
 {
     if (!el.explored_true_child())
-        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.true_elements }, sorted_preconditions, details, context);
+        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.true_elements }, sorted_preconditions, details, builder);
     else if (!el.explored_dontcare_child())
-        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.dontcare_elements }, sorted_preconditions, details, context);
+        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.dontcare_elements }, sorted_preconditions, details, builder);
     else
         throw std::logic_error("Unexpected case.");
 }
@@ -376,10 +380,10 @@ std::optional<StackEntry<Tag>> next_entry(const ConstraintStackEntry<Tag>& el,
 template<typename Tag>
 void push_result(ConstraintStackEntry<Tag>& el, ygg::Data<Node<Tag>> node)
 {
-    if (!el.result.true_child && !el.true_elements.empty())
-        el.result.true_child = node;
-    else if (!el.result.dontcare_child && !el.dontcare_elements.empty())
-        el.result.dontcare_child = node;
+    if (!el.result->true_child && !el.true_elements.empty())
+        el.result->true_child = node;
+    else if (!el.result->dontcare_child && !el.dontcare_elements.empty())
+        el.result->dontcare_child = node;
     else
         throw std::logic_error("Unexpected case.");
 }
@@ -391,10 +395,7 @@ bool explored(const GeneratorStackEntry<Tag>&) noexcept
 }
 
 template<typename Tag>
-std::optional<StackEntry<Tag>> next_entry(const GeneratorStackEntry<Tag>&,
-                                          const SortedPreconditions<Tag>&,
-                                          const PreconditionDetails<Tag>&,
-                                          const ::tyr::formalism::planning::Repository&)
+std::optional<StackEntry<Tag>> next_entry(const GeneratorStackEntry<Tag>&, const SortedPreconditions<Tag>&, const PreconditionDetails<Tag>&, Builder<Tag>&)
 {
     return std::nullopt;
 }
@@ -412,7 +413,8 @@ inline auto get_condition(::tyr::formalism::planning::GroundActionView el) { ret
 template<typename Tag>
 static std::optional<StackEntry<Tag>> try_create_atom_stack_entry(ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> atom,
                                                                   BaseEntry<Tag> base,
-                                                                  const PreconditionDetails<Tag>& details)
+                                                                  const PreconditionDetails<Tag>& details,
+                                                                  Builder<Tag>& builder)
 {
     assert(!base.elements.empty());
 
@@ -448,13 +450,14 @@ static std::optional<StackEntry<Tag>> try_create_atom_stack_entry(ygg::Index<::t
     if (true_elements.empty() && false_elements.empty())
         return std::nullopt;  ///< no element cares about the atom
 
-    return AtomStackEntry<Tag>(base, atom, true_elements, false_elements, dontcare_elements);
+    return AtomStackEntry<Tag>(builder, base, atom, true_elements, false_elements, dontcare_elements);
 }
 
 template<typename Tag>
 static std::optional<StackEntry<Tag>> try_create_variable_stack_entry(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> variable,
                                                                       BaseEntry<Tag> base,
-                                                                      const PreconditionDetails<Tag>& details)
+                                                                      const PreconditionDetails<Tag>& details,
+                                                                      Builder<Tag>& builder)
 {
     assert(!base.elements.empty());
 
@@ -505,13 +508,14 @@ static std::optional<StackEntry<Tag>> try_create_variable_stack_entry(::tyr::for
     if (forward.empty())
         return std::nullopt;  ///< no element cares about the atom
 
-    return VariableStackEntry<Tag>(base, variable, children_elements, forward, dontcare_elements);
+    return VariableStackEntry<Tag>(builder, base, variable, std::move(children_elements), std::move(forward), dontcare_elements);
 }
 
 template<typename Tag>
 static std::optional<StackEntry<Tag>> try_create_negative_fact_stack_entry(ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact,
                                                                            BaseEntry<Tag> base,
-                                                                           const PreconditionDetails<Tag>& details)
+                                                                           const PreconditionDetails<Tag>& details,
+                                                                           Builder<Tag>& builder)
 {
     assert(!base.elements.empty());
 
@@ -536,14 +540,15 @@ static std::optional<StackEntry<Tag>> try_create_negative_fact_stack_entry(ygg::
     if (true_elements.empty())
         return std::nullopt;  ///< no element cares about the constraint
 
-    return NegativeFactStackEntry<Tag>(base, fact, true_elements, dontcare_elements);
+    return NegativeFactStackEntry<Tag>(builder, base, fact, true_elements, dontcare_elements);
 }
 
 template<typename Tag>
 static std::optional<StackEntry<Tag>> try_create_constraint_stack_entry(
     ygg::Data<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::GroundFunctionExpression>>> constraint,
     BaseEntry<Tag> base,
-    const PreconditionDetails<Tag>& details)
+    const PreconditionDetails<Tag>& details,
+    Builder<Tag>& builder)
 {
     assert(!base.elements.empty());
 
@@ -568,21 +573,21 @@ static std::optional<StackEntry<Tag>> try_create_constraint_stack_entry(
     if (true_elements.empty())
         return std::nullopt;  ///< no element cares about the constraint
 
-    return ConstraintStackEntry<Tag>(base, constraint, true_elements, dontcare_elements);
+    return ConstraintStackEntry<Tag>(builder, base, constraint, true_elements, dontcare_elements);
 }
 
 template<typename Tag>
-static StackEntry<Tag> create_generator_stack_entry(BaseEntry<Tag> base)
+static StackEntry<Tag> create_generator_stack_entry(BaseEntry<Tag> base, Builder<Tag>& builder)
 {
     assert(!base.elements.empty());
-    return GeneratorStackEntry(base);
+    return GeneratorStackEntry(builder, base);
 }
 
 template<typename Tag>
 static std::optional<StackEntry<Tag>> try_create_selector_stack_entry(BaseEntry<Tag> base,
                                                                       const SortedPreconditions<Tag>& sorted_preconditions,
                                                                       const PreconditionDetails<Tag>& details,
-                                                                      const ::tyr::formalism::planning::Repository&)
+                                                                      Builder<Tag>& builder)
 {
     return std::visit(
         [&](auto&& arg)
@@ -590,15 +595,15 @@ static std::optional<StackEntry<Tag>> try_create_selector_stack_entry(BaseEntry<
             using Alternative = std::decay_t<decltype(arg)>;
 
             if constexpr (std::same_as<Alternative, ::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag>>)
-                return try_create_variable_stack_entry(arg, base, details);
+                return try_create_variable_stack_entry(arg, base, details, builder);
             else if constexpr (std::same_as<Alternative, ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>)
-                return try_create_negative_fact_stack_entry(arg, base, details);
+                return try_create_negative_fact_stack_entry(arg, base, details, builder);
             else if constexpr (std::same_as<Alternative, ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>>>)
-                return try_create_atom_stack_entry(arg, base, details);
+                return try_create_atom_stack_entry(arg, base, details, builder);
             else if constexpr (std::same_as<
                                    Alternative,
                                    ygg::Data<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::GroundFunctionExpression>>>>)
-                return try_create_constraint_stack_entry(arg, base, details);
+                return try_create_constraint_stack_entry(arg, base, details, builder);
             else
                 static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
         },
@@ -609,18 +614,18 @@ template<typename Tag>
 static std::optional<StackEntry<Tag>> try_create_stack_entry(BaseEntry<Tag> base,
                                                              const SortedPreconditions<Tag>& sorted_preconditions,
                                                              const PreconditionDetails<Tag>& details,
-                                                             const ::tyr::formalism::planning::Repository& context)
+                                                             Builder<Tag>& builder)
 {
     if (!base.elements.empty())
     {
         for (; base.depth < sorted_preconditions.size(); ++base.depth)
-            if (auto entry = try_create_selector_stack_entry(base, sorted_preconditions, details, context))
+            if (auto entry = try_create_selector_stack_entry(base, sorted_preconditions, details, builder))
                 return std::move(entry.value());
     }
     else
         return std::nullopt;
 
-    return create_generator_stack_entry(base);
+    return create_generator_stack_entry(base, builder);
 }
 
 template<typename Tag>
@@ -695,8 +700,9 @@ MatchTree<Tag>::MatchTree(std::vector<ygg::View<ygg::Index<Tag>, ::tyr::formalis
     // std::cout << details << std::endl;
     // std::cout << sorted_preconditions << std::endl;
 
+    auto builder = Builder<Tag> {};
     auto stack = std::deque<StackEntry<Tag>> {};
-    auto initial_entry = try_create_stack_entry(BaseEntry<Tag>(size_t(0), ElementSpan<Tag>(elements_)), sorted_preconditions, details, context_);
+    auto initial_entry = try_create_stack_entry(BaseEntry<Tag>(size_t(0), ElementSpan<Tag>(elements_)), sorted_preconditions, details, builder);
     if (!initial_entry)
         return;
 
@@ -716,7 +722,7 @@ MatchTree<Tag>::MatchTree(std::vector<ygg::View<ygg::Index<Tag>, ::tyr::formalis
                 if (!explored(frame))
                 {
                     // std::cout << "next_entry" << std::endl;
-                    next = next_entry(frame, sorted_preconditions, details, context_);
+                    next = next_entry(frame, sorted_preconditions, details, builder);
                 }
                 else
                 {

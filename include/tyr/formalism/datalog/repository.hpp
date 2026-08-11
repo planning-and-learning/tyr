@@ -35,11 +35,34 @@
 #include <yggdrasil/buffer/indexed_hash_set.hpp>
 #include <yggdrasil/buffer/segmented_buffer.hpp>
 #include <yggdrasil/containers/tuple.hpp>
+#include <yggdrasil/formalism/builder.hpp>
 #include <yggdrasil/formalism/relation_repository.hpp>
 #include <yggdrasil/formalism/repository.hpp>
 #include <yggdrasil/formalism/repository_factory.hpp>
 #include <yggdrasil/formalism/symbol_repository.hpp>
 #include <yggdrasil/semantics/equal_to.hpp>
 #include <yggdrasil/semantics/hash.hpp>
+
+namespace tyr::formalism::datalog
+{
+
+using Builder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, BuilderTypes>;
+
+template<typename T>
+[[nodiscard]] auto checkout(Builder& builder)
+{
+    auto data = builder.template get_builder<T>();
+    data->clear();
+    return data;
+}
+
+template<typename T>
+[[nodiscard]] auto get_or_create(Repository& repository, ygg::Data<T>& data)
+{
+    canonicalize(data);
+    return repository.get_or_create(data);
+}
+
+}
 
 #endif

@@ -90,41 +90,32 @@ void fill_delete_free_condition(fp::ActionView action,
 
 fd::MetricView create_metric(fp::MetricView metric, fp::MergeDatalogContext& context)
 {
-    auto metric_ptr = context.builder.get_builder<fd::Metric>();
-    auto& result = *metric_ptr;
-    result.clear();
-    result.fexpr = fp::merge_p2d(metric.get_fexpr(), context);
-    canonicalize(result);
-    return context.destination.get_or_create(result).first;
+    auto result = fd::checkout<fd::Metric>(context.builder);
+    result->fexpr = fp::merge_p2d(metric.get_fexpr(), context);
+    return fd::get_or_create(context.destination, *result).first;
 }
 
 fd::MetricView create_metric(fd::GroundFunctionTermView<f::FluentTag> term, fp::MergeDatalogContext& context)
 {
-    auto metric_ptr = context.builder.get_builder<fd::Metric>();
-    auto& result = *metric_ptr;
-    result.clear();
-    result.fexpr = ygg::Data<fd::GroundFunctionExpression>(term.get_index());
-    canonicalize(result);
-    return context.destination.get_or_create(result).first;
+    auto result = fd::checkout<fd::Metric>(context.builder);
+    result->fexpr = ygg::Data<fd::GroundFunctionExpression>(term.get_index());
+    return fd::get_or_create(context.destination, *result).first;
 }
 
 auto create_delete_free_goal(fp::GroundConjunctiveConditionView goal,
                              TranslationContext<LiftedTag>& translation_context,
                              ::tyr::formalism::planning::MergeDatalogContext& context)
 {
-    auto conj_cond_ptr = context.builder.get_builder<::tyr::formalism::datalog::GroundConjunctiveCondition>();
-    auto& conj_cond = *conj_cond_ptr;
-    conj_cond.clear();
+    auto conj_cond = fd::checkout<::tyr::formalism::datalog::GroundConjunctiveCondition>(context.builder);
 
     for (const auto fact : goal.get_facts<::tyr::formalism::PositiveTag>())
         if (const auto literal = merge_p2d(fact, true, translation_context.p2d.fluent_to_fluent_predicate, context))
-            conj_cond.fluent_literals.push_back(literal->get_index());
+            conj_cond->fluent_literals.push_back(literal->get_index());
 
     for (const auto numeric_constraint : goal.get_numeric_constraints())
-        conj_cond.numeric_constraints.push_back(merge_p2d(numeric_constraint, context));
+        conj_cond->numeric_constraints.push_back(merge_p2d(numeric_constraint, context));
 
-    canonicalize(conj_cond);
-    return context.destination.get_or_create(conj_cond);
+    return fd::get_or_create(context.destination, *conj_cond);
 }
 
 bool is_real_conditional_effect(fp::ConditionalEffectView cond_eff)
@@ -136,55 +127,37 @@ bool is_real_conditional_effect(fp::ConditionalEffectView cond_eff)
 
 ygg::Data<fd::NumericEffectOperator<f::FluentTag>> create_unit_metric_effect(fd::FunctionTermView<f::FluentTag> term, fp::MergeDatalogContext& context)
 {
-    auto effect_ptr = context.builder.get_builder<fd::NumericEffect<f::FluentTag>>();
-    auto& effect = *effect_ptr;
-    effect.clear();
-    effect.operator_kind = f::NumericEffectOperatorKind::Increase;
-    effect.fterm = term.get_index();
-    effect.fexpr = ygg::Data<fd::FunctionExpression>(ygg::float_t(1));
-    canonicalize(effect);
+    auto effect = fd::checkout<fd::NumericEffect<f::FluentTag>>(context.builder);
+    effect->operator_kind = f::NumericEffectOperatorKind::Increase;
+    effect->fterm = term.get_index();
+    effect->fexpr = ygg::Data<fd::FunctionExpression>(ygg::float_t(1));
     return ygg::Data<fd::NumericEffectOperator<f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
-                                                              context.destination.get_or_create(effect).first.get_index());
+                                                              fd::get_or_create(context.destination, *effect).first.get_index());
 }
 
 ygg::DataList<fd::NumericEffectOperator<f::FluentTag>> create_unit_metric(ygg::Data<fd::Program>& program, fp::MergeDatalogContext& context)
 {
-    auto function_ptr = context.builder.get_builder<f::Function<f::FluentTag>>();
-    auto& function = *function_ptr;
-    function.clear();
-    function.name = "__tyr_unit_cost";
-    function.arity = 0;
-    canonicalize(function);
-    const auto unit_function = context.destination.get_or_create(function).first;
+    auto function = fd::checkout<f::Function<f::FluentTag>>(context.builder);
+    function->name = "__tyr_unit_cost";
+    function->arity = 0;
+    const auto unit_function = fd::get_or_create(context.destination, *function).first;
     program.fluent_functions.push_back(unit_function.get_index());
 
-    auto lifted_term_ptr = context.builder.get_builder<fd::FunctionTerm<f::FluentTag>>();
-    auto& lifted_term = *lifted_term_ptr;
-    lifted_term.clear();
-    lifted_term.function = unit_function.get_index();
-    canonicalize(lifted_term);
-    const auto unit_term = context.destination.get_or_create(lifted_term).first;
+    auto lifted_term = fd::checkout<fd::FunctionTerm<f::FluentTag>>(context.builder);
+    lifted_term->function = unit_function.get_index();
+    const auto unit_term = fd::get_or_create(context.destination, *lifted_term).first;
 
-    auto binding_ptr = context.builder.get_builder<f::RelationBinding<f::Function<f::FluentTag>>>();
-    auto& binding = *binding_ptr;
-    binding.clear();
-    binding.relation = unit_function.get_index();
-    canonicalize(binding);
-    const auto unit_binding = context.destination.get_or_create(binding).first;
+    auto binding = fd::checkout<f::RelationBinding<f::Function<f::FluentTag>>>(context.builder);
+    binding->relation = unit_function.get_index();
+    const auto unit_binding = fd::get_or_create(context.destination, *binding).first;
 
-    auto ground_term_ptr = context.builder.get_builder<fd::GroundFunctionTerm<f::FluentTag>>();
-    auto& ground_term = *ground_term_ptr;
-    ground_term.clear();
-    ground_term.binding = unit_binding.get_index();
-    canonicalize(ground_term);
-    const auto unit_ground_term = context.destination.get_or_create(ground_term).first;
+    auto ground_term = fd::checkout<fd::GroundFunctionTerm<f::FluentTag>>(context.builder);
+    ground_term->binding = unit_binding.get_index();
+    const auto unit_ground_term = fd::get_or_create(context.destination, *ground_term).first;
 
-    auto metric_ptr = context.builder.get_builder<fd::Metric>();
-    auto& metric = *metric_ptr;
-    metric.clear();
-    metric.fexpr = ygg::Data<fd::GroundFunctionExpression>(unit_ground_term.get_index());
-    canonicalize(metric);
-    program.metric = context.destination.get_or_create(metric).first.get_index();
+    auto metric = fd::checkout<fd::Metric>(context.builder);
+    metric->fexpr = ygg::Data<fd::GroundFunctionExpression>(unit_ground_term.get_index());
+    program.metric = fd::get_or_create(context.destination, *metric).first.get_index();
 
     auto result = ygg::DataList<fd::NumericEffectOperator<f::FluentTag>> {};
     result.push_back(create_unit_metric_effect(unit_term, context));
@@ -233,26 +206,20 @@ auto create_cond_effect_rule(fp::ActionView action,
                              TranslationContext<LiftedTag>& translation_context,
                              ::tyr::formalism::planning::MergeDatalogContext& context)
 {
-    auto rule_ptr = context.builder.get_builder<::tyr::formalism::datalog::Rule<f::PredicateTag>>();
-    auto& rule = *rule_ptr;
-    rule.clear();
+    auto rule = fd::checkout<::tyr::formalism::datalog::Rule<f::PredicateTag>>(context.builder);
 
-    auto conj_cond_ptr = context.builder.get_builder<::tyr::formalism::datalog::ConjunctiveCondition>();
-    auto& conj_cond = *conj_cond_ptr;
-    conj_cond.clear();
+    auto conj_cond = fd::checkout<::tyr::formalism::datalog::ConjunctiveCondition>(context.builder);
 
-    fill_delete_free_condition(action, cond_eff, translation_context, context, conj_cond);
+    fill_delete_free_condition(action, cond_eff, translation_context, context, *conj_cond);
 
-    canonicalize(conj_cond);
-    const auto new_conj_cond = context.destination.get_or_create(conj_cond).first;
+    const auto new_conj_cond = fd::get_or_create(context.destination, *conj_cond).first;
 
-    rule.variables = new_conj_cond.get_variables().get_data();
-    rule.body = new_conj_cond.get_index();
-    rule.head = merge_p2d(effect, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index();
-    rule.metric_effects = metric_effects;
+    ygg::extend(new_conj_cond.get_variables(), rule->variables);
+    rule->body = new_conj_cond.get_index();
+    rule->head = merge_p2d(effect, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index();
+    rule->metric_effects.insert(rule->metric_effects.end(), metric_effects.begin(), metric_effects.end());
 
-    canonicalize(rule);
-    return context.destination.get_or_create(rule);
+    return fd::get_or_create(context.destination, *rule);
 }
 
 auto create_cond_numeric_effect_rule(fp::ActionView action,
@@ -262,26 +229,20 @@ auto create_cond_numeric_effect_rule(fp::ActionView action,
                                      TranslationContext<LiftedTag>& translation_context,
                                      ::tyr::formalism::planning::MergeDatalogContext& context)
 {
-    auto rule_ptr = context.builder.get_builder<::tyr::formalism::datalog::Rule<f::FunctionTag>>();
-    auto& rule = *rule_ptr;
-    rule.clear();
+    auto rule = fd::checkout<::tyr::formalism::datalog::Rule<f::FunctionTag>>(context.builder);
 
-    auto conj_cond_ptr = context.builder.get_builder<::tyr::formalism::datalog::ConjunctiveCondition>();
-    auto& conj_cond = *conj_cond_ptr;
-    conj_cond.clear();
+    auto conj_cond = fd::checkout<::tyr::formalism::datalog::ConjunctiveCondition>(context.builder);
 
-    fill_delete_free_condition(action, cond_eff, translation_context, context, conj_cond);
+    fill_delete_free_condition(action, cond_eff, translation_context, context, *conj_cond);
 
-    canonicalize(conj_cond);
-    const auto new_conj_cond = context.destination.get_or_create(conj_cond).first;
+    const auto new_conj_cond = fd::get_or_create(context.destination, *conj_cond).first;
 
-    rule.variables = new_conj_cond.get_variables().get_data();
-    rule.body = new_conj_cond.get_index();
-    rule.head = merge_p2d(effect, context);
-    rule.metric_effects = metric_effects;
+    ygg::extend(new_conj_cond.get_variables(), rule->variables);
+    rule->body = new_conj_cond.get_index();
+    rule->head = merge_p2d(effect, context);
+    rule->metric_effects.insert(rule->metric_effects.end(), metric_effects.begin(), metric_effects.end());
 
-    canonicalize(rule);
-    return context.destination.get_or_create(rule);
+    return fd::get_or_create(context.destination, *rule);
 }
 
 void translate_action_to_delete_free_rules(fp::ActionView action,
@@ -326,67 +287,65 @@ auto create_program(fp::TaskView task,
 {
     auto builder = fd::Builder();
     auto context = fp::MergeDatalogContext(builder, destination);
-    auto program_ptr = builder.get_builder<fd::Program>();
-    auto& program = *program_ptr;
-    program.clear();
+    auto program = fd::checkout<fd::Program>(builder);
 
     for (const auto predicate : task.get_domain().get_predicates<f::StaticTag>())
     {
         const auto new_predicate = fp::merge_p2d(predicate, context).first;
         translation_context.d2p.static_to_static_predicate.emplace(new_predicate, predicate);
         translation_context.p2d.static_to_static_predicate.emplace(predicate, new_predicate);
-        program.static_predicates.push_back(new_predicate.get_index());
+        program->static_predicates.push_back(new_predicate.get_index());
     }
     for (const auto predicate : task.get_domain().get_predicates<f::FluentTag>())
     {
         const auto new_predicate = fp::merge_p2d(predicate, context).first;
         translation_context.d2p.fluent_to_fluent_predicate.emplace(new_predicate, predicate);
         translation_context.p2d.fluent_to_fluent_predicate.emplace(predicate, new_predicate);
-        program.fluent_predicates.push_back(new_predicate.get_index());
+        program->fluent_predicates.push_back(new_predicate.get_index());
     }
 
     for (const auto function : task.get_domain().get_functions<f::StaticTag>())
-        program.static_functions.push_back(fp::merge_p2d(function, context).first.get_index());
+        program->static_functions.push_back(fp::merge_p2d(function, context).first.get_index());
     for (const auto function : task.get_domain().get_functions<f::FluentTag>())
-        program.fluent_functions.push_back(fp::merge_p2d(function, context).first.get_index());
+        program->fluent_functions.push_back(fp::merge_p2d(function, context).first.get_index());
     if (const auto function = task.get_domain().get_auxiliary_function())
-        program.fluent_functions.push_back(fp::merge_p2d<f::AuxiliaryTag, f::FluentTag>(function.value(), context).first.get_index());
+        program->fluent_functions.push_back(fp::merge_p2d<f::AuxiliaryTag, f::FluentTag>(function.value(), context).first.get_index());
 
     for (const auto object : task.get_domain().get_constants())
-        program.objects.push_back(fp::merge_p2d(object, context).first.get_index());
+        program->objects.push_back(fp::merge_p2d(object, context).first.get_index());
     for (const auto object : task.get_objects())
-        program.objects.push_back(fp::merge_p2d(object, context).first.get_index());
+        program->objects.push_back(fp::merge_p2d(object, context).first.get_index());
 
     for (const auto atom : task.get_atoms<f::StaticTag>())
-        program.static_atoms.push_back(fp::merge_p2d(atom, translation_context.p2d.static_to_static_predicate, context).first.get_index());
+        program->static_atoms.push_back(fp::merge_p2d(atom, translation_context.p2d.static_to_static_predicate, context).first.get_index());
     for (const auto atom : task.get_atoms<f::FluentTag>())
-        program.fluent_atoms.push_back(fp::merge_p2d(atom, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
+        program->fluent_atoms.push_back(fp::merge_p2d(atom, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
 
     for (const auto fterm_value : task.get_fterm_values<f::StaticTag>())
-        program.static_fterm_values.push_back(fp::merge_p2d(fterm_value, context).first.get_index());
+        program->static_fterm_values.push_back(fp::merge_p2d(fterm_value, context).first.get_index());
     for (const auto fterm_value : task.get_fterm_values<f::FluentTag>())
-        program.fluent_fterm_values.push_back(fp::merge_p2d(fterm_value, context).first.get_index());
+        program->fluent_fterm_values.push_back(fp::merge_p2d(fterm_value, context).first.get_index());
     if (const auto fterm_value = task.get_auxiliary_fterm_value())
-        program.fluent_fterm_values.push_back(fp::merge_p2d<f::AuxiliaryTag, f::FluentTag>(fterm_value.value(), context).first.get_index());
+        program->fluent_fterm_values.push_back(fp::merge_p2d<f::AuxiliaryTag, f::FluentTag>(fterm_value.value(), context).first.get_index());
 
-    program.goal = create_delete_free_goal(task.get_goal(), translation_context, context).first.get_index();
+    program->goal = create_delete_free_goal(task.get_goal(), translation_context, context).first.get_index();
     auto metric_functions = MetricFunctionSet {};
     auto unit_metric_effects = ygg::DataList<fd::NumericEffectOperator<f::FluentTag>> {};
     if (cost_mode == CostMode::UNIT)
     {
-        unit_metric_effects = create_unit_metric(program, context);
+        unit_metric_effects = create_unit_metric(*program, context);
     }
     else if (task.get_auxiliary_fterm_value())
     {
         const auto fterm_value = fp::merge_p2d<f::AuxiliaryTag, f::FluentTag>(task.get_auxiliary_fterm_value().value(), context).first;
         const auto metric = create_metric(fterm_value.get_fterm(), context);
-        program.metric = metric.get_index();
+        program->metric = metric.get_index();
         metric_functions.insert(fterm_value.get_fterm().get_function());
     }
     else if (task.get_metric())
     {
         const auto metric = create_metric(task.get_metric().value(), context);
-        program.metric = metric.get_index();
+        program->metric = metric.get_index();
 
         auto metric_fterms = ygg::UnorderedSet<fd::GroundFunctionTermView<f::FluentTag>> {};
         fd::collect_fterms(metric.get_fexpr(), metric_fterms);
@@ -395,10 +354,9 @@ auto create_program(fp::TaskView task,
     }
 
     for (const auto action : task.get_domain().get_actions())
-        translate_action_to_delete_free_rules(action, program, cost_mode, unit_metric_effects, metric_functions, translation_context, context, rule_to_action);
+        translate_action_to_delete_free_rules(action, *program, cost_mode, unit_metric_effects, metric_functions, translation_context, context, rule_to_action);
 
-    canonicalize(program);
-    return destination.get_or_create(program).first;
+    return fd::get_or_create(destination, *program).first;
 }
 
 auto create_datalog_program(fp::TaskView task,

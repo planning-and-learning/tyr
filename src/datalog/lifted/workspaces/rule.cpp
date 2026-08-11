@@ -20,7 +20,6 @@
 #include "tyr/datalog/applicability.hpp"
 #include "tyr/datalog/lifted/assignment_sets.hpp"
 #include "tyr/datalog/numeric_utils.hpp"
-#include "tyr/formalism/datalog/builder.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/expression_arity.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
@@ -146,18 +145,15 @@ MetricEffects classify_metric_effects(fd::RuleView<R> rule, fd::Repository& repo
 auto create_witness_conjunctive_condition(fd::ConjunctiveConditionView element, fd::Repository& context)
 {
     auto builder = fd::Builder {};
-    auto conj_cond_ptr = builder.get_builder<fd::ConjunctiveCondition>();
-    auto& conj_cond = *conj_cond_ptr;
-    conj_cond.clear();
+    auto conj_cond = fd::checkout<fd::ConjunctiveCondition>(builder);
 
-    conj_cond.variables = element.get_variables().get_data();
+    ygg::extend(element.get_variables(), conj_cond->variables);
     for (const auto& literal : element.get_literals<f::FluentTag>())
         if (literal.get_polarity())
-            conj_cond.fluent_literals.push_back(literal.get_index());
-    conj_cond.numeric_constraints = element.get_numeric_constraints().get_data();
+            conj_cond->fluent_literals.push_back(literal.get_index());
+    ygg::extend(element.get_numeric_constraints(), conj_cond->numeric_constraints);
 
-    canonicalize(conj_cond);
-    return context.get_or_create(conj_cond);
+    return fd::get_or_create(context, *conj_cond);
 }
 
 template<f::RelationKind R>
@@ -165,16 +161,13 @@ auto create_witness_rule(fd::RuleView<R> element, fd::Repository& context)
 {
     auto builder = fd::Builder {};
     auto merge_context = fd::MergeContext { builder, context };
-    auto rule_ptr = builder.get_builder<fd::Rule<R>>();
-    auto& rule = *rule_ptr;
-    rule.clear();
+    auto rule = fd::checkout<fd::Rule<R>>(builder);
 
-    rule.variables = element.get_variables().get_data();
-    rule.body = create_witness_conjunctive_condition(element.get_body(), context).first.get_index();
-    rule.head = merge_rule_head(element.get_head(), merge_context);
+    ygg::extend(element.get_variables(), rule->variables);
+    rule->body = create_witness_conjunctive_condition(element.get_body(), context).first.get_index();
+    rule->head = merge_rule_head(element.get_head(), merge_context);
 
-    canonicalize(rule);
-    return context.get_or_create(rule);
+    return fd::get_or_create(context, *rule);
 }
 }
 

@@ -18,8 +18,8 @@
 #ifndef TYR_FORMALISM_DATALOG_GROUNDER_DECL_HPP_
 #define TYR_FORMALISM_DATALOG_GROUNDER_DECL_HPP_
 
-#include "tyr/formalism/datalog/builder.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
 
 namespace tyr::formalism::datalog
 {

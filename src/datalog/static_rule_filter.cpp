@@ -43,40 +43,38 @@ fd::GroundProgramView remove_statically_inapplicable_rules(fd::GroundProgramView
 
     auto builder = fd::Builder {};
     auto context = fd::MergeContext { builder, repository };
-    auto result = ygg::Data<fd::GroundProgram> {};
-    result.clear();
+    auto result = fd::checkout<fd::GroundProgram>(builder);
     const auto merge_all = [&](const auto elements, auto& destination)
     {
         for (const auto element : elements)
             destination.push_back(fd::merge_d2d(element, context).first.get_index());
     };
 
-    merge_all(program.get_predicates<f::StaticTag>(), result.static_predicates);
-    merge_all(program.get_predicates<f::FluentTag>(), result.fluent_predicates);
-    merge_all(program.get_functions<f::StaticTag>(), result.static_functions);
-    merge_all(program.get_functions<f::FluentTag>(), result.fluent_functions);
-    merge_all(program.get_objects(), result.objects);
-    merge_all(program.get_atoms<f::StaticTag>(), result.static_atoms);
-    merge_all(program.get_atoms<f::FluentTag>(), result.fluent_atoms);
-    merge_all(program.get_fterm_values<f::StaticTag>(), result.static_fterm_values);
-    merge_all(program.get_fterm_values<f::FluentTag>(), result.fluent_fterm_values);
+    merge_all(program.get_predicates<f::StaticTag>(), result->static_predicates);
+    merge_all(program.get_predicates<f::FluentTag>(), result->fluent_predicates);
+    merge_all(program.get_functions<f::StaticTag>(), result->static_functions);
+    merge_all(program.get_functions<f::FluentTag>(), result->fluent_functions);
+    merge_all(program.get_objects(), result->objects);
+    merge_all(program.get_atoms<f::StaticTag>(), result->static_atoms);
+    merge_all(program.get_atoms<f::FluentTag>(), result->fluent_atoms);
+    merge_all(program.get_fterm_values<f::StaticTag>(), result->static_fterm_values);
+    merge_all(program.get_fterm_values<f::FluentTag>(), result->fluent_fterm_values);
 
     if (const auto goal = program.get_goal())
-        result.goal = fd::merge_d2d(*goal, context).first.get_index();
+        result->goal = fd::merge_d2d(*goal, context).first.get_index();
     if (const auto metric = program.get_metric())
-        result.metric = fd::merge_d2d(*metric, context).first.get_index();
+        result->metric = fd::merge_d2d(*metric, context).first.get_index();
 
     const auto merge_applicable_rules = [&]<f::RelationKind R>()
     {
         for (const auto rule : program.get_rules<R>())
             if (is_statically_applicable(rule, fact_sets))
-                result.get_rules<R>().push_back(fd::merge_d2d(rule, context).first.get_index());
+                result->get_rules<R>().push_back(fd::merge_d2d(rule, context).first.get_index());
     };
     merge_applicable_rules.template operator()<f::PredicateTag>();
     merge_applicable_rules.template operator()<f::FunctionTag>();
 
-    fd::canonicalize(result);
-    return repository.get_or_create(result).first;
+    return fd::get_or_create(repository, *result).first;
 }
 
 }

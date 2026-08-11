@@ -28,6 +28,7 @@
 #include <functional>
 #include <loki/formalism/repository.hpp>
 #include <loki/formalism/views.hpp>
+#include <stdexcept>
 #include <unordered_set>
 #include <variant>
 #include <vector>
@@ -221,13 +222,10 @@ FunctionViewVariant LokiToTyrTranslator::translate_common(loki::formalism::Funct
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto function_ptr = builder.template get_builder<Function<Tag>>();
-        auto& function = *function_ptr;
-        function.clear();
-        function.name = element.get_name();
-        function.arity = element.get_parameters().size();
-        canonicalize(function);
-        return context.get_or_create(function).first;
+        auto function = ::tyr::formalism::planning::checkout<Function<Tag>>(builder);
+        function->name = element.get_name();
+        function->arity = element.get_parameters().size();
+        return ::tyr::formalism::planning::get_or_create(context, *function).first;
     };
 
     if (element.get_name() == "total-cost")
@@ -240,12 +238,9 @@ FunctionViewVariant LokiToTyrTranslator::translate_common(loki::formalism::Funct
 
 ygg::Index<Object> LokiToTyrTranslator::translate_common(loki::formalism::ObjectView element, Builder& builder, Repository& context)
 {
-    auto object_ptr = builder.template get_builder<Object>();
-    auto& object = *object_ptr;
-    object.clear();
-    object.name = element.get_name();
-    canonicalize(object);
-    return context.get_or_create(object).first.get_index();
+    auto object = ::tyr::formalism::planning::checkout<Object>(builder);
+    object->name = element.get_name();
+    return ::tyr::formalism::planning::get_or_create(context, *object).first.get_index();
 }
 
 ygg::Index<Variable> LokiToTyrTranslator::translate_common(loki::formalism::ParameterView element, Builder& builder, Repository& context)
@@ -259,13 +254,10 @@ PredicateViewVariant LokiToTyrTranslator::translate_common(loki::formalism::Pred
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto predicate_ptr = builder.template get_builder<Predicate<Tag>>();
-        auto& predicate = *predicate_ptr;
-        predicate.clear();
-        predicate.name = element.get_name();
-        predicate.arity = element.get_parameters().size();
-        canonicalize(predicate);
-        return context.get_or_create(predicate).first;
+        auto predicate = ::tyr::formalism::planning::checkout<Predicate<Tag>>(builder);
+        predicate->name = element.get_name();
+        predicate->arity = element.get_parameters().size();
+        return ::tyr::formalism::planning::get_or_create(context, *predicate).first;
     };
 
     if (m_fluent_predicates.count(element.get_name().str()) && !m_derived_predicates.count(element.get_name().str()))
@@ -278,21 +270,26 @@ PredicateViewVariant LokiToTyrTranslator::translate_common(loki::formalism::Pred
 
 ygg::Index<Variable> LokiToTyrTranslator::translate_common(loki::formalism::VariableView element, Builder& builder, Repository& context)
 {
-    auto variable_ptr = builder.template get_builder<Variable>();
-    auto& variable = *variable_ptr;
-    variable.clear();
-    variable.name = element.get_name();
-    canonicalize(variable);
-    return context.get_or_create(variable).first.get_index();
+    auto variable = ::tyr::formalism::planning::checkout<Variable>(builder);
+    variable->name = element.get_name();
+    return ::tyr::formalism::planning::get_or_create(context, *variable).first.get_index();
 }
 
 namespace
 {
 
-template<typename T>
-auto to_binding(ygg::View<ygg::Index<T>, Repository> element, const ygg::IndexList<Object>& objects, Repository& context)
+template<typename T, std::ranges::sized_range Range, typename Translate>
+auto to_binding(ygg::View<ygg::Index<T>, Repository> element, const Range& terms, Builder& builder, Repository& context, Translate&& translate)
 {
-    return context.get_or_create(ygg::Data<RelationBinding<T>>(element.get_index(), element.get_arity(), objects));
+    if (std::ranges::size(terms) != element.get_arity())
+        throw std::invalid_argument("RelationBinding object count does not match relation arity.");
+
+    auto binding = ::tyr::formalism::planning::checkout<RelationBinding<T>>(builder);
+    binding->relation = element.get_index();
+    binding->objects.reserve(std::ranges::size(terms));
+    for (const auto term : terms)
+        binding->objects.push_back(translate(term));
+    return ::tyr::formalism::planning::get_or_create(context, *binding);
 }
 
 }
@@ -324,13 +321,10 @@ AtomViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::AtomView 
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto atom_ptr = builder.template get_builder<Atom<Tag>>();
-        auto& atom = *atom_ptr;
-        atom.clear();
-        atom.predicate = predicate.get_index();
-        atom.terms = this->translate_lifted(element.get_terms(), builder, context);
-        canonicalize(atom);
-        return context.get_or_create(atom).first;
+        auto atom = ::tyr::formalism::planning::checkout<Atom<Tag>>(builder);
+        atom->predicate = predicate.get_index();
+        this->translate_lifted(element.get_terms(), builder, context, atom->terms);
+        return ::tyr::formalism::planning::get_or_create(context, *atom).first;
     };
 
     return std::visit(
@@ -357,13 +351,10 @@ LiteralViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::Litera
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto literal_ptr = builder.template get_builder<Literal<Tag>>();
-        auto& literal = *literal_ptr;
-        literal.clear();
-        literal.atom = atom.get_index();
-        literal.polarity = element.get_polarity();
-        canonicalize(literal);
-        return context.get_or_create(literal).first;
+        auto literal = ::tyr::formalism::planning::checkout<Literal<Tag>>(builder);
+        literal->atom = atom.get_index();
+        literal->polarity = element.get_polarity();
+        return ::tyr::formalism::planning::get_or_create(context, *literal).first;
     };
 
     return std::visit(
@@ -382,8 +373,7 @@ LiteralViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::Litera
         atom_view_variant);
 }
 
-ygg::Data<FunctionExpression>
-LokiToTyrTranslator::translate_lifted(loki::formalism::FunctionExpressionNumberView element, Builder&, Repository&)
+ygg::Data<FunctionExpression> LokiToTyrTranslator::translate_lifted(loki::formalism::FunctionExpressionNumberView element, Builder&, Repository&)
 {
     return ygg::Data<FunctionExpression>(ygg::float_t(element.get_value()));
 }
@@ -393,15 +383,13 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::BinaryFunctionExpressionV
 {
     auto build_binary_op = [&](ArithmeticOperatorKind operator_kind) -> ygg::Data<FunctionExpression>
     {
-        auto binary_ptr = builder.template get_builder<BinaryOperator<ArithmeticOperatorKind, ygg::Data<FunctionExpression>>>();
-        auto& binary = *binary_ptr;
-        binary.clear();
-        binary.operator_kind = operator_kind;
-        binary.lhs = translate_lifted(element.get_left(), builder, context);
-        binary.rhs = translate_lifted(element.get_right(), builder, context);
-        canonicalize(binary);
+        auto binary = ::tyr::formalism::planning::checkout<BinaryOperator<ArithmeticOperatorKind, ygg::Data<FunctionExpression>>>(builder);
+        binary->operator_kind = operator_kind;
+        binary->lhs = translate_lifted(element.get_left(), builder, context);
+        binary->rhs = translate_lifted(element.get_right(), builder, context);
         return ygg::Data<FunctionExpression>(
-            ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>(operator_kind, context.get_or_create(binary).first.get_index()));
+            ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>(operator_kind,
+                                                                         ::tyr::formalism::planning::get_or_create(context, *binary).first.get_index()));
     };
 
     switch (element.get_operator())
@@ -423,14 +411,12 @@ ygg::Data<FunctionExpression> LokiToTyrTranslator::translate_lifted(loki::formal
 {
     auto build_multi_op = [&](ArithmeticOperatorKind operator_kind) -> ygg::Data<FunctionExpression>
     {
-        auto multi_ptr = builder.template get_builder<MultiOperator<ygg::Data<FunctionExpression>>>();
-        auto& multi = *multi_ptr;
-        multi.clear();
-        multi.operator_kind = operator_kind;
-        multi.args = translate_lifted(element.get_expressions(), builder, context);
-        canonicalize(multi);
+        auto multi = ::tyr::formalism::planning::checkout<MultiOperator<ygg::Data<FunctionExpression>>>(builder);
+        multi->operator_kind = operator_kind;
+        translate_lifted(element.get_expressions(), builder, context, multi->args);
         return ygg::Data<FunctionExpression>(
-            ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>(operator_kind, context.get_or_create(multi).first.get_index()));
+            ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>(operator_kind,
+                                                                         ::tyr::formalism::planning::get_or_create(context, *multi).first.get_index()));
     };
 
     switch (element.get_operator())
@@ -446,14 +432,12 @@ ygg::Data<FunctionExpression> LokiToTyrTranslator::translate_lifted(loki::formal
 
 ygg::Data<FunctionExpression> LokiToTyrTranslator::translate_lifted(loki::formalism::UnaryFunctionExpressionView element, Builder& builder, Repository& context)
 {
-    auto minus_ptr = builder.template get_builder<UnaryOperator<ygg::Data<FunctionExpression>>>();
-    auto& minus = *minus_ptr;
-    minus.clear();
-    minus.operator_kind = ArithmeticOperatorKind::Sub;
-    minus.arg = translate_lifted(element.get_expression(), builder, context);
-    canonicalize(minus);
+    auto minus = ::tyr::formalism::planning::checkout<UnaryOperator<ygg::Data<FunctionExpression>>>(builder);
+    minus->operator_kind = ArithmeticOperatorKind::Sub;
+    minus->arg = translate_lifted(element.get_expression(), builder, context);
     return ygg::Data<FunctionExpression>(
-        ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>(ArithmeticOperatorKind::Sub, context.get_or_create(minus).first.get_index()));
+        ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>(ArithmeticOperatorKind::Sub,
+                                                                     ::tyr::formalism::planning::get_or_create(context, *minus).first.get_index()));
 }
 
 ygg::Data<FunctionExpression> LokiToTyrTranslator::translate_lifted(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context)
@@ -492,13 +476,10 @@ FunctionTermViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::F
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto fterm_ptr = builder.template get_builder<FunctionTerm<Tag>>();
-        auto& fterm = *fterm_ptr;
-        fterm.clear();
-        fterm.function = function.get_index();
-        fterm.terms = this->translate_lifted(element.get_terms(), builder, context);
-        canonicalize(fterm);
-        return context.get_or_create(fterm).first;
+        auto fterm = ::tyr::formalism::planning::checkout<FunctionTerm<Tag>>(builder);
+        fterm->function = function.get_index();
+        this->translate_lifted(element.get_terms(), builder, context, fterm->terms);
+        return ::tyr::formalism::planning::get_or_create(context, *fterm).first;
     };
 
     return std::visit(
@@ -523,14 +504,12 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionNumericConstrain
 {
     auto build_binary_op = [&](BooleanOperatorKind operator_kind) -> ygg::Data<BooleanOperator<ygg::Data<FunctionExpression>>>
     {
-        auto binary_ptr = builder.template get_builder<BinaryOperator<BooleanOperatorKind, ygg::Data<FunctionExpression>>>();
-        auto& binary = *binary_ptr;
-        binary.clear();
-        binary.operator_kind = operator_kind;
-        binary.lhs = translate_lifted(element.get_left(), builder, context);
-        binary.rhs = translate_lifted(element.get_right(), builder, context);
-        canonicalize(binary);
-        return ygg::Data<BooleanOperator<ygg::Data<FunctionExpression>>>(operator_kind, context.get_or_create(binary).first.get_index());
+        auto binary = ::tyr::formalism::planning::checkout<BinaryOperator<BooleanOperatorKind, ygg::Data<FunctionExpression>>>(builder);
+        binary->operator_kind = operator_kind;
+        binary->lhs = translate_lifted(element.get_left(), builder, context);
+        binary->rhs = translate_lifted(element.get_right(), builder, context);
+        return ygg::Data<BooleanOperator<ygg::Data<FunctionExpression>>>(operator_kind,
+                                                                         ::tyr::formalism::planning::get_or_create(context, *binary).first.get_index());
     };
 
     switch (element.get_comparator())
@@ -555,11 +534,9 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionNumericConstrain
 ygg::Index<ConjunctiveCondition>
 LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionView element, const ygg::IndexList<Variable>& parameters, Builder& builder, Repository& context)
 {
-    auto conj_condition_ptr = builder.template get_builder<ConjunctiveCondition>();
-    auto& conj_condition = *conj_condition_ptr;
-    conj_condition.clear();
+    auto conj_condition = ::tyr::formalism::planning::checkout<ConjunctiveCondition>(builder);
 
-    conj_condition.variables = parameters;
+    conj_condition->variables.insert(conj_condition->variables.end(), parameters.begin(), parameters.end());
 
     const auto func_insert_literal = [](LiteralViewVariant literal_view_variant,
                                         ygg::IndexList<Literal<StaticTag>>& static_literals,
@@ -602,15 +579,15 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionView element, co
                                 const auto literal_view_variant = translate_lifted(subcondition.get_literal(), builder, context);
 
                                 func_insert_literal(literal_view_variant,
-                                                    conj_condition.static_literals,
-                                                    conj_condition.fluent_literals,
-                                                    conj_condition.derived_literals);
+                                                    conj_condition->static_literals,
+                                                    conj_condition->fluent_literals,
+                                                    conj_condition->derived_literals);
                             }
                             else if constexpr (std::is_same_v<SubConditionT, loki::formalism::ConditionNumericConstraintView>)
                             {
                                 const auto numeric_constraint = translate_lifted(subcondition, builder, context);
 
-                                conj_condition.numeric_constraints.push_back(numeric_constraint);
+                                conj_condition->numeric_constraints.push_back(numeric_constraint);
                             }
                             else
                             {
@@ -621,26 +598,23 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionView element, co
                         part.get_value());
                 }
 
-                canonicalize(conj_condition);
-                return context.get_or_create(conj_condition).first.get_index();
+                return ::tyr::formalism::planning::get_or_create(context, *conj_condition).first.get_index();
             }
             else if constexpr (std::is_same_v<ConditionT, loki::formalism::ConditionLiteralView>)
             {
                 const auto literal_view_variant = translate_lifted(condition.get_literal(), builder, context);
 
-                func_insert_literal(literal_view_variant, conj_condition.static_literals, conj_condition.fluent_literals, conj_condition.derived_literals);
+                func_insert_literal(literal_view_variant, conj_condition->static_literals, conj_condition->fluent_literals, conj_condition->derived_literals);
 
-                canonicalize(conj_condition);
-                return context.get_or_create(conj_condition).first.get_index();
+                return ::tyr::formalism::planning::get_or_create(context, *conj_condition).first.get_index();
             }
             else if constexpr (std::is_same_v<ConditionT, loki::formalism::ConditionNumericConstraintView>)
             {
                 const auto numeric_constraint = translate_lifted(condition, builder, context);
 
-                conj_condition.numeric_constraints.push_back(numeric_constraint);
+                conj_condition->numeric_constraints.push_back(numeric_constraint);
 
-                canonicalize(conj_condition);
-                return context.get_or_create(conj_condition).first.get_index();
+                return ::tyr::formalism::planning::get_or_create(context, *conj_condition).first.get_index();
             }
             else
             {
@@ -659,13 +633,10 @@ NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto fterm_ptr = builder.template get_builder<FunctionTerm<Tag>>();
-        auto& fterm = *fterm_ptr;
-        fterm.clear();
-        fterm.function = function.get_index();
-        fterm.terms = this->translate_lifted(element.get_terms(), builder, context);
-        canonicalize(fterm);
-        return context.get_or_create(fterm).first;
+        auto fterm = ::tyr::formalism::planning::checkout<FunctionTerm<Tag>>(builder);
+        fterm->function = function.get_index();
+        this->translate_lifted(element.get_terms(), builder, context, fterm->terms);
+        return ::tyr::formalism::planning::get_or_create(context, *fterm).first;
     };
 
     auto fterm_view_variant = std::visit(
@@ -687,15 +658,12 @@ NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto numeric_effect_ptr = builder.template get_builder<NumericEffect<Tag>>();
-        auto& numeric_effect = *numeric_effect_ptr;
-        numeric_effect.clear();
+        auto numeric_effect = ::tyr::formalism::planning::checkout<NumericEffect<Tag>>(builder);
 
-        numeric_effect.operator_kind = operator_kind;
-        numeric_effect.fterm = fterm.get_index();
-        numeric_effect.fexpr = this->translate_lifted(element.get_expression(), builder, context);
-        canonicalize(numeric_effect);
-        return context.get_or_create(numeric_effect).first;
+        numeric_effect->operator_kind = operator_kind;
+        numeric_effect->fterm = fterm.get_index();
+        numeric_effect->fexpr = this->translate_lifted(element.get_expression(), builder, context);
+        return ::tyr::formalism::planning::get_or_create(context, *numeric_effect).first;
     };
 
     auto build_numeric_effect_term = [&](auto fact_tag, auto fterm) -> NumericEffectViewVariant
@@ -746,8 +714,11 @@ NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::
         fterm_view_variant);
 }
 
-ygg::IndexList<ConditionalEffect>
-LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element, const ygg::IndexList<Variable>& parameters, Builder& builder, Repository& context)
+void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
+                                           const ygg::IndexList<Variable>& parameters,
+                                           Builder& builder,
+                                           Repository& context,
+                                           ygg::IndexList<ConditionalEffect>& output)
 {
     using ConditionalEffectData = ygg::Map<ygg::Index<ConjunctiveCondition>,
                                            std::tuple<ygg::IndexList<Variable>,
@@ -770,7 +741,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element, const
 
                 if constexpr (std::is_same_v<SubEffectT, loki::formalism::EffectForallView>)
                 {
-                    universal_parameters = translate_common(subeffect.get_parameters(), builder, context);
+                    translate_common(subeffect.get_parameters(), builder, context, universal_parameters);
 
                     tmp_effect = subeffect.get_effect();
                 }
@@ -800,11 +771,8 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element, const
                     else
                     {
                         // Create empty conjunctive condition for unconditional effects
-                        auto conj_cond_ptr = builder.template get_builder<ConjunctiveCondition>();
-                        auto& conj_cond = *conj_cond_ptr;
-                        conj_cond.clear();
-                        canonicalize(conj_cond);
-                        return context.get_or_create(conj_cond).first.get_index();
+                        auto conj_cond = ::tyr::formalism::planning::checkout<ConjunctiveCondition>(builder);
+                        return ::tyr::formalism::planning::get_or_create(context, *conj_cond).first.get_index();
                     }
                 },
                 tmp_effect.get_value());
@@ -903,98 +871,75 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element, const
         element.get_value());
 
     /* Instantiate conditional effects. */
-    auto conditional_effects = ygg::IndexList<ConditionalEffect> {};
-
     for (const auto& [cond_conjunctive_condition, value] : conditional_effect_data)
     {
         const auto& [cond_effect_universal_parameters, cond_effect_fluent_literals, cond_effect_fluent_numeric_effects, cond_effect_auxiliary_numeric_effects] =
             value;
 
-        auto conj_effect_ptr = builder.template get_builder<ConjunctiveEffect>();
-        auto& conj_effect = *conj_effect_ptr;
-        conj_effect.clear();
-        conj_effect.literals = cond_effect_fluent_literals;
-        conj_effect.numeric_effects = cond_effect_fluent_numeric_effects;
-        conj_effect.auxiliary_numeric_effect = cond_effect_auxiliary_numeric_effects;
-        canonicalize(conj_effect);
-        const auto conj_effect_index = context.get_or_create(conj_effect).first.get_index();
+        auto conj_effect = ::tyr::formalism::planning::checkout<ConjunctiveEffect>(builder);
+        conj_effect->literals.insert(conj_effect->literals.end(), cond_effect_fluent_literals.begin(), cond_effect_fluent_literals.end());
+        conj_effect->numeric_effects.insert(conj_effect->numeric_effects.end(),
+                                            cond_effect_fluent_numeric_effects.begin(),
+                                            cond_effect_fluent_numeric_effects.end());
+        conj_effect->auxiliary_numeric_effect = cond_effect_auxiliary_numeric_effects;
+        const auto conj_effect_index = ::tyr::formalism::planning::get_or_create(context, *conj_effect).first.get_index();
 
-        auto cond_effect_ptr = builder.template get_builder<ConditionalEffect>();
-        auto& cond_effect = *cond_effect_ptr;
-        cond_effect.clear();
-        cond_effect.variables = cond_effect_universal_parameters;
-        cond_effect.condition = cond_conjunctive_condition;
-        cond_effect.effect = conj_effect_index;
-        canonicalize(cond_effect);
-        const auto cond_effect_index = context.get_or_create(cond_effect).first.get_index();
+        auto cond_effect = ::tyr::formalism::planning::checkout<ConditionalEffect>(builder);
+        cond_effect->variables.insert(cond_effect->variables.end(), cond_effect_universal_parameters.begin(), cond_effect_universal_parameters.end());
+        cond_effect->condition = cond_conjunctive_condition;
+        cond_effect->effect = conj_effect_index;
+        const auto cond_effect_index = ::tyr::formalism::planning::get_or_create(context, *cond_effect).first.get_index();
 
-        conditional_effects.push_back(cond_effect_index);
+        output.push_back(cond_effect_index);
     }
-
-    return conditional_effects;
 }
 
 ygg::Index<Action> LokiToTyrTranslator::translate_lifted(loki::formalism::ActionView element, Builder& builder, Repository& context)
 {
-    auto action_ptr = builder.template get_builder<Action>();
-    auto& action = *action_ptr;
-    action.clear();
-    action.original_arity = element.get_parameters().size();
-    action.name = std::string(element.get_name());
-    action.original_name = std::string(element.get_original_name());
+    auto action = ::tyr::formalism::planning::checkout<Action>(builder);
+    action->original_arity = element.get_parameters().size();
+    action->name = std::string(element.get_name());
+    action->original_name = std::string(element.get_original_name());
 
     // 1. Translate conditions
-    auto parameters = translate_common(element.get_parameters(), builder, context);
-    action.variables = parameters;
+    translate_common(element.get_parameters(), builder, context, action->variables);
 
     ///---------- Push parameters and parse scope -------------
-    m_param_map.push_parameters(parameters);
+    m_param_map.push_parameters(action->variables);
     {
         auto conjunctive_condition = ygg::Index<ConjunctiveCondition>::max();
         if (element.get_precondition().has_value())
         {
-            conjunctive_condition = translate_lifted(element.get_precondition().value(), parameters, builder, context);
+            conjunctive_condition = translate_lifted(element.get_precondition().value(), action->variables, builder, context);
         }
         else
         {
             // Create empty one
-            auto conj_cond_ptr = builder.template get_builder<ConjunctiveCondition>();
-            auto& conj_cond = *conj_cond_ptr;
-            conj_cond.clear();
-            canonicalize(conj_cond);
-            conjunctive_condition = context.get_or_create(conj_cond).first.get_index();
+            auto conj_cond = ::tyr::formalism::planning::checkout<ConjunctiveCondition>(builder);
+            conjunctive_condition = ::tyr::formalism::planning::get_or_create(context, *conj_cond).first.get_index();
         }
-        action.condition = conjunctive_condition;
+        action->condition = conjunctive_condition;
 
         // 2. Translate effects
-        auto conditional_effects = ygg::IndexList<ConditionalEffect> {};
         if (element.get_effect().has_value())
-        {
-            const auto conditional_effects_ = translate_lifted(element.get_effect().value(), parameters, builder, context);
-            conditional_effects = conditional_effects_;
-        }
-        action.effects = conditional_effects;
+            translate_lifted(element.get_effect().value(), action->variables, builder, context, action->effects);
     }
     ///---------- Pop parameters -------------
-    m_param_map.pop_parameters(parameters);
+    m_param_map.pop_parameters(action->variables);
 
-    canonicalize(action);
-    return context.get_or_create(action).first.get_index();
+    return ::tyr::formalism::planning::get_or_create(context, *action).first.get_index();
 }
 
 ygg::Index<Axiom> LokiToTyrTranslator::translate_lifted(loki::formalism::AxiomView element, Builder& builder, Repository& context)
 {
-    auto axiom_ptr = builder.template get_builder<Axiom>();
-    auto& axiom = *axiom_ptr;
-    axiom.clear();
+    auto axiom = ::tyr::formalism::planning::checkout<Axiom>(builder);
 
-    auto parameters = translate_common(element.get_parameters(), builder, context);
-    axiom.variables = parameters;
+    translate_common(element.get_parameters(), builder, context, axiom->variables);
 
     ///---------- Push parameters and parse scope -------------
-    m_param_map.push_parameters(parameters);
+    m_param_map.push_parameters(axiom->variables);
     {
-        axiom.body = translate_lifted(element.get_condition(), parameters, builder, context);
+        axiom->body = translate_lifted(element.get_condition(), axiom->variables, builder, context);
         const auto literal_view_variant = translate_lifted(element.get_head(), builder, context);
 
         std::visit(
@@ -1002,17 +947,16 @@ ygg::Index<Axiom> LokiToTyrTranslator::translate_lifted(loki::formalism::AxiomVi
             {
                 using T = std::decay_t<decltype(arg)>;
                 if constexpr (std::is_same_v<T, LiteralView<DerivedTag>>)
-                    axiom.head = arg.get_atom().get_index();
+                    axiom->head = arg.get_atom().get_index();
                 else
                     throw std::runtime_error("ToMimirStructures::translate_lifted: Expected Literal<DerivedTag> in axiom head.");
             },
             literal_view_variant);
     }
     ///---------- Pop parameters -------------
-    m_param_map.pop_parameters(parameters);
+    m_param_map.pop_parameters(axiom->variables);
 
-    canonicalize(axiom);
-    return context.get_or_create(axiom).first.get_index();
+    return ::tyr::formalism::planning::get_or_create(context, *axiom).first.get_index();
 }
 
 /**
@@ -1043,12 +987,11 @@ GroundAtomViewVariant LokiToTyrTranslator::translate_grounded(loki::formalism::A
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto atom_ptr = builder.template get_builder<GroundAtom<Tag>>();
-        auto& atom = *atom_ptr;
-        atom.clear();
-        atom.binding = to_binding(predicate, this->translate_grounded(element.get_terms(), builder, context), context).first.get_index();
-        canonicalize(atom);
-        return context.get_or_create(atom).first;
+        auto atom = ::tyr::formalism::planning::checkout<GroundAtom<Tag>>(builder);
+        atom->binding =
+            to_binding(predicate, element.get_terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
+                .first.get_index();
+        return ::tyr::formalism::planning::get_or_create(context, *atom).first;
     };
 
     return std::visit(
@@ -1096,13 +1039,10 @@ GroundLiteralViewVariant LokiToTyrTranslator::translate_grounded(loki::formalism
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto literal_ptr = builder.template get_builder<GroundLiteral<Tag>>();
-        auto& literal = *literal_ptr;
-        literal.clear();
-        literal.atom = atom.get_index();
-        literal.polarity = element.get_polarity();
-        canonicalize(literal);
-        return context.get_or_create(literal).first;
+        auto literal = ::tyr::formalism::planning::checkout<GroundLiteral<Tag>>(builder);
+        literal->atom = atom.get_index();
+        literal->polarity = element.get_polarity();
+        return ::tyr::formalism::planning::get_or_create(context, *literal).first;
     };
 
     return std::visit(
@@ -1142,8 +1082,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::LiteralView element, Bu
         literal_view_variant);
 }
 
-ygg::Data<GroundFunctionExpression>
-LokiToTyrTranslator::translate_grounded(loki::formalism::FunctionExpressionNumberView element, Builder&, Repository&)
+ygg::Data<GroundFunctionExpression> LokiToTyrTranslator::translate_grounded(loki::formalism::FunctionExpressionNumberView element, Builder&, Repository&)
 {
     return ygg::Data<GroundFunctionExpression>(ygg::float_t(element.get_value()));
 }
@@ -1153,15 +1092,13 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::BinaryFunctionExpressio
 {
     auto build_binary_op = [&](ArithmeticOperatorKind operator_kind) -> ygg::Data<GroundFunctionExpression>
     {
-        auto binary_ptr = builder.template get_builder<BinaryOperator<ArithmeticOperatorKind, ygg::Data<GroundFunctionExpression>>>();
-        auto& binary = *binary_ptr;
-        binary.clear();
-        binary.operator_kind = operator_kind;
-        binary.lhs = translate_grounded(element.get_left(), builder, context);
-        binary.rhs = translate_grounded(element.get_right(), builder, context);
-        canonicalize(binary);
+        auto binary = ::tyr::formalism::planning::checkout<BinaryOperator<ArithmeticOperatorKind, ygg::Data<GroundFunctionExpression>>>(builder);
+        binary->operator_kind = operator_kind;
+        binary->lhs = translate_grounded(element.get_left(), builder, context);
+        binary->rhs = translate_grounded(element.get_right(), builder, context);
         return ygg::Data<GroundFunctionExpression>(
-            ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>(operator_kind, context.get_or_create(binary).first.get_index()));
+            ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>(operator_kind,
+                                                                               ::tyr::formalism::planning::get_or_create(context, *binary).first.get_index()));
     };
 
     switch (element.get_operator())
@@ -1184,14 +1121,12 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::MultiFunctionExpression
 {
     auto build_multi_op = [&](ArithmeticOperatorKind operator_kind) -> ygg::Data<GroundFunctionExpression>
     {
-        auto multi_ptr = builder.template get_builder<MultiOperator<ygg::Data<GroundFunctionExpression>>>();
-        auto& multi = *multi_ptr;
-        multi.clear();
-        multi.operator_kind = operator_kind;
-        multi.args = translate_grounded(element.get_expressions(), builder, context);
-        canonicalize(multi);
+        auto multi = ::tyr::formalism::planning::checkout<MultiOperator<ygg::Data<GroundFunctionExpression>>>(builder);
+        multi->operator_kind = operator_kind;
+        translate_grounded(element.get_expressions(), builder, context, multi->args);
         return ygg::Data<GroundFunctionExpression>(
-            ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>(operator_kind, context.get_or_create(multi).first.get_index()));
+            ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>(operator_kind,
+                                                                               ::tyr::formalism::planning::get_or_create(context, *multi).first.get_index()));
     };
 
     switch (element.get_operator())
@@ -1208,14 +1143,12 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::MultiFunctionExpression
 ygg::Data<GroundFunctionExpression>
 LokiToTyrTranslator::translate_grounded(loki::formalism::UnaryFunctionExpressionView element, Builder& builder, Repository& context)
 {
-    auto minus_ptr = builder.template get_builder<UnaryOperator<ygg::Data<GroundFunctionExpression>>>();
-    auto& minus = *minus_ptr;
-    minus.clear();
-    minus.operator_kind = ArithmeticOperatorKind::Sub;
-    minus.arg = translate_grounded(element.get_expression(), builder, context);
-    canonicalize(minus);
+    auto minus = ::tyr::formalism::planning::checkout<UnaryOperator<ygg::Data<GroundFunctionExpression>>>(builder);
+    minus->operator_kind = ArithmeticOperatorKind::Sub;
+    minus->arg = translate_grounded(element.get_expression(), builder, context);
     return ygg::Data<GroundFunctionExpression>(
-        ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>(ArithmeticOperatorKind::Sub, context.get_or_create(minus).first.get_index()));
+        ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>(ArithmeticOperatorKind::Sub,
+                                                                           ::tyr::formalism::planning::get_or_create(context, *minus).first.get_index()));
 }
 
 ygg::Data<GroundFunctionExpression>
@@ -1247,12 +1180,11 @@ GroundFunctionTermViewVariant LokiToTyrTranslator::translate_grounded(loki::form
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto fterm_ptr = builder.template get_builder<GroundFunctionTerm<Tag>>();
-        auto& fterm = *fterm_ptr;
-        fterm.clear();
-        fterm.binding = to_binding(function, this->translate_grounded(element.get_terms(), builder, context), context).first.get_index();
-        canonicalize(fterm);
-        return context.get_or_create(fterm).first;
+        auto fterm = ::tyr::formalism::planning::checkout<GroundFunctionTerm<Tag>>(builder);
+        fterm->binding =
+            to_binding(function, element.get_terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
+                .first.get_index();
+        return ::tyr::formalism::planning::get_or_create(context, *fterm).first;
     };
 
     return std::visit(
@@ -1280,11 +1212,9 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::InitialFunctionValueVie
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto fterm_value_ptr = builder.template get_builder<GroundFunctionTermValue<Tag>>();
-        auto& fterm_value = *fterm_value_ptr;
-        fterm_value.clear();
-        fterm_value.fterm = fterm.get_index();
-        fterm_value.value = ygg::visit(
+        auto fterm_value = ::tyr::formalism::planning::checkout<GroundFunctionTermValue<Tag>>(builder);
+        fterm_value->fterm = fterm.get_index();
+        fterm_value->value = ygg::visit(
             [](auto&& expression) -> ygg::float_t
             {
                 using T = std::decay_t<decltype(expression)>;
@@ -1294,8 +1224,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::InitialFunctionValueVie
                     throw std::runtime_error("Expected numeric initial function value.");
             },
             element.get_value().get_value());
-        canonicalize(fterm_value);
-        return context.get_or_create(fterm_value).first;
+        return ::tyr::formalism::planning::get_or_create(context, *fterm_value).first;
     };
 
     return std::visit(
@@ -1319,14 +1248,12 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionNumericConstra
 {
     auto build_binary_op = [&](BooleanOperatorKind operator_kind) -> ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>
     {
-        auto binary_ptr = builder.template get_builder<BinaryOperator<BooleanOperatorKind, ygg::Data<GroundFunctionExpression>>>();
-        auto& binary = *binary_ptr;
-        binary.clear();
-        binary.operator_kind = operator_kind;
-        binary.lhs = translate_grounded(element.get_left(), builder, context);
-        binary.rhs = translate_grounded(element.get_right(), builder, context);
-        canonicalize(binary);
-        return ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>(operator_kind, context.get_or_create(binary).first.get_index());
+        auto binary = ::tyr::formalism::planning::checkout<BinaryOperator<BooleanOperatorKind, ygg::Data<GroundFunctionExpression>>>(builder);
+        binary->operator_kind = operator_kind;
+        binary->lhs = translate_grounded(element.get_left(), builder, context);
+        binary->rhs = translate_grounded(element.get_right(), builder, context);
+        return ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>(operator_kind,
+                                                                               ::tyr::formalism::planning::get_or_create(context, *binary).first.get_index());
     };
 
     switch (element.get_comparator())
@@ -1351,9 +1278,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionNumericConstra
 ygg::Index<GroundConjunctiveCondition>
 LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, Builder& builder, Repository& context, FDRContext& fdr_context)
 {
-    auto conj_condition_ptr = builder.template get_builder<GroundConjunctiveCondition>();
-    auto& conj_condition = *conj_condition_ptr;
-    conj_condition.clear();
+    auto conj_condition = ::tyr::formalism::planning::checkout<GroundConjunctiveCondition>(builder);
 
     const auto func_insert_literal = [](GroundLiteralOrFactViewVariant literal_or_fact_view_variant,
                                         ygg::IndexList<GroundLiteral<StaticTag>>& static_literals,
@@ -1402,16 +1327,16 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
                                 const auto literal_or_fact_view_variant = translate_grounded(subcondition.get_literal(), builder, context, fdr_context);
 
                                 func_insert_literal(literal_or_fact_view_variant,
-                                                    conj_condition.static_literals,
-                                                    conj_condition.derived_literals,
-                                                    conj_condition.positive_facts,
-                                                    conj_condition.negative_facts);
+                                                    conj_condition->static_literals,
+                                                    conj_condition->derived_literals,
+                                                    conj_condition->positive_facts,
+                                                    conj_condition->negative_facts);
                             }
                             else if constexpr (std::is_same_v<SubConditionT, loki::formalism::ConditionNumericConstraintView>)
                             {
                                 const auto numeric_constraint = translate_grounded(subcondition, builder, context);
 
-                                conj_condition.numeric_constraints.push_back(numeric_constraint);
+                                conj_condition->numeric_constraints.push_back(numeric_constraint);
                             }
                             else
                             {
@@ -1422,30 +1347,27 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
                         part.get_value());
                 }
 
-                canonicalize(conj_condition);
-                return context.get_or_create(conj_condition).first.get_index();
+                return ::tyr::formalism::planning::get_or_create(context, *conj_condition).first.get_index();
             }
             else if constexpr (std::is_same_v<ConditionT, loki::formalism::ConditionLiteralView>)
             {
                 const auto index_literal_variant = translate_grounded(condition.get_literal(), builder, context, fdr_context);
 
                 func_insert_literal(index_literal_variant,
-                                    conj_condition.static_literals,
-                                    conj_condition.derived_literals,
-                                    conj_condition.positive_facts,
-                                    conj_condition.negative_facts);
+                                    conj_condition->static_literals,
+                                    conj_condition->derived_literals,
+                                    conj_condition->positive_facts,
+                                    conj_condition->negative_facts);
 
-                canonicalize(conj_condition);
-                return context.get_or_create(conj_condition).first.get_index();
+                return ::tyr::formalism::planning::get_or_create(context, *conj_condition).first.get_index();
             }
             else if constexpr (std::is_same_v<ConditionT, loki::formalism::ConditionNumericConstraintView>)
             {
                 const auto numeric_constraint = translate_grounded(condition, builder, context);
 
-                conj_condition.numeric_constraints.push_back(numeric_constraint);
+                conj_condition->numeric_constraints.push_back(numeric_constraint);
 
-                canonicalize(conj_condition);
-                return context.get_or_create(conj_condition).first.get_index();
+                return ::tyr::formalism::planning::get_or_create(context, *conj_condition).first.get_index();
             }
             else
             {
@@ -1458,16 +1380,14 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
 
 ygg::Index<Metric> LokiToTyrTranslator::translate_grounded(loki::formalism::MetricView element, Builder& builder, Repository& context)
 {
-    auto metric_ptr = builder.template get_builder<Metric>();
-    auto& metric = *metric_ptr;
-    metric.clear();
+    auto metric = ::tyr::formalism::planning::checkout<Metric>(builder);
 
-    metric.fexpr = translate_grounded(element.get_expression(), builder, context);
-    metric.optimization_direction = element.get_optimization_direction() == loki::formalism::OptimizationDirection::Minimize ? OptimizationDirection::Minimize :
-                                                                                                                               OptimizationDirection::Maximize;
+    metric->fexpr = translate_grounded(element.get_expression(), builder, context);
+    metric->optimization_direction = element.get_optimization_direction() == loki::formalism::OptimizationDirection::Minimize ?
+                                         OptimizationDirection::Minimize :
+                                         OptimizationDirection::Maximize;
 
-    canonicalize(metric);
-    return context.get_or_create(metric).first.get_index();
+    return ::tyr::formalism::planning::get_or_create(context, *metric).first.get_index();
 }
 
 PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView& element)
@@ -1479,17 +1399,15 @@ PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView&
     /* Perform static type analysis */
     prepare(element);
 
-    auto domain_ptr = builder.get_builder<planning::Domain>();
-    auto& domain = *domain_ptr;
-    domain.clear();
+    auto domain = ::tyr::formalism::planning::checkout<planning::Domain>(builder);
 
     /* Name */
-    domain.name = element.get_name();
+    domain->name = element.get_name();
 
     /* Requirements section */
 
     /* Constants section */
-    domain.constants = translate_common(element.get_constants(), builder, *context);
+    translate_common(element.get_constants(), builder, *context, domain->constants);
 
     /* Predicates section */
     const auto func_insert_predicate = [](PredicateViewVariant predicate_view_variant,
@@ -1514,10 +1432,8 @@ PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView&
             predicate_view_variant);
     };
 
-    for (const auto& predicate_view_variant : translate_common(element.get_predicates(), builder, *context))
-    {
-        func_insert_predicate(predicate_view_variant, domain.static_predicates, domain.fluent_predicates, domain.derived_predicates);
-    }
+    for (const auto predicate : element.get_predicates())
+        func_insert_predicate(translate_common(predicate, builder, *context), domain->static_predicates, domain->fluent_predicates, domain->derived_predicates);
 
     /* Functions section */
     const auto func_insert_function = [](FunctionViewVariant function_view_variant,
@@ -1545,17 +1461,14 @@ PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView&
             function_view_variant);
     };
 
-    for (const auto& function_view_variant : translate_common(element.get_functions(), builder, *context))
-    {
-        func_insert_function(function_view_variant, domain.static_functions, domain.fluent_functions, domain.auxiliary_function);
-    }
+    for (const auto function : element.get_functions())
+        func_insert_function(translate_common(function, builder, *context), domain->static_functions, domain->fluent_functions, domain->auxiliary_function);
 
     /* Structures section */
-    domain.actions = translate_lifted(element.get_actions(), builder, *context);
-    domain.axioms = translate_lifted(element.get_axioms(), builder, *context);
+    translate_lifted(element.get_actions(), builder, *context, domain->actions);
+    translate_lifted(element.get_axioms(), builder, *context, domain->axioms);
 
-    canonicalize(domain);
-    return PlanningDomain(context->get_or_create(domain).first, context, std::move(factory));
+    return PlanningDomain(::tyr::formalism::planning::get_or_create(*context, *domain).first, context, std::move(factory));
 }
 
 PlanningTask LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, PlanningDomain domain)
@@ -1565,21 +1478,18 @@ PlanningTask LokiToTyrTranslator::translate(const loki::formalism::TaskView& ele
     /* Perform static type analysis */
     prepare(element);
 
-    auto task_ptr = builder.get_builder<planning::Task>();
-    auto& task = *task_ptr;
-    task.clear();
+    auto task = ::tyr::formalism::planning::checkout<planning::Task>(builder);
 
     const auto& factory = domain.get_repository_factory();
-    auto task_context =
-        factory->create_shared(domain.get_domain().get_constants().size() + element.get_objects().size(), domain.get_repository().get());
+    auto task_context = factory->create_shared(domain.get_domain().get_constants().size() + element.get_objects().size(), domain.get_repository().get());
 
     auto fdr_context = std::make_shared<FDRContext>(task_context);
 
     /* Name */
-    task.name = element.get_name();
+    task->name = element.get_name();
 
     /* Domain */
-    task.domain = domain.get_domain().get_index();
+    task->domain = domain.get_domain().get_index();
 
     auto task_derived_predicates = std::unordered_set<std::string> {};
     for (const auto predicate : domain.get_domain().get_predicates<DerivedTag>())
@@ -1594,22 +1504,22 @@ PlanningTask LokiToTyrTranslator::translate(const loki::formalism::TaskView& ele
                 if constexpr (std::is_same_v<T, PredicateView<DerivedTag>>)
                 {
                     if (task_derived_predicates.insert(std::string(arg.get_name())).second)
-                        task.derived_predicates.push_back(arg.get_index());
+                        task->derived_predicates.push_back(arg.get_index());
                 }
             },
             predicate_view_variant);
     };
 
-    for (const auto& predicate_view_variant : translate_common(element.get_domain().get_predicates(), builder, *task_context))
-        insert_task_predicate(predicate_view_variant);
+    for (const auto predicate : element.get_domain().get_predicates())
+        insert_task_predicate(translate_common(predicate, builder, *task_context));
 
-    for (const auto& predicate_view_variant : translate_common(element.get_predicates(), builder, *task_context))
-        insert_task_predicate(predicate_view_variant);
+    for (const auto predicate : element.get_predicates())
+        insert_task_predicate(translate_common(predicate, builder, *task_context));
 
     /* Requirements section */
 
     /* Objects section */
-    task.objects = translate_common(element.get_objects(), builder, *task_context);
+    translate_common(element.get_objects(), builder, *task_context, task->objects);
 
     /* Initial section */
     const auto func_insert_ground_atom = [&](GroundLiteralOrFactViewVariant literal_or_fact_view_variant,
@@ -1637,7 +1547,7 @@ PlanningTask LokiToTyrTranslator::translate(const loki::formalism::TaskView& ele
     {
         const auto literal_or_fact_view_variant = translate_grounded(literal, builder, *task_context, *fdr_context);
 
-        func_insert_ground_atom(literal_or_fact_view_variant, task.static_atoms, task.fluent_atoms);
+        func_insert_ground_atom(literal_or_fact_view_variant, task->static_atoms, task->fluent_atoms);
     }
 
     const auto func_insert_fterm_values = [](GroundFunctionTermValueViewVariant fterm_value_view_variant,
@@ -1665,42 +1575,39 @@ PlanningTask LokiToTyrTranslator::translate(const loki::formalism::TaskView& ele
             fterm_value_view_variant);
     };
 
-    for (const auto fterm_value_view_variant : translate_grounded(element.get_initial_function_values(), builder, *task_context))
-    {
-        func_insert_fterm_values(fterm_value_view_variant, task.static_fterm_values, task.fluent_fterm_values, task.auxiliary_fterm_value);
-    }
+    for (const auto fterm_value : element.get_initial_function_values())
+        func_insert_fterm_values(translate_grounded(fterm_value, builder, *task_context),
+                                 task->static_fterm_values,
+                                 task->fluent_fterm_values,
+                                 task->auxiliary_fterm_value);
 
     /* Goal section */
 
     if (element.get_goal().has_value())
     {
-        task.goal = translate_grounded(element.get_goal().value(), builder, *task_context, *fdr_context);
+        task->goal = translate_grounded(element.get_goal().value(), builder, *task_context, *fdr_context);
     }
     else
     {
         // Create empty conjunctive condition
-        auto conj_cond_ptr = builder.get_builder<GroundConjunctiveCondition>();
-        auto& conj_cond = *conj_cond_ptr;
-        conj_cond.clear();
-        canonicalize(conj_cond);
-        task.goal = task_context->get_or_create(conj_cond).first.get_index();
+        auto conj_cond = ::tyr::formalism::planning::checkout<GroundConjunctiveCondition>(builder);
+        task->goal = ::tyr::formalism::planning::get_or_create(*task_context, *conj_cond).first.get_index();
     }
 
     /* Metric section */
     if (element.get_metric().has_value())
     {
-        task.metric = translate_grounded(element.get_metric().value(), builder, *task_context);
+        task->metric = translate_grounded(element.get_metric().value(), builder, *task_context);
     }
     else
     {
-        task.metric = std::nullopt;
+        task->metric = std::nullopt;
     }
 
     /* Structures section */
-    task.axioms = translate_lifted(element.get_axioms(), builder, *task_context);
+    translate_lifted(element.get_axioms(), builder, *task_context, task->axioms);
 
-    canonicalize(task);
-    return PlanningTask(task_context->get_or_create(task).first, std::move(fdr_context), task_context, std::move(domain));
+    return PlanningTask(::tyr::formalism::planning::get_or_create(*task_context, *task).first, std::move(fdr_context), task_context, std::move(domain));
 }
 
 }
