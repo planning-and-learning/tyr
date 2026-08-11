@@ -24,7 +24,6 @@
 #include "tyr/datalog/policies/annotation.hpp"
 
 #include <concepts>
-#include <optional>
 #include <vector>
 
 namespace tyr::datalog
@@ -34,6 +33,7 @@ template<typename AggregationFunction>
 class MinCostAnnotationPolicy<LiftedTag, AggregationFunction>
 {
 public:
+    using Aggregation = AggregationFunction;
     using PredicateHead = PredicateAnnotationHead<LiftedTag>;
     using FunctionHead = FunctionAnnotationHead<LiftedTag>;
     using FunctionBinding = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
@@ -45,24 +45,31 @@ public:
     void initialize_annotation(FunctionBinding head, ygg::ClosedInterval<ygg::float_t> interval, FunctionAnnotations<LiftedTag>& numeric_annotations) const;
 
     CostUpdate<LiftedTag>
-    commit_annotation(PredicateHead head, const DeltaPredicateAnnotations<LiftedTag>& delta_annotations, PredicateAnnotations<LiftedTag>& annotations) const;
+    commit_annotation(PredicateHead head, const ConcurrentPredicateAnnotations& delta_annotations, PredicateAnnotations<LiftedTag>& annotations) const;
 
     void clear_achievers() noexcept {}
 
-    void record_achiever(PredicateHead, const AnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>&) const noexcept {}
+    void record_achiever(PredicateHead, const WitnessAnnotation<LiftedTag, ::tyr::formalism::PredicateTag>&) const noexcept {}
+
+    bool can_update(PredicateHead head,
+                    Cost cost,
+                    const PredicateAnnotations<LiftedTag>& annotations,
+                    const ConcurrentPredicateAnnotations& delta_annotations) const noexcept;
+
+    bool can_update(FunctionHead head,
+                    ygg::ClosedInterval<ygg::float_t> interval,
+                    Cost cost,
+                    const FunctionAnnotations<LiftedTag>& numeric_annotations,
+                    const ConcurrentFunctionAnnotations& delta_numeric_annotations) const noexcept;
 
     bool try_update_candidate(PredicateHead head,
-                              const AnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context,
-                              DeltaPredicateAnnotations<LiftedTag>& delta_annotations) const;
+                              WitnessAnnotation<LiftedTag, ::tyr::formalism::PredicateTag>&& witness,
+                              ConcurrentPredicateAnnotations& delta_annotations) const;
 
     bool try_update_candidate(FunctionHead head,
                               ygg::ClosedInterval<ygg::float_t> interval,
-                              const AnnotationContext<LiftedTag, ::tyr::formalism::FunctionTag>& context,
-                              DeltaFunctionAnnotations<LiftedTag>& delta_numeric_annotations) const;
-
-    std::optional<Cost> evaluate_candidate_label(const AnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context) const;
-
-    std::optional<Cost> evaluate_candidate_label(const AnnotationContext<LiftedTag, ::tyr::formalism::FunctionTag>& context) const;
+                              WitnessAnnotation<LiftedTag, ::tyr::formalism::FunctionTag>&& witness,
+                              ConcurrentFunctionAnnotations& delta_numeric_annotations) const;
 
     bool is_widening_label_preserving(Cost candidate_label, Cost current_target_label) const noexcept
     {
@@ -88,7 +95,7 @@ public:
 
     const Achievers* find_achievers(PredicateBinding head) const noexcept;
 
-    void record_achiever(PredicateBinding head, const AnnotationContext<LiftedTag, ::tyr::formalism::PredicateTag>& context);
+    void record_achiever(PredicateBinding head, const WitnessAnnotation<LiftedTag, ::tyr::formalism::PredicateTag>& witness);
 
 private:
     ConcurrentRelationMap<::tyr::formalism::PredicateTag, Achievers> m_achievers;

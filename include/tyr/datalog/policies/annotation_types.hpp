@@ -52,9 +52,6 @@ struct WitnessRuleKey;
 template<TaskKind Kind, ::tyr::formalism::RelationKind R>
 using WitnessRuleKeyT = typename WitnessRuleKey<Kind, R>::type;
 
-class GroundDeltaPredicateAnnotations;
-class GroundDeltaFunctionAnnotations;
-
 class ConcurrentPredicateAnnotations;
 class ConcurrentFunctionAnnotations;
 
@@ -63,12 +60,6 @@ using PredicateAnnotationHead = ::tyr::formalism::datalog::PredicateBindingView<
 
 template<TaskKind Kind>
 using FunctionAnnotationHead = NumericSupportKeyT<Kind>;
-
-template<TaskKind Kind>
-using DeltaPredicateAnnotations = std::conditional_t<std::same_as<Kind, GroundTag>, GroundDeltaPredicateAnnotations, ConcurrentPredicateAnnotations>;
-
-template<TaskKind Kind>
-using DeltaFunctionAnnotations = std::conditional_t<std::same_as<Kind, GroundTag>, GroundDeltaFunctionAnnotations, ConcurrentFunctionAnnotations>;
 
 template<TaskKind Kind>
 struct NumericSupport : ygg::comparison::Mixin<NumericSupport<Kind>>
@@ -258,7 +249,7 @@ template<TaskKind Kind>
 using PredicateAnnotations = PredicateAnnotationMap<Kind>;
 
 template<TaskKind Kind>
-struct NumericIntervalAnnotation : ygg::comparison::Mixin<NumericIntervalAnnotation<Kind>>
+struct NumericIntervalAnnotation
 {
     ygg::ClosedInterval<ygg::float_t> interval;
     Annotation<Kind, ::tyr::formalism::FunctionTag> annotation;
@@ -269,18 +260,13 @@ struct NumericIntervalAnnotation : ygg::comparison::Mixin<NumericIntervalAnnotat
         annotation(std::move(annotation))
     {
     }
-
-    auto identifying_members() const noexcept { return std::make_tuple(get_cost(annotation), interval, annotation); }
 };
 
 template<TaskKind Kind>
-bool numeric_interval_key_less(const NumericIntervalAnnotation<Kind>& lhs, const NumericIntervalAnnotation<Kind>& rhs)
+bool numeric_interval_key_less(const NumericIntervalAnnotation<Kind>& lhs, const NumericIntervalAnnotation<Kind>& rhs) noexcept
 {
-    if constexpr (std::same_as<Kind, LiftedTag>)
-        return ygg::Less<> {}(std::tuple(get_cost(lhs.annotation), lower(lhs.interval), upper(lhs.interval)),
-                              std::tuple(get_cost(rhs.annotation), lower(rhs.interval), upper(rhs.interval)));
-    else
-        return lhs < rhs;
+    return ygg::Less<> {}(std::tuple(get_cost(lhs.annotation), lower(lhs.interval), upper(lhs.interval)),
+                          std::tuple(get_cost(rhs.annotation), lower(rhs.interval), upper(rhs.interval)));
 }
 
 template<TaskKind Kind>
@@ -355,21 +341,25 @@ public:
         return entries ? find_numeric_interval_annotation<Kind>(*entries, interval) : nullptr;
     }
 
-    void insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind, ::tyr::formalism::FunctionTag> annotation)
+    bool insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind, ::tyr::formalism::FunctionTag> annotation)
     {
-        insert(NumericIntervalBindingParts<Kind>::get_relation(binding), NumericIntervalBindingParts<Kind>::get_key(binding), interval, std::move(annotation));
+        return insert(NumericIntervalBindingParts<Kind>::get_relation(binding),
+                      NumericIntervalBindingParts<Kind>::get_key(binding),
+                      interval,
+                      std::move(annotation));
     }
 
-    void insert(Relation relation, Key key, ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind, ::tyr::formalism::FunctionTag> annotation)
+    bool insert(Relation relation, Key key, ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind, ::tyr::formalism::FunctionTag> annotation)
     {
         if (empty(interval))
-            return;
+            return false;
 
         auto entry = Entry { interval, std::move(annotation) };
         auto& entries = entries_for_write(relation, key);
         const auto old_size = entries.size();
-        insert_first_best_numeric_interval_annotation(entries, std::move(entry));
+        const auto changed = insert_first_best_numeric_interval_annotation(entries, std::move(entry));
         m_size += entries.size() - old_size;
+        return changed;
     }
 
 private:
@@ -397,9 +387,6 @@ private:
 /// Solve-level numeric annotations: dense, reset once per solve.
 template<TaskKind Kind>
 using FunctionAnnotations = NumericIntervalAnnotations<Kind>;
-
-template<TaskKind Kind, ::tyr::formalism::RelationKind R>
-struct AnnotationContext;
 
 inline ygg::ClosedInterval<ygg::float_t> aggregate_metric_support(ygg::ClosedInterval<ygg::float_t> lhs, ygg::ClosedInterval<ygg::float_t> rhs) noexcept
 {

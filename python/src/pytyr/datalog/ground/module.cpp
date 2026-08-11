@@ -50,10 +50,6 @@ void bind_ground_module_definitions(nb::module_& m)
         .def("get_statistics", [](Queue& self) -> auto& { return self.statistics; }, nb::rv_policy::reference_internal);
 
     bind_common_configurations<GroundTag>(m);
-    bind_configuration<GroundTag,
-                       MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>,
-                       TerminationPolicy<GroundTag, MaxAggregation>,
-                       RuleCostPolicy<GroundTag>>(m, "MaxAchieverGoal");
 }
 
 }

@@ -63,8 +63,8 @@ public:
     AP annotation_policy;
     PredicateAnnotations<LiftedTag> annotations;
     FunctionAnnotations<LiftedTag> numeric_annotations;
-    DeltaPredicateAnnotations<LiftedTag> delta_annotations;
-    DeltaFunctionAnnotations<LiftedTag> delta_numeric_annotations;
+    ConcurrentPredicateAnnotations delta_annotations;
+    ConcurrentFunctionAnnotations delta_numeric_annotations;
     std::optional<NumericSupportSelector<LiftedTag>> numeric_support_selector;
 
     TP tp;
@@ -124,7 +124,7 @@ public:
     template<typename Callback>
     void for_each_numeric_support(const NumericSupport<LiftedTag>& support, Callback&& callback) const
     {
-        get_numeric_support_selector().for_each_support(support, std::forward<Callback>(callback));
+        std::forward<Callback>(callback)(support.get_key(), support.get_interval(), support.get_cost());
     }
 };
 

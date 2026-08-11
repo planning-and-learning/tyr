@@ -569,7 +569,7 @@ void LMCutImplementation<Kind, TP>::seed_goal_zone()
         const auto& selector = this->m_workspace.get_numeric_support_selector();
         for (const auto constraint : goal->get_numeric_constraints())
         {
-            if (selector.get_constraint_cost(constraint, m_numeric_support_selector_workspace, datalog::MaxAggregation {}) != goal_cost)
+            if (selector.get_constraint_cost(constraint, m_numeric_support_selector_workspace.selection, datalog::MaxAggregation {}) != goal_cost)
                 continue;
 
             for (const auto& entry : m_numeric_support_selector_workspace.selection)

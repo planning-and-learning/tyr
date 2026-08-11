@@ -93,9 +93,7 @@ public:
         auto& seen_pending_rule_bindings() noexcept { return m_ws_worker.solve.seen_pending_rule_bindings; }
 #endif
         auto& pending_rule_bindings() noexcept { return m_ws_worker.solve.pending_rule_bindings; }
-        auto& numeric_support_selector_workspace() noexcept { return m_ws_worker.solve.numeric_support_selector_workspace; }
-        auto& effect_support_scratch() noexcept { return m_ws_worker.solve.effect_support_scratch; }
-        auto& witness_support_scratch() noexcept { return m_ws_worker.solve.witness_support_scratch; }
+        auto& rule_evaluation_workspace() noexcept { return m_ws_worker.solve.rule_evaluation_workspace; }
         auto& applicability_cache() noexcept { return m_ws_worker.solve.applicability_cache; }
         auto& statistics() noexcept { return m_ws_worker.solve.statistics; }
 

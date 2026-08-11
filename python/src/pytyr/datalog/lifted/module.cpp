@@ -48,10 +48,6 @@ void bind_lifted_module_definitions(nb::module_& m)
         .def("get_const_program_workspace", &ProgramT::get_const_program_workspace, nb::rv_policy::reference_internal);
 
     bind_common_configurations<LiftedTag>(m);
-    bind_configuration<LiftedTag,
-                       MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>,
-                       TerminationPolicy<LiftedTag, MaxAggregation>,
-                       RuleCostPolicy<LiftedTag>>(m, "MaxAchieverGoal");
 }
 
 }

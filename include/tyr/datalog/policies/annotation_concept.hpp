@@ -21,39 +21,62 @@
 #include "tyr/datalog/policies/annotation_types.hpp"
 
 #include <concepts>
+#include <optional>
 #include <type_traits>
+#include <utility>
 
 namespace tyr::datalog
 {
 
 template<typename T, typename Kind>
-concept AnnotationPolicyConcept = TaskKind<Kind>
-                                  && requires(T& policy,
-                                              const T& const_policy,
-                                              PredicateAnnotationHead<Kind> head,
-                                              FunctionAnnotationHead<Kind> function_head,
-                                              ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> function_binding,
-                                              ygg::ClosedInterval<ygg::float_t> interval,
-                                              const AnnotationContext<Kind, ::tyr::formalism::PredicateTag>& predicate_context,
-                                              const AnnotationContext<Kind, ::tyr::formalism::FunctionTag>& function_context,
-                                              PredicateAnnotations<Kind>& annotations,
-                                              FunctionAnnotations<Kind>& numeric_annotations,
-                                              DeltaPredicateAnnotations<Kind>& delta_annotations,
-                                              const DeltaPredicateAnnotations<Kind>& const_delta_annotations,
-                                              DeltaFunctionAnnotations<Kind>& delta_numeric_annotations) {
-                                         typename std::bool_constant<T::stores_annotations>;
-                                         typename std::bool_constant<T::records_propositional_achievers>;
-                                         { const_policy.is_widening_label_preserving(Cost {}, Cost {}) } -> std::same_as<bool>;
-                                         { const_policy.initialize_annotation(head, annotations) } -> std::same_as<void>;
-                                         { const_policy.initialize_annotation(function_binding, interval, numeric_annotations) } -> std::same_as<void>;
-                                         { policy.clear_achievers() } -> std::same_as<void>;
-                                         { policy.record_achiever(head, predicate_context) } -> std::same_as<void>;
-                                         { const_policy.try_update_candidate(head, predicate_context, delta_annotations) } -> std::same_as<bool>;
-                                         {
-                                             const_policy.try_update_candidate(function_head, interval, function_context, delta_numeric_annotations)
-                                         } -> std::same_as<bool>;
-                                         { const_policy.commit_annotation(head, const_delta_annotations, annotations) } -> std::same_as<CostUpdate<Kind>>;
-                                     };
+concept GroundAnnotationStoragePolicy = std::same_as<Kind, GroundTag>
+                                        && requires(T& policy,
+                                                    const T& const_policy,
+                                                    PredicateAnnotationHead<Kind> head,
+                                                    WitnessAnnotation<Kind, ::tyr::formalism::PredicateTag> witness,
+                                                    PredicateAnnotations<Kind>& annotations) {
+                                               { policy.record_achiever(head, witness) } -> std::same_as<void>;
+                                               {
+                                                   const_policy.publish_annotation(head, std::move(witness), annotations)
+                                               } -> std::same_as<std::optional<CostUpdate<Kind>>>;
+                                           };
+
+template<typename T, typename Kind>
+concept LiftedAnnotationStoragePolicy =
+    std::same_as<Kind, LiftedTag>
+    && requires(T& policy,
+                const T& const_policy,
+                PredicateAnnotationHead<Kind> head,
+                FunctionAnnotationHead<Kind> function_head,
+                ygg::ClosedInterval<ygg::float_t> interval,
+                WitnessAnnotation<Kind, ::tyr::formalism::PredicateTag> predicate_witness,
+                WitnessAnnotation<Kind, ::tyr::formalism::FunctionTag> function_witness,
+                PredicateAnnotations<Kind>& annotations,
+                FunctionAnnotations<Kind>& numeric_annotations,
+                ConcurrentPredicateAnnotations& delta_annotations,
+                const ConcurrentPredicateAnnotations& const_delta_annotations,
+                ConcurrentFunctionAnnotations& delta_numeric_annotations) {
+           { policy.record_achiever(head, predicate_witness) } -> std::same_as<void>;
+           { const_policy.can_update(head, Cost {}, annotations, const_delta_annotations) } -> std::same_as<bool>;
+           { const_policy.can_update(function_head, interval, Cost {}, numeric_annotations, delta_numeric_annotations) } -> std::same_as<bool>;
+           { const_policy.try_update_candidate(head, std::move(predicate_witness), delta_annotations) } -> std::same_as<bool>;
+           { const_policy.try_update_candidate(function_head, interval, std::move(function_witness), delta_numeric_annotations) } -> std::same_as<bool>;
+           { const_policy.commit_annotation(head, const_delta_annotations, annotations) } -> std::same_as<CostUpdate<Kind>>;
+       };
+
+template<typename T, typename Kind>
+concept AnnotationPolicyConcept =
+    TaskKind<Kind>
+    && requires(T& policy, const T& const_policy, PredicateAnnotationHead<Kind> head, ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> function_binding, ygg::ClosedInterval<ygg::float_t> interval, PredicateAnnotations<Kind>& annotations, FunctionAnnotations<Kind>& numeric_annotations) {
+           typename std::bool_constant<T::stores_annotations>;
+           typename std::bool_constant<T::records_propositional_achievers>;
+           { const_policy.is_widening_label_preserving(Cost {}, Cost {}) } -> std::same_as<bool>;
+           { const_policy.initialize_annotation(head, annotations) } -> std::same_as<void>;
+           { const_policy.initialize_annotation(function_binding, interval, numeric_annotations) } -> std::same_as<void>;
+           { policy.clear_achievers() } -> std::same_as<void>;
+       } && (!T::stores_annotations || (requires {
+           typename T::Aggregation;
+       } && (GroundAnnotationStoragePolicy<T, Kind> || LiftedAnnotationStoragePolicy<T, Kind>) ));
 
 }
 

@@ -18,66 +18,27 @@
 #ifndef TYR_DATALOG_GROUND_POLICIES_ANNOTATION_HPP_
 #define TYR_DATALOG_GROUND_POLICIES_ANNOTATION_HPP_
 
-#include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/ground/policies/annotation_types.hpp"
-#include "tyr/datalog/ground/policies/numeric_support.hpp"
+#include "tyr/datalog/ground/rule_instance.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
+#include "tyr/datalog/rule_evaluation.hpp"
 
-#include <concepts>
-#include <span>
+#include <optional>
+#include <utility>
 #include <vector>
 
 namespace tyr::datalog
 {
 
-template<::tyr::formalism::RelationKind R>
-struct AnnotationContext<GroundTag, R>
-{
-    using SelectionEntry = GroundNumericSupportSelectorWorkspace::SelectionEntry;
-    using Selection = std::vector<SelectionEntry>;
-
-    Cost head_cost;
-    Cost local_edge;
-    ::tyr::formalism::datalog::GroundRuleView<R> rule;
-    Cost rule_cost;
-    const GroundNumericSupportSelector& numeric_support_selector;
-    Selection& selection_scratch;
-    std::span<const SelectionEntry> numeric_support_selection;
-    std::vector<NumericSupport<GroundTag>>& witness_support_scratch;
-    const PredicateAnnotations<GroundTag>& annotations;
-};
-
-template<::tyr::formalism::RelationKind R>
-struct GroundAnnotationCostContext
-{
-    using SelectionEntry = GroundNumericSupportSelectorWorkspace::SelectionEntry;
-    using Selection = std::vector<SelectionEntry>;
-
-    ::tyr::formalism::datalog::GroundRuleView<R> rule;
-    Cost rule_cost;
-    const GroundNumericSupportSelector& numeric_support_selector;
-    const PredicateAnnotations<GroundTag>& annotations;
-    Selection& support_selection;
-    Selection& auxiliary_selection;
-    Selection& metric_selection;
-};
-
-struct GroundAnnotationCost
-{
-    Cost support_cost;
-    Cost local_edge;
-
-    Cost total_cost() const noexcept { return support_cost + local_edge; }
-};
-
 template<typename AggregationFunction>
 class MinCostAnnotationPolicy<GroundTag, AggregationFunction>
 {
 public:
+    using Aggregation = AggregationFunction;
     using PredicateHead = PredicateAnnotationHead<GroundTag>;
-    using FunctionHead = FunctionAnnotationHead<GroundTag>;
     using FunctionBinding = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
+    using PredicateWitness = WitnessAnnotation<GroundTag, ::tyr::formalism::PredicateTag>;
 
     static constexpr bool stores_annotations = true;
     static constexpr bool records_propositional_achievers = false;
@@ -89,32 +50,15 @@ public:
         return candidate_label == current_target_label;
     }
 
-    GroundAnnotationCost evaluate_cost(const GroundAnnotationCostContext<::tyr::formalism::PredicateTag>& context) const;
-
-    Cost evaluate_cost(const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context) const;
-
-    GroundAnnotationCost evaluate_cost(const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context,
-                                       ::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect) const;
-
     void initialize_annotation(PredicateHead head, PredicateAnnotations<GroundTag>& annotations) const;
 
     void initialize_annotation(FunctionBinding head, ygg::ClosedInterval<ygg::float_t> interval, FunctionAnnotations<GroundTag>& numeric_annotations) const;
 
-    CostUpdate<GroundTag>
-    commit_annotation(PredicateHead head, const DeltaPredicateAnnotations<GroundTag>& delta_annotations, PredicateAnnotations<GroundTag>& annotations) const;
-
     void clear_achievers() noexcept {}
 
-    void record_achiever(PredicateHead, const AnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>&) const noexcept {}
+    void record_achiever(PredicateHead, const PredicateWitness&) const noexcept {}
 
-    bool try_update_candidate(PredicateHead head,
-                              const AnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context,
-                              DeltaPredicateAnnotations<GroundTag>& delta_annotations) const;
-
-    bool try_update_candidate(FunctionHead head,
-                              ygg::ClosedInterval<ygg::float_t> interval,
-                              const AnnotationContext<GroundTag, ::tyr::formalism::FunctionTag>& context,
-                              DeltaFunctionAnnotations<GroundTag>& delta_numeric_annotations) const;
+    std::optional<CostUpdate<GroundTag>> publish_annotation(PredicateHead head, PredicateWitness witness, PredicateAnnotations<GroundTag>& annotations) const;
 };
 
 template<typename AggregationFunction>
@@ -122,7 +66,8 @@ class MinCostAnnotationWithAchieversPolicy<GroundTag, AggregationFunction> : pub
 {
 public:
     using PredicateHead = PredicateAnnotationHead<GroundTag>;
-    using Achievers = std::vector<WitnessAnnotation<GroundTag, ::tyr::formalism::PredicateTag>>;
+    using PredicateWitness = WitnessAnnotation<GroundTag, ::tyr::formalism::PredicateTag>;
+    using Achievers = std::vector<PredicateWitness>;
 
     static constexpr bool records_propositional_achievers = true;
 
@@ -132,34 +77,32 @@ public:
 
     const Achievers* find_achievers(PredicateHead head) const noexcept;
 
-    void record_achiever(PredicateHead head, const AnnotationContext<GroundTag, ::tyr::formalism::PredicateTag>& context);
+    void record_achiever(PredicateHead head, const PredicateWitness& witness);
 
 private:
     DenseRelationMap<::tyr::formalism::PredicateTag, Achievers> m_achievers;
 };
 
-GroundAnnotationCost evaluate_cost(const NoAnnotationPolicy<GroundTag>&, const GroundAnnotationCostContext<::tyr::formalism::PredicateTag>& context) noexcept;
-
-Cost evaluate_cost(const NoAnnotationPolicy<GroundTag>&, const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context);
-
-GroundAnnotationCost evaluate_cost(const NoAnnotationPolicy<GroundTag>&,
-                                   const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context,
-                                   ::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect);
-
-template<typename AP, ::tyr::formalism::RelationKind R>
+template<typename AP>
     requires(AP::stores_annotations)
-auto evaluate_cost(const AP& policy, const GroundAnnotationCostContext<R>& context)
+std::optional<CostUpdate<GroundTag>> publish_candidate(AP& policy,
+                                                       RuleInstance<GroundTag, ::tyr::formalism::PredicateTag>& instance,
+                                                       const PredicateCandidate<GroundTag>& candidate,
+                                                       PredicateAnnotations<GroundTag>& annotations)
 {
-    return policy.evaluate_cost(context);
+    auto witness = materialize_witness(instance, candidate);
+    policy.record_achiever(candidate.head, witness);
+    return policy.publish_annotation(candidate.head, std::move(witness), annotations);
 }
 
 template<typename AP>
     requires(AP::stores_annotations)
-GroundAnnotationCost evaluate_cost(const AP& policy,
-                                   const GroundAnnotationCostContext<::tyr::formalism::FunctionTag>& context,
-                                   ::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect)
+bool publish_candidate(AP&,
+                       RuleInstance<GroundTag, ::tyr::formalism::FunctionTag>& instance,
+                       const FunctionCandidate<GroundTag>& candidate,
+                       FunctionAnnotations<GroundTag>& annotations)
 {
-    return policy.evaluate_cost(context, effect);
+    return annotations.insert(candidate.annotation_head, candidate.interval, materialize_witness(instance, candidate));
 }
 
 }

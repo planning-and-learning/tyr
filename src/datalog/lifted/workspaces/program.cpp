@@ -38,14 +38,13 @@ void initialize_rule_workspaces(const ConstProgramWorkspace<LiftedTag>& const_wo
 template<::tyr::formalism::RelationKind R>
 void initialize_const_rule_workspaces(Program<LiftedTag>& program,
                                       ::tyr::formalism::datalog::Repository& program_repository,
-                                      const ConstFactsWorkspace<LiftedTag>& facts,
                                       analysis::RuleCompatibilityGraphMap<R>& graphs,
                                       std::vector<std::optional<ConstRuleWorkspace<LiftedTag, R>>>& workspaces)
 {
     const auto rules = program.get_program().template get_rules<R>();
     workspaces.resize(rules.size());
     for (const auto rule : rules)
-        workspaces[ygg::uint_t(rule.get_index())].emplace(rule, program_repository, std::move(graphs.at(rule.get_index())), facts.fact_sets);
+        workspaces[ygg::uint_t(rule.get_index())].emplace(rule, program_repository, std::move(graphs.at(rule.get_index())));
 }
 }
 
@@ -160,12 +159,10 @@ ConstProgramWorkspace<LiftedTag>::ConstProgramWorkspace(Program<LiftedTag>& prog
 {
     initialize_const_rule_workspaces<::tyr::formalism::PredicateTag>(program,
                                                                      *program.m_program_repository,
-                                                                     facts,
                                                                      program.m_analysis.compatibility_graphs.predicate_rules,
                                                                      predicate_rules);
     initialize_const_rule_workspaces<::tyr::formalism::FunctionTag>(program,
                                                                     *program.m_program_repository,
-                                                                    facts,
                                                                     program.m_analysis.compatibility_graphs.function_rules,
                                                                     function_rules);
 }

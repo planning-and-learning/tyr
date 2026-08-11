@@ -21,9 +21,6 @@
 #include "tyr/datalog/policies/annotation_types.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
-#include <optional>
-#include <utility>
-
 namespace tyr::datalog
 {
 
@@ -48,46 +45,6 @@ struct NumericIntervalBindingParts<GroundTag>
 
     static Relation get_relation(Binding binding) noexcept { return binding.get_function().get_index(); }
     static Key get_key(Binding binding) noexcept { return binding.get_row().get_index().row; }
-};
-
-/// Ground queue updates are cleared, written once, and consumed immediately; use a multi-entry store if updates are ever batched.
-class GroundDeltaPredicateAnnotations
-{
-public:
-    using Key = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
-
-    void clear() noexcept { m_entry.reset(); }
-
-    void insert_or_assign(Key key, Annotation<GroundTag> annotation) { m_entry.emplace(key, std::move(annotation)); }
-
-    const Annotation<GroundTag>* find(Key key) const noexcept { return m_entry && m_entry->first == key ? &m_entry->second : nullptr; }
-
-private:
-    std::optional<std::pair<Key, Annotation<GroundTag>>> m_entry;
-};
-
-/// Ground numeric updates follow the same single-entry queue transaction.
-class GroundDeltaFunctionAnnotations
-{
-public:
-    using Binding = NumericSupportKeyT<GroundTag>;
-    using Entry = NumericIntervalAnnotation<GroundTag>;
-
-    void clear() noexcept { m_entry.reset(); }
-
-    void insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<GroundTag, ::tyr::formalism::FunctionTag> annotation)
-    {
-        if (!empty(interval))
-            m_entry.emplace(binding, Entry { interval, std::move(annotation) });
-    }
-
-    const Annotation<GroundTag, ::tyr::formalism::FunctionTag>* find(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
-    {
-        return m_entry && m_entry->first == binding && m_entry->second.interval == interval ? &m_entry->second.annotation : nullptr;
-    }
-
-private:
-    std::optional<std::pair<Binding, Entry>> m_entry;
 };
 
 }

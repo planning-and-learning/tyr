@@ -74,7 +74,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         const auto& numeric_support_selector() const noexcept { return m_ws.get_numeric_support_selector(); }
         void rebuild_numeric_support_selector(const TaggedFactSets<::tyr::formalism::StaticTag>& static_fact_sets)
         {
-            m_ws.numeric_support_selector.emplace(FactSets { static_fact_sets, m_ws.facts.fact_sets }, m_ws.numeric_annotations);
+            m_ws.numeric_support_selector.emplace(FactSets { static_fact_sets, m_ws.facts.fact_sets }, m_ws.numeric_annotations, !AP::stores_annotations);
         }
         void reset_numeric_support_selector() noexcept { m_ws.numeric_support_selector.reset(); }
         auto& tp() noexcept { return m_ws.tp; }

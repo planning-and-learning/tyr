@@ -88,7 +88,7 @@ Cost TerminationPolicy<Kind, AggregationFunction>::get_total_cost(const FactSets
 
     for (const auto numeric_constraint : goals->get_numeric_constraints())
     {
-        const auto constraint_cost = numeric_support_selector.get_constraint_cost(numeric_constraint, numeric_support_selector_workspace, agg);
+        const auto constraint_cost = numeric_support_selector.get_constraint_cost(numeric_constraint, numeric_support_selector_workspace.selection, agg);
         if (constraint_cost == std::numeric_limits<Cost>::max())
             return std::numeric_limits<Cost>::max();
         total = agg(total, constraint_cost);

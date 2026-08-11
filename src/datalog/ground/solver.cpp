@@ -17,20 +17,19 @@
 
 #include "tyr/datalog/ground/solver.hpp"
 
+#include "tyr/datalog/applicability.hpp"
 #include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/ground/policies/numeric_support.hpp"
-#include "tyr/datalog/numeric_utils.hpp"
+#include "tyr/datalog/ground/rule_instance.hpp"
+#include "tyr/datalog/rule_evaluation.hpp"
 
 #include <algorithm>
 #include <cassert>
 #include <functional>
 #include <limits>
 #include <optional>
-#include <span>
-#include <utility>
 #include <vector>
-#include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
 
@@ -44,16 +43,9 @@ namespace fd = ::tyr::formalism::datalog;
 template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
 using GroundCtx = ProgramExecutionContext<GroundTag, AP, TP, CP>;
 
-template<typename Facts>
-ygg::ClosedInterval<ygg::float_t> find_interval(const Facts& facts, fd::GroundFunctionTermView<f::FluentTag> term) noexcept
-{
-    return facts.fact_sets.function[term];
-}
-
-using NumericSelectionEntry = GroundNumericSupportSelectorWorkspace::SelectionEntry;
-
-template<TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
-GroundNumericSupportSelector make_numeric_support_selector(const GroundCtx<NoAnnotationPolicy<GroundTag>, TP, CP>& ctx)
+template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+    requires(!AP::stores_annotations)
+GroundNumericSupportSelector make_numeric_support_selector(const GroundCtx<AP, TP, CP>& ctx)
 {
     return GroundNumericSupportSelector(ctx.in().facts(), ctx.out().facts(), ctx.out().numeric_annotations(), true);
 }
@@ -66,18 +58,7 @@ GroundNumericSupportSelector make_numeric_support_selector(const GroundCtx<AP, T
 }
 
 template<f::RelationKind R, AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
-GroundAnnotationCostContext<R>
-make_annotation_cost_context(fd::GroundRuleView<R> rule, GroundCtx<AP, TP, CP>& ctx, const GroundNumericSupportSelector& selector)
-{
-    auto& out = ctx.out();
-    auto& scratch = out.queue().scratch;
-    return {
-        rule, out.cost_policy().get_cost(rule), selector, out.annotations(), scratch.support_selection, scratch.auxiliary_selection, scratch.metric_selection
-    };
-}
-
-template<f::RelationKind R, AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
-void push_rule(GroundCtx<AP, TP, CP>& ctx, fd::GroundRuleView<R> rule)
+void enqueue_rule(GroundCtx<AP, TP, CP>& ctx, fd::GroundRuleView<R> rule, Cost queue_label)
 {
     auto& out = ctx.out();
     const auto rule_index = rule.get_index();
@@ -85,31 +66,38 @@ void push_rule(GroundCtx<AP, TP, CP>& ctx, fd::GroundRuleView<R> rule)
     if (states[ygg::uint_t(rule_index)].unsatisfied_count != 0 || states[ygg::uint_t(rule_index)].fired)
         return;
 
-    auto selector = make_numeric_support_selector(ctx);
-    const auto cost = [&]
-    {
-        const auto evaluated = evaluate_cost(out.annotation_policy(), make_annotation_cost_context(rule, ctx, selector));
-        if constexpr (std::same_as<R, f::PredicateTag>)
-            return evaluated.total_cost();
-        else
-            return evaluated;
-    }();
-    if (cost == std::numeric_limits<Cost>::max())
-        return;
-
     auto& queued_cost = states[ygg::uint_t(rule_index)].queued_cost;
-    if (queued_cost && *queued_cost <= cost)
+    if (queued_cost && *queued_cost <= queue_label)
         return;
-    queued_cost = cost;
+    queued_cost = queue_label;
 
     auto& queue = out.template queue_storage<R>();
-    queue.push_back(GroundQueueEntry<R> { cost, rule });
+    queue.push_back(GroundQueueEntry<R> { queue_label, rule });
     std::push_heap(queue.begin(), queue.end(), std::greater<> {});
 
     ++out.statistics().num_queue_pushes;
     out.statistics().max_queue_size =
         std::max(out.statistics().max_queue_size,
                  static_cast<ygg::uint_t>(out.template queue_storage<f::PredicateTag>().size() + out.template queue_storage<f::FunctionTag>().size()));
+}
+
+template<f::RelationKind R, AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
+void push_rule(GroundCtx<AP, TP, CP>& ctx, fd::GroundRuleView<R> rule)
+{
+    const auto& state = ctx.out().template rule_states<R>()[ygg::uint_t(rule.get_index())];
+    if (state.unsatisfied_count != 0 || state.fired)
+        return;
+
+    auto instance = RuleInstance<GroundTag, R>(rule);
+    auto selector = make_numeric_support_selector(ctx);
+    auto& workspace = ctx.out().queue().scratch.rule_evaluation;
+    const auto priority = evaluate_rule_priority(instance,
+                                                 ctx.out().annotation_policy(),
+                                                 ctx.out().cost_policy(),
+                                                 RuleEvaluationInput<GroundTag> { selector, ctx.out().annotations() },
+                                                 workspace);
+    if (priority)
+        enqueue_rule(ctx, rule, *priority);
 }
 
 template<f::RelationKind R, AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
@@ -123,13 +111,13 @@ void update_numeric_constraint_satisfaction(GroundCtx<AP, TP, CP>& ctx, fd::Grou
     if (satisfied.size() != numeric_constraints.size())
         satisfied.assign(numeric_constraints.size(), false);
 
-    auto selector = make_numeric_support_selector(ctx);
+    const auto fact_sets = FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets };
     for (ygg::uint_t i = 0; i < numeric_constraints.size(); ++i)
     {
         if (satisfied[i])
             continue;
 
-        if (selector.get_constraint_cost(numeric_constraints[i], MaxAggregation {}) == std::numeric_limits<Cost>::max())
+        if (!evaluate(numeric_constraints[i], fact_sets))
             continue;
 
         satisfied[i] = true;
@@ -281,160 +269,56 @@ bool derive_interval(GroundCtx<AP, TP, CP>& ctx, fd::FunctionBindingView<f::Flue
     return ctx.out().fact_sets().function.insert(term, interval);
 }
 
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
-void update_numeric_annotation(GroundCtx<AP, TP, CP>& ctx,
-                               fd::GroundRuleView<f::FunctionTag> rule,
-                               fd::GroundFunctionTermView<f::FluentTag> term,
-                               ygg::ClosedInterval<ygg::float_t> interval,
-                               Cost cost,
-                               Cost local_edge,
-                               std::span<const NumericSelectionEntry> numeric_support_selection)
-{
-    auto& out = ctx.out();
-    auto& scratch = out.queue().scratch;
-    scratch.delta_numeric_annotations.clear();
-    scratch.numeric_supports.clear();
-
-    const auto selector = make_numeric_support_selector(ctx);
-    const auto context = AnnotationContext<GroundTag, f::FunctionTag> { cost,
-                                                                        local_edge,
-                                                                        rule,
-                                                                        out.cost_policy().get_cost(rule),
-                                                                        selector,
-                                                                        scratch.auxiliary_selection,
-                                                                        numeric_support_selection,
-                                                                        scratch.numeric_supports,
-                                                                        out.annotations() };
-    if (out.annotation_policy().try_update_candidate(term, interval, context, scratch.delta_numeric_annotations))
-    {
-        const auto* annotation = scratch.delta_numeric_annotations.find(term, interval);
-        assert(annotation);
-        out.numeric_annotations().insert(term, interval, *annotation);
-    }
-}
-
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
-bool enqueue_numeric_effect(GroundCtx<AP, TP, CP>& ctx,
-                            fd::GroundRuleView<f::FunctionTag> rule,
-                            fd::GroundNumericEffectView<f::FluentTag> effect,
-                            CostBuckets& pending_heads)
-{
-    auto& scratch = ctx.out().queue().scratch;
-    auto selector = make_numeric_support_selector(ctx);
-    scratch.evaluation_selection.clear();
-    const auto lhs = [&]
-    {
-        if (effect.get_operator() == f::NumericEffectOperatorKind::Assign)
-            return ygg::ClosedInterval<ygg::float_t>();
-        else
-            return selector.select_fluent_interval(effect.get_fterm(), scratch.evaluation_selection);
-    }();
-    if (effect.get_operator() != f::NumericEffectOperatorKind::Assign)
-        if (empty(lhs))
-            return false;
-
-    const auto rhs = selector.evaluate_effect_expression(effect.get_fexpr(), scratch.evaluation_selection);
-    if (empty(rhs))
-        return false;
-
-    const auto raw_interval = apply_numeric_effect(effect.get_operator(), lhs, rhs);
-    if (empty(raw_interval))
-        return false;
-
-    const auto current = find_interval(ctx.out().facts(), effect.get_fterm());
-    if (!empty(current) && subset(raw_interval, current))
-        return false;
-
-    const auto generated_cost = evaluate_cost(ctx.out().annotation_policy(), make_annotation_cost_context(rule, ctx, selector), effect);
-    if (generated_cost.support_cost == std::numeric_limits<Cost>::max())
-        return false;
-
-    auto interval = raw_interval;
-    auto local_edge = generated_cost.local_edge;
-    const auto candidate_cost = generated_cost.total_cost();
-    if (!empty(current) && local_edge == Cost(0))
-    {
-        const auto target_cost = selector.get_current_interval_cost(effect.get_fterm(), current);
-        if (ctx.out().annotation_policy().is_widening_label_preserving(candidate_cost, target_cost))
-            interval = widen_free_growth(raw_interval, current);
-    }
-
-    if (interval == raw_interval)
-        local_edge = reduce_cost(local_edge, ctx.out().cost_policy().get_cost(rule, effect.get_fterm(), raw_interval));
-    const auto transition_cost = generated_cost.support_cost + local_edge;
-
-    if (!pending_heads.insert(transition_cost, effect.get_fterm().get_row(), interval))
-        return false;
-
-    update_numeric_annotation(ctx, rule, effect.get_fterm(), interval, transition_cost, local_edge, scratch.support_selection);
-    return true;
-}
-
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
-std::optional<CostUpdate<GroundTag>>
-update_fact_annotation(GroundCtx<AP, TP, CP>& ctx, fd::GroundRuleView<f::PredicateTag> rule, fd::GroundAtomView<f::FluentTag> fact, GroundAnnotationCost cost)
-{
-    auto& out = ctx.out();
-    auto& scratch = out.queue().scratch;
-    const auto head = fact.get_row();
-    scratch.delta_annotations.clear();
-    scratch.numeric_supports.clear();
-
-    const auto selector = make_numeric_support_selector(ctx);
-    const auto context = AnnotationContext<GroundTag, f::PredicateTag> { cost.total_cost(),
-                                                                         cost.local_edge,
-                                                                         rule,
-                                                                         out.cost_policy().get_cost(rule),
-                                                                         selector,
-                                                                         scratch.auxiliary_selection,
-                                                                         std::span<const NumericSelectionEntry> {},
-                                                                         scratch.numeric_supports,
-                                                                         out.annotations() };
-
-    out.annotation_policy().record_achiever(head, context);
-    if (out.annotation_policy().try_update_candidate(head, context, scratch.delta_annotations))
-        return out.annotation_policy().commit_annotation(head, scratch.delta_annotations, out.annotations());
-
-    return std::nullopt;
-}
-
 bool is_annotation_improvement(const std::optional<CostUpdate<GroundTag>>& update) noexcept
 {
     return update && (!update->old_cost || update->new_cost < *update->old_cost);
 }
 
 template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
-void fire_rule(GroundCtx<AP, TP, CP>& ctx, fd::GroundRuleView<f::PredicateTag> rule, Cost, CostBuckets& pending_heads)
+void fire_rule(GroundCtx<AP, TP, CP>& ctx,
+               fd::GroundRuleView<f::PredicateTag> rule,
+               RuleInstance<GroundTag, f::PredicateTag>& instance,
+               const PredicateCandidate<GroundTag>& candidate,
+               CostBuckets& pending_heads)
 {
     auto& out = ctx.out();
     out.template rule_states<f::PredicateTag>()[ygg::uint_t(rule.get_index())].fired = true;
     ++out.statistics().num_rules_fired;
 
-    const auto atom = rule.get_head();
-    const auto head = atom.get_row();
-    auto selector = make_numeric_support_selector(ctx);
-    const auto cost = evaluate_cost(out.annotation_policy(), make_annotation_cost_context(rule, ctx, selector));
-    const auto update = update_fact_annotation(ctx, rule, atom, cost);
-    if (out.fact_sets().predicate.contains(head))
+    if constexpr (AP::stores_annotations)
     {
-        if (is_annotation_improvement(update))
-            notify_fact_annotation_improved(ctx, head);
+        const auto update = publish_candidate(out.annotation_policy(), instance, candidate, out.annotations());
+        if (out.fact_sets().predicate.contains(candidate.head))
+        {
+            if (is_annotation_improvement(update))
+                notify_fact_annotation_improved(ctx, candidate.head);
+        }
+        else if (update)
+        {
+            pending_heads.update(*update, candidate.head);
+        }
     }
-    else if (update)
+    else
     {
-        pending_heads.update(*update, head);
-    }
-    else if constexpr (!AP::stores_annotations)
-    {
-        pending_heads.insert(cost.total_cost(), head);
+        if (!out.fact_sets().predicate.contains(candidate.head))
+            pending_heads.insert(candidate.cost, candidate.head);
     }
 }
 
 template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
-void fire_rule(GroundCtx<AP, TP, CP>& ctx, fd::GroundRuleView<f::FunctionTag> rule, Cost, CostBuckets& pending_heads)
+void fire_rule(GroundCtx<AP, TP, CP>& ctx,
+               fd::GroundRuleView<f::FunctionTag>,
+               RuleInstance<GroundTag, f::FunctionTag>& instance,
+               const FunctionCandidate<GroundTag>& candidate,
+               CostBuckets& pending_heads)
 {
     ++ctx.out().statistics().num_rules_fired;
-    ygg::visit([&](auto&& effect) { enqueue_numeric_effect(ctx, rule, effect, pending_heads); }, rule.get_head().get_variant());
+    // FunctionAnnotations retains the cheapest certificate for each exact interval.
+    // FactSets determines whether that certificate is available; CostBuckets schedules only hull growth.
+    if constexpr (AP::stores_annotations)
+        publish_candidate(ctx.out().annotation_policy(), instance, candidate, ctx.out().numeric_annotations());
+    if (candidate.grows_fact)
+        pending_heads.insert(candidate.cost, candidate.fact_head, candidate.interval);
 }
 
 template<f::RelationKind R, AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
@@ -503,7 +387,26 @@ void process_next_rule(GroundCtx<AP, TP, CP>& ctx, CostBuckets& pending_heads)
         return;
     }
 
-    fire_rule(ctx, entry->rule, entry->cost, pending_heads);
+    auto instance = RuleInstance<GroundTag, R>(entry->rule);
+    auto selector = make_numeric_support_selector(ctx);
+    auto& workspace = out.queue().scratch.rule_evaluation;
+    const auto input = RuleEvaluationInput<GroundTag> { selector, out.annotations() };
+    const auto candidate = [&]
+    {
+        if constexpr (std::same_as<R, f::PredicateTag>)
+            return evaluate_predicate_candidate(instance, out.annotation_policy(), out.cost_policy(), input, workspace);
+        else
+            return evaluate_function_candidate(instance, out.annotation_policy(), out.cost_policy(), input, workspace);
+    }();
+    if (!candidate || candidate->queue_label != entry->cost)
+    {
+        ++out.statistics().num_stale_queue_pops;
+        if (candidate)
+            enqueue_rule(ctx, entry->rule, candidate->queue_label);
+        return;
+    }
+
+    fire_rule(ctx, entry->rule, instance, *candidate, pending_heads);
 }
 
 template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>

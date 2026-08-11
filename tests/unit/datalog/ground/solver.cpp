@@ -732,6 +732,62 @@ TEST(TyrDatalogGroundQueueTest, DerivedNumericIntervalUnblocksRuleAndRecordsSupp
     EXPECT_EQ(supports.front().get_interval(), ygg::ClosedInterval<ygg::float_t>(3, 3));
 }
 
+TEST(TyrDatalogGroundQueueTest, SameCostBroadAndContainedNumericIntervalsRetainExactAnnotations)
+{
+    auto fixture = GroundQueueFixture();
+    const auto term = fixture.fluent_function_term("n");
+    fixture.initial_fluent_function_value(term, 0);
+    fixture.initial_fluent_function_value(term, 2);
+    fixture.numeric_rule(fixture.condition(), term, f::NumericEffectOperatorKind::ScaleUp, 2, 1);
+    fixture.assign_rule(fixture.condition(), term, 3, 1);
+
+    const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
+    auto termination_policy = datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>();
+    termination_policy.set_goals(fixture.numeric_condition(term, f::BooleanOperatorKind::Ge, 3));
+    using Workspace = datalog::ProgramWorkspace<GroundTag,
+                                                datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>,
+                                                datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>>;
+    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>(), termination_policy);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
+
+    ctx.initialize(fixture.initial_fluent_atoms);
+    dq::compute_model(ctx);
+
+    const auto broad = ygg::ClosedInterval<ygg::float_t>(0, 4);
+    const auto contained = ygg::ClosedInterval<ygg::float_t>(3, 3);
+    EXPECT_EQ(ctx.out().fact_sets().function[term], broad);
+    EXPECT_NE(ctx.out().numeric_annotations().find(term, broad), nullptr);
+    EXPECT_NE(ctx.out().numeric_annotations().find(term, contained), nullptr);
+}
+
+TEST(TyrDatalogGroundQueueTest, RevalidatesQueuedRuleAfterContainedNumericCertificateImproves)
+{
+    auto fixture = GroundQueueFixture();
+    const auto term = fixture.fluent_function_term("n");
+    const auto head = fixture.fluent_atom("head");
+    fixture.initial_fluent_function_value(term, 1);
+    fixture.empty_body_assign_rule(term, 1);
+    fixture.rule(fixture.numeric_condition(term, f::BooleanOperatorKind::Ge, 1), head);
+
+    const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
+    using Workspace =
+        datalog::ProgramWorkspace<GroundTag, datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>, datalog::NoTerminationPolicy<GroundTag>>;
+    auto workspace = Workspace(const_workspace);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
+    ctx.initialize(fixture.initial_fluent_atoms);
+
+    const auto interval = ygg::ClosedInterval<ygg::float_t>(1, 1);
+    ctx.out().numeric_annotations().clear();
+    ctx.out().numeric_annotations().insert(term, interval, datalog::BaseAnnotation<GroundTag>(datalog::Cost(5)));
+
+    dq::compute_model(ctx);
+
+    const auto* annotation = ctx.out().annotations().find(head.get_row());
+    ASSERT_NE(annotation, nullptr);
+    EXPECT_EQ(datalog::get_cost(*annotation), 0);
+    EXPECT_EQ(ctx.out().statistics().num_stale_queue_pops, 1);
+}
+
 TEST(TyrDatalogGroundQueueTest, NumericTransitionCreditOnlyReducesTheLocalEdge)
 {
     auto fixture = GroundQueueFixture();

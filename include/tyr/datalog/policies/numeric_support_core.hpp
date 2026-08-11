@@ -205,9 +205,9 @@ public:
         return get_greedy_support_cost(selection, agg, [&](auto& selected) { return is_supported(constraint, selected); });
     }
 
-    /// Report the annotation witnesses backing a selected support entry: its own annotation if it has
-    /// one, otherwise every available annotation candidate within the entry's cost and interval.
-    /// Returns whether any witness was reported.
+    /// Report a sufficient exact-certificate proof for a selected support entry: its own annotation,
+    /// an exact certificate for the selected interval, or the two certificates attaining its bounds.
+    /// Returns whether a complete proof was reported.
     template<typename Callback>
     bool for_each_entry_support(const SelectionEntry& entry, Callback callback) const
     {
@@ -223,16 +223,37 @@ public:
         if (!entries)
             return false;
 
-        auto reported = false;
+        auto lower_support = decltype(entry.annotation) {};
+        auto upper_support = decltype(entry.annotation) {};
         for (const auto& candidate : *entries)
         {
-            if (is_available(key, candidate.interval) && get_cost(candidate.annotation) <= entry.cost && subset(candidate.interval, entry.interval))
+            const auto cost = get_cost(candidate.annotation);
+            if (cost > entry.cost)
+                break;
+            if (!is_available(key, candidate.interval) || !subset(candidate.interval, entry.interval))
+                continue;
+
+            if (candidate.interval == entry.interval)
             {
                 callback(key, candidate.interval, candidate.annotation);
-                reported = true;
+                return true;
             }
+
+            if (!lower_support && lower(candidate.interval) == lower(entry.interval))
+                lower_support = &candidate;
+            if (!upper_support && upper(candidate.interval) == upper(entry.interval))
+                upper_support = &candidate;
         }
-        return reported;
+
+        if (!lower_support || !upper_support)
+            return false;
+
+        assert(hull(lower_support->interval, upper_support->interval) == entry.interval);
+        assert(std::max(get_cost(lower_support->annotation), get_cost(upper_support->annotation)) == entry.cost);
+        callback(key, lower_support->interval, lower_support->annotation);
+        if (upper_support != lower_support)
+            callback(key, upper_support->interval, upper_support->annotation);
+        return true;
     }
 
     template<typename AggregationFunction, typename Callback>

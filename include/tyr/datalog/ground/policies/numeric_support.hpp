@@ -20,19 +20,15 @@
 
 #include "tyr/datalog/ground/policies/annotation_types.hpp"
 #include "tyr/datalog/ground/workspaces/facts.hpp"
-#include "tyr/datalog/numeric_utils.hpp"
 #include "tyr/datalog/policies/numeric_support_core.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <limits>
-#include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog
 {
-
-using GroundNumericSupportSelectorWorkspace = NumericSupportSelectorWorkspace<GroundTag>;
 
 template<>
 class NumericSupportSelector<GroundTag> :
@@ -63,56 +59,14 @@ public:
     /// Runs without annotations price initial intervals at zero instead of treating them as unreachable.
     Cost missing_entries_cost() const noexcept { return m_initial_intervals_cost_zero ? Cost(0) : std::numeric_limits<Cost>::max(); }
 
-    /**
-     * Workspace-based conveniences on top of the shared core.
-     */
-
-    using Core::for_each_constraint_support;
-    using Core::get_constraint_cost;
-
-    template<typename AggregationFunction>
-    Cost get_constraint_cost(::tyr::formalism::datalog::GroundBooleanOperatorView constraint, AggregationFunction agg) const
-    {
-        m_selection.clear();
-        return get_constraint_cost(constraint, m_selection, agg);
-    }
-
-    template<typename AggregationFunction>
-    Cost get_constraint_cost(::tyr::formalism::datalog::GroundBooleanOperatorView constraint,
-                             NumericSupportSelectorWorkspace<GroundTag>& workspace,
-                             AggregationFunction agg) const
-    {
-        return get_constraint_cost(constraint, workspace.selection, agg);
-    }
-
-    template<typename AggregationFunction, typename Callback>
-    Cost for_each_constraint_support(::tyr::formalism::datalog::GroundBooleanOperatorView constraint,
-                                     NumericSupportSelectorWorkspace<GroundTag>& workspace,
-                                     AggregationFunction agg,
-                                     Callback callback) const
-    {
-        return for_each_constraint_support(constraint, workspace.selection, agg, callback);
-    }
-
 private:
     const ConstFactsWorkspace<GroundTag>& m_static_facts;
     const FactsWorkspace<GroundTag>& m_fluent_facts;
     const NumericIntervalAnnotations<GroundTag>& m_annotations;
     bool m_initial_intervals_cost_zero;
-    mutable std::vector<SelectionEntry> m_selection;
 };
 
 using GroundNumericSupportSelector = NumericSupportSelector<GroundTag>;
-
-inline std::optional<Cost> metric_effect_delta(::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect,
-                                               const GroundNumericSupportSelector& selector,
-                                               std::vector<GroundNumericSupportSelectorWorkspace::SelectionEntry>& selection)
-{
-    return metric_effect_delta(
-        effect.get_operator(),
-        [&] { return selector.select_fluent_interval(effect.get_fterm(), selection); },
-        [&] { return selector.evaluate_effect_expression(effect.get_fexpr(), selection); });
-}
 
 }
 

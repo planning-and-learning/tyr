@@ -23,9 +23,12 @@ namespace f = tyr::formalism;
 namespace tyr::datalog
 {
 
-NumericSupportSelector<LiftedTag>::NumericSupportSelector(const FactSets& fact_sets, const NumericIntervalAnnotations<LiftedTag>& annotations) :
+NumericSupportSelector<LiftedTag>::NumericSupportSelector(const FactSets& fact_sets,
+                                                          const NumericIntervalAnnotations<LiftedTag>& annotations,
+                                                          bool initial_intervals_cost_zero) :
     m_fact_sets(fact_sets),
-    m_annotations(annotations)
+    m_annotations(annotations),
+    m_initial_intervals_cost_zero(initial_intervals_cost_zero)
 {
 }
 

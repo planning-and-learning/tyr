@@ -56,7 +56,6 @@ class NoAnnotationPolicy
 {
 public:
     using PredicateHead = PredicateAnnotationHead<Kind>;
-    using FunctionHead = FunctionAnnotationHead<Kind>;
     using FunctionBinding = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
 
     static constexpr bool stores_annotations = false;
@@ -68,23 +67,6 @@ public:
     void initialize_annotation(FunctionBinding, ygg::ClosedInterval<ygg::float_t>, FunctionAnnotations<Kind>&) const noexcept {}
 
     void clear_achievers() noexcept {}
-
-    void record_achiever(PredicateHead, const AnnotationContext<Kind, ::tyr::formalism::PredicateTag>&) const noexcept {}
-
-    bool try_update_candidate(PredicateHead, const AnnotationContext<Kind, ::tyr::formalism::PredicateTag>&, DeltaPredicateAnnotations<Kind>&) const noexcept
-    {
-        return false;
-    }
-
-    bool try_update_candidate(FunctionHead,
-                              ygg::ClosedInterval<ygg::float_t>,
-                              const AnnotationContext<Kind, ::tyr::formalism::FunctionTag>&,
-                              DeltaFunctionAnnotations<Kind>&) const noexcept
-    {
-        return false;
-    }
-
-    CostUpdate<Kind> commit_annotation(PredicateHead, const DeltaPredicateAnnotations<Kind>&, PredicateAnnotations<Kind>&) const noexcept { return {}; }
 };
 
 }

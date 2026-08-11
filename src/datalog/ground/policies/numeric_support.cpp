@@ -30,8 +30,7 @@ NumericSupportSelector<GroundTag>::NumericSupportSelector(const ConstFactsWorksp
     m_static_facts(static_facts),
     m_fluent_facts(fluent_facts),
     m_annotations(annotations),
-    m_initial_intervals_cost_zero(initial_intervals_cost_zero),
-    m_selection()
+    m_initial_intervals_cost_zero(initial_intervals_cost_zero)
 {
 }
 
@@ -40,10 +39,7 @@ ygg::ClosedInterval<ygg::float_t> NumericSupportSelector<GroundTag>::lookup_stat
     return m_static_facts.fact_sets.function[term];
 }
 
-ygg::ClosedInterval<ygg::float_t> NumericSupportSelector<GroundTag>::current_interval(Key key) const
-{
-    return m_fluent_facts.fact_sets.function[key];
-}
+ygg::ClosedInterval<ygg::float_t> NumericSupportSelector<GroundTag>::current_interval(Key key) const { return m_fluent_facts.fact_sets.function[key]; }
 
 const NumericIntervalAnnotations<GroundTag>::Entries* NumericSupportSelector<GroundTag>::find_entries(Key key) const
 {

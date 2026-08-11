@@ -27,8 +27,6 @@
 #include <cstdint>
 #include <limits>
 #include <oneapi/tbb/spin_mutex.h>
-#include <optional>
-#include <span>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -206,6 +204,18 @@ public:
     /// Evaluation is quiescent here; old slots and entry buffers remain allocated for reuse.
     void clear() noexcept { m_annotations.clear(); }
 
+    Cost fetch_cost(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
+    {
+        return m_annotations.read(
+            binding,
+            [&](const auto& entries)
+            {
+                const auto* annotation = find_numeric_interval_annotation<LiftedTag>(entries, interval);
+                return annotation ? get_cost(*annotation) : std::numeric_limits<Cost>::max();
+            },
+            std::numeric_limits<Cost>::max());
+    }
+
     bool insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<LiftedTag, ::tyr::formalism::FunctionTag> annotation)
     {
         if (empty(interval))
@@ -234,22 +244,6 @@ public:
 
 private:
     ConcurrentRelationMap<::tyr::formalism::FunctionTag, Entries> m_annotations;
-};
-
-template<::tyr::formalism::RelationKind R>
-struct AnnotationContext<LiftedTag, R>
-{
-    std::span<const NumericSupport<LiftedTag>> numeric_supports;
-    std::vector<NumericSupport<LiftedTag>>& witness_support_scratch;
-    ::tyr::formalism::datalog::RuleView<R> rule;
-    std::optional<::tyr::formalism::datalog::RuleBindingView<R>> rule_binding;
-    Cost local_edge_cost;
-    ::tyr::formalism::datalog::ConjunctiveConditionView witness_condition;
-    const NumericSupportSelector<LiftedTag>& numeric_support_selector;
-    NumericSupportSelectorWorkspace<LiftedTag>& numeric_support_selector_workspace;
-    const PredicateAnnotations<LiftedTag>& annotations;
-    const FunctionAnnotations<LiftedTag>& numeric_annotations;
-    ::tyr::formalism::datalog::GrounderContext& ground_context;
 };
 
 }

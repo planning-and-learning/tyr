@@ -114,7 +114,7 @@ struct RPGPolicy<LiftedTag>
         const auto rule_binding = witness.get_rule_key();
         const auto row = rule_binding.get_objects();
         const auto& const_rule_workspace = *workspace.const_workspace.template get_rules<R>()[ygg::uint_t(rule_binding.get_relation().get_index())];
-        const auto witness_condition = const_rule_workspace.get_witness_rule().get_body();
+        const auto witness_condition = const_rule_workspace.get_rule().get_body();
         auto grounder_context = ::tyr::formalism::datalog::GrounderContext { workspace.datalog_builder, workspace.workspace_repository, workspace.binding };
 
         for (const auto literal : witness_condition.template get_literals<::tyr::formalism::FluentTag>())

@@ -21,6 +21,7 @@
 #include "tyr/algorithms/kckp/delta_kckp.hpp"
 #include "tyr/datalog/lifted/consistency_graph.hpp"
 #include "tyr/datalog/lifted/policies/numeric_support.hpp"
+#include "tyr/datalog/rule_evaluation.hpp"
 #include "tyr/datalog/statistics/rule.hpp"
 #include "tyr/datalog/workspaces/rule.hpp"
 #include "tyr/formalism/binding_index.hpp"
@@ -68,10 +69,14 @@ struct FunctionHeadUpdate : ygg::comparison::Mixin<FunctionHeadUpdate>
 {
     ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding;
     ygg::ClosedInterval<ygg::float_t> interval;
+    bool grows_fact;
 
-    FunctionHeadUpdate(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding, ygg::ClosedInterval<ygg::float_t> interval) :
+    FunctionHeadUpdate(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding,
+                       ygg::ClosedInterval<ygg::float_t> interval,
+                       bool grows_fact) :
         binding(binding),
-        interval(interval)
+        interval(interval),
+        grows_fact(grows_fact)
     {
     }
 
@@ -178,9 +183,7 @@ struct RuleWorkspace<LiftedTag, R>
 #endif
         std::vector<::tyr::formalism::datalog::RuleBindingView<R>> pending_rule_bindings;
 
-        NumericSupportSelectorWorkspace<LiftedTag> numeric_support_selector_workspace;
-        std::vector<NumericSupport<LiftedTag>> effect_support_scratch;
-        std::vector<NumericSupport<LiftedTag>> witness_support_scratch;
+        RuleEvaluationWorkspace<LiftedTag> rule_evaluation_workspace;
         ApplicabilityCache applicability_cache;
 
         /// Statistics
@@ -218,28 +221,18 @@ struct ConstRuleWorkspace<LiftedTag, R>
 {
 public:
     auto get_rule() const noexcept { return rule; }
-    auto get_witness_rule() const noexcept { return witness_rule; }
     auto get_nullary_condition() const noexcept { return nullary_condition; }
     auto get_conflicting_overapproximation_rule() const noexcept { return conflicting_overapproximation_rule; }
     const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
-    Cost get_pre_evaluated_metric_cost() const noexcept { return pre_evaluated_metric_cost; }
-    const auto& get_runtime_metric_effects() const noexcept { return runtime_metric_effects; }
 
-    ConstRuleWorkspace(::tyr::formalism::datalog::RuleView<R> rule,
-                       ::tyr::formalism::datalog::Repository& repository,
-                       kckp::Graph compatibility_graph,
-                       const TaggedFactSets<::tyr::formalism::StaticTag>& static_fact_sets);
+    ConstRuleWorkspace(::tyr::formalism::datalog::RuleView<R> rule, ::tyr::formalism::datalog::Repository& repository, kckp::Graph compatibility_graph);
 
 private:
     ::tyr::formalism::datalog::RuleView<R> rule;
-    ::tyr::formalism::datalog::RuleView<R> witness_rule;
     ::tyr::formalism::datalog::GroundConjunctiveConditionView nullary_condition;
     ::tyr::formalism::datalog::RuleView<R> unary_overapproximation_rule;
     ::tyr::formalism::datalog::RuleView<R> binary_overapproximation_rule;
     ::tyr::formalism::datalog::RuleView<R> conflicting_overapproximation_rule;
-
-    Cost pre_evaluated_metric_cost;
-    ::tyr::formalism::datalog::NumericEffectOperatorViewList<::tyr::formalism::FluentTag> runtime_metric_effects;
 
     StaticConsistencyGraph static_consistency_graph;
 };
@@ -298,9 +291,7 @@ RuleWorkspace<LiftedTag, R>::Solve::Solve() :
     seen_pending_rule_bindings(),
 #endif
     pending_rule_bindings(),
-    numeric_support_selector_workspace(),
-    effect_support_scratch(),
-    witness_support_scratch(),
+    rule_evaluation_workspace(),
     applicability_cache(),
     statistics()
 {
@@ -316,9 +307,8 @@ void RuleWorkspace<LiftedTag, R>::Solve::clear() noexcept
     seen_pending_rule_bindings.clear();
 #endif
     pending_rule_bindings.clear();
-    numeric_support_selector_workspace.clear();
-    effect_support_scratch.clear();
-    witness_support_scratch.clear();
+    rule_evaluation_workspace.selector.clear();
+    rule_evaluation_workspace.exact_supports.clear();
     applicability_cache.clear();
 }
 

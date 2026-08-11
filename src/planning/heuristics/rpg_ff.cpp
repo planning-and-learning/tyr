@@ -147,7 +147,7 @@ private:
 
         const auto& selector = this->m_workspace.get_numeric_support_selector();
         selector.for_each_constraint_support(constraint,
-                                             m_numeric_support_workspaces[numeric_support_depth],
+                                             m_numeric_support_workspaces[numeric_support_depth].selection,
                                              datalog::SumAggregation {},
                                              [&](const auto head, const auto, const auto& annotation)
                                              { extract_relaxed_plan(head, annotation, state_context, numeric_support_depth + 1); });

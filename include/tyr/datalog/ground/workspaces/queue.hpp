@@ -18,8 +18,7 @@
 #ifndef TYR_DATALOG_GROUND_WORKSPACES_QUEUE_HPP_
 #define TYR_DATALOG_GROUND_WORKSPACES_QUEUE_HPP_
 
-#include "tyr/datalog/ground/policies/numeric_support.hpp"
-#include "tyr/datalog/policies/aggregation.hpp"
+#include "tyr/datalog/rule_evaluation.hpp"
 #include "tyr/datalog/workspaces/queue.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
@@ -56,27 +55,15 @@ struct GroundQueueStatistics
 
 struct GroundQueueScratch
 {
-    using SelectionEntry = GroundNumericSupportSelectorWorkspace::SelectionEntry;
     using Term = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
 
-    std::vector<SelectionEntry> support_selection;
-    std::vector<SelectionEntry> auxiliary_selection;
-    std::vector<SelectionEntry> metric_selection;
-    std::vector<SelectionEntry> evaluation_selection;
-    std::vector<NumericSupport<GroundTag>> numeric_supports;
-    DeltaPredicateAnnotations<GroundTag> delta_annotations;
-    DeltaFunctionAnnotations<GroundTag> delta_numeric_annotations;
+    RuleEvaluationWorkspace<GroundTag> rule_evaluation;
     std::vector<Term> changed_terms;
 
     void clear() noexcept
     {
-        support_selection.clear();
-        auxiliary_selection.clear();
-        metric_selection.clear();
-        evaluation_selection.clear();
-        numeric_supports.clear();
-        delta_annotations.clear();
-        delta_numeric_annotations.clear();
+        rule_evaluation.selector.clear();
+        rule_evaluation.exact_supports.clear();
         changed_terms.clear();
     }
 };

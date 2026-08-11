@@ -50,13 +50,8 @@ public:
         [[nodiscard]] bool empty() const noexcept { return predicate.empty() && function.empty(); }
     };
 
-    void clear() noexcept
-    {
-        m_buckets.clear();
-        m_current = Cost(0);
-    }
+    void clear() noexcept { m_buckets.clear(); }
 
-    [[nodiscard]] Cost current_cost() const noexcept { return m_current; }
     [[nodiscard]] bool is_empty() const noexcept { return m_buckets.empty(); }
 
     [[nodiscard]] Cost min_cost() const noexcept { return m_buckets.empty() ? std::numeric_limits<Cost>::max() : m_buckets.begin()->first; }
@@ -99,30 +94,6 @@ public:
         insert(update.new_cost, key);
     }
 
-    void clear_current() { m_buckets.erase(m_current); }
-
-    bool advance_to_next_nonempty()
-    {
-        if (is_empty())
-            return false;
-        m_current = min_cost();
-        return true;
-    }
-
-    const PredicateBucket& get_current_bucket() const
-    {
-        static const PredicateBucket kEmpty {};
-        const auto it = m_buckets.find(m_current);
-        return it == m_buckets.end() ? kEmpty : it->second.predicate;
-    }
-
-    const FunctionBucket& get_current_function_bucket() const
-    {
-        static const FunctionBucket kEmpty {};
-        const auto it = m_buckets.find(m_current);
-        return it == m_buckets.end() ? kEmpty : it->second.function;
-    }
-
     Bucket take(Cost cost)
     {
         const auto it = m_buckets.find(cost);
@@ -136,7 +107,6 @@ public:
 
 private:
     std::map<Cost, Bucket> m_buckets;
-    Cost m_current = Cost(0);
 };
 
 }

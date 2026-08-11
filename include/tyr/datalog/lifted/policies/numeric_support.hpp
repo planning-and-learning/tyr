@@ -43,7 +43,7 @@ public:
     using SelectionEntry = NumericSupportSelectorWorkspace<LiftedTag>::SelectionEntry;
     using Core = NumericSupportSelectorCore<NumericSupportSelector<LiftedTag>, Key, SelectionEntry>;
 
-    NumericSupportSelector(const FactSets& fact_sets, const NumericIntervalAnnotations<LiftedTag>& annotations);
+    NumericSupportSelector(const FactSets& fact_sets, const NumericIntervalAnnotations<LiftedTag>& annotations, bool initial_intervals_cost_zero = false);
 
     /**
      * Storage accessors for the shared core.
@@ -55,45 +55,12 @@ public:
     ygg::ClosedInterval<ygg::float_t> current_interval(Key key) const;
     const NumericIntervalAnnotations<LiftedTag>::Entries* find_entries(Key key) const;
     bool keys_equal(Key lhs, Key rhs) const noexcept { return lhs == rhs; }
-    Cost missing_entries_cost() const noexcept { return std::numeric_limits<Cost>::max(); }
-
-    template<typename Callback>
-    void for_each_support(const NumericSupport<LiftedTag>& support, Callback&& callback) const
-    {
-        const auto reported =
-            this->for_each_entry_support(SelectionEntry { support.get_key(), support.get_interval(), nullptr, support.get_cost() },
-                                         [&](const auto key, const auto interval, const auto& annotation) { callback(key, interval, get_cost(annotation)); });
-        if (!reported)
-            callback(support.get_key(), support.get_interval(), support.get_cost());
-    }
-
-    /**
-     * Workspace-based conveniences on top of the shared core.
-     */
-
-    using Core::for_each_constraint_support;
-    using Core::get_constraint_cost;
-
-    template<typename AggregationFunction>
-    Cost get_constraint_cost(::tyr::formalism::datalog::GroundBooleanOperatorView constraint,
-                             NumericSupportSelectorWorkspace<LiftedTag>& workspace,
-                             AggregationFunction agg) const
-    {
-        return get_constraint_cost(constraint, workspace.selection, agg);
-    }
-
-    template<typename AggregationFunction, typename Callback>
-    Cost for_each_constraint_support(::tyr::formalism::datalog::GroundBooleanOperatorView constraint,
-                                     NumericSupportSelectorWorkspace<LiftedTag>& workspace,
-                                     AggregationFunction agg,
-                                     Callback callback) const
-    {
-        return for_each_constraint_support(constraint, workspace.selection, agg, callback);
-    }
+    Cost missing_entries_cost() const noexcept { return m_initial_intervals_cost_zero ? Cost(0) : std::numeric_limits<Cost>::max(); }
 
 private:
     FactSets m_fact_sets;
     const NumericIntervalAnnotations<LiftedTag>& m_annotations;
+    bool m_initial_intervals_cost_zero;
 };
 
 }

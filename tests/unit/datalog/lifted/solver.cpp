@@ -18,11 +18,15 @@
 #include "tyr/datalog/lifted/solver.hpp"
 
 #include "planning/parser.hpp"
+#include "tyr/datalog/ground/policies/annotation.hpp"
+#include "tyr/datalog/ground/programs/program.hpp"
+#include "tyr/datalog/ground/solver.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/policies/annotation.hpp"
 #include "tyr/datalog/lifted/programs/program.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/datas.hpp"
+#include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/merge.hpp"
 #include "tyr/planning/lifted/programs/ground.hpp"
 #include "tyr/planning/planning.hpp"
@@ -215,6 +219,8 @@ struct LiftedNumericProgram
     fd::PredicateBindingView<f::FluentTag> goal;
     fd::FunctionBindingView<f::FluentTag> source;
     fd::FunctionBindingView<f::FluentTag> target;
+    fd::RepositoryFactoryPtr factory;
+    fd::RepositoryPtr repository;
     d::Program<LiftedTag> program;
 
     LiftedNumericProgram(fd::RepositoryFactoryPtr factory_,
@@ -226,12 +232,15 @@ struct LiftedNumericProgram
         goal(goal_),
         source(source_),
         target(target_),
-        program(program_view, std::move(repository_), std::move(factory_))
+        factory(std::move(factory_)),
+        repository(std::move(repository_)),
+        program(program_view, repository, factory)
     {
     }
 };
 
-LiftedNumericProgram make_lifted_numeric_program(bool include_source_rule = true)
+LiftedNumericProgram make_lifted_numeric_program(bool include_source_rule = true,
+                                                 std::initializer_list<ygg::float_t> initial_source_values = {})
 {
     auto factory = std::make_shared<fd::RepositoryFactory>();
     auto repository = factory->create_shared();
@@ -262,6 +271,7 @@ LiftedNumericProgram make_lifted_numeric_program(bool include_source_rule = true
     const auto target = bind_function(target_function);
     const auto source_term = make_function_term(source_function);
     const auto target_term = make_function_term(target_function);
+    const auto ground_source_term = intern(ygg::Data<fd::GroundFunctionTerm<f::FluentTag>>(source));
     const auto empty_body = intern(ygg::Data<fd::ConjunctiveCondition>());
 
     const auto source_assign_effect = intern(ygg::Data<fd::NumericEffect<f::FluentTag>>(f::NumericEffectOperatorKind::Assign,
@@ -313,6 +323,9 @@ LiftedNumericProgram make_lifted_numeric_program(bool include_source_rule = true
     program_data.fluent_predicates.push_back(goal_predicate.get_index());
     program_data.fluent_functions.push_back(source_function.get_index());
     program_data.fluent_functions.push_back(target_function.get_index());
+    for (const auto value : initial_source_values)
+        program_data.fluent_fterm_values.push_back(
+            intern(ygg::Data<fd::GroundFunctionTermValue<f::FluentTag>>(ground_source_term, value)).get_index());
     program_data.predicate_rules.push_back(predicate_rule.get_index());
     if (include_source_rule)
         program_data.function_rules.push_back(source_rule.get_index());
@@ -449,6 +462,137 @@ TEST(TyrDatalogLiftedBottomUpTest, SumAnnotationPricesEachNumericSupportOccurren
     EXPECT_EQ(witness->get_numeric_supports().front().get_key(), fixture.source);
     EXPECT_EQ(witness->get_numeric_supports().front().get_interval(), interval);
     EXPECT_EQ(witness->get_numeric_supports().front().get_cost(), 2);
+}
+
+TEST(TyrDatalogLiftedBottomUpTest, StoredNumericCertificateCanStillBecomeAvailable)
+{
+    auto fixture = make_lifted_numeric_program();
+    using AnnotationPolicy = d::MinCostAnnotationPolicy<LiftedTag, d::SumAggregation>;
+    using Workspace = d::ProgramWorkspace<LiftedTag, AnnotationPolicy, d::NoTerminationPolicy<LiftedTag>>;
+    auto workspace = Workspace(fixture.program);
+    auto context = d::ProgramExecutionContext(workspace);
+    const auto source_interval = ygg::ClosedInterval<ygg::float_t>(3, 3);
+    workspace.numeric_annotations.insert(fixture.source, source_interval, d::BaseAnnotation<LiftedTag>(2));
+
+    d::compute_model(context);
+
+    EXPECT_EQ(workspace.facts.fact_sets.function[fixture.source], source_interval);
+    EXPECT_EQ(workspace.facts.fact_sets.function[fixture.target], source_interval);
+}
+
+TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateSemantics)
+{
+    auto fixture = make_lifted_numeric_program(false, { 1, 10 });
+    const auto source_interval = ygg::ClosedInterval<ygg::float_t>(1, 10);
+    const auto low_support_interval = ygg::ClosedInterval<ygg::float_t>(1, 2);
+    const auto interior_support_interval = ygg::ClosedInterval<ygg::float_t>(4, 6);
+    const auto high_support_interval = ygg::ClosedInterval<ygg::float_t>(8, 10);
+    const auto low_support_metric = ygg::ClosedInterval<ygg::float_t>(3, 3);
+    const auto interior_support_metric = ygg::ClosedInterval<ygg::float_t>(100, 100);
+    const auto high_support_metric = ygg::ClosedInterval<ygg::float_t>(5, 5);
+    const auto expected_target_metric = ygg::ClosedInterval<ygg::float_t>(6, 6);
+    const auto expect_source_annotation_order = [&](const auto* entries)
+    {
+        ASSERT_NE(entries, nullptr);
+        ASSERT_EQ(entries->size(), 3);
+        EXPECT_EQ(entries->at(0).interval, interior_support_interval);
+        EXPECT_EQ(entries->at(1).interval, low_support_interval);
+        EXPECT_EQ(entries->at(2).interval, high_support_interval);
+    };
+
+    using LiftedAnnotationPolicy = d::MinCostAnnotationPolicy<LiftedTag, d::SumAggregation>;
+    using LiftedWorkspace = d::ProgramWorkspace<LiftedTag, LiftedAnnotationPolicy, d::NoTerminationPolicy<LiftedTag>>;
+    auto lifted_workspace = LiftedWorkspace(fixture.program);
+    auto lifted_context = d::ProgramExecutionContext(lifted_workspace);
+    lifted_workspace.numeric_annotations.clear();
+    lifted_workspace.numeric_annotations.insert(
+        fixture.source, high_support_interval, d::BaseAnnotation<LiftedTag>(high_support_metric, d::Cost(2)));
+    lifted_workspace.numeric_annotations.insert(
+        fixture.source, interior_support_interval, d::BaseAnnotation<LiftedTag>(interior_support_metric, d::Cost(1)));
+    lifted_workspace.numeric_annotations.insert(
+        fixture.source, low_support_interval, d::BaseAnnotation<LiftedTag>(low_support_metric, d::Cost(2)));
+    expect_source_annotation_order(
+        lifted_workspace.numeric_annotations.find_entries(fixture.source.get_index().relation, fixture.source.get_index().row));
+
+    d::compute_model(lifted_context);
+
+    EXPECT_EQ(lifted_workspace.workspace_repository.template size<fd::GroundRule<f::PredicateTag>>(), 0);
+    EXPECT_EQ(lifted_workspace.workspace_repository.template size<fd::GroundRule<f::FunctionTag>>(), 0);
+
+    auto builder = fd::Builder {};
+    auto binding = ygg::IndexList<f::Object> {};
+    auto grounder = fd::GrounderContext { builder, *fixture.repository, binding };
+    auto ground_program_data = ygg::Data<fd::GroundProgram> {};
+    const auto lifted_program = fixture.program.get_program();
+    for (const auto predicate : lifted_program.get_predicates<f::FluentTag>())
+        ground_program_data.fluent_predicates.push_back(predicate.get_index());
+    for (const auto function : lifted_program.get_functions<f::FluentTag>())
+        ground_program_data.fluent_functions.push_back(function.get_index());
+    for (const auto value : lifted_program.get_fterm_values<f::FluentTag>())
+        ground_program_data.fluent_fterm_values.push_back(value.get_index());
+    for (const auto rule : lifted_program.get_rules<f::PredicateTag>())
+        ground_program_data.predicate_ground_rules.push_back(fd::ground(rule, grounder).first.get_index());
+    for (const auto rule : lifted_program.get_rules<f::FunctionTag>())
+        ground_program_data.function_ground_rules.push_back(fd::ground(rule, grounder).first.get_index());
+    fd::canonicalize(ground_program_data);
+    const auto ground_program_view = fixture.repository->get_or_create(ground_program_data).first;
+    auto ground_program = d::Program<GroundTag>(ground_program_view, fixture.repository, fixture.factory);
+
+    using GroundAnnotationPolicy = d::MinCostAnnotationPolicy<GroundTag, d::SumAggregation>;
+    using GroundWorkspace = d::ProgramWorkspace<GroundTag, GroundAnnotationPolicy, d::NoTerminationPolicy<GroundTag>>;
+    auto ground_workspace = GroundWorkspace(ground_program);
+    auto ground_context = d::ProgramExecutionContext(ground_workspace);
+
+    auto ground_source_data = ygg::Data<fd::GroundFunctionTerm<f::FluentTag>>(fixture.source);
+    auto ground_target_data = ygg::Data<fd::GroundFunctionTerm<f::FluentTag>>(fixture.target);
+    const auto ground_source = fixture.repository->get_or_create(ground_source_data).first;
+    const auto ground_target = fixture.repository->get_or_create(ground_target_data).first;
+    ground_workspace.numeric_annotations.clear();
+    ground_workspace.numeric_annotations.insert(
+        ground_source, high_support_interval, d::BaseAnnotation<GroundTag>(high_support_metric, d::Cost(2)));
+    ground_workspace.numeric_annotations.insert(
+        ground_source, interior_support_interval, d::BaseAnnotation<GroundTag>(interior_support_metric, d::Cost(1)));
+    ground_workspace.numeric_annotations.insert(
+        ground_source, low_support_interval, d::BaseAnnotation<GroundTag>(low_support_metric, d::Cost(2)));
+    expect_source_annotation_order(ground_workspace.numeric_annotations.find_entries(ground_source.get_function().get_index(),
+                                                                                      ground_source.get_row().get_index().row));
+
+    d::compute_model(ground_context);
+
+    EXPECT_TRUE(lifted_workspace.facts.fact_sets.predicate.contains(fixture.goal));
+    EXPECT_TRUE(ground_workspace.facts.fact_sets.predicate.contains(fixture.goal));
+    EXPECT_EQ(lifted_workspace.facts.fact_sets.function[fixture.source], source_interval);
+    EXPECT_EQ(ground_workspace.facts.fact_sets.function[ground_source], source_interval);
+    EXPECT_EQ(lifted_workspace.facts.fact_sets.function[fixture.target], source_interval);
+    EXPECT_EQ(ground_workspace.facts.fact_sets.function[ground_target], source_interval);
+
+    const auto* lifted_annotation = lifted_workspace.numeric_annotations.find(fixture.target, source_interval);
+    const auto* ground_annotation = ground_workspace.numeric_annotations.find(ground_target, source_interval);
+    ASSERT_NE(lifted_annotation, nullptr);
+    ASSERT_NE(ground_annotation, nullptr);
+    const auto* lifted_witness = std::get_if<d::WitnessAnnotation<LiftedTag, f::FunctionTag>>(lifted_annotation);
+    const auto* ground_witness = std::get_if<d::WitnessAnnotation<GroundTag, f::FunctionTag>>(ground_annotation);
+    ASSERT_NE(lifted_witness, nullptr);
+    ASSERT_NE(ground_witness, nullptr);
+    EXPECT_EQ(lifted_witness->get_cost(), 5);
+    EXPECT_EQ(ground_witness->get_cost(), 5);
+    EXPECT_EQ(lifted_witness->get_metric(), expected_target_metric);
+    EXPECT_EQ(ground_witness->get_metric(), expected_target_metric);
+    ASSERT_EQ(lifted_witness->get_numeric_supports().size(), 2);
+    ASSERT_EQ(ground_witness->get_numeric_supports().size(), 2);
+    for (size_t i = 0; i < ground_witness->get_numeric_supports().size(); ++i)
+    {
+        const auto& ground_support = ground_witness->get_numeric_supports()[i];
+        const auto& lifted_support = lifted_witness->get_numeric_supports()[i];
+        EXPECT_EQ(ground_support.get_key().get_function().get_name(), lifted_support.get_key().get_relation().get_name());
+        EXPECT_EQ(ground_support.get_key().get_row().get_objects().size(), lifted_support.get_key().get_objects().size());
+        EXPECT_EQ(ground_support.get_interval(), lifted_support.get_interval());
+        EXPECT_EQ(ground_support.get_cost(), lifted_support.get_cost());
+    }
+    EXPECT_EQ(lifted_witness->get_numeric_supports()[0].get_interval(), low_support_interval);
+    EXPECT_EQ(lifted_witness->get_numeric_supports()[0].get_cost(), 2);
+    EXPECT_EQ(lifted_witness->get_numeric_supports()[1].get_interval(), high_support_interval);
+    EXPECT_EQ(lifted_witness->get_numeric_supports()[1].get_cost(), 2);
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, RepeatedArgumentsRetryPendingExistingHeadAchiever)
@@ -761,8 +905,8 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
         function_bindings.push_back(make_function_binding(function));
     }
 
-    auto delta_annotations = d::DeltaPredicateAnnotations<LiftedTag>(2);
-    auto delta_numeric_annotations = d::DeltaFunctionAnnotations<LiftedTag>(1);
+    auto delta_annotations = d::ConcurrentPredicateAnnotations(2);
+    auto delta_numeric_annotations = d::ConcurrentFunctionAnnotations(1);
     const auto interval = ygg::ClosedInterval<ygg::float_t>(0, 1);
     auto arena = oneapi::tbb::task_arena(8);
     arena.execute(

@@ -455,6 +455,9 @@ void bind_common_configurations(nb::module_& m)
     bind_configuration<Kind, MinCostAnnotationPolicy<Kind, MaxAggregation>, TerminationPolicy<Kind, MaxAggregation>, RuleCostOverridePolicy<Kind>>(
         m,
         "MaxGoalOverride");
+    bind_configuration<Kind, MinCostAnnotationWithAchieversPolicy<Kind, MaxAggregation>, TerminationPolicy<Kind, MaxAggregation>, RuleCostPolicy<Kind>>(
+        m,
+        "MaxAchieverGoal");
     bind_configuration<Kind, MinCostAnnotationWithAchieversPolicy<Kind, MaxAggregation>, TerminationPolicy<Kind, MaxAggregation>, RuleCostOverridePolicy<Kind>>(
         m,
         "MaxAchieverGoalOverride");
