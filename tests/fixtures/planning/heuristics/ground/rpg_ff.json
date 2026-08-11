@@ -409,10 +409,10 @@
             "task_file": "numeric/tests/fo-counters/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 1
+                    "h": 4
                 },
                 "general": {
-                    "h": 1
+                    "h": 4
                 }
             }
         },

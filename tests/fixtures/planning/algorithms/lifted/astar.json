@@ -5175,8 +5175,8 @@
                 }
             },
             "hadd_unit": {
-                "num_accepted_successors": 76,
-                "num_expanded": 20,
+                "num_accepted_successors": 69,
+                "num_expanded": 18,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5192,8 +5192,8 @@
                 }
             },
             "hadd_general": {
-                "num_accepted_successors": 76,
-                "num_expanded": 20,
+                "num_accepted_successors": 69,
+                "num_expanded": 18,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5209,8 +5209,8 @@
                 }
             },
             "hff_unit": {
-                "num_accepted_successors": 156,
-                "num_expanded": 50,
+                "num_accepted_successors": 74,
+                "num_expanded": 20,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5218,16 +5218,16 @@
                     "length": 5,
                     "actions": [
                         "(increase_rate c1)",
-                        "(increment c1)",
                         "(increase_rate c2)",
                         "(increment c2)",
+                        "(increment c1)",
                         "(increment c2)"
                     ]
                 }
             },
             "hff_general": {
-                "num_accepted_successors": 156,
-                "num_expanded": 50,
+                "num_accepted_successors": 74,
+                "num_expanded": 20,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5235,9 +5235,9 @@
                     "length": 5,
                     "actions": [
                         "(increase_rate c1)",
-                        "(increment c1)",
                         "(increase_rate c2)",
                         "(increment c2)",
+                        "(increment c1)",
                         "(increment c2)"
                     ]
                 }

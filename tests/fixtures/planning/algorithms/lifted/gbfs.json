@@ -5428,14 +5428,15 @@
                 }
             },
             "hadd_unit": {
-                "num_accepted_successors": 68,
-                "num_expanded": 18,
+                "num_accepted_successors": 90,
+                "num_expanded": 19,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 5,
-                    "length": 5,
+                    "cost": 6,
+                    "length": 6,
                     "actions": [
+                        "(increase_rate c0)",
                         "(increase_rate c1)",
                         "(increase_rate c2)",
                         "(increment c2)",
@@ -5445,14 +5446,15 @@
                 }
             },
             "hadd_general": {
-                "num_accepted_successors": 68,
-                "num_expanded": 18,
+                "num_accepted_successors": 90,
+                "num_expanded": 19,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 5,
-                    "length": 5,
+                    "cost": 6,
+                    "length": 6,
                     "actions": [
+                        "(increase_rate c0)",
                         "(increase_rate c1)",
                         "(increase_rate c2)",
                         "(increment c2)",
@@ -5462,14 +5464,15 @@
                 }
             },
             "hff_unit": {
-                "num_accepted_successors": 48,
-                "num_expanded": 13,
+                "num_accepted_successors": 44,
+                "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 5,
-                    "length": 5,
+                    "cost": 6,
+                    "length": 6,
                     "actions": [
+                        "(increase_rate c0)",
                         "(increase_rate c1)",
                         "(increase_rate c2)",
                         "(increment c1)",
@@ -5479,14 +5482,15 @@
                 }
             },
             "hff_general": {
-                "num_accepted_successors": 48,
-                "num_expanded": 13,
+                "num_accepted_successors": 44,
+                "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 5,
-                    "length": 5,
+                    "cost": 6,
+                    "length": 6,
                     "actions": [
+                        "(increase_rate c0)",
                         "(increase_rate c1)",
                         "(increase_rate c2)",
                         "(increment c1)",

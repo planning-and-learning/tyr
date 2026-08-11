@@ -5337,8 +5337,8 @@
                 }
             },
             "hff_unit": {
-                "num_accepted_successors": 126,
-                "num_expanded": 38,
+                "num_accepted_successors": 68,
+                "num_expanded": 20,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5348,14 +5348,14 @@
                         "(increase_rate c2)",
                         "(increment c2)",
                         "(increase_rate c1)",
-                        "(increment c1)",
-                        "(increment c2)"
+                        "(increment c2)",
+                        "(increment c1)"
                     ]
                 }
             },
             "hff_general": {
-                "num_accepted_successors": 126,
-                "num_expanded": 38,
+                "num_accepted_successors": 68,
+                "num_expanded": 20,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5365,8 +5365,8 @@
                         "(increase_rate c2)",
                         "(increment c2)",
                         "(increase_rate c1)",
-                        "(increment c1)",
-                        "(increment c2)"
+                        "(increment c2)",
+                        "(increment c1)"
                     ]
                 }
             },
