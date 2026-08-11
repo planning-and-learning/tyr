@@ -22,7 +22,6 @@
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
-#include <concepts>
 #include <fmt/core.h>
 #include <gtest/gtest.h>
 #include <stdexcept>
@@ -40,9 +39,6 @@ namespace
 using GroundAtomViews = std::vector<fd::GroundAtomView<f::FluentTag>>;
 using StaticGroundAtomViews = std::vector<fd::GroundAtomView<f::StaticTag>>;
 using PredicateBindingViews = std::vector<fd::PredicateBindingView<f::FluentTag>>;
-
-static_assert(std::same_as<datalog::PredicateAnnotationHead, fd::PredicateBindingView<f::FluentTag>>);
-static_assert(std::same_as<datalog::FunctionAnnotationHead, fd::FunctionBindingView<f::FluentTag>>);
 
 template<typename Context>
 PredicateBindingViews binding_views(const Context& ctx)
@@ -553,7 +549,7 @@ TEST(TyrDatalogGroundQueueTest, GroundUsedCostOverrideDoesNotCreateMetricEffectC
     const auto program = fixture.program();
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(program);
     auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
-    cost_policy.set_cost(derive_a, datalog::Cost(7));
+    cost_policy.set_cost(derive_a.get_row(), datalog::Cost(7));
     using Workspace = datalog::ProgramWorkspace<GroundTag,
                                                 datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>,
                                                 datalog::NoTerminationPolicy<GroundTag>,
@@ -672,13 +668,14 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationCommitsMixedLowestCostBucket)
     EXPECT_EQ(ctx.out().statistics().num_rules_fired, 3);
 }
 
-TEST(TyrDatalogGroundQueueTest, AchieverPolicyGroundRecordsFiredRule)
+TEST(TyrDatalogGroundQueueTest, AchieverPolicyGroundRecordsDistinctRuleBindings)
 {
     auto fixture = GroundQueueFixture();
     const auto a = fixture.fluent_atom("a");
     const auto b = fixture.fluent_atom("b");
     fixture.rule(fixture.condition(), a);
-    const auto derive_b = fixture.rule(fixture.condition({ fixture.fluent_literal(a) }), b);
+    const auto first_derive_b = fixture.rule(fixture.condition({ fixture.fluent_literal(a) }), b);
+    const auto second_derive_b = fixture.rule(fixture.condition({ fixture.fluent_literal(a) }), b);
 
     const auto program = fixture.program();
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(program);
@@ -696,8 +693,12 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyGroundRecordsFiredRule)
     EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
     const auto* achievers = ctx.out().annotation_policy().find_achievers(b.get_row());
     ASSERT_NE(achievers, nullptr);
-    ASSERT_EQ(achievers->size(), 1);
-    EXPECT_EQ((*achievers)[0].get_rule_key().get_index(), derive_b.get_index());
+    ASSERT_EQ(achievers->size(), 2);
+    const auto first_key = (*achievers)[0].get_rule_key();
+    const auto second_key = (*achievers)[1].get_rule_key();
+    EXPECT_NE(first_key, second_key);
+    EXPECT_TRUE((first_key == first_derive_b.get_row() && second_key == second_derive_b.get_row())
+                || (first_key == second_derive_b.get_row() && second_key == first_derive_b.get_row()));
 }
 
 TEST(TyrDatalogGroundQueueTest, DerivedNumericIntervalUnblocksRuleAndRecordsSupport)
@@ -800,7 +801,7 @@ TEST(TyrDatalogGroundQueueTest, NumericTransitionCreditOnlyReducesTheLocalEdge)
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
     auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
-    cost_policy.set_cost(rule, term.get_row(), interval, datalog::Cost(3));
+    cost_policy.set_cost(rule.get_row(), term.get_row(), interval, datalog::Cost(3));
     using Workspace = datalog::ProgramWorkspace<GroundTag,
                                                 datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>,
                                                 datalog::NoTerminationPolicy<GroundTag>,
@@ -834,7 +835,7 @@ TEST(TyrDatalogGroundQueueTest, TransitionCreditDoesNotTurnRawPositiveEdgeIntoFr
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
     auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
-    cost_policy.set_cost(rule, term.get_row(), raw_interval, datalog::Cost(1));
+    cost_policy.set_cost(rule.get_row(), term.get_row(), raw_interval, datalog::Cost(1));
     auto termination_policy = datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>();
     termination_policy.set_goals(goal);
     using Workspace = datalog::ProgramWorkspace<GroundTag,

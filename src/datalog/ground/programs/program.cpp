@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/ground/programs/program.hpp"
+#include "tyr/datalog/ground/program.hpp"
 
 namespace tyr::datalog
 {

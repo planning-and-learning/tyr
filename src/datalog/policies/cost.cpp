@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/ground/policies/cost.hpp"
+#include "tyr/datalog/policies/cost.hpp"
 
 #include "tyr/datalog/policies/cost_concept.hpp"
 
@@ -23,8 +23,21 @@ namespace tyr::datalog
 {
 
 static_assert(RuleCostPolicyConcept<RuleCostPolicy<GroundTag>, GroundTag>);
+static_assert(RuleCostPolicyConcept<RuleCostPolicy<LiftedTag>, LiftedTag>);
 static_assert(RuleCostPolicyConcept<RuleCostOverridePolicy<GroundTag>, GroundTag>);
+static_assert(RuleCostPolicyConcept<RuleCostOverridePolicy<LiftedTag>, LiftedTag>);
 static_assert(MutableRuleCostPolicyConcept<RuleCostPolicy<GroundTag>, GroundTag>);
+static_assert(MutableRuleCostPolicyConcept<RuleCostPolicy<LiftedTag>, LiftedTag>);
 static_assert(MutableRuleCostPolicyConcept<RuleCostOverridePolicy<GroundTag>, GroundTag>);
+static_assert(MutableRuleCostPolicyConcept<RuleCostOverridePolicy<LiftedTag>, LiftedTag>);
+
+template struct NumericTransitionCostKey<::tyr::formalism::PredicateTag>;
+template struct NumericTransitionCostKey<::tyr::formalism::FunctionTag>;
+template class RuleCostPolicy<GroundTag>;
+template class RuleCostPolicy<LiftedTag>;
+template class RuleCostOverrideStorage<::tyr::formalism::PredicateTag>;
+template class RuleCostOverrideStorage<::tyr::formalism::FunctionTag>;
+template class RuleCostOverridePolicy<GroundTag>;
+template class RuleCostOverridePolicy<LiftedTag>;
 
 }

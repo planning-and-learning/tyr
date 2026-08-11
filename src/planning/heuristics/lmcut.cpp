@@ -21,9 +21,8 @@
 #include "../lifted/heuristics/rpg.hpp"
 #include "rpg.hpp"
 #include "tyr/datalog/ground/policies/annotation.hpp"
-#include "tyr/datalog/ground/policies/cost.hpp"
 #include "tyr/datalog/lifted/policies/annotation.hpp"
-#include "tyr/datalog/lifted/policies/cost.hpp"
+#include "tyr/datalog/policies/cost.hpp"
 #include "tyr/datalog/policies/numeric_support.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 
@@ -52,11 +51,11 @@ namespace fd = ::tyr::formalism::datalog;
 template<TaskKind Kind>
 struct LMCutNumericNode : ygg::comparison::Mixin<LMCutNumericNode<Kind>>
 {
-    datalog::FunctionAnnotationHead key;
+    fd::FunctionBindingView<f::FluentTag> key;
     ygg::ClosedInterval<ygg::float_t> interval;
 
     LMCutNumericNode() = delete;
-    LMCutNumericNode(datalog::FunctionAnnotationHead key, ygg::ClosedInterval<ygg::float_t> interval) : key(key), interval(interval) {}
+    LMCutNumericNode(fd::FunctionBindingView<f::FluentTag> key, ygg::ClosedInterval<ygg::float_t> interval) : key(key), interval(interval) {}
 
     auto identifying_members() const noexcept { return std::make_tuple(key, lower(interval), upper(interval)); }
 };
@@ -84,10 +83,10 @@ struct LMCutImplementation :
                                       TP,
                                       datalog::RuleCostOverridePolicy<Kind>>;
     using ActionBinding = ::tyr::formalism::planning::ActionBindingView;
-    using PredicateHead = datalog::PredicateAnnotationHead;
+    using PredicateHead = fd::PredicateBindingView<f::FluentTag>;
     using NumericNode = LMCutNumericNode<Kind>;
-    using RuleEdge = datalog::WitnessRuleKeyT<Kind, f::PredicateTag>;
-    using NumericEdge = datalog::NumericTransitionCostKey<Kind, f::FunctionTag>;
+    using RuleEdge = fd::RuleBindingView<f::PredicateTag>;
+    using NumericEdge = datalog::NumericTransitionCostKey<f::FunctionTag>;
     using Precondition = std::variant<PredicateHead, NumericNode>;
     using CutFrontierAtoms = f::planning::GroundAtomViewList<f::FluentTag>;
 

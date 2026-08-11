@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_LIFTED_PROGRAMS_ACTION_HPP_
 #define TYR_PLANNING_LIFTED_PROGRAMS_ACTION_HPP_
 
-#include "tyr/datalog/lifted/programs/program.hpp"
+#include "tyr/datalog/lifted/program.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/lifted/programs/translation_context.hpp"

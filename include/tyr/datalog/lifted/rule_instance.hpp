@@ -18,7 +18,6 @@
 #ifndef TYR_DATALOG_LIFTED_RULE_INSTANCE_HPP_
 #define TYR_DATALOG_LIFTED_RULE_INSTANCE_HPP_
 
-#include "tyr/datalog/lifted/policies/annotation_types.hpp"
 #include "tyr/datalog/rule_instance.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 
@@ -66,7 +65,7 @@ public:
 private:
     SourceRule m_rule;
     ::tyr::formalism::datalog::GrounderContext& m_grounder;
-    mutable std::optional<WitnessRuleKeyT<Task, R>> m_witness_key;
+    mutable std::optional<::tyr::formalism::datalog::RuleBindingView<R>> m_witness_key;
 };
 
 }

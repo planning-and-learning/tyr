@@ -29,9 +29,9 @@ template<typename T, typename Kind>
 concept RuleCostPolicyConcept = TaskKind<Kind>
                                 && requires(T& policy,
                                             const T& const_policy,
-                                            WitnessRuleKeyT<Kind, ::tyr::formalism::PredicateTag> predicate_rule_key,
-                                            WitnessRuleKeyT<Kind, ::tyr::formalism::FunctionTag> function_rule_key,
-                                            FunctionAnnotationHead numeric_key,
+                                            ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::PredicateTag> predicate_rule_key,
+                                            ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::FunctionTag> function_rule_key,
+                                            ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> numeric_key,
                                             ygg::ClosedInterval<ygg::float_t> interval,
                                             Cost cost) {
                                        { const_policy.get_cost(predicate_rule_key) } -> std::same_as<Cost>;

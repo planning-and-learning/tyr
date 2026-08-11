@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/lifted/programs/program.hpp"
+#include "tyr/datalog/lifted/program.hpp"
 
 #include "tyr/analysis/domains.hpp"
 

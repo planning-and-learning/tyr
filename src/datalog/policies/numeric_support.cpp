@@ -17,9 +17,6 @@
 
 #include "tyr/datalog/policies/numeric_support.hpp"
 
-#include "tyr/datalog/ground/policies/annotation_types.hpp"
-#include "tyr/datalog/lifted/policies/annotation_types.hpp"
-
 namespace fd = tyr::formalism::datalog;
 namespace f = tyr::formalism;
 

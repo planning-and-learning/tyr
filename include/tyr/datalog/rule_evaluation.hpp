@@ -59,7 +59,7 @@ struct CandidateEvidence
 template<TaskKind Kind>
 struct PredicateCandidate
 {
-    PredicateAnnotationHead head;
+    ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head;
     Cost cost;
     Cost queue_label;
     std::optional<CandidateEvidence<Kind>> evidence;
@@ -68,7 +68,7 @@ struct PredicateCandidate
 template<TaskKind Kind>
 struct FunctionCandidate
 {
-    FunctionAnnotationHead head;
+    ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> head;
     ygg::ClosedInterval<ygg::float_t> interval;
     Cost cost;
     Cost queue_label;
@@ -140,7 +140,7 @@ Cost get_rule_credit(const CP& policy, RuleInstance<Kind, R>& instance)
 template<TaskKind Kind, typename CP>
 Cost get_transition_credit(const CP& policy,
                            RuleInstance<Kind, ::tyr::formalism::FunctionTag>& instance,
-                           FunctionAnnotationHead head,
+                           ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> head,
                            ygg::ClosedInterval<ygg::float_t> interval)
 {
     if constexpr (std::same_as<std::remove_cvref_t<CP>, RuleCostPolicy<Kind>>)

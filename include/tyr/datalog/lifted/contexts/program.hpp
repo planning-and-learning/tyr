@@ -21,10 +21,10 @@
 #include "tyr/datalog/contexts/program.hpp"
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/lifted/contexts/stratum.hpp"
-#include "tyr/datalog/lifted/policies/cost.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/lifted/workspaces/rule.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
+#include "tyr/datalog/policies/cost.hpp"
 #include "tyr/datalog/policies/cost_concept.hpp"
 #include "tyr/datalog/policies/termination_concept.hpp"
 

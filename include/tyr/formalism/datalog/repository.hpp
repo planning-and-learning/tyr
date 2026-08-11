@@ -63,6 +63,14 @@ template<typename T>
     return repository.get_or_create(data);
 }
 
+template<RelationKind R>
+std::optional<GroundRuleView<R>> find_ground_rule(RuleBindingView<R> binding)
+{
+    auto rule = ygg::Data<GroundRule<R>> {};
+    rule.binding = binding.get_index();
+    return binding.get_context().find(rule);
+}
+
 }
 
 #endif

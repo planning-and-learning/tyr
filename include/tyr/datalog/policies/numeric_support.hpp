@@ -43,7 +43,7 @@ class NumericSupportSelectorWorkspace
 public:
     struct SelectionEntry
     {
-        FunctionAnnotationHead key;
+        ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> key;
         ygg::ClosedInterval<ygg::float_t> interval;
         const NumericIntervalAnnotation<Kind>* annotation;
         Cost cost;
@@ -384,10 +384,12 @@ private:
 
 template<TaskKind Kind>
 class NumericSupportSelector :
-    public NumericSupportSelectorCore<NumericSupportSelector<Kind>, FunctionAnnotationHead, typename NumericSupportSelectorWorkspace<Kind>::SelectionEntry>
+    public NumericSupportSelectorCore<NumericSupportSelector<Kind>,
+                                      ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>,
+                                      typename NumericSupportSelectorWorkspace<Kind>::SelectionEntry>
 {
 public:
-    using Key = FunctionAnnotationHead;
+    using Key = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
     using SelectionEntry = typename NumericSupportSelectorWorkspace<Kind>::SelectionEntry;
     using Core = NumericSupportSelectorCore<NumericSupportSelector<Kind>, Key, SelectionEntry>;
 

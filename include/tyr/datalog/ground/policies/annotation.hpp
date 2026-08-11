@@ -18,7 +18,6 @@
 #ifndef TYR_DATALOG_GROUND_POLICIES_ANNOTATION_HPP_
 #define TYR_DATALOG_GROUND_POLICIES_ANNOTATION_HPP_
 
-#include "tyr/datalog/ground/policies/annotation_types.hpp"
 #include "tyr/datalog/ground/rule_instance.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
@@ -36,7 +35,7 @@ class MinCostAnnotationPolicy<GroundTag, AggregationFunction>
 {
 public:
     using Aggregation = AggregationFunction;
-    using PredicateHead = PredicateAnnotationHead;
+    using PredicateHead = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
     using FunctionBinding = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
     using PredicateWitness = WitnessAnnotation<GroundTag, ::tyr::formalism::PredicateTag>;
 
@@ -65,7 +64,7 @@ template<typename AggregationFunction>
 class MinCostAnnotationWithAchieversPolicy<GroundTag, AggregationFunction> : public MinCostAnnotationPolicy<GroundTag, AggregationFunction>
 {
 public:
-    using PredicateHead = PredicateAnnotationHead;
+    using PredicateHead = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
     using PredicateWitness = WitnessAnnotation<GroundTag, ::tyr::formalism::PredicateTag>;
     using Achievers = std::vector<PredicateWitness>;
 

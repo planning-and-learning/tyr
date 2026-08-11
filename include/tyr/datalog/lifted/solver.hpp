@@ -20,8 +20,8 @@
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
-#include "tyr/datalog/lifted/policies/cost.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
+#include "tyr/datalog/policies/cost.hpp"
 #include "tyr/datalog/policies/cost_concept.hpp"
 #include "tyr/datalog/policies/termination_concept.hpp"
 #include "tyr/declarations.hpp"

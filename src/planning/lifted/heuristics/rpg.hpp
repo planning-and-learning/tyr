@@ -21,8 +21,8 @@
 #include "../../heuristics/rpg.hpp"
 #include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
-#include "tyr/datalog/lifted/policies/cost.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
+#include "tyr/datalog/policies/cost.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/merge_planning.hpp"
@@ -47,7 +47,9 @@ struct RPGPolicy<LiftedTag>
 
     template<typename Workspace>
     static std::optional<::tyr::formalism::planning::GroundAtomView<::tyr::formalism::FluentTag>>
-    translate_cut_atom(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, datalog::PredicateAnnotationHead head)
+    translate_cut_atom(const RPGDefinition<LiftedTag>& definition,
+                       Workspace& workspace,
+                       ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head)
     {
         const auto& mapping = definition.rpg_program.get_translation_context().d2p.fluent_to_fluent_predicate;
         if (!mapping.contains(head.get_relation()))

@@ -21,9 +21,8 @@
 #include "../lifted/heuristics/rpg.hpp"
 #include "rpg.hpp"
 #include "tyr/datalog/ground/policies/annotation.hpp"
-#include "tyr/datalog/ground/policies/cost.hpp"
 #include "tyr/datalog/lifted/policies/annotation.hpp"
-#include "tyr/datalog/lifted/policies/cost.hpp"
+#include "tyr/datalog/policies/cost.hpp"
 #include "tyr/datalog/policies/numeric_support.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/planning/action_executor.hpp"
@@ -43,8 +42,8 @@ struct FFRPGHeuristic<Kind>::Impl :
 {
     using Base = detail::
         RPGEvaluator<Impl, Kind, datalog::MinCostAnnotationPolicy<Kind, datalog::SumAggregation>, datalog::TerminationPolicy<Kind, datalog::SumAggregation>>;
-    using PredicateHead = datalog::PredicateAnnotationHead;
-    using FunctionHead = datalog::FunctionAnnotationHead;
+    using PredicateHead = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
+    using FunctionHead = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
     using NumericAnnotation = datalog::Annotation<Kind, ::tyr::formalism::FunctionTag>;
     using NumericSupportWorkspace = datalog::NumericSupportSelectorWorkspace<Kind>;
 

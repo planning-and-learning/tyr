@@ -19,13 +19,13 @@
 #define TYR_DATALOG_LIFTED_WORKSPACES_PROGRAM_HPP_
 
 #include "tyr/datalog/cost_buckets.hpp"
-#include "tyr/datalog/lifted/policies/annotation_types.hpp"
-#include "tyr/datalog/lifted/policies/cost.hpp"
 #include "tyr/datalog/lifted/rule_scheduler.hpp"
 #include "tyr/datalog/lifted/workspaces/facts.hpp"
 #include "tyr/datalog/lifted/workspaces/rule.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
+#include "tyr/datalog/policies/annotation_types.hpp"
+#include "tyr/datalog/policies/cost.hpp"
 #include "tyr/datalog/policies/cost_concept.hpp"
 #include "tyr/datalog/policies/numeric_support.hpp"
 #include "tyr/datalog/policies/termination.hpp"

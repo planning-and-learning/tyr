@@ -145,9 +145,9 @@ void bind_annotations(nb::module_& m)
     using FunctionWitnessAnnotationT = WitnessAnnotation<Kind, ::tyr::formalism::FunctionTag>;
     using PredicateAnnotationStore = PredicateAnnotations<Kind>;
     using FunctionAnnotationStore = FunctionAnnotations<Kind>;
-    using RuleKey = WitnessRuleKeyT<Kind, ::tyr::formalism::PredicateTag>;
-    using FunctionRuleKey = WitnessRuleKeyT<Kind, ::tyr::formalism::FunctionTag>;
-    using NumericKey = FunctionAnnotationHead;
+    using RuleKey = ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::PredicateTag>;
+    using FunctionRuleKey = ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::FunctionTag>;
+    using NumericKey = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
     using PredicateKey = typename PredicateAnnotationStore::Key;
 
     auto numeric_support_cls = nb::class_<NumericSupportT>(m, "NumericSupport")
@@ -225,13 +225,13 @@ void bind_annotations(nb::module_& m)
 template<TaskKind Kind, typename CostPolicy>
 void bind_cost_policy(nb::module_& m, const char* name)
 {
-    using NumericKey = FunctionAnnotationHead;
+    using NumericKey = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
 
     auto cls = nb::class_<CostPolicy>(m, name).def(nb::init<>()).def("clear", &CostPolicy::clear);
 
     const auto bind_rule_costs = [&]<::tyr::formalism::RelationKind R>()
     {
-        using RuleKey = WitnessRuleKeyT<Kind, R>;
+        using RuleKey = ::tyr::formalism::datalog::RuleBindingView<R>;
         cls.def(
                "get_cost",
                [](const CostPolicy& self, RuleKey rule) { return self.get_cost(rule); },
@@ -289,8 +289,8 @@ void bind_policies(nb::module_& m)
         .def("clear_achievers", &MaxMinCostAnnotationWithAchievers::clear_achievers)
         .def(
             "find_achievers",
-            [](const MaxMinCostAnnotationWithAchievers& self,
-               PredicateAnnotationHead binding) -> std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>
+            [](const MaxMinCostAnnotationWithAchievers& self, ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> binding)
+                -> std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>
             {
                 const auto* achievers = self.find_achievers(binding);
                 return achievers ? std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>(*achievers) : std::nullopt;

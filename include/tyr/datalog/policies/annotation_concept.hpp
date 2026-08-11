@@ -32,7 +32,7 @@ template<typename T, typename Kind>
 concept GroundAnnotationStoragePolicy = std::same_as<Kind, GroundTag>
                                         && requires(T& policy,
                                                     const T& const_policy,
-                                                    PredicateAnnotationHead head,
+                                                    ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
                                                     WitnessAnnotation<Kind, ::tyr::formalism::PredicateTag> witness,
                                                     PredicateAnnotations<Kind>& annotations) {
                                                { policy.record_achiever(head, witness) } -> std::same_as<void>;
@@ -46,8 +46,8 @@ concept LiftedAnnotationStoragePolicy =
     std::same_as<Kind, LiftedTag>
     && requires(T& policy,
                 const T& const_policy,
-                PredicateAnnotationHead head,
-                FunctionAnnotationHead function_head,
+                ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
+                ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> function_head,
                 ygg::ClosedInterval<ygg::float_t> interval,
                 WitnessAnnotation<Kind, ::tyr::formalism::PredicateTag> predicate_witness,
                 WitnessAnnotation<Kind, ::tyr::formalism::FunctionTag> function_witness,
@@ -67,7 +67,7 @@ concept LiftedAnnotationStoragePolicy =
 template<typename T, typename Kind>
 concept AnnotationPolicyConcept =
     TaskKind<Kind>
-    && requires(T& policy, const T& const_policy, PredicateAnnotationHead head, ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> function_binding, ygg::ClosedInterval<ygg::float_t> interval, PredicateAnnotations<Kind>& annotations, FunctionAnnotations<Kind>& numeric_annotations) {
+    && requires(T& policy, const T& const_policy, ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head, ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> function_binding, ygg::ClosedInterval<ygg::float_t> interval, PredicateAnnotations<Kind>& annotations, FunctionAnnotations<Kind>& numeric_annotations) {
            typename std::bool_constant<T::stores_annotations>;
            typename std::bool_constant<T::records_propositional_achievers>;
            { const_policy.is_widening_label_preserving(Cost {}, Cost {}) } -> std::same_as<bool>;

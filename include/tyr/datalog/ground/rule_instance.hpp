@@ -18,7 +18,6 @@
 #ifndef TYR_DATALOG_GROUND_RULE_INSTANCE_HPP_
 #define TYR_DATALOG_GROUND_RULE_INSTANCE_HPP_
 
-#include "tyr/datalog/ground/policies/annotation_types.hpp"
 #include "tyr/datalog/rule_instance.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
@@ -49,7 +48,7 @@ public:
         return { effect.get_operator(), effect.get_fterm().get_row(), effect.get_fexpr() };
     }
 
-    auto witness_key() const noexcept { return m_rule; }
+    auto witness_key() const noexcept { return m_rule.get_row(); }
 
 private:
     SourceRule m_rule;

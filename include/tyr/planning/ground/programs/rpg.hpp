@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_GROUND_PROGRAMS_RPG_HPP_
 #define TYR_PLANNING_GROUND_PROGRAMS_RPG_HPP_
 
-#include "tyr/datalog/ground/programs/program.hpp"
+#include "tyr/datalog/ground/program.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/ground/programs/translation_context.hpp"
@@ -36,7 +36,7 @@ class RPGProgram<GroundTag>
 {
 public:
     template<::tyr::formalism::RelationKind R>
-    using RuleToActionMapping = ygg::UnorderedMap<::tyr::formalism::datalog::GroundRuleView<R>, ::tyr::formalism::planning::GroundActionView>;
+    using RuleToActionMapping = ygg::UnorderedMap<::tyr::formalism::datalog::RuleBindingView<R>, ::tyr::formalism::planning::GroundActionView>;
     struct RuleToActionMappings
     {
         RuleToActionMapping<::tyr::formalism::PredicateTag> predicate;

@@ -72,15 +72,17 @@ struct ActionCostEqual
     }
 };
 
-template<TaskKind Kind, ::tyr::formalism::RelationKind R>
-struct NumericTransitionCostKey : ygg::comparison::Mixin<NumericTransitionCostKey<Kind, R>>
+template<::tyr::formalism::RelationKind R>
+struct NumericTransitionCostKey : ygg::comparison::Mixin<NumericTransitionCostKey<R>>
 {
-    WitnessRuleKeyT<Kind, R> rule_key;
-    FunctionAnnotationHead numeric_key;
+    ::tyr::formalism::datalog::RuleBindingView<R> rule_key;
+    ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> numeric_key;
     ygg::ClosedInterval<ygg::float_t> interval;
 
     NumericTransitionCostKey() = default;
-    NumericTransitionCostKey(WitnessRuleKeyT<Kind, R> rule_key, FunctionAnnotationHead numeric_key, ygg::ClosedInterval<ygg::float_t> interval) :
+    NumericTransitionCostKey(::tyr::formalism::datalog::RuleBindingView<R> rule_key,
+                             ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> numeric_key,
+                             ygg::ClosedInterval<ygg::float_t> interval) :
         rule_key(rule_key),
         numeric_key(numeric_key),
         interval(interval)
@@ -100,7 +102,7 @@ public:
         return Cost(0);
     }
     template<typename RuleKey>
-    Cost get_cost(RuleKey, FunctionAnnotationHead, ygg::ClosedInterval<ygg::float_t>) const noexcept
+    Cost get_cost(RuleKey, ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>, ygg::ClosedInterval<ygg::float_t>) const noexcept
     {
         return Cost(0);
     }
@@ -111,19 +113,19 @@ public:
     {
     }
     template<typename RuleKey>
-    void set_cost(RuleKey, FunctionAnnotationHead, ygg::ClosedInterval<ygg::float_t>, Cost) noexcept
+    void set_cost(RuleKey, ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>, ygg::ClosedInterval<ygg::float_t>, Cost) noexcept
     {
     }
 };
 
-template<TaskKind Kind, ::tyr::formalism::RelationKind R>
+template<::tyr::formalism::RelationKind R>
 class RuleCostOverrideStorage
 {
 public:
-    using RuleKey = WitnessRuleKeyT<Kind, R>;
-    using NumericKey = FunctionAnnotationHead;
+    using RuleKey = ::tyr::formalism::datalog::RuleBindingView<R>;
+    using NumericKey = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
     using CostMap = ygg::UnorderedMap<RuleKey, Cost>;
-    using NumericTransitionCostMap = ygg::UnorderedMap<NumericTransitionCostKey<Kind, R>, Cost>;
+    using NumericTransitionCostMap = ygg::UnorderedMap<NumericTransitionCostKey<R>, Cost>;
 
     RuleCostOverrideStorage() = default;
     explicit RuleCostOverrideStorage(CostMap costs) : m_costs(std::move(costs)), m_numeric_transition_costs() {}
@@ -137,7 +139,7 @@ public:
 
     Cost get_cost(RuleKey rule_key, NumericKey numeric_key, ygg::ClosedInterval<ygg::float_t> interval) const
     {
-        if (const auto it = m_numeric_transition_costs.find(NumericTransitionCostKey<Kind, R> { rule_key, numeric_key, interval });
+        if (const auto it = m_numeric_transition_costs.find(NumericTransitionCostKey<R> { rule_key, numeric_key, interval });
             it != m_numeric_transition_costs.end())
             return it->second;
         return Cost(0);
@@ -153,7 +155,7 @@ public:
 
     void set_cost(RuleKey rule_key, NumericKey numeric_key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost)
     {
-        m_numeric_transition_costs.insert_or_assign(NumericTransitionCostKey<Kind, R> { rule_key, numeric_key, interval }, cost);
+        m_numeric_transition_costs.insert_or_assign(NumericTransitionCostKey<R> { rule_key, numeric_key, interval }, cost);
     }
 
     const CostMap& get_costs() const noexcept { return m_costs; }
@@ -169,11 +171,11 @@ template<TaskKind Kind>
 class RuleCostOverridePolicy
 {
 public:
-    using PredicateRuleKey = WitnessRuleKeyT<Kind, ::tyr::formalism::PredicateTag>;
-    using FunctionRuleKey = WitnessRuleKeyT<Kind, ::tyr::formalism::FunctionTag>;
+    using PredicateRuleKey = ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::PredicateTag>;
+    using FunctionRuleKey = ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::FunctionTag>;
 
     template<::tyr::formalism::RelationKind R>
-    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, ::tyr::formalism::datalog::GroundRuleView<R>, ::tyr::formalism::datalog::RuleView<R>>;
+    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, ::tyr::formalism::datalog::RuleBindingView<R>, ::tyr::formalism::datalog::RuleView<R>>;
     using Action = std::conditional_t<std::same_as<Kind, GroundTag>, ::tyr::formalism::planning::GroundActionView, ::tyr::formalism::planning::ActionView>;
     template<::tyr::formalism::RelationKind R>
     using RuleToActionMapping = ygg::UnorderedMap<Rule<R>, Action>;
@@ -196,7 +198,9 @@ public:
     }
 
     template<typename RuleKey>
-    Cost get_cost(RuleKey rule_key, FunctionAnnotationHead numeric_key, ygg::ClosedInterval<ygg::float_t> interval) const
+    Cost get_cost(RuleKey rule_key,
+                  ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> numeric_key,
+                  ygg::ClosedInterval<ygg::float_t> interval) const
     {
         return storage_for(rule_key).get_cost(rule_key, numeric_key, interval);
     }
@@ -217,7 +221,10 @@ public:
     }
 
     template<typename RuleKey>
-    void set_cost(RuleKey rule_key, FunctionAnnotationHead numeric_key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost)
+    void set_cost(RuleKey rule_key,
+                  ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> numeric_key,
+                  ygg::ClosedInterval<ygg::float_t> interval,
+                  Cost cost)
     {
         storage_for(rule_key).set_cost(rule_key, numeric_key, interval, cost);
     }
@@ -228,23 +235,23 @@ protected:
     const auto& storage(::tyr::formalism::PredicateTag) const noexcept { return predicate_storage; }
     const auto& storage(::tyr::formalism::FunctionTag) const noexcept { return function_storage; }
 
-    auto& storage_for(WitnessRuleKeyT<Kind, ::tyr::formalism::PredicateTag>) noexcept { return predicate_storage; }
-    auto& storage_for(WitnessRuleKeyT<Kind, ::tyr::formalism::FunctionTag>) noexcept { return function_storage; }
-    const auto& storage_for(WitnessRuleKeyT<Kind, ::tyr::formalism::PredicateTag>) const noexcept { return predicate_storage; }
-    const auto& storage_for(WitnessRuleKeyT<Kind, ::tyr::formalism::FunctionTag>) const noexcept { return function_storage; }
+    auto& storage_for(::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::PredicateTag>) noexcept { return predicate_storage; }
+    auto& storage_for(::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::FunctionTag>) noexcept { return function_storage; }
+    const auto& storage_for(::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::PredicateTag>) const noexcept { return predicate_storage; }
+    const auto& storage_for(::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::FunctionTag>) const noexcept { return function_storage; }
 
     const auto* mapping(::tyr::formalism::PredicateTag) const noexcept { return m_predicate_rule_to_action; }
     const auto* mapping(::tyr::formalism::FunctionTag) const noexcept { return m_function_rule_to_action; }
 
     template<::tyr::formalism::RelationKind R>
-    Cost get_action_cost(::tyr::formalism::datalog::GroundRuleView<R> rule) const
+    Cost get_action_cost(::tyr::formalism::datalog::RuleBindingView<R> rule_binding) const
         requires std::same_as<Kind, GroundTag>
     {
         const auto* rule_to_action = mapping(R {});
         if (!rule_to_action)
             return Cost(0);
 
-        const auto action = rule_to_action->find(rule);
+        const auto action = rule_to_action->find(rule_binding);
         if (action == rule_to_action->end())
             return Cost(0);
         const auto cost = m_action_costs.find(action->second.get_row());
@@ -266,8 +273,8 @@ protected:
         return cost == m_action_costs.end() ? Cost(0) : cost->second;
     }
 
-    RuleCostOverrideStorage<Kind, ::tyr::formalism::PredicateTag> predicate_storage;
-    RuleCostOverrideStorage<Kind, ::tyr::formalism::FunctionTag> function_storage;
+    RuleCostOverrideStorage<::tyr::formalism::PredicateTag> predicate_storage;
+    RuleCostOverrideStorage<::tyr::formalism::FunctionTag> function_storage;
     const RuleToActionMapping<::tyr::formalism::PredicateTag>* m_predicate_rule_to_action { nullptr };
     const RuleToActionMapping<::tyr::formalism::FunctionTag>* m_function_rule_to_action { nullptr };
     gtl::flat_hash_map<::tyr::formalism::planning::ActionBindingView, Cost, ActionCostHash, ActionCostEqual> m_action_costs;

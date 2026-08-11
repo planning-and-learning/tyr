@@ -17,9 +17,6 @@
 
 #include "tyr/datalog/policies/annotation_types.hpp"
 
-#include "tyr/datalog/ground/policies/annotation_types.hpp"
-#include "tyr/datalog/lifted/policies/annotation_types.hpp"
-
 #include <algorithm>
 #include <utility>
 
@@ -27,12 +24,12 @@ namespace tyr::datalog
 {
 
 template<TaskKind Kind, ::tyr::formalism::RelationKind R>
-WitnessAnnotation<Kind, R>::WitnessAnnotation(WitnessRuleKeyT<Kind, R> rule_key_, Cost cost_) : rule_key(rule_key_), metric(), cost(cost_)
+WitnessAnnotation<Kind, R>::WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key_, Cost cost_) : rule_key(rule_key_), metric(), cost(cost_)
 {
 }
 
 template<TaskKind Kind, ::tyr::formalism::RelationKind R>
-WitnessAnnotation<Kind, R>::WitnessAnnotation(WitnessRuleKeyT<Kind, R> rule_key_, Metric metric_, Cost cost_) :
+WitnessAnnotation<Kind, R>::WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key_, Metric metric_, Cost cost_) :
     rule_key(rule_key_),
     metric(metric_),
     cost(cost_)
@@ -40,7 +37,10 @@ WitnessAnnotation<Kind, R>::WitnessAnnotation(WitnessRuleKeyT<Kind, R> rule_key_
 }
 
 template<TaskKind Kind, ::tyr::formalism::RelationKind R>
-WitnessAnnotation<Kind, R>::WitnessAnnotation(WitnessRuleKeyT<Kind, R> rule_key_, Metric metric_, Cost cost_, NumericSupports numeric_supports_) :
+WitnessAnnotation<Kind, R>::WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key_,
+                                              Metric metric_,
+                                              Cost cost_,
+                                              NumericSupports numeric_supports_) :
     rule_key(rule_key_),
     metric(metric_),
     cost(cost_),
@@ -51,7 +51,7 @@ WitnessAnnotation<Kind, R>::WitnessAnnotation(WitnessRuleKeyT<Kind, R> rule_key_
 }
 
 template<TaskKind Kind, ::tyr::formalism::RelationKind R>
-WitnessAnnotation<Kind, R>::WitnessAnnotation(WitnessRuleKeyT<Kind, R> rule_key_,
+WitnessAnnotation<Kind, R>::WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key_,
                                               Metric metric_,
                                               Cost cost_,
                                               std::span<const NumericSupport<Kind>> numeric_supports_) :

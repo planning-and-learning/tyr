@@ -46,7 +46,7 @@ template<TaskKind Kind>
 class NoAnnotationPolicy
 {
 public:
-    using PredicateHead = PredicateAnnotationHead;
+    using PredicateHead = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
     using FunctionBinding = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
 
     static constexpr bool stores_annotations = false;

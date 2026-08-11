@@ -19,11 +19,11 @@
 
 #include "planning/parser.hpp"
 #include "tyr/datalog/ground/policies/annotation.hpp"
-#include "tyr/datalog/ground/programs/program.hpp"
+#include "tyr/datalog/ground/program.hpp"
 #include "tyr/datalog/ground/solver.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/policies/annotation.hpp"
-#include "tyr/datalog/lifted/programs/program.hpp"
+#include "tyr/datalog/lifted/program.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/datas.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"

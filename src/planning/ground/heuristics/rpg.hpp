@@ -21,11 +21,13 @@
 #include "../../heuristics/rpg.hpp"
 #include "tyr/datalog/ground/contexts/program.hpp"
 #include "tyr/datalog/ground/workspaces/program.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/planning/ground/programs/rpg.hpp"
 #include "tyr/planning/ground/state_builder.hpp"
 #include "tyr/planning/ground/task.hpp"
 
 #include <optional>
+#include <stdexcept>
 
 namespace tyr::planning::detail
 {
@@ -37,7 +39,9 @@ struct RPGPolicy<GroundTag>
 
     template<typename Workspace>
     static std::optional<::tyr::formalism::planning::GroundAtomView<::tyr::formalism::FluentTag>>
-    translate_cut_atom(const RPGDefinition<GroundTag>& definition, Workspace&, datalog::PredicateAnnotationHead head)
+    translate_cut_atom(const RPGDefinition<GroundTag>& definition,
+                       Workspace&,
+                       ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head)
     {
         const auto& mapping = definition.rpg_program.get_translation_context().d2p.fluent_to_fluent_atom;
         if (const auto it = mapping.find(head); it != mapping.end())
@@ -78,7 +82,10 @@ struct RPGPolicy<GroundTag>
                                               PredicateCallback&& predicate_callback,
                                               NumericCallback&& numeric_callback)
     {
-        const auto body = witness.get_rule_key().get_body();
+        const auto rule = ::tyr::formalism::datalog::find_ground_rule(witness.get_rule_key());
+        if (!rule)
+            throw std::logic_error("Ground witness binding has no rule");
+        const auto body = rule->get_body();
         for (const auto literal : body.template get_literals<::tyr::formalism::FluentTag>())
             if (literal.get_polarity())
                 predicate_callback(literal.get_atom().get_row());

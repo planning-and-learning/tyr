@@ -357,7 +357,7 @@ void translate_action_to_delete_free_rules(fp::GroundActionView action,
             {
                 const auto rule = create_ground_atom_rule(body, literal->get_atom(), context, metric_effects);
                 program.predicate_ground_rules.push_back(rule.get_index());
-                rule_to_action.predicate.emplace(rule, action);
+                rule_to_action.predicate.emplace(rule.get_row(), action);
             }
         }
 
@@ -366,7 +366,7 @@ void translate_action_to_delete_free_rules(fp::GroundActionView action,
         {
             const auto rule = create_ground_numeric_effect_rule(numeric_body, numeric_effect, context, metric_effects);
             program.function_ground_rules.push_back(rule.get_index());
-            rule_to_action.function.emplace(rule, action);
+            rule_to_action.function.emplace(rule.get_row(), action);
         }
     }
 }
@@ -509,15 +509,18 @@ void remap_rule_to_action(const RPGProgram<GroundTag>::RuleToActionMapping<R>& s
                           fd::MergeContext& context,
                           const d::FactSets& fact_sets)
 {
-    for (const auto& [source_rule, action] : source_mapping)
+    for (const auto& [source_binding, action] : source_mapping)
     {
-        if (!d::is_statically_applicable(source_rule, fact_sets))
+        const auto source_rule = fd::find_ground_rule(source_binding);
+        if (!source_rule)
+            throw std::logic_error("Ground rule binding has no rule");
+        if (!d::is_statically_applicable(*source_rule, fact_sets))
             continue;
 
-        const auto [result_rule, inserted] = fd::merge_d2d(source_rule, context);
+        const auto [result_rule, inserted] = fd::merge_d2d(*source_rule, context);
         if (inserted)
             throw std::logic_error("Static rule filtering omitted a retained rule");
-        result_mapping.emplace(result_rule, action);
+        result_mapping.emplace(result_rule.get_row(), action);
     }
 }
 

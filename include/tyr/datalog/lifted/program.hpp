@@ -15,41 +15,48 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_DATALOG_GROUND_PROGRAMS_PROGRAM_HPP_
-#define TYR_DATALOG_GROUND_PROGRAMS_PROGRAM_HPP_
+#ifndef TYR_DATALOG_LIFTED_PROGRAM_HPP_
+#define TYR_DATALOG_LIFTED_PROGRAM_HPP_
 
-#include "tyr/datalog/ground/workspaces/program.hpp"
+#include "tyr/analysis/listeners.hpp"
+#include "tyr/analysis/program_analysis.hpp"
+#include "tyr/analysis/stratification.hpp"
+#include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/programs/program.hpp"
+#include "tyr/formalism/datalog/program_index.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 namespace tyr::datalog
 {
 
 template<>
-class Program<GroundTag>
+class Program<LiftedTag>
 {
 public:
-    Program(::tyr::formalism::datalog::ProgramView<GroundTag> program,
+    Program(::tyr::formalism::datalog::ProgramView<LiftedTag> program,
             ::tyr::formalism::datalog::RepositoryPtr program_repository,
             ::tyr::formalism::datalog::RepositoryFactoryPtr repository_factory);
 
-    auto get_program() const noexcept { return m_const_program_workspace.program; }
-    auto& get_program_repository() noexcept { return *m_program_repository; }
+    auto get_program() const noexcept { return m_program; }
     const auto& get_program_repository() const noexcept { return *m_program_repository; }
     auto& get_repository_factory() noexcept { return *m_repository_factory; }
+    auto& get_repository_factory() const noexcept { return *m_repository_factory; }
+    const auto& get_domains() const noexcept { return m_analysis.domains; }
+    const auto& get_strata() const noexcept { return m_strata; }
+    const auto& get_listeners() const noexcept { return m_listeners; }
     const auto& get_const_program_workspace() const noexcept { return m_const_program_workspace; }
 
 private:
+    friend struct ConstProgramWorkspace<LiftedTag>;
+
+    ::tyr::formalism::datalog::ProgramView<LiftedTag> m_program;
     ::tyr::formalism::datalog::RepositoryPtr m_program_repository;
     ::tyr::formalism::datalog::RepositoryFactoryPtr m_repository_factory;
-    ConstProgramWorkspace<GroundTag> m_const_program_workspace;
+    analysis::ProgramAnalysis m_analysis;
+    analysis::RuleStrata m_strata;
+    analysis::ListenerStrata m_listeners;
+    ConstProgramWorkspace<LiftedTag> m_const_program_workspace;
 };
-
-template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
-ProgramWorkspace<GroundTag, AP, TP, CP>::ProgramWorkspace(Program<GroundTag>& program, AP annotation_policy, TP tp, CP cost_policy) :
-    ProgramWorkspace(program.get_const_program_workspace(), std::move(annotation_policy), std::move(tp), std::move(cost_policy))
-{
-}
 
 }
 

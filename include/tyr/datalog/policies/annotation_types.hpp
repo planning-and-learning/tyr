@@ -43,25 +43,20 @@
 namespace tyr::datalog
 {
 
-template<TaskKind Kind, ::tyr::formalism::RelationKind R>
-struct WitnessRuleKey;
-
-template<TaskKind Kind, ::tyr::formalism::RelationKind R>
-using WitnessRuleKeyT = typename WitnessRuleKey<Kind, R>::type;
-
-using PredicateAnnotationHead = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
-
-using FunctionAnnotationHead = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
-
 template<TaskKind Kind>
 struct NumericSupport : ygg::comparison::Mixin<NumericSupport<Kind>>
 {
-    FunctionAnnotationHead key;
+    ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> key;
     ygg::ClosedInterval<ygg::float_t> interval;
     Cost cost;
 
     NumericSupport() = default;
-    NumericSupport(FunctionAnnotationHead key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost) : key(key), interval(interval), cost(cost) {}
+    NumericSupport(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost) :
+        key(key),
+        interval(interval),
+        cost(cost)
+    {
+    }
 
     auto get_key() const noexcept { return key; }
     auto get_interval() const noexcept { return interval; }
@@ -77,10 +72,10 @@ struct WitnessAnnotation : ygg::comparison::Mixin<WitnessAnnotation<Kind, R>>
     using Metric = ygg::ClosedInterval<ygg::float_t>;
     using NumericSupports = std::vector<NumericSupport<Kind>>;
 
-    WitnessAnnotation(WitnessRuleKeyT<Kind, R> rule_key, Cost cost);
-    WitnessAnnotation(WitnessRuleKeyT<Kind, R> rule_key, Metric metric, Cost cost);
-    WitnessAnnotation(WitnessRuleKeyT<Kind, R> rule_key, Metric metric, Cost cost, NumericSupports numeric_supports);
-    WitnessAnnotation(WitnessRuleKeyT<Kind, R> rule_key, Metric metric, Cost cost, std::span<const NumericSupport<Kind>> numeric_supports);
+    WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key, Cost cost);
+    WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key, Metric metric, Cost cost);
+    WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key, Metric metric, Cost cost, NumericSupports numeric_supports);
+    WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key, Metric metric, Cost cost, std::span<const NumericSupport<Kind>> numeric_supports);
 
     auto get_rule_key() const noexcept { return rule_key; }
     auto get_metric() const noexcept { return metric; }
@@ -90,7 +85,7 @@ struct WitnessAnnotation : ygg::comparison::Mixin<WitnessAnnotation<Kind, R>>
     auto identifying_members() const noexcept { return std::tie(rule_key, metric, cost, numeric_supports); }
 
 private:
-    WitnessRuleKeyT<Kind, R> rule_key;
+    ::tyr::formalism::datalog::RuleBindingView<R> rule_key;
     Metric metric;
     Cost cost;
     NumericSupports numeric_supports;
@@ -406,7 +401,7 @@ class NumericIntervalAnnotations
 public:
     static constexpr bool thread_safe = ThreadSafe;
 
-    using Binding = FunctionAnnotationHead;
+    using Binding = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
     using Entry = NumericIntervalAnnotation<Kind>;
     using Entries = std::vector<Entry>;
     using Storage = DenseRelationMap<::tyr::formalism::FunctionTag, Entries, ThreadSafe>;

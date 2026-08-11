@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/lifted/policies/cost.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
+#include "tyr/datalog/policies/cost.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/datas.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
