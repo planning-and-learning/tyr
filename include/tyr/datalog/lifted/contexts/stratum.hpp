@@ -18,7 +18,6 @@
 #ifndef TYR_DATALOG_LIFTED_CONTEXTS_STRATUM_HPP_
 #define TYR_DATALOG_LIFTED_CONTEXTS_STRATUM_HPP_
 
-#include "tyr/datalog/contexts/program.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/lifted/contexts/rule.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"

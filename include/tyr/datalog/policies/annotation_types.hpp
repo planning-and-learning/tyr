@@ -139,6 +139,7 @@ struct CostUpdate
     }
 
     bool is_monotone() const noexcept { return !old_cost || new_cost <= old_cost.value(); }
+    bool is_strict_improvement() const noexcept { return new_cost < old_cost.value_or(std::numeric_limits<Cost>::max()); }
 };
 
 /// ThreadSafe permits concurrent read(), update(), and row growth after relation lanes

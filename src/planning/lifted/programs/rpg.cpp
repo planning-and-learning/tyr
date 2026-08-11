@@ -88,20 +88,6 @@ void fill_delete_free_condition(fp::ActionView action,
         conj_cond.numeric_constraints.push_back(merge_p2d(numeric_constraint, context));
 }
 
-fd::MetricView create_metric(fp::MetricView metric, fp::MergeDatalogContext& context)
-{
-    auto result = fd::checkout<fd::Metric>(context.builder);
-    result->fexpr = fp::merge_p2d(metric.get_fexpr(), context);
-    return fd::get_or_create(context.destination, *result).first;
-}
-
-fd::MetricView create_metric(fd::GroundFunctionTermView<f::FluentTag> term, fp::MergeDatalogContext& context)
-{
-    auto result = fd::checkout<fd::Metric>(context.builder);
-    result->fexpr = ygg::Data<fd::GroundFunctionExpression>(term.get_index());
-    return fd::get_or_create(context.destination, *result).first;
-}
-
 auto create_delete_free_goal(fp::GroundConjunctiveConditionView goal,
                              TranslationContext<LiftedTag>& translation_context,
                              ::tyr::formalism::planning::MergeDatalogContext& context)
@@ -335,16 +321,9 @@ auto create_program(fp::TaskView task,
     {
         unit_metric_effects = create_unit_metric(*program, context);
     }
-    else if (task.get_auxiliary_fterm_value())
-    {
-        const auto fterm_value = fp::merge_p2d<f::AuxiliaryTag, f::FluentTag>(task.get_auxiliary_fterm_value().value(), context).first;
-        const auto metric = create_metric(fterm_value.get_fterm(), context);
-        program->metric = metric.get_index();
-        metric_functions.insert(fterm_value.get_fterm().get_function());
-    }
     else if (task.get_metric())
     {
-        const auto metric = create_metric(task.get_metric().value(), context);
+        const auto metric = fp::merge_p2d(task.get_metric().value(), context).first;
         program->metric = metric.get_index();
 
         auto metric_fterms = ygg::UnorderedSet<fd::GroundFunctionTermView<f::FluentTag>> {};

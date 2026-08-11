@@ -19,10 +19,10 @@
 #define TYR_DATALOG_LIFTED_WORKSPACES_RULE_HPP_
 
 #include "tyr/algorithms/kckp/delta_kckp.hpp"
+#include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/lifted/consistency_graph.hpp"
 #include "tyr/datalog/rule_evaluation.hpp"
 #include "tyr/datalog/statistics/rule.hpp"
-#include "tyr/datalog/workspaces/rule.hpp"
 #include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/datalog/ground_atom_index.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -112,22 +112,7 @@ struct FunctionHeadIteration
 };
 
 template<::tyr::formalism::RelationKind R>
-struct RuleHeadIteration;
-
-template<>
-struct RuleHeadIteration<::tyr::formalism::PredicateTag>
-{
-    using type = PredicateHeadIteration;
-};
-
-template<>
-struct RuleHeadIteration<::tyr::formalism::FunctionTag>
-{
-    using type = FunctionHeadIteration;
-};
-
-template<::tyr::formalism::RelationKind R>
-using RuleHeadIterationT = typename RuleHeadIteration<R>::type;
+using RuleHeadIterationT = std::conditional_t<std::same_as<R, ::tyr::formalism::PredicateTag>, PredicateHeadIteration, FunctionHeadIteration>;
 
 struct ApplicabilityCache
 {

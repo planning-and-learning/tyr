@@ -15,12 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/lifted/solver.hpp"
+#include "tyr/datalog/solver.hpp"
 
 #include "planning/parser.hpp"
 #include "tyr/datalog/applicability_lifted.hpp"
 #include "tyr/datalog/ground/program.hpp"
-#include "tyr/datalog/ground/solver.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/program.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
@@ -497,8 +496,8 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
 
     const auto solve_workspace = [&](auto& workspace)
     {
-        auto context = d::ProgramExecutionContext(workspace, execution_context->get_num_threads());
-        execution_context->arena().execute([&] { d::compute_model(context); });
+        auto context = d::ProgramExecutionContext(workspace);
+        d::execute_model(context, *execution_context);
     };
 
     const auto solve_program = [&](const auto& program)
@@ -552,8 +551,8 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
             {
                 auto program = p::GroundTaskProgram(task->get_task());
                 auto workspace = d::ProgramWorkspace<::tyr::LiftedTag>(program.get_datalog_program());
-                auto context = d::ProgramExecutionContext(workspace, execution_context->get_num_threads());
-                execution_context->arena().execute([&] { d::compute_model(context); });
+                auto context = d::ProgramExecutionContext(workspace);
+                d::execute_model(context, *execution_context);
                 return collect_atoms_by_predicate(workspace);
             }
 
@@ -606,7 +605,7 @@ TEST(TyrDatalogLiftedBottomUpTest, SingleCoreTerminationExposesOnlyOptimalGoalFr
     auto context = d::ProgramExecutionContext(workspace);
     auto execution_context = ygg::ExecutionContext::create(1);
 
-    execution_context->arena().execute([&] { d::compute_model(context); });
+    d::execute_model(context, *execution_context);
 
     ASSERT_TRUE(workspace.facts.fact_sets.predicate.contains(fixture.goal));
     const auto* achievers = workspace.annotation_policy.find_achievers(fixture.goal);
@@ -623,7 +622,7 @@ TEST(TyrDatalogLiftedBottomUpTest, SingleCoreRetainsFirstEqualCostWitness)
     auto context = d::ProgramExecutionContext(workspace);
     auto execution_context = ygg::ExecutionContext::create(1);
 
-    execution_context->arena().execute([&] { d::compute_model(context); });
+    d::execute_model(context, *execution_context);
 
     const auto* annotation = workspace.annotations.find(fixture.goal);
     ASSERT_NE(annotation, nullptr);

@@ -27,6 +27,8 @@ inline constexpr const char* kHeuristicFixture = "tests/fixtures/planning/heuris
 
 #include "../heuristic.hpp"
 
+TEST(TyrPlanningGroundLMCutHeuristicTest, GeneralMetricTargetsExactBinding) { tyr::tests::expect_general_metric_targets_exact_binding<tyr::GroundTag>(); }
+
 TEST(TyrPlanningGroundLMCutHeuristicTest, WeightedAlternativeRemainsAdmissible)
 {
     const auto fixture = ygg::common::root_path() / "tests/fixtures/planning/heuristics/lmcut_weighted_alternative";

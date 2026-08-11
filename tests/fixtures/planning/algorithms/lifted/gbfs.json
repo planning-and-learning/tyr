@@ -6018,34 +6018,33 @@
                 }
             },
             "hadd_unit": {
-                "num_accepted_successors": 48,
-                "num_expanded": 24,
+                "num_accepted_successors": 40,
+                "num_expanded": 18,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 9,
-                    "length": 9,
+                    "cost": 8,
+                    "length": 8,
                     "actions": [
                         "(drive truck0 depot0 market3)",
-                        "(buy-all truck0 goods0 market3)",
-                        "(drive truck0 market3 market4)",
-                        "(buy-allneeded truck0 goods0 market4)",
-                        "(drive truck0 market4 market3)",
                         "(buy-all truck0 goods1 market3)",
                         "(drive truck0 market3 market4)",
+                        "(buy-all truck0 goods0 market4)",
                         "(buy-allneeded truck0 goods1 market4)",
-                        "(drive truck0 market4 depot0)"
+                        "(drive truck0 market4 market3)",
+                        "(buy-allneeded truck0 goods0 market3)",
+                        "(drive truck0 market3 depot0)"
                     ]
                 }
             },
             "hadd_general": {
-                "num_accepted_successors": 45,
-                "num_expanded": 15,
+                "num_accepted_successors": 42,
+                "num_expanded": 16,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 2049,
-                    "length": 8,
+                    "cost": 2126.08,
+                    "length": 11,
                     "actions": [
                         "(drive truck0 depot0 market1)",
                         "(buy-all truck0 goods0 market1)",
@@ -6053,51 +6052,49 @@
                         "(buy-all truck0 goods1 market4)",
                         "(drive truck0 market4 market3)",
                         "(buy-allneeded truck0 goods1 market3)",
+                        "(drive truck0 market3 market4)",
+                        "(buy-all truck0 goods0 market4)",
+                        "(drive truck0 market4 market3)",
                         "(buy-allneeded truck0 goods0 market3)",
                         "(drive truck0 market3 depot0)"
                     ]
                 }
             },
             "hff_unit": {
-                "num_accepted_successors": 77,
-                "num_expanded": 30,
+                "num_accepted_successors": 35,
+                "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 9,
-                    "length": 9,
+                    "cost": 8,
+                    "length": 8,
                     "actions": [
-                        "(drive truck0 depot0 market1)",
-                        "(buy-all truck0 goods0 market1)",
-                        "(drive truck0 market1 market3)",
-                        "(buy-allneeded truck0 goods0 market3)",
+                        "(drive truck0 depot0 market3)",
+                        "(buy-all truck0 goods1 market3)",
                         "(drive truck0 market3 market4)",
-                        "(buy-all truck0 goods1 market4)",
+                        "(buy-all truck0 goods0 market4)",
+                        "(buy-allneeded truck0 goods1 market4)",
                         "(drive truck0 market4 market3)",
-                        "(buy-allneeded truck0 goods1 market3)",
+                        "(buy-allneeded truck0 goods0 market3)",
                         "(drive truck0 market3 depot0)"
                     ]
                 }
             },
             "hff_general": {
-                "num_accepted_successors": 204,
-                "num_expanded": 83,
+                "num_accepted_successors": 40,
+                "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 2469.5099999999998,
-                    "length": 12,
+                    "cost": 1951.98,
+                    "length": 8,
                     "actions": [
-                        "(drive truck0 depot0 market1)",
-                        "(buy-all truck0 goods0 market1)",
-                        "(drive truck0 market1 market3)",
+                        "(drive truck0 depot0 market3)",
                         "(buy-all truck0 goods1 market3)",
                         "(drive truck0 market3 market4)",
-                        "(buy-allneeded truck0 goods1 market4)",
                         "(buy-all truck0 goods0 market4)",
-                        "(drive truck0 market4 market5)",
-                        "(buy-all truck0 goods0 market5)",
-                        "(drive truck0 market5 market3)",
+                        "(buy-allneeded truck0 goods1 market4)",
+                        "(drive truck0 market4 market3)",
                         "(buy-allneeded truck0 goods0 market3)",
                         "(drive truck0 market3 depot0)"
                     ]
@@ -6302,8 +6299,8 @@
                 }
             },
             "hff_general": {
-                "num_accepted_successors": 66,
-                "num_expanded": 33,
+                "num_accepted_successors": 29,
+                "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -6660,52 +6657,64 @@
                 }
             },
             "hff_unit": {
-                "num_accepted_successors": 285,
-                "num_expanded": 65,
+                "num_accepted_successors": 494,
+                "num_expanded": 130,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 12,
-                    "length": 12,
+                    "cost": 26,
+                    "length": 26,
                     "actions": [
+                        "(decrement c2)",
+                        "(increment c0)",
+                        "(increment c0)",
+                        "(increment c1)",
+                        "(increment c1)",
+                        "(increment c1)",
+                        "(increment c2)",
+                        "(decrement c0)",
+                        "(decrement c0)",
+                        "(decrement c1)",
                         "(decrement c0)",
                         "(increment c2)",
-                        "(increment c3)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(increment c3)",
+                        "(increment c2)",
+                        "(increment c2)",
+                        "(increment c2)",
+                        "(increment c2)",
                         "(increment c2)",
                         "(increment c3)",
                         "(increment c3)",
-                        "(increment c2)",
                         "(increment c3)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(decrement c2)",
                         "(increment c3)"
                     ]
                 }
             },
             "hff_general": {
-                "num_accepted_successors": 546,
-                "num_expanded": 235,
+                "num_accepted_successors": 1395,
+                "num_expanded": 700,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 19,
-                    "length": 19,
+                    "cost": 17,
+                    "length": 17,
                     "actions": [
                         "(decrement c1)",
                         "(decrement c1)",
-                        "(decrement c1)",
-                        "(decrement c1)",
                         "(decrement c2)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(increment c1)",
                         "(decrement c2)",
                         "(increment c3)",
+                        "(decrement c1)",
+                        "(decrement c0)",
+                        "(decrement c0)",
+                        "(decrement c0)",
+                        "(decrement c0)",
+                        "(decrement c0)",
+                        "(decrement c0)",
                         "(increment c3)",
                         "(increment c3)",
                         "(increment c3)",
@@ -7020,8 +7029,8 @@
                 }
             },
             "hff_unit": {
-                "num_accepted_successors": 18,
-                "num_expanded": 5,
+                "num_accepted_successors": 25,
+                "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -7036,18 +7045,22 @@
                 }
             },
             "hff_general": {
-                "num_accepted_successors": 79,
-                "num_expanded": 45,
-                "num_deadends": 5,
+                "num_accepted_successors": 57,
+                "num_expanded": 26,
+                "num_deadends": 4,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 4,
-                    "length": 4,
+                    "cost": 8,
+                    "length": 8,
                     "actions": [
-                        "(visit x0y0z0)",
+                        "(increase_x)",
+                        "(increase_y)",
                         "(increase_z)",
+                        "(decrease_x)",
+                        "(decrease_y)",
                         "(visit x0y0z1)",
-                        "(decrease_z)"
+                        "(decrease_z)",
+                        "(visit x0y0z0)"
                     ]
                 }
             },
@@ -7413,7 +7426,7 @@
                     "cost": 2,
                     "length": 2,
                     "actions": [
-                        "(move-slow farm0 farm1)",
+                        "(move-fast farm0 farm1)",
                         "(move-fast farm0 farm1)"
                     ]
                 }
@@ -7427,7 +7440,7 @@
                     "cost": 2,
                     "length": 2,
                     "actions": [
-                        "(move-fast farm0 farm1)",
+                        "(move-slow farm0 farm1)",
                         "(move-fast farm0 farm1)"
                     ]
                 }
@@ -7550,8 +7563,8 @@
                 }
             },
             "hff_unit": {
-                "num_accepted_successors": 5,
-                "num_expanded": 2,
+                "num_accepted_successors": 7,
+                "num_expanded": 3,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -7695,15 +7708,15 @@
                 }
             },
             "hff_unit": {
-                "num_accepted_successors": 35,
-                "num_expanded": 5,
+                "num_accepted_successors": 15,
+                "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 2,
                     "length": 2,
                     "actions": [
-                        "(go_north_west b0)",
+                        "(go_west b0)",
                         "(save_person b0 p0)"
                     ]
                 }
@@ -7999,8 +8012,8 @@
                 }
             },
             "hff_general": {
-                "num_accepted_successors": 33,
-                "num_expanded": 4,
+                "num_accepted_successors": 22,
+                "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -8159,15 +8172,17 @@
                 }
             },
             "hff_general": {
-                "num_accepted_successors": 201,
-                "num_expanded": 12,
+                "num_accepted_successors": 185,
+                "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 4,
-                    "length": 4,
+                    "cost": 6,
+                    "length": 6,
                     "actions": [
-                        "(feast expectation tuna wurst)",
+                        "(feast expectation tuna pistachio)",
+                        "(feast expectation pistachio chicken)",
+                        "(feast expectation chicken wurst)",
                         "(overcome depression expectation wurst)",
                         "(feast expectation wurst chicken)",
                         "(succumb depression expectation chicken)"
@@ -8602,15 +8617,15 @@
                 }
             },
             "hff_unit": {
-                "num_accepted_successors": 69,
-                "num_expanded": 6,
+                "num_accepted_successors": 27,
+                "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 2,
                     "length": 2,
                     "actions": [
-                        "(go_north_west b0)",
+                        "(go_west b0)",
                         "(save_person b0 p0)"
                     ]
                 }
@@ -8913,8 +8928,8 @@
                 }
             },
             "hff_general": {
-                "num_accepted_successors": 149,
-                "num_expanded": 12,
+                "num_accepted_successors": 104,
+                "num_expanded": 8,
                 "num_deadends": 1,
                 "num_pruned": 0,
                 "plan": {

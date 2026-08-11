@@ -19,6 +19,7 @@
 #define TYR_DATALOG_LIFTED_WORKSPACES_PROGRAM_HPP_
 
 #include "tyr/datalog/cost_buckets.hpp"
+#include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/lifted/rule_scheduler.hpp"
 #include "tyr/datalog/lifted/workspaces/facts.hpp"
 #include "tyr/datalog/lifted/workspaces/rule.hpp"
@@ -31,7 +32,6 @@
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/policies/termination_concept.hpp"
 #include "tyr/datalog/statistics/program.hpp"
-#include "tyr/datalog/workspaces/program.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 

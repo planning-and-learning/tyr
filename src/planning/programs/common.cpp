@@ -19,9 +19,7 @@
 
 #include "tyr/formalism/planning/repository.hpp"
 
-namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;
-namespace fd = tyr::formalism::datalog;
 
 namespace tyr::planning
 {

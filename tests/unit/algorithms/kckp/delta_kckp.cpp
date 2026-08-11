@@ -19,9 +19,10 @@
 
 #include "planning/parser.hpp"
 #include "tyr/datalog/lifted/consistency_graph.hpp"
-#include "tyr/datalog/lifted/solver.hpp"
+#include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
+#include "tyr/datalog/solver.hpp"
 #include "tyr/planning/factory.hpp"
 #include "tyr/planning/heuristics/rpg_ff.hpp"
 #include "tyr/planning/lifted/programs/action.hpp"
@@ -476,8 +477,8 @@ TEST(TyrKCKPDelta, InnerParallelismMatchesSequentialRPG)
         workspace.tp.set_goals(program.get_goal());
         p::insert_unextended_state(initial_state.get_state_builder(), *task->get_repository(), program.get_translation_context().p2d, workspace);
 
-        auto context = d::ProgramExecutionContext(workspace, execution_context->get_num_threads());
-        execution_context->arena().execute([&] { d::compute_model(context); });
+        auto context = d::ProgramExecutionContext(workspace);
+        d::execute_model(context, *execution_context);
     };
     solve(sequential, sequential_context);
     solve(parallel, parallel_context);

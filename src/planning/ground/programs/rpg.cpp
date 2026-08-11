@@ -172,20 +172,6 @@ fd::GroundConjunctiveConditionView create_delete_free_condition(fp::GroundConjun
     return fd::get_or_create(context.merge_context.destination, *result).first;
 }
 
-fd::MetricView create_metric(fp::MetricView metric, GroundProgramBuildContext& context)
-{
-    auto result = fd::checkout<fd::Metric>(context.builder);
-    result->fexpr = fp::merge_p2d(metric.get_fexpr(), context.merge_context);
-    return fd::get_or_create(context.merge_context.destination, *result).first;
-}
-
-fd::MetricView create_metric(fd::GroundFunctionTermView<f::FluentTag> term, GroundProgramBuildContext& context)
-{
-    auto result = fd::checkout<fd::Metric>(context.builder);
-    result->fexpr = ygg::Data<fd::GroundFunctionExpression>(term.get_index());
-    return fd::get_or_create(context.merge_context.destination, *result).first;
-}
-
 fd::GroundConjunctiveConditionView
 create_delete_free_goal(fp::GroundConjunctiveConditionView goal, TranslationContext<GroundTag>& translation_context, GroundProgramBuildContext& context)
 {
@@ -456,16 +442,9 @@ fd::ProgramView<GroundTag> create_rpg_ground_program(fp::FDRTaskView task,
     {
         unit_metric_effects = create_unit_metric(context);
     }
-    else if (task.get_auxiliary_fterm_value())
-    {
-        const auto fterm_value = fp::merge_p2d<f::AuxiliaryTag, f::FluentTag>(task.get_auxiliary_fterm_value().value(), merge_context).first;
-        const auto metric = create_metric(fterm_value.get_fterm(), context);
-        context.program->metric = metric.get_index();
-        metric_fterms.insert(fterm_value.get_fterm());
-    }
     else if (task.get_metric())
     {
-        const auto metric = create_metric(task.get_metric().value(), context);
+        const auto metric = fp::merge_p2d(task.get_metric().value(), context.merge_context).first;
         context.program->metric = metric.get_index();
         fd::collect_fterms(metric.get_fexpr(), metric_fterms);
     }

@@ -448,10 +448,10 @@
             "task_file": "numeric/tests/tpp/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 4
+                    "h": 7
                 },
                 "general": {
-                    "h": 4
+                    "h": 7
                 }
             }
         },
@@ -464,7 +464,7 @@
                     "h": 8
                 },
                 "general": {
-                    "h": 9
+                    "h": 8
                 }
             }
         },
@@ -487,7 +487,7 @@
             "task_file": "numeric/tests/counters/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 4
+                    "h": 7
                 },
                 "general": {
                     "h": 3
@@ -513,10 +513,10 @@
             "task_file": "numeric/tests/drone/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 2
+                    "h": 3
                 },
                 "general": {
-                    "h": 3
+                    "h": 8
                 }
             }
         },
@@ -529,7 +529,7 @@
                     "h": 1
                 },
                 "general": {
-                    "h": 1
+                    "h": 2
                 }
             }
         },
@@ -539,10 +539,10 @@
             "task_file": "numeric/tests/ext-plant-watering/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 3
+                    "h": 6
                 },
                 "general": {
-                    "h": 3
+                    "h": 6
                 }
             }
         },
@@ -552,10 +552,10 @@
             "task_file": "numeric/tests/farmland/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 1
+                    "h": 3
                 },
                 "general": {
-                    "h": 2
+                    "h": 1
                 }
             }
         },
@@ -565,7 +565,7 @@
             "task_file": "numeric/tests/fo-farmland/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 1
+                    "h": 2
                 },
                 "general": {
                     "h": 1
@@ -578,7 +578,7 @@
             "task_file": "numeric/tests/fo-sailing/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 1
+                    "h": 2
                 },
                 "general": {
                     "h": 3
@@ -620,7 +620,7 @@
                     "h": 4
                 },
                 "general": {
-                    "h": 5
+                    "h": 6
                 }
             }
         },
@@ -646,7 +646,7 @@
                     "h": 4
                 },
                 "general": {
-                    "h": 4
+                    "h": 5
                 }
             }
         },
@@ -656,7 +656,7 @@
             "task_file": "numeric/tests/sailing/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 1
+                    "h": 2
                 },
                 "general": {
                     "h": 3
@@ -685,7 +685,7 @@
                     "h": 1
                 },
                 "general": {
-                    "h": 2
+                    "h": 1
                 }
             }
         }

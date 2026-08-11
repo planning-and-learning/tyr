@@ -40,7 +40,8 @@ concept AnnotationStoragePolicy = requires(T& policy,
                                            FunctionAnnotations<>& numeric_annotations,
                                            PredicateAnnotations<true>& delta_annotations,
                                            const PredicateAnnotations<true>& const_delta_annotations,
-                                           FunctionAnnotations<true>& delta_numeric_annotations) {
+                                           FunctionAnnotations<true>& delta_numeric_annotations,
+                                           const FunctionAnnotations<true>& const_delta_numeric_annotations) {
     { policy.record_achiever(head, std::move(predicate_witness)) } -> std::same_as<void>;
     { const_policy.publish_annotation(head, std::move(predicate_witness), annotations) } -> std::same_as<std::optional<CostUpdate>>;
     { const_policy.can_update(head, Cost {}, annotations, const_delta_annotations) } -> std::same_as<bool>;
@@ -48,6 +49,7 @@ concept AnnotationStoragePolicy = requires(T& policy,
     { const_policy.try_update_candidate(head, std::move(predicate_witness), delta_annotations) } -> std::same_as<bool>;
     { const_policy.try_update_candidate(function_head, interval, std::move(function_witness), delta_numeric_annotations) } -> std::same_as<bool>;
     { const_policy.commit_annotation(head, const_delta_annotations, annotations) } -> std::same_as<CostUpdate>;
+    { const_policy.commit_annotation(function_head, interval, const_delta_numeric_annotations, numeric_annotations) } -> std::same_as<CostUpdate>;
 };
 
 template<typename T>

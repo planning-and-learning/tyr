@@ -19,7 +19,7 @@
 #define TYR_DATALOG_GROUND_CONTEXTS_PROGRAM_HPP_
 
 #include "tyr/datalog/applicability.hpp"
-#include "tyr/datalog/contexts/program.hpp"
+#include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/ground/workspaces/program.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
@@ -71,6 +71,7 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
         const auto& annotations() const noexcept { return m_ws.annotations; }
         auto& numeric_annotations() noexcept { return m_ws.numeric_annotations; }
         const auto& numeric_annotations() const noexcept { return m_ws.numeric_annotations; }
+        auto numeric_support_selector() const noexcept { return m_ws.get_numeric_support_selector(); }
         auto& tp() noexcept { return m_ws.tp; }
         const auto& tp() const noexcept { return m_ws.tp; }
         auto& cost_policy() noexcept { return m_ws.cost_policy; }
@@ -95,10 +96,8 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
         {
             return m_ws.queue.template get_storage<R>();
         }
-        auto& fact_sets() noexcept { return m_ws.facts.fact_sets; }
-        const auto& fact_sets() const noexcept { return m_ws.facts.fact_sets; }
-        auto& statistics() noexcept { return m_ws.queue.statistics; }
-        const auto& statistics() const noexcept { return m_ws.queue.statistics; }
+        auto& queue_statistics() noexcept { return m_ws.queue.statistics; }
+        const auto& queue_statistics() const noexcept { return m_ws.queue.statistics; }
         auto& queue() noexcept { return m_ws.queue; }
         const auto& queue() const noexcept { return m_ws.queue; }
 
@@ -133,9 +132,9 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
     void initialize(const Range& fluent_atoms)
     {
         m_out.facts().reset();
-        m_out.fact_sets().function.insert(m_in.program().template get_fterm_values<::tyr::formalism::FluentTag>());
+        m_out.facts().fact_sets.function.insert(m_in.program().template get_fterm_values<::tyr::formalism::FluentTag>());
         for (const auto atom : fluent_atoms)
-            m_out.fact_sets().predicate.insert(atom);
+            m_out.facts().fact_sets.predicate.insert(atom);
         initialize();
     }
 
@@ -151,11 +150,11 @@ private:
         m_out.annotation_policy().clear_achievers();
         m_out.tp().reset();
 
-        for (const auto& set : m_out.fact_sets().predicate.get_sets())
+        for (const auto& set : m_out.facts().fact_sets.predicate.get_sets())
             for (const auto binding : set.get_bindings())
                 m_out.annotation_policy().initialize_annotation(binding, m_out.annotations());
 
-        for (const auto& set : m_out.fact_sets().function.get_sets())
+        for (const auto& set : m_out.facts().fact_sets.function.get_sets())
             for (const auto [binding, interval] : set.get_binding_values())
                 m_out.annotation_policy().initialize_annotation(binding, interval, m_out.numeric_annotations());
     }
@@ -164,7 +163,7 @@ private:
     {
         initialize_annotations();
         m_out.queue().clear();
-        const auto fact_sets = FactSets { m_in.facts().fact_sets, m_out.fact_sets() };
+        const auto fact_sets = FactSets { m_in.facts().fact_sets, m_out.facts().fact_sets };
         initialize_rule_states<::tyr::formalism::PredicateTag>(fact_sets);
         initialize_rule_states<::tyr::formalism::FunctionTag>(fact_sets);
     }

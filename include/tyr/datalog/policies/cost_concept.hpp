@@ -36,6 +36,7 @@ concept RuleCostPolicyConcept = requires(T& policy,
     { const_policy.get_cost(predicate_rule_key) } -> std::same_as<Cost>;
     { const_policy.get_cost(function_rule_key) } -> std::same_as<Cost>;
     { const_policy.get_cost(function_rule_key, numeric_key, interval) } -> std::same_as<Cost>;
+    { const_policy.is_metric_target(numeric_key) } -> std::same_as<bool>;
     { policy.clear() } -> std::same_as<void>;
     { policy.set_cost(predicate_rule_key, cost) } -> std::same_as<void>;
     { policy.set_cost(function_rule_key, cost) } -> std::same_as<void>;

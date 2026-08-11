@@ -26,7 +26,7 @@ void bind_ground_module_definitions(nb::module_& m)
 {
     using ProgramT = Program<GroundTag>;
     using ConstWorkspace = ConstProgramWorkspace<GroundTag>;
-    using Queue = QueueWorkspace<GroundTag>;
+    using Queue = QueueWorkspace;
 
     bind_task_policies<GroundTag>(m);
 

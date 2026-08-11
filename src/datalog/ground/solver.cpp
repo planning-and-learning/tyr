@@ -15,11 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/ground/solver.hpp"
+#include "tyr/datalog/solver.hpp"
 
 #include "tyr/datalog/applicability.hpp"
 #include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/fact_sets.hpp"
+#include "tyr/datalog/ground/contexts/program.hpp"
 #include "tyr/datalog/ground/rule_instance.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/numeric_support.hpp"
@@ -64,20 +65,6 @@ struct PendingPredicateFinalizationGreater
 using PendingPredicateFinalizations = std::vector<PendingPredicateFinalization>;
 using PendingPredicateWitnesses = std::vector<WitnessAnnotation<f::PredicateTag>>;
 
-template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    requires(!AP::stores_annotations)
-NumericSupportSelector make_numeric_support_selector(const GroundCtx<AP, TP, CP>& ctx)
-{
-    return NumericSupportSelector(FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }, ctx.out().numeric_annotations(), true);
-}
-
-template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    requires(AP::stores_annotations)
-NumericSupportSelector make_numeric_support_selector(const GroundCtx<AP, TP, CP>& ctx)
-{
-    return NumericSupportSelector(FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }, ctx.out().numeric_annotations());
-}
-
 template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void enqueue_rule(GroundCtx<AP, TP, CP>& ctx, fd::GroundRuleView<R> rule, Cost queue_label)
 {
@@ -96,9 +83,9 @@ void enqueue_rule(GroundCtx<AP, TP, CP>& ctx, fd::GroundRuleView<R> rule, Cost q
     queue.push_back(GroundQueueEntry<R> { queue_label, rule });
     std::push_heap(queue.begin(), queue.end(), std::greater<> {});
 
-    ++out.statistics().num_queue_pushes;
-    out.statistics().max_queue_size =
-        std::max(out.statistics().max_queue_size,
+    ++out.queue_statistics().num_queue_pushes;
+    out.queue_statistics().max_queue_size =
+        std::max(out.queue_statistics().max_queue_size,
                  static_cast<ygg::uint_t>(out.template queue_storage<f::PredicateTag>().size() + out.template queue_storage<f::FunctionTag>().size()));
 }
 
@@ -110,7 +97,7 @@ void push_rule(GroundCtx<AP, TP, CP>& ctx, fd::GroundRuleView<R> rule)
         return;
 
     auto instance = RuleInstance<GroundTag, R>(rule);
-    auto selector = make_numeric_support_selector(ctx);
+    auto selector = ctx.out().numeric_support_selector();
     auto& workspace = ctx.out().queue().scratch.rule_evaluation;
     const auto input = RuleEvaluationInput { selector, ctx.out().annotations() };
     const auto priority = evaluate_rule_priority(instance, ctx.out().annotation_policy(), ctx.out().cost_policy(), input, workspace);
@@ -183,7 +170,7 @@ std::optional<GroundQueueEntry<R>> pop_next_entry(GroundCtx<AP, TP, CP>& ctx)
     std::pop_heap(queue.begin(), queue.end(), std::greater<> {});
     const auto entry = queue.back();
     queue.pop_back();
-    ++ctx.out().statistics().num_queue_pops;
+    ++ctx.out().queue_statistics().num_queue_pops;
     return entry;
 }
 
@@ -247,10 +234,10 @@ template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicy
 bool derive_fact(GroundCtx<AP, TP, CP>& ctx, fd::PredicateBindingView<f::FluentTag> fact)
 {
     auto& out = ctx.out();
-    const auto inserted = out.fact_sets().predicate.insert(fact);
+    const auto inserted = out.facts().fact_sets.predicate.insert(fact);
     if (inserted)
     {
-        ++out.statistics().num_facts_derived;
+        ++out.queue_statistics().num_facts_derived;
     }
     return inserted;
 }
@@ -284,12 +271,7 @@ bool derive_interval(GroundCtx<AP, TP, CP>& ctx, fd::FunctionBindingView<f::Flue
     if (empty(interval))
         return false;
 
-    return ctx.out().fact_sets().function.insert(term, interval);
-}
-
-bool is_annotation_improvement(const std::optional<CostUpdate>& update) noexcept
-{
-    return update && (!update->old_cost || update->new_cost < *update->old_cost);
+    return ctx.out().facts().fact_sets.function.insert(term, interval);
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
@@ -324,9 +306,9 @@ void stage_rule(GroundCtx<AP, TP, CP>& ctx,
         }
 
         const auto update = out.annotation_policy().publish_annotation(candidate.head, std::move(witness), out.annotations());
-        if (out.fact_sets().predicate.contains(candidate.head))
+        if (out.facts().fact_sets.predicate.contains(candidate.head))
         {
-            if (is_annotation_improvement(update))
+            if (update && update->is_strict_improvement())
                 notify_fact_annotation_improved(ctx, candidate.head);
         }
         else if (update)
@@ -340,7 +322,7 @@ void stage_rule(GroundCtx<AP, TP, CP>& ctx,
     }
     else
     {
-        if (!out.fact_sets().predicate.contains(candidate.head))
+        if (!out.facts().fact_sets.predicate.contains(candidate.head))
             pending_heads.insert(candidate.cost, candidate.head);
     }
 
@@ -356,7 +338,7 @@ void fire_rule(GroundCtx<AP, TP, CP>& ctx,
                const FunctionCandidate& candidate,
                CostBuckets& pending_heads)
 {
-    ++ctx.out().statistics().num_rules_fired;
+    ++ctx.out().queue_statistics().num_rules_fired;
     // FunctionAnnotations retains the cheapest certificate for each exact interval.
     // FactSets determines whether that certificate is available; CostBuckets schedules only hull growth.
     auto annotation_improved = false;
@@ -412,7 +394,7 @@ void finalize_next_rule(GroundCtx<AP, TP, CP>& ctx, PendingPredicateFinalization
     assert(state.pending_cost && *state.pending_cost == entry.cost);
     state.pending_cost.reset();
     state.fired = true;
-    ++out.statistics().num_rules_fired;
+    ++out.queue_statistics().num_rules_fired;
     if constexpr (AP::records_propositional_achievers)
     {
         assert(state.pending_witness_index < pending_witnesses.size());
@@ -491,19 +473,19 @@ void process_next_rule(GroundCtx<AP, TP, CP>& ctx,
     auto& queued_cost = state.queued_cost;
     if (!queued_cost || *queued_cost != entry->cost)
     {
-        ++out.statistics().num_stale_queue_pops;
+        ++out.queue_statistics().num_stale_queue_pops;
         return;
     }
     queued_cost.reset();
 
     if (is_stale_entry(ctx, *entry))
     {
-        ++out.statistics().num_stale_queue_pops;
+        ++out.queue_statistics().num_stale_queue_pops;
         return;
     }
 
     auto instance = RuleInstance<GroundTag, R>(entry->rule);
-    auto selector = make_numeric_support_selector(ctx);
+    auto selector = ctx.out().numeric_support_selector();
     auto& workspace = out.queue().scratch.rule_evaluation;
     const auto input = RuleEvaluationInput { selector, out.annotations() };
     const auto candidate = [&]
@@ -515,7 +497,7 @@ void process_next_rule(GroundCtx<AP, TP, CP>& ctx,
     }();
     if (!candidate || candidate->queue_label != entry->cost)
     {
-        ++out.statistics().num_stale_queue_pops;
+        ++out.queue_statistics().num_stale_queue_pops;
         if (candidate)
             enqueue_rule(ctx, entry->rule, candidate->queue_label);
         return;

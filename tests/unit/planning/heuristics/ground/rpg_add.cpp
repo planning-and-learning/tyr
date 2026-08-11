@@ -30,4 +30,5 @@ inline constexpr const char* kHeuristicFixture = "tests/fixtures/planning/heuris
 namespace tyr::tests
 {
 TEST(TyrPlanningGroundAddRPGHeuristicTest, SetGoalReconfiguresEvaluator) { expect_builtin_set_goal_reconfigures_evaluator<GroundTag>(); }
+TEST(TyrPlanningGroundAddRPGHeuristicTest, GeneralMetricTargetsExactBinding) { expect_general_metric_targets_exact_binding<GroundTag>(); }
 }

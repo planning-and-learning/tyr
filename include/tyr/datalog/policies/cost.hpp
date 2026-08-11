@@ -27,6 +27,7 @@
 #include <tuple>
 #include <utility>
 #include <yggdrasil/containers/associative_containers.hpp>
+#include <yggdrasil/containers/unordered_set.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/semantics/comparison.hpp>
@@ -95,6 +96,12 @@ struct NumericTransitionCostKey : ygg::comparison::Mixin<NumericTransitionCostKe
 class RuleCostPolicy
 {
 public:
+    using MetricTarget = ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::Function<::tyr::formalism::FluentTag>>>;
+    using MetricTargets = ygg::UnorderedSet<MetricTarget>;
+
+    RuleCostPolicy() = default;
+    explicit RuleCostPolicy(const MetricTargets* metric_targets) noexcept : m_metric_targets(metric_targets) {}
+
     template<typename RuleKey>
     Cost get_cost(RuleKey) const noexcept
     {
@@ -106,6 +113,11 @@ public:
         return Cost(0);
     }
 
+    bool is_metric_target(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding) const noexcept
+    {
+        return !m_metric_targets || m_metric_targets->contains(binding.get_index());
+    }
+
     void clear() noexcept {}
     template<typename RuleKey>
     void set_cost(RuleKey, Cost) noexcept
@@ -115,6 +127,9 @@ public:
     void set_cost(RuleKey, ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>, ygg::ClosedInterval<ygg::float_t>, Cost) noexcept
     {
     }
+
+private:
+    const MetricTargets* m_metric_targets { nullptr };
 };
 
 template<::tyr::formalism::RelationKind R>
@@ -167,7 +182,7 @@ protected:
 };
 
 template<TaskKind Kind>
-class RuleCostOverridePolicy
+class RuleCostOverridePolicy : public RuleCostPolicy
 {
 public:
     using PredicateRuleKey = ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::PredicateTag>;
@@ -180,8 +195,17 @@ public:
     using RuleToActionMapping = ygg::UnorderedMap<Rule<R>, Action>;
 
     RuleCostOverridePolicy() = default;
+    using RuleCostPolicy::RuleCostPolicy;
     RuleCostOverridePolicy(const RuleToActionMapping<::tyr::formalism::PredicateTag>& predicate_rule_to_action,
                            const RuleToActionMapping<::tyr::formalism::FunctionTag>& function_rule_to_action) noexcept :
+        m_predicate_rule_to_action(&predicate_rule_to_action),
+        m_function_rule_to_action(&function_rule_to_action)
+    {
+    }
+    RuleCostOverridePolicy(const RuleToActionMapping<::tyr::formalism::PredicateTag>& predicate_rule_to_action,
+                           const RuleToActionMapping<::tyr::formalism::FunctionTag>& function_rule_to_action,
+                           const MetricTargets* metric_targets) noexcept :
+        RuleCostPolicy(metric_targets),
         m_predicate_rule_to_action(&predicate_rule_to_action),
         m_function_rule_to_action(&function_rule_to_action)
     {

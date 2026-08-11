@@ -448,10 +448,10 @@
             "task_file": "numeric/tests/tpp/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 6
+                    "h": 8
                 },
                 "general": {
-                    "h": 971.1500000000001
+                    "h": 2775.54
                 }
             }
         },
@@ -565,7 +565,7 @@
             "task_file": "numeric/tests/fo-farmland/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 2
+                    "h": 3
                 },
                 "general": {
                     "h": 0

@@ -29,8 +29,6 @@
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
 #include <tyr/datalog/datalog.hpp>
-#include <tyr/datalog/ground/solver.hpp>
-#include <tyr/datalog/lifted/solver.hpp>
 #include <tyr/datalog/policies/annotation.hpp>
 #include <tyr/datalog/policies/cost.hpp>
 #include <tyr/datalog/policies/termination.hpp>
@@ -414,7 +412,16 @@ void bind_configuration(nb::module_& m, const char* prefix)
     auto cls = nb::class_<Context>(m, context_name.c_str());
     cls.def(nb::init<Workspace&>(), "workspace"_a, nb::keep_alive<1, 2>())
         .def("clear", &Context::clear)
-        .def("get_statistics", [](Context& self) -> auto& { return self.out().statistics(); }, nb::rv_policy::reference_internal);
+        .def(
+            "get_statistics",
+            [](Context& self) -> auto&
+            {
+                if constexpr (std::same_as<Kind, GroundTag>)
+                    return self.out().queue_statistics();
+                else
+                    return self.out().statistics();
+            },
+            nb::rv_policy::reference_internal);
 
     if constexpr (std::same_as<Kind, GroundTag>)
     {
@@ -428,12 +435,7 @@ void bind_configuration(nb::module_& m, const char* prefix)
 
     m.def(
         "compute_model",
-        [](Context& context, ygg::ExecutionContext& execution_context)
-        {
-            if constexpr (std::same_as<Kind, LiftedTag>)
-                context.set_num_threads(execution_context.get_num_threads());
-            execution_context.arena().execute([&] { compute_model(context); });
-        },
+        [](Context& context, ygg::ExecutionContext& execution_context) { execute_model(context, execution_context); },
         "context"_a,
         "execution_context"_a,
         nb::call_guard<nb::gil_scoped_release>());

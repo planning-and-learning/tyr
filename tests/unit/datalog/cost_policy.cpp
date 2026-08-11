@@ -22,6 +22,7 @@
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <gtest/gtest.h>
+#include <string>
 
 namespace f = tyr::formalism;
 namespace fd = tyr::formalism::datalog;
@@ -72,6 +73,21 @@ RuleBindingFixture make_nullary_rule_binding(fd::Repository& repository)
 
     return { rule, binding };
 }
+
+fd::FunctionBindingView<f::FluentTag> make_nullary_function_binding(fd::Repository& repository, const char* name)
+{
+    auto function_builder = ygg::Data<f::Function<f::FluentTag>>(std::string(name), 0);
+    canonicalize(function_builder);
+    const auto [function, function_success] = repository.get_or_create(function_builder);
+    EXPECT_TRUE(function_success);
+
+    auto binding_builder = ygg::Data<f::RelationBinding<f::Function<f::FluentTag>>>();
+    binding_builder.relation = function.get_index();
+    canonicalize(binding_builder);
+    const auto [binding, binding_success] = repository.get_or_create(binding_builder);
+    EXPECT_TRUE(binding_success);
+    return binding;
+}
 }
 
 TEST(TyrDatalogCostPolicyTest, AnnotationStoresMetricAndCost)
@@ -115,6 +131,34 @@ TEST(TyrDatalogCostPolicyTest, RuleCostOverridePolicyLiftedUsesExactOverride)
     policy.set_cost(fixture.binding, 3);
 
     EXPECT_EQ(policy.get_cost(fixture.binding), 3);
+}
+
+TEST(TyrDatalogCostPolicyTest, DefaultPoliciesAcceptEveryMetricBinding)
+{
+    auto factory = fd::RepositoryFactory();
+    auto repository = factory.create();
+    const auto binding = make_nullary_function_binding(repository, "metric");
+
+    EXPECT_TRUE(d::RuleCostPolicy().is_metric_target(binding));
+    EXPECT_TRUE(d::RuleCostOverridePolicy<LiftedTag>().is_metric_target(binding));
+}
+
+TEST(TyrDatalogCostPolicyTest, FilteredPoliciesAcceptOnlyConfiguredMetricBindings)
+{
+    auto factory = fd::RepositoryFactory();
+    auto repository = factory.create();
+    const auto target = make_nullary_function_binding(repository, "target");
+    const auto other = make_nullary_function_binding(repository, "other");
+    auto targets = d::RuleCostPolicy::MetricTargets {};
+    targets.insert(target.get_index());
+
+    const auto base = d::RuleCostPolicy(&targets);
+    const auto override = d::RuleCostOverridePolicy<LiftedTag>(&targets);
+
+    EXPECT_TRUE(base.is_metric_target(target));
+    EXPECT_FALSE(base.is_metric_target(other));
+    EXPECT_TRUE(override.is_metric_target(target));
+    EXPECT_FALSE(override.is_metric_target(other));
 }
 
 }

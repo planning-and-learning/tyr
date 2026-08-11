@@ -19,14 +19,15 @@
 #define TYR_SRC_PLANNING_HEURISTICS_RPG_HPP_
 
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/datalog/ground/solver.hpp"
-#include "tyr/datalog/lifted/solver.hpp"
+#include "tyr/datalog/ground/contexts/program.hpp"
+#include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
 #include "tyr/datalog/policies/cost.hpp"
 #include "tyr/datalog/policies/cost_concept.hpp"
 #include "tyr/datalog/policies/termination_concept.hpp"
-#include "tyr/datalog/workspaces/program.hpp"
+#include "tyr/datalog/solver.hpp"
+#include "tyr/formalism/datalog/expression_properties.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/views.hpp"
@@ -41,6 +42,7 @@
 #include <optional>
 #include <type_traits>
 #include <utility>
+#include <yggdrasil/containers/unordered_set.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 
 namespace tyr::planning::detail
@@ -49,10 +51,23 @@ namespace tyr::planning::detail
 template<TaskKind Kind>
 struct RPGDefinition
 {
+    using MetricTargets = datalog::RuleCostPolicy::MetricTargets;
+
     TaskPtr<Kind> task;
     RPGProgram<Kind> rpg_program;
+    MetricTargets metric_targets;
 
-    RPGDefinition(TaskPtr<Kind> task, CostMode cost_mode) : task(std::move(task)), rpg_program(this->task->get_task(), cost_mode) {}
+    RPGDefinition(TaskPtr<Kind> task, CostMode cost_mode) : task(std::move(task)), rpg_program(this->task->get_task(), cost_mode), metric_targets()
+    {
+        const auto metric = rpg_program.get_datalog_program().get_program().get_metric();
+        if (!metric)
+            return;
+
+        auto fterms = ygg::UnorderedSet<::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag>> {};
+        ::tyr::formalism::datalog::collect_fterms(metric.value().get_fexpr(), fterms);
+        for (const auto fterm : fterms)
+            metric_targets.insert(fterm.get_row().get_index());
+    }
 };
 
 template<TaskKind Kind>
@@ -164,9 +179,7 @@ protected:
         const auto& translation_context = m_definition->rpg_program.get_translation_context().p2d;
         insert_unextended_state(state, repository, translation_context, m_workspace);
         auto ctx = datalog::ProgramExecutionContext(m_workspace);
-        if constexpr (std::same_as<Kind, LiftedTag>)
-            ctx.set_num_threads(m_execution_context->get_num_threads());
-        m_execution_context->arena().execute([&] { datalog::compute_model(ctx); });
+        datalog::execute_model(ctx, *m_execution_context);
 
         return m_workspace.tp.check(datalog::FactSets { m_workspace.const_workspace.facts.fact_sets, m_workspace.facts.fact_sets }) ?
                    static_cast<Derived&>(*this).compute_result(state) :
@@ -266,7 +279,10 @@ private:
     {
         if constexpr (std::same_as<CP, datalog::RuleCostOverridePolicy<Kind>>)
             return CP(definition.rpg_program.template get_rule_to_action_mapping<::tyr::formalism::PredicateTag>(),
-                      definition.rpg_program.template get_rule_to_action_mapping<::tyr::formalism::FunctionTag>());
+                      definition.rpg_program.template get_rule_to_action_mapping<::tyr::formalism::FunctionTag>(),
+                      &definition.metric_targets);
+        else if constexpr (std::same_as<CP, datalog::RuleCostPolicy>)
+            return CP(&definition.metric_targets);
         else
             return CP {};
     }

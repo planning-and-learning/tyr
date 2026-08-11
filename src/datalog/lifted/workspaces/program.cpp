@@ -68,7 +68,7 @@ ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTa
     delta_annotations(program.get_program().get_predicates<::tyr::formalism::FluentTag>().size()),
     delta_numeric_annotations(program.get_program().get_functions<::tyr::formalism::FluentTag>().size()),
     numeric_support_selector(),
-    tp(tp),
+    tp(std::move(tp)),
     cost_policy(std::move(cost_policy)),
     predicate_rules(),
     function_rules(),

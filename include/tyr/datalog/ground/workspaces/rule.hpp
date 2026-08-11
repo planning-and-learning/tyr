@@ -18,7 +18,7 @@
 #ifndef TYR_DATALOG_GROUND_WORKSPACES_RULE_HPP_
 #define TYR_DATALOG_GROUND_WORKSPACES_RULE_HPP_
 
-#include "tyr/datalog/workspaces/rule.hpp"
+#include "tyr/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <concepts>

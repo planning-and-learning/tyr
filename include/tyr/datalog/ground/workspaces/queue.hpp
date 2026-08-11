@@ -18,8 +18,8 @@
 #ifndef TYR_DATALOG_GROUND_WORKSPACES_QUEUE_HPP_
 #define TYR_DATALOG_GROUND_WORKSPACES_QUEUE_HPP_
 
+#include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/rule_evaluation.hpp"
-#include "tyr/datalog/workspaces/queue.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <concepts>
@@ -68,8 +68,7 @@ struct GroundQueueScratch
     }
 };
 
-template<>
-struct QueueWorkspace<GroundTag>
+struct QueueWorkspace
 {
     std::vector<GroundQueueEntry<::tyr::formalism::PredicateTag>> predicate_storage;
     std::vector<GroundQueueEntry<::tyr::formalism::FunctionTag>> function_storage;

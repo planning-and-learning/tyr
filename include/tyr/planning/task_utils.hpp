@@ -20,7 +20,9 @@
 
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/datalog/declarations.hpp"
-#include "tyr/datalog/workspaces/program.hpp"
+#include "tyr/datalog/policies/annotation_concept.hpp"
+#include "tyr/datalog/policies/cost_concept.hpp"
+#include "tyr/datalog/policies/termination_concept.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/planning/merge_datalog_decl.hpp"
 #include "tyr/formalism/planning/merge_planning_decl.hpp"

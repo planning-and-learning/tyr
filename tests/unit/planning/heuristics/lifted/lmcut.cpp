@@ -27,6 +27,8 @@ inline constexpr const char* kHeuristicFixture = "tests/fixtures/planning/heuris
 
 #include "../heuristic.hpp"
 
+TEST(TyrPlanningLiftedLMCutHeuristicTest, GeneralMetricTargetsExactBinding) { tyr::tests::expect_general_metric_targets_exact_binding<tyr::LiftedTag>(); }
+
 TEST(TyrPlanningLiftedLMCutHeuristicTest, RepeatedEvaluationReusesResetWorkspace)
 {
     auto context = tyr::tests::create_preferred_action_reset_context<tyr::LiftedTag>();

@@ -52,6 +52,19 @@ CostUpdate MinCostAnnotationPolicy<AggregationFunction>::commit_annotation(Predi
 }
 
 template<typename AggregationFunction>
+CostUpdate MinCostAnnotationPolicy<AggregationFunction>::commit_annotation(FunctionBinding head,
+                                                                           ygg::ClosedInterval<ygg::float_t> interval,
+                                                                           const FunctionAnnotations<true>& delta_numeric_annotations,
+                                                                           FunctionAnnotations<>& numeric_annotations) const
+{
+    const auto old_cost = numeric_annotations.fetch_cost(head, interval);
+    const auto* delta_annotation = delta_numeric_annotations.find(head, interval);
+    if (delta_annotation && numeric_annotations.insert(head, interval, *delta_annotation))
+        return CostUpdate(old_cost, get_cost(*delta_annotation));
+    return CostUpdate(old_cost, old_cost);
+}
+
+template<typename AggregationFunction>
 bool MinCostAnnotationPolicy<AggregationFunction>::can_update(PredicateHead head,
                                                               Cost cost,
                                                               const PredicateAnnotations<>& annotations,

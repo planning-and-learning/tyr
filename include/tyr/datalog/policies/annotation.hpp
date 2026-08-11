@@ -107,6 +107,11 @@ public:
                     const FunctionAnnotations<true>& delta_numeric_annotations) const noexcept;
 
     CostUpdate commit_annotation(PredicateHead head, const PredicateAnnotations<true>& delta_annotations, PredicateAnnotations<>& annotations) const;
+
+    CostUpdate commit_annotation(FunctionBinding head,
+                                 ygg::ClosedInterval<ygg::float_t> interval,
+                                 const FunctionAnnotations<true>& delta_numeric_annotations,
+                                 FunctionAnnotations<>& numeric_annotations) const;
 };
 
 template<typename AggregationFunction>

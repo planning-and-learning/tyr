@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/lifted/solver.hpp"
+#include "tyr/datalog/solver.hpp"
 
 #include "tyr/algorithms/kckp/delta_kckp.hpp"
 #include "tyr/datalog/applicability.hpp"
@@ -24,6 +24,7 @@
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/lifted/assignment_sets.hpp"
 #include "tyr/datalog/lifted/consistency_graph.hpp"
+#include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/rule_instance.hpp"
 #include "tyr/datalog/lifted/rule_scheduler.hpp"
 #include "tyr/datalog/lifted/workspaces/facts.hpp"
@@ -630,7 +631,7 @@ bool reduce_worker_heads(PredicateHeadIteration& head_iteration,
             const auto cost_update = annotation_policy.commit_annotation(head, delta_annotations, annotations);
             if (!facts.contains(head))
                 cost_buckets.update(cost_update, head);
-            else if (!cost_update.old_cost || cost_update.new_cost < *cost_update.old_cost)
+            else if (cost_update.is_strict_improvement())
             {
                 annotation_improved = true;
                 scheduler.on_generate(head.get_index().relation);
@@ -660,7 +661,11 @@ bool reduce_worker_heads(FunctionHeadIteration& head_iteration,
             const auto* annotation = delta_numeric_annotations.find(update.binding, update.interval);
             auto improved = false;
             if (annotation)
-                improved = numeric_annotations.insert(update.binding, update.interval, *annotation);
+            {
+                improved = annotation_policy.commit_annotation(update.binding, update.interval, delta_numeric_annotations, numeric_annotations)
+                               .is_strict_improvement();
+                annotation = numeric_annotations.find(update.binding, update.interval);
+            }
             else
                 annotation = numeric_annotations.find(update.binding, update.interval);
             // FunctionAnnotations retains the cheapest certificate for each exact interval.

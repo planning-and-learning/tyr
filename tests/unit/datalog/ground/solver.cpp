@@ -15,8 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/ground/solver.hpp"
+#include "tyr/datalog/solver.hpp"
 
+#include "tyr/datalog/ground/contexts/program.hpp"
 #include "tyr/datalog/static_rule_filter.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
@@ -45,7 +46,7 @@ template<typename Context>
 PredicateBindingViews binding_views(const Context& ctx)
 {
     auto result = PredicateBindingViews {};
-    for (const auto& set : ctx.out().fact_sets().predicate.get_sets())
+    for (const auto& set : ctx.out().facts().fact_sets.predicate.get_sets())
         for (const auto binding : set.get_bindings())
             result.push_back(binding);
     return result;
@@ -359,7 +360,7 @@ SolvedGroundQueue solve_default_state(GroundQueueFixture& fixture)
     auto ctx = datalog::ProgramExecutionContext(workspace);
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::compute_model(ctx);
-    return { binding_views(ctx), ctx.out().statistics() };
+    return { binding_views(ctx), ctx.out().queue_statistics() };
 }
 }
 
@@ -403,8 +404,8 @@ TEST(TyrDatalogGroundQueueTest, NoAnnotationPolicyDerivesFactsWithoutStoringAnno
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::compute_model(ctx);
 
-    EXPECT_TRUE(ctx.out().fact_sets().predicate.contains(atom.get_row()));
-    EXPECT_EQ(ctx.out().fact_sets().function[term], ygg::ClosedInterval<ygg::float_t>(3, 3));
+    EXPECT_TRUE(ctx.out().facts().fact_sets.predicate.contains(atom.get_row()));
+    EXPECT_EQ(ctx.out().facts().fact_sets.function[term], ygg::ClosedInterval<ygg::float_t>(3, 3));
     EXPECT_EQ(ctx.out().annotations().find(atom.get_row()), nullptr);
     EXPECT_EQ(ctx.out().numeric_annotations().size(), 0);
 }
@@ -440,13 +441,13 @@ TEST(TyrDatalogGroundQueueTest, ReusesGroundProgramExecutionContext)
 
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::compute_model(ctx);
-    const auto first_statistics = ctx.out().statistics();
+    const auto first_statistics = ctx.out().queue_statistics();
     EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
     EXPECT_EQ(first_statistics.num_facts_derived, 2);
 
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::compute_model(ctx);
-    const auto second_statistics = ctx.out().statistics();
+    const auto second_statistics = ctx.out().queue_statistics();
     EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
     EXPECT_EQ(second_statistics.num_facts_derived, 2);
     EXPECT_EQ(second_statistics.num_rules_fired, first_statistics.num_rules_fired);
@@ -617,8 +618,8 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationSkipsWorkWhenInitialFactsSatisf
     dq::compute_model(ctx);
 
     EXPECT_EQ(binding_views(ctx), binding_views({ goal_atom }));
-    EXPECT_EQ(ctx.out().statistics().num_rules_fired, 0);
-    EXPECT_EQ(ctx.out().statistics().num_facts_derived, 0);
+    EXPECT_EQ(ctx.out().queue_statistics().num_rules_fired, 0);
+    EXPECT_EQ(ctx.out().queue_statistics().num_facts_derived, 0);
 }
 
 TEST(TyrDatalogGroundQueueTest, GroundTerminationStopsAfterGoalDerived)
@@ -643,7 +644,7 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationStopsAfterGoalDerived)
     dq::compute_model(ctx);
 
     EXPECT_EQ(binding_views(ctx), binding_views({ a }));
-    EXPECT_EQ(ctx.out().statistics().num_rules_fired, 1);
+    EXPECT_EQ(ctx.out().queue_statistics().num_rules_fired, 1);
     EXPECT_TRUE(ctx.out().tp().check(datalog::FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }));
 }
 
@@ -682,14 +683,14 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationCommitsMixedLowestCostBucket)
     ctx.out().annotations().insert_or_assign(expensive_source.get_row(), datalog::BaseAnnotation(datalog::Cost(2)));
     dq::compute_model(ctx);
 
-    EXPECT_TRUE(ctx.out().fact_sets().predicate.contains(goal_atom.get_row()));
-    EXPECT_TRUE(ctx.out().fact_sets().predicate.contains(peer_atom.get_row()));
-    EXPECT_EQ(ctx.out().fact_sets().function[term], ygg::ClosedInterval<ygg::float_t>(3, 3));
+    EXPECT_TRUE(ctx.out().facts().fact_sets.predicate.contains(goal_atom.get_row()));
+    EXPECT_TRUE(ctx.out().facts().fact_sets.predicate.contains(peer_atom.get_row()));
+    EXPECT_EQ(ctx.out().facts().fact_sets.function[term], ygg::ClosedInterval<ygg::float_t>(3, 3));
     const auto* goal_annotation = ctx.out().annotations().find(goal_atom.get_row());
     ASSERT_NE(goal_annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*goal_annotation), 0);
     EXPECT_FALSE(ctx.out().rule_states<f::PredicateTag>()[ygg::uint_t(expensive_goal.get_index())].fired);
-    EXPECT_EQ(ctx.out().statistics().num_rules_fired, 3);
+    EXPECT_EQ(ctx.out().queue_statistics().num_rules_fired, 3);
 }
 
 TEST(TyrDatalogGroundQueueTest, GroundTerminationExposesOnlyOptimalGoalFrontierAchievers)
@@ -827,8 +828,8 @@ TEST(TyrDatalogGroundQueueTest, DerivedNumericIntervalUnblocksRuleAndRecordsSupp
 
     dq::compute_model(ctx);
 
-    EXPECT_TRUE(ctx.out().fact_sets().predicate.contains(head.get_row()));
-    EXPECT_EQ(ctx.out().fact_sets().function[term], ygg::ClosedInterval<ygg::float_t>(3, 3));
+    EXPECT_TRUE(ctx.out().facts().fact_sets.predicate.contains(head.get_row()));
+    EXPECT_EQ(ctx.out().facts().fact_sets.function[term], ygg::ClosedInterval<ygg::float_t>(3, 3));
     const auto* achievers = ctx.out().annotation_policy().find_achievers(head.get_row());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
@@ -860,7 +861,7 @@ TEST(TyrDatalogGroundQueueTest, SameCostBroadAndContainedNumericIntervalsRetainE
 
     const auto broad = ygg::ClosedInterval<ygg::float_t>(0, 4);
     const auto contained = ygg::ClosedInterval<ygg::float_t>(3, 3);
-    EXPECT_EQ(ctx.out().fact_sets().function[term], broad);
+    EXPECT_EQ(ctx.out().facts().fact_sets.function[term], broad);
     EXPECT_NE(ctx.out().numeric_annotations().find(term.get_row(), broad), nullptr);
     EXPECT_NE(ctx.out().numeric_annotations().find(term.get_row(), contained), nullptr);
 }
@@ -889,7 +890,7 @@ TEST(TyrDatalogGroundQueueTest, RevalidatesQueuedRuleAfterContainedNumericCertif
     const auto* annotation = ctx.out().annotations().find(head.get_row());
     ASSERT_NE(annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*annotation), 0);
-    EXPECT_EQ(ctx.out().statistics().num_stale_queue_pops, 1);
+    EXPECT_EQ(ctx.out().queue_statistics().num_stale_queue_pops, 1);
 }
 
 TEST(TyrDatalogGroundQueueTest, EvaluatesReactivatedNumericRuleBeforeTargetHullChanges)
@@ -999,7 +1000,7 @@ TEST(TyrDatalogGroundQueueTest, NumericTransitionCreditOnlyReducesTheLocalEdge)
 
     dq::compute_model(ctx);
 
-    EXPECT_EQ(ctx.out().fact_sets().function[term], interval);
+    EXPECT_EQ(ctx.out().facts().fact_sets.function[term], interval);
     const auto* annotation = ctx.out().numeric_annotations().find(term.get_row(), interval);
     ASSERT_NE(annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*annotation), 5);
@@ -1030,7 +1031,7 @@ TEST(TyrDatalogGroundQueueTest, TransitionCreditDoesNotTurnRawPositiveEdgeIntoFr
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::compute_model(ctx);
 
-    EXPECT_EQ(ctx.out().fact_sets().function[term], ygg::ClosedInterval<ygg::float_t>(0, 1));
+    EXPECT_EQ(ctx.out().facts().fact_sets.function[term], ygg::ClosedInterval<ygg::float_t>(0, 1));
     EXPECT_TRUE(ctx.out().tp().check(datalog::FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }));
 }
 
@@ -1076,7 +1077,7 @@ TEST(TyrDatalogGroundQueueTest, StaticLiteralsUseTheirPolarityAndInitialTruth)
     for (const auto rule : program.get_rules<f::PredicateTag>())
         expected.push_back(rule.get_head().get_row());
     EXPECT_EQ(binding_views(ctx), expected);
-    EXPECT_EQ(ctx.out().statistics().num_rules_fired, 2);
+    EXPECT_EQ(ctx.out().queue_statistics().num_rules_fired, 2);
 }
 
 TEST(TyrDatalogGroundQueueTest, ExplicitFluentAtomsRestoreDeclaredInitialFunctionValues)
@@ -1088,11 +1089,11 @@ TEST(TyrDatalogGroundQueueTest, ExplicitFluentAtomsRestoreDeclaredInitialFunctio
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
     auto workspace = datalog::ProgramWorkspace<GroundTag>(const_workspace);
     auto ctx = datalog::ProgramExecutionContext(workspace);
-    ctx.out().fact_sets().function.insert(term, 9);
+    ctx.out().facts().fact_sets.function.insert(term, 9);
 
     ctx.initialize(fixture.initial_fluent_atoms);
 
-    EXPECT_EQ(ctx.out().fact_sets().function[term], ygg::ClosedInterval<ygg::float_t>(3, 3));
+    EXPECT_EQ(ctx.out().facts().fact_sets.function[term], ygg::ClosedInterval<ygg::float_t>(3, 3));
 }
 
 TEST(TyrDatalogGroundQueueTest, PredicateRuleWithNegativeFluentLiteralIsRejected)

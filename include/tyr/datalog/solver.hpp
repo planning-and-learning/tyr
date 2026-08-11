@@ -15,20 +15,31 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_DATALOG_GROUND_SOLVER_HPP_
-#define TYR_DATALOG_GROUND_SOLVER_HPP_
+#ifndef TYR_DATALOG_SOLVER_HPP_
+#define TYR_DATALOG_SOLVER_HPP_
 
 #include "tyr/datalog/ground/contexts/program.hpp"
-#include "tyr/datalog/ground/workspaces/program.hpp"
-#include "tyr/datalog/policies/annotation_concept.hpp"
-#include "tyr/datalog/policies/cost_concept.hpp"
-#include "tyr/datalog/policies/termination_concept.hpp"
+#include "tyr/datalog/lifted/contexts/program.hpp"
+
+#include <concepts>
+#include <yggdrasil/execution/onetbb.hpp>
 
 namespace tyr::datalog
 {
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void compute_model(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+void compute_model(ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx);
+
+template<TaskKind Kind, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+void execute_model(ProgramExecutionContext<Kind, AP, TP, CP>& ctx, ygg::ExecutionContext& execution_context)
+{
+    if constexpr (std::same_as<Kind, LiftedTag>)
+        ctx.set_num_threads(execution_context.get_num_threads());
+    execution_context.arena().execute([&] { compute_model(ctx); });
+}
 
 }
 

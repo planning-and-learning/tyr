@@ -18,9 +18,9 @@
 #ifndef TYR_DATALOG_LIFTED_WORKSPACES_FACTS_HPP_
 #define TYR_DATALOG_LIFTED_WORKSPACES_FACTS_HPP_
 
+#include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/lifted/assignment_sets.hpp"
-#include "tyr/datalog/workspaces/facts.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 

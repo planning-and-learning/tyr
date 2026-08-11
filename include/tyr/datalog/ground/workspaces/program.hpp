@@ -18,6 +18,7 @@
 #ifndef TYR_DATALOG_GROUND_WORKSPACES_PROGRAM_HPP_
 #define TYR_DATALOG_GROUND_WORKSPACES_PROGRAM_HPP_
 
+#include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/ground/workspaces/facts.hpp"
 #include "tyr/datalog/ground/workspaces/queue.hpp"
 #include "tyr/datalog/ground/workspaces/rule.hpp"
@@ -28,7 +29,6 @@
 #include "tyr/datalog/policies/numeric_support.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/policies/termination_concept.hpp"
-#include "tyr/datalog/workspaces/program.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <type_traits>
@@ -80,7 +80,7 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
     CP cost_policy;
     RuleWorkspace<GroundTag, ::tyr::formalism::PredicateTag> predicate_rules;
     RuleWorkspace<GroundTag, ::tyr::formalism::FunctionTag> function_rules;
-    QueueWorkspace<GroundTag> queue;
+    QueueWorkspace queue;
     ::tyr::formalism::datalog::Builder datalog_builder;
 
     explicit ProgramWorkspace(const ConstProgramWorkspace<GroundTag>& cws, AP annotation_policy_ = AP(), TP tp_ = TP(), CP cost_policy_ = CP()) :
@@ -110,7 +110,7 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
 
     auto get_numeric_support_selector() const noexcept
     {
-        return NumericSupportSelector(FactSets { const_workspace.facts.fact_sets, facts.fact_sets }, numeric_annotations);
+        return NumericSupportSelector(FactSets { const_workspace.facts.fact_sets, facts.fact_sets }, numeric_annotations, !AP::stores_annotations);
     }
 };
 

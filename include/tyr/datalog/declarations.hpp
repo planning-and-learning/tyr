@@ -70,12 +70,17 @@ struct FactsWorkspace;
 template<TaskKind Kind>
 struct ConstFactsWorkspace;
 struct P2DWorkspace;
+template<TaskKind Kind, typename AP = NoAnnotationPolicy, typename TP = NoTerminationPolicy, typename CP = RuleCostPolicy>
+struct ProgramWorkspace;
 template<TaskKind Kind>
 struct ConstProgramWorkspace;
+struct QueueWorkspace;
 template<TaskKind Kind, ::tyr::formalism::RelationKind R>
 struct RuleWorkspace;
 template<TaskKind Kind, ::tyr::formalism::RelationKind R>
 struct ConstRuleWorkspace;
+template<TaskKind Kind, typename AP = NoAnnotationPolicy, typename TP = NoTerminationPolicy, typename CP = RuleCostPolicy>
+struct ProgramExecutionContext;
 
 template<::tyr::formalism::RelationKind R>
 class TypedRuleSchedulerStratum;

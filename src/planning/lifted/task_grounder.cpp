@@ -19,10 +19,10 @@
 
 #include "tyr/analysis/domains.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
-#include "tyr/datalog/lifted/solver.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
+#include "tyr/datalog/solver.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/invariants/mutexes.hpp"
@@ -413,9 +413,8 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
     auto ground_program = GroundTaskProgram(lifted_task.get_task());
     auto workspace = d::ProgramWorkspace<LiftedTag>(ground_program.get_datalog_program());
-    auto ctx = d::ProgramExecutionContext(workspace, execution_context.get_num_threads());
-
-    execution_context.arena().execute([&] { d::compute_model(ctx); });
+    auto ctx = d::ProgramExecutionContext(workspace);
+    d::execute_model(ctx, execution_context);
 
     auto predicate_bindings = std::vector<fd::PredicateBindingView<f::FluentTag>> {};
     for (const auto& set : workspace.facts.fact_sets.predicate.get_sets())

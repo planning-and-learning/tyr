@@ -157,6 +157,8 @@ ygg::Data<::tyr::formalism::datalog::FunctionExpression> merge_p2d(FunctionExpre
 
 ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression> merge_p2d(GroundFunctionExpressionView element, MergeDatalogContext& context);
 
+std::pair<::tyr::formalism::datalog::MetricView, bool> merge_p2d(MetricView element, MergeDatalogContext& context);
+
 template<FactKind T_SRC,
          FactKind T_DST = T_SRC,
          typename = std::enable_if_t<(std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>>>
@@ -581,6 +583,13 @@ inline ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression> merge_p2d(
                 return ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>(merge_p2d(arg, context).first.get_index());
         },
         element.get_variant());
+}
+
+inline std::pair<::tyr::formalism::datalog::MetricView, bool> merge_p2d(MetricView element, MergeDatalogContext& context)
+{
+    auto metric = ::tyr::formalism::datalog::checkout<::tyr::formalism::datalog::Metric>(context.builder);
+    metric->fexpr = merge_p2d(element.get_fexpr(), context);
+    return ::tyr::formalism::datalog::get_or_create(context.destination, *metric);
 }
 
 template<typename T>

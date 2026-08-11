@@ -20,10 +20,10 @@
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
-#include "tyr/datalog/lifted/solver.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
+#include "tyr/datalog/solver.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
@@ -141,9 +141,8 @@ void AxiomEvaluator<LiftedTag>::compute_extended_state(ygg::Builder<State<Lifted
 
     insert_unextended_state(state_builder, *m_impl->definition->task->get_repository(), program.get_translation_context().p2d, workspace);
 
-    auto ctx = d::ProgramExecutionContext(workspace, evaluator.execution_context->get_num_threads());
-
-    evaluator.execution_context->arena().execute([&] { d::compute_model(ctx); });
+    auto ctx = d::ProgramExecutionContext(workspace);
+    d::execute_model(ctx, *evaluator.execution_context);
 
     read_derived_atoms_from_fact_set(state_builder,
                                      *m_impl->definition->task->get_repository(),
