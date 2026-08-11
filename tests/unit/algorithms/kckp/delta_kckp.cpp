@@ -19,8 +19,8 @@
 
 #include "planning/parser.hpp"
 #include "tyr/datalog/lifted/consistency_graph.hpp"
-#include "tyr/datalog/lifted/policies/annotation.hpp"
 #include "tyr/datalog/lifted/solver.hpp"
+#include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/planning/factory.hpp"
 #include "tyr/planning/heuristics/rpg_ff.hpp"

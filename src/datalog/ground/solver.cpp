@@ -21,6 +21,7 @@
 #include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/ground/rule_instance.hpp"
+#include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/numeric_support.hpp"
 #include "tyr/datalog/rule_evaluation.hpp"
 
@@ -287,7 +288,9 @@ void fire_rule(GroundCtx<AP, TP, CP>& ctx,
 
     if constexpr (AP::stores_annotations)
     {
-        const auto update = publish_candidate(out.annotation_policy(), instance, candidate, out.annotations());
+        auto witness = materialize_witness(instance, candidate);
+        out.annotation_policy().record_achiever(candidate.head, witness);
+        const auto update = out.annotation_policy().publish_annotation(candidate.head, std::move(witness), out.annotations());
         if (out.fact_sets().predicate.contains(candidate.head))
         {
             if (is_annotation_improvement(update))
@@ -316,7 +319,10 @@ void fire_rule(GroundCtx<AP, TP, CP>& ctx,
     // FunctionAnnotations retains the cheapest certificate for each exact interval.
     // FactSets determines whether that certificate is available; CostBuckets schedules only hull growth.
     if constexpr (AP::stores_annotations)
-        publish_candidate(ctx.out().annotation_policy(), instance, candidate, ctx.out().numeric_annotations());
+        ctx.out().annotation_policy().try_update_candidate(candidate.head,
+                                                           candidate.interval,
+                                                           materialize_witness(instance, candidate),
+                                                           ctx.out().numeric_annotations());
     if (candidate.grows_fact)
         pending_heads.insert(candidate.cost, candidate.head, candidate.interval);
 }
@@ -335,7 +341,7 @@ Cost next_rule_cost(const GroundCtx<AP, TP, CP>& ctx) noexcept
 }
 
 template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
-bool commit_head_bucket(GroundCtx<AP, TP, CP>& ctx, CostBuckets& pending_heads, Cost cost)
+void commit_head_bucket(GroundCtx<AP, TP, CP>& ctx, CostBuckets& pending_heads, Cost cost)
 {
     auto bucket = pending_heads.take(cost);
     auto changed_facts = std::vector<fd::PredicateBindingView<f::FluentTag>> {};
@@ -360,9 +366,6 @@ bool commit_head_bucket(GroundCtx<AP, TP, CP>& ctx, CostBuckets& pending_heads, 
         notify_fact_inserted(ctx, fact);
     for (const auto term : changed_terms)
         notify_numeric_interval_changed(ctx, term);
-
-    return (!changed_facts.empty() || !changed_terms.empty())
-           && ctx.out().tp().should_terminate(FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets });
 }
 
 template<f::RelationKind R, AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
@@ -430,21 +433,21 @@ void process_rule_frontier(GroundCtx<AP, TP, CP>& ctx, CostBuckets& pending_head
 template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
 void compute_model(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
-    if (ctx.out().tp().should_terminate(FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }))
-        return;
-
     initialize_numeric_constraint_satisfaction(ctx);
     seed_queue(ctx);
 
     auto pending_heads = CostBuckets {};
     while (next_rule_cost(ctx) != std::numeric_limits<Cost>::max() || !pending_heads.is_empty())
     {
+        if (ctx.out().tp().should_terminate(FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }))
+            return;
+
         const auto rule_cost = next_rule_cost(ctx);
         const auto head_cost = pending_heads.min_cost();
         if (rule_cost <= head_cost)
             process_rule_frontier(ctx, pending_heads, rule_cost);
-        else if (commit_head_bucket(ctx, pending_heads, head_cost))
-            break;
+        else
+            commit_head_bucket(ctx, pending_heads, head_cost);
     }
 }
 

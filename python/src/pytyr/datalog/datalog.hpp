@@ -30,7 +30,6 @@
 #include <nanobind/stl/vector.h>
 #include <tyr/datalog/datalog.hpp>
 #include <tyr/datalog/ground/solver.hpp>
-#include <tyr/datalog/lifted/policies/annotation.hpp>
 #include <tyr/datalog/lifted/solver.hpp>
 #include <tyr/datalog/policies/annotation.hpp>
 #include <tyr/datalog/policies/cost.hpp>

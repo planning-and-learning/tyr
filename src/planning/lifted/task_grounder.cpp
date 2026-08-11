@@ -19,9 +19,9 @@
 
 #include "tyr/analysis/domains.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
-#include "tyr/datalog/lifted/policies/annotation.hpp"
 #include "tyr/datalog/lifted/solver.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
+#include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/planning/grounder.hpp"

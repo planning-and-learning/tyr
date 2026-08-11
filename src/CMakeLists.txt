@@ -81,9 +81,8 @@ add_library(
     formalism/planning/planning_task.cpp
 
     datalog/static_rule_filter.cpp
-    datalog/lifted/policies/annotation.cpp
+    datalog/policies/annotation.cpp
     datalog/policies/cost.cpp
-    datalog/ground/policies/annotation.cpp
     datalog/policies/annotation_types.cpp
     datalog/policies/numeric_support.cpp
     datalog/policies/termination.cpp

@@ -18,10 +18,10 @@
 #ifndef TYR_DATALOG_GROUND_WORKSPACES_PROGRAM_HPP_
 #define TYR_DATALOG_GROUND_WORKSPACES_PROGRAM_HPP_
 
-#include "tyr/datalog/ground/policies/annotation.hpp"
 #include "tyr/datalog/ground/workspaces/facts.hpp"
 #include "tyr/datalog/ground/workspaces/queue.hpp"
 #include "tyr/datalog/ground/workspaces/rule.hpp"
+#include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
 #include "tyr/datalog/policies/cost.hpp"
 #include "tyr/datalog/policies/cost_concept.hpp"

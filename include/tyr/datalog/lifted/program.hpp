@@ -22,7 +22,6 @@
 #include "tyr/analysis/program_analysis.hpp"
 #include "tyr/analysis/stratification.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
-#include "tyr/datalog/programs/program.hpp"
 #include "tyr/formalism/datalog/program_index.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 

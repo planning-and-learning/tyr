@@ -117,19 +117,4 @@ TEST(TyrDatalogCostPolicyTest, RuleCostOverridePolicyLiftedUsesExactOverride)
     EXPECT_EQ(policy.get_cost(fixture.binding), 3);
 }
 
-TEST(TyrDatalogCostPolicyTest, WitnessTieUsesSuppliedOrdering)
-{
-    auto factory = fd::RepositoryFactory();
-    auto repository = factory.create();
-    const auto binding = make_nullary_rule_binding(repository).binding;
-    const auto incumbent = d::Annotation<LiftedTag>(d::WitnessAnnotation<LiftedTag>(binding, ygg::ClosedInterval<ygg::float_t>(2, 2), d::Cost(1)));
-    const auto candidate = d::WitnessAnnotation<LiftedTag>(binding, ygg::ClosedInterval<ygg::float_t>(1, 1), d::Cost(1));
-    const auto less_metric = [](const auto& lhs, const auto& rhs) { return lower(lhs.get_metric()) < lower(rhs.get_metric()); };
-
-    EXPECT_TRUE(d::witness_wins_tie(candidate, &incumbent, less_metric));
-
-    const auto base = d::Annotation<LiftedTag>(d::BaseAnnotation<LiftedTag>(d::Cost(1)));
-    EXPECT_FALSE(d::witness_wins_tie(candidate, &base, less_metric));
-}
-
 }

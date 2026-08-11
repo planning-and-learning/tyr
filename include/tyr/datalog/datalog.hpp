@@ -33,7 +33,6 @@
 #include "tyr/datalog/lifted/solver.hpp"
 #include "tyr/datalog/lifted/workspaces/facts.hpp"
 #include "tyr/datalog/lifted/workspaces/rule.hpp"
-#include "tyr/datalog/programs/program.hpp"
 #include "tyr/datalog/statistics/program.hpp"
 #include "tyr/datalog/statistics/rule.hpp"
 #include "tyr/datalog/static_rule_filter.hpp"

@@ -47,14 +47,23 @@ namespace tyr::datalog
 struct PredicateHeadIteration
 {
     using Binding = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
+    using Witness = WitnessAnnotation<LiftedTag, ::tyr::formalism::PredicateTag>;
+
+    struct Achiever
+    {
+        Binding head;
+        Witness witness;
+    };
 
     ygg::UnorderedSet<Binding> seen_bindings;
     std::vector<Binding> bindings;
+    std::vector<Achiever> achievers;
 
     void clear() noexcept
     {
         seen_bindings.clear();
         bindings.clear();
+        achievers.clear();
     }
 
     void insert(Binding binding)
@@ -62,6 +71,8 @@ struct PredicateHeadIteration
         if (seen_bindings.emplace(binding).second)
             bindings.push_back(binding);
     }
+
+    void insert_achiever(Binding head, Witness witness) { achievers.push_back(Achiever { head, std::move(witness) }); }
 };
 
 struct FunctionHeadUpdate : ygg::comparison::Mixin<FunctionHeadUpdate>

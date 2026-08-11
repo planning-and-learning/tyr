@@ -19,7 +19,6 @@
 #define TYR_DATALOG_GROUND_PROGRAM_HPP_
 
 #include "tyr/datalog/ground/workspaces/program.hpp"
-#include "tyr/datalog/programs/program.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 namespace tyr::datalog

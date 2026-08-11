@@ -24,13 +24,13 @@
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/lifted/assignment_sets.hpp"
 #include "tyr/datalog/lifted/consistency_graph.hpp"
-#include "tyr/datalog/lifted/policies/annotation.hpp"
 #include "tyr/datalog/lifted/rule_instance.hpp"
 #include "tyr/datalog/lifted/rule_scheduler.hpp"
 #include "tyr/datalog/lifted/workspaces/facts.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/lifted/workspaces/rule.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
+#include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/rule_evaluation.hpp"
 #include "tyr/declarations.hpp"
@@ -41,6 +41,7 @@
 #include "tyr/formalism/datalog/views.hpp"
 
 #include <assert.h>
+#include <map>
 #include <oneapi/tbb/parallel_for.h>
 #include <oneapi/tbb/parallel_for_each.h>
 #include <oneapi/tbb/task_arena.h>
@@ -60,6 +61,19 @@ namespace fd = tyr::formalism::datalog;
 
 namespace tyr::datalog
 {
+
+using PendingPredicateAchievers = std::map<Cost, std::vector<PredicateHeadIteration::Achiever>>;
+
+template<typename ProgramOut>
+void publish_pending_achievers(PendingPredicateAchievers& pending, PendingPredicateAchievers::iterator end, ProgramOut& program_out)
+{
+    using AnnotationPolicy = std::remove_cvref_t<decltype(program_out.annotation_policy())>;
+    if constexpr (AnnotationPolicy::records_propositional_achievers)
+        for (auto it = pending.begin(); it != end; ++it)
+            for (const auto& achiever : it->second)
+                program_out.annotation_policy().record_achiever(achiever.head, achiever.witness);
+    pending.erase(pending.begin(), end);
+}
 
 static void create_nullary_binding(ygg::IndexList<f::Object>& binding) { binding.clear(); }
 
@@ -103,7 +117,9 @@ static auto make_rule_update_input(In& in, Out& out)
 }
 
 template<AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
-static bool record_propositional_achiever(fd::PredicateBindingView<f::FluentTag> head, RuleUpdateInput<f::PredicateTag, AP, CP>& input)
+static bool stage_propositional_achiever(fd::PredicateBindingView<f::FluentTag> head,
+                                         RuleUpdateInput<f::PredicateTag, AP, CP>& input,
+                                         PredicateHeadIteration& head_iteration)
     requires AP::records_propositional_achievers
 {
     auto candidate = evaluate_predicate_candidate(input.rule_instance, input.annotation_policy, input.cost_policy, input.evaluation, input.workspace);
@@ -111,7 +127,7 @@ static bool record_propositional_achiever(fd::PredicateBindingView<f::FluentTag>
         return false;
 
     assert(candidate->head == head);
-    input.annotation_policy.record_achiever(head, materialize_witness(input.rule_instance, *candidate));
+    head_iteration.insert_achiever(head, materialize_witness(input.rule_instance, *candidate));
     return true;
 }
 
@@ -132,7 +148,7 @@ static bool insert_propositional_update(fd::PredicateBindingView<f::FluentTag> h
         if constexpr (AP::records_propositional_achievers)
         {
             auto witness = materialize_witness(input.rule_instance, *candidate);
-            input.annotation_policy.record_achiever(head, witness);
+            head_iteration.insert_achiever(head, witness);
             if (can_update)
                 input.annotation_policy.try_update_candidate(head, std::move(witness), delta_annotations);
         }
@@ -325,7 +341,7 @@ void process_clique_head(fd::AtomView<f::FluentTag> head_atom,
             else
             {
                 assert(is_applicable(in.cws_rule().get_rule(), ApplicabilityContext { in.fact_sets(), out.ground_context() }));
-                if (!record_propositional_achiever(*head, input))
+                if (!stage_propositional_achiever(*head, input, out.head_updates()))
                     retain_pending();
             }
         }
@@ -461,7 +477,7 @@ void process_pending_rule_bindings(RuleExecutionContext<f::PredicateTag, AP, TP,
                                       return false;
 
                                   assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
-                                  return record_propositional_achiever(*head, input);
+                                  return stage_propositional_achiever(*head, input, out.head_updates());
                               }
                               return true;
                           }
@@ -540,9 +556,16 @@ void run_active_rules(StratumExecutionContext<AP, TP, CP>& ctx)
 }
 
 template<typename ProgramOut>
-void reduce_worker_heads(PredicateHeadIteration& head_iteration, ProgramOut& program_out, CostBuckets& cost_buckets)
+void reduce_worker_heads(PredicateHeadIteration& head_iteration,
+                         ProgramOut& program_out,
+                         CostBuckets& cost_buckets,
+                         PendingPredicateAchievers& pending_achievers)
 {
     using AnnotationPolicy = std::remove_cvref_t<decltype(program_out.annotation_policy())>;
+    if constexpr (AnnotationPolicy::records_propositional_achievers)
+        for (auto& achiever : head_iteration.achievers)
+            pending_achievers[achiever.witness.get_cost()].push_back(std::move(achiever));
+
     for (const auto head : head_iteration.bindings)
     {
         if constexpr (AnnotationPolicy::stores_annotations)
@@ -588,7 +611,7 @@ void reduce_worker_heads(FunctionHeadIteration& head_iteration, ProgramOut& prog
 
 template<f::RelationKind R, AnnotationPolicyConcept<LiftedTag> AP, TerminationPolicyConcept<LiftedTag> TP, RuleCostPolicyConcept<LiftedTag> CP>
 /// Sequential phase: reduce worker annotations and bucket their already-canonical heads by cost.
-void reduce_worker_results(StratumExecutionContext<AP, TP, CP>& ctx)
+void reduce_worker_results(StratumExecutionContext<AP, TP, CP>& ctx, PendingPredicateAchievers& pending_achievers)
 {
     auto& program_out = ctx.out().program();
     auto& cost_buckets = program_out.cost_buckets();
@@ -599,7 +622,12 @@ void reduce_worker_results(StratumExecutionContext<AP, TP, CP>& ctx)
         const auto& ws_rule = program_out.template get_rules<R>()[i];
 
         for (auto& worker : ws_rule->worker)
-            reduce_worker_heads(worker.iteration.head_updates, program_out, cost_buckets);
+        {
+            if constexpr (std::same_as<R, f::PredicateTag>)
+                reduce_worker_heads(worker.iteration.head_updates, program_out, cost_buckets, pending_achievers);
+            else
+                reduce_worker_heads(worker.iteration.head_updates, program_out, cost_buckets);
+        }
     }
 }
 
@@ -649,6 +677,8 @@ void compute_model_for_stratum(StratumExecutionContext<AP, TP, CP>& ctx)
 
     scheduler.activate_all();
     cost_buckets.clear();
+    auto pending_achievers = PendingPredicateAchievers {};
+    const auto defer_achievers_until_frontier = oneapi::tbb::this_task_arena::max_concurrency() == 1;
 
     while (true)
     {
@@ -664,26 +694,42 @@ void compute_model_for_stratum(StratumExecutionContext<AP, TP, CP>& ctx)
         run_active_rules<f::PredicateTag>(ctx);
         run_active_rules<f::FunctionTag>(ctx);
 
-        reduce_worker_results<f::PredicateTag>(ctx);
-        reduce_worker_results<f::FunctionTag>(ctx);
+        reduce_worker_results<f::PredicateTag>(ctx, pending_achievers);
+        reduce_worker_results<f::FunctionTag>(ctx, pending_achievers);
+
+        if (!defer_achievers_until_frontier)
+            publish_pending_achievers(pending_achievers, pending_achievers.end(), program_out);
 
 #ifdef TYR_ENABLE_SEMI_NAIVE
         if (cost_buckets.is_empty())
+        {
+            publish_pending_achievers(pending_achievers, pending_achievers.end(), program_out);
             return;  ///< All reachable heads are committed.
-        commit_bucket(ctx, cost_buckets.min_cost());
+        }
+        const auto cost = cost_buckets.min_cost();
+        commit_bucket(ctx, cost);
+        if (defer_achievers_until_frontier)
+            publish_pending_achievers(pending_achievers, pending_achievers.upper_bound(cost), program_out);
         scheduler.on_finish_iteration();
 #else
         auto changed = false;
         while (!cost_buckets.is_empty())
         {
-            if (commit_bucket(ctx, cost_buckets.min_cost()))
+            const auto cost = cost_buckets.min_cost();
+            const auto bucket_changed = commit_bucket(ctx, cost);
+            if (defer_achievers_until_frontier)
+                publish_pending_achievers(pending_achievers, pending_achievers.upper_bound(cost), program_out);
+            if (bucket_changed)
             {
                 changed = true;
                 break;
             }
         }
         if (!changed)
+        {
+            publish_pending_achievers(pending_achievers, pending_achievers.end(), program_out);
             return;  ///< All reachable heads are committed.
+        }
         scheduler.activate_all();
 #endif
     }

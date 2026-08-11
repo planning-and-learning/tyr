@@ -30,7 +30,6 @@
 #include "tyr/datalog/policies/numeric_support.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/policies/termination_concept.hpp"
-#include "tyr/datalog/programs/program.hpp"
 #include "tyr/datalog/statistics/program.hpp"
 #include "tyr/datalog/workspaces/program.hpp"
 #include "tyr/formalism/datalog/repository.hpp"

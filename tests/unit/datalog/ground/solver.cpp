@@ -26,6 +26,7 @@
 #include <gtest/gtest.h>
 #include <stdexcept>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace f = tyr::formalism;
@@ -200,12 +201,42 @@ struct GroundQueueFixture
         return repository.get_or_create(binding_builder).first;
     }
 
-    fd::GroundRuleView<f::PredicateTag> rule(fd::GroundConjunctiveConditionView body, fd::GroundAtomView<f::FluentTag> head)
+    fd::GroundRuleView<f::PredicateTag>
+    rule(fd::GroundConjunctiveConditionView body, fd::GroundAtomView<f::FluentTag> head, fd::RuleBindingView<f::PredicateTag> binding)
     {
         auto rule_builder = ygg::Data<fd::GroundRule<f::PredicateTag>>();
-        rule_builder.binding = fresh_rule_binding().get_index();
+        rule_builder.binding = binding.get_index();
         rule_builder.body = body.get_index();
         rule_builder.head = head.get_index();
+        canonicalize(rule_builder);
+        const auto ground_rule = repository.get_or_create(rule_builder).first;
+        ground_rules.push_back(ground_rule.get_index());
+        return ground_rule;
+    }
+
+    fd::GroundRuleView<f::PredicateTag> rule(fd::GroundConjunctiveConditionView body, fd::GroundAtomView<f::FluentTag> head)
+    {
+        return rule(body, head, fresh_rule_binding());
+    }
+
+    fd::GroundRuleView<f::PredicateTag> rule(fd::GroundConjunctiveConditionView body,
+                                             fd::GroundAtomView<f::FluentTag> head,
+                                             fd::RuleBindingView<f::PredicateTag> binding,
+                                             fd::GroundFunctionTermView<f::FluentTag> metric_target,
+                                             ygg::float_t metric_delta)
+    {
+        auto metric_effect_builder = ygg::Data<fd::GroundNumericEffect<f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
+                                                                                      metric_target.get_index(),
+                                                                                      ygg::Data<fd::GroundFunctionExpression>(metric_delta));
+        canonicalize(metric_effect_builder);
+        const auto metric_effect = repository.get_or_create(metric_effect_builder).first;
+
+        auto rule_builder = ygg::Data<fd::GroundRule<f::PredicateTag>>();
+        rule_builder.binding = binding.get_index();
+        rule_builder.body = body.get_index();
+        rule_builder.head = head.get_index();
+        rule_builder.metric_effects.emplace_back(f::NumericEffectOperatorKind::Increase,
+                                                 ygg::Data<fd::GroundNumericEffectOperator<f::FluentTag>>::Variant(metric_effect.get_index()));
         canonicalize(rule_builder);
         const auto ground_rule = repository.get_or_create(rule_builder).first;
         ground_rules.push_back(ground_rule.get_index());
@@ -666,6 +697,62 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationCommitsMixedLowestCostBucket)
     EXPECT_EQ(datalog::get_cost(*goal_annotation), 0);
     EXPECT_FALSE(ctx.out().rule_states<f::PredicateTag>()[ygg::uint_t(expensive_goal.get_index())].fired);
     EXPECT_EQ(ctx.out().statistics().num_rules_fired, 3);
+}
+
+TEST(TyrDatalogGroundQueueTest, GroundTerminationExposesOnlyOptimalGoalFrontierAchievers)
+{
+    auto fixture = GroundQueueFixture();
+    const auto goal = fixture.fluent_atom("goal");
+    const auto metric = fixture.fluent_function_term("metric");
+    const auto cheap = fixture.rule(fixture.condition(), goal, fixture.fresh_rule_binding(), metric, 2);
+    const auto expensive = fixture.rule(fixture.condition(), goal, fixture.fresh_rule_binding(), metric, 2);
+
+    auto termination_policy = datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>();
+    termination_policy.set_goals(fixture.condition({ fixture.fluent_literal(goal) }));
+    auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
+    cost_policy.set_cost(cheap.get_row(), datalog::Cost(1));
+    using Workspace = datalog::ProgramWorkspace<GroundTag,
+                                                datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>,
+                                                datalog::TerminationPolicy<GroundTag, datalog::MaxAggregation>,
+                                                datalog::RuleCostOverridePolicy<GroundTag>>;
+    const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
+    auto workspace =
+        Workspace(const_workspace, datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>(), termination_policy, cost_policy);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
+
+    ctx.initialize(fixture.initial_fluent_atoms);
+    dq::compute_model(ctx);
+
+    const auto* achievers = ctx.out().annotation_policy().find_achievers(goal.get_row());
+    ASSERT_NE(achievers, nullptr);
+    ASSERT_EQ(achievers->size(), 1);
+    EXPECT_EQ(achievers->front().get_rule_key(), cheap.get_row());
+    EXPECT_FALSE(ctx.out().rule_states<f::PredicateTag>()[ygg::uint_t(expensive.get_index())].fired);
+}
+
+TEST(TyrDatalogGroundQueueTest, GroundRetainsFirstEqualCostWitness)
+{
+    auto fixture = GroundQueueFixture();
+    const auto goal = fixture.fluent_atom("goal");
+    const auto canonical_first = fixture.fresh_rule_binding();
+    const auto scheduled_first = fixture.fresh_rule_binding();
+    fixture.rule(fixture.condition(), goal, scheduled_first);
+    fixture.rule(fixture.condition(), goal, canonical_first);
+
+    const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
+    using Workspace =
+        datalog::ProgramWorkspace<GroundTag, datalog::MinCostAnnotationPolicy<GroundTag, datalog::MaxAggregation>, datalog::NoTerminationPolicy<GroundTag>>;
+    auto workspace = Workspace(const_workspace);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
+
+    ctx.initialize(fixture.initial_fluent_atoms);
+    dq::compute_model(ctx);
+
+    const auto* annotation = ctx.out().annotations().find(goal.get_row());
+    ASSERT_NE(annotation, nullptr);
+    const auto* witness = std::get_if<datalog::WitnessAnnotation<GroundTag, f::PredicateTag>>(annotation);
+    ASSERT_NE(witness, nullptr);
+    EXPECT_EQ(witness->get_rule_key(), scheduled_first);
 }
 
 TEST(TyrDatalogGroundQueueTest, AchieverPolicyGroundRecordsDistinctRuleBindings)

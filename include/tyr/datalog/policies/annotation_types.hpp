@@ -126,6 +126,24 @@ inline Cost get_cost(const Annotation<Kind, R>& annotation) noexcept
     return std::visit([](const auto& value) { return value.get_cost(); }, annotation);
 }
 
+template<TaskKind Kind>
+struct CostUpdate
+{
+    std::optional<Cost> old_cost;
+    Cost new_cost;
+
+    CostUpdate() noexcept : old_cost(std::nullopt), new_cost(Cost(0)) { assert(is_monotone()); }
+    CostUpdate(std::optional<Cost> old_cost, Cost new_cost) noexcept : old_cost(old_cost), new_cost(new_cost) { assert(is_monotone()); }
+    CostUpdate(Cost old_cost, Cost new_cost) noexcept :
+        old_cost(old_cost == std::numeric_limits<Cost>::max() ? std::nullopt : std::optional<Cost>(old_cost)),
+        new_cost(new_cost)
+    {
+        assert(is_monotone());
+    }
+
+    bool is_monotone() const noexcept { return !old_cost || new_cost <= old_cost.value(); }
+};
+
 /// ThreadSafe permits concurrent read(), update(), and row growth after relation lanes
 /// are initialized. initialize(), clear(), find(), moves, and destruction require quiescence.
 template<::tyr::formalism::RelationKind R, std::default_initializable Value, bool ThreadSafe = false>
@@ -315,16 +333,18 @@ public:
         return m_annotations.read(key, [](const auto& annotation) { return get_cost(annotation); }, std::numeric_limits<Cost>::max());
     }
 
-    bool insert_if_better(Key key, Annotation<Kind> annotation)
+    std::optional<CostUpdate<Kind>> insert_if_better(Key key, Annotation<Kind> annotation)
     {
         return m_annotations.update(key,
                                     [&](auto& incumbent, bool initialized)
                                     {
-                                        if (initialized && get_cost(incumbent) <= get_cost(annotation))
-                                            return false;
+                                        const auto new_cost = get_cost(annotation);
+                                        const auto old_cost = initialized ? std::optional<Cost>(get_cost(incumbent)) : std::nullopt;
+                                        if (old_cost && *old_cost <= new_cost)
+                                            return std::optional<CostUpdate<Kind>> {};
 
                                         incumbent = std::move(annotation);
-                                        return true;
+                                        return std::optional<CostUpdate<Kind>>(std::in_place, old_cost, new_cost);
                                     });
     }
 
@@ -511,24 +531,6 @@ inline ygg::ClosedInterval<ygg::float_t> add_metric_delta(ygg::ClosedInterval<yg
         return ygg::ClosedInterval<ygg::float_t>(delta, delta);
     return ygg::ClosedInterval<ygg::float_t>(lower(metric) + delta, upper(metric) + delta);
 }
-
-template<TaskKind Kind>
-struct CostUpdate
-{
-    std::optional<Cost> old_cost;
-    Cost new_cost;
-
-    CostUpdate() noexcept : old_cost(std::nullopt), new_cost(Cost(0)) { assert(is_monotone()); }
-    CostUpdate(std::optional<Cost> old_cost, Cost new_cost) noexcept : old_cost(old_cost), new_cost(new_cost) { assert(is_monotone()); }
-    CostUpdate(Cost old_cost, Cost new_cost) noexcept :
-        old_cost(old_cost == std::numeric_limits<Cost>::max() ? std::nullopt : std::optional<Cost>(old_cost)),
-        new_cost(new_cost)
-    {
-        assert(is_monotone());
-    }
-
-    bool is_monotone() const noexcept { return !old_cost || new_cost <= old_cost.value(); }
-};
 
 }
 
