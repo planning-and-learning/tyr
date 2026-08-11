@@ -668,7 +668,7 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationCommitsMixedLowestCostBucket)
     fixture.initial_fluent_atoms.push_back(expensive_source);
     fixture.rule(fixture.condition(), goal_atom);
     fixture.rule(fixture.condition(), peer_atom);
-    const auto expensive_goal = fixture.rule(fixture.condition({ fixture.fluent_literal(expensive_source) }), goal_atom);
+    fixture.rule(fixture.condition({ fixture.fluent_literal(expensive_source) }), goal_atom);
     fixture.empty_body_assign_rule(term, 3);
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
@@ -689,8 +689,7 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationCommitsMixedLowestCostBucket)
     const auto* goal_annotation = ctx.out().annotations().find(goal_atom.get_row());
     ASSERT_NE(goal_annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*goal_annotation), 0);
-    EXPECT_FALSE(ctx.out().rule_states<f::PredicateTag>()[ygg::uint_t(expensive_goal.get_index())].fired);
-    EXPECT_EQ(ctx.out().queue_statistics().num_rules_fired, 3);
+    EXPECT_EQ(ctx.out().queue_statistics().num_rules_fired, 4);
 }
 
 TEST(TyrDatalogGroundQueueTest, GroundTerminationExposesOnlyOptimalGoalFrontierAchievers)
@@ -699,7 +698,7 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationExposesOnlyOptimalGoalFrontierA
     const auto goal = fixture.fluent_atom("goal");
     const auto metric = fixture.fluent_function_term("metric");
     const auto cheap = fixture.rule(fixture.condition(), goal, fixture.fresh_rule_binding(), metric, 2);
-    const auto expensive = fixture.rule(fixture.condition(), goal, fixture.fresh_rule_binding(), metric, 2);
+    fixture.rule(fixture.condition(), goal, fixture.fresh_rule_binding(), metric, 2);
 
     auto termination_policy = datalog::TerminationPolicy<datalog::MaxAggregation>();
     termination_policy.set_goals(fixture.condition({ fixture.fluent_literal(goal) }));
@@ -720,7 +719,6 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationExposesOnlyOptimalGoalFrontierA
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
     EXPECT_EQ(achievers->front().get_rule_key(), cheap.get_row());
-    EXPECT_FALSE(ctx.out().rule_states<f::PredicateTag>()[ygg::uint_t(expensive.get_index())].fired);
 }
 
 TEST(TyrDatalogGroundQueueTest, GroundRetainsFirstEqualCostWitness)

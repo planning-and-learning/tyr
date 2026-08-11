@@ -35,6 +35,7 @@
 #include <utility>
 #include <variant>
 #include <vector>
+#include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/containers/segmented_vector.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
@@ -89,6 +90,64 @@ private:
     Cost cost;
     NumericSupports numeric_supports;
 };
+
+using PredicateRuleBinding = ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::PredicateTag>;
+
+struct PredicateAchiever
+{
+    ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head;
+    WitnessAnnotation<::tyr::formalism::PredicateTag> witness;
+};
+
+using PendingPredicateAchieverBuckets = ygg::Map<Cost, std::vector<PredicateRuleBinding>>;
+
+struct PendingPredicateAchiever
+{
+    Cost cost;
+    PredicateAchiever achiever;
+    bool pending;
+};
+
+struct PendingPredicateAchievers
+{
+    PendingPredicateAchieverBuckets buckets;
+    ygg::UnorderedMap<PredicateRuleBinding, PendingPredicateAchiever> by_rule;
+};
+
+inline void insert_pending_achiever(PendingPredicateAchievers& pending, PredicateAchiever achiever)
+{
+    const auto cost = achiever.witness.get_cost();
+    const auto rule_key = achiever.witness.get_rule_key();
+    const auto it = pending.by_rule.find(rule_key);
+    if (it == pending.by_rule.end())
+    {
+        pending.by_rule.emplace(rule_key, PendingPredicateAchiever { cost, std::move(achiever), true });
+    }
+    else
+    {
+        auto& incumbent = it->second;
+        if (incumbent.cost <= cost)
+            return;
+        incumbent = PendingPredicateAchiever { cost, std::move(achiever), true };
+    }
+    pending.buckets[cost].push_back(rule_key);
+}
+
+template<typename AnnotationPolicy>
+void publish_pending_achievers(PendingPredicateAchievers& pending, PendingPredicateAchieverBuckets::iterator end, AnnotationPolicy& annotation_policy)
+{
+    if constexpr (AnnotationPolicy::records_propositional_achievers)
+        for (auto bucket = pending.buckets.begin(); bucket != end; ++bucket)
+            for (const auto rule_key : bucket->second)
+            {
+                auto& entry = pending.by_rule.at(rule_key);
+                if (!entry.pending || entry.cost != bucket->first)
+                    continue;
+                annotation_policy.record_achiever(entry.achiever.head, std::move(entry.achiever.witness));
+                entry.pending = false;
+            }
+    pending.buckets.erase(pending.buckets.begin(), end);
+}
 
 struct BaseAnnotation : ygg::comparison::Mixin<BaseAnnotation>
 {

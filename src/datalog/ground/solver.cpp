@@ -32,7 +32,6 @@
 #include <functional>
 #include <limits>
 #include <optional>
-#include <tuple>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
@@ -45,33 +44,13 @@ namespace
 namespace f = ::tyr::formalism;
 namespace fd = ::tyr::formalism::datalog;
 
-template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-using GroundCtx = ProgramExecutionContext<GroundTag, AP, TP, CP>;
-
-struct PendingPredicateFinalization
-{
-    Cost cost;
-    fd::GroundRuleView<f::PredicateTag> rule;
-};
-
-struct PendingPredicateFinalizationGreater
-{
-    bool operator()(const PendingPredicateFinalization& lhs, const PendingPredicateFinalization& rhs) const noexcept
-    {
-        return std::tie(lhs.cost, lhs.rule) > std::tie(rhs.cost, rhs.rule);
-    }
-};
-
-using PendingPredicateFinalizations = std::vector<PendingPredicateFinalization>;
-using PendingPredicateWitnesses = std::vector<WitnessAnnotation<f::PredicateTag>>;
-
 template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void enqueue_rule(GroundCtx<AP, TP, CP>& ctx, fd::GroundRuleView<R> rule, Cost queue_label)
+void enqueue_rule(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx, fd::GroundRuleView<R> rule, Cost queue_label)
 {
     auto& out = ctx.out();
     const auto rule_index = rule.get_index();
     auto& states = out.template rule_states<R>();
-    if (states[ygg::uint_t(rule_index)].unsatisfied_count != 0 || states[ygg::uint_t(rule_index)].fired)
+    if (states[ygg::uint_t(rule_index)].unsatisfied_count != 0)
         return;
 
     auto& queued_cost = states[ygg::uint_t(rule_index)].queued_cost;
@@ -90,10 +69,10 @@ void enqueue_rule(GroundCtx<AP, TP, CP>& ctx, fd::GroundRuleView<R> rule, Cost q
 }
 
 template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void push_rule(GroundCtx<AP, TP, CP>& ctx, fd::GroundRuleView<R> rule)
+void push_rule(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx, fd::GroundRuleView<R> rule)
 {
     const auto& state = ctx.out().template rule_states<R>()[ygg::uint_t(rule.get_index())];
-    if (state.unsatisfied_count != 0 || state.fired)
+    if (state.unsatisfied_count != 0)
         return;
 
     auto instance = RuleInstance<GroundTag, R>(rule);
@@ -106,7 +85,7 @@ void push_rule(GroundCtx<AP, TP, CP>& ctx, fd::GroundRuleView<R> rule)
 }
 
 template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void update_numeric_constraint_satisfaction(GroundCtx<AP, TP, CP>& ctx, fd::GroundRuleView<R> rule)
+void update_numeric_constraint_satisfaction(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx, fd::GroundRuleView<R> rule)
 {
     auto& out = ctx.out();
     const auto rule_index = rule.get_index();
@@ -133,35 +112,35 @@ void update_numeric_constraint_satisfaction(GroundCtx<AP, TP, CP>& ctx, fd::Grou
 }
 
 template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void initialize_numeric_constraint_satisfaction_for(GroundCtx<AP, TP, CP>& ctx)
+void initialize_numeric_constraint_satisfaction_for(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     for (const auto rule : ctx.in().program().template get_rules<R>())
         update_numeric_constraint_satisfaction(ctx, rule);
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void initialize_numeric_constraint_satisfaction(GroundCtx<AP, TP, CP>& ctx)
+void initialize_numeric_constraint_satisfaction(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     initialize_numeric_constraint_satisfaction_for<f::PredicateTag>(ctx);
     initialize_numeric_constraint_satisfaction_for<f::FunctionTag>(ctx);
 }
 
 template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void seed_queue_for(GroundCtx<AP, TP, CP>& ctx)
+void seed_queue_for(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     for (const auto rule : ctx.in().program().template get_rules<R>())
         push_rule(ctx, rule);
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void seed_queue(GroundCtx<AP, TP, CP>& ctx)
+void seed_queue(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     seed_queue_for<f::PredicateTag>(ctx);
     seed_queue_for<f::FunctionTag>(ctx);
 }
 
 template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-std::optional<GroundQueueEntry<R>> pop_next_entry(GroundCtx<AP, TP, CP>& ctx)
+std::optional<GroundQueueEntry<R>> pop_next_entry(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     auto& queue = ctx.out().template queue_storage<R>();
     if (queue.empty())
@@ -175,15 +154,7 @@ std::optional<GroundQueueEntry<R>> pop_next_entry(GroundCtx<AP, TP, CP>& ctx)
 }
 
 template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-bool is_stale_entry(const GroundCtx<AP, TP, CP>& ctx, const GroundQueueEntry<R>& entry) noexcept
-{
-    const auto& out = ctx.out();
-    const auto& state = out.template rule_states<R>()[ygg::uint_t(entry.rule.get_index())];
-    return state.fired || state.unsatisfied_count != 0;
-}
-
-template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void notify_fact_inserted_for(GroundCtx<AP, TP, CP>& ctx, fd::PredicateBindingView<f::FluentTag> fact)
+void notify_fact_inserted_for(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx, fd::PredicateBindingView<f::FluentTag> fact)
 {
     auto& out = ctx.out();
     const auto& dependencies = ctx.in().template dependencies<R>().fluent_precondition_to_rules;
@@ -203,35 +174,14 @@ void notify_fact_inserted_for(GroundCtx<AP, TP, CP>& ctx, fd::PredicateBindingVi
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void notify_fact_inserted(GroundCtx<AP, TP, CP>& ctx, fd::PredicateBindingView<f::FluentTag> fact)
+void notify_fact_inserted(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx, fd::PredicateBindingView<f::FluentTag> fact)
 {
     notify_fact_inserted_for<f::PredicateTag>(ctx, fact);
     notify_fact_inserted_for<f::FunctionTag>(ctx, fact);
 }
 
-template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void notify_fact_annotation_improved_for(GroundCtx<AP, TP, CP>& ctx, fd::PredicateBindingView<f::FluentTag> fact)
-{
-    auto& out = ctx.out();
-    const auto& dependencies = ctx.in().template dependencies<R>().fluent_precondition_to_rules;
-    const auto* dependent_rules = dependencies.find(fact);
-    if (!dependent_rules)
-        return;
-
-    for (const auto dependent_rule : *dependent_rules)
-        if (out.template rule_states<R>()[ygg::uint_t(dependent_rule.get_index())].unsatisfied_count == 0)
-            push_rule(ctx, dependent_rule);
-}
-
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void notify_fact_annotation_improved(GroundCtx<AP, TP, CP>& ctx, fd::PredicateBindingView<f::FluentTag> fact)
-{
-    notify_fact_annotation_improved_for<f::PredicateTag>(ctx, fact);
-    notify_fact_annotation_improved_for<f::FunctionTag>(ctx, fact);
-}
-
-template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-bool derive_fact(GroundCtx<AP, TP, CP>& ctx, fd::PredicateBindingView<f::FluentTag> fact)
+bool derive_fact(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx, fd::PredicateBindingView<f::FluentTag> fact)
 {
     auto& out = ctx.out();
     const auto inserted = out.facts().fact_sets.predicate.insert(fact);
@@ -243,7 +193,7 @@ bool derive_fact(GroundCtx<AP, TP, CP>& ctx, fd::PredicateBindingView<f::FluentT
 }
 
 template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void notify_numeric_interval_changed_for(GroundCtx<AP, TP, CP>& ctx, fd::FunctionBindingView<f::FluentTag> term)
+void notify_numeric_interval_changed_for(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx, fd::FunctionBindingView<f::FluentTag> term)
 {
     const auto& dependencies = ctx.in().template dependencies<R>().fluent_function_term_to_rules;
     const auto* dependent_rules = dependencies.find(term);
@@ -259,14 +209,16 @@ void notify_numeric_interval_changed_for(GroundCtx<AP, TP, CP>& ctx, fd::Functio
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void notify_numeric_interval_changed(GroundCtx<AP, TP, CP>& ctx, fd::FunctionBindingView<f::FluentTag> term)
+void notify_numeric_interval_changed(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx, fd::FunctionBindingView<f::FluentTag> term)
 {
     notify_numeric_interval_changed_for<f::PredicateTag>(ctx, term);
     notify_numeric_interval_changed_for<f::FunctionTag>(ctx, term);
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-bool derive_interval(GroundCtx<AP, TP, CP>& ctx, fd::FunctionBindingView<f::FluentTag> term, ygg::ClosedInterval<ygg::float_t> interval)
+bool derive_interval(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx,
+                     fd::FunctionBindingView<f::FluentTag> term,
+                     ygg::ClosedInterval<ygg::float_t> interval)
 {
     if (empty(interval))
         return false;
@@ -275,49 +227,39 @@ bool derive_interval(GroundCtx<AP, TP, CP>& ctx, fd::FunctionBindingView<f::Flue
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void stage_rule(GroundCtx<AP, TP, CP>& ctx,
-                fd::GroundRuleView<f::PredicateTag> rule,
+void stage_rule(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx,
                 RuleInstance<GroundTag, f::PredicateTag>& instance,
                 const PredicateCandidate& candidate,
                 CostBuckets& pending_heads,
-                PendingPredicateFinalizations& pending_finalizations,
-                PendingPredicateWitnesses& pending_witnesses)
+                PendingPredicateAchievers& pending_achievers)
 {
     auto& out = ctx.out();
-    auto& state = out.template rule_states<f::PredicateTag>()[ygg::uint_t(rule.get_index())];
-    if (state.pending_cost && *state.pending_cost <= candidate.cost)
-        return;
+    ++out.queue_statistics().num_rules_fired;
 
     if constexpr (AP::stores_annotations)
     {
-        auto witness = materialize_witness(instance, candidate);
-        if constexpr (AP::records_propositional_achievers)
+        const auto factual = out.facts().fact_sets.predicate.contains(candidate.head);
+        if (factual)
         {
-            if (state.pending_cost)
-            {
-                assert(state.pending_witness_index < pending_witnesses.size());
-                pending_witnesses[state.pending_witness_index] = witness;
-            }
-            else
-            {
-                state.pending_witness_index = pending_witnesses.size();
-                pending_witnesses.push_back(witness);
-            }
+            assert(candidate.cost >= out.annotations().fetch_cost(candidate.head) && "A committed predicate label must be final.");
+            if constexpr (AP::records_propositional_achievers)
+                insert_pending_achiever(pending_achievers, PredicateAchiever { candidate.head, materialize_witness(instance, candidate) });
+            return;
         }
 
+        auto witness = materialize_witness(instance, candidate);
+        if constexpr (AP::records_propositional_achievers)
+            insert_pending_achiever(pending_achievers, PredicateAchiever { candidate.head, witness });
+
         const auto update = out.annotation_policy().publish_annotation(candidate.head, std::move(witness), out.annotations());
-        if (out.facts().fact_sets.predicate.contains(candidate.head))
-        {
-            if (update && update->is_strict_improvement())
-                notify_fact_annotation_improved(ctx, candidate.head);
-        }
-        else if (update)
+        if (update)
         {
             pending_heads.update(*update, candidate.head);
         }
-        else if (const auto* annotation = out.annotations().find(candidate.head))
+        else
         {
-            pending_heads.insert(get_cost(*annotation), candidate.head);
+            if (const auto* annotation = out.annotations().find(candidate.head))
+                pending_heads.insert(get_cost(*annotation), candidate.head);
         }
     }
     else
@@ -325,15 +267,10 @@ void stage_rule(GroundCtx<AP, TP, CP>& ctx,
         if (!out.facts().fact_sets.predicate.contains(candidate.head))
             pending_heads.insert(candidate.cost, candidate.head);
     }
-
-    state.pending_cost = candidate.cost;
-    pending_finalizations.push_back({ candidate.cost, rule });
-    std::push_heap(pending_finalizations.begin(), pending_finalizations.end(), PendingPredicateFinalizationGreater {});
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void fire_rule(GroundCtx<AP, TP, CP>& ctx,
-               fd::GroundRuleView<f::FunctionTag>,
+void fire_rule(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx,
                RuleInstance<GroundTag, f::FunctionTag>& instance,
                const FunctionCandidate& candidate,
                CostBuckets& pending_heads)
@@ -353,85 +290,21 @@ void fire_rule(GroundCtx<AP, TP, CP>& ctx,
         notify_numeric_interval_changed(ctx, candidate.head);
 }
 
-template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-bool is_current_finalization(const GroundCtx<AP, TP, CP>& ctx, const PendingPredicateFinalization& entry)
-{
-    const auto& state = ctx.out().template rule_states<f::PredicateTag>()[ygg::uint_t(entry.rule.get_index())];
-    return !state.fired && state.pending_cost && *state.pending_cost == entry.cost;
-}
-
-template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void discard_stale_finalizations(GroundCtx<AP, TP, CP>& ctx, PendingPredicateFinalizations& pending)
-{
-    const auto greater = PendingPredicateFinalizationGreater {};
-    while (!pending.empty() && !is_current_finalization(ctx, pending.front()))
-    {
-        std::pop_heap(pending.begin(), pending.end(), greater);
-        pending.pop_back();
-    }
-}
-
-template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-Cost next_finalization_cost(GroundCtx<AP, TP, CP>& ctx, PendingPredicateFinalizations& pending)
-{
-    discard_stale_finalizations(ctx, pending);
-    return pending.empty() ? std::numeric_limits<Cost>::max() : pending.front().cost;
-}
-
-template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void finalize_next_rule(GroundCtx<AP, TP, CP>& ctx, PendingPredicateFinalizations& pending, PendingPredicateWitnesses& pending_witnesses)
-{
-    discard_stale_finalizations(ctx, pending);
-    assert(!pending.empty());
-
-    const auto greater = PendingPredicateFinalizationGreater {};
-    std::pop_heap(pending.begin(), pending.end(), greater);
-    auto entry = std::move(pending.back());
-    pending.pop_back();
-
-    auto& out = ctx.out();
-    auto& state = out.template rule_states<f::PredicateTag>()[ygg::uint_t(entry.rule.get_index())];
-    assert(state.pending_cost && *state.pending_cost == entry.cost);
-    state.pending_cost.reset();
-    state.fired = true;
-    ++out.queue_statistics().num_rules_fired;
-    if constexpr (AP::records_propositional_achievers)
-    {
-        assert(state.pending_witness_index < pending_witnesses.size());
-        out.annotation_policy().record_achiever(entry.rule.get_head().get_row(), std::move(pending_witnesses[state.pending_witness_index]));
-    }
-    state.pending_witness_index = 0;
-}
-
-template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void reset_pending_finalizations(GroundCtx<AP, TP, CP>& ctx, const PendingPredicateFinalizations& pending)
-{
-    for (const auto& entry : pending)
-    {
-        auto& state = ctx.out().template rule_states<f::PredicateTag>()[ygg::uint_t(entry.rule.get_index())];
-        if (state.pending_cost && *state.pending_cost == entry.cost)
-        {
-            state.pending_cost.reset();
-            state.pending_witness_index = 0;
-        }
-    }
-}
-
 template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-Cost next_rule_cost_for(const GroundCtx<AP, TP, CP>& ctx) noexcept
+Cost next_rule_cost_for(const ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx) noexcept
 {
     const auto& queue = ctx.out().template queue_storage<R>();
     return queue.empty() ? std::numeric_limits<Cost>::max() : queue.front().cost;
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-Cost next_rule_cost(const GroundCtx<AP, TP, CP>& ctx) noexcept
+Cost next_rule_cost(const ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx) noexcept
 {
     return std::min(next_rule_cost_for<f::PredicateTag>(ctx), next_rule_cost_for<f::FunctionTag>(ctx));
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void commit_head_bucket(GroundCtx<AP, TP, CP>& ctx, CostBuckets& pending_heads, Cost cost)
+void commit_head_bucket(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx, CostBuckets& pending_heads, Cost cost)
 {
     auto bucket = pending_heads.take(cost);
     auto changed_facts = std::vector<fd::PredicateBindingView<f::FluentTag>> {};
@@ -459,10 +332,7 @@ void commit_head_bucket(GroundCtx<AP, TP, CP>& ctx, CostBuckets& pending_heads, 
 }
 
 template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void process_next_rule(GroundCtx<AP, TP, CP>& ctx,
-                       CostBuckets& pending_heads,
-                       PendingPredicateFinalizations& pending_finalizations,
-                       PendingPredicateWitnesses& pending_witnesses)
+void process_next_rule(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx, CostBuckets& pending_heads, PendingPredicateAchievers& pending_achievers)
 {
     auto entry = pop_next_entry<R>(ctx);
     assert(entry);
@@ -477,12 +347,6 @@ void process_next_rule(GroundCtx<AP, TP, CP>& ctx,
         return;
     }
     queued_cost.reset();
-
-    if (is_stale_entry(ctx, *entry))
-    {
-        ++out.queue_statistics().num_stale_queue_pops;
-        return;
-    }
 
     auto instance = RuleInstance<GroundTag, R>(entry->rule);
     auto selector = ctx.out().numeric_support_selector();
@@ -504,16 +368,15 @@ void process_next_rule(GroundCtx<AP, TP, CP>& ctx,
     }
 
     if constexpr (std::same_as<R, f::PredicateTag>)
-        stage_rule(ctx, entry->rule, instance, *candidate, pending_heads, pending_finalizations, pending_witnesses);
+        stage_rule(ctx, instance, *candidate, pending_heads, pending_achievers);
     else
-        fire_rule(ctx, entry->rule, instance, *candidate, pending_heads);
+        fire_rule(ctx, instance, *candidate, pending_heads);
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void process_rule_frontier(GroundCtx<AP, TP, CP>& ctx,
+void process_rule_frontier(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx,
                            CostBuckets& pending_heads,
-                           PendingPredicateFinalizations& pending_finalizations,
-                           PendingPredicateWitnesses& pending_witnesses,
+                           PendingPredicateAchievers& pending_achievers,
                            Cost cost)
 {
     while (next_rule_cost(ctx) == cost)
@@ -521,20 +384,17 @@ void process_rule_frontier(GroundCtx<AP, TP, CP>& ctx,
         const auto predicate_cost = next_rule_cost_for<f::PredicateTag>(ctx);
         const auto function_cost = next_rule_cost_for<f::FunctionTag>(ctx);
         if (predicate_cost <= function_cost)
-            process_next_rule<f::PredicateTag>(ctx, pending_heads, pending_finalizations, pending_witnesses);
+            process_next_rule<f::PredicateTag>(ctx, pending_heads, pending_achievers);
         else
-            process_next_rule<f::FunctionTag>(ctx, pending_heads, pending_finalizations, pending_witnesses);
+            process_next_rule<f::FunctionTag>(ctx, pending_heads, pending_achievers);
     }
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void process_rule_wave(GroundCtx<AP, TP, CP>& ctx,
-                       CostBuckets& pending_heads,
-                       PendingPredicateFinalizations& pending_finalizations,
-                       PendingPredicateWitnesses& pending_witnesses)
+void process_rule_wave(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx, CostBuckets& pending_heads, PendingPredicateAchievers& pending_achievers)
 {
     while (next_rule_cost(ctx) != std::numeric_limits<Cost>::max())
-        process_rule_frontier(ctx, pending_heads, pending_finalizations, pending_witnesses, next_rule_cost(ctx));
+        process_rule_frontier(ctx, pending_heads, pending_achievers, next_rule_cost(ctx));
 }
 
 }
@@ -546,39 +406,28 @@ void compute_model(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
     seed_queue(ctx);
 
     auto pending_heads = CostBuckets {};
-    auto pending_finalizations = PendingPredicateFinalizations {};
-    auto pending_witnesses = PendingPredicateWitnesses {};
+    auto pending_achievers = PendingPredicateAchievers {};
     while (true)
     {
         if (ctx.out().tp().should_terminate(FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }))
-        {
-            reset_pending_finalizations(ctx, pending_finalizations);
             return;
-        }
 
         if (next_rule_cost(ctx) != std::numeric_limits<Cost>::max())
         {
             // Every candidate in a ready wave observes the same committed fact snapshot.
-            process_rule_wave(ctx, pending_heads, pending_finalizations, pending_witnesses);
+            process_rule_wave(ctx, pending_heads, pending_achievers);
             continue;
         }
 
-        const auto head_cost = pending_heads.min_cost();
-        const auto finalization_cost = next_finalization_cost(ctx, pending_finalizations);
-        if (head_cost == std::numeric_limits<Cost>::max() && finalization_cost == std::numeric_limits<Cost>::max())
+        if (pending_heads.is_empty())
+        {
+            publish_pending_achievers(pending_achievers, pending_achievers.buckets.end(), ctx.out().annotation_policy());
             return;
+        }
 
-        if (head_cost <= finalization_cost)
-        {
-            commit_head_bucket(ctx, pending_heads, head_cost);
-            while (next_finalization_cost(ctx, pending_finalizations) <= head_cost)
-                finalize_next_rule(ctx, pending_finalizations, pending_witnesses);
-        }
-        else
-        {
-            while (next_finalization_cost(ctx, pending_finalizations) == finalization_cost)
-                finalize_next_rule(ctx, pending_finalizations, pending_witnesses);
-        }
+        const auto cost = pending_heads.min_cost();
+        commit_head_bucket(ctx, pending_heads, cost);
+        publish_pending_achievers(pending_achievers, pending_achievers.buckets.upper_bound(cost), ctx.out().annotation_policy());
     }
 }
 

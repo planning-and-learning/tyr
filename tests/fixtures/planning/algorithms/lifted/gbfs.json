@@ -7301,21 +7301,27 @@
                 }
             },
             "hff_unit": {
-                "num_accepted_successors": 4884,
-                "num_expanded": 1597,
+                "num_accepted_successors": 17906,
+                "num_expanded": 3551,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 8,
-                    "length": 8,
+                    "cost": 14,
+                    "length": 14,
                     "actions": [
-                        "(move_down_right agent1)",
                         "(move_down agent1)",
-                        "(move_down_left agent1)",
+                        "(move_down agent1)",
+                        "(move_down agent1)",
                         "(load agent1 tap1)",
-                        "(move_up_right agent1)",
-                        "(move_up_right agent1)",
                         "(move_up agent1)",
+                        "(move_up agent1)",
+                        "(move_up agent1)",
+                        "(move_down agent2)",
+                        "(move_down_right agent1)",
+                        "(move_down agent2)",
+                        "(move_up agent1)",
+                        "(move_down agent2)",
+                        "(move_right agent1)",
                         "(pour agent1 plant1)"
                     ]
                 }

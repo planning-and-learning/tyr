@@ -371,6 +371,29 @@ make_lifted_numeric_program(bool include_source_rule = true, std::initializer_li
     return LiftedNumericProgram(factory, repository, program, goal, goals, source, target);
 }
 
+TEST(TyrDatalogLiftedBottomUpTest, FullEnumerationIsLimitedToNumericListeners)
+{
+    auto fixture = make_lifted_numeric_program(true, { 3 }, true);
+    auto workspace = d::ProgramWorkspace<LiftedTag>(fixture.program);
+    ASSERT_EQ(workspace.schedulers.data.size(), 1);
+
+    const auto rule = fixture.program.get_program().get_rules<f::PredicateTag>().front();
+    const auto seed = rule.get_body().get_literals<f::FluentTag>().front().get_atom().get_predicate().get_index();
+    auto& scheduler = workspace.schedulers.data.front().get<f::PredicateTag>();
+
+    scheduler.on_start_iteration();
+    scheduler.on_generate(seed);
+    scheduler.on_generate(fixture.target.get_index().relation);
+    scheduler.on_finish_iteration();
+    EXPECT_NE(std::ranges::find(scheduler.get_active_rules(), rule.get_index()), scheduler.get_active_rules().end());
+    EXPECT_FALSE(scheduler.requires_full_enumeration(rule.get_index()));
+
+    scheduler.on_start_iteration();
+    scheduler.on_generate(fixture.source.get_index().relation);
+    scheduler.on_finish_iteration();
+    EXPECT_TRUE(scheduler.requires_full_enumeration(rule.get_index()));
+}
+
 struct LiftedPredicateProgram
 {
     fd::RepositoryFactoryPtr factory;
@@ -696,7 +719,7 @@ TEST(TyrDatalogLiftedBottomUpTest, StoredNumericCertificateCanStillBecomeAvailab
     EXPECT_EQ(workspace.facts.fact_sets.function[fixture.target], source_interval);
 }
 
-TEST(TyrDatalogLiftedBottomUpTest, ReplaysPredicateAfterAvailableNumericCertificateImproves)
+TEST(TyrDatalogLiftedBottomUpTest, RepricesTentativePredicateAfterAvailableNumericCertificateImproves)
 {
     auto fixture = make_lifted_numeric_program(true, { 3 }, true);
     ASSERT_EQ(fixture.program.get_program().get_rules<f::PredicateTag>().front().get_arity(), 1);

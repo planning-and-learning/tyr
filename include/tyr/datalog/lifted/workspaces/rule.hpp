@@ -48,12 +48,7 @@ struct PredicateHeadIteration
 {
     using Binding = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
     using Witness = WitnessAnnotation<::tyr::formalism::PredicateTag>;
-
-    struct Achiever
-    {
-        Binding head;
-        Witness witness;
-    };
+    using Achiever = PredicateAchiever;
 
     ygg::UnorderedSet<Binding> seen_bindings;
     std::vector<Binding> bindings;

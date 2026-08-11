@@ -63,7 +63,8 @@ TypedRuleSchedulerStratum<R>::TypedRuleSchedulerStratum(const analysis::TypedRul
     m_context(context),
     m_active_predicates(num_fluent_predicates),
     m_active_functions(num_fluent_functions),
-    m_active_rules()
+    m_active_rules(),
+    m_full_enumeration_rules()
 {
 }
 
@@ -71,6 +72,7 @@ template<f::RelationKind R>
 void TypedRuleSchedulerStratum<R>::activate_all()
 {
     m_active_rules.clear();
+    m_full_enumeration_rules.clear();
     for (const auto rule : m_rules)
         m_active_rules.insert(rule);
     rebuild_sorted_active_rules();
@@ -106,8 +108,10 @@ template<f::RelationKind R>
 void TypedRuleSchedulerStratum<R>::on_finish_iteration()
 {
     m_active_rules.clear();
+    m_full_enumeration_rules.clear();
     collect_active_rules(m_active_predicates, m_listeners.predicates, m_active_rules);
-    collect_active_rules(m_active_functions, m_listeners.functions, m_active_rules);
+    collect_active_rules(m_active_functions, m_listeners.functions, m_full_enumeration_rules);
+    m_active_rules.insert(m_full_enumeration_rules.begin(), m_full_enumeration_rules.end());
     rebuild_sorted_active_rules();
 }
 

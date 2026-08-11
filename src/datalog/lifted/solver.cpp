@@ -57,62 +57,12 @@
 #include <yggdrasil/semantics/equal_to.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 
-namespace f = tyr::formalism;
-namespace fd = tyr::formalism::datalog;
-
 namespace tyr::datalog
 {
-
-using PredicateRuleBinding = fd::RuleBindingView<f::PredicateTag>;
-using PendingPredicateAchieverBuckets = ygg::Map<Cost, std::vector<PredicateRuleBinding>>;
-
-struct PendingPredicateAchiever
+namespace
 {
-    Cost cost;
-    PredicateHeadIteration::Achiever achiever;
-    bool pending;
-};
-
-struct PendingPredicateAchievers
-{
-    PendingPredicateAchieverBuckets buckets;
-    ygg::UnorderedMap<PredicateRuleBinding, PendingPredicateAchiever> by_rule;
-};
-
-void insert_pending_achiever(PendingPredicateAchievers& pending, PredicateHeadIteration::Achiever achiever)
-{
-    const auto cost = achiever.witness.get_cost();
-    const auto rule_key = achiever.witness.get_rule_key();
-    const auto it = pending.by_rule.find(rule_key);
-    if (it == pending.by_rule.end())
-    {
-        pending.by_rule.emplace(rule_key, PendingPredicateAchiever { cost, std::move(achiever), true });
-    }
-    else
-    {
-        auto& incumbent = it->second;
-        if (incumbent.cost <= cost)
-            return;
-        incumbent = PendingPredicateAchiever { cost, std::move(achiever), true };
-    }
-    pending.buckets[cost].push_back(rule_key);
-}
-
-template<AnnotationPolicyConcept AP>
-void publish_pending_achievers(PendingPredicateAchievers& pending, PendingPredicateAchieverBuckets::iterator end, AP& annotation_policy)
-{
-    if constexpr (AP::records_propositional_achievers)
-        for (auto bucket = pending.buckets.begin(); bucket != end; ++bucket)
-            for (const auto rule_key : bucket->second)
-            {
-                auto& entry = pending.by_rule.at(rule_key);
-                if (!entry.pending || entry.cost != bucket->first)
-                    continue;
-                annotation_policy.record_achiever(entry.achiever.head, std::move(entry.achiever.witness));
-                entry.pending = false;
-            }
-    pending.buckets.erase(pending.buckets.begin(), end);
-}
+namespace f = tyr::formalism;
+namespace fd = tyr::formalism::datalog;
 
 static void create_nullary_binding(ygg::IndexList<f::Object>& binding) { binding.clear(); }
 
@@ -271,10 +221,10 @@ void for_each_relevant_clique(fd::AtomView<f::FluentTag>,
                               kckp::DeltaKCKP& algorithm,
                               Callback&& callback,
                               kckp::Workspace& workspace,
-                              [[maybe_unused]] bool replay_all)
+                              [[maybe_unused]] bool enumerate_all)
 {
 #ifdef TYR_ENABLE_SEMI_NAIVE
-    if (!replay_all)
+    if (!enumerate_all)
     {
         algorithm.for_each_delta_clique(std::forward<Callback>(callback), workspace);
         return;
@@ -444,12 +394,12 @@ void process_clique(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, std::span<
 }
 
 template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void generate_general_case(RuleExecutionContext<R, AP, TP, CP>& rctx, bool replay_all)
+void generate_general_case(RuleExecutionContext<R, AP, TP, CP>& rctx, bool enumerate_all)
 {
     auto& rule_out = rctx.out();
     auto& kckp_algorithm = rule_out.kckp();
     const auto head = rctx.in().cws_rule().get_rule().get_head();
-    if (!replay_all && try_generate_parallel(head, rctx))
+    if (!enumerate_all && try_generate_parallel(head, rctx))
         return;
 
     auto wrctx = rctx.get_rule_worker_execution_context();
@@ -460,20 +410,20 @@ void generate_general_case(RuleExecutionContext<R, AP, TP, CP>& rctx, bool repla
     for_each_relevant_clique(
         head,
         kckp_algorithm,
-        [&](auto&& clique) { process_clique(wrctx, clique, require_novel_binding(head) && !replay_all); },
+        [&](auto&& clique) { process_clique(wrctx, clique, require_novel_binding(head) && !enumerate_all); },
         kckp_workspace,
-        replay_all);
+        enumerate_all);
 }
 
 template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void generate(RuleExecutionContext<R, AP, TP, CP>& rctx, bool replay_all)
+void generate(RuleExecutionContext<R, AP, TP, CP>& rctx, bool enumerate_all)
 {
     const auto arity = rctx.in().cws_rule().get_rule().get_arity();
 
     if (arity == 0)
         generate_nullary_case(rctx);
     else
-        generate_general_case(rctx, replay_all);
+        generate_general_case(rctx, enumerate_all);
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
@@ -539,15 +489,18 @@ void process_pending_rule_bindings(RuleExecutionContext<f::FunctionTag, AP, TP, 
 
 template<f::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 /// Parallel phase: recheck pending rule bindings and generate new ground witnesses for all active rules.
-void run_active_rules(StratumExecutionContext<AP, TP, CP>& ctx, bool replay_all)
+void run_active_rules(StratumExecutionContext<AP, TP, CP>& ctx)
 {
     auto& program_out = ctx.out().program();
-    const auto& active_rules = ctx.out().scheduler().template get<R>().get_active_rules();
+    const auto& rule_scheduler = ctx.out().scheduler().template get<R>();
+    const auto& active_rules = rule_scheduler.get_active_rules();
 
     const auto program_stopwatch = ygg::StopwatchScope(program_out.statistics().parallel_time);
 
     const auto process_rule = [&](auto&& rule_index)
     {
+        // Numeric effects and state-dependent costs are non-idempotent as the numeric envelope evolves.
+        const auto enumerate_all = std::same_as<R, f::FunctionTag> || rule_scheduler.requires_full_enumeration(rule_index);
         auto rctx = ctx.get_rule_execution_context(rule_index);
         auto& rule_out = rctx.out();
 
@@ -572,7 +525,7 @@ void run_active_rules(StratumExecutionContext<AP, TP, CP>& ctx, bool replay_all)
             const auto process_pending_time = ygg::StopwatchScope(rule_out.statistics().process_pending_time);
 
 #ifdef TYR_ENABLE_SEMI_NAIVE
-            if (replay_all)
+            if (enumerate_all)
             {
                 // Full enumeration reconstructs the pending set; retaining it would duplicate old bindings.
                 for (auto& worker : rule_out.workers())
@@ -590,7 +543,7 @@ void run_active_rules(StratumExecutionContext<AP, TP, CP>& ctx, bool replay_all)
         {
             const auto process_generate_time = ygg::StopwatchScope(rule_out.statistics().process_generate_time);
 
-            generate(rctx, replay_all);
+            generate(rctx, enumerate_all);
         }
     };
 
@@ -608,16 +561,14 @@ void run_active_rules(StratumExecutionContext<AP, TP, CP>& ctx, bool replay_all)
 }
 
 template<AnnotationPolicyConcept AP>
-bool reduce_worker_heads(PredicateHeadIteration& head_iteration,
+void reduce_worker_heads(PredicateHeadIteration& head_iteration,
                          [[maybe_unused]] AP& annotation_policy,
                          [[maybe_unused]] const PredicateFactSets<f::FluentTag>& facts,
                          [[maybe_unused]] PredicateAnnotations<true>& delta_annotations,
                          [[maybe_unused]] PredicateAnnotations<>& annotations,
-                         [[maybe_unused]] RuleSchedulerStratum& scheduler,
                          CostBuckets& cost_buckets,
                          [[maybe_unused]] PendingPredicateAchievers& pending_achievers)
 {
-    auto annotation_improved = false;
     if constexpr (AP::records_propositional_achievers)
         for (auto& achiever : head_iteration.achievers)
             insert_pending_achiever(pending_achievers, std::move(achiever));
@@ -626,23 +577,22 @@ bool reduce_worker_heads(PredicateHeadIteration& head_iteration,
     {
         if constexpr (AP::stores_annotations)
         {
-            if (!delta_annotations.find(head) && !annotations.find(head))
-                continue;
-            const auto cost_update = annotation_policy.commit_annotation(head, delta_annotations, annotations);
-            if (!facts.contains(head))
-                cost_buckets.update(cost_update, head);
-            else if (cost_update.is_strict_improvement())
+            const auto* delta_annotation = delta_annotations.find(head);
+            if (facts.contains(head))
             {
-                annotation_improved = true;
-                scheduler.on_generate(head.get_index().relation);
+                assert((!delta_annotation || get_cost(*delta_annotation) >= annotations.fetch_cost(head)) && "A committed predicate label must be final.");
+                continue;
             }
+
+            if (!delta_annotation && !annotations.find(head))
+                continue;
+            cost_buckets.update(annotation_policy.commit_annotation(head, delta_annotations, annotations), head);
         }
         else
         {
             cost_buckets.insert(Cost(0), head);
         }
     }
-    return annotation_improved;
 }
 
 template<AnnotationPolicyConcept AP>
@@ -705,14 +655,13 @@ bool reduce_worker_results(StratumExecutionContext<AP, TP, CP>& ctx, PendingPred
         for (auto& worker : ws_rule->worker)
         {
             if constexpr (std::same_as<R, f::PredicateTag>)
-                annotation_improved |= reduce_worker_heads(worker.iteration.head_updates,
-                                                           annotation_policy,
-                                                           program_out.facts().fact_sets.predicate,
-                                                           program_out.delta_annotations(),
-                                                           program_out.annotations(),
-                                                           scheduler,
-                                                           cost_buckets,
-                                                           pending_achievers);
+                reduce_worker_heads(worker.iteration.head_updates,
+                                    annotation_policy,
+                                    program_out.facts().fact_sets.predicate,
+                                    program_out.delta_annotations(),
+                                    program_out.annotations(),
+                                    cost_buckets,
+                                    pending_achievers);
             else
                 annotation_improved |= reduce_worker_heads(worker.iteration.head_updates,
                                                            annotation_policy,
@@ -727,14 +676,13 @@ bool reduce_worker_results(StratumExecutionContext<AP, TP, CP>& ctx, PendingPred
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 /// Commit a cost bucket: insert its heads into the fact and assignment sets and notify the scheduler.
-std::pair<bool, bool> commit_bucket(StratumExecutionContext<AP, TP, CP>& ctx, Cost cost)
+bool commit_bucket(StratumExecutionContext<AP, TP, CP>& ctx, Cost cost)
 {
     auto& program_out = ctx.out().program();
     auto& scheduler = ctx.out().scheduler();
     auto& facts = program_out.facts();
     auto bucket = program_out.cost_buckets().take(cost);
     auto changed = false;
-    auto function_changed = false;
 
     // Native bucket order avoids sorting overhead. It is deterministic for single-threaded
     // execution; equal-cost order under parallel execution is intentionally unspecified.
@@ -753,14 +701,13 @@ std::pair<bool, bool> commit_bucket(StratumExecutionContext<AP, TP, CP>& ctx, Co
         if (facts.fact_sets.function.insert(head, interval))
         {
             changed = true;
-            function_changed = true;
             scheduler.on_generate(head.get_index().relation);
             facts.assignment_sets.function.insert(head, interval);
         }
     }
 
     program_out.rebuild_numeric_support_selector(ctx.in().program().facts().fact_sets);
-    return { changed, function_changed };
+    return changed;
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
@@ -774,7 +721,6 @@ void compute_model_for_stratum(StratumExecutionContext<AP, TP, CP>& ctx)
     scheduler.activate_all();
     cost_buckets.clear();
     auto pending_achievers = PendingPredicateAchievers {};
-    auto replay_predicate_bindings = false;
 
     while (true)
     {
@@ -787,16 +733,15 @@ void compute_model_for_stratum(StratumExecutionContext<AP, TP, CP>& ctx)
         program_out.delta_annotations().clear();
         program_out.delta_numeric_annotations().clear();
 
-        run_active_rules<f::PredicateTag>(ctx, replay_predicate_bindings);
-        run_active_rules<f::FunctionTag>(ctx, false);
+        run_active_rules<f::PredicateTag>(ctx);
+        run_active_rules<f::FunctionTag>(ctx);
 
-        auto annotation_improved = reduce_worker_results<f::PredicateTag>(ctx, pending_achievers);
-        annotation_improved |= reduce_worker_results<f::FunctionTag>(ctx, pending_achievers);
+        reduce_worker_results<f::PredicateTag>(ctx, pending_achievers);
+        const auto numeric_annotation_improved = reduce_worker_results<f::FunctionTag>(ctx, pending_achievers);
 
-        if (annotation_improved)
+        if (numeric_annotation_improved)
         {
             scheduler.on_finish_iteration();
-            replay_predicate_bindings = true;
             continue;
         }
 
@@ -807,18 +752,15 @@ void compute_model_for_stratum(StratumExecutionContext<AP, TP, CP>& ctx)
             return;  ///< All reachable heads are committed.
         }
         const auto cost = cost_buckets.min_cost();
-        const auto function_changed = commit_bucket(ctx, cost).second;
+        commit_bucket(ctx, cost);
         publish_pending_achievers(pending_achievers, pending_achievers.buckets.upper_bound(cost), program_out.annotation_policy());
         scheduler.on_finish_iteration();
-        replay_predicate_bindings = function_changed;
 #else
         auto fact_changed = false;
-        auto function_changed = false;
         while (!cost_buckets.is_empty())
         {
             const auto cost = cost_buckets.min_cost();
-            const auto [bucket_changed, bucket_function_changed] = commit_bucket(ctx, cost);
-            function_changed |= bucket_function_changed;
+            const auto bucket_changed = commit_bucket(ctx, cost);
             publish_pending_achievers(pending_achievers, pending_achievers.buckets.upper_bound(cost), program_out.annotation_policy());
             if (bucket_changed)
             {
@@ -832,9 +774,10 @@ void compute_model_for_stratum(StratumExecutionContext<AP, TP, CP>& ctx)
             return;  ///< All reachable heads are committed.
         }
         scheduler.activate_all();
-        replay_predicate_bindings = function_changed;
 #endif
     }
+}
+
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
