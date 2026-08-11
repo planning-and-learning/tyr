@@ -34,8 +34,8 @@ class MinCostAnnotationPolicy<LiftedTag, AggregationFunction>
 {
 public:
     using Aggregation = AggregationFunction;
-    using PredicateHead = PredicateAnnotationHead<LiftedTag>;
-    using FunctionHead = FunctionAnnotationHead<LiftedTag>;
+    using PredicateHead = PredicateAnnotationHead;
+    using FunctionHead = FunctionAnnotationHead;
     using FunctionBinding = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
     static constexpr bool stores_annotations = true;
     static constexpr bool records_propositional_achievers = false;
@@ -84,7 +84,7 @@ template<typename AggregationFunction>
 class MinCostAnnotationWithAchieversPolicy<LiftedTag, AggregationFunction> : public MinCostAnnotationPolicy<LiftedTag, AggregationFunction>
 {
 public:
-    using PredicateBinding = PredicateAnnotationHead<LiftedTag>;
+    using PredicateBinding = PredicateAnnotationHead;
     using Achievers = std::vector<WitnessAnnotation<LiftedTag, ::tyr::formalism::PredicateTag>>;
 
     static constexpr bool records_propositional_achievers = true;

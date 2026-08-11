@@ -52,11 +52,11 @@ namespace fd = ::tyr::formalism::datalog;
 template<TaskKind Kind>
 struct LMCutNumericNode : ygg::comparison::Mixin<LMCutNumericNode<Kind>>
 {
-    datalog::NumericSupportKeyT<Kind> key;
+    datalog::FunctionAnnotationHead key;
     ygg::ClosedInterval<ygg::float_t> interval;
 
     LMCutNumericNode() = delete;
-    LMCutNumericNode(datalog::NumericSupportKeyT<Kind> key, ygg::ClosedInterval<ygg::float_t> interval) : key(key), interval(interval) {}
+    LMCutNumericNode(datalog::FunctionAnnotationHead key, ygg::ClosedInterval<ygg::float_t> interval) : key(key), interval(interval) {}
 
     auto identifying_members() const noexcept { return std::make_tuple(key, lower(interval), upper(interval)); }
 };
@@ -84,7 +84,7 @@ struct LMCutImplementation :
                                       TP,
                                       datalog::RuleCostOverridePolicy<Kind>>;
     using ActionBinding = ::tyr::formalism::planning::ActionBindingView;
-    using PredicateHead = datalog::PredicateAnnotationHead<Kind>;
+    using PredicateHead = datalog::PredicateAnnotationHead;
     using NumericNode = LMCutNumericNode<Kind>;
     using RuleEdge = datalog::WitnessRuleKeyT<Kind, f::PredicateTag>;
     using NumericEdge = datalog::NumericTransitionCostKey<Kind, f::FunctionTag>;

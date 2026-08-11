@@ -548,11 +548,12 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     const auto ground_source = fixture.repository->get_or_create(ground_source_data).first;
     const auto ground_target = fixture.repository->get_or_create(ground_target_data).first;
     ground_workspace.numeric_annotations.clear();
-    ground_workspace.numeric_annotations.insert(ground_source, high_support_interval, d::BaseAnnotation<GroundTag>(high_support_metric, d::Cost(2)));
-    ground_workspace.numeric_annotations.insert(ground_source, interior_support_interval, d::BaseAnnotation<GroundTag>(interior_support_metric, d::Cost(1)));
-    ground_workspace.numeric_annotations.insert(ground_source, low_support_interval, d::BaseAnnotation<GroundTag>(low_support_metric, d::Cost(2)));
-    expect_source_annotation_order(
-        ground_workspace.numeric_annotations.find_entries(ground_source.get_function().get_index(), ground_source.get_row().get_index().row));
+    ground_workspace.numeric_annotations.insert(ground_source.get_row(), high_support_interval, d::BaseAnnotation<GroundTag>(high_support_metric, d::Cost(2)));
+    ground_workspace.numeric_annotations.insert(ground_source.get_row(),
+                                                interior_support_interval,
+                                                d::BaseAnnotation<GroundTag>(interior_support_metric, d::Cost(1)));
+    ground_workspace.numeric_annotations.insert(ground_source.get_row(), low_support_interval, d::BaseAnnotation<GroundTag>(low_support_metric, d::Cost(2)));
+    expect_source_annotation_order(ground_workspace.numeric_annotations.find_entries(ground_source.get_row()));
 
     d::compute_model(ground_context);
 
@@ -564,7 +565,7 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     EXPECT_EQ(ground_workspace.facts.fact_sets.function[ground_target], source_interval);
 
     const auto* lifted_annotation = lifted_workspace.numeric_annotations.find(fixture.target, source_interval);
-    const auto* ground_annotation = ground_workspace.numeric_annotations.find(ground_target, source_interval);
+    const auto* ground_annotation = ground_workspace.numeric_annotations.find(ground_target.get_row(), source_interval);
     ASSERT_NE(lifted_annotation, nullptr);
     ASSERT_NE(ground_annotation, nullptr);
     const auto* lifted_witness = std::get_if<d::WitnessAnnotation<LiftedTag, f::FunctionTag>>(lifted_annotation);
@@ -581,10 +582,8 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     {
         const auto& ground_support = ground_witness->get_numeric_supports()[i];
         const auto& lifted_support = lifted_witness->get_numeric_supports()[i];
-        EXPECT_EQ(ground_support.get_key(), ground_source);
-        EXPECT_EQ(lifted_support.get_key(), fixture.source);
-        EXPECT_EQ(ground_support.get_key().get_function().get_name(), lifted_support.get_key().get_relation().get_name());
-        EXPECT_EQ(ground_support.get_key().get_row().get_objects().size(), lifted_support.get_key().get_objects().size());
+        EXPECT_EQ(ground_support.get_key(), lifted_support.get_key());
+        EXPECT_EQ(ground_support.get_key(), ground_source.get_row());
         EXPECT_EQ(ground_support.get_interval(), lifted_support.get_interval());
         EXPECT_EQ(ground_support.get_cost(), lifted_support.get_cost());
     }

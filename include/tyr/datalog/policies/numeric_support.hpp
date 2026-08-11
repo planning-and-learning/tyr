@@ -43,7 +43,7 @@ class NumericSupportSelectorWorkspace
 public:
     struct SelectionEntry
     {
-        NumericSupportKeyT<Kind> key;
+        FunctionAnnotationHead key;
         ygg::ClosedInterval<ygg::float_t> interval;
         const NumericIntervalAnnotation<Kind>* annotation;
         Cost cost;
@@ -384,10 +384,10 @@ private:
 
 template<TaskKind Kind>
 class NumericSupportSelector :
-    public NumericSupportSelectorCore<NumericSupportSelector<Kind>, NumericSupportKeyT<Kind>, typename NumericSupportSelectorWorkspace<Kind>::SelectionEntry>
+    public NumericSupportSelectorCore<NumericSupportSelector<Kind>, FunctionAnnotationHead, typename NumericSupportSelectorWorkspace<Kind>::SelectionEntry>
 {
 public:
-    using Key = NumericSupportKeyT<Kind>;
+    using Key = FunctionAnnotationHead;
     using SelectionEntry = typename NumericSupportSelectorWorkspace<Kind>::SelectionEntry;
     using Core = NumericSupportSelectorCore<NumericSupportSelector<Kind>, Key, SelectionEntry>;
 

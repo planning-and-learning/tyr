@@ -36,7 +36,7 @@ class MinCostAnnotationPolicy<GroundTag, AggregationFunction>
 {
 public:
     using Aggregation = AggregationFunction;
-    using PredicateHead = PredicateAnnotationHead<GroundTag>;
+    using PredicateHead = PredicateAnnotationHead;
     using FunctionBinding = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
     using PredicateWitness = WitnessAnnotation<GroundTag, ::tyr::formalism::PredicateTag>;
 
@@ -65,7 +65,7 @@ template<typename AggregationFunction>
 class MinCostAnnotationWithAchieversPolicy<GroundTag, AggregationFunction> : public MinCostAnnotationPolicy<GroundTag, AggregationFunction>
 {
 public:
-    using PredicateHead = PredicateAnnotationHead<GroundTag>;
+    using PredicateHead = PredicateAnnotationHead;
     using PredicateWitness = WitnessAnnotation<GroundTag, ::tyr::formalism::PredicateTag>;
     using Achievers = std::vector<PredicateWitness>;
 
@@ -102,7 +102,7 @@ bool publish_candidate(AP&,
                        const FunctionCandidate<GroundTag>& candidate,
                        FunctionAnnotations<GroundTag>& annotations)
 {
-    return annotations.insert(candidate.annotation_head, candidate.interval, materialize_witness(instance, candidate));
+    return annotations.insert(candidate.head, candidate.interval, materialize_witness(instance, candidate));
 }
 
 }

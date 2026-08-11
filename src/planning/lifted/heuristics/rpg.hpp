@@ -47,7 +47,7 @@ struct RPGPolicy<LiftedTag>
 
     template<typename Workspace>
     static std::optional<::tyr::formalism::planning::GroundAtomView<::tyr::formalism::FluentTag>>
-    translate_cut_atom(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, datalog::PredicateAnnotationHead<LiftedTag> head)
+    translate_cut_atom(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, datalog::PredicateAnnotationHead head)
     {
         const auto& mapping = definition.rpg_program.get_translation_context().d2p.fluent_to_fluent_predicate;
         if (!mapping.contains(head.get_relation()))

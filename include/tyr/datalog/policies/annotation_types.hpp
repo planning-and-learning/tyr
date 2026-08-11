@@ -40,25 +40,6 @@
 namespace tyr::datalog
 {
 
-template<TaskKind Kind>
-struct NumericSupportKey
-{
-    using type = std::conditional_t<std::same_as<Kind, GroundTag>,
-                                    ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag>,
-                                    ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>>;
-
-    static type from_ground(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term) noexcept
-    {
-        if constexpr (std::same_as<Kind, GroundTag>)
-            return term;
-        else
-            return term.get_row();
-    }
-};
-
-template<TaskKind Kind>
-using NumericSupportKeyT = typename NumericSupportKey<Kind>::type;
-
 template<TaskKind Kind, ::tyr::formalism::RelationKind R>
 struct WitnessRuleKey;
 
@@ -68,21 +49,19 @@ using WitnessRuleKeyT = typename WitnessRuleKey<Kind, R>::type;
 class ConcurrentPredicateAnnotations;
 class ConcurrentFunctionAnnotations;
 
-template<TaskKind Kind>
 using PredicateAnnotationHead = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
 
-template<TaskKind Kind>
-using FunctionAnnotationHead = NumericSupportKeyT<Kind>;
+using FunctionAnnotationHead = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
 
 template<TaskKind Kind>
 struct NumericSupport : ygg::comparison::Mixin<NumericSupport<Kind>>
 {
-    NumericSupportKeyT<Kind> key;
+    FunctionAnnotationHead key;
     ygg::ClosedInterval<ygg::float_t> interval;
     Cost cost;
 
     NumericSupport() = default;
-    NumericSupport(NumericSupportKeyT<Kind> key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost) : key(key), interval(interval), cost(cost) {}
+    NumericSupport(FunctionAnnotationHead key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost) : key(key), interval(interval), cost(cost) {}
 
     auto get_key() const noexcept { return key; }
     auto get_interval() const noexcept { return interval; }
@@ -312,38 +291,15 @@ bool insert_first_best_numeric_interval_annotation(std::vector<NumericIntervalAn
 }
 
 template<TaskKind Kind>
-struct NumericIntervalBindingParts
-{
-    using Binding = NumericSupportKeyT<Kind>;
-    using Relation = ygg::Index<::tyr::formalism::Function<::tyr::formalism::FluentTag>>;
-    using Key = ygg::Index<::tyr::formalism::Row>;
-
-    static Relation get_relation(Binding binding) noexcept
-    {
-        if constexpr (std::same_as<Kind, GroundTag>)
-            return binding.get_function().get_index();
-        else
-            return binding.get_index().relation;
-    }
-
-    static Key get_key(Binding binding) noexcept
-    {
-        if constexpr (std::same_as<Kind, GroundTag>)
-            return binding.get_row().get_index().row;
-        else
-            return binding.get_index().row;
-    }
-};
-
-template<TaskKind Kind>
 class NumericIntervalAnnotations
 {
 public:
-    using Binding = typename NumericIntervalBindingParts<Kind>::Binding;
-    using Relation = typename NumericIntervalBindingParts<Kind>::Relation;
-    using Key = typename NumericIntervalBindingParts<Kind>::Key;
+    using Binding = FunctionAnnotationHead;
     using Entry = NumericIntervalAnnotation<Kind>;
     using Entries = std::vector<Entry>;
+    using Storage = DenseRelationMap<::tyr::formalism::FunctionTag, Entries>;
+    using Relation = typename Storage::Relation;
+    using Key = typename Storage::Row;
 
     explicit NumericIntervalAnnotations(size_t num_relations = 0) : m_slots(num_relations) {}
 
@@ -355,6 +311,8 @@ public:
 
     size_t size() const noexcept { return m_size; }
 
+    const Entries* find_entries(Binding binding) const noexcept { return m_slots.find(binding); }
+
     const Entries* find_entries(Relation relation, Key key) const noexcept { return m_slots.find(relation, key); }
 
     const Annotation<Kind, ::tyr::formalism::FunctionTag>* find(Binding binding) const noexcept
@@ -365,7 +323,7 @@ public:
 
     Annotation<Kind, ::tyr::formalism::FunctionTag>* find(Binding binding) noexcept
     {
-        auto* entries = m_slots.find(NumericIntervalBindingParts<Kind>::get_relation(binding), NumericIntervalBindingParts<Kind>::get_key(binding));
+        auto* entries = m_slots.find(binding);
         return (!entries || entries->empty()) ? nullptr : &entries->back().annotation;
     }
 
@@ -377,10 +335,8 @@ public:
 
     bool insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind, ::tyr::formalism::FunctionTag> annotation)
     {
-        return insert(NumericIntervalBindingParts<Kind>::get_relation(binding),
-                      NumericIntervalBindingParts<Kind>::get_key(binding),
-                      interval,
-                      std::move(annotation));
+        const auto index = binding.get_index();
+        return insert(index.relation, index.row, interval, std::move(annotation));
     }
 
     bool insert(Relation relation, Key key, ygg::ClosedInterval<ygg::float_t> interval, Annotation<Kind, ::tyr::formalism::FunctionTag> annotation)
@@ -397,11 +353,6 @@ public:
     }
 
 private:
-    const Entries* find_entries(Binding binding) const noexcept
-    {
-        return find_entries(NumericIntervalBindingParts<Kind>::get_relation(binding), NumericIntervalBindingParts<Kind>::get_key(binding));
-    }
-
     Entries& entries_for_write(Relation relation, Key key)
     {
         return m_slots.update(relation,
@@ -414,7 +365,7 @@ private:
                               });
     }
 
-    DenseRelationMap<::tyr::formalism::FunctionTag, Entries> m_slots;
+    Storage m_slots;
     size_t m_size { 0 };
 };
 

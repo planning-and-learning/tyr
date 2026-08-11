@@ -31,7 +31,7 @@ concept RuleCostPolicyConcept = TaskKind<Kind>
                                             const T& const_policy,
                                             WitnessRuleKeyT<Kind, ::tyr::formalism::PredicateTag> predicate_rule_key,
                                             WitnessRuleKeyT<Kind, ::tyr::formalism::FunctionTag> function_rule_key,
-                                            NumericSupportKeyT<Kind> numeric_key,
+                                            FunctionAnnotationHead numeric_key,
                                             ygg::ClosedInterval<ygg::float_t> interval,
                                             Cost cost) {
                                        { const_policy.get_cost(predicate_rule_key) } -> std::same_as<Cost>;

@@ -147,7 +147,7 @@ void bind_annotations(nb::module_& m)
     using FunctionAnnotationStore = FunctionAnnotations<Kind>;
     using RuleKey = WitnessRuleKeyT<Kind, ::tyr::formalism::PredicateTag>;
     using FunctionRuleKey = WitnessRuleKeyT<Kind, ::tyr::formalism::FunctionTag>;
-    using NumericKey = NumericSupportKeyT<Kind>;
+    using NumericKey = FunctionAnnotationHead;
     using PredicateKey = typename PredicateAnnotationStore::Key;
 
     auto numeric_support_cls = nb::class_<NumericSupportT>(m, "NumericSupport")
@@ -225,7 +225,7 @@ void bind_annotations(nb::module_& m)
 template<TaskKind Kind, typename CostPolicy>
 void bind_cost_policy(nb::module_& m, const char* name)
 {
-    using NumericKey = NumericSupportKeyT<Kind>;
+    using NumericKey = FunctionAnnotationHead;
 
     auto cls = nb::class_<CostPolicy>(m, name).def(nb::init<>()).def("clear", &CostPolicy::clear);
 
@@ -290,7 +290,7 @@ void bind_policies(nb::module_& m)
         .def(
             "find_achievers",
             [](const MaxMinCostAnnotationWithAchievers& self,
-               PredicateAnnotationHead<Kind> binding) -> std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>
+               PredicateAnnotationHead binding) -> std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>
             {
                 const auto* achievers = self.find_achievers(binding);
                 return achievers ? std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>(*achievers) : std::nullopt;

@@ -23,12 +23,10 @@
 namespace tyr::datalog
 {
 
-template<TaskKind Kind>
 struct ResolvedNumericEffect
 {
     ::tyr::formalism::NumericEffectOperatorKind operator_kind;
-    FunctionAnnotationHead<Kind> annotation_head;
-    ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> fact_head;
+    FunctionAnnotationHead head;
     ::tyr::formalism::datalog::GroundFunctionExpressionView rhs;
 };
 

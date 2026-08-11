@@ -76,11 +76,11 @@ template<TaskKind Kind, ::tyr::formalism::RelationKind R>
 struct NumericTransitionCostKey : ygg::comparison::Mixin<NumericTransitionCostKey<Kind, R>>
 {
     WitnessRuleKeyT<Kind, R> rule_key;
-    NumericSupportKeyT<Kind> numeric_key;
+    FunctionAnnotationHead numeric_key;
     ygg::ClosedInterval<ygg::float_t> interval;
 
     NumericTransitionCostKey() = default;
-    NumericTransitionCostKey(WitnessRuleKeyT<Kind, R> rule_key, NumericSupportKeyT<Kind> numeric_key, ygg::ClosedInterval<ygg::float_t> interval) :
+    NumericTransitionCostKey(WitnessRuleKeyT<Kind, R> rule_key, FunctionAnnotationHead numeric_key, ygg::ClosedInterval<ygg::float_t> interval) :
         rule_key(rule_key),
         numeric_key(numeric_key),
         interval(interval)
@@ -100,7 +100,7 @@ public:
         return Cost(0);
     }
     template<typename RuleKey>
-    Cost get_cost(RuleKey, NumericSupportKeyT<Kind>, ygg::ClosedInterval<ygg::float_t>) const noexcept
+    Cost get_cost(RuleKey, FunctionAnnotationHead, ygg::ClosedInterval<ygg::float_t>) const noexcept
     {
         return Cost(0);
     }
@@ -111,7 +111,7 @@ public:
     {
     }
     template<typename RuleKey>
-    void set_cost(RuleKey, NumericSupportKeyT<Kind>, ygg::ClosedInterval<ygg::float_t>, Cost) noexcept
+    void set_cost(RuleKey, FunctionAnnotationHead, ygg::ClosedInterval<ygg::float_t>, Cost) noexcept
     {
     }
 };
@@ -121,7 +121,7 @@ class RuleCostOverrideStorage
 {
 public:
     using RuleKey = WitnessRuleKeyT<Kind, R>;
-    using NumericKey = NumericSupportKeyT<Kind>;
+    using NumericKey = FunctionAnnotationHead;
     using CostMap = ygg::UnorderedMap<RuleKey, Cost>;
     using NumericTransitionCostMap = ygg::UnorderedMap<NumericTransitionCostKey<Kind, R>, Cost>;
 
@@ -196,7 +196,7 @@ public:
     }
 
     template<typename RuleKey>
-    Cost get_cost(RuleKey rule_key, NumericSupportKeyT<Kind> numeric_key, ygg::ClosedInterval<ygg::float_t> interval) const
+    Cost get_cost(RuleKey rule_key, FunctionAnnotationHead numeric_key, ygg::ClosedInterval<ygg::float_t> interval) const
     {
         return storage_for(rule_key).get_cost(rule_key, numeric_key, interval);
     }
@@ -217,7 +217,7 @@ public:
     }
 
     template<typename RuleKey>
-    void set_cost(RuleKey rule_key, NumericSupportKeyT<Kind> numeric_key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost)
+    void set_cost(RuleKey rule_key, FunctionAnnotationHead numeric_key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost)
     {
         storage_for(rule_key).set_cost(rule_key, numeric_key, interval, cost);
     }

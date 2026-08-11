@@ -43,8 +43,8 @@ struct FFRPGHeuristic<Kind>::Impl :
 {
     using Base = detail::
         RPGEvaluator<Impl, Kind, datalog::MinCostAnnotationPolicy<Kind, datalog::SumAggregation>, datalog::TerminationPolicy<Kind, datalog::SumAggregation>>;
-    using PredicateHead = datalog::PredicateAnnotationHead<Kind>;
-    using FunctionHead = datalog::FunctionAnnotationHead<Kind>;
+    using PredicateHead = datalog::PredicateAnnotationHead;
+    using FunctionHead = datalog::FunctionAnnotationHead;
     using NumericAnnotation = datalog::Annotation<Kind, ::tyr::formalism::FunctionTag>;
     using NumericSupportWorkspace = datalog::NumericSupportSelectorWorkspace<Kind>;
 
@@ -127,9 +127,7 @@ private:
 
     void extract_relaxed_plan(FunctionHead head, const NumericAnnotation& annotation, const StateContext<Kind>& state_context, size_t numeric_support_depth)
     {
-        if (mark(m_function_markings,
-                 datalog::NumericIntervalBindingParts<Kind>::get_relation(head),
-                 datalog::NumericIntervalBindingParts<Kind>::get_key(head)))
+        if (mark(m_function_markings, head.get_index().relation, head.get_index().row))
             return;
 
         const auto* witness = std::get_if<datalog::WitnessAnnotation<Kind, ::tyr::formalism::FunctionTag>>(&annotation);

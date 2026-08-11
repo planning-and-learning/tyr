@@ -44,10 +44,9 @@ public:
 
     auto resolve(::tyr::formalism::datalog::GroundBooleanOperatorView constraint) const noexcept { return constraint; }
 
-    ResolvedNumericEffect<Task> resolve(::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect) const noexcept
+    ResolvedNumericEffect resolve(::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect) const noexcept
     {
-        const auto annotation_head = effect.get_fterm();
-        return { effect.get_operator(), annotation_head, annotation_head.get_row(), effect.get_fexpr() };
+        return { effect.get_operator(), effect.get_fterm().get_row(), effect.get_fexpr() };
     }
 
     auto witness_key() const noexcept { return m_rule; }

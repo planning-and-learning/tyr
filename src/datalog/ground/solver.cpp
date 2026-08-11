@@ -318,7 +318,7 @@ void fire_rule(GroundCtx<AP, TP, CP>& ctx,
     if constexpr (AP::stores_annotations)
         publish_candidate(ctx.out().annotation_policy(), instance, candidate, ctx.out().numeric_annotations());
     if (candidate.grows_fact)
-        pending_heads.insert(candidate.cost, candidate.fact_head, candidate.interval);
+        pending_heads.insert(candidate.cost, candidate.head, candidate.interval);
 }
 
 template<f::RelationKind R, AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>

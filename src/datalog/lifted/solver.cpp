@@ -159,20 +159,18 @@ static bool insert_numeric_update(RuleUpdateInput<f::FunctionTag, AP, CP>& input
     if constexpr (!AP::stores_annotations)
     {
         if (candidate->grows_fact)
-            head_iteration.insert(FunctionHeadUpdate(candidate->fact_head, candidate->interval, true));
+            head_iteration.insert(FunctionHeadUpdate(candidate->head, candidate->interval, true));
     }
     else
     {
         auto staged = false;
-        if (input.annotation_policy
-                .can_update(candidate->annotation_head, candidate->interval, candidate->cost, input.numeric_annotations, delta_numeric_annotations))
+        if (input.annotation_policy.can_update(candidate->head, candidate->interval, candidate->cost, input.numeric_annotations, delta_numeric_annotations))
         {
             auto witness = materialize_witness(input.rule_instance, *candidate);
-            staged =
-                input.annotation_policy.try_update_candidate(candidate->annotation_head, candidate->interval, std::move(witness), delta_numeric_annotations);
+            staged = input.annotation_policy.try_update_candidate(candidate->head, candidate->interval, std::move(witness), delta_numeric_annotations);
         }
         if (staged || candidate->grows_fact)
-            head_iteration.insert(FunctionHeadUpdate(candidate->fact_head, candidate->interval, candidate->grows_fact));
+            head_iteration.insert(FunctionHeadUpdate(candidate->head, candidate->interval, candidate->grows_fact));
     }
     return true;
 }

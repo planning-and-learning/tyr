@@ -59,7 +59,7 @@ struct CandidateEvidence
 template<TaskKind Kind>
 struct PredicateCandidate
 {
-    PredicateAnnotationHead<Kind> head;
+    PredicateAnnotationHead head;
     Cost cost;
     Cost queue_label;
     std::optional<CandidateEvidence<Kind>> evidence;
@@ -68,8 +68,7 @@ struct PredicateCandidate
 template<TaskKind Kind>
 struct FunctionCandidate
 {
-    FunctionAnnotationHead<Kind> annotation_head;
-    ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> fact_head;
+    FunctionAnnotationHead head;
     ygg::ClosedInterval<ygg::float_t> interval;
     Cost cost;
     Cost queue_label;
@@ -89,7 +88,7 @@ struct EvaluationState
     Cost support_cost;
     Metric<Kind> support_metric;
     Cost raw_edge;
-    std::optional<ResolvedNumericEffect<Kind>> numeric_effect;
+    std::optional<ResolvedNumericEffect> numeric_effect;
     ygg::ClosedInterval<ygg::float_t> raw_interval;
     ygg::ClosedInterval<ygg::float_t> current_interval;
 };
@@ -141,7 +140,7 @@ Cost get_rule_credit(const CP& policy, RuleInstance<Kind, R>& instance)
 template<TaskKind Kind, typename CP>
 Cost get_transition_credit(const CP& policy,
                            RuleInstance<Kind, ::tyr::formalism::FunctionTag>& instance,
-                           FunctionAnnotationHead<Kind> head,
+                           FunctionAnnotationHead head,
                            ygg::ClosedInterval<ygg::float_t> interval)
 {
     if constexpr (std::same_as<std::remove_cvref_t<CP>, RuleCostPolicy<Kind>>)
@@ -196,7 +195,7 @@ evaluate_annotated_rule(RuleInstance<Kind, R>& instance, const AP&, const CP&, c
         auto lhs = ygg::ClosedInterval<ygg::float_t> {};
         if (effect.operator_kind != ::tyr::formalism::NumericEffectOperatorKind::Assign)
         {
-            lhs = input.selector.select_fluent_interval(effect.annotation_head, workspace.selector.selection);
+            lhs = input.selector.select_fluent_interval(effect.head, workspace.selector.selection);
             if (empty(lhs))
                 return std::nullopt;
         }
@@ -209,7 +208,7 @@ evaluate_annotated_rule(RuleInstance<Kind, R>& instance, const AP&, const CP&, c
         if (empty(state.raw_interval))
             return std::nullopt;
 
-        state.current_interval = input.selector.current_interval(effect.annotation_head);
+        state.current_interval = input.selector.current_interval(effect.head);
         aggregate_selection_cost<Aggregation>(state.support_cost, workspace.selector);
         if (!append_selection_evidence<CollectEvidence>(input, workspace, state.support_metric))
             return std::nullopt;
@@ -224,7 +223,7 @@ evaluate_annotated_rule(RuleInstance<Kind, R>& instance, const AP&, const CP&, c
                 workspace.selector.clear();
                 const auto result = metric_effect_delta(
                     effect.operator_kind,
-                    [&] { return input.selector.select_fluent_interval(effect.annotation_head, workspace.selector.selection); },
+                    [&] { return input.selector.select_fluent_interval(effect.head, workspace.selector.selection); },
                     [&] { return input.selector.evaluate_effect_expression(effect.rhs, workspace.selector.selection); });
                 if (!result)
                     return std::nullopt;
@@ -255,7 +254,7 @@ std::optional<FunctionCandidate<Kind>> evaluate_unannotated_function(RuleInstanc
     auto lhs = ygg::ClosedInterval<ygg::float_t> {};
     if (effect.operator_kind != ::tyr::formalism::NumericEffectOperatorKind::Assign)
     {
-        lhs = input.selector.select_fluent_interval(effect.annotation_head, workspace.selector.selection);
+        lhs = input.selector.select_fluent_interval(effect.head, workspace.selector.selection);
         if (empty(lhs))
             return std::nullopt;
     }
@@ -268,14 +267,12 @@ std::optional<FunctionCandidate<Kind>> evaluate_unannotated_function(RuleInstanc
     if (empty(raw_interval))
         return std::nullopt;
 
-    const auto current = input.selector.current_interval(effect.annotation_head);
+    const auto current = input.selector.current_interval(effect.head);
     auto interval = raw_interval;
     if (!empty(current) && policy.is_widening_label_preserving(Cost(0), Cost(0)))
         interval = widen_free_growth(raw_interval, current);
 
-    return FunctionCandidate<Kind> {
-        effect.annotation_head, effect.fact_head, interval, Cost(0), Cost(0), empty(current) || !subset(interval, current), std::nullopt
-    };
+    return FunctionCandidate<Kind> { effect.head, interval, Cost(0), Cost(0), empty(current) || !subset(interval, current), std::nullopt };
 }
 
 }
@@ -364,17 +361,16 @@ std::optional<FunctionCandidate<Kind>> evaluate_function_candidate(RuleInstance<
         auto interval = state->raw_interval;
         if (!empty(state->current_interval) && edge == Cost(0))
         {
-            const auto current_label = input.selector.get_current_interval_cost(effect.annotation_head, state->current_interval);
+            const auto current_label = input.selector.get_current_interval_cost(effect.head, state->current_interval);
             if (annotation_policy.is_widening_label_preserving(pre_transition_label, current_label))
                 interval = widen_free_growth(state->raw_interval, state->current_interval);
         }
 
         if (interval == state->raw_interval)
-            edge = reduce_cost(edge, rule_evaluation_detail::get_transition_credit<Kind>(cost_policy, instance, effect.annotation_head, interval));
+            edge = reduce_cost(edge, rule_evaluation_detail::get_transition_credit<Kind>(cost_policy, instance, effect.head, interval));
 
         const auto cost = state->support_cost + edge;
-        return FunctionCandidate<Kind> { effect.annotation_head,
-                                         effect.fact_head,
+        return FunctionCandidate<Kind> { effect.head,
                                          interval,
                                          cost,
                                          state->support_cost,

@@ -179,7 +179,7 @@ protected:
         m_workspace.cost_policy.set_action_cost(action_binding, cost);
     }
 
-    datalog::Cost get_predicate_cost(datalog::PredicateAnnotationHead<Kind> head) const noexcept
+    datalog::Cost get_predicate_cost(datalog::PredicateAnnotationHead head) const noexcept
     {
         const auto* annotation = m_workspace.annotations.find(head);
         return annotation ? datalog::get_cost(*annotation) : datalog::Cost(0);
@@ -226,7 +226,7 @@ protected:
         m_workspace.for_each_numeric_support(support, std::forward<Callback>(callback));
     }
 
-    void append_planning_cut_frontier_atom(datalog::PredicateAnnotationHead<Kind> head,
+    void append_planning_cut_frontier_atom(datalog::PredicateAnnotationHead head,
                                            ::tyr::formalism::planning::GroundAtomViewList<::tyr::formalism::FluentTag>& atoms)
     {
         if (const auto atom = Policy::translate_cut_atom(*m_definition, m_workspace, head))
@@ -254,7 +254,7 @@ protected:
     }
 
     template<typename Callback>
-    void for_each_achiever(datalog::PredicateAnnotationHead<Kind> head, Callback&& callback)
+    void for_each_achiever(datalog::PredicateAnnotationHead head, Callback&& callback)
         requires AP::records_propositional_achievers
     {
         const auto* achievers = m_workspace.annotation_policy.find_achievers(head);

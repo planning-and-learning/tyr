@@ -49,10 +49,11 @@ public:
 
     auto resolve(::tyr::formalism::datalog::LiftedBooleanOperatorView constraint) const { return ::tyr::formalism::datalog::ground(constraint, m_grounder); }
 
-    ResolvedNumericEffect<Task> resolve(::tyr::formalism::datalog::NumericEffectView<::tyr::formalism::FluentTag> effect) const
+    ResolvedNumericEffect resolve(::tyr::formalism::datalog::NumericEffectView<::tyr::formalism::FluentTag> effect) const
     {
-        const auto fact_head = ::tyr::formalism::datalog::ground_binding(effect.get_fterm(), m_grounder).first;
-        return { effect.get_operator(), fact_head, fact_head, ::tyr::formalism::datalog::ground(effect.get_fexpr(), m_grounder) };
+        return { effect.get_operator(),
+                 ::tyr::formalism::datalog::ground_binding(effect.get_fterm(), m_grounder).first,
+                 ::tyr::formalism::datalog::ground(effect.get_fexpr(), m_grounder) };
     }
 
     auto witness_key() const

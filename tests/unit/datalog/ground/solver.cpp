@@ -41,7 +41,8 @@ using GroundAtomViews = std::vector<fd::GroundAtomView<f::FluentTag>>;
 using StaticGroundAtomViews = std::vector<fd::GroundAtomView<f::StaticTag>>;
 using PredicateBindingViews = std::vector<fd::PredicateBindingView<f::FluentTag>>;
 
-static_assert(std::same_as<datalog::PredicateAnnotationHead<GroundTag>, fd::PredicateBindingView<f::FluentTag>>);
+static_assert(std::same_as<datalog::PredicateAnnotationHead, fd::PredicateBindingView<f::FluentTag>>);
+static_assert(std::same_as<datalog::FunctionAnnotationHead, fd::FunctionBindingView<f::FluentTag>>);
 
 template<typename Context>
 PredicateBindingViews binding_views(const Context& ctx)
@@ -728,7 +729,7 @@ TEST(TyrDatalogGroundQueueTest, DerivedNumericIntervalUnblocksRuleAndRecordsSupp
     ASSERT_EQ(achievers->size(), 1);
     const auto& supports = achievers->front().get_numeric_supports();
     ASSERT_EQ(supports.size(), 1);
-    EXPECT_EQ(supports.front().get_key(), term);
+    EXPECT_EQ(supports.front().get_key(), term.get_row());
     EXPECT_EQ(supports.front().get_interval(), ygg::ClosedInterval<ygg::float_t>(3, 3));
 }
 
@@ -756,8 +757,8 @@ TEST(TyrDatalogGroundQueueTest, SameCostBroadAndContainedNumericIntervalsRetainE
     const auto broad = ygg::ClosedInterval<ygg::float_t>(0, 4);
     const auto contained = ygg::ClosedInterval<ygg::float_t>(3, 3);
     EXPECT_EQ(ctx.out().fact_sets().function[term], broad);
-    EXPECT_NE(ctx.out().numeric_annotations().find(term, broad), nullptr);
-    EXPECT_NE(ctx.out().numeric_annotations().find(term, contained), nullptr);
+    EXPECT_NE(ctx.out().numeric_annotations().find(term.get_row(), broad), nullptr);
+    EXPECT_NE(ctx.out().numeric_annotations().find(term.get_row(), contained), nullptr);
 }
 
 TEST(TyrDatalogGroundQueueTest, RevalidatesQueuedRuleAfterContainedNumericCertificateImproves)
@@ -778,7 +779,7 @@ TEST(TyrDatalogGroundQueueTest, RevalidatesQueuedRuleAfterContainedNumericCertif
 
     const auto interval = ygg::ClosedInterval<ygg::float_t>(1, 1);
     ctx.out().numeric_annotations().clear();
-    ctx.out().numeric_annotations().insert(term, interval, datalog::BaseAnnotation<GroundTag>(datalog::Cost(5)));
+    ctx.out().numeric_annotations().insert(term.get_row(), interval, datalog::BaseAnnotation<GroundTag>(datalog::Cost(5)));
 
     dq::compute_model(ctx);
 
@@ -799,7 +800,7 @@ TEST(TyrDatalogGroundQueueTest, NumericTransitionCreditOnlyReducesTheLocalEdge)
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
     auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
-    cost_policy.set_cost(rule, term, interval, datalog::Cost(3));
+    cost_policy.set_cost(rule, term.get_row(), interval, datalog::Cost(3));
     using Workspace = datalog::ProgramWorkspace<GroundTag,
                                                 datalog::MinCostAnnotationPolicy<GroundTag, datalog::SumAggregation>,
                                                 datalog::NoTerminationPolicy<GroundTag>,
@@ -816,7 +817,7 @@ TEST(TyrDatalogGroundQueueTest, NumericTransitionCreditOnlyReducesTheLocalEdge)
     dq::compute_model(ctx);
 
     EXPECT_EQ(ctx.out().fact_sets().function[term], interval);
-    const auto* annotation = ctx.out().numeric_annotations().find(term, interval);
+    const auto* annotation = ctx.out().numeric_annotations().find(term.get_row(), interval);
     ASSERT_NE(annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*annotation), 5);
     EXPECT_EQ(datalog::get_metric(*annotation), ygg::ClosedInterval<ygg::float_t>(5, 5));
@@ -833,7 +834,7 @@ TEST(TyrDatalogGroundQueueTest, TransitionCreditDoesNotTurnRawPositiveEdgeIntoFr
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
     auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
-    cost_policy.set_cost(rule, term, raw_interval, datalog::Cost(1));
+    cost_policy.set_cost(rule, term.get_row(), raw_interval, datalog::Cost(1));
     auto termination_policy = datalog::TerminationPolicy<GroundTag, datalog::SumAggregation>();
     termination_policy.set_goals(goal);
     using Workspace = datalog::ProgramWorkspace<GroundTag,

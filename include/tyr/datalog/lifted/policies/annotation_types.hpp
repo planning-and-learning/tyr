@@ -143,7 +143,7 @@ private:
 class ConcurrentPredicateAnnotations
 {
 public:
-    using Key = PredicateAnnotationHead<LiftedTag>;
+    using Key = PredicateAnnotationHead;
 
     explicit ConcurrentPredicateAnnotations(size_t num_relations) : m_annotations(num_relations) {}
 
@@ -176,11 +176,12 @@ private:
 class ConcurrentFunctionAnnotations
 {
 public:
-    using Binding = NumericSupportKeyT<LiftedTag>;
-    using Relation = typename NumericIntervalBindingParts<LiftedTag>::Relation;
-    using Key = typename NumericIntervalBindingParts<LiftedTag>::Key;
+    using Binding = FunctionAnnotationHead;
     using Entry = NumericIntervalAnnotation<LiftedTag>;
     using Entries = std::vector<Entry>;
+    using Storage = ConcurrentRelationMap<::tyr::formalism::FunctionTag, Entries>;
+    using Relation = typename Storage::Relation;
+    using Key = typename Storage::Row;
 
     explicit ConcurrentFunctionAnnotations(size_t num_relations) : m_annotations(num_relations) {}
 
@@ -226,7 +227,7 @@ public:
     const Entries* find_entries(Relation relation, Key key) const noexcept { return m_annotations.find(relation, key); }
 
 private:
-    ConcurrentRelationMap<::tyr::formalism::FunctionTag, Entries> m_annotations;
+    Storage m_annotations;
 };
 
 }
