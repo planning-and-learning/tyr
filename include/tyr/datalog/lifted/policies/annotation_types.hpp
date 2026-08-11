@@ -35,27 +35,10 @@
 namespace tyr::datalog
 {
 
-template<>
-struct NumericSupportKey<LiftedTag>
-{
-    using type = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
-};
-
 template<::tyr::formalism::RelationKind R>
 struct WitnessRuleKey<LiftedTag, R>
 {
     using type = ::tyr::formalism::datalog::RuleBindingView<R>;
-};
-
-template<>
-struct NumericIntervalBindingParts<LiftedTag>
-{
-    using Binding = NumericSupportKeyT<LiftedTag>;
-    using Relation = ygg::Index<::tyr::formalism::Function<::tyr::formalism::FluentTag>>;
-    using Key = ygg::Index<::tyr::formalism::Row>;
-
-    static Relation get_relation(Binding binding) noexcept { return binding.get_index().relation; }
-    static Key get_key(Binding binding) noexcept { return binding.get_index().row; }
 };
 
 template<::tyr::formalism::RelationKind R, std::default_initializable Value>

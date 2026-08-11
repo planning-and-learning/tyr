@@ -21,7 +21,7 @@
 #include "tyr/datalog/numeric_utils.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
 #include "tyr/datalog/policies/cost.hpp"
-#include "tyr/datalog/policies/numeric_support_core.hpp"
+#include "tyr/datalog/policies/numeric_support.hpp"
 #include "tyr/datalog/rule_instance.hpp"
 
 #include <cassert>

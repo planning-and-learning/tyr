@@ -20,12 +20,12 @@
 
 #include "tyr/datalog/ground/policies/annotation.hpp"
 #include "tyr/datalog/ground/policies/cost.hpp"
-#include "tyr/datalog/ground/policies/numeric_support.hpp"
 #include "tyr/datalog/ground/workspaces/facts.hpp"
 #include "tyr/datalog/ground/workspaces/queue.hpp"
 #include "tyr/datalog/ground/workspaces/rule.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
 #include "tyr/datalog/policies/cost_concept.hpp"
+#include "tyr/datalog/policies/numeric_support.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/policies/termination_concept.hpp"
 #include "tyr/datalog/workspaces/program.hpp"
@@ -108,7 +108,10 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
 
     void clear_costs() { cost_policy.clear(); }
 
-    auto get_numeric_support_selector() const noexcept { return GroundNumericSupportSelector(const_workspace.facts, facts, numeric_annotations); }
+    auto get_numeric_support_selector() const noexcept
+    {
+        return GroundNumericSupportSelector(FactSets { const_workspace.facts.fact_sets, facts.fact_sets }, numeric_annotations);
+    }
 
     template<typename Callback>
     void for_each_numeric_support(const NumericSupport<GroundTag>& support, Callback&& callback) const

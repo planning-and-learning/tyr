@@ -21,7 +21,7 @@
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
-#include "tyr/datalog/policies/numeric_support_core.hpp"
+#include "tyr/datalog/policies/numeric_support.hpp"
 #include "tyr/datalog/policies/termination_concept.hpp"
 
 #include <optional>

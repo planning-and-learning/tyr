@@ -18,8 +18,8 @@
 #include "tyr/datalog/policies/termination.hpp"
 
 #include "tyr/datalog/applicability.hpp"
-#include "tyr/datalog/ground/policies/numeric_support.hpp"
-#include "tyr/datalog/lifted/policies/numeric_support.hpp"
+#include "tyr/datalog/ground/policies/annotation_types.hpp"
+#include "tyr/datalog/lifted/policies/annotation_types.hpp"
 
 #include <cassert>
 #include <limits>

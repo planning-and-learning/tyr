@@ -24,27 +24,10 @@
 namespace tyr::datalog
 {
 
-template<>
-struct NumericSupportKey<GroundTag>
-{
-    using type = ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag>;
-};
-
 template<::tyr::formalism::RelationKind R>
 struct WitnessRuleKey<GroundTag, R>
 {
     using type = ::tyr::formalism::datalog::GroundRuleView<R>;
-};
-
-template<>
-struct NumericIntervalBindingParts<GroundTag>
-{
-    using Binding = NumericSupportKeyT<GroundTag>;
-    using Relation = ygg::Index<::tyr::formalism::Function<::tyr::formalism::FluentTag>>;
-    using Key = ygg::Index<::tyr::formalism::Row>;
-
-    static Relation get_relation(Binding binding) noexcept { return binding.get_function().get_index(); }
-    static Key get_key(Binding binding) noexcept { return binding.get_row().get_index().row; }
 };
 
 }

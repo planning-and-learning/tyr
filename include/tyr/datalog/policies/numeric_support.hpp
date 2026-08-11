@@ -15,9 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_DATALOG_POLICIES_NUMERIC_SUPPORT_CORE_HPP_
-#define TYR_DATALOG_POLICIES_NUMERIC_SUPPORT_CORE_HPP_
+#ifndef TYR_DATALOG_POLICIES_NUMERIC_SUPPORT_HPP_
+#define TYR_DATALOG_POLICIES_NUMERIC_SUPPORT_HPP_
 
+#include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
 #include "tyr/formalism/arithmetic_operator_utils.hpp"
@@ -380,6 +381,36 @@ private:
         return cost;
     }
 };
+
+template<TaskKind Kind>
+class NumericSupportSelector :
+    public NumericSupportSelectorCore<NumericSupportSelector<Kind>, NumericSupportKeyT<Kind>, typename NumericSupportSelectorWorkspace<Kind>::SelectionEntry>
+{
+public:
+    using Key = NumericSupportKeyT<Kind>;
+    using SelectionEntry = typename NumericSupportSelectorWorkspace<Kind>::SelectionEntry;
+    using Core = NumericSupportSelectorCore<NumericSupportSelector<Kind>, Key, SelectionEntry>;
+
+    NumericSupportSelector(const FactSets& fact_sets, const NumericIntervalAnnotations<Kind>& annotations, bool initial_intervals_cost_zero = false);
+
+    static Key key_of(const SelectionEntry& entry) noexcept { return entry.key; }
+    Key fluent_key(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term) const noexcept;
+    ygg::ClosedInterval<ygg::float_t> lookup_static(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::StaticTag> term) const;
+    ygg::ClosedInterval<ygg::float_t> current_interval(Key key) const;
+    const typename NumericIntervalAnnotations<Kind>::Entries* find_entries(Key key) const;
+    bool keys_equal(Key lhs, Key rhs) const noexcept { return lhs == rhs; }
+    Cost missing_entries_cost() const noexcept { return m_initial_intervals_cost_zero ? Cost(0) : std::numeric_limits<Cost>::max(); }
+
+private:
+    FactSets m_fact_sets;
+    const NumericIntervalAnnotations<Kind>& m_annotations;
+    bool m_initial_intervals_cost_zero;
+};
+
+using GroundNumericSupportSelector = NumericSupportSelector<GroundTag>;
+
+extern template class NumericSupportSelector<GroundTag>;
+extern template class NumericSupportSelector<LiftedTag>;
 
 }
 

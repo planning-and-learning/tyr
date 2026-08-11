@@ -22,10 +22,9 @@
 #include "rpg.hpp"
 #include "tyr/datalog/ground/policies/annotation.hpp"
 #include "tyr/datalog/ground/policies/cost.hpp"
-#include "tyr/datalog/ground/policies/numeric_support.hpp"
 #include "tyr/datalog/lifted/policies/annotation.hpp"
 #include "tyr/datalog/lifted/policies/cost.hpp"
-#include "tyr/datalog/lifted/policies/numeric_support.hpp"
+#include "tyr/datalog/policies/numeric_support.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 
 #include <algorithm>

@@ -41,7 +41,20 @@ namespace tyr::datalog
 {
 
 template<TaskKind Kind>
-struct NumericSupportKey;
+struct NumericSupportKey
+{
+    using type = std::conditional_t<std::same_as<Kind, GroundTag>,
+                                    ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag>,
+                                    ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>>;
+
+    static type from_ground(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term) noexcept
+    {
+        if constexpr (std::same_as<Kind, GroundTag>)
+            return term;
+        else
+            return term.get_row();
+    }
+};
 
 template<TaskKind Kind>
 using NumericSupportKeyT = typename NumericSupportKey<Kind>::type;
@@ -299,7 +312,28 @@ bool insert_first_best_numeric_interval_annotation(std::vector<NumericIntervalAn
 }
 
 template<TaskKind Kind>
-struct NumericIntervalBindingParts;
+struct NumericIntervalBindingParts
+{
+    using Binding = NumericSupportKeyT<Kind>;
+    using Relation = ygg::Index<::tyr::formalism::Function<::tyr::formalism::FluentTag>>;
+    using Key = ygg::Index<::tyr::formalism::Row>;
+
+    static Relation get_relation(Binding binding) noexcept
+    {
+        if constexpr (std::same_as<Kind, GroundTag>)
+            return binding.get_function().get_index();
+        else
+            return binding.get_index().relation;
+    }
+
+    static Key get_key(Binding binding) noexcept
+    {
+        if constexpr (std::same_as<Kind, GroundTag>)
+            return binding.get_row().get_index().row;
+        else
+            return binding.get_index().row;
+    }
+};
 
 template<TaskKind Kind>
 class NumericIntervalAnnotations

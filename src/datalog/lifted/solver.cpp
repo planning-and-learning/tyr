@@ -25,7 +25,6 @@
 #include "tyr/datalog/lifted/assignment_sets.hpp"
 #include "tyr/datalog/lifted/consistency_graph.hpp"
 #include "tyr/datalog/lifted/policies/annotation.hpp"
-#include "tyr/datalog/lifted/policies/numeric_support.hpp"
 #include "tyr/datalog/lifted/rule_instance.hpp"
 #include "tyr/datalog/lifted/rule_scheduler.hpp"
 #include "tyr/datalog/lifted/workspaces/facts.hpp"

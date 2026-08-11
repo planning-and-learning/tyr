@@ -20,7 +20,6 @@
 
 #include "tyr/algorithms/kckp/delta_kckp.hpp"
 #include "tyr/datalog/lifted/consistency_graph.hpp"
-#include "tyr/datalog/lifted/policies/numeric_support.hpp"
 #include "tyr/datalog/rule_evaluation.hpp"
 #include "tyr/datalog/statistics/rule.hpp"
 #include "tyr/datalog/workspaces/rule.hpp"

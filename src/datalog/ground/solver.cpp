@@ -20,8 +20,8 @@
 #include "tyr/datalog/applicability.hpp"
 #include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/datalog/ground/policies/numeric_support.hpp"
 #include "tyr/datalog/ground/rule_instance.hpp"
+#include "tyr/datalog/policies/numeric_support.hpp"
 #include "tyr/datalog/rule_evaluation.hpp"
 
 #include <algorithm>
@@ -47,14 +47,14 @@ template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundT
     requires(!AP::stores_annotations)
 GroundNumericSupportSelector make_numeric_support_selector(const GroundCtx<AP, TP, CP>& ctx)
 {
-    return GroundNumericSupportSelector(ctx.in().facts(), ctx.out().facts(), ctx.out().numeric_annotations(), true);
+    return GroundNumericSupportSelector(FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }, ctx.out().numeric_annotations(), true);
 }
 
 template<AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
     requires(AP::stores_annotations)
 GroundNumericSupportSelector make_numeric_support_selector(const GroundCtx<AP, TP, CP>& ctx)
 {
-    return GroundNumericSupportSelector(ctx.in().facts(), ctx.out().facts(), ctx.out().numeric_annotations());
+    return GroundNumericSupportSelector(FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }, ctx.out().numeric_annotations());
 }
 
 template<f::RelationKind R, AnnotationPolicyConcept<GroundTag> AP, TerminationPolicyConcept<GroundTag> TP, RuleCostPolicyConcept<GroundTag> CP>
