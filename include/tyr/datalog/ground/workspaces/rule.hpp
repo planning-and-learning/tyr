@@ -21,7 +21,10 @@
 #include "tyr/datalog/workspaces/rule.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
+#include <concepts>
 #include <optional>
+#include <type_traits>
+#include <variant>
 #include <vector>
 #include <yggdrasil/core/types.hpp>
 
@@ -29,18 +32,19 @@ namespace tyr::datalog
 {
 
 template<::tyr::formalism::RelationKind R>
-struct RuleState<GroundTag, R>
+struct RuleState
 {
     ygg::uint_t unsatisfied_count = 0;
     bool fired = false;
     std::optional<Cost> queued_cost;
     std::vector<bool> numeric_constraint_satisfied;
+    [[no_unique_address]] std::conditional_t<std::same_as<R, ::tyr::formalism::PredicateTag>, std::optional<Cost>, std::monostate> pending_cost;
 };
 
 template<::tyr::formalism::RelationKind R>
 struct RuleWorkspace<GroundTag, R>
 {
-    std::vector<RuleState<GroundTag, R>> states;
+    std::vector<RuleState<R>> states;
 
     explicit RuleWorkspace(::tyr::formalism::datalog::ProgramView<GroundTag>) {}
 

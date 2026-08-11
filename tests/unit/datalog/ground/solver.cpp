@@ -223,11 +223,11 @@ struct GroundQueueFixture
                                              fd::GroundAtomView<f::FluentTag> head,
                                              fd::RuleBindingView<f::PredicateTag> binding,
                                              fd::GroundFunctionTermView<f::FluentTag> metric_target,
-                                             ygg::float_t metric_delta)
+                                             ygg::float_t metric_delta,
+                                             f::NumericEffectOperatorKind metric_operator = f::NumericEffectOperatorKind::Increase)
     {
-        auto metric_effect_builder = ygg::Data<fd::GroundNumericEffect<f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
-                                                                                      metric_target.get_index(),
-                                                                                      ygg::Data<fd::GroundFunctionExpression>(metric_delta));
+        auto metric_effect_builder =
+            ygg::Data<fd::GroundNumericEffect<f::FluentTag>>(metric_operator, metric_target.get_index(), ygg::Data<fd::GroundFunctionExpression>(metric_delta));
         canonicalize(metric_effect_builder);
         const auto metric_effect = repository.get_or_create(metric_effect_builder).first;
 
@@ -235,8 +235,7 @@ struct GroundQueueFixture
         rule_builder.binding = binding.get_index();
         rule_builder.body = body.get_index();
         rule_builder.head = head.get_index();
-        rule_builder.metric_effects.emplace_back(f::NumericEffectOperatorKind::Increase,
-                                                 ygg::Data<fd::GroundNumericEffectOperator<f::FluentTag>>::Variant(metric_effect.get_index()));
+        rule_builder.metric_effects.emplace_back(metric_operator, ygg::Data<fd::GroundNumericEffectOperator<f::FluentTag>>::Variant(metric_effect.get_index()));
         canonicalize(rule_builder);
         const auto ground_rule = repository.get_or_create(rule_builder).first;
         ground_rules.push_back(ground_rule.get_index());
@@ -865,6 +864,90 @@ TEST(TyrDatalogGroundQueueTest, RevalidatesQueuedRuleAfterContainedNumericCertif
     ASSERT_NE(annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*annotation), 0);
     EXPECT_EQ(ctx.out().statistics().num_stale_queue_pops, 1);
+}
+
+TEST(TyrDatalogGroundQueueTest, EvaluatesReactivatedNumericRuleBeforeTargetHullChanges)
+{
+    auto fixture = GroundQueueFixture();
+    const auto term = fixture.fluent_function_term("n");
+    const auto prerequisite = fixture.fluent_atom("prerequisite");
+    fixture.initial_fluent_function_value(term, 0);
+    fixture.assign_rule(fixture.condition(), term, 7, 5);
+    fixture.assign_rule(fixture.condition(), term, 20, 7);
+    fixture.rule(fixture.condition(), prerequisite, fixture.fresh_rule_binding(), term, 6);
+    fixture.numeric_rule(fixture.condition({ fixture.fluent_literal(prerequisite) }), term, f::NumericEffectOperatorKind::Increase, 20);
+
+    auto termination_policy = datalog::TerminationPolicy<datalog::SumAggregation>();
+    termination_policy.set_goals(fixture.numeric_condition(term, f::BooleanOperatorKind::Ge, 27));
+    const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
+    using Workspace =
+        datalog::ProgramWorkspace<GroundTag, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>, datalog::TerminationPolicy<datalog::SumAggregation>>;
+    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>(), termination_policy);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
+
+    ctx.initialize(fixture.initial_fluent_atoms);
+    dq::compute_model(ctx);
+
+    const auto interval = ygg::ClosedInterval<ygg::float_t>(20, 27);
+    const auto* annotation = ctx.out().numeric_annotations().find(term.get_row(), interval);
+    ASSERT_NE(annotation, nullptr);
+    EXPECT_EQ(datalog::get_cost(*annotation), 11);
+    EXPECT_TRUE(ctx.out().tp().check(datalog::FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }));
+}
+
+TEST(TyrDatalogGroundQueueTest, PreservesPredicateCandidateWhenNumericHullRaisesItsCurrentCost)
+{
+    auto fixture = GroundQueueFixture();
+    const auto ready = fixture.fluent_atom("ready");
+    const auto goal = fixture.fluent_atom("goal");
+    const auto term = fixture.fluent_function_term("n");
+    fixture.initial_fluent_atoms.push_back(ready);
+    fixture.initial_fluent_function_value(term, 0);
+    fixture.assign_rule(fixture.condition(), term, 7, 5);
+    fixture.rule(fixture.condition({ fixture.fluent_literal(ready) }), goal, fixture.fresh_rule_binding(), term, 2, f::NumericEffectOperatorKind::ScaleUp);
+
+    auto termination_policy = datalog::TerminationPolicy<datalog::SumAggregation>();
+    termination_policy.set_goals(fixture.condition({ fixture.fluent_literal(goal) }));
+    const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
+    using Workspace =
+        datalog::ProgramWorkspace<GroundTag, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>, datalog::TerminationPolicy<datalog::SumAggregation>>;
+    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>(), termination_policy);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
+
+    ctx.initialize(fixture.initial_fluent_atoms);
+    ctx.out().annotations().insert_or_assign(ready.get_row(), datalog::BaseAnnotation(datalog::Cost(6)));
+    dq::compute_model(ctx);
+
+    const auto* annotation = ctx.out().annotations().find(goal.get_row());
+    ASSERT_NE(annotation, nullptr);
+    EXPECT_EQ(datalog::get_cost(*annotation), 6);
+}
+
+TEST(TyrDatalogGroundQueueTest, ReevaluatesPendingPredicateWhenNumericSupportBecomesCheaper)
+{
+    auto fixture = GroundQueueFixture();
+    const auto goal = fixture.fluent_atom("goal");
+    const auto term = fixture.fluent_function_term("n");
+    fixture.initial_fluent_function_value(term, 5);
+    fixture.assign_rule(fixture.condition(), term, 15, 6);
+    fixture.rule(fixture.numeric_condition(term, f::BooleanOperatorKind::Ge, 5), goal);
+
+    auto termination_policy = datalog::TerminationPolicy<datalog::SumAggregation>();
+    termination_policy.set_goals(fixture.condition({ fixture.fluent_literal(goal) }));
+    const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
+    using Workspace =
+        datalog::ProgramWorkspace<GroundTag, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>, datalog::TerminationPolicy<datalog::SumAggregation>>;
+    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>(), termination_policy);
+    auto ctx = datalog::ProgramExecutionContext(workspace);
+
+    ctx.initialize(fixture.initial_fluent_atoms);
+    ctx.out().numeric_annotations().clear();
+    ctx.out().numeric_annotations().insert(term.get_row(), ygg::ClosedInterval<ygg::float_t>(5, 5), datalog::BaseAnnotation(datalog::Cost(10)));
+    dq::compute_model(ctx);
+
+    const auto* annotation = ctx.out().annotations().find(goal.get_row());
+    ASSERT_NE(annotation, nullptr);
+    EXPECT_EQ(datalog::get_cost(*annotation), 6);
 }
 
 TEST(TyrDatalogGroundQueueTest, NumericTransitionCreditOnlyReducesTheLocalEdge)

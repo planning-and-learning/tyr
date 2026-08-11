@@ -50,7 +50,7 @@ bool is_canonical(const ygg::Data<BinaryOperator<Operator, T>>& data)
 template<typename T>
 bool is_canonical(const ygg::Data<MultiOperator<T>>& data)
 {
-    return is_canonical(data.args);
+    return ygg::is_canonical<false>(data.args);
 }
 
 template<typename T>
@@ -211,7 +211,7 @@ void canonicalize(ygg::Data<BinaryOperator<Operator, T>>& data)
 template<typename T>
 void canonicalize(ygg::Data<MultiOperator<T>>& data)
 {
-    canonicalize(data.args);
+    ygg::canonicalize<false>(data.args);
 }
 
 template<FactKind T>

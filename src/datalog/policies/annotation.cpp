@@ -84,15 +84,20 @@ MinCostAnnotationWithAchieversPolicy<AggregationFunction>::find_achievers(Predic
 }
 
 template<typename AggregationFunction>
-void MinCostAnnotationWithAchieversPolicy<AggregationFunction>::record_achiever(PredicateHead head, const PredicateWitness& witness)
+void MinCostAnnotationWithAchieversPolicy<AggregationFunction>::record_achiever(PredicateHead head, PredicateWitness witness)
 {
     m_achievers.update(head,
                        [&](auto& achievers, bool initialized)
                        {
                            if (!initialized)
                                achievers.clear();
-                           if (std::find(achievers.begin(), achievers.end(), witness) == achievers.end())
-                               achievers.push_back(witness);
+                           const auto incumbent = std::find_if(achievers.begin(),
+                                                               achievers.end(),
+                                                               [&](const auto& achiever) { return achiever.get_rule_key() == witness.get_rule_key(); });
+                           if (incumbent == achievers.end())
+                               achievers.push_back(std::move(witness));
+                           else if (witness.get_cost() < incumbent->get_cost())
+                               *incumbent = std::move(witness);
                        });
 }
 

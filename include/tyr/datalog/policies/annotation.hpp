@@ -73,7 +73,7 @@ public:
 
     void clear_achievers() noexcept {}
 
-    void record_achiever(PredicateHead, const PredicateWitness&) const noexcept {}
+    void record_achiever(PredicateHead, PredicateWitness) const noexcept {}
 
     template<bool ThreadSafe>
     std::optional<CostUpdate> publish_annotation(PredicateHead head, PredicateWitness witness, PredicateAnnotations<ThreadSafe>& annotations) const
@@ -124,7 +124,7 @@ public:
 
     const Achievers* find_achievers(PredicateHead head) const noexcept;
 
-    void record_achiever(PredicateHead head, const PredicateWitness& witness);
+    void record_achiever(PredicateHead head, PredicateWitness witness);
 
 private:
     DenseRelationMap<::tyr::formalism::PredicateTag, Achievers> m_achievers;

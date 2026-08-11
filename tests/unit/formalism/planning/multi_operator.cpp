@@ -45,3 +45,23 @@ TEST(TyrFormalismPlanningMultiOperator, RejectsNonMultiOperator)
     using Args = ::cista::offset::vector<ygg::Data<fp::FunctionExpression>>;
     EXPECT_THROW((ygg::Data<Lifted>(f::ArithmeticOperatorKind::Sub, Args {})), std::invalid_argument);
 }
+
+TEST(TyrFormalismPlanningMultiOperator, PreservesRepeatedOperands)
+{
+    using Expression = ygg::Data<fp::FunctionExpression>;
+
+    for (const auto op : { f::ArithmeticOperatorKind::Add, f::ArithmeticOperatorKind::Mul })
+    {
+        auto data = ygg::Data<Lifted> {};
+        data.operator_kind = op;
+        data.args.emplace_back(Expression::Variant(2.0));
+        data.args.emplace_back(Expression::Variant(1.0));
+        data.args.emplace_back(Expression::Variant(1.0));
+
+        EXPECT_FALSE(fp::is_canonical(data));
+        fp::canonicalize(data);
+        EXPECT_TRUE(fp::is_canonical(data));
+        ASSERT_EQ(data.args.size(), 3);
+        EXPECT_EQ(data.args[0], data.args[1]);
+    }
+}

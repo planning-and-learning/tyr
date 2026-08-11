@@ -4,6 +4,7 @@
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <concepts>
+#include <gtest/gtest.h>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -34,3 +35,23 @@ static_assert(std::same_as<ygg::View<ygg::Index<Lifted>, fd::Repository>, fd::Li
 static_assert(std::same_as<ygg::View<ygg::Index<Ground>, fd::Repository>, fd::GroundMultiOperatorView>);
 static_assert(std::constructible_from<ygg::Data<Lifted>, f::ArithmeticOperatorKind, std::vector<fd::FunctionExpressionView>>);
 static_assert(std::constructible_from<ygg::Data<Ground>, f::ArithmeticOperatorKind, std::vector<fd::GroundFunctionExpressionView>>);
+
+TEST(TyrFormalismDatalogMultiOperator, PreservesRepeatedOperands)
+{
+    using Expression = ygg::Data<fd::FunctionExpression>;
+
+    for (const auto op : { f::ArithmeticOperatorKind::Add, f::ArithmeticOperatorKind::Mul })
+    {
+        auto data = ygg::Data<Lifted> {};
+        data.operator_kind = op;
+        data.args.emplace_back(Expression::Variant(2.0));
+        data.args.emplace_back(Expression::Variant(1.0));
+        data.args.emplace_back(Expression::Variant(1.0));
+
+        EXPECT_FALSE(fd::is_canonical(data));
+        fd::canonicalize(data);
+        EXPECT_TRUE(fd::is_canonical(data));
+        ASSERT_EQ(data.args.size(), 3);
+        EXPECT_EQ(data.args[0], data.args[1]);
+    }
+}

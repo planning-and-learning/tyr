@@ -41,7 +41,7 @@ concept AnnotationStoragePolicy = requires(T& policy,
                                            PredicateAnnotations<true>& delta_annotations,
                                            const PredicateAnnotations<true>& const_delta_annotations,
                                            FunctionAnnotations<true>& delta_numeric_annotations) {
-    { policy.record_achiever(head, predicate_witness) } -> std::same_as<void>;
+    { policy.record_achiever(head, std::move(predicate_witness)) } -> std::same_as<void>;
     { const_policy.publish_annotation(head, std::move(predicate_witness), annotations) } -> std::same_as<std::optional<CostUpdate>>;
     { const_policy.can_update(head, Cost {}, annotations, const_delta_annotations) } -> std::same_as<bool>;
     { const_policy.can_update(function_head, interval, Cost {}, numeric_annotations, delta_numeric_annotations) } -> std::same_as<bool>;
