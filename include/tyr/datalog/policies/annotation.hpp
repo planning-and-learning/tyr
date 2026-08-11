@@ -20,20 +20,11 @@
 
 #include "tyr/datalog/policies/annotation_types.hpp"
 
-#include <limits>
 #include <variant>
 #include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::datalog
 {
-
-template<TaskKind Kind>
-Cost fetch_annotation_cost(typename PredicateAnnotations<Kind>::Key key, const PredicateAnnotations<Kind>& annotations)
-{
-    if (const auto* annotation = annotations.find(key))
-        return get_cost(*annotation);
-    return std::numeric_limits<Cost>::max();
-}
 
 template<TaskKind Kind, ::tyr::formalism::RelationKind R, typename Less>
 bool witness_wins_tie(const WitnessAnnotation<Kind, R>& witness, const Annotation<Kind, R>* incumbent, Less less)

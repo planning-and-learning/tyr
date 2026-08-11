@@ -45,7 +45,7 @@ public:
     void initialize_annotation(FunctionBinding head, ygg::ClosedInterval<ygg::float_t> interval, FunctionAnnotations<LiftedTag>& numeric_annotations) const;
 
     CostUpdate<LiftedTag>
-    commit_annotation(PredicateHead head, const ConcurrentPredicateAnnotations& delta_annotations, PredicateAnnotations<LiftedTag>& annotations) const;
+    commit_annotation(PredicateHead head, const PredicateAnnotations<LiftedTag, true>& delta_annotations, PredicateAnnotations<LiftedTag>& annotations) const;
 
     void clear_achievers() noexcept {}
 
@@ -54,22 +54,22 @@ public:
     bool can_update(PredicateHead head,
                     Cost cost,
                     const PredicateAnnotations<LiftedTag>& annotations,
-                    const ConcurrentPredicateAnnotations& delta_annotations) const noexcept;
+                    const PredicateAnnotations<LiftedTag, true>& delta_annotations) const noexcept;
 
     bool can_update(FunctionHead head,
                     ygg::ClosedInterval<ygg::float_t> interval,
                     Cost cost,
                     const FunctionAnnotations<LiftedTag>& numeric_annotations,
-                    const ConcurrentFunctionAnnotations& delta_numeric_annotations) const noexcept;
+                    const FunctionAnnotations<LiftedTag, true>& delta_numeric_annotations) const noexcept;
 
     bool try_update_candidate(PredicateHead head,
                               WitnessAnnotation<LiftedTag, ::tyr::formalism::PredicateTag>&& witness,
-                              ConcurrentPredicateAnnotations& delta_annotations) const;
+                              PredicateAnnotations<LiftedTag, true>& delta_annotations) const;
 
     bool try_update_candidate(FunctionHead head,
                               ygg::ClosedInterval<ygg::float_t> interval,
                               WitnessAnnotation<LiftedTag, ::tyr::formalism::FunctionTag>&& witness,
-                              ConcurrentFunctionAnnotations& delta_numeric_annotations) const;
+                              FunctionAnnotations<LiftedTag, true>& delta_numeric_annotations) const;
 
     bool is_widening_label_preserving(Cost candidate_label, Cost current_target_label) const noexcept
     {
@@ -98,7 +98,7 @@ public:
     void record_achiever(PredicateBinding head, const WitnessAnnotation<LiftedTag, ::tyr::formalism::PredicateTag>& witness);
 
 private:
-    ConcurrentRelationMap<::tyr::formalism::PredicateTag, Achievers> m_achievers;
+    DenseRelationMap<::tyr::formalism::PredicateTag, Achievers, true> m_achievers;
 };
 
 }

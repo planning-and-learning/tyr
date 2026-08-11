@@ -119,7 +119,7 @@ template<AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag>
 static bool insert_propositional_update(fd::PredicateBindingView<f::FluentTag> head,
                                         RuleUpdateInput<f::PredicateTag, AP, CP>& input,
                                         PredicateHeadIteration& head_iteration,
-                                        [[maybe_unused]] ConcurrentPredicateAnnotations& delta_annotations)
+                                        [[maybe_unused]] PredicateAnnotations<LiftedTag, true>& delta_annotations)
 {
     auto candidate = evaluate_predicate_candidate(input.rule_instance, input.annotation_policy, input.cost_policy, input.evaluation, input.workspace);
     if (!candidate)
@@ -150,7 +150,7 @@ static bool insert_propositional_update(fd::PredicateBindingView<f::FluentTag> h
 template<AnnotationPolicyConcept<LiftedTag> AP, RuleCostPolicyConcept<LiftedTag> CP>
 static bool insert_numeric_update(RuleUpdateInput<f::FunctionTag, AP, CP>& input,
                                   FunctionHeadIteration& head_iteration,
-                                  [[maybe_unused]] ConcurrentFunctionAnnotations& delta_numeric_annotations)
+                                  [[maybe_unused]] FunctionAnnotations<LiftedTag, true>& delta_numeric_annotations)
 {
     auto candidate = evaluate_function_candidate(input.rule_instance, input.annotation_policy, input.cost_policy, input.evaluation, input.workspace);
     if (!candidate)

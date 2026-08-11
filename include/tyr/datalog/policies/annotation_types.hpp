@@ -25,7 +25,9 @@
 #include <algorithm>
 #include <cassert>
 #include <concepts>
+#include <cstdint>
 #include <limits>
+#include <oneapi/tbb/spin_mutex.h>
 #include <optional>
 #include <span>
 #include <tuple>
@@ -33,6 +35,7 @@
 #include <utility>
 #include <variant>
 #include <vector>
+#include <yggdrasil/containers/segmented_vector.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/semantics/comparison.hpp>
@@ -45,9 +48,6 @@ struct WitnessRuleKey;
 
 template<TaskKind Kind, ::tyr::formalism::RelationKind R>
 using WitnessRuleKeyT = typename WitnessRuleKey<Kind, R>::type;
-
-class ConcurrentPredicateAnnotations;
-class ConcurrentFunctionAnnotations;
 
 using PredicateAnnotationHead = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
 
@@ -131,10 +131,14 @@ inline Cost get_cost(const Annotation<Kind, R>& annotation) noexcept
     return std::visit([](const auto& value) { return value.get_cost(); }, annotation);
 }
 
-template<::tyr::formalism::RelationKind R, std::default_initializable Value>
+/// ThreadSafe permits concurrent read(), update(), and row growth after relation lanes
+/// are initialized. initialize(), clear(), find(), moves, and destruction require quiescence.
+template<::tyr::formalism::RelationKind R, std::default_initializable Value, bool ThreadSafe = false>
 class DenseRelationMap
 {
 public:
+    static constexpr bool thread_safe = ThreadSafe;
+
     using Key = std::conditional_t<std::same_as<R, ::tyr::formalism::PredicateTag>,
                                    ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>,
                                    ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>>;
@@ -142,10 +146,34 @@ public:
     using Row = decltype(std::declval<Key>().get_index().row);
 
     explicit DenseRelationMap(size_t num_relations = 0) : m_lanes(num_relations) {}
+    DenseRelationMap(const DenseRelationMap&)
+        requires(!ThreadSafe)
+    = default;
+    DenseRelationMap& operator=(const DenseRelationMap&)
+        requires(!ThreadSafe)
+    = default;
+    DenseRelationMap(const DenseRelationMap&)
+        requires(ThreadSafe)
+    = delete;
+    DenseRelationMap& operator=(const DenseRelationMap&)
+        requires(ThreadSafe)
+    = delete;
+    DenseRelationMap(DenseRelationMap&&) noexcept = default;
+    DenseRelationMap& operator=(DenseRelationMap&&) noexcept = default;
 
     void initialize(size_t num_relations) { m_lanes = std::vector<Lane>(num_relations); }
 
     void clear() noexcept { ++m_generation; }
+
+    template<std::invocable<const Value&> Read>
+    std::invoke_result_t<Read, const Value&> read(Key key, Read&& read, std::invoke_result_t<Read, const Value&> missing) const
+    {
+        const auto* slot = find_slot(key);
+        if (!slot)
+            return missing;
+
+        return with_slot_lock(*slot, [&] { return slot->generation == m_generation ? std::forward<Read>(read)(slot->value) : missing; });
+    }
 
     template<std::invocable<Value&, bool> Update>
     decltype(auto) update(Key key, Update&& update)
@@ -158,9 +186,13 @@ public:
     decltype(auto) update(Relation relation, Row row, Update&& update)
     {
         auto& slot = get_or_create_slot(relation, row);
-        const auto initialized = slot.generation == m_generation;
-        slot.generation = m_generation;
-        return std::forward<Update>(update)(slot.value, initialized);
+        return with_slot_lock(slot,
+                              [&]() -> decltype(auto)
+                              {
+                                  const auto initialized = slot.generation == m_generation;
+                                  slot.generation = m_generation;
+                                  return std::forward<Update>(update)(slot.value, initialized);
+                              });
     }
 
     const Value* find(Key key) const noexcept
@@ -169,55 +201,110 @@ public:
         return find(index.relation, index.row);
     }
 
-    Value* find(Key key) noexcept { return const_cast<Value*>(std::as_const(*this).find(key)); }
+    Value* find(Key key) noexcept
+        requires(!ThreadSafe)
+    {
+        return const_cast<Value*>(std::as_const(*this).find(key));
+    }
 
     const Value* find(Relation relation, Row row) const noexcept
     {
-        const auto relation_index = ygg::uint_t(relation);
-        const auto row_index = ygg::uint_t(row);
-        if (relation_index >= m_lanes.size() || row_index >= m_lanes[relation_index].size())
-            return nullptr;
-
-        const auto& slot = m_lanes[relation_index][row_index];
-        return slot.generation == m_generation ? &slot.value : nullptr;
+        const auto* slot = find_slot(relation, row);
+        return slot && slot->generation == m_generation ? &slot->value : nullptr;
     }
 
-    Value* find(Relation relation, Row row) noexcept { return const_cast<Value*>(std::as_const(*this).find(relation, row)); }
+    Value* find(Relation relation, Row row) noexcept
+        requires(!ThreadSafe)
+    {
+        return const_cast<Value*>(std::as_const(*this).find(relation, row));
+    }
 
 private:
+    struct NoMutex
+    {
+    };
+
+    using Mutex = std::conditional_t<ThreadSafe, oneapi::tbb::spin_mutex, NoMutex>;
+
     struct Slot
     {
+        [[no_unique_address]] mutable Mutex mutex;
         uint64_t generation { 0 };
         Value value {};
     };
 
-    using Lane = std::vector<Slot>;
+    using Lane = std::conditional_t<ThreadSafe, ygg::SegmentedVector<Slot, 32, true>, std::vector<Slot>>;
+
+    template<typename SlotT, typename Callback>
+    static decltype(auto) with_slot_lock(SlotT& slot, Callback&& callback)
+    {
+        if constexpr (ThreadSafe)
+        {
+            const auto lock = oneapi::tbb::spin_mutex::scoped_lock(slot.mutex);
+            return std::forward<Callback>(callback)();
+        }
+        else
+        {
+            return std::forward<Callback>(callback)();
+        }
+    }
 
     Slot& get_or_create_slot(Relation relation, Row row)
     {
         const auto relation_index = ygg::uint_t(relation);
-        if (relation_index >= m_lanes.size())
+        if constexpr (ThreadSafe)
+            assert(relation_index < m_lanes.size());
+        else if (relation_index >= m_lanes.size())
             m_lanes.resize(relation_index + 1);
 
         auto& lane = m_lanes[relation_index];
         const auto row_index = ygg::uint_t(row);
-        if (row_index >= lane.size())
+        if constexpr (ThreadSafe)
+        {
+            while (lane.size() <= row_index)
+                lane.emplace_back();
+        }
+        else if (row_index >= lane.size())
             lane.resize(row_index + 1);
         return lane[row_index];
+    }
+
+    const Slot* find_slot(Key key) const noexcept
+    {
+        const auto index = key.get_index();
+        return find_slot(index.relation, index.row);
+    }
+
+    const Slot* find_slot(Relation relation, Row row) const noexcept
+    {
+        const auto relation_index = ygg::uint_t(relation);
+        const auto row_index = ygg::uint_t(row);
+        if (relation_index >= m_lanes.size())
+            return nullptr;
+
+        const auto& lane = m_lanes[relation_index];
+        return row_index < lane.size() ? &lane[row_index] : nullptr;
     }
 
     std::vector<Lane> m_lanes;
     uint64_t m_generation { 1 };
 };
 
-template<TaskKind Kind>
+/// ThreadSafe permits concurrent insertions and cost reads; clear(), find(), moves,
+/// and destruction require quiescence.
+template<TaskKind Kind, bool ThreadSafe = false>
 class PredicateAnnotationMap
 {
 public:
+    static constexpr bool thread_safe = ThreadSafe;
+
     /// Both engines key predicate annotations by the fluent predicate binding.
     using Key = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
 
-    explicit PredicateAnnotationMap(size_t num_relations = 0) : m_annotations(num_relations) {}
+    PredicateAnnotationMap()
+        requires(!ThreadSafe)
+    = default;
+    explicit PredicateAnnotationMap(size_t num_relations) : m_annotations(num_relations) {}
 
     /// Resetting bumps the generation rather than touching the dense row span. Slots of older
     /// generations read as absent and retain their annotation storage for reuse.
@@ -228,17 +315,38 @@ public:
         m_annotations.update(key, [&](auto& incumbent, bool) { incumbent = std::move(annotation); });
     }
 
+    Cost fetch_cost(Key key) const noexcept
+    {
+        return m_annotations.read(key, [](const auto& annotation) { return get_cost(annotation); }, std::numeric_limits<Cost>::max());
+    }
+
+    bool insert_if_better(Key key, Annotation<Kind> annotation)
+    {
+        return m_annotations.update(key,
+                                    [&](auto& incumbent, bool initialized)
+                                    {
+                                        if (initialized && get_cost(incumbent) <= get_cost(annotation))
+                                            return false;
+
+                                        incumbent = std::move(annotation);
+                                        return true;
+                                    });
+    }
+
     const Annotation<Kind>* find(Key key) const noexcept { return m_annotations.find(key); }
 
-    Annotation<Kind>* find(Key key) noexcept { return const_cast<Annotation<Kind>*>(std::as_const(*this).find(key)); }
+    Annotation<Kind>* find(Key key) noexcept
+        requires(!ThreadSafe)
+    {
+        return const_cast<Annotation<Kind>*>(std::as_const(*this).find(key));
+    }
 
 private:
-    DenseRelationMap<::tyr::formalism::PredicateTag, Annotation<Kind>> m_annotations;
+    DenseRelationMap<::tyr::formalism::PredicateTag, Annotation<Kind>, ThreadSafe> m_annotations;
 };
 
-/// Solve-level annotations: dense indexing, reset once per solve.
-template<TaskKind Kind>
-using PredicateAnnotations = PredicateAnnotationMap<Kind>;
+template<TaskKind Kind, bool ThreadSafe = false>
+using PredicateAnnotations = PredicateAnnotationMap<Kind, ThreadSafe>;
 
 template<TaskKind Kind>
 struct NumericIntervalAnnotation
@@ -290,18 +398,25 @@ bool insert_first_best_numeric_interval_annotation(std::vector<NumericIntervalAn
     return true;
 }
 
-template<TaskKind Kind>
+/// ThreadSafe permits concurrent insertions and cost reads; clear(), find(), moves,
+/// and destruction require quiescence.
+template<TaskKind Kind, bool ThreadSafe = false>
 class NumericIntervalAnnotations
 {
 public:
+    static constexpr bool thread_safe = ThreadSafe;
+
     using Binding = FunctionAnnotationHead;
     using Entry = NumericIntervalAnnotation<Kind>;
     using Entries = std::vector<Entry>;
-    using Storage = DenseRelationMap<::tyr::formalism::FunctionTag, Entries>;
+    using Storage = DenseRelationMap<::tyr::formalism::FunctionTag, Entries, ThreadSafe>;
     using Relation = typename Storage::Relation;
     using Key = typename Storage::Row;
 
-    explicit NumericIntervalAnnotations(size_t num_relations = 0) : m_slots(num_relations) {}
+    NumericIntervalAnnotations()
+        requires(!ThreadSafe)
+    = default;
+    explicit NumericIntervalAnnotations(size_t num_relations) : m_slots(num_relations) {}
 
     void clear() noexcept
     {
@@ -309,7 +424,23 @@ public:
         m_size = 0;
     }
 
-    size_t size() const noexcept { return m_size; }
+    size_t size() const noexcept
+        requires(!ThreadSafe)
+    {
+        return m_size;
+    }
+
+    Cost fetch_cost(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
+    {
+        return m_slots.read(
+            binding,
+            [&](const auto& entries)
+            {
+                const auto* annotation = find_numeric_interval_annotation<Kind>(entries, interval);
+                return annotation ? get_cost(*annotation) : std::numeric_limits<Cost>::max();
+            },
+            std::numeric_limits<Cost>::max());
+    }
 
     const Entries* find_entries(Binding binding) const noexcept { return m_slots.find(binding); }
 
@@ -322,6 +453,7 @@ public:
     }
 
     Annotation<Kind, ::tyr::formalism::FunctionTag>* find(Binding binding) noexcept
+        requires(!ThreadSafe)
     {
         auto* entries = m_slots.find(binding);
         return (!entries || entries->empty()) ? nullptr : &entries->back().annotation;
@@ -345,33 +477,27 @@ public:
             return false;
 
         auto entry = Entry { interval, std::move(annotation) };
-        auto& entries = entries_for_write(relation, key);
-        const auto old_size = entries.size();
-        const auto changed = insert_first_best_numeric_interval_annotation(entries, std::move(entry));
-        m_size += entries.size() - old_size;
-        return changed;
-    }
-
-private:
-    Entries& entries_for_write(Relation relation, Key key)
-    {
         return m_slots.update(relation,
                               key,
-                              [](Entries& entries, bool initialized) -> Entries&
+                              [&](Entries& entries, bool initialized)
                               {
                                   if (!initialized)
                                       entries.clear();
-                                  return entries;
+                                  const auto old_size = entries.size();
+                                  const auto changed = insert_first_best_numeric_interval_annotation(entries, std::move(entry));
+                                  if constexpr (!ThreadSafe)
+                                      m_size += entries.size() - old_size;
+                                  return changed;
                               });
     }
 
+private:
     Storage m_slots;
     size_t m_size { 0 };
 };
 
-/// Solve-level numeric annotations: dense, reset once per solve.
-template<TaskKind Kind>
-using FunctionAnnotations = NumericIntervalAnnotations<Kind>;
+template<TaskKind Kind, bool ThreadSafe = false>
+using FunctionAnnotations = NumericIntervalAnnotations<Kind, ThreadSafe>;
 
 inline ygg::ClosedInterval<ygg::float_t> aggregate_metric_support(ygg::ClosedInterval<ygg::float_t> lhs, ygg::ClosedInterval<ygg::float_t> rhs) noexcept
 {

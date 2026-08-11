@@ -53,9 +53,9 @@ concept LiftedAnnotationStoragePolicy =
                 WitnessAnnotation<Kind, ::tyr::formalism::FunctionTag> function_witness,
                 PredicateAnnotations<Kind>& annotations,
                 FunctionAnnotations<Kind>& numeric_annotations,
-                ConcurrentPredicateAnnotations& delta_annotations,
-                const ConcurrentPredicateAnnotations& const_delta_annotations,
-                ConcurrentFunctionAnnotations& delta_numeric_annotations) {
+                PredicateAnnotations<Kind, true>& delta_annotations,
+                const PredicateAnnotations<Kind, true>& const_delta_annotations,
+                FunctionAnnotations<Kind, true>& delta_numeric_annotations) {
            { policy.record_achiever(head, predicate_witness) } -> std::same_as<void>;
            { const_policy.can_update(head, Cost {}, annotations, const_delta_annotations) } -> std::same_as<bool>;
            { const_policy.can_update(function_head, interval, Cost {}, numeric_annotations, delta_numeric_annotations) } -> std::same_as<bool>;

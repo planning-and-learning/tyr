@@ -51,7 +51,7 @@ void MinCostAnnotationPolicy<LiftedTag, AggregationFunction>::initialize_annotat
 template<typename AggregationFunction>
 CostUpdate<LiftedTag>
 MinCostAnnotationPolicy<LiftedTag, AggregationFunction>::commit_annotation(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
-                                                                           const ConcurrentPredicateAnnotations& delta_annotations,
+                                                                           const PredicateAnnotations<LiftedTag, true>& delta_annotations,
                                                                            PredicateAnnotations<LiftedTag>& annotations) const
 {
     const auto* old_annotation = annotations.find(head);
@@ -77,9 +77,9 @@ template<typename AggregationFunction>
 bool MinCostAnnotationPolicy<LiftedTag, AggregationFunction>::can_update(PredicateHead head,
                                                                          Cost cost,
                                                                          const PredicateAnnotations<LiftedTag>& annotations,
-                                                                         const ConcurrentPredicateAnnotations& delta_annotations) const noexcept
+                                                                         const PredicateAnnotations<LiftedTag, true>& delta_annotations) const noexcept
 {
-    return cost < std::min(fetch_annotation_cost<LiftedTag>(head, annotations), delta_annotations.fetch_cost(head));
+    return cost < std::min(annotations.fetch_cost(head), delta_annotations.fetch_cost(head));
 }
 
 template<typename AggregationFunction>
@@ -87,17 +87,15 @@ bool MinCostAnnotationPolicy<LiftedTag, AggregationFunction>::can_update(Functio
                                                                          ygg::ClosedInterval<ygg::float_t> interval,
                                                                          Cost cost,
                                                                          const FunctionAnnotations<LiftedTag>& numeric_annotations,
-                                                                         const ConcurrentFunctionAnnotations& delta_numeric_annotations) const noexcept
+                                                                         const FunctionAnnotations<LiftedTag, true>& delta_numeric_annotations) const noexcept
 {
-    const auto* annotation = numeric_annotations.find(head, interval);
-    const auto global_cost = annotation ? get_cost(*annotation) : std::numeric_limits<Cost>::max();
-    return cost < std::min(global_cost, delta_numeric_annotations.fetch_cost(head, interval));
+    return cost < std::min(numeric_annotations.fetch_cost(head, interval), delta_numeric_annotations.fetch_cost(head, interval));
 }
 
 template<typename AggregationFunction>
 bool MinCostAnnotationPolicy<LiftedTag, AggregationFunction>::try_update_candidate(PredicateHead head,
                                                                                    WitnessAnnotation<LiftedTag, ::tyr::formalism::PredicateTag>&& witness,
-                                                                                   ConcurrentPredicateAnnotations& delta_annotations) const
+                                                                                   PredicateAnnotations<LiftedTag, true>& delta_annotations) const
 {
     return delta_annotations.insert_if_better(head, Annotation<LiftedTag, ::tyr::formalism::PredicateTag>(std::move(witness)));
 }
@@ -106,7 +104,7 @@ template<typename AggregationFunction>
 bool MinCostAnnotationPolicy<LiftedTag, AggregationFunction>::try_update_candidate(FunctionHead head,
                                                                                    ygg::ClosedInterval<ygg::float_t> interval,
                                                                                    WitnessAnnotation<LiftedTag, ::tyr::formalism::FunctionTag>&& witness,
-                                                                                   ConcurrentFunctionAnnotations& delta_numeric_annotations) const
+                                                                                   FunctionAnnotations<LiftedTag, true>& delta_numeric_annotations) const
 {
     return delta_numeric_annotations.insert(head, interval, Annotation<LiftedTag, ::tyr::formalism::FunctionTag>(std::move(witness)));
 }

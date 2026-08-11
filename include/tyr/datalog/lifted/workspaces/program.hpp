@@ -63,8 +63,8 @@ public:
     AP annotation_policy;
     PredicateAnnotations<LiftedTag> annotations;
     FunctionAnnotations<LiftedTag> numeric_annotations;
-    ConcurrentPredicateAnnotations delta_annotations;
-    ConcurrentFunctionAnnotations delta_numeric_annotations;
+    PredicateAnnotations<LiftedTag, true> delta_annotations;
+    FunctionAnnotations<LiftedTag, true> delta_numeric_annotations;
     std::optional<NumericSupportSelector<LiftedTag>> numeric_support_selector;
 
     TP tp;

@@ -52,6 +52,7 @@
 #include <string>
 #include <string_view>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -903,8 +904,38 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
         function_bindings.push_back(make_function_binding(function));
     }
 
-    auto delta_annotations = d::ConcurrentPredicateAnnotations(2);
-    auto delta_numeric_annotations = d::ConcurrentFunctionAnnotations(1);
+    using SequentialMap = d::DenseRelationMap<f::PredicateTag, d::Cost>;
+    using ConcurrentMap = d::DenseRelationMap<f::PredicateTag, d::Cost, true>;
+    static_assert(!SequentialMap::thread_safe);
+    static_assert(ConcurrentMap::thread_safe);
+    static_assert(!d::PredicateAnnotations<LiftedTag>::thread_safe);
+    static_assert(d::PredicateAnnotations<LiftedTag, true>::thread_safe);
+    static_assert(!d::FunctionAnnotations<LiftedTag>::thread_safe);
+    static_assert(d::FunctionAnnotations<LiftedTag, true>::thread_safe);
+    static_assert(std::is_default_constructible_v<d::PredicateAnnotations<LiftedTag>>);
+    static_assert(!std::is_default_constructible_v<d::PredicateAnnotations<LiftedTag, true>>);
+    static_assert(std::is_default_constructible_v<d::FunctionAnnotations<LiftedTag>>);
+    static_assert(!std::is_default_constructible_v<d::FunctionAnnotations<LiftedTag, true>>);
+    static_assert(std::is_copy_constructible_v<SequentialMap>);
+    static_assert(!std::is_copy_constructible_v<ConcurrentMap>);
+    static_assert(std::is_nothrow_move_constructible_v<ConcurrentMap>);
+    static_assert(std::is_nothrow_move_assignable_v<ConcurrentMap>);
+    const auto retain_min = [](auto& map, auto binding, d::Cost candidate)
+    {
+        map.update(binding,
+                   [&](auto& incumbent, bool initialized)
+                   {
+                       if (!initialized || candidate < incumbent)
+                           incumbent = candidate;
+                   });
+    };
+    auto sequential_map = SequentialMap(2);
+    auto concurrent_map = ConcurrentMap(2);
+    for (size_t worker = 0; worker < 8; ++worker)
+        retain_min(sequential_map, first_bindings.front(), d::Cost(8 - worker));
+
+    auto delta_annotations = d::PredicateAnnotations<LiftedTag, true>(2);
+    auto delta_numeric_annotations = d::FunctionAnnotations<LiftedTag, true>(1);
     const auto interval = ygg::ClosedInterval<ygg::float_t>(0, 1);
     auto arena = oneapi::tbb::task_arena(8);
     arena.execute(
@@ -916,6 +947,7 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
                                       {
                                           const auto predicate_cost = d::Cost(8 - worker);
                                           const auto function_cost = d::Cost(worker < 4 ? 3 : 5);
+                                          retain_min(concurrent_map, first_bindings.front(), predicate_cost);
                                           for (size_t i = first_bindings.size(); i-- > 0;)
                                           {
                                               delta_annotations.insert_if_better(first_bindings[i], d::BaseAnnotation<LiftedTag>(predicate_cost));
@@ -924,6 +956,10 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
                                           }
                                       });
         });
+
+    ASSERT_NE(sequential_map.find(first_bindings.front()), nullptr);
+    ASSERT_NE(concurrent_map.find(first_bindings.front()), nullptr);
+    EXPECT_EQ(*sequential_map.find(first_bindings.front()), *concurrent_map.find(first_bindings.front()));
 
     for (size_t i = 0; i < first_bindings.size(); ++i)
     {
@@ -965,14 +1001,21 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
 
     delta_annotations.clear();
     delta_numeric_annotations.clear();
+    sequential_map.clear();
+    concurrent_map.clear();
     EXPECT_EQ(delta_annotations.find(first_bindings.back()), nullptr);
     EXPECT_EQ(delta_numeric_annotations.find_entries(function_bindings.back()), nullptr);
+    EXPECT_EQ(sequential_map.find(first_bindings.front()), nullptr);
+    EXPECT_EQ(concurrent_map.find(first_bindings.front()), nullptr);
 
     delta_annotations.insert_if_better(first_bindings.back(), d::BaseAnnotation<LiftedTag>(7));
     delta_numeric_annotations.insert(function_bindings.back(), interval, d::BaseAnnotation<LiftedTag>(7));
+    retain_min(sequential_map, first_bindings.front(), d::Cost(7));
+    retain_min(concurrent_map, first_bindings.front(), d::Cost(7));
     EXPECT_EQ(d::get_cost(*delta_annotations.find(first_bindings.back())), 7);
     ASSERT_NE(delta_numeric_annotations.find_entries(function_bindings.back()), nullptr);
     EXPECT_EQ(delta_numeric_annotations.find_entries(function_bindings.back())->size(), 1);
+    EXPECT_EQ(*sequential_map.find(first_bindings.front()), *concurrent_map.find(first_bindings.front()));
 }
 
 INSTANTIATE_TEST_SUITE_P(TyrDatalogLiftedBottomUpFixture,
