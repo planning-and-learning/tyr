@@ -125,7 +125,7 @@ private:
     {
         [[maybe_unused]] const auto& in = ctx.in();
         auto& out = ctx.out();
-        assert(is_applicable(in.cws_rule().get_rule(), ApplicabilityContext { in.fact_sets(), out.ground_context() }));
+        assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
         insert_numeric_update(input, out.head_updates(), out.delta_numeric_annotations());
     }
 
@@ -247,64 +247,72 @@ private:
 
     bool try_generate_parallel(fd::NumericEffectOperatorView<f::FluentTag>, RuleExecutionContext<f::FunctionTag, AP, TP, CP>&) { return false; }
 
-    template<typename DynamicallyApplicable>
-    void process_clique_head(fd::AtomView<f::FluentTag> head_atom,
-                             RuleWorkerExecutionContext<f::PredicateTag, AP, TP, CP>& wrctx,
-                             RuleUpdateInput<LiftedTag, f::PredicateTag, AP, CP>& input,
-                             DynamicallyApplicable&& dynamically_applicable)
+    template<f::RelationKind R>
+    bool is_current_binding_dynamically_applicable(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, const ApplicabilityContext& applicability_context)
+    {
+        auto& in = wrctx.in();
+        auto& applicability_cache = wrctx.out().applicability_cache();
+        if (!applicability_cache.dynamic_nullary)
+            applicability_cache.dynamic_nullary = is_dynamically_applicable(in.cws_rule().get_nullary_condition(), in.fact_sets());
+        return applicability_cache.dynamic_nullary && is_applicable(in.cws_rule().get_conflicting_overapproximation_condition(), applicability_context);
+    }
+
+    bool try_process_predicate_binding(fd::AtomView<f::FluentTag> head_atom,
+                                       RuleWorkerExecutionContext<f::PredicateTag, AP, TP, CP>& wrctx,
+                                       RuleUpdateInput<LiftedTag, f::PredicateTag, AP, CP>& input,
+                                       const ApplicabilityContext& applicability_context)
     {
         auto& in = wrctx.in();
         auto& out = wrctx.out();
-        const auto retain_pending = [&]()
-        {
-            ++out.statistics().num_pending_rules;
-            const auto rule_binding = input.rule_instance.witness_key();
-#ifdef TYR_ENABLE_SEMI_NAIVE
-            out.pending_rule_bindings().push_back(rule_binding);
-#else
-            if (out.seen_pending_rule_bindings().emplace(rule_binding).second)
-                out.pending_rule_bindings().push_back(rule_binding);
-#endif
-        };
         auto head = fd::try_ground_binding(head_atom, out.ground_context());
         if (head && in.fact_sets().template get<f::FluentTag>().predicate.contains(*head))
         {
             if constexpr (AP::records_propositional_achievers)
             {
-                if (!dynamically_applicable())
-                    retain_pending();
-                else
-                {
-                    assert(is_applicable(in.cws_rule().get_rule(), ApplicabilityContext { in.fact_sets(), out.ground_context() }));
-                    if (!insert_propositional_update(*head, input, out.head_updates(), out.delta_annotations()).is_handled())
-                        retain_pending();
-                }
+                if (!is_current_binding_dynamically_applicable(wrctx, applicability_context))
+                    return false;
+                assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
+                return insert_propositional_update(*head, input, out.head_updates(), out.delta_annotations()).is_handled();
             }
-            return;
+            return true;
         }
 
-        if (!dynamically_applicable())
-        {
-            retain_pending();
-            return;
-        }
+        if (!is_current_binding_dynamically_applicable(wrctx, applicability_context))
+            return false;
 
         if (!head)
             head = fd::ground_binding(head_atom, out.ground_context()).first;
-        assert(is_applicable(in.cws_rule().get_rule(), ApplicabilityContext { in.fact_sets(), out.ground_context() }));
-        if (!insert_propositional_update(*head, input, out.head_updates(), out.delta_annotations()).is_handled())
-            retain_pending();
+        assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
+        return insert_propositional_update(*head, input, out.head_updates(), out.delta_annotations()).is_handled();
     }
 
-    template<typename DynamicallyApplicable>
+    void process_clique_head(fd::AtomView<f::FluentTag> head_atom,
+                             RuleWorkerExecutionContext<f::PredicateTag, AP, TP, CP>& wrctx,
+                             RuleUpdateInput<LiftedTag, f::PredicateTag, AP, CP>& input,
+                             const ApplicabilityContext& applicability_context)
+    {
+        auto& out = wrctx.out();
+        if (try_process_predicate_binding(head_atom, wrctx, input, applicability_context))
+            return;
+
+        ++out.statistics().num_pending_rules;
+        const auto rule_binding = input.rule_instance.witness_key();
+#ifdef TYR_ENABLE_SEMI_NAIVE
+        out.pending_rule_bindings().push_back(rule_binding);
+#else
+        if (out.seen_pending_rule_bindings().emplace(rule_binding).second)
+            out.pending_rule_bindings().push_back(rule_binding);
+#endif
+    }
+
     void process_clique_head(fd::NumericEffectOperatorView<f::FluentTag>,
                              RuleWorkerExecutionContext<f::FunctionTag, AP, TP, CP>& wrctx,
                              RuleUpdateInput<LiftedTag, f::FunctionTag, AP, CP>& input,
-                             DynamicallyApplicable&& dynamically_applicable)
+                             const ApplicabilityContext& applicability_context)
     {
         [[maybe_unused]] const auto& in = wrctx.in();
         auto& out = wrctx.out();
-        if (!dynamically_applicable())
+        if (!is_current_binding_dynamically_applicable(wrctx, applicability_context))
             return;
 
         assert(is_applicable(in.cws_rule().get_rule(), ApplicabilityContext { in.fact_sets(), out.ground_context() }));
@@ -333,24 +341,17 @@ private:
 
         ++out.statistics().num_generated_rules;
 
-        const auto nullary_condition = in.cws_rule().get_nullary_condition();
         const auto conflicting_condition = in.cws_rule().get_conflicting_overapproximation_condition();
         const auto applicability_context = ApplicabilityContext { in.fact_sets(), out.ground_context() };
         auto& applicability_cache = out.applicability_cache();
 
         const auto statically_applicable = [&]()
         { return applicability_cache.static_nullary && is_applicable(conflicting_condition.template get_literals<f::StaticTag>(), applicability_context); };
-        const auto dynamically_applicable = [&]()
-        {
-            if (!applicability_cache.dynamic_nullary)
-                applicability_cache.dynamic_nullary = is_dynamically_applicable(nullary_condition, in.fact_sets());
-            return applicability_cache.dynamic_nullary && is_applicable(conflicting_condition, applicability_context);
-        };
 
         if (!statically_applicable())
             return;
 
-        process_clique_head(in.cws_rule().get_rule().get_head(), wrctx, input, dynamically_applicable);
+        process_clique_head(in.cws_rule().get_rule().get_head(), wrctx, input, applicability_context);
     }
 
     template<f::RelationKind R>
@@ -394,19 +395,10 @@ private:
 
             auto& in = wrctx.in();
             auto& out = wrctx.out();
-            const auto nullary_condition = in.cws_rule().get_nullary_condition();
-            const auto conflicting_condition = in.cws_rule().get_conflicting_overapproximation_condition();
             const auto applicability_context = ApplicabilityContext { in.fact_sets(), out.ground_context() };
-            auto& applicability_cache = out.applicability_cache();
-            const auto dynamically_applicable = [&]()
-            {
-                if (!applicability_cache.dynamic_nullary)
-                    applicability_cache.dynamic_nullary = is_dynamically_applicable(nullary_condition, in.fact_sets());
-                return applicability_cache.dynamic_nullary && is_applicable(conflicting_condition, applicability_context);
-            };
 
             auto& pending = out.pending_rule_bindings();
-            assert(pending.empty() || applicability_cache.static_nullary);
+            assert(pending.empty() || out.applicability_cache().static_nullary);
             std::erase_if(pending,
                           [&](const auto pending_binding)
                           {
@@ -420,29 +412,9 @@ private:
                                                                   in.annotation_policy(),
                                                                   in.cost_policy());
 
-                              assert(is_applicable(conflicting_condition.template get_literals<f::StaticTag>(), applicability_context));
-
-                              auto head = fd::try_ground_binding(in.cws_rule().get_rule().get_head(), out.ground_context());
-                              if (head && in.fact_sets().template get<f::FluentTag>().predicate.contains(*head))
-                              {
-                                  if constexpr (AP::records_propositional_achievers)
-                                  {
-                                      if (!dynamically_applicable())
-                                          return false;
-
-                                      assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
-                                      return insert_propositional_update(*head, input, out.head_updates(), out.delta_annotations()).is_handled();
-                                  }
-                                  return true;
-                              }
-
-                              if (!dynamically_applicable())
-                                  return false;
-
-                              if (!head)
-                                  head = fd::ground_binding(in.cws_rule().get_rule().get_head(), out.ground_context()).first;
-                              assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
-                              return insert_propositional_update(*head, input, out.head_updates(), out.delta_annotations()).is_handled();
+                              assert(is_applicable(in.cws_rule().get_conflicting_overapproximation_condition().template get_literals<f::StaticTag>(),
+                                                   applicability_context));
+                              return try_process_predicate_binding(in.cws_rule().get_rule().get_head(), wrctx, input, applicability_context);
                           });
         }
     }
