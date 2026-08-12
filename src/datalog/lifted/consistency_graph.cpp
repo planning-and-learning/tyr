@@ -1148,18 +1148,22 @@ create_overapproximation_conflicting_conjunctive_condition(size_t k, fd::Conjunc
     for (const auto variable : condition.get_variables())
         conj_cond->variables.push_back(variable.get_index());
 
-    const auto requires_exact_check = [k](const auto element) { return kckp_arity(element) > k || (k == 2 && kckp_arity(element) == 2); };
+    // Binary KCKP edges join distinct rule parameters, so a one-parameter literal such as p(x,x) still needs an exact check.
+    const auto requires_exact_literal_check = [k](const auto literal)
+    { return kckp_arity(literal) > k || (k == 2 && kckp_arity(literal) == 2 && parameter_arity(literal) == 1); };
+    const auto requires_exact_numeric_check = [k](const auto numeric_constraint)
+    { return kckp_arity(numeric_constraint) > k || (k == 2 && kckp_arity(numeric_constraint) == 2); };
 
     for (const auto literal : condition.get_literals<f::StaticTag>())
-        if (requires_exact_check(literal))
+        if (requires_exact_literal_check(literal))
             conj_cond->static_literals.push_back(literal.get_index());
 
     for (const auto literal : condition.get_literals<f::FluentTag>())
-        if (requires_exact_check(literal))
+        if (requires_exact_literal_check(literal))
             conj_cond->fluent_literals.push_back(literal.get_index());
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
-        if (requires_exact_check(numeric_constraint))
+        if (requires_exact_numeric_check(numeric_constraint))
             conj_cond->numeric_constraints.push_back(numeric_constraint.get_data());
 
     return fd::get_or_create(context, *conj_cond);

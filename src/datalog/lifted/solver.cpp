@@ -315,7 +315,7 @@ void process_clique_head(fd::AtomView<f::FluentTag> head_atom,
     auto head = fd::try_ground_binding(head_atom, out.ground_context());
     if (head && in.fact_sets().template get<f::FluentTag>().predicate.contains(*head))
     {
-        if constexpr (AP::stores_annotations)
+        if constexpr (AP::records_propositional_achievers)
         {
             if (!dynamically_applicable())
                 retain_pending();
@@ -460,7 +460,7 @@ void process_pending_rule_bindings(RuleExecutionContext<f::PredicateTag, AP, TP,
                           auto head = fd::try_ground_binding(in.cws_rule().get_rule().get_head(), out.ground_context());
                           if (head && in.fact_sets().template get<f::FluentTag>().predicate.contains(*head))
                           {
-                              if constexpr (AP::stores_annotations)
+                              if constexpr (AP::records_propositional_achievers)
                               {
                                   if (!dynamically_applicable())
                                       return false;

@@ -20,6 +20,7 @@
 #include "planning/parser.hpp"
 #include "tyr/datalog/applicability_lifted.hpp"
 #include "tyr/datalog/ground/program.hpp"
+#include "tyr/datalog/lifted/consistency_graph.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/program.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
@@ -906,12 +907,14 @@ TEST(TyrDatalogLiftedBottomUpTest, RepeatedArgumentsRetryPendingExistingHeadAchi
     const auto derive_rule = intern(std::move(derive_rule_data));
 
     const auto goal_diagonal_atom = make_atom(diagonal, { f::ParameterIndex(0), f::ParameterIndex(0) });
+    const auto goal_pair_atom = make_atom(diagonal, { f::ParameterIndex(0), f::ParameterIndex(1) });
     const auto goal_seed_atom = make_atom(seed, { f::ParameterIndex(1) });
     const auto goal_atom = make_atom(goal_predicate, {});
     auto goal_body_data = ygg::Data<fd::ConjunctiveCondition>();
     goal_body_data.variables.push_back(x.get_index());
     goal_body_data.variables.push_back(y.get_index());
     goal_body_data.fluent_literals.push_back(make_literal(goal_diagonal_atom).get_index());
+    goal_body_data.fluent_literals.push_back(make_literal(goal_pair_atom).get_index());
     goal_body_data.fluent_literals.push_back(make_literal(goal_seed_atom).get_index());
     const auto goal_body = intern(std::move(goal_body_data));
     auto goal_rule_data = ygg::Data<fd::Rule<f::PredicateTag>>();
@@ -920,6 +923,10 @@ TEST(TyrDatalogLiftedBottomUpTest, RepeatedArgumentsRetryPendingExistingHeadAchi
     goal_rule_data.body = goal_body.get_index();
     goal_rule_data.head = goal_atom.get_index();
     const auto goal_rule = intern(std::move(goal_rule_data));
+    const auto conflicting_goal_rule = d::create_overapproximation_conflicting_rule(2, goal_rule, *repository).first;
+    const auto conflicting_literals = conflicting_goal_rule.get_body().get_literals<f::FluentTag>();
+    ASSERT_EQ(conflicting_literals.size(), 1);
+    EXPECT_EQ(conflicting_literals.front().get_atom().get_index(), goal_diagonal_atom.get_index());
 
     const auto initial_aa = make_initial_atom(diagonal, { a.get_index(), a.get_index() });
     const auto initial_ab = make_initial_atom(diagonal, { a.get_index(), b.get_index() });
