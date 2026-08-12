@@ -204,22 +204,15 @@ private:
 extern std::pair<::tyr::formalism::datalog::GroundConjunctiveConditionView, bool>
 create_ground_nullary_conjunctive_condition(::tyr::formalism::datalog::ConjunctiveConditionView condition, ::tyr::formalism::datalog::Repository& context);
 
-template<::tyr::formalism::RelationKind R>
-std::pair<::tyr::formalism::datalog::RuleView<R>, bool>
-create_overapproximation_rule(size_t k, ::tyr::formalism::datalog::RuleView<R> element, ::tyr::formalism::datalog::Repository& context);
+extern std::pair<::tyr::formalism::datalog::ConjunctiveConditionView, bool>
+create_overapproximation_conjunctive_condition(size_t k,
+                                               ::tyr::formalism::datalog::ConjunctiveConditionView condition,
+                                               ::tyr::formalism::datalog::Repository& context);
 
-template<::tyr::formalism::RelationKind R>
-std::pair<::tyr::formalism::datalog::RuleView<R>, bool>
-create_overapproximation_conflicting_rule(size_t k, ::tyr::formalism::datalog::RuleView<R> element, ::tyr::formalism::datalog::Repository& context);
-
-extern template std::pair<::tyr::formalism::datalog::RuleView<::tyr::formalism::PredicateTag>, bool>
-create_overapproximation_rule(size_t, ::tyr::formalism::datalog::RuleView<::tyr::formalism::PredicateTag>, ::tyr::formalism::datalog::Repository&);
-extern template std::pair<::tyr::formalism::datalog::RuleView<::tyr::formalism::FunctionTag>, bool>
-create_overapproximation_rule(size_t, ::tyr::formalism::datalog::RuleView<::tyr::formalism::FunctionTag>, ::tyr::formalism::datalog::Repository&);
-extern template std::pair<::tyr::formalism::datalog::RuleView<::tyr::formalism::PredicateTag>, bool>
-create_overapproximation_conflicting_rule(size_t, ::tyr::formalism::datalog::RuleView<::tyr::formalism::PredicateTag>, ::tyr::formalism::datalog::Repository&);
-extern template std::pair<::tyr::formalism::datalog::RuleView<::tyr::formalism::FunctionTag>, bool>
-create_overapproximation_conflicting_rule(size_t, ::tyr::formalism::datalog::RuleView<::tyr::formalism::FunctionTag>, ::tyr::formalism::datalog::Repository&);
+extern std::pair<::tyr::formalism::datalog::ConjunctiveConditionView, bool>
+create_overapproximation_conflicting_conjunctive_condition(size_t k,
+                                                           ::tyr::formalism::datalog::ConjunctiveConditionView condition,
+                                                           ::tyr::formalism::datalog::Repository& context);
 
 }
 

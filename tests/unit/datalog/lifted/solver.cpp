@@ -423,7 +423,7 @@ struct LiftedPredicateProgram
     }
 };
 
-LiftedPredicateProgram make_lifted_predicate_program()
+LiftedPredicateProgram make_lifted_predicate_program(bool include_lifted_metric_effect = false)
 {
     auto factory = std::make_shared<fd::RepositoryFactory>();
     auto repository = factory->create_shared();
@@ -438,6 +438,7 @@ LiftedPredicateProgram make_lifted_predicate_program()
     const auto source_predicate = intern(ygg::Data<f::Predicate<f::FluentTag>>(std::string("source"), 1));
     const auto goal_predicate = intern(ygg::Data<f::Predicate<f::FluentTag>>(std::string("goal"), 0));
     const auto metric_function = intern(ygg::Data<f::Function<f::FluentTag>>(std::string("metric"), 0));
+    const auto lifted_metric_function = intern(ygg::Data<f::Function<f::FluentTag>>(std::string("lifted-metric"), 1));
     const auto first_object = intern(ygg::Data<f::Object>(std::string("a")));
     const auto second_object = intern(ygg::Data<f::Object>(std::string("b")));
     const auto variable = intern(ygg::Data<f::Variable>(std::string("x")));
@@ -453,9 +454,19 @@ LiftedPredicateProgram make_lifted_predicate_program()
     auto metric_term_data = ygg::Data<fd::FunctionTerm<f::FluentTag>>();
     metric_term_data.function = metric_function.get_index();
     const auto metric_term = intern(std::move(metric_term_data));
+    auto lifted_metric_term_data = ygg::Data<fd::FunctionTerm<f::FluentTag>>();
+    lifted_metric_term_data.function = lifted_metric_function.get_index();
+    lifted_metric_term_data.terms.emplace_back(f::ParameterIndex(0));
+    const auto lifted_metric_term = intern(std::move(lifted_metric_term_data));
     const auto metric_effect = intern(ygg::Data<fd::NumericEffect<f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
                                                                                  metric_term.get_index(),
                                                                                  ygg::Data<fd::FunctionExpression>(ygg::float_t(2))));
+    const auto lifted_metric_effect = intern(ygg::Data<fd::NumericEffect<f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
+                                                                                        lifted_metric_term.get_index(),
+                                                                                        ygg::Data<fd::FunctionExpression>(ygg::float_t(3))));
+    const auto lifted_rhs_metric_effect = intern(ygg::Data<fd::NumericEffect<f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
+                                                                                            metric_term.get_index(),
+                                                                                            ygg::Data<fd::FunctionExpression>(lifted_metric_term.get_index())));
 
     auto body_data = ygg::Data<fd::ConjunctiveCondition>();
     body_data.variables.push_back(variable.get_index());
@@ -467,6 +478,15 @@ LiftedPredicateProgram make_lifted_predicate_program()
     rule_data.head = goal_atom.get_index();
     rule_data.metric_effects.emplace_back(f::NumericEffectOperatorKind::Increase,
                                           ygg::Data<fd::NumericEffectOperator<f::FluentTag>>::Variant(metric_effect.get_index()));
+    if (include_lifted_metric_effect)
+    {
+        rule_data.metric_effects.emplace_back(f::NumericEffectOperatorKind::Increase,
+                                              ygg::Data<fd::NumericEffectOperator<f::FluentTag>>::Variant(metric_effect.get_index()));
+        rule_data.metric_effects.emplace_back(f::NumericEffectOperatorKind::Increase,
+                                              ygg::Data<fd::NumericEffectOperator<f::FluentTag>>::Variant(lifted_metric_effect.get_index()));
+        rule_data.metric_effects.emplace_back(f::NumericEffectOperatorKind::Increase,
+                                              ygg::Data<fd::NumericEffectOperator<f::FluentTag>>::Variant(lifted_rhs_metric_effect.get_index()));
+    }
     const auto rule = intern(std::move(rule_data));
 
     const auto bind_rule = [&](auto object)
@@ -501,11 +521,25 @@ LiftedPredicateProgram make_lifted_predicate_program()
     program_data.objects = { first_object.get_index(), second_object.get_index() };
     program_data.fluent_predicates = { source_predicate.get_index(), goal_predicate.get_index() };
     program_data.fluent_functions = { metric_function.get_index() };
+    if (include_lifted_metric_effect)
+        program_data.fluent_functions.push_back(lifted_metric_function.get_index());
     program_data.fluent_atoms = { ground_first_source.get_index(), ground_second_source.get_index() };
     program_data.predicate_rules = { rule.get_index() };
     const auto program = intern(std::move(program_data));
 
     return LiftedPredicateProgram(factory, repository, program, goal, goals, first_binding, second_binding);
+}
+
+TEST(TyrDatalogLiftedBottomUpTest, ConstRuleWorkspacePartitionsMetricEffectsByParameters)
+{
+    auto fixture = make_lifted_predicate_program(true);
+    const auto& workspace = fixture.program.get_const_program_workspace().get_rules<f::PredicateTag>().front().value();
+
+    EXPECT_EQ(workspace.get_rule().get_metric_effects().size(), 4);
+    ASSERT_EQ(workspace.get_lifted_effects().size(), 2);
+    ASSERT_EQ(workspace.get_nullary_effects().size(), 2);
+    EXPECT_EQ(&workspace.get_lifted_effects().front().get_context(), &fixture.program.get_program_repository());
+    EXPECT_EQ(&workspace.get_nullary_effects().front().get_context(), &fixture.program.get_program_repository());
 }
 
 class BottomUpFixtureTest : public ::testing::TestWithParam<BottomUpCase>
@@ -923,8 +957,8 @@ TEST(TyrDatalogLiftedBottomUpTest, RepeatedArgumentsRetryPendingExistingHeadAchi
     goal_rule_data.body = goal_body.get_index();
     goal_rule_data.head = goal_atom.get_index();
     const auto goal_rule = intern(std::move(goal_rule_data));
-    const auto conflicting_goal_rule = d::create_overapproximation_conflicting_rule(2, goal_rule, *repository).first;
-    const auto conflicting_literals = conflicting_goal_rule.get_body().get_literals<f::FluentTag>();
+    const auto conflicting_goal_condition = d::create_overapproximation_conflicting_conjunctive_condition(2, goal_rule.get_body(), *repository).first;
+    const auto conflicting_literals = conflicting_goal_condition.get_literals<f::FluentTag>();
     ASSERT_EQ(conflicting_literals.size(), 1);
     EXPECT_EQ(conflicting_literals.front().get_atom().get_index(), goal_diagonal_atom.get_index());
 

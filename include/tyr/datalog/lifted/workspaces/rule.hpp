@@ -212,7 +212,9 @@ struct ConstRuleWorkspace<LiftedTag, R>
 public:
     auto get_rule() const noexcept { return rule; }
     auto get_nullary_condition() const noexcept { return nullary_condition; }
-    auto get_conflicting_overapproximation_rule() const noexcept { return conflicting_overapproximation_rule; }
+    const auto& get_lifted_effects() const noexcept { return lifted_effects; }
+    const auto& get_nullary_effects() const noexcept { return nullary_effects; }
+    auto get_conflicting_overapproximation_condition() const noexcept { return conflicting_overapproximation_condition; }
     const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
 
     ConstRuleWorkspace(::tyr::formalism::datalog::RuleView<R> rule, ::tyr::formalism::datalog::Repository& repository, kckp::Graph compatibility_graph);
@@ -220,9 +222,11 @@ public:
 private:
     ::tyr::formalism::datalog::RuleView<R> rule;
     ::tyr::formalism::datalog::GroundConjunctiveConditionView nullary_condition;
-    ::tyr::formalism::datalog::RuleView<R> unary_overapproximation_rule;
-    ::tyr::formalism::datalog::RuleView<R> binary_overapproximation_rule;
-    ::tyr::formalism::datalog::RuleView<R> conflicting_overapproximation_rule;
+    ::tyr::formalism::datalog::NumericEffectOperatorViewList<::tyr::formalism::FluentTag> lifted_effects;
+    ::tyr::formalism::datalog::GroundNumericEffectOperatorViewList<::tyr::formalism::FluentTag> nullary_effects;
+    ::tyr::formalism::datalog::ConjunctiveConditionView unary_overapproximation_condition;
+    ::tyr::formalism::datalog::ConjunctiveConditionView binary_overapproximation_condition;
+    ::tyr::formalism::datalog::ConjunctiveConditionView conflicting_overapproximation_condition;
 
     StaticConsistencyGraph static_consistency_graph;
 };

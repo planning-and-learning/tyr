@@ -304,7 +304,7 @@ void process_clique_head(fd::AtomView<f::FluentTag> head_atom,
     const auto retain_pending = [&]()
     {
         ++out.statistics().num_pending_rules;
-        const auto rule_binding = fd::ground_binding(in.cws_rule().get_conflicting_overapproximation_rule(), out.ground_context()).first;
+        const auto rule_binding = input.rule_instance.witness_key();
 #ifdef TYR_ENABLE_SEMI_NAIVE
         out.pending_rule_bindings().push_back(rule_binding);
 #else
@@ -374,7 +374,7 @@ void process_clique(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, std::span<
     ++out.statistics().num_generated_rules;
 
     const auto nullary_condition = in.cws_rule().get_nullary_condition();
-    const auto conflicting_condition = in.cws_rule().get_conflicting_overapproximation_rule().get_body();
+    const auto conflicting_condition = in.cws_rule().get_conflicting_overapproximation_condition();
     const auto applicability_context = ApplicabilityContext { in.fact_sets(), out.ground_context() };
     auto& applicability_cache = out.applicability_cache();
 
@@ -436,7 +436,7 @@ void process_pending_rule_bindings(RuleExecutionContext<f::PredicateTag, AP, TP,
         auto& in = wrctx.in();
         auto& out = wrctx.out();
         const auto nullary_condition = in.cws_rule().get_nullary_condition();
-        const auto conflicting_condition = in.cws_rule().get_conflicting_overapproximation_rule().get_body();
+        const auto conflicting_condition = in.cws_rule().get_conflicting_overapproximation_condition();
         const auto applicability_context = ApplicabilityContext { in.fact_sets(), out.ground_context() };
         auto& applicability_cache = out.applicability_cache();
         const auto dynamically_applicable = [&]()

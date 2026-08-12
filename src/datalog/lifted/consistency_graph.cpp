@@ -28,7 +28,6 @@
 #include "tyr/formalism/datalog/expression_properties.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
-#include "tyr/formalism/datalog/merge.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 
@@ -1109,8 +1108,6 @@ const kckp::PartitionedAdjacencyLayout& StaticConsistencyGraph::get_partitioned_
 
 const kckp::DeduplicatedAdjacencyMatrix& StaticConsistencyGraph::get_adjacency_matrix() const noexcept { return m_compatibility_graph.get_adjacency_matrix(); }
 
-namespace
-{
 std::pair<fd::ConjunctiveConditionView, bool>
 create_overapproximation_conjunctive_condition(size_t k, fd::ConjunctiveConditionView condition, fd::Repository& context)
 {
@@ -1168,7 +1165,6 @@ create_overapproximation_conflicting_conjunctive_condition(size_t k, fd::Conjunc
 
     return fd::get_or_create(context, *conj_cond);
 }
-}
 
 std::pair<fd::GroundConjunctiveConditionView, bool> create_ground_nullary_conjunctive_condition(fd::ConjunctiveConditionView condition, fd::Repository& context)
 {
@@ -1194,37 +1190,4 @@ std::pair<fd::GroundConjunctiveConditionView, bool> create_ground_nullary_conjun
 
     return fd::get_or_create(context, *conj_cond);
 }
-
-template<f::RelationKind R>
-std::pair<fd::RuleView<R>, bool> create_overapproximation_rule(size_t k, fd::RuleView<R> element, fd::Repository& context)
-{
-    auto builder = fd::Builder {};
-    auto merge_context = fd::MergeContext { builder, context };
-    auto rule = fd::checkout<fd::Rule<R>>(builder);
-
-    ygg::extend(element.get_variables(), rule->variables);
-    rule->body = create_overapproximation_conjunctive_condition(k, element.get_body(), context).first.get_index();
-    rule->head = merge_rule_head(element.get_head(), merge_context);
-
-    return fd::get_or_create(context, *rule);
-}
-
-template<f::RelationKind R>
-std::pair<fd::RuleView<R>, bool> create_overapproximation_conflicting_rule(size_t k, fd::RuleView<R> element, fd::Repository& context)
-{
-    auto builder = fd::Builder {};
-    auto merge_context = fd::MergeContext { builder, context };
-    auto rule = fd::checkout<fd::Rule<R>>(builder);
-
-    ygg::extend(element.get_variables(), rule->variables);
-    rule->body = create_overapproximation_conflicting_conjunctive_condition(k, element.get_body(), context).first.get_index();
-    rule->head = merge_rule_head(element.get_head(), merge_context);
-
-    return fd::get_or_create(context, *rule);
-}
-
-template std::pair<fd::RuleView<f::PredicateTag>, bool> create_overapproximation_rule(size_t, fd::RuleView<f::PredicateTag>, fd::Repository&);
-template std::pair<fd::RuleView<f::FunctionTag>, bool> create_overapproximation_rule(size_t, fd::RuleView<f::FunctionTag>, fd::Repository&);
-template std::pair<fd::RuleView<f::PredicateTag>, bool> create_overapproximation_conflicting_rule(size_t, fd::RuleView<f::PredicateTag>, fd::Repository&);
-template std::pair<fd::RuleView<f::FunctionTag>, bool> create_overapproximation_conflicting_rule(size_t, fd::RuleView<f::FunctionTag>, fd::Repository&);
 }
