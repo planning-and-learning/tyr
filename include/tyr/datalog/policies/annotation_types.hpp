@@ -50,7 +50,7 @@ struct NumericSupport : ygg::comparison::Mixin<NumericSupport>
     ygg::ClosedInterval<ygg::float_t> interval;
     Cost cost;
 
-    NumericSupport() = default;
+    NumericSupport() = delete;
     NumericSupport(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost) :
         key(key),
         interval(interval),

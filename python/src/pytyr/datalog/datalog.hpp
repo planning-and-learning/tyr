@@ -417,7 +417,7 @@ void bind_configuration(nb::module_& m, const char* prefix)
             [](Context& self) -> auto&
             {
                 if constexpr (std::same_as<Kind, GroundTag>)
-                    return self.out().queue_statistics();
+                    return self.out().scheduler().statistics();
                 else
                     return self.out().statistics();
             },

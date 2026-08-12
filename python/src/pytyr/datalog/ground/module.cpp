@@ -26,7 +26,6 @@ void bind_ground_module_definitions(nb::module_& m)
 {
     using ProgramT = Program<GroundTag>;
     using ConstWorkspace = ConstProgramWorkspace<GroundTag>;
-    using Queue = QueueWorkspace;
 
     bind_task_policies<GroundTag>(m);
 
@@ -42,11 +41,6 @@ void bind_ground_module_definitions(nb::module_& m)
         .def("get_program", &ProgramT::get_program, nb::keep_alive<0, 1>())
         .def("get_program_repository", nb::overload_cast<>(&ProgramT::get_program_repository), nb::rv_policy::reference_internal)
         .def("get_const_program_workspace", &ProgramT::get_const_program_workspace, nb::rv_policy::reference_internal);
-
-    nb::class_<Queue>(m, "QueueWorkspace")
-        .def(nb::new_([](ProgramT& program) { return Queue(program.get_program()); }), "program"_a, nb::keep_alive<1, 2>())
-        .def("clear", &Queue::clear)
-        .def("get_statistics", [](Queue& self) -> auto& { return self.statistics; }, nb::rv_policy::reference_internal);
 
     bind_common_configurations<GroundTag>(m);
 }

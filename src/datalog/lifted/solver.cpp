@@ -125,7 +125,7 @@ private:
     {
         [[maybe_unused]] const auto& in = ctx.in();
         auto& out = ctx.out();
-        assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
+        assert(is_applicable(in.cws_rule().get_rule(), ApplicabilityContext { in.fact_sets(), out.ground_context() }));
         insert_numeric_update(input, out.head_updates(), out.delta_numeric_annotations());
     }
 

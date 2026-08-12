@@ -12,7 +12,6 @@ from ..._pytyr.datalog.ground import (
     NoTerminationPolicy,
     NumericSupport,
     Program,
-    QueueWorkspace,
     RuleCostOverridePolicy,
     RuleCostPolicy,
     PredicateAnnotations,
