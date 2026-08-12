@@ -205,32 +205,27 @@ evaluate_annotated_rule(Instance& instance, const AP&, const CP& cost_policy, co
             return std::nullopt;
     }
 
-    for (const auto& metric_operator : instance.get_metric_effects())
-    {
-        const auto delta = ygg::visit(
-            [&](const auto metric_effect) -> std::optional<Cost>
-            {
-                const auto effect = instance.resolve(metric_effect);
-                if (!cost_policy.is_metric_target(effect.head))
-                    return Cost(0);
-                workspace.selector.clear();
-                const auto result = metric_effect_delta(
-                    effect.operator_kind,
-                    [&] { return input.selector.select_fluent_interval(effect.head, workspace.selector.selection); },
-                    [&] { return input.selector.evaluate_effect_expression(effect.rhs, workspace.selector.selection); });
-                if (!result)
-                    return std::nullopt;
+    const auto metric_effects_available = instance.for_each_resolved_metric_effect(
+        [&](const ResolvedNumericEffect& effect)
+        {
+            if (!cost_policy.is_metric_target(effect.head))
+                return true;
+            workspace.selector.clear();
+            const auto delta = metric_effect_delta(
+                effect.operator_kind,
+                [&] { return input.selector.select_fluent_interval(effect.head, workspace.selector.selection); },
+                [&] { return input.selector.evaluate_effect_expression(effect.rhs, workspace.selector.selection); });
+            if (!delta)
+                return false;
 
-                aggregate_selection_cost<Aggregation>(state.support_cost, workspace.selector);
-                if (!append_selection_evidence<CollectEvidence>(input, workspace, state.support_metric))
-                    return std::nullopt;
-                return result;
-            },
-            metric_operator.get_variant());
-        if (!delta)
-            return std::nullopt;
-        state.raw_edge += *delta;
-    }
+            aggregate_selection_cost<Aggregation>(state.support_cost, workspace.selector);
+            if (!append_selection_evidence<CollectEvidence>(input, workspace, state.support_metric))
+                return false;
+            state.raw_edge += *delta;
+            return true;
+        });
+    if (!metric_effects_available)
+        return std::nullopt;
 
     return state;
 }

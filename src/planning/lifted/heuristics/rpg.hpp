@@ -116,7 +116,7 @@ struct RPGPolicy<LiftedTag>
         auto binding = ygg::IndexList<::tyr::formalism::Object> {};
         ygg::extend(rule_binding.get_objects(), binding);
         auto grounder_context = ::tyr::formalism::datalog::GrounderContext { workspace.datalog_builder, workspace.workspace_repository, binding };
-        const auto instance = datalog::RuleInstance<LiftedTag, R>(const_rule_workspace.get_rule(), grounder_context);
+        const auto instance = datalog::RuleInstance<LiftedTag, R>(const_rule_workspace, grounder_context);
         std::forward<Callback>(callback)(instance);
     }
 

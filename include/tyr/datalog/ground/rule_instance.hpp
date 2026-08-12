@@ -21,6 +21,8 @@
 #include "tyr/datalog/rule_instance.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
+#include <yggdrasil/containers/variant.hpp>
+
 namespace tyr::datalog
 {
 
@@ -37,7 +39,6 @@ public:
     SourceRule get_rule() const noexcept { return m_rule; }
     auto get_body() const noexcept { return m_rule.get_body(); }
     auto get_head() const noexcept { return m_rule.get_head(); }
-    auto get_metric_effects() const noexcept { return m_rule.get_metric_effects(); }
 
     auto resolve(::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag> atom) const noexcept { return atom.get_row(); }
 
@@ -46,6 +47,15 @@ public:
     ResolvedNumericEffect resolve(::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect) const noexcept
     {
         return { effect.get_operator(), effect.get_fterm().get_row(), effect.get_fexpr() };
+    }
+
+    template<typename Callback>
+    bool for_each_resolved_metric_effect(Callback&& callback) const
+    {
+        for (const auto& metric_operator : m_rule.get_metric_effects())
+            if (!ygg::visit([&](const auto metric_effect) { return callback(resolve(metric_effect)); }, metric_operator.get_variant()))
+                return false;
+        return true;
     }
 
     auto witness_key() const noexcept { return m_rule.get_row(); }

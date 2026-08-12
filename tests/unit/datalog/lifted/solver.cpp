@@ -403,6 +403,9 @@ struct LiftedPredicateProgram
     fd::GroundConjunctiveConditionView goals;
     fd::RuleBindingView<f::PredicateTag> first_binding;
     fd::RuleBindingView<f::PredicateTag> second_binding;
+    fd::FunctionBindingView<f::FluentTag> metric;
+    fd::FunctionBindingView<f::FluentTag> first_lifted_metric;
+    fd::FunctionBindingView<f::FluentTag> second_lifted_metric;
     d::Program<LiftedTag> program;
 
     LiftedPredicateProgram(fd::RepositoryFactoryPtr factory_,
@@ -411,13 +414,19 @@ struct LiftedPredicateProgram
                            fd::PredicateBindingView<f::FluentTag> goal_,
                            fd::GroundConjunctiveConditionView goals_,
                            fd::RuleBindingView<f::PredicateTag> first_binding_,
-                           fd::RuleBindingView<f::PredicateTag> second_binding_) :
+                           fd::RuleBindingView<f::PredicateTag> second_binding_,
+                           fd::FunctionBindingView<f::FluentTag> metric_,
+                           fd::FunctionBindingView<f::FluentTag> first_lifted_metric_,
+                           fd::FunctionBindingView<f::FluentTag> second_lifted_metric_) :
         factory(std::move(factory_)),
         repository(std::move(repository_)),
         goal(goal_),
         goals(goals_),
         first_binding(first_binding_),
         second_binding(second_binding_),
+        metric(metric_),
+        first_lifted_metric(first_lifted_metric_),
+        second_lifted_metric(second_lifted_metric_),
         program(program_view, repository, factory)
     {
     }
@@ -499,6 +508,17 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_lifted_metric_
     const auto first_binding = bind_rule(first_object);
     const auto second_binding = bind_rule(second_object);
 
+    const auto bind_function = [&](auto function, auto... objects)
+    {
+        auto data = ygg::Data<f::RelationBinding<f::Function<f::FluentTag>>>();
+        data.relation = function.get_index();
+        (data.objects.push_back(objects.get_index()), ...);
+        return intern(std::move(data));
+    };
+    const auto metric = bind_function(metric_function);
+    const auto first_lifted_metric = bind_function(lifted_metric_function, first_object);
+    const auto second_lifted_metric = bind_function(lifted_metric_function, second_object);
+
     const auto bind_source = [&](auto object)
     {
         auto data = ygg::Data<f::RelationBinding<f::Predicate<f::FluentTag>>>();
@@ -522,12 +542,18 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_lifted_metric_
     program_data.fluent_predicates = { source_predicate.get_index(), goal_predicate.get_index() };
     program_data.fluent_functions = { metric_function.get_index() };
     if (include_lifted_metric_effect)
+    {
         program_data.fluent_functions.push_back(lifted_metric_function.get_index());
+        const auto first_term = intern(ygg::Data<fd::GroundFunctionTerm<f::FluentTag>>(first_lifted_metric));
+        const auto second_term = intern(ygg::Data<fd::GroundFunctionTerm<f::FluentTag>>(second_lifted_metric));
+        program_data.fluent_fterm_values = { intern(ygg::Data<fd::GroundFunctionTermValue<f::FluentTag>>(first_term, ygg::float_t(5))).get_index(),
+                                             intern(ygg::Data<fd::GroundFunctionTermValue<f::FluentTag>>(second_term, ygg::float_t(7))).get_index() };
+    }
     program_data.fluent_atoms = { ground_first_source.get_index(), ground_second_source.get_index() };
     program_data.predicate_rules = { rule.get_index() };
     const auto program = intern(std::move(program_data));
 
-    return LiftedPredicateProgram(factory, repository, program, goal, goals, first_binding, second_binding);
+    return LiftedPredicateProgram(factory, repository, program, goal, goals, first_binding, second_binding, metric, first_lifted_metric, second_lifted_metric);
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, ConstRuleWorkspacePartitionsMetricEffectsByParameters)
@@ -540,6 +566,32 @@ TEST(TyrDatalogLiftedBottomUpTest, ConstRuleWorkspacePartitionsMetricEffectsByPa
     ASSERT_EQ(workspace.get_nullary_effects().size(), 2);
     EXPECT_EQ(&workspace.get_lifted_effects().front().get_context(), &fixture.program.get_program_repository());
     EXPECT_EQ(&workspace.get_nullary_effects().front().get_context(), &fixture.program.get_program_repository());
+}
+
+TEST(TyrDatalogLiftedBottomUpTest, MixedMetricEffectsRespectExactTargetsAndRetainEvidence)
+{
+    auto fixture = make_lifted_predicate_program(true);
+    auto metric_targets = d::RuleCostPolicy::MetricTargets {};
+    metric_targets.insert(fixture.metric.get_index());
+    metric_targets.insert(fixture.first_lifted_metric.get_index());
+    using AnnotationPolicy = d::MinCostAnnotationPolicy<d::SumAggregation>;
+    using Workspace = d::ProgramWorkspace<LiftedTag, AnnotationPolicy, d::NoTerminationPolicy, d::RuleCostPolicy>;
+    auto workspace = Workspace(fixture.program, AnnotationPolicy(), d::NoTerminationPolicy(), d::RuleCostPolicy(&metric_targets));
+    auto context = d::ProgramExecutionContext(workspace);
+
+    d::compute_model(context);
+
+    const auto* annotation = workspace.annotations.find(fixture.goal);
+    ASSERT_NE(annotation, nullptr);
+    const auto* witness = std::get_if<d::WitnessAnnotation<f::PredicateTag>>(annotation);
+    ASSERT_NE(witness, nullptr);
+    EXPECT_EQ(witness->get_rule_key(), fixture.second_binding);
+    EXPECT_EQ(witness->get_cost(), 11);  // b: 2 + 2 + 0 (filtered target) + 7; a: 2 + 2 + 3 + 5 = 12.
+    EXPECT_EQ(witness->get_metric(), ygg::ClosedInterval<ygg::float_t>(11, 11));
+    ASSERT_EQ(witness->get_numeric_supports().size(), 1);
+    EXPECT_EQ(witness->get_numeric_supports().front().get_key(), fixture.second_lifted_metric);
+    EXPECT_EQ(witness->get_numeric_supports().front().get_interval(), ygg::ClosedInterval<ygg::float_t>(7, 7));
+    EXPECT_EQ(witness->get_numeric_supports().front().get_cost(), d::Cost(0));
 }
 
 class BottomUpFixtureTest : public ::testing::TestWithParam<BottomUpCase>

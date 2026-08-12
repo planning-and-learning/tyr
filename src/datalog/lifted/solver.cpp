@@ -96,7 +96,7 @@ template<f::RelationKind R, typename In, typename Out>
 static auto make_rule_update_input(In& in, Out& out)
 {
     return RuleUpdateInput<R, std::decay_t<decltype(in.annotation_policy())>, std::decay_t<decltype(in.cost_policy())>> {
-        RuleInstance<LiftedTag, R> { in.cws_rule().get_rule(), out.ground_context() },
+        RuleInstance<LiftedTag, R> { in.cws_rule(), out.ground_context() },
         RuleEvaluationInput { in.numeric_support_selector(), in.annotations() },
         out.rule_evaluation_workspace(),
         in.numeric_annotations(),
