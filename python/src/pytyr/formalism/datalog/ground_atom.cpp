@@ -45,8 +45,7 @@ void bind_ground_atom_view(nb::module_& m, const char* name)
                    .def("get_index", &V::get_index)
                    .def("get_predicate", &V::get_predicate, nb::keep_alive<0, 1>())
                    .def("get_row", &V::get_row, nb::keep_alive<0, 1>())
-                   .def("get_objects", &V::get_objects)
-                   .def("get_key", &V::get_key);
+                   .def("get_objects", &V::get_objects);
     ygg::add_print(cls);
     ygg::add_comparison(cls);
     ygg::add_hash(cls);

@@ -42,7 +42,7 @@ The Python interface for implementing search algorithms is:
 
 ```py
 # Recommended namespace aliases
-from pytyr.planning import ExecutionContext
+from pyyggdrasil.execution import ExecutionContext
 import pytyr.formalism.planning as tfp
 import pytyr.planning.lifted as tpl  # pytyr.planning.ground also exists
 

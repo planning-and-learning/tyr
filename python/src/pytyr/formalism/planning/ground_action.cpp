@@ -46,7 +46,6 @@ void bind_ground_action(nb::module_& m, RepositoryBinding& repository)
                        .def("get_action", &V::get_action, nb::keep_alive<0, 1>())
                        .def("get_row", &V::get_row, nb::keep_alive<0, 1>())
                        .def("get_objects", &V::get_objects)
-                       .def("get_key", &V::get_key)
                        .def("get_condition", &V::get_condition, nb::keep_alive<0, 1>())
                        .def("get_effects", &V::get_effects);
         ygg::add_print(cls);

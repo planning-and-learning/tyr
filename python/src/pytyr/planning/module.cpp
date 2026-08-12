@@ -56,8 +56,7 @@ void bind_module_definitions(nb::module_& m)
         .value("EXHAUSTED", SearchStatus::EXHAUSTED)
         .value("CYCLE", SearchStatus::CYCLE)
         .value("SOLVED", SearchStatus::SOLVED)
-        .value("UNSOLVABLE", SearchStatus::UNSOLVABLE)
-        .export_values();
+        .value("UNSOLVABLE", SearchStatus::UNSOLVABLE);
 
     /**
      * CostMode

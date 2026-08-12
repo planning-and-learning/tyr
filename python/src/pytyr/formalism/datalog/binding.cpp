@@ -44,8 +44,7 @@ void bind_binding_view(nb::module_& m, const char* name)
     auto cls = nb::class_<V>(m, name)
                    .def("get_index", &V::get_index)
                    .def("get_relation", &V::get_relation, nb::keep_alive<0, 1>())
-                   .def("get_objects", &V::get_objects)
-                   .def("get_key", &V::get_key);
+                   .def("get_objects", &V::get_objects);
     ygg::add_print(cls);
     ygg::add_comparison(cls);
     ygg::add_hash(cls);

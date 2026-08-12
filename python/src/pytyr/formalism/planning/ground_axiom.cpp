@@ -43,7 +43,6 @@ void bind_ground_axiom(nb::module_& m, RepositoryBinding& repository)
                        .def("get_axiom", &V::get_axiom, nb::keep_alive<0, 1>())
                        .def("get_row", &V::get_row, nb::keep_alive<0, 1>())
                        .def("get_objects", &V::get_objects)
-                       .def("get_key", &V::get_key)
                        .def("get_body", &V::get_body, nb::keep_alive<0, 1>())
                        .def("get_head", &V::get_head, nb::keep_alive<0, 1>());
         ygg::add_print(cls);
