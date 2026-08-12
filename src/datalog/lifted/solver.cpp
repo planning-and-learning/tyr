@@ -111,9 +111,23 @@ static bool insert_propositional_update(fd::PredicateBindingView<f::FluentTag> h
                                         PredicateHeadIteration& head_iteration,
                                         [[maybe_unused]] PredicateAnnotations<true>& delta_annotations)
 {
-    auto candidate = evaluate_predicate_candidate(input.rule_instance, input.annotation_policy, input.cost_policy, input.evaluation, input.workspace);
+    auto [candidate, pruned] = evaluate_propositional_candidate(head,
+                                                                input.rule_instance,
+                                                                input.annotation_policy,
+                                                                input.cost_policy,
+                                                                input.evaluation,
+                                                                input.workspace,
+                                                                delta_annotations);
     if (!candidate)
+    {
+        if (pruned)
+        {
+            // A staged annotation can still need its head restored to the cost frontier after resume.
+            head_iteration.insert(head);
+            return true;
+        }
         return false;
+    }
 
     assert(candidate->head == head);
     if constexpr (AP::stores_annotations)

@@ -24,11 +24,13 @@
 #include "tyr/datalog/policies/numeric_support.hpp"
 #include "tyr/datalog/rule_instance.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <limits>
 #include <optional>
 #include <span>
 #include <type_traits>
+#include <utility>
 #include <vector>
 #include <yggdrasil/containers/variant.hpp>
 
@@ -73,6 +75,11 @@ struct FunctionCandidate
 
 namespace rule_evaluation_detail
 {
+
+struct AlwaysContinue
+{
+    constexpr bool operator()(Cost, Cost) const noexcept { return true; }
+};
 
 struct EvaluationState
 {
@@ -119,8 +126,8 @@ bool append_selection_evidence(const RuleEvaluationInput& input, RuleEvaluationW
     }
 }
 
-template<typename Instance, typename CP>
-Cost get_rule_credit(const CP& policy, Instance& instance)
+template<TaskKind Kind, ::tyr::formalism::RelationKind R, typename CP>
+Cost get_rule_credit(const CP& policy, RuleInstance<Kind, R>& instance)
 {
     if constexpr (std::same_as<std::remove_cvref_t<CP>, RuleCostPolicy>)
         return Cost(0);
@@ -128,9 +135,9 @@ Cost get_rule_credit(const CP& policy, Instance& instance)
         return policy.get_cost(instance.witness_key());
 }
 
-template<typename Instance, typename CP>
+template<TaskKind Kind, ::tyr::formalism::RelationKind R, typename CP>
 Cost get_transition_credit(const CP& policy,
-                           Instance& instance,
+                           RuleInstance<Kind, R>& instance,
                            ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> head,
                            ygg::ClosedInterval<ygg::float_t> interval)
 {
@@ -140,15 +147,50 @@ Cost get_transition_credit(const CP& policy,
         return policy.get_cost(instance.witness_key(), head, interval);
 }
 
-template<bool CollectEvidence, typename Instance, typename AP, typename CP>
-std::optional<EvaluationState>
-evaluate_annotated_rule(Instance& instance, const AP&, const CP& cost_policy, const RuleEvaluationInput& input, RuleEvaluationWorkspace& workspace)
+template<bool CollectEvidence, TaskKind Kind, ::tyr::formalism::RelationKind R, typename AP, typename CP, typename CanContinue>
+std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& instance,
+                                                       const AP&,
+                                                       const CP& cost_policy,
+                                                       const RuleEvaluationInput& input,
+                                                       RuleEvaluationWorkspace& workspace,
+                                                       CanContinue&& can_continue)
 {
     using Aggregation = typename AP::Aggregation;
     const auto aggregate = Aggregation {};
     auto state = EvaluationState { Aggregation::identity(), {}, Cost(0), std::nullopt, {}, {} };
 
     workspace.exact_supports.clear();
+
+    if (!can_continue(state.support_cost, state.raw_edge))
+        return std::nullopt;
+
+    const auto evaluate_metric_effects = [&]
+    {
+        return instance.for_each_resolved_metric_effect(
+            [&](const ResolvedNumericEffect& effect)
+            {
+                if (!cost_policy.is_metric_target(effect.head))
+                    return true;
+                workspace.selector.clear();
+                const auto delta = metric_effect_delta(
+                    effect.operator_kind,
+                    [&] { return input.selector.select_fluent_interval(effect.head, workspace.selector.selection); },
+                    [&] { return input.selector.evaluate_effect_expression(effect.rhs, workspace.selector.selection); });
+                if (!delta)
+                    return false;
+
+                aggregate_selection_cost<Aggregation>(state.support_cost, workspace.selector);
+                state.raw_edge += *delta;
+                if (!can_continue(state.support_cost, state.raw_edge))
+                    return false;
+                return append_selection_evidence<CollectEvidence>(input, workspace, state.support_metric);
+            });
+    };
+
+    // The pruning path evaluates metric effects first to establish an edge-cost lower bound.
+    if constexpr (!std::same_as<std::remove_cvref_t<CanContinue>, AlwaysContinue>)
+        if (!evaluate_metric_effects())
+            return std::nullopt;
 
     for (const auto literal : instance.get_body().template get_literals<::tyr::formalism::FluentTag>())
     {
@@ -161,6 +203,8 @@ evaluate_annotated_rule(Instance& instance, const AP&, const CP& cost_policy, co
             return std::nullopt;
 
         state.support_cost = aggregate(state.support_cost, get_cost(*annotation));
+        if (!can_continue(state.support_cost, state.raw_edge))
+            return std::nullopt;
         if constexpr (CollectEvidence)
             state.support_metric = aggregate_metric_support(state.support_metric, get_metric(*annotation));
     }
@@ -173,11 +217,13 @@ evaluate_annotated_rule(Instance& instance, const AP&, const CP& cost_policy, co
             return std::nullopt;
 
         state.support_cost = aggregate(state.support_cost, constraint_cost);
+        if (!can_continue(state.support_cost, state.raw_edge))
+            return std::nullopt;
         if (!append_selection_evidence<CollectEvidence>(input, workspace, state.support_metric))
             return std::nullopt;
     }
 
-    if constexpr (std::same_as<typename Instance::Relation, ::tyr::formalism::FunctionTag>)
+    if constexpr (std::same_as<R, ::tyr::formalism::FunctionTag>)
     {
         state.numeric_effect = ygg::visit([&](const auto effect) { return instance.resolve(effect); }, instance.get_head().get_variant());
         const auto& effect = *state.numeric_effect;
@@ -201,38 +247,24 @@ evaluate_annotated_rule(Instance& instance, const AP&, const CP& cost_policy, co
 
         state.current_interval = input.selector.current_interval(effect.head);
         aggregate_selection_cost<Aggregation>(state.support_cost, workspace.selector);
+        if (!can_continue(state.support_cost, state.raw_edge))
+            return std::nullopt;
         if (!append_selection_evidence<CollectEvidence>(input, workspace, state.support_metric))
             return std::nullopt;
     }
 
-    const auto metric_effects_available = instance.for_each_resolved_metric_effect(
-        [&](const ResolvedNumericEffect& effect)
-        {
-            if (!cost_policy.is_metric_target(effect.head))
-                return true;
-            workspace.selector.clear();
-            const auto delta = metric_effect_delta(
-                effect.operator_kind,
-                [&] { return input.selector.select_fluent_interval(effect.head, workspace.selector.selection); },
-                [&] { return input.selector.evaluate_effect_expression(effect.rhs, workspace.selector.selection); });
-            if (!delta)
-                return false;
-
-            aggregate_selection_cost<Aggregation>(state.support_cost, workspace.selector);
-            if (!append_selection_evidence<CollectEvidence>(input, workspace, state.support_metric))
-                return false;
-            state.raw_edge += *delta;
-            return true;
-        });
-    if (!metric_effects_available)
-        return std::nullopt;
+    if constexpr (std::same_as<std::remove_cvref_t<CanContinue>, AlwaysContinue>)
+        if (!evaluate_metric_effects())
+            return std::nullopt;
 
     return state;
 }
 
-template<typename Instance, typename AP>
-std::optional<FunctionCandidate>
-evaluate_unannotated_function(Instance& instance, const AP& policy, const RuleEvaluationInput& input, RuleEvaluationWorkspace& workspace)
+template<TaskKind Kind, typename AP>
+std::optional<FunctionCandidate> evaluate_unannotated_function(RuleInstance<Kind, ::tyr::formalism::FunctionTag>& instance,
+                                                               const AP& policy,
+                                                               const RuleEvaluationInput& input,
+                                                               RuleEvaluationWorkspace& workspace)
 {
     const auto effect = ygg::visit([&](const auto source) { return instance.resolve(source); }, instance.get_head().get_variant());
     workspace.selector.clear();
@@ -263,14 +295,13 @@ evaluate_unannotated_function(Instance& instance, const AP& policy, const RuleEv
 
 }
 
-template<typename Instance, typename AP, typename CP>
-std::optional<Cost> evaluate_rule_priority(Instance& instance,
+template<TaskKind Kind, ::tyr::formalism::RelationKind R, typename AP, typename CP>
+std::optional<Cost> evaluate_rule_priority(RuleInstance<Kind, R>& instance,
                                            const AP& annotation_policy,
                                            const CP& cost_policy,
                                            const RuleEvaluationInput& input,
                                            RuleEvaluationWorkspace& workspace)
 {
-    using R = typename Instance::Relation;
     if constexpr (!AP::stores_annotations)
     {
         if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
@@ -283,7 +314,12 @@ std::optional<Cost> evaluate_rule_priority(Instance& instance,
     }
     else
     {
-        const auto state = rule_evaluation_detail::evaluate_annotated_rule<false>(instance, annotation_policy, cost_policy, input, workspace);
+        const auto state = rule_evaluation_detail::evaluate_annotated_rule<false>(instance,
+                                                                                  annotation_policy,
+                                                                                  cost_policy,
+                                                                                  input,
+                                                                                  workspace,
+                                                                                  rule_evaluation_detail::AlwaysContinue {});
         if (!state)
             return std::nullopt;
         if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
@@ -298,21 +334,22 @@ std::optional<Cost> evaluate_rule_priority(Instance& instance,
     }
 }
 
-template<typename Instance, typename AP, typename CP>
-std::optional<PredicateCandidate> evaluate_predicate_candidate(Instance& instance,
+template<TaskKind Kind, typename AP, typename CP, typename CanContinue = rule_evaluation_detail::AlwaysContinue>
+std::optional<PredicateCandidate> evaluate_predicate_candidate(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
+                                                               RuleInstance<Kind, ::tyr::formalism::PredicateTag>& instance,
                                                                const AP& annotation_policy,
                                                                const CP& cost_policy,
                                                                const RuleEvaluationInput& input,
-                                                               RuleEvaluationWorkspace& workspace)
+                                                               RuleEvaluationWorkspace& workspace,
+                                                               CanContinue can_continue = {})
 {
-    const auto head = instance.resolve(instance.get_head());
     if constexpr (!AP::stores_annotations)
     {
         return PredicateCandidate { head, Cost(0), Cost(0), std::nullopt };
     }
     else
     {
-        const auto state = rule_evaluation_detail::evaluate_annotated_rule<true>(instance, annotation_policy, cost_policy, input, workspace);
+        const auto state = rule_evaluation_detail::evaluate_annotated_rule<true>(instance, annotation_policy, cost_policy, input, workspace, can_continue);
         if (!state)
             return std::nullopt;
 
@@ -322,8 +359,52 @@ std::optional<PredicateCandidate> evaluate_predicate_candidate(Instance& instanc
     }
 }
 
-template<typename Instance, typename AP, typename CP>
-std::optional<FunctionCandidate> evaluate_function_candidate(Instance& instance,
+template<TaskKind Kind, typename AP, typename CP>
+auto evaluate_propositional_candidate(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
+                                      RuleInstance<Kind, ::tyr::formalism::PredicateTag>& rule_instance,
+                                      const AP& annotation_policy,
+                                      const CP& cost_policy,
+                                      const RuleEvaluationInput& input,
+                                      RuleEvaluationWorkspace& workspace,
+                                      Cost best_cost)
+{
+    auto pruned = false;
+    if constexpr (AP::stores_annotations && !AP::records_propositional_achievers && std::same_as<CP, RuleCostPolicy>)
+    {
+        auto candidate = evaluate_predicate_candidate(head,
+                                                      rule_instance,
+                                                      annotation_policy,
+                                                      cost_policy,
+                                                      input,
+                                                      workspace,
+                                                      [&](const Cost support_cost, const Cost edge)
+                                                      {
+                                                          pruned = support_cost + edge >= best_cost;
+                                                          return !pruned;
+                                                      });
+        return std::pair(std::move(candidate), pruned);
+    }
+    else
+    {
+        return std::pair(evaluate_predicate_candidate(head, rule_instance, annotation_policy, cost_policy, input, workspace), false);
+    }
+}
+
+template<TaskKind Kind, typename AP, typename CP>
+auto evaluate_propositional_candidate(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
+                                      RuleInstance<Kind, ::tyr::formalism::PredicateTag>& rule_instance,
+                                      const AP& annotation_policy,
+                                      const CP& cost_policy,
+                                      const RuleEvaluationInput& input,
+                                      RuleEvaluationWorkspace& workspace,
+                                      const PredicateAnnotations<true>& delta_annotations)
+{
+    const auto best_cost = std::min(input.predicate_annotations.fetch_cost(head), delta_annotations.fetch_cost(head));
+    return evaluate_propositional_candidate(head, rule_instance, annotation_policy, cost_policy, input, workspace, best_cost);
+}
+
+template<TaskKind Kind, typename AP, typename CP>
+std::optional<FunctionCandidate> evaluate_function_candidate(RuleInstance<Kind, ::tyr::formalism::FunctionTag>& instance,
                                                              const AP& annotation_policy,
                                                              const CP& cost_policy,
                                                              const RuleEvaluationInput& input,
@@ -335,7 +416,12 @@ std::optional<FunctionCandidate> evaluate_function_candidate(Instance& instance,
     }
     else
     {
-        const auto state = rule_evaluation_detail::evaluate_annotated_rule<true>(instance, annotation_policy, cost_policy, input, workspace);
+        const auto state = rule_evaluation_detail::evaluate_annotated_rule<true>(instance,
+                                                                                 annotation_policy,
+                                                                                 cost_policy,
+                                                                                 input,
+                                                                                 workspace,
+                                                                                 rule_evaluation_detail::AlwaysContinue {});
         if (!state || !state->numeric_effect)
             return std::nullopt;
 
@@ -363,14 +449,11 @@ std::optional<FunctionCandidate> evaluate_function_candidate(Instance& instance,
     }
 }
 
-template<typename Instance, typename Candidate>
-WitnessAnnotation<typename Instance::Relation> materialize_witness(Instance& instance, const Candidate& candidate)
+template<TaskKind Kind, ::tyr::formalism::RelationKind R, typename Candidate>
+WitnessAnnotation<R> materialize_witness(RuleInstance<Kind, R>& instance, const Candidate& candidate)
 {
     assert(candidate.evidence);
-    return WitnessAnnotation<typename Instance::Relation>(instance.witness_key(),
-                                                          candidate.evidence->metric,
-                                                          candidate.cost,
-                                                          candidate.evidence->numeric_supports);
+    return WitnessAnnotation<R>(instance.witness_key(), candidate.evidence->metric, candidate.cost, candidate.evidence->numeric_supports);
 }
 
 }

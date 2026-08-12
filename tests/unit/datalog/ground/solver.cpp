@@ -689,7 +689,7 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationCommitsMixedLowestCostBucket)
     const auto* goal_annotation = ctx.out().annotations().find(goal_atom.get_row());
     ASSERT_NE(goal_annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*goal_annotation), 0);
-    EXPECT_EQ(ctx.out().queue_statistics().num_rules_fired, 4);
+    EXPECT_EQ(ctx.out().queue_statistics().num_rules_fired, 3);
 }
 
 TEST(TyrDatalogGroundQueueTest, GroundTerminationExposesOnlyOptimalGoalFrontierAchievers)

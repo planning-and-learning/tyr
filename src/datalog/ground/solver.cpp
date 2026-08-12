@@ -352,13 +352,32 @@ void process_next_rule(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx, Cost
     auto selector = ctx.out().numeric_support_selector();
     auto& workspace = out.queue().scratch.rule_evaluation;
     const auto input = RuleEvaluationInput { selector, out.annotations() };
-    const auto candidate = [&]
+    auto [candidate, pruned] = [&]
     {
         if constexpr (std::same_as<R, f::PredicateTag>)
-            return evaluate_predicate_candidate(instance, out.annotation_policy(), out.cost_policy(), input, workspace);
+        {
+            const auto head = instance.resolve(instance.get_head());
+            return evaluate_propositional_candidate(head,
+                                                    instance,
+                                                    out.annotation_policy(),
+                                                    out.cost_policy(),
+                                                    input,
+                                                    workspace,
+                                                    out.annotations().fetch_cost(head));
+        }
         else
-            return evaluate_function_candidate(instance, out.annotation_policy(), out.cost_policy(), input, workspace);
+            return std::pair(evaluate_function_candidate(instance, out.annotation_policy(), out.cost_policy(), input, workspace), false);
     }();
+    if (pruned)
+    {
+        if constexpr (std::same_as<R, f::PredicateTag>)
+        {
+            const auto head = instance.resolve(instance.get_head());
+            if (!out.facts().fact_sets.predicate.contains(head))
+                pending_heads.insert(out.annotations().fetch_cost(head), head);
+        }
+        return;
+    }
     if (!candidate || candidate->queue_label != entry->cost)
     {
         ++out.queue_statistics().num_stale_queue_pops;
