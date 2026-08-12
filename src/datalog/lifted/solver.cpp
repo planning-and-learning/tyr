@@ -80,16 +80,6 @@ public:
         return true;
     }
 
-    void begin_stratum() { stratum().out().scheduler().activate_all(); }
-
-    void begin_iteration()
-    {
-        auto& out = stratum().out();
-        out.scheduler().on_start_iteration();
-        out.program().delta_annotations().clear();
-        out.program().delta_numeric_annotations().clear();
-    }
-
     bool generate_updates(CostBuckets& cost_buckets, PendingPredicateAchievers& pending_achievers)
     {
         auto& ctx = stratum();
@@ -100,18 +90,6 @@ public:
     }
 
     Scheduler<LiftedTag>& scheduler() { return stratum().out().scheduler(); }
-
-    void finish_iteration([[maybe_unused]] SolverIterationTrigger trigger)
-    {
-#ifdef TYR_ENABLE_SEMI_NAIVE
-        stratum().out().scheduler().on_finish_iteration();
-#else
-        if (trigger == SolverIterationTrigger::AnnotationImproved)
-            stratum().out().scheduler().on_finish_iteration();
-        else
-            stratum().out().scheduler().activate_all();
-#endif
-    }
 
 private:
     static void create_nullary_binding(ygg::IndexList<f::Object>& binding) { binding.clear(); }

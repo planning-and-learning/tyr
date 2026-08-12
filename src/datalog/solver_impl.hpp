@@ -26,17 +26,35 @@
 #include "tyr/datalog/policies/termination_concept.hpp"
 #include "tyr/datalog/solver.hpp"
 
+#include <concepts>
+
 namespace tyr::datalog
 {
 
-enum class SolverIterationTrigger
-{
-    AnnotationImproved,
-    FactChanged
-};
-
 template<TaskKind Kind, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 class SolverPolicy;
+
+template<typename Kind, typename AP, typename TP, typename CP>
+concept SchedulerConcept = TaskKind<Kind> && AnnotationPolicyConcept<AP> && TerminationPolicyConcept<TP> && RuleCostPolicyConcept<CP>
+                           && requires(Scheduler<Kind>& scheduler,
+                                       ProgramExecutionContext<Kind, AP, TP, CP>& ctx,
+                                       const CostBuckets::Bucket& bucket,
+                                       ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> function) {
+                                  { scheduler.begin_stratum(ctx) } -> std::same_as<void>;
+                                  { scheduler.begin_iteration(ctx) } -> std::same_as<void>;
+                                  { scheduler.finish_iteration(SchedulerIterationTrigger::FactChanged) } -> std::same_as<void>;
+                                  { scheduler.notify_numeric_changed(function, ctx) } -> std::same_as<void>;
+                                  { scheduler.notify_generated(bucket, ctx) } -> std::same_as<void>;
+                              };
+
+template<typename Kind, typename AP, typename TP, typename CP>
+concept SolverPolicyConcept =
+    SchedulerConcept<Kind, AP, TP, CP> && std::constructible_from<SolverPolicy<Kind, AP, TP, CP>, ProgramExecutionContext<Kind, AP, TP, CP>&>
+    && requires(SolverPolicy<Kind, AP, TP, CP>& policy, CostBuckets& cost_buckets, PendingPredicateAchievers& pending_achievers) {
+           { policy.next_stratum() } -> std::same_as<bool>;
+           { policy.generate_updates(cost_buckets, pending_achievers) } -> std::same_as<bool>;
+           { policy.scheduler() } -> std::same_as<Scheduler<Kind>&>;
+       };
 
 template<TaskKind Kind, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 bool commit_head_bucket(ProgramExecutionContext<Kind, AP, TP, CP>& ctx, Scheduler<Kind>& scheduler, CostBuckets& cost_buckets, Cost cost)
@@ -47,29 +65,31 @@ bool commit_head_bucket(ProgramExecutionContext<Kind, AP, TP, CP>& ctx, Schedule
 
     // Install the entire bucket before notifying rules. The scheduler controls the representation-specific
     // notification order.
-    scheduler.on_generate(bucket, ctx);
+    scheduler.notify_generated(bucket, ctx);
     return !bucket.empty();
 }
 
 template<TaskKind Kind, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+    requires SolverPolicyConcept<Kind, AP, TP, CP>
 void compute_model_impl(ProgramExecutionContext<Kind, AP, TP, CP>& ctx)
 {
     auto policy = SolverPolicy<Kind, AP, TP, CP>(ctx);
     while (policy.next_stratum())
     {
+        Scheduler<Kind>& scheduler = policy.scheduler();
         auto cost_buckets = CostBuckets {};
         auto pending_achievers = PendingPredicateAchievers {};
-        policy.begin_stratum();
+        scheduler.begin_stratum(ctx);
 
         while (true)
         {
             if (ctx.out().tp().should_terminate(FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }))
                 return;
 
-            policy.begin_iteration();
+            scheduler.begin_iteration(ctx);
             if (policy.generate_updates(cost_buckets, pending_achievers))
             {
-                policy.finish_iteration(SolverIterationTrigger::AnnotationImproved);
+                scheduler.finish_iteration(SchedulerIterationTrigger::AnnotationImproved);
                 continue;
             }
 
@@ -77,7 +97,7 @@ void compute_model_impl(ProgramExecutionContext<Kind, AP, TP, CP>& ctx)
             while (!cost_buckets.is_empty() && !fact_changed)
             {
                 const auto cost = cost_buckets.min_cost();
-                fact_changed = commit_head_bucket(ctx, policy.scheduler(), cost_buckets, cost);
+                fact_changed = commit_head_bucket(ctx, scheduler, cost_buckets, cost);
                 publish_pending_achievers(pending_achievers, pending_achievers.buckets.upper_bound(cost), ctx.out().annotation_policy());
             }
 
@@ -86,7 +106,7 @@ void compute_model_impl(ProgramExecutionContext<Kind, AP, TP, CP>& ctx)
                 publish_pending_achievers(pending_achievers, pending_achievers.buckets.end(), ctx.out().annotation_policy());
                 break;
             }
-            policy.finish_iteration(SolverIterationTrigger::FactChanged);
+            scheduler.finish_iteration(SchedulerIterationTrigger::FactChanged);
         }
     }
 }

@@ -88,9 +88,6 @@ template<>
 class Scheduler<LiftedTag>
 {
 public:
-    TypedRuleSchedulerStratum<::tyr::formalism::PredicateTag> predicate_rules;
-    TypedRuleSchedulerStratum<::tyr::formalism::FunctionTag> function_rules;
-
     Scheduler(const analysis::RuleStratum& rules,
               const analysis::ListenerStratum& listeners,
               const ::tyr::formalism::datalog::Repository& context,
@@ -114,35 +111,57 @@ public:
         return get(R {});
     }
 
-    void activate_all();
-    void on_start_iteration() noexcept;
-    void on_generate(ygg::Index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>> predicate);
-    void on_generate(ygg::Index<::tyr::formalism::Function<::tyr::formalism::FluentTag>> function);
-
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void on_generate(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> binding,
-                     [[maybe_unused]] ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
+    void begin_stratum([[maybe_unused]] ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
     {
-        on_generate(binding.get_index().relation);
+        activate_all();
     }
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void on_generate(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding,
-                     [[maybe_unused]] ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
+    void begin_iteration(ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
     {
-        on_generate(binding.get_index().relation);
+        on_start_iteration();
+        ctx.out().delta_annotations().clear();
+        ctx.out().delta_numeric_annotations().clear();
     }
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void on_generate(const CostBuckets::Bucket& bucket, [[maybe_unused]] ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
+    void notify_numeric_changed(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding,
+                                [[maybe_unused]] ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
+    {
+        activate(binding.get_index().relation);
+    }
+
+    template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+    void notify_generated(const CostBuckets::Bucket& bucket, [[maybe_unused]] ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
     {
         for (const auto fact : bucket.predicate)
-            on_generate(fact.get_index().relation);
+            activate(fact.get_index().relation);
         for (const auto& entry : bucket.function)
-            on_generate(entry.first.get_index().relation);
+            activate(entry.first.get_index().relation);
     }
 
+    void finish_iteration([[maybe_unused]] SchedulerIterationTrigger trigger)
+    {
+#ifdef TYR_ENABLE_SEMI_NAIVE
+        on_finish_iteration();
+#else
+        if (trigger == SchedulerIterationTrigger::AnnotationImproved)
+            on_finish_iteration();
+        else
+            activate_all();
+#endif
+    }
+
+private:
+    void activate_all();
+    void on_start_iteration() noexcept;
+    void activate(ygg::Index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>> predicate);
+    void activate(ygg::Index<::tyr::formalism::Function<::tyr::formalism::FluentTag>> function);
     void on_finish_iteration();
+
+    TypedRuleSchedulerStratum<::tyr::formalism::PredicateTag> predicate_rules;
+    TypedRuleSchedulerStratum<::tyr::formalism::FunctionTag> function_rules;
 };
 
 std::vector<Scheduler<LiftedTag>> create_schedulers(const analysis::RuleStrata& rules,

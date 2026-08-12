@@ -229,7 +229,7 @@ bool reduce_function_head_updates(FunctionHeadUpdates& head_updates,
         if (reduce_function_head_update(update, annotation_policy, delta_numeric_annotations, numeric_annotations, cost_buckets))
         {
             annotation_improved = true;
-            scheduler.on_generate(update.binding, ctx);
+            scheduler.notify_numeric_changed(update.binding, ctx);
         }
     }
     return annotation_improved;

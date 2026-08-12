@@ -137,13 +137,13 @@ void Scheduler<LiftedTag>::on_start_iteration() noexcept
     function_rules.on_start_iteration();
 }
 
-void Scheduler<LiftedTag>::on_generate(ygg::Index<f::Predicate<f::FluentTag>> predicate)
+void Scheduler<LiftedTag>::activate(ygg::Index<f::Predicate<f::FluentTag>> predicate)
 {
     predicate_rules.on_generate(predicate);
     function_rules.on_generate(predicate);
 }
 
-void Scheduler<LiftedTag>::on_generate(ygg::Index<f::Function<f::FluentTag>> function)
+void Scheduler<LiftedTag>::activate(ygg::Index<f::Function<f::FluentTag>> function)
 {
     predicate_rules.on_generate(function);
     function_rules.on_generate(function);

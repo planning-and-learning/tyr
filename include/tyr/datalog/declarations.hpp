@@ -47,6 +47,12 @@ struct TaggedFactSets;
 
 struct FactSets;
 
+enum class SchedulerIterationTrigger
+{
+    AnnotationImproved,
+    FactChanged
+};
+
 class StaticConsistencyGraph;
 template<TaskKind Kind>
 class Program;

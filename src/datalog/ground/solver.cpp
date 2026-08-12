@@ -43,10 +43,6 @@ public:
     // Ground programs currently reject negative fluent bodies, so every supported program has one stratum.
     bool next_stratum() noexcept { return std::exchange(m_pending_stratum, false); }
 
-    void begin_stratum() { m_ctx.out().scheduler().seed(m_ctx); }
-
-    void begin_iteration() noexcept {}
-
     bool generate_updates(CostBuckets& cost_buckets, PendingPredicateAchievers& pending_achievers)
     {
         while (scheduler().next_cost() != std::numeric_limits<Cost>::max())
@@ -55,8 +51,6 @@ public:
     }
 
     Scheduler<GroundTag>& scheduler() noexcept { return m_ctx.out().scheduler(); }
-
-    void finish_iteration(SolverIterationTrigger) noexcept {}
 
 private:
     template<f::RelationKind R>

@@ -75,8 +75,8 @@ void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(scheduler_impl
 }
 
 template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::on_generate_predicate(scheduler_impl::fd::PredicateBindingView<scheduler_impl::f::FluentTag> fact,
-                                                 ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
+void Scheduler<GroundTag>::notify_predicate_generated_for(scheduler_impl::fd::PredicateBindingView<scheduler_impl::f::FluentTag> fact,
+                                                          ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     const auto* dependent_rules = ctx.in().template dependencies<R>().fluent_precondition_to_rules.find(fact);
     if (!dependent_rules)
@@ -94,8 +94,8 @@ void Scheduler<GroundTag>::on_generate_predicate(scheduler_impl::fd::PredicateBi
 }
 
 template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::on_generate_function(scheduler_impl::fd::FunctionBindingView<scheduler_impl::f::FluentTag> term,
-                                                ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
+void Scheduler<GroundTag>::notify_numeric_changed_for(scheduler_impl::fd::FunctionBindingView<scheduler_impl::f::FluentTag> term,
+                                                      ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     const auto* dependent_rules = ctx.in().template dependencies<R>().fluent_function_term_to_rules.find(term);
     if (!dependent_rules)
@@ -110,7 +110,7 @@ void Scheduler<GroundTag>::on_generate_function(scheduler_impl::fd::FunctionBind
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::seed(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
+void Scheduler<GroundTag>::begin_stratum(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     for (const auto rule : m_program.get_rules<scheduler_impl::f::PredicateTag>())
         update_numeric_constraint_satisfaction(rule, ctx);
@@ -124,24 +124,24 @@ void Scheduler<GroundTag>::seed(ProgramExecutionContext<GroundTag, AP, TP, CP>& 
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::on_generate(scheduler_impl::fd::PredicateBindingView<scheduler_impl::f::FluentTag> fact,
-                                       ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
+void Scheduler<GroundTag>::notify_predicate_generated(scheduler_impl::fd::PredicateBindingView<scheduler_impl::f::FluentTag> fact,
+                                                      ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     ++m_statistics.num_facts_derived;
-    on_generate_predicate<scheduler_impl::f::PredicateTag>(fact, ctx);
-    on_generate_predicate<scheduler_impl::f::FunctionTag>(fact, ctx);
+    notify_predicate_generated_for<scheduler_impl::f::PredicateTag>(fact, ctx);
+    notify_predicate_generated_for<scheduler_impl::f::FunctionTag>(fact, ctx);
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::on_generate(scheduler_impl::fd::FunctionBindingView<scheduler_impl::f::FluentTag> term,
-                                       ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
+void Scheduler<GroundTag>::notify_numeric_changed(scheduler_impl::fd::FunctionBindingView<scheduler_impl::f::FluentTag> term,
+                                                  ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
-    on_generate_function<scheduler_impl::f::PredicateTag>(term, ctx);
-    on_generate_function<scheduler_impl::f::FunctionTag>(term, ctx);
+    notify_numeric_changed_for<scheduler_impl::f::PredicateTag>(term, ctx);
+    notify_numeric_changed_for<scheduler_impl::f::FunctionTag>(term, ctx);
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::on_generate(const CostBuckets::Bucket& bucket, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
+void Scheduler<GroundTag>::notify_generated(const CostBuckets::Bucket& bucket, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     m_scratch.changed_facts.assign(bucket.predicate.begin(), bucket.predicate.end());
     m_scratch.changed_terms.clear();
@@ -152,9 +152,9 @@ void Scheduler<GroundTag>::on_generate(const CostBuckets::Bucket& bucket, Progra
     std::sort(m_scratch.changed_facts.begin(), m_scratch.changed_facts.end());
     std::sort(m_scratch.changed_terms.begin(), m_scratch.changed_terms.end());
     for (const auto fact : m_scratch.changed_facts)
-        on_generate(fact, ctx);
+        notify_predicate_generated(fact, ctx);
     for (const auto term : m_scratch.changed_terms)
-        on_generate(term, ctx);
+        notify_numeric_changed(term, ctx);
 }
 
 }

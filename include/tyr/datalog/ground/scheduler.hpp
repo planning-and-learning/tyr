@@ -176,20 +176,22 @@ public:
 
     Cost next_cost() const noexcept { return std::min(next_cost<::tyr::formalism::PredicateTag>(), next_cost<::tyr::formalism::FunctionTag>()); }
 
-    template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void schedule(::tyr::formalism::datalog::GroundRuleView<R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+    void begin_stratum(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void seed(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    void begin_iteration([[maybe_unused]] ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx) noexcept
+    {
+    }
+
+    void finish_iteration(SchedulerIterationTrigger) noexcept {}
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void on_generate(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    void notify_numeric_changed(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> term,
+                                ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void on_generate(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> term, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
-
-    template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void on_generate(const CostBuckets::Bucket& bucket, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    void notify_generated(const CostBuckets::Bucket& bucket, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<::tyr::formalism::RelationKind R>
     auto& get_states() noexcept
@@ -209,6 +211,13 @@ public:
     const GroundSchedulerScratch& scratch() const noexcept { return m_scratch; }
 
 private:
+    template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+    void schedule(::tyr::formalism::datalog::GroundRuleView<R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+
+    template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+    void notify_predicate_generated(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> fact,
+                                    ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+
     template<::tyr::formalism::RelationKind R>
     void initialize_rule_states(const FactSets& fact_sets)
     {
@@ -237,12 +246,12 @@ private:
     void update_numeric_constraint_satisfaction(::tyr::formalism::datalog::GroundRuleView<R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void on_generate_predicate(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> fact,
-                               ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    void notify_predicate_generated_for(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> fact,
+                                        ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void on_generate_function(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> term,
-                              ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    void notify_numeric_changed_for(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> term,
+                                    ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     auto& get_queue(::tyr::formalism::PredicateTag) noexcept { return m_predicate_queue; }
     auto& get_queue(::tyr::formalism::FunctionTag) noexcept { return m_function_queue; }
