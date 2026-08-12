@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/lifted/rule_scheduler.hpp"
+#include "tyr/datalog/lifted/scheduler.hpp"
 
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/views.hpp"
@@ -115,57 +115,57 @@ void TypedRuleSchedulerStratum<R>::on_finish_iteration()
     rebuild_sorted_active_rules();
 }
 
-RuleSchedulerStratum::RuleSchedulerStratum(const analysis::RuleStratum& rules,
-                                           const analysis::ListenerStratum& listeners,
-                                           const fd::Repository& context,
-                                           size_t num_fluent_predicates,
-                                           size_t num_fluent_functions) :
+Scheduler<LiftedTag>::Scheduler(const analysis::RuleStratum& rules,
+                                const analysis::ListenerStratum& listeners,
+                                const fd::Repository& context,
+                                size_t num_fluent_predicates,
+                                size_t num_fluent_functions) :
     predicate_rules(rules.get<f::PredicateTag>(), listeners.get<f::PredicateTag>(), context, num_fluent_predicates, num_fluent_functions),
     function_rules(rules.get<f::FunctionTag>(), listeners.get<f::FunctionTag>(), context, num_fluent_predicates, num_fluent_functions)
 {
 }
 
-void RuleSchedulerStratum::activate_all()
+void Scheduler<LiftedTag>::activate_all()
 {
     predicate_rules.activate_all();
     function_rules.activate_all();
 }
 
-void RuleSchedulerStratum::on_start_iteration() noexcept
+void Scheduler<LiftedTag>::on_start_iteration() noexcept
 {
     predicate_rules.on_start_iteration();
     function_rules.on_start_iteration();
 }
 
-void RuleSchedulerStratum::on_generate(ygg::Index<f::Predicate<f::FluentTag>> predicate)
+void Scheduler<LiftedTag>::on_generate(ygg::Index<f::Predicate<f::FluentTag>> predicate)
 {
     predicate_rules.on_generate(predicate);
     function_rules.on_generate(predicate);
 }
 
-void RuleSchedulerStratum::on_generate(ygg::Index<f::Function<f::FluentTag>> function)
+void Scheduler<LiftedTag>::on_generate(ygg::Index<f::Function<f::FluentTag>> function)
 {
     predicate_rules.on_generate(function);
     function_rules.on_generate(function);
 }
 
-void RuleSchedulerStratum::on_finish_iteration()
+void Scheduler<LiftedTag>::on_finish_iteration()
 {
     predicate_rules.on_finish_iteration();
     function_rules.on_finish_iteration();
 }
 
-RuleSchedulerStrata create_schedulers(const analysis::RuleStrata& rules,
-                                      const analysis::ListenerStrata& listeners,
-                                      const fd::Repository& context,
-                                      size_t num_fluent_predicates,
-                                      size_t num_fluent_functions)
+std::vector<Scheduler<LiftedTag>> create_schedulers(const analysis::RuleStrata& rules,
+                                                    const analysis::ListenerStrata& listeners,
+                                                    const fd::Repository& context,
+                                                    size_t num_fluent_predicates,
+                                                    size_t num_fluent_functions)
 {
     assert(rules.data.size() == listeners.data.size());
 
-    auto result = RuleSchedulerStrata {};
+    auto result = std::vector<Scheduler<LiftedTag>> {};
     for (ygg::uint_t i = 0; i < rules.data.size(); ++i)
-        result.data.emplace_back(rules.data[i], listeners.data[i], context, num_fluent_predicates, num_fluent_functions);
+        result.emplace_back(rules.data[i], listeners.data[i], context, num_fluent_predicates, num_fluent_functions);
 
     return result;
 }

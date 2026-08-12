@@ -79,7 +79,6 @@ ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTa
                                  program_repository,
                                  program.get_program().get_predicates<::tyr::formalism::FluentTag>().size(),
                                  program.get_program().get_functions<::tyr::formalism::FluentTag>().size())),
-    cost_buckets(),
     statistics()
 {
     if constexpr (AP::records_propositional_achievers)
@@ -103,7 +102,6 @@ void ProgramWorkspace<LiftedTag, AP, TP, CP>::reset_evaluation()
 
     tp.clear();
     cost_policy.clear();
-    cost_buckets.clear();
     numeric_support_selector.reset();
     annotations.clear();
     numeric_annotations.clear();

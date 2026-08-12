@@ -360,7 +360,7 @@ SolvedGroundQueue solve_default_state(GroundQueueFixture& fixture)
     auto ctx = datalog::ProgramExecutionContext(workspace);
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::compute_model(ctx);
-    return { binding_views(ctx), ctx.out().queue_statistics() };
+    return { binding_views(ctx), ctx.out().scheduler().statistics() };
 }
 }
 
@@ -441,13 +441,13 @@ TEST(TyrDatalogGroundQueueTest, ReusesGroundProgramExecutionContext)
 
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::compute_model(ctx);
-    const auto first_statistics = ctx.out().queue_statistics();
+    const auto first_statistics = ctx.out().scheduler().statistics();
     EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
     EXPECT_EQ(first_statistics.num_facts_derived, 2);
 
     ctx.initialize(fixture.initial_fluent_atoms);
     dq::compute_model(ctx);
-    const auto second_statistics = ctx.out().queue_statistics();
+    const auto second_statistics = ctx.out().scheduler().statistics();
     EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
     EXPECT_EQ(second_statistics.num_facts_derived, 2);
     EXPECT_EQ(second_statistics.num_rules_fired, first_statistics.num_rules_fired);
@@ -510,7 +510,7 @@ TEST(TyrDatalogGroundQueueTest, InitialFluentFactsSatisfyDynamicUnsatisfiedCount
     EXPECT_EQ(rule_indices(*a_rules), std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>>({ fixture.ground_rules[0] }));
 
     ctx.initialize(fixture.initial_fluent_atoms);
-    EXPECT_EQ(ctx.out().rule_states<f::PredicateTag>()[fixture.ground_rules[0].get_value()].unsatisfied_count, 0);
+    EXPECT_EQ(ctx.out().scheduler().get_states<f::PredicateTag>()[fixture.ground_rules[0].get_value()].unsatisfied_count, 0);
 }
 
 TEST(TyrDatalogGroundQueueTest, ExplicitFluentStateDrivesDynamicUnsatisfiedCounts)
@@ -528,7 +528,7 @@ TEST(TyrDatalogGroundQueueTest, ExplicitFluentStateDrivesDynamicUnsatisfiedCount
 
     ctx.out().facts().reset();
     ctx.initialize();
-    EXPECT_EQ(ctx.out().rule_states<f::PredicateTag>()[fixture.ground_rules[0].get_value()].unsatisfied_count, 1);
+    EXPECT_EQ(ctx.out().scheduler().get_states<f::PredicateTag>()[fixture.ground_rules[0].get_value()].unsatisfied_count, 1);
 }
 
 TEST(TyrDatalogGroundQueueTest, DerivedFactOnlyDecrementsRulesWaitingOnThatFact)
@@ -551,8 +551,8 @@ TEST(TyrDatalogGroundQueueTest, DerivedFactOnlyDecrementsRulesWaitingOnThatFact)
     dq::compute_model(ctx);
 
     EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
-    EXPECT_EQ(ctx.out().rule_states<f::PredicateTag>()[fixture.ground_rules[1].get_value()].unsatisfied_count, 0);
-    EXPECT_EQ(ctx.out().rule_states<f::PredicateTag>()[fixture.ground_rules[2].get_value()].unsatisfied_count, 1);
+    EXPECT_EQ(ctx.out().scheduler().get_states<f::PredicateTag>()[fixture.ground_rules[1].get_value()].unsatisfied_count, 0);
+    EXPECT_EQ(ctx.out().scheduler().get_states<f::PredicateTag>()[fixture.ground_rules[2].get_value()].unsatisfied_count, 1);
 }
 
 TEST(TyrDatalogGroundQueueTest, DuplicateHeadsDeriveFactOnce)
@@ -618,8 +618,8 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationSkipsWorkWhenInitialFactsSatisf
     dq::compute_model(ctx);
 
     EXPECT_EQ(binding_views(ctx), binding_views({ goal_atom }));
-    EXPECT_EQ(ctx.out().queue_statistics().num_rules_fired, 0);
-    EXPECT_EQ(ctx.out().queue_statistics().num_facts_derived, 0);
+    EXPECT_EQ(ctx.out().scheduler().statistics().num_rules_fired, 0);
+    EXPECT_EQ(ctx.out().scheduler().statistics().num_facts_derived, 0);
 }
 
 TEST(TyrDatalogGroundQueueTest, GroundTerminationStopsAfterGoalDerived)
@@ -644,7 +644,7 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationStopsAfterGoalDerived)
     dq::compute_model(ctx);
 
     EXPECT_EQ(binding_views(ctx), binding_views({ a }));
-    EXPECT_EQ(ctx.out().queue_statistics().num_rules_fired, 1);
+    EXPECT_EQ(ctx.out().scheduler().statistics().num_rules_fired, 1);
     EXPECT_TRUE(ctx.out().tp().check(datalog::FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }));
 }
 
@@ -689,7 +689,7 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationCommitsMixedLowestCostBucket)
     const auto* goal_annotation = ctx.out().annotations().find(goal_atom.get_row());
     ASSERT_NE(goal_annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*goal_annotation), 0);
-    EXPECT_EQ(ctx.out().queue_statistics().num_rules_fired, 3);
+    EXPECT_EQ(ctx.out().scheduler().statistics().num_rules_fired, 3);
 }
 
 TEST(TyrDatalogGroundQueueTest, GroundTerminationExposesOnlyOptimalGoalFrontierAchievers)
@@ -822,7 +822,7 @@ TEST(TyrDatalogGroundQueueTest, DerivedNumericIntervalUnblocksRuleAndRecordsSupp
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
-    EXPECT_EQ(ctx.out().rule_states<f::PredicateTag>()[ygg::uint_t(derive_head.get_index())].unsatisfied_count, 1);
+    EXPECT_EQ(ctx.out().scheduler().get_states<f::PredicateTag>()[ygg::uint_t(derive_head.get_index())].unsatisfied_count, 1);
 
     dq::compute_model(ctx);
 
@@ -888,7 +888,7 @@ TEST(TyrDatalogGroundQueueTest, RevalidatesQueuedRuleAfterContainedNumericCertif
     const auto* annotation = ctx.out().annotations().find(head.get_row());
     ASSERT_NE(annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*annotation), 0);
-    EXPECT_EQ(ctx.out().queue_statistics().num_stale_queue_pops, 1);
+    EXPECT_EQ(ctx.out().scheduler().statistics().num_stale_queue_pops, 1);
 }
 
 TEST(TyrDatalogGroundQueueTest, EvaluatesReactivatedNumericRuleBeforeTargetHullChanges)
@@ -1075,7 +1075,7 @@ TEST(TyrDatalogGroundQueueTest, StaticLiteralsUseTheirPolarityAndInitialTruth)
     for (const auto rule : program.get_rules<f::PredicateTag>())
         expected.push_back(rule.get_head().get_row());
     EXPECT_EQ(binding_views(ctx), expected);
-    EXPECT_EQ(ctx.out().queue_statistics().num_rules_fired, 2);
+    EXPECT_EQ(ctx.out().scheduler().statistics().num_rules_fired, 2);
 }
 
 TEST(TyrDatalogGroundQueueTest, ExplicitFluentAtomsRestoreDeclaredInitialFunctionValues)

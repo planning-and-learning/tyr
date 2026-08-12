@@ -15,11 +15,16 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_DATALOG_RULE_SCHEDULER_HPP_
-#define TYR_DATALOG_RULE_SCHEDULER_HPP_
+#ifndef TYR_DATALOG_LIFTED_SCHEDULER_HPP_
+#define TYR_DATALOG_LIFTED_SCHEDULER_HPP_
 
 #include "tyr/analysis/listeners.hpp"
 #include "tyr/analysis/stratification.hpp"
+#include "tyr/datalog/cost_buckets.hpp"
+#include "tyr/datalog/declarations.hpp"
+#include "tyr/datalog/policies/annotation_concept.hpp"
+#include "tyr/datalog/policies/cost_concept.hpp"
+#include "tyr/datalog/policies/termination_concept.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/rule_index.hpp"
 
@@ -79,16 +84,18 @@ private:
     ygg::IndexList<::tyr::formalism::datalog::Rule<R>> m_sorted_active_rules;
 };
 
-struct RuleSchedulerStratum
+template<>
+class Scheduler<LiftedTag>
 {
+public:
     TypedRuleSchedulerStratum<::tyr::formalism::PredicateTag> predicate_rules;
     TypedRuleSchedulerStratum<::tyr::formalism::FunctionTag> function_rules;
 
-    RuleSchedulerStratum(const analysis::RuleStratum& rules,
-                         const analysis::ListenerStratum& listeners,
-                         const ::tyr::formalism::datalog::Repository& context,
-                         size_t num_fluent_predicates,
-                         size_t num_fluent_functions);
+    Scheduler(const analysis::RuleStratum& rules,
+              const analysis::ListenerStratum& listeners,
+              const ::tyr::formalism::datalog::Repository& context,
+              size_t num_fluent_predicates,
+              size_t num_fluent_functions);
 
     auto& get(::tyr::formalism::PredicateTag) noexcept { return predicate_rules; }
     auto& get(::tyr::formalism::FunctionTag) noexcept { return function_rules; }
@@ -111,19 +118,38 @@ struct RuleSchedulerStratum
     void on_start_iteration() noexcept;
     void on_generate(ygg::Index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>> predicate);
     void on_generate(ygg::Index<::tyr::formalism::Function<::tyr::formalism::FluentTag>> function);
+
+    template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+    void on_generate(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> binding,
+                     [[maybe_unused]] ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
+    {
+        on_generate(binding.get_index().relation);
+    }
+
+    template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+    void on_generate(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding,
+                     [[maybe_unused]] ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
+    {
+        on_generate(binding.get_index().relation);
+    }
+
+    template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+    void on_generate(const CostBuckets::Bucket& bucket, [[maybe_unused]] ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
+    {
+        for (const auto fact : bucket.predicate)
+            on_generate(fact.get_index().relation);
+        for (const auto& entry : bucket.function)
+            on_generate(entry.first.get_index().relation);
+    }
+
     void on_finish_iteration();
 };
 
-struct RuleSchedulerStrata
-{
-    std::vector<RuleSchedulerStratum> data;
-};
-
-RuleSchedulerStrata create_schedulers(const analysis::RuleStrata& rules,
-                                      const analysis::ListenerStrata& listeners,
-                                      const ::tyr::formalism::datalog::Repository& context,
-                                      size_t num_fluent_predicates,
-                                      size_t num_fluent_functions);
+std::vector<Scheduler<LiftedTag>> create_schedulers(const analysis::RuleStrata& rules,
+                                                    const analysis::ListenerStrata& listeners,
+                                                    const ::tyr::formalism::datalog::Repository& context,
+                                                    size_t num_fluent_predicates,
+                                                    size_t num_fluent_functions);
 
 }
 

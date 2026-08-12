@@ -19,9 +19,8 @@
 #define TYR_DATALOG_GROUND_WORKSPACES_PROGRAM_HPP_
 
 #include "tyr/datalog/declarations.hpp"
+#include "tyr/datalog/ground/scheduler.hpp"
 #include "tyr/datalog/ground/workspaces/facts.hpp"
-#include "tyr/datalog/ground/workspaces/queue.hpp"
-#include "tyr/datalog/ground/workspaces/rule.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
 #include "tyr/datalog/policies/cost.hpp"
@@ -78,9 +77,7 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
     FunctionAnnotations<> numeric_annotations;
     TP tp;
     CP cost_policy;
-    RuleWorkspace<GroundTag, ::tyr::formalism::PredicateTag> predicate_rules;
-    RuleWorkspace<GroundTag, ::tyr::formalism::FunctionTag> function_rules;
-    QueueWorkspace queue;
+    Scheduler<GroundTag> scheduler;
     ::tyr::formalism::datalog::Builder datalog_builder;
 
     explicit ProgramWorkspace(const ConstProgramWorkspace<GroundTag>& cws, AP annotation_policy_ = AP(), TP tp_ = TP(), CP cost_policy_ = CP()) :
@@ -95,9 +92,7 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
         numeric_annotations(cws.program.template get_functions<::tyr::formalism::FluentTag>().size()),
         tp(std::move(tp_)),
         cost_policy(std::move(cost_policy_)),
-        predicate_rules(cws.program),
-        function_rules(cws.program),
-        queue(cws.program),
+        scheduler(cws.program),
         datalog_builder()
     {
         if constexpr (AP::records_propositional_achievers)

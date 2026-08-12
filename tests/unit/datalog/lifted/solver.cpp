@@ -376,11 +376,11 @@ TEST(TyrDatalogLiftedBottomUpTest, FullEnumerationIsLimitedToNumericListeners)
 {
     auto fixture = make_lifted_numeric_program(true, { 3 }, true);
     auto workspace = d::ProgramWorkspace<LiftedTag>(fixture.program);
-    ASSERT_EQ(workspace.schedulers.data.size(), 1);
+    ASSERT_EQ(workspace.schedulers.size(), 1);
 
     const auto rule = fixture.program.get_program().get_rules<f::PredicateTag>().front();
     const auto seed = rule.get_body().get_literals<f::FluentTag>().front().get_atom().get_predicate().get_index();
-    auto& scheduler = workspace.schedulers.data.front().get<f::PredicateTag>();
+    auto& scheduler = workspace.schedulers.front().get<f::PredicateTag>();
 
     scheduler.on_start_iteration();
     scheduler.on_generate(seed);

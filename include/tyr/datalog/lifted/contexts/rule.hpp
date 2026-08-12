@@ -59,7 +59,6 @@ public:
         const auto& annotations() const noexcept { return m_rctx.stratum_out().program().annotations(); }
         const auto& numeric_annotations() const noexcept { return m_rctx.stratum_out().program().numeric_annotations(); }
         const auto& numeric_support_selector() const noexcept { return m_rctx.stratum_out().program().numeric_support_selector(); }
-        const auto& cost_buckets() const noexcept { return m_rctx.stratum_out().program().cost_buckets(); }
         const auto& cost_policy() const noexcept { return m_rctx.stratum_out().program().cost_policy(); }
         const auto& fact_sets() const noexcept { return m_fact_sets; }
 

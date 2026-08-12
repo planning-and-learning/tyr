@@ -45,17 +45,18 @@ struct StratumExecutionContext
     class Out
     {
     public:
-        Out(RuleSchedulerStratum& scheduler, ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_scheduler(scheduler), m_ctx(ctx) {}
+        Out(Scheduler<LiftedTag>& scheduler, ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_scheduler(scheduler), m_ctx(ctx) {}
 
         auto& scheduler() noexcept { return m_scheduler; }
         auto& program() noexcept { return m_ctx.out(); }
+        auto& program_context() noexcept { return m_ctx; }
 
     private:
-        RuleSchedulerStratum& m_scheduler;
+        Scheduler<LiftedTag>& m_scheduler;
         ProgramExecutionContext<LiftedTag, AP, TP, CP>& m_ctx;
     };
 
-    StratumExecutionContext(RuleSchedulerStratum& scheduler, ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_in(ctx), m_out(scheduler, ctx) {}
+    StratumExecutionContext(Scheduler<LiftedTag>& scheduler, ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_in(ctx), m_out(scheduler, ctx) {}
 
     template<::tyr::formalism::RelationKind R>
     auto get_rule_execution_context(ygg::Index<::tyr::formalism::datalog::Rule<R>> rule)

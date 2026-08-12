@@ -76,49 +76,10 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
         const auto& tp() const noexcept { return m_ws.tp; }
         auto& cost_policy() noexcept { return m_ws.cost_policy; }
         const auto& cost_policy() const noexcept { return m_ws.cost_policy; }
-        template<::tyr::formalism::RelationKind R>
-        auto& rule_states() noexcept
-        {
-            return rules<R>().states;
-        }
-        template<::tyr::formalism::RelationKind R>
-        const auto& rule_states() const noexcept
-        {
-            return rules<R>().states;
-        }
-        template<::tyr::formalism::RelationKind R>
-        auto& queue_storage() noexcept
-        {
-            return m_ws.queue.template get_storage<R>();
-        }
-        template<::tyr::formalism::RelationKind R>
-        const auto& queue_storage() const noexcept
-        {
-            return m_ws.queue.template get_storage<R>();
-        }
-        auto& queue_statistics() noexcept { return m_ws.queue.statistics; }
-        const auto& queue_statistics() const noexcept { return m_ws.queue.statistics; }
-        auto& queue() noexcept { return m_ws.queue; }
-        const auto& queue() const noexcept { return m_ws.queue; }
+        auto& scheduler() noexcept { return m_ws.scheduler; }
+        const auto& scheduler() const noexcept { return m_ws.scheduler; }
 
     private:
-        template<::tyr::formalism::RelationKind R>
-        auto& rules() noexcept
-        {
-            if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
-                return m_ws.predicate_rules;
-            else
-                return m_ws.function_rules;
-        }
-        template<::tyr::formalism::RelationKind R>
-        const auto& rules() const noexcept
-        {
-            if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
-                return m_ws.predicate_rules;
-            else
-                return m_ws.function_rules;
-        }
-
         ProgramWorkspace<GroundTag, AP, TP, CP>& m_ws;
     };
 
@@ -162,35 +123,8 @@ private:
     void reset_from_current_facts()
     {
         initialize_annotations();
-        m_out.queue().clear();
         const auto fact_sets = FactSets { m_in.facts().fact_sets, m_out.facts().fact_sets };
-        initialize_rule_states<::tyr::formalism::PredicateTag>(fact_sets);
-        initialize_rule_states<::tyr::formalism::FunctionTag>(fact_sets);
-    }
-
-    template<::tyr::formalism::RelationKind R>
-    void initialize_rule_states(const FactSets& fact_sets)
-    {
-        const auto rules = m_in.program().template get_rules<R>();
-        auto& states = m_out.template rule_states<R>();
-        states.resize(rules.size());
-        for (ygg::uint_t rule_index = 0; rule_index < rules.size(); ++rule_index)
-        {
-            const auto rule = rules[rule_index];
-            auto& state = states[rule_index];
-
-            auto unsatisfied_count = ygg::uint_t(0);
-            for (const auto literal : rule.get_body().template get_literals<::tyr::formalism::FluentTag>())
-                if (!is_applicable(literal, fact_sets))
-                    ++unsatisfied_count;
-            const auto numeric_constraints = rule.get_body().get_numeric_constraints();
-            state.numeric_constraint_satisfied.assign(numeric_constraints.size(), false);
-            for (ygg::uint_t i = 0; i < numeric_constraints.size(); ++i)
-                ++unsatisfied_count;
-
-            state.unsatisfied_count = unsatisfied_count;
-            state.queued_cost = std::nullopt;
-        }
+        m_out.scheduler().reset(fact_sets);
     }
 
     In m_in;

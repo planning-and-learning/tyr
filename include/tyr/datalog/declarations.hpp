@@ -74,18 +74,21 @@ template<TaskKind Kind, typename AP = NoAnnotationPolicy, typename TP = NoTermin
 struct ProgramWorkspace;
 template<TaskKind Kind>
 struct ConstProgramWorkspace;
-struct QueueWorkspace;
 template<TaskKind Kind, ::tyr::formalism::RelationKind R>
 struct RuleWorkspace;
 template<TaskKind Kind, ::tyr::formalism::RelationKind R>
 struct ConstRuleWorkspace;
 template<TaskKind Kind, typename AP = NoAnnotationPolicy, typename TP = NoTerminationPolicy, typename CP = RuleCostPolicy>
 struct ProgramExecutionContext;
+template<TaskKind Kind>
+class Scheduler;
+template<>
+class Scheduler<GroundTag>;
+template<>
+class Scheduler<LiftedTag>;
 
 template<::tyr::formalism::RelationKind R>
 class TypedRuleSchedulerStratum;
-struct RuleSchedulerStratum;
-struct RuleSchedulerStrata;
 
 struct ProgramStatistics;
 struct RuleStatistics;

@@ -20,7 +20,6 @@
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/datalog/lifted/contexts/stratum.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/lifted/workspaces/rule.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
@@ -30,7 +29,6 @@
 
 #include <cassert>
 #include <cstddef>
-#include <ranges>
 
 namespace tyr::datalog
 {
@@ -97,8 +95,6 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         const auto& workspace_repository() const noexcept { return m_ws.workspace_repository; }
         auto& schedulers() noexcept { return m_ws.schedulers; }
         const auto& schedulers() const noexcept { return m_ws.schedulers; }
-        auto& cost_buckets() noexcept { return m_ws.cost_buckets; }
-        const auto& cost_buckets() const noexcept { return m_ws.cost_buckets; }
         auto& statistics() noexcept { return m_ws.statistics; }
         const auto& statistics() const noexcept { return m_ws.statistics; }
 
@@ -154,14 +150,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
             }
         }
 
-        out.cost_buckets().clear();
         out.rebuild_numeric_support_selector(in().facts().fact_sets);
-    }
-
-    auto get_stratum_execution_contexts()
-    {
-        return out().schedulers().data
-               | std::views::transform([this](RuleSchedulerStratum& scheduler) { return StratumExecutionContext<AP, TP, CP> { scheduler, *this }; });
     }
 
     const auto& in() const noexcept { return m_in; }

@@ -24,6 +24,8 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
+#include <yggdrasil/core/closed_interval.hpp>
+
 namespace tyr::datalog
 {
 template<>
@@ -40,6 +42,22 @@ struct FactsWorkspace<LiftedTag>
                             ::tyr::formalism::datalog::GroundAtomListView<::tyr::formalism::FluentTag> atoms,
                             ::tyr::formalism::datalog::GroundFunctionTermValueListView<::tyr::formalism::FluentTag> fterm_values,
                             const ::tyr::formalism::datalog::Repository& workspace_repository);
+
+    bool insert(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> binding)
+    {
+        if (!fact_sets.predicate.insert(binding))
+            return false;
+        assignment_sets.predicate.insert(binding);
+        return true;
+    }
+
+    bool insert(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding, ygg::ClosedInterval<ygg::float_t> interval)
+    {
+        if (!fact_sets.function.insert(binding, interval))
+            return false;
+        assignment_sets.function.insert(binding, interval);
+        return true;
+    }
 
     void reset();
 };

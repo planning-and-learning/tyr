@@ -100,7 +100,7 @@ add_library(
     datalog/ground/workspaces/facts.cpp
     datalog/ground/workspaces/program.cpp
     datalog/ground/solver.cpp
-    datalog/lifted/rule_scheduler.cpp
+    datalog/lifted/scheduler.cpp
 
     ${TYR_STATE_STORAGE_SRC_FILES}
 

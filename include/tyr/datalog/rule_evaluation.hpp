@@ -18,10 +18,14 @@
 #ifndef TYR_DATALOG_RULE_EVALUATION_HPP_
 #define TYR_DATALOG_RULE_EVALUATION_HPP_
 
+#include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/numeric_utils.hpp"
+#include "tyr/datalog/policies/annotation_concept.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
 #include "tyr/datalog/policies/cost.hpp"
+#include "tyr/datalog/policies/cost_concept.hpp"
 #include "tyr/datalog/policies/numeric_support.hpp"
+#include "tyr/datalog/policies/termination_concept.hpp"
 #include "tyr/datalog/rule_instance.hpp"
 
 #include <algorithm>
@@ -29,10 +33,14 @@
 #include <limits>
 #include <optional>
 #include <span>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/containers/variant.hpp>
+#include <yggdrasil/semantics/comparison.hpp>
+#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::datalog
 {
@@ -71,6 +79,207 @@ struct FunctionCandidate
     Cost queue_label;
     bool grows_fact;
     std::optional<CandidateEvidence> evidence;
+};
+
+struct PredicateHeadUpdates
+{
+    using Binding = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
+    using Witness = WitnessAnnotation<::tyr::formalism::PredicateTag>;
+
+    ygg::UnorderedSet<Binding> seen_bindings;
+    std::vector<Binding> bindings;
+    std::vector<PredicateAchiever> achievers;
+
+    void clear() noexcept
+    {
+        seen_bindings.clear();
+        bindings.clear();
+        achievers.clear();
+    }
+
+    void insert(Binding binding)
+    {
+        if (seen_bindings.emplace(binding).second)
+            bindings.push_back(binding);
+    }
+
+    void insert_achiever(Binding head, Witness witness) { achievers.push_back(PredicateAchiever { head, std::move(witness) }); }
+};
+
+struct FunctionHeadUpdate : ygg::comparison::Mixin<FunctionHeadUpdate>
+{
+    ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding;
+    ygg::ClosedInterval<ygg::float_t> interval;
+    bool grows_fact;
+
+    FunctionHeadUpdate(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding,
+                       ygg::ClosedInterval<ygg::float_t> interval,
+                       bool grows_fact) :
+        binding(binding),
+        interval(interval),
+        grows_fact(grows_fact)
+    {
+    }
+
+    auto identifying_members() const noexcept { return std::tie(binding, interval); }
+};
+
+struct FunctionHeadUpdates
+{
+    ygg::UnorderedSet<FunctionHeadUpdate> seen_updates;
+    std::vector<FunctionHeadUpdate> updates;
+
+    void clear() noexcept
+    {
+        seen_updates.clear();
+        updates.clear();
+    }
+
+    void insert(FunctionHeadUpdate update)
+    {
+        if (seen_updates.emplace(update).second)
+            updates.push_back(std::move(update));
+    }
+};
+
+template<AnnotationPolicyConcept AP>
+void reduce_predicate_head_updates(PredicateHeadUpdates& head_updates,
+                                   [[maybe_unused]] AP& annotation_policy,
+                                   [[maybe_unused]] const PredicateFactSets<::tyr::formalism::FluentTag>& facts,
+                                   [[maybe_unused]] PredicateAnnotations<true>& delta_annotations,
+                                   [[maybe_unused]] PredicateAnnotations<>& annotations,
+                                   CostBuckets& cost_buckets,
+                                   [[maybe_unused]] PendingPredicateAchievers& pending_achievers)
+{
+    if constexpr (AP::records_propositional_achievers)
+        for (auto& achiever : head_updates.achievers)
+            insert_pending_achiever(pending_achievers, std::move(achiever));
+
+    for (const auto head : head_updates.bindings)
+    {
+        if constexpr (AP::stores_annotations)
+        {
+            const auto* delta_annotation = delta_annotations.find(head);
+            if (facts.contains(head))
+            {
+                assert((!delta_annotation || get_cost(*delta_annotation) >= annotations.fetch_cost(head)) && "A committed predicate label must be final.");
+                continue;
+            }
+
+            if (!delta_annotation && !annotations.find(head))
+                continue;
+            cost_buckets.update(annotation_policy.commit_annotation(head, delta_annotations, annotations), head);
+        }
+        else if (!facts.contains(head))
+        {
+            cost_buckets.insert(Cost(0), head);
+        }
+    }
+}
+
+template<AnnotationPolicyConcept AP>
+bool reduce_function_head_update(const FunctionHeadUpdate& update,
+                                 [[maybe_unused]] AP& annotation_policy,
+                                 [[maybe_unused]] FunctionAnnotations<true>& delta_numeric_annotations,
+                                 [[maybe_unused]] FunctionAnnotations<>& numeric_annotations,
+                                 CostBuckets& cost_buckets)
+{
+    if constexpr (AP::stores_annotations)
+    {
+        const auto* annotation = delta_numeric_annotations.find(update.binding, update.interval);
+        auto improved = false;
+        if (annotation)
+        {
+            improved =
+                annotation_policy.commit_annotation(update.binding, update.interval, delta_numeric_annotations, numeric_annotations).is_strict_improvement();
+            annotation = numeric_annotations.find(update.binding, update.interval);
+        }
+        else
+            annotation = numeric_annotations.find(update.binding, update.interval);
+
+        // FunctionAnnotations retains the cheapest certificate for each exact interval.
+        // FactSets determines whether that certificate is available; CostBuckets schedules only hull growth.
+        if (annotation && update.grows_fact)
+        {
+            cost_buckets.insert(get_cost(*annotation), update.binding, update.interval);
+            return false;
+        }
+        return improved;
+    }
+    else
+    {
+        if (update.grows_fact)
+            cost_buckets.insert(Cost(0), update.binding, update.interval);
+        return false;
+    }
+}
+
+template<TaskKind Kind, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+bool reduce_function_head_updates(FunctionHeadUpdates& head_updates,
+                                  AP& annotation_policy,
+                                  FunctionAnnotations<true>& delta_numeric_annotations,
+                                  FunctionAnnotations<>& numeric_annotations,
+                                  CostBuckets& cost_buckets,
+                                  Scheduler<Kind>& scheduler,
+                                  ProgramExecutionContext<Kind, AP, TP, CP>& ctx)
+{
+    auto annotation_improved = false;
+    for (const auto& update : head_updates.updates)
+    {
+        if (reduce_function_head_update(update, annotation_policy, delta_numeric_annotations, numeric_annotations, cost_buckets))
+        {
+            annotation_improved = true;
+            scheduler.on_generate(update.binding, ctx);
+        }
+    }
+    return annotation_improved;
+}
+
+template<::tyr::formalism::RelationKind R>
+using RuleHeadUpdatesT = std::conditional_t<std::same_as<R, ::tyr::formalism::PredicateTag>, PredicateHeadUpdates, FunctionHeadUpdates>;
+
+template<TaskKind Kind, ::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
+struct RuleUpdateInput
+{
+    RuleInstance<Kind, R> rule_instance;
+    RuleEvaluationInput evaluation;
+    RuleEvaluationWorkspace& workspace;
+    const FunctionAnnotations<>& numeric_annotations;
+    AP& annotation_policy;
+    const CP& cost_policy;
+};
+
+template<TaskKind Kind, ::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
+RuleUpdateInput<Kind, R, AP, CP> make_rule_update_input(RuleInstance<Kind, R> rule_instance,
+                                                        const NumericSupportSelector& numeric_support_selector,
+                                                        const PredicateAnnotations<>& predicate_annotations,
+                                                        RuleEvaluationWorkspace& workspace,
+                                                        const FunctionAnnotations<>& numeric_annotations,
+                                                        AP& annotation_policy,
+                                                        const CP& cost_policy)
+{
+    return { std::move(rule_instance),
+             RuleEvaluationInput { numeric_support_selector, predicate_annotations },
+             workspace,
+             numeric_annotations,
+             annotation_policy,
+             cost_policy };
+}
+
+enum class RuleUpdateStatus
+{
+    Unavailable,
+    Pruned,
+    QueueLabelChanged,
+    Completed,
+};
+
+struct RuleUpdateResult
+{
+    RuleUpdateStatus status;
+    std::optional<Cost> queue_label;
+
+    bool is_handled() const noexcept { return status == RuleUpdateStatus::Pruned || status == RuleUpdateStatus::Completed; }
 };
 
 namespace rule_evaluation_detail
@@ -454,6 +663,87 @@ WitnessAnnotation<R> materialize_witness(RuleInstance<Kind, R>& instance, const 
 {
     assert(candidate.evidence);
     return WitnessAnnotation<R>(instance.witness_key(), candidate.evidence->metric, candidate.cost, candidate.evidence->numeric_supports);
+}
+
+template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
+RuleUpdateResult insert_propositional_update(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
+                                             RuleUpdateInput<Kind, ::tyr::formalism::PredicateTag, AP, CP>& input,
+                                             PredicateHeadUpdates& head_updates,
+                                             PredicateAnnotations<true>& delta_annotations,
+                                             std::optional<Cost> required_queue_label = std::nullopt)
+{
+    auto [candidate, pruned] = evaluate_propositional_candidate(head,
+                                                                input.rule_instance,
+                                                                input.annotation_policy,
+                                                                input.cost_policy,
+                                                                input.evaluation,
+                                                                input.workspace,
+                                                                delta_annotations);
+    if (!candidate)
+    {
+        if (!pruned)
+            return { RuleUpdateStatus::Unavailable, std::nullopt };
+
+        // A staged annotation can still need its head restored to the cost frontier after resume.
+        head_updates.insert(head);
+        return { RuleUpdateStatus::Pruned, std::nullopt };
+    }
+
+    assert(candidate->head == head);
+    if (required_queue_label && candidate->queue_label != *required_queue_label)
+        return { RuleUpdateStatus::QueueLabelChanged, candidate->queue_label };
+
+    if constexpr (AP::stores_annotations)
+    {
+        const auto can_update = input.annotation_policy.can_update(head, candidate->cost, input.evaluation.predicate_annotations, delta_annotations);
+        if constexpr (AP::records_propositional_achievers)
+        {
+            auto witness = materialize_witness(input.rule_instance, *candidate);
+            head_updates.insert_achiever(head, witness);
+            if (can_update)
+                input.annotation_policy.try_update_candidate(head, std::move(witness), delta_annotations);
+        }
+        else if (can_update)
+        {
+            auto witness = materialize_witness(input.rule_instance, *candidate);
+            input.annotation_policy.try_update_candidate(head, std::move(witness), delta_annotations);
+        }
+    }
+    // A previously staged certificate may still need to become an available fact after a resumed solve.
+    head_updates.insert(head);
+    return { RuleUpdateStatus::Completed, candidate->queue_label };
+}
+
+template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
+RuleUpdateResult insert_numeric_update(RuleUpdateInput<Kind, ::tyr::formalism::FunctionTag, AP, CP>& input,
+                                       FunctionHeadUpdates& head_updates,
+                                       [[maybe_unused]] FunctionAnnotations<true>& delta_numeric_annotations,
+                                       std::optional<Cost> required_queue_label = std::nullopt)
+{
+    auto candidate = evaluate_function_candidate(input.rule_instance, input.annotation_policy, input.cost_policy, input.evaluation, input.workspace);
+    if (!candidate)
+        return { RuleUpdateStatus::Unavailable, std::nullopt };
+
+    if (required_queue_label && candidate->queue_label != *required_queue_label)
+        return { RuleUpdateStatus::QueueLabelChanged, candidate->queue_label };
+
+    if constexpr (!AP::stores_annotations)
+    {
+        if (candidate->grows_fact)
+            head_updates.insert(FunctionHeadUpdate(candidate->head, candidate->interval, true));
+    }
+    else
+    {
+        auto staged = false;
+        if (input.annotation_policy.can_update(candidate->head, candidate->interval, candidate->cost, input.numeric_annotations, delta_numeric_annotations))
+        {
+            auto witness = materialize_witness(input.rule_instance, *candidate);
+            staged = input.annotation_policy.try_update_candidate(candidate->head, candidate->interval, std::move(witness), delta_numeric_annotations);
+        }
+        if (staged || candidate->grows_fact)
+            head_updates.insert(FunctionHeadUpdate(candidate->head, candidate->interval, candidate->grows_fact));
+    }
+    return { RuleUpdateStatus::Completed, candidate->queue_label };
 }
 
 }

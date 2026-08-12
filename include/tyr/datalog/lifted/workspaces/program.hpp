@@ -18,9 +18,8 @@
 #ifndef TYR_DATALOG_LIFTED_WORKSPACES_PROGRAM_HPP_
 #define TYR_DATALOG_LIFTED_WORKSPACES_PROGRAM_HPP_
 
-#include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/declarations.hpp"
-#include "tyr/datalog/lifted/rule_scheduler.hpp"
+#include "tyr/datalog/lifted/scheduler.hpp"
 #include "tyr/datalog/lifted/workspaces/facts.hpp"
 #include "tyr/datalog/lifted/workspaces/rule.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
@@ -99,9 +98,7 @@ public:
 
     ygg::IndexList<::tyr::formalism::Object> binding;
 
-    RuleSchedulerStrata schedulers;
-
-    CostBuckets cost_buckets;
+    std::vector<Scheduler<LiftedTag>> schedulers;
 
     ProgramStatistics statistics;
 

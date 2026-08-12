@@ -40,6 +40,13 @@ struct FactsWorkspace<GroundTag>
                             ::tyr::formalism::datalog::GroundFunctionTermValueListView<::tyr::formalism::FluentTag> fterm_values,
                             const ::tyr::formalism::datalog::Repository& workspace_repository);
 
+    bool insert(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> binding) { return fact_sets.predicate.insert(binding); }
+
+    bool insert(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding, ygg::ClosedInterval<ygg::float_t> interval)
+    {
+        return fact_sets.function.insert(binding, interval);
+    }
+
     void reset();
 };
 

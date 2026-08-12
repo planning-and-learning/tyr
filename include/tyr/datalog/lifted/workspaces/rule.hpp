@@ -31,83 +31,15 @@
 
 #include <cassert>
 #include <deque>
-#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::datalog
 {
-
-struct PredicateHeadIteration
-{
-    using Binding = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
-    using Witness = WitnessAnnotation<::tyr::formalism::PredicateTag>;
-    using Achiever = PredicateAchiever;
-
-    ygg::UnorderedSet<Binding> seen_bindings;
-    std::vector<Binding> bindings;
-    std::vector<Achiever> achievers;
-
-    void clear() noexcept
-    {
-        seen_bindings.clear();
-        bindings.clear();
-        achievers.clear();
-    }
-
-    void insert(Binding binding)
-    {
-        if (seen_bindings.emplace(binding).second)
-            bindings.push_back(binding);
-    }
-
-    void insert_achiever(Binding head, Witness witness) { achievers.push_back(Achiever { head, std::move(witness) }); }
-};
-
-struct FunctionHeadUpdate : ygg::comparison::Mixin<FunctionHeadUpdate>
-{
-    ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding;
-    ygg::ClosedInterval<ygg::float_t> interval;
-    bool grows_fact;
-
-    FunctionHeadUpdate(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding,
-                       ygg::ClosedInterval<ygg::float_t> interval,
-                       bool grows_fact) :
-        binding(binding),
-        interval(interval),
-        grows_fact(grows_fact)
-    {
-    }
-
-    auto identifying_members() const noexcept { return std::tie(binding, interval); }
-};
-
-struct FunctionHeadIteration
-{
-    ygg::UnorderedSet<FunctionHeadUpdate> seen_updates;
-    std::vector<FunctionHeadUpdate> updates;
-
-    void clear() noexcept
-    {
-        seen_updates.clear();
-        updates.clear();
-    }
-
-    void insert(FunctionHeadUpdate update)
-    {
-        if (seen_updates.emplace(update).second)
-            updates.push_back(std::move(update));
-    }
-};
-
-template<::tyr::formalism::RelationKind R>
-using RuleHeadIterationT = std::conditional_t<std::same_as<R, ::tyr::formalism::PredicateTag>, PredicateHeadIteration, FunctionHeadIteration>;
 
 struct ApplicabilityCache
 {
@@ -151,7 +83,7 @@ struct RuleWorkspace<LiftedTag, R>
         void clear() noexcept;
 
         /// Head updates
-        RuleHeadIterationT<R> head_updates;
+        RuleHeadUpdatesT<R> head_updates;
 
         /// KCKP
         kckp::Workspace kckp_workspace;
@@ -235,9 +167,9 @@ private:
  * Implementations
  */
 
-inline PredicateHeadIteration make_head_iteration(::tyr::formalism::datalog::AtomView<::tyr::formalism::FluentTag>) { return {}; }
+inline PredicateHeadUpdates make_head_updates(::tyr::formalism::datalog::AtomView<::tyr::formalism::FluentTag>) { return {}; }
 
-inline FunctionHeadIteration make_head_iteration(::tyr::formalism::datalog::NumericEffectOperatorView<::tyr::formalism::FluentTag>) { return {}; }
+inline FunctionHeadUpdates make_head_updates(::tyr::formalism::datalog::NumericEffectOperatorView<::tyr::formalism::FluentTag>) { return {}; }
 
 inline bool supports_inner_parallelism(::tyr::formalism::datalog::AtomView<::tyr::formalism::FluentTag>) noexcept { return true; }
 inline bool supports_inner_parallelism(::tyr::formalism::datalog::NumericEffectOperatorView<::tyr::formalism::FluentTag>) noexcept { return false; }
@@ -265,7 +197,7 @@ void RuleWorkspace<LiftedTag, R>::Common::initialize_iteration(const AssignmentS
 
 template<::tyr::formalism::RelationKind R>
 RuleWorkspace<LiftedTag, R>::Iteration::Iteration(const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common) :
-    head_updates(make_head_iteration(cws.get_rule().get_head())),
+    head_updates(make_head_updates(cws.get_rule().get_head())),
     kckp_workspace(common.kckp.get_graph_layout())
 {
 }
