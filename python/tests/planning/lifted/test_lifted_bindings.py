@@ -1,4 +1,5 @@
 import gc
+from pathlib import Path
 from typing import override
 
 from pypddl.formalism import ParserOptions
@@ -40,6 +41,25 @@ def test_lifted_datalog_workspaces_own_independent_repositories() -> None:
 
     assert first.get_static_fact_sets() is not None
     assert second.get_static_fact_sets() is not None
+
+
+def test_function_fact_value_iterator_preserves_pairing() -> None:
+    fixture = Path(__file__).parents[4] / "tests/fixtures/planning/algorithms"
+    options = ParserOptions()
+    task = planning.lifted.Task(
+        Parser(str(fixture / "iw_goal_before_novelty_domain.pddl"), options).parse_task(
+            str(fixture / "iw_goal_before_novelty_problem.pddl"), options
+        )
+    )
+    program = planning.lifted.RPGProgram(task.get_task()).get_datalog_program()
+    workspace = datalog.lifted.UnannotatedProgramWorkspace(program)
+    (fact_set,) = workspace.get_fluent_fact_sets().get_function_sets()
+
+    values = fact_set.get_binding_values()
+    assert iter(values) is values
+    entries = list(values)
+    assert len(entries) == fact_set.count() == 1
+    assert entries[0][1] == 0.0
 
 
 def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None:

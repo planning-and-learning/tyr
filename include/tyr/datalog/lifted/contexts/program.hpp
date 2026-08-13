@@ -143,10 +143,13 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
 
         for (const auto& set : out.facts().fact_sets.function.get_sets())
         {
-            for (const auto [binding, interval] : set.get_binding_values())
+            const auto bindings = set.get_bindings();
+            const auto& values = set.get_values();
+            assert(bindings.size() == values.size());
+            for (size_t i = 0; i < bindings.size(); ++i)
             {
-                out.annotation_policy().initialize_annotation(binding, interval, out.numeric_annotations());
-                out.facts().assignment_sets.function.insert(binding, interval);
+                out.annotation_policy().initialize_annotation(bindings[i], values[i], out.numeric_annotations());
+                out.facts().assignment_sets.function.insert(bindings[i], values[i]);
             }
         }
 

@@ -103,15 +103,11 @@ bool PredicateFactSet<T>::contains(fd::PredicateBindingView<T> binding) const no
 }
 
 template<f::FactKind T>
-PredicateBindingIndexRange<T> PredicateFactSet<T>::get_binding_indices() const noexcept
-{
-    return PredicateBindingIndexRange<T>(m_predicate_index, m_bitset);
-}
-
-template<f::FactKind T>
 PredicateBindingViewRange<T> PredicateFactSet<T>::get_bindings() const noexcept
 {
-    return PredicateBindingViewRange<T>(m_predicate_index, m_bitset, m_repository);
+    auto rows = detail::PredicateFactRowRange { detail::PredicateFactRowIterator { m_bitset, true }, detail::PredicateFactRowIterator { m_bitset, false } };
+    auto bindings = ygg::make_view(detail::PredicateBindingRange<T> { m_predicate_index, rows }, m_repository);
+    return { bindings.begin(), bindings.end() };
 }
 
 template class PredicateFactSet<f::StaticTag>;
@@ -212,10 +208,7 @@ void FunctionFactSet<T>::reset() noexcept
 template<f::FactKind T>
 bool FunctionFactSet<T>::insert(const FunctionFactSet& other)
 {
-    auto changed = false;
-    for (const auto [binding, interval] : other.get_binding_values())
-        changed |= insert(binding, interval);
-    return changed;
+    return insert(other.get_bindings(), other.get_values());
 }
 
 template<f::FactKind T>
@@ -339,15 +332,15 @@ ygg::ClosedInterval<ygg::float_t> FunctionFactSet<T>::operator[](fd::GroundFunct
 }
 
 template<f::FactKind T>
-FunctionBindingIndexValueRange<T> FunctionFactSet<T>::get_binding_index_values() const noexcept
+fd::FunctionBindingRandomAccessRangeView<T> FunctionFactSet<T>::get_bindings() const noexcept
 {
-    return FunctionBindingIndexValueRange<T>(m_function_index, m_bindings, m_values);
+    return ygg::make_view(f::RelationBindingsRandomAccessRange<f::Function<T>, std::vector<ygg::Index<f::Row>>> { m_function_index, m_bindings }, m_repository);
 }
 
 template<f::FactKind T>
-FunctionBindingViewValueRange<T> FunctionFactSet<T>::get_binding_values() const noexcept
+const std::vector<ygg::ClosedInterval<ygg::float_t>>& FunctionFactSet<T>::get_values() const noexcept
 {
-    return FunctionBindingViewValueRange<T>(m_function_index, m_bindings, m_values, m_repository);
+    return m_values;
 }
 
 template class FunctionFactSet<f::StaticTag>;

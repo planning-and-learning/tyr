@@ -669,9 +669,12 @@ void TaggedAssignmentSets<T>::insert(const TaggedFactSets<T>& fact_sets)
     {
         auto& self = function.get_sets()[i];
         const auto& other = fact_sets.function.get_sets()[i];
+        const auto bindings = other.get_bindings();
+        const auto& values = other.get_values();
 
-        for (const auto [binding, interval] : other.get_binding_values())
-            self.insert(binding, interval);
+        assert(bindings.size() == values.size());
+        for (size_t j = 0; j < bindings.size(); ++j)
+            self.insert(bindings[j], values[j]);
     }
 }
 

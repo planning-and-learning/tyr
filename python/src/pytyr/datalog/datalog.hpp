@@ -20,6 +20,7 @@
 
 #include "module.hpp"
 
+#include <boost/iterator/transform_iterator.hpp>
 #include <nanobind/make_iterator.h>
 #include <nanobind/stl/chrono.h>
 #include <nanobind/stl/optional.h>
@@ -80,18 +81,15 @@ void bind_function_fact_set(nb::module_& m, const char* name)
             "get_binding_values",
             [](const Set& self)
             {
-                const auto values = self.get_binding_values();
-                return nb::make_iterator(nb::type<Set>(), "BindingValueIterator", values.begin(), values.end());
+                const auto bindings = self.get_bindings();
+                const auto project = [&self](const Binding binding) { return std::pair(binding, self[binding]); };
+                return nb::make_iterator(nb::type<Set>(),
+                                         "BindingValueIterator",
+                                         boost::make_transform_iterator(bindings.begin(), project),
+                                         boost::make_transform_iterator(bindings.end(), project));
             },
             nb::keep_alive<0, 1>())
-        .def("count",
-             [](const Set& self)
-             {
-                 auto result = size_t(0);
-                 for ([[maybe_unused]] const auto entry : self.get_binding_values())
-                     ++result;
-                 return result;
-             })
+        .def("count", [](const Set& self) { return self.get_values().size(); })
         .def("get", [](const Set& self, Binding binding) { return self[binding]; }, "binding"_a);
 }
 

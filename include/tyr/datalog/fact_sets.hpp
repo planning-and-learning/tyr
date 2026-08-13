@@ -18,10 +18,12 @@
 #ifndef TYR_DATALOG_FACT_SETS_HPP_
 #define TYR_DATALOG_FACT_SETS_HPP_
 
-#include "tyr/datalog/fact_sets_iterators.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <boost/dynamic_bitset.hpp>
+#include <cassert>
+#include <iterator>
+#include <ranges>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/semantics/equal_to.hpp>
@@ -29,6 +31,68 @@
 
 namespace tyr::datalog
 {
+
+namespace detail
+{
+
+class PredicateFactRowIterator
+{
+public:
+    using value_type = ygg::Index<::tyr::formalism::Row>;
+    using reference = value_type;
+    using difference_type = std::ptrdiff_t;
+    using iterator_category = std::forward_iterator_tag;
+    using iterator_concept = std::forward_iterator_tag;
+
+    PredicateFactRowIterator() noexcept = default;
+    PredicateFactRowIterator(const boost::dynamic_bitset<>& data, bool begin) noexcept :
+        m_data(&data),
+        m_position(begin ? data.find_first() : boost::dynamic_bitset<>::npos)
+    {
+    }
+
+    value_type operator*() const noexcept
+    {
+        assert(m_data);
+        return value_type { static_cast<ygg::uint_t>(m_position) };
+    }
+
+    PredicateFactRowIterator& operator++() noexcept
+    {
+        assert(m_data);
+        m_position = m_data->find_next(m_position);
+        return *this;
+    }
+
+    PredicateFactRowIterator operator++(int) noexcept
+    {
+        auto copy = *this;
+        ++(*this);
+        return copy;
+    }
+
+    friend bool operator==(const PredicateFactRowIterator& lhs, const PredicateFactRowIterator& rhs) noexcept
+    {
+        return lhs.m_data == rhs.m_data && lhs.m_position == rhs.m_position;
+    }
+
+private:
+    const boost::dynamic_bitset<>* m_data = nullptr;
+    boost::dynamic_bitset<>::size_type m_position = boost::dynamic_bitset<>::npos;
+};
+
+using PredicateFactRowRange = std::ranges::subrange<PredicateFactRowIterator>;
+
+template<::tyr::formalism::FactKind T>
+using PredicateBindingRange = ::tyr::formalism::RelationBindingsForwardRange<::tyr::formalism::Predicate<T>, PredicateFactRowRange>;
+
+template<::tyr::formalism::FactKind T>
+using PredicateBindingRangeView = ygg::View<PredicateBindingRange<T>, ::tyr::formalism::datalog::Repository>;
+
+}
+
+template<::tyr::formalism::FactKind T>
+using PredicateBindingViewRange = std::ranges::subrange<typename detail::PredicateBindingRangeView<T>::const_iterator>;
 
 template<::tyr::formalism::FactKind T>
 class PredicateFactSet
@@ -56,7 +120,6 @@ public:
 
     bool contains(::tyr::formalism::datalog::PredicateBindingView<T> binding) const noexcept;
 
-    PredicateBindingIndexRange<T> get_binding_indices() const noexcept;
     PredicateBindingViewRange<T> get_bindings() const noexcept;
 };
 
@@ -116,8 +179,8 @@ public:
     ygg::ClosedInterval<ygg::float_t> operator[](::tyr::formalism::datalog::FunctionBindingView<T> binding) const noexcept;
     ygg::ClosedInterval<ygg::float_t> operator[](::tyr::formalism::datalog::GroundFunctionTermView<T> fterm) const noexcept;
 
-    FunctionBindingIndexValueRange<T> get_binding_index_values() const noexcept;
-    FunctionBindingViewValueRange<T> get_binding_values() const noexcept;
+    ::tyr::formalism::datalog::FunctionBindingRandomAccessRangeView<T> get_bindings() const noexcept;
+    const std::vector<ygg::ClosedInterval<ygg::float_t>>& get_values() const noexcept;
 };
 
 template<::tyr::formalism::FactKind T>
