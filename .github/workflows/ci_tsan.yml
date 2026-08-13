@@ -10,6 +10,9 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
+    env:
+      TBB_TSAN_PREFIX: /tmp/oneTBB-install
+
     steps:
       - name: Checkout Tyr
         uses: actions/checkout@v4
@@ -33,12 +36,11 @@ jobs:
       - name: Rebuild oneTBB with ThreadSanitizer
         run: |
           git clone --depth 1 --branch v2022.2.0 https://github.com/uxlfoundation/oneTBB.git /tmp/oneTBB
-          PYYGGDRASIL_PREFIX="$(python -c 'import pyyggdrasil; print(pyyggdrasil.native_prefix())')"
           CC=clang CXX=clang++ cmake \
             -S /tmp/oneTBB \
             -B /tmp/oneTBB-build \
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-            -DCMAKE_INSTALL_PREFIX="${PYYGGDRASIL_PREFIX}" \
+            -DCMAKE_INSTALL_PREFIX="${TBB_TSAN_PREFIX}" \
             -DTBB_SANITIZE=thread \
             -DTBB_ENABLE_IPO=OFF \
             -DTBB_TEST=OFF \
@@ -60,6 +62,7 @@ jobs:
             -DCMAKE_CXX_FLAGS="-fsanitize=thread -fno-omit-frame-pointer" \
             -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=thread" \
             -DCMAKE_SHARED_LINKER_FLAGS="-fsanitize=thread" \
+            -DTBB_DIR="${TBB_TSAN_PREFIX}/lib/cmake/TBB" \
             -DPython_EXECUTABLE="$(python -c 'import sys; print(sys.executable)')" \
             -DCMAKE_PREFIX_PATH="$(python -c 'import pypddl, pyyggdrasil; print(f"{pypddl.native_prefix()};{pyyggdrasil.native_prefix()}")')"
 
@@ -79,7 +82,7 @@ jobs:
         run: |
           PYPDDL_LIB_DIR="$(python -c 'import pypddl; print(pypddl.native_prefix() / "lib")')"
           PYYGGDRASIL_LIB_DIR="$(python -c 'import pyyggdrasil; print(pyyggdrasil.native_prefix() / "lib")')"
-          export LD_LIBRARY_PATH="${PYPDDL_LIB_DIR}:${PYYGGDRASIL_LIB_DIR}:$PWD/../../src:${LD_LIBRARY_PATH:-}"
+          export LD_LIBRARY_PATH="${TBB_TSAN_PREFIX}/lib:${PYPDDL_LIB_DIR}:${PYYGGDRASIL_LIB_DIR}:$PWD/../../src:${LD_LIBRARY_PATH:-}"
           TSAN_OPTIONS=halt_on_error=1 ctest \
             --parallel 1 \
             --output-on-failure \
