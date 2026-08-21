@@ -38,17 +38,6 @@
 namespace tyr::planning::detail
 {
 
-constexpr size_t preferred_boost_share(size_t boost, size_t num_workers, size_t worker)
-{
-    assert(num_workers > 0);
-    assert(worker < num_workers);
-    return boost / num_workers + (worker < boost % num_workers);
-}
-
-static_assert(preferred_boost_share(1000, 4, 0) == 250);
-static_assert(preferred_boost_share(2, 4, 0) == 1);
-static_assert(preferred_boost_share(2, 4, 2) == 0);
-
 template<TaskKind Kind, SearchKind Search>
 class LazyGBFSPolicy
 {
@@ -272,8 +261,7 @@ public:
         const auto num_workers = engine.num_workers();
         for (size_t i = 0; i < num_workers; ++i)
         {
-            const auto boost = preferred_boost_share(engine.m_options.boost_preferred_queue, num_workers, i);
-            engine.get_worker(ygg::Index<Worker>(static_cast<ygg::uint_t>(i))).search.queue_preferred_boost(boost);
+            engine.get_worker(ygg::Index<Worker>(static_cast<ygg::uint_t>(i))).search.queue_preferred_boost(engine.m_options.boost_preferred_queue);
         }
     }
 
