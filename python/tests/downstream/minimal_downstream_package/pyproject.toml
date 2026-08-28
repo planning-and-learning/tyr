@@ -1,11 +1,13 @@
 [build-system]
-requires = ["scikit-build-core>=0.10"]
+requires = ["scikit-build-core>=1.0.3,<2"]
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "downstream-tyr-user"
 version = "0.0.0"
 dependencies = ["pytyr"]
+requires-python = ">=3.10"
 
 [tool.scikit-build]
 wheel.packages = []
+wheel.py-api = "cp310"

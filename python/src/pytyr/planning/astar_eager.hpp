@@ -29,7 +29,7 @@ class PyEventHandler : public EventHandler<Kind>
 public:
     using Base = EventHandler<Kind>;
 
-    NB_TRAMPOLINE(Base, 3);
+    NB_TRAMPOLINE(Base);
 
     void on_start_search(const Node<Kind>& node, ygg::float_t f_value) override { NB_OVERRIDE_PURE(on_start_search, node, f_value); }
 

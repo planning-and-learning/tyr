@@ -29,7 +29,7 @@ class PyEventHandler : public EventHandler<Kind>
 public:
     using Base = EventHandler<Kind>;
 
-    NB_TRAMPOLINE(Base, 6);
+    NB_TRAMPOLINE(Base);
 
     void on_start_search(ygg::uint_t max_arity) override { NB_OVERRIDE_PURE(on_start_search, max_arity); }
 

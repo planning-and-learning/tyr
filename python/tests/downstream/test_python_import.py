@@ -41,10 +41,6 @@ def test_downstream_python_binding_imports_public_pytyr_api_and_links_tyr_core(t
     if not (tyr_cmake_dir / "tyrConfig.cmake").exists():
         pytest.skip("pytyr was not installed with Tyr CMake package files")
 
-    nanobind_cmake_dir = pyyggdrasil_prefix / "lib" / "cmake" / "nanobind"
-    if not nanobind_cmake_dir.exists():
-        pytest.skip("nanobind CMake package was not found in the pyyggdrasil installation prefix")
-
     project_dir = tmp_path / "minimal_downstream_package"
     shutil.copytree(DOWNSTREAM_PACKAGE_DIR, project_dir)
 

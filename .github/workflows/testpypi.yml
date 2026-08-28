@@ -53,16 +53,16 @@ jobs:
           PIP_INDEX_URL: https://test.pypi.org/simple/
           PIP_EXTRA_INDEX_URL: https://pypi.org/simple/
           CIBW_PLATFORM: linux
-          CIBW_BUILD: "cp313-*"
+          CIBW_BUILD: "cp310-*"
           CIBW_SKIP: "*-musllinux_*"
           CIBW_ARCHS: x86_64
           CIBW_BUILD_VERBOSITY: "1"
-          CIBW_ENVIRONMENT: "TYR_HEADER_INSTANTIATION=OFF TYR_ENABLE_LTO=OFF TYR_JOBS=2 PYPDDL_JOBS=2 PYYGGDRASIL_JOBS=2 PIP_NO_CACHE_DIR=1 PIP_INDEX_URL=https://test.pypi.org/simple/ PIP_EXTRA_INDEX_URL=https://pypi.org/simple/"
+          CIBW_ENVIRONMENT: "TYR_HEADER_INSTANTIATION=OFF TYR_ENABLE_LTO=OFF TYR_JOBS=2 LOKI_JOBS=2 YGGDRASIL_JOBS=2 PIP_NO_CACHE_DIR=1 PIP_INDEX_URL=https://test.pypi.org/simple/ PIP_EXTRA_INDEX_URL=https://pypi.org/simple/"
 
       - name: Upload Linux wheel artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wheel-linux-cp313-x86_64
+          name: wheel-linux-cp310-x86_64
           path: wheelhouse/*.whl
 
   build_wheel_macos:
@@ -99,15 +99,15 @@ jobs:
           PIP_INDEX_URL: https://test.pypi.org/simple/
           PIP_EXTRA_INDEX_URL: https://pypi.org/simple/
           CIBW_PLATFORM: macos
-          CIBW_BUILD: "cp313-*"
+          CIBW_BUILD: "cp310-*"
           CIBW_ARCHS: arm64
           CIBW_BUILD_VERBOSITY: "1"
-          CIBW_ENVIRONMENT: "TYR_HEADER_INSTANTIATION=OFF TYR_ENABLE_LTO=OFF TYR_JOBS=2 PYPDDL_JOBS=2 PYYGGDRASIL_JOBS=2 PIP_NO_CACHE_DIR=1 PIP_INDEX_URL=https://test.pypi.org/simple/ PIP_EXTRA_INDEX_URL=https://pypi.org/simple/"
+          CIBW_ENVIRONMENT: "TYR_HEADER_INSTANTIATION=OFF TYR_ENABLE_LTO=OFF TYR_JOBS=2 LOKI_JOBS=2 YGGDRASIL_JOBS=2 PIP_NO_CACHE_DIR=1 PIP_INDEX_URL=https://test.pypi.org/simple/ PIP_EXTRA_INDEX_URL=https://pypi.org/simple/"
 
       - name: Upload macOS wheel artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wheel-macos-cp313-arm64
+          name: wheel-macos-cp310-arm64
           path: wheelhouse/*.whl
 
   publish:

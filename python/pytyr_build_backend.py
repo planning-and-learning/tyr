@@ -6,4 +6,5 @@ ProviderBackend(
     package="pytyr",
     providers=("pypddl", "pyyggdrasil"),
     jobs_env="TYR_JOBS",
+    strip_env="TYR_STRIP_WHEEL",
 ).install_hooks(globals())

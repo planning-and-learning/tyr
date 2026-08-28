@@ -359,7 +359,7 @@ public:
     using Base = GoalStrategy<Kind>;
     using Base::is_dynamic_goal_satisfied;
 
-    NB_TRAMPOLINE(Base, 3);
+    NB_TRAMPOLINE(Base);
 
     GoalStrategyPtr<Kind> make_worker(ygg::Index<Worker> index) const override { NB_OVERRIDE(make_worker, index); }
 
@@ -412,7 +412,7 @@ class PyPruningStrategy : public PruningStrategy<Kind>
 public:
     using Base = PruningStrategy<Kind>;
 
-    NB_TRAMPOLINE(Base, 3);
+    NB_TRAMPOLINE(Base);
 
     PruningStrategyPtr<Kind> make_worker(ygg::Index<Worker> index) const override { NB_OVERRIDE(make_worker, index); }
 
@@ -447,7 +447,7 @@ public:
     using Base = Heuristic<Kind>;
     using Base::evaluate;
 
-    NB_TRAMPOLINE(Base, 4);
+    NB_TRAMPOLINE(Base);
 
     void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override { NB_OVERRIDE_PURE(set_goal, goal); }
 

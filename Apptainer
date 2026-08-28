@@ -21,7 +21,7 @@ Stage: build
     export DEBIAN_FRONTEND=noninteractive
 
     # Update and install dependencies
-    # At least Python 3.9 for nanobind.
+    # Python 3.10 is the split-mode ABI floor.
     apt-get update
     apt-get install -y \
         build-essential \
@@ -39,7 +39,7 @@ Stage: build
     cd /opt/tyr
 
     python3.10 -m pip install --no-cache-dir --upgrade pip uv
-    PYPDDL_JOBS=2 uv pip install --python /usr/bin/python3.10 --break-system-packages --no-cache -r pyproject.toml
+    LOKI_JOBS=2 uv pip install --python /usr/bin/python3.10 --break-system-packages --no-cache -r pyproject.toml
 
     # Build Tyr
     cmake -S . -B build \

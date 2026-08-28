@@ -1,5 +1,5 @@
 find_package(
-    Python 3.9 REQUIRED
+    Python 3.10 REQUIRED
     COMPONENTS Interpreter Development.Module
     OPTIONAL_COMPONENTS Development.SABIModule
 )
@@ -16,7 +16,7 @@ file(
 )
 
 nanobind_add_module(
-    _pytyr NB_SHARED
+    _pytyr
     module.cpp
     pytyr/module.cpp
     ${PYTYR_FORMALISM_SOURCES}
@@ -36,6 +36,7 @@ nanobind_add_module(
     pytyr/planning/lifted/gbfs_lazy/module.cpp
     pytyr/planning/lifted/iw/module.cpp
     pytyr/planning/lifted/siw/module.cpp
+    BACKEND_MODULE nanobind_backend
 )
 
 target_link_libraries(_pytyr PRIVATE tyr::core TBB::tbb)
@@ -104,7 +105,7 @@ yggdrasil_install_python_files(
 
 yggdrasil_install_provider_env(
     PYTYR pytyr
-    PREFIXES "${PYPDDL_NATIVE_PREFIX}" "${YGGDRASIL_NATIVE_PREFIX}"
+    PREFIXES "${LOKI_NATIVE_PREFIX}" "${YGGDRASIL_NATIVE_PREFIX}"
 )
 
 yggdrasil_install_python_stubs(

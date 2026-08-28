@@ -35,7 +35,7 @@ jobs:
       fail-fast: false
       matrix:
         architecture: ["x86_64"]
-        python-version: ["cp39", "cp310", "cp311", "cp312", "cp313"]
+        python-version: ["cp310"]
 
     steps:
       - name: Checkout repository
@@ -59,14 +59,14 @@ jobs:
           CIBW_SKIP: "*-musllinux_*"
           CIBW_ARCHS: "${{ matrix.architecture }}"
           CIBW_BUILD_VERBOSITY: "1"
-          CIBW_ENVIRONMENT: "TYR_HEADER_INSTANTIATION=OFF TYR_ENABLE_LTO=OFF TYR_JOBS=2 PYPDDL_JOBS=2 PYYGGDRASIL_JOBS=2 PIP_NO_CACHE_DIR=1"
+          CIBW_ENVIRONMENT: "TYR_HEADER_INSTANTIATION=OFF TYR_ENABLE_LTO=OFF TYR_JOBS=2 LOKI_JOBS=2 YGGDRASIL_JOBS=2 PIP_NO_CACHE_DIR=1"
 
   build_wheels_macos:
     runs-on: macos-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["cp39", "cp310", "cp311", "cp312", "cp313"]
+        python-version: ["cp310"]
 
     steps:
       - name: Checkout repository
@@ -89,4 +89,4 @@ jobs:
           CIBW_BUILD: "${{ matrix.python-version }}-*"
           CIBW_ARCHS: arm64
           CIBW_BUILD_VERBOSITY: "1"
-          CIBW_ENVIRONMENT: "TYR_HEADER_INSTANTIATION=OFF TYR_ENABLE_LTO=OFF TYR_JOBS=2 PYPDDL_JOBS=2 PYYGGDRASIL_JOBS=2 PIP_NO_CACHE_DIR=1"
+          CIBW_ENVIRONMENT: "TYR_HEADER_INSTANTIATION=OFF TYR_ENABLE_LTO=OFF TYR_JOBS=2 LOKI_JOBS=2 YGGDRASIL_JOBS=2 PIP_NO_CACHE_DIR=1"

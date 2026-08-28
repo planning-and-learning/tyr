@@ -35,8 +35,8 @@ jobs:
           uv pip install --system --no-cache -r pyproject.toml --extra test
         env:
           PIP_NO_CACHE_DIR: 1
-          PYYGGDRASIL_JOBS: 2
-          PYPDDL_JOBS: 2
+          YGGDRASIL_JOBS: 2
+          LOKI_JOBS: 2
 
       - name: Install CMake on Linux
         if: runner.os == 'Linux'
@@ -61,8 +61,8 @@ jobs:
       - name: Run Tests
         working-directory: build_${{ matrix.build_type }}/tests/unit
         run: |
-          PYPDDL_LIB_DIR="$(python -c 'import pypddl; print(pypddl.native_prefix() / "lib")')"
-          PYYGGDRASIL_LIB_DIR="$(python -c 'import pyyggdrasil; print(pyyggdrasil.native_prefix() / "lib")')"
-          export DYLD_LIBRARY_PATH="${PYPDDL_LIB_DIR}:${PYYGGDRASIL_LIB_DIR}:$PWD/../../src:${DYLD_LIBRARY_PATH:-}"
-          export LD_LIBRARY_PATH="${PYPDDL_LIB_DIR}:${PYYGGDRASIL_LIB_DIR}:$PWD/../../src:${LD_LIBRARY_PATH:-}"
+          LOKI_LIB_DIR="$(python -c 'import pypddl; print(pypddl.native_prefix() / "lib")')"
+          YGGDRASIL_LIB_DIR="$(python -c 'import pyyggdrasil; print(pyyggdrasil.native_prefix() / "lib")')"
+          export DYLD_LIBRARY_PATH="${LOKI_LIB_DIR}:${YGGDRASIL_LIB_DIR}:$PWD/../../src:${DYLD_LIBRARY_PATH:-}"
+          export LD_LIBRARY_PATH="${LOKI_LIB_DIR}:${YGGDRASIL_LIB_DIR}:$PWD/../../src:${LD_LIBRARY_PATH:-}"
           GTEST_OUTPUT=xml:test-results/ GTEST_COLOR=1 ctest -V
