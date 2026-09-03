@@ -19,6 +19,7 @@
 #include "planning/parser.hpp"
 #include "tyr/planning/planning.hpp"
 
+#include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
@@ -26,7 +27,9 @@
 #include <limits>
 #include <memory>
 #include <optional>
+#include <semaphore>
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -60,13 +63,15 @@ TaskPair parse_tasks(const std::filesystem::path& domain, const std::filesystem:
 
 TaskPair parse_tasks(const std::filesystem::path& problem) { return parse_tasks("parallel_search_edge_cases_domain.pddl", problem); }
 
-TaskPair parse_pruned_improvement_tasks()
+TaskPair parse_transport_tasks(const std::filesystem::path& problem)
 {
     const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/fixtures/planning/algorithms";
     const auto benchmark_root = std::filesystem::path(BENCHMARKS_DIR);
-    return make_task_pair(p::Task<LiftedTag>::create(
-        make_test_parser(benchmark_root / "classical/tests/transport/domain.pddl").parse_task(fixture_root / "parallel_astar_pruned_improvement.pddl")));
+    return make_task_pair(
+        p::Task<LiftedTag>::create(make_test_parser(benchmark_root / "classical/tests/transport/domain.pddl").parse_task(fixture_root / problem)));
 }
+
+TaskPair parse_pruned_improvement_tasks() { return parse_transport_tasks("parallel_astar_pruned_improvement.pddl"); }
 
 template<TaskKind Kind>
 struct SearchContext
@@ -146,6 +151,136 @@ public:
 
 private:
     std::vector<size_t>& m_worker_threads;
+};
+
+template<TaskKind Kind>
+bool is_at_location(const ygg::Builder<p::State<Kind>>& state, const ::tyr::formalism::planning::Repository& repository, std::string_view location)
+{
+    return std::ranges::any_of(state.get_fluent_facts_view(repository),
+                               [&](const auto fact)
+                               {
+                                   const auto atom = fact.get_atom();
+                                   return atom && atom->get_predicate().get_name().str() == "at" && atom->get_objects().size() == 2
+                                          && atom->get_objects().back().get_name().str() == location;
+                               });
+}
+
+struct AStarHeuristicGate
+{
+    std::counting_semaphore<8> target_started { 0 };
+    std::counting_semaphore<8> target_continue { 0 };
+    std::atomic_size_t num_evaluations { 0 };
+    std::atomic_size_t num_target_evaluations { 0 };
+    std::atomic_bool transition_seen { false };
+};
+
+template<TaskKind Kind>
+class GatedLocationHeuristic final : public p::Heuristic<Kind>
+{
+public:
+    using p::Heuristic<Kind>::evaluate;
+
+    GatedLocationHeuristic(p::TaskPtr<Kind> task,
+                           std::shared_ptr<AStarHeuristicGate> gate,
+                           std::string_view target_location,
+                           std::optional<std::string_view> wait_location = std::nullopt) :
+        m_task(std::move(task)),
+        m_gate(std::move(gate)),
+        m_target_location(target_location),
+        m_wait_location(wait_location)
+    {
+    }
+
+    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView) override {}
+
+    ygg::float_t evaluate(const ygg::Builder<p::State<Kind>>& state) override
+    {
+        m_gate->num_evaluations.fetch_add(1, std::memory_order_relaxed);
+        if (m_wait_location && is_at_location(state, *m_task->get_repository(), *m_wait_location)
+            && !m_gate->target_started.try_acquire_for(std::chrono::seconds(5)))
+            throw std::runtime_error("Timed out waiting for the target heuristic evaluation.");
+
+        if (is_at_location(state, *m_task->get_repository(), m_target_location))
+        {
+            m_gate->num_target_evaluations.fetch_add(1, std::memory_order_relaxed);
+            m_gate->target_started.release();
+            if (!m_gate->target_continue.try_acquire_for(std::chrono::seconds(5)))
+                throw std::runtime_error("Timed out waiting for the competing transition.");
+        }
+        return 0;
+    }
+
+    p::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr) const override
+    {
+        return std::make_shared<GatedLocationHeuristic>(m_task, m_gate, m_target_location, m_wait_location);
+    }
+
+private:
+    p::TaskPtr<Kind> m_task;
+    std::shared_ptr<AStarHeuristicGate> m_gate;
+    std::string_view m_target_location;
+    std::optional<std::string_view> m_wait_location;
+};
+
+template<TaskKind Kind>
+class LocationThrowingHeuristic final : public p::Heuristic<Kind>
+{
+public:
+    using p::Heuristic<Kind>::evaluate;
+
+    LocationThrowingHeuristic(p::TaskPtr<Kind> task, std::string_view location) : m_task(std::move(task)), m_location(location) {}
+
+    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView) override {}
+
+    ygg::float_t evaluate(const ygg::Builder<p::State<Kind>>& state) override
+    {
+        if (is_at_location(state, *m_task->get_repository(), m_location))
+            throw std::runtime_error("Successor heuristic evaluation failed.");
+        return 0;
+    }
+
+    p::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr) const override { return std::make_shared<LocationThrowingHeuristic>(m_task, m_location); }
+
+private:
+    p::TaskPtr<Kind> m_task;
+    std::string_view m_location;
+};
+
+template<TaskKind Kind>
+class ReleasingAStarWorkerEventHandler final : public p::astar_eager::WorkerEventHandler<Kind>
+{
+public:
+    ReleasingAStarWorkerEventHandler(std::shared_ptr<AStarHeuristicGate> gate, p::TransitionOutcome expected) : m_gate(std::move(gate)), m_expected(expected) {}
+
+    void on_generate_transition(const p::Node<Kind>&, const p::LabeledNode<Kind>&, p::TransitionOutcome outcome) override
+    {
+        if (outcome == m_expected && !m_gate->transition_seen.exchange(true, std::memory_order_relaxed))
+            m_gate->target_continue.release();
+    }
+
+private:
+    std::shared_ptr<AStarHeuristicGate> m_gate;
+    p::TransitionOutcome m_expected;
+};
+
+template<TaskKind Kind>
+class ReleasingAStarEventHandler final : public p::astar_eager::EventHandler<Kind>
+{
+public:
+    ReleasingAStarEventHandler(std::shared_ptr<AStarHeuristicGate> gate, p::TransitionOutcome expected) : m_gate(std::move(gate)), m_expected(expected) {}
+
+    void on_start_search(const p::Node<Kind>&, ygg::float_t) override {}
+    void on_end_search(p::SearchStatus, const p::Statistics&) override {}
+    void on_solved(const p::Plan<Kind>&) override {}
+
+    p::astar_eager::WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<p::Worker>) override
+    {
+        return std::make_unique<ReleasingAStarWorkerEventHandler<Kind>>(m_gate, m_expected);
+    }
+
+private:
+    std::shared_ptr<AStarHeuristicGate> m_gate;
+    p::TransitionOutcome m_expected;
 };
 
 template<TaskKind Kind>
@@ -811,6 +946,76 @@ void expect_parallel_lazy_heuristic_exceptions_propagate(const p::TaskPtr<Kind>&
     }
 }
 
+template<TaskKind Kind>
+void expect_pending_astar_improvement_is_coalesced(const p::TaskPtr<Kind>& task)
+{
+    auto probe = make_search_context(task);
+    const auto start = probe.successor_generator->get_initial_node(*probe.repository, *probe.axiom_evaluator);
+    auto expensive = std::optional<p::Node<Kind>> {};
+    auto cheap = std::optional<p::Node<Kind>> {};
+    for (const auto& successor : probe.successor_generator->get_labeled_successor_nodes(start, *probe.repository, *probe.axiom_evaluator))
+    {
+        if (is_at_location(successor.node.get_state().get_state_builder(), *task->get_repository(), "expensive"))
+            expensive = successor.node;
+        else if (is_at_location(successor.node.get_state().get_state_builder(), *task->get_repository(), "cheap"))
+            cheap = successor.node;
+    }
+    ASSERT_TRUE(expensive);
+    ASSERT_TRUE(cheap);
+    const auto cheap_successors = probe.successor_generator->get_labeled_successor_nodes(*cheap, *probe.repository, *probe.axiom_evaluator);
+    const auto cheap_wait = std::ranges::find_if(
+        cheap_successors,
+        [&](const auto& successor) { return is_at_location(successor.node.get_state().get_state_builder(), *task->get_repository(), "cheap-wait"); });
+    ASSERT_NE(cheap_wait, cheap_successors.end());
+
+    auto seed = std::optional<uint64_t> {};
+    for (uint64_t candidate = 0; candidate < 1024 && !seed; ++candidate)
+    {
+        auto hash = p::DistHash<Kind, p::RandomDistHashTag>(candidate);
+        hash.initialize(start.get_state());
+        const auto expensive_owner = hash.owner(expensive->get_state().get_state_builder(), 3);
+        const auto cheap_owner = hash.owner(cheap->get_state().get_state_builder(), 3);
+        if (expensive_owner != cheap_owner && hash.owner(cheap_wait->node.get_state().get_state_builder(), 3) == cheap_owner)
+            seed = candidate;
+    }
+    ASSERT_TRUE(seed);
+
+    auto context = make_search_context(task);
+    auto gate = std::make_shared<AStarHeuristicGate>();
+    auto heuristic = GatedLocationHeuristic<Kind>(task, gate, "merge", "cheap-wait");
+    auto options = p::astar_eager::Options<Kind> {};
+    options.event_handler = std::make_shared<ReleasingAStarEventHandler<Kind>>(gate, p::TransitionOutcome::RELAXED);
+    options.num_search_workers = 3;
+    options.dist_hash_mode = p::DistHashMode::RANDOM;
+    options.parallel_search_mode = p::astar_eager::ParallelSearchMode::ASYNCHRONOUS;
+    options.random_seed = *seed;
+
+    const auto result = p::astar_eager::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options);
+
+    ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
+    ASSERT_TRUE(result.plan);
+    EXPECT_EQ(result.plan->get_cost(), 4);
+    EXPECT_EQ(result.plan->get_length(), 4);
+    EXPECT_TRUE(gate->transition_seen.load(std::memory_order_relaxed));
+    EXPECT_EQ(gate->num_target_evaluations.load(std::memory_order_relaxed), 1);
+}
+
+template<TaskKind Kind>
+void expect_parallel_astar_heuristic_exceptions_propagate(const p::TaskPtr<Kind>& task)
+{
+    for (const auto mode : { p::astar_eager::ParallelSearchMode::SYNCHRONOUS, p::astar_eager::ParallelSearchMode::ASYNCHRONOUS })
+    {
+        auto context = make_search_context(task, true);
+        auto heuristic = LocationThrowingHeuristic<Kind>(task, "left");
+        auto options = p::astar_eager::Options<Kind> {};
+        options.num_search_workers = 2;
+        options.parallel_search_mode = mode;
+
+        EXPECT_THROW(p::astar_eager::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options),
+                     std::runtime_error);
+    }
+}
+
 TEST(TyrPlanningSearchEngineTest, ChecksGoalsBeforeHeuristics)
 {
     const auto tasks = parse_tasks("parallel_search_simple.pddl");
@@ -823,6 +1028,43 @@ TEST(TyrPlanningSearchEngineTest, PrunedDuplicatesDoNotCloseAcceptedAStarStates)
     const auto tasks = parse_tasks("parallel_search_diamond.pddl");
     expect_astar_duplicate_pruning_preserves_open_state(tasks.ground);
     expect_astar_duplicate_pruning_preserves_open_state(tasks.lifted);
+}
+
+TEST(TyrPlanningSearchEngineTest, DuplicateDetectionPrecedesParallelAStarHeuristicEvaluation)
+{
+    const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/fixtures/planning/algorithms";
+    const auto task = p::Task<LiftedTag>::create(
+        make_test_parser(fixture_root / "parallel_search_edge_cases_domain.pddl").parse_task(fixture_root / "parallel_search_diamond.pddl"));
+    auto context = make_search_context(task, true);
+    auto gate = std::make_shared<AStarHeuristicGate>();
+    auto heuristic = GatedLocationHeuristic<LiftedTag>(task, gate, "merge");
+    auto options = p::astar_eager::Options<LiftedTag> {};
+    options.event_handler = std::make_shared<ReleasingAStarEventHandler<LiftedTag>>(gate, p::TransitionOutcome::DUPLICATE);
+    options.num_search_workers = 2;
+    options.collect_destination_lock_statistics = true;
+
+    const auto result = p::astar_eager::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options);
+
+    ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
+    EXPECT_EQ(result.statistics.get_num_generated_successors(), 5);
+    EXPECT_EQ(result.statistics.get_num_destination_lock_acquisitions(), 8);
+    EXPECT_TRUE(gate->transition_seen.load(std::memory_order_relaxed));
+    EXPECT_EQ(gate->num_evaluations.load(std::memory_order_relaxed), 4);
+    EXPECT_EQ(gate->num_target_evaluations.load(std::memory_order_relaxed), 1);
+}
+
+TEST(TyrPlanningSearchEngineTest, ParallelAStarCoalescesBetterPathsWhileHeuristicIsPending)
+{
+    const auto tasks = parse_transport_tasks("parallel_astar_pending_improvement.pddl");
+    expect_pending_astar_improvement_is_coalesced(tasks.ground);
+    expect_pending_astar_improvement_is_coalesced(tasks.lifted);
+}
+
+TEST(TyrPlanningSearchEngineTest, ParallelAStarUnlockedHeuristicExceptionsPropagateWithoutDeadlock)
+{
+    const auto tasks = parse_tasks("parallel_search_diamond.pddl");
+    expect_parallel_astar_heuristic_exceptions_propagate(tasks.ground);
+    expect_parallel_astar_heuristic_exceptions_propagate(tasks.lifted);
 }
 
 TEST(TyrPlanningSearchEngineTest, PrunedImprovementsDoNotOverwriteAcceptedAStarStates)

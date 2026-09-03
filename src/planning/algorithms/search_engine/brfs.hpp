@@ -171,8 +171,6 @@ public:
         return SuccessorMetadata { WorkerStateIndex<Kind> { worker, state }, static_cast<ygg::float_t>(search_node.g_value) };
     }
 
-    static constexpr void prepare_routed_successor(Heuristic<Kind>&, const ygg::Builder<State<Kind>>&, bool, SuccessorMetadata&) noexcept {}
-
     static void set_parent(SearchNode& search_node, WorkerStateIndex<Kind> parent) noexcept { search_node.parent_state = ParentPolicy::make_parent(parent); }
 
     void open_successor(ygg::Index<State<Kind>> state, ygg::float_t g_value, ygg::float_t, SearchNodeStatus, bool)
@@ -180,7 +178,7 @@ public:
         m_openlist.push_back(PoppedEntry { static_cast<ygg::uint_t>(g_value), state });
     }
 
-    template<typename Engine, typename WorkerData, typename EmitTransition>
+    template<typename Engine, typename WorkerData, typename EvaluateHeuristic, typename EmitTransition>
     AcceptanceResult accept_successor(Engine& engine,
                                       WorkerData& worker,
                                       const Node<Kind>& source_node,
@@ -188,6 +186,7 @@ public:
                                       const typename Engine::RoutedSuccessor& routed_successor,
                                       SearchNode& successor_search_node,
                                       bool is_new,
+                                      EvaluateHeuristic&&,
                                       EmitTransition&& emit_transition)
     {
         if (!is_new)

@@ -61,7 +61,7 @@ concept SearchPolicyConcept =
            typename std::bool_constant<T::supports_priority_layer_synchronization>;
            requires SearchKind<typename T::SearchTag>;
            requires std::same_as<typename T::TaskTag, Kind>;
-       } && std::constructible_from<T, Heuristic<Kind>&, const typename T::Options&> && requires(T& policy, const T& const_policy, Heuristic<Kind>& heuristic, const ygg::Builder<State<Kind>>& state_builder, ygg::Index<Worker> worker, ygg::Index<State<Kind>> state, ygg::float_t value, bool is_goal, typename T::SuccessorMetadata& metadata, const typename T::SearchNode& const_search_node, const typename T::PoppedEntry& entry, ::tyr::formalism::planning::ActionBindingView action, const typename T::Options& options, const typename T::EventHandlerPtr& event_handler) {
+       } && std::constructible_from<T, Heuristic<Kind>&, const typename T::Options&> && requires(T& policy, const T& const_policy, ygg::Index<Worker> worker, ygg::Index<State<Kind>> state, ygg::float_t value, const typename T::SearchNode& const_search_node, const typename T::PoppedEntry& entry, ::tyr::formalism::planning::ActionBindingView action, const typename T::Options& options, const typename T::EventHandlerPtr& event_handler) {
            { T::terminate_on_goal } -> std::convertible_to<bool>;
            { T::supports_priority_layer_synchronization } -> std::convertible_to<bool>;
            { policy.initialize_start(state, value, value) } -> std::same_as<typename T::SearchNode&>;
@@ -72,7 +72,6 @@ concept SearchPolicyConcept =
            { const_policy.should_discard(entry, value) } -> std::convertible_to<bool>;
            { policy.get_search_node(state) } -> std::same_as<typename T::SearchNode&>;
            { const_policy.make_successor_metadata(worker, state, const_search_node, action) } -> std::same_as<typename T::SuccessorMetadata>;
-           { policy.prepare_routed_successor(heuristic, state_builder, is_goal, metadata) } -> std::same_as<void>;
            { T::make_worker_event_handler(event_handler, worker) } -> std::same_as<typename T::WorkerEventHandlerPtr>;
            { const_policy.get_search_nodes() } -> std::same_as<const ygg::SegmentedVector<typename T::SearchNode>&>;
        } && (!T::supports_priority_layer_synchronization || requires(const T& policy, const typename T::Options& options) {

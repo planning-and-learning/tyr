@@ -450,6 +450,7 @@ class LayeredAStarEventHandler final : public p::astar_eager::EventHandler<Kind>
 {
 public:
     void on_start_search(const p::Node<Kind>&, ygg::float_t) override {}
+    void on_finish_f_layer(ygg::float_t f_value, const p::Statistics&) override { finished_f_layers.push_back(f_value); }
     void on_end_search(p::SearchStatus, const p::Statistics&) override {}
     void on_solved(const p::Plan<Kind>&) override {}
 
@@ -459,6 +460,7 @@ public:
     }
 
     AStarLayerGate gate;
+    std::vector<ygg::float_t> finished_f_layers;
 };
 
 template<TaskKind Kind>
@@ -1065,6 +1067,10 @@ void expect_parallel_astar_coordinates_f_layers(const p::TaskPtr<Kind>& task,
     EXPECT_EQ(result.status, p::SearchStatus::EXHAUSTED);
     EXPECT_EQ(event_handler->gate.higher_expanded.load(std::memory_order_relaxed), expect_higher_expansion);
     EXPECT_EQ(result.statistics.get_num_expanded(), expect_higher_expansion ? 4 : 3);
+    if (mode == p::astar_eager::ParallelSearchMode::SYNCHRONOUS)
+        EXPECT_EQ(event_handler->finished_f_layers, (std::vector<ygg::float_t> { 0, 1, 2 }));
+    else
+        EXPECT_TRUE(event_handler->finished_f_layers.empty());
 }
 
 template<TaskKind Kind>

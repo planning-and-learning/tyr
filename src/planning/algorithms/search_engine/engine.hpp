@@ -393,43 +393,43 @@ private:
 
         auto prepared = std::optional<PreparedExpansion> {};
         auto claimed = false;
-        m_execution.with_worker_lock(
-            worker,
-            [&](auto&& evaluate_unlocked)
-            {
-                if (!m_execution.can_expand_locked(*this, worker))
-                    return;
+        m_execution.with_worker_lock(worker,
+                                     [&](auto&& evaluate_unlocked)
+                                     {
+                                         if (!m_execution.can_expand_locked(*this, worker))
+                                             return;
 
-                claimed = true;
-                const auto entry = worker.search.pop();
-                if (worker.search.should_discard(entry, m_execution.incumbent_cost()))
-                    return;
+                                         claimed = true;
+                                         const auto entry = worker.search.pop();
+                                         if (worker.search.should_discard(entry, m_execution.incumbent_cost()))
+                                             return;
 
-                auto state = worker.state_repository.get_registered_state(entry.state);
-                auto& search_node = worker.get_search_node(entry.state);
-                auto node = Node<Kind>(std::move(state), search_node.g_value);
+                                         auto state = worker.state_repository.get_registered_state(entry.state);
+                                         auto& search_node = worker.get_search_node(entry.state);
+                                         auto node = Node<Kind>(std::move(state), search_node.g_value);
 
-                if (search_node.status == SearchNodeStatus::CLOSED || search_node.status == SearchNodeStatus::DEAD_END)
-                    return;
+                                         if (search_node.status == SearchNodeStatus::CLOSED || search_node.status == SearchNodeStatus::DEAD_END
+                                             || search_node.status == SearchNodeStatus::HEURISTIC_PENDING)
+                                             return;
 
-                const auto expansion_result = worker.search.prepare_expansion(
-                    entry,
-                    node,
-                    search_node,
-                    worker.statistics,
-                    std::forward<decltype(evaluate_unlocked)>(evaluate_unlocked),
-                    [&](ygg::float_t h_value, auto&& callback)
-                    { return improve_best_h(h_value, std::forward<decltype(callback)>(callback)); },
-                    [&](auto&& callback) { call_worker_event(worker, std::forward<decltype(callback)>(callback)); },
-                    [&](ygg::float_t priority) { on_finish_priority_layer(priority); });
-                if (expansion_result == ExpansionResult::GOAL)
-                {
-                    solve(worker, node);
-                    return;
-                }
-                if (expansion_result == ExpansionResult::EXPAND)
-                    prepared.emplace(PreparedExpansion { entry, std::move(node), search_node });
-            });
+                                         const auto expansion_result = worker.search.prepare_expansion(
+                                             entry,
+                                             node,
+                                             search_node,
+                                             worker.statistics,
+                                             std::forward<decltype(evaluate_unlocked)>(evaluate_unlocked),
+                                             [&](ygg::float_t h_value, auto&& callback)
+                                             { return improve_best_h(h_value, std::forward<decltype(callback)>(callback)); },
+                                             [&](auto&& callback) { call_worker_event(worker, std::forward<decltype(callback)>(callback)); },
+                                             [&](ygg::float_t priority) { on_finish_priority_layer(priority); });
+                                         if (expansion_result == ExpansionResult::GOAL)
+                                         {
+                                             solve(worker, node);
+                                             return;
+                                         }
+                                         if (expansion_result == ExpansionResult::EXPAND)
+                                             prepared.emplace(PreparedExpansion { entry, std::move(node), search_node });
+                                     });
 
         if (!claimed)
             return false;
@@ -444,7 +444,9 @@ private:
         return true;
     }
 
-    AcceptanceResult accept_successor(WorkerData& worker, const Node<Kind>& source_node, const RoutedSuccessor& routed_successor)
+    template<typename EvaluateHeuristic>
+    AcceptanceResult
+    accept_successor(WorkerData& worker, const Node<Kind>& source_node, const RoutedSuccessor& routed_successor, EvaluateHeuristic&& evaluate_heuristic)
     {
         const auto& labeled_successor = routed_successor.labeled_node;
         const auto& successor_node = labeled_successor.node;
@@ -465,7 +467,15 @@ private:
                               [&](auto& handler)
                               { handler.on_generate_transition(source_node, LabeledNode<Kind> { labeled_successor.label, normalized_node }, outcome); });
         };
-        return worker.search.accept_successor(*this, worker, source_node, normalized_node, routed_successor, successor_search_node, is_new, emit_transition);
+        return worker.search.accept_successor(*this,
+                                              worker,
+                                              source_node,
+                                              normalized_node,
+                                              routed_successor,
+                                              successor_search_node,
+                                              is_new,
+                                              std::forward<EvaluateHeuristic>(evaluate_heuristic),
+                                              emit_transition);
     }
 
     void expand_successors(WorkerData& worker, const Node<Kind>& node, const typename SearchPolicy::PoppedEntry& entry, const SearchNode& search_node)

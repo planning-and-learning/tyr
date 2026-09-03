@@ -179,7 +179,7 @@ public:
 
         worker.statistics.increment_num_generated_successors(false);
         const auto routed = typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata), g_value, false };
-        return engine.accept_successor(worker, source, routed);
+        return engine.accept_successor(worker, source, routed, [&](const StateView<Kind>& state) { return worker.heuristic.evaluate(state); });
     }
 
     template<typename Engine, typename WorkerData, typename EmitTransition>

@@ -1,0 +1,25 @@
+(define (problem parallel-astar-pending-improvement)
+  (:domain transport)
+  (:objects
+    start expensive cheap cheap-wait merge goal - location
+    truck - vehicle
+  )
+  (:init
+    (= (total-cost) 0)
+    (at truck start)
+    (road start expensive)
+    (= (road-length start expensive) 1)
+    (road start cheap)
+    (= (road-length start cheap) 1)
+    (road expensive merge)
+    (= (road-length expensive merge) 99)
+    (road cheap cheap-wait)
+    (= (road-length cheap cheap-wait) 1)
+    (road cheap-wait merge)
+    (= (road-length cheap-wait merge) 1)
+    (road merge goal)
+    (= (road-length merge goal) 1)
+  )
+  (:goal (at truck goal))
+  (:metric minimize (total-cost))
+)

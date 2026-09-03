@@ -79,9 +79,19 @@ DefaultEventHandler<Kind>::DefaultEventHandler(size_t verbosity) : m_verbosity(v
 template<TaskKind Kind>
 void DefaultEventHandler<Kind>::on_start_search(const Node<Kind>&, ygg::float_t f_value)
 {
+    m_progress_statistics.clear();
     if (m_verbosity < 1)
         return;
     fmt::print("[ASTAR] Search started.\n[ASTAR] Start node f_value: {}\n", f_value);
+}
+
+template<TaskKind Kind>
+void DefaultEventHandler<Kind>::on_finish_f_layer(ygg::float_t f_value, const tyr::planning::Statistics& statistics)
+{
+    m_progress_statistics.add_snapshot(statistics);
+    if (m_verbosity < 1)
+        return;
+    fmt::print("[ASTAR] Finished f-layer: {}\n", f_value);
 }
 
 template<TaskKind Kind>
@@ -89,7 +99,7 @@ void DefaultEventHandler<Kind>::on_end_search(SearchStatus, const tyr::planning:
 {
     if (m_verbosity < 1)
         return;
-    fmt::print("[ASTAR] Search ended.\n{}\n", statistics);
+    fmt::print("[ASTAR] Search ended.\n{}\n{}\n", statistics, m_progress_statistics);
 }
 
 template<TaskKind Kind>

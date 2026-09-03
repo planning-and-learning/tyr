@@ -33,6 +33,7 @@ enum SearchNodeStatus : uint8_t
     CLOSED = 2,
     OPEN = 3,
     NEW = 4,
+    HEURISTIC_PENDING = 5,
 };
 
 template<typename T, typename ParentState>

@@ -33,15 +33,14 @@ namespace tyr::planning
  * actions, so evaluate() is intentionally non-const and must not be called concurrently on the same instance. Preferred actions describe the latest
  * evaluation and must not be retained across another evaluation or reconfiguration.
  *
- * Evaluation consumes state contents through a builder and must not depend on repository registration or state identity. Parallel eager search may
- * evaluate a completed candidate before duplicate and pruning checks.
+ * Evaluation consumes state contents through a builder and must not depend on repository registration or state identity.
  *
  * Heavy built-in heuristics hide a task-derived definition and a worker-local evaluator behind their private implementation. Definitions are frozen before
  * being shared between workers, while evaluators own all mutable workspaces. This avoids repeating task translation without exposing those implementation
  * details through the search API. set_goal() is configuration and must run before workers are materialized, or after they have been discarded. Custom
  * heuristics need not use the same internal representation, but must return an independently mutable evaluator from make_worker() that gives equivalent
- * results for identical task, goal, and state contents. Each worker instance is called serially, but may run on different OS threads because remote states
- * execute as work of their logical owner. Evaluation must not re-enter the search or wait for work from the same logical worker.
+ * results for identical task, goal, and state contents. Each worker instance is called serially by its source worker. In parallel eager search, the state
+ * being evaluated may be registered with a different logical owner. Evaluation must not re-enter the search or wait for work from the source worker.
  */
 template<TaskKind Kind>
 class Heuristic

@@ -165,8 +165,7 @@ public:
 
     static size_t search_node_divisor(size_t num_workers) noexcept { return num_workers; }
 
-    static ygg::Index<State<Kind>>
-    search_node_index(ygg::Index<State<Kind>> state, [[maybe_unused]] ygg::Index<Worker> worker, size_t num_workers) noexcept
+    static ygg::Index<State<Kind>> search_node_index(ygg::Index<State<Kind>> state, [[maybe_unused]] ygg::Index<Worker> worker, size_t num_workers) noexcept
     {
         assert(owner(state, num_workers) == worker);
         return ygg::Index<State<Kind>>(static_cast<ygg::uint_t>(ygg::uint_t(state) / num_workers));
@@ -561,32 +560,42 @@ public:
             throw std::runtime_error("find_solution(...): successor path cost is not finite.");
 
         const auto is_goal = sender.goal_strategy->is_dynamic_goal_satisfied(engine.m_start_node.get_state(), *target);
-        sender.search.prepare_routed_successor(sender.heuristic, *target, is_goal, metadata);
-
         auto prepared = m_state_policy.prepare_target(engine, sender, std::move(target), metric, engine.num_workers());
         sender.statistics.increment_num_generated_successors(prepared.owner != sender.index);
         auto& receiver = engine.get_worker(prepared.owner);
-        const auto wait_start = m_collect_destination_lock_statistics ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point {};
 
         auto result = AcceptanceResult::TERMINAL;
         {
-            // Logical worker state is serialized here; callbacks do not have OS-thread affinity.
-            const auto lock = std::lock_guard(receiver.execution.mutex);
-            const auto hold_start = m_collect_destination_lock_statistics ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point {};
+            auto wait_start = m_collect_destination_lock_statistics ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point {};
+            auto lock = std::unique_lock(receiver.execution.mutex);
+            auto hold_start = m_collect_destination_lock_statistics ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point {};
+            const auto record_lock = [&]
+            {
+                if (!m_collect_destination_lock_statistics)
+                    return;
+                const auto hold_end = std::chrono::steady_clock::now();
+                receiver.statistics.add_destination_lock_statistics(std::chrono::duration_cast<std::chrono::nanoseconds>(hold_start - wait_start),
+                                                                    std::chrono::duration_cast<std::chrono::nanoseconds>(hold_end - hold_start));
+            };
+            const auto evaluate_heuristic = [&](const StateView<Kind>& state)
+            {
+                record_lock();
+                lock.unlock();
+                const auto h_value = sender.heuristic.evaluate(state);
+                wait_start = m_collect_destination_lock_statistics ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point {};
+                lock.lock();
+                hold_start = m_collect_destination_lock_statistics ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point {};
+                return h_value;
+            };
             if (running())
             {
                 auto node = m_state_policy.take_target(receiver, std::move(prepared));
                 auto routed = typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata), g_value, is_goal };
-                result = engine.accept_successor(receiver, source, routed);
+                result = engine.accept_successor(receiver, source, routed, evaluate_heuristic);
                 if (result == AcceptanceResult::QUEUED)
                     retain_successor();
             }
-            if (m_collect_destination_lock_statistics)
-            {
-                const auto hold_end = std::chrono::steady_clock::now();
-                receiver.statistics.add_destination_lock_statistics(std::chrono::duration_cast<std::chrono::nanoseconds>(hold_start - wait_start),
-                                                                    std::chrono::duration_cast<std::chrono::nanoseconds>(hold_end - hold_start));
-            }
+            record_lock();
         }
 
         if (result == AcceptanceResult::QUEUED)
