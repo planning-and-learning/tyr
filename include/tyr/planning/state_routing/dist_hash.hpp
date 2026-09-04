@@ -63,7 +63,7 @@ public:
         auto result = static_cast<ygg::hash_t>(m_seed);
         ygg::hash_combine(result, state.template get_atoms<::tyr::formalism::FluentTag>());
         ygg::hash_combine(result, state.get_numeric_variables());
-        return result;
+        return ygg::fmix64(result);
     }
 
     ygg::Index<Worker> owner(const ygg::Builder<State<Kind>>& state, size_t num_workers) const noexcept

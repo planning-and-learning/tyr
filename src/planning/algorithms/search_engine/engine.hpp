@@ -169,6 +169,7 @@ public:
         SuccessorGeneratorPtr<Kind> owned_successor_generator;
         HeuristicPtr<Kind> owned_heuristic;
         StateRepository<Kind>& state_repository;
+        std::vector<StateRepositoryPtr<Kind>> registration_repositories;
         AxiomEvaluator<Kind>& axiom_evaluator;
         SuccessorGenerator<Kind>& successor_generator;
         Heuristic<Kind>& heuristic;
@@ -209,16 +210,27 @@ public:
 
     WorkerData& get_worker(ygg::Index<Worker> index) noexcept { return m_workers.get(index); }
 
-    void on_finish_priority_layer(ygg::float_t priority)
+    std::optional<Statistics> collect_priority_layer_statistics()
     {
         if (!m_event_handler || !SearchPolicy::emits_priority_layer_events)
-            return;
+            return std::nullopt;
 
         auto statistics = Statistics {};
         for_each_worker([&](const auto& worker) { statistics.add(worker.statistics); });
         statistics.set_search_start_time_point(m_search_start_time_point);
         statistics.set_search_end_time_point(std::chrono::steady_clock::now());
+        return statistics;
+    }
+
+    void on_finish_priority_layer(ygg::float_t priority, const Statistics& statistics)
+    {
         call_root_event([&](auto& handler) { SearchPolicy::on_finish_priority_layer(handler, priority, statistics); });
+    }
+
+    void on_finish_priority_layer(ygg::float_t priority)
+    {
+        if (const auto statistics = collect_priority_layer_statistics())
+            on_finish_priority_layer(priority, *statistics);
     }
 
     void worker_loop(WorkerData& worker)
@@ -288,6 +300,7 @@ private:
                 worker.statistics.set_search_end_time_point(m_search_start_time_point);
             });
 
+        auto [start_owner, start_state] = prepare_start_state();
         auto& root_worker = get_worker(ygg::Index<Worker>(0));
 
         if (!root_worker.goal_strategy->is_static_goal_satisfied(m_task))
@@ -317,7 +330,6 @@ private:
             return std::move(m_result);
         }
 
-        auto [start_owner, start_state] = prepare_start_state();
         auto& start_worker = get_worker(start_owner);
         const auto start_state_index = start_state.get_index();
         const auto start_g_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_start_node.get_metric());
@@ -393,43 +405,47 @@ private:
 
         auto prepared = std::optional<PreparedExpansion> {};
         auto claimed = false;
-        m_execution.with_worker_lock(worker,
-                                     [&](auto&& evaluate_unlocked)
-                                     {
-                                         if (!m_execution.can_expand_locked(*this, worker))
-                                             return;
+        m_execution.with_worker_lock(
+            worker,
+            [&](auto&& evaluate_unlocked)
+            {
+                if (!m_execution.can_expand_locked(*this, worker))
+                    return;
 
-                                         claimed = true;
-                                         const auto entry = worker.search.pop();
-                                         if (worker.search.should_discard(entry, m_execution.incumbent_cost()))
-                                             return;
+                claimed = true;
+                const auto entry = worker.search.pop();
+                if (worker.search.should_discard(entry, m_execution.incumbent_cost()))
+                    return;
 
-                                         auto state = worker.state_repository.get_registered_state(entry.state);
-                                         auto& search_node = worker.get_search_node(entry.state);
-                                         auto node = Node<Kind>(std::move(state), search_node.g_value);
+                const auto is_stale = [](SearchNodeStatus status)
+                { return status == SearchNodeStatus::CLOSED || status == SearchNodeStatus::DEAD_END || status == SearchNodeStatus::HEURISTIC_PENDING; };
+                if (is_stale(worker.get_search_node(entry.state).status))
+                    return;
 
-                                         if (search_node.status == SearchNodeStatus::CLOSED || search_node.status == SearchNodeStatus::DEAD_END
-                                             || search_node.status == SearchNodeStatus::HEURISTIC_PENDING)
-                                             return;
+                auto state = evaluate_unlocked([&] { return worker.state_repository.get_registered_state(entry.state); });
+                // Incoming successors can relax this node while its immutable state is being decoded.
+                auto& search_node = worker.get_search_node(entry.state);
+                if (!m_execution.running() || is_stale(search_node.status))
+                    return;
+                auto node = Node<Kind>(std::move(state), search_node.g_value);
 
-                                         const auto expansion_result = worker.search.prepare_expansion(
-                                             entry,
-                                             node,
-                                             search_node,
-                                             worker.statistics,
-                                             std::forward<decltype(evaluate_unlocked)>(evaluate_unlocked),
-                                             [&](ygg::float_t h_value, auto&& callback)
-                                             { return improve_best_h(h_value, std::forward<decltype(callback)>(callback)); },
-                                             [&](auto&& callback) { call_worker_event(worker, std::forward<decltype(callback)>(callback)); },
-                                             [&](ygg::float_t priority) { on_finish_priority_layer(priority); });
-                                         if (expansion_result == ExpansionResult::GOAL)
-                                         {
-                                             solve(worker, node);
-                                             return;
-                                         }
-                                         if (expansion_result == ExpansionResult::EXPAND)
-                                             prepared.emplace(PreparedExpansion { entry, std::move(node), search_node });
-                                     });
+                const auto expansion_result = worker.search.prepare_expansion(
+                    entry,
+                    node,
+                    search_node,
+                    worker.statistics,
+                    std::forward<decltype(evaluate_unlocked)>(evaluate_unlocked),
+                    [&](ygg::float_t h_value, auto&& callback) { return improve_best_h(h_value, std::forward<decltype(callback)>(callback)); },
+                    [&](auto&& callback) { call_worker_event(worker, std::forward<decltype(callback)>(callback)); },
+                    [&](ygg::float_t priority) { on_finish_priority_layer(priority); });
+                if (expansion_result == ExpansionResult::GOAL)
+                {
+                    solve(worker, node);
+                    return;
+                }
+                if (expansion_result == ExpansionResult::EXPAND)
+                    prepared.emplace(PreparedExpansion { entry, std::move(node), search_node });
+            });
 
         if (!claimed)
             return false;

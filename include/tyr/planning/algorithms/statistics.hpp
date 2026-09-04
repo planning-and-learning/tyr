@@ -30,12 +30,13 @@ namespace tyr::planning
 class Statistics
 {
 private:
+    uint64_t m_num_generated_candidates {};
     uint64_t m_num_generated_successors {};
-    uint64_t m_num_accepted_successors {};
     uint64_t m_num_expanded {};
     uint64_t m_num_deadends {};
     uint64_t m_num_pruned {};
-    uint64_t m_num_transferred_successors {};
+    uint64_t m_num_transferred_candidates {};
+
     uint64_t m_num_registered_states {};
 
     size_t m_state_storage_memory_usage {};
@@ -61,17 +62,18 @@ public:
      * Setters
      */
 
-    void increment_num_accepted_successors() noexcept { ++m_num_accepted_successors; }
+    /// Generated successors have passed duplicate/dominance rejection and pruning.
+    void increment_num_generated_successors() noexcept { ++m_num_generated_successors; }
     void increment_num_expanded() { ++m_num_expanded; }
     void increment_num_deadends() { ++m_num_deadends; }
     void increment_num_pruned() { ++m_num_pruned; }
-    /// Generated successors are counted before receiver-side duplicate detection and pruning, matching the HDA* communication-overhead definition.
+    /// Generated candidates are counted before receiver-side duplicate detection and pruning, matching the HDA* communication-overhead definition.
     /// Each worker is the sole writer of its outgoing counters.
-    void increment_num_generated_successors(bool transferred) noexcept
+    void increment_num_generated_candidates(bool transferred) noexcept
     {
-        ++m_num_generated_successors;
+        ++m_num_generated_candidates;
         if (transferred)
-            ++m_num_transferred_successors;
+            ++m_num_transferred_candidates;
     }
     void add_idle_time(std::chrono::nanoseconds duration) noexcept { m_idle_time += duration; }
     void add_destination_lock_statistics(std::chrono::nanoseconds wait_time, std::chrono::nanoseconds hold_time) noexcept
@@ -91,12 +93,12 @@ public:
     /// Accumulate work while retaining the peak resource usage of sequentially composed searches.
     void add(const Statistics& other)
     {
+        m_num_generated_candidates += other.m_num_generated_candidates;
         m_num_generated_successors += other.m_num_generated_successors;
-        m_num_accepted_successors += other.m_num_accepted_successors;
         m_num_expanded += other.m_num_expanded;
         m_num_deadends += other.m_num_deadends;
         m_num_pruned += other.m_num_pruned;
-        m_num_transferred_successors += other.m_num_transferred_successors;
+        m_num_transferred_candidates += other.m_num_transferred_candidates;
         m_num_registered_states = std::max(m_num_registered_states, other.m_num_registered_states);
         m_state_storage_memory_usage = std::max(m_state_storage_memory_usage, other.m_state_storage_memory_usage);
         m_action_bindings_memory_usage = std::max(m_action_bindings_memory_usage, other.m_action_bindings_memory_usage);
@@ -116,16 +118,16 @@ public:
      * Getters
      */
 
+    uint64_t get_num_generated_candidates() const noexcept { return m_num_generated_candidates; }
     uint64_t get_num_generated_successors() const noexcept { return m_num_generated_successors; }
-    uint64_t get_num_accepted_successors() const noexcept { return m_num_accepted_successors; }
     uint64_t get_num_expanded() const { return m_num_expanded; }
     uint64_t get_num_deadends() const { return m_num_deadends; }
     uint64_t get_num_pruned() const { return m_num_pruned; }
-    uint64_t get_num_transferred_successors() const noexcept { return m_num_transferred_successors; }
-    /// HDA* communication overhead: the fraction of generated successors transferred to another worker.
+    uint64_t get_num_transferred_candidates() const noexcept { return m_num_transferred_candidates; }
+    /// HDA* communication overhead: the fraction of generated candidates transferred to another worker.
     double get_communication_overhead() const noexcept
     {
-        return m_num_generated_successors == 0 ? 0.0 : static_cast<double>(m_num_transferred_successors) / static_cast<double>(m_num_generated_successors);
+        return m_num_generated_candidates == 0 ? 0.0 : static_cast<double>(m_num_transferred_candidates) / static_cast<double>(m_num_generated_candidates);
     }
     uint64_t get_num_registered_states() const noexcept { return m_num_registered_states; }
 
@@ -149,33 +151,47 @@ public:
     class Snapshot
     {
     private:
-        uint64_t m_num_accepted_successors;
+        uint64_t m_num_generated_successors;
         uint64_t m_num_expanded;
         uint64_t m_num_deadends;
         uint64_t m_num_pruned;
+        uint64_t m_num_generated_candidates;
+        uint64_t m_num_transferred_candidates;
 
     public:
-        Snapshot(uint64_t num_accepted_successors, uint64_t num_expanded, uint64_t num_deadends, uint64_t num_pruned) :
-            m_num_accepted_successors(num_accepted_successors),
+        Snapshot(uint64_t num_generated_successors,
+                 uint64_t num_expanded,
+                 uint64_t num_deadends,
+                 uint64_t num_pruned,
+                 uint64_t num_generated_candidates = 0,
+                 uint64_t num_transferred_candidates = 0) :
+            m_num_generated_successors(num_generated_successors),
             m_num_expanded(num_expanded),
             m_num_deadends(num_deadends),
-            m_num_pruned(num_pruned)
+            m_num_pruned(num_pruned),
+            m_num_generated_candidates(num_generated_candidates),
+            m_num_transferred_candidates(num_transferred_candidates)
         {
         }
 
-        uint64_t get_num_accepted_successors() const noexcept { return m_num_accepted_successors; }
+        uint64_t get_num_generated_successors() const noexcept { return m_num_generated_successors; }
         uint64_t get_num_expanded() const { return m_num_expanded; }
         uint64_t get_num_deadends() const { return m_num_deadends; }
         uint64_t get_num_pruned() const { return m_num_pruned; }
+        uint64_t get_num_generated_candidates() const noexcept { return m_num_generated_candidates; }
+        uint64_t get_num_transferred_candidates() const noexcept { return m_num_transferred_candidates; }
     };
 
     void add_snapshot(const Statistics& statistics)
     {
-        m_snapshots.push_back(
-            Snapshot(statistics.get_num_accepted_successors(), statistics.get_num_expanded(), statistics.get_num_deadends(), statistics.get_num_pruned()));
+        m_snapshots.emplace_back(statistics.get_num_generated_successors(),
+                                 statistics.get_num_expanded(),
+                                 statistics.get_num_deadends(),
+                                 statistics.get_num_pruned(),
+                                 statistics.get_num_generated_candidates(),
+                                 statistics.get_num_transferred_candidates());
     }
 
-    void add_snap_shot(const Statistics& statistics) { add_snapshot(statistics); }
     void clear() noexcept { m_snapshots.clear(); }
     bool empty() const noexcept { return m_snapshots.empty(); }
     size_t size() const noexcept { return m_snapshots.size(); }

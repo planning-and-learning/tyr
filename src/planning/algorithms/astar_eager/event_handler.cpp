@@ -37,12 +37,10 @@ template<TaskKind Kind>
 class DefaultWorkerEventHandler final : public WorkerEventHandler<Kind>
 {
 public:
-    DefaultWorkerEventHandler(ygg::Index<Worker> index, bool trace_nodes) : m_index(index), m_trace_nodes(trace_nodes) {}
+    explicit DefaultWorkerEventHandler(ygg::Index<Worker> index) : m_index(index) {}
 
     void on_expand_node(const Node<Kind>& node) override
     {
-        if (!m_trace_nodes)
-            return;
         fmt::print("[ASTAR][Worker {}] ----------------------------------------\n[ASTAR][Worker {}] Expanding node: {}\n\n",
                    ygg::uint_t(m_index),
                    ygg::uint_t(m_index),
@@ -51,9 +49,8 @@ public:
 
     void on_generate_transition(const Node<Kind>&, const LabeledNode<Kind>& labeled_succ_node, TransitionOutcome outcome) override
     {
-        if (!m_trace_nodes
-            || (outcome != TransitionOutcome::OPENED && outcome != TransitionOutcome::RELAXED && outcome != TransitionOutcome::DEAD_END
-                && outcome != TransitionOutcome::GOAL))
+        if (outcome != TransitionOutcome::OPENED && outcome != TransitionOutcome::RELAXED && outcome != TransitionOutcome::DEAD_END
+            && outcome != TransitionOutcome::GOAL)
             return;
         fmt::print("[ASTAR][Worker {}] Action: {}\n[ASTAR][Worker {}] Successor node: {}\n\n",
                    ygg::uint_t(m_index),
@@ -62,11 +59,8 @@ public:
                    labeled_succ_node.node);
     }
 
-    void on_finish_f_layer(ygg::float_t f_value) override { fmt::print("[ASTAR][Worker {}] Finished f-layer: {}\n", ygg::uint_t(m_index), f_value); }
-
 private:
     ygg::Index<Worker> m_index;
-    bool m_trace_nodes;
 };
 
 }
@@ -113,9 +107,9 @@ void DefaultEventHandler<Kind>::on_solved(const Plan<Kind>& plan)
 template<TaskKind Kind>
 WorkerEventHandlerPtr<Kind> DefaultEventHandler<Kind>::make_worker(ygg::Index<Worker> index)
 {
-    if (m_verbosity < 1)
+    if (m_verbosity < 2)
         return nullptr;
-    return std::make_unique<DefaultWorkerEventHandler<Kind>>(index, m_verbosity >= 2);
+    return std::make_unique<DefaultWorkerEventHandler<Kind>>(index);
 }
 
 template<TaskKind Kind>

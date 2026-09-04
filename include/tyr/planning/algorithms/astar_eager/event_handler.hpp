@@ -45,8 +45,9 @@ public:
     virtual void on_finish_f_layer(ygg::float_t) {}
 };
 
-/// @brief Search-lifecycle events shared by all A* workers. on_finish_f_layer runs on the worker that completes a globally synchronized f-layer barrier;
-/// sequential layer events remain worker-local. on_start_search is emitted only after the root passes immediate terminal checks and receives an f-value.
+/// @brief Search-lifecycle events shared by all A* workers. on_finish_f_layer runs after a sequential f-layer completes or on the worker that completes a
+/// globally synchronized f-layer barrier. Sequential search also emits the worker-local layer callback.
+/// on_start_search is emitted only after the root passes immediate terminal checks and receives an f-value.
 template<TaskKind Kind>
 class EventHandler
 {

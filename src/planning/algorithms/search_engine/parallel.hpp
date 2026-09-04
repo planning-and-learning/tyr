@@ -20,9 +20,11 @@
 
 #include "../repository_statistics.hpp"
 #include "concepts.hpp"
+#include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
+#include "tyr/planning/factory.hpp"
 #include "tyr/planning/search_space/parallel.hpp"
 #include "tyr/planning/state_routing/dist_hash.hpp"
 #include "tyr/planning/successor_generator.hpp"
@@ -61,8 +63,7 @@ public:
     struct PreparedTarget
     {
         ygg::Index<Worker> owner;
-        BuilderPtr state;
-        ygg::float_t metric;
+        Node<Kind> node;
     };
 
     explicit HashDistributedStatePolicy(uint64_t seed) : m_dist_hash(seed) {}
@@ -72,35 +73,34 @@ public:
     {
         m_dist_hash.initialize(start_state);
         const auto owner = m_dist_hash.owner(start_state.get_state_builder(), engine.num_workers());
-        if (owner == ygg::Index<Worker>(0))
-            return { owner, start_state };
-
         auto& worker = engine.get_worker(owner);
-        auto& repository = worker.state_repository;
-        auto builder = repository.get_state_builder();
-        builder->assign_unextended_part(start_state.get_state_builder());
-        return { owner, repository.register_state(worker.axiom_evaluator, std::move(builder)) };
+        return { owner, materialize_state(start_state, worker.state_repository, worker.axiom_evaluator) };
     }
 
     template<typename Engine, typename WorkerData>
-    PreparedTarget prepare_target(Engine& engine, WorkerData& sender, BuilderPtr target, ygg::float_t metric, size_t num_workers)
+    PreparedTarget prepare_target([[maybe_unused]] Engine& engine, WorkerData& sender, BuilderPtr target, ygg::float_t metric, size_t num_workers)
     {
         const auto owner = m_dist_hash.owner(*target, num_workers);
+        const auto owner_index = static_cast<size_t>(ygg::uint_t(owner));
+        assert(owner_index < sender.registration_repositories.size());
+        auto& repository = *sender.registration_repositories[owner_index];
         if (owner != sender.index)
         {
-            auto receiver_target = engine.get_worker(owner).state_repository.get_state_builder();
+            auto receiver_target = repository.get_state_builder();
             using std::swap;
             swap(*receiver_target, *target);
             target = std::move(receiver_target);
         }
 
-        return PreparedTarget { owner, std::move(target), metric };
+        auto node = Node<Kind>(repository.register_extended_state(std::move(target)), metric);
+        assert(repository.shares_storage_with(engine.get_worker(owner).state_repository));
+        return PreparedTarget { owner, std::move(node) };
     }
 
     template<typename WorkerData>
-    static Node<Kind> take_target(WorkerData& receiver, PreparedTarget&& target)
+    static Node<Kind> take_target(WorkerData&, PreparedTarget&& target)
     {
-        return Node<Kind>(receiver.state_repository.register_extended_state(std::move(target.state)), target.metric);
+        return std::move(target.node);
     }
 
     static size_t search_node_divisor(size_t) noexcept { return 1; }
@@ -256,6 +256,7 @@ private:
         auto generation = size_t { 0 };
         auto terminal_status = std::optional<SearchStatus> {};
         auto finished_priority = std::optional<ygg::float_t> {};
+        auto layer_statistics = std::optional<Statistics> {};
         auto next_active_priority = std::optional<ygg::float_t> {};
         auto release_workers = false;
         const auto worker_index = static_cast<size_t>(ygg::uint_t(worker.index));
@@ -301,6 +302,8 @@ private:
                     {
                         finished_priority = active_priority;
                         next_active_priority = next_priority;
+                        // Keep timed-out waiters from leaving and updating their statistics during the snapshot.
+                        layer_statistics = engine.collect_priority_layer_statistics();
                     }
                     // A counted waiter received eligible work before sleeping. Resume the current layer without reporting it as finished.
                 }
@@ -318,8 +321,8 @@ private:
             }
             else
             {
-                if (finished_priority)
-                    engine.on_finish_priority_layer(*finished_priority);
+                if (layer_statistics)
+                    engine.on_finish_priority_layer(*finished_priority, *layer_statistics);
                 if (next_active_priority)
                     m_active_priority.store(*next_active_priority, std::memory_order_release);
                 m_layer_generation.fetch_add(1, std::memory_order_release);
@@ -536,7 +539,7 @@ public:
         auto lock = std::unique_lock(worker.execution.mutex);
         const auto evaluate_unlocked = [&](auto&& evaluate)
         {
-            // Lazy evaluation uses only worker-local heuristic state, so receiver publication need not wait for it.
+            // Worker-local evaluation and immutable state decoding need not block receiver publication.
             lock.unlock();
             auto result = std::forward<decltype(evaluate)>(evaluate)();
             lock.lock();
@@ -561,8 +564,10 @@ public:
 
         const auto is_goal = sender.goal_strategy->is_dynamic_goal_satisfied(engine.m_start_node.get_state(), *target);
         auto prepared = m_state_policy.prepare_target(engine, sender, std::move(target), metric, engine.num_workers());
-        sender.statistics.increment_num_generated_successors(prepared.owner != sender.index);
+        sender.statistics.increment_num_generated_candidates(prepared.owner != sender.index);
         auto& receiver = engine.get_worker(prepared.owner);
+        auto node = m_state_policy.take_target(receiver, std::move(prepared));
+        auto routed = typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata), g_value, is_goal };
 
         auto result = AcceptanceResult::TERMINAL;
         {
@@ -589,8 +594,6 @@ public:
             };
             if (running())
             {
-                auto node = m_state_policy.take_target(receiver, std::move(prepared));
-                auto routed = typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata), g_value, is_goal };
                 result = engine.accept_successor(receiver, source, routed, evaluate_heuristic);
                 if (result == AcceptanceResult::QUEUED)
                     retain_successor();
@@ -765,16 +768,28 @@ public:
                  SuccessorGenerator<Kind>& successor_generator,
                  Heuristic<Kind>& heuristic,
                  const typename SearchPolicy::Options& options,
-                 const typename SearchPolicy::EventHandlerPtr& event_handler)
+                 const typename SearchPolicy::EventHandlerPtr& event_handler) :
+        m_caller_state_repository(state_repository),
+        m_caller_axiom_evaluator(axiom_evaluator)
     {
         const auto num_workers = ExecutionPolicy::num_workers(options);
+        const auto hash_distributed = !state_repository.is_concurrent();
+        if (hash_distributed)
+        {
+            auto state_repository_factory = StateRepositoryFactory<Kind> {};
+            m_owner_state_repositories.reserve(num_workers);
+            for (size_t i = 0; i < num_workers; ++i)
+                m_owner_state_repositories.push_back(state_repository_factory.create_concurrent(state_repository.get_task()));
+        }
+
         m_workers.reserve(num_workers);
 
         auto pruning_strategy = options.pruning_strategy ? options.pruning_strategy : PruningStrategy<Kind>::create();
         auto goal_strategy = options.goal_strategy ? options.goal_strategy : ConjunctiveGoalStrategy<Kind>::create(task);
         const auto num_datalog_threads = axiom_evaluator.get_execution_context()->get_num_threads();
+        auto& root_state_repository = hash_distributed ? *m_owner_state_repositories.front() : state_repository;
         m_workers.push_back(std::make_unique<WorkerData>(ygg::Index<Worker>(0),
-                                                         state_repository,
+                                                         root_state_repository,
                                                          axiom_evaluator,
                                                          successor_generator,
                                                          heuristic,
@@ -788,7 +803,7 @@ public:
         {
             const auto index = ygg::Index<Worker>(static_cast<ygg::uint_t>(i));
             auto execution_context = ygg::ExecutionContext::create(num_datalog_threads);
-            auto worker_state_repository = state_repository.make_worker();
+            auto worker_state_repository = hash_distributed ? m_owner_state_repositories[i] : state_repository.make_worker();
             auto worker_axiom_evaluator = axiom_evaluator.make_worker(execution_context);
             auto worker_successor_generator = successor_generator.make_worker(execution_context);
             auto worker_heuristic = heuristic.make_worker(execution_context);
@@ -817,6 +832,23 @@ public:
                                                              std::move(worker_pruning_strategy),
                                                              std::move(worker_goal_strategy),
                                                              std::move(worker_event_handler)));
+        }
+
+        if (hash_distributed)
+        {
+            // Storage is concurrent, but every sender needs private backend scratch for each owner.
+            for (size_t sender = 0; sender < num_workers; ++sender)
+            {
+                auto& registration_repositories = m_workers[sender]->registration_repositories;
+                registration_repositories.reserve(num_workers);
+                for (size_t owner = 0; owner < num_workers; ++owner)
+                {
+                    auto repository = sender == owner ? m_owner_state_repositories[owner] : m_owner_state_repositories[owner]->make_worker();
+                    if (!repository)
+                        throw std::invalid_argument("Parallel search state repository does not support worker construction.");
+                    registration_repositories.push_back(std::move(repository));
+                }
+            }
         }
     }
 
@@ -853,18 +885,20 @@ public:
                 });
             });
 
-        auto& caller = get(ygg::Index<Worker>(0));
         auto plan = PlanReconstructionPolicy<ParallelSearch>::extract_total_ordered_plan(
             goal,
             std::span<const WorkerSearchSpaceView<Kind, typename SearchPolicy::SearchNode>>(views),
-            caller.state_repository,
-            caller.axiom_evaluator,
+            m_caller_state_repository,
+            m_caller_axiom_evaluator,
             options.cost_mode);
         auto goal_node = plan.empty() ? plan.get_start_node() : plan.get_labeled_succ_nodes().back().node;
         return { std::move(plan), std::move(goal_node) };
     }
 
 private:
+    StateRepository<Kind>& m_caller_state_repository;
+    AxiomEvaluator<Kind>& m_caller_axiom_evaluator;
+    std::vector<StateRepositoryPtr<Kind>> m_owner_state_repositories;
     std::vector<std::unique_ptr<WorkerData>> m_workers;
 };
 

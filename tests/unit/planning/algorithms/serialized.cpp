@@ -230,12 +230,12 @@ private:
 TEST(TyrPlanningSerialized, StatisticsClearResetsCountersAndProgressSnapshots)
 {
     auto statistics = p::Statistics();
-    statistics.increment_num_accepted_successors();
+    statistics.increment_num_generated_successors();
     statistics.increment_num_expanded();
     statistics.increment_num_deadends();
     statistics.increment_num_pruned();
-    statistics.increment_num_generated_successors(false);
-    statistics.increment_num_generated_successors(true);
+    statistics.increment_num_generated_candidates(false);
+    statistics.increment_num_generated_candidates(true);
 
     auto progress_statistics = p::ProgressStatistics();
     progress_statistics.add_snapshot(statistics);
@@ -243,23 +243,28 @@ TEST(TyrPlanningSerialized, StatisticsClearResetsCountersAndProgressSnapshots)
     ASSERT_EQ(progress_statistics.size(), 1);
     ASSERT_FALSE(progress_statistics.empty());
     ASSERT_EQ(progress_statistics.get_snapshots().size(), 1);
-    EXPECT_EQ(statistics.get_num_accepted_successors(), 1);
+    EXPECT_EQ(progress_statistics.get_snapshots().front().get_num_generated_successors(), 1);
+    EXPECT_EQ(progress_statistics.get_snapshots().front().get_num_generated_candidates(), 2);
+    EXPECT_EQ(progress_statistics.get_snapshots().front().get_num_transferred_candidates(), 1);
+    EXPECT_EQ(statistics.get_num_generated_successors(), 1);
     EXPECT_EQ(statistics.get_num_expanded(), 1);
     EXPECT_EQ(statistics.get_num_deadends(), 1);
     EXPECT_EQ(statistics.get_num_pruned(), 1);
-    EXPECT_EQ(statistics.get_num_generated_successors(), 2);
-    EXPECT_EQ(statistics.get_num_transferred_successors(), 1);
+    EXPECT_EQ(statistics.get_num_generated_candidates(), 2);
+    EXPECT_EQ(statistics.get_num_transferred_candidates(), 1);
     EXPECT_DOUBLE_EQ(statistics.get_communication_overhead(), 0.5);
 
     statistics.clear();
+    EXPECT_EQ(progress_statistics.get_snapshots().front().get_num_generated_candidates(), 2);
+    EXPECT_EQ(progress_statistics.get_snapshots().front().get_num_transferred_candidates(), 1);
     progress_statistics.clear();
 
-    EXPECT_EQ(statistics.get_num_accepted_successors(), 0);
+    EXPECT_EQ(statistics.get_num_generated_successors(), 0);
     EXPECT_EQ(statistics.get_num_expanded(), 0);
     EXPECT_EQ(statistics.get_num_deadends(), 0);
     EXPECT_EQ(statistics.get_num_pruned(), 0);
-    EXPECT_EQ(statistics.get_num_generated_successors(), 0);
-    EXPECT_EQ(statistics.get_num_transferred_successors(), 0);
+    EXPECT_EQ(statistics.get_num_generated_candidates(), 0);
+    EXPECT_EQ(statistics.get_num_transferred_candidates(), 0);
     EXPECT_DOUBLE_EQ(statistics.get_communication_overhead(), 0.0);
     EXPECT_TRUE(progress_statistics.empty());
     EXPECT_EQ(progress_statistics.size(), 0);
@@ -270,28 +275,38 @@ TEST(TyrPlanningSerialized, StatisticsAggregatesAndClearsDestinationLockMetrics)
 {
     auto statistics = p::Statistics {};
     statistics.add_destination_lock_statistics(std::chrono::nanoseconds(3), std::chrono::nanoseconds(5));
-    statistics.increment_num_generated_successors(false);
+    statistics.increment_num_generated_candidates(false);
 
     auto other = p::Statistics {};
     other.add_destination_lock_statistics(std::chrono::nanoseconds(7), std::chrono::nanoseconds(11));
-    other.increment_num_generated_successors(true);
-    other.increment_num_generated_successors(true);
+    other.increment_num_generated_candidates(true);
+    other.increment_num_generated_candidates(true);
     statistics.add(other);
 
     EXPECT_EQ(statistics.get_num_destination_lock_acquisitions(), 2);
     EXPECT_EQ(statistics.get_destination_lock_wait_time(), std::chrono::nanoseconds(10));
     EXPECT_EQ(statistics.get_destination_lock_hold_time(), std::chrono::nanoseconds(16));
-    EXPECT_EQ(statistics.get_num_generated_successors(), 3);
-    EXPECT_EQ(statistics.get_num_transferred_successors(), 2);
+    EXPECT_EQ(statistics.get_num_generated_candidates(), 3);
+    EXPECT_EQ(statistics.get_num_transferred_candidates(), 2);
     EXPECT_DOUBLE_EQ(statistics.get_communication_overhead(), 2.0 / 3.0);
 
     statistics.clear();
     EXPECT_EQ(statistics.get_num_destination_lock_acquisitions(), 0);
     EXPECT_EQ(statistics.get_destination_lock_wait_time(), std::chrono::nanoseconds(0));
     EXPECT_EQ(statistics.get_destination_lock_hold_time(), std::chrono::nanoseconds(0));
-    EXPECT_EQ(statistics.get_num_generated_successors(), 0);
-    EXPECT_EQ(statistics.get_num_transferred_successors(), 0);
+    EXPECT_EQ(statistics.get_num_generated_candidates(), 0);
+    EXPECT_EQ(statistics.get_num_transferred_candidates(), 0);
     EXPECT_DOUBLE_EQ(statistics.get_communication_overhead(), 0.0);
+}
+
+TEST(TyrPlanningSerialized, AStarDefaultWorkerEventsRequireTraceVerbosity)
+{
+    const auto worker = ygg::Index<p::Worker>(0);
+    for (const auto verbosity : { 0, 1, 2 })
+    {
+        EXPECT_EQ(p::astar_eager::DefaultEventHandler<::tyr::GroundTag>(verbosity).make_worker(worker) != nullptr, verbosity >= 2);
+        EXPECT_EQ(p::astar_eager::DefaultEventHandler<::tyr::LiftedTag>(verbosity).make_worker(worker) != nullptr, verbosity >= 2);
+    }
 }
 
 TEST(TyrPlanningSerialized, BrfsEventHandlerClearsProgressSnapshotsOnSearchStart)
@@ -300,13 +315,13 @@ TEST(TyrPlanningSerialized, BrfsEventHandlerClearsProgressSnapshotsOnSearchStart
     auto node = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator);
     auto event_handler = p::brfs::DefaultEventHandler<::tyr::GroundTag>(0);
     auto statistics = p::Statistics {};
-    statistics.increment_num_accepted_successors();
+    statistics.increment_num_generated_successors();
 
     event_handler.on_start_search(node);
     event_handler.on_finish_layer(0, statistics);
 
     ASSERT_EQ(event_handler.get_progress_statistics().size(), 1);
-    EXPECT_EQ(event_handler.get_progress_statistics().get_snapshots().front().get_num_accepted_successors(), 1);
+    EXPECT_EQ(event_handler.get_progress_statistics().get_snapshots().front().get_num_generated_successors(), 1);
 
     event_handler.on_start_search(node);
 
@@ -662,7 +677,7 @@ TEST(TyrPlanningSerialized, DetectsRepeatedSubgoalState)
 
     auto first_subresult = p::SearchResult<::tyr::GroundTag> {};
     first_subresult.status = p::SearchStatus::SOLVED;
-    first_subresult.statistics.increment_num_accepted_successors();
+    first_subresult.statistics.increment_num_generated_successors();
     first_subresult.statistics.increment_num_pruned();
     first_subresult.statistics.set_num_registered_states(20);
     first_subresult.statistics.set_state_storage_memory_usage(100);
@@ -675,7 +690,7 @@ TEST(TyrPlanningSerialized, DetectsRepeatedSubgoalState)
 
     auto second_subresult = p::SearchResult<::tyr::GroundTag> {};
     second_subresult.status = p::SearchStatus::SOLVED;
-    second_subresult.statistics.increment_num_accepted_successors();
+    second_subresult.statistics.increment_num_generated_successors();
     second_subresult.statistics.increment_num_expanded();
     second_subresult.statistics.set_num_registered_states(30);
     second_subresult.statistics.set_state_storage_memory_usage(90);
@@ -710,7 +725,7 @@ TEST(TyrPlanningSerialized, DetectsRepeatedSubgoalState)
     EXPECT_EQ(result.plan->get_cost(), 2);
     EXPECT_EQ(result.cycle_range->first, 0);
     EXPECT_EQ(result.cycle_range->second, 2);
-    EXPECT_EQ(result.statistics.get_num_accepted_successors(), 2);
+    EXPECT_EQ(result.statistics.get_num_generated_successors(), 2);
     EXPECT_EQ(result.statistics.get_num_expanded(), 1);
     EXPECT_EQ(result.statistics.get_num_pruned(), 1);
     EXPECT_EQ(result.statistics.get_num_registered_states(), 30);

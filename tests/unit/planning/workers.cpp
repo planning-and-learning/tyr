@@ -230,7 +230,10 @@ void expect_shared_worker_cohort(const p::TaskPtr<Kind>& task)
 {
     auto source_context = ygg::ExecutionContext::create(1);
     auto source_axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, source_context);
-    auto source_repository = p::StateRepositoryFactory<Kind>().create_concurrent(task);
+    auto repository_factory = p::StateRepositoryFactory<Kind> {};
+    auto source_repository = repository_factory.create_concurrent(task);
+    auto other_owner_repository = repository_factory.create_concurrent(task);
+    auto other_owner_worker_repository = other_owner_repository->make_worker();
     auto source = p::SuccessorGeneratorFactory<Kind>().create(task, source_context);
     auto worker_context = ygg::ExecutionContext::create(1);
     auto worker_axiom_evaluator = source_axiom_evaluator->make_worker(worker_context);
@@ -238,6 +241,7 @@ void expect_shared_worker_cohort(const p::TaskPtr<Kind>& task)
     auto worker = source->make_worker(worker_context);
     ASSERT_NE(worker_axiom_evaluator, nullptr);
     ASSERT_NE(worker_repository, nullptr);
+    ASSERT_NE(other_owner_worker_repository, nullptr);
     ASSERT_NE(worker, nullptr);
 
     const auto& first_repository = source_repository;
@@ -247,6 +251,13 @@ void expect_shared_worker_cohort(const p::TaskPtr<Kind>& task)
     EXPECT_NE(source->get_index(), worker->get_index());
     EXPECT_NE(first_repository->get_index(), second_repository->get_index());
     EXPECT_TRUE(first_repository->shares_storage_with(*second_repository));
+    EXPECT_TRUE(first_repository->is_concurrent());
+    EXPECT_TRUE(second_repository->is_concurrent());
+    EXPECT_TRUE(other_owner_repository->is_concurrent());
+    EXPECT_TRUE(other_owner_worker_repository->is_concurrent());
+    EXPECT_FALSE(first_repository->shares_storage_with(*other_owner_repository));
+    EXPECT_FALSE(second_repository->shares_storage_with(*other_owner_worker_repository));
+    EXPECT_TRUE(other_owner_repository->shares_storage_with(*other_owner_worker_repository));
 
     auto initial_start = std::barrier(2);
     auto first_initial_future = std::async(std::launch::async,

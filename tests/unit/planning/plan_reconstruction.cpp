@@ -83,7 +83,7 @@ public:
     void on_generate_transition(const p::Node<Kind>&, const p::LabeledNode<Kind>&, p::TransitionOutcome outcome) override
     {
         if (outcome == p::TransitionOutcome::OPENED || outcome == p::TransitionOutcome::GOAL)
-            m_statistics.increment_num_accepted_successors();
+            m_statistics.increment_num_generated_successors();
         else if (outcome == p::TransitionOutcome::PRUNED)
             m_statistics.increment_num_pruned();
     }
@@ -163,7 +163,7 @@ public:
     void on_generate_transition(const p::Node<Kind>&, const p::LabeledNode<Kind>&, p::TransitionOutcome outcome) override
     {
         if (outcome == p::TransitionOutcome::OPENED || outcome == p::TransitionOutcome::GOAL)
-            m_statistics.increment_num_accepted_successors();
+            m_statistics.increment_num_generated_successors();
         else if (outcome == p::TransitionOutcome::PRUNED)
             m_statistics.increment_num_pruned();
     }
@@ -234,7 +234,7 @@ public:
         if (source_owner != worker)
         {
             m_num_remote_transitions.fetch_add(1, std::memory_order_relaxed);
-            if (m_mode == RepositoryMode::SHARED && source.get_state_repository() != target.get_state_repository())
+            if (m_mode == RepositoryMode::SHARED && !source.get_state_repository()->shares_storage_with(*target.get_state_repository()))
                 m_wrong_shared_remote_repository.store(true, std::memory_order_relaxed);
         }
         access(worker, target);
@@ -283,7 +283,8 @@ private:
 
         auto* expected_repository = static_cast<const p::StateRepository<Kind>*>(nullptr);
         const auto* repository = state.get_state_repository().get();
-        if (!lane.repository.compare_exchange_strong(expected_repository, repository, std::memory_order_relaxed) && expected_repository != repository)
+        if (!lane.repository.compare_exchange_strong(expected_repository, repository, std::memory_order_relaxed)
+            && !expected_repository->shares_storage_with(*repository))
             lane.wrong_repository.store(true, std::memory_order_relaxed);
     }
 
@@ -774,13 +775,13 @@ void expect_brfs_events(const p::TaskPtr<Kind>& task, RepositoryMode state_repos
     ASSERT_TRUE(event_handler->end_status);
     EXPECT_EQ(*event_handler->end_status, result.status);
     ASSERT_TRUE(event_handler->end_statistics);
-    EXPECT_EQ(event_handler->end_statistics->get_num_accepted_successors(), result.statistics.get_num_accepted_successors());
+    EXPECT_EQ(event_handler->end_statistics->get_num_generated_successors(), result.statistics.get_num_generated_successors());
     EXPECT_EQ(event_handler->end_statistics->get_num_expanded(), result.statistics.get_num_expanded());
 
     auto worker_totals = p::Statistics {};
     for (const auto& statistics : event_handler->worker_statistics)
         worker_totals.add(statistics);
-    EXPECT_EQ(worker_totals.get_num_accepted_successors(), result.statistics.get_num_accepted_successors());
+    EXPECT_EQ(worker_totals.get_num_generated_successors(), result.statistics.get_num_generated_successors());
     EXPECT_EQ(worker_totals.get_num_expanded(), result.statistics.get_num_expanded());
     EXPECT_EQ(worker_totals.get_num_pruned(), result.statistics.get_num_pruned());
 
@@ -791,7 +792,7 @@ void expect_brfs_events(const p::TaskPtr<Kind>& task, RepositoryMode state_repos
     for (size_t i = 1; i < event_handler->layer_statistics.size(); ++i)
     {
         EXPECT_EQ(event_handler->finished_layers[i], event_handler->finished_layers[i - 1] + 1);
-        EXPECT_LE(event_handler->layer_statistics[i - 1].get_num_accepted_successors(), event_handler->layer_statistics[i].get_num_accepted_successors());
+        EXPECT_LE(event_handler->layer_statistics[i - 1].get_num_generated_successors(), event_handler->layer_statistics[i].get_num_generated_successors());
         EXPECT_LE(event_handler->layer_statistics[i - 1].get_num_expanded(), event_handler->layer_statistics[i].get_num_expanded());
     }
 }
@@ -806,12 +807,12 @@ void expect_aggregated_worker_statistics(const p::SearchResult<Kind>& result, si
         totals.add(worker);
         EXPECT_EQ(worker.get_search_time(), result.statistics.get_search_time());
     }
-    EXPECT_EQ(totals.get_num_accepted_successors(), result.statistics.get_num_accepted_successors());
+    EXPECT_EQ(totals.get_num_generated_successors(), result.statistics.get_num_generated_successors());
     EXPECT_EQ(totals.get_num_expanded(), result.statistics.get_num_expanded());
     EXPECT_EQ(totals.get_num_deadends(), result.statistics.get_num_deadends());
     EXPECT_EQ(totals.get_num_pruned(), result.statistics.get_num_pruned());
-    EXPECT_EQ(totals.get_num_generated_successors(), result.statistics.get_num_generated_successors());
-    EXPECT_EQ(totals.get_num_transferred_successors(), result.statistics.get_num_transferred_successors());
+    EXPECT_EQ(totals.get_num_generated_candidates(), result.statistics.get_num_generated_candidates());
+    EXPECT_EQ(totals.get_num_transferred_candidates(), result.statistics.get_num_transferred_candidates());
     EXPECT_EQ(totals.get_idle_time(), result.statistics.get_idle_time());
 }
 
@@ -920,14 +921,14 @@ void expect_lazy_gbfs_worker_events(const p::TaskPtr<Kind>& task, RepositoryMode
     EXPECT_EQ(event_handler->num_workers_created, num_search_workers);
 
     const auto totals = event_handler->totals();
-    EXPECT_EQ(totals.get_num_accepted_successors(), result.statistics.get_num_accepted_successors());
+    EXPECT_EQ(totals.get_num_generated_successors(), result.statistics.get_num_generated_successors());
     EXPECT_EQ(totals.get_num_expanded(), result.statistics.get_num_expanded());
     EXPECT_EQ(totals.get_num_pruned(), result.statistics.get_num_pruned());
 
     ASSERT_TRUE(event_handler->end_status);
     EXPECT_EQ(*event_handler->end_status, result.status);
     ASSERT_TRUE(event_handler->end_statistics);
-    EXPECT_EQ(event_handler->end_statistics->get_num_accepted_successors(), result.statistics.get_num_accepted_successors());
+    EXPECT_EQ(event_handler->end_statistics->get_num_generated_successors(), result.statistics.get_num_generated_successors());
     EXPECT_EQ(event_handler->end_statistics->get_num_expanded(), result.statistics.get_num_expanded());
     EXPECT_EQ(event_handler->end_statistics->get_num_deadends(), result.statistics.get_num_deadends());
     EXPECT_EQ(event_handler->end_statistics->get_num_pruned(), result.statistics.get_num_pruned());
@@ -947,7 +948,7 @@ void expect_lazy_gbfs_worker_events(const p::TaskPtr<Kind>& task, RepositoryMode
         state_storage_memory_usage += statistics.get_state_storage_memory_usage();
         EXPECT_LE(statistics.get_idle_time(), std::chrono::duration_cast<std::chrono::nanoseconds>(statistics.get_search_time()));
     }
-    EXPECT_EQ(worker_totals.get_num_accepted_successors(), result.statistics.get_num_accepted_successors());
+    EXPECT_EQ(worker_totals.get_num_generated_successors(), result.statistics.get_num_generated_successors());
     EXPECT_EQ(worker_totals.get_num_expanded(), result.statistics.get_num_expanded());
     EXPECT_EQ(worker_totals.get_num_deadends(), result.statistics.get_num_deadends());
     EXPECT_EQ(worker_totals.get_num_pruned(), result.statistics.get_num_pruned());
@@ -1113,7 +1114,7 @@ void expect_parallel_lazy_gbfs_exhaustion(const p::TaskPtr<Kind>& task, Reposito
     const auto result = p::gbfs_lazy::find_solution(*task, *repository, *axiom_evaluator, *generator, *heuristic, options);
     EXPECT_EQ(result.status, p::SearchStatus::EXHAUSTED);
     EXPECT_GT(result.statistics.get_num_expanded(), 0);
-    EXPECT_GT(result.statistics.get_num_accepted_successors(), 0);
+    EXPECT_GT(result.statistics.get_num_generated_successors(), 0);
 }
 
 template<TaskKind Kind>
@@ -1136,7 +1137,6 @@ void expect_parallel_brfs_exhaustion(const p::TaskPtr<Kind>& task, RepositoryMod
     auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
     auto repository = make_repository(task, state_repository_mode);
     auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
-    const auto initial_node = generator->get_initial_node(*repository, *axiom_evaluator);
     constexpr auto seed = uint64_t { 0 };
     auto guard = std::make_shared<OwnerAccessGuard<Kind>>(state_repository_mode, seed);
     auto options = p::brfs::Options<Kind> {};
@@ -1153,30 +1153,26 @@ void expect_parallel_brfs_exhaustion(const p::TaskPtr<Kind>& task, RepositoryMod
 
     EXPECT_EQ(sequential_result.status, p::SearchStatus::EXHAUSTED);
     EXPECT_EQ(result.status, p::SearchStatus::EXHAUSTED);
-    const auto copied_start_state =
-        state_repository_mode == RepositoryMode::HASH_DISTRIBUTED
-        && p::DistHash<Kind, p::RandomDistHashTag>(seed).owner(initial_node.get_state().get_state_builder(), OwnerAccessGuard<Kind>::num_workers)
-               != ygg::Index<p::Worker>(0);
-    EXPECT_EQ(result.statistics.get_num_registered_states(), sequential_result.statistics.get_num_registered_states() + copied_start_state);
+    EXPECT_EQ(result.statistics.get_num_registered_states(), sequential_result.statistics.get_num_registered_states());
     EXPECT_EQ(result.statistics.get_num_expanded(), sequential_result.statistics.get_num_expanded());
-    EXPECT_EQ(result.statistics.get_num_accepted_successors(), sequential_result.statistics.get_num_accepted_successors());
+    EXPECT_EQ(result.statistics.get_num_generated_successors(), sequential_result.statistics.get_num_generated_successors());
     EXPECT_EQ(result.statistics.get_num_pruned(), 0);
     EXPECT_EQ(result.worker_statistics.size(), OwnerAccessGuard<Kind>::num_workers);
-    EXPECT_GT(sequential_result.statistics.get_num_generated_successors(), 0);
-    EXPECT_EQ(sequential_result.statistics.get_num_transferred_successors(), 0);
+    EXPECT_GT(sequential_result.statistics.get_num_generated_candidates(), 0);
+    EXPECT_EQ(sequential_result.statistics.get_num_transferred_candidates(), 0);
     EXPECT_DOUBLE_EQ(sequential_result.statistics.get_communication_overhead(), 0.0);
-    EXPECT_GT(result.statistics.get_num_generated_successors(), 0);
-    EXPECT_GT(result.statistics.get_num_transferred_successors(), 0);
-    EXPECT_LE(result.statistics.get_num_transferred_successors(), result.statistics.get_num_generated_successors());
+    EXPECT_GT(result.statistics.get_num_generated_candidates(), 0);
+    EXPECT_GT(result.statistics.get_num_transferred_candidates(), 0);
+    EXPECT_LE(result.statistics.get_num_transferred_candidates(), result.statistics.get_num_generated_candidates());
     EXPECT_DOUBLE_EQ(result.statistics.get_communication_overhead(),
-                     static_cast<double>(result.statistics.get_num_transferred_successors())
-                         / static_cast<double>(result.statistics.get_num_generated_successors()));
+                     static_cast<double>(result.statistics.get_num_transferred_candidates())
+                         / static_cast<double>(result.statistics.get_num_generated_candidates()));
 
     auto worker_totals = p::Statistics {};
     for (const auto& statistics : result.worker_statistics)
         worker_totals.add(statistics);
-    EXPECT_EQ(worker_totals.get_num_generated_successors(), result.statistics.get_num_generated_successors());
-    EXPECT_EQ(worker_totals.get_num_transferred_successors(), result.statistics.get_num_transferred_successors());
+    EXPECT_EQ(worker_totals.get_num_generated_candidates(), result.statistics.get_num_generated_candidates());
+    EXPECT_EQ(worker_totals.get_num_transferred_candidates(), result.statistics.get_num_transferred_candidates());
 }
 
 }

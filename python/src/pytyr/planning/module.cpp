@@ -83,17 +83,17 @@ void bind_module_definitions(nb::module_& m)
     auto statistics_cls = nb::class_<Statistics>(m, "Statistics")
                               .def(nb::init<>())
                               .def("clear", &Statistics::clear)
-                              .def("increment_num_accepted_successors", &Statistics::increment_num_accepted_successors)
+                              .def("increment_num_generated_successors", &Statistics::increment_num_generated_successors)
                               .def("increment_num_expanded", &Statistics::increment_num_expanded)
                               .def("increment_num_deadends", &Statistics::increment_num_deadends)
                               .def("increment_num_pruned", &Statistics::increment_num_pruned)
-                              .def("increment_num_generated_successors", &Statistics::increment_num_generated_successors, "transferred"_a)
-                              .def("get_num_accepted_successors", &Statistics::get_num_accepted_successors)
+                              .def("increment_num_generated_candidates", &Statistics::increment_num_generated_candidates, "transferred"_a)
+                              .def("get_num_generated_successors", &Statistics::get_num_generated_successors)
                               .def("get_num_expanded", &Statistics::get_num_expanded)
                               .def("get_num_deadends", &Statistics::get_num_deadends)
                               .def("get_num_pruned", &Statistics::get_num_pruned)
-                              .def("get_num_generated_successors", &Statistics::get_num_generated_successors)
-                              .def("get_num_transferred_successors", &Statistics::get_num_transferred_successors)
+                              .def("get_num_generated_candidates", &Statistics::get_num_generated_candidates)
+                              .def("get_num_transferred_candidates", &Statistics::get_num_transferred_candidates)
                               .def("get_communication_overhead", &Statistics::get_communication_overhead)
                               .def("get_num_registered_states", &Statistics::get_num_registered_states)
                               .def("get_state_storage_memory_usage", &Statistics::get_state_storage_memory_usage)
@@ -111,19 +111,25 @@ void bind_module_definitions(nb::module_& m)
 
     using ProgressSnapshot = ProgressStatistics::Snapshot;
 
-    auto progress_snapshot_cls =
-        nb::class_<ProgressSnapshot>(m, "ProgressStatisticsSnapshot")
-            .def(nb::init<uint64_t, uint64_t, uint64_t, uint64_t>(), "num_accepted_successors"_a, "num_expanded"_a, "num_deadends"_a, "num_pruned"_a)
-            .def("get_num_accepted_successors", &ProgressSnapshot::get_num_accepted_successors)
-            .def("get_num_expanded", &ProgressSnapshot::get_num_expanded)
-            .def("get_num_deadends", &ProgressSnapshot::get_num_deadends)
-            .def("get_num_pruned", &ProgressSnapshot::get_num_pruned);
+    auto progress_snapshot_cls = nb::class_<ProgressSnapshot>(m, "ProgressStatisticsSnapshot")
+                                     .def(nb::init<uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t>(),
+                                          "num_generated_successors"_a,
+                                          "num_expanded"_a,
+                                          "num_deadends"_a,
+                                          "num_pruned"_a,
+                                          "num_generated_candidates"_a = 0,
+                                          "num_transferred_candidates"_a = 0)
+                                     .def("get_num_generated_successors", &ProgressSnapshot::get_num_generated_successors)
+                                     .def("get_num_expanded", &ProgressSnapshot::get_num_expanded)
+                                     .def("get_num_deadends", &ProgressSnapshot::get_num_deadends)
+                                     .def("get_num_pruned", &ProgressSnapshot::get_num_pruned)
+                                     .def("get_num_generated_candidates", &ProgressSnapshot::get_num_generated_candidates)
+                                     .def("get_num_transferred_candidates", &ProgressSnapshot::get_num_transferred_candidates);
     ygg::add_print(progress_snapshot_cls);
 
     auto progress_statistics_cls = nb::class_<ProgressStatistics>(m, "ProgressStatistics")
                                        .def(nb::init<>())
                                        .def("add_snapshot", &ProgressStatistics::add_snapshot, "statistics"_a)
-                                       .def("add_snap_shot", &ProgressStatistics::add_snap_shot, "statistics"_a)
                                        .def("clear", &ProgressStatistics::clear)
                                        .def("empty", &ProgressStatistics::empty)
                                        .def("size", &ProgressStatistics::size)

@@ -10,7 +10,7 @@ import re
 
 FLOAT = r"([-+]?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?|inf))"
 WORKER_STATISTICS = re.compile(
-    r"^\[Search\] Worker (\d+): idle=(\d+) ns, expanded=(\d+), accepted=(\d+), "
+    r"^\[Search\] Worker (\d+): idle=(\d+) ns, expanded=(\d+), generated=(\d+), "
     r"deadends=(\d+), pruned=(\d+), registered=(\d+), state_storage=(\d+) bytes$",
     re.MULTILINE,
 )
@@ -19,7 +19,7 @@ WORKER_DESTINATION_LOCK_STATISTICS = re.compile(
     re.MULTILINE,
 )
 WORKER_COMMUNICATION_STATISTICS = re.compile(
-    r"^\[Search\] Worker (\d+) communication: generated=(\d+), transferred=(\d+)$",
+    r"^\[Search\] Worker (\d+) communication: generated_candidates=(\d+), transferred_candidates=(\d+)$",
     re.MULTILINE,
 )
 
@@ -52,7 +52,7 @@ def parse_worker_statistics(content, props):
     matches, _, unexpected_indices = parse_worker_rows(WORKER_STATISTICS, content, props)
     if not matches:
         if props.get("num_search_workers", 0) and any(
-            name in props for name in ("search_time_ns", "num_expanded", "num_accepted_successors", "num_deadends", "num_pruned")
+            name in props for name in ("search_time_ns", "num_expanded", "num_generated_successors", "num_deadends", "num_pruned")
         ):
             tools.add_unexplained_error(props, "Unexpected search worker indices: []")
         return
@@ -64,7 +64,7 @@ def parse_worker_statistics(content, props):
     names = (
         "worker_idle_time_ns",
         "worker_num_expanded",
-        "worker_num_accepted_successors",
+        "worker_num_generated_successors",
         "worker_num_deadends",
         "worker_num_pruned",
         "worker_num_registered_states",
@@ -79,7 +79,7 @@ def parse_worker_statistics(content, props):
 
 def parse_communication_statistics(content, props):
     matches, expected_workers, unexpected_indices = parse_worker_rows(WORKER_COMMUNICATION_STATISTICS, content, props)
-    aggregate_names = ("num_generated_successors", "num_transferred_successors")
+    aggregate_names = ("num_generated_candidates", "num_transferred_candidates")
     if expected_workers and not matches and any(name in props for name in aggregate_names):
         tools.add_unexplained_error(props, "Missing communication worker statistics")
         return
@@ -89,20 +89,23 @@ def parse_communication_statistics(content, props):
             tools.add_unexplained_error(props, f"Unexpected communication worker indices: {unexpected_indices}")
             return
 
-        generated = [values[1] for values in matches]
-        transferred = [values[2] for values in matches]
-        if any(transferred_count > generated_count for generated_count, transferred_count in zip(generated, transferred)):
-            tools.add_unexplained_error(props, "Transferred successors exceed generated successors for a worker")
+        generated_candidates = [values[1] for values in matches]
+        transferred_candidates = [values[2] for values in matches]
+        if any(
+            transferred_count > generated_count
+            for generated_count, transferred_count in zip(generated_candidates, transferred_candidates)
+        ):
+            tools.add_unexplained_error(props, "Transferred candidates exceed generated candidates for a worker")
             return
 
-        props["worker_num_generated_successors"] = generated
-        props["worker_num_transferred_successors"] = transferred
+        props["worker_num_generated_candidates"] = generated_candidates
+        props["worker_num_transferred_candidates"] = transferred_candidates
         props["worker_communication_overheads"] = [
             transferred_count / generated_count if generated_count else 0.0
-            for generated_count, transferred_count in zip(generated, transferred)
+            for generated_count, transferred_count in zip(generated_candidates, transferred_candidates)
         ]
 
-        for name, total in zip(aggregate_names, (sum(generated), sum(transferred))):
+        for name, total in zip(aggregate_names, (sum(generated_candidates), sum(transferred_candidates))):
             if name in props and props[name] != total:
                 tools.add_unexplained_error(props, f"Communication aggregate does not match worker values: {name}")
             else:
@@ -115,17 +118,17 @@ def parse_communication_statistics(content, props):
     if not all(present_aggregates):
         return
 
-    generated = props["num_generated_successors"]
-    transferred = props["num_transferred_successors"]
-    if transferred > generated:
-        tools.add_unexplained_error(props, "Transferred successors exceed generated successors")
+    generated_candidates = props["num_generated_candidates"]
+    transferred_candidates = props["num_transferred_candidates"]
+    if transferred_candidates > generated_candidates:
+        tools.add_unexplained_error(props, "Transferred candidates exceed generated candidates")
         return
 
-    overhead = transferred / generated if generated else 0.0
+    overhead = transferred_candidates / generated_candidates if generated_candidates else 0.0
     if "communication_overhead" in props and not math.isclose(
         props["communication_overhead"], overhead, rel_tol=1e-9, abs_tol=1e-12
     ):
-        tools.add_unexplained_error(props, "Communication overhead does not match generated and transferred successor counts")
+        tools.add_unexplained_error(props, "Communication overhead does not match generated and transferred candidate counts")
     props["communication_overhead"] = overhead
 
 
@@ -227,12 +230,12 @@ class SearchParser(Parser):
     [Total] Number of objects: 4
     [GBFS] Search started.
     [GBFS] Start node h_value: 3
-    [GBFS] New best h_value: 2 with num expanded states 3 and num accepted successors 5 (0 ms)
-    [GBFS] New best h_value: 1 with num expanded states 4 and num accepted successors 7 (0 ms)
+    [GBFS] New best h_value: 2 with num expanded states 3 and num generated successors 5 (0 ms)
+    [GBFS] New best h_value: 1 with num expanded states 4 and num generated successors 7 (0 ms)
     [GBFS] Search ended.
     [Search] Search time: 0 ms (743179 ns)
     [Search] Number of expanded states: 4
-    [Search] Number of accepted successors: 7
+    [Search] Number of generated successors: 7
     [Search] Number of pruned states: 0
     [GBFS] Plan found.
     [GBFS] Plan cost: 3
@@ -274,11 +277,11 @@ class SearchParser(Parser):
         self.add_pattern("destination_lock_wait_time_ns", r"\[Search\] Destination lock wait time: \d+ ms \((\d+) ns\)", type=int)
         self.add_pattern("destination_lock_hold_time_ns", r"\[Search\] Destination lock hold time: \d+ ms \((\d+) ns\)", type=int)
         self.add_pattern("num_expanded", r"\[Search\] Number of expanded states: (\d+)", type=int)
-        self.add_pattern("num_accepted_successors", r"\[Search\] Number of accepted successors: (\d+)", type=int)
+        self.add_pattern("num_generated_successors", r"\[Search\] Number of generated successors: (\d+)", type=int)
         self.add_pattern("num_deadends", r"\[Search\] Number of dead-end states: (\d+)", type=int)
         self.add_pattern("num_pruned", r"\[Search\] Number of pruned states: (\d+)", type=int)
-        self.add_pattern("num_generated_successors", r"\[Search\] Number of generated successors: (\d+)", type=int)
-        self.add_pattern("num_transferred_successors", r"\[Search\] Number of transferred successors: (\d+)", type=int)
+        self.add_pattern("num_generated_candidates", r"\[Search\] Number of generated candidates: (\d+)", type=int)
+        self.add_pattern("num_transferred_candidates", r"\[Search\] Number of transferred candidates: (\d+)", type=int)
         self.add_pattern("communication_overhead", rf"\[Search\] Communication overhead: {FLOAT}", type=float)
         self.add_pattern("num_registered_states", r"\[Search\] Number of registered states: (\d+)", type=int)
         self.add_pattern("search_state_storage_memory_usage_bytes", r"\[Search\] State storage memory usage: (\d+) bytes", type=int)
@@ -288,8 +291,18 @@ class SearchParser(Parser):
         self.add_pattern("search_function_bindings_memory_usage_bytes", r"\[Search\] Function bindings memory usage: (\d+) bytes", type=int)
         self.add_pattern("num_expanded_until_last_snapshot", r"\[Search\] Number of expanded states at last snapshot: (\d+)", type=int)
         self.add_pattern(
-            "num_accepted_successors_until_last_snapshot",
-            r"\[Search\] Number of accepted successors at last snapshot: (\d+)",
+            "num_generated_successors_until_last_snapshot",
+            r"\[Search\] Number of generated successors at last snapshot: (\d+)",
+            type=int,
+        )
+        self.add_pattern(
+            "num_generated_candidates_until_last_snapshot",
+            r"\[Search\] Number of generated candidates at last snapshot: (\d+)",
+            type=int,
+        )
+        self.add_pattern(
+            "num_transferred_candidates_until_last_snapshot",
+            r"\[Search\] Number of transferred candidates at last snapshot: (\d+)",
             type=int,
         )
         self.add_pattern("num_deadends_until_last_snapshot", r"\[Search\] Number of deadend states at last snapshot: (\d+)", type=int)
@@ -359,15 +372,17 @@ class SearchParser(Parser):
             Attribute("destination_lock_hold_capacity_ratio", function=arithmetic_mean, digits=3),
             Attribute("worker_utilization_excluding_destination_lock_wait", function=arithmetic_mean, min_wins=False, digits=3),
             "num_expanded",
-            "num_accepted_successors",
+            "num_generated_successors",
             "num_deadends",
             "num_pruned",
-            "num_generated_successors",
-            "num_transferred_successors",
+            "num_generated_candidates",
+            "num_transferred_candidates",
             Attribute("communication_overhead", function=arithmetic_mean, digits=3),
             "num_registered_states",
             "num_expanded_until_last_snapshot",
-            "num_accepted_successors_until_last_snapshot",
+            "num_generated_successors_until_last_snapshot",
+            "num_generated_candidates_until_last_snapshot",
+            "num_transferred_candidates_until_last_snapshot",
             "num_deadends_until_last_snapshot",
             "num_pruned_until_last_snapshot",
             Attribute("search_time_ms_per_expanded", function=geometric_mean, digits=2),

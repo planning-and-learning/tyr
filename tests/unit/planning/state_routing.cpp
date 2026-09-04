@@ -26,6 +26,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <optional>
+#include <set>
 #include <stdexcept>
 #include <string_view>
 #include <thread>
@@ -152,6 +153,18 @@ void expect_state_routing(const p::TaskPtr<Kind>& task)
         trailing_zero_facts->set(ygg::Data<fp::FDRFact<f::FluentTag>>(high_variable, fp::FDRValue::none()));
         EXPECT_EQ(trailing_zero_facts->get(low_variable), fp::FDRValue { 1 });
         EXPECT_EQ(dist_hash.hash(*canonical_facts), dist_hash.hash(*trailing_zero_facts));
+
+        auto owners = std::set<ygg::uint_t> {};
+        for (ygg::uint_t mask = 0; mask < 256; ++mask)
+        {
+            auto state = repository->get_state_builder();
+            state->set(ygg::Data<fp::FDRFact<f::FluentTag>>(ygg::Index<fp::FDRVariable<f::FluentTag>>(44), fp::FDRValue { 1 }));
+            for (ygg::uint_t bit = 0; bit < 8; ++bit)
+                if (mask & (ygg::uint_t { 1 } << bit))
+                    state->set(ygg::Data<fp::FDRFact<f::FluentTag>>(ygg::Index<fp::FDRVariable<f::FluentTag>>(6 + bit), fp::FDRValue { 1 }));
+            owners.insert(ygg::uint_t(dist_hash.owner(*state, 16)));
+        }
+        EXPECT_EQ(owners.size(), 16);
     }
 
     const auto bindings = generator->get_applicable_action_bindings(initial);

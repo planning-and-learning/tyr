@@ -46,12 +46,12 @@ def test_planning_modules_export_expected_algorithm_submodules():
 def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
     statistics = planning.Statistics()
 
-    assert statistics.get_num_accepted_successors() == 0
+    assert statistics.get_num_generated_successors() == 0
     assert statistics.get_num_expanded() == 0
     assert statistics.get_num_deadends() == 0
     assert statistics.get_num_pruned() == 0
-    assert statistics.get_num_generated_successors() == 0
-    assert statistics.get_num_transferred_successors() == 0
+    assert statistics.get_num_generated_candidates() == 0
+    assert statistics.get_num_transferred_candidates() == 0
     assert statistics.get_communication_overhead() == 0
     assert statistics.get_num_registered_states() == 0
     assert statistics.get_idle_time() == timedelta(0)
@@ -66,26 +66,26 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
         "get_function_bindings_memory_usage",
     ):
         assert getattr(statistics, getter)() == 0
-    statistics.increment_num_accepted_successors()
+    statistics.increment_num_generated_successors()
     statistics.increment_num_expanded()
     statistics.increment_num_deadends()
     statistics.increment_num_pruned()
-    statistics.increment_num_generated_successors(False)
-    statistics.increment_num_generated_successors(True)
-    assert statistics.get_num_accepted_successors() == 1
+    statistics.increment_num_generated_candidates(False)
+    statistics.increment_num_generated_candidates(True)
+    assert statistics.get_num_generated_successors() == 1
     assert statistics.get_num_expanded() == 1
     assert statistics.get_num_deadends() == 1
     assert statistics.get_num_pruned() == 1
-    assert statistics.get_num_generated_successors() == 2
-    assert statistics.get_num_transferred_successors() == 1
+    assert statistics.get_num_generated_candidates() == 2
+    assert statistics.get_num_transferred_candidates() == 1
     assert statistics.get_communication_overhead() == 0.5
     statistics.clear()
-    assert statistics.get_num_accepted_successors() == 0
+    assert statistics.get_num_generated_successors() == 0
     assert statistics.get_num_expanded() == 0
     assert statistics.get_num_deadends() == 0
     assert statistics.get_num_pruned() == 0
-    assert statistics.get_num_generated_successors() == 0
-    assert statistics.get_num_transferred_successors() == 0
+    assert statistics.get_num_generated_candidates() == 0
+    assert statistics.get_num_transferred_candidates() == 0
     assert statistics.get_communication_overhead() == 0
     assert repr(statistics) == str(statistics)
     for label in (
@@ -95,8 +95,8 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
         "Predicate bindings memory usage",
         "Axiom bindings memory usage",
         "Function bindings memory usage",
-        "Number of generated successors",
-        "Number of transferred successors",
+        "Number of generated candidates",
+        "Number of transferred candidates",
         "Communication overhead",
         "Destination lock acquisitions",
         "Destination lock wait time",
@@ -105,26 +105,45 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
         assert label in str(statistics)
 
     snapshot = planning.ProgressStatisticsSnapshot(1, 2, 3, 4)
+    assert snapshot.get_num_generated_candidates() == 0
+    assert snapshot.get_num_transferred_candidates() == 0
+    snapshot = planning.ProgressStatisticsSnapshot(1, 2, 3, 4, num_generated_candidates=9, num_transferred_candidates=5)
 
-    assert snapshot.get_num_accepted_successors() == 1
+    assert snapshot.get_num_generated_successors() == 1
     assert snapshot.get_num_expanded() == 2
     assert snapshot.get_num_deadends() == 3
     assert snapshot.get_num_pruned() == 4
+    assert snapshot.get_num_generated_candidates() == 9
+    assert snapshot.get_num_transferred_candidates() == 5
     assert repr(snapshot) == str(snapshot)
+    assert "generated successors" in str(snapshot)
     assert "deadend" in str(snapshot)
+    assert "Number of generated candidates at snapshot: 9" in str(snapshot)
+    assert "Number of transferred candidates at snapshot: 5" in str(snapshot)
 
     progress_statistics = planning.ProgressStatistics()
 
     assert progress_statistics.get_snapshots() == []
     assert progress_statistics.empty()
     assert progress_statistics.size() == 0
+    assert not hasattr(progress_statistics, "add_snap_shot")
+    statistics.increment_num_generated_candidates(False)
+    statistics.increment_num_generated_candidates(True)
     progress_statistics.add_snapshot(statistics)
-    progress_statistics.add_snap_shot(statistics)
+    statistics.increment_num_generated_candidates(False)
+    progress_statistics.add_snapshot(statistics)
+    statistics.clear()
     assert len(progress_statistics.get_snapshots()) == 2
     assert progress_statistics.size() == 2
     assert not progress_statistics.empty()
-    assert progress_statistics.get_snapshots()[0].get_num_accepted_successors() == 0
-    assert progress_statistics.get_snapshots()[1].get_num_accepted_successors() == 0
+    assert progress_statistics.get_snapshots()[0].get_num_generated_successors() == 0
+    assert progress_statistics.get_snapshots()[1].get_num_generated_successors() == 0
+    assert progress_statistics.get_snapshots()[0].get_num_generated_candidates() == 2
+    assert progress_statistics.get_snapshots()[0].get_num_transferred_candidates() == 1
+    assert progress_statistics.get_snapshots()[1].get_num_generated_candidates() == 3
+    assert progress_statistics.get_snapshots()[1].get_num_transferred_candidates() == 1
+    assert "Number of generated candidates at last snapshot: 3" in str(progress_statistics)
+    assert "Number of transferred candidates at last snapshot: 1" in str(progress_statistics)
     progress_statistics.clear()
     assert progress_statistics.get_snapshots() == []
     assert progress_statistics.empty()
@@ -133,8 +152,10 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
     progress_statistics = planning.ProgressStatistics()
     progress_statistics.add_snapshot(statistics)
     assert len(progress_statistics.get_snapshots()) == 1
-    assert progress_statistics.get_snapshots()[0].get_num_accepted_successors() == 0
+    assert progress_statistics.get_snapshots()[0].get_num_generated_successors() == 0
     assert repr(progress_statistics) == str(progress_statistics)
+    assert progress_statistics.get_snapshots()[0].get_num_generated_candidates() == 0
+    assert progress_statistics.get_snapshots()[0].get_num_transferred_candidates() == 0
     assert "deadend" in str(progress_statistics)
 
     for task_module in (planning.ground, planning.lifted):
@@ -263,34 +284,34 @@ def test_search_result_exposes_all_result_fields():
         assert result.cycle_range is None
         assert isinstance(result.statistics, planning.Statistics)
         assert result.worker_statistics == []
-        assert result.statistics.get_num_accepted_successors() == 0
+        assert result.statistics.get_num_generated_successors() == 0
 
         result.status = planning.SearchStatus.CYCLE
         result.cycle_range = (1, 3)
-        result.statistics.increment_num_accepted_successors()
+        result.statistics.increment_num_generated_successors()
 
         assert result.status == planning.SearchStatus.CYCLE
         assert result.cycle_range == (1, 3)
-        assert result.statistics.get_num_accepted_successors() == 1
+        assert result.statistics.get_num_generated_successors() == 1
 
 
 def _assert_worker_statistics(result, num_workers: int):
     assert len(result.worker_statistics) == num_workers
     for getter in (
-        "get_num_accepted_successors",
+        "get_num_generated_successors",
         "get_num_expanded",
         "get_num_deadends",
         "get_num_pruned",
-        "get_num_generated_successors",
-        "get_num_transferred_successors",
+        "get_num_generated_candidates",
+        "get_num_transferred_candidates",
         "get_num_registered_states",
         "get_state_storage_memory_usage",
     ):
         worker_total = sum(getattr(worker, getter)() for worker in result.worker_statistics)
         assert worker_total == getattr(result.statistics, getter)()
     assert result.statistics.get_communication_overhead() == (
-        result.statistics.get_num_transferred_successors() / result.statistics.get_num_generated_successors()
-        if result.statistics.get_num_generated_successors()
+        result.statistics.get_num_transferred_candidates() / result.statistics.get_num_generated_candidates()
+        if result.statistics.get_num_generated_candidates()
         else 0
     )
     worker_idle_time = sum(

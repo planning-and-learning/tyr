@@ -15,10 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "planning/algorithms/search_engine/astar_eager.hpp"
 #include "planning/algorithms/search_engine/gbfs_lazy.hpp"
+#include "planning/algorithms/search_engine/parallel.hpp"
 #include "planning/parser.hpp"
 #include "tyr/planning/planning.hpp"
 
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <cstdint>
@@ -26,10 +29,12 @@
 #include <gtest/gtest.h>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <semaphore>
 #include <stdexcept>
 #include <string_view>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -284,6 +289,18 @@ private:
 };
 
 template<TaskKind Kind>
+class RecordingAStarLayerEventHandler final : public p::astar_eager::EventHandler<Kind>
+{
+public:
+    std::vector<std::pair<ygg::float_t, p::Statistics>> snapshots;
+
+    void on_start_search(const p::Node<Kind>&, ygg::float_t) override {}
+    void on_finish_f_layer(ygg::float_t f_value, const p::Statistics& statistics) override { snapshots.emplace_back(f_value, statistics); }
+    void on_end_search(p::SearchStatus, const p::Statistics&) override {}
+    void on_solved(const p::Plan<Kind>&) override {}
+};
+
+template<TaskKind Kind>
 class ThrowingHeuristic final : public p::Heuristic<Kind>
 {
 public:
@@ -485,6 +502,37 @@ void expect_astar_goal_precedes_heuristic(const p::TaskPtr<Kind>& task)
 }
 
 template<TaskKind Kind>
+void expect_sequential_astar_root_layer_statistics(const p::TaskPtr<Kind>& task)
+{
+    auto context = make_search_context(task);
+    auto heuristic = p::BlindHeuristic<Kind>::create();
+    auto event_handler = std::make_shared<RecordingAStarLayerEventHandler<Kind>>();
+    auto options = p::astar_eager::Options<Kind> {};
+    options.event_handler = event_handler;
+
+    const auto result = p::astar_eager::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, *heuristic, options);
+
+    ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
+    ASSERT_TRUE(result.plan);
+    EXPECT_EQ(result.plan->get_length(), 3);
+    ASSERT_EQ(event_handler->snapshots.size(), 3);
+
+    const auto expanded = std::vector<uint64_t> { 1, 3, 4 };
+    const auto generated_successors = std::vector<uint64_t> { 2, 3, 4 };
+    const auto generated_candidates = std::vector<uint64_t> { 2, 4, 5 };
+    for (size_t i = 0; i < event_handler->snapshots.size(); ++i)
+    {
+        const auto& [f_value, statistics] = event_handler->snapshots[i];
+        EXPECT_EQ(f_value, i);
+        EXPECT_EQ(statistics.get_num_expanded(), expanded[i]);
+        EXPECT_EQ(statistics.get_num_generated_successors(), generated_successors[i]);
+        EXPECT_EQ(statistics.get_num_generated_candidates(), generated_candidates[i]);
+        EXPECT_EQ(statistics.get_num_deadends(), 0);
+        EXPECT_EQ(statistics.get_num_pruned(), 0);
+    }
+}
+
+template<TaskKind Kind>
 void expect_astar_duplicate_pruning_preserves_open_state(const p::TaskPtr<Kind>& task)
 {
     for_each_execution_mode(
@@ -532,7 +580,7 @@ void expect_one_step_goal_result(const p::SearchResult<Kind>& result)
     ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
     ASSERT_TRUE(result.plan);
     EXPECT_EQ(result.plan->get_length(), 1);
-    EXPECT_EQ(result.statistics.get_num_accepted_successors(), 1);
+    EXPECT_EQ(result.statistics.get_num_generated_successors(), 1);
     EXPECT_EQ(result.statistics.get_num_pruned(), 0);
 }
 
@@ -768,6 +816,7 @@ void expect_terminal_roots_skip_heuristic(const p::TaskPtr<Kind>& task)
                     result =
                         p::astar_eager::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options));
                 EXPECT_EQ(result.status, expected_status);
+                EXPECT_EQ(result.statistics.get_num_registered_states(), 1);
             };
             const auto check_gbfs = [&](auto configure, p::SearchStatus expected_status)
             {
@@ -783,6 +832,7 @@ void expect_terminal_roots_skip_heuristic(const p::TaskPtr<Kind>& task)
                     result =
                         p::gbfs_lazy::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options));
                 EXPECT_EQ(result.status, expected_status);
+                EXPECT_EQ(result.statistics.get_num_registered_states(), 1);
             };
 
             const auto dynamic_goal = [](auto& options) { options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>(); };
@@ -1023,6 +1073,13 @@ TEST(TyrPlanningSearchEngineTest, ChecksGoalsBeforeHeuristics)
     expect_astar_goal_precedes_heuristic(tasks.lifted);
 }
 
+TEST(TyrPlanningSearchEngineTest, SequentialAStarReportsRootLayerStatisticsWithoutWorkerHandler)
+{
+    const auto tasks = parse_tasks("parallel_search_diamond.pddl");
+    expect_sequential_astar_root_layer_statistics(tasks.ground);
+    expect_sequential_astar_root_layer_statistics(tasks.lifted);
+}
+
 TEST(TyrPlanningSearchEngineTest, PrunedDuplicatesDoNotCloseAcceptedAStarStates)
 {
     const auto tasks = parse_tasks("parallel_search_diamond.pddl");
@@ -1035,22 +1092,42 @@ TEST(TyrPlanningSearchEngineTest, DuplicateDetectionPrecedesParallelAStarHeurist
     const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/fixtures/planning/algorithms";
     const auto task = p::Task<LiftedTag>::create(
         make_test_parser(fixture_root / "parallel_search_edge_cases_domain.pddl").parse_task(fixture_root / "parallel_search_diamond.pddl"));
-    auto context = make_search_context(task, true);
-    auto gate = std::make_shared<AStarHeuristicGate>();
-    auto heuristic = GatedLocationHeuristic<LiftedTag>(task, gate, "merge");
-    auto options = p::astar_eager::Options<LiftedTag> {};
-    options.event_handler = std::make_shared<ReleasingAStarEventHandler<LiftedTag>>(gate, p::TransitionOutcome::DUPLICATE);
-    options.num_search_workers = 2;
-    options.collect_destination_lock_statistics = true;
+    auto probe = make_search_context(task);
+    const auto start = probe.successor_generator->get_initial_node(*probe.repository, *probe.axiom_evaluator);
+    const auto successors = probe.successor_generator->get_labeled_successor_nodes(start, *probe.repository, *probe.axiom_evaluator);
+    ASSERT_EQ(successors.size(), 2);
 
-    const auto result = p::astar_eager::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options);
+    auto seed = std::optional<uint64_t> {};
+    for (uint64_t candidate = 0; candidate < 1024 && !seed; ++candidate)
+    {
+        auto hash = p::DistHash<LiftedTag, p::RandomDistHashTag>(candidate);
+        hash.initialize(start.get_state());
+        if (hash.owner(successors.front().node.get_state().get_state_builder(), 3) != hash.owner(successors.back().node.get_state().get_state_builder(), 3))
+            seed = candidate;
+    }
+    ASSERT_TRUE(seed);
 
-    ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
-    EXPECT_EQ(result.statistics.get_num_generated_successors(), 5);
-    EXPECT_EQ(result.statistics.get_num_destination_lock_acquisitions(), 8);
-    EXPECT_TRUE(gate->transition_seen.load(std::memory_order_relaxed));
-    EXPECT_EQ(gate->num_evaluations.load(std::memory_order_relaxed), 4);
-    EXPECT_EQ(gate->num_target_evaluations.load(std::memory_order_relaxed), 1);
+    for (const auto concurrent : { false, true })
+    {
+        auto context = make_search_context(task, concurrent);
+        auto gate = std::make_shared<AStarHeuristicGate>();
+        auto heuristic = GatedLocationHeuristic<LiftedTag>(task, gate, "merge");
+        auto options = p::astar_eager::Options<LiftedTag> {};
+        options.event_handler = std::make_shared<ReleasingAStarEventHandler<LiftedTag>>(gate, p::TransitionOutcome::DUPLICATE);
+        options.num_search_workers = concurrent ? 2 : 3;
+        options.collect_destination_lock_statistics = true;
+        options.random_seed = *seed;
+
+        const auto result =
+            p::astar_eager::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options);
+
+        ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
+        EXPECT_EQ(result.statistics.get_num_generated_candidates(), 5);
+        EXPECT_EQ(result.statistics.get_num_destination_lock_acquisitions(), 8);
+        EXPECT_TRUE(gate->transition_seen.load(std::memory_order_relaxed));
+        EXPECT_EQ(gate->num_evaluations.load(std::memory_order_relaxed), 4);
+        EXPECT_EQ(gate->num_target_evaluations.load(std::memory_order_relaxed), 1);
+    }
 }
 
 TEST(TyrPlanningSearchEngineTest, ParallelAStarCoalescesBetterPathsWhileHeuristicIsPending)
@@ -1149,6 +1226,146 @@ TEST(TyrPlanningSearchEngineTest, QueuedPreferredBoostAffectsTheNextPop)
     EXPECT_EQ(policy.pop().state, first_preferred);
     EXPECT_EQ(policy.pop().state, second_preferred);
     EXPECT_EQ(policy.pop().state, standard);
+}
+
+TEST(TyrPlanningSearchEngineTest, ParallelAStarSnapshotExcludesTimedOutWaitersButCallbackDoesNot)
+{
+    using Policy = p::detail::EagerAStarPolicy<GroundTag, p::ParallelSearch>;
+    using Execution = p::detail::ParallelExecutionPolicy<GroundTag, Policy, p::detail::SharedStatePolicy<GroundTag>>;
+    struct Search
+    {
+        bool empty() const { return false; }
+        ygg::float_t get_min_priority() const { return 1; }
+        size_t get_num_open_entries() const { return 1; }
+    };
+    struct Worker
+    {
+        ygg::Index<p::Worker> index;
+        Execution::WorkerState execution;
+        Search search;
+        p::Statistics statistics;
+    };
+    struct Engine
+    {
+        std::array<Worker, 2> workers;
+        std::binary_semaphore snapshot_started { 0 };
+        std::binary_semaphore allow_snapshot { 0 };
+        std::counting_semaphore<2> waiter_exited { 0 };
+        size_t num_callbacks { 0 };
+
+        size_t num_workers() const { return workers.size(); }
+        Worker& get_worker(ygg::Index<p::Worker> index) { return workers[ygg::uint_t(index)]; }
+
+        std::optional<p::Statistics> collect_priority_layer_statistics()
+        {
+            snapshot_started.release();
+            allow_snapshot.acquire();
+            auto statistics = p::Statistics {};
+            for (const auto& worker : workers)
+                statistics.add(worker.statistics);
+            return statistics;
+        }
+
+        void on_finish_priority_layer(ygg::float_t priority, const p::Statistics& statistics)
+        {
+            ++num_callbacks;
+            EXPECT_EQ(priority, 0);
+            EXPECT_TRUE(waiter_exited.try_acquire_for(std::chrono::seconds(2)));
+            EXPECT_EQ(statistics.get_idle_time(), std::chrono::nanoseconds(0));
+        }
+    } engine;
+    for (size_t i = 0; i < engine.num_workers(); ++i)
+        engine.workers[i].index = ygg::Index<p::Worker>(static_cast<ygg::uint_t>(i));
+
+    auto execution = Execution(0);
+    auto options = p::astar_eager::Options<GroundTag> {};
+    options.num_search_workers = engine.num_workers();
+    options.parallel_search_mode = p::astar_eager::ParallelSearchMode::SYNCHRONOUS;
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(1);
+    execution.start(deadline, 0, options);
+    execution.retain_successor();
+
+    auto threads = std::vector<std::jthread> {};
+    for (auto& worker : engine.workers)
+    {
+        threads.emplace_back(
+            [&engine, &execution, &worker]
+            {
+                execution.wait_for_work(engine, worker);
+                worker.statistics.add_idle_time(std::chrono::nanoseconds(1));
+                engine.waiter_exited.release();
+            });
+    }
+
+    EXPECT_TRUE(engine.snapshot_started.try_acquire_for(std::chrono::seconds(2)));
+    // A timeout must not let the peer update its idle time until collection has finished.
+    EXPECT_FALSE(engine.waiter_exited.try_acquire_until(deadline + std::chrono::milliseconds(50)));
+    engine.allow_snapshot.release();
+    threads.clear();
+
+    EXPECT_EQ(engine.num_callbacks, 1);
+    EXPECT_EQ(execution.status(), p::SearchStatus::OUT_OF_TIME);
+}
+
+TEST(TyrPlanningSearchEngineTest, LazyGbfsBestHCallbackReleasesTheWorkerLock)
+{
+    using Policy = p::detail::LazyGBFSPolicy<GroundTag, p::ParallelSearch>;
+    using Execution = p::detail::ParallelExecutionPolicy<GroundTag, Policy, p::detail::SharedStatePolicy<GroundTag>>;
+    struct Worker
+    {
+        Execution::WorkerState execution;
+    } worker;
+    struct Handler
+    {
+        std::mutex& worker_mutex;
+        bool called { false };
+
+        void on_new_best_h_value(ygg::float_t h_value)
+        {
+            called = true;
+            EXPECT_EQ(h_value, 0);
+            auto unlocked = false;
+            auto receiver = std::thread(
+                [&]
+                {
+                    auto lock = std::unique_lock(worker_mutex, std::try_to_lock);
+                    unlocked = lock.owns_lock();
+                });
+            receiver.join();
+            EXPECT_TRUE(unlocked);
+        }
+    } handler { worker.execution.mutex };
+
+    const auto task = parse_tasks("parallel_search_simple.pddl").ground;
+    auto context = make_search_context(task);
+    const auto start = context.successor_generator->get_initial_node(*context.repository, *context.axiom_evaluator);
+    auto heuristic = p::BlindHeuristic<GroundTag> {};
+    auto options = p::gbfs_lazy::Options<GroundTag> {};
+    auto policy = Policy(heuristic, options);
+    auto execution = Execution(0);
+    execution.initialize_best_h(1);
+    auto& search_node = policy.initialize_start(start.get_state().get_index(), start.get_metric(), 1);
+    auto statistics = p::Statistics {};
+
+    const auto result =
+        execution.with_worker_lock(worker,
+                                   [&](auto&& evaluate_unlocked)
+                                   {
+                                       return policy.prepare_expansion(
+                                           Policy::PoppedEntry { start.get_state().get_index() },
+                                           start,
+                                           search_node,
+                                           statistics,
+                                           evaluate_unlocked,
+                                           [&](ygg::float_t h_value, auto&& callback) { return execution.improve_best_h(h_value, [&] { callback(handler); }); },
+                                           [](auto&&) {},
+                                           [](auto) {});
+                                   });
+
+    EXPECT_TRUE(handler.called);
+    EXPECT_EQ(result, p::detail::ExpansionResult::EXPAND);
+    EXPECT_EQ(search_node.status, p::SearchNodeStatus::CLOSED);
+    EXPECT_EQ(statistics.get_num_expanded(), 1);
 }
 
 TEST(TyrPlanningSearchEngineTest, DestinationLockStatisticsAreOptInAndAggregated)

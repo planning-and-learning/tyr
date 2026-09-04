@@ -146,17 +146,21 @@ public:
         std::forward<EmitEvent>(emit_event)([&](auto& handler) { handler.on_expand_node(node); });
 
         m_state_h_value = std::forward<EvaluateUnlocked>(evaluate_unlocked)(
-            [&] { return ygg::FloatTolerance<ygg::float_t>::canonicalize(m_heuristic.evaluate(node.get_state())); });
-        if (std::isnan(m_state_h_value))
-            throw std::runtime_error("GBFS heuristic value is NaN.");
+            [&]
+            {
+                const auto h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_heuristic.evaluate(node.get_state()));
+                if (std::isnan(h_value))
+                    throw std::runtime_error("GBFS heuristic value is NaN.");
+                if (h_value != std::numeric_limits<ygg::float_t>::infinity())
+                    static_cast<void>(std::forward<ImproveBestH>(improve_best_h)(h_value, [&](auto& handler) { handler.on_new_best_h_value(h_value); }));
+                return h_value;
+            });
         if (m_state_h_value == std::numeric_limits<ygg::float_t>::infinity())
         {
             statistics.increment_num_deadends();
             search_node.status = SearchNodeStatus::DEAD_END;
             return ExpansionResult::SKIP;
         }
-
-        static_cast<void>(std::forward<ImproveBestH>(improve_best_h)(m_state_h_value, [&](auto& handler) { handler.on_new_best_h_value(m_state_h_value); }));
 
         m_preferred_actions = m_options.use_preferred_actions ? &m_heuristic.get_preferred_actions() : nullptr;
         search_node.status = SearchNodeStatus::CLOSED;
@@ -207,7 +211,7 @@ public:
         successor_search_node.g_value = g_value;
         if (engine.m_execution.is_generated_goal(engine, worker, routed_successor, successor_state))
         {
-            worker.statistics.increment_num_accepted_successors();
+            worker.statistics.increment_num_generated_successors();
             successor_search_node.status = SearchNodeStatus::GOAL;
             emit_transition(TransitionOutcome::GOAL);
             engine.solve(worker, successor_node);
@@ -222,7 +226,7 @@ public:
             return AcceptanceResult::DISCARDED;
         }
 
-        worker.statistics.increment_num_accepted_successors();
+        worker.statistics.increment_num_generated_successors();
         open_successor(successor_state.get_index(),
                        g_value,
                        routed_successor.metadata.inherited_h_value,

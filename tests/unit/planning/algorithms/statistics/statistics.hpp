@@ -59,9 +59,9 @@ struct SearchStatistics
 /// Parse the four counters from an object that carries them inline (returns nullopt when absent).
 inline std::optional<planning::ProgressStatistics::Snapshot> parse_optional_counters(const boost::json::object& object)
 {
-    if (!object.if_contains("num_accepted_successors"))
+    if (!object.if_contains("num_generated_successors"))
         return std::nullopt;
-    return planning::ProgressStatistics::Snapshot { boost::json::value_to<uint64_t>(object.at("num_accepted_successors")),
+    return planning::ProgressStatistics::Snapshot { boost::json::value_to<uint64_t>(object.at("num_generated_successors")),
                                                     boost::json::value_to<uint64_t>(object.at("num_expanded")),
                                                     boost::json::value_to<uint64_t>(object.at("num_deadends")),
                                                     boost::json::value_to<uint64_t>(object.at("num_pruned")) };
@@ -69,7 +69,7 @@ inline std::optional<planning::ProgressStatistics::Snapshot> parse_optional_coun
 
 inline void expect_counters(const planning::ProgressStatistics::Snapshot& expected, const planning::Statistics& actual)
 {
-    EXPECT_EQ(actual.get_num_accepted_successors(), expected.get_num_accepted_successors());
+    EXPECT_EQ(actual.get_num_generated_successors(), expected.get_num_generated_successors());
     EXPECT_EQ(actual.get_num_expanded(), expected.get_num_expanded());
     EXPECT_EQ(actual.get_num_deadends(), expected.get_num_deadends());
     EXPECT_EQ(actual.get_num_pruned(), expected.get_num_pruned());
@@ -151,7 +151,7 @@ inline planning::SearchStatus parse_search_status(const std::string& status)
 
 /// One fixture case: expected statistics per configuration key. Split fixtures use "default"
 /// for heuristic-free searches and keys such as "hmax_unit" otherwise; any case key whose
-/// object value holds a "num_accepted_successors" member is parsed as a configuration.
+/// object value holds a "num_generated_successors" member is parsed as a configuration.
 struct SearchCase
 {
     std::string name;
@@ -169,7 +169,7 @@ inline SearchCase parse_search_case(const boost::json::object& object)
                                ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(object, "task_file", "case")),
                                {} };
     for (const auto& [key, value] : object)
-        if (value.is_object() && value.as_object().if_contains("num_accepted_successors"))
+        if (value.is_object() && value.as_object().if_contains("num_generated_successors"))
             result.configs.emplace_back(std::string(key), *parse_optional_statistics(object, std::string(key).c_str()));
     return result;
 }

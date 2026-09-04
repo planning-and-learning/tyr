@@ -222,8 +222,8 @@
             "type": "int",
             "compare": "lower_is_better"
         },
-        "num_accepted_successors": {
-            "description": "The number of successors accepted during search.",
+        "num_generated_successors": {
+            "description": "The number of successors generated after duplicate detection and pruning.",
             "type": "int",
             "compare": "lower_is_better"
         },

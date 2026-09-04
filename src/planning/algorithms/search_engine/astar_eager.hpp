@@ -44,13 +44,14 @@ struct AStarModePolicy<Kind, SequentialSearch>
 
     static constexpr bool should_discard(ygg::float_t, ygg::float_t) noexcept { return false; }
 
-    template<typename EmitEvent>
-    static void finish_f_layer(ygg::float_t entry_f_value, ygg::float_t& current_f_value, EmitEvent&& emit_event)
+    template<typename EmitEvent, typename FinishPriorityLayer>
+    static void finish_f_layer(ygg::float_t entry_f_value, ygg::float_t& current_f_value, EmitEvent&& emit_event, FinishPriorityLayer&& finish_priority_layer)
     {
         if (entry_f_value <= current_f_value)
             return;
 
         std::forward<EmitEvent>(emit_event)([&](auto& handler) { handler.on_finish_f_layer(current_f_value); });
+        std::forward<FinishPriorityLayer>(finish_priority_layer)(current_f_value);
         current_f_value = entry_f_value;
     }
 
@@ -69,8 +70,8 @@ struct AStarModePolicy<Kind, ParallelSearch>
         return entry_f_value >= incumbent_cost;
     }
 
-    template<typename EmitEvent>
-    static constexpr void finish_f_layer(ygg::float_t, ygg::float_t&, EmitEvent&&) noexcept
+    template<typename EmitEvent, typename FinishPriorityLayer>
+    static constexpr void finish_f_layer(ygg::float_t, ygg::float_t&, EmitEvent&&, FinishPriorityLayer&&) noexcept
     {
     }
 
@@ -187,9 +188,9 @@ public:
                                       EvaluateUnlocked&&,
                                       ImproveBestH&&,
                                       EmitEvent&& emit_event,
-                                      FinishPriorityLayer&&)
+                                      FinishPriorityLayer&& finish_priority_layer)
     {
-        ModePolicy::finish_f_layer(entry.f_value, m_f_value, emit_event);
+        ModePolicy::finish_f_layer(entry.f_value, m_f_value, emit_event, std::forward<FinishPriorityLayer>(finish_priority_layer));
         // A remote lower-f entry may arrive later, so a parallel worker cannot declare an f-layer finished.
 
         if (search_node.status == SearchNodeStatus::GOAL)
@@ -242,7 +243,7 @@ public:
 
         if (engine.m_execution.is_generated_goal(engine, worker, routed_successor, successor_state))
         {
-            worker.statistics.increment_num_accepted_successors();
+            worker.statistics.increment_num_generated_successors();
             set_parent(successor_search_node, routed_successor.metadata.parent);
             successor_search_node.g_value = g_value;
             successor_search_node.h_value = 0;
@@ -266,7 +267,7 @@ public:
             return AcceptanceResult::DISCARDED;
         }
 
-        worker.statistics.increment_num_accepted_successors();
+        worker.statistics.increment_num_generated_successors();
         set_parent(successor_search_node, routed_successor.metadata.parent);
         successor_search_node.g_value = g_value;
 
