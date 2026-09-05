@@ -88,7 +88,7 @@ should not be used further.
         .def("get_repository", &Task<LiftedTag>::get_repository)
         .def("get_task", &Task<LiftedTag>::get_task, nb::keep_alive<0, 1>())
         .def("get_fdr_context", nb::overload_cast<>(&Task<LiftedTag>::get_fdr_context, nb::const_), nb::rv_policy::reference_internal)
-        .def("instantiate_ground_task", &Task<LiftedTag>::instantiate_ground_task, "execution_context"_a, "options"_a);
+        .def("instantiate_ground_task", &Task<LiftedTag>::instantiate_ground_task, "execution_context"_a, "options"_a = GroundTaskInstantiationOptions());
 
     using ApplicableProgram = ApplicableActionProgram<LiftedTag>;
     nb::class_<ApplicableProgram>(m, "ApplicableActionProgram")

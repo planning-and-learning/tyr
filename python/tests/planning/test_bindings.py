@@ -868,7 +868,16 @@ def test_ground_task_instantiation_result_default_is_explicit_failure():
     assert result.status == planning.lifted.GroundTaskInstantiationStatus.PROVEN_UNSOLVABLE
 
 
-def test_lifted_task_instantiates_ground_task_from_parsed_pddl():
+@pytest.mark.parametrize(
+    "options",
+    [
+        (),
+        (planning.lifted.GroundTaskInstantiationOptions(),),
+        (planning.lifted.GroundTaskInstantiationOptions(disable_invariant_synthesis=False),),
+    ],
+    ids=["omitted", "default", "invariant_synthesis"],
+)
+def test_lifted_task_instantiates_ground_task_from_parsed_pddl(options):
     parser_options = ParserOptions()
     parser = Parser(str(GRIPPER.domain_path), parser_options)
     formalism_task = parser.parse_task(
@@ -877,10 +886,7 @@ def test_lifted_task_instantiates_ground_task_from_parsed_pddl():
     )
 
     lifted_task = planning.lifted.Task(formalism_task)
-    result = lifted_task.instantiate_ground_task(
-        ExecutionContext(1),
-        planning.lifted.GroundTaskInstantiationOptions(),
-    )
+    result = lifted_task.instantiate_ground_task(ExecutionContext(1), *options)
 
     assert result.status == planning.lifted.GroundTaskInstantiationStatus.SUCCESS
     assert isinstance(result.task, planning.ground.Task)
