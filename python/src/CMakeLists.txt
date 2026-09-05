@@ -1,5 +1,5 @@
 find_package(
-    Python 3.10 REQUIRED
+    Python 3.11 REQUIRED
     COMPONENTS Interpreter Development.Module
     OPTIONAL_COMPONENTS Development.SABIModule
 )
@@ -83,9 +83,7 @@ yggdrasil_install_python_files(
         pytyr/__main__.py
         pytyr/__init__.pyi
         pytyr/tools/__init__.py
-        pytyr/tools/ground.py
-        pytyr/tools/keys.py
-        pytyr/tools/lifted.py
+        pytyr/tools/dictionaries.py
         pytyr/tools/output.py
         pytyr/formalism/__init__.py
         pytyr/formalism/datalog/__init__.py

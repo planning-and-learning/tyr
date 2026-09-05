@@ -192,7 +192,7 @@ endif()
 
 if(TYR_BUILD_TESTS OR TYR_BUILD_PROFILING)
     # Benchmark PDDL is resolved from the pypddl-datasets cache and downloaded on demand at configure time.
-    find_package(Python 3.10 REQUIRED COMPONENTS Interpreter)
+    find_package(Python 3.11 REQUIRED COMPONENTS Interpreter)
     execute_process(
         COMMAND
             "${Python_EXECUTABLE}"

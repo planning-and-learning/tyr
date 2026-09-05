@@ -9,7 +9,7 @@ Tyr consumes native third-party dependencies from Python packages:
 ## Requirements
 
 1. CMake 3.21 or newer.
-2. Python >= 3.10 with development headers.
+2. Python >= 3.11 with development headers.
 3. A C++20 compiler.
 
 ## Dependency Setup

@@ -6,8 +6,8 @@ build-backend = "scikit_build_core.build"
 name = "downstream-tyr-user"
 version = "0.0.0"
 dependencies = ["pytyr"]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 [tool.scikit-build]
 wheel.packages = []
-wheel.py-api = "cp310"
+wheel.py-api = "cp311"

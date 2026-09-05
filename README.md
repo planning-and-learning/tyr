@@ -30,40 +30,9 @@ The library consists of a **formalism** and a **planning** component. The formal
 
 Pytyr is available at [PyPI](https://pypi.org/project/pytyr/) and can be installed with `pip install pytyr`. 
 
-For satisficing search on native tasks and explicit JSON/Markdown output, use
-[`pytyr.tools`](docs/tools/index.md):
-
-```python
-from pypddl.formalism import ParserOptions
-from pyyggdrasil.execution import ExecutionContext
-from pytyr.formalism.planning import Parser
-from pytyr.planning import lifted
-from pytyr.tools import dump_result, find_satisficing_plan
-
-options = ParserOptions()
-parser = Parser("domain.pddl", options)
-task = lifted.Task(parser.parse_task("problem.pddl", options))
-execution = ExecutionContext(1)
-state_repository = lifted.StateRepositoryFactory().create(task)
-axiom_evaluator = lifted.AxiomEvaluatorFactory().create(task, execution)
-successor_generator = lifted.SuccessorGeneratorFactory().create(task, execution)
-result = find_satisficing_plan(
-    task, state_repository, axiom_evaluator, successor_generator, execution,
-)
-dump_result(task, result, "artifacts/find-plan")
-```
-
-`pytyr.tools.ground.find_satisficing_plan` accepts a native ground task;
-`pytyr.tools.lifted.find_satisficing_plan` and the root import accept a native
-lifted task. Supply the task's native state repository, axiom evaluator, and
-successor generator. Each function returns its backend's native `SearchResult`.
-The helpers default to 1,000,000 states and 60 seconds. Their optional
-`search_budget` uses `pytyr.planning.SearchBudget` (`max_num_states: int | None`,
-`max_time: timedelta | None`), also exported by `pytyr.tools`; native
-`SearchBudget()` defaults both limits to `None`, meaning unlimited.
-
-See [task setup](docs/tools/context.md) for grounding and the
-[output contract](docs/tools/dumping.md) for `dump_result(...)`.
+[`pytyr.tools`](docs/tools/index.md) provides compressed representations of planning
+entities. Shared dictionaries identify states, actions, atoms, and function terms;
+static facts appear once in the task representation.
 
 Detailed examples are available in the `python/examples` directory:
 

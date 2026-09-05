@@ -14,12 +14,11 @@ version = "0.1.0"
 description = "Tyr datalog/planning library"
 readme = "README.md"
 license = "GPL-3.0-or-later"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [
     {name = "Dominik Drexler", email = "dominik.drexler@liu.se"},
 ]
 dependencies = [
-    "tabulate>=0.9,<1",
     "nanobind-backend>=1.0",
     "pyyggdrasil>=0.1,<0.2",
     "pypddl>=1.1,<1.2",
@@ -30,9 +29,8 @@ Homepage = "https://github.com/planning-and-learning/tyr"
 
 [project.optional-dependencies]
 test = [
-    "types-tabulate",
     "pytest",
-    "pypddl-datasets>=0.0.12,<0.1; python_version >= '3.10'",
+    "pypddl-datasets>=0.0.12,<0.1",
 ]
 
 [tool.pytest.ini_options]
@@ -44,7 +42,7 @@ build.targets = ["pytyr_wheel"]
 cmake.build-type = "Release"
 install.components = ["pytyr"]
 wheel.packages = []
-wheel.py-api = "cp310"
+wheel.py-api = "cp311"
 
 [tool.scikit-build.sdist]
 include = [
@@ -80,7 +78,7 @@ TYR_ENABLE_SEMI_NAIVE = {env = "TYR_ENABLE_SEMI_NAIVE", default = true}
 TYR_RELATION_STORAGE_POLICY = {env = "TYR_RELATION_STORAGE_POLICY", default = "Word"}
 
 [tool.cibuildwheel]
-build = "cp310-*"
+build = "cp311-*"
 container-engine = "docker"
 # Build in the cibuildwheel environment (not a fresh isolated env) so the
 # provider install below — which retries to absorb TestPyPI index-propagation
