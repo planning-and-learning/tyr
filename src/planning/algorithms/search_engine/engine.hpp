@@ -396,14 +396,7 @@ private:
 
     bool expand_one(WorkerData& worker)
     {
-        struct PreparedExpansion
-        {
-            typename SearchPolicy::PoppedEntry entry;
-            Node<Kind> node;
-            SearchNode search_node;
-        };
-
-        auto prepared = std::optional<PreparedExpansion> {};
+        auto prepared = std::optional<Node<Kind>> {};
         auto claimed = false;
         m_execution.with_worker_lock(
             worker,
@@ -444,7 +437,7 @@ private:
                     return;
                 }
                 if (expansion_result == ExpansionResult::EXPAND)
-                    prepared.emplace(PreparedExpansion { entry, std::move(node), search_node });
+                    prepared.emplace(std::move(node));
             });
 
         if (!claimed)
@@ -453,8 +446,8 @@ private:
         m_execution.notify_if_stopped(*this);
         if (prepared && m_execution.running())
         {
-            worker.successor_generator.get_applicable_action_bindings(prepared->node, worker.applicable_actions);
-            expand_successors(worker, prepared->node, prepared->entry, prepared->search_node);
+            worker.successor_generator.get_applicable_action_bindings(*prepared, worker.applicable_actions);
+            expand_successors(worker, *prepared);
         }
         m_execution.finish_expansion(*this);
         return true;
@@ -494,7 +487,7 @@ private:
                                               emit_transition);
     }
 
-    void expand_successors(WorkerData& worker, const Node<Kind>& node, const typename SearchPolicy::PoppedEntry& entry, const SearchNode& search_node)
+    void expand_successors(WorkerData& worker, const Node<Kind>& node)
     {
         if (m_options.shuffle_labeled_succ_nodes)
             ygg::portable_shuffle(worker.applicable_actions.begin(), worker.applicable_actions.end(), worker.rng);
@@ -506,7 +499,7 @@ private:
 
             auto successor_state = worker.state_repository.get_state_builder();
             const auto action_result = worker.successor_generator.generate_successor_state(node, action, *successor_state);
-            auto metadata = worker.search.make_successor_metadata(worker.index, entry.state, search_node, action);
+            auto metadata = worker.search.make_successor_metadata(worker.index, node, action);
             if (m_execution.route(*this, worker, node, std::move(successor_state), action_result, action, std::move(metadata)) == AcceptanceResult::TERMINAL
                 || !m_execution.running())
                 break;

@@ -38,39 +38,13 @@ SearchResult<Kind> find_solution(Task<Kind>& task,
     if (options.num_search_workers > 1)
     {
         using Search = detail::EagerAStarPolicy<Kind, ParallelSearch>;
-        if (!state_repository.is_concurrent())
-        {
-            switch (options.dist_hash_mode)
-            {
-                case DistHashMode::RANDOM:
-                {
-                    using Distribution = detail::HashDistributedStatePolicy<Kind, RandomDistHashTag>;
-                    using Execution = detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
-                    return detail::SearchEngine<Kind, Search, Execution>::find_solution(task,
-                                                                                        state_repository,
-                                                                                        axiom_evaluator,
-                                                                                        successor_generator,
-                                                                                        heuristic,
-                                                                                        options);
-                }
-                case DistHashMode::LMCUT:
-                {
-                    using Distribution = detail::HashDistributedStatePolicy<Kind, LMCutDistHashTag>;
-                    using Execution = detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
-                    return detail::SearchEngine<Kind, Search, Execution>::find_solution(task,
-                                                                                        state_repository,
-                                                                                        axiom_evaluator,
-                                                                                        successor_generator,
-                                                                                        heuristic,
-                                                                                        options);
-                }
-            }
-            throw std::invalid_argument("astar_eager::find_solution(...): unknown distribution hash mode.");
-        }
-
-        using Distribution = detail::SharedStatePolicy<Kind>;
-        using Execution = detail::ParallelExecutionPolicy<Kind, Search, Distribution>;
-        return detail::SearchEngine<Kind, Search, Execution>::find_solution(task, state_repository, axiom_evaluator, successor_generator, heuristic, options);
+        return detail::find_parallel_solution<Kind, Search>(task,
+                                                            state_repository,
+                                                            axiom_evaluator,
+                                                            successor_generator,
+                                                            heuristic,
+                                                            options,
+                                                            "astar_eager::find_solution(...): unknown distribution hash mode.");
     }
 
     using Search = detail::EagerAStarPolicy<Kind, SequentialSearch>;

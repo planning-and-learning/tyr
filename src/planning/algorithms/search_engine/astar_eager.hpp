@@ -202,12 +202,9 @@ public:
         return ExpansionResult::EXPAND;
     }
 
-    SuccessorMetadata make_successor_metadata(ygg::Index<Worker> worker,
-                                              ygg::Index<State<Kind>> state,
-                                              const SearchNode& search_node,
-                                              ::tyr::formalism::planning::ActionBindingView) const
+    SuccessorMetadata make_successor_metadata(ygg::Index<Worker> worker, const Node<Kind>& node, ::tyr::formalism::planning::ActionBindingView) const
     {
-        return SuccessorMetadata { WorkerStateIndex<Kind> { worker, state }, search_node.g_value };
+        return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().get_index() }, node.get_metric() };
     }
 
     static void set_parent(SearchNode& search_node, WorkerStateIndex<Kind> parent) noexcept { search_node.parent_state = ParentPolicy::make_parent(parent); }

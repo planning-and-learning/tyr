@@ -1209,6 +1209,30 @@ TEST(TyrPlanningSearchEngineTest, SecondarySearchWorkersInheritPrototypeInnerCon
     EXPECT_EQ(worker_threads, (std::vector<size_t> { 2 }));
 }
 
+TEST(TyrPlanningSearchEngineTest, HashDistributedPolicyUsesOwnerRepositoriesWithAConcurrentCaller)
+{
+    using Policy = p::detail::EagerAStarPolicy<GroundTag, p::ParallelSearch>;
+    using Distribution = p::detail::HashDistributedStatePolicy<GroundTag, p::RandomDistHashTag>;
+    using Execution = p::detail::ParallelExecutionPolicy<GroundTag, Policy, Distribution>;
+    const auto task = parse_tasks("parallel_search_simple.pddl").ground;
+    auto context = make_search_context(task, true);
+    auto heuristic = p::BlindHeuristic<GroundTag> {};
+    auto options = p::astar_eager::Options<GroundTag> {};
+    options.num_search_workers = 2;
+    ASSERT_TRUE(context.repository->is_concurrent());
+
+    const auto result = p::detail::SearchEngine<GroundTag, Policy, Execution>::find_solution(*task,
+                                                                                             *context.repository,
+                                                                                             *context.axiom_evaluator,
+                                                                                             *context.successor_generator,
+                                                                                             heuristic,
+                                                                                             options);
+
+    ASSERT_EQ(result.status, p::SearchStatus::SOLVED);
+    ASSERT_TRUE(result.plan);
+    EXPECT_EQ(result.plan->get_length(), 1);
+}
+
 TEST(TyrPlanningSearchEngineTest, QueuedPreferredBoostAffectsTheNextPop)
 {
     auto heuristic = p::BlindHeuristic<GroundTag> {};

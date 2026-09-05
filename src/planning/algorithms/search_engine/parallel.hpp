@@ -20,6 +20,7 @@
 
 #include "../repository_statistics.hpp"
 #include "concepts.hpp"
+#include "engine.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
@@ -59,6 +60,7 @@ class HashDistributedStatePolicy
 
 public:
     using TaskTag = Kind;
+    static constexpr bool uses_owner_repositories = true;
 
     struct PreparedTarget
     {
@@ -97,12 +99,6 @@ public:
         return PreparedTarget { owner, std::move(node) };
     }
 
-    template<typename WorkerData>
-    static Node<Kind> take_target(WorkerData&, PreparedTarget&& target)
-    {
-        return std::move(target.node);
-    }
-
     static size_t search_node_divisor(size_t) noexcept { return 1; }
 
     static ygg::Index<State<Kind>> search_node_index(ygg::Index<State<Kind>> state, ygg::Index<Worker>, size_t) noexcept { return state; }
@@ -128,6 +124,7 @@ class SharedStatePolicy
 
 public:
     using TaskTag = Kind;
+    static constexpr bool uses_owner_repositories = false;
 
     struct PreparedTarget
     {
@@ -155,12 +152,6 @@ public:
     {
         auto node = Node<Kind>(worker.state_repository.register_extended_state(std::move(target)), metric);
         return PreparedTarget { owner(node.get_state().get_index(), num_workers), std::move(node) };
-    }
-
-    template<typename WorkerData>
-    static Node<Kind> take_target(WorkerData&, PreparedTarget&& target)
-    {
-        return std::move(target.node);
     }
 
     static size_t search_node_divisor(size_t num_workers) noexcept { return num_workers; }
@@ -381,6 +372,7 @@ class ParallelExecutionPolicy
 public:
     using TaskTag = Kind;
     using SearchTag = ParallelSearch;
+    static constexpr bool uses_owner_repositories = StatePolicy::uses_owner_repositories;
 
     struct WorkerState
     {
@@ -566,8 +558,7 @@ public:
         auto prepared = m_state_policy.prepare_target(engine, sender, std::move(target), metric, engine.num_workers());
         sender.statistics.increment_num_generated_candidates(prepared.owner != sender.index);
         auto& receiver = engine.get_worker(prepared.owner);
-        auto node = m_state_policy.take_target(receiver, std::move(prepared));
-        auto routed = typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata), g_value, is_goal };
+        auto routed = typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(prepared.node) }, std::move(metadata), g_value, is_goal };
 
         auto result = AcceptanceResult::TERMINAL;
         {
@@ -662,7 +653,18 @@ public:
     template<typename Engine>
     void finish_expansion(Engine& engine)
     {
-        release_work(engine);
+        const auto old = m_work.fetch_sub(1, std::memory_order_acq_rel);
+        assert(old > 0);
+        if (old != 1)
+            return;
+
+        {
+            const auto lock = std::lock_guard(m_terminal_mutex);
+            if (!running())
+                return;
+            m_status.store(m_goal ? SearchStatus::SOLVED : SearchStatus::EXHAUSTED, std::memory_order_release);
+        }
+        notify_workers(engine);
     }
 
 private:
@@ -703,27 +705,6 @@ private:
             if (!m_exception)
                 m_exception = std::move(exception);
             m_status.store(SearchStatus::FAILED, std::memory_order_release);
-        }
-        notify_workers(engine);
-    }
-
-    template<typename Engine>
-    void release_work(Engine& engine)
-    {
-        const auto old = m_work.fetch_sub(1, std::memory_order_acq_rel);
-        assert(old > 0);
-        if (old == 1)
-            finish_search(engine);
-    }
-
-    template<typename Engine>
-    void finish_search(Engine& engine)
-    {
-        {
-            const auto lock = std::lock_guard(m_terminal_mutex);
-            if (!running())
-                return;
-            m_status.store(m_goal ? SearchStatus::SOLVED : SearchStatus::EXHAUSTED, std::memory_order_release);
         }
         notify_workers(engine);
     }
@@ -773,8 +754,8 @@ public:
         m_caller_axiom_evaluator(axiom_evaluator)
     {
         const auto num_workers = ExecutionPolicy::num_workers(options);
-        const auto hash_distributed = !state_repository.is_concurrent();
-        if (hash_distributed)
+        constexpr auto uses_owner_repositories = ExecutionPolicy::uses_owner_repositories;
+        if constexpr (uses_owner_repositories)
         {
             auto state_repository_factory = StateRepositoryFactory<Kind> {};
             m_owner_state_repositories.reserve(num_workers);
@@ -787,7 +768,7 @@ public:
         auto pruning_strategy = options.pruning_strategy ? options.pruning_strategy : PruningStrategy<Kind>::create();
         auto goal_strategy = options.goal_strategy ? options.goal_strategy : ConjunctiveGoalStrategy<Kind>::create(task);
         const auto num_datalog_threads = axiom_evaluator.get_execution_context()->get_num_threads();
-        auto& root_state_repository = hash_distributed ? *m_owner_state_repositories.front() : state_repository;
+        auto& root_state_repository = uses_owner_repositories ? *m_owner_state_repositories.front() : state_repository;
         m_workers.push_back(std::make_unique<WorkerData>(ygg::Index<Worker>(0),
                                                          root_state_repository,
                                                          axiom_evaluator,
@@ -803,7 +784,7 @@ public:
         {
             const auto index = ygg::Index<Worker>(static_cast<ygg::uint_t>(i));
             auto execution_context = ygg::ExecutionContext::create(num_datalog_threads);
-            auto worker_state_repository = hash_distributed ? m_owner_state_repositories[i] : state_repository.make_worker();
+            auto worker_state_repository = uses_owner_repositories ? m_owner_state_repositories[i] : state_repository.make_worker();
             auto worker_axiom_evaluator = axiom_evaluator.make_worker(execution_context);
             auto worker_successor_generator = successor_generator.make_worker(execution_context);
             auto worker_heuristic = heuristic.make_worker(execution_context);
@@ -834,7 +815,7 @@ public:
                                                              std::move(worker_event_handler)));
         }
 
-        if (hash_distributed)
+        if constexpr (uses_owner_repositories)
         {
             // Storage is concurrent, but every sender needs private backend scratch for each owner.
             for (size_t sender = 0; sender < num_workers; ++sender)
@@ -901,6 +882,38 @@ private:
     std::vector<StateRepositoryPtr<Kind>> m_owner_state_repositories;
     std::vector<std::unique_ptr<WorkerData>> m_workers;
 };
+
+template<TaskKind Kind, SearchPolicyConcept<Kind> SearchPolicy>
+    requires std::same_as<typename SearchPolicy::SearchTag, ParallelSearch>
+SearchResult<Kind> find_parallel_solution(Task<Kind>& task,
+                                          StateRepository<Kind>& state_repository,
+                                          AxiomEvaluator<Kind>& axiom_evaluator,
+                                          SuccessorGenerator<Kind>& successor_generator,
+                                          Heuristic<Kind>& heuristic,
+                                          const typename SearchPolicy::Options& options,
+                                          const char* invalid_hash_message)
+{
+    if (state_repository.is_concurrent())
+    {
+        using Execution = ParallelExecutionPolicy<Kind, SearchPolicy, SharedStatePolicy<Kind>>;
+        return SearchEngine<Kind, SearchPolicy, Execution>::find_solution(task, state_repository, axiom_evaluator, successor_generator, heuristic, options);
+    }
+
+    switch (options.dist_hash_mode)
+    {
+        case DistHashMode::RANDOM:
+        {
+            using Execution = ParallelExecutionPolicy<Kind, SearchPolicy, HashDistributedStatePolicy<Kind, RandomDistHashTag>>;
+            return SearchEngine<Kind, SearchPolicy, Execution>::find_solution(task, state_repository, axiom_evaluator, successor_generator, heuristic, options);
+        }
+        case DistHashMode::LMCUT:
+        {
+            using Execution = ParallelExecutionPolicy<Kind, SearchPolicy, HashDistributedStatePolicy<Kind, LMCutDistHashTag>>;
+            return SearchEngine<Kind, SearchPolicy, Execution>::find_solution(task, state_repository, axiom_evaluator, successor_generator, heuristic, options);
+        }
+    }
+    throw std::invalid_argument(invalid_hash_message);
+}
 
 }
 
