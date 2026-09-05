@@ -692,14 +692,14 @@ void expect_parallel_lazy_gbfs(const p::TaskPtr<Kind>& task, RepositoryMode stat
     EXPECT_THROW(p::gbfs_lazy::find_solution(*task, *repository, *axiom_evaluator, *generator, *heuristic, options), std::invalid_argument);
 
     options.goal_strategy = nullptr;
-    options.max_num_states = 0;
+    options.search_budget.max_num_states = 0;
     EXPECT_EQ(p::gbfs_lazy::find_solution(*task, *repository, *axiom_evaluator, *generator, *heuristic, options).status, p::SearchStatus::OUT_OF_STATES);
 
-    options.max_num_states = 1;
+    options.search_budget.max_num_states = 1;
     EXPECT_EQ(p::gbfs_lazy::find_solution(*task, *repository, *axiom_evaluator, *generator, *heuristic, options).status, p::SearchStatus::OUT_OF_STATES);
 
-    options.max_num_states = std::numeric_limits<ygg::uint_t>::max();
-    options.max_time = std::chrono::steady_clock::duration::zero();
+    options.search_budget.max_num_states = std::nullopt;
+    options.search_budget.max_time = std::chrono::steady_clock::duration::zero();
     EXPECT_EQ(p::gbfs_lazy::find_solution(*task, *repository, *axiom_evaluator, *generator, *heuristic, options).status, p::SearchStatus::OUT_OF_TIME);
 }
 
@@ -741,14 +741,14 @@ void expect_parallel_brfs(const p::TaskPtr<Kind>& task, RepositoryMode state_rep
     EXPECT_THROW(p::brfs::find_solution(*task, *repository, *axiom_evaluator, *generator, options), std::invalid_argument);
 
     options.num_search_workers = 2;
-    options.max_num_states = 0;
+    options.search_budget.max_num_states = 0;
     EXPECT_EQ(p::brfs::find_solution(*task, *repository, *axiom_evaluator, *generator, options).status, p::SearchStatus::OUT_OF_STATES);
 
-    options.max_num_states = 1;
+    options.search_budget.max_num_states = 1;
     EXPECT_EQ(p::brfs::find_solution(*task, *repository, *axiom_evaluator, *generator, options).status, p::SearchStatus::OUT_OF_STATES);
 
-    options.max_num_states = std::numeric_limits<ygg::uint_t>::max();
-    options.max_time = std::chrono::steady_clock::duration::zero();
+    options.search_budget.max_num_states = std::nullopt;
+    options.search_budget.max_time = std::chrono::steady_clock::duration::zero();
     EXPECT_EQ(p::brfs::find_solution(*task, *repository, *axiom_evaluator, *generator, options).status, p::SearchStatus::OUT_OF_TIME);
 }
 
@@ -1092,10 +1092,10 @@ void expect_synchronous_parallel_astar_stops_all_workers(const p::TaskPtr<Kind>&
     options.dist_hash_mode = p::DistHashMode::RANDOM;
     options.parallel_search_mode = p::astar_eager::ParallelSearchMode::SYNCHRONOUS;
     options.random_seed = *seed;
-    options.max_time = std::chrono::milliseconds(50);
+    options.search_budget.max_time = std::chrono::milliseconds(50);
     EXPECT_EQ(p::astar_eager::find_solution(*task, *repository, *axiom_evaluator, *generator, *heuristic, options).status, p::SearchStatus::OUT_OF_TIME);
 
-    options.max_time = std::nullopt;
+    options.search_budget.max_time = std::nullopt;
     options.event_handler = std::make_shared<ThrowingAStarEventHandler<Kind>>();
     EXPECT_THROW(p::astar_eager::find_solution(*task, *repository, *axiom_evaluator, *generator, *heuristic, options), std::runtime_error);
 }

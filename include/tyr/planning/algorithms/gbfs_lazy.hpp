@@ -20,11 +20,10 @@
 
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/search_budget.hpp"
 
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -41,10 +40,7 @@ struct Options
     EventHandlerPtr<Kind> event_handler = nullptr;
     PruningStrategyPtr<Kind> pruning_strategy = nullptr;
     GoalStrategyPtr<Kind> goal_strategy = nullptr;
-    /// Maximum solve-local states, including an unsolved start. Existing repository population is ignored, but a pre-interned state counts when first
-    /// encountered, and an over-limit successor may already be interned. A satisfied start may solve even when this is zero.
-    ygg::uint_t max_num_states = std::numeric_limits<ygg::uint_t>::max();
-    std::optional<std::chrono::steady_clock::duration> max_time = std::nullopt;
+    SearchBudget search_budget;
     CostMode cost_mode = CostMode::GENERAL;
     bool use_preferred_actions = true;
     ygg::uint_t boost_preferred_queue = 1000;

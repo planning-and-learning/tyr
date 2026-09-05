@@ -22,6 +22,7 @@
 #include "tyr/planning/algorithms/astar_eager.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/formatter.hpp"
+#include "tyr/planning/search_budget.hpp"
 #include "tyr/planning/worker_index.hpp"
 
 #include <cstdint>
@@ -42,6 +43,13 @@ namespace tyr::planning
 void bind_module_definitions(nb::module_& m)
 {
     ygg::bind_index<ygg::Index<Worker>>(m, "WorkerIndex");
+
+    nb::class_<SearchBudget>(m, "SearchBudget")
+        .def(nb::init<std::optional<ygg::uint_t>, std::optional<std::chrono::steady_clock::duration>>(),
+             "max_num_states"_a = nb::none(),
+             "max_time"_a = nb::none())
+        .def_rw("max_num_states", &SearchBudget::max_num_states)
+        .def_rw("max_time", &SearchBudget::max_time);
 
     /**
      * SearchStatus

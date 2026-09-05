@@ -22,6 +22,7 @@
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <algorithm>
+#include <filesystem>
 #include <iterator>
 #include <loki/formalism/declarations.hpp>
 #include <optional>
@@ -257,9 +258,9 @@ private:
 public:
     LokiToTyrTranslator() = default;
 
-    PlanningDomain translate(const loki::formalism::DomainView& domain);
+    PlanningDomain translate(const loki::formalism::DomainView& domain, std::optional<std::filesystem::path> path = std::nullopt);
 
-    PlanningTask translate(const loki::formalism::TaskView& problem, PlanningDomain domain);
+    PlanningTask translate(const loki::formalism::TaskView& problem, PlanningDomain domain, std::optional<std::filesystem::path> path = std::nullopt);
 };
 
 }

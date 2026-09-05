@@ -354,7 +354,7 @@ TEST(TyrPlanningSerialized, ZeroSubsearchesUsesDefaultStartAndReturnsExhaustedPa
 {
     auto context = create_gripper_context();
     auto solver = p::brfs::Solver<::tyr::GroundTag> { context.task, context.state_repository, context.axiom_evaluator, context.successor_generator, {} };
-    solver.options.max_time = std::chrono::steady_clock::duration::zero();
+    solver.options.search_budget.max_time = std::chrono::steady_clock::duration::zero();
     auto options = p::serialized::Options<::tyr::GroundTag, decltype(solver)> {};
     auto event_handler = std::make_shared<RecordingSerializedEventHandler<decltype(solver)>>();
     options.event_handler = event_handler;
@@ -487,7 +487,7 @@ TEST(TyrPlanningSerialized, ExpiredBudgetDoesNotStartSubsearch)
 {
     auto context = create_gripper_context();
     auto solver = p::brfs::Solver<::tyr::GroundTag> { context.task, context.state_repository, context.axiom_evaluator, context.successor_generator, {} };
-    solver.options.max_time = std::chrono::steady_clock::duration::zero();
+    solver.options.search_budget.max_time = std::chrono::steady_clock::duration::zero();
     auto options = p::serialized::Options<::tyr::GroundTag, decltype(solver)> {};
     auto event_handler = std::make_shared<RecordingSerializedEventHandler<decltype(solver)>>();
     options.event_handler = event_handler;
@@ -515,7 +515,7 @@ TEST(TyrPlanningSerialized, SlowSubsearchStartDoesNotRegrantNestedBudget)
     options.goal_strategy = std::make_shared<NeverSatisfiedGoalStrategy>();
     options.max_num_subsearches = 1;
     options.max_time = std::chrono::milliseconds(100);
-    solver.options.max_num_states = 1;
+    solver.options.search_budget.max_num_states = 1;
 
     const auto result = p::serialized::find_solution(solver, options);
 
@@ -533,8 +533,8 @@ TEST(TyrPlanningSerialized, SlowArityStartDoesNotRegrantNestedBudget)
     auto options = p::iw::Options<::tyr::GroundTag> {};
     options.event_handler = event_handler;
     options.goal_strategy = std::make_shared<NeverSatisfiedGoalStrategy>();
-    options.max_num_states = 1;
-    options.max_time = std::chrono::milliseconds(100);
+    options.search_budget.max_num_states = 1;
+    options.search_budget.max_time = std::chrono::milliseconds(100);
 
     const auto result = p::iw::find_solution(brfs_solver, 0, options);
 
@@ -552,7 +552,7 @@ TEST(TyrPlanningSerialized, IwDeadlineStopsBeforeStartingAnotherWidth)
     auto options = p::iw::Options<::tyr::GroundTag> {};
     options.event_handler = event_handler;
     options.goal_strategy = std::make_shared<NeverSatisfiedGoalStrategy>();
-    options.max_time = std::chrono::milliseconds(1);
+    options.search_budget.max_time = std::chrono::milliseconds(1);
 
     const auto result = p::iw::find_solution(brfs_solver, 1, options);
 
@@ -567,7 +567,7 @@ TEST(TyrPlanningSerialized, SiwUsesUnderlyingBrfsBudgetBeforeStartingIw)
 {
     auto context = create_gripper_context();
     auto brfs_options = p::brfs::Options<::tyr::GroundTag> {};
-    brfs_options.max_time = std::chrono::steady_clock::duration::zero();
+    brfs_options.search_budget.max_time = std::chrono::steady_clock::duration::zero();
     auto brfs_solver =
         p::brfs::Solver<::tyr::GroundTag> { context.task, context.state_repository, context.axiom_evaluator, context.successor_generator, brfs_options };
     auto iw_solver = p::iw::Solver<::tyr::GroundTag> { std::move(brfs_solver), 1, {} };

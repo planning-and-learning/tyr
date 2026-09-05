@@ -1365,7 +1365,7 @@ ygg::Index<Metric> LokiToTyrTranslator::translate_grounded(loki::formalism::Metr
     return ::tyr::formalism::planning::get_or_create(context, *metric).first.get_index();
 }
 
-PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView& element)
+PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView& element, std::optional<std::filesystem::path> path)
 {
     auto builder = Builder();
     auto factory = std::make_shared<RepositoryFactory>();
@@ -1443,10 +1443,10 @@ PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView&
     translate_lifted(element.get_actions(), builder, *context, domain->actions);
     translate_lifted(element.get_axioms(), builder, *context, domain->axioms);
 
-    return PlanningDomain(::tyr::formalism::planning::get_or_create(*context, *domain).first, context, std::move(factory));
+    return PlanningDomain(::tyr::formalism::planning::get_or_create(*context, *domain).first, context, std::move(factory), std::move(path));
 }
 
-PlanningTask LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, PlanningDomain domain)
+PlanningTask LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, PlanningDomain domain, std::optional<std::filesystem::path> path)
 {
     auto builder = Builder();
 
@@ -1582,7 +1582,11 @@ PlanningTask LokiToTyrTranslator::translate(const loki::formalism::TaskView& ele
     /* Structures section */
     translate_lifted(element.get_axioms(), builder, *task_context, task->axioms);
 
-    return PlanningTask(::tyr::formalism::planning::get_or_create(*task_context, *task).first, std::move(fdr_context), task_context, std::move(domain));
+    return PlanningTask(::tyr::formalism::planning::get_or_create(*task_context, *task).first,
+                        std::move(fdr_context),
+                        task_context,
+                        std::move(domain),
+                        std::move(path));
 }
 
 }

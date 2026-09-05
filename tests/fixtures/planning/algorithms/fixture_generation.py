@@ -24,6 +24,7 @@ import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Callable, Literal, Mapping, Protocol, Sequence, TypeAlias, TypedDict, cast
 
@@ -32,7 +33,7 @@ from pypddl.formalism import ParserOptions
 from pyyggdrasil.execution import ExecutionContext
 
 from pytyr.formalism.planning import Parser, PlanningTask
-from pytyr.planning import CostMode, SearchStatus, Statistics
+from pytyr.planning import CostMode, SearchBudget, SearchStatus, Statistics
 from pytyr.planning import ground as ground_planning
 from pytyr.planning import lifted as lifted_planning
 
@@ -115,8 +116,7 @@ class SearchResultLike(Protocol):
 
 
 class SearchOptionsLike(Protocol):
-    max_num_states: int
-    max_time: float
+    search_budget: SearchBudget
     cost_mode: CostMode
 
 
@@ -223,8 +223,7 @@ def run_search_config(
     module = getattr(planning_module(context), algorithm)  # runtime-selected submodule (see module docstring)
     options = cast(SearchOptionsLike, module.Options())
     if apply_limits:
-        options.max_num_states = MAX_NUM_STATES
-        options.max_time = MAX_TIME
+        options.search_budget = SearchBudget(MAX_NUM_STATES, timedelta(seconds=MAX_TIME))
 
     if heuristic_name is None:
         result = cast(

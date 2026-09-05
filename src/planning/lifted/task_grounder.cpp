@@ -632,11 +632,12 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
             }
         });
 
-    return GroundTaskInstantiationResult {
-        std::make_shared<Task<GroundTag>>(
-            fp::PlanningFDRTask(fp::get_or_create(*repository, *fdr_task).first, std::move(fdr_context), repository, planning_task.get_domain())),
-        GroundTaskInstantiationStatus::SUCCESS
-    };
+    return GroundTaskInstantiationResult { std::make_shared<Task<GroundTag>>(fp::PlanningFDRTask(fp::get_or_create(*repository, *fdr_task).first,
+                                                                                                 std::move(fdr_context),
+                                                                                                 repository,
+                                                                                                 planning_task.get_domain(),
+                                                                                                 planning_task.get_path())),
+                                           GroundTaskInstantiationStatus::SUCCESS };
 }
 
 }

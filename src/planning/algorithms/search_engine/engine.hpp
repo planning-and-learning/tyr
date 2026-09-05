@@ -289,7 +289,7 @@ private:
 
     SearchResult<Kind> run()
     {
-        const auto deadline = m_options.max_time ? std::optional(m_search_start_time_point + *m_options.max_time) : std::nullopt;
+        const auto deadline = m_options.search_budget.max_time ? std::optional(m_search_start_time_point + *m_options.search_budget.max_time) : std::nullopt;
         const auto timed_out = [&] { return deadline && std::chrono::steady_clock::now() >= *deadline; };
 
         m_result.statistics.set_search_start_time_point(m_search_start_time_point);
@@ -318,7 +318,9 @@ private:
             return std::move(m_result);
         }
 
-        if (m_options.max_num_states == 0)
+        // Count solve-local states, including an unsolved start. Existing repository population is ignored, but a pre-interned state counts when first
+        // encountered, and an over-limit successor may already be interned. A satisfied start may solve even when this is zero.
+        if (m_options.search_budget.max_num_states == 0)
         {
             finalize(SearchStatus::OUT_OF_STATES);
             return std::move(m_result);
@@ -463,7 +465,7 @@ private:
         auto& successor_search_node = worker.get_search_node(successor_state.get_index());
 
         const auto is_new = successor_search_node.status == SearchNodeStatus::NEW;
-        if (is_new && !m_execution.reserve_state(m_options.max_num_states))
+        if (is_new && m_options.search_budget.max_num_states && !m_execution.reserve_state(*m_options.search_budget.max_num_states))
         {
             m_execution.set_terminal(SearchStatus::OUT_OF_STATES);
             return AcceptanceResult::TERMINAL;

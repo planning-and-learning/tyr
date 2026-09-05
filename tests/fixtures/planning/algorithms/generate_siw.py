@@ -11,8 +11,11 @@ Usage:
 
 from __future__ import annotations
 
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Protocol, cast
+
+from pytyr.planning import SearchBudget
 
 from .fixture_generation import (
     MAX_NUM_STATES,
@@ -67,8 +70,7 @@ def run_config(kind: TaskKind,
     brfs_solver.successor_generator = context.successor_generator
     brfs_solver.options.event_handler = planning.brfs.DefaultEventHandler()
     if apply_limits:
-        brfs_solver.options.max_num_states = MAX_NUM_STATES
-        brfs_solver.options.max_time = MAX_TIME
+        brfs_solver.options.search_budget = SearchBudget(MAX_NUM_STATES, timedelta(seconds=MAX_TIME))
 
     iw_solver = planning.iw.Solver()
     iw_solver.brfs_solver = brfs_solver

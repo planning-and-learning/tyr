@@ -336,6 +336,52 @@ def _assert_worker_statistics(result, num_workers: int):
     assert abs(worker_lock_hold_time - result.statistics.get_destination_lock_hold_time()) <= timedelta(microseconds=num_workers)
 
 
+def test_search_budget_defaults_arguments_and_mutable_fields():
+    unlimited = planning.SearchBudget()
+    assert unlimited.max_num_states is None
+    assert unlimited.max_time is None
+    assert planning.SearchBudget(None, None).max_num_states is None
+    assert planning.SearchBudget(max_num_states=None).max_num_states is None
+    assert planning.SearchBudget(0).max_num_states == 0
+
+    positional = planning.SearchBudget(50, timedelta(milliseconds=250))
+    keyword = planning.SearchBudget(max_num_states=50, max_time=timedelta(milliseconds=250))
+    assert positional.max_num_states == keyword.max_num_states == 50
+    assert positional.max_time == keyword.max_time == timedelta(milliseconds=250)
+    assert planning.SearchBudget(max_time=timedelta(seconds=2)).max_num_states == unlimited.max_num_states
+    assert planning.SearchBudget(50).max_time is None
+
+    positional.max_num_states = 75
+    positional.max_time = None
+    assert positional.max_num_states == 75
+    assert positional.max_time is None
+    positional.max_num_states = None
+    assert positional.max_num_states is None
+    positional.max_time = timedelta(seconds=3)
+    assert positional.max_time == timedelta(seconds=3)
+
+
+def test_algorithm_options_copy_budgets_and_keep_mutable_members_local():
+    for task_module in (planning.ground, planning.lifted):
+        for algorithm in (task_module.brfs, task_module.astar_eager, task_module.gbfs_lazy, task_module.iw):
+            budget = planning.SearchBudget(50, timedelta(seconds=2))
+            first, second = algorithm.Options(), algorithm.Options()
+            first.search_budget = budget
+            second.search_budget = budget
+
+            budget.max_num_states = 75
+            budget.max_time = None
+            assert first.search_budget.max_num_states == second.search_budget.max_num_states == 50
+            assert first.search_budget.max_time == second.search_budget.max_time == timedelta(seconds=2)
+
+            first.search_budget.max_num_states = 100
+            first.search_budget.max_time = timedelta(seconds=4)
+            assert first.search_budget.max_num_states == 100
+            assert first.search_budget.max_time == timedelta(seconds=4)
+            assert second.search_budget.max_num_states == 50
+            assert second.search_budget.max_time == timedelta(seconds=2)
+
+
 def test_algorithm_options_are_default_constructible_with_expected_fields():
     ygg_uint_max = (1 << 32) - 1
     expected_defaults_by_algorithm = {
@@ -344,8 +390,6 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "event_handler": None,
             "pruning_strategy": None,
             "goal_strategy": None,
-            "max_num_states": ygg_uint_max,
-            "max_time": None,
             "cost_mode": planning.CostMode.GENERAL,
             "num_search_workers": 1,
             "dist_hash_mode": planning.DistHashMode.RANDOM,
@@ -359,8 +403,6 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "event_handler": None,
             "pruning_strategy": None,
             "goal_strategy": None,
-            "max_num_states": ygg_uint_max,
-            "max_time": None,
             "num_search_workers": 1,
             "dist_hash_mode": planning.DistHashMode.RANDOM,
             "collect_destination_lock_statistics": False,
@@ -372,8 +414,6 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "event_handler": None,
             "pruning_strategy": None,
             "goal_strategy": None,
-            "max_num_states": ygg_uint_max,
-            "max_time": None,
             "cost_mode": planning.CostMode.GENERAL,
             "use_preferred_actions": True,
             "boost_preferred_queue": 1000,
@@ -387,8 +427,6 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "start_node": None,
             "event_handler": None,
             "goal_strategy": None,
-            "max_num_states": ygg_uint_max,
-            "max_time": None,
             "random_seed": 0,
             "shuffle_labeled_succ_nodes": False,
         },
@@ -407,8 +445,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "event_handler",
             "pruning_strategy",
             "goal_strategy",
-            "max_num_states",
-            "max_time",
+            "search_budget",
             "cost_mode",
             "num_search_workers",
             "dist_hash_mode",
@@ -422,8 +459,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "event_handler",
             "pruning_strategy",
             "goal_strategy",
-            "max_num_states",
-            "max_time",
+            "search_budget",
             "num_search_workers",
             "dist_hash_mode",
             "collect_destination_lock_statistics",
@@ -435,8 +471,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "event_handler",
             "pruning_strategy",
             "goal_strategy",
-            "max_num_states",
-            "max_time",
+            "search_budget",
             "cost_mode",
             "use_preferred_actions",
             "boost_preferred_queue",
@@ -450,8 +485,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
             "start_node",
             "event_handler",
             "goal_strategy",
-            "max_num_states",
-            "max_time",
+            "search_budget",
             "random_seed",
             "shuffle_labeled_succ_nodes",
         ),
@@ -473,6 +507,13 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
 
             for field, expected_default in expected_defaults_by_algorithm[algorithm_name].items():
                 assert getattr(options, field) == expected_default
+
+            if algorithm_name != "siw":
+                assert isinstance(options.search_budget, planning.SearchBudget)
+                assert options.search_budget.max_num_states is None
+                assert options.search_budget.max_time is None
+                assert not hasattr(options, "max_num_states")
+                assert not hasattr(options, "max_time")
 
 
 def _make_gripper_tasks():

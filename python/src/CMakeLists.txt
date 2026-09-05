@@ -82,6 +82,11 @@ yggdrasil_install_python_files(
         pytyr/__init__.py
         pytyr/__main__.py
         pytyr/__init__.pyi
+        pytyr/tools/__init__.py
+        pytyr/tools/ground.py
+        pytyr/tools/keys.py
+        pytyr/tools/lifted.py
+        pytyr/tools/output.py
         pytyr/formalism/__init__.py
         pytyr/formalism/datalog/__init__.py
         pytyr/formalism/planning/__init__.py

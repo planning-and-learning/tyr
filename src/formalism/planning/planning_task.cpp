@@ -26,11 +26,16 @@
 
 namespace tyr::formalism::planning
 {
-PlanningTask::PlanningTask(TaskView task, FDRContextPtr fdr_context, std::shared_ptr<Repository> repository, PlanningDomain domain) :
+PlanningTask::PlanningTask(TaskView task,
+                           FDRContextPtr fdr_context,
+                           std::shared_ptr<Repository> repository,
+                           PlanningDomain domain,
+                           std::optional<std::filesystem::path> path) :
     m_repository(std::move(repository)),
     m_task(task),
     m_fdr_context(std::move(fdr_context)),
     m_domain(std::move(domain)),
+    m_path(std::move(path)),
     m_variable_domains(analysis::compute_variable_domains(m_task)),
     m_variable_domains_view(analysis::compute_variable_domain_views(m_variable_domains, *m_repository))
 {

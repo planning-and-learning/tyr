@@ -95,7 +95,7 @@ SearchResult<Kind> find_solution(brfs::Solver<Kind>& brfs_solver, ygg::uint_t ma
     auto result = SearchResult<Kind> {};
     result.status = SearchStatus::EXHAUSTED;
     const auto search_start = std::chrono::steady_clock::now();
-    const auto max_time = options.max_time ? options.max_time : brfs_solver.options.max_time;
+    const auto max_time = options.search_budget.max_time ? options.search_budget.max_time : brfs_solver.options.search_budget.max_time;
     const auto deadline = max_time ? std::make_optional(search_start + *max_time) : std::optional<std::chrono::steady_clock::time_point> {};
     statistics.set_search_start_time_point(search_start);
 
@@ -131,11 +131,11 @@ SearchResult<Kind> find_solution(brfs::Solver<Kind>& brfs_solver, ygg::uint_t ma
         local_brfs_solver.options.start_node = options.start_node ? options.start_node : brfs_solver.options.start_node;
         local_brfs_solver.options.pruning_strategy = make_pruning_strategy<Kind>(arity, brfs_solver.options.pruning_strategy);
         local_brfs_solver.options.goal_strategy = options.goal_strategy ? options.goal_strategy : brfs_solver.options.goal_strategy;
-        local_brfs_solver.options.max_num_states = options.max_num_states;
+        local_brfs_solver.options.search_budget.max_num_states = options.search_budget.max_num_states;
         local_brfs_solver.options.random_seed = options.random_seed;
         local_brfs_solver.options.shuffle_labeled_succ_nodes = options.shuffle_labeled_succ_nodes;
 
-        local_brfs_solver.options.max_time =
+        local_brfs_solver.options.search_budget.max_time =
             deadline ? std::make_optional(std::max(*deadline - std::chrono::steady_clock::now(), std::chrono::steady_clock::duration::zero())) :
                        std::optional<std::chrono::steady_clock::duration> {};
         result = local_brfs_solver.solve();

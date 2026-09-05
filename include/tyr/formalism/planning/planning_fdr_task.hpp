@@ -24,17 +24,25 @@
 #include "tyr/formalism/planning/planning_domain.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
+#include <filesystem>
+#include <optional>
+
 namespace tyr::formalism::planning
 {
 
 class PlanningFDRTask
 {
 public:
-    PlanningFDRTask(FDRTaskView task, FDRContextPtr fdr_context, std::shared_ptr<Repository> repository, PlanningDomain domain) :
+    PlanningFDRTask(FDRTaskView task,
+                    FDRContextPtr fdr_context,
+                    std::shared_ptr<Repository> repository,
+                    PlanningDomain domain,
+                    std::optional<std::filesystem::path> path = std::nullopt) :
         m_repository(std::move(repository)),
         m_task(task),
         m_fdr_context(std::move(fdr_context)),
-        m_domain(std::move(domain))
+        m_domain(std::move(domain)),
+        m_path(std::move(path))
     {
         if (&m_task.get_context() != m_repository.get())
             throw std::invalid_argument("Task context does not match the given Repository.");
@@ -44,12 +52,14 @@ public:
     auto get_task() const noexcept { return m_task; }
     const auto& get_fdr_context() const noexcept { return m_fdr_context; }
     const auto& get_domain() const noexcept { return m_domain; }
+    const auto& get_path() const noexcept { return m_path; }
 
 private:
     std::shared_ptr<Repository> m_repository;
     FDRTaskView m_task;
     FDRContextPtr m_fdr_context;
     PlanningDomain m_domain;
+    std::optional<std::filesystem::path> m_path;
 };
 
 }

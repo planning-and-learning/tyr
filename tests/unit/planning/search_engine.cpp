@@ -677,13 +677,13 @@ void expect_root_inclusive_state_limits(const p::TaskPtr<Kind>& task)
     for_each_execution_mode(
         [&](size_t num_workers, bool concurrent)
         {
-            const auto solve = [&](ygg::uint_t limit, p::GoalStrategyPtr<Kind> goal_strategy = nullptr)
+            const auto solve = [&](std::optional<ygg::uint_t> limit, p::GoalStrategyPtr<Kind> goal_strategy = nullptr)
             {
                 auto context = make_search_context(task, concurrent);
                 auto options = p::brfs::Options<Kind> {};
                 options.num_search_workers = num_workers;
 
-                options.max_num_states = limit;
+                options.search_budget.max_num_states = limit;
                 options.goal_strategy = std::move(goal_strategy);
                 return p::brfs::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, options);
             };
@@ -691,6 +691,7 @@ void expect_root_inclusive_state_limits(const p::TaskPtr<Kind>& task)
             EXPECT_EQ(solve(0).status, p::SearchStatus::OUT_OF_STATES);
             EXPECT_EQ(solve(1).status, p::SearchStatus::OUT_OF_STATES);
             EXPECT_EQ(solve(2).status, p::SearchStatus::SOLVED);
+            EXPECT_EQ(solve(std::nullopt).status, p::SearchStatus::SOLVED);
             EXPECT_EQ(solve(0, std::make_shared<AlwaysGoalStrategy<Kind>>()).status, p::SearchStatus::SOLVED);
         });
 
@@ -699,7 +700,7 @@ void expect_root_inclusive_state_limits(const p::TaskPtr<Kind>& task)
     auto successors = context.successor_generator->get_labeled_successor_nodes(initial, *context.repository, *context.axiom_evaluator);
     ASSERT_EQ(successors.size(), 1);
     auto options = p::brfs::Options<Kind> {};
-    options.max_num_states = 2;
+    options.search_budget.max_num_states = 2;
     EXPECT_EQ(p::brfs::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, options).status,
               p::SearchStatus::SOLVED);
 }
@@ -837,7 +838,7 @@ void expect_terminal_roots_skip_heuristic(const p::TaskPtr<Kind>& task)
 
             const auto dynamic_goal = [](auto& options) { options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>(); };
             const auto static_failure = [](auto& options) { options.goal_strategy = std::make_shared<StaticallyUnsatisfiedGoalStrategy<Kind>>(); };
-            const auto no_capacity = [](auto& options) { options.max_num_states = 0; };
+            const auto no_capacity = [](auto& options) { options.search_budget.max_num_states = 0; };
             const auto root_pruned = [](auto& options) { options.pruning_strategy = std::make_shared<AlwaysPruningStrategy<Kind>>(); };
 
             check_astar(dynamic_goal, p::SearchStatus::SOLVED);

@@ -209,8 +209,6 @@ public:
 
     bool reserve_state(ygg::uint_t max_num_states) noexcept
     {
-        if (max_num_states == std::numeric_limits<ygg::uint_t>::max())
-            return true;
         if (m_num_states >= max_num_states)
             return false;
         ++m_num_states;

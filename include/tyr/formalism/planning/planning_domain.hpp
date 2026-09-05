@@ -22,16 +22,23 @@
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
+#include <filesystem>
+#include <optional>
+
 namespace tyr::formalism::planning
 {
 
 class PlanningDomain
 {
 public:
-    PlanningDomain(DomainView domain, RepositoryPtr repository, RepositoryFactoryPtr repository_factory) :
+    PlanningDomain(DomainView domain,
+                   RepositoryPtr repository,
+                   RepositoryFactoryPtr repository_factory,
+                   std::optional<std::filesystem::path> path = std::nullopt) :
         m_repository(std::move(repository)),
         m_repository_factory(std::move(repository_factory)),
-        m_domain(domain)
+        m_domain(domain),
+        m_path(std::move(path))
     {
         if (&m_domain.get_context() != m_repository.get())
             throw std::invalid_argument("Domain context does not match the given Repository.");
@@ -40,11 +47,13 @@ public:
     auto get_domain() const noexcept { return m_domain; }
     const auto& get_repository() const noexcept { return m_repository; }
     const auto& get_repository_factory() const noexcept { return m_repository_factory; }
+    const auto& get_path() const noexcept { return m_path; }
 
 private:
     RepositoryPtr m_repository;
     RepositoryFactoryPtr m_repository_factory;
     DomainView m_domain;
+    std::optional<std::filesystem::path> m_path;
 };
 
 }

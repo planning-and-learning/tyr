@@ -636,9 +636,6 @@ public:
 
     bool reserve_state(ygg::uint_t max_num_states) noexcept
     {
-        if (max_num_states == std::numeric_limits<ygg::uint_t>::max())
-            return true;
-
         auto count = m_num_states.load(std::memory_order_relaxed);
         while (count < max_num_states)
         {

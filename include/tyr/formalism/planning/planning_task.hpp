@@ -25,18 +25,26 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
 
+#include <filesystem>
+#include <optional>
+
 namespace tyr::formalism::planning
 {
 
 class PlanningTask
 {
 public:
-    PlanningTask(TaskView task, FDRContextPtr fdr_context, std::shared_ptr<Repository> repository, PlanningDomain domain);
+    PlanningTask(TaskView task,
+                 FDRContextPtr fdr_context,
+                 std::shared_ptr<Repository> repository,
+                 PlanningDomain domain,
+                 std::optional<std::filesystem::path> path = std::nullopt);
 
     const auto& get_repository() const noexcept { return m_repository; }
     auto get_task() const noexcept { return m_task; }
     const auto& get_fdr_context() const noexcept { return m_fdr_context; }
     const auto& get_domain() const noexcept { return m_domain; }
+    const auto& get_path() const noexcept { return m_path; }
     const auto& get_variable_domains() const noexcept { return m_variable_domains; }
     const auto& get_variable_domains_view() const noexcept { return m_variable_domains_view; }
 
@@ -45,6 +53,7 @@ private:
     TaskView m_task;
     FDRContextPtr m_fdr_context;
     PlanningDomain m_domain;
+    std::optional<std::filesystem::path> m_path;
     analysis::TaskVariableDomains m_variable_domains;
     analysis::TaskVariableDomainsView m_variable_domains_view;
 };

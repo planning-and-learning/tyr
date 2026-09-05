@@ -1,5 +1,10 @@
+from pathlib import Path
+
+import pytest
 from pypddl.formalism import ParserOptions
-from pytyr.formalism.planning import Parser
+from pytyr.formalism.planning import Parser, PlanningDomain, PlanningTask
+from pytyr.planning import lifted
+from pyyggdrasil.execution import ExecutionContext
 
 from pypddl_datasets import fetch_task
 
@@ -21,6 +26,47 @@ def test_pddl_parser():
     domain = parser.get_domain()
 
     assert domain.get_domain() == task.get_domain().get_domain()
+    assert domain.get_path() == GRIPPER.domain_path
+    assert task.get_path() == GRIPPER.task_path
+
+
+@pytest.mark.parametrize(
+    ("domain_path", "task_path"),
+    [(None, None), (Path("virtual/../domain.pddl"), Path("virtual/../problem.pddl"))],
+)
+def test_in_memory_paths_are_optional_and_preserved_through_grounding(
+    domain_path: Path | None, task_path: Path | None,
+) -> None:
+    options = ParserOptions()
+    parser = Parser(GRIPPER.domain_path.read_text(), domain_path, options)
+    task = parser.parse_task(GRIPPER.task_path.read_text(), task_path, options)
+
+    assert parser.get_domain().get_path() == domain_path
+    assert task.get_domain().get_path() == domain_path
+    assert task.get_path() == task_path
+    lifted_task = lifted.Task(task)
+    assert lifted_task.get_formalism_task().get_path() == task_path
+    grounded = lifted_task.instantiate_ground_task(
+        ExecutionContext(1), lifted.GroundTaskInstantiationOptions(),
+    )
+    assert grounded.status == lifted.GroundTaskInstantiationStatus.SUCCESS
+    assert grounded.task.get_formalism_task().get_path() == task_path
+    assert grounded.task.get_formalism_task().get_domain().get_path() == domain_path
+
+
+def test_programmatic_wrappers_default_to_no_path() -> None:
+    parser, parsed_task = _parse_gripper_task()
+    parsed_domain = parser.get_domain()
+    domain = PlanningDomain(
+        parsed_domain.get_domain(), parsed_domain.get_repository(),
+        parsed_domain.get_repository_factory(),
+    )
+    task = PlanningTask(
+        parsed_task.get_task(), parsed_task.get_fdr_context(),
+        parsed_task.get_repository(), domain,
+    )
+    assert domain.get_path() is None
+    assert task.get_path() is None
 
 
 def test_parser_view_accessors_keep_temporary_owners_alive():

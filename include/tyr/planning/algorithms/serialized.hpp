@@ -64,7 +64,7 @@ concept SerializedSolverConcept =
            { solver.normalize_start_node(start_node) } -> std::same_as<Node<Kind>>;
            solver.options.start_node = start_node;
            solver.options.goal_strategy = goal_strategy;
-           solver.options.max_time = max_time;
+           solver.options.search_budget.max_time = max_time;
        } && (std::same_as<typename T::EventHandlerType::StatisticsType, tyr::planning::Statistics> || requires(T solver) {
            solver.options.event_handler;
            solver.options.event_handler->get_statistics();
@@ -136,7 +136,7 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Solver>& op
     auto statistics = tyr::planning::Statistics {};
     auto worker_statistics = std::vector<tyr::planning::Statistics> {};
     const auto search_start = std::chrono::steady_clock::now();
-    const auto max_time = options.max_time ? options.max_time : solver.options.max_time;
+    const auto max_time = options.max_time ? options.max_time : solver.options.search_budget.max_time;
     const auto deadline = max_time ? std::make_optional(search_start + *max_time) : std::optional<std::chrono::steady_clock::time_point> {};
     statistics.set_search_start_time_point(search_start);
 
@@ -201,7 +201,7 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Solver>& op
         event_handler->on_start_subsearch(subsearch_index);
 
         if (deadline)
-            local_solver.options.max_time = std::max(*deadline - std::chrono::steady_clock::now(), std::chrono::steady_clock::duration::zero());
+            local_solver.options.search_budget.max_time = std::max(*deadline - std::chrono::steady_clock::now(), std::chrono::steady_clock::duration::zero());
         auto sub_result = local_solver.solve();
         statistics.add(sub_result.statistics);
         worker_statistics.resize(std::max(worker_statistics.size(), sub_result.worker_statistics.size()));

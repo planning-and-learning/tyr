@@ -6,6 +6,7 @@ from .._pytyr.planning import (
     ParallelSearchMode,
     ProgressStatistics,
     ProgressStatisticsSnapshot,
+    SearchBudget,
     SearchStatus,
     Statistics,
     WorkerIndex,
