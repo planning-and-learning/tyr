@@ -3,28 +3,25 @@
 
 #include "tyr/formalism/planning/numeric_effect_operator_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/planning/numeric_effect_view.hpp"
+#include "yggdrasil/serialization/dictionaries.hpp"
 
-namespace tyr::serialization
+namespace ygg::serialization
 {
 
-template<TaskKind T, formalism::FactKind F>
-struct TypeName<formalism::planning::NumericEffectOperatorView<T, F>>
+template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
+struct TypeName<::tyr::formalism::planning::NumericEffectOperatorView<T, F>>
 {
-    static std::string get() { return std::string(F::name) + (std::same_as<T, GroundTag> ? T::name : "") + "NumericEffectOperator"; }
+    static std::string get() { return std::string(F::name) + (std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "NumericEffectOperator"; }
 };
 
-template<TaskKind T, formalism::FactKind F>
+template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
 void tag_invoke(boost::json::value_from_tag,
                 boost::json::value& result,
-                const formalism::planning::NumericEffectOperatorView<T, F>& value,
+                const ::tyr::formalism::planning::NumericEffectOperatorView<T, F>& value,
                 Dictionaries* dictionaries)
 {
-    dictionaries->object(result, value, [&](auto& ar)
-    {
-        ar.variant(value.get_variant());
-    });
+    dictionaries->object(result, value, [&](auto& ar) { ar.variant(value.get_variant()); });
 }
 
 }

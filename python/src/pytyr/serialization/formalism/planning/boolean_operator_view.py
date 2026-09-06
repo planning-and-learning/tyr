@@ -8,10 +8,10 @@ from pytyr.serialization.formalism.planning import binary_operator_view
 
 
 class BooleanOperator(TypedDict):
-    kind: int
+    kind: str
     value: binary_operator_view.BinaryBooleanOperator | str
 
 
 class GroundBooleanOperator(TypedDict):
-    kind: int
+    kind: str
     value: binary_operator_view.GroundBinaryBooleanOperator | str

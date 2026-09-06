@@ -3,30 +3,32 @@
 
 #include "tyr/formalism/planning/multi_operator_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/enums.hpp"
 #include "tyr/serialization/formalism/planning/function_expression_view.hpp"
+#include "yggdrasil/serialization/dictionaries.hpp"
 
-namespace tyr::serialization
+namespace ygg::serialization
 {
 
-template<TaskKind T>
-struct TypeName<formalism::planning::MultiOperatorView<T>>
+template<::tyr::TaskKind T>
+struct TypeName<::tyr::formalism::planning::MultiOperatorView<T>>
 {
-    static std::string get() { return std::string(std::same_as<T, GroundTag> ? T::name : "") + "MultiOperator"; }
+    static std::string get() { return std::string(std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "MultiOperator"; }
 };
 
-template<TaskKind T>
+template<::tyr::TaskKind T>
 void tag_invoke(boost::json::value_from_tag,
                 boost::json::value& result,
-                const formalism::planning::MultiOperatorView<T>& value,
+                const ::tyr::formalism::planning::MultiOperatorView<T>& value,
                 Dictionaries* dictionaries)
 {
-    dictionaries->object(result, value, [&](auto& ar)
-    {
-        ar.field("operator", value.get_operator());
-        ar.field("args", value.get_args());
-    });
+    dictionaries->object(result,
+                         value,
+                         [&](auto& ar)
+                         {
+                             ar.field("operator", value.get_operator());
+                             ar.field("args", value.get_args());
+                         });
 }
 
 }

@@ -3,24 +3,24 @@
 
 #include "tyr/planning/ground/state_view.hpp"
 #include "tyr/planning/lifted/state_view.hpp"
-#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/planning/atom_view.hpp"
 #include "tyr/serialization/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/serialization/formalism/planning/function_term_view.hpp"
+#include "yggdrasil/serialization/dictionaries.hpp"
 
 #include <string>
 
-namespace tyr::serialization
+namespace ygg::serialization
 {
 
-template<TaskKind T>
-struct TypeName<planning::StateView<T>>
+template<::tyr::TaskKind T>
+struct TypeName<::tyr::planning::StateView<T>>
 {
     static std::string get() { return std::string(T::name) + "State"; }
 };
 
-template<TaskKind T>
-void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const planning::StateView<T>& value, Dictionaries* dictionaries)
+template<::tyr::TaskKind T>
+void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::planning::StateView<T>& value, Dictionaries* dictionaries)
 {
     dictionaries->object(result,
                          value,

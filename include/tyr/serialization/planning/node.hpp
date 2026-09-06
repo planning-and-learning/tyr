@@ -2,23 +2,23 @@
 #define TYR_SERIALIZATION_PLANNING_NODE_HPP_
 
 #include "tyr/planning/node.hpp"
-#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/binding_view.hpp"
 #include "tyr/serialization/planning/state_view.hpp"
+#include "yggdrasil/serialization/dictionaries.hpp"
 
 #include <string>
 
-namespace tyr::serialization
+namespace ygg::serialization
 {
 
-template<TaskKind T>
-struct TypeName<planning::Node<T>>
+template<::tyr::TaskKind T>
+struct TypeName<::tyr::planning::Node<T>>
 {
     static std::string get() { return std::string(T::name) + "Node"; }
 };
 
-template<TaskKind T>
-void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const planning::Node<T>& value, Dictionaries* dictionaries)
+template<::tyr::TaskKind T>
+void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::planning::Node<T>& value, Dictionaries* dictionaries)
 {
     dictionaries->object(result,
                          value,
@@ -29,14 +29,14 @@ void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const p
                          });
 }
 
-template<TaskKind T>
-struct TypeName<planning::LabeledNode<T>>
+template<::tyr::TaskKind T>
+struct TypeName<::tyr::planning::LabeledNode<T>>
 {
     static std::string get() { return std::string(T::name) + "LabeledNode"; }
 };
 
-template<TaskKind T>
-void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const planning::LabeledNode<T>& value, Dictionaries* dictionaries)
+template<::tyr::TaskKind T>
+void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::planning::LabeledNode<T>& value, Dictionaries* dictionaries)
 {
     dictionaries->object(result,
                          value,

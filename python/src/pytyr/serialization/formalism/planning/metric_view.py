@@ -8,5 +8,5 @@ from pytyr.serialization.formalism.planning import function_expression_view
 
 
 class Metric(TypedDict):
-    optimization_direction: int
+    optimization_direction: str
     fexpr: function_expression_view.GroundFunctionExpression | str

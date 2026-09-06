@@ -3,28 +3,25 @@
 
 #include "tyr/formalism/planning/boolean_operator_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/planning/binary_operator_view.hpp"
+#include "yggdrasil/serialization/dictionaries.hpp"
 
-namespace tyr::serialization
+namespace ygg::serialization
 {
 
-template<TaskKind T>
-struct TypeName<formalism::planning::BooleanOperatorView<T>>
+template<::tyr::TaskKind T>
+struct TypeName<::tyr::formalism::planning::BooleanOperatorView<T>>
 {
-    static std::string get() { return std::string(std::same_as<T, GroundTag> ? T::name : "") + "BooleanOperator"; }
+    static std::string get() { return std::string(std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "BooleanOperator"; }
 };
 
-template<TaskKind T>
+template<::tyr::TaskKind T>
 void tag_invoke(boost::json::value_from_tag,
                 boost::json::value& result,
-                const formalism::planning::BooleanOperatorView<T>& value,
+                const ::tyr::formalism::planning::BooleanOperatorView<T>& value,
                 Dictionaries* dictionaries)
 {
-    dictionaries->object(result, value, [&](auto& ar)
-    {
-        ar.variant(value.get_variant());
-    });
+    dictionaries->object(result, value, [&](auto& ar) { ar.variant(value.get_variant()); });
 }
 
 }

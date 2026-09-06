@@ -8,24 +8,24 @@ from pytyr.serialization.formalism.planning import function_expression_view
 
 
 class BinaryArithmeticOperator(TypedDict):
-    operator: int
+    operator: str
     lhs: function_expression_view.FunctionExpression | str
     rhs: function_expression_view.FunctionExpression | str
 
 
 class BinaryBooleanOperator(TypedDict):
-    operator: int
+    operator: str
     lhs: function_expression_view.FunctionExpression | str
     rhs: function_expression_view.FunctionExpression | str
 
 
 class GroundBinaryArithmeticOperator(TypedDict):
-    operator: int
+    operator: str
     lhs: function_expression_view.GroundFunctionExpression | str
     rhs: function_expression_view.GroundFunctionExpression | str
 
 
 class GroundBinaryBooleanOperator(TypedDict):
-    operator: int
+    operator: str
     lhs: function_expression_view.GroundFunctionExpression | str
     rhs: function_expression_view.GroundFunctionExpression | str

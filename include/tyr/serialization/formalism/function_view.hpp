@@ -3,19 +3,19 @@
 
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/serialization/dictionaries.hpp"
+#include "yggdrasil/serialization/dictionaries.hpp"
 
-namespace tyr::serialization
+namespace ygg::serialization
 {
 
-template<formalism::FactKind T>
-struct TypeName<formalism::planning::FunctionView<T>>
+template<::tyr::formalism::FactKind T>
+struct TypeName<::tyr::formalism::planning::FunctionView<T>>
 {
     static std::string get() { return std::string(T::name) + "Function"; }
 };
 
-template<formalism::FactKind T>
-void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const formalism::planning::FunctionView<T>& value, Dictionaries* dictionaries)
+template<::tyr::formalism::FactKind T>
+void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::planning::FunctionView<T>& value, Dictionaries* dictionaries)
 {
     dictionaries->object(result,
                          value,

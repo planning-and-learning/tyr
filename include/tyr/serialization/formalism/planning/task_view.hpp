@@ -3,7 +3,6 @@
 
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/function_view.hpp"
 #include "tyr/serialization/formalism/object_view.hpp"
 #include "tyr/serialization/formalism/planning/action_view.hpp"
@@ -14,36 +13,36 @@
 #include "tyr/serialization/formalism/planning/function_term_value_view.hpp"
 #include "tyr/serialization/formalism/planning/metric_view.hpp"
 #include "tyr/serialization/formalism/predicate_view.hpp"
+#include "yggdrasil/serialization/dictionaries.hpp"
 
-namespace tyr::serialization
+namespace ygg::serialization
 {
 
 template<>
-struct TypeName<formalism::planning::TaskView>
+struct TypeName<::tyr::formalism::planning::TaskView>
 {
     static std::string get() { return "LiftedTask"; }
 };
 
-inline void tag_invoke(boost::json::value_from_tag,
-                       boost::json::value& result,
-                       const formalism::planning::TaskView& value,
-                       Dictionaries* dictionaries)
+inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::planning::TaskView& value, Dictionaries* dictionaries)
 {
-    dictionaries->object(result, value, [&](auto& ar)
-    {
-        ar.field("name", value.get_name());
-        ar.field("domain", value.get_domain());
-        ar.field("derived_predicates", value.get_derived_predicates());
-        ar.field("objects", value.get_objects());
-        ar.field("static_atoms", value.get_atoms<formalism::StaticTag>());
-        ar.field("fluent_atoms", value.get_atoms<formalism::FluentTag>());
-        ar.field("static_fterm_values", value.get_fterm_values<formalism::StaticTag>());
-        ar.field("fluent_fterm_values", value.get_fterm_values<formalism::FluentTag>());
-        ar.field("auxiliary_fterm_value", value.get_auxiliary_fterm_value());
-        ar.field("goal", value.get_goal());
-        ar.field("metric", value.get_metric());
-        ar.field("axioms", value.get_axioms());
-    });
+    dictionaries->object(result,
+                         value,
+                         [&](auto& ar)
+                         {
+                             ar.field("name", value.get_name());
+                             ar.field("domain", value.get_domain());
+                             ar.field("derived_predicates", value.get_derived_predicates());
+                             ar.field("objects", value.get_objects());
+                             ar.field("static_atoms", value.get_atoms<::tyr::formalism::StaticTag>());
+                             ar.field("fluent_atoms", value.get_atoms<::tyr::formalism::FluentTag>());
+                             ar.field("static_fterm_values", value.get_fterm_values<::tyr::formalism::StaticTag>());
+                             ar.field("fluent_fterm_values", value.get_fterm_values<::tyr::formalism::FluentTag>());
+                             ar.field("auxiliary_fterm_value", value.get_auxiliary_fterm_value());
+                             ar.field("goal", value.get_goal());
+                             ar.field("metric", value.get_metric());
+                             ar.field("axioms", value.get_axioms());
+                         });
 }
 
 }

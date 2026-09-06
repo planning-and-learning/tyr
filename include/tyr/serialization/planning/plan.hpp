@@ -2,22 +2,22 @@
 #define TYR_SERIALIZATION_PLANNING_PLAN_HPP_
 
 #include "tyr/planning/plan.hpp"
-#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/planning/node.hpp"
+#include "yggdrasil/serialization/dictionaries.hpp"
 
 #include <string>
 
-namespace tyr::serialization
+namespace ygg::serialization
 {
 
-template<TaskKind T>
-struct TypeName<planning::Plan<T>>
+template<::tyr::TaskKind T>
+struct TypeName<::tyr::planning::Plan<T>>
 {
     static std::string get() { return std::string(T::name) + "Plan"; }
 };
 
-template<TaskKind T>
-void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const planning::Plan<T>& value, Dictionaries* dictionaries)
+template<::tyr::TaskKind T>
+void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::planning::Plan<T>& value, Dictionaries* dictionaries)
 {
     dictionaries->object(result,
                          value,

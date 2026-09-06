@@ -3,18 +3,18 @@
 
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/serialization/dictionaries.hpp"
+#include "yggdrasil/serialization/dictionaries.hpp"
 
-namespace tyr::serialization
+namespace ygg::serialization
 {
 
 template<>
-struct TypeName<formalism::planning::ObjectView>
+struct TypeName<::tyr::formalism::planning::ObjectView>
 {
     static std::string get() { return "Object"; }
 };
 
-inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const formalism::planning::ObjectView& value, Dictionaries* dictionaries)
+inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::planning::ObjectView& value, Dictionaries* dictionaries)
 {
     dictionaries->object(result, value, [&](auto& ar) { ar.field("name", value.get_name()); });
 }

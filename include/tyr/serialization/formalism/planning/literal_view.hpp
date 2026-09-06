@@ -3,30 +3,29 @@
 
 #include "tyr/formalism/planning/literal_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/planning/atom_view.hpp"
 #include "tyr/serialization/formalism/predicate_view.hpp"
+#include "yggdrasil/serialization/dictionaries.hpp"
 
-namespace tyr::serialization
+namespace ygg::serialization
 {
 
-template<TaskKind T, formalism::FactKind F>
-struct TypeName<formalism::planning::LiteralView<T, F>>
+template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
+struct TypeName<::tyr::formalism::planning::LiteralView<T, F>>
 {
-    static std::string get() { return std::string(F::name) + (std::same_as<T, GroundTag> ? T::name : "") + "Literal"; }
+    static std::string get() { return std::string(F::name) + (std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "Literal"; }
 };
 
-template<TaskKind T, formalism::FactKind F>
-void tag_invoke(boost::json::value_from_tag,
-                boost::json::value& result,
-                const formalism::planning::LiteralView<T, F>& value,
-                Dictionaries* dictionaries)
+template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
+void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::planning::LiteralView<T, F>& value, Dictionaries* dictionaries)
 {
-    dictionaries->object(result, value, [&](auto& ar)
-    {
-        ar.field("atom", value.get_atom());
-        ar.field("polarity", value.get_polarity());
-    });
+    dictionaries->object(result,
+                         value,
+                         [&](auto& ar)
+                         {
+                             ar.field("atom", value.get_atom());
+                             ar.field("polarity", value.get_polarity());
+                         });
 }
 
 }

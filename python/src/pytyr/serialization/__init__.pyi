@@ -1,9 +1,10 @@
 from typing import TypeAlias, overload
 
+from pyyggdrasil.serialization import EnumEntry, Table
+
 from pytyr.formalism import planning as fp
 from pytyr.planning import ground, lifted
 from . import planning as runtime
-from .dictionaries import EnumEntry, Table
 from .formalism import planning as schema
 from .planning.ground import task as ground_schema
 from .planning.lifted import task as lifted_schema

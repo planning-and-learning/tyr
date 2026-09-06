@@ -3,26 +3,26 @@
 
 #include "tyr/formalism/binding_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/function_view.hpp"
 #include "tyr/serialization/formalism/object_view.hpp"
 #include "tyr/serialization/formalism/planning/action_view.hpp"
 #include "tyr/serialization/formalism/planning/axiom_view.hpp"
 #include "tyr/serialization/formalism/predicate_view.hpp"
+#include "yggdrasil/serialization/dictionaries.hpp"
 
-namespace tyr::serialization
+namespace ygg::serialization
 {
 
 template<typename T>
-struct TypeName<ygg::View<ygg::Index<formalism::RelationBinding<T>>, formalism::planning::Repository>>
+struct TypeName<ygg::View<ygg::Index<::tyr::formalism::RelationBinding<T>>, ::tyr::formalism::planning::Repository>>
 {
-    static std::string get() { return TypeName<ygg::View<ygg::Index<T>, formalism::planning::Repository>>::get() + "Binding"; }
+    static std::string get() { return TypeName<ygg::View<ygg::Index<T>, ::tyr::formalism::planning::Repository>>::get() + "Binding"; }
 };
 
 template<typename T>
 void tag_invoke(boost::json::value_from_tag,
                 boost::json::value& result,
-                const ygg::View<ygg::Index<formalism::RelationBinding<T>>, formalism::planning::Repository>& value,
+                const ygg::View<ygg::Index<::tyr::formalism::RelationBinding<T>>, ::tyr::formalism::planning::Repository>& value,
                 Dictionaries* dictionaries)
 {
     dictionaries->object(result,

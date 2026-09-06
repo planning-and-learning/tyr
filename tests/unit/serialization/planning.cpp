@@ -16,7 +16,7 @@ namespace
 namespace f = formalism;
 namespace fp = formalism::planning;
 namespace p = planning;
-namespace s = serialization;
+namespace s = ygg::serialization;
 
 fp::AtomView<GroundTag, f::FluentTag> make_atom(fp::Repository& repository, std::string object_name)
 {
@@ -164,13 +164,11 @@ TEST(TyrSerialization, RecursiveExpressionsReferenceSharedDescendantsAndKeepCons
     const auto expressions = dictionaries.table<fp::FunctionExpressionView<LiftedTag>>();
     ASSERT_EQ(expressions.size(), 2);
     const auto& root = expressions[0].as_object();
-    EXPECT_EQ(root.at("kind").as_uint64(), 1);
     EXPECT_EQ(root.at("value").as_object().at("value").as_string(), "b0");
     const auto operators = dictionaries.table<BinaryView>();
     ASSERT_EQ(operators.size(), 1);
     EXPECT_EQ(operators[0].as_object().at("lhs").as_string(), "e1");
     EXPECT_EQ(operators[0].as_object().at("rhs").as_string(), "e1");
-    EXPECT_EQ(expressions[1].as_object().at("kind").as_uint64(), 0);
     EXPECT_EQ(expressions[1].as_object().at("value").as_double(), 3);
     const auto legends = dictionaries.enums();
     const auto& kinds = legends.at(s::TypeName<fp::FunctionExpressionView<LiftedTag>>::get()).as_array();
@@ -178,10 +176,37 @@ TEST(TyrSerialization, RecursiveExpressionsReferenceSharedDescendantsAndKeepCons
     EXPECT_EQ(kinds[0].as_object().at("id").as_uint64(), 0);
     EXPECT_EQ(kinds[0].as_object().at("name").as_string(), "constant");
     EXPECT_EQ(kinds[1].as_object().at("id").as_uint64(), 1);
+    EXPECT_EQ(root.at("kind"), kinds[1].as_object().at("ref"));
+    EXPECT_EQ(expressions[1].as_object().at("kind"), kinds[0].as_object().at("ref"));
+    const auto& operator_kinds = legends.at("ArithmeticOperatorKind").as_array();
+    ASSERT_EQ(operator_kinds.size(), 1);
+    EXPECT_EQ(operator_kinds[0].as_object().at("id").as_uint64(), static_cast<size_t>(f::ArithmeticOperatorKind::Sub));
+    EXPECT_EQ(operators[0].as_object().at("operator"), operator_kinds[0].as_object().at("ref"));
     const auto snapshot = dictionaries.tables();
     EXPECT_EQ(dictionaries.serialize(expression).as_string(), "e0");
     EXPECT_EQ(dictionaries.tables(), snapshot);
     EXPECT_EQ(dictionaries.enums(), legends);
+}
+
+TEST(TyrSerialization, LegendReferencesAreGlobalAndStableAcrossSortedInsertions)
+{
+    auto dictionaries = s::Dictionaries {};
+    const auto arithmetic = dictionaries.serialize(f::ArithmeticOperatorKind::Sub);
+    const auto boolean = dictionaries.serialize(f::BooleanOperatorKind::Ne);
+    EXPECT_EQ(arithmetic.as_string(), "@0");
+    EXPECT_EQ(boolean.as_string(), "@1");
+    const auto before = dictionaries.enums();
+    const auto addition = dictionaries.serialize(f::ArithmeticOperatorKind::Add);
+    EXPECT_EQ(addition.as_string(), "@2");
+    EXPECT_EQ(dictionaries.serialize(f::ArithmeticOperatorKind::Sub), arithmetic);
+    EXPECT_EQ(dictionaries.serialize(f::BooleanOperatorKind::Ne), boolean);
+    const auto legends = dictionaries.enums();
+    const auto& arithmetic_kinds = legends.at("ArithmeticOperatorKind").as_array();
+    ASSERT_EQ(arithmetic_kinds.size(), 2);
+    EXPECT_EQ(arithmetic_kinds[0].as_object().at("ref"), addition);
+    EXPECT_EQ(arithmetic_kinds[1].as_object().at("ref"), arithmetic);
+    EXPECT_LT(arithmetic_kinds[0].as_object().at("id").as_uint64(), arithmetic_kinds[1].as_object().at("id").as_uint64());
+    EXPECT_EQ(before.at("ArithmeticOperatorKind").as_array().size(), 1);
 }
 
 TEST(TyrSerialization, RegistrationRequiresUniqueNamesPrefixesAndPrecedesSerialization)
@@ -190,6 +215,7 @@ TEST(TyrSerialization, RegistrationRequiresUniqueNamesPrefixesAndPrecedesSeriali
     EXPECT_THROW(dictionaries.register_table<fp::ObjectView>("", "o"), std::invalid_argument);
     EXPECT_THROW(dictionaries.register_table<fp::ObjectView>("objects", ""), std::invalid_argument);
     EXPECT_THROW(dictionaries.register_table<fp::ObjectView>("objects", "o1"), std::invalid_argument);
+    EXPECT_THROW(dictionaries.register_table<fp::ObjectView>("objects", "@"), std::invalid_argument);
     dictionaries.register_table<fp::ObjectView>("objects", "o");
     EXPECT_THROW(dictionaries.register_table<fp::ObjectView>("other", "x"), std::invalid_argument);
     EXPECT_THROW(dictionaries.register_table<fp::PredicateView<f::FluentTag>>("objects", "p"), std::invalid_argument);

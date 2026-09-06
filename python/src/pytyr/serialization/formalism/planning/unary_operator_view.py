@@ -8,10 +8,10 @@ from pytyr.serialization.formalism.planning import function_expression_view
 
 
 class UnaryOperator(TypedDict):
-    operator: int
+    operator: str
     arg: function_expression_view.FunctionExpression | str
 
 
 class GroundUnaryOperator(TypedDict):
-    operator: int
+    operator: str
     arg: function_expression_view.GroundFunctionExpression | str

@@ -3,30 +3,27 @@
 
 #include "tyr/formalism/planning/arithmetic_operator_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/planning/binary_operator_view.hpp"
 #include "tyr/serialization/formalism/planning/multi_operator_view.hpp"
 #include "tyr/serialization/formalism/planning/unary_operator_view.hpp"
+#include "yggdrasil/serialization/dictionaries.hpp"
 
-namespace tyr::serialization
+namespace ygg::serialization
 {
 
-template<TaskKind T>
-struct TypeName<formalism::planning::ArithmeticOperatorView<T>>
+template<::tyr::TaskKind T>
+struct TypeName<::tyr::formalism::planning::ArithmeticOperatorView<T>>
 {
-    static std::string get() { return std::string(std::same_as<T, GroundTag> ? T::name : "") + "ArithmeticOperator"; }
+    static std::string get() { return std::string(std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "ArithmeticOperator"; }
 };
 
-template<TaskKind T>
+template<::tyr::TaskKind T>
 void tag_invoke(boost::json::value_from_tag,
                 boost::json::value& result,
-                const formalism::planning::ArithmeticOperatorView<T>& value,
+                const ::tyr::formalism::planning::ArithmeticOperatorView<T>& value,
                 Dictionaries* dictionaries)
 {
-    dictionaries->object(result, value, [&](auto& ar)
-    {
-        ar.variant(value.get_variant());
-    });
+    dictionaries->object(result, value, [&](auto& ar) { ar.variant(value.get_variant()); });
 }
 
 }

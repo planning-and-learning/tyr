@@ -81,9 +81,21 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     assert states[1]["derived_atoms"] == []
     tables = dictionaries.tables()
     assert tables["visited"] == {"prefix": "s", "rows": states}
-    assert json.loads(json.dumps(tables)) == tables
-    assert dictionaries.enums()
-    assert all(isinstance(entry["id"], int) for legend in dictionaries.enums().values() for entry in legend)
+    encoded_tables = json.dumps(tables)
+    assert json.loads(encoded_tables) == tables
+    legends = dictionaries.enums()
+    entries = [entry for legend in legends.values() for entry in legend]
+    assert entries
+    assert all(isinstance(entry["id"], int) for entry in entries)
+    assert len({entry["ref"] for entry in entries}) == len(entries)
+    assert all(entry["ref"].startswith("@") and entry["ref"][1:].isdigit() for entry in entries)
+    assert all(json.dumps(entry["ref"]) in encoded_tables for entry in entries)
+    snapshot = dictionaries.tables()
+    snapshot["visited"]["rows"][0]["annotation"] = {"selected": True}
+    assert "annotation" not in dictionaries.tables()["visited"]["rows"][0]
+    legend_snapshot = dictionaries.enums()
+    next(iter(legend_snapshot.values()))[0]["name"] = "annotated"
+    assert dictionaries.enums() == legends
     states.clear()
     assert len(dictionaries.table(state_type)) == 2
     del plan, result, generator, evaluator, repository, task, parser
@@ -100,6 +112,8 @@ def test_registration_errors_and_inline_variants() -> None:
         dictionaries.register_table(str, "strings", "s")  # pyright: ignore[reportArgumentType]
     with pytest.raises(ValueError):
         dictionaries.register_table(fp.StaticGroundFunctionTerm, "terms", "t0")
+    with pytest.raises(ValueError):
+        dictionaries.register_table(fp.StaticGroundFunctionTerm, "terms", "@")
     dictionaries.register_table(fp.StaticGroundFunctionTerm, "terms", "t")
     with pytest.raises(ValueError):
         dictionaries.register_table(fp.StaticGroundFunctionTerm, "more_terms", "u")
@@ -116,4 +130,7 @@ def test_registration_errors_and_inline_variants() -> None:
     assert inline.tables() == {}
     owner = inline.serialize(task.get_formalism_task())
     assert json.loads(json.dumps(owner)) == owner
-    assert inline.enums()
+    legends = inline.enums()
+    assert legends
+    assert inline.serialize(task.get_formalism_task()) == owner
+    assert inline.enums() == legends

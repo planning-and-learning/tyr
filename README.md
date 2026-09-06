@@ -30,10 +30,6 @@ The library consists of a **formalism** and a **planning** component. The formal
 
 Pytyr is available at [PyPI](https://pypi.org/project/pytyr/) and can be installed with `pip install pytyr`. 
 
-[`pytyr.tools`](docs/tools/index.md) provides compressed representations of planning
-entities. Shared dictionaries identify states, actions, atoms, and function terms;
-static facts appear once in the task representation.
-
 [`pytyr.serialization`](docs/serialization/index.md) provides structured native
 representations with caller-selected dictionary tables and reference prefixes.
 

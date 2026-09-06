@@ -42,7 +42,6 @@ endif()
 
 add_library(
     core SHARED ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
-    serialization/dictionaries.cpp
     algorithms/kckp/graphs.cpp
     algorithms/kckp/kckp.cpp
     algorithms/kckp/delta_kckp.cpp
