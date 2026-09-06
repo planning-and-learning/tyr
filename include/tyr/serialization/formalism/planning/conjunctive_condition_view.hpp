@@ -3,22 +3,28 @@
 
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/planning/boolean_operator_view.hpp"
 #include "tyr/serialization/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/serialization/formalism/planning/literal_view.hpp"
 #include "tyr/serialization/formalism/variable_view.hpp"
-#include "tyr/serialization/serializer.hpp"
 
 namespace tyr::serialization
 {
 
 template<TaskKind T>
-struct Serializer<formalism::planning::ConjunctiveConditionView<T>>
+struct TypeName<formalism::planning::ConjunctiveConditionView<T>>
 {
-    static std::string name() { return std::string(std::same_as<T, GroundTag> ? T::name : "") + "ConjunctiveCondition"; }
+    static std::string get() { return std::string(std::same_as<T, GroundTag> ? T::name : "") + "ConjunctiveCondition"; }
+};
 
-    template<class Archive>
-    static void save(Archive& ar, const formalism::planning::ConjunctiveConditionView<T>& value)
+template<TaskKind T>
+void tag_invoke(boost::json::value_from_tag,
+                boost::json::value& result,
+                const formalism::planning::ConjunctiveConditionView<T>& value,
+                Dictionaries* dictionaries)
+{
+    dictionaries->object(result, value, [&](auto& ar)
     {
         if constexpr (std::same_as<T, LiftedTag>)
         {
@@ -36,8 +42,8 @@ struct Serializer<formalism::planning::ConjunctiveConditionView<T>>
             ar.field("negative_facts", value.template get_facts<formalism::NegativeTag>());
         }
         ar.field("numeric_constraints", value.get_numeric_constraints());
-    }
-};
+    });
+}
 
 }
 

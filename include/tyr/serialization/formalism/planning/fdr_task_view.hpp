@@ -3,6 +3,7 @@
 
 #include "tyr/formalism/planning/fdr_task_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/function_view.hpp"
 #include "tyr/serialization/formalism/object_view.hpp"
 #include "tyr/serialization/formalism/planning/action_view.hpp"
@@ -16,18 +17,22 @@
 #include "tyr/serialization/formalism/planning/function_term_view.hpp"
 #include "tyr/serialization/formalism/planning/metric_view.hpp"
 #include "tyr/serialization/formalism/predicate_view.hpp"
-#include "tyr/serialization/serializer.hpp"
 
 namespace tyr::serialization
 {
 
 template<>
-struct Serializer<formalism::planning::FDRTaskView>
+struct TypeName<formalism::planning::FDRTaskView>
 {
-    static std::string name() { return "GroundTask"; }
+    static std::string get() { return "GroundTask"; }
+};
 
-    template<class Archive>
-    static void save(Archive& ar, const formalism::planning::FDRTaskView& value)
+inline void tag_invoke(boost::json::value_from_tag,
+                       boost::json::value& result,
+                       const formalism::planning::FDRTaskView& value,
+                       Dictionaries* dictionaries)
+{
+    dictionaries->object(result, value, [&](auto& ar)
     {
         ar.field("name", value.get_name());
         ar.field("domain", value.get_domain());
@@ -46,8 +51,8 @@ struct Serializer<formalism::planning::FDRTaskView>
         ar.field("fluent_facts", value.get_fluent_facts());
         ar.field("ground_actions", value.get_ground_actions());
         ar.field("ground_axioms", value.get_ground_axioms());
-    }
-};
+    });
+}
 
 }
 

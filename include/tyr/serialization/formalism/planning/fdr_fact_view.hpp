@@ -3,24 +3,30 @@
 
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/serialization/serializer.hpp"
 
 namespace tyr::serialization
 {
 
 template<formalism::FactKind T>
-struct Serializer<formalism::planning::FDRFactView<T>>
+struct TypeName<formalism::planning::FDRFactView<T>>
 {
-    static std::string name() { return std::string(T::name) + "FDRFact"; }
+    static std::string get() { return std::string(T::name) + "FDRFact"; }
+};
 
-    template<class Archive>
-    static void save(Archive& ar, const formalism::planning::FDRFactView<T>& value)
+template<formalism::FactKind T>
+void tag_invoke(boost::json::value_from_tag,
+                boost::json::value& result,
+                const formalism::planning::FDRFactView<T>& value,
+                Dictionaries* dictionaries)
+{
+    dictionaries->object(result, value, [&](auto& ar)
     {
         ar.field("variable", value.get_variable());
         ar.field("value", ygg::uint_t(value.get_value()));
-    }
-};
+    });
+}
 
 }
 

@@ -2,6 +2,7 @@
 #define TYR_SERIALIZATION_PLANNING_PLAN_HPP_
 
 #include "tyr/planning/plan.hpp"
+#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/planning/node.hpp"
 
 #include <string>
@@ -10,19 +11,24 @@ namespace tyr::serialization
 {
 
 template<TaskKind T>
-struct Serializer<planning::Plan<T>>
+struct TypeName<planning::Plan<T>>
 {
-    static std::string name() { return std::string(T::name) + "Plan"; }
-
-    template<class Archive>
-    static void save(Archive& archive, const planning::Plan<T>& plan)
-    {
-        archive.field("start_node", plan.get_start_node());
-        archive.field("labeled_succ_nodes", plan.get_labeled_succ_nodes());
-        archive.field("length", plan.get_length());
-        archive.field("cost", plan.get_cost());
-    }
+    static std::string get() { return std::string(T::name) + "Plan"; }
 };
+
+template<TaskKind T>
+void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const planning::Plan<T>& value, Dictionaries* dictionaries)
+{
+    dictionaries->object(result,
+                         value,
+                         [&](auto& ar)
+                         {
+                             ar.field("start_node", value.get_start_node());
+                             ar.field("labeled_succ_nodes", value.get_labeled_succ_nodes());
+                             ar.field("length", value.get_length());
+                             ar.field("cost", value.get_cost());
+                         });
+}
 
 }
 

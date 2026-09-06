@@ -25,7 +25,7 @@ A reference combines its table prefix and zero-based row position. For example, 
 }
 ```
 
-Table names and prefixes are chosen by the caller. Both must be nonempty and unique; a prefix cannot end in a digit. Registrations are fixed when serialization begins. Rows follow first encounter order, including dependencies encountered inside other rows. Repeated references share a row. Equal local indexes from independent repositories remain separate entries.
+Table names and prefixes are chosen by the caller. Both must be nonempty and unique; a prefix cannot end in a digit. Registrations are fixed when serialization begins. Rows follow first encounter order, including dependencies encountered inside other rows. Values that compare equal under their native equality share a row.
 
 The result, table snapshot, and enum snapshot are separate values. Registered tables remain present even when empty. Snapshots contain the rows collected so far; later serialization does not change an earlier snapshot. The library does not choose a report envelope, render tables, or write files.
 
@@ -41,4 +41,4 @@ Sequences are JSON arrays, pairs are two-element arrays, absent optional values 
 
 Planning states contain only `fluent_facts`, `derived_atoms`, and `fluent_fterm_values`. Static facts belong to the task representation. Function-term values are pairs of a term representation or reference and its numeric value. An FDR fact preserves its `variable` and numeric `value`; zero represents the native none value.
 
-Nodes contain `state` and `metric`. Labeled nodes contain `label` and `node`. Plans contain `start_node`, `labeled_succ_nodes`, `length`, and `cost`; repeated states reuse their registered state references. Ground and lifted task wrappers contain `formalism_task`, which preserves the underlying task and domain information without exposing runtime caches.
+Nodes contain `state` and `metric`. Labeled nodes contain `label` and `node`. Plans contain `start_node`, `labeled_succ_nodes`, `length`, and `cost`; repeated states and nodes reuse their registered references. Ground and lifted task wrappers contain `formalism_task`, which preserves the underlying task and domain information without exposing runtime caches.

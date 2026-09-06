@@ -2,6 +2,7 @@
 #define TYR_SERIALIZATION_PLANNING_NODE_HPP_
 
 #include "tyr/planning/node.hpp"
+#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/binding_view.hpp"
 #include "tyr/serialization/planning/state_view.hpp"
 
@@ -11,30 +12,40 @@ namespace tyr::serialization
 {
 
 template<TaskKind T>
-struct Serializer<planning::Node<T>>
+struct TypeName<planning::Node<T>>
 {
-    static std::string name() { return std::string(T::name) + "Node"; }
-
-    template<class Archive>
-    static void save(Archive& archive, const planning::Node<T>& node)
-    {
-        archive.field("state", node.get_state());
-        archive.field("metric", node.get_metric());
-    }
+    static std::string get() { return std::string(T::name) + "Node"; }
 };
 
 template<TaskKind T>
-struct Serializer<planning::LabeledNode<T>>
+void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const planning::Node<T>& value, Dictionaries* dictionaries)
 {
-    static std::string name() { return std::string(T::name) + "LabeledNode"; }
+    dictionaries->object(result,
+                         value,
+                         [&](auto& ar)
+                         {
+                             ar.field("state", value.get_state());
+                             ar.field("metric", value.get_metric());
+                         });
+}
 
-    template<class Archive>
-    static void save(Archive& archive, const planning::LabeledNode<T>& node)
-    {
-        archive.field("label", node.label);
-        archive.field("node", node.node);
-    }
+template<TaskKind T>
+struct TypeName<planning::LabeledNode<T>>
+{
+    static std::string get() { return std::string(T::name) + "LabeledNode"; }
 };
+
+template<TaskKind T>
+void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const planning::LabeledNode<T>& value, Dictionaries* dictionaries)
+{
+    dictionaries->object(result,
+                         value,
+                         [&](auto& ar)
+                         {
+                             ar.field("label", value.label);
+                             ar.field("node", value.node);
+                         });
+}
 
 }
 

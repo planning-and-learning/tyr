@@ -102,13 +102,15 @@ TEST(TyrSerialization, RegisteredDescendantsAreCollectedOnceAndSnapshotsAreIndep
     EXPECT_EQ(boost::json::parse(boost::json::serialize(dictionaries.tables())), dictionaries.tables());
 }
 
-TEST(TyrSerialization, UnregisteredObjectsRemainInlineAndRepositoryIdentityIsPreserved)
+TEST(TyrSerialization, UnregisteredObjectsRemainInlineAndNativeViewIdentityIsPreserved)
 {
-    auto first_repository = fp::RepositoryFactory().create();
-    auto second_repository = fp::RepositoryFactory().create();
+    auto factory = fp::RepositoryFactory();
+    auto first_repository = factory.create();
+    auto second_repository = factory.create();
     const auto first = make_atom(first_repository, "truck");
     const auto second = make_atom(second_repository, "truck");
     ASSERT_EQ(first.get_index(), second.get_index());
+    ASSERT_NE(first.get_context().get_index(), second.get_context().get_index());
     auto inline_dictionaries = s::Dictionaries {};
     const auto inline_atom = inline_dictionaries.serialize(first).as_object();
     EXPECT_EQ(inline_atom.at("binding").as_object().at("objects").as_array()[0].as_object().at("name").as_string(), "truck");
@@ -171,7 +173,7 @@ TEST(TyrSerialization, RecursiveExpressionsReferenceSharedDescendantsAndKeepCons
     EXPECT_EQ(expressions[1].as_object().at("kind").as_uint64(), 0);
     EXPECT_EQ(expressions[1].as_object().at("value").as_double(), 3);
     const auto legends = dictionaries.enums();
-    const auto& kinds = legends.at(s::Serializer<fp::FunctionExpressionView<LiftedTag>>::name()).as_array();
+    const auto& kinds = legends.at(s::TypeName<fp::FunctionExpressionView<LiftedTag>>::get()).as_array();
     ASSERT_EQ(kinds.size(), 2);
     EXPECT_EQ(kinds[0].as_object().at("id").as_uint64(), 0);
     EXPECT_EQ(kinds[0].as_object().at("name").as_string(), "constant");

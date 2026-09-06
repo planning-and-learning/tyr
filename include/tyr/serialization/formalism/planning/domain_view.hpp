@@ -3,23 +3,28 @@
 
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/function_view.hpp"
 #include "tyr/serialization/formalism/object_view.hpp"
 #include "tyr/serialization/formalism/planning/action_view.hpp"
 #include "tyr/serialization/formalism/planning/axiom_view.hpp"
 #include "tyr/serialization/formalism/predicate_view.hpp"
-#include "tyr/serialization/serializer.hpp"
 
 namespace tyr::serialization
 {
 
 template<>
-struct Serializer<formalism::planning::DomainView>
+struct TypeName<formalism::planning::DomainView>
 {
-    static std::string name() { return "Domain"; }
+    static std::string get() { return "Domain"; }
+};
 
-    template<class Archive>
-    static void save(Archive& ar, const formalism::planning::DomainView& value)
+inline void tag_invoke(boost::json::value_from_tag,
+                       boost::json::value& result,
+                       const formalism::planning::DomainView& value,
+                       Dictionaries* dictionaries)
+{
+    dictionaries->object(result, value, [&](auto& ar)
     {
         ar.field("name", value.get_name());
         ar.field("static_predicates", value.get_predicates<formalism::StaticTag>());
@@ -31,8 +36,8 @@ struct Serializer<formalism::planning::DomainView>
         ar.field("constants", value.get_constants());
         ar.field("actions", value.get_actions());
         ar.field("axioms", value.get_axioms());
-    }
-};
+    });
+}
 
 }
 

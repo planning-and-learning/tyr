@@ -3,6 +3,7 @@
 
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/function_view.hpp"
 #include "tyr/serialization/formalism/object_view.hpp"
 #include "tyr/serialization/formalism/planning/action_view.hpp"
@@ -13,18 +14,22 @@
 #include "tyr/serialization/formalism/planning/function_term_value_view.hpp"
 #include "tyr/serialization/formalism/planning/metric_view.hpp"
 #include "tyr/serialization/formalism/predicate_view.hpp"
-#include "tyr/serialization/serializer.hpp"
 
 namespace tyr::serialization
 {
 
 template<>
-struct Serializer<formalism::planning::TaskView>
+struct TypeName<formalism::planning::TaskView>
 {
-    static std::string name() { return "LiftedTask"; }
+    static std::string get() { return "LiftedTask"; }
+};
 
-    template<class Archive>
-    static void save(Archive& ar, const formalism::planning::TaskView& value)
+inline void tag_invoke(boost::json::value_from_tag,
+                       boost::json::value& result,
+                       const formalism::planning::TaskView& value,
+                       Dictionaries* dictionaries)
+{
+    dictionaries->object(result, value, [&](auto& ar)
     {
         ar.field("name", value.get_name());
         ar.field("domain", value.get_domain());
@@ -38,8 +43,8 @@ struct Serializer<formalism::planning::TaskView>
         ar.field("goal", value.get_goal());
         ar.field("metric", value.get_metric());
         ar.field("axioms", value.get_axioms());
-    }
-};
+    });
+}
 
 }
 

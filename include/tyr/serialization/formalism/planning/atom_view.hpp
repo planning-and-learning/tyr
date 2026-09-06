@@ -3,21 +3,27 @@
 
 #include "tyr/formalism/planning/atom_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/binding_view.hpp"
 #include "tyr/serialization/formalism/predicate_view.hpp"
 #include "tyr/serialization/formalism/term_view.hpp"
-#include "tyr/serialization/serializer.hpp"
 
 namespace tyr::serialization
 {
 
 template<TaskKind T, formalism::FactKind F>
-struct Serializer<formalism::planning::AtomView<T, F>>
+struct TypeName<formalism::planning::AtomView<T, F>>
 {
-    static std::string name() { return std::string(F::name) + (std::same_as<T, GroundTag> ? T::name : "") + "Atom"; }
+    static std::string get() { return std::string(F::name) + (std::same_as<T, GroundTag> ? T::name : "") + "Atom"; }
+};
 
-    template<class Archive>
-    static void save(Archive& ar, const formalism::planning::AtomView<T, F>& value)
+template<TaskKind T, formalism::FactKind F>
+void tag_invoke(boost::json::value_from_tag,
+                boost::json::value& result,
+                const formalism::planning::AtomView<T, F>& value,
+                Dictionaries* dictionaries)
+{
+    dictionaries->object(result, value, [&](auto& ar)
     {
         if constexpr (std::same_as<T, LiftedTag>)
         {
@@ -28,8 +34,8 @@ struct Serializer<formalism::planning::AtomView<T, F>>
         {
             ar.field("binding", value.get_row());
         }
-    }
-};
+    });
+}
 
 }
 

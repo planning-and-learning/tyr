@@ -1,53 +1,28 @@
 #ifndef TYR_SERIALIZATION_DICTIONARIES_HPP_
 #define TYR_SERIALIZATION_DICTIONARIES_HPP_
 
-#include "tyr/serialization/serializer.hpp"
+#include "tyr/serialization/conversion.hpp"
 
 #include <any>
-#include <boost/json.hpp>
-#include <cstdint>
-#include <filesystem>
-#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <tuple>
 #include <typeindex>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 #include <yggdrasil/containers/variant.hpp>
+#include <yggdrasil/core/concepts.hpp>
 #include <yggdrasil/semantics/equal_to.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::serialization
 {
 
-template<typename T>
-struct EnumTraits;
-
 namespace detail
 {
-template<DictionaryValue T>
-auto identity(const T& value)
-{
-    if constexpr (requires { value.get_state_repository(); })
-        return value.identifying_members();
-    else
-    {
-        const auto* context = &value.get_context();
-        if constexpr (requires { context->get_canonical_context(value.get_handle()); })
-            context = &context->get_canonical_context(value.get_handle());
-        // Addresses distinguish independent repository factories; they never appear in the output.
-        return std::make_pair(reinterpret_cast<std::uintptr_t>(context), value.get_handle());
-    }
-}
-
-template<DictionaryValue T>
-using Identity = decltype(identity(std::declval<const T&>()));
-
-template<DictionaryValue T>
-using Index = std::unordered_map<Identity<T>, size_t, ygg::Hash<Identity<T>>, ygg::EqualTo<Identity<T>>>;
+template<typename T>
+using Index = std::unordered_map<T, size_t, ygg::Hash<T>, ygg::EqualTo<T>>;
 }
 
 /// Referenced formalism repositories (including their parents) must outlive this object.
@@ -82,7 +57,7 @@ class Dictionaries
         template<typename T>
         void field(std::string_view name, const T& value)
         {
-            fields[name] = m_dictionaries.encode(value);
+            fields[name] = boost::json::value_from(value, &m_dictionaries);
         }
 
         template<typename Variant>
@@ -92,102 +67,58 @@ class Dictionaries
             std::visit([&](const auto& alternative)
             {
                 using Alternative = std::remove_cvref_t<decltype(alternative)>;
-                using Context = std::remove_cvref_t<decltype(value.get_context())>;
-                auto write = [&](const auto& item)
-                {
-                    const auto kind = value.index_variant().index();
-                    m_dictionaries.add_kind(m_type_name, kind, type_name<std::remove_cvref_t<decltype(item)>>());
-                    fields["kind"] = kind;
-                    fields["value"] = m_dictionaries.encode(item);
-                };
-                if constexpr (ygg::ViewConcept<Alternative, Context>)
-                    write(ygg::make_view(alternative, value.get_context()));
-                else
-                    write(alternative);
+                const auto& item = value.template get<Alternative>();
+                const auto kind = value.index_variant().index();
+                m_dictionaries.add_kind(m_type_name, kind, TypeName<std::remove_cvref_t<decltype(item)>>::get());
+                fields["kind"] = kind;
+                fields["value"] = boost::json::value_from(item, &m_dictionaries);
             }, value.index_variant());
         }
     };
 
-    void add_kind(std::string_view type, size_t id, std::string name);
-
-    template<Serializable T>
-    boost::json::object body(const T& value)
+    template<typename T, typename Body>
+    boost::json::value collect(const T&, Body&& body)
     {
-        Archive archive(*this, Serializer<T>::name());
-        Serializer<T>::save(archive, value);
-        return std::move(archive.fields);
+        return body();
     }
 
-    template<typename T>
-    boost::json::value encode(const T& value)
+    template<ygg::Hashable T, typename Body>
+    boost::json::value collect(const T& value, Body&& body)
     {
-        if constexpr (Serializable<T>)
+        if (const auto found = m_types.find(typeid(T)); found != m_types.end())
         {
-            if constexpr (DictionaryValue<T>)
+            auto& table = m_tables[found->second];
+            auto& index = std::any_cast<detail::Index<T>&>(table.index);
+            const auto [entry, inserted] = index.try_emplace(value, table.rows.size());
+            const auto id = entry->second;
+            const auto reference = table.prefix + std::to_string(id);
+            if (inserted)
             {
-                if (const auto found = m_types.find(typeid(T)); found != m_types.end())
-                {
-                    auto& table = m_tables[found->second];
-                    auto& index = std::any_cast<detail::Index<T>&>(table.index);
-                    const auto [entry, inserted] = index.try_emplace(detail::identity(value), table.rows.size());
-                    const auto id = entry->second;
-                    const auto reference = table.prefix + std::to_string(id);
-                    if (inserted)
-                    {
-                        table.rows.emplace_back(nullptr);
-                        // Descendants may append to this table. Keep the index, not a reference to its row.
-                        auto row = body(value);
-                        table.rows[id] = std::move(row);
-                    }
-                    return boost::json::value(reference);
-                }
+                table.rows.emplace_back(nullptr);
+                // Descendants may append to this table. Keep the index, not a reference to its row.
+                auto row = body();
+                table.rows[id] = std::move(row);
             }
-            return body(value);
+            return boost::json::value(reference);
         }
-        else if constexpr (std::same_as<T, bool>)
-            return value;
-        else if constexpr (std::integral<T>)
-        {
-            if constexpr (std::is_signed_v<T>)
-                return static_cast<std::int64_t>(value);
-            else
-                return static_cast<std::uint64_t>(value);
-        }
-        else if constexpr (std::floating_point<T>)
-            return static_cast<double>(value);
-        else if constexpr (PrimitiveSerializable<T>)
-            return encode(PrimitiveSerializer<T>::value(value));
-        else if constexpr (std::is_enum_v<T>)
-        {
-            const auto id = static_cast<std::underlying_type_t<T>>(value);
-            add_kind(EnumTraits<T>::name(), id, EnumTraits<T>::label(value));
-            return id;
-        }
-        else if constexpr (std::same_as<T, std::filesystem::path>)
-            return boost::json::value(value.generic_string());
-        else if constexpr (requires { std::string_view(value); })
-            return boost::json::value(std::string_view(value));
-        else if constexpr (requires { value.has_value(); *value; })
-            return value.has_value() ? encode(*value) : boost::json::value(nullptr);
-        else if constexpr (std::ranges::input_range<const T>)
-        {
-            boost::json::array array;
-            for (const auto& item : value)
-                array.push_back(encode(item));
-            return array;
-        }
-        else if constexpr (requires { std::tuple_size<T>::value; })
-        {
-            boost::json::array array;
-            std::apply([&](const auto&... item) { (array.push_back(encode(item)), ...); }, value);
-            return array;
-        }
-        else
-            static_assert(sizeof(T) == 0, "Missing serializer for field type");
+        return body();
     }
 
 public:
-    template<DictionaryValue T>
+    template<typename T, typename Fields>
+    void object(boost::json::value& result, const T& value, Fields&& fields)
+    {
+        result = collect(value, [&]
+        {
+            Archive archive(*this, TypeName<T>::get());
+            fields(archive);
+            return std::move(archive.fields);
+        });
+    }
+
+    void add_kind(std::string_view type, size_t id, std::string name);
+
+    template<ygg::Hashable T>
     void register_table(std::string name, std::string prefix)
     {
         check_valid();
@@ -205,16 +136,16 @@ public:
         m_types.emplace(typeid(T), position);
     }
 
-    template<Serializable T>
+    template<typename T>
     boost::json::value serialize(const T& value)
     {
         check_valid();
         m_started = true;
-        try { return encode(value); }
+        try { return boost::json::value_from(value, this); }
         catch (...) { m_failed = true; throw; }
     }
 
-    template<DictionaryValue T>
+    template<typename T>
     boost::json::array table() const
     {
         check_valid();

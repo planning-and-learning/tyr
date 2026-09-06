@@ -3,24 +3,23 @@
 
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/term_view.hpp"
+#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/object_view.hpp"
 #include "tyr/serialization/formalism/parameter_index.hpp"
-#include "tyr/serialization/serializer.hpp"
 
 namespace tyr::serialization
 {
 
 template<>
-struct Serializer<formalism::planning::TermView>
+struct TypeName<formalism::planning::TermView>
 {
-    static std::string name() { return "Term"; }
-
-    template<class Archive>
-    static void save(Archive& ar, const formalism::planning::TermView& value)
-    {
-        ar.variant(value.get_variant());
-    }
+    static std::string get() { return "Term"; }
 };
+
+inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const formalism::planning::TermView& value, Dictionaries* dictionaries)
+{
+    dictionaries->object(result, value, [&](auto& ar) { ar.variant(value.get_variant()); });
+}
 
 }
 

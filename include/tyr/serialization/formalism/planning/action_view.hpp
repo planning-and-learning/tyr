@@ -3,22 +3,28 @@
 
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/binding_view.hpp"
 #include "tyr/serialization/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/serialization/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/serialization/formalism/variable_view.hpp"
-#include "tyr/serialization/serializer.hpp"
 
 namespace tyr::serialization
 {
 
 template<TaskKind T>
-struct Serializer<formalism::planning::ActionView<T>>
+struct TypeName<formalism::planning::ActionView<T>>
 {
-    static std::string name() { return std::string(std::same_as<T, GroundTag> ? T::name : "") + "Action"; }
+    static std::string get() { return std::string(std::same_as<T, GroundTag> ? T::name : "") + "Action"; }
+};
 
-    template<class Archive>
-    static void save(Archive& ar, const formalism::planning::ActionView<T>& value)
+template<TaskKind T>
+void tag_invoke(boost::json::value_from_tag,
+                boost::json::value& result,
+                const formalism::planning::ActionView<T>& value,
+                Dictionaries* dictionaries)
+{
+    dictionaries->object(result, value, [&](auto& ar)
     {
         if constexpr (std::same_as<T, LiftedTag>)
         {
@@ -33,8 +39,8 @@ struct Serializer<formalism::planning::ActionView<T>>
         }
         ar.field("condition", value.get_condition());
         ar.field("effects", value.get_effects());
-    }
-};
+    });
+}
 
 }
 

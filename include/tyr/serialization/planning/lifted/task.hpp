@@ -2,8 +2,8 @@
 #define TYR_SERIALIZATION_PLANNING_LIFTED_TASK_HPP_
 
 #include "tyr/planning/lifted/task.hpp"
+#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/planning/planning_task.hpp"
-#include "tyr/serialization/serializer.hpp"
 
 #include <string>
 
@@ -11,16 +11,15 @@ namespace tyr::serialization
 {
 
 template<>
-struct Serializer<planning::Task<LiftedTag>>
+struct TypeName<planning::Task<LiftedTag>>
 {
-    static std::string name() { return "LiftedTask"; }
-
-    template<class Archive>
-    static void save(Archive& archive, const planning::Task<LiftedTag>& task)
-    {
-        archive.field("formalism_task", task.get_formalism_task());
-    }
+    static std::string get() { return "LiftedTask"; }
 };
+
+inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const planning::Task<LiftedTag>& value, Dictionaries* dictionaries)
+{
+    dictionaries->object(result, value, [&](auto& ar) { ar.field("formalism_task", value.get_formalism_task()); });
+}
 
 }
 

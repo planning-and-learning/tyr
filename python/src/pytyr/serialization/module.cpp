@@ -1,8 +1,10 @@
 #include "module.hpp"
 
 #include <nanobind/stl/string.h>
+#include <type_traits>
 #include <tyr/serialization/serialization.hpp>
 #include <tyr/serialization/types.hpp>
+#include <yggdrasil/core/concepts.hpp>
 
 namespace nb = nanobind;
 using namespace nb::literals;
@@ -44,7 +46,6 @@ nb::object to_python(const boost::json::value& value)
 }
 
 using RuntimeStates = ygg::TypeList<planning::StateView<GroundTag>, planning::StateView<LiftedTag>>;
-using RegisteredTypes = ygg::ConcatTypeListsT<FormalismViews, RuntimeStates>;
 using RuntimeOwners = ygg::TypeList<planning::Task<GroundTag>,
                                    planning::Task<LiftedTag>,
                                    planning::Node<GroundTag>,
@@ -53,7 +54,12 @@ using RuntimeOwners = ygg::TypeList<planning::Task<GroundTag>,
                                    planning::LabeledNode<LiftedTag>,
                                    planning::Plan<GroundTag>,
                                    planning::Plan<LiftedTag>>;
-using SerializedTypes = ygg::ConcatTypeListsT<RegisteredTypes, FormalismOwners, RuntimeOwners>;
+using SerializedTypes = ygg::ConcatTypeListsT<FormalismViews, RuntimeStates, FormalismOwners, RuntimeOwners>;
+
+template<typename T>
+using HashableTypeList = std::conditional_t<ygg::Hashable<T>, ygg::TypeList<T>, ygg::TypeList<>>;
+
+using RegisteredTypes = ygg::ApplyTypeListT<ygg::ConcatTypeListsT, ygg::MapTypeListT<HashableTypeList, SerializedTypes>>;
 
 template<typename... Ts>
 void register_table(Dictionaries& self, nb::type_object native_type, const std::string& name, const std::string& prefix, ygg::TypeList<Ts...>)

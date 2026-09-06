@@ -3,26 +3,31 @@
 
 #include "tyr/formalism/planning/planning_fdr_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/planning/fdr_task_view.hpp"
 #include "tyr/serialization/formalism/planning/planning_domain.hpp"
-#include "tyr/serialization/serializer.hpp"
 
 namespace tyr::serialization
 {
 
 template<>
-struct Serializer<formalism::planning::PlanningFDRTask>
+struct TypeName<formalism::planning::PlanningFDRTask>
 {
-    static std::string name() { return "PlanningFDRTask"; }
+    static std::string get() { return "PlanningFDRTask"; }
+};
 
-    template<class Archive>
-    static void save(Archive& ar, const formalism::planning::PlanningFDRTask& value)
+inline void tag_invoke(boost::json::value_from_tag,
+                       boost::json::value& result,
+                       const formalism::planning::PlanningFDRTask& value,
+                       Dictionaries* dictionaries)
+{
+    dictionaries->object(result, value, [&](auto& ar)
     {
         ar.field("task", value.get_task());
         ar.field("domain", value.get_domain());
         ar.field("path", value.get_path());
-    }
-};
+    });
+}
 
 }
 

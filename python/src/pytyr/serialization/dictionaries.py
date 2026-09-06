@@ -1,6 +1,6 @@
 from typing import TypeAlias, TypedDict
 from .formalism import planning as schema
-from .planning import State
+from .planning import Node, State
 
 
 Row: TypeAlias = (
@@ -23,7 +23,7 @@ Row: TypeAlias = (
     schema.ConditionalEffect | schema.ConjunctiveCondition | schema.ConjunctiveEffect | schema.GroundAction |
     schema.GroundAxiom | schema.GroundConditionalEffect | schema.GroundConjunctiveCondition | schema.GroundConjunctiveEffect |
     schema.Metric | schema.Domain | schema.LiftedTask | schema.GroundTask |
-    State
+    State | Node
 )
 
 

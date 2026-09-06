@@ -4,36 +4,62 @@
 #include "tyr/formalism/enums.hpp"
 #include "tyr/serialization/dictionaries.hpp"
 
+#include <type_traits>
+
 namespace tyr::serialization
 {
 
 template<>
-struct EnumTraits<formalism::BooleanOperatorKind>
+struct TypeName<formalism::BooleanOperatorKind>
 {
-    static std::string name() { return "BooleanOperatorKind"; }
-    static std::string label(formalism::BooleanOperatorKind value) { return std::string(formalism::to_string(value)); }
+    static std::string get() { return "BooleanOperatorKind"; }
 };
 
-template<>
-struct EnumTraits<formalism::ArithmeticOperatorKind>
+inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const formalism::BooleanOperatorKind& value, Dictionaries* dictionaries)
 {
-    static std::string name() { return "ArithmeticOperatorKind"; }
-    static std::string label(formalism::ArithmeticOperatorKind value) { return std::string(formalism::to_string(value)); }
-};
+    const auto id = static_cast<std::underlying_type_t<formalism::BooleanOperatorKind>>(value);
+    dictionaries->add_kind(TypeName<formalism::BooleanOperatorKind>::get(), id, std::string(formalism::to_string(value)));
+    result = id;
+}
 
 template<>
-struct EnumTraits<formalism::NumericEffectOperatorKind>
+struct TypeName<formalism::ArithmeticOperatorKind>
 {
-    static std::string name() { return "NumericEffectOperatorKind"; }
-    static std::string label(formalism::NumericEffectOperatorKind value) { return std::string(formalism::to_string(value)); }
+    static std::string get() { return "ArithmeticOperatorKind"; }
 };
 
-template<>
-struct EnumTraits<formalism::OptimizationDirection>
+inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const formalism::ArithmeticOperatorKind& value, Dictionaries* dictionaries)
 {
-    static std::string name() { return "OptimizationDirection"; }
-    static std::string label(formalism::OptimizationDirection value) { return std::string(formalism::to_string(value)); }
+    const auto id = static_cast<std::underlying_type_t<formalism::ArithmeticOperatorKind>>(value);
+    dictionaries->add_kind(TypeName<formalism::ArithmeticOperatorKind>::get(), id, std::string(formalism::to_string(value)));
+    result = id;
+}
+
+template<>
+struct TypeName<formalism::NumericEffectOperatorKind>
+{
+    static std::string get() { return "NumericEffectOperatorKind"; }
 };
+
+inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const formalism::NumericEffectOperatorKind& value, Dictionaries* dictionaries)
+{
+    const auto id = static_cast<std::underlying_type_t<formalism::NumericEffectOperatorKind>>(value);
+    dictionaries->add_kind(TypeName<formalism::NumericEffectOperatorKind>::get(), id, std::string(formalism::to_string(value)));
+    result = id;
+}
+
+template<>
+struct TypeName<formalism::OptimizationDirection>
+{
+    static std::string get() { return "OptimizationDirection"; }
+};
+
+inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const formalism::OptimizationDirection& value, Dictionaries* dictionaries)
+{
+    const auto id = static_cast<std::underlying_type_t<formalism::OptimizationDirection>>(value);
+    dictionaries->add_kind(TypeName<formalism::OptimizationDirection>::get(), id, std::string(formalism::to_string(value)));
+    result = id;
+}
 
 }
 

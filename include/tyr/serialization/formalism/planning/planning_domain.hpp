@@ -3,24 +3,29 @@
 
 #include "tyr/formalism/planning/planning_domain.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/planning/domain_view.hpp"
-#include "tyr/serialization/serializer.hpp"
 
 namespace tyr::serialization
 {
 
 template<>
-struct Serializer<formalism::planning::PlanningDomain>
+struct TypeName<formalism::planning::PlanningDomain>
 {
-    static std::string name() { return "PlanningDomain"; }
+    static std::string get() { return "PlanningDomain"; }
+};
 
-    template<class Archive>
-    static void save(Archive& ar, const formalism::planning::PlanningDomain& value)
+inline void tag_invoke(boost::json::value_from_tag,
+                       boost::json::value& result,
+                       const formalism::planning::PlanningDomain& value,
+                       Dictionaries* dictionaries)
+{
+    dictionaries->object(result, value, [&](auto& ar)
     {
         ar.field("domain", value.get_domain());
         ar.field("path", value.get_path());
-    }
-};
+    });
+}
 
 }
 

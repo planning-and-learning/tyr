@@ -3,25 +3,30 @@
 
 #include "tyr/formalism/planning/metric_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/serialization/dictionaries.hpp"
 #include "tyr/serialization/formalism/enums.hpp"
 #include "tyr/serialization/formalism/planning/function_expression_view.hpp"
-#include "tyr/serialization/serializer.hpp"
 
 namespace tyr::serialization
 {
 
 template<>
-struct Serializer<formalism::planning::MetricView>
+struct TypeName<formalism::planning::MetricView>
 {
-    static std::string name() { return "Metric"; }
+    static std::string get() { return "Metric"; }
+};
 
-    template<class Archive>
-    static void save(Archive& ar, const formalism::planning::MetricView& value)
+inline void tag_invoke(boost::json::value_from_tag,
+                       boost::json::value& result,
+                       const formalism::planning::MetricView& value,
+                       Dictionaries* dictionaries)
+{
+    dictionaries->object(result, value, [&](auto& ar)
     {
         ar.field("optimization_direction", value.get_optimization_direction());
         ar.field("fexpr", value.get_fexpr());
-    }
-};
+    });
+}
 
 }
 

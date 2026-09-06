@@ -15,4 +15,4 @@ class Node(TypedDict):
 
 class LabeledNode(TypedDict):
     label: ActionBinding | str
-    node: Node
+    node: Node | str
