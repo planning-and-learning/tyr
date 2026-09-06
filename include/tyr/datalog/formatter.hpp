@@ -108,7 +108,7 @@ struct formatter<tyr::datalog::details::RuleToLiteralInfoMappings, char>
             fmt::print(os, "{}{}\n", "literal infos with constant pairs = ", value.infos_with_constant_pairs);
         }
         os << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -129,7 +129,7 @@ struct formatter<tyr::datalog::details::RuleToLiteralPositionMappings, char>
             fmt::print(os, "{}{}\n", "parameter to positions = ", value.parameter_to_positions);
         }
         os << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -152,7 +152,7 @@ struct formatter<tyr::datalog::details::RuleToLiteralInfo<T>, char>
             fmt::print(os, "{}{}\n", "position mappings = ", value.position_mappings);
         }
         os << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -173,7 +173,7 @@ struct formatter<tyr::datalog::details::TaggedRuleToLiteralInfos<T>, char>
             fmt::print(os, "{}{}\n", "info mappings = ", value.info_mappings);
         }
         os << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 

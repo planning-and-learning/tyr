@@ -67,7 +67,7 @@ struct formatter<tyr::kckp::VertexPartitions, char>
             os << "]\n";
         }
         os << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -96,7 +96,7 @@ struct formatter<tyr::kckp::DeduplicatedAdjacencyMatrix, char>
             os << "]\n";
         }
         os << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -145,7 +145,7 @@ struct formatter<tyr::kckp::PartitionedAdjacencyMatrix, char>
             os << "]\n";
         }
         os << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 

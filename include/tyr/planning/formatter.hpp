@@ -301,7 +301,7 @@ struct formatter<tyr::planning::StateView<Kind>, char>
         }
 
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -322,7 +322,7 @@ struct formatter<tyr::planning::Node<Kind>, char>
             fmt::print(os, "{}{}\n", "state = ", value.get_state());
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -343,7 +343,7 @@ struct formatter<tyr::planning::LabeledNode<Kind>, char>
             fmt::print(os, "{}{}\n", "node = ", value.node);
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 

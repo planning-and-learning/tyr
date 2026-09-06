@@ -45,7 +45,7 @@ struct formatter<tyr::formalism::planning::MutableAtom<T>, char>
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::MutableAtom<T>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {})", value.predicate.get_name(), fmt::join(ygg::to_strings(value.terms), " "));
+        return fmt::format_to(ctx.out(), "({} {})", value.predicate.get_name(), fmt::join(value.terms, " "));
     }
 };
 
@@ -87,7 +87,7 @@ struct formatter<tyr::formalism::planning::MutableConjunctiveCondition, char>
             fmt::print(os, "{}{}\n", "fluent literals = ", value.fluent_literals);
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -111,7 +111,7 @@ struct formatter<tyr::formalism::planning::MutableConjunctiveEffect, char>
             fmt::print(os, "{}{}\n", "literals = ", value.literals);
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -137,7 +137,7 @@ struct formatter<tyr::formalism::planning::MutableConditionalEffect, char>
             fmt::print(os, "{}{}\n", "effect = ", value.effect);
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -161,7 +161,7 @@ struct formatter<tyr::formalism::planning::MutableAction, char>
             fmt::print(os, "{}{}\n", "effects = ", value.effects);
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 

@@ -59,7 +59,7 @@ struct formatter<tyr::formalism::unification::SubstitutionFunction<T>, char>
         }
         os << ygg::print_indent << ")";
 
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 

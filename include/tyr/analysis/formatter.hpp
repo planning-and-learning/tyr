@@ -68,7 +68,7 @@ struct formatter<tyr::analysis::Scoped<Element, Payload>, char>
             fmt::print(os, "{}{}\n", "payload = ", value.payload);
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -89,7 +89,7 @@ struct formatter<tyr::analysis::Scoped<tyr::formalism::planning::Axiom<::tyr::Li
             fmt::print(os, "{}{}\n", "payload = ", value.payload);
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -110,7 +110,7 @@ struct formatter<tyr::analysis::Scoped<tyr::formalism::datalog::Rule<::tyr::Lift
             fmt::print(os, "{}{}\n", "payload = ", value.payload);
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -133,7 +133,7 @@ struct formatter<tyr::analysis::ConditionalEffectDomain, char>
             fmt::print(os, "{}{}\n", "effect domain = ", value.payload.effect_domain);
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -156,7 +156,7 @@ struct formatter<tyr::analysis::ActionDomain, char>
             fmt::print(os, "{}{}\n", "effect domains = ", value.payload.effect_domains);
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -177,7 +177,7 @@ struct formatter<tyr::analysis::ConditionalEffectDomainData, char>
             fmt::print(os, "{}{}\n", "effect domain = ", value.effect_domain);
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -198,7 +198,7 @@ struct formatter<tyr::analysis::ActionDomainData, char>
             fmt::print(os, "{}{}\n", "effect domains = ", value.effect_domains);
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -234,7 +234,7 @@ struct formatter<tyr::analysis::ProgramVariableDomains, char>
             format_rules.template operator()<tyr::formalism::FunctionTag>();
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -273,7 +273,7 @@ struct formatter<tyr::analysis::TaskVariableDomains, char>
             }
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -297,7 +297,7 @@ struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Conditional
             fmt::print(os, "{}\n", value.payload.effect_domain);
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -324,7 +324,7 @@ struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Action<::ty
             }
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -345,7 +345,7 @@ struct formatter<tyr::analysis::ScopedView<Element, Payload, C>, char>
             fmt::print(os, "{}{}\n", "payload = ", value.payload);
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -366,7 +366,7 @@ struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Conjunctive
             fmt::print(os, "{}{}\n", "payload = ", value.payload);
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -387,7 +387,7 @@ struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Conjunctive
             fmt::print(os, "{}{}\n", "payload = ", value.payload);
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -408,7 +408,7 @@ struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Axiom<::tyr
             fmt::print(os, "{}{}\n", "payload = ", value.payload);
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -429,7 +429,7 @@ struct formatter<tyr::analysis::ScopedView<tyr::formalism::datalog::Rule<::tyr::
             fmt::print(os, "{}{}\n", "payload = ", value.payload);
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -476,7 +476,7 @@ struct formatter<tyr::analysis::ProgramVariableDomainsView, char>
             format_rules.template operator()<tyr::formalism::FunctionTag>();
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
@@ -515,7 +515,7 @@ struct formatter<tyr::analysis::TaskVariableDomainsView, char>
             }
         }
         os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 

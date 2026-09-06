@@ -59,7 +59,7 @@ struct formatter<tyr::formalism::planning::invariant::Invariant, char>
 
         os << ")";
 
-        return fmt::format_to(ctx.out(), "{}", os.str());
+        return fmt::format_to(ctx.out(), "{}", os.view());
     }
 };
 
