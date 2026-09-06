@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import TypedDict
 
-from pytyr.serialization.formalism.planning import domain_view
+from pytyr.serialization.formalism.planning import domain
 
 
 
 
 class PlanningDomain(TypedDict):
-    domain: domain_view.Domain | str
+    domain: domain.Domain | str
     path: str | None

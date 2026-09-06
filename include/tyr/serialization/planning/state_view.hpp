@@ -4,7 +4,6 @@
 #include "tyr/planning/ground/state_view.hpp"
 #include "tyr/planning/lifted/state_view.hpp"
 #include "tyr/serialization/formalism/planning/atom_view.hpp"
-#include "tyr/serialization/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/serialization/formalism/planning/function_term_view.hpp"
 #include "yggdrasil/serialization/dictionaries.hpp"
 
@@ -26,7 +25,7 @@ void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const :
                          value,
                          [&](auto& ar)
                          {
-                             ar.field("fluent_facts", value.get_fluent_facts_view());
+                             ar.field("fluent_atoms", value.get_fluent_atoms_view());
                              ar.field("derived_atoms", value.get_derived_atoms_view());
                              ar.field("fluent_fterm_values", value.get_fluent_fterm_values_view());
                          });

@@ -79,6 +79,7 @@ public:
 
     auto get_static_atoms_view() const noexcept;
     auto get_fluent_facts_view() const noexcept;
+    auto get_fluent_atoms_view() const noexcept;
     auto get_derived_atoms_view() const noexcept;
     auto get_static_fterm_values_view() const noexcept;
     auto get_fluent_fterm_values_view() const noexcept;
@@ -105,6 +106,12 @@ template<::tyr::TaskKind Kind>
 auto View<ygg::Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::get_fluent_facts_view() const noexcept
 {
     return get_fluent_facts() | std::views::transform([context = this->get_repository()](auto id) { return ygg::make_view(id, *context); });
+}
+
+template<::tyr::TaskKind Kind>
+auto View<ygg::Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::get_fluent_atoms_view() const noexcept
+{
+    return get_fluent_facts_view() | std::views::transform([](auto fact) { return *fact.get_atom(); });
 }
 
 template<::tyr::TaskKind Kind>
@@ -179,6 +186,7 @@ template<typename T>
 concept IterableViewStateConcept = requires(const T& cs) {
     requires AtomViewRangeConcept<decltype(cs.get_static_atoms_view()), formalism::StaticTag>;
     requires FactViewRangeConcept<decltype(cs.get_fluent_facts_view()), formalism::FluentTag>;
+    requires AtomViewRangeConcept<decltype(cs.get_fluent_atoms_view()), formalism::FluentTag>;
     requires AtomViewRangeConcept<decltype(cs.get_derived_atoms_view()), formalism::DerivedTag>;
     requires FunctionTermViewValueRangeConcept<decltype(cs.get_static_fterm_values_view()), formalism::StaticTag>;
     requires FunctionTermViewValueRangeConcept<decltype(cs.get_fluent_fterm_values_view()), formalism::FluentTag>;

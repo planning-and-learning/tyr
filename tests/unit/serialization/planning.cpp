@@ -229,7 +229,7 @@ void check_runtime_serialization()
     {
         const auto& row = state.as_object();
         EXPECT_EQ(row.size(), 3);
-        EXPECT_TRUE(row.at("fluent_facts").is_array());
+        EXPECT_TRUE(row.at("fluent_atoms").is_array());
         EXPECT_TRUE(row.at("derived_atoms").is_array());
         EXPECT_TRUE(row.at("fluent_fterm_values").is_array());
         EXPECT_FALSE(row.contains("static_atoms"));

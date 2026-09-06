@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from typing import TypedDict
-from .state_view import State
-from ..formalism.binding_view import ActionBinding
+from .state import State
+from ..formalism.binding import ActionBinding
 
 
 

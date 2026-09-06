@@ -137,6 +137,14 @@ void bind_state(nb::module_& m, const std::string& name)
                 { return make_owning_iterator<fp::FDRFactView<formalism::FluentTag>>(nb::type<T>(), "fluent facts iterator", s.get_fluent_facts_view()); },
                 nb::keep_alive<0, 1>())
             .def(
+                "fluent_atoms",
+                [](const T& s) {
+                    return make_owning_iterator<fp::AtomView<GroundTag, formalism::FluentTag>>(nb::type<T>(),
+                                                                                              "fluent atom iterator",
+                                                                                              s.get_fluent_atoms_view());
+                },
+                nb::keep_alive<0, 1>())
+            .def(
                 "derived_atoms",
                 [](const T& s) {
                     return make_owning_iterator<fp::AtomView<GroundTag, formalism::DerivedTag>>(nb::type<T>(),

@@ -9,9 +9,9 @@ from pyyggdrasil.execution import ExecutionContext
 from pytyr.formalism import planning as fp
 from pytyr.planning import SearchStatus, ground, lifted
 from pytyr.serialization import Dictionaries
-from pytyr.serialization.formalism.binding_view import ActionBinding
-from pytyr.serialization.formalism.planning.function_expression_view import FunctionExpression
-from pytyr.serialization.planning.state_view import State
+from pytyr.serialization.formalism.binding import ActionBinding
+from pytyr.serialization.formalism.planning.function_expression import FunctionExpression
+from pytyr.serialization.planning.state import State
 
 
 DOMAIN = """(define (domain serialize)
@@ -65,7 +65,7 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     dictionaries.register_table(node_type, "nodes", "v")
     dictionaries.register_table(fp.ActionBinding, "actions", "a")
     dictionaries.register_table(fp.FluentGroundFunctionTerm, "functions", "n")
-    dictionaries.register_table(fp.FluentFDRFact, "facts", "f")
+    dictionaries.register_table(fp.FluentGroundAtom, "atoms", "p")
     dictionaries.register_table(fp.DerivedGroundAtom, "derived", "d")
     references = sys.getrefcount(plan)
     data = dictionaries.serialize(plan)
@@ -74,6 +74,8 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     assert dictionaries.table(state_type) == []
     assert dictionaries.serialize(plan.get_start_node()) == "v0"
     step, = plan.get_labeled_succ_nodes()
+    assert [atom.get_predicate().get_name() for atom in plan.get_start_node().get_state().fluent_atoms()] == ["start"]
+    assert [atom.get_predicate().get_name() for atom in step.node.get_state().fluent_atoms()] == ["done"]
     assert dictionaries.serialize(step) == str(step)
     assert dictionaries.serialize(step.node) == "v1"
     assert dictionaries.serialize(step.label) == "a0"
@@ -81,6 +83,8 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     assert dictionaries.serialize(plan) == data
     states = dictionaries.table(state_type)
     assert len(states) == 2
+    assert states[0]["fluent_atoms"] == ["p0"]
+    assert states[1]["fluent_atoms"] == ["p1"]
     assert states[0]["fluent_fterm_values"] == [["n0", 3.0]]
     assert states[1]["fluent_fterm_values"] == [["n0", 2.0]]
     assert states[0]["derived_atoms"] == ["d0"]

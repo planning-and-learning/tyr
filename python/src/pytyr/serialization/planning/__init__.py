@@ -2,4 +2,4 @@
 
 from .node import LabeledNode as LabeledNode, Node as Node
 from .plan import Plan as Plan
-from .state_view import State as State
+from .state import State as State

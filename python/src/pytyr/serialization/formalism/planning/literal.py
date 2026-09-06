@@ -2,34 +2,34 @@ from __future__ import annotations
 
 from typing import TypedDict
 
-from pytyr.serialization.formalism.planning import atom_view
+from pytyr.serialization.formalism.planning import atom
 
 
 class StaticLiteral(TypedDict):
-    atom: atom_view.StaticAtom | str
+    atom: atom.StaticAtom | str
     polarity: bool
 
 
 class FluentLiteral(TypedDict):
-    atom: atom_view.FluentAtom | str
+    atom: atom.FluentAtom | str
     polarity: bool
 
 
 class DerivedLiteral(TypedDict):
-    atom: atom_view.DerivedAtom | str
+    atom: atom.DerivedAtom | str
     polarity: bool
 
 
 class StaticGroundLiteral(TypedDict):
-    atom: atom_view.StaticGroundAtom | str
+    atom: atom.StaticGroundAtom | str
     polarity: bool
 
 
 class FluentGroundLiteral(TypedDict):
-    atom: atom_view.FluentGroundAtom | str
+    atom: atom.FluentGroundAtom | str
     polarity: bool
 
 
 class DerivedGroundLiteral(TypedDict):
-    atom: atom_view.DerivedGroundAtom | str
+    atom: atom.DerivedGroundAtom | str
     polarity: bool
