@@ -28,8 +28,8 @@ void tag_invoke(boost::json::value_from_tag,
                          [&](auto& ar)
                          {
                              ar.field("operator", value.get_operator());
-                             ar.field("fterm", value.get_fterm());
-                             ar.field("fexpr", value.get_fexpr());
+                             ar.field("function_term", value.get_fterm());
+                             ar.field("function_expression", value.get_fexpr());
                          });
 }
 

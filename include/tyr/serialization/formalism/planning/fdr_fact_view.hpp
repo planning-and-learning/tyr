@@ -22,7 +22,7 @@ void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const :
                          value,
                          [&](auto& ar)
                          {
-                             ar.field("variable", value.get_variable());
+                             ar.field("fdr_variable", value.get_variable());
                              ar.field("value", ygg::uint_t(value.get_value()));
                          });
 }

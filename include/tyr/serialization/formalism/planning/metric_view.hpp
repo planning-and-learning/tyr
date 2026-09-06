@@ -23,7 +23,7 @@ inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, 
                          [&](auto& ar)
                          {
                              ar.field("optimization_direction", value.get_optimization_direction());
-                             ar.field("fexpr", value.get_fexpr());
+                             ar.field("function_expression", value.get_fexpr());
                          });
 }
 

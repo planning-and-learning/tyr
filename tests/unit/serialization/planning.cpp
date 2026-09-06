@@ -137,7 +137,7 @@ TEST(TyrSerialization, FdrNoneRetainsItsVariableAndZeroValue)
     dictionaries.register_table<fp::FDRVariableView<f::FluentTag>>("variables", "v");
     EXPECT_EQ(dictionaries.serialize(fact).as_string(), "f0");
     const auto row = dictionaries.table<fp::FDRFactView<f::FluentTag>>()[0].as_object();
-    EXPECT_EQ(row.at("variable").as_string(), "v0");
+    EXPECT_EQ(row.at("fdr_variable").as_string(), "v0");
     EXPECT_EQ(row.at("value").as_uint64(), 0);
     EXPECT_EQ(dictionaries.table<fp::FDRVariableView<f::FluentTag>>().size(), 1);
 }
@@ -229,11 +229,11 @@ void check_runtime_serialization()
     {
         const auto& row = state.as_object();
         EXPECT_EQ(row.size(), 3);
-        EXPECT_TRUE(row.at("fluent_atoms").is_array());
-        EXPECT_TRUE(row.at("derived_atoms").is_array());
-        EXPECT_TRUE(row.at("fluent_fterm_values").is_array());
-        EXPECT_FALSE(row.contains("static_atoms"));
-        const auto& numeric = row.at("fluent_fterm_values").as_array();
+        EXPECT_TRUE(row.at("fluent_ground_atoms").is_array());
+        EXPECT_TRUE(row.at("derived_ground_atoms").is_array());
+        EXPECT_TRUE(row.at("fluent_ground_function_term_values").is_array());
+        EXPECT_FALSE(row.contains("static_ground_atoms"));
+        const auto& numeric = row.at("fluent_ground_function_term_values").as_array();
         ASSERT_EQ(numeric.size(), 1);
         EXPECT_EQ(numeric[0].as_array().size(), 2);
     }

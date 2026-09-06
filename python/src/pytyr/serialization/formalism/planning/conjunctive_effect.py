@@ -14,7 +14,7 @@ class ConjunctiveEffect(TypedDict):
 
 
 class GroundConjunctiveEffect(TypedDict):
-    add_facts: list[fdr_fact.FluentFDRFact | str]
-    del_facts: list[fdr_fact.FluentFDRFact | str]
+    add_fdr_facts: list[fdr_fact.FluentFDRFact | str]
+    delete_fdr_facts: list[fdr_fact.FluentFDRFact | str]
     numeric_effects: list[numeric_effect_operator.FluentGroundNumericEffectOperator | str]
     auxiliary_numeric_effect: numeric_effect_operator.AuxiliaryGroundNumericEffectOperator | str | None

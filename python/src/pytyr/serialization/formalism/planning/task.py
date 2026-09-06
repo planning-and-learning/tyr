@@ -19,11 +19,11 @@ class LiftedTask(TypedDict):
     domain: domain.Domain | str
     derived_predicates: list[predicate.DerivedPredicate | str]
     objects: list[object.Object | str]
-    static_atoms: list[atom.StaticGroundAtom | str]
-    fluent_atoms: list[atom.FluentGroundAtom | str]
-    static_fterm_values: list[function_term_value.StaticGroundFunctionTermValue | str]
-    fluent_fterm_values: list[function_term_value.FluentGroundFunctionTermValue | str]
-    auxiliary_fterm_value: function_term_value.AuxiliaryGroundFunctionTermValue | str | None
+    static_ground_atoms: list[atom.StaticGroundAtom | str]
+    fluent_ground_atoms: list[atom.FluentGroundAtom | str]
+    static_ground_function_term_values: list[function_term_value.StaticGroundFunctionTermValue | str]
+    fluent_ground_function_term_values: list[function_term_value.FluentGroundFunctionTermValue | str]
+    auxiliary_ground_function_term_value: function_term_value.AuxiliaryGroundFunctionTermValue | str | None
     goal: conjunctive_condition.GroundConjunctiveCondition | str
     metric: metric.Metric | str | None
     axioms: list[axiom.Axiom | str]

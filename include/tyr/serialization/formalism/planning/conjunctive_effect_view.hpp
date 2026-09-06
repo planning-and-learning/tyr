@@ -33,8 +33,8 @@ void tag_invoke(boost::json::value_from_tag,
                              }
                              else
                              {
-                                 ar.field("add_facts", value.template get_facts<::tyr::formalism::PositiveTag>());
-                                 ar.field("del_facts", value.template get_facts<::tyr::formalism::NegativeTag>());
+                                 ar.field("add_fdr_facts", value.template get_facts<::tyr::formalism::PositiveTag>());
+                                 ar.field("delete_fdr_facts", value.template get_facts<::tyr::formalism::NegativeTag>());
                              }
                              ar.field("numeric_effects", value.get_numeric_effects());
                              ar.field("auxiliary_numeric_effect", value.get_auxiliary_numeric_effect());

@@ -9,4 +9,4 @@ from pytyr.serialization.formalism.planning import function_expression
 
 class Metric(TypedDict):
     optimization_direction: str
-    fexpr: function_expression.GroundFunctionExpression | str
+    function_expression: function_expression.GroundFunctionExpression | str

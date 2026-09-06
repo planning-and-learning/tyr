@@ -8,5 +8,5 @@ from pytyr.serialization.formalism.planning import fdr_variable
 
 
 class FluentFDRFact(TypedDict):
-    variable: fdr_variable.FluentFDRVariable | str
+    fdr_variable: fdr_variable.FluentFDRVariable | str
     value: int

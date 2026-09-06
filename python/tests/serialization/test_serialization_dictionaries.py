@@ -83,12 +83,12 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     assert dictionaries.serialize(plan) == data
     states = dictionaries.table(state_type)
     assert len(states) == 2
-    assert states[0]["fluent_atoms"] == ["p0"]
-    assert states[1]["fluent_atoms"] == ["p1"]
-    assert states[0]["fluent_fterm_values"] == [["n0", 3.0]]
-    assert states[1]["fluent_fterm_values"] == [["n0", 2.0]]
-    assert states[0]["derived_atoms"] == ["d0"]
-    assert states[1]["derived_atoms"] == []
+    assert states[0]["fluent_ground_atoms"] == ["p0"]
+    assert states[1]["fluent_ground_atoms"] == ["p1"]
+    assert states[0]["fluent_ground_function_term_values"] == [["n0", 3.0]]
+    assert states[1]["fluent_ground_function_term_values"] == [["n0", 2.0]]
+    assert states[0]["derived_ground_atoms"] == ["d0"]
+    assert states[1]["derived_ground_atoms"] == []
     tables = dictionaries.tables()
     assert tables["visited"] == {"prefix": "s", "rows": states}
     encoded_tables = json.dumps(tables)

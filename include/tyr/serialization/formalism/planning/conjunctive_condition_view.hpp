@@ -32,16 +32,18 @@ void tag_invoke(boost::json::value_from_tag,
                              {
                                  ar.field("variables", value.get_variables());
                              }
-                             ar.field("static_literals", value.template get_literals<::tyr::formalism::StaticTag>());
+                             ar.field(std::same_as<T, ::tyr::GroundTag> ? "static_ground_literals" : "static_literals",
+                                      value.template get_literals<::tyr::formalism::StaticTag>());
                              if constexpr (std::same_as<T, ::tyr::LiftedTag>)
                              {
                                  ar.field("fluent_literals", value.template get_literals<::tyr::formalism::FluentTag>());
                              }
-                             ar.field("derived_literals", value.template get_literals<::tyr::formalism::DerivedTag>());
+                             ar.field(std::same_as<T, ::tyr::GroundTag> ? "derived_ground_literals" : "derived_literals",
+                                      value.template get_literals<::tyr::formalism::DerivedTag>());
                              if constexpr (std::same_as<T, ::tyr::GroundTag>)
                              {
-                                 ar.field("positive_facts", value.template get_facts<::tyr::formalism::PositiveTag>());
-                                 ar.field("negative_facts", value.template get_facts<::tyr::formalism::NegativeTag>());
+                                 ar.field("positive_fdr_facts", value.template get_facts<::tyr::formalism::PositiveTag>());
+                                 ar.field("negative_fdr_facts", value.template get_facts<::tyr::formalism::NegativeTag>());
                              }
                              ar.field("numeric_constraints", value.get_numeric_constraints());
                          });

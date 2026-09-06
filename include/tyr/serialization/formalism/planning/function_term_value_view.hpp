@@ -25,7 +25,7 @@ void tag_invoke(boost::json::value_from_tag,
                          value,
                          [&](auto& ar)
                          {
-                             ar.field("fterm", value.get_fterm());
+                             ar.field("function_term", value.get_fterm());
                              ar.field("value", value.get_value());
                          });
 }

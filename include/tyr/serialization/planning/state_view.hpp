@@ -25,9 +25,9 @@ void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const :
                          value,
                          [&](auto& ar)
                          {
-                             ar.field("fluent_atoms", value.get_fluent_atoms_view());
-                             ar.field("derived_atoms", value.get_derived_atoms_view());
-                             ar.field("fluent_fterm_values", value.get_fluent_fterm_values_view());
+                             ar.field("fluent_ground_atoms", value.get_fluent_atoms_view());
+                             ar.field("derived_ground_atoms", value.get_derived_atoms_view());
+                             ar.field("fluent_ground_function_term_values", value.get_fluent_fterm_values_view());
                          });
 }
 
