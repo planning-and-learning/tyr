@@ -63,7 +63,7 @@ void bind_lifted_module_definitions(nb::module_& m)
         .def(nb::init<bool>(), "disable_invariant_synthesis"_a = true)
         .def_rw("disable_invariant_synthesis", &GroundTaskInstantiationOptions::disable_invariant_synthesis);
 
-    nb::class_<Task<LiftedTag>>(m, "Task")  //
+    auto task = nb::class_<Task<LiftedTag>>(m, "Task")  //
         .def(nb::new_([](formalism::planning::PlanningTask&& task) { return std::make_shared<Task<LiftedTag>>(std::move(task)); }),
              "formalism_task"_a,
              R"doc(
@@ -89,6 +89,7 @@ should not be used further.
         .def("get_task", &Task<LiftedTag>::get_task, nb::keep_alive<0, 1>())
         .def("get_fdr_context", nb::overload_cast<>(&Task<LiftedTag>::get_fdr_context, nb::const_), nb::rv_policy::reference_internal)
         .def("instantiate_ground_task", &Task<LiftedTag>::instantiate_ground_task, "execution_context"_a, "options"_a = GroundTaskInstantiationOptions());
+    ygg::add_print(task);
 
     using ApplicableProgram = ApplicableActionProgram<LiftedTag>;
     nb::class_<ApplicableProgram>(m, "ApplicableActionProgram")

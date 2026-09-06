@@ -48,18 +48,21 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
         generator = ground.SuccessorGeneratorFactory().create(task, execution)
         result = ground.brfs.find_solution(task, repository, evaluator, generator, ground.brfs.Options())
         state_type = ground.State
+        node_type = ground.Node
     else:
         repository = lifted.StateRepositoryFactory().create(task)
         evaluator = lifted.AxiomEvaluatorFactory().create(task, execution)
         generator = lifted.SuccessorGeneratorFactory().create(task, execution)
         result = lifted.brfs.find_solution(task, repository, evaluator, generator, lifted.brfs.Options())
         state_type = lifted.State
+        node_type = lifted.Node
     assert result.status == SearchStatus.SOLVED
     plan = result.plan
     assert plan is not None
 
     dictionaries = Dictionaries()
     dictionaries.register_table(state_type, "visited", "s")
+    dictionaries.register_table(node_type, "nodes", "v")
     dictionaries.register_table(fp.ActionBinding, "actions", "a")
     dictionaries.register_table(fp.FluentGroundFunctionTerm, "functions", "n")
     dictionaries.register_table(fp.FluentFDRFact, "facts", "f")
@@ -67,11 +70,14 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     references = sys.getrefcount(plan)
     data = dictionaries.serialize(plan)
     assert sys.getrefcount(plan) > references
-    assert data["length"] == 1
-    assert data["cost"] == plan.get_cost()
-    assert data["start_node"]["state"] == "s0"
-    assert data["labeled_succ_nodes"][0]["node"]["state"] == "s1"
-    assert data["labeled_succ_nodes"][0]["label"] == "a0"
+    assert data == str(plan)
+    assert dictionaries.table(state_type) == []
+    assert dictionaries.serialize(plan.get_start_node()) == "v0"
+    step, = plan.get_labeled_succ_nodes()
+    assert dictionaries.serialize(step) == str(step)
+    assert dictionaries.serialize(step.node) == "v1"
+    assert dictionaries.serialize(step.label) == "a0"
+    assert [row["state"] for row in dictionaries.table(node_type)] == ["s0", "s1"]
     assert dictionaries.serialize(plan) == data
     states = dictionaries.table(state_type)
     assert len(states) == 2
@@ -83,19 +89,9 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     assert tables["visited"] == {"prefix": "s", "rows": states}
     encoded_tables = json.dumps(tables)
     assert json.loads(encoded_tables) == tables
-    legends = dictionaries.enums()
-    entries = [entry for legend in legends.values() for entry in legend]
-    assert entries
-    assert all(isinstance(entry["id"], int) for entry in entries)
-    assert len({entry["ref"] for entry in entries}) == len(entries)
-    assert all(entry["ref"].startswith("@") and entry["ref"][1:].isdigit() for entry in entries)
-    assert all(json.dumps(entry["ref"]) in encoded_tables for entry in entries)
     snapshot = dictionaries.tables()
     snapshot["visited"]["rows"][0]["annotation"] = {"selected": True}
     assert "annotation" not in dictionaries.tables()["visited"]["rows"][0]
-    legend_snapshot = dictionaries.enums()
-    next(iter(legend_snapshot.values()))[0]["name"] = "annotated"
-    assert dictionaries.enums() == legends
     states.clear()
     assert len(dictionaries.table(state_type)) == 2
     del plan, result, generator, evaluator, repository, task, parser
@@ -103,7 +99,7 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     assert dictionaries.tables() == tables
 
 
-def test_registration_errors_and_inline_variants() -> None:
+def test_registration_errors_and_native_text() -> None:
     parser = fp.Parser(DOMAIN, None, ParserOptions())
     task = lifted.Task(parser.parse_task(PROBLEM, None, ParserOptions()))
     term = next(iter(task.get_task().get_static_fterm_values())).get_fterm()
@@ -112,8 +108,6 @@ def test_registration_errors_and_inline_variants() -> None:
         dictionaries.register_table(str, "strings", "s")  # pyright: ignore[reportArgumentType]
     with pytest.raises(ValueError):
         dictionaries.register_table(fp.StaticGroundFunctionTerm, "terms", "t0")
-    with pytest.raises(ValueError):
-        dictionaries.register_table(fp.StaticGroundFunctionTerm, "terms", "@")
     dictionaries.register_table(fp.StaticGroundFunctionTerm, "terms", "t")
     with pytest.raises(ValueError):
         dictionaries.register_table(fp.StaticGroundFunctionTerm, "more_terms", "u")
@@ -126,11 +120,25 @@ def test_registration_errors_and_inline_variants() -> None:
         dictionaries.serialize("a native value is required")  # pyright: ignore[reportCallIssue, reportArgumentType]
 
     inline = Dictionaries()
-    assert inline.serialize(term) == dictionaries.table(fp.StaticGroundFunctionTerm)[0]
-    assert inline.tables() == {}
+    inline.register_table(fp.StaticFunctionBinding, "bindings", "b")
+    assert inline.serialize(term) == str(term)
+    assert inline.table(fp.StaticFunctionBinding) == []
     owner = inline.serialize(task.get_formalism_task())
+    assert owner == str(task.get_formalism_task())
     assert json.loads(json.dumps(owner)) == owner
-    legends = inline.enums()
-    assert legends
     assert inline.serialize(task.get_formalism_task()) == owner
-    assert inline.enums() == legends
+
+
+def test_registered_variant_preserves_numeric_constant() -> None:
+    parser = fp.Parser(DOMAIN, None, ParserOptions())
+    repository = parser.get_domain().get_repository()
+    expression = repository.create(fp.FunctionExpressionData(3.5))
+    dictionaries = Dictionaries()
+    dictionaries.register_table(fp.FunctionExpression, "expressions", "e")
+    assert dictionaries.serialize(expression) == "e0"
+    expected = [{"kind": "constant", "value": 3.5}]
+    assert dictionaries.table(fp.FunctionExpression) == expected
+    snapshot = dictionaries.tables()
+    snapshot["expressions"]["rows"][0]["value"] = 8
+    assert dictionaries.serialize(expression) == "e0"
+    assert dictionaries.table(fp.FunctionExpression) == expected

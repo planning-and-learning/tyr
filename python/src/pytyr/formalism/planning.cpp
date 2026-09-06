@@ -18,6 +18,7 @@
 #include "planning/bindings.hpp"
 #include "planning/module.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
+#include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/planning_fdr_task.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 
@@ -100,7 +101,7 @@ void bind_module_definitions(nb::module_& m)
      */
 
     {
-        nb::class_<PlanningDomain>(m, "PlanningDomain")  //
+        auto cls = nb::class_<PlanningDomain>(m, "PlanningDomain")  //
             .def(nb::init<DomainView, RepositoryPtr, RepositoryFactoryPtr, std::optional<std::filesystem::path>>(),
                  "domain"_a,
                  "repository"_a,
@@ -110,10 +111,11 @@ void bind_module_definitions(nb::module_& m)
             .def("get_repository", &PlanningDomain::get_repository)
             .def("get_repository_factory", &PlanningDomain::get_repository_factory)
             .def("get_path", &PlanningDomain::get_path);
+        ygg::add_print(cls);
     }
 
     {
-        nb::class_<PlanningTask>(m, "PlanningTask")  //
+        auto cls = nb::class_<PlanningTask>(m, "PlanningTask")  //
             .def(nb::new_([](TaskView task,
                              FDRContextPtr fdr_context,
                              RepositoryPtr repository,
@@ -131,15 +133,17 @@ void bind_module_definitions(nb::module_& m)
             .def("get_domain", &PlanningTask::get_domain, nb::rv_policy::reference_internal)
             .def("get_path", &PlanningTask::get_path)
             .def("get_variable_domains", &PlanningTask::get_variable_domains_view, nb::rv_policy::reference_internal);
+        ygg::add_print(cls);
     }
 
     {
-        nb::class_<PlanningFDRTask>(m, "PlanningFDRTask")  //
+        auto cls = nb::class_<PlanningFDRTask>(m, "PlanningFDRTask")  //
             .def("get_task", &PlanningFDRTask::get_task, nb::keep_alive<0, 1>())
             .def("get_repository", &PlanningFDRTask::get_repository)
             .def("get_fdr_context", &PlanningFDRTask::get_fdr_context, nb::rv_policy::reference_internal)
             .def("get_domain", &PlanningFDRTask::get_domain, nb::rv_policy::reference_internal)
             .def("get_path", &PlanningFDRTask::get_path);
+        ygg::add_print(cls);
     }
 }
 

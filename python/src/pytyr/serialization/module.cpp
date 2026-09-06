@@ -54,7 +54,6 @@ void bind_module_definitions(nb::module_& m)
             "table",
             [](Dictionaries& self, nb::type_object native_type) { return ygg::python::table(self, native_type, RegisteredTypes {}); },
             "native_type"_a)
-        .def("tables", [](Dictionaries& self) { return ygg::python::to_python(self.tables()); })
-        .def("enums", [](Dictionaries& self) { return ygg::python::to_python(self.enums()); });
+        .def("tables", [](Dictionaries& self) { return ygg::python::to_python(self.tables()); });
 }
 }
