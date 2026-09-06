@@ -30,7 +30,7 @@ struct BindingPublicView<f::Function<T>, fd::Repository>
 };
 
 template<f::RelationKind R>
-struct BindingPublicView<fd::Rule<R>, fd::Repository>
+struct BindingPublicView<fd::Rule<::tyr::LiftedTag, R>, fd::Repository>
 {
     using type = fd::RuleBindingView<R>;
 };
@@ -48,13 +48,13 @@ struct BindingPublicView<f::Function<T>, fp::Repository>
 };
 
 template<>
-struct BindingPublicView<fp::Action, fp::Repository>
+struct BindingPublicView<fp::Action<::tyr::LiftedTag>, fp::Repository>
 {
     using type = fp::ActionBindingView;
 };
 
 template<>
-struct BindingPublicView<fp::Axiom, fp::Repository>
+struct BindingPublicView<fp::Axiom<::tyr::LiftedTag>, fp::Repository>
 {
     using type = fp::AxiomBindingView;
 };

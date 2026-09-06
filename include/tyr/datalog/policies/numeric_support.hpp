@@ -65,13 +65,13 @@ public:
 
     NumericSupportSelector(const FactSets& fact_sets, const NumericIntervalAnnotations<>& annotations, bool initial_intervals_cost_zero = false);
 
-    Key fluent_key(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> term) const noexcept;
-    ygg::ClosedInterval<ygg::float_t> lookup_static(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::StaticTag> term) const;
+    Key fluent_key(::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> term) const noexcept;
+    ygg::ClosedInterval<ygg::float_t> lookup_static(::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> term) const;
     ygg::ClosedInterval<ygg::float_t> current_interval(Key key) const;
     const NumericIntervalAnnotations<>::Entries* find_entries(Key key) const;
     Cost missing_entries_cost() const noexcept { return m_initial_intervals_cost_zero ? Cost(0) : std::numeric_limits<Cost>::max(); }
 
-    ygg::ClosedInterval<ygg::float_t> evaluate_effect_expression(::tyr::formalism::datalog::GroundFunctionExpressionView expression, Selection& selection) const
+    ygg::ClosedInterval<ygg::float_t> evaluate_effect_expression(::tyr::formalism::datalog::FunctionExpressionView<::tyr::GroundTag> expression, Selection& selection) const
     {
         return evaluate_numeric_expression(expression, [&](const auto term) { return evaluate_term(term, selection); });
     }
@@ -219,7 +219,7 @@ public:
 
 private:
     template<::tyr::formalism::FactKind T>
-    ygg::ClosedInterval<ygg::float_t> evaluate_term(::tyr::formalism::datalog::GroundFunctionTermView<T> term, Selection& selection) const
+    ygg::ClosedInterval<ygg::float_t> evaluate_term(::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, T> term, Selection& selection) const
     {
         if constexpr (std::same_as<T, ::tyr::formalism::StaticTag>)
             return lookup_static(term);

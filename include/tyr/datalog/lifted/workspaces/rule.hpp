@@ -24,7 +24,7 @@
 #include "tyr/datalog/rule_evaluation.hpp"
 #include "tyr/datalog/statistics/rule.hpp"
 #include "tyr/formalism/binding_index.hpp"
-#include "tyr/formalism/datalog/ground_atom_index.hpp"
+#include "tyr/formalism/datalog/atom_index.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/object_index.hpp"
@@ -149,16 +149,16 @@ public:
     auto get_conflicting_overapproximation_condition() const noexcept { return conflicting_overapproximation_condition; }
     const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
 
-    ConstRuleWorkspace(::tyr::formalism::datalog::RuleView<R> rule, ::tyr::formalism::datalog::Repository& repository, kckp::Graph compatibility_graph);
+    ConstRuleWorkspace(::tyr::formalism::datalog::RuleView<::tyr::LiftedTag, R> rule, ::tyr::formalism::datalog::Repository& repository, kckp::Graph compatibility_graph);
 
 private:
-    ::tyr::formalism::datalog::RuleView<R> rule;
-    ::tyr::formalism::datalog::GroundConjunctiveConditionView nullary_condition;
-    ::tyr::formalism::datalog::NumericEffectOperatorViewList<::tyr::formalism::FluentTag> lifted_effects;
-    ::tyr::formalism::datalog::GroundNumericEffectOperatorViewList<::tyr::formalism::FluentTag> nullary_effects;
-    ::tyr::formalism::datalog::ConjunctiveConditionView unary_overapproximation_condition;
-    ::tyr::formalism::datalog::ConjunctiveConditionView binary_overapproximation_condition;
-    ::tyr::formalism::datalog::ConjunctiveConditionView conflicting_overapproximation_condition;
+    ::tyr::formalism::datalog::RuleView<::tyr::LiftedTag, R> rule;
+    ::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::GroundTag> nullary_condition;
+    ::tyr::formalism::datalog::NumericEffectOperatorViewList<::tyr::LiftedTag, ::tyr::formalism::FluentTag> lifted_effects;
+    ::tyr::formalism::datalog::NumericEffectOperatorViewList<::tyr::GroundTag, ::tyr::formalism::FluentTag> nullary_effects;
+    ::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::LiftedTag> unary_overapproximation_condition;
+    ::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::LiftedTag> binary_overapproximation_condition;
+    ::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::LiftedTag> conflicting_overapproximation_condition;
 
     StaticConsistencyGraph static_consistency_graph;
 };
@@ -167,12 +167,12 @@ private:
  * Implementations
  */
 
-inline PredicateHeadUpdates make_head_updates(::tyr::formalism::datalog::AtomView<::tyr::formalism::FluentTag>) { return {}; }
+inline PredicateHeadUpdates make_head_updates(::tyr::formalism::datalog::AtomView<::tyr::LiftedTag, ::tyr::formalism::FluentTag>) { return {}; }
 
-inline FunctionHeadUpdates make_head_updates(::tyr::formalism::datalog::NumericEffectOperatorView<::tyr::formalism::FluentTag>) { return {}; }
+inline FunctionHeadUpdates make_head_updates(::tyr::formalism::datalog::NumericEffectOperatorView<::tyr::LiftedTag, ::tyr::formalism::FluentTag>) { return {}; }
 
-inline bool supports_inner_parallelism(::tyr::formalism::datalog::AtomView<::tyr::formalism::FluentTag>) noexcept { return true; }
-inline bool supports_inner_parallelism(::tyr::formalism::datalog::NumericEffectOperatorView<::tyr::formalism::FluentTag>) noexcept { return false; }
+inline bool supports_inner_parallelism(::tyr::formalism::datalog::AtomView<::tyr::LiftedTag, ::tyr::formalism::FluentTag>) noexcept { return true; }
+inline bool supports_inner_parallelism(::tyr::formalism::datalog::NumericEffectOperatorView<::tyr::LiftedTag, ::tyr::formalism::FluentTag>) noexcept { return false; }
 
 template<::tyr::formalism::RelationKind R>
 RuleWorkspace<LiftedTag, R>::Common::Common(const StaticConsistencyGraph& static_consistency_graph) :

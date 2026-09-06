@@ -18,8 +18,8 @@ concept BooleanOperatorContract = std::totally_ordered<ygg::Data<Entity>> && std
                                          { view < view } -> std::same_as<bool>;
                                      };
 
-static_assert(BooleanOperatorContract<fp::BooleanOperator<ygg::Data<fp::FunctionExpression>>>);
-static_assert(std::same_as<ygg::View<ygg::Data<fp::BooleanOperator<ygg::Data<fp::FunctionExpression>>>, fp::Repository>, fp::LiftedBooleanOperatorView>);
-static_assert(BooleanOperatorContract<fp::BooleanOperator<ygg::Data<fp::GroundFunctionExpression>>>);
-static_assert(std::same_as<ygg::View<ygg::Data<fp::BooleanOperator<ygg::Data<fp::GroundFunctionExpression>>>, fp::Repository>, fp::GroundBooleanOperatorView>);
+static_assert(BooleanOperatorContract<fp::BooleanOperator<ygg::Data<fp::FunctionExpression<::tyr::LiftedTag>>>>);
+static_assert(std::same_as<ygg::View<ygg::Data<fp::BooleanOperator<ygg::Data<fp::FunctionExpression<::tyr::LiftedTag>>>>, fp::Repository>, fp::LiftedBooleanOperatorView>);
+static_assert(BooleanOperatorContract<fp::BooleanOperator<ygg::Data<fp::FunctionExpression<::tyr::GroundTag>>>>);
+static_assert(std::same_as<ygg::View<ygg::Data<fp::BooleanOperator<ygg::Data<fp::FunctionExpression<::tyr::GroundTag>>>>, fp::Repository>, fp::GroundBooleanOperatorView>);
 static_assert(f::to_string(f::BooleanOperatorKind::Ne) == "!=");

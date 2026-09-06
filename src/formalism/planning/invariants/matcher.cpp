@@ -152,7 +152,7 @@ void Matcher::query(const MutableAtom<FluentTag>& atom, QueryResult& result, Que
     }
 }
 
-void Matcher::query(GroundAtomView<FluentTag> atom, QueryResult& result, QueryWorkspace& workspace) const
+void Matcher::query(AtomView<::tyr::GroundTag, FluentTag> atom, QueryResult& result, QueryWorkspace& workspace) const
 {
     query(MutableAtom<FluentTag>(atom), result, workspace);
 }
@@ -165,7 +165,7 @@ QueryResult Matcher::query(const MutableAtom<FluentTag>& atom) const
     return result;
 }
 
-QueryResult Matcher::query(GroundAtomView<FluentTag> atom) const
+QueryResult Matcher::query(AtomView<::tyr::GroundTag, FluentTag> atom) const
 {
     QueryResult result;
     QueryWorkspace workspace;

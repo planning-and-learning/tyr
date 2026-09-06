@@ -5,7 +5,6 @@
 #include "tyr/formalism/planning/unary_operator_view.hpp"
 #include "tyr/serialization/formalism/enums.hpp"
 #include "tyr/serialization/formalism/planning/function_expression_view.hpp"
-#include "tyr/serialization/formalism/planning/ground_function_expression_view.hpp"
 #include "tyr/serialization/serializer.hpp"
 
 namespace tyr::serialization
@@ -16,7 +15,7 @@ struct Serializer<::tyr::formalism::planning::UnaryOperatorView<T>>
 {
     static std::string name()
     {
-        return std::string(std::same_as<T, ygg::Data<::tyr::formalism::planning::GroundFunctionExpression>> ? "Ground" : "") + "UnaryOperator";
+        return std::string(std::same_as<T, ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>> ? "Ground" : "") + "UnaryOperator";
     }
 
     template<class Archive>

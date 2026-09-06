@@ -16,7 +16,7 @@ namespace tyr::analysis
 {
 
 template<::tyr::formalism::RelationKind R>
-using RuleCompatibilityGraphMap = ygg::UnorderedMap<ygg::Index<::tyr::formalism::datalog::Rule<R>>, kckp::Graph>;
+using RuleCompatibilityGraphMap = ygg::UnorderedMap<ygg::Index<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>>, kckp::Graph>;
 
 struct ProgramCompatibilityGraphs
 {

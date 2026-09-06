@@ -38,8 +38,8 @@ namespace tyr::tests
 {
 namespace
 {
-using GroundAtomViews = std::vector<fd::GroundAtomView<f::FluentTag>>;
-using StaticGroundAtomViews = std::vector<fd::GroundAtomView<f::StaticTag>>;
+using GroundAtomViews = std::vector<fd::AtomView<::tyr::GroundTag, f::FluentTag>>;
+using StaticGroundAtomViews = std::vector<fd::AtomView<::tyr::GroundTag, f::StaticTag>>;
 using PredicateBindingViews = std::vector<fd::PredicateBindingView<f::FluentTag>>;
 
 template<typename Context>
@@ -52,7 +52,7 @@ PredicateBindingViews binding_views(const Context& ctx)
     return result;
 }
 
-PredicateBindingViews binding_views(std::initializer_list<fd::GroundAtomView<f::FluentTag>> atoms)
+PredicateBindingViews binding_views(std::initializer_list<fd::AtomView<::tyr::GroundTag, f::FluentTag>> atoms)
 {
     auto result = PredicateBindingViews {};
     for (const auto atom : atoms)
@@ -69,12 +69,12 @@ struct GroundQueueFixture
     std::vector<ygg::Index<f::Function<f::FluentTag>>> fluent_functions;
     StaticGroundAtomViews initial_static_atoms;
     GroundAtomViews initial_fluent_atoms;
-    std::vector<ygg::Index<fd::GroundFunctionTermValue<f::FluentTag>>> initial_fluent_fterm_values;
-    std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>> ground_rules;
-    std::vector<ygg::Index<fd::GroundRule<f::FunctionTag>>> ground_function_rules;
+    std::vector<ygg::Index<fd::FunctionTermValue<::tyr::GroundTag, f::FluentTag>>> initial_fluent_fterm_values;
+    std::vector<ygg::Index<fd::Rule<::tyr::GroundTag, f::PredicateTag>>> ground_rules;
+    std::vector<ygg::Index<fd::Rule<::tyr::GroundTag, f::FunctionTag>>> ground_function_rules;
     ygg::uint_t next_rule_id = 0;
 
-    fd::GroundAtomView<f::FluentTag> fluent_atom(const std::string& name)
+    fd::AtomView<::tyr::GroundTag, f::FluentTag> fluent_atom(const std::string& name)
     {
         auto predicate_builder = ygg::Data<f::Predicate<f::FluentTag>>(name, 0);
         canonicalize(predicate_builder);
@@ -88,19 +88,19 @@ struct GroundQueueFixture
         const auto [binding, binding_inserted] = repository.get_or_create(binding_builder);
         (void) binding_inserted;
 
-        auto atom_builder = ygg::Data<fd::GroundAtom<f::FluentTag>>(binding.get_index());
+        auto atom_builder = ygg::Data<fd::Atom<::tyr::GroundTag, f::FluentTag>>(binding.get_index());
         canonicalize(atom_builder);
         return repository.get_or_create(atom_builder).first;
     }
 
-    fd::GroundLiteralView<f::FluentTag> fluent_literal(fd::GroundAtomView<f::FluentTag> atom, bool polarity = true)
+    fd::LiteralView<::tyr::GroundTag, f::FluentTag> fluent_literal(fd::AtomView<::tyr::GroundTag, f::FluentTag> atom, bool polarity = true)
     {
-        auto literal_builder = ygg::Data<fd::GroundLiteral<f::FluentTag>>(atom.get_index(), polarity);
+        auto literal_builder = ygg::Data<fd::Literal<::tyr::GroundTag, f::FluentTag>>(atom.get_index(), polarity);
         canonicalize(literal_builder);
         return repository.get_or_create(literal_builder).first;
     }
 
-    fd::GroundAtomView<f::StaticTag> static_atom(const std::string& name)
+    fd::AtomView<::tyr::GroundTag, f::StaticTag> static_atom(const std::string& name)
     {
         auto predicate_builder = ygg::Data<f::Predicate<f::StaticTag>>(name, 0);
         canonicalize(predicate_builder);
@@ -113,19 +113,19 @@ struct GroundQueueFixture
         canonicalize(binding_builder);
         const auto binding = repository.get_or_create(binding_builder).first;
 
-        auto atom_builder = ygg::Data<fd::GroundAtom<f::StaticTag>>(binding.get_index());
+        auto atom_builder = ygg::Data<fd::Atom<::tyr::GroundTag, f::StaticTag>>(binding.get_index());
         canonicalize(atom_builder);
         return repository.get_or_create(atom_builder).first;
     }
 
-    fd::GroundLiteralView<f::StaticTag> static_literal(fd::GroundAtomView<f::StaticTag> atom, bool polarity = true)
+    fd::LiteralView<::tyr::GroundTag, f::StaticTag> static_literal(fd::AtomView<::tyr::GroundTag, f::StaticTag> atom, bool polarity = true)
     {
-        auto literal_builder = ygg::Data<fd::GroundLiteral<f::StaticTag>>(atom.get_index(), polarity);
+        auto literal_builder = ygg::Data<fd::Literal<::tyr::GroundTag, f::StaticTag>>(atom.get_index(), polarity);
         canonicalize(literal_builder);
         return repository.get_or_create(literal_builder).first;
     }
 
-    fd::GroundFunctionTermView<f::FluentTag> fluent_function_term(const std::string& name)
+    fd::FunctionTermView<::tyr::GroundTag, f::FluentTag> fluent_function_term(const std::string& name)
     {
         auto function_builder = ygg::Data<f::Function<f::FluentTag>>(name, 0);
         canonicalize(function_builder);
@@ -137,22 +137,22 @@ struct GroundQueueFixture
         canonicalize(binding_builder);
         const auto binding = repository.get_or_create(binding_builder).first;
 
-        auto term_builder = ygg::Data<fd::GroundFunctionTerm<f::FluentTag>>(binding.get_index());
+        auto term_builder = ygg::Data<fd::FunctionTerm<::tyr::GroundTag, f::FluentTag>>(binding.get_index());
         canonicalize(term_builder);
         return repository.get_or_create(term_builder).first;
     }
 
-    void initial_fluent_function_value(fd::GroundFunctionTermView<f::FluentTag> term, ygg::float_t value)
+    void initial_fluent_function_value(fd::FunctionTermView<::tyr::GroundTag, f::FluentTag> term, ygg::float_t value)
     {
-        auto value_builder = ygg::Data<fd::GroundFunctionTermValue<f::FluentTag>>(term.get_index(), value);
+        auto value_builder = ygg::Data<fd::FunctionTermValue<::tyr::GroundTag, f::FluentTag>>(term.get_index(), value);
         canonicalize(value_builder);
         initial_fluent_fterm_values.push_back(repository.get_or_create(value_builder).first.get_index());
     }
 
-    fd::GroundConjunctiveConditionView condition(std::initializer_list<fd::GroundLiteralView<f::FluentTag>> fluent_literals = {},
-                                                 std::initializer_list<fd::GroundLiteralView<f::StaticTag>> static_literals = {})
+    fd::ConjunctiveConditionView<::tyr::GroundTag> condition(std::initializer_list<fd::LiteralView<::tyr::GroundTag, f::FluentTag>> fluent_literals = {},
+                                                 std::initializer_list<fd::LiteralView<::tyr::GroundTag, f::StaticTag>> static_literals = {})
     {
-        auto condition_builder = ygg::Data<fd::GroundConjunctiveCondition>();
+        auto condition_builder = ygg::Data<fd::ConjunctiveCondition<::tyr::GroundTag>>();
         for (const auto literal : fluent_literals)
             condition_builder.fluent_literals.push_back(literal.get_index());
         for (const auto literal : static_literals)
@@ -161,15 +161,15 @@ struct GroundQueueFixture
         return repository.get_or_create(condition_builder).first;
     }
 
-    fd::GroundConjunctiveConditionView numeric_condition(fd::GroundFunctionTermView<f::FluentTag> term, f::BooleanOperatorKind op, ygg::float_t value)
+    fd::ConjunctiveConditionView<::tyr::GroundTag> numeric_condition(fd::FunctionTermView<::tyr::GroundTag, f::FluentTag> term, f::BooleanOperatorKind op, ygg::float_t value)
     {
         auto comparison_builder = ygg::Data<fd::GroundBinaryOperatorType<f::BooleanOperatorKind>>(op,
-                                                                                                  ygg::Data<fd::GroundFunctionExpression>(term.get_index()),
-                                                                                                  ygg::Data<fd::GroundFunctionExpression>(value));
+                                                                                                  ygg::Data<fd::FunctionExpression<::tyr::GroundTag>>(term.get_index()),
+                                                                                                  ygg::Data<fd::FunctionExpression<::tyr::GroundTag>>(value));
         canonicalize(comparison_builder);
         const auto comparison = repository.get_or_create(comparison_builder).first;
 
-        auto condition_builder = ygg::Data<fd::GroundConjunctiveCondition>();
+        auto condition_builder = ygg::Data<fd::ConjunctiveCondition<::tyr::GroundTag>>();
         condition_builder.numeric_constraints.emplace_back(op, fd::GroundBooleanOperatorData::Variant(comparison.get_index()));
         canonicalize(condition_builder);
         return repository.get_or_create(condition_builder).first;
@@ -181,31 +181,31 @@ struct GroundQueueFixture
         canonicalize(predicate_builder);
         const auto predicate = repository.get_or_create(predicate_builder).first;
 
-        auto atom_builder = ygg::Data<fd::Atom<f::FluentTag>>();
+        auto atom_builder = ygg::Data<fd::Atom<::tyr::LiftedTag, f::FluentTag>>();
         atom_builder.predicate = predicate.get_index();
         canonicalize(atom_builder);
         const auto atom = repository.get_or_create(atom_builder).first;
 
-        auto condition_builder = ygg::Data<fd::ConjunctiveCondition>();
+        auto condition_builder = ygg::Data<fd::ConjunctiveCondition<::tyr::LiftedTag>>();
         canonicalize(condition_builder);
         const auto lifted_condition = repository.get_or_create(condition_builder).first;
 
-        auto rule_builder = ygg::Data<fd::Rule<f::PredicateTag>>();
+        auto rule_builder = ygg::Data<fd::Rule<::tyr::LiftedTag, f::PredicateTag>>();
         rule_builder.body = lifted_condition.get_index();
         rule_builder.head = atom.get_index();
         canonicalize(rule_builder);
         const auto rule = repository.get_or_create(rule_builder).first;
 
-        auto binding_builder = ygg::Data<f::RelationBinding<fd::Rule<f::PredicateTag>>>();
+        auto binding_builder = ygg::Data<f::RelationBinding<fd::Rule<::tyr::LiftedTag, f::PredicateTag>>>();
         binding_builder.relation = rule.get_index();
         canonicalize(binding_builder);
         return repository.get_or_create(binding_builder).first;
     }
 
-    fd::GroundRuleView<f::PredicateTag>
-    rule(fd::GroundConjunctiveConditionView body, fd::GroundAtomView<f::FluentTag> head, fd::RuleBindingView<f::PredicateTag> binding)
+    fd::RuleView<::tyr::GroundTag, f::PredicateTag>
+    rule(fd::ConjunctiveConditionView<::tyr::GroundTag> body, fd::AtomView<::tyr::GroundTag, f::FluentTag> head, fd::RuleBindingView<f::PredicateTag> binding)
     {
-        auto rule_builder = ygg::Data<fd::GroundRule<f::PredicateTag>>();
+        auto rule_builder = ygg::Data<fd::Rule<::tyr::GroundTag, f::PredicateTag>>();
         rule_builder.binding = binding.get_index();
         rule_builder.body = body.get_index();
         rule_builder.head = head.get_index();
@@ -215,91 +215,91 @@ struct GroundQueueFixture
         return ground_rule;
     }
 
-    fd::GroundRuleView<f::PredicateTag> rule(fd::GroundConjunctiveConditionView body, fd::GroundAtomView<f::FluentTag> head)
+    fd::RuleView<::tyr::GroundTag, f::PredicateTag> rule(fd::ConjunctiveConditionView<::tyr::GroundTag> body, fd::AtomView<::tyr::GroundTag, f::FluentTag> head)
     {
         return rule(body, head, fresh_rule_binding());
     }
 
-    fd::GroundRuleView<f::PredicateTag> rule(fd::GroundConjunctiveConditionView body,
-                                             fd::GroundAtomView<f::FluentTag> head,
+    fd::RuleView<::tyr::GroundTag, f::PredicateTag> rule(fd::ConjunctiveConditionView<::tyr::GroundTag> body,
+                                             fd::AtomView<::tyr::GroundTag, f::FluentTag> head,
                                              fd::RuleBindingView<f::PredicateTag> binding,
-                                             fd::GroundFunctionTermView<f::FluentTag> metric_target,
+                                             fd::FunctionTermView<::tyr::GroundTag, f::FluentTag> metric_target,
                                              ygg::float_t metric_delta,
                                              f::NumericEffectOperatorKind metric_operator = f::NumericEffectOperatorKind::Increase)
     {
         auto metric_effect_builder =
-            ygg::Data<fd::GroundNumericEffect<f::FluentTag>>(metric_operator, metric_target.get_index(), ygg::Data<fd::GroundFunctionExpression>(metric_delta));
+            ygg::Data<fd::NumericEffect<::tyr::GroundTag, f::FluentTag>>(metric_operator, metric_target.get_index(), ygg::Data<fd::FunctionExpression<::tyr::GroundTag>>(metric_delta));
         canonicalize(metric_effect_builder);
         const auto metric_effect = repository.get_or_create(metric_effect_builder).first;
 
-        auto rule_builder = ygg::Data<fd::GroundRule<f::PredicateTag>>();
+        auto rule_builder = ygg::Data<fd::Rule<::tyr::GroundTag, f::PredicateTag>>();
         rule_builder.binding = binding.get_index();
         rule_builder.body = body.get_index();
         rule_builder.head = head.get_index();
-        rule_builder.metric_effects.emplace_back(metric_operator, ygg::Data<fd::GroundNumericEffectOperator<f::FluentTag>>::Variant(metric_effect.get_index()));
+        rule_builder.metric_effects.emplace_back(metric_operator, ygg::Data<fd::NumericEffectOperator<::tyr::GroundTag, f::FluentTag>>::Variant(metric_effect.get_index()));
         canonicalize(rule_builder);
         const auto ground_rule = repository.get_or_create(rule_builder).first;
         ground_rules.push_back(ground_rule.get_index());
         return ground_rule;
     }
 
-    fd::GroundRuleView<f::FunctionTag> numeric_rule(fd::GroundConjunctiveConditionView body,
-                                                    fd::GroundFunctionTermView<f::FluentTag> head,
+    fd::RuleView<::tyr::GroundTag, f::FunctionTag> numeric_rule(fd::ConjunctiveConditionView<::tyr::GroundTag> body,
+                                                    fd::FunctionTermView<::tyr::GroundTag, f::FluentTag> head,
                                                     f::NumericEffectOperatorKind op,
                                                     ygg::float_t value,
                                                     ygg::float_t metric_delta = 0)
     {
-        auto lifted_term_builder = ygg::Data<fd::FunctionTerm<f::FluentTag>>();
+        auto lifted_term_builder = ygg::Data<fd::FunctionTerm<::tyr::LiftedTag, f::FluentTag>>();
         lifted_term_builder.function = head.get_function().get_index();
         canonicalize(lifted_term_builder);
         const auto lifted_term = repository.get_or_create(lifted_term_builder).first;
 
-        auto lifted_effect_builder = ygg::Data<fd::NumericEffect<f::FluentTag>>(op, lifted_term.get_index(), ygg::Data<fd::FunctionExpression>(value));
+        auto lifted_effect_builder = ygg::Data<fd::NumericEffect<::tyr::LiftedTag, f::FluentTag>>(op, lifted_term.get_index(), ygg::Data<fd::FunctionExpression<::tyr::LiftedTag>>(value));
         canonicalize(lifted_effect_builder);
         const auto lifted_effect = repository.get_or_create(lifted_effect_builder).first;
 
-        auto lifted_condition_builder = ygg::Data<fd::ConjunctiveCondition>();
+        auto lifted_condition_builder = ygg::Data<fd::ConjunctiveCondition<::tyr::LiftedTag>>();
         canonicalize(lifted_condition_builder);
         const auto lifted_condition = repository.get_or_create(lifted_condition_builder).first;
 
-        auto lifted_rule_builder = ygg::Data<fd::Rule<f::FunctionTag>>();
+        auto lifted_rule_builder = ygg::Data<fd::Rule<::tyr::LiftedTag, f::FunctionTag>>();
         lifted_rule_builder.body = lifted_condition.get_index();
-        lifted_rule_builder.head = ygg::Data<fd::NumericEffectOperator<f::FluentTag>>(op, lifted_effect.get_index());
+        lifted_rule_builder.head = ygg::Data<fd::NumericEffectOperator<::tyr::LiftedTag, f::FluentTag>>(op, lifted_effect.get_index());
         if (metric_delta != 0)
         {
-            auto metric_effect_builder = ygg::Data<fd::NumericEffect<f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
+            auto metric_effect_builder = ygg::Data<fd::NumericEffect<::tyr::LiftedTag, f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
                                                                                     lifted_term.get_index(),
-                                                                                    ygg::Data<fd::FunctionExpression>(metric_delta));
+                                                                                    ygg::Data<fd::FunctionExpression<::tyr::LiftedTag>>(metric_delta));
             canonicalize(metric_effect_builder);
             const auto metric_effect = repository.get_or_create(metric_effect_builder).first;
             lifted_rule_builder.metric_effects.emplace_back(f::NumericEffectOperatorKind::Increase,
-                                                            ygg::Data<fd::NumericEffectOperator<f::FluentTag>>::Variant(metric_effect.get_index()));
+                                                            ygg::Data<fd::NumericEffectOperator<::tyr::LiftedTag, f::FluentTag>>::Variant(metric_effect.get_index()));
         }
         canonicalize(lifted_rule_builder);
         const auto lifted_rule = repository.get_or_create(lifted_rule_builder).first;
 
-        auto binding_builder = ygg::Data<f::RelationBinding<fd::Rule<f::FunctionTag>>>();
+        auto binding_builder = ygg::Data<f::RelationBinding<fd::Rule<::tyr::LiftedTag, f::FunctionTag>>>();
         binding_builder.relation = lifted_rule.get_index();
         canonicalize(binding_builder);
         const auto binding = repository.get_or_create(binding_builder).first;
 
-        auto effect_builder = ygg::Data<fd::GroundNumericEffect<f::FluentTag>>(op, head.get_index(), ygg::Data<fd::GroundFunctionExpression>(value));
+        auto effect_builder = ygg::Data<fd::NumericEffect<::tyr::GroundTag, f::FluentTag>>(op, head.get_index(), ygg::Data<fd::FunctionExpression<::tyr::GroundTag>>(value));
         canonicalize(effect_builder);
         const auto effect = repository.get_or_create(effect_builder).first;
 
-        auto rule_builder = ygg::Data<fd::GroundRule<f::FunctionTag>>();
+        auto rule_builder = ygg::Data<fd::Rule<::tyr::GroundTag, f::FunctionTag>>();
         rule_builder.binding = binding.get_index();
         rule_builder.body = body.get_index();
-        rule_builder.head = ygg::Data<fd::GroundNumericEffectOperator<f::FluentTag>>(op, effect.get_index());
+        rule_builder.head = ygg::Data<fd::NumericEffectOperator<::tyr::GroundTag, f::FluentTag>>(op, effect.get_index());
         if (metric_delta != 0)
         {
-            auto metric_effect_builder = ygg::Data<fd::GroundNumericEffect<f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
+            auto metric_effect_builder = ygg::Data<fd::NumericEffect<::tyr::GroundTag, f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
                                                                                           head.get_index(),
-                                                                                          ygg::Data<fd::GroundFunctionExpression>(metric_delta));
+                                                                                          ygg::Data<fd::FunctionExpression<::tyr::GroundTag>>(metric_delta));
             canonicalize(metric_effect_builder);
             const auto metric_effect = repository.get_or_create(metric_effect_builder).first;
             rule_builder.metric_effects.emplace_back(f::NumericEffectOperatorKind::Increase,
-                                                     ygg::Data<fd::GroundNumericEffectOperator<f::FluentTag>>::Variant(metric_effect.get_index()));
+                                                     ygg::Data<fd::NumericEffectOperator<::tyr::GroundTag, f::FluentTag>>::Variant(metric_effect.get_index()));
         }
         canonicalize(rule_builder);
         const auto ground_rule = repository.get_or_create(rule_builder).first;
@@ -307,20 +307,20 @@ struct GroundQueueFixture
         return ground_rule;
     }
 
-    fd::GroundRuleView<f::FunctionTag>
-    assign_rule(fd::GroundConjunctiveConditionView body, fd::GroundFunctionTermView<f::FluentTag> head, ygg::float_t value, ygg::float_t metric_delta = 0)
+    fd::RuleView<::tyr::GroundTag, f::FunctionTag>
+    assign_rule(fd::ConjunctiveConditionView<::tyr::GroundTag> body, fd::FunctionTermView<::tyr::GroundTag, f::FluentTag> head, ygg::float_t value, ygg::float_t metric_delta = 0)
     {
         return numeric_rule(body, head, f::NumericEffectOperatorKind::Assign, value, metric_delta);
     }
 
-    fd::GroundRuleView<f::FunctionTag> empty_body_assign_rule(fd::GroundFunctionTermView<f::FluentTag> head, ygg::float_t value)
+    fd::RuleView<::tyr::GroundTag, f::FunctionTag> empty_body_assign_rule(fd::FunctionTermView<::tyr::GroundTag, f::FluentTag> head, ygg::float_t value)
     {
         return assign_rule(condition(), head, value);
     }
 
     fd::ProgramView<GroundTag> program()
     {
-        auto program_builder = ygg::Data<fd::GroundProgram>();
+        auto program_builder = ygg::Data<fd::Program<::tyr::GroundTag>>();
         program_builder.static_predicates.insert(program_builder.static_predicates.end(), static_predicates.begin(), static_predicates.end());
         program_builder.fluent_predicates.insert(program_builder.fluent_predicates.end(), fluent_predicates.begin(), fluent_predicates.end());
         program_builder.fluent_functions.insert(program_builder.fluent_functions.end(), fluent_functions.begin(), fluent_functions.end());
@@ -331,16 +331,16 @@ struct GroundQueueFixture
         program_builder.fluent_fterm_values.insert(program_builder.fluent_fterm_values.end(),
                                                    initial_fluent_fterm_values.begin(),
                                                    initial_fluent_fterm_values.end());
-        program_builder.predicate_ground_rules.insert(program_builder.predicate_ground_rules.end(), ground_rules.begin(), ground_rules.end());
-        program_builder.function_ground_rules.insert(program_builder.function_ground_rules.end(), ground_function_rules.begin(), ground_function_rules.end());
+        program_builder.predicate_rules.insert(program_builder.predicate_rules.end(), ground_rules.begin(), ground_rules.end());
+        program_builder.function_rules.insert(program_builder.function_rules.end(), ground_function_rules.begin(), ground_function_rules.end());
         canonicalize(program_builder);
         return repository.get_or_create(program_builder).first;
     }
 };
 
-std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>> rule_indices(const std::vector<fd::GroundRuleView<f::PredicateTag>>& rules)
+std::vector<ygg::Index<fd::Rule<::tyr::GroundTag, f::PredicateTag>>> rule_indices(const std::vector<fd::RuleView<::tyr::GroundTag, f::PredicateTag>>& rules)
 {
-    auto indices = std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>> {};
+    auto indices = std::vector<ygg::Index<fd::Rule<::tyr::GroundTag, f::PredicateTag>>> {};
     for (const auto rule : rules)
         indices.push_back(rule.get_index());
     return indices;
@@ -487,8 +487,8 @@ TEST(TyrDatalogGroundQueueTest, PositiveFluentPreconditionIndexMapsFactToWaiting
 
     ASSERT_NE(a_rules, nullptr);
     ASSERT_NE(d_rules, nullptr);
-    EXPECT_EQ(rule_indices(*a_rules), std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>>({ fixture.ground_rules[0], fixture.ground_rules[1] }));
-    EXPECT_EQ(rule_indices(*d_rules), std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>>({ fixture.ground_rules[2] }));
+    EXPECT_EQ(rule_indices(*a_rules), (std::vector<ygg::Index<fd::Rule<::tyr::GroundTag, f::PredicateTag>>>({ fixture.ground_rules[0], fixture.ground_rules[1] })));
+    EXPECT_EQ(rule_indices(*d_rules), (std::vector<ygg::Index<fd::Rule<::tyr::GroundTag, f::PredicateTag>>>({ fixture.ground_rules[2] })));
 }
 
 TEST(TyrDatalogGroundQueueTest, InitialFluentFactsSatisfyDynamicUnsatisfiedCounts)
@@ -507,7 +507,7 @@ TEST(TyrDatalogGroundQueueTest, InitialFluentFactsSatisfyDynamicUnsatisfiedCount
     const auto* a_rules = dependencies.fluent_precondition_to_rules.find(a.get_row());
 
     ASSERT_NE(a_rules, nullptr);
-    EXPECT_EQ(rule_indices(*a_rules), std::vector<ygg::Index<fd::GroundRule<f::PredicateTag>>>({ fixture.ground_rules[0] }));
+    EXPECT_EQ(rule_indices(*a_rules), (std::vector<ygg::Index<fd::Rule<::tyr::GroundTag, f::PredicateTag>>>({ fixture.ground_rules[0] })));
 
     ctx.initialize(fixture.initial_fluent_atoms);
     EXPECT_EQ(ctx.out().scheduler().get_states<f::PredicateTag>()[fixture.ground_rules[0].get_value()].unsatisfied_count, 0);

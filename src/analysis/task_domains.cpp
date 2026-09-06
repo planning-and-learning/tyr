@@ -75,10 +75,10 @@ using TmpPredicateDomainMap = TmpSimpleScopedDomainMap<::tyr::formalism::Predica
 template<::tyr::formalism::FactKind T>
 using TmpFunctionDomainMap = TmpSimpleScopedDomainMap<::tyr::formalism::Function<T>>;
 
-using TmpAxiomDomainMap = TmpSimpleScopedDomainMap<::tyr::formalism::planning::Axiom>;
+using TmpAxiomDomainMap = TmpSimpleScopedDomainMap<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>;
 
-using TmpConjunctiveConditionDomain = TmpSimpleScopedDomain<::tyr::formalism::planning::ConjunctiveCondition>;
-using TmpConjunctiveEffectDomain = TmpSimpleScopedDomain<::tyr::formalism::planning::ConjunctiveEffect>;
+using TmpConjunctiveConditionDomain = TmpSimpleScopedDomain<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>;
+using TmpConjunctiveEffectDomain = TmpSimpleScopedDomain<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>;
 
 struct TmpConditionalEffectDomain
 {
@@ -87,7 +87,7 @@ struct TmpConditionalEffectDomain
     kckp::Graph compatibility_graph;
 };
 
-using TmpConditionalEffectDomainMap = ygg::UnorderedMap<ygg::Index<::tyr::formalism::planning::ConditionalEffect>, TmpConditionalEffectDomain>;
+using TmpConditionalEffectDomainMap = ygg::UnorderedMap<ygg::Index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>, TmpConditionalEffectDomain>;
 
 struct TmpActionDomain
 {
@@ -95,7 +95,7 @@ struct TmpActionDomain
     TmpConditionalEffectDomainMap effect_domains;
 };
 
-using TmpActionDomainMap = ygg::UnorderedMap<ygg::Index<::tyr::formalism::planning::Action>, TmpActionDomain>;
+using TmpActionDomainMap = ygg::UnorderedMap<ygg::Index<::tyr::formalism::planning::Action<::tyr::LiftedTag>>, TmpActionDomain>;
 
 /**
  * Conversion helpers to public representation.
@@ -159,7 +159,7 @@ AxiomDomainMap to_axiom_domain_map(const TmpAxiomDomainMap& domains)
     for (const auto& [axiom, variable_domains] : domains)
     {
         result.emplace(axiom,
-                       SimpleScopedDomain<::tyr::formalism::planning::Axiom> {
+                       SimpleScopedDomain<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>> {
                            axiom,
                            to_variable_domain_list(variable_domains),
                        });
@@ -246,7 +246,7 @@ TmpPredicateDomainMap<T> initialize_predicate_domain_sets(fp::PredicateListView<
 }
 
 template<f::FactKind T>
-void insert_into_predicate_domain_sets(fp::GroundAtomListView<T> atoms, TmpPredicateDomainMap<T>& predicate_domain_sets)
+void insert_into_predicate_domain_sets(fp::AtomListView<::tyr::GroundTag, T> atoms, TmpPredicateDomainMap<T>& predicate_domain_sets)
 {
     for (const auto atom : atoms)
     {
@@ -272,7 +272,7 @@ TmpFunctionDomainMap<T> initialize_function_domain_sets(fp::FunctionListView<T> 
 }
 
 template<f::FactKind T>
-void insert_into_function_domain_sets(fp::GroundFunctionTermValueListView<T> fterm_values, TmpFunctionDomainMap<T>& function_domain_sets)
+void insert_into_function_domain_sets(fp::FunctionTermValueListView<::tyr::GroundTag, T> fterm_values, TmpFunctionDomainMap<T>& function_domain_sets)
 {
     for (const auto term_value : fterm_values)
     {
@@ -352,7 +352,7 @@ struct RestrictPolicy
     }
 
     template<f::FactKind T>
-    bool should_skip(fp::LiteralView<T> literal) const
+    bool should_skip(fp::LiteralView<::tyr::LiftedTag, T> literal) const
     {
         return !literal.get_polarity();
     }
@@ -422,7 +422,7 @@ struct LiftPolicy
  */
 
 template<typename Policy>
-void apply_policy(fp::FunctionExpressionView element, Policy& policy);
+void apply_policy(fp::FunctionExpressionView<::tyr::LiftedTag> element, Policy& policy);
 
 template<typename Policy>
 void apply_policy(ygg::float_t, Policy&)
@@ -450,7 +450,7 @@ void apply_policy(fp::LiftedMultiOperatorView element, Policy& policy)
 }
 
 template<f::FactKind T, typename Policy>
-void apply_policy(fp::AtomView<T> element, Policy& policy)
+void apply_policy(fp::AtomView<::tyr::LiftedTag, T> element, Policy& policy)
 {
     const auto predicate = element.get_predicate();
 
@@ -479,7 +479,7 @@ void apply_policy(fp::AtomView<T> element, Policy& policy)
 }
 
 template<f::FactKind T, typename Policy>
-void apply_policy(fp::LiteralView<T> element, Policy& policy)
+void apply_policy(fp::LiteralView<::tyr::LiftedTag, T> element, Policy& policy)
 {
     if (policy.should_skip(element))
         return;
@@ -488,7 +488,7 @@ void apply_policy(fp::LiteralView<T> element, Policy& policy)
 }
 
 template<f::FactKind T, typename Policy>
-void apply_policy(fp::FunctionTermView<T> element, Policy& policy)
+void apply_policy(fp::FunctionTermView<::tyr::LiftedTag, T> element, Policy& policy)
 {
     const auto function = element.get_function();
 
@@ -517,7 +517,7 @@ void apply_policy(fp::FunctionTermView<T> element, Policy& policy)
 }
 
 template<f::FactKind T, typename Policy>
-void apply_policy(fp::NumericEffectView<T> element, Policy& policy)
+void apply_policy(fp::NumericEffectView<::tyr::LiftedTag, T> element, Policy& policy)
 {
     apply_policy(element.get_fterm(), policy);
     apply_policy(element.get_fexpr(), policy);
@@ -530,7 +530,7 @@ void apply_policy(fp::LiftedArithmeticOperatorView element, Policy& policy)
 }
 
 template<typename Policy>
-void apply_policy(fp::FunctionExpressionView element, Policy& policy)
+void apply_policy(fp::FunctionExpressionView<::tyr::LiftedTag> element, Policy& policy)
 {
     visit([&](auto&& arg) { apply_policy(arg, policy); }, element.get_variant());
 }
@@ -542,7 +542,7 @@ void apply_policy(fp::LiftedBooleanOperatorView element, Policy& policy)
 }
 
 template<f::FactKind T, typename Policy>
-void apply_policy(fp::NumericEffectOperatorView<T> element, Policy& policy)
+void apply_policy(fp::NumericEffectOperatorView<::tyr::LiftedTag, T> element, Policy& policy)
 {
     visit([&](auto&& arg) { apply_policy(arg, policy); }, element.get_variant());
 }

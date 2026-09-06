@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from typing import TypedDict
 
-from pytyr.serialization.formalism.object_view import Object
+from pytyr.serialization.formalism import object_view
+
+
 
 
 class Term(TypedDict):
     kind: int
-    value: Object | str | int
+    value: object_view.Object | str | int

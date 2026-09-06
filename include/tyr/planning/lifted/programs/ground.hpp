@@ -38,9 +38,9 @@ class GroundTaskProgram
 {
 public:
     using AppPredicateToActionMapping =
-        ygg::UnorderedMap<::tyr::formalism::datalog::PredicateView<::tyr::formalism::FluentTag>, ::tyr::formalism::planning::ActionView>;
+        ygg::UnorderedMap<::tyr::formalism::datalog::PredicateView<::tyr::formalism::FluentTag>, ::tyr::formalism::planning::ActionView<::tyr::LiftedTag>>;
     using AppPredicateToAxiomMapping =
-        ygg::UnorderedMap<::tyr::formalism::datalog::PredicateView<::tyr::formalism::FluentTag>, std::vector<::tyr::formalism::planning::AxiomView>>;
+        ygg::UnorderedMap<::tyr::formalism::datalog::PredicateView<::tyr::formalism::FluentTag>, std::vector<::tyr::formalism::planning::AxiomView<::tyr::LiftedTag>>>;
 
     explicit GroundTaskProgram(::tyr::formalism::planning::TaskView task);
 

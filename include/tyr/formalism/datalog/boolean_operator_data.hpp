@@ -64,14 +64,15 @@ struct Data<::tyr::formalism::datalog::BooleanOperator<T>>
     auto identifying_members() const noexcept { return std::tie(operator_kind, value); }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::BooleanOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression>>>);
+static_assert(
+    !ygg::uses_trivial_storage_v<::tyr::formalism::datalog::BooleanOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>>>);
 
 }
 
 namespace tyr::formalism::datalog
 {
-using BooleanOperatorData = ygg::Data<BooleanOperator<ygg::Data<FunctionExpression>>>;
-using GroundBooleanOperatorData = ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>;
+using BooleanOperatorData = ygg::Data<BooleanOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>;
+using GroundBooleanOperatorData = ygg::Data<BooleanOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>;
 }
 
 #endif

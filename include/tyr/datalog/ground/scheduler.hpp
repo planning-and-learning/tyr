@@ -45,10 +45,10 @@ template<::tyr::formalism::RelationKind R>
 struct GroundQueueEntry : ygg::comparison::Mixin<GroundQueueEntry<R>>
 {
     Cost cost;
-    ::tyr::formalism::datalog::GroundRuleView<R> rule;
+    ::tyr::formalism::datalog::RuleView<::tyr::GroundTag, R> rule;
 
     GroundQueueEntry() = delete;
-    GroundQueueEntry(Cost cost, ::tyr::formalism::datalog::GroundRuleView<R> rule) : cost(cost), rule(rule) {}
+    GroundQueueEntry(Cost cost, ::tyr::formalism::datalog::RuleView<::tyr::GroundTag, R> rule) : cost(cost), rule(rule) {}
 
     auto identifying_members() const noexcept { return std::make_tuple(cost, rule); }
 };
@@ -122,7 +122,7 @@ public:
     }
 
     template<::tyr::formalism::RelationKind R>
-    void enqueue(::tyr::formalism::datalog::GroundRuleView<R> rule, Cost queue_label)
+    void enqueue(::tyr::formalism::datalog::RuleView<::tyr::GroundTag, R> rule, Cost queue_label)
     {
         auto& state = get_states<R>()[ygg::uint_t(rule.get_index())];
         if (state.unsatisfied_count != 0)
@@ -212,7 +212,7 @@ public:
 
 private:
     template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void schedule(::tyr::formalism::datalog::GroundRuleView<R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    void schedule(::tyr::formalism::datalog::RuleView<::tyr::GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void notify_predicate_generated(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> fact,
@@ -243,7 +243,7 @@ private:
     }
 
     template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void update_numeric_constraint_satisfaction(::tyr::formalism::datalog::GroundRuleView<R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    void update_numeric_constraint_satisfaction(::tyr::formalism::datalog::RuleView<::tyr::GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void notify_predicate_generated_for(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> fact,

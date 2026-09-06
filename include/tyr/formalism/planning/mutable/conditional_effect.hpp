@@ -18,8 +18,6 @@
 #ifndef TYR_FORMALISM_PLANNING_MUTABLE_CONDITIONAL_EFFECT_HPP_
 #define TYR_FORMALISM_PLANNING_MUTABLE_CONDITIONAL_EFFECT_HPP_
 
-#include <yggdrasil/semantics/comparison.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 #include "tyr/formalism/planning/mutable/conjunctive_condition.hpp"
 #include "tyr/formalism/planning/mutable/conjunctive_effect.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -30,6 +28,8 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+#include <yggdrasil/semantics/comparison.hpp>
+#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -48,7 +48,7 @@ struct MutableConditionalEffect : ygg::comparison::Mixin<MutableConditionalEffec
         effect(std::move(effect))
     {
     }
-    MutableConditionalEffect(size_t num_parent_variables, ConditionalEffectView element) :
+    MutableConditionalEffect(size_t num_parent_variables, ConditionalEffectView<::tyr::LiftedTag> element) :
         num_parent_variables(num_parent_variables),
         num_variables(element.get_arity()),
         condition(num_parent_variables, element.get_condition()),

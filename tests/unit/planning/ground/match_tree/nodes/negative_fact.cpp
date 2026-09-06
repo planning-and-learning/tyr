@@ -24,5 +24,5 @@ concept NegativeFactSelectorContract =
            view.get_dontcare_child();
        };
 
-using MatchTreeTags = ygg::TypeList<fp::GroundAction, fp::GroundAxiom>;
+using MatchTreeTags = ygg::TypeList<fp::Action<::tyr::GroundTag>, fp::Axiom<::tyr::GroundTag>>;
 static_assert([]<typename... Tags>(ygg::TypeList<Tags...>) { return (NegativeFactSelectorContract<Tags> && ...); }(MatchTreeTags {}));

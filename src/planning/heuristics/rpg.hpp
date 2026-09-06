@@ -63,7 +63,7 @@ struct RPGDefinition
         if (!metric)
             return;
 
-        auto fterms = ygg::UnorderedSet<::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag>> {};
+        auto fterms = ygg::UnorderedSet<::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag>> {};
         ::tyr::formalism::datalog::collect_fterms(metric.value().get_fexpr(), fterms);
         for (const auto fterm : fterms)
             metric_targets.insert(fterm.get_row().get_index());
@@ -73,7 +73,7 @@ struct RPGDefinition
 template<TaskKind Kind>
 struct RPGPolicy;
 
-inline ::tyr::formalism::planning::ActionBindingView to_action_binding(::tyr::formalism::planning::GroundActionView action) noexcept
+inline ::tyr::formalism::planning::ActionBindingView to_action_binding(::tyr::formalism::planning::ActionView<::tyr::GroundTag> action) noexcept
 {
     return action.get_row();
 }
@@ -81,7 +81,7 @@ inline ::tyr::formalism::planning::ActionBindingView to_action_binding(::tyr::fo
 inline ::tyr::formalism::planning::ActionBindingView to_action_binding(::tyr::formalism::planning::ActionBindingView action) noexcept { return action; }
 
 template<TaskKind Kind, typename Workspace>
-void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, ::tyr::formalism::planning::GroundConjunctiveConditionView source_goal)
+void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, ::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> source_goal)
 {
     namespace fd = ::tyr::formalism::datalog;
     auto& destination = [&]() -> fd::Repository&
@@ -92,7 +92,7 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, ::t
             return workspace.workspace_repository;
     }();
     auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { workspace.datalog_builder, destination };
-    auto condition = fd::checkout<fd::GroundConjunctiveCondition>(merge_context.builder);
+    auto condition = fd::checkout<fd::ConjunctiveCondition<::tyr::GroundTag>>(merge_context.builder);
 
     const auto translate_atom = [&](const auto atom)
     {
@@ -109,7 +109,7 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, ::t
         if (!atom)
             continue;
 
-        auto literal = fd::checkout<fd::GroundLiteral<::tyr::formalism::FluentTag>>(merge_context.builder);
+        auto literal = fd::checkout<fd::Literal<::tyr::GroundTag, ::tyr::formalism::FluentTag>>(merge_context.builder);
         literal->atom = translate_atom(*atom).get_index();
         literal->polarity = true;
         condition->fluent_literals.push_back(fd::get_or_create(merge_context.destination, *literal).first.get_index());
@@ -156,7 +156,7 @@ public:
         Policy::set_goal(*m_definition, m_workspace, m_source_goal);
     }
 
-    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal)
+    void set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal)
     {
         m_source_goal = goal;
         Policy::set_goal(*m_definition, m_workspace, m_source_goal);
@@ -236,7 +236,7 @@ protected:
     }
 
     void append_planning_cut_frontier_atom(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
-                                           ::tyr::formalism::planning::GroundAtomViewList<::tyr::formalism::FluentTag>& atoms)
+                                           ::tyr::formalism::planning::AtomViewList<::tyr::GroundTag, ::tyr::formalism::FluentTag>& atoms)
     {
         if (const auto atom = Policy::translate_cut_atom(*m_definition, m_workspace, head))
             atoms.push_back(*atom);
@@ -271,7 +271,7 @@ protected:
 
     std::shared_ptr<Definition> m_definition;
     ygg::ExecutionContextPtr m_execution_context;
-    ::tyr::formalism::planning::GroundConjunctiveConditionView m_source_goal;
+    ::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> m_source_goal;
     Workspace m_workspace;
 
 private:

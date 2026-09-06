@@ -18,8 +18,6 @@
 #ifndef TYR_FORMALISM_PLANNING_MUTABLE_ACTION_HPP_
 #define TYR_FORMALISM_PLANNING_MUTABLE_ACTION_HPP_
 
-#include <yggdrasil/semantics/comparison.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 #include "tyr/formalism/planning/mutable/conditional_effect.hpp"
 #include "tyr/formalism/planning/mutable/conjunctive_condition.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -30,6 +28,8 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+#include <yggdrasil/semantics/comparison.hpp>
+#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -46,7 +46,7 @@ struct MutableAction : ygg::comparison::Mixin<MutableAction>
         effects(std::move(effects))
     {
     }
-    MutableAction(ActionView element) : num_variables(element.get_arity()), condition(num_variables, element.get_condition()), effects()
+    MutableAction(ActionView<::tyr::LiftedTag> element) : num_variables(element.get_arity()), condition(num_variables, element.get_condition()), effects()
     {
         for (const auto& effect : element.get_effects())
             effects.emplace_back(num_variables, effect);

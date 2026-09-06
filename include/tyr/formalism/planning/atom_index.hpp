@@ -18,17 +18,18 @@
 #ifndef TYR_FORMALISM_PLANNING_ATOM_INDEX_HPP_
 #define TYR_FORMALISM_PLANNING_ATOM_INDEX_HPP_
 
-#include <yggdrasil/ids/index_mixins.hpp>
-#include <yggdrasil/core/types.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
+
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/ids/index_mixins.hpp>
 
 namespace ygg
 {
-template<tyr::formalism::FactKind T>
-struct Index<tyr::formalism::planning::Atom<T>> : ygg::IndexMixin<ygg::Index<tyr::formalism::planning::Atom<T>>>
+template<::tyr::TaskKind T, tyr::formalism::FactKind F>
+struct Index<tyr::formalism::planning::Atom<T, F>> : ygg::IndexMixin<ygg::Index<tyr::formalism::planning::Atom<T, F>>>
 {
     // Inherit constructors
-    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::planning::Atom<T>>>;
+    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::planning::Atom<T, F>>>;
     using Base::Base;
 };
 

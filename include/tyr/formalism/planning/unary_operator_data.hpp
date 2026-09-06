@@ -20,7 +20,6 @@
 
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/function_expression_data.hpp"
-#include "tyr/formalism/planning/ground_function_expression_data.hpp"
 #include "tyr/formalism/planning/unary_operator_index.hpp"
 
 #include <stdexcept>
@@ -69,7 +68,8 @@ struct Data<::tyr::formalism::planning::UnaryOperator<T>>
     auto identifying_members() const noexcept { return std::tie(operator_kind, arg); }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::UnaryOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression>>>);
+static_assert(
+    !ygg::uses_trivial_storage_v<::tyr::formalism::planning::UnaryOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>>>);
 
 }
 

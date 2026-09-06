@@ -31,7 +31,7 @@ template<FactKind T>
 void bind_fdr_variable_data(nb::module_& m, const char* name)
 {
     using V = ygg::Data<FDRVariable<T>>;
-    auto cls = nb::class_<V>(m, name).def(nb::init<const GroundAtomViewList<T>>(), "atoms"_a);
+    auto cls = nb::class_<V>(m, name).def(nb::init<const AtomViewList<::tyr::GroundTag, T>>(), "atoms"_a);
     ygg::add_print(cls);
     ygg::add_comparison(cls);
     ygg::add_hash(cls);

@@ -9,13 +9,13 @@
 namespace tyr::serialization
 {
 
-template<TaskKind Kind>
-struct Serializer<planning::Plan<Kind>>
+template<TaskKind T>
+struct Serializer<planning::Plan<T>>
 {
-    static std::string name() { return std::same_as<Kind, GroundTag> ? "GroundPlan" : "LiftedPlan"; }
+    static std::string name() { return std::string(T::name) + "Plan"; }
 
     template<class Archive>
-    static void save(Archive& archive, const planning::Plan<Kind>& plan)
+    static void save(Archive& archive, const planning::Plan<T>& plan)
     {
         archive.field("start_node", plan.get_start_node());
         archive.field("labeled_succ_nodes", plan.get_labeled_succ_nodes());

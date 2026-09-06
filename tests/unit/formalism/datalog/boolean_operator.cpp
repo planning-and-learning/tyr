@@ -14,8 +14,8 @@ concept BooleanOperatorContract = std::totally_ordered<ygg::Data<Entity>> && std
                                          view.get_variant();
                                      };
 
-using Lifted = fd::BooleanOperator<ygg::Data<fd::FunctionExpression>>;
-using Ground = fd::BooleanOperator<ygg::Data<fd::GroundFunctionExpression>>;
+using Lifted = fd::BooleanOperator<ygg::Data<fd::FunctionExpression<::tyr::LiftedTag>>>;
+using Ground = fd::BooleanOperator<ygg::Data<fd::FunctionExpression<::tyr::GroundTag>>>;
 
 static_assert(BooleanOperatorContract<Lifted>);
 static_assert(BooleanOperatorContract<Ground>);

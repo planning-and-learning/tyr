@@ -40,9 +40,9 @@ class RPGProgram
 {
 public:
     using Task = std::conditional_t<std::same_as<Kind, GroundTag>, ::tyr::formalism::planning::FDRTaskView, ::tyr::formalism::planning::TaskView>;
-    using Action = std::conditional_t<std::same_as<Kind, GroundTag>, ::tyr::formalism::planning::GroundActionView, ::tyr::formalism::planning::ActionView>;
+    using Action = std::conditional_t<std::same_as<Kind, GroundTag>, ::tyr::formalism::planning::ActionView<::tyr::GroundTag>, ::tyr::formalism::planning::ActionView<::tyr::LiftedTag>>;
     template<::tyr::formalism::RelationKind R>
-    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, ::tyr::formalism::datalog::RuleBindingView<R>, ::tyr::formalism::datalog::RuleView<R>>;
+    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, ::tyr::formalism::datalog::RuleBindingView<R>, ::tyr::formalism::datalog::RuleView<::tyr::LiftedTag, R>>;
     template<::tyr::formalism::RelationKind R>
     using RuleToActionMapping = ygg::UnorderedMap<Rule<R>, Action>;
 
@@ -67,7 +67,7 @@ public:
 
     datalog::Program<Kind>& get_datalog_program() noexcept { return m_datalog_program; }
     const datalog::Program<Kind>& get_datalog_program() const noexcept { return m_datalog_program; }
-    ::tyr::formalism::datalog::GroundConjunctiveConditionView get_goal() const noexcept { return m_datalog_program.get_program().get_goal().value(); }
+    ::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::GroundTag> get_goal() const noexcept { return m_datalog_program.get_program().get_goal().value(); }
 
 private:
     TranslationContext<Kind> m_translation_context;

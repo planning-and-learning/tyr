@@ -19,8 +19,8 @@
 #define TYR_PLANNING_GROUND_MATCH_TREE_REPOSITORY_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/ground_action_index.hpp"
-#include "tyr/formalism/planning/ground_axiom_index.hpp"
+#include "tyr/formalism/planning/action_index.hpp"
+#include "tyr/formalism/planning/axiom_index.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/planning/ground/match_tree/canonicalization.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
@@ -53,8 +53,8 @@
 namespace tyr::planning::match_tree
 {
 
-using GroundActionBuilder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, RepositoryTypes<::tyr::formalism::planning::GroundAction>>;
-using GroundAxiomBuilder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, RepositoryTypes<::tyr::formalism::planning::GroundAxiom>>;
+using GroundActionBuilder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, RepositoryTypes<::tyr::formalism::planning::Action<::tyr::GroundTag>>>;
+using GroundAxiomBuilder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, RepositoryTypes<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>>;
 
 template<typename T>
 [[nodiscard]] auto checkout(GroundActionBuilder& builder)
@@ -139,9 +139,9 @@ public:
     void clear() noexcept { m_repository.clear(); }
 };
 
-static_assert(RepositoryConcept<Repository<::tyr::formalism::planning::GroundAction>, ::tyr::formalism::planning::GroundAction>);
+static_assert(RepositoryConcept<Repository<::tyr::formalism::planning::Action<::tyr::GroundTag>>, ::tyr::formalism::planning::Action<::tyr::GroundTag>>);
 
-static_assert(Context<Repository<::tyr::formalism::planning::GroundAction>, ::tyr::formalism::planning::GroundAction>);
+static_assert(Context<Repository<::tyr::formalism::planning::Action<::tyr::GroundTag>>, ::tyr::formalism::planning::Action<::tyr::GroundTag>>);
 
 template<typename Tag, typename T>
 [[nodiscard]] auto get_or_create(Repository<Tag>& repository, ygg::Data<T>& data)

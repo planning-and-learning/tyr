@@ -73,11 +73,11 @@ struct formatter<tyr::analysis::Scoped<Element, Payload>, char>
 };
 
 template<typename Payload>
-struct formatter<tyr::analysis::Scoped<tyr::formalism::planning::Axiom, Payload>, char>
+struct formatter<tyr::analysis::Scoped<tyr::formalism::planning::Axiom<::tyr::LiftedTag>, Payload>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::analysis::Scoped<tyr::formalism::planning::Axiom, Payload>& value, FormatContext& ctx) const
+    auto format(const tyr::analysis::Scoped<tyr::formalism::planning::Axiom<::tyr::LiftedTag>, Payload>& value, FormatContext& ctx) const
     {
         auto os = std::stringstream {};
         os << "AxiomDomain(\n";
@@ -94,11 +94,11 @@ struct formatter<tyr::analysis::Scoped<tyr::formalism::planning::Axiom, Payload>
 };
 
 template<tyr::formalism::RelationKind R, typename Payload>
-struct formatter<tyr::analysis::Scoped<tyr::formalism::datalog::Rule<R>, Payload>, char>
+struct formatter<tyr::analysis::Scoped<tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>, Payload>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::analysis::Scoped<tyr::formalism::datalog::Rule<R>, Payload>& value, FormatContext& ctx) const
+    auto format(const tyr::analysis::Scoped<tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>, Payload>& value, FormatContext& ctx) const
     {
         auto os = std::stringstream {};
         os << "RuleDomain(\n";
@@ -278,11 +278,11 @@ struct formatter<tyr::analysis::TaskVariableDomains, char>
 };
 
 template<typename C>
-struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::ConditionalEffect, tyr::analysis::ConditionalEffectDomainViewData<C>, C>, char>
+struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>, tyr::analysis::ConditionalEffectDomainViewData<C>, C>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::analysis::ScopedView<tyr::formalism::planning::ConditionalEffect, tyr::analysis::ConditionalEffectDomainViewData<C>, C>& value,
+    auto format(const tyr::analysis::ScopedView<tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>, tyr::analysis::ConditionalEffectDomainViewData<C>, C>& value,
                 FormatContext& ctx) const
     {
         auto os = std::stringstream {};
@@ -302,11 +302,11 @@ struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Conditional
 };
 
 template<typename C>
-struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Action, tyr::analysis::ActionDomainViewData<C>, C>, char>
+struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Action<::tyr::LiftedTag>, tyr::analysis::ActionDomainViewData<C>, C>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::analysis::ScopedView<tyr::formalism::planning::Action, tyr::analysis::ActionDomainViewData<C>, C>& value, FormatContext& ctx) const
+    auto format(const tyr::analysis::ScopedView<tyr::formalism::planning::Action<::tyr::LiftedTag>, tyr::analysis::ActionDomainViewData<C>, C>& value, FormatContext& ctx) const
     {
         auto os = std::stringstream {};
         os << "ActionDomain(\n";
@@ -350,11 +350,11 @@ struct formatter<tyr::analysis::ScopedView<Element, Payload, C>, char>
 };
 
 template<typename Payload, typename C>
-struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::ConjunctiveCondition, Payload, C>, char>
+struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>, Payload, C>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::analysis::ScopedView<tyr::formalism::planning::ConjunctiveCondition, Payload, C>& value, FormatContext& ctx) const
+    auto format(const tyr::analysis::ScopedView<tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>, Payload, C>& value, FormatContext& ctx) const
     {
         auto os = std::stringstream {};
         os << "ConjunctiveConditionDomain(\n";
@@ -371,11 +371,11 @@ struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Conjunctive
 };
 
 template<typename Payload, typename C>
-struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::ConjunctiveEffect, Payload, C>, char>
+struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>, Payload, C>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::analysis::ScopedView<tyr::formalism::planning::ConjunctiveEffect, Payload, C>& value, FormatContext& ctx) const
+    auto format(const tyr::analysis::ScopedView<tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>, Payload, C>& value, FormatContext& ctx) const
     {
         auto os = std::stringstream {};
         os << "ConjunctiveEffectDomain(\n";
@@ -392,11 +392,11 @@ struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Conjunctive
 };
 
 template<typename Payload, typename C>
-struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Axiom, Payload, C>, char>
+struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Axiom<::tyr::LiftedTag>, Payload, C>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::analysis::ScopedView<tyr::formalism::planning::Axiom, Payload, C>& value, FormatContext& ctx) const
+    auto format(const tyr::analysis::ScopedView<tyr::formalism::planning::Axiom<::tyr::LiftedTag>, Payload, C>& value, FormatContext& ctx) const
     {
         auto os = std::stringstream {};
         os << "AxiomDomain(\n";
@@ -413,11 +413,11 @@ struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Axiom, Payl
 };
 
 template<tyr::formalism::RelationKind R, typename Payload, typename C>
-struct formatter<tyr::analysis::ScopedView<tyr::formalism::datalog::Rule<R>, Payload, C>, char>
+struct formatter<tyr::analysis::ScopedView<tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>, Payload, C>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::analysis::ScopedView<tyr::formalism::datalog::Rule<R>, Payload, C>& value, FormatContext& ctx) const
+    auto format(const tyr::analysis::ScopedView<tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>, Payload, C>& value, FormatContext& ctx) const
     {
         auto os = std::stringstream {};
         os << "RuleDomain(\n";

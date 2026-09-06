@@ -154,7 +154,7 @@ struct RuleExecutionContext
         RuleWorkspace<LiftedTag, R>& m_ws_rule;
     };
 
-    RuleExecutionContext(ygg::Index<::tyr::formalism::datalog::Rule<R>> rule, StratumExecutionContext<AP, TP, CP>& ctx) :
+    RuleExecutionContext(ygg::Index<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>> rule, StratumExecutionContext<AP, TP, CP>& ctx) :
         m_ctx(ctx),
         m_in(*ctx.in().program().template get_rules<R>()[ygg::uint_t(rule)]),
         m_out(*ctx.out().program().template get_rules<R>()[ygg::uint_t(rule)])

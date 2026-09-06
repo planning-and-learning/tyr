@@ -3,9 +3,9 @@
 
 #include "tyr/planning/ground/state_view.hpp"
 #include "tyr/planning/lifted/state_view.hpp"
+#include "tyr/serialization/formalism/planning/atom_view.hpp"
 #include "tyr/serialization/formalism/planning/fdr_fact_view.hpp"
-#include "tyr/serialization/formalism/planning/ground_atom_view.hpp"
-#include "tyr/serialization/formalism/planning/ground_function_term_view.hpp"
+#include "tyr/serialization/formalism/planning/function_term_view.hpp"
 #include "tyr/serialization/serializer.hpp"
 
 #include <string>
@@ -13,13 +13,13 @@
 namespace tyr::serialization
 {
 
-template<TaskKind Kind>
-struct Serializer<planning::StateView<Kind>>
+template<TaskKind T>
+struct Serializer<planning::StateView<T>>
 {
-    static std::string name() { return std::same_as<Kind, GroundTag> ? "GroundState" : "LiftedState"; }
+    static std::string name() { return std::string(T::name) + "State"; }
 
     template<class Archive>
-    static void save(Archive& archive, const planning::StateView<Kind>& state)
+    static void save(Archive& archive, const planning::StateView<T>& state)
     {
         archive.field("fluent_facts", state.get_fluent_facts_view());
         archive.field("derived_atoms", state.get_derived_atoms_view());

@@ -22,15 +22,15 @@
 namespace tyr::datalog
 {
 
-template bool is_applicable(::tyr::formalism::datalog::LiteralView<::tyr::formalism::StaticTag> element, const ApplicabilityContext& context);
-template bool is_applicable(::tyr::formalism::datalog::LiteralView<::tyr::formalism::FluentTag> element, const ApplicabilityContext& context);
+template bool is_applicable(::tyr::formalism::datalog::LiteralView<::tyr::LiftedTag, ::tyr::formalism::StaticTag> element, const ApplicabilityContext& context);
+template bool is_applicable(::tyr::formalism::datalog::LiteralView<::tyr::LiftedTag, ::tyr::formalism::FluentTag> element, const ApplicabilityContext& context);
 
-template bool is_applicable(::tyr::formalism::datalog::LiteralListView<::tyr::formalism::StaticTag> elements, const ApplicabilityContext& context);
-template bool is_applicable(::tyr::formalism::datalog::LiteralListView<::tyr::formalism::FluentTag> elements, const ApplicabilityContext& context);
+template bool is_applicable(::tyr::formalism::datalog::LiteralListView<::tyr::LiftedTag, ::tyr::formalism::StaticTag> elements, const ApplicabilityContext& context);
+template bool is_applicable(::tyr::formalism::datalog::LiteralListView<::tyr::LiftedTag, ::tyr::formalism::FluentTag> elements, const ApplicabilityContext& context);
 
-template ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::NumericEffectView<::tyr::formalism::FluentTag> element,
+template ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::NumericEffectView<::tyr::LiftedTag, ::tyr::formalism::FluentTag> element,
                                                     const ApplicabilityContext& context);
-template ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::NumericEffectOperatorView<::tyr::formalism::FluentTag> element,
+template ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::NumericEffectOperatorView<::tyr::LiftedTag, ::tyr::formalism::FluentTag> element,
                                                     const ApplicabilityContext& context);
 
 }

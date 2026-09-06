@@ -19,7 +19,7 @@
 #define TYR_FORMALISM_DATALOG_METRIC_DATA_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/ground_function_expression_data.hpp"
+#include "tyr/formalism/datalog/function_expression_data.hpp"
 #include "tyr/formalism/datalog/metric_index.hpp"
 
 #include <tuple>
@@ -34,12 +34,12 @@ template<>
 struct Data<::tyr::formalism::datalog::Metric>
 {
     ygg::Index<::tyr::formalism::datalog::Metric> index;
-    ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression> fexpr;
+    ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::GroundTag>> fexpr;
 
     Data() = default;
-    explicit Data(ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression> fexpr_) : index(), fexpr(std::move(fexpr_)) {}
+    explicit Data(ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::GroundTag>> fexpr_) : index(), fexpr(std::move(fexpr_)) {}
     template<typename C>
-    explicit Data(::ygg::View<ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>, C> fexpr_) : index(), fexpr()
+    explicit Data(::ygg::View<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::GroundTag>>, C> fexpr_) : index(), fexpr()
     {
         set(fexpr_, fexpr);
     }

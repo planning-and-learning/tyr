@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import TypedDict
 
 from pytyr.serialization.formalism.planning import function_expression_view
-from pytyr.serialization.formalism.planning import ground_function_expression_view
+
+
 
 
 class MultiOperator(TypedDict):
@@ -13,4 +14,4 @@ class MultiOperator(TypedDict):
 
 class GroundMultiOperator(TypedDict):
     operator: int
-    args: list[ground_function_expression_view.GroundFunctionExpression | str]
+    args: list[function_expression_view.GroundFunctionExpression | str]

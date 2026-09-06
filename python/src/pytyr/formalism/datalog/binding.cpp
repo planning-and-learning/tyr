@@ -54,7 +54,7 @@ void bind_binding_view(nb::module_& m, const char* name)
 void bind_binding(nb::module_& m, RepositoryBinding& repository)
 {
     {
-        using V = ygg::Index<RelationBinding<Rule<PredicateTag>>>;
+        using V = ygg::Index<RelationBinding<Rule<::tyr::LiftedTag, PredicateTag>>>;
         auto cls = nb::class_<V>(m, "RuleBindingIndex").def_ro("relation_index", &V::relation).def_ro("row_index", &V::row);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
@@ -62,26 +62,26 @@ void bind_binding(nb::module_& m, RepositoryBinding& repository)
     }
 
     {
-        using V = ygg::Index<RelationBinding<Rule<FunctionTag>>>;
+        using V = ygg::Index<RelationBinding<Rule<::tyr::LiftedTag, FunctionTag>>>;
         auto cls = nb::class_<V>(m, "FunctionRuleBindingIndex").def_ro("relation_index", &V::relation).def_ro("row_index", &V::row);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);
     }
 
-    bind_binding_data<Rule<PredicateTag>>(m, "RuleBindingData");
-    bind_binding_data<Rule<FunctionTag>>(m, "FunctionRuleBindingData");
+    bind_binding_data<Rule<::tyr::LiftedTag, PredicateTag>>(m, "RuleBindingData");
+    bind_binding_data<Rule<::tyr::LiftedTag, FunctionTag>>(m, "FunctionRuleBindingData");
 
-    bind_binding_view<Rule<PredicateTag>>(m, "RuleBinding");
-    bind_binding_view<Rule<FunctionTag>>(m, "FunctionRuleBinding");
+    bind_binding_view<Rule<::tyr::LiftedTag, PredicateTag>>(m, "RuleBinding");
+    bind_binding_view<Rule<::tyr::LiftedTag, FunctionTag>>(m, "FunctionRuleBinding");
     bind_binding_view<Predicate<StaticTag>>(m, "StaticPredicateBinding");
     bind_binding_view<Predicate<FluentTag>>(m, "FluentPredicateBinding");
     bind_binding_view<Function<StaticTag>>(m, "StaticFunctionBinding");
     bind_binding_view<Function<FluentTag>>(m, "FluentFunctionBinding");
     bind_binding_view<Function<AuxiliaryTag>>(m, "AuxiliaryFunctionBinding");
 
-    repository.def("get_or_create", &get_or_create_relation_data<Rule<PredicateTag>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_relation_data<Rule<FunctionTag>>, "data"_a, nb::keep_alive<0, 1>());
+    repository.def("get_or_create", &get_or_create_relation_data<Rule<::tyr::LiftedTag, PredicateTag>>, "data"_a, nb::keep_alive<0, 1>());
+    repository.def("get_or_create", &get_or_create_relation_data<Rule<::tyr::LiftedTag, FunctionTag>>, "data"_a, nb::keep_alive<0, 1>());
     repository.def("get_or_create", &get_or_create_relation_data<Predicate<StaticTag>>, "data"_a, nb::keep_alive<0, 1>());
     repository.def("get_or_create", &get_or_create_relation_data<Predicate<FluentTag>>, "data"_a, nb::keep_alive<0, 1>());
     repository.def("get_or_create", &get_or_create_relation_data<Function<StaticTag>>, "data"_a, nb::keep_alive<0, 1>());

@@ -21,7 +21,6 @@
 #include "tyr/formalism/planning/binary_operator_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/function_expression_data.hpp"
-#include "tyr/formalism/planning/ground_function_expression_data.hpp"
 
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
@@ -65,8 +64,9 @@ struct Data<::tyr::formalism::planning::BinaryOperator<Operator, T>>
     auto identifying_members() const noexcept { return std::tie(operator_kind, lhs, rhs); }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<
-              ::tyr::formalism::planning::BinaryOperator<::tyr::formalism::ArithmeticOperatorKind, ygg::Data<::tyr::formalism::planning::FunctionExpression>>>);
+static_assert(
+    !ygg::uses_trivial_storage_v<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::ArithmeticOperatorKind,
+                                                                            ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>>>);
 
 }
 

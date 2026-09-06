@@ -7,6 +7,8 @@ from pytyr.serialization.formalism.planning import multi_operator_view
 from pytyr.serialization.formalism.planning import unary_operator_view
 
 
+
+
 class ArithmeticOperator(TypedDict):
     kind: int
     value: unary_operator_view.UnaryOperator | binary_operator_view.BinaryArithmeticOperator | multi_operator_view.MultiOperator | str

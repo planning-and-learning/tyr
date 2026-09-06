@@ -4,7 +4,7 @@
 #include "tyr/formalism/planning/metric_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/serialization/formalism/enums.hpp"
-#include "tyr/serialization/formalism/planning/ground_function_expression_view.hpp"
+#include "tyr/serialization/formalism/planning/function_expression_view.hpp"
 #include "tyr/serialization/serializer.hpp"
 
 namespace tyr::serialization

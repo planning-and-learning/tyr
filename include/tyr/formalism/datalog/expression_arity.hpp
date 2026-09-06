@@ -38,16 +38,16 @@ void collect_parameters(ygg::float_t element, ygg::UnorderedSet<ParameterIndex>&
 
 void collect_parameters(TermView element, ygg::UnorderedSet<ParameterIndex>& result);
 
-template<FactKind T>
-void collect_parameters(AtomView<T> element, ygg::UnorderedSet<ParameterIndex>& result);
+template<FactKind F>
+void collect_parameters(AtomView<::tyr::LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result);
 
-template<FactKind T>
-void collect_parameters(LiteralView<T> element, ygg::UnorderedSet<ParameterIndex>& result);
+template<FactKind F>
+void collect_parameters(LiteralView<::tyr::LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result);
 
-template<FactKind T>
-void collect_parameters(FunctionTermView<T> element, ygg::UnorderedSet<ParameterIndex>& result);
+template<FactKind F>
+void collect_parameters(FunctionTermView<::tyr::LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result);
 
-void collect_parameters(FunctionExpressionView element, ygg::UnorderedSet<ParameterIndex>& result);
+void collect_parameters(FunctionExpressionView<::tyr::LiftedTag> element, ygg::UnorderedSet<ParameterIndex>& result);
 
 void collect_parameters(LiftedUnaryOperatorView element, ygg::UnorderedSet<ParameterIndex>& result);
 
@@ -84,27 +84,27 @@ inline void collect_parameters(TermView element, ygg::UnorderedSet<ParameterInde
         element.get_variant());
 }
 
-template<FactKind T>
-inline void collect_parameters(AtomView<T> element, ygg::UnorderedSet<ParameterIndex>& result)
+template<FactKind F>
+inline void collect_parameters(AtomView<::tyr::LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result)
 {
     for (const auto term : element.get_terms())
         collect_parameters(term, result);
 }
 
-template<FactKind T>
-inline void collect_parameters(LiteralView<T> element, ygg::UnorderedSet<ParameterIndex>& result)
+template<FactKind F>
+inline void collect_parameters(LiteralView<::tyr::LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result)
 {
     collect_parameters(element.get_atom(), result);
 }
 
-template<FactKind T>
-inline void collect_parameters(FunctionTermView<T> element, ygg::UnorderedSet<ParameterIndex>& result)
+template<FactKind F>
+inline void collect_parameters(FunctionTermView<::tyr::LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result)
 {
     for (const auto term : element.get_terms())
         collect_parameters(term, result);
 }
 
-inline void collect_parameters(FunctionExpressionView element, ygg::UnorderedSet<ParameterIndex>& result)
+inline void collect_parameters(FunctionExpressionView<::tyr::LiftedTag> element, ygg::UnorderedSet<ParameterIndex>& result)
 {
     visit([&](auto&& arg) { collect_parameters(arg, result); }, element.get_variant());
 }
@@ -134,24 +134,24 @@ inline void collect_parameters(LiftedBooleanOperatorView element, ygg::Unordered
     visit([&](auto&& arg) { collect_parameters(arg, result); }, element.get_variant());
 }
 
-template<FactKind T>
-inline auto collect_parameters(AtomView<T> element)
+template<FactKind F>
+inline auto collect_parameters(AtomView<::tyr::LiftedTag, F> element)
 {
     auto result = ygg::UnorderedSet<ParameterIndex> {};
     collect_parameters(element, result);
     return result;
 }
 
-template<FactKind T>
-inline auto collect_parameters(LiteralView<T> element)
+template<FactKind F>
+inline auto collect_parameters(LiteralView<::tyr::LiftedTag, F> element)
 {
     auto result = ygg::UnorderedSet<ParameterIndex> {};
     collect_parameters(element, result);
     return result;
 }
 
-template<FactKind T>
-inline auto collect_parameters(FunctionTermView<T> element)
+template<FactKind F>
+inline auto collect_parameters(FunctionTermView<::tyr::LiftedTag, F> element)
 {
     auto result = ygg::UnorderedSet<ParameterIndex> {};
     collect_parameters(element, result);
@@ -171,10 +171,10 @@ inline auto collect_parameters(LiftedBooleanOperatorView element)
 
 inline size_t max_fterm_arity(ygg::float_t element);
 
-template<FactKind T>
-size_t max_fterm_arity(FunctionTermView<T> element);
+template<FactKind F>
+size_t max_fterm_arity(FunctionTermView<::tyr::LiftedTag, F> element);
 
-size_t max_fterm_arity(FunctionExpressionView element);
+size_t max_fterm_arity(FunctionExpressionView<::tyr::LiftedTag> element);
 
 size_t max_fterm_arity(LiftedUnaryOperatorView element);
 
@@ -193,13 +193,13 @@ size_t max_fterm_arity(LiftedBooleanOperatorView element);
 
 inline size_t max_fterm_arity(ygg::float_t) { return 0; }
 
-template<FactKind T>
-inline size_t max_fterm_arity(FunctionTermView<T> element)
+template<FactKind F>
+inline size_t max_fterm_arity(FunctionTermView<::tyr::LiftedTag, F> element)
 {
     return max_fterm_arity(element.get_function().get_arity());
 }
 
-inline size_t max_fterm_arity(FunctionExpressionView element)
+inline size_t max_fterm_arity(FunctionExpressionView<::tyr::LiftedTag> element)
 {
     return visit([&](auto&& arg) { return max_fterm_arity(arg); }, element.get_variant());
 }
@@ -236,14 +236,14 @@ inline size_t max_fterm_arity(LiftedBooleanOperatorView element)
  * kckp_arity
  */
 
-template<FactKind T>
-inline size_t kckp_arity(LiteralView<T> element)
+template<FactKind F>
+inline size_t kckp_arity(LiteralView<::tyr::LiftedTag, F> element)
 {
     return element.get_atom().get_predicate().get_arity();
 }
 
-template<FactKind T>
-inline size_t kckp_arity(FunctionTermView<T> element)
+template<FactKind F>
+inline size_t kckp_arity(FunctionTermView<::tyr::LiftedTag, F> element)
 {
     return element.get_function().get_arity();
 }
@@ -254,14 +254,14 @@ inline size_t kckp_arity(LiftedBooleanOperatorView element) { return std::max(ma
  * parameter_arity
  */
 
-template<FactKind T>
-inline size_t parameter_arity(LiteralView<T> element)
+template<FactKind F>
+inline size_t parameter_arity(LiteralView<::tyr::LiftedTag, F> element)
 {
     return collect_parameters(element).size();
 }
 
-template<FactKind T>
-inline size_t parameter_arity(FunctionTermView<T> element)
+template<FactKind F>
+inline size_t parameter_arity(FunctionTermView<::tyr::LiftedTag, F> element)
 {
     return collect_parameters(element).size();
 }

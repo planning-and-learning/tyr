@@ -64,9 +64,9 @@ template<typename T>
 }
 
 template<RelationKind R>
-std::optional<GroundRuleView<R>> find_ground_rule(RuleBindingView<R> binding)
+std::optional<RuleView<::tyr::GroundTag, R>> find_ground_rule(RuleBindingView<R> binding)
 {
-    auto rule = ygg::Data<GroundRule<R>> {};
+    auto rule = ygg::Data<Rule<::tyr::GroundTag, R>> {};
     rule.binding = binding.get_index();
     return binding.get_context().find(rule);
 }

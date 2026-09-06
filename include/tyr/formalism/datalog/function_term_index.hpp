@@ -18,19 +18,23 @@
 #ifndef TYR_FORMALISM_DATALOG_FUNCTION_TERM_INDEX_HPP_
 #define TYR_FORMALISM_DATALOG_FUNCTION_TERM_INDEX_HPP_
 
-#include <yggdrasil/ids/index_mixins.hpp>
-#include <yggdrasil/core/types.hpp>
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/function_index.hpp"
+
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/ids/index_mixins.hpp>
 
 namespace ygg
 {
-template<tyr::formalism::FactKind T>
-struct Index<tyr::formalism::datalog::FunctionTerm<T>> : ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::FunctionTerm<T>>>
+
+template<::tyr::TaskKind T, tyr::formalism::FactKind F>
+struct Index<tyr::formalism::datalog::FunctionTerm<T, F>> : ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::FunctionTerm<T, F>>>
 {
     // Inherit constructors
-    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::FunctionTerm<T>>>;
+    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::FunctionTerm<T, F>>>;
     using Base::Base;
 };
+
 }
 
 #endif

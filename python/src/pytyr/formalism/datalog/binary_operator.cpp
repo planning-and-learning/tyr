@@ -29,8 +29,8 @@ void bind_binary_operator(nb::module_& m, RepositoryBinding& repository)
 {
     using Arithmetic = ArithmeticOperatorKind;
     using Boolean = BooleanOperatorKind;
-    using LiftedExpression = ygg::Data<FunctionExpression>;
-    using GroundExpression = ygg::Data<GroundFunctionExpression>;
+    using LiftedExpression = ygg::Data<FunctionExpression<::tyr::LiftedTag>>;
+    using GroundExpression = ygg::Data<FunctionExpression<::tyr::GroundTag>>;
 
     ygg::bind_index<ygg::Index<BinaryOperator<Arithmetic, LiftedExpression>>>(m, "BinaryArithmeticOperatorIndex");
     ygg::bind_index<ygg::Index<BinaryOperator<Boolean, LiftedExpression>>>(m, "BinaryBooleanOperatorIndex");

@@ -27,36 +27,44 @@ namespace tyr::formalism::datalog
 void bind_arithmetic_operator(nb::module_& m, RepositoryBinding& repository)
 {
     {
-        using V = ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>;
+        using V = ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>;
         auto cls = nb::class_<V>(m, "ArithmeticOperatorData").def(nb::init<V::ViewVariant<Repository>>(), "value"_a);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);
     }
     {
-        using V = ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>;
+        using V = ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>;
         auto cls = nb::class_<V>(m, "GroundArithmeticOperatorData").def(nb::init<V::ViewVariant<Repository>>(), "value"_a);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);
     }
     {
-        using V = ArithmeticOperatorView<ygg::Data<FunctionExpression>>;
+        using V = ArithmeticOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>;
         auto cls = nb::class_<V>(m, "ArithmeticOperator").def("get_variant", &V::get_variant);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);
     }
     {
-        using V = ArithmeticOperatorView<ygg::Data<GroundFunctionExpression>>;
+        using V = ArithmeticOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>>;
         auto cls = nb::class_<V>(m, "GroundArithmeticOperator").def("get_variant", &V::get_variant);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);
     }
 
-    repository.def("create", &create_data<ArithmeticOperator<ygg::Data<FunctionExpression>>>, "data"_a, nb::keep_alive<0, 1>(), nb::keep_alive<0, 2>());
-    repository.def("create", &create_data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>, "data"_a, nb::keep_alive<0, 1>(), nb::keep_alive<0, 2>());
+    repository.def("create",
+                   &create_data<ArithmeticOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>,
+                   "data"_a,
+                   nb::keep_alive<0, 1>(),
+                   nb::keep_alive<0, 2>());
+    repository.def("create",
+                   &create_data<ArithmeticOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>,
+                   "data"_a,
+                   nb::keep_alive<0, 1>(),
+                   nb::keep_alive<0, 2>());
 }
 
 }  // namespace tyr::formalism::datalog

@@ -41,7 +41,7 @@ namespace tyr::datalog
 template<::tyr::formalism::RelationKind R>
 struct GroundRuleDependencies
 {
-    using Rules = std::vector<::tyr::formalism::datalog::GroundRuleView<R>>;
+    using Rules = std::vector<::tyr::formalism::datalog::RuleView<::tyr::GroundTag, R>>;
 
     DenseRelationMap<::tyr::formalism::PredicateTag, Rules> fluent_precondition_to_rules;
     DenseRelationMap<::tyr::formalism::FunctionTag, Rules> fluent_function_term_to_rules;

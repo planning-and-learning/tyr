@@ -59,7 +59,7 @@ bool PredicateFactSet<T>::insert(const PredicateFactSet<T>& other)
 }
 
 template<f::FactKind T>
-bool PredicateFactSet<T>::insert(fd::GroundAtomView<T> ground_atom)
+bool PredicateFactSet<T>::insert(fd::AtomView<::tyr::GroundTag, T> ground_atom)
 {
     return insert(ground_atom.get_row());
 }
@@ -148,7 +148,7 @@ bool PredicateFactSets<T>::insert(const PredicateFactSets<T>& other)
 }
 
 template<f::FactKind T>
-bool PredicateFactSets<T>::insert(fd::GroundAtomView<T> ground_atom)
+bool PredicateFactSets<T>::insert(fd::AtomView<::tyr::GroundTag, T> ground_atom)
 {
     return insert(ground_atom.get_row());
 }
@@ -243,13 +243,13 @@ bool FunctionFactSet<T>::insert(fd::FunctionBindingView<T> binding, ygg::float_t
 }
 
 template<f::FactKind T>
-bool FunctionFactSet<T>::insert(fd::GroundFunctionTermView<T> fterm, ygg::ClosedInterval<ygg::float_t> interval)
+bool FunctionFactSet<T>::insert(fd::FunctionTermView<::tyr::GroundTag, T> fterm, ygg::ClosedInterval<ygg::float_t> interval)
 {
     return insert(fterm.get_row(), interval);
 }
 
 template<f::FactKind T>
-bool FunctionFactSet<T>::insert(fd::GroundFunctionTermView<T> fterm, ygg::float_t value)
+bool FunctionFactSet<T>::insert(fd::FunctionTermView<::tyr::GroundTag, T> fterm, ygg::float_t value)
 {
     return insert(fterm.get_row(), value);
 }
@@ -299,13 +299,13 @@ bool FunctionFactSet<T>::insert(const std::vector<fd::FunctionBindingView<T>>& b
 }
 
 template<f::FactKind T>
-bool FunctionFactSet<T>::insert(fd::GroundFunctionTermValueView<T> fterm_value)
+bool FunctionFactSet<T>::insert(fd::FunctionTermValueView<::tyr::GroundTag, T> fterm_value)
 {
     return insert(fterm_value.get_fterm().get_row(), fterm_value.get_value());
 }
 
 template<f::FactKind T>
-bool FunctionFactSet<T>::insert(fd::GroundFunctionTermValueListView<T> fterm_values)
+bool FunctionFactSet<T>::insert(fd::FunctionTermValueListView<::tyr::GroundTag, T> fterm_values)
 {
     auto changed = false;
     for (const auto fterm_value : fterm_values)
@@ -326,7 +326,7 @@ ygg::ClosedInterval<ygg::float_t> FunctionFactSet<T>::operator[](::tyr::formalis
 }
 
 template<f::FactKind T>
-ygg::ClosedInterval<ygg::float_t> FunctionFactSet<T>::operator[](fd::GroundFunctionTermView<T> fterm) const noexcept
+ygg::ClosedInterval<ygg::float_t> FunctionFactSet<T>::operator[](fd::FunctionTermView<::tyr::GroundTag, T> fterm) const noexcept
 {
     return (*this)[fterm.get_row()];
 }
@@ -382,7 +382,7 @@ bool FunctionFactSets<T>::insert(const FunctionFactSets& other)
 }
 
 template<f::FactKind T>
-bool FunctionFactSets<T>::insert(fd::GroundFunctionTermView<T> function_term, ygg::ClosedInterval<ygg::float_t> interval)
+bool FunctionFactSets<T>::insert(fd::FunctionTermView<::tyr::GroundTag, T> function_term, ygg::ClosedInterval<ygg::float_t> interval)
 {
     return m_sets[ygg::uint_t(function_term.get_function().get_index())].insert(function_term, interval);
 }
@@ -400,13 +400,13 @@ bool FunctionFactSets<T>::insert(fd::FunctionBindingView<T> binding, ygg::float_
 }
 
 template<f::FactKind T>
-bool FunctionFactSets<T>::insert(fd::GroundFunctionTermView<T> function_term, ygg::float_t value)
+bool FunctionFactSets<T>::insert(fd::FunctionTermView<::tyr::GroundTag, T> function_term, ygg::float_t value)
 {
     return insert(function_term, ygg::ClosedInterval<ygg::float_t>(value, value));
 }
 
 template<f::FactKind T>
-bool FunctionFactSets<T>::insert(fd::GroundFunctionTermListView<T> function_terms, const std::vector<ygg::float_t>& values)
+bool FunctionFactSets<T>::insert(fd::FunctionTermListView<::tyr::GroundTag, T> function_terms, const std::vector<ygg::float_t>& values)
 {
     assert(function_terms.size() == values.size());
 
@@ -417,13 +417,13 @@ bool FunctionFactSets<T>::insert(fd::GroundFunctionTermListView<T> function_term
 }
 
 template<f::FactKind T>
-bool FunctionFactSets<T>::insert(fd::GroundFunctionTermValueView<T> fterm_value)
+bool FunctionFactSets<T>::insert(fd::FunctionTermValueView<::tyr::GroundTag, T> fterm_value)
 {
     return m_sets[ygg::uint_t(fterm_value.get_fterm().get_function().get_index())].insert(fterm_value.get_fterm(), fterm_value.get_value());
 }
 
 template<f::FactKind T>
-bool FunctionFactSets<T>::insert(fd::GroundFunctionTermValueListView<T> fterm_values)
+bool FunctionFactSets<T>::insert(fd::FunctionTermValueListView<::tyr::GroundTag, T> fterm_values)
 {
     auto changed = false;
     for (const auto fterm_value : fterm_values)
@@ -438,7 +438,7 @@ ygg::ClosedInterval<ygg::float_t> FunctionFactSets<T>::operator[](::tyr::formali
 }
 
 template<f::FactKind T>
-ygg::ClosedInterval<ygg::float_t> FunctionFactSets<T>::operator[](fd::GroundFunctionTermView<T> fterm) const noexcept
+ygg::ClosedInterval<ygg::float_t> FunctionFactSets<T>::operator[](fd::FunctionTermView<::tyr::GroundTag, T> fterm) const noexcept
 {
     return (*this)[fterm.get_row()];
 }
@@ -467,8 +467,8 @@ TaggedFactSets<T>::TaggedFactSets(fd::PredicateListView<T> predicates, fd::Funct
 template<f::FactKind T>
 TaggedFactSets<T>::TaggedFactSets(fd::PredicateListView<T> predicates,
                                   fd::FunctionListView<T> functions,
-                                  fd::GroundAtomListView<T> atoms,
-                                  fd::GroundFunctionTermValueListView<T> fterm_values,
+                                  fd::AtomListView<::tyr::GroundTag, T> atoms,
+                                  fd::FunctionTermValueListView<::tyr::GroundTag, T> fterm_values,
                                   const fd::Repository& repository) :
     TaggedFactSets(predicates, functions, repository)
 {

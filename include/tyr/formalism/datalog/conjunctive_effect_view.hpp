@@ -26,15 +26,16 @@
 
 namespace ygg
 {
-template<::tyr::formalism::datalog::Context C>
-class View<ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect>, C>
+
+template<::tyr::TaskKind T, ::tyr::formalism::datalog::Context C>
+class View<ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<T>>, C>
 {
 private:
     const C* m_context;
-    ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect> m_handle;
+    ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<T>> m_handle;
 
 public:
-    View(ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+    View(ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<T>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }

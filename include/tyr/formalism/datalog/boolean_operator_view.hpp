@@ -18,12 +18,12 @@
 #ifndef TYR_FORMALISM_DATALOG_BOOLEAN_OPERATOR_VIEW_HPP_
 #define TYR_FORMALISM_DATALOG_BOOLEAN_OPERATOR_VIEW_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/containers/variant.hpp>
 #include "tyr/formalism/datalog/boolean_operator_data.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/function_expression_data.hpp"
-#include "tyr/formalism/datalog/ground_function_expression_data.hpp"
+
+#include <yggdrasil/containers/variant.hpp>
+#include <yggdrasil/core/types.hpp>
 
 namespace ygg
 {

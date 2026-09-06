@@ -37,10 +37,10 @@ namespace tyr::planning::detail
 template<>
 struct RPGPolicy<GroundTag>
 {
-    using Action = ::tyr::formalism::planning::GroundActionView;
+    using Action = ::tyr::formalism::planning::ActionView<::tyr::GroundTag>;
 
     template<typename Workspace>
-    static std::optional<::tyr::formalism::planning::GroundAtomView<::tyr::formalism::FluentTag>>
+    static std::optional<::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag>>
     translate_cut_atom(const RPGDefinition<GroundTag>& definition,
                        Workspace&,
                        ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head)
@@ -52,13 +52,13 @@ struct RPGPolicy<GroundTag>
     }
 
     template<typename Workspace>
-    static void set_goal(RPGDefinition<GroundTag>& definition, Workspace& workspace, ::tyr::formalism::planning::GroundConjunctiveConditionView source_goal)
+    static void set_goal(RPGDefinition<GroundTag>& definition, Workspace& workspace, ::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> source_goal)
     {
         materialize_goal(definition, workspace, source_goal);
     }
 
     template<typename Workspace>
-    static void begin_state_evaluation(const RPGDefinition<GroundTag>&, Workspace& workspace, ::tyr::formalism::planning::GroundConjunctiveConditionView)
+    static void begin_state_evaluation(const RPGDefinition<GroundTag>&, Workspace& workspace, ::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag>)
     {
         workspace.clear_costs();
     }

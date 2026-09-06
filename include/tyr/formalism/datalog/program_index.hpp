@@ -18,17 +18,19 @@
 #ifndef TYR_FORMALISM_DATALOG_PROGRAM_INDEX_HPP_
 #define TYR_FORMALISM_DATALOG_PROGRAM_INDEX_HPP_
 
-#include <yggdrasil/ids/index_mixins.hpp>
-#include <yggdrasil/core/types.hpp>
 #include "tyr/formalism/datalog/declarations.hpp"
+
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/ids/index_mixins.hpp>
 
 namespace ygg
 {
-template<>
-struct Index<tyr::formalism::datalog::Program> : ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::Program>>
+
+template<::tyr::TaskKind T>
+struct Index<tyr::formalism::datalog::Program<T>> : ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::Program<T>>>
 {
     // Inherit constructors
-    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::Program>>;
+    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::Program<T>>>;
     using Base::Base;
 };
 

@@ -25,10 +25,11 @@
 
 namespace ygg
 {
-template<>
-struct Index<tyr::formalism::datalog::ConditionalEffect> : ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::ConditionalEffect>>
+
+template<::tyr::TaskKind T>
+struct Index<tyr::formalism::datalog::ConditionalEffect<T>> : ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::ConditionalEffect<T>>>
 {
-    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::ConditionalEffect>>;
+    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::ConditionalEffect<T>>>;
     using Base::Base;
 };
 

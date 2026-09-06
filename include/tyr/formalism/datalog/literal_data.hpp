@@ -28,17 +28,17 @@
 namespace ygg
 {
 
-template<::tyr::formalism::FactKind T>
-struct Data<::tyr::formalism::datalog::Literal<T>>
+template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
+struct Data<::tyr::formalism::datalog::Literal<T, F>>
 {
-    ygg::Index<::tyr::formalism::datalog::Literal<T>> index;
-    ygg::Index<::tyr::formalism::datalog::Atom<T>> atom;
+    ygg::Index<::tyr::formalism::datalog::Literal<T, F>> index;
+    ygg::Index<::tyr::formalism::datalog::Atom<T, F>> atom;
     bool polarity;
 
     Data() = default;
-    Data(ygg::Index<::tyr::formalism::datalog::Atom<T>> atom_, bool polarity_) : index(), atom(atom_), polarity(polarity_) {}
+    Data(ygg::Index<::tyr::formalism::datalog::Atom<T, F>> atom_, bool polarity_) : index(), atom(atom_), polarity(polarity_) {}
     template<typename C>
-    Data(::ygg::View<ygg::Index<::tyr::formalism::datalog::Atom<T>>, C> atom_, bool polarity_) : index(), atom(), polarity(polarity_)
+    Data(::ygg::View<ygg::Index<::tyr::formalism::datalog::Atom<T, F>>, C> atom_, bool polarity_) : index(), atom(), polarity(polarity_)
     {
         set(atom_, atom);
     }
@@ -58,7 +58,8 @@ struct Data<::tyr::formalism::datalog::Literal<T>>
     auto identifying_members() const noexcept { return std::tie(atom, polarity); }
 };
 
-static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::datalog::Literal<::tyr::formalism::StaticTag>>);
+static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::datalog::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>);
+static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::datalog::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>);
 
 }
 

@@ -30,17 +30,17 @@
 namespace ygg
 {
 
-template<>
-struct Data<::tyr::formalism::datalog::NumericEffectOperator<::tyr::formalism::FluentTag>>
+template<::tyr::TaskKind T>
+struct Data<::tyr::formalism::datalog::NumericEffectOperator<T, ::tyr::formalism::FluentTag>>
 {
     using OperatorType = ::tyr::formalism::NumericEffectOperatorKind;
-    using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::datalog::NumericEffect<::tyr::formalism::FluentTag>>>;
+    using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::datalog::NumericEffect<T, ::tyr::formalism::FluentTag>>>;
 
     OperatorType operator_kind = OperatorType::Assign;
     Variant value;
 
     template<typename C>
-    using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::NumericEffect<::tyr::formalism::FluentTag>>, C>>;
+    using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::NumericEffect<T, ::tyr::formalism::FluentTag>>, C>>;
 
     Data() = default;
     Data(OperatorType operator_kind_, Variant value_) : operator_kind(operator_kind_), value(value_)
@@ -65,7 +65,8 @@ struct Data<::tyr::formalism::datalog::NumericEffectOperator<::tyr::formalism::F
     auto identifying_members() const noexcept { return std::tie(operator_kind, value); }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::NumericEffectOperator<::tyr::formalism::FluentTag>>);
+static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::NumericEffectOperator<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>);
+static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::NumericEffectOperator<::tyr::GroundTag, ::tyr::formalism::FluentTag>>);
 
 }
 

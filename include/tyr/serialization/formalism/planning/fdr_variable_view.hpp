@@ -3,7 +3,7 @@
 
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/serialization/formalism/planning/ground_atom_view.hpp"
+#include "tyr/serialization/formalism/planning/atom_view.hpp"
 #include "tyr/serialization/serializer.hpp"
 
 namespace tyr::serialization

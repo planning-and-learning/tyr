@@ -66,7 +66,7 @@ AddRPGHeuristicPtr<Kind> AddRPGHeuristic<Kind>::create(TaskPtr<Kind> task, ygg::
 }
 
 template<TaskKind Kind>
-void AddRPGHeuristic<Kind>::set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal)
+void AddRPGHeuristic<Kind>::set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal)
 {
     m_impl->set_goal(goal);
 }

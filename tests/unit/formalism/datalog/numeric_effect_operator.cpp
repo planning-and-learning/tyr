@@ -1,8 +1,10 @@
 #include "tyr/formalism/datalog/numeric_effect_operator_data.hpp"
 #include "tyr/formalism/datalog/numeric_effect_operator_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-
 #include <concepts>
+
+namespace lifted_tests
+{
 
 namespace fd = tyr::formalism::datalog;
 
@@ -10,9 +12,9 @@ template<typename Entity>
 struct NumericEffectOperatorPublicView;
 
 template<tyr::formalism::FactKind T>
-struct NumericEffectOperatorPublicView<fd::NumericEffectOperator<T>>
+struct NumericEffectOperatorPublicView<fd::NumericEffectOperator<::tyr::LiftedTag, T>>
 {
-    using type = fd::NumericEffectOperatorView<T>;
+    using type = fd::NumericEffectOperatorView<::tyr::LiftedTag, T>;
 };
 
 template<typename Entity>
@@ -25,6 +27,39 @@ concept NumericEffectOperatorContract = std::totally_ordered<ygg::Data<Entity>> 
                                            };
 
 static_assert([]<typename... Entities>(ygg::TypeList<Entities...>)
-              { return (NumericEffectOperatorContract<Entities> && ...); }(fd::NumericEffectOperatorTypes {}));
-static_assert(std::constructible_from<ygg::Data<fd::NumericEffectOperator<tyr::formalism::FluentTag>>,
-                                      ygg::Data<fd::NumericEffectOperator<tyr::formalism::FluentTag>>::ViewVariant<fd::Repository>>);
+              { return (NumericEffectOperatorContract<Entities> && ...); }(fd::NumericEffectOperatorTypes<::tyr::LiftedTag> {}));
+static_assert(std::constructible_from<ygg::Data<fd::NumericEffectOperator<::tyr::LiftedTag, tyr::formalism::FluentTag>>,
+                                      ygg::Data<fd::NumericEffectOperator<::tyr::LiftedTag, tyr::formalism::FluentTag>>::ViewVariant<fd::Repository>>);
+
+}
+
+namespace ground_tests
+{
+
+namespace fd = tyr::formalism::datalog;
+
+template<typename Entity>
+struct GroundNumericEffectOperatorPublicView;
+
+template<tyr::formalism::FactKind T>
+struct GroundNumericEffectOperatorPublicView<fd::NumericEffectOperator<::tyr::GroundTag, T>>
+{
+    using type = fd::NumericEffectOperatorView<::tyr::GroundTag, T>;
+};
+
+template<typename Entity>
+concept GroundNumericEffectOperatorContract =
+    std::totally_ordered<ygg::Data<Entity>> && std::totally_ordered<ygg::View<ygg::Data<Entity>, fd::Repository>>
+    && std::same_as<ygg::View<ygg::Data<Entity>, fd::Repository>, typename GroundNumericEffectOperatorPublicView<Entity>::type>
+    && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Data<Entity>, fd::Repository>& view) {
+           data.value;
+           data.clear();
+           view.get_variant();
+       };
+
+static_assert([]<typename... Entities>(ygg::TypeList<Entities...>)
+              { return (GroundNumericEffectOperatorContract<Entities> && ...); }(fd::NumericEffectOperatorTypes<::tyr::GroundTag> {}));
+static_assert(std::constructible_from<ygg::Data<fd::NumericEffectOperator<::tyr::GroundTag, tyr::formalism::FluentTag>>,
+                                      ygg::Data<fd::NumericEffectOperator<::tyr::GroundTag, tyr::formalism::FluentTag>>::ViewVariant<fd::Repository>>);
+
+}

@@ -27,7 +27,7 @@ struct ResolvedNumericEffect
 {
     ::tyr::formalism::NumericEffectOperatorKind operator_kind;
     ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> head;
-    ::tyr::formalism::datalog::GroundFunctionExpressionView rhs;
+    ::tyr::formalism::datalog::FunctionExpressionView<::tyr::GroundTag> rhs;
 };
 
 template<TaskKind Kind, ::tyr::formalism::RelationKind R>

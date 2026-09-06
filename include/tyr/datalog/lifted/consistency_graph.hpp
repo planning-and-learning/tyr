@@ -96,7 +96,7 @@ struct RuleToFunctionTermInfo
 template<::tyr::formalism::FactKind T>
 struct TaggedRuleToFunctionTermInfos
 {
-    ygg::UnorderedMap<ygg::Index<::tyr::formalism::datalog::FunctionTerm<T>>, RuleToFunctionTermInfo<T>> infos;
+    ygg::UnorderedMap<ygg::Index<::tyr::formalism::datalog::FunctionTerm<::tyr::LiftedTag, T>>, RuleToFunctionTermInfo<T>> infos;
 
     RuleToLiteralInfoMappings info_mappings;
 };
@@ -169,8 +169,8 @@ public:
 class StaticConsistencyGraph
 {
 public:
-    StaticConsistencyGraph(::tyr::formalism::datalog::ConjunctiveConditionView unary_overapproximation_condition,
-                           ::tyr::formalism::datalog::ConjunctiveConditionView binary_overapproximation_condition,
+    StaticConsistencyGraph(::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::LiftedTag> unary_overapproximation_condition,
+                           ::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::LiftedTag> binary_overapproximation_condition,
                            kckp::Graph compatibility_graph);
 
     void initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
@@ -185,8 +185,8 @@ public:
     const kckp::DeduplicatedAdjacencyMatrix& get_adjacency_matrix() const noexcept;
 
 private:
-    ::tyr::formalism::datalog::ConjunctiveConditionView m_unary_overapproximation_condition;
-    ::tyr::formalism::datalog::ConjunctiveConditionView m_binary_overapproximation_condition;
+    ::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::LiftedTag> m_unary_overapproximation_condition;
+    ::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::LiftedTag> m_binary_overapproximation_condition;
 
     ::tyr::formalism::datalog::VariableDependencyGraph m_unary_overapproximation_vdg;
     ::tyr::formalism::datalog::VariableDependencyGraph m_binary_overapproximation_vdg;
@@ -201,17 +201,17 @@ private:
     details::RuleToRuleToConstraintInfos m_binary_overapproximation_indexed_constraints;
 };
 
-extern std::pair<::tyr::formalism::datalog::GroundConjunctiveConditionView, bool>
-create_ground_nullary_conjunctive_condition(::tyr::formalism::datalog::ConjunctiveConditionView condition, ::tyr::formalism::datalog::Repository& context);
+extern std::pair<::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::GroundTag>, bool>
+create_ground_nullary_conjunctive_condition(::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::LiftedTag> condition, ::tyr::formalism::datalog::Repository& context);
 
-extern std::pair<::tyr::formalism::datalog::ConjunctiveConditionView, bool>
+extern std::pair<::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::LiftedTag>, bool>
 create_overapproximation_conjunctive_condition(size_t k,
-                                               ::tyr::formalism::datalog::ConjunctiveConditionView condition,
+                                               ::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::LiftedTag> condition,
                                                ::tyr::formalism::datalog::Repository& context);
 
-extern std::pair<::tyr::formalism::datalog::ConjunctiveConditionView, bool>
+extern std::pair<::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::LiftedTag>, bool>
 create_overapproximation_conflicting_conjunctive_condition(size_t k,
-                                                           ::tyr::formalism::datalog::ConjunctiveConditionView condition,
+                                                           ::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::LiftedTag> condition,
                                                            ::tyr::formalism::datalog::Repository& context);
 
 }

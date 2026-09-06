@@ -38,7 +38,7 @@ namespace tyr::datalog
 template<::tyr::formalism::RelationKind R>
 struct ActionCostLookup
 {
-    ::tyr::formalism::planning::ActionView action;
+    ::tyr::formalism::planning::ActionView<::tyr::LiftedTag> action;
     ::tyr::formalism::datalog::RuleBindingView<R> rule_binding;
 
     auto get_key() const noexcept
@@ -189,8 +189,8 @@ public:
     using FunctionRuleKey = ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::FunctionTag>;
 
     template<::tyr::formalism::RelationKind R>
-    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, ::tyr::formalism::datalog::RuleBindingView<R>, ::tyr::formalism::datalog::RuleView<R>>;
-    using Action = std::conditional_t<std::same_as<Kind, GroundTag>, ::tyr::formalism::planning::GroundActionView, ::tyr::formalism::planning::ActionView>;
+    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, ::tyr::formalism::datalog::RuleBindingView<R>, ::tyr::formalism::datalog::RuleView<::tyr::LiftedTag, R>>;
+    using Action = std::conditional_t<std::same_as<Kind, GroundTag>, ::tyr::formalism::planning::ActionView<::tyr::GroundTag>, ::tyr::formalism::planning::ActionView<::tyr::LiftedTag>>;
     template<::tyr::formalism::RelationKind R>
     using RuleToActionMapping = ygg::UnorderedMap<Rule<R>, Action>;
 

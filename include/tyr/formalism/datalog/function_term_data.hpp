@@ -18,9 +18,11 @@
 #ifndef TYR_FORMALISM_DATALOG_FUNCTION_TERM_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_FUNCTION_TERM_DATA_HPP_
 
+#include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/function_term_index.hpp"
 #include "tyr/formalism/function_index.hpp"
+#include "tyr/formalism/object_index.hpp"
 #include "tyr/formalism/term_data.hpp"
 
 #include <yggdrasil/core/types.hpp>
@@ -29,22 +31,22 @@
 namespace ygg
 {
 
-template<::tyr::formalism::FactKind T>
-struct Data<::tyr::formalism::datalog::FunctionTerm<T>>
+template<::tyr::formalism::FactKind F>
+struct Data<::tyr::formalism::datalog::FunctionTerm<::tyr::LiftedTag, F>>
 {
-    ygg::Index<::tyr::formalism::datalog::FunctionTerm<T>> index;
-    ygg::Index<::tyr::formalism::Function<T>> function;
+    ygg::Index<::tyr::formalism::datalog::FunctionTerm<::tyr::LiftedTag, F>> index;
+    ygg::Index<::tyr::formalism::Function<F>> function;
     ygg::DataList<::tyr::formalism::Term> terms;
 
     Data() = default;
-    Data(ygg::Index<::tyr::formalism::Function<T>> function_, ygg::DataList<::tyr::formalism::Term> terms_) :
+    Data(ygg::Index<::tyr::formalism::Function<F>> function_, ygg::DataList<::tyr::formalism::Term> terms_) :
         index(),
         function(function_),
         terms(std::move(terms_))
     {
     }
     template<typename C>
-    Data(::ygg::View<ygg::Index<::tyr::formalism::Function<T>>, C> function_, const std::vector<::ygg::View<ygg::Data<::tyr::formalism::Term>, C>>& terms_) :
+    Data(::ygg::View<ygg::Index<::tyr::formalism::Function<F>>, C> function_, const std::vector<::ygg::View<ygg::Data<::tyr::formalism::Term>, C>>& terms_) :
         index(),
         function(),
         terms()
@@ -68,7 +70,38 @@ struct Data<::tyr::formalism::datalog::FunctionTerm<T>>
     auto identifying_members() const noexcept { return std::tie(function, terms); }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::FunctionTerm<::tyr::formalism::StaticTag>>);
+static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>);
+
+template<::tyr::formalism::FactKind F>
+struct Data<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, F>>
+{
+    ygg::Index<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, F>> index;
+    ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::Function<F>>> binding;
+
+    Data() = default;
+    Data(ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::Function<F>>> binding_) : index(), binding(binding_) {}
+    template<typename C>
+    Data(::ygg::View<ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::Function<F>>>, C> binding_) : index(), binding()
+    {
+        set(binding_, binding);
+    }
+    Data(const Data& other) = default;
+    Data& operator=(const Data& other) = default;
+    Data(Data&& other) = default;
+    Data& operator=(Data&& other) = default;
+
+    void clear() noexcept
+    {
+        ygg::clear(index);
+        ygg::clear(binding);
+    }
+
+    auto cista_members() const noexcept { return std::tie(index, binding); }
+    auto identifying_members() const noexcept { return std::tie(binding); }
+};
+
+static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>>);
+
 }
 
 #endif

@@ -37,16 +37,10 @@ struct to_datalog_payload
     using type = T;  // default: unchanged
 };
 
-template<>
-struct to_datalog_payload<ygg::Data<::tyr::formalism::planning::FunctionExpression>>
+template<::tyr::TaskKind T>
+struct to_datalog_payload<ygg::Data<::tyr::formalism::planning::FunctionExpression<T>>>
 {
-    using type = ygg::Data<::tyr::formalism::datalog::FunctionExpression>;
-};
-
-template<>
-struct to_datalog_payload<ygg::Data<::tyr::formalism::planning::GroundFunctionExpression>>
-{
-    using type = ygg::Data<::tyr::formalism::datalog::GroundFunctionExpression>;
+    using type = ygg::Data<::tyr::formalism::datalog::FunctionExpression<T>>;
 };
 
 template<typename T>

@@ -21,39 +21,70 @@
 namespace tyr::formalism::planning
 {
 
+namespace
+{
+template<TaskKind T>
+void bind_conjunctive_effect_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
+{
+    using Tag = ConjunctiveEffect<T>;
+    ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
+
+    {
+        using V = ygg::Data<Tag>;
+        auto cls = nb::class_<V>(m, (name + "Data").c_str());
+        if constexpr (std::same_as<T, LiftedTag>)
+        {
+            cls.def(nb::init<const LiteralViewList<T, FluentTag>&,
+                             const NumericEffectOperatorViewList<T, FluentTag>&,
+                             const std::optional<NumericEffectOperatorView<T, AuxiliaryTag>>&>(),
+                    "fluent_literals"_a,
+                    "fluent_numeric_effects"_a,
+                    "auxiliary_numeric_effect"_a);
+        }
+        else
+        {
+            cls.def(nb::init<const FDRFactViewList<FluentTag>&,
+                             const FDRFactViewList<FluentTag>&,
+                             const NumericEffectOperatorViewList<T, FluentTag>&,
+                             const std::optional<NumericEffectOperatorView<T, AuxiliaryTag>>&>(),
+                    "add_facts"_a,
+                    "del_facts"_a,
+                    "fluent_numeric_effects"_a,
+                    "auxiliary_numeric_effect"_a);
+        }
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+
+    {
+        using V = ConjunctiveEffectView<T>;
+        auto cls = nb::class_<V>(m, name.c_str());
+        cls.def("get_index", &V::get_index);
+        if constexpr (std::same_as<T, LiftedTag>)
+        {
+            cls.def("get_literals", &V::get_literals);
+        }
+        else
+        {
+            cls.def("get_add_facts", &V::template get_facts<PositiveTag>);
+            cls.def("get_del_facts", &V::template get_facts<NegativeTag>);
+        }
+        cls.def("get_numeric_effects", &V::get_numeric_effects);
+        cls.def("get_auxiliary_numeric_effect", &V::get_auxiliary_numeric_effect);
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+
+    repository.def("get_or_create", &get_or_create_data<Tag>, "data"_a, nb::keep_alive<0, 1>());
+}
+}  // namespace
+
 void bind_conjunctive_effect(nb::module_& m, RepositoryBinding& repository)
 {
-    ygg::bind_index<ygg::Index<ConjunctiveEffect>>(m, "ConjunctiveEffectIndex");
-
-    {
-        using V = ygg::Data<ConjunctiveEffect>;
-
-        auto cls = nb::class_<V>(m, "ConjunctiveEffectData")  //
-                       .def(nb::init<const LiteralViewList<FluentTag>&,
-                                     const NumericEffectOperatorViewList<FluentTag>&,
-                                     const std::optional<NumericEffectOperatorView<AuxiliaryTag>>&>(),
-                            "fluent_literals"_a,
-                            "fluent_numeric_effects"_a,
-                            "auxiliary_numeric_effect"_a);
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-
-    {
-        using V = ConjunctiveEffectView;
-
-        auto cls = nb::class_<V>(m, "ConjunctiveEffect")  //
-                       .def("get_index", &V::get_index)
-                       .def("get_literals", &V::get_literals)
-                       .def("get_numeric_effects", &V::get_numeric_effects)
-                       .def("get_auxiliary_numeric_effect", &V::get_auxiliary_numeric_effect);
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-
-    repository.def("get_or_create", &get_or_create_data<ConjunctiveEffect>, "data"_a, nb::keep_alive<0, 1>());
+    bind_conjunctive_effect_kind<LiftedTag>(m, repository, "ConjunctiveEffect");
+    bind_conjunctive_effect_kind<GroundTag>(m, repository, "GroundConjunctiveEffect");
 }
 
 }  // namespace tyr::formalism::planning

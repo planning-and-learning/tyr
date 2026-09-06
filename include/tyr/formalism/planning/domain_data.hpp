@@ -18,8 +18,6 @@
 #ifndef TYR_FORMALISM_PLANNING_DOMAIN_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_DOMAIN_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/function_index.hpp"
 #include "tyr/formalism/object_index.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
@@ -29,9 +27,11 @@
 #include "tyr/formalism/planning/task_index.hpp"
 #include "tyr/formalism/predicate_index.hpp"
 
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
+
 namespace ygg
 {
-
 
 template<>
 struct Data<::tyr::formalism::planning::Domain>
@@ -45,8 +45,8 @@ struct Data<::tyr::formalism::planning::Domain>
     ygg::IndexList<::tyr::formalism::Function<::tyr::formalism::FluentTag>> fluent_functions;
     ::cista::optional<ygg::Index<::tyr::formalism::Function<::tyr::formalism::AuxiliaryTag>>> auxiliary_function;
     ygg::IndexList<::tyr::formalism::Object> constants;
-    ygg::IndexList<::tyr::formalism::planning::Action> actions;
-    ygg::IndexList<::tyr::formalism::planning::Axiom> axioms;
+    ygg::IndexList<::tyr::formalism::planning::Action<::tyr::LiftedTag>> actions;
+    ygg::IndexList<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>> axioms;
 
     Data() = default;
     Data(::cista::offset::string name_,
@@ -57,8 +57,8 @@ struct Data<::tyr::formalism::planning::Domain>
          ygg::IndexList<::tyr::formalism::Function<::tyr::formalism::FluentTag>> fluent_functions_,
          ::cista::optional<ygg::Index<::tyr::formalism::Function<::tyr::formalism::AuxiliaryTag>>> auxiliary_function_,
          ygg::IndexList<::tyr::formalism::Object> constants_,
-         ygg::IndexList<::tyr::formalism::planning::Action> actions_,
-         ygg::IndexList<::tyr::formalism::planning::Axiom> axioms_) :
+         ygg::IndexList<::tyr::formalism::planning::Action<::tyr::LiftedTag>> actions_,
+         ygg::IndexList<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>> axioms_) :
         index(),
         name(std::move(name_)),
         static_predicates(std::move(static_predicates_)),
@@ -82,8 +82,8 @@ struct Data<::tyr::formalism::planning::Domain>
          const std::vector<::ygg::View<ygg::Index<::tyr::formalism::Function<::tyr::formalism::FluentTag>>, C>>& fluent_functions_,
          const std::optional<::ygg::View<ygg::Index<::tyr::formalism::Function<::tyr::formalism::AuxiliaryTag>>, C>>& auxiliary_function_,
          const std::vector<::ygg::View<ygg::Index<::tyr::formalism::Object>, C>>& constants_,
-         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::Action>, C>>& actions_,
-         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::Axiom>, C>>& axioms_) :
+         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::Action<::tyr::LiftedTag>>, C>>& actions_,
+         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>, C>>& axioms_) :
         index(),
         name(name_),
         static_predicates(),

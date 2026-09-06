@@ -28,21 +28,21 @@
 namespace ygg
 {
 
-template<>
-struct Data<::tyr::formalism::datalog::ConjunctiveEffect>
+template<::tyr::TaskKind T>
+struct Data<::tyr::formalism::datalog::ConjunctiveEffect<T>>
 {
-    ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect> index;
-    ygg::DataList<::tyr::formalism::datalog::NumericEffectOperator<::tyr::formalism::FluentTag>> numeric_effects;
+    ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<T>> index;
+    ygg::DataList<::tyr::formalism::datalog::NumericEffectOperator<T, ::tyr::formalism::FluentTag>> numeric_effects;
 
     Data() = default;
-    explicit Data(ygg::DataList<::tyr::formalism::datalog::NumericEffectOperator<::tyr::formalism::FluentTag>> numeric_effects_) :
+    explicit Data(ygg::DataList<::tyr::formalism::datalog::NumericEffectOperator<T, ::tyr::formalism::FluentTag>> numeric_effects_) :
         index(),
         numeric_effects(std::move(numeric_effects_))
     {
     }
     template<typename C>
     explicit Data(
-        const std::vector<::ygg::View<ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<::tyr::formalism::FluentTag>>, C>>& numeric_effects_) :
+        const std::vector<::ygg::View<ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T, ::tyr::formalism::FluentTag>>, C>>& numeric_effects_) :
         index(),
         numeric_effects()
     {
@@ -63,7 +63,8 @@ struct Data<::tyr::formalism::datalog::ConjunctiveEffect>
     auto identifying_members() const noexcept { return std::tie(numeric_effects); }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::ConjunctiveEffect>);
+static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::ConjunctiveEffect<::tyr::LiftedTag>>);
+static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::ConjunctiveEffect<::tyr::GroundTag>>);
 
 }
 

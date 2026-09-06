@@ -20,7 +20,7 @@
 
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
-#include "tyr/formalism/planning/ground_atom_index.hpp"
+#include "tyr/formalism/planning/atom_index.hpp"
 #include "tyr/planning/ground/state_builder.hpp"
 #include "tyr/planning/lifted/state_builder.hpp"
 #include "tyr/planning/worker_index.hpp"
@@ -97,7 +97,7 @@ public:
 private:
     struct Feature
     {
-        ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::FluentTag>> atom;
+        ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>> atom;
         ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact;
     };
 

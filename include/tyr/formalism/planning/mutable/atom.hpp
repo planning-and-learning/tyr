@@ -48,12 +48,12 @@ struct MutableAtom : ygg::comparison::Mixin<MutableAtom<T>>
         for (const auto& term : terms_)
             terms.push_back(term.get_data());
     }
-    MutableAtom(AtomView<T> element_) : predicate(element_.get_predicate()), terms()
+    MutableAtom(AtomView<::tyr::LiftedTag, T> element_) : predicate(element_.get_predicate()), terms()
     {
         for (const auto& term : element_.get_terms())
             terms.push_back(term.get_data());
     }
-    MutableAtom(GroundAtomView<T> element) : predicate(element.get_predicate()), terms()
+    MutableAtom(AtomView<::tyr::GroundTag, T> element) : predicate(element.get_predicate()), terms()
     {
         for (const auto& object : element.get_objects())
             terms.push_back(ygg::Data<Term>(object.get_index()));

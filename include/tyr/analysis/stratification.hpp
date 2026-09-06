@@ -31,7 +31,7 @@ namespace tyr::analysis
 {
 
 template<::tyr::formalism::RelationKind R>
-using TypedRuleStratum = ygg::IndexList<::tyr::formalism::datalog::Rule<R>>;
+using TypedRuleStratum = ygg::IndexList<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>>;
 
 struct RuleStratum
 {

@@ -41,28 +41,35 @@ namespace tyr::formalism::planning
 
 using PredicateViewVariant = std::variant<PredicateView<StaticTag>, PredicateView<FluentTag>, PredicateView<DerivedTag>>;
 
-using AtomViewVariant = std::variant<AtomView<StaticTag>, AtomView<FluentTag>, AtomView<DerivedTag>>;
+using AtomViewVariant = std::variant<AtomView<::tyr::LiftedTag, StaticTag>, AtomView<::tyr::LiftedTag, FluentTag>, AtomView<::tyr::LiftedTag, DerivedTag>>;
 
-using LiteralViewVariant = std::variant<LiteralView<StaticTag>, LiteralView<FluentTag>, LiteralView<DerivedTag>>;
+using LiteralViewVariant =
+    std::variant<LiteralView<::tyr::LiftedTag, StaticTag>, LiteralView<::tyr::LiftedTag, FluentTag>, LiteralView<::tyr::LiftedTag, DerivedTag>>;
 
-using GroundAtomViewVariant = std::variant<GroundAtomView<StaticTag>, GroundAtomView<FluentTag>, GroundAtomView<DerivedTag>>;
+using GroundAtomViewVariant =
+    std::variant<AtomView<::tyr::GroundTag, StaticTag>, AtomView<::tyr::GroundTag, FluentTag>, AtomView<::tyr::GroundTag, DerivedTag>>;
 
-using GroundAtomOrFactViewVariant = std::variant<GroundAtomView<StaticTag>, GroundAtomView<DerivedTag>, FDRFactView<FluentTag>>;
+using GroundAtomOrFactViewVariant = std::variant<AtomView<::tyr::GroundTag, StaticTag>, AtomView<::tyr::GroundTag, DerivedTag>, FDRFactView<FluentTag>>;
 
-using GroundLiteralViewVariant = std::variant<GroundLiteralView<StaticTag>, GroundLiteralView<FluentTag>, GroundLiteralView<DerivedTag>>;
+using GroundLiteralViewVariant =
+    std::variant<LiteralView<::tyr::GroundTag, StaticTag>, LiteralView<::tyr::GroundTag, FluentTag>, LiteralView<::tyr::GroundTag, DerivedTag>>;
 
-using GroundLiteralOrFactViewVariant = std::variant<GroundLiteralView<StaticTag>, GroundLiteralView<DerivedTag>, std::pair<FDRFactView<FluentTag>, bool>>;
+using GroundLiteralOrFactViewVariant =
+    std::variant<LiteralView<::tyr::GroundTag, StaticTag>, LiteralView<::tyr::GroundTag, DerivedTag>, std::pair<FDRFactView<FluentTag>, bool>>;
 
 using FunctionViewVariant = std::variant<FunctionView<StaticTag>, FunctionView<FluentTag>, FunctionView<AuxiliaryTag>>;
 
-using FunctionTermViewVariant = std::variant<FunctionTermView<StaticTag>, FunctionTermView<FluentTag>, FunctionTermView<AuxiliaryTag>>;
+using FunctionTermViewVariant = std::
+    variant<FunctionTermView<::tyr::LiftedTag, StaticTag>, FunctionTermView<::tyr::LiftedTag, FluentTag>, FunctionTermView<::tyr::LiftedTag, AuxiliaryTag>>;
 
-using GroundFunctionTermViewVariant = std::variant<GroundFunctionTermView<StaticTag>, GroundFunctionTermView<FluentTag>, GroundFunctionTermView<AuxiliaryTag>>;
+using GroundFunctionTermViewVariant = std::
+    variant<FunctionTermView<::tyr::GroundTag, StaticTag>, FunctionTermView<::tyr::GroundTag, FluentTag>, FunctionTermView<::tyr::GroundTag, AuxiliaryTag>>;
 
-using GroundFunctionTermValueViewVariant =
-    std::variant<GroundFunctionTermValueView<StaticTag>, GroundFunctionTermValueView<FluentTag>, GroundFunctionTermValueView<AuxiliaryTag>>;
+using GroundFunctionTermValueViewVariant = std::variant<FunctionTermValueView<::tyr::GroundTag, StaticTag>,
+                                                        FunctionTermValueView<::tyr::GroundTag, FluentTag>,
+                                                        FunctionTermValueView<::tyr::GroundTag, AuxiliaryTag>>;
 
-using NumericEffectViewVariant = std::variant<NumericEffectView<FluentTag>, NumericEffectView<AuxiliaryTag>>;
+using NumericEffectViewVariant = std::variant<NumericEffectView<::tyr::LiftedTag, FluentTag>, NumericEffectView<::tyr::LiftedTag, AuxiliaryTag>>;
 
 class LokiToTyrTranslator
 {
@@ -180,22 +187,26 @@ private:
 
     LiteralViewVariant translate_lifted(loki::formalism::LiteralView element, Builder& builder, Repository& context);
 
-    ygg::Data<FunctionExpression> translate_lifted(loki::formalism::FunctionExpressionNumberView element, Builder& builder, Repository& context);
+    ygg::Data<FunctionExpression<::tyr::LiftedTag>>
+    translate_lifted(loki::formalism::FunctionExpressionNumberView element, Builder& builder, Repository& context);
 
-    ygg::Data<FunctionExpression> translate_lifted(loki::formalism::BinaryFunctionExpressionView element, Builder& builder, Repository& context);
+    ygg::Data<FunctionExpression<::tyr::LiftedTag>>
+    translate_lifted(loki::formalism::BinaryFunctionExpressionView element, Builder& builder, Repository& context);
 
-    ygg::Data<FunctionExpression> translate_lifted(loki::formalism::MultiFunctionExpressionView element, Builder& builder, Repository& context);
+    ygg::Data<FunctionExpression<::tyr::LiftedTag>>
+    translate_lifted(loki::formalism::MultiFunctionExpressionView element, Builder& builder, Repository& context);
 
-    ygg::Data<FunctionExpression> translate_lifted(loki::formalism::UnaryFunctionExpressionView element, Builder& builder, Repository& context);
+    ygg::Data<FunctionExpression<::tyr::LiftedTag>>
+    translate_lifted(loki::formalism::UnaryFunctionExpressionView element, Builder& builder, Repository& context);
 
-    ygg::Data<FunctionExpression> translate_lifted(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context);
+    ygg::Data<FunctionExpression<::tyr::LiftedTag>> translate_lifted(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context);
 
     FunctionTermViewVariant translate_lifted(loki::formalism::FunctionTermView element, Builder& builder, Repository& context);
 
-    ygg::Data<BooleanOperator<ygg::Data<FunctionExpression>>>
+    ygg::Data<BooleanOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>
     translate_lifted(loki::formalism::ConditionNumericConstraintView element, Builder& builder, Repository& context);
 
-    ygg::Index<ConjunctiveCondition>
+    ygg::Index<ConjunctiveCondition<::tyr::LiftedTag>>
     translate_lifted(loki::formalism::ConditionView element, const ygg::IndexList<Variable>& parameters, Builder& builder, Repository& context);
 
     NumericEffectViewVariant translate_lifted(loki::formalism::EffectNumericView element, Builder& builder, Repository& context);
@@ -204,11 +215,11 @@ private:
                           const ygg::IndexList<Variable>& parameters,
                           Builder& builder,
                           Repository& context,
-                          ygg::IndexList<ConditionalEffect>& output);
+                          ygg::IndexList<ConditionalEffect<::tyr::LiftedTag>>& output);
 
-    ygg::Index<Action> translate_lifted(loki::formalism::ActionView element, Builder& builder, Repository& context);
+    ygg::Index<Action<::tyr::LiftedTag>> translate_lifted(loki::formalism::ActionView element, Builder& builder, Repository& context);
 
-    ygg::Index<Axiom> translate_lifted(loki::formalism::AxiomView element, Builder& builder, Repository& context);
+    ygg::Index<Axiom<::tyr::LiftedTag>> translate_lifted(loki::formalism::AxiomView element, Builder& builder, Repository& context);
 
     /**
      * Grounded translation
@@ -233,24 +244,28 @@ private:
 
     GroundLiteralOrFactViewVariant translate_grounded(loki::formalism::LiteralView element, Builder& builder, Repository& context, FDRContext& fdr_context);
 
-    ygg::Data<GroundFunctionExpression> translate_grounded(loki::formalism::FunctionExpressionNumberView element, Builder& builder, Repository& context);
+    ygg::Data<FunctionExpression<::tyr::GroundTag>>
+    translate_grounded(loki::formalism::FunctionExpressionNumberView element, Builder& builder, Repository& context);
 
-    ygg::Data<GroundFunctionExpression> translate_grounded(loki::formalism::BinaryFunctionExpressionView element, Builder& builder, Repository& context);
+    ygg::Data<FunctionExpression<::tyr::GroundTag>>
+    translate_grounded(loki::formalism::BinaryFunctionExpressionView element, Builder& builder, Repository& context);
 
-    ygg::Data<GroundFunctionExpression> translate_grounded(loki::formalism::MultiFunctionExpressionView element, Builder& builder, Repository& context);
+    ygg::Data<FunctionExpression<::tyr::GroundTag>>
+    translate_grounded(loki::formalism::MultiFunctionExpressionView element, Builder& builder, Repository& context);
 
-    ygg::Data<GroundFunctionExpression> translate_grounded(loki::formalism::UnaryFunctionExpressionView element, Builder& builder, Repository& context);
+    ygg::Data<FunctionExpression<::tyr::GroundTag>>
+    translate_grounded(loki::formalism::UnaryFunctionExpressionView element, Builder& builder, Repository& context);
 
-    ygg::Data<GroundFunctionExpression> translate_grounded(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context);
+    ygg::Data<FunctionExpression<::tyr::GroundTag>> translate_grounded(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context);
 
     GroundFunctionTermViewVariant translate_grounded(loki::formalism::FunctionTermView element, Builder& builder, Repository& context);
 
     GroundFunctionTermValueViewVariant translate_grounded(loki::formalism::InitialFunctionValueView element, Builder& builder, Repository& context);
 
-    ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>
+    ygg::Data<BooleanOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>
     translate_grounded(loki::formalism::ConditionNumericConstraintView element, Builder& builder, Repository& context);
 
-    ygg::Index<GroundConjunctiveCondition>
+    ygg::Index<ConjunctiveCondition<::tyr::GroundTag>>
     translate_grounded(loki::formalism::ConditionView element, Builder& builder, Repository& context, FDRContext& fdr_context);
 
     ygg::Index<Metric> translate_grounded(loki::formalism::MetricView element, Builder& builder, Repository& context);

@@ -18,15 +18,16 @@
 #ifndef TYR_FORMALISM_PLANNING_INVARIANTS_MUTEXES_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANTS_MUTEXES_HPP_
 
-#include "tyr/formalism/planning/invariants/invariant.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/invariants/invariant.hpp"
 
 #include <vector>
 
 namespace tyr::formalism::planning::invariant
 {
-std::vector<GroundAtomViewList<FluentTag>>
-compute_mutex_groups(const GroundAtomViewList<FluentTag>& initial_atoms, const GroundAtomViewList<FluentTag>& all_atoms, const InvariantList& invariants);
+std::vector<AtomViewList<::tyr::GroundTag, FluentTag>> compute_mutex_groups(const AtomViewList<::tyr::GroundTag, FluentTag>& initial_atoms,
+                                                                            const AtomViewList<::tyr::GroundTag, FluentTag>& all_atoms,
+                                                                            const InvariantList& invariants);
 }
 
 #endif

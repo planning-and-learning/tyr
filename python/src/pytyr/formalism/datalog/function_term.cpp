@@ -27,45 +27,59 @@ namespace tyr::formalism::datalog
 
 namespace
 {
-template<FactKind T>
-void bind_function_term_data(nb::module_& m, const char* name)
+template<TaskKind T, FactKind F>
+void bind_function_term_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
 {
-    using V = ygg::Data<FunctionTerm<T>>;
-    auto cls = nb::class_<V>(m, name).def(nb::init<FunctionView<T>, const TermViewList&>(), "function"_a, "terms"_a);
-    ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
-}
+    using Tag = FunctionTerm<T, F>;
+    ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
 
-template<FactKind T>
-void bind_function_term_view(nb::module_& m, const char* name)
-{
-    using V = FunctionTermView<T>;
-    auto cls =
-        nb::class_<V>(m, name).def("get_index", &V::get_index).def("get_function", &V::get_function, nb::keep_alive<0, 1>()).def("get_terms", &V::get_terms);
-    ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    {
+        using V = ygg::Data<Tag>;
+        auto cls = nb::class_<V>(m, (name + "Data").c_str());
+        if constexpr (std::same_as<T, LiftedTag>)
+        {
+            cls.def(nb::init<FunctionView<F>, const TermViewList&>(), "function"_a, "terms"_a);
+        }
+        else
+        {
+            cls.def(nb::init<FunctionBindingView<F>>(), "binding"_a);
+        }
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+
+    {
+        using V = FunctionTermView<T, F>;
+        auto cls = nb::class_<V>(m, name.c_str());
+        cls.def("get_index", &V::get_index);
+        cls.def("get_function", &V::get_function, nb::keep_alive<0, 1>());
+        if constexpr (std::same_as<T, LiftedTag>)
+        {
+            cls.def("get_terms", &V::get_terms);
+        }
+        else
+        {
+            cls.def("get_row", &V::get_row, nb::keep_alive<0, 1>());
+            cls.def("get_objects", &V::get_objects);
+        }
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+
+    repository.def("get_or_create", &get_or_create_data<Tag>, "data"_a, nb::keep_alive<0, 1>());
 }
 }  // namespace
 
 void bind_function_term(nb::module_& m, RepositoryBinding& repository)
 {
-    ygg::bind_index<ygg::Index<FunctionTerm<StaticTag>>>(m, "StaticFunctionTermIndex");
-    ygg::bind_index<ygg::Index<FunctionTerm<FluentTag>>>(m, "FluentFunctionTermIndex");
-    ygg::bind_index<ygg::Index<FunctionTerm<AuxiliaryTag>>>(m, "AuxiliaryFunctionTermIndex");
-
-    bind_function_term_data<StaticTag>(m, "StaticFunctionTermData");
-    bind_function_term_data<FluentTag>(m, "FluentFunctionTermData");
-    bind_function_term_data<AuxiliaryTag>(m, "AuxiliaryFunctionTermData");
-
-    bind_function_term_view<StaticTag>(m, "StaticFunctionTerm");
-    bind_function_term_view<FluentTag>(m, "FluentFunctionTerm");
-    bind_function_term_view<AuxiliaryTag>(m, "AuxiliaryFunctionTerm");
-
-    repository.def("get_or_create", &get_or_create_data<FunctionTerm<StaticTag>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_data<FunctionTerm<FluentTag>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_data<FunctionTerm<AuxiliaryTag>>, "data"_a, nb::keep_alive<0, 1>());
+    bind_function_term_kind<LiftedTag, StaticTag>(m, repository, "StaticFunctionTerm");
+    bind_function_term_kind<LiftedTag, FluentTag>(m, repository, "FluentFunctionTerm");
+    bind_function_term_kind<LiftedTag, AuxiliaryTag>(m, repository, "AuxiliaryFunctionTerm");
+    bind_function_term_kind<GroundTag, StaticTag>(m, repository, "StaticGroundFunctionTerm");
+    bind_function_term_kind<GroundTag, FluentTag>(m, repository, "FluentGroundFunctionTerm");
+    bind_function_term_kind<GroundTag, AuxiliaryTag>(m, repository, "AuxiliaryGroundFunctionTerm");
 }
 
 }  // namespace tyr::formalism::datalog

@@ -17,6 +17,7 @@
 
 #include "tyr/formalism/planning/fdr_context.hpp"
 
+#include "tyr/formalism/planning/atom_view.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
@@ -24,7 +25,6 @@
 #include "tyr/formalism/planning/fdr_variable_data.hpp"
 #include "tyr/formalism/planning/fdr_variable_index.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/planning/ground_atom_view.hpp"
 #include "tyr/formalism/planning/merge.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
@@ -56,7 +56,7 @@ FDRFactView<FluentTag> merge_p2p(FDRFactView<FluentTag> element, MergeContext& c
 
 FDRContext::FDRContext(RepositoryPtr context) : m_context(std::move(context)), m_facts(), m_registration_mutex(), m_builder(), m_variables() {}
 
-FDRContext::FDRContext(const std::vector<GroundAtomViewList<FluentTag>>& mutexes, RepositoryPtr context) :
+FDRContext::FDRContext(const std::vector<AtomViewList<::tyr::GroundTag, FluentTag>>& mutexes, RepositoryPtr context) :
     m_context(std::move(context)),
     m_facts(),
     m_registration_mutex(),
@@ -78,7 +78,7 @@ FDRContext::FDRContext(const std::vector<GroundAtomViewList<FluentTag>>& mutexes
     }
 }
 
-FDRContext::FDRContext(const GroundAtomViewList<FluentTag>& all_atoms, RepositoryPtr context) :
+FDRContext::FDRContext(const AtomViewList<::tyr::GroundTag, FluentTag>& all_atoms, RepositoryPtr context) :
     m_context(std::move(context)),
     m_facts(),
     m_registration_mutex(),
@@ -110,7 +110,7 @@ FDRContext::FDRContext(const FDRContext& other, Builder& builder, RepositoryPtr 
 
     for (size_t i = 0; i < other.m_facts.size(); ++i)
     {
-        const auto atom = ygg::make_view(ygg::Index<GroundAtom<FluentTag>>(i), *other.m_context);
+        const auto atom = ygg::make_view(ygg::Index<Atom<::tyr::GroundTag, FluentTag>>(i), *other.m_context);
         const auto fact = other.find_fact(atom);
         if (!fact)
             continue;
@@ -120,7 +120,7 @@ FDRContext::FDRContext(const FDRContext& other, Builder& builder, RepositoryPtr 
     }
 }
 
-FDRFactView<FluentTag> FDRContext::get_fact(GroundAtomView<FluentTag> atom)
+FDRFactView<FluentTag> FDRContext::get_fact(AtomView<::tyr::GroundTag, FluentTag> atom)
 {
     if (const auto fact = find_fact(atom))
         return *fact;
@@ -144,9 +144,9 @@ FDRFactView<FluentTag> FDRContext::get_fact(GroundAtomView<FluentTag> atom)
     return ygg::make_view(fact, *m_context);
 }
 
-std::optional<FDRFactView<FluentTag>> FDRContext::get_fact(GroundAtomView<FluentTag> atom) const { return find_fact(atom); }
+std::optional<FDRFactView<FluentTag>> FDRContext::get_fact(AtomView<::tyr::GroundTag, FluentTag> atom) const { return find_fact(atom); }
 
-std::optional<FDRFactView<FluentTag>> FDRContext::find_fact(GroundAtomView<FluentTag> atom) const
+std::optional<FDRFactView<FluentTag>> FDRContext::find_fact(AtomView<::tyr::GroundTag, FluentTag> atom) const
 {
     assert(&m_context->get_canonical_context(atom.get_index()) == &atom.get_context());
     const auto index = ygg::uint_t(atom.get_index());
@@ -160,14 +160,14 @@ std::optional<FDRFactView<FluentTag>> FDRContext::find_fact(GroundAtomView<Fluen
     return ygg::make_view(slot.fact, *m_context);
 }
 
-void FDRContext::ensure_fact_slot(GroundAtomView<FluentTag> atom)
+void FDRContext::ensure_fact_slot(AtomView<::tyr::GroundTag, FluentTag> atom)
 {
     const auto index = ygg::uint_t(atom.get_index());
     while (m_facts.size() <= index)
         m_facts.emplace_back();
 }
 
-bool FDRContext::publish_fact(GroundAtomView<FluentTag> atom, ygg::Data<FDRFact<FluentTag>> fact)
+bool FDRContext::publish_fact(AtomView<::tyr::GroundTag, FluentTag> atom, ygg::Data<FDRFact<FluentTag>> fact)
 {
     ensure_fact_slot(atom);
     const auto index = ygg::uint_t(atom.get_index());

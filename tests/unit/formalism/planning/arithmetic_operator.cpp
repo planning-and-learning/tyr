@@ -18,8 +18,8 @@ concept ArithmeticOperatorContract = std::totally_ordered<ygg::Data<Entity>> && 
                                             { view < view } -> std::same_as<bool>;
                                         };
 
-using LiftedArithmeticOperator = fp::ArithmeticOperator<ygg::Data<fp::FunctionExpression>>;
-using GroundArithmeticOperator = fp::ArithmeticOperator<ygg::Data<fp::GroundFunctionExpression>>;
+using LiftedArithmeticOperator = fp::ArithmeticOperator<ygg::Data<fp::FunctionExpression<::tyr::LiftedTag>>>;
+using GroundArithmeticOperator = fp::ArithmeticOperator<ygg::Data<fp::FunctionExpression<::tyr::GroundTag>>>;
 
 static_assert(ArithmeticOperatorContract<LiftedArithmeticOperator>);
 static_assert(std::same_as<ygg::View<ygg::Data<LiftedArithmeticOperator>, fp::Repository>, fp::LiftedArithmeticOperatorView>);

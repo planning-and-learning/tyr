@@ -36,7 +36,7 @@ namespace fd = ::tyr::formalism::datalog;
 }
 
 template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::schedule(scheduler_impl::fd::GroundRuleView<R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
+void Scheduler<GroundTag>::schedule(scheduler_impl::fd::RuleView<::tyr::GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     if (get_states<R>()[ygg::uint_t(rule.get_index())].unsatisfied_count != 0)
         return;
@@ -51,7 +51,7 @@ void Scheduler<GroundTag>::schedule(scheduler_impl::fd::GroundRuleView<R> rule, 
 }
 
 template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(scheduler_impl::fd::GroundRuleView<R> rule,
+void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(scheduler_impl::fd::RuleView<::tyr::GroundTag, R> rule,
                                                                   ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     const auto rule_index = rule.get_index();

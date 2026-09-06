@@ -3,6 +3,7 @@
 
 #include "tyr/formalism/planning/function_term_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/serialization/formalism/binding_view.hpp"
 #include "tyr/serialization/formalism/function_view.hpp"
 #include "tyr/serialization/formalism/term_view.hpp"
 #include "tyr/serialization/serializer.hpp"
@@ -10,16 +11,23 @@
 namespace tyr::serialization
 {
 
-template<::tyr::formalism::FactKind T>
-struct Serializer<::tyr::formalism::planning::FunctionTermView<T>>
+template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
+struct Serializer<::tyr::formalism::planning::FunctionTermView<T, F>>
 {
-    static std::string name() { return std::string(T::name) + "FunctionTerm"; }
+    static std::string name() { return std::string(F::name) + (std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "FunctionTerm"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::FunctionTermView<T>& value)
+    static void save(Archive& ar, const ::tyr::formalism::planning::FunctionTermView<T, F>& value)
     {
-        ar.field("function", value.get_function());
-        ar.field("terms", value.get_terms());
+        if constexpr (std::same_as<T, ::tyr::LiftedTag>)
+        {
+            ar.field("function", value.get_function());
+            ar.field("terms", value.get_terms());
+        }
+        else
+        {
+            ar.field("binding", value.get_row());
+        }
     }
 };
 

@@ -10,26 +10,26 @@
 namespace tyr::serialization
 {
 
-template<TaskKind Kind>
-struct Serializer<planning::Node<Kind>>
+template<TaskKind T>
+struct Serializer<planning::Node<T>>
 {
-    static std::string name() { return std::same_as<Kind, GroundTag> ? "GroundNode" : "LiftedNode"; }
+    static std::string name() { return std::string(T::name) + "Node"; }
 
     template<class Archive>
-    static void save(Archive& archive, const planning::Node<Kind>& node)
+    static void save(Archive& archive, const planning::Node<T>& node)
     {
         archive.field("state", node.get_state());
         archive.field("metric", node.get_metric());
     }
 };
 
-template<TaskKind Kind>
-struct Serializer<planning::LabeledNode<Kind>>
+template<TaskKind T>
+struct Serializer<planning::LabeledNode<T>>
 {
-    static std::string name() { return std::same_as<Kind, GroundTag> ? "GroundLabeledNode" : "LiftedLabeledNode"; }
+    static std::string name() { return std::string(T::name) + "LabeledNode"; }
 
     template<class Archive>
-    static void save(Archive& archive, const planning::LabeledNode<Kind>& node)
+    static void save(Archive& archive, const planning::LabeledNode<T>& node)
     {
         archive.field("label", node.label);
         archive.field("node", node.node);

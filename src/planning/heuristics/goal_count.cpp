@@ -36,7 +36,7 @@ std::shared_ptr<GoalCountHeuristic<Kind>> GoalCountHeuristic<Kind>::create(std::
 }
 
 template<TaskKind Kind>
-void GoalCountHeuristic<Kind>::set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal)
+void GoalCountHeuristic<Kind>::set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal)
 {
     m_goal = goal;
 }

@@ -18,8 +18,6 @@
 #ifndef TYR_FORMALISM_PLANNING_MUTABLE_LITERAL_HPP_
 #define TYR_FORMALISM_PLANNING_MUTABLE_LITERAL_HPP_
 
-#include <yggdrasil/semantics/comparison.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 #include "tyr/formalism/planning/mutable/atom.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/unification/structure_traits.hpp"
@@ -29,6 +27,8 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+#include <yggdrasil/semantics/comparison.hpp>
+#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -40,7 +40,7 @@ struct MutableLiteral : ygg::comparison::Mixin<MutableLiteral<T>>
 
     MutableLiteral() = default;
     MutableLiteral(MutableAtom<T> atom, bool polarity) : atom(std::move(atom)), polarity(polarity) {}
-    MutableLiteral(LiteralView<T> element) : atom(element.get_atom()), polarity(element.get_polarity()) {}
+    MutableLiteral(LiteralView<::tyr::LiftedTag, T> element) : atom(element.get_atom()), polarity(element.get_polarity()) {}
 
     auto identifying_members() const noexcept { return std::tie(atom, polarity); }
 };

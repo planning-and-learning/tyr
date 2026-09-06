@@ -18,27 +18,28 @@
 #ifndef TYR_FORMALISM_PLANNING_LITERAL_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_LITERAL_DATA_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/planning/atom_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/literal_index.hpp"
 
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
+
 namespace ygg
 {
 
-template<::tyr::formalism::FactKind T>
-struct Data<::tyr::formalism::planning::Literal<T>>
+template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
+struct Data<::tyr::formalism::planning::Literal<T, F>>
 {
-    ygg::Index<::tyr::formalism::planning::Literal<T>> index;
-    ygg::Index<::tyr::formalism::planning::Atom<T>> atom;
+    ygg::Index<::tyr::formalism::planning::Literal<T, F>> index;
+    ygg::Index<::tyr::formalism::planning::Atom<T, F>> atom;
     bool polarity;
 
     Data() = default;
-    Data(ygg::Index<::tyr::formalism::planning::Atom<T>> atom_, bool polarity_) : index(), atom(atom_), polarity(polarity_) {}
+    Data(ygg::Index<::tyr::formalism::planning::Atom<T, F>> atom_, bool polarity_) : index(), atom(atom_), polarity(polarity_) {}
     // Python constructor
     template<typename C>
-    Data(::ygg::View<ygg::Index<::tyr::formalism::planning::Atom<T>>, C> atom_, bool polarity_) : index(), atom(), polarity(polarity_)
+    Data(::ygg::View<ygg::Index<::tyr::formalism::planning::Atom<T, F>>, C> atom_, bool polarity_) : index(), atom(), polarity(polarity_)
     {
         set(atom_, atom);
     }
@@ -58,7 +59,8 @@ struct Data<::tyr::formalism::planning::Literal<T>>
     auto identifying_members() const noexcept { return std::tie(atom, polarity); }
 };
 
-static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::planning::Literal<::tyr::formalism::StaticTag>>);
+static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>);
+static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::planning::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>);
 
 }
 

@@ -59,17 +59,17 @@ public:
 
     ygg::Index<planning::State<Kind>> get_index() const;
 
-    bool test(ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::StaticTag>> index) const;
-    ygg::float_t get(ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::StaticTag>> index) const;
+    bool test(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const;
+    ygg::float_t get(ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const;
     ::tyr::formalism::planning::FDRValue get(ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const;
-    ygg::float_t get(ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>> index) const;
-    bool test(ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> index) const;
+    ygg::float_t get(ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const;
+    bool test(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const;
 
-    bool test(::tyr::formalism::planning::GroundAtomView<::tyr::formalism::StaticTag> view) const;
-    ygg::float_t get(::tyr::formalism::planning::GroundFunctionTermView<::tyr::formalism::StaticTag> view) const;
+    bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const;
+    ygg::float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const;
     ::tyr::formalism::planning::FDRValue get(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const;
-    ygg::float_t get(::tyr::formalism::planning::GroundFunctionTermView<::tyr::formalism::FluentTag> view) const;
-    bool test(::tyr::formalism::planning::GroundAtomView<::tyr::formalism::DerivedTag> view) const;
+    ygg::float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const;
+    bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const;
 
     planning::AtomRange<::tyr::formalism::StaticTag> get_static_atoms() const noexcept;
     planning::FDRFactRange<Kind, ::tyr::formalism::FluentTag> get_fluent_facts() const noexcept;
@@ -138,7 +138,7 @@ namespace tyr::planning
 
 template<class R, class Tag>
 concept AtomRangeConcept =
-    std::ranges::input_range<R> && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, ygg::Index<::tyr::formalism::planning::GroundAtom<Tag>>>;
+    std::ranges::input_range<R> && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, Tag>>>;
 
 template<class R, class Tag>
 concept FactRangeConcept =
@@ -147,7 +147,7 @@ concept FactRangeConcept =
 template<class R, class Tag>
 concept FunctionTermValueRangeConcept = std::ranges::input_range<R>
                                         && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>,
-                                                        std::pair<ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<Tag>>, ygg::float_t>>;
+                                                        std::pair<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, Tag>>, ygg::float_t>>;
 
 template<typename T>
 concept IterableStateConcept = requires(const T& cs) {
@@ -164,7 +164,7 @@ concept IterableStateConcept = requires(const T& cs) {
 
 template<class R, class Tag>
 concept AtomViewRangeConcept =
-    std::ranges::input_range<R> && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, ::tyr::formalism::planning::GroundAtomView<Tag>>;
+    std::ranges::input_range<R> && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, ::tyr::formalism::planning::AtomView<::tyr::GroundTag, Tag>>;
 
 template<class R, class Tag>
 concept FactViewRangeConcept =
@@ -173,7 +173,7 @@ concept FactViewRangeConcept =
 template<class R, class Tag>
 concept FunctionTermViewValueRangeConcept =
     std::ranges::input_range<R>
-    && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, ::tyr::formalism::planning::GroundFunctionTermViewValuePair<Tag>>;
+    && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, ::tyr::formalism::planning::FunctionTermViewValuePair<::tyr::GroundTag, Tag>>;
 
 template<typename T>
 concept IterableViewStateConcept = requires(const T& cs) {
@@ -191,10 +191,10 @@ concept IterableViewStateConcept = requires(const T& cs) {
 template<typename T, typename Kind>
 concept IndexableStateConcept = requires(const T& cs,
                                          ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> variable,
-                                         ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::StaticTag>> static_fterm,
-                                         ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>> fluent_fterm,
-                                         ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::StaticTag>> static_atom,
-                                         ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> derived_atom) {
+                                         ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> static_fterm,
+                                         ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fluent_fterm,
+                                         ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> static_atom,
+                                         ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> derived_atom) {
     requires TaskKind<Kind>;
     requires std::same_as<typename T::TaskType, Task<Kind>>;
     { cs.get_index() } -> std::same_as<ygg::Index<State<Kind>>>;
@@ -213,10 +213,10 @@ concept IndexableStateConcept = requires(const T& cs,
 template<typename T, typename Kind>
 concept IndexableViewStateConcept = requires(const T& cs,
                                              ::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> variable,
-                                             ::tyr::formalism::planning::GroundFunctionTermView<::tyr::formalism::StaticTag> static_fterm,
-                                             ::tyr::formalism::planning::GroundFunctionTermView<::tyr::formalism::FluentTag> fluent_fterm,
-                                             ::tyr::formalism::planning::GroundAtomView<::tyr::formalism::StaticTag> static_atom,
-                                             ::tyr::formalism::planning::GroundAtomView<::tyr::formalism::DerivedTag> derived_atom) {
+                                             ::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> static_fterm,
+                                             ::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> fluent_fterm,
+                                             ::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag> static_atom,
+                                             ::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> derived_atom) {
     requires TaskKind<Kind>;
     requires std::same_as<typename T::TaskType, Task<Kind>>;
     { cs.get_index() } -> std::same_as<ygg::Index<State<Kind>>>;

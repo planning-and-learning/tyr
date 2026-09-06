@@ -100,7 +100,7 @@ should not be used further.
             [](const ApplicableProgram& self)
             {
                 using Entry =
-                    std::pair<const ::tyr::formalism::datalog::PredicateView<::tyr::formalism::FluentTag>*, const ::tyr::formalism::planning::ActionView*>;
+                    std::pair<const ::tyr::formalism::datalog::PredicateView<::tyr::formalism::FluentTag>*, const ::tyr::formalism::planning::ActionView<::tyr::LiftedTag>*>;
                 auto result = std::vector<Entry> {};
                 for (const auto& [predicate, action] : self.get_predicate_to_action_mapping())
                     result.emplace_back(&predicate, &action);
@@ -124,7 +124,7 @@ should not be used further.
             [](const RelaxedProgram& self)
             {
                 using Entry =
-                    std::pair<const ::tyr::formalism::datalog::RuleView<::tyr::formalism::PredicateTag>*, const ::tyr::formalism::planning::ActionView*>;
+                    std::pair<const ::tyr::formalism::datalog::RuleView<::tyr::LiftedTag, ::tyr::formalism::PredicateTag>*, const ::tyr::formalism::planning::ActionView<::tyr::LiftedTag>*>;
                 auto result = std::vector<Entry> {};
                 for (const auto& [rule, action] : self.get_rule_to_action_mapping<::tyr::formalism::PredicateTag>())
                     result.emplace_back(&rule, &action);
@@ -141,7 +141,7 @@ should not be used further.
             [](const GroundTaskProgram& self)
             {
                 using Entry =
-                    std::pair<const ::tyr::formalism::datalog::PredicateView<::tyr::formalism::FluentTag>*, const ::tyr::formalism::planning::ActionView*>;
+                    std::pair<const ::tyr::formalism::datalog::PredicateView<::tyr::formalism::FluentTag>*, const ::tyr::formalism::planning::ActionView<::tyr::LiftedTag>*>;
                 auto result = std::vector<Entry> {};
                 for (const auto& [predicate, action] : self.get_predicate_to_action_mapping())
                     result.emplace_back(&predicate, &action);
@@ -152,7 +152,7 @@ should not be used further.
             "get_predicate_to_axiom_mapping",
             [](const GroundTaskProgram& self)
             {
-                using Axioms = std::vector<const ::tyr::formalism::planning::AxiomView*>;
+                using Axioms = std::vector<const ::tyr::formalism::planning::AxiomView<::tyr::LiftedTag>*>;
                 using Entry = std::pair<const ::tyr::formalism::datalog::PredicateView<::tyr::formalism::FluentTag>*, Axioms>;
                 auto result = std::vector<Entry> {};
                 for (const auto& [predicate, axioms] : self.get_predicate_to_axiom_mapping())

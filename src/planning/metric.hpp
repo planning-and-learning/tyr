@@ -37,7 +37,7 @@ namespace tyr::planning
 
 template<TaskKind Kind>
 ygg::float_t evaluate_metric(ygg::View<::cista::optional<ygg::Index<::tyr::formalism::planning::Metric>>, ::tyr::formalism::planning::Repository> metric,
-                             ygg::View<::cista::optional<ygg::Index<::tyr::formalism::planning::GroundFunctionTermValue<::tyr::formalism::AuxiliaryTag>>>,
+                             ygg::View<::cista::optional<ygg::Index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>,
                                        ::tyr::formalism::planning::Repository> auxiliary_fterm_value,
                              const StateContext<Kind>& state_context)
 {

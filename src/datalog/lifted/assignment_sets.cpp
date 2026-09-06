@@ -295,7 +295,7 @@ void PredicateAssignmentSets<T>::reset() noexcept
 }
 
 template<::tyr::formalism::FactKind T>
-void PredicateAssignmentSets<T>::insert(::tyr::formalism::datalog::GroundAtomView<T> ground_atom)
+void PredicateAssignmentSets<T>::insert(::tyr::formalism::datalog::AtomView<::tyr::GroundTag, T> ground_atom)
 {
     insert(ground_atom.get_row());
 }
@@ -404,7 +404,7 @@ bool FunctionAssignmentSet<T>::insert(::tyr::formalism::datalog::FunctionBinding
 }
 
 template<::tyr::formalism::FactKind T>
-bool FunctionAssignmentSet<T>::insert(::tyr::formalism::datalog::GroundFunctionTermValueView<T> fterm_value)
+bool FunctionAssignmentSet<T>::insert(::tyr::formalism::datalog::FunctionTermValueView<::tyr::GroundTag, T> fterm_value)
 {
     return insert(fterm_value.get_fterm().get_row(), fterm_value.get_value());
 }
@@ -560,19 +560,19 @@ bool FunctionAssignmentSets<T>::insert(::tyr::formalism::datalog::FunctionBindin
 }
 
 template<::tyr::formalism::FactKind T>
-bool FunctionAssignmentSets<T>::insert(::tyr::formalism::datalog::GroundFunctionTermView<T> function_term, ygg::float_t value)
+bool FunctionAssignmentSets<T>::insert(::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, T> function_term, ygg::float_t value)
 {
     return m_sets[function_term.get_function().get_index().get_value()].insert(function_term.get_row(), value);
 }
 
 template<::tyr::formalism::FactKind T>
-bool FunctionAssignmentSets<T>::insert(::tyr::formalism::datalog::GroundFunctionTermView<T> function_term, ygg::ClosedInterval<ygg::float_t> interval)
+bool FunctionAssignmentSets<T>::insert(::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, T> function_term, ygg::ClosedInterval<ygg::float_t> interval)
 {
     return m_sets[function_term.get_function().get_index().get_value()].insert(function_term.get_row(), interval);
 }
 
 template<::tyr::formalism::FactKind T>
-void FunctionAssignmentSets<T>::insert(::tyr::formalism::datalog::GroundFunctionTermListView<T> function_terms, const std::vector<ygg::float_t>& values)
+void FunctionAssignmentSets<T>::insert(::tyr::formalism::datalog::FunctionTermListView<::tyr::GroundTag, T> function_terms, const std::vector<ygg::float_t>& values)
 {
     assert(function_terms.size() == values.size());
 
@@ -581,7 +581,7 @@ void FunctionAssignmentSets<T>::insert(::tyr::formalism::datalog::GroundFunction
 }
 
 template<::tyr::formalism::FactKind T>
-void FunctionAssignmentSets<T>::insert(::tyr::formalism::datalog::GroundFunctionTermValueListView<T> fterm_values)
+void FunctionAssignmentSets<T>::insert(::tyr::formalism::datalog::FunctionTermValueListView<::tyr::GroundTag, T> fterm_values)
 {
     for (const auto fterm_value : fterm_values)
         insert(fterm_value.get_fterm(), fterm_value.get_value());

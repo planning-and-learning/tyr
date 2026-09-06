@@ -20,7 +20,6 @@
 
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/function_expression_data.hpp"
-#include "tyr/formalism/datalog/ground_function_expression_data.hpp"
 #include "tyr/formalism/datalog/unary_operator_index.hpp"
 
 #include <stdexcept>
@@ -68,7 +67,8 @@ struct Data<::tyr::formalism::datalog::UnaryOperator<T>>
     auto identifying_members() const noexcept { return std::tie(operator_kind, arg); }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::UnaryOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression>>>);
+static_assert(
+    !ygg::uses_trivial_storage_v<::tyr::formalism::datalog::UnaryOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>>>);
 
 }
 

@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_HEURISTICS_GOAL_COUNT_HPP_
 #define TYR_PLANNING_HEURISTICS_GOAL_COUNT_HPP_
 
-#include "tyr/formalism/planning/ground_conjunctive_condition_view.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/state_view.hpp"
 #include "tyr/planning/heuristic.hpp"
@@ -39,7 +39,7 @@ public:
 
     using Heuristic<Kind>::evaluate;
 
-    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override;
+    void set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal) override;
 
     ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state) override;
 
@@ -48,7 +48,7 @@ public:
 protected:
     std::shared_ptr<const Task<Kind>> m_task;
 
-    ::tyr::formalism::planning::GroundConjunctiveConditionView m_goal;
+    ::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> m_goal;
 };
 
 }

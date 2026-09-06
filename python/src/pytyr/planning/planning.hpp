@@ -102,15 +102,15 @@ void bind_state(nb::module_& m, const std::string& name)
                    .def("get_state_repository", &T::get_state_repository, nb::rv_policy::copy)
                    // AccessibleStateConcept
                    .def("test",
-                        nb::overload_cast<::tyr::formalism::planning::GroundAtomView<::tyr::formalism::StaticTag>>(&T::test, nb::const_),
+                        nb::overload_cast<::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag>>(&T::test, nb::const_),
                         nb::rv_policy::copy,
                         "static_atom"_a)
                    .def("test",
-                        nb::overload_cast<::tyr::formalism::planning::GroundAtomView<::tyr::formalism::DerivedTag>>(&T::test, nb::const_),
+                        nb::overload_cast<::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>(&T::test, nb::const_),
                         nb::rv_policy::copy,
                         "derived_atom"_a)
                    .def("get",
-                        nb::overload_cast<::tyr::formalism::planning::GroundFunctionTermView<::tyr::formalism::StaticTag>>(&T::get, nb::const_),
+                        nb::overload_cast<::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag>>(&T::get, nb::const_),
                         nb::rv_policy::copy,
                         "static_fterm"_a)
                    .def("get",
@@ -118,14 +118,14 @@ void bind_state(nb::module_& m, const std::string& name)
                         nb::rv_policy::copy,
                         "fluent_variable"_a)
                    .def("get",
-                        nb::overload_cast<::tyr::formalism::planning::GroundFunctionTermView<::tyr::formalism::FluentTag>>(&T::get, nb::const_),
+                        nb::overload_cast<::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag>>(&T::get, nb::const_),
                         nb::rv_policy::copy,
                         "fluent_fterm"_a)
                    // IterableStateConcept
                    .def(
                        "static_atoms",
                        [](const T& s) {
-                           return make_owning_iterator<fp::GroundAtomView<::tyr::formalism::StaticTag>>(nb::type<T>(),
+                           return make_owning_iterator<fp::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag>>(nb::type<T>(),
                                                                                                         "static atom iterator",
                                                                                                         s.get_static_atoms_view());
                        },
@@ -141,7 +141,7 @@ void bind_state(nb::module_& m, const std::string& name)
                    .def(
                        "derived_atoms",
                        [](const T& s) {
-                           return make_owning_iterator<fp::GroundAtomView<::tyr::formalism::DerivedTag>>(nb::type<T>(),
+                           return make_owning_iterator<fp::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>(nb::type<T>(),
                                                                                                          "derived atom iterator",
                                                                                                          s.get_derived_atoms_view());
                        },
@@ -150,7 +150,7 @@ void bind_state(nb::module_& m, const std::string& name)
                        "static_fterm_values",
                        [](const T& s)
                        {
-                           return make_owning_iterator<fp::GroundFunctionTermViewValuePair<::tyr::formalism::StaticTag>>(nb::type<T>(),
+                           return make_owning_iterator<fp::FunctionTermViewValuePair<::tyr::GroundTag, ::tyr::formalism::StaticTag>>(nb::type<T>(),
                                                                                                                          "static function term value iterator",
                                                                                                                          s.get_static_fterm_values_view());
                        },
@@ -159,7 +159,7 @@ void bind_state(nb::module_& m, const std::string& name)
                        "fluent_fterm_values",
                        [](const T& s)
                        {
-                           return make_owning_iterator<fp::GroundFunctionTermViewValuePair<::tyr::formalism::FluentTag>>(nb::type<T>(),
+                           return make_owning_iterator<fp::FunctionTermViewValuePair<::tyr::GroundTag, ::tyr::formalism::FluentTag>>(nb::type<T>(),
                                                                                                                          "fluent function term value iterator",
                                                                                                                          s.get_fluent_fterm_values_view());
                        },
@@ -178,9 +178,9 @@ void bind_state_builder(nb::module_& m, const std::string& name)
         .def("get", nb::overload_cast<fp::FDRVariableView<::tyr::formalism::FluentTag>>(&T::get, nb::const_), "fluent_variable"_a)
         .def(
             "get",
-            [](const T& state, fp::GroundFunctionTermView<::tyr::formalism::FluentTag> fterm) { return state.get(fterm.get_index()); },
+            [](const T& state, fp::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> fterm) { return state.get(fterm.get_index()); },
             "fluent_fterm"_a)
-        .def("test", nb::overload_cast<fp::GroundAtomView<::tyr::formalism::DerivedTag>>(&T::test, nb::const_), "derived_atom"_a);
+        .def("test", nb::overload_cast<fp::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>(&T::test, nb::const_), "derived_atom"_a);
 }
 
 template<TaskKind Kind>
@@ -249,7 +249,7 @@ void bind_state_repository(nb::module_& m, const std::string& name)
              nb::overload_cast<
                  AxiomEvaluator<Kind>&,
                  const std::vector<ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>&,
-                 const std::vector<std::pair<ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>>, ygg::float_t>>&>(
+                 const std::vector<std::pair<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>>, ygg::float_t>>&>(
                  &T::create_state),
              nb::rv_policy::move,
              "axiom_evaluator"_a,
@@ -258,7 +258,7 @@ void bind_state_repository(nb::module_& m, const std::string& name)
         .def("create_state",
              nb::overload_cast<AxiomEvaluator<Kind>&,
                                const std::vector<::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag>>&,
-                               const std::vector<::tyr::formalism::planning::GroundFunctionTermViewValuePair<::tyr::formalism::FluentTag>>&>(&T::create_state),
+                               const std::vector<::tyr::formalism::planning::FunctionTermViewValuePair<::tyr::GroundTag, ::tyr::formalism::FluentTag>>&>(&T::create_state),
              nb::rv_policy::move,
              "axiom_evaluator"_a,
              "fluent_facts"_a,
@@ -290,7 +290,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             "state_repository"_a,
             "axiom_evaluator"_a)
         .def("get_successor_node",
-             nb::overload_cast<const Node<Kind>&, fp::GroundActionView, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::get_successor_node),
+             nb::overload_cast<const Node<Kind>&, fp::ActionView<::tyr::GroundTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::get_successor_node),
              "node"_a,
              "action"_a,
              "state_repository"_a,
@@ -393,7 +393,7 @@ void bind_conjunctive_goal_strategy(nb::module_& m, const std::string& name)
 
     nb::class_<T, GoalStrategy<Kind>>(m, name.c_str())  //
         .def(nb::init<const Task<Kind>&>(), "task"_a)
-        .def(nb::init<fp::GroundConjunctiveConditionView>(), "goal"_a)
+        .def(nb::init<fp::ConjunctiveConditionView<::tyr::GroundTag>>(), "goal"_a)
         .def("set_goal", &T::set_goal, "goal"_a);
 }
 
@@ -449,7 +449,7 @@ public:
 
     NB_TRAMPOLINE(Base);
 
-    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override { NB_OVERRIDE_PURE(set_goal, goal); }
+    void set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal) override { NB_OVERRIDE_PURE(set_goal, goal); }
 
     ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state) override { NB_OVERRIDE_PURE(evaluate, state); }
 

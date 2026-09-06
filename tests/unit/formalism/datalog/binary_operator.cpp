@@ -38,8 +38,8 @@ static_assert(std::same_as<ygg::View<ygg::Index<LiftedArithmetic>, fd::Repositor
 static_assert(std::same_as<ygg::View<ygg::Index<LiftedBoolean>, fd::Repository>, fd::LiftedBinaryOperatorView<f::BooleanOperatorKind>>);
 static_assert(std::same_as<ygg::View<ygg::Index<GroundArithmetic>, fd::Repository>, fd::GroundBinaryOperatorView<f::ArithmeticOperatorKind>>);
 static_assert(std::same_as<ygg::View<ygg::Index<GroundBoolean>, fd::Repository>, fd::GroundBinaryOperatorView<f::BooleanOperatorKind>>);
-static_assert(std::constructible_from<ygg::Data<LiftedArithmetic>, f::ArithmeticOperatorKind, fd::FunctionExpressionView, fd::FunctionExpressionView>);
-static_assert(std::constructible_from<ygg::Data<LiftedBoolean>, f::BooleanOperatorKind, fd::FunctionExpressionView, fd::FunctionExpressionView>);
+static_assert(std::constructible_from<ygg::Data<LiftedArithmetic>, f::ArithmeticOperatorKind, fd::FunctionExpressionView<::tyr::LiftedTag>, fd::FunctionExpressionView<::tyr::LiftedTag>>);
+static_assert(std::constructible_from<ygg::Data<LiftedBoolean>, f::BooleanOperatorKind, fd::FunctionExpressionView<::tyr::LiftedTag>, fd::FunctionExpressionView<::tyr::LiftedTag>>);
 static_assert(
-    std::constructible_from<ygg::Data<GroundArithmetic>, f::ArithmeticOperatorKind, fd::GroundFunctionExpressionView, fd::GroundFunctionExpressionView>);
-static_assert(std::constructible_from<ygg::Data<GroundBoolean>, f::BooleanOperatorKind, fd::GroundFunctionExpressionView, fd::GroundFunctionExpressionView>);
+    std::constructible_from<ygg::Data<GroundArithmetic>, f::ArithmeticOperatorKind, fd::FunctionExpressionView<::tyr::GroundTag>, fd::FunctionExpressionView<::tyr::GroundTag>>);
+static_assert(std::constructible_from<ygg::Data<GroundBoolean>, f::BooleanOperatorKind, fd::FunctionExpressionView<::tyr::GroundTag>, fd::FunctionExpressionView<::tyr::GroundTag>>);

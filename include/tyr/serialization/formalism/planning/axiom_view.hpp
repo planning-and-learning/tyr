@@ -3,6 +3,7 @@
 
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/serialization/formalism/binding_view.hpp"
 #include "tyr/serialization/formalism/planning/atom_view.hpp"
 #include "tyr/serialization/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/serialization/formalism/variable_view.hpp"
@@ -11,15 +12,22 @@
 namespace tyr::serialization
 {
 
-template<>
-struct Serializer<::tyr::formalism::planning::AxiomView>
+template<::tyr::TaskKind T>
+struct Serializer<::tyr::formalism::planning::AxiomView<T>>
 {
-    static std::string name() { return "Axiom"; }
+    static std::string name() { return std::string(std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "Axiom"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::AxiomView& value)
+    static void save(Archive& ar, const ::tyr::formalism::planning::AxiomView<T>& value)
     {
-        ar.field("variables", value.get_variables());
+        if constexpr (std::same_as<T, ::tyr::LiftedTag>)
+        {
+            ar.field("variables", value.get_variables());
+        }
+        else
+        {
+            ar.field("binding", value.get_row());
+        }
         ar.field("body", value.get_body());
         ar.field("head", value.get_head());
     }

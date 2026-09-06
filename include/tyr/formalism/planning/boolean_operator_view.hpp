@@ -18,13 +18,13 @@
 #ifndef TYR_FORMALISM_PLANNING_BOOLEAN_OPERATOR_VIEW_HPP_
 #define TYR_FORMALISM_PLANNING_BOOLEAN_OPERATOR_VIEW_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/containers/variant.hpp>
 #include "tyr/formalism/planning/binary_operator_view.hpp"
 #include "tyr/formalism/planning/boolean_operator_data.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/function_expression_data.hpp"
-#include "tyr/formalism/planning/ground_function_expression_data.hpp"
+
+#include <yggdrasil/containers/variant.hpp>
+#include <yggdrasil/core/types.hpp>
 
 namespace ygg
 {

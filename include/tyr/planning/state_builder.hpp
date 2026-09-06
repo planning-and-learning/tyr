@@ -35,9 +35,9 @@ concept StateBuilderConcept = requires(T& s,
                                        ygg::Index<State<Kind>> index,
                                        ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> variable,
                                        ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact,
-                                       ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>> fterm,
+                                       ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fterm,
                                        ygg::float_t value,
-                                       ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> atom) {
+                                       ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) {
     requires TaskKind<Kind>;
     typename T::TaskType;
     { s.clear() };

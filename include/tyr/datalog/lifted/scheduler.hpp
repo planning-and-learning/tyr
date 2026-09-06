@@ -61,14 +61,14 @@ public:
     void on_finish_iteration();
 
     const ::tyr::formalism::datalog::Repository& get_context() const noexcept { return m_context; }
-    const ygg::IndexList<::tyr::formalism::datalog::Rule<R>>& get_rules() const noexcept { return m_rules; }
+    const ygg::IndexList<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>>& get_rules() const noexcept { return m_rules; }
 
     /// Active rules in sorted index order: hash-set iteration order is platform-unspecified, but the
     /// rule processing order assigns program-repository rows (first-derivation order) that delta
     /// bitsets are indexed by, so it must be identical on every platform.
-    const ygg::IndexList<::tyr::formalism::datalog::Rule<R>>& get_active_rules() const noexcept { return m_sorted_active_rules; }
+    const ygg::IndexList<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>>& get_active_rules() const noexcept { return m_sorted_active_rules; }
 
-    bool requires_full_enumeration(ygg::Index<::tyr::formalism::datalog::Rule<R>> rule) const noexcept { return m_full_enumeration_rules.contains(rule); }
+    bool requires_full_enumeration(ygg::Index<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>> rule) const noexcept { return m_full_enumeration_rules.contains(rule); }
 
 private:
     void rebuild_sorted_active_rules();
@@ -79,9 +79,9 @@ private:
 
     boost::dynamic_bitset<> m_active_predicates;
     boost::dynamic_bitset<> m_active_functions;
-    ygg::UnorderedSet<ygg::Index<::tyr::formalism::datalog::Rule<R>>> m_active_rules;
-    ygg::UnorderedSet<ygg::Index<::tyr::formalism::datalog::Rule<R>>> m_full_enumeration_rules;
-    ygg::IndexList<::tyr::formalism::datalog::Rule<R>> m_sorted_active_rules;
+    ygg::UnorderedSet<ygg::Index<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>>> m_active_rules;
+    ygg::UnorderedSet<ygg::Index<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>>> m_full_enumeration_rules;
+    ygg::IndexList<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>> m_sorted_active_rules;
 };
 
 template<>

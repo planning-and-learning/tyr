@@ -18,17 +18,18 @@
 #ifndef TYR_FORMALISM_PLANNING_CONJUNCTIVE_CONDITION_INDEX_HPP_
 #define TYR_FORMALISM_PLANNING_CONJUNCTIVE_CONDITION_INDEX_HPP_
 
-#include <yggdrasil/ids/index_mixins.hpp>
-#include <yggdrasil/core/types.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
+
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/ids/index_mixins.hpp>
 
 namespace ygg
 {
-template<>
-struct Index<tyr::formalism::planning::ConjunctiveCondition> : ygg::IndexMixin<ygg::Index<tyr::formalism::planning::ConjunctiveCondition>>
+template<::tyr::TaskKind T>
+struct Index<tyr::formalism::planning::ConjunctiveCondition<T>> : ygg::IndexMixin<ygg::Index<tyr::formalism::planning::ConjunctiveCondition<T>>>
 {
     // Inherit constructors
-    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::planning::ConjunctiveCondition>>;
+    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::planning::ConjunctiveCondition<T>>>;
     using Base::Base;
 };
 

@@ -38,9 +38,9 @@ template<typename T>
 struct GrounderCacheEntry;
 
 template<>
-struct GrounderCacheEntry<Axiom>
+struct GrounderCacheEntry<Axiom<::tyr::LiftedTag>>
 {
-    using container_type = ygg::UnorderedMap<ygg::Index<RelationBinding<Axiom>>, ygg::Index<GroundAxiom>>;
+    using container_type = ygg::UnorderedMap<ygg::Index<RelationBinding<Axiom<::tyr::LiftedTag>>>, ygg::Index<Axiom<::tyr::GroundTag>>>;
 
     container_type container;
 };

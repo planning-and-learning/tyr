@@ -18,8 +18,6 @@
 #ifndef TYR_FORMALISM_PLANNING_MUTABLE_CONJUNCTIVE_CONDITION_HPP_
 #define TYR_FORMALISM_PLANNING_MUTABLE_CONJUNCTIVE_CONDITION_HPP_
 
-#include <yggdrasil/semantics/comparison.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 #include "tyr/formalism/planning/mutable/literal.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/unification/structure_traits.hpp"
@@ -29,6 +27,8 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+#include <yggdrasil/semantics/comparison.hpp>
+#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -50,7 +50,7 @@ struct MutableConjunctiveCondition : ygg::comparison::Mixin<MutableConjunctiveCo
         fluent_literals(std::move(fluent_literals))
     {
     }
-    MutableConjunctiveCondition(size_t num_parent_variables, ConjunctiveConditionView element) :
+    MutableConjunctiveCondition(size_t num_parent_variables, ConjunctiveConditionView<::tyr::LiftedTag> element) :
         num_parent_variables(num_parent_variables),
         num_variables(element.get_arity()),
         static_literals(),

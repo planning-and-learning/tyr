@@ -25,10 +25,11 @@
 
 namespace ygg
 {
-template<>
-struct Index<tyr::formalism::datalog::ConjunctiveEffect> : ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::ConjunctiveEffect>>
+
+template<::tyr::TaskKind T>
+struct Index<tyr::formalism::datalog::ConjunctiveEffect<T>> : ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::ConjunctiveEffect<T>>>
 {
-    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::ConjunctiveEffect>>;
+    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::ConjunctiveEffect<T>>>;
     using Base::Base;
 };
 

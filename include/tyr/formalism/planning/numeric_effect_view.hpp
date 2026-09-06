@@ -29,18 +29,18 @@
 namespace ygg
 {
 
-template<::tyr::formalism::FactKind T, ::tyr::formalism::planning::Context C>
-class View<ygg::Index<::tyr::formalism::planning::NumericEffect<T>>, C>
+template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, ::tyr::formalism::planning::Context C>
+class View<ygg::Index<::tyr::formalism::planning::NumericEffect<T, F>>, C>
 {
-    static_assert(std::same_as<T, ::tyr::formalism::FluentTag> || std::same_as<T, ::tyr::formalism::AuxiliaryTag>,
-                  "Unsupported NumericEffect<T> specialization.");
+    static_assert(std::same_as<F, ::tyr::formalism::FluentTag> || std::same_as<F, ::tyr::formalism::AuxiliaryTag>,
+                  "Unsupported NumericEffect<F> specialization.");
 
 private:
     const C* m_context;
-    ygg::Index<::tyr::formalism::planning::NumericEffect<T>> m_handle;
+    ygg::Index<::tyr::formalism::planning::NumericEffect<T, F>> m_handle;
 
 public:
-    View(ygg::Index<::tyr::formalism::planning::NumericEffect<T>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+    View(ygg::Index<::tyr::formalism::planning::NumericEffect<T, F>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }

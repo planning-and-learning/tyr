@@ -19,7 +19,7 @@
 #define TYR_FORMALISM_PLANNING_METRIC_DATA_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/ground_function_expression_data.hpp"
+#include "tyr/formalism/planning/function_expression_data.hpp"
 #include "tyr/formalism/planning/metric_index.hpp"
 
 #include <yggdrasil/core/types.hpp>
@@ -33,10 +33,10 @@ struct Data<::tyr::formalism::planning::Metric>
 {
     ygg::Index<::tyr::formalism::planning::Metric> index;
     ::tyr::formalism::OptimizationDirection optimization_direction = ::tyr::formalism::OptimizationDirection::Minimize;
-    ygg::Data<::tyr::formalism::planning::GroundFunctionExpression> fexpr;
+    ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>> fexpr;
 
     Data() = default;
-    Data(::tyr::formalism::OptimizationDirection optimization_direction_, ygg::Data<::tyr::formalism::planning::GroundFunctionExpression> fexpr_) :
+    Data(::tyr::formalism::OptimizationDirection optimization_direction_, ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>> fexpr_) :
         index(),
         optimization_direction(optimization_direction_),
         fexpr(fexpr_)
@@ -45,7 +45,7 @@ struct Data<::tyr::formalism::planning::Metric>
     // Python constructor
     template<typename C>
     Data(::tyr::formalism::OptimizationDirection optimization_direction_,
-         ::ygg::View<ygg::Data<::tyr::formalism::planning::GroundFunctionExpression>, C> fexpr_) :
+         ::ygg::View<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>, C> fexpr_) :
         index(),
         optimization_direction(optimization_direction_),
         fexpr()

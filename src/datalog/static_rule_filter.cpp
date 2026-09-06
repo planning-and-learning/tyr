@@ -27,7 +27,7 @@ namespace tyr::datalog
 namespace fd = ::tyr::formalism::datalog;
 namespace f = ::tyr::formalism;
 
-fd::GroundProgramView remove_statically_inapplicable_rules(fd::GroundProgramView program, fd::Repository& repository)
+fd::ProgramView<::tyr::GroundTag> remove_statically_inapplicable_rules(fd::ProgramView<::tyr::GroundTag> program, fd::Repository& repository)
 {
     const auto static_fact_sets = TaggedFactSets<f::StaticTag>(program.get_predicates<f::StaticTag>(),
                                                                program.get_functions<f::StaticTag>(),
@@ -43,7 +43,7 @@ fd::GroundProgramView remove_statically_inapplicable_rules(fd::GroundProgramView
 
     auto builder = fd::Builder {};
     auto context = fd::MergeContext { builder, repository };
-    auto result = fd::checkout<fd::GroundProgram>(builder);
+    auto result = fd::checkout<fd::Program<::tyr::GroundTag>>(builder);
     const auto merge_all = [&](const auto elements, auto& destination)
     {
         for (const auto element : elements)

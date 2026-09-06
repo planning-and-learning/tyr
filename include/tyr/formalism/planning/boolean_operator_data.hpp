@@ -65,7 +65,8 @@ struct Data<::tyr::formalism::planning::BooleanOperator<T>>
     auto identifying_members() const noexcept { return std::tie(operator_kind, value); }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression>>>);
+static_assert(
+    !ygg::uses_trivial_storage_v<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>>>);
 }
 
 #endif

@@ -55,12 +55,12 @@ void LiftedStateBuilder::set(ygg::Data<::tyr::formalism::planning::FDRFact<::tyr
     }
 }
 
-ygg::float_t LiftedStateBuilder::get(ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>> index) const
+ygg::float_t LiftedStateBuilder::get(ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const
 {
     return ygg::get(ygg::uint_t(index), m_numeric_storage.values, std::numeric_limits<ygg::float_t>::quiet_NaN());
 }
 
-void LiftedStateBuilder::set(ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>> index, ygg::float_t value)
+void LiftedStateBuilder::set(ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index, ygg::float_t value)
 {
     ygg::set(ygg::uint_t(index),
              ygg::FloatTolerance<ygg::float_t>::canonicalize(value),
@@ -68,12 +68,12 @@ void LiftedStateBuilder::set(ygg::Index<::tyr::formalism::planning::GroundFuncti
              std::numeric_limits<ygg::float_t>::quiet_NaN());
 }
 
-bool LiftedStateBuilder::test(ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> index) const
+bool LiftedStateBuilder::test(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const
 {
     return ygg::test(ygg::uint_t(index), m_atom_storage.indices);
 }
 
-void LiftedStateBuilder::set(ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> index)
+void LiftedStateBuilder::set(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index)
 {
     ygg::set(ygg::uint_t(index), true, m_atom_storage.indices);
 }
@@ -85,19 +85,19 @@ void LiftedStateBuilder::set(ygg::Index<::tyr::formalism::planning::GroundAtom<:
 
 void LiftedStateBuilder::set(::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag> view) { set(view.get_data()); }
 
-ygg::float_t LiftedStateBuilder::get(::tyr::formalism::planning::GroundFunctionTermView<::tyr::formalism::FluentTag> view) const
+ygg::float_t LiftedStateBuilder::get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const
 {
     return get(view.get_index());
 }
 
-void LiftedStateBuilder::set(::tyr::formalism::planning::GroundFunctionTermView<::tyr::formalism::FluentTag> view, ygg::float_t value)
+void LiftedStateBuilder::set(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view, ygg::float_t value)
 {
     set(view.get_index(), value);
 }
 
-bool LiftedStateBuilder::test(::tyr::formalism::planning::GroundAtomView<::tyr::formalism::DerivedTag> view) const { return test(view.get_index()); }
+bool LiftedStateBuilder::test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const { return test(view.get_index()); }
 
-void LiftedStateBuilder::set(::tyr::formalism::planning::GroundAtomView<::tyr::formalism::DerivedTag> view) { set(view.get_index()); }
+void LiftedStateBuilder::set(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) { set(view.get_index()); }
 
 void LiftedStateBuilder::clear()
 {

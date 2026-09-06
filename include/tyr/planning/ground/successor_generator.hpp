@@ -76,10 +76,10 @@ public:
                                        StateRepository<GroundTag>& state_repository,
                                        AxiomEvaluator<GroundTag>& axiom_evaluator);
     Node<GroundTag> get_successor_node(const Node<GroundTag>& node,
-                                       ::tyr::formalism::planning::GroundActionView action,
+                                       ::tyr::formalism::planning::ActionView<::tyr::GroundTag> action,
                                        StateRepository<GroundTag>& state_repository,
                                        AxiomEvaluator<GroundTag>& axiom_evaluator);
-    ::tyr::formalism::planning::GroundActionView ground_action(::tyr::formalism::planning::ActionBindingView binding) const;
+    ::tyr::formalism::planning::ActionView<::tyr::GroundTag> ground_action(::tyr::formalism::planning::ActionBindingView binding) const;
 
     std::vector<::tyr::formalism::planning::ActionBindingView> get_applicable_action_bindings(const Node<GroundTag>& node);
     void get_applicable_action_bindings(const Node<GroundTag>& node, std::vector<::tyr::formalism::planning::ActionBindingView>& out_bindings);

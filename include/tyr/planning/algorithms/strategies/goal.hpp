@@ -57,12 +57,12 @@ public:
     using GoalStrategy<Kind>::is_dynamic_goal_satisfied;
 
     ConjunctiveGoalStrategy(const Task<Kind>& task) : m_goal(task.get_task().get_goal()) {}
-    ConjunctiveGoalStrategy(::tyr::formalism::planning::GroundConjunctiveConditionView goal) : m_goal(goal) {}
+    ConjunctiveGoalStrategy(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal) : m_goal(goal) {}
 
-    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) { m_goal = goal; }
+    void set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal) { m_goal = goal; }
 
     static std::shared_ptr<ConjunctiveGoalStrategy<Kind>> create(const Task<Kind>& task) { return std::make_shared<ConjunctiveGoalStrategy<Kind>>(task); }
-    static std::shared_ptr<ConjunctiveGoalStrategy<Kind>> create(::tyr::formalism::planning::GroundConjunctiveConditionView goal)
+    static std::shared_ptr<ConjunctiveGoalStrategy<Kind>> create(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal)
     {
         return std::make_shared<ConjunctiveGoalStrategy<Kind>>(goal);
     }
@@ -77,7 +77,7 @@ public:
     }
 
 private:
-    ::tyr::formalism::planning::GroundConjunctiveConditionView m_goal;
+    ::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> m_goal;
 };
 
 template<TaskKind Kind>
@@ -87,10 +87,10 @@ public:
     using GoalStrategy<Kind>::is_dynamic_goal_satisfied;
 
     SerializedGoalStrategy(const Task<Kind>& task) : m_goal(task.get_task().get_goal()) {}
-    SerializedGoalStrategy(::tyr::formalism::planning::GroundConjunctiveConditionView goal) : m_goal(goal) {}
+    SerializedGoalStrategy(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal) : m_goal(goal) {}
 
     static std::shared_ptr<SerializedGoalStrategy<Kind>> create(const Task<Kind>& task) { return std::make_shared<SerializedGoalStrategy<Kind>>(task); }
-    static std::shared_ptr<SerializedGoalStrategy<Kind>> create(::tyr::formalism::planning::GroundConjunctiveConditionView goal)
+    static std::shared_ptr<SerializedGoalStrategy<Kind>> create(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal)
     {
         return std::make_shared<SerializedGoalStrategy<Kind>>(goal);
     }
@@ -125,7 +125,7 @@ private:
         return result;
     }
 
-    ::tyr::formalism::planning::GroundConjunctiveConditionView m_goal;
+    ::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> m_goal;
 };
 
 template<TaskKind Kind>

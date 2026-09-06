@@ -42,7 +42,7 @@ public:
 
     using Heuristic<Kind>::evaluate;
 
-    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override;
+    void set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal) override;
     ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state) override;
     [[nodiscard]] HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override;
     const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>& get_preferred_actions() override;

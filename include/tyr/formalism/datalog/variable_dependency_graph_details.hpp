@@ -18,18 +18,18 @@
 #ifndef TYR_FORMALISM_DATALOG_VARIABLE_DEPENDENCY_GRAPH_DETAILS_HPP_
 #define TYR_FORMALISM_DATALOG_VARIABLE_DEPENDENCY_GRAPH_DETAILS_HPP_
 
-#include <yggdrasil/core/config.hpp>
 #include "tyr/formalism/declarations.hpp"
 
 #include <boost/dynamic_bitset.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism::datalog::details
 {
 
-template<FactKind T, PolarityKind P, typename Dep>
+template<FactKind F, PolarityKind P, typename Dep>
 decltype(auto) select_literal_dependency(Dep&& dep) noexcept
 {
-    if constexpr (std::is_same_v<T, StaticTag>)
+    if constexpr (std::is_same_v<F, StaticTag>)
     {
         if constexpr (std::is_same_v<P, PositiveTag>)
             return (std::forward<Dep>(dep).static_positive_literal);
@@ -38,7 +38,7 @@ decltype(auto) select_literal_dependency(Dep&& dep) noexcept
         else
             static_assert(ygg::dependent_false<P>::value, "Missing case");
     }
-    else if constexpr (std::is_same_v<T, FluentTag>)
+    else if constexpr (std::is_same_v<F, FluentTag>)
     {
         if constexpr (std::is_same_v<P, PositiveTag>)
             return (std::forward<Dep>(dep).fluent_positive_literal);
@@ -49,7 +49,7 @@ decltype(auto) select_literal_dependency(Dep&& dep) noexcept
     }
     else
     {
-        static_assert(ygg::dependent_false<T>::value, "Missing case");
+        static_assert(ygg::dependent_false<F>::value, "Missing case");
     }
 }
 
@@ -75,10 +75,10 @@ struct UnaryDependencies
      * get_
      */
 
-    template<FactKind T, PolarityKind P>
+    template<FactKind F, PolarityKind P>
     const auto& get_literal_dependency() const noexcept
     {
-        return details::select_literal_dependency<T, P>(*this);
+        return details::select_literal_dependency<F, P>(*this);
     }
 
     const auto& get_numeric_dependency() const noexcept { return details::select_numeric_dependency(*this); }
@@ -87,11 +87,11 @@ struct UnaryDependencies
      * has_
      */
 
-    template<FactKind T, PolarityKind P>
+    template<FactKind F, PolarityKind P>
     bool has_literal_dependency(ygg::uint_t p) const noexcept
     {
         assert(p < k);
-        return get_literal_dependency<T, P>().test(p);
+        return get_literal_dependency<F, P>().test(p);
     }
 
     bool has_numeric_dependency(ygg::uint_t p) const noexcept
@@ -137,10 +137,10 @@ struct BinaryDependencies
      * get_
      */
 
-    template<FactKind T, PolarityKind P>
+    template<FactKind F, PolarityKind P>
     const auto& get_literal_dependency() const noexcept
     {
-        return details::select_literal_dependency<T, P>(*this);
+        return details::select_literal_dependency<F, P>(*this);
     }
 
     const auto& get_numeric_dependency() const noexcept { return details::select_numeric_dependency(*this); }
@@ -149,10 +149,10 @@ struct BinaryDependencies
      * has_
      */
 
-    template<FactKind T, PolarityKind P>
+    template<FactKind F, PolarityKind P>
     bool has_literal_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept
     {
-        return get_literal_dependency<T, P>().test(get_index(pi, pj));
+        return get_literal_dependency<F, P>().test(get_index(pi, pj));
     }
 
     bool has_numeric_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept { return numeric_constraint.test(get_index(pi, pj)); }

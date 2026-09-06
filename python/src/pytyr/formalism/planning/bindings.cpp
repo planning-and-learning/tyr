@@ -28,13 +28,10 @@ void bind_formalism(nb::module_& m)
     bind_binding(m, repository);
     bind_predicate(m, repository);
     bind_atom(m, repository);
-    bind_ground_atom(m, repository);
     bind_literal(m, repository);
-    bind_ground_literal(m, repository);
     bind_fdr_variable(m, repository);
     bind_function_term(m, repository);
-    bind_ground_function_term(m, repository);
-    bind_ground_function_term_value(m, repository);
+    bind_function_term_value(m, repository);
     bind_unary_operator(m, repository);
     bind_binary_operator(m, repository);
     bind_multi_operator(m, repository);
@@ -44,12 +41,6 @@ void bind_formalism(nb::module_& m)
     bind_conditional_effect(m, repository);
     bind_action(m, repository);
     bind_axiom(m, repository);
-    bind_ground_conjunctive_condition(m, repository);
-    bind_ground_numeric_effect(m, repository);
-    bind_ground_conjunctive_effect(m, repository);
-    bind_ground_conditional_effect(m, repository);
-    bind_ground_action(m, repository);
-    bind_ground_axiom(m, repository);
     bind_metric(m, repository);
     bind_domain(m, repository);
     bind_task(m, repository);
@@ -59,8 +50,6 @@ void bind_formalism(nb::module_& m)
     bind_boolean_operator(m, repository);
     bind_function_expression(m, repository);
     bind_numeric_effect_operator(m, repository);
-    bind_ground_function_expression(m, repository);
-    bind_ground_numeric_effect_operator(m, repository);
     bind_object(m, repository);
     bind_variable(m, repository);
     bind_term(m, repository);

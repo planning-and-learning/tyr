@@ -40,7 +40,7 @@ struct RelationVertexMap
 };
 
 template<f::RelationKind R>
-void add_body_dependencies(fd::RuleView<R> rule, ygg::uint_t head_vertex, const RelationVertexMap& vertices, stratification::DepGraph& graph)
+void add_body_dependencies(fd::RuleView<::tyr::LiftedTag, R> rule, ygg::uint_t head_vertex, const RelationVertexMap& vertices, stratification::DepGraph& graph)
 {
     for (const auto literal : rule.get_body().template get_literals<f::FluentTag>())
     {
@@ -59,12 +59,12 @@ void add_body_dependencies(fd::RuleView<R> rule, ygg::uint_t head_vertex, const 
     }
 }
 
-ygg::uint_t get_head_vertex(fd::AtomView<f::FluentTag> head, const RelationVertexMap& vertices)
+ygg::uint_t get_head_vertex(fd::AtomView<::tyr::LiftedTag, f::FluentTag> head, const RelationVertexMap& vertices)
 {
     return vertices.get_vertex(head.get_predicate().get_index());
 }
 
-ygg::uint_t get_head_vertex(fd::NumericEffectOperatorView<f::FluentTag> head, const RelationVertexMap& vertices)
+ygg::uint_t get_head_vertex(fd::NumericEffectOperatorView<::tyr::LiftedTag, f::FluentTag> head, const RelationVertexMap& vertices)
 {
     return visit([&](auto&& effect) { return vertices.get_vertex(effect.get_fterm().get_function().get_index()); }, head.get_variant());
 }

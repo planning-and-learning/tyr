@@ -33,7 +33,7 @@ namespace tyr::planning
 namespace
 {
 
-auto create_applicability_predicate(fp::ActionView action, fp::MergeDatalogContext& context)
+auto create_applicability_predicate(fp::ActionView<::tyr::LiftedTag> action, fp::MergeDatalogContext& context)
 {
     auto predicate = fd::checkout<f::Predicate<f::FluentTag>>(context.builder);
 
@@ -43,9 +43,9 @@ auto create_applicability_predicate(fp::ActionView action, fp::MergeDatalogConte
     return fd::get_or_create(context.destination, *predicate);
 }
 
-auto create_applicability_atom(fp::ActionView action, fp::MergeDatalogContext& context)
+auto create_applicability_atom(fp::ActionView<::tyr::LiftedTag> action, fp::MergeDatalogContext& context)
 {
-    auto atom = fd::checkout<f::datalog::Atom<f::FluentTag>>(context.builder);
+    auto atom = fd::checkout<f::datalog::Atom<::tyr::LiftedTag, f::FluentTag>>(context.builder);
 
     const auto applicability_predicate = create_applicability_predicate(action, context).first;
 
@@ -63,7 +63,7 @@ auto create_program(fp::TaskView task,
 {
     auto builder = fd::Builder();
     auto context = fp::MergeDatalogContext(builder, repository);
-    auto program = fd::checkout<fd::Program>(builder);
+    auto program = fd::checkout<fd::Program<::tyr::LiftedTag>>(builder);
 
     for (const auto predicate : task.get_domain().get_predicates<f::StaticTag>())
     {
@@ -123,9 +123,9 @@ auto create_program(fp::TaskView task,
 
         program->fluent_predicates.push_back(applicability_predicate.get_index());
 
-        auto rule = fd::checkout<fd::Rule<f::PredicateTag>>(builder);
+        auto rule = fd::checkout<fd::Rule<::tyr::LiftedTag, f::PredicateTag>>(builder);
 
-        auto conj_cond = fd::checkout<fd::ConjunctiveCondition>(builder);
+        auto conj_cond = fd::checkout<fd::ConjunctiveCondition<::tyr::LiftedTag>>(builder);
 
         for (const auto variable : action.get_variables())
             rule->variables.push_back(fp::merge_p2d(variable, context).first.get_index());

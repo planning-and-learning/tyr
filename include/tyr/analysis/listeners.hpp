@@ -34,7 +34,7 @@ namespace tyr::analysis
 {
 
 template<::tyr::formalism::RelationKind R>
-using RuleIndexSet = ygg::UnorderedSet<ygg::Index<::tyr::formalism::datalog::Rule<R>>>;
+using RuleIndexSet = ygg::UnorderedSet<ygg::Index<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>>>;
 
 template<::tyr::formalism::RelationKind R>
 struct TypedListenerStratum

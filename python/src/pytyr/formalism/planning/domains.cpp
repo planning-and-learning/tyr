@@ -103,9 +103,9 @@ void bind_variable_domains(nb::module_& m)
     bind_variable_domain_view<PlanningC>(m, "VariableDomain");
 
     // Planning scoped views
-    bind_simple_scoped_domain_view<::tyr::formalism::planning::Axiom, PlanningC>(m, "AxiomDomain");
-    bind_simple_scoped_domain_view<::tyr::formalism::planning::ConjunctiveCondition, PlanningC>(m, "ConjunctiveConditionDomain");
-    bind_simple_scoped_domain_view<::tyr::formalism::planning::ConjunctiveEffect, PlanningC>(m, "ConjunctiveEffectDomain");
+    bind_simple_scoped_domain_view<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>, PlanningC>(m, "AxiomDomain");
+    bind_simple_scoped_domain_view<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>, PlanningC>(m, "ConjunctiveConditionDomain");
+    bind_simple_scoped_domain_view<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>, PlanningC>(m, "ConjunctiveEffectDomain");
 
     // Composite planning views
     bind_conditional_effect_domain_view<PlanningC>(m, "ConditionalEffectDomain");

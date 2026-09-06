@@ -18,9 +18,9 @@
 #ifndef TYR_FORMALISM_PLANNING_FDR_VARIABLE_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_FDR_VARIABLE_DATA_HPP_
 
+#include "tyr/formalism/planning/atom_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_variable_index.hpp"
-#include "tyr/formalism/planning/ground_atom_index.hpp"
 
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
@@ -32,13 +32,13 @@ template<::tyr::formalism::FactKind T>
 struct Data<::tyr::formalism::planning::FDRVariable<T>>
 {
     ygg::Index<::tyr::formalism::planning::FDRVariable<T>> index;
-    ygg::IndexList<::tyr::formalism::planning::GroundAtom<T>> atoms;
+    ygg::IndexList<::tyr::formalism::planning::Atom<::tyr::GroundTag, T>> atoms;
 
     Data() = default;
-    Data(ygg::IndexList<::tyr::formalism::planning::GroundAtom<T>> atoms_) : index(), atoms(std::move(atoms_)) {}
+    Data(ygg::IndexList<::tyr::formalism::planning::Atom<::tyr::GroundTag, T>> atoms_) : index(), atoms(std::move(atoms_)) {}
     // Python constructor
     template<typename C>
-    Data(const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::GroundAtom<T>>, C>>& atoms_) : index(), atoms()
+    Data(const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, T>>, C>>& atoms_) : index(), atoms()
     {
         set(atoms_, atoms);
     }

@@ -14,8 +14,8 @@ concept ArithmeticOperatorContract = std::totally_ordered<ygg::Data<Entity>> && 
                                             view.get_variant();
                                         };
 
-using Lifted = fd::ArithmeticOperator<ygg::Data<fd::FunctionExpression>>;
-using Ground = fd::ArithmeticOperator<ygg::Data<fd::GroundFunctionExpression>>;
+using Lifted = fd::ArithmeticOperator<ygg::Data<fd::FunctionExpression<::tyr::LiftedTag>>>;
+using Ground = fd::ArithmeticOperator<ygg::Data<fd::FunctionExpression<::tyr::GroundTag>>>;
 
 static_assert(ArithmeticOperatorContract<Lifted>);
 static_assert(ArithmeticOperatorContract<Ground>);

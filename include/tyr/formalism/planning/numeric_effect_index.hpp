@@ -25,13 +25,13 @@
 
 namespace ygg
 {
-template<tyr::formalism::FactKind T>
-struct Index<tyr::formalism::planning::NumericEffect<T>> : ygg::IndexMixin<ygg::Index<tyr::formalism::planning::NumericEffect<T>>>
+template<::tyr::TaskKind T, tyr::formalism::FactKind F>
+struct Index<tyr::formalism::planning::NumericEffect<T, F>> : ygg::IndexMixin<ygg::Index<tyr::formalism::planning::NumericEffect<T, F>>>
 {
-    static_assert(std::same_as<T, tyr::formalism::FluentTag> || std::same_as<T, tyr::formalism::AuxiliaryTag>, "Unsupported NumericEffect<T> specialization.");
+    static_assert(std::same_as<F, tyr::formalism::FluentTag> || std::same_as<F, tyr::formalism::AuxiliaryTag>, "Unsupported NumericEffect<F> specialization.");
 
     // Inherit constructors
-    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::planning::NumericEffect<T>>>;
+    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::planning::NumericEffect<T, F>>>;
     using Base::Base;
 };
 

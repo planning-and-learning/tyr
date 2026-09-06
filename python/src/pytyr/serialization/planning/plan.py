@@ -1,6 +1,6 @@
 from typing import TypedDict
-
 from .node import LabeledNode, Node
+
 
 
 class Plan(TypedDict):

@@ -225,12 +225,12 @@ void expect_repository_statistics(const SearchContext<Kind>& context, const plan
 
     EXPECT_EQ(statistics.get_num_registered_states(), state_repository.num_states());
     EXPECT_EQ(statistics.get_state_storage_memory_usage(), state_repository.memory_usage());
-    EXPECT_EQ(statistics.get_action_bindings_memory_usage(), task_repository.template memory_usage<formalism::RelationBinding<formalism::planning::Action>>());
+    EXPECT_EQ(statistics.get_action_bindings_memory_usage(), task_repository.template memory_usage<formalism::RelationBinding<formalism::planning::Action<::tyr::LiftedTag>>>());
     EXPECT_EQ(statistics.get_predicate_bindings_memory_usage(),
               task_repository.template memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::StaticTag>>>()
                   + task_repository.template memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>()
                   + task_repository.template memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::DerivedTag>>>());
-    EXPECT_EQ(statistics.get_axiom_bindings_memory_usage(), task_repository.template memory_usage<formalism::RelationBinding<formalism::planning::Axiom>>());
+    EXPECT_EQ(statistics.get_axiom_bindings_memory_usage(), task_repository.template memory_usage<formalism::RelationBinding<formalism::planning::Axiom<::tyr::LiftedTag>>>());
     EXPECT_EQ(statistics.get_function_bindings_memory_usage(),
               task_repository.template memory_usage<formalism::RelationBinding<formalism::Function<formalism::StaticTag>>>()
                   + task_repository.template memory_usage<formalism::RelationBinding<formalism::Function<formalism::FluentTag>>>()

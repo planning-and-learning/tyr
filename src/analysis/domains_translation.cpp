@@ -150,8 +150,8 @@ ProgramVariableDomainsView compute_variable_domain_views(const ProgramVariableDo
         to_simple_scoped_domain_view_map<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>, C>(domains.fluent_predicate_domains, repository),
         to_simple_scoped_domain_view_map<::tyr::formalism::Function<::tyr::formalism::StaticTag>, C>(domains.static_function_domains, repository),
         to_simple_scoped_domain_view_map<::tyr::formalism::Function<::tyr::formalism::FluentTag>, C>(domains.fluent_function_domains, repository),
-        to_scoped_domain_view_map<::tyr::formalism::datalog::Rule<::tyr::formalism::PredicateTag>, C>(domains.predicate_rule_domains, repository),
-        to_scoped_domain_view_map<::tyr::formalism::datalog::Rule<::tyr::formalism::FunctionTag>, C>(domains.function_rule_domains, repository),
+        to_scoped_domain_view_map<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, ::tyr::formalism::PredicateTag>, C>(domains.predicate_rule_domains, repository),
+        to_scoped_domain_view_map<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, ::tyr::formalism::FunctionTag>, C>(domains.function_rule_domains, repository),
     };
 }
 
@@ -166,7 +166,7 @@ TaskVariableDomainsView compute_variable_domain_views(const TaskVariableDomains&
         to_simple_scoped_domain_view_map<::tyr::formalism::Function<::tyr::formalism::StaticTag>, C>(domains.static_function_domains, repository),
         to_simple_scoped_domain_view_map<::tyr::formalism::Function<::tyr::formalism::FluentTag>, C>(domains.fluent_function_domains, repository),
         to_action_domain_view_map<C>(domains.action_domains, repository),
-        to_scoped_domain_view_map<::tyr::formalism::planning::Axiom, C>(domains.axiom_domains, repository),
+        to_scoped_domain_view_map<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>, C>(domains.axiom_domains, repository),
     };
 }
 

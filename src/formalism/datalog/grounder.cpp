@@ -24,8 +24,8 @@ namespace tyr::formalism::datalog
 template std::pair<FunctionBindingView<StaticTag>, bool> ground(TermListView terms, FunctionView<StaticTag> function, GrounderContext& context);
 template std::pair<FunctionBindingView<FluentTag>, bool> ground(TermListView terms, FunctionView<FluentTag> function, GrounderContext& context);
 
-template std::pair<GroundFunctionTermView<StaticTag>, bool> ground(FunctionTermView<StaticTag> element, GrounderContext& context);
-template std::pair<GroundFunctionTermView<FluentTag>, bool> ground(FunctionTermView<FluentTag> element, GrounderContext& context);
+template std::pair<FunctionTermView<::tyr::GroundTag, StaticTag>, bool> ground(FunctionTermView<::tyr::LiftedTag, StaticTag> element, GrounderContext& context);
+template std::pair<FunctionTermView<::tyr::GroundTag, FluentTag>, bool> ground(FunctionTermView<::tyr::LiftedTag, FluentTag> element, GrounderContext& context);
 
 template std::pair<GroundBinaryOperatorView<ArithmeticOperatorKind>, bool> ground(LiftedBinaryOperatorView<ArithmeticOperatorKind> element,
                                                                                   GrounderContext& context);
@@ -34,36 +34,38 @@ template std::pair<GroundBinaryOperatorView<BooleanOperatorKind>, bool> ground(L
 template std::pair<PredicateBindingView<StaticTag>, bool> ground(TermListView terms, PredicateView<StaticTag> predicate, GrounderContext& context);
 template std::pair<PredicateBindingView<FluentTag>, bool> ground(TermListView terms, PredicateView<FluentTag> predicate, GrounderContext& context);
 
-template std::pair<GroundAtomView<StaticTag>, bool> ground(AtomView<StaticTag> element, GrounderContext& context);
-template std::pair<GroundAtomView<FluentTag>, bool> ground(AtomView<FluentTag> element, GrounderContext& context);
+template std::pair<AtomView<::tyr::GroundTag, StaticTag>, bool> ground(AtomView<::tyr::LiftedTag, StaticTag> element, GrounderContext& context);
+template std::pair<AtomView<::tyr::GroundTag, FluentTag>, bool> ground(AtomView<::tyr::LiftedTag, FluentTag> element, GrounderContext& context);
 
-template std::pair<GroundLiteralView<StaticTag>, bool> ground(LiteralView<StaticTag> element, GrounderContext& context);
-template std::pair<GroundLiteralView<FluentTag>, bool> ground(LiteralView<FluentTag> element, GrounderContext& context);
+template std::pair<LiteralView<::tyr::GroundTag, StaticTag>, bool> ground(LiteralView<::tyr::LiftedTag, StaticTag> element, GrounderContext& context);
+template std::pair<LiteralView<::tyr::GroundTag, FluentTag>, bool> ground(LiteralView<::tyr::LiftedTag, FluentTag> element, GrounderContext& context);
 
-template std::pair<GroundNumericEffectView<FluentTag>, bool> ground(NumericEffectView<FluentTag> element, GrounderContext& context);
-template GroundNumericEffectOperatorView<FluentTag> ground(NumericEffectOperatorView<FluentTag> element, GrounderContext& context);
+template std::pair<NumericEffectView<::tyr::GroundTag, FluentTag>, bool> ground(NumericEffectView<::tyr::LiftedTag, FluentTag> element,
+                                                                                GrounderContext& context);
+template NumericEffectOperatorView<::tyr::GroundTag, FluentTag> ground(NumericEffectOperatorView<::tyr::LiftedTag, FluentTag> element,
+                                                                       GrounderContext& context);
 
-template std::pair<PredicateBindingView<StaticTag>, bool> ground_binding(AtomView<StaticTag> element, GrounderContext& context);
-template std::pair<PredicateBindingView<FluentTag>, bool> ground_binding(AtomView<FluentTag> element, GrounderContext& context);
+template std::pair<PredicateBindingView<StaticTag>, bool> ground_binding(AtomView<::tyr::LiftedTag, StaticTag> element, GrounderContext& context);
+template std::pair<PredicateBindingView<FluentTag>, bool> ground_binding(AtomView<::tyr::LiftedTag, FluentTag> element, GrounderContext& context);
 
-template std::pair<FunctionBindingView<StaticTag>, bool> ground_binding(FunctionTermView<StaticTag> element, GrounderContext& context);
-template std::pair<FunctionBindingView<FluentTag>, bool> ground_binding(FunctionTermView<FluentTag> element, GrounderContext& context);
+template std::pair<FunctionBindingView<StaticTag>, bool> ground_binding(FunctionTermView<::tyr::LiftedTag, StaticTag> element, GrounderContext& context);
+template std::pair<FunctionBindingView<FluentTag>, bool> ground_binding(FunctionTermView<::tyr::LiftedTag, FluentTag> element, GrounderContext& context);
 
-template std::optional<FunctionBindingView<StaticTag>> try_ground_binding(::tyr::formalism::datalog::FunctionTermView<StaticTag> element,
+template std::optional<FunctionBindingView<StaticTag>> try_ground_binding(::tyr::formalism::datalog::FunctionTermView<::tyr::LiftedTag, StaticTag> element,
                                                                           ::tyr::formalism::datalog::GrounderContext& context);
-template std::optional<FunctionBindingView<FluentTag>> try_ground_binding(::tyr::formalism::datalog::FunctionTermView<FluentTag> element,
+template std::optional<FunctionBindingView<FluentTag>> try_ground_binding(::tyr::formalism::datalog::FunctionTermView<::tyr::LiftedTag, FluentTag> element,
                                                                           ::tyr::formalism::datalog::GrounderContext& context);
 
-template std::optional<PredicateBindingView<StaticTag>> try_ground_binding(::tyr::formalism::datalog::AtomView<StaticTag> element,
+template std::optional<PredicateBindingView<StaticTag>> try_ground_binding(::tyr::formalism::datalog::AtomView<::tyr::LiftedTag, StaticTag> element,
                                                                            ::tyr::formalism::datalog::GrounderContext& context);
-template std::optional<PredicateBindingView<FluentTag>> try_ground_binding(::tyr::formalism::datalog::AtomView<FluentTag> element,
+template std::optional<PredicateBindingView<FluentTag>> try_ground_binding(::tyr::formalism::datalog::AtomView<::tyr::LiftedTag, FluentTag> element,
                                                                            ::tyr::formalism::datalog::GrounderContext& context);
 
-template std::pair<GroundRuleView<PredicateTag>, bool> ground(RuleView<PredicateTag> element, GrounderContext& context);
-template std::pair<GroundRuleView<FunctionTag>, bool> ground(RuleView<FunctionTag> element, GrounderContext& context);
+template std::pair<RuleView<::tyr::GroundTag, PredicateTag>, bool> ground(RuleView<::tyr::LiftedTag, PredicateTag> element, GrounderContext& context);
+template std::pair<RuleView<::tyr::GroundTag, FunctionTag>, bool> ground(RuleView<::tyr::LiftedTag, FunctionTag> element, GrounderContext& context);
 
-template std::pair<RuleBindingView<PredicateTag>, bool> ground_binding(RuleView<PredicateTag> element, GrounderContext& context);
-template std::pair<RuleBindingView<FunctionTag>, bool> ground_binding(RuleView<FunctionTag> element, GrounderContext& context);
+template std::pair<RuleBindingView<PredicateTag>, bool> ground_binding(RuleView<::tyr::LiftedTag, PredicateTag> element, GrounderContext& context);
+template std::pair<RuleBindingView<FunctionTag>, bool> ground_binding(RuleView<::tyr::LiftedTag, FunctionTag> element, GrounderContext& context);
 }
 
 #endif

@@ -21,29 +21,39 @@
 namespace tyr::formalism::planning
 {
 
+namespace
+{
+template<TaskKind T>
+void bind_function_expression_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
+{
+    using Tag = FunctionExpression<T>;
+
+    {
+        using V = ygg::Data<Tag>;
+        auto cls = nb::class_<V>(m, (name + "Data").c_str());
+        cls.def(nb::init<typename V::template ViewVariant<Repository>>(), "value"_a);
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+
+    {
+        using V = FunctionExpressionView<T>;
+        auto cls = nb::class_<V>(m, name.c_str());
+        cls.def("get_variant", &V::get_variant);
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+
+    repository.def("create", &create_data<Tag>, "data"_a, nb::keep_alive<0, 1>(), nb::keep_alive<0, 2>());
+}
+}  // namespace
+
 void bind_function_expression(nb::module_& m, RepositoryBinding& repository)
 {
-    {
-        using V = ygg::Data<FunctionExpression>;
-
-        auto cls = nb::class_<V>(m, "FunctionExpressionData")  //
-                       .def(nb::init<typename V::template ViewVariant<Repository>>(), "value"_a);
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-
-    {
-        using V = FunctionExpressionView;
-
-        auto cls = nb::class_<V>(m, "FunctionExpression")  //
-                       .def("get_variant", &V::get_variant);
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-
-    repository.def("create", &create_data<FunctionExpression>, "data"_a, nb::keep_alive<0, 1>(), nb::keep_alive<0, 2>());
+    bind_function_expression_kind<LiftedTag>(m, repository, "FunctionExpression");
+    bind_function_expression_kind<GroundTag>(m, repository, "GroundFunctionExpression");
 }
 
 }  // namespace tyr::formalism::planning

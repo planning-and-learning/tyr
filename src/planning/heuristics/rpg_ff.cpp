@@ -70,7 +70,7 @@ struct FFRPGHeuristic<Kind>::Impl :
     {
     }
 
-    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal)
+    void set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal)
     {
         Base::set_goal(goal);
         m_relaxed_plan.clear();
@@ -210,7 +210,7 @@ FFRPGHeuristicPtr<Kind> FFRPGHeuristic<Kind>::create(TaskPtr<Kind> task, ygg::Ex
 }
 
 template<TaskKind Kind>
-void FFRPGHeuristic<Kind>::set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal)
+void FFRPGHeuristic<Kind>::set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal)
 {
     m_impl->set_goal(goal);
 }

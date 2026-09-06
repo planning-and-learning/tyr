@@ -3,6 +3,7 @@
 
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/serialization/formalism/binding_view.hpp"
 #include "tyr/serialization/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/serialization/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/serialization/formalism/variable_view.hpp"
@@ -11,18 +12,25 @@
 namespace tyr::serialization
 {
 
-template<>
-struct Serializer<::tyr::formalism::planning::ActionView>
+template<::tyr::TaskKind T>
+struct Serializer<::tyr::formalism::planning::ActionView<T>>
 {
-    static std::string name() { return "Action"; }
+    static std::string name() { return std::string(std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "Action"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::ActionView& value)
+    static void save(Archive& ar, const ::tyr::formalism::planning::ActionView<T>& value)
     {
-        ar.field("name", value.get_name());
-        ar.field("original_name", value.get_original_name());
-        ar.field("original_arity", value.get_original_arity());
-        ar.field("variables", value.get_variables());
+        if constexpr (std::same_as<T, ::tyr::LiftedTag>)
+        {
+            ar.field("name", value.get_name());
+            ar.field("original_name", value.get_original_name());
+            ar.field("original_arity", value.get_original_arity());
+            ar.field("variables", value.get_variables());
+        }
+        else
+        {
+            ar.field("binding", value.get_row());
+        }
         ar.field("condition", value.get_condition());
         ar.field("effects", value.get_effects());
     }

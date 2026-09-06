@@ -146,8 +146,7 @@ add_library(
     planning/applicability.cpp
     planning/applicability_lifted.cpp
     planning/action_executor.cpp
-    planning/ground_task.cpp
-    planning/lifted_task.cpp
+    planning/task.cpp
     planning/plan.cpp
     planning/task_utils.cpp
 )

@@ -35,10 +35,10 @@ namespace tyr::planning
 {
 namespace
 {
-void process_axiom_body(fp::ConjunctiveConditionView axiom_body,
+void process_axiom_body(fp::ConjunctiveConditionView<::tyr::LiftedTag> axiom_body,
                         const TranslationContext<LiftedTag>& translation_context,
                         fp::MergeDatalogContext& context,
-                        ygg::Data<fd::ConjunctiveCondition>& conj_cond)
+                        ygg::Data<fd::ConjunctiveCondition<::tyr::LiftedTag>>& conj_cond)
 {
     for (const auto literal : axiom_body.get_literals<f::StaticTag>())
         conj_cond.static_literals.push_back(fp::merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.get_index());
@@ -54,11 +54,11 @@ void process_axiom_body(fp::ConjunctiveConditionView axiom_body,
         conj_cond.numeric_constraints.push_back(fp::merge_p2d(numeric_constraint, context));
 }
 
-auto create_axiom_rule(fp::AxiomView axiom, const TranslationContext<LiftedTag>& translation_context, fp::MergeDatalogContext& context)
+auto create_axiom_rule(fp::AxiomView<::tyr::LiftedTag> axiom, const TranslationContext<LiftedTag>& translation_context, fp::MergeDatalogContext& context)
 {
-    auto rule = fd::checkout<fd::Rule<f::PredicateTag>>(context.builder);
+    auto rule = fd::checkout<fd::Rule<::tyr::LiftedTag, f::PredicateTag>>(context.builder);
 
-    auto conj_cond = fd::checkout<fd::ConjunctiveCondition>(context.builder);
+    auto conj_cond = fd::checkout<fd::ConjunctiveCondition<::tyr::LiftedTag>>(context.builder);
 
     for (const auto variable : axiom.get_variables())
         conj_cond->variables.push_back(fp::merge_p2d(variable, context).first.get_index());
@@ -81,7 +81,7 @@ auto create_program(fp::TaskView task, TranslationContext<LiftedTag>& translatio
 {
     auto builder = fd::Builder();
     auto context = fp::MergeDatalogContext(builder, repository);
-    auto program = fd::checkout<fd::Program>(builder);
+    auto program = fd::checkout<fd::Program<::tyr::LiftedTag>>(builder);
 
     for (const auto predicate : task.get_domain().get_predicates<f::StaticTag>())
     {

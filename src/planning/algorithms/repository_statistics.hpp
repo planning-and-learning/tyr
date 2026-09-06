@@ -34,12 +34,12 @@ void snapshot_state_repository_statistics(const StateRepository<Kind>& repositor
 
 inline void snapshot_task_repository_statistics(const ::tyr::formalism::planning::Repository& repository, Statistics& statistics)
 {
-    statistics.set_action_bindings_memory_usage(repository.memory_usage<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action>>());
+    statistics.set_action_bindings_memory_usage(repository.memory_usage<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action<::tyr::LiftedTag>>>());
     statistics.set_predicate_bindings_memory_usage(
         repository.memory_usage<::tyr::formalism::RelationBinding<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>>()
         + repository.memory_usage<::tyr::formalism::RelationBinding<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>>()
         + repository.memory_usage<::tyr::formalism::RelationBinding<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>>());
-    statistics.set_axiom_bindings_memory_usage(repository.memory_usage<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Axiom>>());
+    statistics.set_axiom_bindings_memory_usage(repository.memory_usage<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>>());
     statistics.set_function_bindings_memory_usage(
         repository.memory_usage<::tyr::formalism::RelationBinding<::tyr::formalism::Function<::tyr::formalism::StaticTag>>>()
         + repository.memory_usage<::tyr::formalism::RelationBinding<::tyr::formalism::Function<::tyr::formalism::FluentTag>>>()

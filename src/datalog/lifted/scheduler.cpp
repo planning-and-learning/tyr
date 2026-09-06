@@ -44,7 +44,7 @@ void activate_relation(boost::dynamic_bitset<>& bitset, ygg::Index<Relation> rel
 template<typename Relation, f::RelationKind R>
 void collect_active_rules(const boost::dynamic_bitset<>& bitset,
                           const ygg::UnorderedMap<ygg::Index<Relation>, analysis::RuleIndexSet<R>>& listeners,
-                          ygg::UnorderedSet<ygg::Index<fd::Rule<R>>>& active_rules)
+                          ygg::UnorderedSet<ygg::Index<fd::Rule<::tyr::LiftedTag, R>>>& active_rules)
 {
     for (auto i = bitset.find_first(); i != boost::dynamic_bitset<>::npos; i = bitset.find_next(i))
         if (const auto it = listeners.find(ygg::Index<Relation>(i)); it != listeners.end())

@@ -42,9 +42,9 @@ public:
 
     using Heuristic<Kind>::evaluate;
 
-    void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) override;
+    void set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal) override;
     ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state) override;
-    ::tyr::formalism::planning::GroundAtomViewList<::tyr::formalism::FluentTag> compute_cut_frontier_atoms(const ygg::Builder<State<Kind>>& state);
+    ::tyr::formalism::planning::AtomViewList<::tyr::GroundTag, ::tyr::formalism::FluentTag> compute_cut_frontier_atoms(const ygg::Builder<State<Kind>>& state);
     [[nodiscard]] HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override;
     void print_summary(size_t verbosity) const override;
 

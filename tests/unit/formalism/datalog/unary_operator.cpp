@@ -31,5 +31,5 @@ static_assert(UnaryOperatorContract<Lifted>);
 static_assert(UnaryOperatorContract<Ground>);
 static_assert(std::same_as<ygg::View<ygg::Index<Lifted>, fd::Repository>, fd::LiftedUnaryOperatorView>);
 static_assert(std::same_as<ygg::View<ygg::Index<Ground>, fd::Repository>, fd::GroundUnaryOperatorView>);
-static_assert(std::constructible_from<ygg::Data<Lifted>, f::ArithmeticOperatorKind, fd::FunctionExpressionView>);
-static_assert(std::constructible_from<ygg::Data<Ground>, f::ArithmeticOperatorKind, fd::GroundFunctionExpressionView>);
+static_assert(std::constructible_from<ygg::Data<Lifted>, f::ArithmeticOperatorKind, fd::FunctionExpressionView<::tyr::LiftedTag>>);
+static_assert(std::constructible_from<ygg::Data<Ground>, f::ArithmeticOperatorKind, fd::FunctionExpressionView<::tyr::GroundTag>>);

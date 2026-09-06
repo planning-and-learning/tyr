@@ -18,13 +18,13 @@
 #ifndef TYR_FORMALISM_PLANNING_EXPRESSION_ARITY_HPP_
 #define TYR_FORMALISM_PLANNING_EXPRESSION_ARITY_HPP_
 
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 
 #include <numeric>
+#include <yggdrasil/semantics/equal_to.hpp>
+#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -36,7 +36,7 @@ namespace tyr::formalism::planning
 void collect_parameters(TermView element, ParameterList& result);
 
 template<FactKind T>
-void collect_parameters(AtomView<T> element, ParameterList& result);
+void collect_parameters(AtomView<::tyr::LiftedTag, T> element, ParameterList& result);
 
 /**
  * Implementations
@@ -59,14 +59,14 @@ inline void collect_parameters(TermView element, ParameterList& result)
 }
 
 template<FactKind T>
-inline void collect_parameters(AtomView<T> element, ParameterList& result)
+inline void collect_parameters(AtomView<::tyr::LiftedTag, T> element, ParameterList& result)
 {
     for (const auto term : element.get_terms())
         collect_parameters(term, result);
 }
 
 template<FactKind T>
-inline auto collect_parameters(AtomView<T> element)
+inline auto collect_parameters(AtomView<::tyr::LiftedTag, T> element)
 {
     auto result = ParameterList {};
     collect_parameters(element, result);

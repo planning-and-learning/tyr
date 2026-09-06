@@ -345,8 +345,8 @@ void bind_workspace(nb::module_& m, const std::string& name)
 
     if constexpr (std::same_as<Kind, GroundTag>)
     {
-        using Atom = ::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag>;
-        using FunctionTerm = ::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag>;
+        using Atom = ::tyr::formalism::datalog::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag>;
+        using FunctionTerm = ::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag>;
 
         cls.def("clear_fluent_facts", [](Workspace& self) { self.facts.reset(); })
             .def(
@@ -361,7 +361,7 @@ void bind_workspace(nb::module_& m, const std::string& name)
     }
     else
     {
-        using Atom = ::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag>;
+        using Atom = ::tyr::formalism::datalog::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag>;
         using PredicateBinding = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
         using FunctionBinding = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
 
@@ -426,7 +426,7 @@ void bind_configuration(nb::module_& m, const char* prefix)
         cls.def("initialize", [](Context& self) { self.initialize(); })
             .def(
                 "initialize",
-                [](Context& self, const std::vector<::tyr::formalism::datalog::GroundAtomView<::tyr::formalism::FluentTag>>& fluent_atoms)
+                [](Context& self, const std::vector<::tyr::formalism::datalog::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag>>& fluent_atoms)
                 { self.initialize(fluent_atoms); },
                 "fluent_atoms"_a);
     }

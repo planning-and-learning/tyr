@@ -24,17 +24,17 @@ namespace fp = tyr::formalism::planning;
 namespace tyr::planning
 {
 
-::cista::offset::string create_applicability_name(fp::ActionView action)
+::cista::offset::string create_applicability_name(fp::ActionView<::tyr::LiftedTag> action)
 {
     return ::cista::offset::string { std::string { "@" } + action.get_name().str() + std::string("_") + std::to_string(action.get_index().get_value()) };
 }
 
-::cista::offset::string create_triggered_name(fp::ActionView action, fp::ConditionalEffectView cond_eff)
+::cista::offset::string create_triggered_name(fp::ActionView<::tyr::LiftedTag> action, fp::ConditionalEffectView<::tyr::LiftedTag> cond_eff)
 {
     return ::cista::offset::string { create_applicability_name(action).str() + std::string("_") + std::to_string(cond_eff.get_index().get_value()) };
 }
 
-::cista::offset::string create_applicability_name(fp::AxiomView axiom)
+::cista::offset::string create_applicability_name(fp::AxiomView<::tyr::LiftedTag> axiom)
 {
     return ::cista::offset::string { std::string { "@" } + axiom.get_head().get_predicate().get_name().str() + std::string("_")
                                      + std::to_string(axiom.get_index().get_value()) };

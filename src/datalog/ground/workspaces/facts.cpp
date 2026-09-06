@@ -25,8 +25,8 @@ namespace tyr::datalog
 
 FactsWorkspace<GroundTag>::FactsWorkspace(fd::PredicateListView<f::FluentTag> predicates,
                                           fd::FunctionListView<f::FluentTag> functions,
-                                          fd::GroundAtomListView<f::FluentTag> atoms,
-                                          fd::GroundFunctionTermValueListView<f::FluentTag> fterm_values,
+                                          fd::AtomListView<::tyr::GroundTag, f::FluentTag> atoms,
+                                          fd::FunctionTermValueListView<::tyr::GroundTag, f::FluentTag> fterm_values,
                                           const fd::Repository& workspace_repository) :
     fact_sets(predicates, functions, atoms, fterm_values, workspace_repository)
 {
@@ -39,8 +39,8 @@ void FactsWorkspace<GroundTag>::reset()
 
 ConstFactsWorkspace<GroundTag>::ConstFactsWorkspace(fd::PredicateListView<f::StaticTag> predicates,
                                                     fd::FunctionListView<f::StaticTag> functions,
-                                                    fd::GroundAtomListView<f::StaticTag> atoms,
-                                                    fd::GroundFunctionTermValueListView<f::StaticTag> fterm_values,
+                                                    fd::AtomListView<::tyr::GroundTag, f::StaticTag> atoms,
+                                                    fd::FunctionTermValueListView<::tyr::GroundTag, f::StaticTag> fterm_values,
                                                     const fd::Repository& program_repository) :
     fact_sets(predicates, functions, atoms, fterm_values, program_repository)
 {

@@ -18,8 +18,6 @@
 #ifndef TYR_FORMALISM_PLANNING_MUTABLE_CONJUNCTIVE_EFFECT_HPP_
 #define TYR_FORMALISM_PLANNING_MUTABLE_CONJUNCTIVE_EFFECT_HPP_
 
-#include <yggdrasil/semantics/comparison.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 #include "tyr/formalism/planning/mutable/literal.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/unification/structure_traits.hpp"
@@ -29,6 +27,8 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+#include <yggdrasil/semantics/comparison.hpp>
+#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -45,7 +45,7 @@ struct MutableConjunctiveEffect : ygg::comparison::Mixin<MutableConjunctiveEffec
         literals(std::move(literals))
     {
     }
-    MutableConjunctiveEffect(size_t num_parent_variables, size_t num_variables, ConjunctiveEffectView element) :
+    MutableConjunctiveEffect(size_t num_parent_variables, size_t num_variables, ConjunctiveEffectView<::tyr::LiftedTag> element) :
         num_parent_variables(num_parent_variables),
         num_variables(num_variables),
         literals()

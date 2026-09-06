@@ -25,12 +25,13 @@
 
 namespace ygg
 {
-template<tyr::formalism::FactKind T>
-struct Index<tyr::formalism::datalog::NumericEffect<T>> : ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::NumericEffect<T>>>
-{
-    static_assert(std::same_as<T, tyr::formalism::FluentTag>, "Datalog numeric effects are currently only supported for fluent functions.");
 
-    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::NumericEffect<T>>>;
+template<::tyr::TaskKind T, tyr::formalism::FactKind F>
+struct Index<tyr::formalism::datalog::NumericEffect<T, F>> : ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::NumericEffect<T, F>>>
+{
+    static_assert(std::same_as<F, tyr::formalism::FluentTag>, "Datalog numeric effects are currently only supported for fluent functions.");
+
+    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::NumericEffect<T, F>>>;
     using Base::Base;
 };
 

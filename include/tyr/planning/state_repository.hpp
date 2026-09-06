@@ -57,10 +57,10 @@ public:
     StateView<Kind> create_state(
         AxiomEvaluator<Kind>& axiom_evaluator,
         const std::vector<ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>& fluent_facts,
-        const std::vector<std::pair<ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>>, ygg::float_t>>& fterm_values);
+        const std::vector<std::pair<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>>, ygg::float_t>>& fterm_values);
     StateView<Kind> create_state(AxiomEvaluator<Kind>& axiom_evaluator,
                                  const std::vector<::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag>>& fluent_facts,
-                                 const std::vector<::tyr::formalism::planning::GroundFunctionTermViewValuePair<::tyr::formalism::FluentTag>>& fterm_values);
+                                 const std::vector<::tyr::formalism::planning::FunctionTermViewValuePair<::tyr::GroundTag, ::tyr::formalism::FluentTag>>& fterm_values);
 
     ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> get_state_builder();
 
@@ -93,9 +93,9 @@ concept StateRepositoryConcept =
              ygg::Index<State<Kind>> index,
              ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state_builder,
              const std::vector<ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>& fluent_facts,
-             const std::vector<std::pair<ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>>, ygg::float_t>>& fterm_values,
+             const std::vector<std::pair<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>>, ygg::float_t>>& fterm_values,
              const std::vector<::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag>>& fluent_fact_views,
-             const std::vector<::tyr::formalism::planning::GroundFunctionTermViewValuePair<::tyr::formalism::FluentTag>>& fterm_value_views,
+             const std::vector<::tyr::formalism::planning::FunctionTermViewValuePair<::tyr::GroundTag, ::tyr::formalism::FluentTag>>& fterm_value_views,
              AxiomEvaluator<Kind>& axiom_evaluator) {
         requires TaskKind<Kind>;
         { r.get_initial_state(axiom_evaluator) } -> std::same_as<StateView<Kind>>;

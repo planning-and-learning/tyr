@@ -18,30 +18,64 @@
 #ifndef TYR_FORMALISM_PLANNING_FUNCTION_TERM_VIEW_HPP_
 #define TYR_FORMALISM_PLANNING_FUNCTION_TERM_VIEW_HPP_
 
-#include <yggdrasil/core/types.hpp>
+#include "tyr/formalism/binding_view.hpp"
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/function_term_index.hpp"
 
+#include <yggdrasil/containers/array.hpp>
+#include <yggdrasil/containers/vector.hpp>
+#include <yggdrasil/core/types.hpp>
+
 namespace ygg
 {
-template<::tyr::formalism::FactKind T, ::tyr::formalism::planning::Context C>
-class View<ygg::Index<::tyr::formalism::planning::FunctionTerm<T>>, C>
+template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, ::tyr::formalism::planning::Context C>
+class View<ygg::Index<::tyr::formalism::planning::FunctionTerm<T, F>>, C>
 {
 private:
     const C* m_context;
-    ygg::Index<::tyr::formalism::planning::FunctionTerm<T>> m_handle;
+    ygg::Index<::tyr::formalism::planning::FunctionTerm<T, F>> m_handle;
 
 public:
-    View(ygg::Index<::tyr::formalism::planning::FunctionTerm<T>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+    View(ygg::Index<::tyr::formalism::planning::FunctionTerm<T, F>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_handle() const noexcept { return m_handle; }
 
     auto get_index() const noexcept { return m_handle; }
-    auto get_function() const noexcept { return ygg::make_view(get_data().function, *m_context); }
-    auto get_terms() const noexcept { return ygg::make_view(get_data().terms, *m_context); }
+    auto get_function() const noexcept
+    {
+        if constexpr (std::same_as<T, ::tyr::GroundTag>)
+        {
+            return get_row().get_relation();
+        }
+        else
+        {
+            return ygg::make_view(get_data().function, *m_context);
+        }
+    }
+    auto get_terms() const noexcept
+        requires std::same_as<T, ::tyr::LiftedTag>
+    {
+        return ygg::make_view(get_data().terms, *m_context);
+    }
+
+    auto get_row() const noexcept
+        requires std::same_as<T, ::tyr::GroundTag>
+    {
+        return ygg::make_view(get_data().binding, *m_context);
+    }
+    auto get_objects() const noexcept
+        requires std::same_as<T, ::tyr::GroundTag>
+    {
+        return get_row().get_objects();
+    }
+    auto get_key() const noexcept
+        requires std::same_as<T, ::tyr::GroundTag>
+    {
+        return get_row().get_key();
+    }
 
     auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }
 };

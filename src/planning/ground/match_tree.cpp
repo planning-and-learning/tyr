@@ -50,10 +50,10 @@ namespace tyr::planning::match_tree
 {
 
 using PreconditionVariant =
-    std::variant<ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>>,
+    std::variant<ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>,
                  ::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag>,
                  ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>,
-                 ygg::Data<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::GroundFunctionExpression>>>>;
+                 ygg::Data<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>>>>;
 
 template<typename Tag>
 using ElementView = ygg::View<ygg::Index<Tag>, ::tyr::formalism::planning::Repository>;
@@ -68,7 +68,7 @@ template<typename Tag>
 using MatchNodeView = ygg::View<ygg::Data<Node<Tag>>, Repository<Tag>>;
 
 template<typename Tag>
-using Builder = std::conditional_t<std::same_as<Tag, ::tyr::formalism::planning::GroundAction>, GroundActionBuilder, GroundAxiomBuilder>;
+using Builder = std::conditional_t<std::same_as<Tag, ::tyr::formalism::planning::Action<::tyr::GroundTag>>, GroundActionBuilder, GroundAxiomBuilder>;
 
 template<typename Tag>
 using SortedPreconditions = std::vector<std::pair<PreconditionVariant, ElementViews<Tag>>>;
@@ -126,7 +126,7 @@ struct AtomStackEntry
 
     AtomStackEntry(Builder<Tag>& builder,
                    BaseEntry<Tag> base,
-                   ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> atom,
+                   ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom,
                    ElementSpan<Tag> true_elements,
                    ElementSpan<Tag> false_elements,
                    ElementSpan<Tag> dontcare_elements) :
@@ -216,7 +216,7 @@ struct ConstraintStackEntry
 
     ConstraintStackEntry(Builder<Tag>& builder,
                          BaseEntry<Tag> base,
-                         ygg::Data<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::GroundFunctionExpression>>> constraint,
+                         ygg::Data<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>>> constraint,
                          ElementSpan<Tag> true_elements,
                          ElementSpan<Tag> dontcare_elements) :
         base(base),
@@ -406,12 +406,12 @@ void push_result(GeneratorStackEntry<Tag>&, ygg::Data<Node<Tag>>)
     throw std::logic_error("Unexpected case.");
 }
 
-inline auto get_condition(::tyr::formalism::planning::GroundAxiomView el) { return el.get_body(); }
+inline auto get_condition(::tyr::formalism::planning::AxiomView<::tyr::GroundTag> el) { return el.get_body(); }
 
-inline auto get_condition(::tyr::formalism::planning::GroundActionView el) { return el.get_condition(); }
+inline auto get_condition(::tyr::formalism::planning::ActionView<::tyr::GroundTag> el) { return el.get_condition(); }
 
 template<typename Tag>
-static std::optional<StackEntry<Tag>> try_create_atom_stack_entry(ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> atom,
+static std::optional<StackEntry<Tag>> try_create_atom_stack_entry(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom,
                                                                   BaseEntry<Tag> base,
                                                                   const PreconditionDetails<Tag>& details,
                                                                   Builder<Tag>& builder)
@@ -545,7 +545,7 @@ static std::optional<StackEntry<Tag>> try_create_negative_fact_stack_entry(ygg::
 
 template<typename Tag>
 static std::optional<StackEntry<Tag>> try_create_constraint_stack_entry(
-    ygg::Data<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::GroundFunctionExpression>>> constraint,
+    ygg::Data<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>>> constraint,
     BaseEntry<Tag> base,
     const PreconditionDetails<Tag>& details,
     Builder<Tag>& builder)
@@ -598,11 +598,11 @@ static std::optional<StackEntry<Tag>> try_create_selector_stack_entry(BaseEntry<
                 return try_create_variable_stack_entry(arg, base, details, builder);
             else if constexpr (std::same_as<Alternative, ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>)
                 return try_create_negative_fact_stack_entry(arg, base, details, builder);
-            else if constexpr (std::same_as<Alternative, ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>>>)
+            else if constexpr (std::same_as<Alternative, ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>>)
                 return try_create_atom_stack_entry(arg, base, details, builder);
             else if constexpr (std::same_as<
                                    Alternative,
-                                   ygg::Data<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::GroundFunctionExpression>>>>)
+                                   ygg::Data<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>>>>)
                 return try_create_constraint_stack_entry(arg, base, details, builder);
             else
                 static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
@@ -858,7 +858,7 @@ void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
     }
 }
 
-template class MatchTree<::tyr::formalism::planning::GroundAction>;
-template class MatchTree<::tyr::formalism::planning::GroundAxiom>;
+template class MatchTree<::tyr::formalism::planning::Action<::tyr::GroundTag>>;
+template class MatchTree<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>;
 
 }

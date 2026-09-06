@@ -249,7 +249,7 @@ struct formatter<tyr::planning::StateView<Kind>, char>
     template<typename FormatContext>
     auto format(const tyr::planning::StateView<Kind>& value, FormatContext& ctx) const
     {
-        auto static_atoms = std::vector<tyr::formalism::planning::GroundAtomView<tyr::formalism::StaticTag>> {};
+        auto static_atoms = std::vector<tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::StaticTag>> {};
         for (auto&& atom : value.get_static_atoms_view())
         {
             static_atoms.push_back(atom);
@@ -264,19 +264,19 @@ struct formatter<tyr::planning::StateView<Kind>, char>
             }
         }
 
-        auto derived_atoms = std::vector<tyr::formalism::planning::GroundAtomView<tyr::formalism::DerivedTag>> {};
+        auto derived_atoms = std::vector<tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::DerivedTag>> {};
         for (auto&& atom : value.get_derived_atoms_view())
         {
             derived_atoms.push_back(atom);
         }
 
-        auto static_fterm_values = std::vector<tyr::formalism::planning::GroundFunctionTermViewValuePair<tyr::formalism::StaticTag>> {};
+        auto static_fterm_values = std::vector<tyr::formalism::planning::FunctionTermViewValuePair<::tyr::GroundTag, tyr::formalism::StaticTag>> {};
         for (auto&& fterm_value : value.get_static_fterm_values_view())
         {
             static_fterm_values.push_back(fterm_value);
         }
 
-        auto fluent_fterm_values = std::vector<tyr::formalism::planning::GroundFunctionTermViewValuePair<tyr::formalism::FluentTag>> {};
+        auto fluent_fterm_values = std::vector<tyr::formalism::planning::FunctionTermViewValuePair<::tyr::GroundTag, tyr::formalism::FluentTag>> {};
         for (auto&& fterm_value : value.get_fluent_fterm_values_view())
         {
             fluent_fterm_values.push_back(fterm_value);

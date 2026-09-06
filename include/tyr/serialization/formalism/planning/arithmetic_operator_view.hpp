@@ -16,7 +16,7 @@ struct Serializer<::tyr::formalism::planning::ArithmeticOperatorView<T>>
 {
     static std::string name()
     {
-        return std::string(std::same_as<T, ygg::Data<::tyr::formalism::planning::GroundFunctionExpression>> ? "Ground" : "") + "ArithmeticOperator";
+        return std::string(std::same_as<T, ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>> ? "Ground" : "") + "ArithmeticOperator";
     }
 
     template<class Archive>

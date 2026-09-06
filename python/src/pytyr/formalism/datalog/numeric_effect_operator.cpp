@@ -24,24 +24,39 @@
 namespace tyr::formalism::datalog
 {
 
-void bind_numeric_effect_operator(nb::module_& m, RepositoryBinding& repository)
+namespace
 {
+template<TaskKind T, FactKind F>
+void bind_numeric_effect_operator_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
+{
+    using Tag = NumericEffectOperator<T, F>;
+
     {
-        using V = ygg::Data<NumericEffectOperator<FluentTag>>;
-        auto cls = nb::class_<V>(m, "FluentNumericEffectOperatorData").def(nb::init<V::ViewVariant<Repository>>(), "value"_a);
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-    {
-        using V = NumericEffectOperatorView<FluentTag>;
-        auto cls = nb::class_<V>(m, "FluentNumericEffectOperator").def("get_variant", &V::get_variant);
+        using V = ygg::Data<Tag>;
+        auto cls = nb::class_<V>(m, (name + "Data").c_str());
+        cls.def(nb::init<typename V::template ViewVariant<Repository>>(), "value"_a);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);
     }
 
-    repository.def("create", &create_data<NumericEffectOperator<FluentTag>>, "data"_a, nb::keep_alive<0, 1>(), nb::keep_alive<0, 2>());
+    {
+        using V = NumericEffectOperatorView<T, F>;
+        auto cls = nb::class_<V>(m, name.c_str());
+        cls.def("get_variant", &V::get_variant);
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+
+    repository.def("create", &create_data<Tag>, "data"_a, nb::keep_alive<0, 1>(), nb::keep_alive<0, 2>());
+}
+}  // namespace
+
+void bind_numeric_effect_operator(nb::module_& m, RepositoryBinding& repository)
+{
+    bind_numeric_effect_operator_kind<LiftedTag, FluentTag>(m, repository, "FluentNumericEffectOperator");
+    bind_numeric_effect_operator_kind<GroundTag, FluentTag>(m, repository, "FluentGroundNumericEffectOperator");
 }
 
 }  // namespace tyr::formalism::datalog

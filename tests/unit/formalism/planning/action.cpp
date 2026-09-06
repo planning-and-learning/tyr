@@ -5,23 +5,25 @@
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/variable_data.hpp"
-
 #include <concepts>
 #include <gtest/gtest.h>
 #include <string>
 
+namespace lifted_tests
+{
+
 namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;
 
-using ActionIndex = ygg::Index<fp::Action>;
-using ActionData = ygg::Data<fp::Action>;
+using ActionIndex = ygg::Index<fp::Action<::tyr::LiftedTag>>;
+using ActionData = ygg::Data<fp::Action<::tyr::LiftedTag>>;
 using ActionView = ygg::View<ActionIndex, fp::Repository>;
 
 static_assert(std::constructible_from<ActionIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<ActionIndex>);
 static_assert(std::totally_ordered<ActionData>);
 static_assert(std::totally_ordered<ActionView>);
-static_assert(std::same_as<ActionView, fp::ActionView>);
+static_assert(std::same_as<ActionView, fp::ActionView<::tyr::LiftedTag>>);
 static_assert(requires(ActionData& data) {
     data.index;
     data.name;
@@ -69,7 +71,7 @@ TEST(TyrFormalismPlanningAction, FormatsBinding)
     const auto [object, object_created] = repository.get_or_create(object_data);
     ASSERT_TRUE(object_created);
 
-    auto binding_data = ygg::Data<f::RelationBinding<fp::Action>> {};
+    auto binding_data = ygg::Data<f::RelationBinding<fp::Action<::tyr::LiftedTag>>> {};
     binding_data.relation = action.get_index();
     binding_data.objects.push_back(object.get_index());
     canonicalize(binding_data);
@@ -80,4 +82,43 @@ TEST(TyrFormalismPlanningAction, FormatsBinding)
     EXPECT_EQ(fp::to_string(binding), "(move-internal truck)");
     EXPECT_EQ(fp::to_string(std::make_pair(binding, fp::PlanFormatting {})), "(move)");
     EXPECT_EQ(fmt::format("{}", std::make_pair(binding, fp::PlanFormatting {})), "(move)");
+}
+
+}
+
+namespace ground_tests
+{
+
+namespace f = tyr::formalism;
+namespace fp = tyr::formalism::planning;
+
+using GroundActionIndex = ygg::Index<fp::Action<::tyr::GroundTag>>;
+using GroundActionData = ygg::Data<fp::Action<::tyr::GroundTag>>;
+using GroundActionView = ygg::View<GroundActionIndex, fp::Repository>;
+
+static_assert(std::constructible_from<GroundActionIndex, ygg::uint_t>);
+static_assert(std::totally_ordered<GroundActionIndex>);
+static_assert(std::totally_ordered<GroundActionData>);
+static_assert(std::totally_ordered<GroundActionView>);
+static_assert(std::same_as<GroundActionView, fp::ActionView<::tyr::GroundTag>>);
+static_assert(requires(GroundActionData& data) {
+    data.index;
+    data.binding;
+    data.condition;
+    data.effects;
+    data.clear();
+    { data == data } -> std::same_as<bool>;
+});
+static_assert(requires(const GroundActionView& view) {
+    view.get_index();
+    view.get_action();
+    view.get_row();
+    view.get_objects();
+    view.get_key();
+    view.get_condition();
+    view.get_effects();
+    { view == view } -> std::same_as<bool>;
+    { view < view } -> std::same_as<bool>;
+});
+
 }

@@ -42,7 +42,7 @@ template<class Tag>
 class AtomIterator
 {
 public:
-    using value_type = ygg::Index<::tyr::formalism::planning::GroundAtom<Tag>>;
+    using value_type = ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, Tag>>;
     using reference = value_type;
     using difference_type = std::ptrdiff_t;
     using iterator_category = std::input_iterator_tag;
@@ -55,7 +55,7 @@ public:
     value_type operator*() const noexcept
     {
         assert(m_data);
-        return ygg::Index<::tyr::formalism::planning::GroundAtom<Tag>> { static_cast<ygg::uint_t>(m_i) };
+        return ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, Tag>> { static_cast<ygg::uint_t>(m_i) };
     }
 
     AtomIterator& operator++() noexcept
@@ -115,7 +115,7 @@ template<class Tag>
 class FunctionTermValueIterator
 {
 public:
-    using value_type = std::pair<ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<Tag>>, ygg::float_t>;
+    using value_type = std::pair<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, Tag>>, ygg::float_t>;
     using reference = value_type;
     using difference_type = std::ptrdiff_t;
     using iterator_category = std::input_iterator_tag;
@@ -139,7 +139,7 @@ public:
     value_type operator*() const noexcept
     {
         assert(m_data);
-        return { ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<Tag>> { static_cast<ygg::uint_t>(m_i) }, (*m_data)[m_i] };
+        return { ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, Tag>> { static_cast<ygg::uint_t>(m_i) }, (*m_data)[m_i] };
     }
 
     FunctionTermValueIterator& operator++() noexcept

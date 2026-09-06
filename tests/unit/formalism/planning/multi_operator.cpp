@@ -37,18 +37,18 @@ static_assert(MultiOperatorContract<Lifted>);
 static_assert(MultiOperatorContract<Ground>);
 static_assert(std::same_as<ygg::View<ygg::Index<Lifted>, fp::Repository>, fp::LiftedMultiOperatorView>);
 static_assert(std::same_as<ygg::View<ygg::Index<Ground>, fp::Repository>, fp::GroundMultiOperatorView>);
-static_assert(std::constructible_from<ygg::Data<Lifted>, f::ArithmeticOperatorKind, std::vector<fp::FunctionExpressionView>>);
-static_assert(std::constructible_from<ygg::Data<Ground>, f::ArithmeticOperatorKind, std::vector<fp::GroundFunctionExpressionView>>);
+static_assert(std::constructible_from<ygg::Data<Lifted>, f::ArithmeticOperatorKind, std::vector<fp::FunctionExpressionView<::tyr::LiftedTag>>>);
+static_assert(std::constructible_from<ygg::Data<Ground>, f::ArithmeticOperatorKind, std::vector<fp::FunctionExpressionView<::tyr::GroundTag>>>);
 
 TEST(TyrFormalismPlanningMultiOperator, RejectsNonMultiOperator)
 {
-    using Args = ::cista::offset::vector<ygg::Data<fp::FunctionExpression>>;
+    using Args = ::cista::offset::vector<ygg::Data<fp::FunctionExpression<::tyr::LiftedTag>>>;
     EXPECT_THROW((ygg::Data<Lifted>(f::ArithmeticOperatorKind::Sub, Args {})), std::invalid_argument);
 }
 
 TEST(TyrFormalismPlanningMultiOperator, PreservesRepeatedOperands)
 {
-    using Expression = ygg::Data<fp::FunctionExpression>;
+    using Expression = ygg::Data<fp::FunctionExpression<::tyr::LiftedTag>>;
 
     for (const auto op : { f::ArithmeticOperatorKind::Add, f::ArithmeticOperatorKind::Mul })
     {

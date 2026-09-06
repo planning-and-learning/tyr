@@ -5,6 +5,8 @@ from typing import TypedDict
 from pytyr.serialization.formalism.planning import binary_operator_view
 
 
+
+
 class BooleanOperator(TypedDict):
     kind: int
     value: binary_operator_view.BinaryBooleanOperator | str

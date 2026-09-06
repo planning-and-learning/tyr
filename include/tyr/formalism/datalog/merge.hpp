@@ -44,44 +44,40 @@ TermView merge_d2d(TermView element, MergeContext& context);
 
 // Propositional
 
-template<FactKind T>
-std::pair<PredicateView<T>, bool> merge_d2d(PredicateView<T> element, MergeContext& context);
+template<FactKind F>
+std::pair<PredicateView<F>, bool> merge_d2d(PredicateView<F> element, MergeContext& context);
 
-template<FactKind T>
-std::pair<AtomView<T>, bool> merge_d2d(AtomView<T> element, MergeContext& context);
+template<FactKind F>
+std::pair<AtomView<::tyr::LiftedTag, F>, bool> merge_d2d(AtomView<::tyr::LiftedTag, F> element, MergeContext& context);
 
-template<FactKind T>
-std::pair<PredicateBindingView<T>, bool> merge_d2d(PredicateBindingView<T> element, MergeContext& context);
+template<FactKind F>
+std::pair<PredicateBindingView<F>, bool> merge_d2d(PredicateBindingView<F> element, MergeContext& context);
 
-template<FactKind T>
-std::pair<GroundAtomView<T>, bool> merge_d2d(GroundAtomView<T> element, MergeContext& context);
+template<FactKind F>
+std::pair<AtomView<::tyr::GroundTag, F>, bool> merge_d2d(AtomView<::tyr::GroundTag, F> element, MergeContext& context);
 
-template<FactKind T>
-std::pair<LiteralView<T>, bool> merge_d2d(LiteralView<T> element, MergeContext& context);
-
-template<FactKind T>
-std::pair<GroundLiteralView<T>, bool> merge_d2d(GroundLiteralView<T> element, MergeContext& context);
+template<::tyr::TaskKind T, FactKind F>
+std::pair<LiteralView<T, F>, bool> merge_d2d(LiteralView<T, F> element, MergeContext& context);
 
 // Numeric
 
-template<FactKind T>
-std::pair<FunctionView<T>, bool> merge_d2d(FunctionView<T> element, MergeContext& context);
+template<FactKind F>
+std::pair<FunctionView<F>, bool> merge_d2d(FunctionView<F> element, MergeContext& context);
 
-template<FactKind T>
-std::pair<FunctionTermView<T>, bool> merge_d2d(FunctionTermView<T> element, MergeContext& context);
+template<FactKind F>
+std::pair<FunctionTermView<::tyr::LiftedTag, F>, bool> merge_d2d(FunctionTermView<::tyr::LiftedTag, F> element, MergeContext& context);
 
-template<FactKind T>
-std::pair<FunctionBindingView<T>, bool> merge_d2d(FunctionBindingView<T> element, MergeContext& context);
+template<FactKind F>
+std::pair<FunctionBindingView<F>, bool> merge_d2d(FunctionBindingView<F> element, MergeContext& context);
 
-template<FactKind T>
-std::pair<GroundFunctionTermView<T>, bool> merge_d2d(GroundFunctionTermView<T> element, MergeContext& context);
+template<FactKind F>
+std::pair<FunctionTermView<::tyr::GroundTag, F>, bool> merge_d2d(FunctionTermView<::tyr::GroundTag, F> element, MergeContext& context);
 
-template<FactKind T>
-std::pair<GroundFunctionTermValueView<T>, bool> merge_d2d(GroundFunctionTermValueView<T> element, MergeContext& context);
+template<FactKind F>
+std::pair<FunctionTermValueView<::tyr::GroundTag, F>, bool> merge_d2d(FunctionTermValueView<::tyr::GroundTag, F> element, MergeContext& context);
 
-FunctionExpressionView merge_d2d(FunctionExpressionView element, MergeContext& context);
-
-GroundFunctionExpressionView merge_d2d(GroundFunctionExpressionView element, MergeContext& context);
+template<::tyr::TaskKind T>
+FunctionExpressionView<T> merge_d2d(FunctionExpressionView<T> element, MergeContext& context);
 
 template<typename T>
 std::pair<UnaryOperatorView<T>, bool> merge_d2d(UnaryOperatorView<T> element, MergeContext& context);
@@ -98,32 +94,26 @@ ArithmeticOperatorView<T> merge_d2d(ArithmeticOperatorView<T> element, MergeCont
 template<typename T>
 BooleanOperatorView<T> merge_d2d(BooleanOperatorView<T> element, MergeContext& context);
 
-template<FactKind T>
-std::pair<NumericEffectView<T>, bool> merge_d2d(NumericEffectView<T> element, MergeContext& context);
+template<::tyr::TaskKind T, FactKind F>
+std::pair<NumericEffectView<T, F>, bool> merge_d2d(NumericEffectView<T, F> element, MergeContext& context);
 
-template<FactKind T>
-NumericEffectOperatorView<T> merge_d2d(NumericEffectOperatorView<T> element, MergeContext& context);
+template<::tyr::TaskKind T, FactKind F>
+NumericEffectOperatorView<T, F> merge_d2d(NumericEffectOperatorView<T, F> element, MergeContext& context);
 
-template<FactKind T>
-std::pair<GroundNumericEffectView<T>, bool> merge_d2d(GroundNumericEffectView<T> element, MergeContext& context);
+std::pair<ConjunctiveConditionView<::tyr::LiftedTag>, bool> merge_d2d(ConjunctiveConditionView<::tyr::LiftedTag> element, MergeContext& context);
 
-template<FactKind T>
-GroundNumericEffectOperatorView<T> merge_d2d(GroundNumericEffectOperatorView<T> element, MergeContext& context);
-
-std::pair<ConjunctiveConditionView, bool> merge_d2d(ConjunctiveConditionView element, MergeContext& context);
-
-std::pair<GroundConjunctiveConditionView, bool> merge_d2d(GroundConjunctiveConditionView element, MergeContext& context);
+std::pair<ConjunctiveConditionView<::tyr::GroundTag>, bool> merge_d2d(ConjunctiveConditionView<::tyr::GroundTag> element, MergeContext& context);
 
 std::pair<MetricView, bool> merge_d2d(MetricView element, MergeContext& context);
 
 template<RelationKind R>
-std::pair<RuleView<R>, bool> merge_d2d(RuleView<R> element, MergeContext& context);
+std::pair<RuleView<::tyr::LiftedTag, R>, bool> merge_d2d(RuleView<::tyr::LiftedTag, R> element, MergeContext& context);
 
 template<RelationKind R>
 std::pair<RuleBindingView<R>, bool> merge_d2d(RuleBindingView<R> element, MergeContext& context);
 
 template<RelationKind R>
-std::pair<GroundRuleView<R>, bool> merge_d2d(GroundRuleView<R> element, MergeContext& context);
+std::pair<RuleView<::tyr::GroundTag, R>, bool> merge_d2d(RuleView<::tyr::GroundTag, R> element, MergeContext& context);
 
 // Common
 
@@ -165,10 +155,10 @@ inline TermView merge_d2d(TermView element, MergeContext& context)
 
 // Propositional
 
-template<FactKind T>
-std::pair<PredicateView<T>, bool> merge_d2d(PredicateView<T> element, MergeContext& context)
+template<FactKind F>
+std::pair<PredicateView<F>, bool> merge_d2d(PredicateView<F> element, MergeContext& context)
 {
-    auto predicate = ::tyr::formalism::datalog::checkout<Predicate<T>>(context.builder);
+    auto predicate = ::tyr::formalism::datalog::checkout<Predicate<F>>(context.builder);
 
     predicate->name = element.get_name();
     predicate->arity = element.get_arity();
@@ -176,10 +166,10 @@ std::pair<PredicateView<T>, bool> merge_d2d(PredicateView<T> element, MergeConte
     return ::tyr::formalism::datalog::get_or_create(context.destination, *predicate);
 }
 
-template<FactKind T>
-std::pair<AtomView<T>, bool> merge_d2d(AtomView<T> element, MergeContext& context)
+template<FactKind F>
+std::pair<AtomView<::tyr::LiftedTag, F>, bool> merge_d2d(AtomView<::tyr::LiftedTag, F> element, MergeContext& context)
 {
-    auto atom = ::tyr::formalism::datalog::checkout<Atom<T>>(context.builder);
+    auto atom = ::tyr::formalism::datalog::checkout<Atom<::tyr::LiftedTag, F>>(context.builder);
 
     atom->predicate = merge_d2d(element.get_predicate(), context).first.get_index();
     for (const auto term : element.get_terms())
@@ -188,10 +178,10 @@ std::pair<AtomView<T>, bool> merge_d2d(AtomView<T> element, MergeContext& contex
     return ::tyr::formalism::datalog::get_or_create(context.destination, *atom);
 }
 
-template<FactKind T>
-std::pair<PredicateBindingView<T>, bool> merge_d2d(PredicateBindingView<T> element, MergeContext& context)
+template<FactKind F>
+std::pair<PredicateBindingView<F>, bool> merge_d2d(PredicateBindingView<F> element, MergeContext& context)
 {
-    auto binding = ::tyr::formalism::datalog::checkout<RelationBinding<Predicate<T>>>(context.builder);
+    auto binding = ::tyr::formalism::datalog::checkout<RelationBinding<Predicate<F>>>(context.builder);
 
     binding->relation = merge_d2d(element.get_relation(), context).first.get_index();
     for (const auto object : element.get_objects())
@@ -200,31 +190,20 @@ std::pair<PredicateBindingView<T>, bool> merge_d2d(PredicateBindingView<T> eleme
     return ::tyr::formalism::datalog::get_or_create(context.destination, *binding);
 }
 
-template<FactKind T>
-std::pair<GroundAtomView<T>, bool> merge_d2d(GroundAtomView<T> element, MergeContext& context)
+template<FactKind F>
+std::pair<AtomView<::tyr::GroundTag, F>, bool> merge_d2d(AtomView<::tyr::GroundTag, F> element, MergeContext& context)
 {
-    auto atom = ::tyr::formalism::datalog::checkout<GroundAtom<T>>(context.builder);
+    auto atom = ::tyr::formalism::datalog::checkout<Atom<::tyr::GroundTag, F>>(context.builder);
 
     atom->binding = merge_d2d(element.get_row(), context).first.get_index();
 
     return ::tyr::formalism::datalog::get_or_create(context.destination, *atom);
 }
 
-template<FactKind T>
-std::pair<LiteralView<T>, bool> merge_d2d(LiteralView<T> element, MergeContext& context)
+template<::tyr::TaskKind T, FactKind F>
+std::pair<LiteralView<T, F>, bool> merge_d2d(LiteralView<T, F> element, MergeContext& context)
 {
-    auto literal = ::tyr::formalism::datalog::checkout<Literal<T>>(context.builder);
-
-    literal->polarity = element.get_polarity();
-    literal->atom = merge_d2d(element.get_atom(), context).first.get_index();
-
-    return ::tyr::formalism::datalog::get_or_create(context.destination, *literal);
-}
-
-template<FactKind T>
-std::pair<GroundLiteralView<T>, bool> merge_d2d(GroundLiteralView<T> element, MergeContext& context)
-{
-    auto literal = ::tyr::formalism::datalog::checkout<GroundLiteral<T>>(context.builder);
+    auto literal = ::tyr::formalism::datalog::checkout<Literal<T, F>>(context.builder);
 
     literal->polarity = element.get_polarity();
     literal->atom = merge_d2d(element.get_atom(), context).first.get_index();
@@ -234,10 +213,10 @@ std::pair<GroundLiteralView<T>, bool> merge_d2d(GroundLiteralView<T> element, Me
 
 // Numeric
 
-template<FactKind T>
-std::pair<FunctionView<T>, bool> merge_d2d(FunctionView<T> element, MergeContext& context)
+template<FactKind F>
+std::pair<FunctionView<F>, bool> merge_d2d(FunctionView<F> element, MergeContext& context)
 {
-    auto function = ::tyr::formalism::datalog::checkout<Function<T>>(context.builder);
+    auto function = ::tyr::formalism::datalog::checkout<Function<F>>(context.builder);
 
     function->name = element.get_name();
     function->arity = element.get_arity();
@@ -245,10 +224,10 @@ std::pair<FunctionView<T>, bool> merge_d2d(FunctionView<T> element, MergeContext
     return ::tyr::formalism::datalog::get_or_create(context.destination, *function);
 }
 
-template<FactKind T>
-std::pair<FunctionTermView<T>, bool> merge_d2d(FunctionTermView<T> element, MergeContext& context)
+template<FactKind F>
+std::pair<FunctionTermView<::tyr::LiftedTag, F>, bool> merge_d2d(FunctionTermView<::tyr::LiftedTag, F> element, MergeContext& context)
 {
-    auto fterm = ::tyr::formalism::datalog::checkout<FunctionTerm<T>>(context.builder);
+    auto fterm = ::tyr::formalism::datalog::checkout<FunctionTerm<::tyr::LiftedTag, F>>(context.builder);
 
     fterm->function = merge_d2d(element.get_function(), context).first.get_index();
     for (const auto term : element.get_terms())
@@ -257,10 +236,10 @@ std::pair<FunctionTermView<T>, bool> merge_d2d(FunctionTermView<T> element, Merg
     return ::tyr::formalism::datalog::get_or_create(context.destination, *fterm);
 }
 
-template<FactKind T>
-std::pair<FunctionBindingView<T>, bool> merge_d2d(FunctionBindingView<T> element, MergeContext& context)
+template<FactKind F>
+std::pair<FunctionBindingView<F>, bool> merge_d2d(FunctionBindingView<F> element, MergeContext& context)
 {
-    auto binding = ::tyr::formalism::datalog::checkout<RelationBinding<Function<T>>>(context.builder);
+    auto binding = ::tyr::formalism::datalog::checkout<RelationBinding<Function<F>>>(context.builder);
 
     binding->relation = merge_d2d(element.get_relation(), context).first.get_index();
     for (const auto object : element.get_objects())
@@ -269,20 +248,20 @@ std::pair<FunctionBindingView<T>, bool> merge_d2d(FunctionBindingView<T> element
     return ::tyr::formalism::datalog::get_or_create(context.destination, *binding);
 }
 
-template<FactKind T>
-std::pair<GroundFunctionTermView<T>, bool> merge_d2d(GroundFunctionTermView<T> element, MergeContext& context)
+template<FactKind F>
+std::pair<FunctionTermView<::tyr::GroundTag, F>, bool> merge_d2d(FunctionTermView<::tyr::GroundTag, F> element, MergeContext& context)
 {
-    auto fterm = ::tyr::formalism::datalog::checkout<GroundFunctionTerm<T>>(context.builder);
+    auto fterm = ::tyr::formalism::datalog::checkout<FunctionTerm<::tyr::GroundTag, F>>(context.builder);
 
     fterm->binding = merge_d2d(element.get_row(), context).first.get_index();
 
     return ::tyr::formalism::datalog::get_or_create(context.destination, *fterm);
 }
 
-template<FactKind T>
-std::pair<GroundFunctionTermValueView<T>, bool> merge_d2d(GroundFunctionTermValueView<T> element, MergeContext& context)
+template<FactKind F>
+std::pair<FunctionTermValueView<::tyr::GroundTag, F>, bool> merge_d2d(FunctionTermValueView<::tyr::GroundTag, F> element, MergeContext& context)
 {
-    auto fterm_value = ::tyr::formalism::datalog::checkout<GroundFunctionTermValue<T>>(context.builder);
+    auto fterm_value = ::tyr::formalism::datalog::checkout<FunctionTermValue<::tyr::GroundTag, F>>(context.builder);
 
     fterm_value->fterm = merge_d2d(element.get_fterm(), context).first.get_index();
     fterm_value->value = element.get_value();
@@ -290,7 +269,8 @@ std::pair<GroundFunctionTermValueView<T>, bool> merge_d2d(GroundFunctionTermValu
     return ::tyr::formalism::datalog::get_or_create(context.destination, *fterm_value);
 }
 
-inline FunctionExpressionView merge_d2d(FunctionExpressionView element, MergeContext& context)
+template<::tyr::TaskKind T>
+FunctionExpressionView<T> merge_d2d(FunctionExpressionView<T> element, MergeContext& context)
 {
     const auto data = visit(
         [&](auto&& arg)
@@ -298,29 +278,11 @@ inline FunctionExpressionView merge_d2d(FunctionExpressionView element, MergeCon
             using Alternative = std::decay_t<decltype(arg)>;
 
             if constexpr (std::is_same_v<Alternative, ygg::float_t>)
-                return ygg::Data<FunctionExpression>(arg);
-            else if constexpr (std::is_same_v<Alternative, LiftedArithmeticOperatorView>)
-                return ygg::Data<FunctionExpression>(merge_d2d(arg, context).get_data());
+                return ygg::Data<FunctionExpression<T>>(arg);
+            else if constexpr (std::is_same_v<Alternative, ArithmeticOperatorView<ygg::Data<FunctionExpression<T>>>>)
+                return ygg::Data<FunctionExpression<T>>(merge_d2d(arg, context).get_data());
             else
-                return ygg::Data<FunctionExpression>(merge_d2d(arg, context).first.get_index());
-        },
-        element.get_variant());
-    return ygg::make_view(data, context.destination);
-}
-
-inline GroundFunctionExpressionView merge_d2d(GroundFunctionExpressionView element, MergeContext& context)
-{
-    const auto data = visit(
-        [&](auto&& arg)
-        {
-            using Alternative = std::decay_t<decltype(arg)>;
-
-            if constexpr (std::is_same_v<Alternative, ygg::float_t>)
-                return ygg::Data<GroundFunctionExpression>(arg);
-            else if constexpr (std::is_same_v<Alternative, GroundArithmeticOperatorView>)
-                return ygg::Data<GroundFunctionExpression>(merge_d2d(arg, context).get_data());
-            else
-                return ygg::Data<GroundFunctionExpression>(merge_d2d(arg, context).first.get_index());
+                return ygg::Data<FunctionExpression<T>>(merge_d2d(arg, context).first.get_index());
         },
         element.get_variant());
     return ygg::make_view(data, context.destination);
@@ -377,10 +339,10 @@ BooleanOperatorView<T> merge_d2d(BooleanOperatorView<T> element, MergeContext& c
     return ygg::make_view(data, context.destination);
 }
 
-template<FactKind T>
-std::pair<NumericEffectView<T>, bool> merge_d2d(NumericEffectView<T> element, MergeContext& context)
+template<::tyr::TaskKind T, FactKind F>
+std::pair<NumericEffectView<T, F>, bool> merge_d2d(NumericEffectView<T, F> element, MergeContext& context)
 {
-    auto numeric_effect = ::tyr::formalism::datalog::checkout<NumericEffect<T>>(context.builder);
+    auto numeric_effect = ::tyr::formalism::datalog::checkout<NumericEffect<T, F>>(context.builder);
 
     numeric_effect->operator_kind = element.get_operator();
     numeric_effect->fterm = merge_d2d(element.get_fterm(), context).first.get_index();
@@ -389,38 +351,17 @@ std::pair<NumericEffectView<T>, bool> merge_d2d(NumericEffectView<T> element, Me
     return ::tyr::formalism::datalog::get_or_create(context.destination, *numeric_effect);
 }
 
-template<FactKind T>
-NumericEffectOperatorView<T> merge_d2d(NumericEffectOperatorView<T> element, MergeContext& context)
+template<::tyr::TaskKind T, FactKind F>
+NumericEffectOperatorView<T, F> merge_d2d(NumericEffectOperatorView<T, F> element, MergeContext& context)
 {
-    const auto data = visit([&](auto&& arg) { return ygg::Data<NumericEffectOperator<T>>(arg.get_operator(), merge_d2d(arg, context).first.get_index()); },
+    const auto data = visit([&](auto&& arg) { return ygg::Data<NumericEffectOperator<T, F>>(arg.get_operator(), merge_d2d(arg, context).first.get_index()); },
                             element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
-template<FactKind T>
-std::pair<GroundNumericEffectView<T>, bool> merge_d2d(GroundNumericEffectView<T> element, MergeContext& context)
+inline std::pair<ConjunctiveConditionView<::tyr::LiftedTag>, bool> merge_d2d(ConjunctiveConditionView<::tyr::LiftedTag> element, MergeContext& context)
 {
-    auto numeric_effect = ::tyr::formalism::datalog::checkout<GroundNumericEffect<T>>(context.builder);
-
-    numeric_effect->operator_kind = element.get_operator();
-    numeric_effect->fterm = merge_d2d(element.get_fterm(), context).first.get_index();
-    numeric_effect->fexpr = merge_d2d(element.get_fexpr(), context).get_data();
-
-    return ::tyr::formalism::datalog::get_or_create(context.destination, *numeric_effect);
-}
-
-template<FactKind T>
-GroundNumericEffectOperatorView<T> merge_d2d(GroundNumericEffectOperatorView<T> element, MergeContext& context)
-{
-    const auto data =
-        visit([&](auto&& arg) { return ygg::Data<GroundNumericEffectOperator<T>>(arg.get_operator(), merge_d2d(arg, context).first.get_index()); },
-              element.get_variant());
-    return ygg::make_view(data, context.destination);
-}
-
-inline std::pair<ConjunctiveConditionView, bool> merge_d2d(ConjunctiveConditionView element, MergeContext& context)
-{
-    auto conj_cond = ::tyr::formalism::datalog::checkout<ConjunctiveCondition>(context.builder);
+    auto conj_cond = ::tyr::formalism::datalog::checkout<ConjunctiveCondition<::tyr::LiftedTag>>(context.builder);
 
     for (const auto variable : element.get_variables())
         conj_cond->variables.push_back(merge_d2d(variable, context).first.get_index());
@@ -434,9 +375,9 @@ inline std::pair<ConjunctiveConditionView, bool> merge_d2d(ConjunctiveConditionV
     return ::tyr::formalism::datalog::get_or_create(context.destination, *conj_cond);
 }
 
-inline std::pair<GroundConjunctiveConditionView, bool> merge_d2d(GroundConjunctiveConditionView element, MergeContext& context)
+inline std::pair<ConjunctiveConditionView<::tyr::GroundTag>, bool> merge_d2d(ConjunctiveConditionView<::tyr::GroundTag> element, MergeContext& context)
 {
-    auto conj_cond = ::tyr::formalism::datalog::checkout<GroundConjunctiveCondition>(context.builder);
+    auto conj_cond = ::tyr::formalism::datalog::checkout<ConjunctiveCondition<::tyr::GroundTag>>(context.builder);
 
     for (const auto literal : element.template get_literals<StaticTag>())
         conj_cond->static_literals.push_back(merge_d2d(literal, context).first.get_index());
@@ -457,14 +398,22 @@ inline std::pair<MetricView, bool> merge_d2d(MetricView element, MergeContext& c
     return ::tyr::formalism::datalog::get_or_create(context.destination, *metric);
 }
 
-inline auto merge_rule_head(AtomView<FluentTag> head, MergeContext& context) { return merge_d2d(head, context).first.get_index(); }
+template<::tyr::TaskKind T>
+auto merge_rule_head(AtomView<T, FluentTag> head, MergeContext& context)
+{
+    return merge_d2d(head, context).first.get_index();
+}
 
-inline auto merge_rule_head(NumericEffectOperatorView<FluentTag> head, MergeContext& context) { return merge_d2d(head, context).get_data(); }
+template<::tyr::TaskKind T>
+auto merge_rule_head(NumericEffectOperatorView<T, FluentTag> head, MergeContext& context)
+{
+    return merge_d2d(head, context).get_data();
+}
 
 template<RelationKind R>
-std::pair<RuleView<R>, bool> merge_d2d(RuleView<R> element, MergeContext& context)
+std::pair<RuleView<::tyr::LiftedTag, R>, bool> merge_d2d(RuleView<::tyr::LiftedTag, R> element, MergeContext& context)
 {
-    auto rule = ::tyr::formalism::datalog::checkout<Rule<R>>(context.builder);
+    auto rule = ::tyr::formalism::datalog::checkout<Rule<::tyr::LiftedTag, R>>(context.builder);
 
     for (const auto variable : element.get_variables())
         rule->variables.push_back(merge_d2d(variable, context).first.get_index());
@@ -479,7 +428,7 @@ std::pair<RuleView<R>, bool> merge_d2d(RuleView<R> element, MergeContext& contex
 template<RelationKind R>
 std::pair<RuleBindingView<R>, bool> merge_d2d(RuleBindingView<R> element, MergeContext& context)
 {
-    auto binding = ::tyr::formalism::datalog::checkout<RelationBinding<Rule<R>>>(context.builder);
+    auto binding = ::tyr::formalism::datalog::checkout<RelationBinding<Rule<::tyr::LiftedTag, R>>>(context.builder);
 
     binding->relation = merge_d2d(element.get_relation(), context).first.get_index();
     for (const auto object : element.get_objects())
@@ -488,18 +437,14 @@ std::pair<RuleBindingView<R>, bool> merge_d2d(RuleBindingView<R> element, MergeC
     return ::tyr::formalism::datalog::get_or_create(context.destination, *binding);
 }
 
-inline auto merge_ground_rule_head(GroundAtomView<FluentTag> head, MergeContext& context) { return merge_d2d(head, context).first.get_index(); }
-
-inline auto merge_ground_rule_head(GroundNumericEffectOperatorView<FluentTag> head, MergeContext& context) { return merge_d2d(head, context).get_data(); }
-
 template<RelationKind R>
-std::pair<GroundRuleView<R>, bool> merge_d2d(GroundRuleView<R> element, MergeContext& context)
+std::pair<RuleView<::tyr::GroundTag, R>, bool> merge_d2d(RuleView<::tyr::GroundTag, R> element, MergeContext& context)
 {
-    auto rule = ::tyr::formalism::datalog::checkout<GroundRule<R>>(context.builder);
+    auto rule = ::tyr::formalism::datalog::checkout<Rule<::tyr::GroundTag, R>>(context.builder);
 
     rule->binding = merge_d2d(element.get_row(), context).first.get_index();
     rule->body = merge_d2d(element.get_body(), context).first.get_index();
-    rule->head = merge_ground_rule_head(element.get_head(), context);
+    rule->head = merge_rule_head(element.get_head(), context);
     for (const auto metric_effect : element.get_metric_effects())
         rule->metric_effects.push_back(merge_d2d(metric_effect, context).get_data());
 
@@ -515,74 +460,84 @@ namespace tyr::formalism::datalog
 extern template std::pair<PredicateView<StaticTag>, bool> merge_d2d(PredicateView<StaticTag> element, MergeContext& context);
 extern template std::pair<PredicateView<FluentTag>, bool> merge_d2d(PredicateView<FluentTag> element, MergeContext& context);
 
-extern template std::pair<AtomView<StaticTag>, bool> merge_d2d(AtomView<StaticTag> element, MergeContext& context);
-extern template std::pair<AtomView<FluentTag>, bool> merge_d2d(AtomView<FluentTag> element, MergeContext& context);
+extern template std::pair<AtomView<::tyr::LiftedTag, StaticTag>, bool> merge_d2d(AtomView<::tyr::LiftedTag, StaticTag> element, MergeContext& context);
+extern template std::pair<AtomView<::tyr::LiftedTag, FluentTag>, bool> merge_d2d(AtomView<::tyr::LiftedTag, FluentTag> element, MergeContext& context);
 
 extern template std::pair<PredicateBindingView<StaticTag>, bool> merge_d2d(PredicateBindingView<StaticTag> element, MergeContext& context);
 extern template std::pair<PredicateBindingView<FluentTag>, bool> merge_d2d(PredicateBindingView<FluentTag> element, MergeContext& context);
 
-extern template std::pair<GroundAtomView<StaticTag>, bool> merge_d2d(GroundAtomView<StaticTag> element, MergeContext& context);
-extern template std::pair<GroundAtomView<FluentTag>, bool> merge_d2d(GroundAtomView<FluentTag> element, MergeContext& context);
+extern template std::pair<AtomView<::tyr::GroundTag, StaticTag>, bool> merge_d2d(AtomView<::tyr::GroundTag, StaticTag> element, MergeContext& context);
+extern template std::pair<AtomView<::tyr::GroundTag, FluentTag>, bool> merge_d2d(AtomView<::tyr::GroundTag, FluentTag> element, MergeContext& context);
 
-extern template std::pair<LiteralView<StaticTag>, bool> merge_d2d(LiteralView<StaticTag> element, MergeContext& context);
-extern template std::pair<LiteralView<FluentTag>, bool> merge_d2d(LiteralView<FluentTag> element, MergeContext& context);
+extern template std::pair<LiteralView<::tyr::LiftedTag, StaticTag>, bool> merge_d2d(LiteralView<::tyr::LiftedTag, StaticTag> element, MergeContext& context);
+extern template std::pair<LiteralView<::tyr::LiftedTag, FluentTag>, bool> merge_d2d(LiteralView<::tyr::LiftedTag, FluentTag> element, MergeContext& context);
 
-extern template std::pair<GroundLiteralView<StaticTag>, bool> merge_d2d(GroundLiteralView<StaticTag> element, MergeContext& context);
-extern template std::pair<GroundLiteralView<FluentTag>, bool> merge_d2d(GroundLiteralView<FluentTag> element, MergeContext& context);
+extern template std::pair<LiteralView<::tyr::GroundTag, StaticTag>, bool> merge_d2d(LiteralView<::tyr::GroundTag, StaticTag> element, MergeContext& context);
+extern template std::pair<LiteralView<::tyr::GroundTag, FluentTag>, bool> merge_d2d(LiteralView<::tyr::GroundTag, FluentTag> element, MergeContext& context);
 
 extern template std::pair<FunctionView<StaticTag>, bool> merge_d2d(FunctionView<StaticTag> element, MergeContext& context);
 extern template std::pair<FunctionView<FluentTag>, bool> merge_d2d(FunctionView<FluentTag> element, MergeContext& context);
 
-extern template std::pair<FunctionTermView<StaticTag>, bool> merge_d2d(FunctionTermView<StaticTag> element, MergeContext& context);
-extern template std::pair<FunctionTermView<FluentTag>, bool> merge_d2d(FunctionTermView<FluentTag> element, MergeContext& context);
+extern template std::pair<FunctionTermView<::tyr::LiftedTag, StaticTag>, bool> merge_d2d(FunctionTermView<::tyr::LiftedTag, StaticTag> element,
+                                                                                         MergeContext& context);
+extern template std::pair<FunctionTermView<::tyr::LiftedTag, FluentTag>, bool> merge_d2d(FunctionTermView<::tyr::LiftedTag, FluentTag> element,
+                                                                                         MergeContext& context);
 
 extern template std::pair<FunctionBindingView<StaticTag>, bool> merge_d2d(FunctionBindingView<StaticTag> element, MergeContext& context);
 extern template std::pair<FunctionBindingView<FluentTag>, bool> merge_d2d(FunctionBindingView<FluentTag> element, MergeContext& context);
 
-extern template std::pair<GroundFunctionTermView<StaticTag>, bool> merge_d2d(GroundFunctionTermView<StaticTag> element, MergeContext& context);
-extern template std::pair<GroundFunctionTermView<FluentTag>, bool> merge_d2d(GroundFunctionTermView<FluentTag> element, MergeContext& context);
+extern template std::pair<FunctionTermView<::tyr::GroundTag, StaticTag>, bool> merge_d2d(FunctionTermView<::tyr::GroundTag, StaticTag> element,
+                                                                                         MergeContext& context);
+extern template std::pair<FunctionTermView<::tyr::GroundTag, FluentTag>, bool> merge_d2d(FunctionTermView<::tyr::GroundTag, FluentTag> element,
+                                                                                         MergeContext& context);
 
-extern template std::pair<GroundFunctionTermValueView<StaticTag>, bool> merge_d2d(GroundFunctionTermValueView<StaticTag> element, MergeContext& context);
-extern template std::pair<GroundFunctionTermValueView<FluentTag>, bool> merge_d2d(GroundFunctionTermValueView<FluentTag> element, MergeContext& context);
+extern template std::pair<FunctionTermValueView<::tyr::GroundTag, StaticTag>, bool> merge_d2d(FunctionTermValueView<::tyr::GroundTag, StaticTag> element,
+                                                                                              MergeContext& context);
+extern template std::pair<FunctionTermValueView<::tyr::GroundTag, FluentTag>, bool> merge_d2d(FunctionTermValueView<::tyr::GroundTag, FluentTag> element,
+                                                                                              MergeContext& context);
 
-extern template std::pair<UnaryOperatorView<ygg::Data<FunctionExpression>>, bool> merge_d2d(UnaryOperatorView<ygg::Data<FunctionExpression>> element,
-                                                                                            MergeContext& context);
-extern template std::pair<UnaryOperatorView<ygg::Data<GroundFunctionExpression>>, bool>
-merge_d2d(UnaryOperatorView<ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
+extern template std::pair<UnaryOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>, bool>
+merge_d2d(UnaryOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>> element, MergeContext& context);
+extern template std::pair<UnaryOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>>, bool>
+merge_d2d(UnaryOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>> element, MergeContext& context);
 
-extern template std::pair<BinaryOperatorView<BooleanOperatorKind, ygg::Data<FunctionExpression>>, bool>
-merge_d2d(BinaryOperatorView<BooleanOperatorKind, ygg::Data<FunctionExpression>> element, MergeContext& context);
-extern template std::pair<BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<FunctionExpression>>, bool>
-merge_d2d(BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<FunctionExpression>> element, MergeContext& context);
-extern template std::pair<BinaryOperatorView<BooleanOperatorKind, ygg::Data<GroundFunctionExpression>>, bool>
-merge_d2d(BinaryOperatorView<BooleanOperatorKind, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
-extern template std::pair<BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<GroundFunctionExpression>>, bool>
-merge_d2d(BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
+extern template std::pair<BinaryOperatorView<BooleanOperatorKind, ygg::Data<FunctionExpression<::tyr::LiftedTag>>>, bool>
+merge_d2d(BinaryOperatorView<BooleanOperatorKind, ygg::Data<FunctionExpression<::tyr::LiftedTag>>> element, MergeContext& context);
+extern template std::pair<BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<FunctionExpression<::tyr::LiftedTag>>>, bool>
+merge_d2d(BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<FunctionExpression<::tyr::LiftedTag>>> element, MergeContext& context);
+extern template std::pair<BinaryOperatorView<BooleanOperatorKind, ygg::Data<FunctionExpression<::tyr::GroundTag>>>, bool>
+merge_d2d(BinaryOperatorView<BooleanOperatorKind, ygg::Data<FunctionExpression<::tyr::GroundTag>>> element, MergeContext& context);
+extern template std::pair<BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<FunctionExpression<::tyr::GroundTag>>>, bool>
+merge_d2d(BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<FunctionExpression<::tyr::GroundTag>>> element, MergeContext& context);
 
-extern template std::pair<MultiOperatorView<ygg::Data<FunctionExpression>>, bool> merge_d2d(MultiOperatorView<ygg::Data<FunctionExpression>> element,
-                                                                                            MergeContext& context);
-extern template std::pair<MultiOperatorView<ygg::Data<GroundFunctionExpression>>, bool>
-merge_d2d(MultiOperatorView<ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
+extern template std::pair<MultiOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>, bool>
+merge_d2d(MultiOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>> element, MergeContext& context);
+extern template std::pair<MultiOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>>, bool>
+merge_d2d(MultiOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>> element, MergeContext& context);
 
-extern template ArithmeticOperatorView<ygg::Data<FunctionExpression>> merge_d2d(ArithmeticOperatorView<ygg::Data<FunctionExpression>> element,
-                                                                                MergeContext& context);
-extern template ArithmeticOperatorView<ygg::Data<GroundFunctionExpression>> merge_d2d(ArithmeticOperatorView<ygg::Data<GroundFunctionExpression>> element,
-                                                                                      MergeContext& context);
+extern template ArithmeticOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>
+merge_d2d(ArithmeticOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>> element, MergeContext& context);
+extern template ArithmeticOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>>
+merge_d2d(ArithmeticOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>> element, MergeContext& context);
 
-extern template std::pair<NumericEffectView<FluentTag>, bool> merge_d2d(NumericEffectView<FluentTag> element, MergeContext& context);
-extern template NumericEffectOperatorView<FluentTag> merge_d2d(NumericEffectOperatorView<FluentTag> element, MergeContext& context);
+extern template std::pair<NumericEffectView<::tyr::LiftedTag, FluentTag>, bool> merge_d2d(NumericEffectView<::tyr::LiftedTag, FluentTag> element,
+                                                                                          MergeContext& context);
+extern template NumericEffectOperatorView<::tyr::LiftedTag, FluentTag> merge_d2d(NumericEffectOperatorView<::tyr::LiftedTag, FluentTag> element,
+                                                                                 MergeContext& context);
 
-extern template std::pair<GroundNumericEffectView<FluentTag>, bool> merge_d2d(GroundNumericEffectView<FluentTag> element, MergeContext& context);
-extern template GroundNumericEffectOperatorView<FluentTag> merge_d2d(GroundNumericEffectOperatorView<FluentTag> element, MergeContext& context);
+extern template std::pair<NumericEffectView<::tyr::GroundTag, FluentTag>, bool> merge_d2d(NumericEffectView<::tyr::GroundTag, FluentTag> element,
+                                                                                          MergeContext& context);
+extern template NumericEffectOperatorView<::tyr::GroundTag, FluentTag> merge_d2d(NumericEffectOperatorView<::tyr::GroundTag, FluentTag> element,
+                                                                                 MergeContext& context);
 
-extern template std::pair<RuleView<PredicateTag>, bool> merge_d2d(RuleView<PredicateTag> element, MergeContext& context);
-extern template std::pair<RuleView<FunctionTag>, bool> merge_d2d(RuleView<FunctionTag> element, MergeContext& context);
+extern template std::pair<RuleView<::tyr::LiftedTag, PredicateTag>, bool> merge_d2d(RuleView<::tyr::LiftedTag, PredicateTag> element, MergeContext& context);
+extern template std::pair<RuleView<::tyr::LiftedTag, FunctionTag>, bool> merge_d2d(RuleView<::tyr::LiftedTag, FunctionTag> element, MergeContext& context);
 
 extern template std::pair<RuleBindingView<PredicateTag>, bool> merge_d2d(RuleBindingView<PredicateTag> element, MergeContext& context);
 extern template std::pair<RuleBindingView<FunctionTag>, bool> merge_d2d(RuleBindingView<FunctionTag> element, MergeContext& context);
 
-extern template std::pair<GroundRuleView<PredicateTag>, bool> merge_d2d(GroundRuleView<PredicateTag> element, MergeContext& context);
-extern template std::pair<GroundRuleView<FunctionTag>, bool> merge_d2d(GroundRuleView<FunctionTag> element, MergeContext& context);
+extern template std::pair<RuleView<::tyr::GroundTag, PredicateTag>, bool> merge_d2d(RuleView<::tyr::GroundTag, PredicateTag> element, MergeContext& context);
+extern template std::pair<RuleView<::tyr::GroundTag, FunctionTag>, bool> merge_d2d(RuleView<::tyr::GroundTag, FunctionTag> element, MergeContext& context);
 }
 
 #endif

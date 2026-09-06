@@ -25,32 +25,6 @@ namespace tyr
  * Views
  */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 
 #endif

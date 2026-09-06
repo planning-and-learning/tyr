@@ -53,12 +53,12 @@ void GroundStateBuilder::set(ygg::Data<fp::FDRFact<f::FluentTag>> fact)
     m_fact_storage.values[ygg::uint_t(fact.variable)] = ygg::uint_t(fact.value);
 }
 
-ygg::float_t GroundStateBuilder::get(ygg::Index<fp::GroundFunctionTerm<f::FluentTag>> index) const
+ygg::float_t GroundStateBuilder::get(ygg::Index<fp::FunctionTerm<::tyr::GroundTag, f::FluentTag>> index) const
 {
     return ygg::get(ygg::uint_t(index), m_numeric_storage.values, std::numeric_limits<ygg::float_t>::quiet_NaN());
 }
 
-void GroundStateBuilder::set(ygg::Index<fp::GroundFunctionTerm<f::FluentTag>> index, ygg::float_t value)
+void GroundStateBuilder::set(ygg::Index<fp::FunctionTerm<::tyr::GroundTag, f::FluentTag>> index, ygg::float_t value)
 {
     ygg::set(ygg::uint_t(index),
              ygg::FloatTolerance<ygg::float_t>::canonicalize(value),
@@ -66,25 +66,25 @@ void GroundStateBuilder::set(ygg::Index<fp::GroundFunctionTerm<f::FluentTag>> in
              std::numeric_limits<ygg::float_t>::quiet_NaN());
 }
 
-ygg::float_t GroundStateBuilder::get(fp::GroundFunctionTermView<f::FluentTag> view) const { return get(view.get_index()); }
+ygg::float_t GroundStateBuilder::get(fp::FunctionTermView<::tyr::GroundTag, f::FluentTag> view) const { return get(view.get_index()); }
 
-void GroundStateBuilder::set(fp::GroundFunctionTermView<f::FluentTag> view, ygg::float_t value) { set(view.get_index(), value); }
+void GroundStateBuilder::set(fp::FunctionTermView<::tyr::GroundTag, f::FluentTag> view, ygg::float_t value) { set(view.get_index(), value); }
 
-bool GroundStateBuilder::test(ygg::Index<fp::GroundAtom<f::DerivedTag>> index) const
+bool GroundStateBuilder::test(ygg::Index<fp::Atom<::tyr::GroundTag, f::DerivedTag>> index) const
 {
     assert(ygg::uint_t(index) < m_atom_storage.indices.size());
     return m_atom_storage.indices.test(ygg::uint_t(index));
 }
 
-void GroundStateBuilder::set(ygg::Index<fp::GroundAtom<f::DerivedTag>> index)
+void GroundStateBuilder::set(ygg::Index<fp::Atom<::tyr::GroundTag, f::DerivedTag>> index)
 {
     assert(ygg::uint_t(index) < m_atom_storage.indices.size());
     m_atom_storage.indices.set(ygg::uint_t(index));
 }
 
-bool GroundStateBuilder::test(fp::GroundAtomView<f::DerivedTag> view) const { return test(view.get_index()); }
+bool GroundStateBuilder::test(fp::AtomView<::tyr::GroundTag, f::DerivedTag> view) const { return test(view.get_index()); }
 
-void GroundStateBuilder::set(fp::GroundAtomView<f::DerivedTag> view) { set(view.get_index()); }
+void GroundStateBuilder::set(fp::AtomView<::tyr::GroundTag, f::DerivedTag> view) { set(view.get_index()); }
 
 void GroundStateBuilder::clear()
 {

@@ -36,10 +36,10 @@ static_assert(UnaryOperatorContract<Lifted>);
 static_assert(UnaryOperatorContract<Ground>);
 static_assert(std::same_as<ygg::View<ygg::Index<Lifted>, fp::Repository>, fp::LiftedUnaryOperatorView>);
 static_assert(std::same_as<ygg::View<ygg::Index<Ground>, fp::Repository>, fp::GroundUnaryOperatorView>);
-static_assert(std::constructible_from<ygg::Data<Lifted>, f::ArithmeticOperatorKind, fp::FunctionExpressionView>);
-static_assert(std::constructible_from<ygg::Data<Ground>, f::ArithmeticOperatorKind, fp::GroundFunctionExpressionView>);
+static_assert(std::constructible_from<ygg::Data<Lifted>, f::ArithmeticOperatorKind, fp::FunctionExpressionView<::tyr::LiftedTag>>);
+static_assert(std::constructible_from<ygg::Data<Ground>, f::ArithmeticOperatorKind, fp::FunctionExpressionView<::tyr::GroundTag>>);
 
 TEST(TyrFormalismPlanningUnaryOperator, RejectsNonUnaryOperator)
 {
-    EXPECT_THROW((ygg::Data<Lifted>(f::ArithmeticOperatorKind::Add, ygg::Data<fp::FunctionExpression>(ygg::float_t(0)))), std::invalid_argument);
+    EXPECT_THROW((ygg::Data<Lifted>(f::ArithmeticOperatorKind::Add, ygg::Data<fp::FunctionExpression<::tyr::LiftedTag>>(ygg::float_t(0)))), std::invalid_argument);
 }

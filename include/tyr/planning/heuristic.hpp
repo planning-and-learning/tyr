@@ -48,7 +48,7 @@ class Heuristic
 public:
     virtual ~Heuristic() = default;
 
-    virtual void set_goal(::tyr::formalism::planning::GroundConjunctiveConditionView goal) = 0;
+    virtual void set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal) = 0;
 
     ygg::float_t evaluate(const StateView<Kind>& state);
     virtual ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state) = 0;

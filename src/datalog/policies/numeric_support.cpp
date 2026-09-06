@@ -30,9 +30,9 @@ NumericSupportSelector::NumericSupportSelector(const FactSets& fact_sets, const 
 {
 }
 
-NumericSupportSelector::Key NumericSupportSelector::fluent_key(fd::GroundFunctionTermView<f::FluentTag> term) const noexcept { return term.get_row(); }
+NumericSupportSelector::Key NumericSupportSelector::fluent_key(fd::FunctionTermView<::tyr::GroundTag, f::FluentTag> term) const noexcept { return term.get_row(); }
 
-ygg::ClosedInterval<ygg::float_t> NumericSupportSelector::lookup_static(fd::GroundFunctionTermView<f::StaticTag> term) const
+ygg::ClosedInterval<ygg::float_t> NumericSupportSelector::lookup_static(fd::FunctionTermView<::tyr::GroundTag, f::StaticTag> term) const
 {
     return m_fact_sets.static_sets.function[term];
 }

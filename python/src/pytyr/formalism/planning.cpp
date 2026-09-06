@@ -74,14 +74,13 @@ void bind_module_definitions(nb::module_& m)
 
     nb::class_<RepositoryFactory>(m, "RepositoryFactory")  //
         .def(nb::new_([]() { return std::make_shared<RepositoryFactory>(); }))
-        .def("create_repository",
-             [](RepositoryFactory& factory, const Repository* parent_repository, std::optional<std::size_t> num_objects)
-             {
-                 return num_objects ? factory.create_shared(*num_objects, parent_repository) : factory.create_shared(parent_repository);
-             },
-             "parent_repository"_a = nullptr,
-             "num_objects"_a = nb::none(),
-             nb::keep_alive<0, 2>());
+        .def(
+            "create_repository",
+            [](RepositoryFactory& factory, const Repository* parent_repository, std::optional<std::size_t> num_objects)
+            { return num_objects ? factory.create_shared(*num_objects, parent_repository) : factory.create_shared(parent_repository); },
+            "parent_repository"_a = nullptr,
+            "num_objects"_a = nb::none(),
+            nb::keep_alive<0, 2>());
 
     /**
      * FDRContext
@@ -89,11 +88,11 @@ void bind_module_definitions(nb::module_& m)
 
     nb::class_<FDRContext>(m, "FDRContext")  //
         .def(nb::new_([](RepositoryPtr repository) { return std::make_shared<FDRContext>(std::move(repository)); }), "repository"_a)
-        .def(nb::new_([](const std::vector<std::vector<GroundAtomView<FluentTag>>>& ground_mutex_groups, RepositoryPtr repository)
+        .def(nb::new_([](const std::vector<std::vector<AtomView<::tyr::GroundTag, FluentTag>>>& ground_mutex_groups, RepositoryPtr repository)
                       { return std::make_shared<FDRContext>(ground_mutex_groups, std::move(repository)); }),
              "ground_mutex_groups"_a,
              "repository"_a)
-        .def("get_fact", nb::overload_cast<GroundAtomView<FluentTag>>(&FDRContext::get_fact), "atom"_a, nb::keep_alive<0, 1>())
+        .def("get_fact", nb::overload_cast<AtomView<::tyr::GroundTag, FluentTag>>(&FDRContext::get_fact), "atom"_a, nb::keep_alive<0, 1>())
         .def("get_variables", &FDRContext::get_variables);
 
     /**

@@ -25,31 +25,43 @@
 namespace tyr::formalism::datalog
 {
 
+namespace
+{
+template<TaskKind T, FactKind F>
+void bind_numeric_effect_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
+{
+    using Tag = NumericEffect<T, F>;
+    ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
+
+    {
+        using V = ygg::Data<Tag>;
+        auto cls = nb::class_<V>(m, (name + "Data").c_str());
+        cls.def(nb::init<NumericEffectOperatorKind, FunctionTermView<T, F>, FunctionExpressionView<T>>(), "operator"_a, "fterm"_a, "fexpr"_a);
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+
+    {
+        using V = NumericEffectView<T, F>;
+        auto cls = nb::class_<V>(m, name.c_str());
+        cls.def("get_index", &V::get_index);
+        cls.def("get_operator", &V::get_operator);
+        cls.def("get_fterm", &V::get_fterm, nb::keep_alive<0, 1>());
+        cls.def("get_fexpr", &V::get_fexpr, nb::keep_alive<0, 1>());
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+
+    repository.def("get_or_create", &get_or_create_data<Tag>, "data"_a, nb::keep_alive<0, 1>());
+}
+}  // namespace
+
 void bind_numeric_effect(nb::module_& m, RepositoryBinding& repository)
 {
-    ygg::bind_index<ygg::Index<NumericEffect<FluentTag>>>(m, "FluentNumericEffectIndex");
-
-    {
-        using V = ygg::Data<NumericEffect<FluentTag>>;
-        auto cls = nb::class_<V>(m, "FluentNumericEffectData")
-                       .def(nb::init<NumericEffectOperatorKind, FunctionTermView<FluentTag>, FunctionExpressionView>(), "operator"_a, "fterm"_a, "fexpr"_a);
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-    {
-        using V = NumericEffectView<FluentTag>;
-        auto cls = nb::class_<V>(m, "FluentNumericEffect")
-                       .def("get_index", &V::get_index)
-                       .def("get_operator", &V::get_operator)
-                       .def("get_fterm", &V::get_fterm, nb::keep_alive<0, 1>())
-                       .def("get_fexpr", &V::get_fexpr, nb::keep_alive<0, 1>());
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-
-    repository.def("get_or_create", &get_or_create_data<NumericEffect<FluentTag>>, "data"_a, nb::keep_alive<0, 1>());
+    bind_numeric_effect_kind<LiftedTag, FluentTag>(m, repository, "FluentNumericEffect");
+    bind_numeric_effect_kind<GroundTag, FluentTag>(m, repository, "FluentGroundNumericEffect");
 }
 
 }  // namespace tyr::formalism::datalog

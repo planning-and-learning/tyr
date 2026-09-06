@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_GROUND_MATCH_TREE_NODES_ATOM_DATA_HPP_
 #define TYR_PLANNING_GROUND_MATCH_TREE_NODES_ATOM_DATA_HPP_
 
-#include "tyr/formalism/planning/ground_atom_index.hpp"
+#include "tyr/formalism/planning/atom_index.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/atom_index.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
@@ -34,14 +34,14 @@ template<typename Tag>
 struct Data<planning::match_tree::AtomSelectorNode<Tag>>
 {
     ygg::Index<planning::match_tree::AtomSelectorNode<Tag>> index;
-    ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> atom;
+    ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom;
     ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> true_child;
     ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> false_child;
     ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> dontcare_child;
 
     Data() = default;
     Data(ygg::Index<planning::match_tree::AtomSelectorNode<Tag>> index,
-         ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> atom,
+         ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom,
          ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> true_child,
          ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> false_child,
          ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> dontcare_child) :

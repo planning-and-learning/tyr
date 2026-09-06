@@ -33,12 +33,12 @@ static_assert(MultiOperatorContract<Lifted>);
 static_assert(MultiOperatorContract<Ground>);
 static_assert(std::same_as<ygg::View<ygg::Index<Lifted>, fd::Repository>, fd::LiftedMultiOperatorView>);
 static_assert(std::same_as<ygg::View<ygg::Index<Ground>, fd::Repository>, fd::GroundMultiOperatorView>);
-static_assert(std::constructible_from<ygg::Data<Lifted>, f::ArithmeticOperatorKind, std::vector<fd::FunctionExpressionView>>);
-static_assert(std::constructible_from<ygg::Data<Ground>, f::ArithmeticOperatorKind, std::vector<fd::GroundFunctionExpressionView>>);
+static_assert(std::constructible_from<ygg::Data<Lifted>, f::ArithmeticOperatorKind, std::vector<fd::FunctionExpressionView<::tyr::LiftedTag>>>);
+static_assert(std::constructible_from<ygg::Data<Ground>, f::ArithmeticOperatorKind, std::vector<fd::FunctionExpressionView<::tyr::GroundTag>>>);
 
 TEST(TyrFormalismDatalogMultiOperator, PreservesRepeatedOperands)
 {
-    using Expression = ygg::Data<fd::FunctionExpression>;
+    using Expression = ygg::Data<fd::FunctionExpression<::tyr::LiftedTag>>;
 
     for (const auto op : { f::ArithmeticOperatorKind::Add, f::ArithmeticOperatorKind::Mul })
     {

@@ -36,32 +36,32 @@ public:
     // Ground action API
 
     template<TaskKind Kind>
-    bool is_applicable(::tyr::formalism::planning::GroundActionView action, const StateContext<Kind>& state);
+    bool is_applicable(::tyr::formalism::planning::ActionView<::tyr::GroundTag> action, const StateContext<Kind>& state);
 
     template<TaskKind Kind>
-    bool is_applicable_if_fires(::tyr::formalism::planning::GroundActionView action, const StateContext<Kind>& state);
+    bool is_applicable_if_fires(::tyr::formalism::planning::ActionView<::tyr::GroundTag> action, const StateContext<Kind>& state);
 
     /// Applies the action into caller-owned storage without interning the successor; returns the updated auxiliary metric value.
     template<TaskKind Kind>
     ygg::float_t apply_action_unregistered(const StateContext<Kind>& state_context,
-                                           ::tyr::formalism::planning::GroundActionView action,
+                                           ::tyr::formalism::planning::ActionView<::tyr::GroundTag> action,
                                            ygg::Builder<State<Kind>>& successor_state_builder);
 
     // Lifted action API
 
-    bool is_applicable(::tyr::formalism::planning::ActionView action,
+    bool is_applicable(::tyr::formalism::planning::ActionView<::tyr::LiftedTag> action,
                        const StateContext<LiftedTag>& state_context,
                        ::tyr::formalism::planning::GrounderContext& grounder,
                        const ::tyr::formalism::planning::FDRContext& fdr);
 
-    bool is_applicable_if_fires(::tyr::formalism::planning::ActionView action,
+    bool is_applicable_if_fires(::tyr::formalism::planning::ActionView<::tyr::LiftedTag> action,
                                 const StateContext<LiftedTag>& state_context,
                                 ::tyr::formalism::planning::GrounderContext& grounder,
                                 const ::tyr::formalism::planning::FDRContext& fdr);
 
     /// Applies the action into caller-owned storage without interning the successor; returns the updated auxiliary metric value.
     ygg::float_t apply_action_unregistered(const StateContext<LiftedTag>& state_context,
-                                           ::tyr::formalism::planning::ActionView action,
+                                           ::tyr::formalism::planning::ActionView<::tyr::LiftedTag> action,
                                            ::tyr::formalism::planning::GrounderContext& grounder,
                                            ::tyr::formalism::planning::FDRContext& fdr,
                                            ygg::Builder<State<LiftedTag>>& successor_state_builder);

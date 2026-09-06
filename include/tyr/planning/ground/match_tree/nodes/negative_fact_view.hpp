@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_GROUND_MATCH_TREE_NODES_NEGATIVE_FACT_VIEW_HPP_
 #define TYR_PLANNING_GROUND_MATCH_TREE_NODES_NEGATIVE_FACT_VIEW_HPP_
 
-#include "tyr/formalism/planning/ground_atom_view.hpp"
+#include "tyr/formalism/planning/atom_view.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/negative_fact_data.hpp"
 #include "tyr/planning/ground/match_tree/nodes/negative_fact_index.hpp"

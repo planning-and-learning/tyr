@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from typing import TypedDict
 
-from pytyr.serialization.formalism.planning.fdr_variable_view import FluentFDRVariable
+from pytyr.serialization.formalism.planning import fdr_variable_view
+
+
 
 
 class FluentFDRFact(TypedDict):
-    variable: FluentFDRVariable | str
+    variable: fdr_variable_view.FluentFDRVariable | str
     value: int

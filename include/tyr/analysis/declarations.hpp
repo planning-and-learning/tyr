@@ -67,13 +67,13 @@ template<::tyr::formalism::FactKind T>
 using FunctionDomainMap = SimpleScopedDomainMap<::tyr::formalism::Function<T>>;
 
 template<::tyr::formalism::RelationKind R>
-using RuleDomainMap = ScopedDomainMap<::tyr::formalism::datalog::Rule<R>>;
+using RuleDomainMap = ScopedDomainMap<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>>;
 
-using AxiomDomainMap = ScopedDomainMap<::tyr::formalism::planning::Axiom>;
+using AxiomDomainMap = ScopedDomainMap<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>;
 
-using ConjunctiveConditionDomain = SimpleScopedDomain<::tyr::formalism::planning::ConjunctiveCondition>;
+using ConjunctiveConditionDomain = SimpleScopedDomain<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>;
 
-using ConjunctiveEffectDomain = SimpleScopedDomain<::tyr::formalism::planning::ConjunctiveEffect>;
+using ConjunctiveEffectDomain = SimpleScopedDomain<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>;
 
 struct ConditionalEffectDomainData
 {
@@ -83,9 +83,9 @@ struct ConditionalEffectDomainData
     std::vector<std::vector<kckp::Vertex>> object_to_vertex;
 };
 
-using ConditionalEffectDomain = Scoped<::tyr::formalism::planning::ConditionalEffect, ConditionalEffectDomainData>;
+using ConditionalEffectDomain = Scoped<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>, ConditionalEffectDomainData>;
 
-using ConditionalEffectDomainMap = ygg::UnorderedMap<ygg::Index<::tyr::formalism::planning::ConditionalEffect>, ConditionalEffectDomain>;
+using ConditionalEffectDomainMap = ygg::UnorderedMap<ygg::Index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>, ConditionalEffectDomain>;
 
 struct CompatibilityWorkspace
 {
@@ -99,9 +99,9 @@ struct ActionDomainData
     ConditionalEffectDomainMap effect_domains;
 };
 
-using ActionDomain = Scoped<::tyr::formalism::planning::Action, ActionDomainData>;
+using ActionDomain = Scoped<::tyr::formalism::planning::Action<::tyr::LiftedTag>, ActionDomainData>;
 
-using ActionDomainMap = ygg::UnorderedMap<ygg::Index<::tyr::formalism::planning::Action>, ActionDomain>;
+using ActionDomainMap = ygg::UnorderedMap<ygg::Index<::tyr::formalism::planning::Action<::tyr::LiftedTag>>, ActionDomain>;
 
 struct ProgramVariableDomains
 {
@@ -193,16 +193,16 @@ template<::tyr::formalism::FactKind T, typename C>
 using FunctionDomainViewMap = SimpleScopedDomainViewMap<::tyr::formalism::Function<T>, C>;
 
 template<::tyr::formalism::RelationKind R, typename C>
-using RuleDomainViewMap = ScopedDomainViewMap<::tyr::formalism::datalog::Rule<R>, C>;
+using RuleDomainViewMap = ScopedDomainViewMap<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>, C>;
 
 template<typename C>
-using AxiomDomainViewMap = ScopedDomainViewMap<::tyr::formalism::planning::Axiom, C>;
+using AxiomDomainViewMap = ScopedDomainViewMap<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>, C>;
 
 template<typename C>
-using ConjunctiveConditionDomainView = SimpleScopedDomainView<::tyr::formalism::planning::ConjunctiveCondition, C>;
+using ConjunctiveConditionDomainView = SimpleScopedDomainView<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>, C>;
 
 template<typename C>
-using ConjunctiveEffectDomainView = SimpleScopedDomainView<::tyr::formalism::planning::ConjunctiveEffect, C>;
+using ConjunctiveEffectDomainView = SimpleScopedDomainView<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>, C>;
 
 template<typename C>
 struct ConditionalEffectDomainViewData
@@ -212,11 +212,11 @@ struct ConditionalEffectDomainViewData
 };
 
 template<typename C>
-using ConditionalEffectDomainView = ScopedView<::tyr::formalism::planning::ConditionalEffect, ConditionalEffectDomainViewData<C>, C>;
+using ConditionalEffectDomainView = ScopedView<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>, ConditionalEffectDomainViewData<C>, C>;
 
 template<typename C>
 using ConditionalEffectDomainViewMap =
-    ygg::UnorderedMap<ygg::View<ygg::Index<::tyr::formalism::planning::ConditionalEffect>, C>, ConditionalEffectDomainView<C>>;
+    ygg::UnorderedMap<ygg::View<ygg::Index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>, C>, ConditionalEffectDomainView<C>>;
 
 template<typename C>
 struct ActionDomainViewData
@@ -226,10 +226,10 @@ struct ActionDomainViewData
 };
 
 template<typename C>
-using ActionDomainView = ScopedView<::tyr::formalism::planning::Action, ActionDomainViewData<C>, C>;
+using ActionDomainView = ScopedView<::tyr::formalism::planning::Action<::tyr::LiftedTag>, ActionDomainViewData<C>, C>;
 
 template<typename C>
-using ActionDomainViewMap = ygg::UnorderedMap<ygg::View<ygg::Index<::tyr::formalism::planning::Action>, C>, ActionDomainView<C>>;
+using ActionDomainViewMap = ygg::UnorderedMap<ygg::View<ygg::Index<::tyr::formalism::planning::Action<::tyr::LiftedTag>>, C>, ActionDomainView<C>>;
 
 struct ProgramVariableDomainsView
 {

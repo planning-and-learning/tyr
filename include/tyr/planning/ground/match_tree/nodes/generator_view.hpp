@@ -18,8 +18,8 @@
 #ifndef TYR_PLANNING_GROUND_MATCH_TREE_NODES_GENERATOR_VIEW_HPP_
 #define TYR_PLANNING_GROUND_MATCH_TREE_NODES_GENERATOR_VIEW_HPP_
 
-#include "tyr/formalism/planning/ground_action_view.hpp"
-#include "tyr/formalism/planning/ground_axiom_view.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/generator_data.hpp"
 #include "tyr/planning/ground/match_tree/nodes/generator_index.hpp"

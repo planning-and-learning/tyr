@@ -68,13 +68,11 @@ struct Data<::tyr::formalism::datalog::ArithmeticOperator<T>>
     }
 
     auto cista_members() const noexcept { return std::tie(operator_kind, value); }
-    auto identifying_members() const noexcept
-    {
-        return std::tuple<std::size_t, const OperatorType&, const Variant&>(value.index(), operator_kind, value);
-    }
+    auto identifying_members() const noexcept { return std::tuple<std::size_t, const OperatorType&, const Variant&>(value.index(), operator_kind, value); }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::ArithmeticOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression>>>);
+static_assert(
+    !ygg::uses_trivial_storage_v<::tyr::formalism::datalog::ArithmeticOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>>>);
 
 }
 

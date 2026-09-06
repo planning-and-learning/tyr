@@ -49,11 +49,11 @@ public:
 
     const auto& get_static_atoms_bitset() const noexcept { return m_static_atoms_bitset; }
     const auto& get_static_numeric_variables() const noexcept { return m_static_numeric_variables; }
-    bool test(ygg::Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::StaticTag>> index) const
+    bool test(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
     {
         return ygg::test(ygg::uint_t(index), m_static_atoms_bitset);
     }
-    ygg::float_t get(ygg::Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::StaticTag>> index) const noexcept
+    ygg::float_t get(ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const noexcept
     {
         return ygg::get(ygg::uint_t(index), m_static_numeric_variables, std::numeric_limits<ygg::float_t>::quiet_NaN());
     }

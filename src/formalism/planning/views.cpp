@@ -29,30 +29,15 @@ namespace tyr
 
 // FactKind-dependent index views
 
-
-
-
-
-
-
-
-
-
 // Operator index views: lifted
-
-
 
 // Operator index views: grounded
 
-
-
 // Numeric effect index views
-
 
 // ygg::Data views
 
 // Pair views
-
 
 }
 

@@ -123,14 +123,14 @@ void expect_state_routing(const p::TaskPtr<Kind>& task)
 
     auto derived_only_difference = repository->get_state_builder();
     derived_only_difference->assign_unextended_part(initial.get_state().get_state_builder());
-    derived_only_difference->set(ygg::Index<fp::GroundAtom<f::DerivedTag>>(0));
+    derived_only_difference->set(ygg::Index<fp::Atom<::tyr::GroundTag, f::DerivedTag>>(0));
     EXPECT_EQ(dist_hash.hash(*derived_only_difference), dist_hash.hash(initial.get_state().get_state_builder()));
 
     auto first_numeric = repository->get_state_builder();
     auto second_numeric = repository->get_state_builder();
     first_numeric->assign_unextended_part(initial.get_state().get_state_builder());
     second_numeric->assign_unextended_part(initial.get_state().get_state_builder());
-    const auto numeric_index = ygg::Index<fp::GroundFunctionTerm<f::FluentTag>>(0);
+    const auto numeric_index = ygg::Index<fp::FunctionTerm<::tyr::GroundTag, f::FluentTag>>(0);
     const auto first_value = ygg::float_t { 1 };
     const auto second_value = first_value + ygg::FloatTolerance<ygg::float_t>::abs_epsilon * ygg::float_t { 0.25 };
     first_numeric->set(numeric_index, first_value);
@@ -221,7 +221,7 @@ void expect_lmcut_state_routing(const p::TaskPtr<Kind>& task)
     const auto bindings = generator->get_applicable_action_bindings(initial_node);
     const auto reach_landmark = std::ranges::find_if(bindings, [](const auto binding) { return binding.get_relation().get_name().str() == "reach-landmark"; });
     ASSERT_NE(reach_landmark, bindings.end());
-    auto side = std::optional<fp::GroundAtomView<f::FluentTag>> {};
+    auto side = std::optional<fp::AtomView<::tyr::GroundTag, f::FluentTag>> {};
     for (const auto conditional_effect : generator->ground_action(*reach_landmark).get_effects())
         for (const auto fact : conditional_effect.get_effect().template get_facts<f::PositiveTag>())
             if (const auto atom = fact.get_atom(); atom && atom->get_predicate().get_name().str() == "side")

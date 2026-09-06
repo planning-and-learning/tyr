@@ -36,12 +36,9 @@ void bind_object(nb::module_& m, RepositoryBinding& repository);
 void bind_variable(nb::module_& m, RepositoryBinding& repository);
 void bind_term(nb::module_& m, RepositoryBinding& repository);
 void bind_atom(nb::module_& m, RepositoryBinding& repository);
-void bind_ground_atom(nb::module_& m, RepositoryBinding& repository);
 void bind_literal(nb::module_& m, RepositoryBinding& repository);
-void bind_ground_literal(nb::module_& m, RepositoryBinding& repository);
 void bind_function_term(nb::module_& m, RepositoryBinding& repository);
-void bind_ground_function_term(nb::module_& m, RepositoryBinding& repository);
-void bind_ground_function_term_value(nb::module_& m, RepositoryBinding& repository);
+void bind_function_term_value(nb::module_& m, RepositoryBinding& repository);
 void bind_unary_operator(nb::module_& m, RepositoryBinding& repository);
 void bind_binary_operator(nb::module_& m, RepositoryBinding& repository);
 void bind_multi_operator(nb::module_& m, RepositoryBinding& repository);
@@ -49,21 +46,13 @@ void bind_arithmetic_operator(nb::module_& m, RepositoryBinding& repository);
 void bind_boolean_operator(nb::module_& m, RepositoryBinding& repository);
 void bind_numeric_effect(nb::module_& m, RepositoryBinding& repository);
 void bind_numeric_effect_operator(nb::module_& m, RepositoryBinding& repository);
-void bind_ground_numeric_effect(nb::module_& m, RepositoryBinding& repository);
-void bind_ground_numeric_effect_operator(nb::module_& m, RepositoryBinding& repository);
 void bind_conditional_effect(nb::module_& m, RepositoryBinding& repository);
 void bind_conjunctive_condition(nb::module_& m, RepositoryBinding& repository);
 void bind_conjunctive_effect(nb::module_& m, RepositoryBinding& repository);
 void bind_function_expression(nb::module_& m, RepositoryBinding& repository);
-void bind_ground_conditional_effect(nb::module_& m, RepositoryBinding& repository);
-void bind_ground_conjunctive_condition(nb::module_& m, RepositoryBinding& repository);
-void bind_ground_conjunctive_effect(nb::module_& m, RepositoryBinding& repository);
-void bind_ground_function_expression(nb::module_& m, RepositoryBinding& repository);
 void bind_rule(nb::module_& m, RepositoryBinding& repository);
-void bind_ground_rule(nb::module_& m, RepositoryBinding& repository);
 void bind_metric(nb::module_& m, RepositoryBinding& repository);
 void bind_program(nb::module_& m, RepositoryBinding& repository);
-void bind_ground_program(nb::module_& m, RepositoryBinding& repository);
 
 }  // namespace tyr::formalism::datalog
 

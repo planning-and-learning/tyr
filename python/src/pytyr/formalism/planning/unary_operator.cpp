@@ -27,11 +27,11 @@ namespace tyr::formalism::planning
 
 void bind_unary_operator(nb::module_& m, RepositoryBinding& repository)
 {
-    ygg::bind_index<ygg::Index<UnaryOperator<ygg::Data<FunctionExpression>>>>(m, "UnaryOperatorIndex");
-    ygg::bind_index<ygg::Index<UnaryOperator<ygg::Data<GroundFunctionExpression>>>>(m, "GroundUnaryOperatorIndex");
+    ygg::bind_index<ygg::Index<UnaryOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>>(m, "UnaryOperatorIndex");
+    ygg::bind_index<ygg::Index<UnaryOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>>(m, "GroundUnaryOperatorIndex");
 
     {
-        using ExpressionData = ygg::Data<FunctionExpression>;
+        using ExpressionData = ygg::Data<FunctionExpression<::tyr::LiftedTag>>;
         using ExpressionView = ygg::View<ExpressionData, Repository>;
         using V = ygg::Data<UnaryOperator<ExpressionData>>;
         auto cls = nb::class_<V>(m, "UnaryOperatorData").def(nb::init<ArithmeticOperatorKind, ExpressionView>(), "operator"_a, "arg"_a);
@@ -40,7 +40,7 @@ void bind_unary_operator(nb::module_& m, RepositoryBinding& repository)
         ygg::add_hash(cls);
     }
     {
-        using ExpressionData = ygg::Data<GroundFunctionExpression>;
+        using ExpressionData = ygg::Data<FunctionExpression<::tyr::GroundTag>>;
         using ExpressionView = ygg::View<ExpressionData, Repository>;
         using V = ygg::Data<UnaryOperator<ExpressionData>>;
         auto cls = nb::class_<V>(m, "GroundUnaryOperatorData").def(nb::init<ArithmeticOperatorKind, ExpressionView>(), "operator"_a, "arg"_a);
@@ -49,22 +49,22 @@ void bind_unary_operator(nb::module_& m, RepositoryBinding& repository)
         ygg::add_hash(cls);
     }
     {
-        using V = UnaryOperatorView<ygg::Data<FunctionExpression>>;
+        using V = UnaryOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>;
         auto cls = nb::class_<V>(m, "UnaryOperator").def("get_index", &V::get_index).def("get_operator", &V::get_operator).def("get_arg", &V::get_arg);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);
     }
     {
-        using V = UnaryOperatorView<ygg::Data<GroundFunctionExpression>>;
+        using V = UnaryOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>>;
         auto cls = nb::class_<V>(m, "GroundUnaryOperator").def("get_index", &V::get_index).def("get_operator", &V::get_operator).def("get_arg", &V::get_arg);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);
     }
 
-    repository.def("get_or_create", &get_or_create_data<UnaryOperator<ygg::Data<FunctionExpression>>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_data<UnaryOperator<ygg::Data<GroundFunctionExpression>>>, "data"_a, nb::keep_alive<0, 1>());
+    repository.def("get_or_create", &get_or_create_data<UnaryOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>, "data"_a, nb::keep_alive<0, 1>());
+    repository.def("get_or_create", &get_or_create_data<UnaryOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>, "data"_a, nb::keep_alive<0, 1>());
 }
 
 }  // namespace tyr::formalism::planning

@@ -27,15 +27,16 @@
 
 namespace ygg
 {
-template<::tyr::formalism::FactKind T, ::tyr::formalism::datalog::Context C>
-class View<ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T>>, C>
+
+template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, ::tyr::formalism::datalog::Context C>
+class View<ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T, F>>, C>
 {
 private:
     const C* m_context;
-    ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T>> m_handle;
+    ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T, F>> m_handle;
 
 public:
-    View(ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T>> data, const C& context) noexcept : m_context(&context), m_handle(data) {}
+    View(ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T, F>> data, const C& context) noexcept : m_context(&context), m_handle(data) {}
 
     const auto& get_data() const noexcept { return m_handle; }
     const auto& get_context() const noexcept { return *m_context; }
@@ -46,10 +47,10 @@ public:
     auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }
 };
 
-template<::tyr::formalism::FactKind T, typename C>
-auto make_view(const ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T>>& element, const C& context) noexcept
+template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, typename C>
+auto make_view(const ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T, F>>& element, const C& context) noexcept
 {
-    return ygg::View<ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T>>, C>(
+    return ygg::View<ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T, F>>, C>(
         element,
         std::visit([&](const auto& arg) -> decltype(auto) { return ygg::make_view(arg, context).get_context(); }, element.value));
 }

@@ -160,7 +160,7 @@ ygg::ClosedInterval<ygg::float_t> consistent_interval(fd::LiftedMultiOperatorVie
                                                       const AssignmentSets& assignment_sets) noexcept;
 
 template<typename GraphStructure>
-ygg::ClosedInterval<ygg::float_t> consistent_interval(fd::FunctionExpressionView element,
+ygg::ClosedInterval<ygg::float_t> consistent_interval(fd::FunctionExpressionView<::tyr::LiftedTag> element,
                                                       const GraphStructure& structure,
                                                       const RuleToConstraintInfo& constraint_info,
                                                       const AssignmentSets& assignment_sets) noexcept;
@@ -442,7 +442,7 @@ inline ygg::ClosedInterval<ygg::float_t> consistent_interval(fd::LiftedMultiOper
 }
 
 template<typename GraphStructure>
-inline ygg::ClosedInterval<ygg::float_t> consistent_interval(fd::FunctionExpressionView element,
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(fd::FunctionExpressionView<::tyr::LiftedTag> element,
                                                              const GraphStructure& structure,
                                                              const RuleToConstraintInfo& constraint_info,
                                                              const AssignmentSets& assignment_sets) noexcept
@@ -456,9 +456,9 @@ inline ygg::ClosedInterval<ygg::float_t> consistent_interval(fd::FunctionExpress
                 return ygg::ClosedInterval<ygg::float_t>(arg, arg);
             else if constexpr (std::is_same_v<Alternative, fd::LiftedArithmeticOperatorView>)
                 return consistent_interval(arg, structure, constraint_info, assignment_sets);
-            else if constexpr (std::is_same_v<Alternative, fd::FunctionTermView<f::StaticTag>>)
+            else if constexpr (std::is_same_v<Alternative, fd::FunctionTermView<::tyr::LiftedTag, f::StaticTag>>)
                 return consistent_interval(constraint_info.static_infos.infos.at(arg.get_index()), structure, assignment_sets.static_sets.function);
-            else if constexpr (std::is_same_v<Alternative, fd::FunctionTermView<f::FluentTag>>)
+            else if constexpr (std::is_same_v<Alternative, fd::FunctionTermView<::tyr::LiftedTag, f::FluentTag>>)
                 return consistent_interval(constraint_info.fluent_infos.infos.at(arg.get_index()), structure, assignment_sets.fluent_sets.function);
             else
                 static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
@@ -672,7 +672,7 @@ inline bool consistent_numeric_constraints(const Edge& edge,
 }
 
 template<f::FactKind T>
-static auto compute_tagged_indexed_literals(fd::LiteralListView<T> literals, size_t arity)
+static auto compute_tagged_indexed_literals(fd::LiteralListView<::tyr::LiftedTag, T> literals, size_t arity)
 {
     auto result = details::TaggedRuleToLiteralInfos<T> {};
 
@@ -759,7 +759,7 @@ static auto compute_tagged_indexed_literals(fd::LiteralListView<T> literals, siz
 }
 
 template<f::FactKind T>
-static auto compute_tagged_indexed_fterms(const std::vector<fd::FunctionTermView<T>>& fterms, size_t arity)
+static auto compute_tagged_indexed_fterms(const std::vector<fd::FunctionTermView<::tyr::LiftedTag, T>>& fterms, size_t arity)
 {
     auto result = details::TaggedRuleToFunctionTermInfos<T> {};
 
@@ -848,8 +848,8 @@ static auto compute_constraint_info(fd::LiftedBooleanOperatorView element, size_
 {
     auto result = details::RuleToConstraintInfo {};
 
-    auto static_fterms = fd::collect_fterms<f::StaticTag>(element);
-    auto fluent_fterms = fd::collect_fterms<f::FluentTag>(element);
+    auto static_fterms = fd::collect_fterms<LiftedTag, f::StaticTag>(element);
+    auto fluent_fterms = fd::collect_fterms<LiftedTag, f::FluentTag>(element);
 
     result.static_infos = compute_tagged_indexed_fterms(static_fterms, arity);
     result.fluent_infos = compute_tagged_indexed_fterms(fluent_fterms, arity);
@@ -859,7 +859,7 @@ static auto compute_constraint_info(fd::LiftedBooleanOperatorView element, size_
     return result;
 }
 
-static auto compute_indexed_constraints(fd::ConjunctiveConditionView element)
+static auto compute_indexed_constraints(fd::ConjunctiveConditionView<::tyr::LiftedTag> element)
 {
     auto result = details::RuleToRuleToConstraintInfos {};
     result.infos = std::vector<details::RuleToConstraintInfo> {};
@@ -868,7 +868,7 @@ static auto compute_indexed_constraints(fd::ConjunctiveConditionView element)
     return result;
 }
 
-static auto compute_indexed_literals(fd::ConjunctiveConditionView element)
+static auto compute_indexed_literals(fd::ConjunctiveConditionView<::tyr::LiftedTag> element)
 {
     return compute_tagged_indexed_literals(element.get_literals<f::FluentTag>(), element.get_arity());
 }
@@ -897,8 +897,8 @@ static auto classify_adjacency(const kckp::GraphLayout& layout, const fd::Variab
     return result;
 }
 
-StaticConsistencyGraph::StaticConsistencyGraph(fd::ConjunctiveConditionView unary_overapproximation_condition,
-                                               fd::ConjunctiveConditionView binary_overapproximation_condition,
+StaticConsistencyGraph::StaticConsistencyGraph(fd::ConjunctiveConditionView<::tyr::LiftedTag> unary_overapproximation_condition,
+                                               fd::ConjunctiveConditionView<::tyr::LiftedTag> binary_overapproximation_condition,
                                                kckp::Graph compatibility_graph) :
     m_unary_overapproximation_condition(unary_overapproximation_condition),
     m_binary_overapproximation_condition(binary_overapproximation_condition),
@@ -1108,11 +1108,11 @@ const kckp::PartitionedAdjacencyLayout& StaticConsistencyGraph::get_partitioned_
 
 const kckp::DeduplicatedAdjacencyMatrix& StaticConsistencyGraph::get_adjacency_matrix() const noexcept { return m_compatibility_graph.get_adjacency_matrix(); }
 
-std::pair<fd::ConjunctiveConditionView, bool>
-create_overapproximation_conjunctive_condition(size_t k, fd::ConjunctiveConditionView condition, fd::Repository& context)
+std::pair<fd::ConjunctiveConditionView<::tyr::LiftedTag>, bool>
+create_overapproximation_conjunctive_condition(size_t k, fd::ConjunctiveConditionView<::tyr::LiftedTag> condition, fd::Repository& context)
 {
     auto builder = fd::Builder {};
-    auto conj_cond = fd::checkout<fd::ConjunctiveCondition>(builder);
+    auto conj_cond = fd::checkout<fd::ConjunctiveCondition<::tyr::LiftedTag>>(builder);
 
     for (const auto variable : condition.get_variables())
         conj_cond->variables.push_back(variable.get_index());
@@ -1136,11 +1136,11 @@ create_overapproximation_conjunctive_condition(size_t k, fd::ConjunctiveConditio
     return fd::get_or_create(context, *conj_cond);
 }
 
-std::pair<fd::ConjunctiveConditionView, bool>
-create_overapproximation_conflicting_conjunctive_condition(size_t k, fd::ConjunctiveConditionView condition, fd::Repository& context)
+std::pair<fd::ConjunctiveConditionView<::tyr::LiftedTag>, bool>
+create_overapproximation_conflicting_conjunctive_condition(size_t k, fd::ConjunctiveConditionView<::tyr::LiftedTag> condition, fd::Repository& context)
 {
     auto builder = fd::Builder {};
-    auto conj_cond = fd::checkout<fd::ConjunctiveCondition>(builder);
+    auto conj_cond = fd::checkout<fd::ConjunctiveCondition<::tyr::LiftedTag>>(builder);
 
     for (const auto variable : condition.get_variables())
         conj_cond->variables.push_back(variable.get_index());
@@ -1166,10 +1166,10 @@ create_overapproximation_conflicting_conjunctive_condition(size_t k, fd::Conjunc
     return fd::get_or_create(context, *conj_cond);
 }
 
-std::pair<fd::GroundConjunctiveConditionView, bool> create_ground_nullary_conjunctive_condition(fd::ConjunctiveConditionView condition, fd::Repository& context)
+std::pair<fd::ConjunctiveConditionView<::tyr::GroundTag>, bool> create_ground_nullary_conjunctive_condition(fd::ConjunctiveConditionView<::tyr::LiftedTag> condition, fd::Repository& context)
 {
     auto builder = fd::Builder {};
-    auto conj_cond = fd::checkout<fd::GroundConjunctiveCondition>(builder);
+    auto conj_cond = fd::checkout<fd::ConjunctiveCondition<::tyr::GroundTag>>(builder);
 
     auto binding_empty = ygg::IndexList<f::Object> {};
     auto grounder_context = fd::GrounderContext { builder, context, binding_empty };

@@ -27,45 +27,58 @@ namespace tyr::formalism::planning
 
 namespace
 {
-template<FactKind T>
-void bind_atom_data(nb::module_& m, const char* name)
+template<TaskKind T, FactKind F>
+void bind_atom_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
 {
-    using V = ygg::Data<Atom<T>>;
-    auto cls = nb::class_<V>(m, name).def(nb::init<PredicateView<T>, const TermViewList&>(), "predicate"_a, "terms"_a);
-    ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
-}
+    using Tag = Atom<T, F>;
+    ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
 
-template<FactKind T>
-void bind_atom_view(nb::module_& m, const char* name)
-{
-    using V = AtomView<T>;
-    auto cls =
-        nb::class_<V>(m, name).def("get_index", &V::get_index).def("get_predicate", &V::get_predicate, nb::keep_alive<0, 1>()).def("get_terms", &V::get_terms);
-    ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    {
+        using V = ygg::Data<Tag>;
+        auto cls = nb::class_<V>(m, (name + "Data").c_str());
+        if constexpr (std::same_as<T, LiftedTag>)
+        {
+            cls.def(nb::init<PredicateView<F>, const TermViewList&>(), "predicate"_a, "terms"_a);
+        }
+        else
+        {
+            cls.def(nb::init<PredicateBindingView<F>>(), "binding"_a);
+        }
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+
+    {
+        using V = AtomView<T, F>;
+        auto cls = nb::class_<V>(m, name.c_str());
+        cls.def("get_index", &V::get_index);
+        cls.def("get_predicate", &V::get_predicate, nb::keep_alive<0, 1>());
+        if constexpr (std::same_as<T, LiftedTag>)
+        {
+            cls.def("get_terms", &V::get_terms);
+        }
+        else
+        {
+            cls.def("get_objects", &V::get_objects);
+        }
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+
+    repository.def("get_or_create", &get_or_create_data<Tag>, "data"_a, nb::keep_alive<0, 1>());
 }
 }  // namespace
 
 void bind_atom(nb::module_& m, RepositoryBinding& repository)
 {
-    ygg::bind_index<ygg::Index<Atom<StaticTag>>>(m, "StaticAtomIndex");
-    ygg::bind_index<ygg::Index<Atom<FluentTag>>>(m, "FluentAtomIndex");
-    ygg::bind_index<ygg::Index<Atom<DerivedTag>>>(m, "DerivedAtomIndex");
-
-    bind_atom_data<StaticTag>(m, "StaticAtomData");
-    bind_atom_data<FluentTag>(m, "FluentAtomData");
-    bind_atom_data<DerivedTag>(m, "DerivedAtomData");
-
-    bind_atom_view<StaticTag>(m, "StaticAtom");
-    bind_atom_view<FluentTag>(m, "FluentAtom");
-    bind_atom_view<DerivedTag>(m, "DerivedAtom");
-
-    repository.def("get_or_create", &get_or_create_data<Atom<StaticTag>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_data<Atom<FluentTag>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_data<Atom<DerivedTag>>, "data"_a, nb::keep_alive<0, 1>());
+    bind_atom_kind<LiftedTag, StaticTag>(m, repository, "StaticAtom");
+    bind_atom_kind<LiftedTag, FluentTag>(m, repository, "FluentAtom");
+    bind_atom_kind<LiftedTag, DerivedTag>(m, repository, "DerivedAtom");
+    bind_atom_kind<GroundTag, StaticTag>(m, repository, "StaticGroundAtom");
+    bind_atom_kind<GroundTag, FluentTag>(m, repository, "FluentGroundAtom");
+    bind_atom_kind<GroundTag, DerivedTag>(m, repository, "DerivedGroundAtom");
 }
 
 }  // namespace tyr::formalism::planning

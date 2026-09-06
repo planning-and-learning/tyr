@@ -21,35 +21,54 @@
 namespace tyr::formalism::planning
 {
 
+namespace
+{
+template<TaskKind T>
+void bind_conditional_effect_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
+{
+    using Tag = ConditionalEffect<T>;
+    ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
+
+    {
+        using V = ygg::Data<Tag>;
+        auto cls = nb::class_<V>(m, (name + "Data").c_str());
+        if constexpr (std::same_as<T, LiftedTag>)
+        {
+            cls.def(nb::init<const VariableViewList&, ConjunctiveConditionView<T>, ConjunctiveEffectView<T>>(), "variables"_a, "condition"_a, "effect"_a);
+        }
+        else
+        {
+            cls.def(nb::init<ConjunctiveConditionView<T>, ConjunctiveEffectView<T>>(), "condition"_a, "effect"_a);
+        }
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+
+    {
+        using V = ConditionalEffectView<T>;
+        auto cls = nb::class_<V>(m, name.c_str());
+        cls.def("get_index", &V::get_index);
+        if constexpr (std::same_as<T, LiftedTag>)
+        {
+            cls.def("get_variables", &V::get_variables);
+            cls.def("get_arity", &V::get_arity);
+        }
+        cls.def("get_condition", &V::get_condition, nb::keep_alive<0, 1>());
+        cls.def("get_effect", &V::get_effect, nb::keep_alive<0, 1>());
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+
+    repository.def("get_or_create", &get_or_create_data<Tag>, "data"_a, nb::keep_alive<0, 1>());
+}
+}  // namespace
+
 void bind_conditional_effect(nb::module_& m, RepositoryBinding& repository)
 {
-    ygg::bind_index<ygg::Index<ConditionalEffect>>(m, "ConditionalEffectIndex");
-
-    {
-        using V = ygg::Data<ConditionalEffect>;
-
-        auto cls = nb::class_<V>(m, "ConditionalEffectData")  //
-                       .def(nb::init<const VariableViewList&, ConjunctiveConditionView, ConjunctiveEffectView>(), "variables"_a, "condition"_a, "effect"_a);
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-
-    {
-        using V = ConditionalEffectView;
-
-        auto cls = nb::class_<V>(m, "ConditionalEffect")  //
-                       .def("get_index", &V::get_index)
-                       .def("get_variables", &V::get_variables)
-                       .def("get_arity", &V::get_arity)
-                       .def("get_condition", &V::get_condition, nb::keep_alive<0, 1>())
-                       .def("get_effect", &V::get_effect, nb::keep_alive<0, 1>());
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-
-    repository.def("get_or_create", &get_or_create_data<ConditionalEffect>, "data"_a, nb::keep_alive<0, 1>());
+    bind_conditional_effect_kind<LiftedTag>(m, repository, "ConditionalEffect");
+    bind_conditional_effect_kind<GroundTag>(m, repository, "GroundConditionalEffect");
 }
 
 }  // namespace tyr::formalism::planning

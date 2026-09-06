@@ -34,78 +34,93 @@ template std::pair<PredicateView<StaticTag>, bool> merge_p2p(PredicateView<Stati
 template std::pair<PredicateView<FluentTag>, bool> merge_p2p(PredicateView<FluentTag> element, MergeContext& context);
 template std::pair<PredicateView<DerivedTag>, bool> merge_p2p(PredicateView<DerivedTag> element, MergeContext& context);
 
-template std::pair<AtomView<StaticTag>, bool> merge_p2p(AtomView<StaticTag> element, MergeContext& context);
-template std::pair<AtomView<FluentTag>, bool> merge_p2p(AtomView<FluentTag> element, MergeContext& context);
-template std::pair<AtomView<DerivedTag>, bool> merge_p2p(AtomView<DerivedTag> element, MergeContext& context);
+template std::pair<AtomView<::tyr::LiftedTag, StaticTag>, bool> merge_p2p(AtomView<::tyr::LiftedTag, StaticTag> element, MergeContext& context);
+template std::pair<AtomView<::tyr::LiftedTag, FluentTag>, bool> merge_p2p(AtomView<::tyr::LiftedTag, FluentTag> element, MergeContext& context);
+template std::pair<AtomView<::tyr::LiftedTag, DerivedTag>, bool> merge_p2p(AtomView<::tyr::LiftedTag, DerivedTag> element, MergeContext& context);
 
-template std::pair<GroundAtomView<StaticTag>, bool> merge_p2p(GroundAtomView<StaticTag> element, MergeContext& context);
-template std::pair<GroundAtomView<FluentTag>, bool> merge_p2p(GroundAtomView<FluentTag> element, MergeContext& context);
-template std::pair<GroundAtomView<DerivedTag>, bool> merge_p2p(GroundAtomView<DerivedTag> element, MergeContext& context);
+template std::pair<AtomView<::tyr::GroundTag, StaticTag>, bool> merge_p2p(AtomView<::tyr::GroundTag, StaticTag> element, MergeContext& context);
+template std::pair<AtomView<::tyr::GroundTag, FluentTag>, bool> merge_p2p(AtomView<::tyr::GroundTag, FluentTag> element, MergeContext& context);
+template std::pair<AtomView<::tyr::GroundTag, DerivedTag>, bool> merge_p2p(AtomView<::tyr::GroundTag, DerivedTag> element, MergeContext& context);
 
-template std::pair<LiteralView<StaticTag>, bool> merge_p2p(LiteralView<StaticTag> element, MergeContext& context);
-template std::pair<LiteralView<FluentTag>, bool> merge_p2p(LiteralView<FluentTag> element, MergeContext& context);
-template std::pair<LiteralView<DerivedTag>, bool> merge_p2p(LiteralView<DerivedTag> element, MergeContext& context);
+template std::pair<LiteralView<::tyr::LiftedTag, StaticTag>, bool> merge_p2p(LiteralView<::tyr::LiftedTag, StaticTag> element, MergeContext& context);
+template std::pair<LiteralView<::tyr::LiftedTag, FluentTag>, bool> merge_p2p(LiteralView<::tyr::LiftedTag, FluentTag> element, MergeContext& context);
+template std::pair<LiteralView<::tyr::LiftedTag, DerivedTag>, bool> merge_p2p(LiteralView<::tyr::LiftedTag, DerivedTag> element, MergeContext& context);
 
-template std::pair<GroundLiteralView<StaticTag>, bool> merge_p2p(GroundLiteralView<StaticTag> element, MergeContext& context);
-template std::pair<GroundLiteralView<FluentTag>, bool> merge_p2p(GroundLiteralView<FluentTag> element, MergeContext& context);
-template std::pair<GroundLiteralView<DerivedTag>, bool> merge_p2p(GroundLiteralView<DerivedTag> element, MergeContext& context);
+template std::pair<LiteralView<::tyr::GroundTag, StaticTag>, bool> merge_p2p(LiteralView<::tyr::GroundTag, StaticTag> element, MergeContext& context);
+template std::pair<LiteralView<::tyr::GroundTag, FluentTag>, bool> merge_p2p(LiteralView<::tyr::GroundTag, FluentTag> element, MergeContext& context);
+template std::pair<LiteralView<::tyr::GroundTag, DerivedTag>, bool> merge_p2p(LiteralView<::tyr::GroundTag, DerivedTag> element, MergeContext& context);
 
 template std::pair<FunctionView<StaticTag>, bool> merge_p2p(FunctionView<StaticTag> element, MergeContext& context);
 template std::pair<FunctionView<FluentTag>, bool> merge_p2p(FunctionView<FluentTag> element, MergeContext& context);
 template std::pair<FunctionView<AuxiliaryTag>, bool> merge_p2p(FunctionView<AuxiliaryTag> element, MergeContext& context);
 
-template std::pair<FunctionTermView<StaticTag>, bool> merge_p2p(FunctionTermView<StaticTag> element, MergeContext& context);
-template std::pair<FunctionTermView<FluentTag>, bool> merge_p2p(FunctionTermView<FluentTag> element, MergeContext& context);
-template std::pair<FunctionTermView<AuxiliaryTag>, bool> merge_p2p(FunctionTermView<AuxiliaryTag> element, MergeContext& context);
-
-template std::pair<GroundFunctionTermView<StaticTag>, bool> merge_p2p(GroundFunctionTermView<StaticTag> element, MergeContext& context);
-template std::pair<GroundFunctionTermView<FluentTag>, bool> merge_p2p(GroundFunctionTermView<FluentTag> element, MergeContext& context);
-template std::pair<GroundFunctionTermView<AuxiliaryTag>, bool> merge_p2p(GroundFunctionTermView<AuxiliaryTag> element, MergeContext& context);
-
-template std::pair<GroundFunctionTermValueView<StaticTag>, bool> merge_p2p(GroundFunctionTermValueView<StaticTag> element, MergeContext& context);
-template std::pair<GroundFunctionTermValueView<FluentTag>, bool> merge_p2p(GroundFunctionTermValueView<FluentTag> element, MergeContext& context);
-template std::pair<GroundFunctionTermValueView<AuxiliaryTag>, bool> merge_p2p(GroundFunctionTermValueView<AuxiliaryTag> element, MergeContext& context);
-
-template std::pair<UnaryOperatorView<ygg::Data<FunctionExpression>>, bool> merge_p2p(UnaryOperatorView<ygg::Data<FunctionExpression>> element,
+template std::pair<FunctionTermView<::tyr::LiftedTag, StaticTag>, bool> merge_p2p(FunctionTermView<::tyr::LiftedTag, StaticTag> element, MergeContext& context);
+template std::pair<FunctionTermView<::tyr::LiftedTag, FluentTag>, bool> merge_p2p(FunctionTermView<::tyr::LiftedTag, FluentTag> element, MergeContext& context);
+template std::pair<FunctionTermView<::tyr::LiftedTag, AuxiliaryTag>, bool> merge_p2p(FunctionTermView<::tyr::LiftedTag, AuxiliaryTag> element,
                                                                                      MergeContext& context);
-template std::pair<UnaryOperatorView<ygg::Data<GroundFunctionExpression>>, bool> merge_p2p(UnaryOperatorView<ygg::Data<GroundFunctionExpression>> element,
-                                                                                           MergeContext& context);
 
-template std::pair<BinaryOperatorView<BooleanOperatorKind, ygg::Data<FunctionExpression>>, bool>
-merge_p2p(BinaryOperatorView<BooleanOperatorKind, ygg::Data<FunctionExpression>> element, MergeContext& context);
-template std::pair<BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<FunctionExpression>>, bool>
-merge_p2p(BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<FunctionExpression>> element, MergeContext& context);
-template std::pair<BinaryOperatorView<BooleanOperatorKind, ygg::Data<GroundFunctionExpression>>, bool>
-merge_p2p(BinaryOperatorView<BooleanOperatorKind, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
-template std::pair<BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<GroundFunctionExpression>>, bool>
-merge_p2p(BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<GroundFunctionExpression>> element, MergeContext& context);
-
-template std::pair<MultiOperatorView<ygg::Data<FunctionExpression>>, bool> merge_p2p(MultiOperatorView<ygg::Data<FunctionExpression>> element,
+template std::pair<FunctionTermView<::tyr::GroundTag, StaticTag>, bool> merge_p2p(FunctionTermView<::tyr::GroundTag, StaticTag> element, MergeContext& context);
+template std::pair<FunctionTermView<::tyr::GroundTag, FluentTag>, bool> merge_p2p(FunctionTermView<::tyr::GroundTag, FluentTag> element, MergeContext& context);
+template std::pair<FunctionTermView<::tyr::GroundTag, AuxiliaryTag>, bool> merge_p2p(FunctionTermView<::tyr::GroundTag, AuxiliaryTag> element,
                                                                                      MergeContext& context);
-template std::pair<MultiOperatorView<ygg::Data<GroundFunctionExpression>>, bool> merge_p2p(MultiOperatorView<ygg::Data<GroundFunctionExpression>> element,
-                                                                                           MergeContext& context);
 
-template ArithmeticOperatorView<ygg::Data<FunctionExpression>> merge_p2p(ArithmeticOperatorView<ygg::Data<FunctionExpression>> element, MergeContext& context);
-template ArithmeticOperatorView<ygg::Data<GroundFunctionExpression>> merge_p2p(ArithmeticOperatorView<ygg::Data<GroundFunctionExpression>> element,
-                                                                               MergeContext& context);
+template std::pair<FunctionTermValueView<::tyr::GroundTag, StaticTag>, bool> merge_p2p(FunctionTermValueView<::tyr::GroundTag, StaticTag> element,
+                                                                                       MergeContext& context);
+template std::pair<FunctionTermValueView<::tyr::GroundTag, FluentTag>, bool> merge_p2p(FunctionTermValueView<::tyr::GroundTag, FluentTag> element,
+                                                                                       MergeContext& context);
+template std::pair<FunctionTermValueView<::tyr::GroundTag, AuxiliaryTag>, bool> merge_p2p(FunctionTermValueView<::tyr::GroundTag, AuxiliaryTag> element,
+                                                                                          MergeContext& context);
 
-template BooleanOperatorView<ygg::Data<FunctionExpression>> merge_p2p(BooleanOperatorView<ygg::Data<FunctionExpression>> element, MergeContext& context);
-template BooleanOperatorView<ygg::Data<GroundFunctionExpression>> merge_p2p(BooleanOperatorView<ygg::Data<GroundFunctionExpression>> element,
-                                                                            MergeContext& context);
+template std::pair<UnaryOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>, bool>
+merge_p2p(UnaryOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>> element, MergeContext& context);
+template std::pair<UnaryOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>>, bool>
+merge_p2p(UnaryOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>> element, MergeContext& context);
 
-template std::pair<NumericEffectView<FluentTag>, bool> merge_p2p(NumericEffectView<FluentTag> element, MergeContext& context);
+template std::pair<BinaryOperatorView<BooleanOperatorKind, ygg::Data<FunctionExpression<::tyr::LiftedTag>>>, bool>
+merge_p2p(BinaryOperatorView<BooleanOperatorKind, ygg::Data<FunctionExpression<::tyr::LiftedTag>>> element, MergeContext& context);
+template std::pair<BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<FunctionExpression<::tyr::LiftedTag>>>, bool>
+merge_p2p(BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<FunctionExpression<::tyr::LiftedTag>>> element, MergeContext& context);
+template std::pair<BinaryOperatorView<BooleanOperatorKind, ygg::Data<FunctionExpression<::tyr::GroundTag>>>, bool>
+merge_p2p(BinaryOperatorView<BooleanOperatorKind, ygg::Data<FunctionExpression<::tyr::GroundTag>>> element, MergeContext& context);
+template std::pair<BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<FunctionExpression<::tyr::GroundTag>>>, bool>
+merge_p2p(BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<FunctionExpression<::tyr::GroundTag>>> element, MergeContext& context);
 
-template std::pair<NumericEffectView<AuxiliaryTag>, bool> merge_p2p(NumericEffectView<AuxiliaryTag> element, MergeContext& context);
+template std::pair<MultiOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>, bool>
+merge_p2p(MultiOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>> element, MergeContext& context);
+template std::pair<MultiOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>>, bool>
+merge_p2p(MultiOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>> element, MergeContext& context);
 
-template NumericEffectOperatorView<FluentTag> merge_p2p(NumericEffectOperatorView<FluentTag> element, MergeContext& context);
-template NumericEffectOperatorView<AuxiliaryTag> merge_p2p(NumericEffectOperatorView<AuxiliaryTag> element, MergeContext& context);
+template ArithmeticOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>
+merge_p2p(ArithmeticOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>> element, MergeContext& context);
+template ArithmeticOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>>
+merge_p2p(ArithmeticOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>> element, MergeContext& context);
 
-template std::pair<GroundNumericEffectView<FluentTag>, bool> merge_p2p(GroundNumericEffectView<FluentTag> element, MergeContext& context);
+template BooleanOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>
+merge_p2p(BooleanOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>> element, MergeContext& context);
+template BooleanOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>>
+merge_p2p(BooleanOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>> element, MergeContext& context);
 
-template std::pair<GroundNumericEffectView<AuxiliaryTag>, bool> merge_p2p(GroundNumericEffectView<AuxiliaryTag> element, MergeContext& context);
+template std::pair<NumericEffectView<::tyr::LiftedTag, FluentTag>, bool> merge_p2p(NumericEffectView<::tyr::LiftedTag, FluentTag> element,
+                                                                                   MergeContext& context);
 
-template GroundNumericEffectOperatorView<FluentTag> merge_p2p(GroundNumericEffectOperatorView<FluentTag> element, MergeContext& context);
-template GroundNumericEffectOperatorView<AuxiliaryTag> merge_p2p(GroundNumericEffectOperatorView<AuxiliaryTag> element, MergeContext& context);
+template std::pair<NumericEffectView<::tyr::LiftedTag, AuxiliaryTag>, bool> merge_p2p(NumericEffectView<::tyr::LiftedTag, AuxiliaryTag> element,
+                                                                                      MergeContext& context);
+
+template NumericEffectOperatorView<::tyr::LiftedTag, FluentTag> merge_p2p(NumericEffectOperatorView<::tyr::LiftedTag, FluentTag> element,
+                                                                          MergeContext& context);
+template NumericEffectOperatorView<::tyr::LiftedTag, AuxiliaryTag> merge_p2p(NumericEffectOperatorView<::tyr::LiftedTag, AuxiliaryTag> element,
+                                                                             MergeContext& context);
+
+template std::pair<NumericEffectView<::tyr::GroundTag, FluentTag>, bool> merge_p2p(NumericEffectView<::tyr::GroundTag, FluentTag> element,
+                                                                                   MergeContext& context);
+
+template std::pair<NumericEffectView<::tyr::GroundTag, AuxiliaryTag>, bool> merge_p2p(NumericEffectView<::tyr::GroundTag, AuxiliaryTag> element,
+                                                                                      MergeContext& context);
+
+template NumericEffectOperatorView<::tyr::GroundTag, FluentTag> merge_p2p(NumericEffectOperatorView<::tyr::GroundTag, FluentTag> element,
+                                                                          MergeContext& context);
+template NumericEffectOperatorView<::tyr::GroundTag, AuxiliaryTag> merge_p2p(NumericEffectOperatorView<::tyr::GroundTag, AuxiliaryTag> element,
+                                                                             MergeContext& context);
 
 }
 

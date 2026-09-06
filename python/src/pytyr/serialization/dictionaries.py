@@ -1,7 +1,7 @@
 from typing import TypeAlias, TypedDict
-
 from .formalism import planning as schema
 from .planning import State
+
 
 Row: TypeAlias = (
     schema.Object | schema.Variable | schema.StaticPredicate | schema.StaticPredicateBinding |

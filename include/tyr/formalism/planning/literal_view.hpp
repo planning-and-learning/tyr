@@ -18,23 +18,24 @@
 #ifndef TYR_FORMALISM_PLANNING_LITERAL_VIEW_HPP_
 #define TYR_FORMALISM_PLANNING_LITERAL_VIEW_HPP_
 
-#include <yggdrasil/core/types.hpp>
 #include "tyr/formalism/planning/atom_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/literal_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
 
+#include <yggdrasil/core/types.hpp>
+
 namespace ygg
 {
-template<::tyr::formalism::FactKind T, ::tyr::formalism::planning::Context C>
-class View<ygg::Index<::tyr::formalism::planning::Literal<T>>, C>
+template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, ::tyr::formalism::planning::Context C>
+class View<ygg::Index<::tyr::formalism::planning::Literal<T, F>>, C>
 {
 private:
     const C* m_context;
-    ygg::Index<::tyr::formalism::planning::Literal<T>> m_handle;
+    ygg::Index<::tyr::formalism::planning::Literal<T, F>> m_handle;
 
 public:
-    View(ygg::Index<::tyr::formalism::planning::Literal<T>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+    View(ygg::Index<::tyr::formalism::planning::Literal<T, F>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }

@@ -73,10 +73,10 @@ public:
                                      LabeledNodeList<LiftedTag>& out_nodes);
 
     Node<LiftedTag> get_successor_node(const Node<LiftedTag>& node,
-                                       ::tyr::formalism::planning::GroundActionView action,
+                                       ::tyr::formalism::planning::ActionView<::tyr::GroundTag> action,
                                        StateRepository<LiftedTag>& state_repository,
                                        AxiomEvaluator<LiftedTag>& axiom_evaluator);
-    ::tyr::formalism::planning::GroundActionView ground_action(::tyr::formalism::planning::ActionBindingView binding);
+    ::tyr::formalism::planning::ActionView<::tyr::GroundTag> ground_action(::tyr::formalism::planning::ActionBindingView binding);
 
     // Action binding API (interning)
     Node<LiftedTag> get_successor_node(const Node<LiftedTag>& node,
@@ -99,7 +99,7 @@ public:
 
     // Action binding API (no interning)
     Node<LiftedTag> get_successor_node(const Node<LiftedTag>& node,
-                                       const ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action>>& binding,
+                                       const ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action<::tyr::LiftedTag>>>& binding,
                                        StateRepository<LiftedTag>& state_repository,
                                        AxiomEvaluator<LiftedTag>& axiom_evaluator);
 

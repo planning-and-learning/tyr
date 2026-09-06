@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from typing import TypedDict
 
-from pytyr.serialization.formalism.planning.ground_atom_view import FluentGroundAtom
+from pytyr.serialization.formalism.planning import atom_view
+
+
 
 
 class FluentFDRVariable(TypedDict):
-    atoms: list[FluentGroundAtom | str]
+    atoms: list[atom_view.FluentGroundAtom | str]

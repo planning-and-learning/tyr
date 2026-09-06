@@ -48,7 +48,7 @@ struct RPGPolicy<LiftedTag>
     using Action = ::tyr::formalism::planning::ActionBindingView;
 
     template<typename Workspace>
-    static std::optional<::tyr::formalism::planning::GroundAtomView<::tyr::formalism::FluentTag>>
+    static std::optional<::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag>>
     translate_cut_atom(const RPGDefinition<LiftedTag>& definition,
                        Workspace& workspace,
                        ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head)
@@ -62,7 +62,7 @@ struct RPGPolicy<LiftedTag>
     }
 
     template<typename Workspace>
-    static void set_goal(RPGDefinition<LiftedTag>&, Workspace&, ::tyr::formalism::planning::GroundConjunctiveConditionView) noexcept
+    static void set_goal(RPGDefinition<LiftedTag>&, Workspace&, ::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag>) noexcept
     {
         // Lifted ground bindings live in the evaluation repository, which reset_evaluation()
         // clears. The goal is therefore materialized in begin_state_evaluation() after the reset.
@@ -70,7 +70,7 @@ struct RPGPolicy<LiftedTag>
 
     template<typename Workspace>
     static void
-    begin_state_evaluation(RPGDefinition<LiftedTag>& definition, Workspace& workspace, ::tyr::formalism::planning::GroundConjunctiveConditionView source_goal)
+    begin_state_evaluation(RPGDefinition<LiftedTag>& definition, Workspace& workspace, ::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> source_goal)
     {
         workspace.reset_evaluation();
         // Lifted ground bindings live in the evaluation repository and must be restored after it is cleared.

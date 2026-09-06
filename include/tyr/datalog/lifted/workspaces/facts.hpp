@@ -39,8 +39,8 @@ struct FactsWorkspace<LiftedTag>
                             const analysis::PredicateDomainMap<::tyr::formalism::FluentTag>& predicate_domains,
                             const analysis::FunctionDomainMap<::tyr::formalism::FluentTag>& function_domains,
                             size_t num_objects,
-                            ::tyr::formalism::datalog::GroundAtomListView<::tyr::formalism::FluentTag> atoms,
-                            ::tyr::formalism::datalog::GroundFunctionTermValueListView<::tyr::formalism::FluentTag> fterm_values,
+                            ::tyr::formalism::datalog::AtomListView<::tyr::GroundTag, ::tyr::formalism::FluentTag> atoms,
+                            ::tyr::formalism::datalog::FunctionTermValueListView<::tyr::GroundTag, ::tyr::formalism::FluentTag> fterm_values,
                             const ::tyr::formalism::datalog::Repository& workspace_repository);
 
     bool insert(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> binding)
@@ -73,8 +73,8 @@ struct ConstFactsWorkspace<LiftedTag>
                                  const analysis::PredicateDomainMap<::tyr::formalism::StaticTag>& predicate_domains,
                                  const analysis::FunctionDomainMap<::tyr::formalism::StaticTag>& function_domains,
                                  size_t num_objects,
-                                 ::tyr::formalism::datalog::GroundAtomListView<::tyr::formalism::StaticTag> atoms,
-                                 ::tyr::formalism::datalog::GroundFunctionTermValueListView<::tyr::formalism::StaticTag> fterm_values,
+                                 ::tyr::formalism::datalog::AtomListView<::tyr::GroundTag, ::tyr::formalism::StaticTag> atoms,
+                                 ::tyr::formalism::datalog::FunctionTermValueListView<::tyr::GroundTag, ::tyr::formalism::StaticTag> fterm_values,
                                  const ::tyr::formalism::datalog::Repository& program_repository);
 };
 

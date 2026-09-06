@@ -15,5 +15,5 @@ concept NodeContract = std::totally_ordered<ygg::Data<mt::Node<Tag>>> && std::to
                               view.get_variant();
                           };
 
-using MatchTreeTags = ygg::TypeList<fp::GroundAction, fp::GroundAxiom>;
+using MatchTreeTags = ygg::TypeList<fp::Action<::tyr::GroundTag>, fp::Axiom<::tyr::GroundTag>>;
 static_assert([]<typename... Tags>(ygg::TypeList<Tags...>) { return (NodeContract<Tags> && ...); }(MatchTreeTags {}));

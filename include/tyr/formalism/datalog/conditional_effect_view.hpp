@@ -28,22 +28,27 @@
 
 namespace ygg
 {
-template<::tyr::formalism::datalog::Context C>
-class View<ygg::Index<::tyr::formalism::datalog::ConditionalEffect>, C>
+
+template<::tyr::TaskKind T, ::tyr::formalism::datalog::Context C>
+class View<ygg::Index<::tyr::formalism::datalog::ConditionalEffect<T>>, C>
 {
 private:
     const C* m_context;
-    ygg::Index<::tyr::formalism::datalog::ConditionalEffect> m_handle;
+    ygg::Index<::tyr::formalism::datalog::ConditionalEffect<T>> m_handle;
 
 public:
-    View(ygg::Index<::tyr::formalism::datalog::ConditionalEffect> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+    View(ygg::Index<::tyr::formalism::datalog::ConditionalEffect<T>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_handle() const noexcept { return m_handle; }
 
     auto get_index() const noexcept { return m_handle; }
-    auto get_variables() const noexcept { return ygg::make_view(get_data().variables, *m_context); }
+    auto get_variables() const noexcept
+        requires std::same_as<T, ::tyr::LiftedTag>
+    {
+        return ygg::make_view(get_data().variables, *m_context);
+    }
     auto get_condition() const noexcept { return ygg::make_view(get_data().condition, *m_context); }
     auto get_effect() const noexcept { return ygg::make_view(get_data().effect, *m_context); }
 

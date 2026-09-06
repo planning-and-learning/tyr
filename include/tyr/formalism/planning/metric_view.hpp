@@ -19,7 +19,7 @@
 #define TYR_FORMALISM_PLANNING_METRIC_VIEW_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/ground_function_expression_data.hpp"
+#include "tyr/formalism/planning/function_expression_data.hpp"
 #include "tyr/formalism/planning/metric_data.hpp"
 #include "tyr/formalism/planning/metric_index.hpp"
 

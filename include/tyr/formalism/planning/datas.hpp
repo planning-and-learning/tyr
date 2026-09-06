@@ -15,8 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-
-
 #ifndef TYR_FORMALISM_PLANNING_DATAS_HPP_
 #define TYR_FORMALISM_PLANNING_DATAS_HPP_
 
@@ -36,18 +34,7 @@
 #include "tyr/formalism/planning/fdr_variable_data.hpp"
 #include "tyr/formalism/planning/function_expression_data.hpp"
 #include "tyr/formalism/planning/function_term_data.hpp"
-#include "tyr/formalism/planning/ground_action_data.hpp"
-#include "tyr/formalism/planning/ground_atom_data.hpp"
-#include "tyr/formalism/planning/ground_axiom_data.hpp"
-#include "tyr/formalism/planning/ground_conditional_effect_data.hpp"
-#include "tyr/formalism/planning/ground_conjunctive_condition_data.hpp"
-#include "tyr/formalism/planning/ground_conjunctive_effect_data.hpp"
-#include "tyr/formalism/planning/ground_function_expression_data.hpp"
-#include "tyr/formalism/planning/ground_function_term_data.hpp"
-#include "tyr/formalism/planning/ground_function_term_value_data.hpp"
-#include "tyr/formalism/planning/ground_literal_data.hpp"
-#include "tyr/formalism/planning/ground_numeric_effect_data.hpp"
-#include "tyr/formalism/planning/ground_numeric_effect_operator_data.hpp"
+#include "tyr/formalism/planning/function_term_value_data.hpp"
 #include "tyr/formalism/planning/literal_data.hpp"
 #include "tyr/formalism/planning/metric_data.hpp"
 #include "tyr/formalism/planning/multi_operator_data.hpp"

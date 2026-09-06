@@ -90,14 +90,14 @@ template<::tyr::TaskKind Kind>
 
 template<::tyr::TaskKind Kind>
 float_t View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::get(
-    Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::FluentTag>> index) const
+    Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const
 {
     return m_state_builder->get(index);
 }
 
 template<::tyr::TaskKind Kind>
 bool View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::test(
-    Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::DerivedTag>> index) const
+    Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const
 {
     return m_state_builder->test(index);
 }
@@ -117,14 +117,14 @@ const Builder<planning::State<Kind>>& View<Index<planning::State<Kind>>, std::sh
 
 template<::tyr::TaskKind Kind>
 bool View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::test(
-    ::tyr::formalism::planning::GroundAtomView<::tyr::formalism::StaticTag> view) const
+    ::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const
 {
     return test(view.get_index());
 }
 
 template<::tyr::TaskKind Kind>
 float_t View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::get(
-    ::tyr::formalism::planning::GroundFunctionTermView<::tyr::formalism::StaticTag> view) const
+    ::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const
 {
     return get(view.get_index());
 }
@@ -138,28 +138,28 @@ template<::tyr::TaskKind Kind>
 
 template<::tyr::TaskKind Kind>
 float_t View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::get(
-    ::tyr::formalism::planning::GroundFunctionTermView<::tyr::formalism::FluentTag> view) const
+    ::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const
 {
     return get(view.get_index());
 }
 
 template<::tyr::TaskKind Kind>
 bool View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::test(
-    ::tyr::formalism::planning::GroundAtomView<::tyr::formalism::DerivedTag> view) const
+    ::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const
 {
     return test(view.get_index());
 }
 
 template<::tyr::TaskKind Kind>
 bool View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::test(
-    Index<::tyr::formalism::planning::GroundAtom<::tyr::formalism::StaticTag>> index) const
+    Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
 {
     return m_state_repository->get_task()->test(index);
 }
 
 template<::tyr::TaskKind Kind>
 float_t View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::get(
-    Index<::tyr::formalism::planning::GroundFunctionTerm<::tyr::formalism::StaticTag>> index) const
+    Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
 {
     return m_state_repository->get_task()->get(index);
 }

@@ -31,17 +31,17 @@ namespace ygg
 {
 
 template<>
-struct Data<::tyr::formalism::datalog::ConditionalEffect>
+struct Data<::tyr::formalism::datalog::ConditionalEffect<::tyr::LiftedTag>>
 {
-    ygg::Index<::tyr::formalism::datalog::ConditionalEffect> index;
+    ygg::Index<::tyr::formalism::datalog::ConditionalEffect<::tyr::LiftedTag>> index;
     ygg::IndexList<::tyr::formalism::Variable> variables;
-    ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition> condition;
-    ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect> effect;
+    ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>> condition;
+    ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<::tyr::LiftedTag>> effect;
 
     Data() = default;
     Data(ygg::IndexList<::tyr::formalism::Variable> variables_,
-         ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition> condition_,
-         ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect> effect_) :
+         ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>> condition_,
+         ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<::tyr::LiftedTag>> effect_) :
         index(),
         variables(std::move(variables_)),
         condition(condition_),
@@ -50,8 +50,8 @@ struct Data<::tyr::formalism::datalog::ConditionalEffect>
     }
     template<typename C>
     Data(const std::vector<::ygg::View<ygg::Index<::tyr::formalism::Variable>, C>>& variables_,
-         ::ygg::View<ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition>, C> condition_,
-         ::ygg::View<ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect>, C> effect_) :
+         ::ygg::View<ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>, C> condition_,
+         ::ygg::View<ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<::tyr::LiftedTag>>, C> effect_) :
         index(),
         variables(),
         condition(),
@@ -78,7 +78,50 @@ struct Data<::tyr::formalism::datalog::ConditionalEffect>
     auto identifying_members() const noexcept { return std::tie(variables, condition, effect); }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::ConditionalEffect>);
+static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::ConditionalEffect<::tyr::LiftedTag>>);
+
+template<>
+struct Data<::tyr::formalism::datalog::ConditionalEffect<::tyr::GroundTag>>
+{
+    ygg::Index<::tyr::formalism::datalog::ConditionalEffect<::tyr::GroundTag>> index;
+    ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>> condition;
+    ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<::tyr::GroundTag>> effect;
+
+    Data() = default;
+    Data(ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>> condition_,
+         ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<::tyr::GroundTag>> effect_) :
+        index(),
+        condition(condition_),
+        effect(effect_)
+    {
+    }
+    template<typename C>
+    Data(::ygg::View<ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>, C> condition_,
+         ::ygg::View<ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<::tyr::GroundTag>>, C> effect_) :
+        index(),
+        condition(),
+        effect()
+    {
+        set(condition_, condition);
+        set(effect_, effect);
+    }
+    Data(const Data& other) = default;
+    Data& operator=(const Data& other) = default;
+    Data(Data&& other) = default;
+    Data& operator=(Data&& other) = default;
+
+    void clear() noexcept
+    {
+        ygg::clear(index);
+        ygg::clear(condition);
+        ygg::clear(effect);
+    }
+
+    auto cista_members() const noexcept { return std::tie(index, condition, effect); }
+    auto identifying_members() const noexcept { return std::tie(condition, effect); }
+};
+
+static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::datalog::ConditionalEffect<::tyr::GroundTag>>);
 
 }
 

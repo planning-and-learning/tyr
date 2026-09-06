@@ -18,8 +18,6 @@
 #ifndef TYR_FORMALISM_PLANNING_INVARIANTS_FORMATTER_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANTS_FORMATTER_HPP_
 
-#include <yggdrasil/formatting/cista_formatters.hpp>
-#include <yggdrasil/io/iostream.hpp>
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/planning/invariants/invariant.hpp"
 #include "tyr/formalism/planning/mutable/formatter.hpp"
@@ -29,7 +27,8 @@
 #include <fmt/ranges.h>
 #include <ostream>
 #include <sstream>
-
+#include <yggdrasil/formatting/cista_formatters.hpp>
+#include <yggdrasil/io/iostream.hpp>
 
 namespace fmt
 {

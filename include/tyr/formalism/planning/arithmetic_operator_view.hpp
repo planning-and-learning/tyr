@@ -18,12 +18,12 @@
 #ifndef TYR_FORMALISM_PLANNING_ARITHMETIC_OPERATOR_VIEW_HPP_
 #define TYR_FORMALISM_PLANNING_ARITHMETIC_OPERATOR_VIEW_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/containers/variant.hpp>
 #include "tyr/formalism/planning/arithmetic_operator_data.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/function_expression_data.hpp"
-#include "tyr/formalism/planning/ground_function_expression_data.hpp"
+
+#include <yggdrasil/containers/variant.hpp>
+#include <yggdrasil/core/types.hpp>
 
 namespace ygg
 {

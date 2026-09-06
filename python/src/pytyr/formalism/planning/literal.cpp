@@ -27,45 +27,44 @@ namespace tyr::formalism::planning
 
 namespace
 {
-template<FactKind T>
-void bind_literal_data(nb::module_& m, const char* name)
+template<TaskKind T, FactKind F>
+void bind_literal_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
 {
-    using V = ygg::Data<Literal<T>>;
-    auto cls = nb::class_<V>(m, name).def(nb::init<AtomView<T>, bool>(), "atom"_a, "polarity"_a);
-    ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
-}
+    using Tag = Literal<T, F>;
+    ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
 
-template<FactKind T>
-void bind_literal_view(nb::module_& m, const char* name)
-{
-    using V = LiteralView<T>;
-    auto cls =
-        nb::class_<V>(m, name).def("get_index", &V::get_index).def("get_atom", &V::get_atom, nb::keep_alive<0, 1>()).def("get_polarity", &V::get_polarity);
-    ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    {
+        using V = ygg::Data<Tag>;
+        auto cls = nb::class_<V>(m, (name + "Data").c_str());
+        cls.def(nb::init<AtomView<T, F>, bool>(), "atom"_a, "polarity"_a);
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+
+    {
+        using V = LiteralView<T, F>;
+        auto cls = nb::class_<V>(m, name.c_str());
+        cls.def("get_index", &V::get_index);
+        cls.def("get_atom", &V::get_atom, nb::keep_alive<0, 1>());
+        cls.def("get_polarity", &V::get_polarity);
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+
+    repository.def("get_or_create", &get_or_create_data<Tag>, "data"_a, nb::keep_alive<0, 1>());
 }
 }  // namespace
 
 void bind_literal(nb::module_& m, RepositoryBinding& repository)
 {
-    ygg::bind_index<ygg::Index<Literal<StaticTag>>>(m, "StaticLiteralIndex");
-    ygg::bind_index<ygg::Index<Literal<FluentTag>>>(m, "FluentLiteralIndex");
-    ygg::bind_index<ygg::Index<Literal<DerivedTag>>>(m, "DerivedLiteralIndex");
-
-    bind_literal_data<StaticTag>(m, "StaticLiteralData");
-    bind_literal_data<FluentTag>(m, "FluentLiteralData");
-    bind_literal_data<DerivedTag>(m, "DerivedLiteralData");
-
-    bind_literal_view<StaticTag>(m, "StaticLiteral");
-    bind_literal_view<FluentTag>(m, "FluentLiteral");
-    bind_literal_view<DerivedTag>(m, "DerivedLiteral");
-
-    repository.def("get_or_create", &get_or_create_data<Literal<StaticTag>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_data<Literal<FluentTag>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_data<Literal<DerivedTag>>, "data"_a, nb::keep_alive<0, 1>());
+    bind_literal_kind<LiftedTag, StaticTag>(m, repository, "StaticLiteral");
+    bind_literal_kind<LiftedTag, FluentTag>(m, repository, "FluentLiteral");
+    bind_literal_kind<LiftedTag, DerivedTag>(m, repository, "DerivedLiteral");
+    bind_literal_kind<GroundTag, StaticTag>(m, repository, "StaticGroundLiteral");
+    bind_literal_kind<GroundTag, FluentTag>(m, repository, "FluentGroundLiteral");
+    bind_literal_kind<GroundTag, DerivedTag>(m, repository, "DerivedGroundLiteral");
 }
 
 }  // namespace tyr::formalism::planning

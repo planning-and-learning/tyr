@@ -31,7 +31,7 @@ static_assert(TerminationPolicyConcept<TerminationPolicy<SumAggregation>>);
 static_assert(TerminationPolicyConcept<TerminationPolicy<MaxAggregation>>);
 
 template<typename AggregationFunction>
-void TerminationPolicy<AggregationFunction>::set_goals(::tyr::formalism::datalog::GroundConjunctiveConditionView goals_)
+void TerminationPolicy<AggregationFunction>::set_goals(::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::GroundTag> goals_)
 {
     for (const auto literal : goals_.template get_literals<::tyr::formalism::FluentTag>())
         if (!literal.get_polarity())

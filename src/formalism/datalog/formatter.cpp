@@ -95,148 +95,108 @@ std::string format_view(BooleanOperatorView<T> value)
     return fmt::format("{}", value.get_variant());
 }
 
-template<FactKind T>
-std::string format_data(const ygg::Data<Atom<T>>& value)
+template<FactKind F>
+std::string format_data(const ygg::Data<Atom<::tyr::LiftedTag, F>>& value)
 {
     return fmt::format("({} {})", value.predicate, fmt::join(ygg::to_strings(value.terms), " "));
 }
 
-template<FactKind T>
-std::string format_view(AtomView<T> value)
+template<FactKind F>
+std::string format_view(AtomView<::tyr::LiftedTag, F> value)
 {
     return fmt::format("({} {})", value.get_predicate().get_name(), fmt::join(ygg::to_strings(value.get_terms()), " "));
 }
 
-template<FactKind T>
-std::string format_data(const ygg::Data<Literal<T>>& value)
+template<::tyr::TaskKind T, FactKind F>
+std::string format_data(const ygg::Data<Literal<T, F>>& value)
 {
     if (value.polarity)
         return fmt::format("{}", value.atom);
     return fmt::format("(not {})", value.atom);
 }
 
-template<FactKind T>
-std::string format_view(LiteralView<T> value)
+template<::tyr::TaskKind T, FactKind F>
+std::string format_view(LiteralView<T, F> value)
 {
     if (value.get_polarity())
         return fmt::format("{}", value.get_atom());
     return fmt::format("(not {})", value.get_atom());
 }
 
-template<FactKind T>
-std::string format_data(const ygg::Data<GroundAtom<T>>& value)
+template<FactKind F>
+std::string format_data(const ygg::Data<Atom<::tyr::GroundTag, F>>& value)
 {
     return fmt::format("({})", value.binding);
 }
 
-template<FactKind T>
-std::string format_view(GroundAtomView<T> value)
+template<FactKind F>
+std::string format_view(AtomView<::tyr::GroundTag, F> value)
 {
     return fmt::format("{}", value.get_row());
 }
 
-template<FactKind T>
-std::string format_data(const ygg::Data<GroundLiteral<T>>& value)
-{
-    if (value.polarity)
-        return fmt::format("{}", value.atom);
-    return fmt::format("(not {})", value.atom);
-}
-
-template<FactKind T>
-std::string format_view(GroundLiteralView<T> value)
-{
-    if (value.get_polarity())
-        return fmt::format("{}", value.get_atom());
-    return fmt::format("(not {})", value.get_atom());
-}
-
-template<FactKind T>
-std::string format_data(const ygg::Data<FunctionTerm<T>>& value)
+template<FactKind F>
+std::string format_data(const ygg::Data<FunctionTerm<::tyr::LiftedTag, F>>& value)
 {
     return fmt::format("({} {})", value.function, fmt::join(ygg::to_strings(value.terms), " "));
 }
 
-template<FactKind T>
-std::string format_view(FunctionTermView<T> value)
+template<FactKind F>
+std::string format_view(FunctionTermView<::tyr::LiftedTag, F> value)
 {
     return fmt::format("({} {})", value.get_function().get_name(), fmt::join(ygg::to_strings(value.get_terms()), " "));
 }
 
-template<FactKind T>
-std::string format_data(const ygg::Data<GroundFunctionTerm<T>>& value)
+template<FactKind F>
+std::string format_data(const ygg::Data<FunctionTerm<::tyr::GroundTag, F>>& value)
 {
     return fmt::format("({})", value.binding);
 }
 
-template<FactKind T>
-std::string format_view(GroundFunctionTermView<T> value)
+template<FactKind F>
+std::string format_view(FunctionTermView<::tyr::GroundTag, F> value)
 {
     return fmt::format("{}", value.get_row());
 }
 
-template<FactKind T>
-std::string format_data(const ygg::Data<GroundFunctionTermValue<T>>& value)
+template<FactKind F>
+std::string format_data(const ygg::Data<FunctionTermValue<::tyr::GroundTag, F>>& value)
 {
     return fmt::format("(= {} {})", value.fterm, value.value);
 }
 
-template<FactKind T>
-std::string format_view(GroundFunctionTermValueView<T> value)
+template<FactKind F>
+std::string format_view(FunctionTermValueView<::tyr::GroundTag, F> value)
 {
     return fmt::format("(= {} {})", value.get_fterm(), value.get_value());
 }
 
-template<FactKind T>
-std::string format_data(const ygg::Data<NumericEffect<T>>& value)
+template<::tyr::TaskKind T, FactKind F>
+std::string format_data(const ygg::Data<NumericEffect<T, F>>& value)
 {
     return fmt::format("({} {} {})", value.operator_kind, value.fterm, value.fexpr);
 }
 
-template<FactKind T>
-std::string format_view(NumericEffectView<T> value)
+template<::tyr::TaskKind T, FactKind F>
+std::string format_view(NumericEffectView<T, F> value)
 {
     return fmt::format("({} {} {})", value.get_operator(), value.get_fterm(), value.get_fexpr());
 }
 
-template<FactKind T>
-std::string format_data(const ygg::Data<NumericEffectOperator<T>>& value)
+template<::tyr::TaskKind T, FactKind F>
+std::string format_data(const ygg::Data<NumericEffectOperator<T, F>>& value)
 {
     return fmt::format("{}", value.value);
 }
 
-template<FactKind T>
-std::string format_view(NumericEffectOperatorView<T> value)
-{
-    return fmt::format("{}", value.get_variant());
-}
-
-template<FactKind T>
-std::string format_data(const ygg::Data<GroundNumericEffect<T>>& value)
-{
-    return fmt::format("({} {} {})", value.operator_kind, value.fterm, value.fexpr);
-}
-
-template<FactKind T>
-std::string format_view(GroundNumericEffectView<T> value)
-{
-    return fmt::format("({} {} {})", value.get_operator(), value.get_fterm(), value.get_fexpr());
-}
-
-template<FactKind T>
-std::string format_data(const ygg::Data<GroundNumericEffectOperator<T>>& value)
-{
-    return fmt::format("{}", value.value);
-}
-
-template<FactKind T>
-std::string format_view(GroundNumericEffectOperatorView<T> value)
+template<::tyr::TaskKind T, FactKind F>
+std::string format_view(NumericEffectOperatorView<T, F> value)
 {
     return fmt::format("{}", value.get_variant());
 }
 
 template<RelationKind R>
-std::string format_data(const ygg::Data<Rule<R>>& value)
+std::string format_data(const ygg::Data<Rule<::tyr::LiftedTag, R>>& value)
 {
     auto os = std::stringstream {};
     os << "Rule(\n";
@@ -258,7 +218,7 @@ std::string format_data(const ygg::Data<Rule<R>>& value)
 }
 
 template<RelationKind R>
-std::string format_view(RuleView<R> value)
+std::string format_view(RuleView<::tyr::LiftedTag, R> value)
 {
     auto os = std::stringstream {};
     os << "Rule(\n";
@@ -280,7 +240,7 @@ std::string format_view(RuleView<R> value)
 }
 
 template<RelationKind R>
-std::string format_data(const ygg::Data<GroundRule<R>>& value)
+std::string format_data(const ygg::Data<Rule<::tyr::GroundTag, R>>& value)
 {
     auto os = std::stringstream {};
     os << "GroundRule(\n";
@@ -300,7 +260,7 @@ std::string format_data(const ygg::Data<GroundRule<R>>& value)
 }
 
 template<RelationKind R>
-std::string format_view(GroundRuleView<R> value)
+std::string format_view(RuleView<::tyr::GroundTag, R> value)
 {
     auto os = std::stringstream {};
     os << "GroundRule(\n";
@@ -335,18 +295,30 @@ std::string format_binding(BindingView value)
 
 }  // namespace
 
-std::string to_string(const ygg::Data<UnaryOperator<ygg::Data<FunctionExpression>>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<UnaryOperator<ygg::Data<GroundFunctionExpression>>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<BinaryOperator<ArithmeticOperatorKind, ygg::Data<FunctionExpression>>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<BinaryOperator<BooleanOperatorKind, ygg::Data<FunctionExpression>>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<BinaryOperator<ArithmeticOperatorKind, ygg::Data<GroundFunctionExpression>>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<BinaryOperator<BooleanOperatorKind, ygg::Data<GroundFunctionExpression>>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<MultiOperator<ygg::Data<FunctionExpression>>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<MultiOperator<ygg::Data<GroundFunctionExpression>>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression>>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<ArithmeticOperator<ygg::Data<GroundFunctionExpression>>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<BooleanOperator<ygg::Data<FunctionExpression>>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<BooleanOperator<ygg::Data<GroundFunctionExpression>>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<UnaryOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<UnaryOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<BinaryOperator<ArithmeticOperatorKind, ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>& value)
+{
+    return format_data(value);
+}
+std::string to_string(const ygg::Data<BinaryOperator<BooleanOperatorKind, ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>& value)
+{
+    return format_data(value);
+}
+std::string to_string(const ygg::Data<BinaryOperator<ArithmeticOperatorKind, ygg::Data<FunctionExpression<::tyr::GroundTag>>>>& value)
+{
+    return format_data(value);
+}
+std::string to_string(const ygg::Data<BinaryOperator<BooleanOperatorKind, ygg::Data<FunctionExpression<::tyr::GroundTag>>>>& value)
+{
+    return format_data(value);
+}
+std::string to_string(const ygg::Data<MultiOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<MultiOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<BooleanOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<BooleanOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>& value) { return format_data(value); }
 
 std::string to_string(LiftedUnaryOperatorView value) { return format_view(value); }
 std::string to_string(GroundUnaryOperatorView value) { return format_view(value); }
@@ -361,49 +333,49 @@ std::string to_string(GroundArithmeticOperatorView value) { return format_view(v
 std::string to_string(LiftedBooleanOperatorView value) { return format_view(value); }
 std::string to_string(GroundBooleanOperatorView value) { return format_view(value); }
 
-std::string to_string(const ygg::Data<Atom<StaticTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<Atom<FluentTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<Literal<StaticTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<Literal<FluentTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<GroundAtom<StaticTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<GroundAtom<FluentTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<GroundLiteral<StaticTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<GroundLiteral<FluentTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<FunctionTerm<StaticTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<FunctionTerm<FluentTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<FunctionTerm<AuxiliaryTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<GroundFunctionTerm<StaticTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<GroundFunctionTerm<FluentTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<GroundFunctionTerm<AuxiliaryTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<GroundFunctionTermValue<StaticTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<GroundFunctionTermValue<FluentTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<GroundFunctionTermValue<AuxiliaryTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<NumericEffect<FluentTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<NumericEffectOperator<FluentTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<GroundNumericEffect<FluentTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<GroundNumericEffectOperator<FluentTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<Atom<::tyr::LiftedTag, StaticTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<Atom<::tyr::LiftedTag, FluentTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<Literal<::tyr::LiftedTag, StaticTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<Literal<::tyr::LiftedTag, FluentTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<Atom<::tyr::GroundTag, StaticTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<Atom<::tyr::GroundTag, FluentTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<Literal<::tyr::GroundTag, StaticTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<Literal<::tyr::GroundTag, FluentTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<FunctionTerm<::tyr::LiftedTag, StaticTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<FunctionTerm<::tyr::LiftedTag, FluentTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<FunctionTerm<::tyr::LiftedTag, AuxiliaryTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<FunctionTerm<::tyr::GroundTag, StaticTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<FunctionTerm<::tyr::GroundTag, FluentTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<FunctionTerm<::tyr::GroundTag, AuxiliaryTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<FunctionTermValue<::tyr::GroundTag, StaticTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<FunctionTermValue<::tyr::GroundTag, FluentTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<FunctionTermValue<::tyr::GroundTag, AuxiliaryTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<NumericEffect<::tyr::LiftedTag, FluentTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<NumericEffectOperator<::tyr::LiftedTag, FluentTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<NumericEffect<::tyr::GroundTag, FluentTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<NumericEffectOperator<::tyr::GroundTag, FluentTag>>& value) { return format_data(value); }
 
-std::string to_string(AtomView<StaticTag> value) { return format_view(value); }
-std::string to_string(AtomView<FluentTag> value) { return format_view(value); }
-std::string to_string(LiteralView<StaticTag> value) { return format_view(value); }
-std::string to_string(LiteralView<FluentTag> value) { return format_view(value); }
-std::string to_string(GroundAtomView<StaticTag> value) { return format_view(value); }
-std::string to_string(GroundAtomView<FluentTag> value) { return format_view(value); }
-std::string to_string(GroundLiteralView<StaticTag> value) { return format_view(value); }
-std::string to_string(GroundLiteralView<FluentTag> value) { return format_view(value); }
-std::string to_string(FunctionTermView<StaticTag> value) { return format_view(value); }
-std::string to_string(FunctionTermView<FluentTag> value) { return format_view(value); }
-std::string to_string(FunctionTermView<AuxiliaryTag> value) { return format_view(value); }
-std::string to_string(GroundFunctionTermView<StaticTag> value) { return format_view(value); }
-std::string to_string(GroundFunctionTermView<FluentTag> value) { return format_view(value); }
-std::string to_string(GroundFunctionTermView<AuxiliaryTag> value) { return format_view(value); }
-std::string to_string(GroundFunctionTermValueView<StaticTag> value) { return format_view(value); }
-std::string to_string(GroundFunctionTermValueView<FluentTag> value) { return format_view(value); }
-std::string to_string(GroundFunctionTermValueView<AuxiliaryTag> value) { return format_view(value); }
-std::string to_string(NumericEffectView<FluentTag> value) { return format_view(value); }
-std::string to_string(NumericEffectOperatorView<FluentTag> value) { return format_view(value); }
-std::string to_string(GroundNumericEffectView<FluentTag> value) { return format_view(value); }
-std::string to_string(GroundNumericEffectOperatorView<FluentTag> value) { return format_view(value); }
+std::string to_string(AtomView<::tyr::LiftedTag, StaticTag> value) { return format_view(value); }
+std::string to_string(AtomView<::tyr::LiftedTag, FluentTag> value) { return format_view(value); }
+std::string to_string(LiteralView<::tyr::LiftedTag, StaticTag> value) { return format_view(value); }
+std::string to_string(LiteralView<::tyr::LiftedTag, FluentTag> value) { return format_view(value); }
+std::string to_string(AtomView<::tyr::GroundTag, StaticTag> value) { return format_view(value); }
+std::string to_string(AtomView<::tyr::GroundTag, FluentTag> value) { return format_view(value); }
+std::string to_string(LiteralView<::tyr::GroundTag, StaticTag> value) { return format_view(value); }
+std::string to_string(LiteralView<::tyr::GroundTag, FluentTag> value) { return format_view(value); }
+std::string to_string(FunctionTermView<::tyr::LiftedTag, StaticTag> value) { return format_view(value); }
+std::string to_string(FunctionTermView<::tyr::LiftedTag, FluentTag> value) { return format_view(value); }
+std::string to_string(FunctionTermView<::tyr::LiftedTag, AuxiliaryTag> value) { return format_view(value); }
+std::string to_string(FunctionTermView<::tyr::GroundTag, StaticTag> value) { return format_view(value); }
+std::string to_string(FunctionTermView<::tyr::GroundTag, FluentTag> value) { return format_view(value); }
+std::string to_string(FunctionTermView<::tyr::GroundTag, AuxiliaryTag> value) { return format_view(value); }
+std::string to_string(FunctionTermValueView<::tyr::GroundTag, StaticTag> value) { return format_view(value); }
+std::string to_string(FunctionTermValueView<::tyr::GroundTag, FluentTag> value) { return format_view(value); }
+std::string to_string(FunctionTermValueView<::tyr::GroundTag, AuxiliaryTag> value) { return format_view(value); }
+std::string to_string(NumericEffectView<::tyr::LiftedTag, FluentTag> value) { return format_view(value); }
+std::string to_string(NumericEffectOperatorView<::tyr::LiftedTag, FluentTag> value) { return format_view(value); }
+std::string to_string(NumericEffectView<::tyr::GroundTag, FluentTag> value) { return format_view(value); }
+std::string to_string(NumericEffectOperatorView<::tyr::GroundTag, FluentTag> value) { return format_view(value); }
 
 std::string to_string(VariableView value) { return fmt::format("{}", value.get_name()); }
 std::string to_string(ObjectView value) { return fmt::format("{}", value.get_name()); }
@@ -421,24 +393,24 @@ std::string to_string(FunctionBindingView<AuxiliaryTag> value) { return format_b
 std::string to_string(RuleBindingView<PredicateTag> value) { return format_binding(value); }
 std::string to_string(RuleBindingView<FunctionTag> value) { return format_binding(value); }
 
-std::string to_string(const ygg::Data<RelationBinding<Rule<PredicateTag>>>& value)
+std::string to_string(const ygg::Data<RelationBinding<Rule<::tyr::LiftedTag, PredicateTag>>>& value)
 {
     return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.objects), " "));
 }
 
-std::string to_string(const ygg::Data<RelationBinding<Rule<FunctionTag>>>& value)
+std::string to_string(const ygg::Data<RelationBinding<Rule<::tyr::LiftedTag, FunctionTag>>>& value)
 {
     return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.objects), " "));
 }
 
-std::string to_string(const ygg::Data<FunctionExpression>& value) { return fmt::format("{}", value.value); }
-std::string to_string(FunctionExpressionView value) { return fmt::format("{}", value.get_variant()); }
-std::string to_string(const ygg::Data<GroundFunctionExpression>& value) { return fmt::format("{}", value.value); }
-std::string to_string(GroundFunctionExpressionView value) { return fmt::format("{}", value.get_variant()); }
+std::string to_string(const ygg::Data<FunctionExpression<::tyr::LiftedTag>>& value) { return fmt::format("{}", value.value); }
+std::string to_string(FunctionExpressionView<::tyr::LiftedTag> value) { return fmt::format("{}", value.get_variant()); }
+std::string to_string(const ygg::Data<FunctionExpression<::tyr::GroundTag>>& value) { return fmt::format("{}", value.value); }
+std::string to_string(FunctionExpressionView<::tyr::GroundTag> value) { return fmt::format("{}", value.get_variant()); }
 std::string to_string(const ygg::Data<Metric>& value) { return fmt::format("{}", value.fexpr); }
 std::string to_string(MetricView value) { return fmt::format("{}", value.get_fexpr()); }
 
-std::string to_string(const ygg::Data<ConjunctiveCondition>& value)
+std::string to_string(const ygg::Data<ConjunctiveCondition<::tyr::LiftedTag>>& value)
 {
     auto os = std::stringstream {};
     os << "ConjunctiveCondition(\n";
@@ -459,7 +431,7 @@ std::string to_string(const ygg::Data<ConjunctiveCondition>& value)
     return os.str();
 }
 
-std::string to_string(ConjunctiveConditionView value)
+std::string to_string(ConjunctiveConditionView<::tyr::LiftedTag> value)
 {
     auto os = std::stringstream {};
     os << "ConjunctiveCondition(\n";
@@ -480,7 +452,7 @@ std::string to_string(ConjunctiveConditionView value)
     return os.str();
 }
 
-std::string to_string(const ygg::Data<ConjunctiveEffect>& value)
+std::string to_string(const ygg::Data<ConjunctiveEffect<::tyr::LiftedTag>>& value)
 {
     auto os = std::stringstream {};
     os << "ConjunctiveEffect(\n";
@@ -495,7 +467,7 @@ std::string to_string(const ygg::Data<ConjunctiveEffect>& value)
     return os.str();
 }
 
-std::string to_string(ConjunctiveEffectView value)
+std::string to_string(ConjunctiveEffectView<::tyr::LiftedTag> value)
 {
     auto os = std::stringstream {};
     os << "ConjunctiveEffect(\n";
@@ -510,7 +482,7 @@ std::string to_string(ConjunctiveEffectView value)
     return os.str();
 }
 
-std::string to_string(const ygg::Data<ConditionalEffect>& value)
+std::string to_string(const ygg::Data<ConditionalEffect<::tyr::LiftedTag>>& value)
 {
     auto os = std::stringstream {};
     os << "ConditionalEffect(\n";
@@ -529,7 +501,7 @@ std::string to_string(const ygg::Data<ConditionalEffect>& value)
     return os.str();
 }
 
-std::string to_string(ConditionalEffectView value)
+std::string to_string(ConditionalEffectView<::tyr::LiftedTag> value)
 {
     auto os = std::stringstream {};
     os << "ConditionalEffect(\n";
@@ -548,12 +520,12 @@ std::string to_string(ConditionalEffectView value)
     return os.str();
 }
 
-std::string to_string(const ygg::Data<Rule<PredicateTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<Rule<FunctionTag>>& value) { return format_data(value); }
-std::string to_string(RuleView<PredicateTag> value) { return format_view(value); }
-std::string to_string(RuleView<FunctionTag> value) { return format_view(value); }
+std::string to_string(const ygg::Data<Rule<::tyr::LiftedTag, PredicateTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<Rule<::tyr::LiftedTag, FunctionTag>>& value) { return format_data(value); }
+std::string to_string(RuleView<::tyr::LiftedTag, PredicateTag> value) { return format_view(value); }
+std::string to_string(RuleView<::tyr::LiftedTag, FunctionTag> value) { return format_view(value); }
 
-std::string to_string(const ygg::Data<GroundConjunctiveCondition>& value)
+std::string to_string(const ygg::Data<ConjunctiveCondition<::tyr::GroundTag>>& value)
 {
     auto os = std::stringstream {};
     os << "GroundConjunctiveCondition(\n";
@@ -572,7 +544,7 @@ std::string to_string(const ygg::Data<GroundConjunctiveCondition>& value)
     return os.str();
 }
 
-std::string to_string(GroundConjunctiveConditionView value)
+std::string to_string(ConjunctiveConditionView<::tyr::GroundTag> value)
 {
     auto os = std::stringstream {};
     os << "GroundConjunctiveCondition(\n";
@@ -591,7 +563,7 @@ std::string to_string(GroundConjunctiveConditionView value)
     return os.str();
 }
 
-std::string to_string(const ygg::Data<GroundConjunctiveEffect>& value)
+std::string to_string(const ygg::Data<ConjunctiveEffect<::tyr::GroundTag>>& value)
 {
     auto os = std::stringstream {};
     os << "GroundConjunctiveEffect(\n";
@@ -606,7 +578,7 @@ std::string to_string(const ygg::Data<GroundConjunctiveEffect>& value)
     return os.str();
 }
 
-std::string to_string(GroundConjunctiveEffectView value)
+std::string to_string(ConjunctiveEffectView<::tyr::GroundTag> value)
 {
     auto os = std::stringstream {};
     os << "GroundConjunctiveEffect(\n";
@@ -621,7 +593,7 @@ std::string to_string(GroundConjunctiveEffectView value)
     return os.str();
 }
 
-std::string to_string(const ygg::Data<GroundConditionalEffect>& value)
+std::string to_string(const ygg::Data<ConditionalEffect<::tyr::GroundTag>>& value)
 {
     auto os = std::stringstream {};
     os << "GroundConditionalEffect(\n";
@@ -638,7 +610,7 @@ std::string to_string(const ygg::Data<GroundConditionalEffect>& value)
     return os.str();
 }
 
-std::string to_string(GroundConditionalEffectView value)
+std::string to_string(ConditionalEffectView<::tyr::GroundTag> value)
 {
     auto os = std::stringstream {};
     os << "GroundConditionalEffect(\n";
@@ -655,12 +627,12 @@ std::string to_string(GroundConditionalEffectView value)
     return os.str();
 }
 
-std::string to_string(const ygg::Data<GroundRule<PredicateTag>>& value) { return format_data(value); }
-std::string to_string(const ygg::Data<GroundRule<FunctionTag>>& value) { return format_data(value); }
-std::string to_string(GroundRuleView<PredicateTag> value) { return format_view(value); }
-std::string to_string(GroundRuleView<FunctionTag> value) { return format_view(value); }
+std::string to_string(const ygg::Data<Rule<::tyr::GroundTag, PredicateTag>>& value) { return format_data(value); }
+std::string to_string(const ygg::Data<Rule<::tyr::GroundTag, FunctionTag>>& value) { return format_data(value); }
+std::string to_string(RuleView<::tyr::GroundTag, PredicateTag> value) { return format_view(value); }
+std::string to_string(RuleView<::tyr::GroundTag, FunctionTag> value) { return format_view(value); }
 
-std::string to_string(const ygg::Data<Program>& value)
+std::string to_string(const ygg::Data<Program<::tyr::LiftedTag>>& value)
 {
     auto os = std::stringstream {};
     os << "Program(\n";
@@ -734,7 +706,7 @@ std::string to_string(ProgramView<LiftedTag> value)
     return os.str();
 }
 
-std::string to_string(const ygg::Data<GroundProgram>& value)
+std::string to_string(const ygg::Data<Program<::tyr::GroundTag>>& value)
 {
     auto os = std::stringstream {};
     os << "GroundProgram(\n";
@@ -763,9 +735,9 @@ std::string to_string(const ygg::Data<GroundProgram>& value)
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "goal = ", value.goal);
         os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "ground rules = ", value.predicate_ground_rules);
+        fmt::print(os, "{}{}\n", "ground rules = ", value.predicate_rules);
         os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "numeric ground rules = ", value.function_ground_rules);
+        fmt::print(os, "{}{}\n", "numeric ground rules = ", value.function_rules);
     }
     os << ygg::print_indent << ")";
     return os.str();

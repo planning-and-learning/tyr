@@ -22,20 +22,20 @@
 namespace tyr::datalog
 {
 
-template ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::StaticTag> element,
+template ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> element,
                                                     const FactSets& fact_sets);
-template ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::GroundFunctionTermView<::tyr::formalism::FluentTag> element,
+template ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> element,
                                                     const FactSets& fact_sets);
 
 /**
  * is_applicable
  */
 
-template bool is_applicable(::tyr::formalism::datalog::GroundLiteralView<::tyr::formalism::StaticTag> element, const FactSets& fact_sets);
-template bool is_applicable(::tyr::formalism::datalog::GroundLiteralView<::tyr::formalism::FluentTag> element, const FactSets& fact_sets);
+template bool is_applicable(::tyr::formalism::datalog::LiteralView<::tyr::GroundTag, ::tyr::formalism::StaticTag> element, const FactSets& fact_sets);
+template bool is_applicable(::tyr::formalism::datalog::LiteralView<::tyr::GroundTag, ::tyr::formalism::FluentTag> element, const FactSets& fact_sets);
 
-template bool is_applicable(::tyr::formalism::datalog::GroundLiteralListView<::tyr::formalism::StaticTag> elements, const FactSets& fact_sets);
-template bool is_applicable(::tyr::formalism::datalog::GroundLiteralListView<::tyr::formalism::FluentTag> elements, const FactSets& fact_sets);
+template bool is_applicable(::tyr::formalism::datalog::LiteralListView<::tyr::GroundTag, ::tyr::formalism::StaticTag> elements, const FactSets& fact_sets);
+template bool is_applicable(::tyr::formalism::datalog::LiteralListView<::tyr::GroundTag, ::tyr::formalism::FluentTag> elements, const FactSets& fact_sets);
 
 // GroundConjunctiveCondition
 

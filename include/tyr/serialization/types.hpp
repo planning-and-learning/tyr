@@ -12,16 +12,16 @@ template<typename T>
 using FormalismIndexView = ygg::View<ygg::Index<T>, ::tyr::formalism::planning::Repository>;
 
 using FormalismValueViews = ygg::TypeList<::tyr::formalism::planning::TermView,
-                                          ::tyr::formalism::planning::FunctionExpressionView,
-                                          ::tyr::formalism::planning::GroundFunctionExpressionView,
+                                          ::tyr::formalism::planning::FunctionExpressionView<::tyr::LiftedTag>,
+                                          ::tyr::formalism::planning::FunctionExpressionView<::tyr::GroundTag>,
                                           ::tyr::formalism::planning::LiftedArithmeticOperatorView,
                                           ::tyr::formalism::planning::GroundArithmeticOperatorView,
                                           ::tyr::formalism::planning::LiftedBooleanOperatorView,
                                           ::tyr::formalism::planning::GroundBooleanOperatorView,
-                                          ::tyr::formalism::planning::NumericEffectOperatorView<::tyr::formalism::FluentTag>,
-                                          ::tyr::formalism::planning::NumericEffectOperatorView<::tyr::formalism::AuxiliaryTag>,
-                                          ::tyr::formalism::planning::GroundNumericEffectOperatorView<::tyr::formalism::FluentTag>,
-                                          ::tyr::formalism::planning::GroundNumericEffectOperatorView<::tyr::formalism::AuxiliaryTag>,
+                                          ::tyr::formalism::planning::NumericEffectOperatorView<::tyr::LiftedTag, ::tyr::formalism::FluentTag>,
+                                          ::tyr::formalism::planning::NumericEffectOperatorView<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>,
+                                          ::tyr::formalism::planning::NumericEffectOperatorView<::tyr::GroundTag, ::tyr::formalism::FluentTag>,
+                                          ::tyr::formalism::planning::NumericEffectOperatorView<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>,
                                           ::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag>>;
 
 using FormalismViews = ygg::ConcatTypeListsT<ygg::MapTypeListT<FormalismIndexView, ::tyr::formalism::planning::BuilderTypes>, FormalismValueViews>;

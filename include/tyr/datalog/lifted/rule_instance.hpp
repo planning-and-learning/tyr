@@ -34,7 +34,7 @@ class RuleInstance<LiftedTag, R>
 public:
     using Task = LiftedTag;
     using Relation = R;
-    using SourceRule = ::tyr::formalism::datalog::RuleView<R>;
+    using SourceRule = ::tyr::formalism::datalog::RuleView<::tyr::LiftedTag, R>;
 
     RuleInstance(const ConstRuleWorkspace<LiftedTag, R>& workspace, ::tyr::formalism::datalog::GrounderContext& grounder) :
         m_workspace(workspace),
@@ -46,21 +46,21 @@ public:
     auto get_body() const noexcept { return get_rule().get_body(); }
     auto get_head() const noexcept { return get_rule().get_head(); }
 
-    auto resolve(::tyr::formalism::datalog::AtomView<::tyr::formalism::FluentTag> atom) const
+    auto resolve(::tyr::formalism::datalog::AtomView<::tyr::LiftedTag, ::tyr::formalism::FluentTag> atom) const
     {
         return ::tyr::formalism::datalog::ground_binding(atom, m_grounder).first;
     }
 
     auto resolve(::tyr::formalism::datalog::LiftedBooleanOperatorView constraint) const { return ::tyr::formalism::datalog::ground(constraint, m_grounder); }
 
-    ResolvedNumericEffect resolve(::tyr::formalism::datalog::NumericEffectView<::tyr::formalism::FluentTag> effect) const
+    ResolvedNumericEffect resolve(::tyr::formalism::datalog::NumericEffectView<::tyr::LiftedTag, ::tyr::formalism::FluentTag> effect) const
     {
         return { effect.get_operator(),
                  ::tyr::formalism::datalog::ground_binding(effect.get_fterm(), m_grounder).first,
                  ::tyr::formalism::datalog::ground(effect.get_fexpr(), m_grounder) };
     }
 
-    ResolvedNumericEffect resolve(::tyr::formalism::datalog::GroundNumericEffectView<::tyr::formalism::FluentTag> effect) const noexcept
+    ResolvedNumericEffect resolve(::tyr::formalism::datalog::NumericEffectView<::tyr::GroundTag, ::tyr::formalism::FluentTag> effect) const noexcept
     {
         return { effect.get_operator(), effect.get_fterm().get_row(), effect.get_fexpr() };
     }

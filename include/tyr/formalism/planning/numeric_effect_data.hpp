@@ -30,43 +30,43 @@
 namespace ygg
 {
 
-template<::tyr::formalism::FactKind T>
-struct Data<::tyr::formalism::planning::NumericEffect<T>>
+template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
+struct Data<::tyr::formalism::planning::NumericEffect<T, F>>
 {
-    static_assert(std::same_as<T, ::tyr::formalism::FluentTag> || std::same_as<T, ::tyr::formalism::AuxiliaryTag>,
-                  "Unsupported NumericEffect<T> specialization.");
-    static constexpr auto default_operator = std::same_as<T, ::tyr::formalism::AuxiliaryTag> ? ::tyr::formalism::NumericEffectOperatorKind::Increase :
+    static_assert(std::same_as<F, ::tyr::formalism::FluentTag> || std::same_as<F, ::tyr::formalism::AuxiliaryTag>,
+                  "Unsupported NumericEffect<F> specialization.");
+    static constexpr auto default_operator = std::same_as<F, ::tyr::formalism::AuxiliaryTag> ? ::tyr::formalism::NumericEffectOperatorKind::Increase :
                                                                                                ::tyr::formalism::NumericEffectOperatorKind::Assign;
 
-    ygg::Index<::tyr::formalism::planning::NumericEffect<T>> index;
+    ygg::Index<::tyr::formalism::planning::NumericEffect<T, F>> index;
     ::tyr::formalism::NumericEffectOperatorKind operator_kind = default_operator;
-    ygg::Index<::tyr::formalism::planning::FunctionTerm<T>> fterm;
-    ygg::Data<::tyr::formalism::planning::FunctionExpression> fexpr;
+    ygg::Index<::tyr::formalism::planning::FunctionTerm<T, F>> fterm;
+    ygg::Data<::tyr::formalism::planning::FunctionExpression<T>> fexpr;
 
     Data() = default;
     Data(::tyr::formalism::NumericEffectOperatorKind operator_kind_,
-         ygg::Index<::tyr::formalism::planning::FunctionTerm<T>> fterm_,
-         ygg::Data<::tyr::formalism::planning::FunctionExpression> fexpr_) :
+         ygg::Index<::tyr::formalism::planning::FunctionTerm<T, F>> fterm_,
+         ygg::Data<::tyr::formalism::planning::FunctionExpression<T>> fexpr_) :
         index(),
         operator_kind(operator_kind_),
         fterm(fterm_),
         fexpr(fexpr_)
     {
-        if constexpr (std::same_as<T, ::tyr::formalism::AuxiliaryTag>)
+        if constexpr (std::same_as<F, ::tyr::formalism::AuxiliaryTag>)
             if (operator_kind != default_operator)
                 throw std::invalid_argument("auxiliary numeric effect must be Increase");
     }
     // Python constructor
     template<typename C>
     Data(::tyr::formalism::NumericEffectOperatorKind operator_kind_,
-         ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<T>>, C> fterm_,
-         ::ygg::View<ygg::Data<::tyr::formalism::planning::FunctionExpression>, C> fexpr_) :
+         ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<T, F>>, C> fterm_,
+         ::ygg::View<ygg::Data<::tyr::formalism::planning::FunctionExpression<T>>, C> fexpr_) :
         index(),
         operator_kind(operator_kind_),
         fterm(),
         fexpr()
     {
-        if constexpr (std::same_as<T, ::tyr::formalism::AuxiliaryTag>)
+        if constexpr (std::same_as<F, ::tyr::formalism::AuxiliaryTag>)
             if (operator_kind != default_operator)
                 throw std::invalid_argument("auxiliary numeric effect must be Increase");
         ygg::set(fterm_, fterm);
@@ -89,7 +89,8 @@ struct Data<::tyr::formalism::planning::NumericEffect<T>>
     auto identifying_members() const noexcept { return std::tie(operator_kind, fterm, fexpr); }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::NumericEffect<::tyr::formalism::FluentTag>>);
+static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>);
+static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::NumericEffect<::tyr::GroundTag, ::tyr::formalism::FluentTag>>);
 
 }
 
