@@ -23,21 +23,21 @@
 namespace tyr::datalog
 {
 
-template<::tyr::formalism::RelationKind R>
-WitnessAnnotation<R>::WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key_, Cost cost_) : rule_key(rule_key_), metric(), cost(cost_)
+template<formalism::RelationKind R>
+WitnessAnnotation<R>::WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key_, Cost cost_) : rule_key(rule_key_), metric(), cost(cost_)
 {
 }
 
-template<::tyr::formalism::RelationKind R>
-WitnessAnnotation<R>::WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key_, Metric metric_, Cost cost_) :
+template<formalism::RelationKind R>
+WitnessAnnotation<R>::WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key_, Metric metric_, Cost cost_) :
     rule_key(rule_key_),
     metric(metric_),
     cost(cost_)
 {
 }
 
-template<::tyr::formalism::RelationKind R>
-WitnessAnnotation<R>::WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key_,
+template<formalism::RelationKind R>
+WitnessAnnotation<R>::WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key_,
                                         Metric metric_,
                                         Cost cost_,
                                         NumericSupports numeric_supports_) :
@@ -50,8 +50,8 @@ WitnessAnnotation<R>::WitnessAnnotation(::tyr::formalism::datalog::RuleBindingVi
     numeric_supports.erase(std::unique(numeric_supports.begin(), numeric_supports.end()), numeric_supports.end());
 }
 
-template<::tyr::formalism::RelationKind R>
-WitnessAnnotation<R>::WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key_,
+template<formalism::RelationKind R>
+WitnessAnnotation<R>::WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key_,
                                         Metric metric_,
                                         Cost cost_,
                                         std::span<const NumericSupport> numeric_supports_) :
@@ -59,7 +59,7 @@ WitnessAnnotation<R>::WitnessAnnotation(::tyr::formalism::datalog::RuleBindingVi
 {
 }
 
-template struct WitnessAnnotation<::tyr::formalism::PredicateTag>;
-template struct WitnessAnnotation<::tyr::formalism::FunctionTag>;
+template struct WitnessAnnotation<formalism::PredicateTag>;
+template struct WitnessAnnotation<formalism::FunctionTag>;
 
 }

@@ -41,22 +41,22 @@
 
 namespace tyr::planning
 {
-template<::tyr::formalism::FactKind T>
+template<formalism::FactKind T>
 struct GroundUnpackedAtomStorageType;
 
 template<>
-struct GroundUnpackedAtomStorageType<::tyr::formalism::FluentTag>
+struct GroundUnpackedAtomStorageType<formalism::FluentTag>
 {
     using type = planning::FactUnpackedStorage<GroundTag>;
 };
 
 template<>
-struct GroundUnpackedAtomStorageType<::tyr::formalism::DerivedTag>
+struct GroundUnpackedAtomStorageType<formalism::DerivedTag>
 {
     using type = planning::AtomUnpackedStorage<GroundTag>;
 };
 
-template<::tyr::formalism::FactKind T>
+template<formalism::FactKind T>
 using GroundUnpackedAtomStorage = typename GroundUnpackedAtomStorageType<T>::type;
 
 }

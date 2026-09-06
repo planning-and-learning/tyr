@@ -50,7 +50,7 @@ struct MutableConjunctiveCondition : ygg::comparison::Mixin<MutableConjunctiveCo
         fluent_literals(std::move(fluent_literals))
     {
     }
-    MutableConjunctiveCondition(size_t num_parent_variables, ConjunctiveConditionView<::tyr::LiftedTag> element) :
+    MutableConjunctiveCondition(size_t num_parent_variables, ConjunctiveConditionView<LiftedTag> element) :
         num_parent_variables(num_parent_variables),
         num_variables(element.get_arity()),
         static_literals(),
@@ -71,9 +71,9 @@ using MutableConjunctiveConditionList = std::vector<MutableConjunctiveCondition>
 namespace tyr::formalism::unification
 {
 template<>
-struct structure_traits<tyr::formalism::planning::MutableConjunctiveCondition>
+struct structure_traits<planning::MutableConjunctiveCondition>
 {
-    using Type = tyr::formalism::planning::MutableConjunctiveCondition;
+    using Type = planning::MutableConjunctiveCondition;
 
     template<typename F>
     static bool zip_terms(const Type& lhs, const Type& rhs, F&& f)
@@ -84,8 +84,7 @@ struct structure_traits<tyr::formalism::planning::MutableConjunctiveCondition>
         if (lhs.num_variables != rhs.num_variables)
             return false;
 
-        return tyr::formalism::unification::zip_terms(lhs.static_literals, rhs.static_literals, f)
-               && tyr::formalism::unification::zip_terms(lhs.fluent_literals, rhs.fluent_literals, f);
+        return unification::zip_terms(lhs.static_literals, rhs.static_literals, f) && unification::zip_terms(lhs.fluent_literals, rhs.fluent_literals, f);
     }
 
     template<typename F>
@@ -93,8 +92,8 @@ struct structure_traits<tyr::formalism::planning::MutableConjunctiveCondition>
     {
         return Type(value.num_parent_variables,
                     value.num_variables,
-                    tyr::formalism::unification::transform_terms(value.static_literals, f),
-                    tyr::formalism::unification::transform_terms(value.fluent_literals, f));
+                    unification::transform_terms(value.static_literals, f),
+                    unification::transform_terms(value.fluent_literals, f));
     }
 };
 }

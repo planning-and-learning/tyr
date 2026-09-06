@@ -35,7 +35,7 @@ namespace f = tyr::formalism;
 
 namespace tyr::planning
 {
-Task<LiftedTag>::Task(::tyr::formalism::planning::PlanningTask task) : m_task(std::move(task)), m_static_atoms_bitset(), m_static_numeric_variables()
+Task<LiftedTag>::Task(formalism::planning::PlanningTask task) : m_task(std::move(task)), m_static_atoms_bitset(), m_static_numeric_variables()
 {
     for (const auto atom : get_task().template get_atoms<f::StaticTag>())
         ygg::set(ygg::uint_t(atom.get_index()), true, m_static_atoms_bitset);
@@ -47,14 +47,14 @@ Task<LiftedTag>::Task(::tyr::formalism::planning::PlanningTask task) : m_task(st
                  std::numeric_limits<ygg::float_t>::quiet_NaN());
 }
 
-TaskPtr<LiftedTag> Task<LiftedTag>::create(::tyr::formalism::planning::PlanningTask task) { return std::make_shared<Task<LiftedTag>>(std::move(task)); }
+TaskPtr<LiftedTag> Task<LiftedTag>::create(formalism::planning::PlanningTask task) { return std::make_shared<Task<LiftedTag>>(std::move(task)); }
 
 GroundTaskInstantiationResult Task<LiftedTag>::instantiate_ground_task(ygg::ExecutionContext& execution_context, const GroundTaskInstantiationOptions& options)
 {
     return tyr::planning::instantiate_ground_task(*this, execution_context, options);
 }
 
-Task<GroundTag>::Task(::tyr::formalism::planning::PlanningFDRTask task) : m_task(std::move(task)), m_static_atoms_bitset(), m_static_numeric_variables()
+Task<GroundTag>::Task(formalism::planning::PlanningFDRTask task) : m_task(std::move(task)), m_static_atoms_bitset(), m_static_numeric_variables()
 {
     for (const auto atom : get_task().template get_atoms<f::StaticTag>())
         ygg::set(ygg::uint_t(atom.get_index()), true, m_static_atoms_bitset);

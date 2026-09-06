@@ -37,8 +37,8 @@ SearchResult<Kind> find_solution(Task<Kind>& task,
         throw std::invalid_argument("gbfs_lazy::find_solution(...): num_search_workers must be greater than zero.");
     if (options.num_search_workers > 1)
     {
-        using Search = ::tyr::planning::detail::LazyGBFSPolicy<Kind, ParallelSearch>;
-        return ::tyr::planning::detail::find_parallel_solution<Kind, Search>(task,
+        using Search = planning::detail::LazyGBFSPolicy<Kind, ParallelSearch>;
+        return planning::detail::find_parallel_solution<Kind, Search>(task,
                                                                              state_repository,
                                                                              axiom_evaluator,
                                                                              successor_generator,
@@ -47,9 +47,9 @@ SearchResult<Kind> find_solution(Task<Kind>& task,
                                                                              "gbfs_lazy::find_solution(...): unknown distribution hash mode.");
     }
 
-    using Search = ::tyr::planning::detail::LazyGBFSPolicy<Kind, SequentialSearch>;
-    using Execution = ::tyr::planning::detail::SequentialExecutionPolicy<Kind, Search>;
-    return ::tyr::planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task,
+    using Search = planning::detail::LazyGBFSPolicy<Kind, SequentialSearch>;
+    using Execution = planning::detail::SequentialExecutionPolicy<Kind, Search>;
+    return planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task,
                                                                                          state_repository,
                                                                                          axiom_evaluator,
                                                                                          successor_generator,

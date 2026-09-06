@@ -39,7 +39,7 @@ template<class Tag>
 class FDRFactIterator<GroundTag, Tag>
 {
 public:
-    using value_type = ygg::Data<::tyr::formalism::planning::FDRFact<Tag>>;
+    using value_type = ygg::Data<formalism::planning::FDRFact<Tag>>;
     using reference = value_type;
     using difference_type = std::ptrdiff_t;
     using iterator_category = std::input_iterator_tag;
@@ -50,21 +50,21 @@ public:
     FDRFactIterator(const FactUnpackedStorage<GroundTag>& storage, bool begin) noexcept : m_storage(&storage), m_i(begin ? 0 : m_storage->values.size())
     {
         if (begin)
-            while (m_i < m_storage->values.size() && ::tyr::formalism::planning::FDRValue(m_storage->values[m_i]).is_none())
+            while (m_i < m_storage->values.size() && formalism::planning::FDRValue(m_storage->values[m_i]).is_none())
                 ++m_i;
     }
 
     value_type operator*() const noexcept
     {
         assert(m_storage);
-        return ygg::Data<::tyr::formalism::planning::FDRFact<Tag>> { ygg::Index<::tyr::formalism::planning::FDRVariable<Tag>> { static_cast<ygg::uint_t>(m_i) },
-                                                                     ::tyr::formalism::planning::FDRValue(m_storage->values[m_i]) };
+        return ygg::Data<formalism::planning::FDRFact<Tag>> { ygg::Index<formalism::planning::FDRVariable<Tag>> { static_cast<ygg::uint_t>(m_i) },
+                                                                     formalism::planning::FDRValue(m_storage->values[m_i]) };
     }
 
     FDRFactIterator& operator++() noexcept
     {
         ++m_i;
-        while (m_i < m_storage->values.size() && ::tyr::formalism::planning::FDRValue(m_storage->values[m_i]).is_none())
+        while (m_i < m_storage->values.size() && formalism::planning::FDRValue(m_storage->values[m_i]).is_none())
             ++m_i;
         return *this;
     }

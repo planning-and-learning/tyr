@@ -31,9 +31,9 @@ ygg::float_t Heuristic<Kind>::evaluate(const StateView<Kind>& state)
 }
 
 template<TaskKind Kind>
-const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>& Heuristic<Kind>::get_preferred_actions()
+const ygg::UnorderedSet<formalism::planning::ActionBindingView>& Heuristic<Kind>::get_preferred_actions()
 {
-    static const auto actions = ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView> {};
+    static const auto actions = ygg::UnorderedSet<formalism::planning::ActionBindingView> {};
     return actions;
 }
 

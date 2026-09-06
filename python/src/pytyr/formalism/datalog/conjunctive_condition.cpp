@@ -37,7 +37,7 @@ void bind_conjunctive_condition_kind(nb::module_& m, RepositoryBinding& reposito
             cls.def(nb::init<const VariableViewList&,
                              const LiteralViewList<T, StaticTag>&,
                              const LiteralViewList<T, FluentTag>&,
-                             const LiftedBooleanOperatorViewList&>(),
+                             const BooleanOperatorViewList<T>&>(),
                     "variables"_a,
                     "static_literals"_a,
                     "fluent_literals"_a,
@@ -45,7 +45,7 @@ void bind_conjunctive_condition_kind(nb::module_& m, RepositoryBinding& reposito
         }
         else
         {
-            cls.def(nb::init<const LiteralViewList<T, StaticTag>&, const LiteralViewList<T, FluentTag>&, const GroundBooleanOperatorViewList&>(),
+            cls.def(nb::init<const LiteralViewList<T, StaticTag>&, const LiteralViewList<T, FluentTag>&, const BooleanOperatorViewList<T>&>(),
                     "static_literals"_a,
                     "fluent_literals"_a,
                     "numeric_constraints"_a);

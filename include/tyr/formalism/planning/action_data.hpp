@@ -179,7 +179,7 @@ static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::Action<::
 
 namespace tyr::formalism::planning
 {
-template<::tyr::TaskKind T>
+template<TaskKind T>
 using ActionData = ygg::Data<Action<T>>;
 }
 

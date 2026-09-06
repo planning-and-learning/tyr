@@ -80,7 +80,7 @@ struct AxiomEvaluator<LiftedTag>::Impl
 
         ygg::ExecutionContextPtr execution_context;
         std::unique_ptr<datalog::ProgramWorkspace<LiftedTag>> workspace;
-        std::vector<::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>> derived_bindings;
+        std::vector<formalism::datalog::PredicateBindingView<formalism::FluentTag>> derived_bindings;
     };
 
     Impl(ygg::uint_t index_, TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :

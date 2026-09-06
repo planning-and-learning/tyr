@@ -37,13 +37,13 @@ namespace tyr::planning::detail
 template<>
 struct RPGPolicy<GroundTag>
 {
-    using Action = ::tyr::formalism::planning::ActionView<::tyr::GroundTag>;
+    using Action = formalism::planning::ActionView<GroundTag>;
 
     template<typename Workspace>
-    static std::optional<::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag>>
+    static std::optional<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>
     translate_cut_atom(const RPGDefinition<GroundTag>& definition,
                        Workspace&,
-                       ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head)
+                       formalism::datalog::PredicateBindingView<formalism::FluentTag> head)
     {
         const auto& mapping = definition.rpg_program.get_translation_context().d2p.fluent_to_fluent_atom;
         if (const auto it = mapping.find(head); it != mapping.end())
@@ -52,18 +52,18 @@ struct RPGPolicy<GroundTag>
     }
 
     template<typename Workspace>
-    static void set_goal(RPGDefinition<GroundTag>& definition, Workspace& workspace, ::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> source_goal)
+    static void set_goal(RPGDefinition<GroundTag>& definition, Workspace& workspace, formalism::planning::ConjunctiveConditionView<GroundTag> source_goal)
     {
         materialize_goal(definition, workspace, source_goal);
     }
 
     template<typename Workspace>
-    static void begin_state_evaluation(const RPGDefinition<GroundTag>&, Workspace& workspace, ::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag>)
+    static void begin_state_evaluation(const RPGDefinition<GroundTag>&, Workspace& workspace, formalism::planning::ConjunctiveConditionView<GroundTag>)
     {
         workspace.clear_costs();
     }
 
-    template<::tyr::formalism::RelationKind R, typename Workspace>
+    template<formalism::RelationKind R, typename Workspace>
     static std::optional<Action> get_action(const RPGDefinition<GroundTag>& definition, Workspace&, const datalog::WitnessAnnotation<R>& witness)
     {
         const auto& mapping = definition.rpg_program.template get_rule_to_action_mapping<R>();
@@ -78,10 +78,10 @@ struct RPGPolicy<GroundTag>
         return executor.is_applicable(action, state_context);
     }
 
-    template<::tyr::formalism::RelationKind R, typename Workspace, typename Callback>
+    template<formalism::RelationKind R, typename Workspace, typename Callback>
     static void visit_witness_rule_instance(Workspace&, const datalog::WitnessAnnotation<R>& witness, Callback&& callback)
     {
-        const auto rule = ::tyr::formalism::datalog::find_ground_rule(witness.get_rule_key());
+        const auto rule = formalism::datalog::find_ground_rule(witness.get_rule_key());
         if (!rule)
             throw std::logic_error("Ground witness binding has no rule");
 

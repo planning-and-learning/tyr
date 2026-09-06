@@ -9,16 +9,13 @@
 namespace tyr::serialization
 {
 
-template<typename T>
-struct Serializer<::tyr::formalism::planning::BooleanOperatorView<T>>
+template<TaskKind T>
+struct Serializer<formalism::planning::BooleanOperatorView<T>>
 {
-    static std::string name()
-    {
-        return std::string(std::same_as<T, ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>> ? "Ground" : "") + "BooleanOperator";
-    }
+    static std::string name() { return std::string(std::same_as<T, GroundTag> ? T::name : "") + "BooleanOperator"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::BooleanOperatorView<T>& value)
+    static void save(Archive& ar, const formalism::planning::BooleanOperatorView<T>& value)
     {
         ar.variant(value.get_variant());
     }

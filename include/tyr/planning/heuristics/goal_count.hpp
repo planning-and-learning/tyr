@@ -39,7 +39,7 @@ public:
 
     using Heuristic<Kind>::evaluate;
 
-    void set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal) override;
+    void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) override;
 
     ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state) override;
 
@@ -48,7 +48,7 @@ public:
 protected:
     std::shared_ptr<const Task<Kind>> m_task;
 
-    ::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> m_goal;
+    formalism::planning::ConjunctiveConditionView<GroundTag> m_goal;
 };
 
 }

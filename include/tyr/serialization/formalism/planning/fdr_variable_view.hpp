@@ -9,13 +9,13 @@
 namespace tyr::serialization
 {
 
-template<::tyr::formalism::FactKind T>
-struct Serializer<::tyr::formalism::planning::FDRVariableView<T>>
+template<formalism::FactKind T>
+struct Serializer<formalism::planning::FDRVariableView<T>>
 {
     static std::string name() { return std::string(T::name) + "FDRVariable"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::FDRVariableView<T>& value)
+    static void save(Archive& ar, const formalism::planning::FDRVariableView<T>& value)
     {
         ar.field("atoms", value.get_atoms());
     }

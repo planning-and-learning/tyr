@@ -28,21 +28,22 @@
 namespace ygg
 {
 
-template<::tyr::formalism::BinaryOperatorKind Operator, typename T>
-struct Data<::tyr::formalism::planning::BinaryOperator<Operator, T>>
+template<::tyr::TaskKind T, ::tyr::formalism::BinaryOperatorKind O>
+struct Data<::tyr::formalism::planning::BinaryOperator<T, O>>
 {
-    using OperatorType = Operator;
+    using Operand = ygg::Data<::tyr::formalism::planning::FunctionExpression<T>>;
+    using OperatorType = O;
 
-    ygg::Index<::tyr::formalism::planning::BinaryOperator<Operator, T>> index;
+    ygg::Index<::tyr::formalism::planning::BinaryOperator<T, O>> index;
     OperatorType operator_kind {};
-    T lhs;
-    T rhs;
+    Operand lhs;
+    Operand rhs;
 
     Data() = default;
-    Data(OperatorType operator_kind_, T lhs_, T rhs_) : index(), operator_kind(operator_kind_), lhs(lhs_), rhs(rhs_) {}
+    Data(OperatorType operator_kind_, Operand lhs_, Operand rhs_) : index(), operator_kind(operator_kind_), lhs(lhs_), rhs(rhs_) {}
     // Python constructor
     template<typename C>
-    Data(OperatorType operator_kind_, ::ygg::View<T, C> lhs_, ::ygg::View<T, C> rhs_) : index(), operator_kind(operator_kind_), lhs(), rhs()
+    Data(OperatorType operator_kind_, ::ygg::View<Operand, C> lhs_, ::ygg::View<Operand, C> rhs_) : index(), operator_kind(operator_kind_), lhs(), rhs()
     {
         set(lhs_, lhs);
         set(rhs_, rhs);
@@ -64,9 +65,7 @@ struct Data<::tyr::formalism::planning::BinaryOperator<Operator, T>>
     auto identifying_members() const noexcept { return std::tie(operator_kind, lhs, rhs); }
 };
 
-static_assert(
-    !ygg::uses_trivial_storage_v<::tyr::formalism::planning::BinaryOperator<::tyr::formalism::ArithmeticOperatorKind,
-                                                                            ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>>>);
+static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::BinaryOperator<::tyr::LiftedTag, ::tyr::formalism::ArithmeticOperatorKind>>);
 
 }
 

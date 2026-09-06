@@ -51,7 +51,7 @@ auto compute_layout_data(const Task<GroundTag>& task) -> typename StateStorageCo
     }
 
     layout.fluent_array_size = ygg::bit::ceil_div(current_bit, bits_per_block);
-    layout.derived_num_bits = static_cast<ygg::uint_t>(task.get_formalism_task().get_task().get_atoms<::tyr::formalism::DerivedTag>().size());
+    layout.derived_num_bits = static_cast<ygg::uint_t>(task.get_formalism_task().get_task().get_atoms<formalism::DerivedTag>().size());
     layout.derived_array_size = ygg::bit::ceil_div(layout.derived_num_bits, bits_per_block);
 
     return layout;

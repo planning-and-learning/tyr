@@ -45,7 +45,7 @@ struct MutableConjunctiveEffect : ygg::comparison::Mixin<MutableConjunctiveEffec
         literals(std::move(literals))
     {
     }
-    MutableConjunctiveEffect(size_t num_parent_variables, size_t num_variables, ConjunctiveEffectView<::tyr::LiftedTag> element) :
+    MutableConjunctiveEffect(size_t num_parent_variables, size_t num_variables, ConjunctiveEffectView<LiftedTag> element) :
         num_parent_variables(num_parent_variables),
         num_variables(num_variables),
         literals()
@@ -63,9 +63,9 @@ using MutableConjunctiveEffectList = std::vector<MutableConjunctiveEffect>;
 namespace tyr::formalism::unification
 {
 template<>
-struct structure_traits<tyr::formalism::planning::MutableConjunctiveEffect>
+struct structure_traits<planning::MutableConjunctiveEffect>
 {
-    using Type = tyr::formalism::planning::MutableConjunctiveEffect;
+    using Type = planning::MutableConjunctiveEffect;
 
     template<typename F>
     static bool zip_terms(const Type& lhs, const Type& rhs, F&& f)
@@ -76,13 +76,13 @@ struct structure_traits<tyr::formalism::planning::MutableConjunctiveEffect>
         if (lhs.num_variables != rhs.num_variables)
             return false;
 
-        return tyr::formalism::unification::zip_terms(lhs.literals, rhs.literals, f);
+        return unification::zip_terms(lhs.literals, rhs.literals, f);
     }
 
     template<typename F>
     static Type transform_terms(const Type& value, F&& f)
     {
-        return Type(value.num_parent_variables, value.num_variables, tyr::formalism::unification::transform_terms(value.literals, f));
+        return Type(value.num_parent_variables, value.num_variables, unification::transform_terms(value.literals, f));
     }
 };
 }

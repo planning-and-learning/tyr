@@ -73,24 +73,24 @@ public:
                                      LabeledNodeList<LiftedTag>& out_nodes);
 
     Node<LiftedTag> get_successor_node(const Node<LiftedTag>& node,
-                                       ::tyr::formalism::planning::ActionView<::tyr::GroundTag> action,
+                                       formalism::planning::ActionView<GroundTag> action,
                                        StateRepository<LiftedTag>& state_repository,
                                        AxiomEvaluator<LiftedTag>& axiom_evaluator);
-    ::tyr::formalism::planning::ActionView<::tyr::GroundTag> ground_action(::tyr::formalism::planning::ActionBindingView binding);
+    formalism::planning::ActionView<GroundTag> ground_action(formalism::planning::ActionBindingView binding);
 
     // Action binding API (interning)
     Node<LiftedTag> get_successor_node(const Node<LiftedTag>& node,
-                                       ::tyr::formalism::planning::ActionBindingView binding,
+                                       formalism::planning::ActionBindingView binding,
                                        StateRepository<LiftedTag>& state_repository,
                                        AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
-    std::vector<::tyr::formalism::planning::ActionBindingView> get_applicable_action_bindings(const Node<LiftedTag>& node);
+    std::vector<formalism::planning::ActionBindingView> get_applicable_action_bindings(const Node<LiftedTag>& node);
 
-    void get_applicable_action_bindings(const Node<LiftedTag>& node, std::vector<::tyr::formalism::planning::ActionBindingView>& out_bindings);
+    void get_applicable_action_bindings(const Node<LiftedTag>& node, std::vector<formalism::planning::ActionBindingView>& out_bindings);
 
     /// Writes an unregistered successor. Pass the same pooled builder and result to finalize_successor_state().
     PendingActionResult
-    generate_successor_state(const Node<LiftedTag>& node, ::tyr::formalism::planning::ActionBindingView binding, ygg::Builder<State<LiftedTag>>& out_state);
+    generate_successor_state(const Node<LiftedTag>& node, formalism::planning::ActionBindingView binding, ygg::Builder<State<LiftedTag>>& out_state);
     /// Computes axiom closure and the final metric, then interns the completed state.
     Node<LiftedTag> finalize_successor_state(StateRepository<LiftedTag>& state_repository,
                                              AxiomEvaluator<LiftedTag>& axiom_evaluator,
@@ -99,7 +99,7 @@ public:
 
     // Action binding API (no interning)
     Node<LiftedTag> get_successor_node(const Node<LiftedTag>& node,
-                                       const ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action<::tyr::LiftedTag>>>& binding,
+                                       const ygg::Data<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>>& binding,
                                        StateRepository<LiftedTag>& state_repository,
                                        AxiomEvaluator<LiftedTag>& axiom_evaluator);
 

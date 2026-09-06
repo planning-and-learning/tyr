@@ -32,9 +32,7 @@ void bind_ground_module_definitions(nb::module_& m)
     nb::class_<ConstWorkspace>(m, "ConstProgramWorkspace").def("get_program", [](const ConstWorkspace& self) { return self.program; }, nb::keep_alive<0, 1>());
 
     nb::class_<ProgramT>(m, "Program")
-        .def(nb::init<::tyr::formalism::datalog::ProgramView<GroundTag>,
-                      ::tyr::formalism::datalog::RepositoryPtr,
-                      ::tyr::formalism::datalog::RepositoryFactoryPtr>(),
+        .def(nb::init<formalism::datalog::ProgramView<GroundTag>, formalism::datalog::RepositoryPtr, formalism::datalog::RepositoryFactoryPtr>(),
              "program"_a,
              "repository"_a,
              "repository_factory"_a)

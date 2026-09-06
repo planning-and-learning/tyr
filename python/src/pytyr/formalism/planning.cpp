@@ -88,11 +88,11 @@ void bind_module_definitions(nb::module_& m)
 
     nb::class_<FDRContext>(m, "FDRContext")  //
         .def(nb::new_([](RepositoryPtr repository) { return std::make_shared<FDRContext>(std::move(repository)); }), "repository"_a)
-        .def(nb::new_([](const std::vector<std::vector<AtomView<::tyr::GroundTag, FluentTag>>>& ground_mutex_groups, RepositoryPtr repository)
+        .def(nb::new_([](const std::vector<std::vector<AtomView<GroundTag, FluentTag>>>& ground_mutex_groups, RepositoryPtr repository)
                       { return std::make_shared<FDRContext>(ground_mutex_groups, std::move(repository)); }),
              "ground_mutex_groups"_a,
              "repository"_a)
-        .def("get_fact", nb::overload_cast<AtomView<::tyr::GroundTag, FluentTag>>(&FDRContext::get_fact), "atom"_a, nb::keep_alive<0, 1>())
+        .def("get_fact", nb::overload_cast<AtomView<GroundTag, FluentTag>>(&FDRContext::get_fact), "atom"_a, nb::keep_alive<0, 1>())
         .def("get_variables", &FDRContext::get_variables);
 
     /**

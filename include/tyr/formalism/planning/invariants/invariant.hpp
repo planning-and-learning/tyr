@@ -83,9 +83,9 @@ namespace tyr::formalism::unification
 {
 
 template<>
-struct structure_traits<tyr::formalism::planning::invariant::Invariant>
+struct structure_traits<planning::invariant::Invariant>
 {
-    using Type = tyr::formalism::planning::invariant::Invariant;
+    using Type = planning::invariant::Invariant;
 
     template<typename F>
     static bool zip_terms(const Type& lhs, const Type& rhs, F&& f)

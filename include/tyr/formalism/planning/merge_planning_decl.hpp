@@ -31,21 +31,6 @@ struct MergePlanningContext
     Repository& destination;
 };
 
-template<typename T>
-struct to_planning_payload
-{
-    using type = T;  // default: unchanged
-};
-
-template<::tyr::TaskKind T>
-struct to_planning_payload<ygg::Data<::tyr::formalism::datalog::FunctionExpression<T>>>
-{
-    using type = ygg::Data<::tyr::formalism::planning::FunctionExpression<T>>;
-};
-
-template<typename T>
-using to_planning_payload_t = typename to_planning_payload<T>::type;
-
 }
 
 #endif

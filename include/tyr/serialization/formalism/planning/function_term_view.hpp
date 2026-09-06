@@ -11,15 +11,15 @@
 namespace tyr::serialization
 {
 
-template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
-struct Serializer<::tyr::formalism::planning::FunctionTermView<T, F>>
+template<TaskKind T, formalism::FactKind F>
+struct Serializer<formalism::planning::FunctionTermView<T, F>>
 {
-    static std::string name() { return std::string(F::name) + (std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "FunctionTerm"; }
+    static std::string name() { return std::string(F::name) + (std::same_as<T, GroundTag> ? T::name : "") + "FunctionTerm"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::FunctionTermView<T, F>& value)
+    static void save(Archive& ar, const formalism::planning::FunctionTermView<T, F>& value)
     {
-        if constexpr (std::same_as<T, ::tyr::LiftedTag>)
+        if constexpr (std::same_as<T, LiftedTag>)
         {
             ar.field("function", value.get_function());
             ar.field("terms", value.get_terms());

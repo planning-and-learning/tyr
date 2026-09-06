@@ -176,7 +176,7 @@ public:
         SearchPolicy search;
         WorkerExecutionState execution;
         std::mt19937_64 rng;
-        std::vector<::tyr::formalism::planning::ActionBindingView> applicable_actions;
+        std::vector<formalism::planning::ActionBindingView> applicable_actions;
         PruningStrategyPtr<Kind> pruning_strategy;
         GoalStrategyPtr<Kind> goal_strategy;
         Statistics statistics;

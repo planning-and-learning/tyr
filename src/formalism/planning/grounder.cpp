@@ -25,47 +25,48 @@ template std::pair<FunctionBindingView<StaticTag>, bool> ground(TermListView ter
 template std::pair<FunctionBindingView<FluentTag>, bool> ground(TermListView terms, FunctionView<FluentTag> function, GrounderContext& context);
 template std::pair<FunctionBindingView<AuxiliaryTag>, bool> ground(TermListView terms, FunctionView<AuxiliaryTag> function, GrounderContext& context);
 
-template std::pair<FunctionTermView<::tyr::GroundTag, StaticTag>, bool> ground(FunctionTermView<::tyr::LiftedTag, StaticTag> element, GrounderContext& context);
-template std::pair<FunctionTermView<::tyr::GroundTag, FluentTag>, bool> ground(FunctionTermView<::tyr::LiftedTag, FluentTag> element, GrounderContext& context);
-template std::pair<FunctionTermView<::tyr::GroundTag, AuxiliaryTag>, bool> ground(FunctionTermView<::tyr::LiftedTag, AuxiliaryTag> element,
+template std::pair<FunctionTermView<GroundTag, StaticTag>, bool> ground(FunctionTermView<LiftedTag, StaticTag> element, GrounderContext& context);
+template std::pair<FunctionTermView<GroundTag, FluentTag>, bool> ground(FunctionTermView<LiftedTag, FluentTag> element, GrounderContext& context);
+template std::pair<FunctionTermView<GroundTag, AuxiliaryTag>, bool> ground(FunctionTermView<LiftedTag, AuxiliaryTag> element,
                                                                                   GrounderContext& context);
 
-template std::pair<GroundBinaryOperatorView<ArithmeticOperatorKind>, bool> ground(LiftedBinaryOperatorView<ArithmeticOperatorKind> element,
-                                                                                  GrounderContext& context);
-template std::pair<GroundBinaryOperatorView<BooleanOperatorKind>, bool> ground(LiftedBinaryOperatorView<BooleanOperatorKind> element, GrounderContext& context);
+template std::pair<BinaryOperatorView<GroundTag, ArithmeticOperatorKind>, bool>
+ground(BinaryOperatorView<LiftedTag, ArithmeticOperatorKind> element, GrounderContext& context);
+template std::pair<BinaryOperatorView<GroundTag, BooleanOperatorKind>, bool> ground(BinaryOperatorView<LiftedTag, BooleanOperatorKind> element,
+                                                                                           GrounderContext& context);
 
 template std::pair<PredicateBindingView<StaticTag>, bool> ground(TermListView terms, PredicateView<StaticTag> predicate, GrounderContext& context);
 template std::pair<PredicateBindingView<FluentTag>, bool> ground(TermListView terms, PredicateView<FluentTag> predicate, GrounderContext& context);
 template std::pair<PredicateBindingView<DerivedTag>, bool> ground(TermListView terms, PredicateView<DerivedTag> predicate, GrounderContext& context);
 
-template std::pair<AtomView<::tyr::GroundTag, StaticTag>, bool> ground(AtomView<::tyr::LiftedTag, StaticTag> element, GrounderContext& grounder_context);
-template std::pair<AtomView<::tyr::GroundTag, FluentTag>, bool> ground(AtomView<::tyr::LiftedTag, FluentTag> element, GrounderContext& grounder_context);
-template std::pair<AtomView<::tyr::GroundTag, DerivedTag>, bool> ground(AtomView<::tyr::LiftedTag, DerivedTag> element, GrounderContext& grounder_context);
+template std::pair<AtomView<GroundTag, StaticTag>, bool> ground(AtomView<LiftedTag, StaticTag> element, GrounderContext& grounder_context);
+template std::pair<AtomView<GroundTag, FluentTag>, bool> ground(AtomView<LiftedTag, FluentTag> element, GrounderContext& grounder_context);
+template std::pair<AtomView<GroundTag, DerivedTag>, bool> ground(AtomView<LiftedTag, DerivedTag> element, GrounderContext& grounder_context);
 
-template std::pair<LiteralView<::tyr::GroundTag, StaticTag>, bool> ground(LiteralView<::tyr::LiftedTag, StaticTag> element, GrounderContext& context);
-template std::pair<LiteralView<::tyr::GroundTag, FluentTag>, bool> ground(LiteralView<::tyr::LiftedTag, FluentTag> element, GrounderContext& context);
-template std::pair<LiteralView<::tyr::GroundTag, DerivedTag>, bool> ground(LiteralView<::tyr::LiftedTag, DerivedTag> element, GrounderContext& context);
+template std::pair<LiteralView<GroundTag, StaticTag>, bool> ground(LiteralView<LiftedTag, StaticTag> element, GrounderContext& context);
+template std::pair<LiteralView<GroundTag, FluentTag>, bool> ground(LiteralView<LiftedTag, FluentTag> element, GrounderContext& context);
+template std::pair<LiteralView<GroundTag, DerivedTag>, bool> ground(LiteralView<LiftedTag, DerivedTag> element, GrounderContext& context);
 
-template std::pair<NumericEffectView<::tyr::GroundTag, FluentTag>, bool> ground(NumericEffectView<::tyr::LiftedTag, FluentTag> element,
+template std::pair<NumericEffectView<GroundTag, FluentTag>, bool> ground(NumericEffectView<LiftedTag, FluentTag> element,
                                                                                 GrounderContext& context);
-template std::pair<NumericEffectView<::tyr::GroundTag, AuxiliaryTag>, bool> ground(NumericEffectView<::tyr::LiftedTag, AuxiliaryTag> element,
+template std::pair<NumericEffectView<GroundTag, AuxiliaryTag>, bool> ground(NumericEffectView<LiftedTag, AuxiliaryTag> element,
                                                                                    GrounderContext& context);
 
-template NumericEffectOperatorView<::tyr::GroundTag, FluentTag> ground(NumericEffectOperatorView<::tyr::LiftedTag, FluentTag> element,
+template NumericEffectOperatorView<GroundTag, FluentTag> ground(NumericEffectOperatorView<LiftedTag, FluentTag> element,
                                                                        GrounderContext& context);
-template NumericEffectOperatorView<::tyr::GroundTag, AuxiliaryTag> ground(NumericEffectOperatorView<::tyr::LiftedTag, AuxiliaryTag> element,
+template NumericEffectOperatorView<GroundTag, AuxiliaryTag> ground(NumericEffectOperatorView<LiftedTag, AuxiliaryTag> element,
                                                                           GrounderContext& context);
 
-template std::optional<FunctionTermView<::tyr::GroundTag, StaticTag>> try_ground(FunctionTermView<::tyr::LiftedTag, StaticTag> element,
+template std::optional<FunctionTermView<GroundTag, StaticTag>> try_ground(FunctionTermView<LiftedTag, StaticTag> element,
                                                                                  GrounderContext& context);
-template std::optional<FunctionTermView<::tyr::GroundTag, FluentTag>> try_ground(FunctionTermView<::tyr::LiftedTag, FluentTag> element,
+template std::optional<FunctionTermView<GroundTag, FluentTag>> try_ground(FunctionTermView<LiftedTag, FluentTag> element,
                                                                                  GrounderContext& context);
-template std::optional<FunctionTermView<::tyr::GroundTag, AuxiliaryTag>> try_ground(FunctionTermView<::tyr::LiftedTag, AuxiliaryTag> element,
+template std::optional<FunctionTermView<GroundTag, AuxiliaryTag>> try_ground(FunctionTermView<LiftedTag, AuxiliaryTag> element,
                                                                                     GrounderContext& context);
 
-template std::optional<AtomView<::tyr::GroundTag, StaticTag>> try_ground(AtomView<::tyr::LiftedTag, StaticTag> element, GrounderContext& context);
-template std::optional<AtomView<::tyr::GroundTag, FluentTag>> try_ground(AtomView<::tyr::LiftedTag, FluentTag> element, GrounderContext& context);
-template std::optional<AtomView<::tyr::GroundTag, DerivedTag>> try_ground(AtomView<::tyr::LiftedTag, DerivedTag> element, GrounderContext& context);
+template std::optional<AtomView<GroundTag, StaticTag>> try_ground(AtomView<LiftedTag, StaticTag> element, GrounderContext& context);
+template std::optional<AtomView<GroundTag, FluentTag>> try_ground(AtomView<LiftedTag, FluentTag> element, GrounderContext& context);
+template std::optional<AtomView<GroundTag, DerivedTag>> try_ground(AtomView<LiftedTag, DerivedTag> element, GrounderContext& context);
 }
 
 #endif

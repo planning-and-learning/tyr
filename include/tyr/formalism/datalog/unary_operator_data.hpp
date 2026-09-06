@@ -29,23 +29,24 @@
 namespace ygg
 {
 
-template<typename T>
+template<::tyr::TaskKind T>
 struct Data<::tyr::formalism::datalog::UnaryOperator<T>>
 {
+    using Operand = ygg::Data<::tyr::formalism::datalog::FunctionExpression<T>>;
     using OperatorType = ::tyr::formalism::ArithmeticOperatorKind;
 
     ygg::Index<::tyr::formalism::datalog::UnaryOperator<T>> index;
     OperatorType operator_kind = OperatorType::Sub;
-    T arg;
+    Operand arg;
 
     Data() = default;
-    Data(OperatorType operator_kind_, T arg_) : index(), operator_kind(operator_kind_), arg(arg_)
+    Data(OperatorType operator_kind_, Operand arg_) : index(), operator_kind(operator_kind_), arg(arg_)
     {
         if (!is_unary(operator_kind))
             throw std::invalid_argument("unary operator must be Sub");
     }
     template<typename C>
-    Data(OperatorType operator_kind_, ::ygg::View<T, C> arg_) : index(), operator_kind(operator_kind_), arg()
+    Data(OperatorType operator_kind_, ::ygg::View<Operand, C> arg_) : index(), operator_kind(operator_kind_), arg()
     {
         if (!is_unary(operator_kind))
             throw std::invalid_argument("unary operator must be Sub");
@@ -67,8 +68,7 @@ struct Data<::tyr::formalism::datalog::UnaryOperator<T>>
     auto identifying_members() const noexcept { return std::tie(operator_kind, arg); }
 };
 
-static_assert(
-    !ygg::uses_trivial_storage_v<::tyr::formalism::datalog::UnaryOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>>>);
+static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::UnaryOperator<::tyr::LiftedTag>>);
 
 }
 

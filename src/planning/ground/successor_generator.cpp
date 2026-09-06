@@ -64,14 +64,14 @@ void validate_task(const TaskPtr<GroundTag>& task, const StateView<GroundTag>& s
 
 struct SuccessorGenerator<GroundTag>::Impl
 {
-    using ActionBindingMap = ygg::UnorderedMap<fp::ActionBindingView, fp::ActionView<::tyr::GroundTag>>;
+    using ActionBindingMap = ygg::UnorderedMap<fp::ActionBindingView, fp::ActionView<GroundTag>>;
 
     struct Definition
     {
         explicit Definition(TaskPtr<GroundTag> task);
 
         TaskPtr<GroundTag> task;
-        match_tree::MatchTreePtr<fp::Action<::tyr::GroundTag>> action_match_tree_prototype;
+        match_tree::MatchTreePtr<fp::Action<GroundTag>> action_match_tree_prototype;
         ActionBindingMap action_binding_to_ground_action;
     };
 
@@ -79,8 +79,8 @@ struct SuccessorGenerator<GroundTag>::Impl
     {
         explicit Evaluator(const Definition& definition);
 
-        match_tree::MatchTreePtr<fp::Action<::tyr::GroundTag>> action_match_tree;
-        fp::ActionViewList<::tyr::GroundTag> applicable_actions;
+        match_tree::MatchTreePtr<fp::Action<GroundTag>> action_match_tree;
+        fp::ActionViewList<GroundTag> applicable_actions;
         ActionExecutor executor;
     };
 
@@ -108,8 +108,8 @@ struct SuccessorGenerator<GroundTag>::Impl
 
 SuccessorGenerator<GroundTag>::Impl::Definition::Definition(TaskPtr<GroundTag> task_) :
     task(std::move(task_)),
-    action_match_tree_prototype(match_tree::MatchTree<fp::Action<::tyr::GroundTag>>::create(
-        fp::ActionViewList<::tyr::GroundTag>(task->get_task().get_ground_actions().begin(), task->get_task().get_ground_actions().end()),
+    action_match_tree_prototype(match_tree::MatchTree<fp::Action<GroundTag>>::create(
+        fp::ActionViewList<GroundTag>(task->get_task().get_ground_actions().begin(), task->get_task().get_ground_actions().end()),
         task->get_task().get_context())),
     action_binding_to_ground_action()
 {
@@ -247,7 +247,7 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::get_successor_node(const Node<Gro
 }
 
 Node<GroundTag> SuccessorGenerator<GroundTag>::get_successor_node(const Node<GroundTag>& node,
-                                                                  fp::ActionView<::tyr::GroundTag> action,
+                                                                  fp::ActionView<GroundTag> action,
                                                                   StateRepository<GroundTag>& state_repository,
                                                                   AxiomEvaluator<GroundTag>& axiom_evaluator)
 {
@@ -307,7 +307,7 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::finalize_successor_state(StateRep
     return Node<GroundTag>(state_repository.register_extended_state(std::move(state)), metric);
 }
 
-fp::ActionView<::tyr::GroundTag> SuccessorGenerator<GroundTag>::ground_action(fp::ActionBindingView binding) const
+fp::ActionView<GroundTag> SuccessorGenerator<GroundTag>::ground_action(fp::ActionBindingView binding) const
 {
     const auto it = m_impl->definition->action_binding_to_ground_action.find(binding);
     assert(it != m_impl->definition->action_binding_to_ground_action.end() && "Ground action binding not found.");

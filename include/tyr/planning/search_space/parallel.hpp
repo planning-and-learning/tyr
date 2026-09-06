@@ -79,7 +79,7 @@ struct PlanReconstructionPolicy<ParallelSearch>
         }
         std::reverse(trajectory.begin(), trajectory.end());
 
-        auto labels = std::vector<::tyr::formalism::planning::ActionBindingView> {};
+        auto labels = std::vector<formalism::planning::ActionBindingView> {};
         labels.reserve(trajectory.size() - 1);
         auto successors = LabeledNodeList<Kind> {};
 
@@ -141,7 +141,7 @@ private:
     {
         const auto& lhs_builder = lhs.get_state_builder();
         const auto& rhs_builder = rhs.get_state_builder();
-        return ygg::EqualTo<> {}(lhs_builder.template get_atoms<::tyr::formalism::FluentTag>(), rhs_builder.template get_atoms<::tyr::formalism::FluentTag>())
+        return ygg::EqualTo<> {}(lhs_builder.template get_atoms<formalism::FluentTag>(), rhs_builder.template get_atoms<formalism::FluentTag>())
                && ygg::EqualTo<> {}(lhs_builder.get_numeric_variables(), rhs_builder.get_numeric_variables());
     }
 

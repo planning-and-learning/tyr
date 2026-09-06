@@ -38,14 +38,13 @@ struct Data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>
     ygg::IndexList<::tyr::formalism::Variable> variables;
     ygg::IndexList<::tyr::formalism::datalog::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>> static_literals;
     ygg::IndexList<::tyr::formalism::datalog::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>> fluent_literals;
-    ygg::DataList<::tyr::formalism::datalog::BooleanOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>>> numeric_constraints;
+    ygg::DataList<::tyr::formalism::datalog::BooleanOperator<::tyr::LiftedTag>> numeric_constraints;
 
     Data() = default;
     Data(ygg::IndexList<::tyr::formalism::Variable> variables_,
          ygg::IndexList<::tyr::formalism::datalog::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>> static_literals_,
          ygg::IndexList<::tyr::formalism::datalog::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>> fluent_literals_,
-         ygg::DataList<::tyr::formalism::datalog::BooleanOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>>>
-             numeric_constraints_) :
+         ygg::DataList<::tyr::formalism::datalog::BooleanOperator<::tyr::LiftedTag>> numeric_constraints_) :
         index(),
         variables(std::move(variables_)),
         static_literals(std::move(static_literals_)),
@@ -57,9 +56,7 @@ struct Data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>
     Data(const std::vector<::ygg::View<ygg::Index<::tyr::formalism::Variable>, C>>& variables_,
          const std::vector<::ygg::View<ygg::Index<::tyr::formalism::datalog::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>, C>>& static_literals_,
          const std::vector<::ygg::View<ygg::Index<::tyr::formalism::datalog::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>, C>>& fluent_literals_,
-         const std::vector<
-             ::ygg::View<ygg::Data<::tyr::formalism::datalog::BooleanOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>>>, C>>&
-             numeric_constraints_) :
+         const std::vector<::ygg::View<ygg::Data<::tyr::formalism::datalog::BooleanOperator<::tyr::LiftedTag>>, C>>& numeric_constraints_) :
         index(),
         variables(),
         static_literals(),
@@ -108,13 +105,12 @@ struct Data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>
     ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>> index;
     ygg::IndexList<::tyr::formalism::datalog::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>> static_literals;
     ygg::IndexList<::tyr::formalism::datalog::Literal<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fluent_literals;
-    ygg::DataList<::tyr::formalism::datalog::BooleanOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::GroundTag>>>> numeric_constraints;
+    ygg::DataList<::tyr::formalism::datalog::BooleanOperator<::tyr::GroundTag>> numeric_constraints;
 
     Data() = default;
     Data(ygg::IndexList<::tyr::formalism::datalog::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>> static_literals_,
          ygg::IndexList<::tyr::formalism::datalog::Literal<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fluent_literals_,
-         ygg::DataList<::tyr::formalism::datalog::BooleanOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::GroundTag>>>>
-             numeric_constraints_) :
+         ygg::DataList<::tyr::formalism::datalog::BooleanOperator<::tyr::GroundTag>> numeric_constraints_) :
         index(),
         static_literals(std::move(static_literals_)),
         fluent_literals(std::move(fluent_literals_)),
@@ -124,9 +120,7 @@ struct Data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>
     template<typename C>
     Data(const std::vector<::ygg::View<ygg::Index<::tyr::formalism::datalog::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>, C>>& static_literals_,
          const std::vector<::ygg::View<ygg::Index<::tyr::formalism::datalog::Literal<::tyr::GroundTag, ::tyr::formalism::FluentTag>>, C>>& fluent_literals_,
-         const std::vector<
-             ::ygg::View<ygg::Data<::tyr::formalism::datalog::BooleanOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::GroundTag>>>>, C>>&
-             numeric_constraints_) :
+         const std::vector<::ygg::View<ygg::Data<::tyr::formalism::datalog::BooleanOperator<::tyr::GroundTag>>, C>>& numeric_constraints_) :
         index(),
         static_literals(),
         fluent_literals(),

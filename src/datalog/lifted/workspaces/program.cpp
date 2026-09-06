@@ -26,7 +26,7 @@ namespace tyr::datalog
 {
 namespace
 {
-template<::tyr::formalism::RelationKind R>
+template<formalism::RelationKind R>
 void initialize_rule_workspaces(const ConstProgramWorkspace<LiftedTag>& const_workspace, std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, R>>>& workspaces)
 {
     const auto& const_workspaces = const_workspace.template get_rules<R>();
@@ -35,9 +35,9 @@ void initialize_rule_workspaces(const ConstProgramWorkspace<LiftedTag>& const_wo
         workspaces.emplace_back(workspace ? std::make_unique<RuleWorkspace<LiftedTag, R>>(*workspace) : nullptr);
 }
 
-template<::tyr::formalism::RelationKind R>
+template<formalism::RelationKind R>
 void initialize_const_rule_workspaces(Program<LiftedTag>& program,
-                                      ::tyr::formalism::datalog::Repository& program_repository,
+                                      formalism::datalog::Repository& program_repository,
                                       analysis::RuleCompatibilityGraphMap<R>& graphs,
                                       std::vector<std::optional<ConstRuleWorkspace<LiftedTag, R>>>& workspaces)
 {
@@ -54,19 +54,19 @@ ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTa
     program_repository(program.get_program_repository()),
     m_workspace_repository(program.get_repository_factory().create_shared(program.get_program().get_objects().size(), &program_repository)),
     workspace_repository(*m_workspace_repository),
-    facts(program.get_program().get_predicates<::tyr::formalism::FluentTag>(),
-          program.get_program().get_functions<::tyr::formalism::FluentTag>(),
+    facts(program.get_program().get_predicates<formalism::FluentTag>(),
+          program.get_program().get_functions<formalism::FluentTag>(),
           program.get_domains().fluent_predicate_domains,
           program.get_domains().fluent_function_domains,
           program.get_program().get_objects().size(),
-          program.get_program().get_atoms<::tyr::formalism::FluentTag>(),
-          program.get_program().get_fterm_values<::tyr::formalism::FluentTag>(),
+          program.get_program().get_atoms<formalism::FluentTag>(),
+          program.get_program().get_fterm_values<formalism::FluentTag>(),
           workspace_repository),
     annotation_policy(std::move(annotation_policy)),
-    annotations(program.get_program().get_predicates<::tyr::formalism::FluentTag>().size()),
-    numeric_annotations(program.get_program().get_functions<::tyr::formalism::FluentTag>().size()),
-    delta_annotations(program.get_program().get_predicates<::tyr::formalism::FluentTag>().size()),
-    delta_numeric_annotations(program.get_program().get_functions<::tyr::formalism::FluentTag>().size()),
+    annotations(program.get_program().get_predicates<formalism::FluentTag>().size()),
+    numeric_annotations(program.get_program().get_functions<formalism::FluentTag>().size()),
+    delta_annotations(program.get_program().get_predicates<formalism::FluentTag>().size()),
+    delta_numeric_annotations(program.get_program().get_functions<formalism::FluentTag>().size()),
     numeric_support_selector(),
     tp(std::move(tp)),
     cost_policy(std::move(cost_policy)),
@@ -77,15 +77,15 @@ ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTa
     schedulers(create_schedulers(program.get_strata(),
                                  program.get_listeners(),
                                  program_repository,
-                                 program.get_program().get_predicates<::tyr::formalism::FluentTag>().size(),
-                                 program.get_program().get_functions<::tyr::formalism::FluentTag>().size())),
+                                 program.get_program().get_predicates<formalism::FluentTag>().size(),
+                                 program.get_program().get_functions<formalism::FluentTag>().size())),
     statistics()
 {
     if constexpr (AP::records_propositional_achievers)
-        this->annotation_policy.initialize(program.get_program().get_predicates<::tyr::formalism::FluentTag>().size());
+        this->annotation_policy.initialize(program.get_program().get_predicates<formalism::FluentTag>().size());
 
-    initialize_rule_workspaces<::tyr::formalism::PredicateTag>(const_workspace, predicate_rules);
-    initialize_rule_workspaces<::tyr::formalism::FunctionTag>(const_workspace, function_rules);
+    initialize_rule_workspaces<formalism::PredicateTag>(const_workspace, predicate_rules);
+    initialize_rule_workspaces<formalism::FunctionTag>(const_workspace, function_rules);
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
@@ -128,22 +128,22 @@ template struct ProgramWorkspace<LiftedTag,
                                  RuleCostOverridePolicy<LiftedTag>>;
 
 ConstProgramWorkspace<LiftedTag>::ConstProgramWorkspace(Program<LiftedTag>& program) :
-    facts(program.get_program().get_predicates<::tyr::formalism::StaticTag>(),
-          program.get_program().get_functions<::tyr::formalism::StaticTag>(),
+    facts(program.get_program().get_predicates<formalism::StaticTag>(),
+          program.get_program().get_functions<formalism::StaticTag>(),
           program.get_domains().static_predicate_domains,
           program.get_domains().static_function_domains,
           program.get_program().get_objects().size(),
-          program.get_program().get_atoms<::tyr::formalism::StaticTag>(),
-          program.get_program().get_fterm_values<::tyr::formalism::StaticTag>(),
+          program.get_program().get_atoms<formalism::StaticTag>(),
+          program.get_program().get_fterm_values<formalism::StaticTag>(),
           *program.m_program_repository),
     predicate_rules(),
     function_rules()
 {
-    initialize_const_rule_workspaces<::tyr::formalism::PredicateTag>(program,
+    initialize_const_rule_workspaces<formalism::PredicateTag>(program,
                                                                      *program.m_program_repository,
                                                                      program.m_analysis.compatibility_graphs.predicate_rules,
                                                                      predicate_rules);
-    initialize_const_rule_workspaces<::tyr::formalism::FunctionTag>(program,
+    initialize_const_rule_workspaces<formalism::FunctionTag>(program,
                                                                     *program.m_program_repository,
                                                                     program.m_analysis.compatibility_graphs.function_rules,
                                                                     function_rules);

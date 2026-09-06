@@ -26,11 +26,11 @@
 
 namespace tyr::planning
 {
-extern ::cista::offset::string create_applicability_name(::tyr::formalism::planning::ActionView<::tyr::LiftedTag> action);
+extern ::cista::offset::string create_applicability_name(formalism::planning::ActionView<LiftedTag> action);
 
-extern ::cista::offset::string create_triggered_name(::tyr::formalism::planning::ActionView<::tyr::LiftedTag> action, ::tyr::formalism::planning::ConditionalEffectView<::tyr::LiftedTag> cond_eff);
+extern ::cista::offset::string create_triggered_name(formalism::planning::ActionView<LiftedTag> action, formalism::planning::ConditionalEffectView<LiftedTag> cond_eff);
 
-extern ::cista::offset::string create_applicability_name(::tyr::formalism::planning::AxiomView<::tyr::LiftedTag> axiom);
+extern ::cista::offset::string create_applicability_name(formalism::planning::AxiomView<LiftedTag> axiom);
 
 }
 

@@ -22,22 +22,22 @@ namespace tyr::serialization
 {
 
 template<>
-struct Serializer<::tyr::formalism::planning::FDRTaskView>
+struct Serializer<formalism::planning::FDRTaskView>
 {
     static std::string name() { return "GroundTask"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::FDRTaskView& value)
+    static void save(Archive& ar, const formalism::planning::FDRTaskView& value)
     {
         ar.field("name", value.get_name());
         ar.field("domain", value.get_domain());
         ar.field("derived_predicates", value.get_derived_predicates());
         ar.field("objects", value.get_objects());
-        ar.field("static_atoms", value.get_atoms<::tyr::formalism::StaticTag>());
-        ar.field("fluent_atoms", value.get_atoms<::tyr::formalism::FluentTag>());
-        ar.field("derived_atoms", value.get_atoms<::tyr::formalism::DerivedTag>());
-        ar.field("static_fterm_values", value.get_fterm_values<::tyr::formalism::StaticTag>());
-        ar.field("fluent_fterm_values", value.get_fterm_values<::tyr::formalism::FluentTag>());
+        ar.field("static_atoms", value.get_atoms<formalism::StaticTag>());
+        ar.field("fluent_atoms", value.get_atoms<formalism::FluentTag>());
+        ar.field("derived_atoms", value.get_atoms<formalism::DerivedTag>());
+        ar.field("static_fterm_values", value.get_fterm_values<formalism::StaticTag>());
+        ar.field("fluent_fterm_values", value.get_fterm_values<formalism::FluentTag>());
         ar.field("auxiliary_fterm_value", value.get_auxiliary_fterm_value());
         ar.field("goal", value.get_goal());
         ar.field("metric", value.get_metric());

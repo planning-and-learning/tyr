@@ -34,7 +34,7 @@ namespace
 {
 struct RuleBindingFixture
 {
-    fd::RuleView<::tyr::LiftedTag, f::PredicateTag> rule;
+    fd::RuleView<LiftedTag, f::PredicateTag> rule;
     fd::RuleBindingView<f::PredicateTag> binding;
 };
 
@@ -47,25 +47,25 @@ RuleBindingFixture make_nullary_rule_binding(fd::Repository& repository)
     const auto [predicate, predicate_success] = repository.get_or_create(predicate_builder);
     EXPECT_TRUE(predicate_success);
 
-    auto atom_builder = ygg::Data<fd::Atom<::tyr::LiftedTag, f::FluentTag>>();
+    auto atom_builder = ygg::Data<fd::Atom<LiftedTag, f::FluentTag>>();
     atom_builder.predicate = predicate.get_index();
     canonicalize(atom_builder);
     const auto [atom, atom_success] = repository.get_or_create(atom_builder);
     EXPECT_TRUE(atom_success);
 
-    auto condition_builder = ygg::Data<fd::ConjunctiveCondition<::tyr::LiftedTag>>();
+    auto condition_builder = ygg::Data<fd::ConjunctiveCondition<LiftedTag>>();
     canonicalize(condition_builder);
     const auto [condition, condition_success] = repository.get_or_create(condition_builder);
     EXPECT_TRUE(condition_success);
 
-    auto rule_builder = ygg::Data<fd::Rule<::tyr::LiftedTag, f::PredicateTag>>();
+    auto rule_builder = ygg::Data<fd::Rule<LiftedTag, f::PredicateTag>>();
     rule_builder.body = condition.get_index();
     rule_builder.head = atom.get_index();
     canonicalize(rule_builder);
     const auto [rule, rule_success] = repository.get_or_create(rule_builder);
     EXPECT_TRUE(rule_success);
 
-    auto binding_builder = ygg::Data<f::RelationBinding<fd::Rule<::tyr::LiftedTag, f::PredicateTag>>>();
+    auto binding_builder = ygg::Data<f::RelationBinding<fd::Rule<LiftedTag, f::PredicateTag>>>();
     binding_builder.relation = rule.get_index();
     canonicalize(binding_builder);
     const auto [binding, binding_success] = repository.get_or_create(binding_builder);

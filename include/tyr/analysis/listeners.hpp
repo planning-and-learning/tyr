@@ -33,33 +33,33 @@
 namespace tyr::analysis
 {
 
-template<::tyr::formalism::RelationKind R>
-using RuleIndexSet = ygg::UnorderedSet<ygg::Index<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>>>;
+template<formalism::RelationKind R>
+using RuleIndexSet = ygg::UnorderedSet<ygg::Index<formalism::datalog::Rule<LiftedTag, R>>>;
 
-template<::tyr::formalism::RelationKind R>
+template<formalism::RelationKind R>
 struct TypedListenerStratum
 {
-    ygg::UnorderedMap<ygg::Index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>, RuleIndexSet<R>> predicates;
-    ygg::UnorderedMap<ygg::Index<::tyr::formalism::Function<::tyr::formalism::FluentTag>>, RuleIndexSet<R>> functions;
+    ygg::UnorderedMap<ygg::Index<formalism::Predicate<formalism::FluentTag>>, RuleIndexSet<R>> predicates;
+    ygg::UnorderedMap<ygg::Index<formalism::Function<formalism::FluentTag>>, RuleIndexSet<R>> functions;
 };
 
 struct ListenerStratum
 {
-    TypedListenerStratum<::tyr::formalism::PredicateTag> predicate_rules;
-    TypedListenerStratum<::tyr::formalism::FunctionTag> function_rules;
+    TypedListenerStratum<formalism::PredicateTag> predicate_rules;
+    TypedListenerStratum<formalism::FunctionTag> function_rules;
 
-    auto& get(::tyr::formalism::PredicateTag) noexcept { return predicate_rules; }
-    auto& get(::tyr::formalism::FunctionTag) noexcept { return function_rules; }
-    const auto& get(::tyr::formalism::PredicateTag) const noexcept { return predicate_rules; }
-    const auto& get(::tyr::formalism::FunctionTag) const noexcept { return function_rules; }
+    auto& get(formalism::PredicateTag) noexcept { return predicate_rules; }
+    auto& get(formalism::FunctionTag) noexcept { return function_rules; }
+    const auto& get(formalism::PredicateTag) const noexcept { return predicate_rules; }
+    const auto& get(formalism::FunctionTag) const noexcept { return function_rules; }
 
-    template<::tyr::formalism::RelationKind R>
+    template<formalism::RelationKind R>
     auto& get() noexcept
     {
         return get(R {});
     }
 
-    template<::tyr::formalism::RelationKind R>
+    template<formalism::RelationKind R>
     const auto& get() const noexcept
     {
         return get(R {});
@@ -71,7 +71,7 @@ struct ListenerStrata
     std::vector<ListenerStratum> data;
 };
 
-ListenerStrata compute_listeners(const RuleStrata& strata, const ::tyr::formalism::datalog::Repository& context);
+ListenerStrata compute_listeners(const RuleStrata& strata, const formalism::datalog::Repository& context);
 }
 
 #endif

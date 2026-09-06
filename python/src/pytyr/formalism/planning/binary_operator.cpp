@@ -25,100 +25,45 @@
 namespace tyr::formalism::planning
 {
 
+namespace
+{
+template<TaskKind T, BinaryOperatorKind O>
+void bind_binary_operator_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
+{
+    using Tag = BinaryOperator<T, O>;
+    ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
+
+    {
+        using V = ygg::Data<Tag>;
+        auto cls =
+            nb::class_<V>(m, (name + "Data").c_str()).def(nb::init<O, FunctionExpressionView<T>, FunctionExpressionView<T>>(), "operator"_a, "lhs"_a, "rhs"_a);
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+
+    {
+        using V = BinaryOperatorView<T, O>;
+        auto cls = nb::class_<V>(m, name.c_str())
+                       .def("get_index", &V::get_index)
+                       .def("get_operator", &V::get_operator)
+                       .def("get_lhs", &V::get_lhs)
+                       .def("get_rhs", &V::get_rhs);
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+
+    repository.def("get_or_create", &get_or_create_data<Tag>, "data"_a, nb::keep_alive<0, 1>());
+}
+}  // namespace
+
 void bind_binary_operator(nb::module_& m, RepositoryBinding& repository)
 {
-    using Arithmetic = ArithmeticOperatorKind;
-    using Boolean = BooleanOperatorKind;
-    using LiftedExpression = ygg::Data<FunctionExpression<::tyr::LiftedTag>>;
-    using GroundExpression = ygg::Data<FunctionExpression<::tyr::GroundTag>>;
-
-    ygg::bind_index<ygg::Index<BinaryOperator<Arithmetic, LiftedExpression>>>(m, "BinaryArithmeticOperatorIndex");
-    ygg::bind_index<ygg::Index<BinaryOperator<Boolean, LiftedExpression>>>(m, "BinaryBooleanOperatorIndex");
-    ygg::bind_index<ygg::Index<BinaryOperator<Arithmetic, GroundExpression>>>(m, "GroundBinaryArithmeticOperatorIndex");
-    ygg::bind_index<ygg::Index<BinaryOperator<Boolean, GroundExpression>>>(m, "GroundBinaryBooleanOperatorIndex");
-
-    {
-        using ExpressionView = ygg::View<LiftedExpression, Repository>;
-        using V = ygg::Data<BinaryOperator<Arithmetic, LiftedExpression>>;
-        auto cls = nb::class_<V>(m, "BinaryArithmeticOperatorData").def(nb::init<Arithmetic, ExpressionView, ExpressionView>(), "operator"_a, "lhs"_a, "rhs"_a);
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-    {
-        using ExpressionView = ygg::View<LiftedExpression, Repository>;
-        using V = ygg::Data<BinaryOperator<Boolean, LiftedExpression>>;
-        auto cls = nb::class_<V>(m, "BinaryBooleanOperatorData").def(nb::init<Boolean, ExpressionView, ExpressionView>(), "operator"_a, "lhs"_a, "rhs"_a);
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-    {
-        using ExpressionView = ygg::View<GroundExpression, Repository>;
-        using V = ygg::Data<BinaryOperator<Arithmetic, GroundExpression>>;
-        auto cls =
-            nb::class_<V>(m, "GroundBinaryArithmeticOperatorData").def(nb::init<Arithmetic, ExpressionView, ExpressionView>(), "operator"_a, "lhs"_a, "rhs"_a);
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-    {
-        using ExpressionView = ygg::View<GroundExpression, Repository>;
-        using V = ygg::Data<BinaryOperator<Boolean, GroundExpression>>;
-        auto cls = nb::class_<V>(m, "GroundBinaryBooleanOperatorData").def(nb::init<Boolean, ExpressionView, ExpressionView>(), "operator"_a, "lhs"_a, "rhs"_a);
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-    {
-        using V = BinaryOperatorView<Arithmetic, LiftedExpression>;
-        auto cls = nb::class_<V>(m, "BinaryArithmeticOperator")
-                       .def("get_index", &V::get_index)
-                       .def("get_operator", &V::get_operator)
-                       .def("get_lhs", &V::get_lhs)
-                       .def("get_rhs", &V::get_rhs);
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-    {
-        using V = BinaryOperatorView<Boolean, LiftedExpression>;
-        auto cls = nb::class_<V>(m, "BinaryBooleanOperator")
-                       .def("get_index", &V::get_index)
-                       .def("get_operator", &V::get_operator)
-                       .def("get_lhs", &V::get_lhs)
-                       .def("get_rhs", &V::get_rhs);
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-    {
-        using V = BinaryOperatorView<Arithmetic, GroundExpression>;
-        auto cls = nb::class_<V>(m, "GroundBinaryArithmeticOperator")
-                       .def("get_index", &V::get_index)
-                       .def("get_operator", &V::get_operator)
-                       .def("get_lhs", &V::get_lhs)
-                       .def("get_rhs", &V::get_rhs);
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-    {
-        using V = BinaryOperatorView<Boolean, GroundExpression>;
-        auto cls = nb::class_<V>(m, "GroundBinaryBooleanOperator")
-                       .def("get_index", &V::get_index)
-                       .def("get_operator", &V::get_operator)
-                       .def("get_lhs", &V::get_lhs)
-                       .def("get_rhs", &V::get_rhs);
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-
-    repository.def("get_or_create", &get_or_create_data<BinaryOperator<Arithmetic, LiftedExpression>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_data<BinaryOperator<Boolean, LiftedExpression>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_data<BinaryOperator<Arithmetic, GroundExpression>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_data<BinaryOperator<Boolean, GroundExpression>>, "data"_a, nb::keep_alive<0, 1>());
+    bind_binary_operator_kind<LiftedTag, ArithmeticOperatorKind>(m, repository, "BinaryArithmeticOperator");
+    bind_binary_operator_kind<LiftedTag, BooleanOperatorKind>(m, repository, "BinaryBooleanOperator");
+    bind_binary_operator_kind<GroundTag, ArithmeticOperatorKind>(m, repository, "GroundBinaryArithmeticOperator");
+    bind_binary_operator_kind<GroundTag, BooleanOperatorKind>(m, repository, "GroundBinaryBooleanOperator");
 }
 
 }  // namespace tyr::formalism::planning

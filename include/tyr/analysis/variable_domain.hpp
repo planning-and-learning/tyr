@@ -27,7 +27,7 @@ namespace tyr::analysis
 
 struct VariableDomain
 {
-    std::vector<ygg::Index<::tyr::formalism::Object>> objects;
+    std::vector<ygg::Index<formalism::Object>> objects;
 };
 
 using VariableDomainList = std::vector<VariableDomain>;

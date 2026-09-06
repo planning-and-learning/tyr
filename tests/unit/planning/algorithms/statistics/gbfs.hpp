@@ -23,10 +23,10 @@ namespace tyr::tests
 {
 namespace
 {
-void check_statistics(const SearchStatistics& expected, const SearchCase& test_case, const std::string& heuristic_name, ::tyr::CostMode cost_mode)
+void check_statistics(const SearchStatistics& expected, const SearchCase& test_case, const std::string& heuristic_name, CostMode cost_mode)
 {
     auto context = create_search_context<StatisticsTaskKind>(test_case.domain_file, test_case.task_file);
-    const auto num_ground_actions_before = context.task->get_repository()->template size<::tyr::formalism::planning::Action<::tyr::GroundTag>>();
+    const auto num_ground_actions_before = context.task->get_repository()->template size<formalism::planning::Action<GroundTag>>();
     auto heuristic = create_search_heuristic<StatisticsTaskKind>(heuristic_name, context, cost_mode);
 
     auto options = p::gbfs_lazy::Options<StatisticsTaskKind>();
@@ -36,9 +36,9 @@ void check_statistics(const SearchStatistics& expected, const SearchCase& test_c
 
     expect_statistics(expected, result.statistics, result);
     expect_repository_statistics(context, result.statistics);
-    if constexpr (std::is_same_v<StatisticsTaskKind, ::tyr::LiftedTag>)
+    if constexpr (std::is_same_v<StatisticsTaskKind, LiftedTag>)
     {
-        EXPECT_EQ(context.task->get_repository()->template size<::tyr::formalism::planning::Action<::tyr::GroundTag>>(), num_ground_actions_before);
+        EXPECT_EQ(context.task->get_repository()->template size<formalism::planning::Action<GroundTag>>(), num_ground_actions_before);
     }
 }
 }

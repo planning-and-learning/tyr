@@ -33,11 +33,11 @@ template<typename T, typename Kind>
 concept StateBuilderConcept = requires(T& s,
                                        const T& cs,
                                        ygg::Index<State<Kind>> index,
-                                       ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> variable,
-                                       ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact,
-                                       ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fterm,
+                                       ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>> variable,
+                                       ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>> fact,
+                                       ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> fterm,
                                        ygg::float_t value,
-                                       ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) {
+                                       ygg::Index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> atom) {
     requires TaskKind<Kind>;
     typename T::TaskType;
     { s.clear() };
@@ -47,7 +47,7 @@ concept StateBuilderConcept = requires(T& s,
     { s.swap(s) } noexcept;
     { cs.get_index() } -> std::same_as<ygg::Index<State<Kind>>>;
     { s.set(index) };
-    { cs.get(variable) } -> std::same_as<::tyr::formalism::planning::FDRValue>;
+    { cs.get(variable) } -> std::same_as<formalism::planning::FDRValue>;
     { s.set(fact) };
     { cs.get(fterm) } -> std::same_as<ygg::float_t>;
     { s.set(fterm, value) };

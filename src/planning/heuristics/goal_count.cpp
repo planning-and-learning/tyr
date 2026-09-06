@@ -36,7 +36,7 @@ std::shared_ptr<GoalCountHeuristic<Kind>> GoalCountHeuristic<Kind>::create(std::
 }
 
 template<TaskKind Kind>
-void GoalCountHeuristic<Kind>::set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal)
+void GoalCountHeuristic<Kind>::set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
 {
     m_goal = goal;
 }
@@ -48,19 +48,19 @@ ygg::float_t GoalCountHeuristic<Kind>::evaluate(const ygg::Builder<State<Kind>>&
 
     auto state_context = StateContext<Kind> { *m_task, state, ygg::float_t { 0 } };
 
-    for (const auto fact : m_goal.template get_facts<::tyr::formalism::PositiveTag>())
+    for (const auto fact : m_goal.template get_facts<formalism::PositiveTag>())
     {
-        if (!is_applicable<::tyr::formalism::PositiveTag>(fact, state_context))
+        if (!is_applicable<formalism::PositiveTag>(fact, state_context))
             ++unsat_counter;
     }
 
-    for (const auto fact : m_goal.template get_facts<::tyr::formalism::NegativeTag>())
+    for (const auto fact : m_goal.template get_facts<formalism::NegativeTag>())
     {
-        if (!is_applicable<::tyr::formalism::NegativeTag>(fact, state_context))
+        if (!is_applicable<formalism::NegativeTag>(fact, state_context))
             ++unsat_counter;
     }
 
-    for (const auto fact : m_goal.template get_literals<::tyr::formalism::DerivedTag>())
+    for (const auto fact : m_goal.template get_literals<formalism::DerivedTag>())
     {
         if (!is_applicable(fact, state_context))
             ++unsat_counter;

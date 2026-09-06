@@ -74,7 +74,7 @@ void validate_task(const TaskPtr<LiftedTag>& task, const StateView<LiftedTag>& s
 struct SuccessorGenerator<LiftedTag>::Impl
 {
     using Program = ApplicableActionProgram<LiftedTag>;
-    using ActionBindingMap = ygg::UnorderedMap<fp::ActionBindingView, fp::ActionView<::tyr::GroundTag>>;
+    using ActionBindingMap = ygg::UnorderedMap<fp::ActionBindingView, fp::ActionView<GroundTag>>;
 
     struct Definition
     {
@@ -90,7 +90,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
 
         ygg::ExecutionContextPtr execution_context;
         fp::Builder scratch_builder;
-        ygg::UniqueObjectPoolPtr<ygg::Data<f::RelationBinding<fp::Action<::tyr::LiftedTag>>>> scratch_action_binding;
+        ygg::UniqueObjectPoolPtr<ygg::Data<f::RelationBinding<fp::Action<LiftedTag>>>> scratch_action_binding;
         ActionBindingMap action_binding_to_ground_action;
         datalog::ProgramWorkspace<LiftedTag> workspace;
         analysis::CompatibilityWorkspace compatibility_workspace;
@@ -119,10 +119,10 @@ struct SuccessorGenerator<LiftedTag>::Impl
     void compute_action_facts(const Node<LiftedTag>& node);
 
     template<typename Callback>
-    void for_each_applicable_action_binding(const Node<LiftedTag>& node, ygg::Data<f::RelationBinding<fp::Action<::tyr::LiftedTag>>>& scratch_binding, Callback&& callback);
+    void for_each_applicable_action_binding(const Node<LiftedTag>& node, ygg::Data<f::RelationBinding<fp::Action<LiftedTag>>>& scratch_binding, Callback&& callback);
 
     ygg::float_t
-    generate_successor_state(const Node<LiftedTag>& node, const ygg::Data<f::RelationBinding<fp::Action<::tyr::LiftedTag>>>& binding, ygg::Builder<State<LiftedTag>>& out_state);
+    generate_successor_state(const Node<LiftedTag>& node, const ygg::Data<f::RelationBinding<fp::Action<LiftedTag>>>& binding, ygg::Builder<State<LiftedTag>>& out_state);
 
     ygg::uint_t index;
     std::shared_ptr<std::atomic<ygg::uint_t>> next_index;
@@ -135,7 +135,7 @@ SuccessorGenerator<LiftedTag>::Impl::Definition::Definition(TaskPtr<LiftedTag> t
 SuccessorGenerator<LiftedTag>::Impl::Evaluator::Evaluator(const Definition& definition, ygg::ExecutionContextPtr execution_context_) :
     execution_context(std::move(execution_context_)),
     scratch_builder(),
-    scratch_action_binding(fp::checkout<f::RelationBinding<fp::Action<::tyr::LiftedTag>>>(scratch_builder)),
+    scratch_action_binding(fp::checkout<f::RelationBinding<fp::Action<LiftedTag>>>(scratch_builder)),
     action_binding_to_ground_action(),
     workspace(definition.action_program.get_datalog_program()),
     compatibility_workspace(),
@@ -159,7 +159,7 @@ void SuccessorGenerator<LiftedTag>::Impl::compute_action_facts(const Node<Lifted
 
 template<typename Callback>
 void SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(const Node<LiftedTag>& node,
-                                                                             ygg::Data<f::RelationBinding<fp::Action<::tyr::LiftedTag>>>& scratch_binding,
+                                                                             ygg::Data<f::RelationBinding<fp::Action<LiftedTag>>>& scratch_binding,
                                                                              Callback&& callback)
 {
     compute_action_facts(node);
@@ -194,7 +194,7 @@ void SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
 }
 
 ygg::float_t SuccessorGenerator<LiftedTag>::Impl::generate_successor_state(const Node<LiftedTag>& node,
-                                                                           const ygg::Data<f::RelationBinding<fp::Action<::tyr::LiftedTag>>>& binding,
+                                                                           const ygg::Data<f::RelationBinding<fp::Action<LiftedTag>>>& binding,
                                                                            ygg::Builder<State<LiftedTag>>& out_state)
 {
     evaluator.workspace.binding.clear();
@@ -296,7 +296,7 @@ void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<Lifte
 }
 
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag>& node,
-                                                                  fp::ActionView<::tyr::GroundTag> action,
+                                                                  fp::ActionView<GroundTag> action,
                                                                   StateRepository<LiftedTag>& state_repository,
                                                                   AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
@@ -310,7 +310,7 @@ Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<Lif
     return finalize_successor_state(state_repository, axiom_evaluator, std::move(successor_state), result);
 }
 
-fp::ActionView<::tyr::GroundTag> SuccessorGenerator<LiftedTag>::ground_action(fp::ActionBindingView binding)
+fp::ActionView<GroundTag> SuccessorGenerator<LiftedTag>::ground_action(fp::ActionBindingView binding)
 {
     if (const auto it = m_impl->evaluator.action_binding_to_ground_action.find(binding); it != m_impl->evaluator.action_binding_to_ground_action.end())
         return it->second;
@@ -333,7 +333,7 @@ fp::ActionView<::tyr::GroundTag> SuccessorGenerator<LiftedTag>::ground_action(fp
 
 // Action binding API (interning)
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag>& node,
-                                                                  ::tyr::formalism::planning::ActionBindingView binding,
+                                                                  formalism::planning::ActionBindingView binding,
                                                                   StateRepository<LiftedTag>& state_repository,
                                                                   AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
@@ -344,15 +344,15 @@ Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<Lif
     return get_successor_node(node, *m_impl->evaluator.scratch_action_binding, state_repository, axiom_evaluator);
 }
 
-std::vector<::tyr::formalism::planning::ActionBindingView> SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<LiftedTag>& node)
+std::vector<formalism::planning::ActionBindingView> SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<LiftedTag>& node)
 {
-    auto result = std::vector<::tyr::formalism::planning::ActionBindingView> {};
+    auto result = std::vector<formalism::planning::ActionBindingView> {};
     get_applicable_action_bindings(node, result);
     return result;
 }
 
 void SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<LiftedTag>& node,
-                                                                   std::vector<::tyr::formalism::planning::ActionBindingView>& out_bindings)
+                                                                   std::vector<formalism::planning::ActionBindingView>& out_bindings)
 {
     validate_task(m_impl->definition->task, node.get_state());
     out_bindings.clear();
@@ -388,7 +388,7 @@ Node<LiftedTag> SuccessorGenerator<LiftedTag>::finalize_successor_state(StateRep
 // Action binding API (no interning)
 Node<LiftedTag>
 SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag>& node,
-                                                  const ygg::Data<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action<::tyr::LiftedTag>>>& binding,
+                                                  const ygg::Data<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>>& binding,
                                                   StateRepository<LiftedTag>& state_repository,
                                                   AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {

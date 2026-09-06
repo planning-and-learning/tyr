@@ -52,7 +52,7 @@ static void insert_literal_dependencies(const std::vector<ParameterIndex>& param
 }
 
 template<FactKind F>
-static void insert_literal(LiteralView<::tyr::LiftedTag, F> literal, details::UnaryDependencies& unary, details::BinaryDependencies& binary)
+static void insert_literal(LiteralView<LiftedTag, F> literal, details::UnaryDependencies& unary, details::BinaryDependencies& binary)
 {
     const auto parameters_set = collect_parameters(literal);
     auto parameters = std::vector<ParameterIndex>(parameters_set.begin(), parameters_set.end());
@@ -64,7 +64,7 @@ static void insert_literal(LiteralView<::tyr::LiftedTag, F> literal, details::Un
         insert_literal_dependencies<F, NegativeTag>(parameters, unary, binary);
 }
 
-static void insert_numeric_constraint(LiftedBooleanOperatorView numeric_constraint, details::UnaryDependencies& unary, details::BinaryDependencies& binary)
+static void insert_numeric_constraint(BooleanOperatorView<LiftedTag> numeric_constraint, details::UnaryDependencies& unary, details::BinaryDependencies& binary)
 {
     const auto parameters_set = collect_parameters(numeric_constraint);
     auto parameters = std::vector<ParameterIndex>(parameters_set.begin(), parameters_set.end());
@@ -93,7 +93,7 @@ static void insert_numeric_constraint(LiftedBooleanOperatorView numeric_constrai
     }
 }
 
-VariableDependencyGraph::VariableDependencyGraph(ConjunctiveConditionView<::tyr::LiftedTag> condition) :
+VariableDependencyGraph::VariableDependencyGraph(ConjunctiveConditionView<LiftedTag> condition) :
     m_k(condition.get_arity()),
     m_unary_dependencies(m_k),
     m_binary_dependencies(m_k)

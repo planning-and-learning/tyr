@@ -63,8 +63,8 @@ struct RPGDefinition
         if (!metric)
             return;
 
-        auto fterms = ygg::UnorderedSet<::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag>> {};
-        ::tyr::formalism::datalog::collect_fterms(metric.value().get_fexpr(), fterms);
+        auto fterms = ygg::UnorderedSet<formalism::datalog::FunctionTermView<GroundTag, formalism::FluentTag>> {};
+        formalism::datalog::collect_fterms(metric.value().get_fexpr(), fterms);
         for (const auto fterm : fterms)
             metric_targets.insert(fterm.get_row().get_index());
     }
@@ -73,17 +73,17 @@ struct RPGDefinition
 template<TaskKind Kind>
 struct RPGPolicy;
 
-inline ::tyr::formalism::planning::ActionBindingView to_action_binding(::tyr::formalism::planning::ActionView<::tyr::GroundTag> action) noexcept
+inline formalism::planning::ActionBindingView to_action_binding(formalism::planning::ActionView<GroundTag> action) noexcept
 {
     return action.get_row();
 }
 
-inline ::tyr::formalism::planning::ActionBindingView to_action_binding(::tyr::formalism::planning::ActionBindingView action) noexcept { return action; }
+inline formalism::planning::ActionBindingView to_action_binding(formalism::planning::ActionBindingView action) noexcept { return action; }
 
 template<TaskKind Kind, typename Workspace>
-void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, ::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> source_goal)
+void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, formalism::planning::ConjunctiveConditionView<GroundTag> source_goal)
 {
-    namespace fd = ::tyr::formalism::datalog;
+    namespace fd = formalism::datalog;
     auto& destination = [&]() -> fd::Repository&
     {
         if constexpr (std::same_as<Kind, GroundTag>)
@@ -91,8 +91,8 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, ::t
         else
             return workspace.workspace_repository;
     }();
-    auto merge_context = ::tyr::formalism::planning::MergeDatalogContext { workspace.datalog_builder, destination };
-    auto condition = fd::checkout<fd::ConjunctiveCondition<::tyr::GroundTag>>(merge_context.builder);
+    auto merge_context = formalism::planning::MergeDatalogContext { workspace.datalog_builder, destination };
+    auto condition = fd::checkout<fd::ConjunctiveCondition<GroundTag>>(merge_context.builder);
 
     const auto translate_atom = [&](const auto atom)
     {
@@ -100,23 +100,23 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, ::t
         if constexpr (std::same_as<Kind, GroundTag>)
             return p2d.fluent_to_fluent_atom.at(atom);
         else
-            return ::tyr::formalism::planning::merge_p2d(atom, p2d.fluent_to_fluent_predicate, merge_context).first;
+            return formalism::planning::merge_p2d(atom, p2d.fluent_to_fluent_predicate, merge_context).first;
     };
 
-    for (const auto fact : source_goal.template get_facts<::tyr::formalism::PositiveTag>())
+    for (const auto fact : source_goal.template get_facts<formalism::PositiveTag>())
     {
         const auto atom = fact.get_atom();
         if (!atom)
             continue;
 
-        auto literal = fd::checkout<fd::Literal<::tyr::GroundTag, ::tyr::formalism::FluentTag>>(merge_context.builder);
+        auto literal = fd::checkout<fd::Literal<GroundTag, formalism::FluentTag>>(merge_context.builder);
         literal->atom = translate_atom(*atom).get_index();
         literal->polarity = true;
         condition->fluent_literals.push_back(fd::get_or_create(merge_context.destination, *literal).first.get_index());
     }
 
     for (const auto numeric_constraint : source_goal.get_numeric_constraints())
-        condition->numeric_constraints.push_back(::tyr::formalism::planning::merge_p2d(numeric_constraint, merge_context));
+        condition->numeric_constraints.push_back(formalism::planning::merge_p2d(numeric_constraint, merge_context));
 
     workspace.tp.set_goals(fd::get_or_create(merge_context.destination, *condition).first);
 }
@@ -156,7 +156,7 @@ public:
         Policy::set_goal(*m_definition, m_workspace, m_source_goal);
     }
 
-    void set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal)
+    void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
     {
         m_source_goal = goal;
         Policy::set_goal(*m_definition, m_workspace, m_source_goal);
@@ -188,13 +188,13 @@ protected:
 
     ygg::float_t compute_result(const ygg::Builder<State<Kind>>&) const noexcept { return get_goal_cost(); }
 
-    void set_action_binding_cost(::tyr::formalism::planning::ActionBindingView action_binding, datalog::Cost cost)
+    void set_action_binding_cost(formalism::planning::ActionBindingView action_binding, datalog::Cost cost)
         requires std::same_as<CP, datalog::RuleCostOverridePolicy<Kind>>
     {
         m_workspace.cost_policy.set_action_cost(action_binding, cost);
     }
 
-    datalog::Cost get_predicate_cost(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head) const noexcept
+    datalog::Cost get_predicate_cost(formalism::datalog::PredicateBindingView<formalism::FluentTag> head) const noexcept
     {
         const auto* annotation = m_workspace.annotations.find(head);
         return annotation ? datalog::get_cost(*annotation) : datalog::Cost(0);
@@ -209,14 +209,14 @@ protected:
                                              numeric_support_selector);
     }
 
-    template<::tyr::formalism::RelationKind R>
+    template<formalism::RelationKind R>
     auto get_action(const datalog::WitnessAnnotation<R>& witness)
     {
         return Policy::get_action(*m_definition, m_workspace, witness);
     }
 
-    template<::tyr::formalism::RelationKind R>
-    std::optional<::tyr::formalism::planning::ActionBindingView> get_action_binding(const datalog::WitnessAnnotation<R>& witness)
+    template<formalism::RelationKind R>
+    std::optional<formalism::planning::ActionBindingView> get_action_binding(const datalog::WitnessAnnotation<R>& witness)
     {
         const auto action = get_action(witness);
         if (!action)
@@ -224,7 +224,7 @@ protected:
         return detail::to_action_binding(*action);
     }
 
-    ::tyr::formalism::planning::ActionBindingView get_action_binding(typename Policy::Action action) const noexcept
+    formalism::planning::ActionBindingView get_action_binding(typename Policy::Action action) const noexcept
     {
         return detail::to_action_binding(action);
     }
@@ -235,28 +235,28 @@ protected:
         return Policy::is_action_applicable(*m_definition, m_workspace, executor, action, state_context);
     }
 
-    void append_planning_cut_frontier_atom(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
-                                           ::tyr::formalism::planning::AtomViewList<::tyr::GroundTag, ::tyr::formalism::FluentTag>& atoms)
+    void append_planning_cut_frontier_atom(formalism::datalog::PredicateBindingView<formalism::FluentTag> head,
+                                           formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>& atoms)
     {
         if (const auto atom = Policy::translate_cut_atom(*m_definition, m_workspace, head))
             atoms.push_back(*atom);
     }
 
-    template<::tyr::formalism::RelationKind R, typename Callback>
+    template<formalism::RelationKind R, typename Callback>
     void for_each_witness_precondition(const datalog::WitnessAnnotation<R>& witness, Callback&& callback)
     {
         Policy::visit_witness_rule_instance(m_workspace,
                                             witness,
                                             [&](const auto& instance)
                                             {
-                                                for (const auto literal : instance.get_body().template get_literals<::tyr::formalism::FluentTag>())
+                                                for (const auto literal : instance.get_body().template get_literals<formalism::FluentTag>())
                                                     if (literal.get_polarity())
                                                         callback(instance.resolve(literal.get_atom()));
                                             });
     }
 
     template<typename Callback>
-    void for_each_achiever(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head, Callback&& callback)
+    void for_each_achiever(formalism::datalog::PredicateBindingView<formalism::FluentTag> head, Callback&& callback)
         requires AP::records_propositional_achievers
     {
         const auto* achievers = m_workspace.annotation_policy.find_achievers(head);
@@ -271,15 +271,15 @@ protected:
 
     std::shared_ptr<Definition> m_definition;
     ygg::ExecutionContextPtr m_execution_context;
-    ::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> m_source_goal;
+    formalism::planning::ConjunctiveConditionView<GroundTag> m_source_goal;
     Workspace m_workspace;
 
 private:
     static CP make_cost_policy(const Definition& definition)
     {
         if constexpr (std::same_as<CP, datalog::RuleCostOverridePolicy<Kind>>)
-            return CP(definition.rpg_program.template get_rule_to_action_mapping<::tyr::formalism::PredicateTag>(),
-                      definition.rpg_program.template get_rule_to_action_mapping<::tyr::formalism::FunctionTag>(),
+            return CP(definition.rpg_program.template get_rule_to_action_mapping<formalism::PredicateTag>(),
+                      definition.rpg_program.template get_rule_to_action_mapping<formalism::FunctionTag>(),
                       &definition.metric_targets);
         else if constexpr (std::same_as<CP, datalog::RuleCostPolicy>)
             return CP(&definition.metric_targets);

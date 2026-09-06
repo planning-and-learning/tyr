@@ -46,12 +46,12 @@ namespace tyr::datalog
 
 struct NumericSupport : ygg::comparison::Mixin<NumericSupport>
 {
-    ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> key;
+    formalism::datalog::FunctionBindingView<formalism::FluentTag> key;
     ygg::ClosedInterval<ygg::float_t> interval;
     Cost cost;
 
     NumericSupport() = delete;
-    NumericSupport(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost) :
+    NumericSupport(formalism::datalog::FunctionBindingView<formalism::FluentTag> key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost) :
         key(key),
         interval(interval),
         cost(cost)
@@ -65,17 +65,17 @@ struct NumericSupport : ygg::comparison::Mixin<NumericSupport>
     auto identifying_members() const noexcept { return std::tie(key, interval, cost); }
 };
 
-template<::tyr::formalism::RelationKind R = ::tyr::formalism::PredicateTag>
+template<formalism::RelationKind R = formalism::PredicateTag>
 struct WitnessAnnotation : ygg::comparison::Mixin<WitnessAnnotation<R>>
 {
     using Relation = R;
     using Metric = ygg::ClosedInterval<ygg::float_t>;
     using NumericSupports = std::vector<NumericSupport>;
 
-    WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key, Cost cost);
-    WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key, Metric metric, Cost cost);
-    WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key, Metric metric, Cost cost, NumericSupports numeric_supports);
-    WitnessAnnotation(::tyr::formalism::datalog::RuleBindingView<R> rule_key, Metric metric, Cost cost, std::span<const NumericSupport> numeric_supports);
+    WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key, Cost cost);
+    WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key, Metric metric, Cost cost);
+    WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key, Metric metric, Cost cost, NumericSupports numeric_supports);
+    WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key, Metric metric, Cost cost, std::span<const NumericSupport> numeric_supports);
 
     auto get_rule_key() const noexcept { return rule_key; }
     auto get_metric() const noexcept { return metric; }
@@ -85,18 +85,18 @@ struct WitnessAnnotation : ygg::comparison::Mixin<WitnessAnnotation<R>>
     auto identifying_members() const noexcept { return std::tie(rule_key, metric, cost, numeric_supports); }
 
 private:
-    ::tyr::formalism::datalog::RuleBindingView<R> rule_key;
+    formalism::datalog::RuleBindingView<R> rule_key;
     Metric metric;
     Cost cost;
     NumericSupports numeric_supports;
 };
 
-using PredicateRuleBinding = ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::PredicateTag>;
+using PredicateRuleBinding = formalism::datalog::RuleBindingView<formalism::PredicateTag>;
 
 struct PredicateAchiever
 {
-    ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head;
-    WitnessAnnotation<::tyr::formalism::PredicateTag> witness;
+    formalism::datalog::PredicateBindingView<formalism::FluentTag> head;
+    WitnessAnnotation<formalism::PredicateTag> witness;
 };
 
 using PendingPredicateAchieverBuckets = ygg::Map<Cost, std::vector<PredicateRuleBinding>>;
@@ -168,16 +168,16 @@ private:
     Cost m_cost;
 };
 
-template<::tyr::formalism::RelationKind R = ::tyr::formalism::PredicateTag>
+template<formalism::RelationKind R = formalism::PredicateTag>
 using Annotation = std::variant<BaseAnnotation, WitnessAnnotation<R>>;
 
-template<::tyr::formalism::RelationKind R>
+template<formalism::RelationKind R>
 inline auto get_metric(const Annotation<R>& annotation) noexcept
 {
     return std::visit([](const auto& value) { return value.get_metric(); }, annotation);
 }
 
-template<::tyr::formalism::RelationKind R>
+template<formalism::RelationKind R>
 inline Cost get_cost(const Annotation<R>& annotation) noexcept
 {
     return std::visit([](const auto& value) { return value.get_cost(); }, annotation);
@@ -203,15 +203,15 @@ struct CostUpdate
 
 /// ThreadSafe permits concurrent read(), update(), and row growth after relation lanes
 /// are initialized. initialize(), clear(), find(), moves, and destruction require quiescence.
-template<::tyr::formalism::RelationKind R, std::default_initializable Value, bool ThreadSafe = false>
+template<formalism::RelationKind R, std::default_initializable Value, bool ThreadSafe = false>
 class DenseRelationMap
 {
 public:
     static constexpr bool thread_safe = ThreadSafe;
 
-    using Key = std::conditional_t<std::same_as<R, ::tyr::formalism::PredicateTag>,
-                                   ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>,
-                                   ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>>;
+    using Key = std::conditional_t<std::same_as<R, formalism::PredicateTag>,
+                                   formalism::datalog::PredicateBindingView<formalism::FluentTag>,
+                                   formalism::datalog::FunctionBindingView<formalism::FluentTag>>;
     using Relation = decltype(std::declval<Key>().get_index().relation);
     using Row = decltype(std::declval<Key>().get_index().row);
 
@@ -369,7 +369,7 @@ public:
     static constexpr bool thread_safe = ThreadSafe;
 
     /// Both engines key predicate annotations by the fluent predicate binding.
-    using Key = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
+    using Key = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
 
     PredicateAnnotationMap()
         requires(!ThreadSafe)
@@ -414,7 +414,7 @@ public:
     }
 
 private:
-    DenseRelationMap<::tyr::formalism::PredicateTag, Annotation<>, ThreadSafe> m_annotations;
+    DenseRelationMap<formalism::PredicateTag, Annotation<>, ThreadSafe> m_annotations;
 };
 
 template<bool ThreadSafe = false>
@@ -423,10 +423,10 @@ using PredicateAnnotations = PredicateAnnotationMap<ThreadSafe>;
 struct NumericIntervalAnnotation
 {
     ygg::ClosedInterval<ygg::float_t> interval;
-    Annotation<::tyr::formalism::FunctionTag> annotation;
+    Annotation<formalism::FunctionTag> annotation;
 
     NumericIntervalAnnotation() = default;
-    NumericIntervalAnnotation(ygg::ClosedInterval<ygg::float_t> interval, Annotation<::tyr::formalism::FunctionTag> annotation) :
+    NumericIntervalAnnotation(ygg::ClosedInterval<ygg::float_t> interval, Annotation<formalism::FunctionTag> annotation) :
         interval(interval),
         annotation(std::move(annotation))
     {
@@ -439,7 +439,7 @@ inline bool numeric_interval_key_less(const NumericIntervalAnnotation& lhs, cons
                           std::tuple(get_cost(rhs.annotation), lower(rhs.interval), upper(rhs.interval)));
 }
 
-inline const Annotation<::tyr::formalism::FunctionTag>* find_numeric_interval_annotation(const std::vector<NumericIntervalAnnotation>& entries,
+inline const Annotation<formalism::FunctionTag>* find_numeric_interval_annotation(const std::vector<NumericIntervalAnnotation>& entries,
                                                                                          ygg::ClosedInterval<ygg::float_t> interval) noexcept
 {
     const auto it = std::find_if(entries.begin(), entries.end(), [&](const auto& entry) { return entry.interval == interval; });
@@ -474,10 +474,10 @@ class NumericIntervalAnnotations
 public:
     static constexpr bool thread_safe = ThreadSafe;
 
-    using Binding = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
+    using Binding = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
     using Entry = NumericIntervalAnnotation;
     using Entries = std::vector<Entry>;
-    using Storage = DenseRelationMap<::tyr::formalism::FunctionTag, Entries, ThreadSafe>;
+    using Storage = DenseRelationMap<formalism::FunctionTag, Entries, ThreadSafe>;
     using Relation = typename Storage::Relation;
     using Key = typename Storage::Row;
 
@@ -514,32 +514,32 @@ public:
 
     const Entries* find_entries(Relation relation, Key key) const noexcept { return m_slots.find(relation, key); }
 
-    const Annotation<::tyr::formalism::FunctionTag>* find(Binding binding) const noexcept
+    const Annotation<formalism::FunctionTag>* find(Binding binding) const noexcept
     {
         const auto* entries = find_entries(binding);
         return (!entries || entries->empty()) ? nullptr : &entries->back().annotation;
     }
 
-    Annotation<::tyr::formalism::FunctionTag>* find(Binding binding) noexcept
+    Annotation<formalism::FunctionTag>* find(Binding binding) noexcept
         requires(!ThreadSafe)
     {
         auto* entries = m_slots.find(binding);
         return (!entries || entries->empty()) ? nullptr : &entries->back().annotation;
     }
 
-    const Annotation<::tyr::formalism::FunctionTag>* find(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
+    const Annotation<formalism::FunctionTag>* find(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
     {
         const auto* entries = find_entries(binding);
         return entries ? find_numeric_interval_annotation(*entries, interval) : nullptr;
     }
 
-    bool insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<::tyr::formalism::FunctionTag> annotation)
+    bool insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<formalism::FunctionTag> annotation)
     {
         const auto index = binding.get_index();
         return insert(index.relation, index.row, interval, std::move(annotation));
     }
 
-    bool insert(Relation relation, Key key, ygg::ClosedInterval<ygg::float_t> interval, Annotation<::tyr::formalism::FunctionTag> annotation)
+    bool insert(Relation relation, Key key, ygg::ClosedInterval<ygg::float_t> interval, Annotation<formalism::FunctionTag> annotation)
     {
         if (empty(interval))
             return false;

@@ -35,12 +35,12 @@ struct RuleState
     std::vector<bool> numeric_constraint_satisfied;
 };
 
-template<::tyr::formalism::RelationKind R>
+template<formalism::RelationKind R>
 struct RuleWorkspace<GroundTag, R>
 {
     std::vector<RuleState> states;
 
-    explicit RuleWorkspace(::tyr::formalism::datalog::ProgramView<GroundTag>) {}
+    explicit RuleWorkspace(formalism::datalog::ProgramView<GroundTag>) {}
 
     void clear() { states.clear(); }
 };

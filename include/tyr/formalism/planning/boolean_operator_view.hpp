@@ -28,7 +28,7 @@
 
 namespace ygg
 {
-template<typename T, ::tyr::formalism::planning::Context C>
+template<::tyr::TaskKind T, ::tyr::formalism::planning::Context C>
 class View<ygg::Data<::tyr::formalism::planning::BooleanOperator<T>>, C>
 {
 private:
@@ -47,7 +47,7 @@ public:
 };
 
 /// Canonical context depends on variable.
-template<typename T, typename C>
+template<::tyr::TaskKind T, typename C>
 auto make_view(const ygg::Data<::tyr::formalism::planning::BooleanOperator<T>>& element, const C& context) noexcept
 {
     return ygg::View<ygg::Data<::tyr::formalism::planning::BooleanOperator<T>>, C>(

@@ -56,7 +56,7 @@ struct TmpScoped
 
 struct TmpVariableDomain
 {
-    ygg::UnorderedSet<ygg::Index<::tyr::formalism::Object>> objects;
+    ygg::UnorderedSet<ygg::Index<formalism::Object>> objects;
 };
 
 using TmpVariableDomainList = std::vector<TmpVariableDomain>;
@@ -67,14 +67,14 @@ using TmpSimpleScopedDomain = TmpScoped<Element, TmpVariableDomainList>;
 template<typename Element>
 using TmpSimpleScopedDomainMap = ygg::UnorderedMap<ygg::Index<Element>, TmpVariableDomainList>;
 
-template<::tyr::formalism::FactKind T>
-using TmpPredicateDomainMap = TmpSimpleScopedDomainMap<::tyr::formalism::Predicate<T>>;
+template<formalism::FactKind T>
+using TmpPredicateDomainMap = TmpSimpleScopedDomainMap<formalism::Predicate<T>>;
 
-template<::tyr::formalism::FactKind T>
-using TmpFunctionDomainMap = TmpSimpleScopedDomainMap<::tyr::formalism::Function<T>>;
+template<formalism::FactKind T>
+using TmpFunctionDomainMap = TmpSimpleScopedDomainMap<formalism::Function<T>>;
 
-template<::tyr::formalism::RelationKind R>
-using TmpRuleDomainMap = TmpSimpleScopedDomainMap<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>>;
+template<formalism::RelationKind R>
+using TmpRuleDomainMap = TmpSimpleScopedDomainMap<formalism::datalog::Rule<LiftedTag, R>>;
 
 /**
  * Conversion helpers to public representation.
@@ -139,7 +139,7 @@ RuleDomainMap<R> to_rule_domain_map(const TmpRuleDomainMap<R>& domains)
     for (const auto& [rule, variable_domains] : domains)
     {
         result.emplace(rule,
-                       SimpleScopedDomain<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>> {
+                       SimpleScopedDomain<formalism::datalog::Rule<LiftedTag, R>> {
                            rule,
                            to_variable_domain_list(variable_domains),
                        });
@@ -165,7 +165,7 @@ TmpPredicateDomainMap<T> initialize_predicate_domain_sets(fd::PredicateListView<
 }
 
 template<f::FactKind T>
-void insert_into_predicate_domain_sets(fd::AtomListView<::tyr::GroundTag, T> atoms, TmpPredicateDomainMap<T>& predicate_domain_sets)
+void insert_into_predicate_domain_sets(fd::AtomListView<GroundTag, T> atoms, TmpPredicateDomainMap<T>& predicate_domain_sets)
 {
     for (const auto atom : atoms)
     {
@@ -191,7 +191,7 @@ TmpFunctionDomainMap<T> initialize_function_domain_sets(fd::FunctionListView<T> 
 }
 
 template<f::FactKind T>
-void insert_into_function_domain_sets(fd::FunctionTermValueListView<::tyr::GroundTag, T> fterm_values, TmpFunctionDomainMap<T>& function_domain_sets)
+void insert_into_function_domain_sets(fd::FunctionTermValueListView<GroundTag, T> fterm_values, TmpFunctionDomainMap<T>& function_domain_sets)
 {
     for (const auto term_value : fterm_values)
     {
@@ -269,7 +269,7 @@ struct RestrictPolicy
     }
 
     template<f::FactKind T>
-    bool should_skip(fd::LiteralView<::tyr::LiftedTag, T> literal) const
+    bool should_skip(fd::LiteralView<LiftedTag, T> literal) const
     {
         return !literal.get_polarity();
     }
@@ -340,7 +340,7 @@ struct LiftPolicy
  */
 
 template<typename Policy>
-void apply_policy(fd::FunctionExpressionView<::tyr::LiftedTag> element, Policy& policy);
+void apply_policy(fd::FunctionExpressionView<LiftedTag> element, Policy& policy);
 
 template<typename Policy>
 void apply_policy(ygg::float_t, Policy&)
@@ -348,27 +348,27 @@ void apply_policy(ygg::float_t, Policy&)
 }
 
 template<typename Policy>
-void apply_policy(fd::LiftedUnaryOperatorView element, Policy& policy)
+void apply_policy(fd::UnaryOperatorView<LiftedTag> element, Policy& policy)
 {
     apply_policy(element.get_arg(), policy);
 }
 
 template<f::BinaryOperatorKind O, typename Policy>
-void apply_policy(fd::LiftedBinaryOperatorView<O> element, Policy& policy)
+void apply_policy(fd::BinaryOperatorView<LiftedTag, O> element, Policy& policy)
 {
     apply_policy(element.get_lhs(), policy);
     apply_policy(element.get_rhs(), policy);
 }
 
 template<typename Policy>
-void apply_policy(fd::LiftedMultiOperatorView element, Policy& policy)
+void apply_policy(fd::MultiOperatorView<LiftedTag> element, Policy& policy)
 {
     for (const auto arg : element.get_args())
         apply_policy(arg, policy);
 }
 
 template<f::FactKind T, typename Policy>
-void apply_policy(fd::AtomView<::tyr::LiftedTag, T> element, Policy& policy)
+void apply_policy(fd::AtomView<LiftedTag, T> element, Policy& policy)
 {
     const auto predicate = element.get_predicate();
 
@@ -397,7 +397,7 @@ void apply_policy(fd::AtomView<::tyr::LiftedTag, T> element, Policy& policy)
 }
 
 template<f::FactKind T, typename Policy>
-void apply_policy(fd::LiteralView<::tyr::LiftedTag, T> element, Policy& policy)
+void apply_policy(fd::LiteralView<LiftedTag, T> element, Policy& policy)
 {
     if (policy.should_skip(element))
         return;
@@ -406,7 +406,7 @@ void apply_policy(fd::LiteralView<::tyr::LiftedTag, T> element, Policy& policy)
 }
 
 template<f::FactKind T, typename Policy>
-void apply_policy(fd::FunctionTermView<::tyr::LiftedTag, T> element, Policy& policy)
+void apply_policy(fd::FunctionTermView<LiftedTag, T> element, Policy& policy)
 {
     const auto function = element.get_function();
 
@@ -435,32 +435,32 @@ void apply_policy(fd::FunctionTermView<::tyr::LiftedTag, T> element, Policy& pol
 }
 
 template<f::FactKind T, typename Policy>
-void apply_policy(fd::NumericEffectView<::tyr::LiftedTag, T> element, Policy& policy)
+void apply_policy(fd::NumericEffectView<LiftedTag, T> element, Policy& policy)
 {
     apply_policy(element.get_fterm(), policy);
     apply_policy(element.get_fexpr(), policy);
 }
 
 template<typename Policy>
-void apply_policy(fd::LiftedArithmeticOperatorView element, Policy& policy)
+void apply_policy(fd::ArithmeticOperatorView<LiftedTag> element, Policy& policy)
 {
     visit([&](auto&& arg) { apply_policy(arg, policy); }, element.get_variant());
 }
 
 template<typename Policy>
-void apply_policy(fd::FunctionExpressionView<::tyr::LiftedTag> element, Policy& policy)
+void apply_policy(fd::FunctionExpressionView<LiftedTag> element, Policy& policy)
 {
     visit([&](auto&& arg) { apply_policy(arg, policy); }, element.get_variant());
 }
 
 template<typename Policy>
-void apply_policy(fd::LiftedBooleanOperatorView element, Policy& policy)
+void apply_policy(fd::BooleanOperatorView<LiftedTag> element, Policy& policy)
 {
     visit([&](auto&& arg) { apply_policy(arg, policy); }, element.get_variant());
 }
 
 template<f::FactKind T, typename Policy>
-void apply_policy(fd::NumericEffectOperatorView<::tyr::LiftedTag, T> element, Policy& policy)
+void apply_policy(fd::NumericEffectOperatorView<LiftedTag, T> element, Policy& policy)
 {
     visit([&](auto&& arg) { apply_policy(arg, policy); }, element.get_variant());
 }

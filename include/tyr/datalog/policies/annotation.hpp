@@ -34,8 +34,8 @@ namespace tyr::datalog
 class NoAnnotationPolicy
 {
 public:
-    using PredicateHead = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
-    using FunctionBinding = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
+    using PredicateHead = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
+    using FunctionBinding = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
 
     static constexpr bool stores_annotations = false;
     static constexpr bool records_propositional_achievers = false;
@@ -53,10 +53,10 @@ class MinCostAnnotationPolicy
 {
 public:
     using Aggregation = AggregationFunction;
-    using PredicateHead = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
-    using FunctionBinding = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
-    using PredicateWitness = WitnessAnnotation<::tyr::formalism::PredicateTag>;
-    using FunctionWitness = WitnessAnnotation<::tyr::formalism::FunctionTag>;
+    using PredicateHead = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
+    using FunctionBinding = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
+    using PredicateWitness = WitnessAnnotation<formalism::PredicateTag>;
+    using FunctionWitness = WitnessAnnotation<formalism::FunctionTag>;
 
     static constexpr bool stores_annotations = true;
     static constexpr bool records_propositional_achievers = false;
@@ -94,7 +94,7 @@ public:
                               FunctionWitness&& witness,
                               FunctionAnnotations<ThreadSafe>& numeric_annotations) const
     {
-        return numeric_annotations.insert(head, interval, Annotation<::tyr::formalism::FunctionTag>(std::move(witness)));
+        return numeric_annotations.insert(head, interval, Annotation<formalism::FunctionTag>(std::move(witness)));
     }
 
     bool
@@ -118,8 +118,8 @@ template<typename AggregationFunction>
 class MinCostAnnotationWithAchieversPolicy : public MinCostAnnotationPolicy<AggregationFunction>
 {
 public:
-    using PredicateHead = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
-    using PredicateWitness = WitnessAnnotation<::tyr::formalism::PredicateTag>;
+    using PredicateHead = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
+    using PredicateWitness = WitnessAnnotation<formalism::PredicateTag>;
     using Achievers = std::vector<PredicateWitness>;
 
     static constexpr bool records_propositional_achievers = true;
@@ -133,7 +133,7 @@ public:
     void record_achiever(PredicateHead head, PredicateWitness witness);
 
 private:
-    using RuleBinding = ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::PredicateTag>;
+    using RuleBinding = formalism::datalog::RuleBindingView<formalism::PredicateTag>;
 
     struct IndexedAchievers
     {
@@ -141,7 +141,7 @@ private:
         ygg::UnorderedMap<RuleBinding, size_t> indices;
     };
 
-    DenseRelationMap<::tyr::formalism::PredicateTag, IndexedAchievers> m_achievers;
+    DenseRelationMap<formalism::PredicateTag, IndexedAchievers> m_achievers;
 };
 
 }

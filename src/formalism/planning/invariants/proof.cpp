@@ -40,10 +40,10 @@ namespace tyr::formalism::planning::invariant
 
 namespace
 {
-tyr::formalism::unification::SubstitutionFunction<ygg::Data<Term>> make_effect_alpha_renaming(const MutableConditionalEffect& effect, size_t fresh_base)
+unification::SubstitutionFunction<ygg::Data<Term>> make_effect_alpha_renaming(const MutableConditionalEffect& effect, size_t fresh_base)
 {
     auto sigma =
-        tyr::formalism::unification::SubstitutionFunction<ygg::Data<Term>>::from_range(ParameterIndex { ygg::uint_t(effect.num_parent_variables) }, effect.num_variables);
+        unification::SubstitutionFunction<ygg::Data<Term>>::from_range(ParameterIndex { ygg::uint_t(effect.num_parent_variables) }, effect.num_variables);
 
     for (size_t i = 0; i < effect.num_variables; ++i)
     {
@@ -215,11 +215,11 @@ bool is_operator_too_heavy(const MutableAction& op, const Invariant& inv)
             const auto lhs_sigma = make_effect_alpha_renaming(*eff1.effect, fresh_base_lhs);
             const auto rhs_sigma = make_effect_alpha_renaming(*eff2.effect, fresh_base_rhs);
 
-            const auto lhs_atom = tyr::formalism::unification::apply_substitution(*eff1.atom, lhs_sigma);
-            const auto rhs_atom = tyr::formalism::unification::apply_substitution(*eff2.atom, rhs_sigma);
+            const auto lhs_atom = unification::apply_substitution(*eff1.atom, lhs_sigma);
+            const auto rhs_atom = unification::apply_substitution(*eff2.atom, rhs_sigma);
 
-            const auto lhs_cond = tyr::formalism::unification::apply_substitution(eff1.effect->condition, lhs_sigma);
-            const auto rhs_cond = tyr::formalism::unification::apply_substitution(eff2.effect->condition, rhs_sigma);
+            const auto lhs_cond = unification::apply_substitution(eff1.effect->condition, lhs_sigma);
+            const auto rhs_cond = unification::apply_substitution(eff2.effect->condition, rhs_sigma);
 
             const auto* lhs_pattern = find_part(inv, lhs_atom.predicate);
             const auto* rhs_pattern = find_part(inv, rhs_atom.predicate);

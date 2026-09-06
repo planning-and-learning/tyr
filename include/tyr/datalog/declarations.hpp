@@ -23,26 +23,26 @@
 
 namespace tyr::datalog
 {
-template<::tyr::formalism::FactKind T>
+template<formalism::FactKind T>
 class PredicateAssignmentSet;
-template<::tyr::formalism::FactKind T>
+template<formalism::FactKind T>
 class PredicateAssignmentSets;
-template<::tyr::formalism::FactKind T>
+template<formalism::FactKind T>
 class FunctionAssignmentSet;
-template<::tyr::formalism::FactKind T>
+template<formalism::FactKind T>
 class FunctionAssignmentSets;
 
-template<::tyr::formalism::FactKind T>
+template<formalism::FactKind T>
 struct TaggedAssignmentSets;
 
 struct AssignmentSets;
 
-template<::tyr::formalism::FactKind T>
+template<formalism::FactKind T>
 class PredicateFactSet;
-template<::tyr::formalism::FactKind T>
+template<formalism::FactKind T>
 class FunctionFactSet;
 
-template<::tyr::formalism::FactKind T>
+template<formalism::FactKind T>
 struct TaggedFactSets;
 
 struct FactSets;
@@ -80,9 +80,9 @@ template<TaskKind Kind, typename AP = NoAnnotationPolicy, typename TP = NoTermin
 struct ProgramWorkspace;
 template<TaskKind Kind>
 struct ConstProgramWorkspace;
-template<TaskKind Kind, ::tyr::formalism::RelationKind R>
+template<TaskKind Kind, formalism::RelationKind R>
 struct RuleWorkspace;
-template<TaskKind Kind, ::tyr::formalism::RelationKind R>
+template<TaskKind Kind, formalism::RelationKind R>
 struct ConstRuleWorkspace;
 template<TaskKind Kind, typename AP = NoAnnotationPolicy, typename TP = NoTerminationPolicy, typename CP = RuleCostPolicy>
 struct ProgramExecutionContext;
@@ -93,7 +93,7 @@ class Scheduler<GroundTag>;
 template<>
 class Scheduler<LiftedTag>;
 
-template<::tyr::formalism::RelationKind R>
+template<formalism::RelationKind R>
 class TypedRuleSchedulerStratum;
 
 struct ProgramStatistics;
@@ -109,9 +109,9 @@ class Edge;
 
 struct RuleToLiteralInfoMappings;
 struct RuleToLiteralPositionMappings;
-template<::tyr::formalism::FactKind T>
+template<formalism::FactKind T>
 struct RuleToLiteralInfo;
-template<::tyr::formalism::FactKind T>
+template<formalism::FactKind T>
 struct TaggedRuleToLiteralInfos;
 }
 

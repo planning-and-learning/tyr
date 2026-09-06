@@ -168,7 +168,7 @@ public:
                            const Node<Kind>& source,
                            ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> target,
                            PendingActionResult action_result,
-                           ::tyr::formalism::planning::ActionBindingView action,
+                           formalism::planning::ActionBindingView action,
                            typename SearchPolicy::SuccessorMetadata metadata)
     {
         const auto metric = engine.complete_successor_state(worker, *target, action_result);

@@ -10,16 +10,13 @@
 namespace tyr::serialization
 {
 
-template<typename T>
-struct Serializer<::tyr::formalism::planning::UnaryOperatorView<T>>
+template<TaskKind T>
+struct Serializer<formalism::planning::UnaryOperatorView<T>>
 {
-    static std::string name()
-    {
-        return std::string(std::same_as<T, ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>> ? "Ground" : "") + "UnaryOperator";
-    }
+    static std::string name() { return std::string(std::same_as<T, GroundTag> ? T::name : "") + "UnaryOperator"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::UnaryOperatorView<T>& value)
+    static void save(Archive& ar, const formalism::planning::UnaryOperatorView<T>& value)
     {
         ar.field("operator", value.get_operator());
         ar.field("arg", value.get_arg());

@@ -11,16 +11,13 @@
 namespace tyr::serialization
 {
 
-template<typename T>
-struct Serializer<::tyr::formalism::planning::ArithmeticOperatorView<T>>
+template<TaskKind T>
+struct Serializer<formalism::planning::ArithmeticOperatorView<T>>
 {
-    static std::string name()
-    {
-        return std::string(std::same_as<T, ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>> ? "Ground" : "") + "ArithmeticOperator";
-    }
+    static std::string name() { return std::string(std::same_as<T, GroundTag> ? T::name : "") + "ArithmeticOperator"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::ArithmeticOperatorView<T>& value)
+    static void save(Archive& ar, const formalism::planning::ArithmeticOperatorView<T>& value)
     {
         ar.variant(value.get_variant());
     }

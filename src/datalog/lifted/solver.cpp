@@ -110,7 +110,7 @@ private:
         }
     }
 
-    void insert_nullary_update(fd::AtomView<::tyr::LiftedTag, f::FluentTag> head_atom,
+    void insert_nullary_update(fd::AtomView<LiftedTag, f::FluentTag> head_atom,
                                RuleUpdateInput<LiftedTag, f::PredicateTag, AP, CP>& input,
                                RuleWorkerExecutionContext<f::PredicateTag, AP, TP, CP>& ctx)
     {
@@ -119,7 +119,7 @@ private:
         insert_propositional_update(head, input, out.head_updates(), out.delta_annotations());
     }
 
-    void insert_nullary_update(fd::NumericEffectOperatorView<::tyr::LiftedTag, f::FluentTag>,
+    void insert_nullary_update(fd::NumericEffectOperatorView<LiftedTag, f::FluentTag>,
                                RuleUpdateInput<LiftedTag, f::FunctionTag, AP, CP>& input,
                                RuleWorkerExecutionContext<f::FunctionTag, AP, TP, CP>& ctx)
     {
@@ -173,7 +173,7 @@ private:
     }
 
     template<typename Callback>
-    void for_each_relevant_clique(fd::AtomView<::tyr::LiftedTag, f::FluentTag>,
+    void for_each_relevant_clique(fd::AtomView<LiftedTag, f::FluentTag>,
                                   kckp::DeltaKCKP& algorithm,
                                   Callback&& callback,
                                   kckp::Workspace& workspace,
@@ -191,12 +191,12 @@ private:
 
     template<typename Callback>
     void
-    for_each_relevant_clique(fd::NumericEffectOperatorView<::tyr::LiftedTag, f::FluentTag>, kckp::DeltaKCKP& algorithm, Callback&& callback, kckp::Workspace& workspace, bool)
+    for_each_relevant_clique(fd::NumericEffectOperatorView<LiftedTag, f::FluentTag>, kckp::DeltaKCKP& algorithm, Callback&& callback, kckp::Workspace& workspace, bool)
     {
         algorithm.for_each_clique(std::forward<Callback>(callback), workspace);
     }
 
-    inline bool require_novel_binding(fd::AtomView<::tyr::LiftedTag, f::FluentTag>) noexcept
+    inline bool require_novel_binding(fd::AtomView<LiftedTag, f::FluentTag>) noexcept
     {
 #ifdef TYR_ENABLE_SEMI_NAIVE
         return true;
@@ -205,9 +205,9 @@ private:
 #endif
     }
 
-    inline bool require_novel_binding(fd::NumericEffectOperatorView<::tyr::LiftedTag, f::FluentTag>) noexcept { return false; }
+    inline bool require_novel_binding(fd::NumericEffectOperatorView<LiftedTag, f::FluentTag>) noexcept { return false; }
 
-    bool try_generate_parallel(fd::AtomView<::tyr::LiftedTag, f::FluentTag>, [[maybe_unused]] RuleExecutionContext<f::PredicateTag, AP, TP, CP>& rctx)
+    bool try_generate_parallel(fd::AtomView<LiftedTag, f::FluentTag>, [[maybe_unused]] RuleExecutionContext<f::PredicateTag, AP, TP, CP>& rctx)
     {
 #if defined(TYR_ENABLE_INNER_PARALLELISM) && defined(TYR_ENABLE_SEMI_NAIVE)
         constexpr size_t kNumStripes = 2;
@@ -245,7 +245,7 @@ private:
         return false;
     }
 
-    bool try_generate_parallel(fd::NumericEffectOperatorView<::tyr::LiftedTag, f::FluentTag>, RuleExecutionContext<f::FunctionTag, AP, TP, CP>&) { return false; }
+    bool try_generate_parallel(fd::NumericEffectOperatorView<LiftedTag, f::FluentTag>, RuleExecutionContext<f::FunctionTag, AP, TP, CP>&) { return false; }
 
     template<f::RelationKind R>
     bool is_current_binding_dynamically_applicable(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, const ApplicabilityContext& applicability_context)
@@ -257,7 +257,7 @@ private:
         return applicability_cache.dynamic_nullary && is_applicable(in.cws_rule().get_conflicting_overapproximation_condition(), applicability_context);
     }
 
-    bool try_process_predicate_binding(fd::AtomView<::tyr::LiftedTag, f::FluentTag> head_atom,
+    bool try_process_predicate_binding(fd::AtomView<LiftedTag, f::FluentTag> head_atom,
                                        RuleWorkerExecutionContext<f::PredicateTag, AP, TP, CP>& wrctx,
                                        RuleUpdateInput<LiftedTag, f::PredicateTag, AP, CP>& input,
                                        const ApplicabilityContext& applicability_context)
@@ -286,7 +286,7 @@ private:
         return insert_propositional_update(*head, input, out.head_updates(), out.delta_annotations()).is_handled();
     }
 
-    void process_clique_head(fd::AtomView<::tyr::LiftedTag, f::FluentTag> head_atom,
+    void process_clique_head(fd::AtomView<LiftedTag, f::FluentTag> head_atom,
                              RuleWorkerExecutionContext<f::PredicateTag, AP, TP, CP>& wrctx,
                              RuleUpdateInput<LiftedTag, f::PredicateTag, AP, CP>& input,
                              const ApplicabilityContext& applicability_context)
@@ -305,7 +305,7 @@ private:
 #endif
     }
 
-    void process_clique_head(fd::NumericEffectOperatorView<::tyr::LiftedTag, f::FluentTag>,
+    void process_clique_head(fd::NumericEffectOperatorView<LiftedTag, f::FluentTag>,
                              RuleWorkerExecutionContext<f::FunctionTag, AP, TP, CP>& wrctx,
                              RuleUpdateInput<LiftedTag, f::FunctionTag, AP, CP>& input,
                              const ApplicabilityContext& applicability_context)

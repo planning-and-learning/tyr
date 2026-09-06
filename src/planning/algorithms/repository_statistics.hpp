@@ -32,18 +32,18 @@ void snapshot_state_repository_statistics(const StateRepository<Kind>& repositor
     statistics.set_state_storage_memory_usage(repository.memory_usage());
 }
 
-inline void snapshot_task_repository_statistics(const ::tyr::formalism::planning::Repository& repository, Statistics& statistics)
+inline void snapshot_task_repository_statistics(const formalism::planning::Repository& repository, Statistics& statistics)
 {
-    statistics.set_action_bindings_memory_usage(repository.memory_usage<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action<::tyr::LiftedTag>>>());
+    statistics.set_action_bindings_memory_usage(repository.memory_usage<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>>());
     statistics.set_predicate_bindings_memory_usage(
-        repository.memory_usage<::tyr::formalism::RelationBinding<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>>()
-        + repository.memory_usage<::tyr::formalism::RelationBinding<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>>()
-        + repository.memory_usage<::tyr::formalism::RelationBinding<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>>());
-    statistics.set_axiom_bindings_memory_usage(repository.memory_usage<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>>());
+        repository.memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::StaticTag>>>()
+        + repository.memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>()
+        + repository.memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::DerivedTag>>>());
+    statistics.set_axiom_bindings_memory_usage(repository.memory_usage<formalism::RelationBinding<formalism::planning::Axiom<LiftedTag>>>());
     statistics.set_function_bindings_memory_usage(
-        repository.memory_usage<::tyr::formalism::RelationBinding<::tyr::formalism::Function<::tyr::formalism::StaticTag>>>()
-        + repository.memory_usage<::tyr::formalism::RelationBinding<::tyr::formalism::Function<::tyr::formalism::FluentTag>>>()
-        + repository.memory_usage<::tyr::formalism::RelationBinding<::tyr::formalism::Function<::tyr::formalism::AuxiliaryTag>>>());
+        repository.memory_usage<formalism::RelationBinding<formalism::Function<formalism::StaticTag>>>()
+        + repository.memory_usage<formalism::RelationBinding<formalism::Function<formalism::FluentTag>>>()
+        + repository.memory_usage<formalism::RelationBinding<formalism::Function<formalism::AuxiliaryTag>>>());
 }
 
 }

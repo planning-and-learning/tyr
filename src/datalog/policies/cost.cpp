@@ -26,10 +26,10 @@ static_assert(RuleCostPolicyConcept<RuleCostPolicy>);
 static_assert(RuleCostPolicyConcept<RuleCostOverridePolicy<GroundTag>>);
 static_assert(RuleCostPolicyConcept<RuleCostOverridePolicy<LiftedTag>>);
 
-template struct NumericTransitionCostKey<::tyr::formalism::PredicateTag>;
-template struct NumericTransitionCostKey<::tyr::formalism::FunctionTag>;
-template class RuleCostOverrideStorage<::tyr::formalism::PredicateTag>;
-template class RuleCostOverrideStorage<::tyr::formalism::FunctionTag>;
+template struct NumericTransitionCostKey<formalism::PredicateTag>;
+template struct NumericTransitionCostKey<formalism::FunctionTag>;
+template class RuleCostOverrideStorage<formalism::PredicateTag>;
+template class RuleCostOverrideStorage<formalism::FunctionTag>;
 template class RuleCostOverridePolicy<GroundTag>;
 template class RuleCostOverridePolicy<LiftedTag>;
 

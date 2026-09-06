@@ -21,7 +21,7 @@ namespace tyr::tests
 {
 using HeuristicTaskKind = LiftedTag;
 template<TaskKind Kind>
-using TestedHeuristic = ::tyr::planning::LMCutHeuristic<Kind>;
+using TestedHeuristic = planning::LMCutHeuristic<Kind>;
 inline constexpr const char* kHeuristicFixture = "tests/fixtures/planning/heuristics/lifted/lmcut.json";
 }
 

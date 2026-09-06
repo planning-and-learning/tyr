@@ -35,7 +35,7 @@ class NoTerminationPolicy
 public:
     NoTerminationPolicy() = default;
 
-    void set_goals(::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::GroundTag>) {}
+    void set_goals(formalism::datalog::ConjunctiveConditionView<GroundTag>) {}
     bool check(const FactSets&) const noexcept { return false; }
     bool should_terminate(const FactSets&) const noexcept { return false; }
     Cost get_total_cost(const FactSets&, const PredicateAnnotations<>&, const FunctionAnnotations<>&, const NumericSupportSelector&) const noexcept
@@ -52,7 +52,7 @@ class TerminationPolicy
 public:
     TerminationPolicy() = default;
 
-    void set_goals(::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::GroundTag> goals_);
+    void set_goals(formalism::datalog::ConjunctiveConditionView<GroundTag> goals_);
 
     bool check(const FactSets& fact_sets) const noexcept;
     bool should_terminate(const FactSets& fact_sets) const noexcept;
@@ -71,7 +71,7 @@ public:
     void clear() noexcept;
 
 private:
-    std::optional<::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::GroundTag>> goals;
+    std::optional<formalism::datalog::ConjunctiveConditionView<GroundTag>> goals;
     mutable NumericSupportSelectorWorkspace numeric_support_selector_workspace;
     AggregationFunction agg;
     bool early_termination { true };

@@ -11,15 +11,15 @@
 namespace tyr::serialization
 {
 
-template<::tyr::TaskKind T>
-struct Serializer<::tyr::formalism::planning::ConditionalEffectView<T>>
+template<TaskKind T>
+struct Serializer<formalism::planning::ConditionalEffectView<T>>
 {
-    static std::string name() { return std::string(std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "ConditionalEffect"; }
+    static std::string name() { return std::string(std::same_as<T, GroundTag> ? T::name : "") + "ConditionalEffect"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::ConditionalEffectView<T>& value)
+    static void save(Archive& ar, const formalism::planning::ConditionalEffectView<T>& value)
     {
-        if constexpr (std::same_as<T, ::tyr::LiftedTag>)
+        if constexpr (std::same_as<T, LiftedTag>)
         {
             ar.field("variables", value.get_variables());
         }

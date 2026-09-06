@@ -41,7 +41,7 @@ class NumericSupportSelectorWorkspace
 public:
     struct SelectionEntry
     {
-        ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> key;
+        formalism::datalog::FunctionBindingView<formalism::FluentTag> key;
         ygg::ClosedInterval<ygg::float_t> interval;
         const NumericIntervalAnnotation* annotation;
         Cost cost;
@@ -59,24 +59,24 @@ public:
 class NumericSupportSelector
 {
 public:
-    using Key = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
+    using Key = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
     using SelectionEntry = NumericSupportSelectorWorkspace::SelectionEntry;
     using Selection = std::vector<SelectionEntry>;
 
     NumericSupportSelector(const FactSets& fact_sets, const NumericIntervalAnnotations<>& annotations, bool initial_intervals_cost_zero = false);
 
-    Key fluent_key(::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> term) const noexcept;
-    ygg::ClosedInterval<ygg::float_t> lookup_static(::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> term) const;
+    Key fluent_key(formalism::datalog::FunctionTermView<GroundTag, formalism::FluentTag> term) const noexcept;
+    ygg::ClosedInterval<ygg::float_t> lookup_static(formalism::datalog::FunctionTermView<GroundTag, formalism::StaticTag> term) const;
     ygg::ClosedInterval<ygg::float_t> current_interval(Key key) const;
     const NumericIntervalAnnotations<>::Entries* find_entries(Key key) const;
     Cost missing_entries_cost() const noexcept { return m_initial_intervals_cost_zero ? Cost(0) : std::numeric_limits<Cost>::max(); }
 
-    ygg::ClosedInterval<ygg::float_t> evaluate_effect_expression(::tyr::formalism::datalog::FunctionExpressionView<::tyr::GroundTag> expression, Selection& selection) const
+    ygg::ClosedInterval<ygg::float_t> evaluate_effect_expression(formalism::datalog::FunctionExpressionView<GroundTag> expression, Selection& selection) const
     {
         return evaluate_numeric_expression(expression, [&](const auto term) { return evaluate_term(term, selection); });
     }
 
-    bool is_supported(::tyr::formalism::datalog::GroundBooleanOperatorView constraint, Selection& selection) const
+    bool is_supported(formalism::datalog::BooleanOperatorView<GroundTag> constraint, Selection& selection) const
     {
         return evaluate_numeric_expression(constraint, [&](const auto term) { return evaluate_term(term, selection); });
     }
@@ -99,7 +99,7 @@ public:
     }
 
     template<typename AggregationFunction>
-    Cost get_constraint_cost(::tyr::formalism::datalog::GroundBooleanOperatorView constraint, Selection& selection, AggregationFunction agg) const
+    Cost get_constraint_cost(formalism::datalog::BooleanOperatorView<GroundTag> constraint, Selection& selection, AggregationFunction agg) const
     {
         return get_greedy_support_cost(selection, agg, [&](auto& selected) { return is_supported(constraint, selected); });
     }
@@ -158,7 +158,7 @@ public:
     }
 
     template<typename AggregationFunction, typename Callback>
-    Cost for_each_constraint_support(::tyr::formalism::datalog::GroundBooleanOperatorView constraint,
+    Cost for_each_constraint_support(formalism::datalog::BooleanOperatorView<GroundTag> constraint,
                                      Selection& selection,
                                      AggregationFunction agg,
                                      Callback callback) const
@@ -218,12 +218,12 @@ public:
     }
 
 private:
-    template<::tyr::formalism::FactKind T>
-    ygg::ClosedInterval<ygg::float_t> evaluate_term(::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, T> term, Selection& selection) const
+    template<formalism::FactKind T>
+    ygg::ClosedInterval<ygg::float_t> evaluate_term(formalism::datalog::FunctionTermView<GroundTag, T> term, Selection& selection) const
     {
-        if constexpr (std::same_as<T, ::tyr::formalism::StaticTag>)
+        if constexpr (std::same_as<T, formalism::StaticTag>)
             return lookup_static(term);
-        else if constexpr (std::same_as<T, ::tyr::formalism::FluentTag>)
+        else if constexpr (std::same_as<T, formalism::FluentTag>)
             return select_fluent_interval(fluent_key(term), selection);
         else
             return {};

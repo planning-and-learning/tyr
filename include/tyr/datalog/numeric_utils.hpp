@@ -60,14 +60,14 @@ auto evaluate(Expression expression, ResolveTerm& resolve_term)
     {
         const auto rhs = evaluate(expression.get_rhs(), resolve_term);
         const auto lhs = evaluate(expression.get_lhs(), resolve_term);
-        if constexpr (std::same_as<typename Type::OperatorType, ::tyr::formalism::BooleanOperatorKind>)
-            return ::tyr::formalism::apply_existential(expression.get_operator(), lhs, rhs);
+        if constexpr (std::same_as<typename Type::OperatorType, formalism::BooleanOperatorKind>)
+            return formalism::apply_existential(expression.get_operator(), lhs, rhs);
         else
-            return ::tyr::formalism::apply(expression.get_operator(), lhs, rhs);
+            return formalism::apply(expression.get_operator(), lhs, rhs);
     }
     else if constexpr (requires { expression.get_arg(); })
     {
-        return ::tyr::formalism::apply(expression.get_operator(), evaluate(expression.get_arg(), resolve_term));
+        return formalism::apply(expression.get_operator(), evaluate(expression.get_arg(), resolve_term));
     }
     else if constexpr (requires { expression.get_args(); })
     {
@@ -79,7 +79,7 @@ auto evaluate(Expression expression, ResolveTerm& resolve_term)
         auto value = evaluate(*it, resolve_term);
         ++it;
         for (; it != args.end(); ++it)
-            value = ::tyr::formalism::apply(expression.get_operator(), value, evaluate(*it, resolve_term));
+            value = formalism::apply(expression.get_operator(), value, evaluate(*it, resolve_term));
         return value;
     }
     else
@@ -100,9 +100,9 @@ auto evaluate_numeric_expression(Expression expression, ResolveTerm&& resolve_te
 
 /// Interval semantics of applying a numeric effect operator.
 inline ygg::ClosedInterval<ygg::float_t>
-apply_numeric_effect(::tyr::formalism::NumericEffectOperatorKind op, ygg::ClosedInterval<ygg::float_t> lhs, ygg::ClosedInterval<ygg::float_t> rhs)
+apply_numeric_effect(formalism::NumericEffectOperatorKind op, ygg::ClosedInterval<ygg::float_t> lhs, ygg::ClosedInterval<ygg::float_t> rhs)
 {
-    using enum ::tyr::formalism::NumericEffectOperatorKind;
+    using enum formalism::NumericEffectOperatorKind;
     switch (op)
     {
         case Assign:
@@ -127,7 +127,7 @@ ygg::ClosedInterval<ygg::float_t> evaluate_numeric_effect(Effect effect, Resolve
     if (empty(rhs))
         return {};
 
-    if (effect.get_operator() == ::tyr::formalism::NumericEffectOperatorKind::Assign)
+    if (effect.get_operator() == formalism::NumericEffectOperatorKind::Assign)
         return rhs;
 
     const auto lhs = numeric_evaluation_detail::evaluate(effect.get_fterm(), resolve_term);
@@ -141,15 +141,15 @@ ygg::ClosedInterval<ygg::float_t> evaluate_numeric_effect(Effect effect, Resolve
 /// so evaluation side effects (e.g., support selection) only occur for operands the operator needs.
 /// Returns nullopt when an operand is unsupported.
 template<typename EvalLhs, typename EvalRhs>
-std::optional<Cost> metric_effect_delta(::tyr::formalism::NumericEffectOperatorKind op, EvalLhs&& eval_lhs, EvalRhs&& eval_rhs)
+std::optional<Cost> metric_effect_delta(formalism::NumericEffectOperatorKind op, EvalLhs&& eval_lhs, EvalRhs&& eval_rhs)
 {
     const auto rhs = eval_rhs();
     if (empty(rhs))
         return std::nullopt;
 
-    if (op == ::tyr::formalism::NumericEffectOperatorKind::Increase)
+    if (op == formalism::NumericEffectOperatorKind::Increase)
         return clamp_metric_delta(lower(rhs));
-    if (op == ::tyr::formalism::NumericEffectOperatorKind::Decrease)
+    if (op == formalism::NumericEffectOperatorKind::Decrease)
         return Cost(0);
 
     const auto lhs = eval_lhs();

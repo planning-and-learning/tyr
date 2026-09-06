@@ -26,9 +26,9 @@
 namespace tyr::formalism::planning::invariant
 {
 
-using ActionSubstitution = tyr::formalism::unification::SubstitutionFunction<ygg::Data<Term>>;
-using EffectSubstitution = tyr::formalism::unification::SubstitutionFunction<ygg::Data<Term>>;
-using InvariantSubstitution = tyr::formalism::unification::SubstitutionFunction<ygg::Data<Term>>;
+using ActionSubstitution = unification::SubstitutionFunction<ygg::Data<Term>>;
+using EffectSubstitution = unification::SubstitutionFunction<ygg::Data<Term>>;
+using InvariantSubstitution = unification::SubstitutionFunction<ygg::Data<Term>>;
 
 struct ActionAlignment
 {

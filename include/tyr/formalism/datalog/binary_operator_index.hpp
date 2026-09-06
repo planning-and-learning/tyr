@@ -25,13 +25,13 @@
 
 namespace ygg
 {
-template<tyr::formalism::BinaryOperatorKind Operator, typename T>
-struct Index<tyr::formalism::datalog::BinaryOperator<Operator, T>> : ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::BinaryOperator<Operator, T>>>
+template<::tyr::TaskKind T, tyr::formalism::BinaryOperatorKind O>
+struct Index<tyr::formalism::datalog::BinaryOperator<T, O>> : ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::BinaryOperator<T, O>>>
 {
-    using OperatorType = Operator;
+    using OperatorType = O;
 
     // Inherit constructors
-    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::BinaryOperator<Operator, T>>>;
+    using Base = ygg::IndexMixin<ygg::Index<tyr::formalism::datalog::BinaryOperator<T, O>>>;
     using Base::Base;
 };
 }

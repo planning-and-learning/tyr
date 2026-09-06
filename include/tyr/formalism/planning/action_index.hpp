@@ -36,7 +36,7 @@ struct Index<tyr::formalism::planning::Action<T>> : IndexMixin<ygg::Index<tyr::f
 
 namespace tyr::formalism::planning
 {
-template<::tyr::TaskKind T>
+template<TaskKind T>
 using ActionIndex = ygg::Index<Action<T>>;
 }
 

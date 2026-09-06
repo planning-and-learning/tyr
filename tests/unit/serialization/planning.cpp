@@ -18,7 +18,7 @@ namespace fp = formalism::planning;
 namespace p = planning;
 namespace s = serialization;
 
-fp::AtomView<::tyr::GroundTag, f::FluentTag> make_atom(fp::Repository& repository, std::string object_name)
+fp::AtomView<GroundTag, f::FluentTag> make_atom(fp::Repository& repository, std::string object_name)
 {
     auto predicate_data = ygg::Data<f::Predicate<f::FluentTag>>(std::string("at"), 1);
     canonicalize(predicate_data);
@@ -31,7 +31,7 @@ fp::AtomView<::tyr::GroundTag, f::FluentTag> make_atom(fp::Repository& repositor
     binding_data.objects.push_back(object.get_index());
     canonicalize(binding_data);
     const auto binding = repository.get_or_create(binding_data).first;
-    auto atom_data = ygg::Data<fp::Atom<::tyr::GroundTag, f::FluentTag>>(binding.get_index());
+    auto atom_data = ygg::Data<fp::Atom<GroundTag, f::FluentTag>>(binding.get_index());
     canonicalize(atom_data);
     return repository.get_or_create(atom_data).first;
 }
@@ -78,14 +78,14 @@ TEST(TyrSerialization, RegisteredDescendantsAreCollectedOnceAndSnapshotsAreIndep
     auto repository = fp::RepositoryFactory().create();
     const auto atom = make_atom(repository, "truck");
     auto dictionaries = s::Dictionaries {};
-    dictionaries.register_table<fp::AtomView<::tyr::GroundTag, f::FluentTag>>("atoms", "a");
+    dictionaries.register_table<fp::AtomView<GroundTag, f::FluentTag>>("atoms", "a");
     dictionaries.register_table<fp::PredicateBindingView<f::FluentTag>>("bindings", "b");
     dictionaries.register_table<fp::PredicateView<f::FluentTag>>("predicates", "p");
     dictionaries.register_table<fp::ObjectView>("objects", "o");
 
     EXPECT_EQ(dictionaries.serialize(atom).as_string(), "a0");
     EXPECT_EQ(dictionaries.serialize(atom).as_string(), "a0");
-    const auto atoms = dictionaries.table<fp::AtomView<::tyr::GroundTag, f::FluentTag>>();
+    const auto atoms = dictionaries.table<fp::AtomView<GroundTag, f::FluentTag>>();
     ASSERT_EQ(atoms.size(), 1);
     EXPECT_EQ(atoms[0].as_object().at("binding").as_string(), "b0");
     const auto binding = dictionaries.table<fp::PredicateBindingView<f::FluentTag>>()[0].as_object();
@@ -96,7 +96,7 @@ TEST(TyrSerialization, RegisteredDescendantsAreCollectedOnceAndSnapshotsAreIndep
     const auto other = make_atom(repository, "van");
     EXPECT_EQ(dictionaries.serialize(other).as_string(), "a1");
     EXPECT_EQ(before.at("atoms").as_object().at("rows").as_array().size(), 1);
-    EXPECT_EQ((dictionaries.table<fp::AtomView<::tyr::GroundTag, f::FluentTag>>().size()), 2);
+    EXPECT_EQ((dictionaries.table<fp::AtomView<GroundTag, f::FluentTag>>().size()), 2);
     EXPECT_EQ(dictionaries.table<fp::PredicateView<f::FluentTag>>().size(), 1);
     EXPECT_EQ(dictionaries.tables().at("atoms").as_object().at("prefix").as_string(), "a");
     EXPECT_EQ(boost::json::parse(boost::json::serialize(dictionaries.tables())), dictionaries.tables());
@@ -115,10 +115,10 @@ TEST(TyrSerialization, UnregisteredObjectsRemainInlineAndRepositoryIdentityIsPre
     EXPECT_TRUE(inline_dictionaries.tables().empty());
 
     auto dictionaries = s::Dictionaries {};
-    dictionaries.register_table<fp::AtomView<::tyr::GroundTag, f::FluentTag>>("atoms", "a");
+    dictionaries.register_table<fp::AtomView<GroundTag, f::FluentTag>>("atoms", "a");
     EXPECT_EQ(dictionaries.serialize(first).as_string(), "a0");
     EXPECT_EQ(dictionaries.serialize(second).as_string(), "a1");
-    EXPECT_EQ((dictionaries.table<fp::AtomView<::tyr::GroundTag, f::FluentTag>>().size()), 2);
+    EXPECT_EQ((dictionaries.table<fp::AtomView<GroundTag, f::FluentTag>>().size()), 2);
 }
 
 TEST(TyrSerialization, FdrNoneRetainsItsVariableAndZeroValue)
@@ -143,9 +143,9 @@ TEST(TyrSerialization, FdrNoneRetainsItsVariableAndZeroValue)
 
 TEST(TyrSerialization, RecursiveExpressionsReferenceSharedDescendantsAndKeepConstantsInline)
 {
-    using Expression = ygg::Data<fp::FunctionExpression<::tyr::LiftedTag>>;
-    using Arithmetic = ygg::Data<fp::ArithmeticOperator<Expression>>;
-    using Binary = fp::BinaryOperator<f::ArithmeticOperatorKind, Expression>;
+    using Expression = ygg::Data<fp::FunctionExpression<LiftedTag>>;
+    using Arithmetic = ygg::Data<fp::ArithmeticOperator<LiftedTag>>;
+    using Binary = fp::BinaryOperator<LiftedTag, f::ArithmeticOperatorKind>;
     using BinaryView = ygg::View<ygg::Index<Binary>, fp::Repository>;
     auto repository = fp::RepositoryFactory().create();
     const auto constant = Expression(Expression::Variant(ygg::float_t(3)));
@@ -155,11 +155,11 @@ TEST(TyrSerialization, RecursiveExpressionsReferenceSharedDescendantsAndKeepCons
     const auto expression = ygg::make_view(
         Expression(Expression::Variant(Arithmetic(f::ArithmeticOperatorKind::Sub, Arithmetic::Variant(binary.get_index())))), repository);
     auto dictionaries = s::Dictionaries {};
-    dictionaries.register_table<fp::FunctionExpressionView<::tyr::LiftedTag>>("expressions", "e");
+    dictionaries.register_table<fp::FunctionExpressionView<LiftedTag>>("expressions", "e");
     dictionaries.register_table<BinaryView>("binary_operators", "b");
 
     EXPECT_EQ(dictionaries.serialize(expression).as_string(), "e0");
-    const auto expressions = dictionaries.table<fp::FunctionExpressionView<::tyr::LiftedTag>>();
+    const auto expressions = dictionaries.table<fp::FunctionExpressionView<LiftedTag>>();
     ASSERT_EQ(expressions.size(), 2);
     const auto& root = expressions[0].as_object();
     EXPECT_EQ(root.at("kind").as_uint64(), 1);
@@ -171,7 +171,7 @@ TEST(TyrSerialization, RecursiveExpressionsReferenceSharedDescendantsAndKeepCons
     EXPECT_EQ(expressions[1].as_object().at("kind").as_uint64(), 0);
     EXPECT_EQ(expressions[1].as_object().at("value").as_double(), 3);
     const auto legends = dictionaries.enums();
-    const auto& kinds = legends.at(s::Serializer<fp::FunctionExpressionView<::tyr::LiftedTag>>::name()).as_array();
+    const auto& kinds = legends.at(s::Serializer<fp::FunctionExpressionView<LiftedTag>>::name()).as_array();
     ASSERT_EQ(kinds.size(), 2);
     EXPECT_EQ(kinds[0].as_object().at("id").as_uint64(), 0);
     EXPECT_EQ(kinds[0].as_object().at("name").as_string(), "constant");

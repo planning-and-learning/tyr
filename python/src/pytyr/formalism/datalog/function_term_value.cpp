@@ -30,8 +30,8 @@ namespace
 template<FactKind F>
 void bind_function_term_value_data(nb::module_& m, const char* name)
 {
-    using V = ygg::Data<FunctionTermValue<::tyr::GroundTag, F>>;
-    auto cls = nb::class_<V>(m, name).def(nb::init<FunctionTermView<::tyr::GroundTag, F>, ygg::float_t>(), "fterm"_a, "value"_a);
+    using V = ygg::Data<FunctionTermValue<GroundTag, F>>;
+    auto cls = nb::class_<V>(m, name).def(nb::init<FunctionTermView<GroundTag, F>, ygg::float_t>(), "fterm"_a, "value"_a);
     ygg::add_print(cls);
     ygg::add_comparison(cls);
     ygg::add_hash(cls);
@@ -40,7 +40,7 @@ void bind_function_term_value_data(nb::module_& m, const char* name)
 template<FactKind F>
 void bind_function_term_value_view(nb::module_& m, const char* name)
 {
-    using V = FunctionTermValueView<::tyr::GroundTag, F>;
+    using V = FunctionTermValueView<GroundTag, F>;
     auto cls = nb::class_<V>(m, name).def("get_index", &V::get_index).def("get_fterm", &V::get_fterm, nb::keep_alive<0, 1>()).def("get_value", &V::get_value);
     ygg::add_print(cls);
     ygg::add_comparison(cls);
@@ -50,9 +50,9 @@ void bind_function_term_value_view(nb::module_& m, const char* name)
 
 void bind_function_term_value(nb::module_& m, RepositoryBinding& repository)
 {
-    ygg::bind_index<ygg::Index<FunctionTermValue<::tyr::GroundTag, StaticTag>>>(m, "StaticGroundFunctionTermValueIndex");
-    ygg::bind_index<ygg::Index<FunctionTermValue<::tyr::GroundTag, FluentTag>>>(m, "FluentGroundFunctionTermValueIndex");
-    ygg::bind_index<ygg::Index<FunctionTermValue<::tyr::GroundTag, AuxiliaryTag>>>(m, "AuxiliaryGroundFunctionTermValueIndex");
+    ygg::bind_index<ygg::Index<FunctionTermValue<GroundTag, StaticTag>>>(m, "StaticGroundFunctionTermValueIndex");
+    ygg::bind_index<ygg::Index<FunctionTermValue<GroundTag, FluentTag>>>(m, "FluentGroundFunctionTermValueIndex");
+    ygg::bind_index<ygg::Index<FunctionTermValue<GroundTag, AuxiliaryTag>>>(m, "AuxiliaryGroundFunctionTermValueIndex");
 
     bind_function_term_value_data<StaticTag>(m, "StaticGroundFunctionTermValueData");
     bind_function_term_value_data<FluentTag>(m, "FluentGroundFunctionTermValueData");
@@ -62,9 +62,9 @@ void bind_function_term_value(nb::module_& m, RepositoryBinding& repository)
     bind_function_term_value_view<FluentTag>(m, "FluentGroundFunctionTermValue");
     bind_function_term_value_view<AuxiliaryTag>(m, "AuxiliaryGroundFunctionTermValue");
 
-    repository.def("get_or_create", &get_or_create_data<FunctionTermValue<::tyr::GroundTag, StaticTag>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_data<FunctionTermValue<::tyr::GroundTag, FluentTag>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_data<FunctionTermValue<::tyr::GroundTag, AuxiliaryTag>>, "data"_a, nb::keep_alive<0, 1>());
+    repository.def("get_or_create", &get_or_create_data<FunctionTermValue<GroundTag, StaticTag>>, "data"_a, nb::keep_alive<0, 1>());
+    repository.def("get_or_create", &get_or_create_data<FunctionTermValue<GroundTag, FluentTag>>, "data"_a, nb::keep_alive<0, 1>());
+    repository.def("get_or_create", &get_or_create_data<FunctionTermValue<GroundTag, AuxiliaryTag>>, "data"_a, nb::keep_alive<0, 1>());
 }
 
 }  // namespace tyr::formalism::datalog

@@ -62,7 +62,7 @@ concept SearchPolicyConcept =
            typename std::bool_constant<T::supports_priority_layer_synchronization>;
            requires SearchKind<typename T::SearchTag>;
            requires std::same_as<typename T::TaskTag, Kind>;
-       } && std::constructible_from<T, Heuristic<Kind>&, const typename T::Options&> && requires(T& policy, const T& const_policy, ygg::Index<Worker> worker, ygg::Index<State<Kind>> state, ygg::float_t value, const typename T::SearchNode& const_search_node, const Node<Kind>& node, const typename T::PoppedEntry& entry, ::tyr::formalism::planning::ActionBindingView action, const typename T::Options& options, const typename T::EventHandlerPtr& event_handler) {
+       } && std::constructible_from<T, Heuristic<Kind>&, const typename T::Options&> && requires(T& policy, const T& const_policy, ygg::Index<Worker> worker, ygg::Index<State<Kind>> state, ygg::float_t value, const typename T::SearchNode& const_search_node, const Node<Kind>& node, const typename T::PoppedEntry& entry, formalism::planning::ActionBindingView action, const typename T::Options& options, const typename T::EventHandlerPtr& event_handler) {
            { T::terminate_on_goal } -> std::convertible_to<bool>;
            { T::supports_priority_layer_synchronization } -> std::convertible_to<bool>;
            { policy.initialize_start(state, value, value) } -> std::same_as<typename T::SearchNode&>;

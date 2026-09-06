@@ -11,22 +11,22 @@
 namespace tyr::serialization
 {
 
-template<::tyr::TaskKind T>
-struct Serializer<::tyr::formalism::planning::ConjunctiveEffectView<T>>
+template<TaskKind T>
+struct Serializer<formalism::planning::ConjunctiveEffectView<T>>
 {
-    static std::string name() { return std::string(std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "ConjunctiveEffect"; }
+    static std::string name() { return std::string(std::same_as<T, GroundTag> ? T::name : "") + "ConjunctiveEffect"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::ConjunctiveEffectView<T>& value)
+    static void save(Archive& ar, const formalism::planning::ConjunctiveEffectView<T>& value)
     {
-        if constexpr (std::same_as<T, ::tyr::LiftedTag>)
+        if constexpr (std::same_as<T, LiftedTag>)
         {
             ar.field("literals", value.get_literals());
         }
         else
         {
-            ar.field("add_facts", value.template get_facts<::tyr::formalism::PositiveTag>());
-            ar.field("del_facts", value.template get_facts<::tyr::formalism::NegativeTag>());
+            ar.field("add_facts", value.template get_facts<formalism::PositiveTag>());
+            ar.field("del_facts", value.template get_facts<formalism::NegativeTag>());
         }
         ar.field("numeric_effects", value.get_numeric_effects());
         ar.field("auxiliary_numeric_effect", value.get_auxiliary_numeric_effect());

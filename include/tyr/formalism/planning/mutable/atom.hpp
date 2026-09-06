@@ -48,12 +48,12 @@ struct MutableAtom : ygg::comparison::Mixin<MutableAtom<T>>
         for (const auto& term : terms_)
             terms.push_back(term.get_data());
     }
-    MutableAtom(AtomView<::tyr::LiftedTag, T> element_) : predicate(element_.get_predicate()), terms()
+    MutableAtom(AtomView<LiftedTag, T> element_) : predicate(element_.get_predicate()), terms()
     {
         for (const auto& term : element_.get_terms())
             terms.push_back(term.get_data());
     }
-    MutableAtom(AtomView<::tyr::GroundTag, T> element) : predicate(element.get_predicate()), terms()
+    MutableAtom(AtomView<GroundTag, T> element) : predicate(element.get_predicate()), terms()
     {
         for (const auto& object : element.get_objects())
             terms.push_back(ygg::Data<Term>(object.get_index()));
@@ -69,9 +69,9 @@ using MutableAtomList = std::vector<MutableAtom<T>>;
 namespace tyr::formalism::unification
 {
 template<FactKind T>
-struct structure_traits<tyr::formalism::planning::MutableAtom<T>>
+struct structure_traits<planning::MutableAtom<T>>
 {
-    using Type = tyr::formalism::planning::MutableAtom<T>;
+    using Type = planning::MutableAtom<T>;
 
     template<typename F>
     static bool zip_terms(const Type& lhs, const Type& rhs, F&& f)
@@ -82,13 +82,13 @@ struct structure_traits<tyr::formalism::planning::MutableAtom<T>>
         if (lhs.terms.size() != rhs.terms.size())
             return false;
 
-        return tyr::formalism::unification::zip_terms(lhs.terms, rhs.terms, f);
+        return unification::zip_terms(lhs.terms, rhs.terms, f);
     }
 
     template<typename F>
     static Type transform_terms(const Type& value, F&& f)
     {
-        return Type(value.predicate, tyr::formalism::unification::transform_terms(value.terms, f));
+        return Type(value.predicate, unification::transform_terms(value.terms, f));
     }
 };
 

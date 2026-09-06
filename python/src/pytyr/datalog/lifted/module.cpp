@@ -32,13 +32,11 @@ void bind_lifted_module_definitions(nb::module_& m)
     nb::class_<ConstWorkspace>(m, "ConstProgramWorkspace")
         .def(
             "get_static_fact_sets",
-            [](const ConstWorkspace& self) -> const TaggedFactSets<::tyr::formalism::StaticTag>& { return self.facts.fact_sets; },
+            [](const ConstWorkspace& self) -> const TaggedFactSets<formalism::StaticTag>& { return self.facts.fact_sets; },
             nb::rv_policy::reference_internal);
 
     nb::class_<ProgramT>(m, "Program")
-        .def(nb::init<::tyr::formalism::datalog::ProgramView<LiftedTag>,
-                      ::tyr::formalism::datalog::RepositoryPtr,
-                      ::tyr::formalism::datalog::RepositoryFactoryPtr>(),
+        .def(nb::init<formalism::datalog::ProgramView<LiftedTag>, formalism::datalog::RepositoryPtr, formalism::datalog::RepositoryFactoryPtr>(),
              "program"_a,
              "repository"_a,
              "repository_factory"_a)

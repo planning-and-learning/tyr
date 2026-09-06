@@ -38,17 +38,17 @@ public:
     explicit FDRContext(RepositoryPtr context);
 
     // Construct with ground mutexes.
-    FDRContext(const std::vector<AtomViewList<::tyr::GroundTag, FluentTag>>& mutexes, RepositoryPtr context);
+    FDRContext(const std::vector<AtomViewList<GroundTag, FluentTag>>& mutexes, RepositoryPtr context);
 
     // Construct with binary ground mutexes.
-    FDRContext(const AtomViewList<::tyr::GroundTag, FluentTag>& all_atoms, RepositoryPtr context);
+    FDRContext(const AtomViewList<GroundTag, FluentTag>& all_atoms, RepositoryPtr context);
 
     // Copy the FDRContext after concurrent registrations have completed.
     FDRContext(const FDRContext& other, Builder& builder, RepositoryPtr context);
 
-    FDRFactView<FluentTag> get_fact(AtomView<::tyr::GroundTag, FluentTag> atom);
+    FDRFactView<FluentTag> get_fact(AtomView<GroundTag, FluentTag> atom);
 
-    std::optional<FDRFactView<FluentTag>> get_fact(AtomView<::tyr::GroundTag, FluentTag> atom) const;
+    std::optional<FDRFactView<FluentTag>> get_fact(AtomView<GroundTag, FluentTag> atom) const;
 
     /// Concurrent get_fact calls must have completed before accessing the variable list.
     const FDRVariableViewList<FluentTag>& get_variables() const noexcept;
@@ -60,9 +60,9 @@ private:
         std::atomic_bool ready { false };
     };
 
-    std::optional<FDRFactView<FluentTag>> find_fact(AtomView<::tyr::GroundTag, FluentTag> atom) const;
-    void ensure_fact_slot(AtomView<::tyr::GroundTag, FluentTag> atom);
-    bool publish_fact(AtomView<::tyr::GroundTag, FluentTag> atom, ygg::Data<FDRFact<FluentTag>> fact);
+    std::optional<FDRFactView<FluentTag>> find_fact(AtomView<GroundTag, FluentTag> atom) const;
+    void ensure_fact_slot(AtomView<GroundTag, FluentTag> atom);
+    bool publish_fact(AtomView<GroundTag, FluentTag> atom, ygg::Data<FDRFact<FluentTag>> fact);
 
     RepositoryPtr m_context;
     // Facts are append-only and lock-free to read; only first registration serializes the reusable builder and variable list.

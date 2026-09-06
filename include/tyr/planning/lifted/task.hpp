@@ -43,9 +43,9 @@ template<>
 class Task<LiftedTag>
 {
 public:
-    explicit Task(::tyr::formalism::planning::PlanningTask task);
+    explicit Task(formalism::planning::PlanningTask task);
 
-    static TaskPtr<LiftedTag> create(::tyr::formalism::planning::PlanningTask task);
+    static TaskPtr<LiftedTag> create(formalism::planning::PlanningTask task);
 
     GroundTaskInstantiationResult instantiate_ground_task(ygg::ExecutionContext& execution_context,
                                                           const GroundTaskInstantiationOptions& options = GroundTaskInstantiationOptions());
@@ -64,17 +64,17 @@ public:
 
     const auto& get_static_atoms_bitset() const noexcept { return m_static_atoms_bitset; }
     const auto& get_static_numeric_variables() const noexcept { return m_static_numeric_variables; }
-    bool test(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
+    bool test(ygg::Index<formalism::planning::Atom<GroundTag, formalism::StaticTag>> index) const
     {
         return ygg::test(ygg::uint_t(index), m_static_atoms_bitset);
     }
-    ygg::float_t get(ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
+    ygg::float_t get(ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>> index) const
     {
         return ygg::get(ygg::uint_t(index), m_static_numeric_variables, std::numeric_limits<ygg::float_t>::quiet_NaN());
     }
 
 private:
-    ::tyr::formalism::planning::PlanningTask m_task;
+    formalism::planning::PlanningTask m_task;
 
     boost::dynamic_bitset<> m_static_atoms_bitset;
     std::vector<ygg::float_t> m_static_numeric_variables;

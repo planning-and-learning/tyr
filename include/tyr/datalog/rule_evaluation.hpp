@@ -65,7 +65,7 @@ struct CandidateEvidence
 
 struct PredicateCandidate
 {
-    ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head;
+    formalism::datalog::PredicateBindingView<formalism::FluentTag> head;
     Cost cost;
     Cost queue_label;
     std::optional<CandidateEvidence> evidence;
@@ -73,7 +73,7 @@ struct PredicateCandidate
 
 struct FunctionCandidate
 {
-    ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> head;
+    formalism::datalog::FunctionBindingView<formalism::FluentTag> head;
     ygg::ClosedInterval<ygg::float_t> interval;
     Cost cost;
     Cost queue_label;
@@ -83,8 +83,8 @@ struct FunctionCandidate
 
 struct PredicateHeadUpdates
 {
-    using Binding = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
-    using Witness = WitnessAnnotation<::tyr::formalism::PredicateTag>;
+    using Binding = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
+    using Witness = WitnessAnnotation<formalism::PredicateTag>;
 
     ygg::UnorderedSet<Binding> seen_bindings;
     std::vector<Binding> bindings;
@@ -108,11 +108,11 @@ struct PredicateHeadUpdates
 
 struct FunctionHeadUpdate : ygg::comparison::Mixin<FunctionHeadUpdate>
 {
-    ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding;
+    formalism::datalog::FunctionBindingView<formalism::FluentTag> binding;
     ygg::ClosedInterval<ygg::float_t> interval;
     bool grows_fact;
 
-    FunctionHeadUpdate(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> binding,
+    FunctionHeadUpdate(formalism::datalog::FunctionBindingView<formalism::FluentTag> binding,
                        ygg::ClosedInterval<ygg::float_t> interval,
                        bool grows_fact) :
         binding(binding),
@@ -145,7 +145,7 @@ struct FunctionHeadUpdates
 template<AnnotationPolicyConcept AP>
 void reduce_predicate_head_updates(PredicateHeadUpdates& head_updates,
                                    [[maybe_unused]] AP& annotation_policy,
-                                   [[maybe_unused]] const PredicateFactSets<::tyr::formalism::FluentTag>& facts,
+                                   [[maybe_unused]] const PredicateFactSets<formalism::FluentTag>& facts,
                                    [[maybe_unused]] PredicateAnnotations<true>& delta_annotations,
                                    [[maybe_unused]] PredicateAnnotations<>& annotations,
                                    CostBuckets& cost_buckets,
@@ -235,10 +235,10 @@ bool reduce_function_head_updates(FunctionHeadUpdates& head_updates,
     return annotation_improved;
 }
 
-template<::tyr::formalism::RelationKind R>
-using RuleHeadUpdatesT = std::conditional_t<std::same_as<R, ::tyr::formalism::PredicateTag>, PredicateHeadUpdates, FunctionHeadUpdates>;
+template<formalism::RelationKind R>
+using RuleHeadUpdatesT = std::conditional_t<std::same_as<R, formalism::PredicateTag>, PredicateHeadUpdates, FunctionHeadUpdates>;
 
-template<TaskKind Kind, ::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
+template<TaskKind Kind, formalism::RelationKind R, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
 struct RuleUpdateInput
 {
     RuleInstance<Kind, R> rule_instance;
@@ -249,7 +249,7 @@ struct RuleUpdateInput
     const CP& cost_policy;
 };
 
-template<TaskKind Kind, ::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
+template<TaskKind Kind, formalism::RelationKind R, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
 RuleUpdateInput<Kind, R, AP, CP> make_rule_update_input(RuleInstance<Kind, R> rule_instance,
                                                         const NumericSupportSelector& numeric_support_selector,
                                                         const PredicateAnnotations<>& predicate_annotations,
@@ -335,7 +335,7 @@ bool append_selection_evidence(const RuleEvaluationInput& input, RuleEvaluationW
     }
 }
 
-template<TaskKind Kind, ::tyr::formalism::RelationKind R, typename CP>
+template<TaskKind Kind, formalism::RelationKind R, typename CP>
 Cost get_rule_credit(const CP& policy, RuleInstance<Kind, R>& instance)
 {
     if constexpr (std::same_as<std::remove_cvref_t<CP>, RuleCostPolicy>)
@@ -344,10 +344,10 @@ Cost get_rule_credit(const CP& policy, RuleInstance<Kind, R>& instance)
         return policy.get_cost(instance.witness_key());
 }
 
-template<TaskKind Kind, ::tyr::formalism::RelationKind R, typename CP>
+template<TaskKind Kind, formalism::RelationKind R, typename CP>
 Cost get_transition_credit(const CP& policy,
                            RuleInstance<Kind, R>& instance,
-                           ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> head,
+                           formalism::datalog::FunctionBindingView<formalism::FluentTag> head,
                            ygg::ClosedInterval<ygg::float_t> interval)
 {
     if constexpr (std::same_as<std::remove_cvref_t<CP>, RuleCostPolicy>)
@@ -356,7 +356,7 @@ Cost get_transition_credit(const CP& policy,
         return policy.get_cost(instance.witness_key(), head, interval);
 }
 
-template<bool CollectEvidence, TaskKind Kind, ::tyr::formalism::RelationKind R, typename AP, typename CP, typename CanContinue>
+template<bool CollectEvidence, TaskKind Kind, formalism::RelationKind R, typename AP, typename CP, typename CanContinue>
 std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& instance,
                                                        const AP&,
                                                        const CP& cost_policy,
@@ -401,7 +401,7 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
         if (!evaluate_metric_effects())
             return std::nullopt;
 
-    for (const auto literal : instance.get_body().template get_literals<::tyr::formalism::FluentTag>())
+    for (const auto literal : instance.get_body().template get_literals<formalism::FluentTag>())
     {
         if (!literal.get_polarity())
             continue;
@@ -432,14 +432,14 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
             return std::nullopt;
     }
 
-    if constexpr (std::same_as<R, ::tyr::formalism::FunctionTag>)
+    if constexpr (std::same_as<R, formalism::FunctionTag>)
     {
         state.numeric_effect = ygg::visit([&](const auto effect) { return instance.resolve(effect); }, instance.get_head().get_variant());
         const auto& effect = *state.numeric_effect;
         workspace.selector.clear();
 
         auto lhs = ygg::ClosedInterval<ygg::float_t> {};
-        if (effect.operator_kind != ::tyr::formalism::NumericEffectOperatorKind::Assign)
+        if (effect.operator_kind != formalism::NumericEffectOperatorKind::Assign)
         {
             lhs = input.selector.select_fluent_interval(effect.head, workspace.selector.selection);
             if (empty(lhs))
@@ -470,7 +470,7 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
 }
 
 template<TaskKind Kind, typename AP>
-std::optional<FunctionCandidate> evaluate_unannotated_function(RuleInstance<Kind, ::tyr::formalism::FunctionTag>& instance,
+std::optional<FunctionCandidate> evaluate_unannotated_function(RuleInstance<Kind, formalism::FunctionTag>& instance,
                                                                const AP& policy,
                                                                const RuleEvaluationInput& input,
                                                                RuleEvaluationWorkspace& workspace)
@@ -479,7 +479,7 @@ std::optional<FunctionCandidate> evaluate_unannotated_function(RuleInstance<Kind
     workspace.selector.clear();
 
     auto lhs = ygg::ClosedInterval<ygg::float_t> {};
-    if (effect.operator_kind != ::tyr::formalism::NumericEffectOperatorKind::Assign)
+    if (effect.operator_kind != formalism::NumericEffectOperatorKind::Assign)
     {
         lhs = input.selector.select_fluent_interval(effect.head, workspace.selector.selection);
         if (empty(lhs))
@@ -504,7 +504,7 @@ std::optional<FunctionCandidate> evaluate_unannotated_function(RuleInstance<Kind
 
 }
 
-template<TaskKind Kind, ::tyr::formalism::RelationKind R, typename AP, typename CP>
+template<TaskKind Kind, formalism::RelationKind R, typename AP, typename CP>
 std::optional<Cost> evaluate_rule_priority(RuleInstance<Kind, R>& instance,
                                            const AP& annotation_policy,
                                            const CP& cost_policy,
@@ -513,7 +513,7 @@ std::optional<Cost> evaluate_rule_priority(RuleInstance<Kind, R>& instance,
 {
     if constexpr (!AP::stores_annotations)
     {
-        if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
+        if constexpr (std::same_as<R, formalism::PredicateTag>)
             return Cost(0);
         else
         {
@@ -531,7 +531,7 @@ std::optional<Cost> evaluate_rule_priority(RuleInstance<Kind, R>& instance,
                                                                                   rule_evaluation_detail::AlwaysContinue {});
         if (!state)
             return std::nullopt;
-        if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
+        if constexpr (std::same_as<R, formalism::PredicateTag>)
         {
             const auto edge = reduce_cost(state->raw_edge, rule_evaluation_detail::get_rule_credit(cost_policy, instance));
             return state->support_cost + edge;
@@ -544,8 +544,8 @@ std::optional<Cost> evaluate_rule_priority(RuleInstance<Kind, R>& instance,
 }
 
 template<TaskKind Kind, typename AP, typename CP, typename CanContinue = rule_evaluation_detail::AlwaysContinue>
-std::optional<PredicateCandidate> evaluate_predicate_candidate(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
-                                                               RuleInstance<Kind, ::tyr::formalism::PredicateTag>& instance,
+std::optional<PredicateCandidate> evaluate_predicate_candidate(formalism::datalog::PredicateBindingView<formalism::FluentTag> head,
+                                                               RuleInstance<Kind, formalism::PredicateTag>& instance,
                                                                const AP& annotation_policy,
                                                                const CP& cost_policy,
                                                                const RuleEvaluationInput& input,
@@ -569,8 +569,8 @@ std::optional<PredicateCandidate> evaluate_predicate_candidate(::tyr::formalism:
 }
 
 template<TaskKind Kind, typename AP, typename CP>
-auto evaluate_propositional_candidate(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
-                                      RuleInstance<Kind, ::tyr::formalism::PredicateTag>& rule_instance,
+auto evaluate_propositional_candidate(formalism::datalog::PredicateBindingView<formalism::FluentTag> head,
+                                      RuleInstance<Kind, formalism::PredicateTag>& rule_instance,
                                       const AP& annotation_policy,
                                       const CP& cost_policy,
                                       const RuleEvaluationInput& input,
@@ -600,8 +600,8 @@ auto evaluate_propositional_candidate(::tyr::formalism::datalog::PredicateBindin
 }
 
 template<TaskKind Kind, typename AP, typename CP>
-auto evaluate_propositional_candidate(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
-                                      RuleInstance<Kind, ::tyr::formalism::PredicateTag>& rule_instance,
+auto evaluate_propositional_candidate(formalism::datalog::PredicateBindingView<formalism::FluentTag> head,
+                                      RuleInstance<Kind, formalism::PredicateTag>& rule_instance,
                                       const AP& annotation_policy,
                                       const CP& cost_policy,
                                       const RuleEvaluationInput& input,
@@ -613,7 +613,7 @@ auto evaluate_propositional_candidate(::tyr::formalism::datalog::PredicateBindin
 }
 
 template<TaskKind Kind, typename AP, typename CP>
-std::optional<FunctionCandidate> evaluate_function_candidate(RuleInstance<Kind, ::tyr::formalism::FunctionTag>& instance,
+std::optional<FunctionCandidate> evaluate_function_candidate(RuleInstance<Kind, formalism::FunctionTag>& instance,
                                                              const AP& annotation_policy,
                                                              const CP& cost_policy,
                                                              const RuleEvaluationInput& input,
@@ -658,7 +658,7 @@ std::optional<FunctionCandidate> evaluate_function_candidate(RuleInstance<Kind, 
     }
 }
 
-template<TaskKind Kind, ::tyr::formalism::RelationKind R, typename Candidate>
+template<TaskKind Kind, formalism::RelationKind R, typename Candidate>
 WitnessAnnotation<R> materialize_witness(RuleInstance<Kind, R>& instance, const Candidate& candidate)
 {
     assert(candidate.evidence);
@@ -666,8 +666,8 @@ WitnessAnnotation<R> materialize_witness(RuleInstance<Kind, R>& instance, const 
 }
 
 template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
-RuleUpdateResult insert_propositional_update(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> head,
-                                             RuleUpdateInput<Kind, ::tyr::formalism::PredicateTag, AP, CP>& input,
+RuleUpdateResult insert_propositional_update(formalism::datalog::PredicateBindingView<formalism::FluentTag> head,
+                                             RuleUpdateInput<Kind, formalism::PredicateTag, AP, CP>& input,
                                              PredicateHeadUpdates& head_updates,
                                              PredicateAnnotations<true>& delta_annotations,
                                              std::optional<Cost> required_queue_label = std::nullopt)
@@ -715,7 +715,7 @@ RuleUpdateResult insert_propositional_update(::tyr::formalism::datalog::Predicat
 }
 
 template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
-RuleUpdateResult insert_numeric_update(RuleUpdateInput<Kind, ::tyr::formalism::FunctionTag, AP, CP>& input,
+RuleUpdateResult insert_numeric_update(RuleUpdateInput<Kind, formalism::FunctionTag, AP, CP>& input,
                                        FunctionHeadUpdates& head_updates,
                                        [[maybe_unused]] FunctionAnnotations<true>& delta_numeric_annotations,
                                        std::optional<Cost> required_queue_label = std::nullopt)

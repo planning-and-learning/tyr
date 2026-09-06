@@ -50,7 +50,7 @@ struct StateRepositoryPolicy<GroundTag>
     {
         state.clear();
         state.resize_fluent_facts(task.get_task().get_fluent_variables().size());
-        state.resize_derived_atoms(task.get_task().template get_atoms<::tyr::formalism::DerivedTag>().size());
+        state.resize_derived_atoms(task.get_task().template get_atoms<formalism::DerivedTag>().size());
     }
 };
 
@@ -65,7 +65,7 @@ struct StateRepositoryPolicy<LiftedTag>
 
     static void insert_initial_fluent_facts(const Task<LiftedTag>& task, ygg::Builder<State<LiftedTag>>& state)
     {
-        for (const auto atom : task.get_task().template get_atoms<::tyr::formalism::FluentTag>())
+        for (const auto atom : task.get_task().template get_atoms<formalism::FluentTag>())
             state.set(task.get_fdr_context()->get_fact(atom).get_data());
     }
 

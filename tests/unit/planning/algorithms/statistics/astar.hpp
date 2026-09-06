@@ -23,7 +23,7 @@ namespace tyr::tests
 {
 namespace
 {
-void check_statistics(const SearchStatistics& expected, const SearchCase& test_case, const std::string& heuristic_name, ::tyr::CostMode cost_mode)
+void check_statistics(const SearchStatistics& expected, const SearchCase& test_case, const std::string& heuristic_name, CostMode cost_mode)
 {
     auto context = create_search_context<StatisticsTaskKind>(test_case.domain_file, test_case.task_file);
     auto heuristic = create_search_heuristic<StatisticsTaskKind>(heuristic_name, context, cost_mode);

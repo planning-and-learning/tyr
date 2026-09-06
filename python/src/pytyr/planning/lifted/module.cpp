@@ -64,7 +64,7 @@ void bind_lifted_module_definitions(nb::module_& m)
         .def_rw("disable_invariant_synthesis", &GroundTaskInstantiationOptions::disable_invariant_synthesis);
 
     nb::class_<Task<LiftedTag>>(m, "Task")  //
-        .def(nb::new_([](::tyr::formalism::planning::PlanningTask&& task) { return std::make_shared<Task<LiftedTag>>(std::move(task)); }),
+        .def(nb::new_([](formalism::planning::PlanningTask&& task) { return std::make_shared<Task<LiftedTag>>(std::move(task)); }),
              "formalism_task"_a,
              R"doc(
 Create a planning task from a formalism task.
@@ -82,7 +82,7 @@ should not be used further.
         )doc")
         .def_static(
             "create",
-            [](::tyr::formalism::planning::PlanningTask&& task) { return Task<LiftedTag>::create(std::move(task)); },
+            [](formalism::planning::PlanningTask&& task) { return Task<LiftedTag>::create(std::move(task)); },
             "formalism_task"_a)
         .def("get_formalism_task", &Task<LiftedTag>::get_formalism_task, nb::rv_policy::reference_internal)
         .def("get_repository", &Task<LiftedTag>::get_repository)
@@ -92,15 +92,14 @@ should not be used further.
 
     using ApplicableProgram = ApplicableActionProgram<LiftedTag>;
     nb::class_<ApplicableProgram>(m, "ApplicableActionProgram")
-        .def(nb::init<::tyr::formalism::planning::TaskView>(), "task"_a, nb::keep_alive<1, 2>())
+        .def(nb::init<formalism::planning::TaskView>(), "task"_a, nb::keep_alive<1, 2>())
         .def("get_datalog_program", nb::overload_cast<>(&ApplicableProgram::get_datalog_program), nb::rv_policy::reference_internal)
         .def("get_const_program_workspace", &ApplicableProgram::get_const_program_workspace, nb::rv_policy::reference_internal)
         .def(
             "get_predicate_to_action_mapping",
             [](const ApplicableProgram& self)
             {
-                using Entry =
-                    std::pair<const ::tyr::formalism::datalog::PredicateView<::tyr::formalism::FluentTag>*, const ::tyr::formalism::planning::ActionView<::tyr::LiftedTag>*>;
+                using Entry = std::pair<const formalism::datalog::PredicateView<formalism::FluentTag>*, const formalism::planning::ActionView<LiftedTag>*>;
                 auto result = std::vector<Entry> {};
                 for (const auto& [predicate, action] : self.get_predicate_to_action_mapping())
                     result.emplace_back(&predicate, &action);
@@ -110,13 +109,13 @@ should not be used further.
 
     using AxiomProgram = AxiomEvaluatorProgram<LiftedTag>;
     nb::class_<AxiomProgram>(m, "AxiomEvaluatorProgram")
-        .def(nb::init<::tyr::formalism::planning::TaskView>(), "task"_a, nb::keep_alive<1, 2>())
+        .def(nb::init<formalism::planning::TaskView>(), "task"_a, nb::keep_alive<1, 2>())
         .def("get_datalog_program", nb::overload_cast<>(&AxiomProgram::get_datalog_program), nb::rv_policy::reference_internal)
         .def("get_const_program_workspace", &AxiomProgram::get_const_program_workspace, nb::rv_policy::reference_internal);
 
     using RelaxedProgram = RPGProgram<LiftedTag>;
     nb::class_<RelaxedProgram>(m, "RPGProgram")
-        .def(nb::init<::tyr::formalism::planning::TaskView, CostMode>(), "task"_a, "cost_mode"_a = CostMode::GENERAL, nb::keep_alive<1, 2>())
+        .def(nb::init<formalism::planning::TaskView, CostMode>(), "task"_a, "cost_mode"_a = CostMode::GENERAL, nb::keep_alive<1, 2>())
         .def("get_datalog_program", nb::overload_cast<>(&RelaxedProgram::get_datalog_program), nb::rv_policy::reference_internal)
         .def("get_goal", &RelaxedProgram::get_goal, nb::keep_alive<0, 1>())
         .def(
@@ -124,24 +123,23 @@ should not be used further.
             [](const RelaxedProgram& self)
             {
                 using Entry =
-                    std::pair<const ::tyr::formalism::datalog::RuleView<::tyr::LiftedTag, ::tyr::formalism::PredicateTag>*, const ::tyr::formalism::planning::ActionView<::tyr::LiftedTag>*>;
+                    std::pair<const formalism::datalog::RuleView<LiftedTag, formalism::PredicateTag>*, const formalism::planning::ActionView<LiftedTag>*>;
                 auto result = std::vector<Entry> {};
-                for (const auto& [rule, action] : self.get_rule_to_action_mapping<::tyr::formalism::PredicateTag>())
+                for (const auto& [rule, action] : self.get_rule_to_action_mapping<formalism::PredicateTag>())
                     result.emplace_back(&rule, &action);
                 return result;
             },
             nb::rv_policy::reference_internal);
 
     nb::class_<GroundTaskProgram>(m, "GroundTaskProgram")
-        .def(nb::init<::tyr::formalism::planning::TaskView>(), "task"_a, nb::keep_alive<1, 2>())
+        .def(nb::init<formalism::planning::TaskView>(), "task"_a, nb::keep_alive<1, 2>())
         .def("get_datalog_program", nb::overload_cast<>(&GroundTaskProgram::get_datalog_program), nb::rv_policy::reference_internal)
         .def("get_const_program_workspace", &GroundTaskProgram::get_const_program_workspace, nb::rv_policy::reference_internal)
         .def(
             "get_predicate_to_action_mapping",
             [](const GroundTaskProgram& self)
             {
-                using Entry =
-                    std::pair<const ::tyr::formalism::datalog::PredicateView<::tyr::formalism::FluentTag>*, const ::tyr::formalism::planning::ActionView<::tyr::LiftedTag>*>;
+                using Entry = std::pair<const formalism::datalog::PredicateView<formalism::FluentTag>*, const formalism::planning::ActionView<LiftedTag>*>;
                 auto result = std::vector<Entry> {};
                 for (const auto& [predicate, action] : self.get_predicate_to_action_mapping())
                     result.emplace_back(&predicate, &action);
@@ -152,8 +150,8 @@ should not be used further.
             "get_predicate_to_axiom_mapping",
             [](const GroundTaskProgram& self)
             {
-                using Axioms = std::vector<const ::tyr::formalism::planning::AxiomView<::tyr::LiftedTag>*>;
-                using Entry = std::pair<const ::tyr::formalism::datalog::PredicateView<::tyr::formalism::FluentTag>*, Axioms>;
+                using Axioms = std::vector<const formalism::planning::AxiomView<LiftedTag>*>;
+                using Entry = std::pair<const formalism::datalog::PredicateView<formalism::FluentTag>*, Axioms>;
                 auto result = std::vector<Entry> {};
                 for (const auto& [predicate, axioms] : self.get_predicate_to_axiom_mapping())
                 {

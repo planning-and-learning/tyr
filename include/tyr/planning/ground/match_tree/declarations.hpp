@@ -96,7 +96,7 @@ constexpr bool match_tree_repository_access_for_types(ygg::TypeList<Tags...>) no
 
 template<typename T>
 concept HasFormalismRepository = requires(const T& r) {
-    { r.get_formalism_repository() } -> ::tyr::formalism::planning::Context;
+    { r.get_formalism_repository() } -> formalism::planning::Context;
 };
 
 template<typename T, typename Tag>

@@ -43,7 +43,7 @@ namespace tyr::datalog
 
 using Interval = ygg::ClosedInterval<ygg::float_t>;
 
-template<::tyr::formalism::FactKind T>
+template<formalism::FactKind T>
 void bind_predicate_fact_set(nb::module_& m, const char* name)
 {
     using Set = PredicateFactSet<T>;
@@ -69,11 +69,11 @@ void bind_predicate_fact_set(nb::module_& m, const char* name)
         .def("contains", &Set::contains, "binding"_a);
 }
 
-template<::tyr::formalism::FactKind T>
+template<formalism::FactKind T>
 void bind_function_fact_set(nb::module_& m, const char* name)
 {
     using Set = FunctionFactSet<T>;
-    using Binding = ::tyr::formalism::datalog::FunctionBindingView<T>;
+    using Binding = formalism::datalog::FunctionBindingView<T>;
 
     nb::class_<Set>(m, name)
         .def("get_function", &Set::get_function, nb::keep_alive<0, 1>())
@@ -93,7 +93,7 @@ void bind_function_fact_set(nb::module_& m, const char* name)
         .def("get", [](const Set& self, Binding binding) { return self[binding]; }, "binding"_a);
 }
 
-template<::tyr::formalism::FactKind T>
+template<formalism::FactKind T>
 void bind_tagged_fact_sets(nb::module_& m, const char* name)
 {
     using Sets = TaggedFactSets<T>;
@@ -123,17 +123,17 @@ void bind_tagged_fact_sets(nb::module_& m, const char* name)
 
 inline void bind_fact_sets(nb::module_& m)
 {
-    bind_predicate_fact_set<::tyr::formalism::StaticTag>(m, "StaticPredicateFactSet");
-    bind_predicate_fact_set<::tyr::formalism::FluentTag>(m, "FluentPredicateFactSet");
-    bind_function_fact_set<::tyr::formalism::StaticTag>(m, "StaticFunctionFactSet");
-    bind_function_fact_set<::tyr::formalism::FluentTag>(m, "FluentFunctionFactSet");
-    bind_tagged_fact_sets<::tyr::formalism::StaticTag>(m, "StaticFactSets");
-    bind_tagged_fact_sets<::tyr::formalism::FluentTag>(m, "FluentFactSets");
+    bind_predicate_fact_set<formalism::StaticTag>(m, "StaticPredicateFactSet");
+    bind_predicate_fact_set<formalism::FluentTag>(m, "FluentPredicateFactSet");
+    bind_function_fact_set<formalism::StaticTag>(m, "StaticFunctionFactSet");
+    bind_function_fact_set<formalism::FluentTag>(m, "FluentFunctionFactSet");
+    bind_tagged_fact_sets<formalism::StaticTag>(m, "StaticFactSets");
+    bind_tagged_fact_sets<formalism::FluentTag>(m, "FluentFactSets");
 }
 
 inline void bind_numeric_support(nb::module_& m)
 {
-    using NumericKey = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
+    using NumericKey = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
 
     auto cls = nb::class_<NumericSupport>(m, "NumericSupport")
                    .def(nb::init<NumericKey, Interval, Cost>(), "key"_a, "interval"_a, "cost"_a)
@@ -145,13 +145,13 @@ inline void bind_numeric_support(nb::module_& m)
 
 inline void bind_annotations(nb::module_& m)
 {
-    using WitnessAnnotationT = WitnessAnnotation<::tyr::formalism::PredicateTag>;
-    using FunctionWitnessAnnotationT = WitnessAnnotation<::tyr::formalism::FunctionTag>;
+    using WitnessAnnotationT = WitnessAnnotation<formalism::PredicateTag>;
+    using FunctionWitnessAnnotationT = WitnessAnnotation<formalism::FunctionTag>;
     using PredicateAnnotationStore = PredicateAnnotations<>;
     using FunctionAnnotationStore = FunctionAnnotations<>;
-    using RuleKey = ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::PredicateTag>;
-    using FunctionRuleKey = ::tyr::formalism::datalog::RuleBindingView<::tyr::formalism::FunctionTag>;
-    using NumericKey = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
+    using RuleKey = formalism::datalog::RuleBindingView<formalism::PredicateTag>;
+    using FunctionRuleKey = formalism::datalog::RuleBindingView<formalism::FunctionTag>;
+    using NumericKey = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
     using PredicateKey = typename PredicateAnnotationStore::Key;
 
     auto base_annotation_cls = nb::class_<BaseAnnotation>(m, "BaseAnnotation")
@@ -202,18 +202,18 @@ inline void bind_annotations(nb::module_& m)
         .def("size", &FunctionAnnotationStore::size)
         .def(
             "find",
-            [](const FunctionAnnotationStore& self, NumericKey key) -> std::optional<Annotation<::tyr::formalism::FunctionTag>>
+            [](const FunctionAnnotationStore& self, NumericKey key) -> std::optional<Annotation<formalism::FunctionTag>>
             {
                 const auto* annotation = self.find(key);
-                return annotation ? std::optional<Annotation<::tyr::formalism::FunctionTag>>(*annotation) : std::nullopt;
+                return annotation ? std::optional<Annotation<formalism::FunctionTag>>(*annotation) : std::nullopt;
             },
             "binding"_a)
         .def(
             "find",
-            [](const FunctionAnnotationStore& self, NumericKey key, const Interval& interval) -> std::optional<Annotation<::tyr::formalism::FunctionTag>>
+            [](const FunctionAnnotationStore& self, NumericKey key, const Interval& interval) -> std::optional<Annotation<formalism::FunctionTag>>
             {
                 const auto* annotation = self.find(key, interval);
-                return annotation ? std::optional<Annotation<::tyr::formalism::FunctionTag>>(*annotation) : std::nullopt;
+                return annotation ? std::optional<Annotation<formalism::FunctionTag>>(*annotation) : std::nullopt;
             },
             "binding"_a,
             "interval"_a);
@@ -222,13 +222,13 @@ inline void bind_annotations(nb::module_& m)
 template<typename CostPolicy>
 void bind_cost_policy(nb::module_& m, const char* name)
 {
-    using NumericKey = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
+    using NumericKey = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
 
     auto cls = nb::class_<CostPolicy>(m, name).def(nb::init<>()).def("clear", &CostPolicy::clear);
 
-    const auto bind_rule_costs = [&]<::tyr::formalism::RelationKind R>()
+    const auto bind_rule_costs = [&]<formalism::RelationKind R>()
     {
-        using RuleKey = ::tyr::formalism::datalog::RuleBindingView<R>;
+        using RuleKey = formalism::datalog::RuleBindingView<R>;
         cls.def(
                "get_cost",
                [](const CostPolicy& self, RuleKey rule) { return self.get_cost(rule); },
@@ -252,8 +252,8 @@ void bind_cost_policy(nb::module_& m, const char* name)
                 "interval"_a,
                 "cost"_a);
     };
-    bind_rule_costs.template operator()<::tyr::formalism::PredicateTag>();
-    bind_rule_costs.template operator()<::tyr::formalism::FunctionTag>();
+    bind_rule_costs.template operator()<formalism::PredicateTag>();
+    bind_rule_costs.template operator()<formalism::FunctionTag>();
 }
 
 template<typename Aggregation>
@@ -283,8 +283,8 @@ inline void bind_policies(nb::module_& m)
         .def("clear_achievers", &MaxMinCostAnnotationWithAchievers::clear_achievers)
         .def(
             "find_achievers",
-            [](const MaxMinCostAnnotationWithAchievers& self, ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> binding)
-                -> std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>
+            [](const MaxMinCostAnnotationWithAchievers& self,
+               formalism::datalog::PredicateBindingView<formalism::FluentTag> binding) -> std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>
             {
                 const auto* achievers = self.find_achievers(binding);
                 return achievers ? std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>(*achievers) : std::nullopt;
@@ -315,11 +315,11 @@ void bind_workspace(nb::module_& m, const std::string& name)
                    .def(nb::init<Program<Kind>&>(), "program"_a, nb::keep_alive<1, 2>())
                    .def(
                        "get_static_fact_sets",
-                       [](const Workspace& self) -> const TaggedFactSets<::tyr::formalism::StaticTag>& { return self.const_workspace.facts.fact_sets; },
+                       [](const Workspace& self) -> const TaggedFactSets<formalism::StaticTag>& { return self.const_workspace.facts.fact_sets; },
                        nb::rv_policy::reference_internal)
                    .def(
                        "get_fluent_fact_sets",
-                       [](const Workspace& self) -> const TaggedFactSets<::tyr::formalism::FluentTag>& { return self.facts.fact_sets; },
+                       [](const Workspace& self) -> const TaggedFactSets<formalism::FluentTag>& { return self.facts.fact_sets; },
                        nb::rv_policy::reference_internal)
                    .def(
                        "get_annotations",
@@ -345,8 +345,8 @@ void bind_workspace(nb::module_& m, const std::string& name)
 
     if constexpr (std::same_as<Kind, GroundTag>)
     {
-        using Atom = ::tyr::formalism::datalog::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag>;
-        using FunctionTerm = ::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag>;
+        using Atom = formalism::datalog::AtomView<GroundTag, formalism::FluentTag>;
+        using FunctionTerm = formalism::datalog::FunctionTermView<GroundTag, formalism::FluentTag>;
 
         cls.def("clear_fluent_facts", [](Workspace& self) { self.facts.reset(); })
             .def(
@@ -361,9 +361,9 @@ void bind_workspace(nb::module_& m, const std::string& name)
     }
     else
     {
-        using Atom = ::tyr::formalism::datalog::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag>;
-        using PredicateBinding = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
-        using FunctionBinding = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
+        using Atom = formalism::datalog::AtomView<GroundTag, formalism::FluentTag>;
+        using PredicateBinding = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
+        using FunctionBinding = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
 
         cls.def(
                "get_workspace_repository",
@@ -375,24 +375,24 @@ void bind_workspace(nb::module_& m, const std::string& name)
                 "insert_fluent_atom",
                 [](Workspace& self, Atom atom)
                 {
-                    auto context = ::tyr::formalism::datalog::MergeContext { self.datalog_builder, self.workspace_repository };
-                    return self.facts.fact_sets.predicate.insert(::tyr::formalism::datalog::merge_d2d(atom, context).first);
+                    auto context = formalism::datalog::MergeContext { self.datalog_builder, self.workspace_repository };
+                    return self.facts.fact_sets.predicate.insert(formalism::datalog::merge_d2d(atom, context).first);
                 },
                 "atom"_a)
             .def(
                 "insert_fluent_binding",
                 [](Workspace& self, PredicateBinding binding)
                 {
-                    auto context = ::tyr::formalism::datalog::MergeContext { self.datalog_builder, self.workspace_repository };
-                    return self.facts.fact_sets.predicate.insert(::tyr::formalism::datalog::merge_d2d(binding, context).first);
+                    auto context = formalism::datalog::MergeContext { self.datalog_builder, self.workspace_repository };
+                    return self.facts.fact_sets.predicate.insert(formalism::datalog::merge_d2d(binding, context).first);
                 },
                 "binding"_a)
             .def(
                 "set_fluent_function",
                 [](Workspace& self, FunctionBinding binding, const Interval& interval)
                 {
-                    auto context = ::tyr::formalism::datalog::MergeContext { self.datalog_builder, self.workspace_repository };
-                    return self.facts.fact_sets.function.insert(::tyr::formalism::datalog::merge_d2d(binding, context).first, interval);
+                    auto context = formalism::datalog::MergeContext { self.datalog_builder, self.workspace_repository };
+                    return self.facts.fact_sets.function.insert(formalism::datalog::merge_d2d(binding, context).first, interval);
                 },
                 "binding"_a,
                 "interval"_a)
@@ -426,7 +426,7 @@ void bind_configuration(nb::module_& m, const char* prefix)
         cls.def("initialize", [](Context& self) { self.initialize(); })
             .def(
                 "initialize",
-                [](Context& self, const std::vector<::tyr::formalism::datalog::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag>>& fluent_atoms)
+                [](Context& self, const std::vector<formalism::datalog::AtomView<GroundTag, formalism::FluentTag>>& fluent_atoms)
                 { self.initialize(fluent_atoms); },
                 "fluent_atoms"_a);
     }

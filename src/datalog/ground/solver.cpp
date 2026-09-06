@@ -32,7 +32,7 @@
 
 namespace tyr::datalog
 {
-namespace f = ::tyr::formalism;
+namespace f = formalism;
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 class SolverPolicy<GroundTag, AP, TP, CP>

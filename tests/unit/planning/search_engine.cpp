@@ -106,7 +106,7 @@ public:
 
     explicit GoalAsDeadEndHeuristic(p::TaskPtr<Kind> task) : m_task(std::move(task)), m_goal(m_task->get_task().get_goal()) {}
 
-    void set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal) override { m_goal = goal; }
+    void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) override { m_goal = goal; }
 
     ygg::float_t evaluate(const ygg::Builder<p::State<Kind>>& state) override
     {
@@ -123,7 +123,7 @@ public:
 
 private:
     p::TaskPtr<Kind> m_task;
-    ::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> m_goal;
+    formalism::planning::ConjunctiveConditionView<GroundTag> m_goal;
 };
 
 template<TaskKind Kind>
@@ -132,7 +132,7 @@ class NullWorkerHeuristic final : public p::Heuristic<Kind>
 public:
     using p::Heuristic<Kind>::evaluate;
 
-    void set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag>) override {}
+    void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag>) override {}
     ygg::float_t evaluate(const ygg::Builder<p::State<Kind>>&) override { return 0; }
     p::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr) const override { return nullptr; }
 };
@@ -145,7 +145,7 @@ public:
 
     explicit WorkerContextRecordingHeuristic(std::vector<size_t>& worker_threads) : m_worker_threads(worker_threads) {}
 
-    void set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag>) override {}
+    void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag>) override {}
     ygg::float_t evaluate(const ygg::Builder<p::State<Kind>>&) override { return 0; }
 
     p::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override
@@ -159,7 +159,7 @@ private:
 };
 
 template<TaskKind Kind>
-bool is_at_location(const ygg::Builder<p::State<Kind>>& state, const ::tyr::formalism::planning::Repository& repository, std::string_view location)
+bool is_at_location(const ygg::Builder<p::State<Kind>>& state, const formalism::planning::Repository& repository, std::string_view location)
 {
     return std::ranges::any_of(state.get_fluent_facts_view(repository),
                                [&](const auto fact)
@@ -196,7 +196,7 @@ public:
     {
     }
 
-    void set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag>) override {}
+    void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag>) override {}
 
     ygg::float_t evaluate(const ygg::Builder<p::State<Kind>>& state) override
     {
@@ -235,7 +235,7 @@ public:
 
     LocationThrowingHeuristic(p::TaskPtr<Kind> task, std::string_view location) : m_task(std::move(task)), m_location(location) {}
 
-    void set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag>) override {}
+    void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag>) override {}
 
     ygg::float_t evaluate(const ygg::Builder<p::State<Kind>>& state) override
     {
@@ -306,7 +306,7 @@ class ThrowingHeuristic final : public p::Heuristic<Kind>
 public:
     using p::Heuristic<Kind>::evaluate;
 
-    void set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag>) override {}
+    void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag>) override {}
     ygg::float_t evaluate(const ygg::Builder<p::State<Kind>>&) override { throw std::runtime_error("Unexpected heuristic evaluation."); }
     p::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr) const override { return std::make_shared<ThrowingHeuristic>(); }
 };
@@ -319,7 +319,7 @@ public:
 
     explicit GoalAsThrowingHeuristic(p::TaskPtr<Kind> task) : m_task(std::move(task)), m_goal(m_task->get_task().get_goal()) {}
 
-    void set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal) override { m_goal = goal; }
+    void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) override { m_goal = goal; }
 
     ygg::float_t evaluate(const ygg::Builder<p::State<Kind>>& state) override
     {
@@ -338,7 +338,7 @@ public:
 
 private:
     p::TaskPtr<Kind> m_task;
-    ::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> m_goal;
+    formalism::planning::ConjunctiveConditionView<GroundTag> m_goal;
 };
 
 template<TaskKind Kind>
@@ -347,7 +347,7 @@ class InfiniteHeuristic final : public p::Heuristic<Kind>
 public:
     using p::Heuristic<Kind>::evaluate;
 
-    void set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag>) override {}
+    void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag>) override {}
     ygg::float_t evaluate(const ygg::Builder<p::State<Kind>>&) override { return std::numeric_limits<ygg::float_t>::infinity(); }
     p::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr) const override { return std::make_shared<InfiniteHeuristic>(); }
 };
@@ -464,13 +464,13 @@ public:
     size_t get_num_successor_checks() const noexcept { return m_observations->num_successor_checks; }
 
 private:
-    SeedRecordingGoalStrategy(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal, std::shared_ptr<Observations> observations) :
+    SeedRecordingGoalStrategy(formalism::planning::ConjunctiveConditionView<GroundTag> goal, std::shared_ptr<Observations> observations) :
         m_goal(goal),
         m_observations(std::move(observations))
     {
     }
 
-    ::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> m_goal;
+    formalism::planning::ConjunctiveConditionView<GroundTag> m_goal;
     std::shared_ptr<Observations> m_observations;
 };
 

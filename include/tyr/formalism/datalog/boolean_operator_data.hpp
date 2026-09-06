@@ -29,17 +29,17 @@
 namespace ygg
 {
 
-template<typename T>
+template<::tyr::TaskKind T>
 struct Data<::tyr::formalism::datalog::BooleanOperator<T>>
 {
     using OperatorType = ::tyr::formalism::BooleanOperatorKind;
-    using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::BooleanOperatorKind, T>>>;
+    using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::datalog::BinaryOperator<T, ::tyr::formalism::BooleanOperatorKind>>>;
 
     OperatorType operator_kind = OperatorType::Eq;
     Variant value;
 
     template<typename C>
-    using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::BooleanOperatorKind, T>>, C>>;
+    using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<T, ::tyr::formalism::BooleanOperatorKind>>, C>>;
 
     Data() = default;
     Data(OperatorType operator_kind_, Variant value_) : operator_kind(operator_kind_), value(value_)
@@ -64,15 +64,8 @@ struct Data<::tyr::formalism::datalog::BooleanOperator<T>>
     auto identifying_members() const noexcept { return std::tie(operator_kind, value); }
 };
 
-static_assert(
-    !ygg::uses_trivial_storage_v<::tyr::formalism::datalog::BooleanOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>>>);
+static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::BooleanOperator<::tyr::LiftedTag>>);
 
-}
-
-namespace tyr::formalism::datalog
-{
-using BooleanOperatorData = ygg::Data<BooleanOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>;
-using GroundBooleanOperatorData = ygg::Data<BooleanOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>;
 }
 
 #endif

@@ -25,12 +25,12 @@ namespace tyr::datalog
 
 struct ResolvedNumericEffect
 {
-    ::tyr::formalism::NumericEffectOperatorKind operator_kind;
-    ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> head;
-    ::tyr::formalism::datalog::FunctionExpressionView<::tyr::GroundTag> rhs;
+    formalism::NumericEffectOperatorKind operator_kind;
+    formalism::datalog::FunctionBindingView<formalism::FluentTag> head;
+    formalism::datalog::FunctionExpressionView<GroundTag> rhs;
 };
 
-template<TaskKind Kind, ::tyr::formalism::RelationKind R>
+template<TaskKind Kind, formalism::RelationKind R>
 class RuleInstance;
 
 }

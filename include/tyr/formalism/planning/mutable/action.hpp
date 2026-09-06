@@ -46,7 +46,7 @@ struct MutableAction : ygg::comparison::Mixin<MutableAction>
         effects(std::move(effects))
     {
     }
-    MutableAction(ActionView<::tyr::LiftedTag> element) : num_variables(element.get_arity()), condition(num_variables, element.get_condition()), effects()
+    MutableAction(ActionView<LiftedTag> element) : num_variables(element.get_arity()), condition(num_variables, element.get_condition()), effects()
     {
         for (const auto& effect : element.get_effects())
             effects.emplace_back(num_variables, effect);
@@ -61,9 +61,9 @@ using MutableActionList = std::vector<MutableAction>;
 namespace tyr::formalism::unification
 {
 template<>
-struct structure_traits<tyr::formalism::planning::MutableAction>
+struct structure_traits<planning::MutableAction>
 {
-    using Type = tyr::formalism::planning::MutableAction;
+    using Type = planning::MutableAction;
 
     template<typename F>
     static bool zip_terms(const Type& lhs, const Type& rhs, F&& f)
@@ -71,15 +71,13 @@ struct structure_traits<tyr::formalism::planning::MutableAction>
         if (lhs.num_variables != rhs.num_variables)
             return false;
 
-        return tyr::formalism::unification::zip_terms(lhs.condition, rhs.condition, f) && tyr::formalism::unification::zip_terms(lhs.effects, rhs.effects, f);
+        return unification::zip_terms(lhs.condition, rhs.condition, f) && unification::zip_terms(lhs.effects, rhs.effects, f);
     }
 
     template<typename F>
     static Type transform_terms(const Type& value, F&& f)
     {
-        return Type(value.num_variables,
-                    tyr::formalism::unification::transform_terms(value.condition, f),
-                    tyr::formalism::unification::transform_terms(value.effects, f));
+        return Type(value.num_variables, unification::transform_terms(value.condition, f), unification::transform_terms(value.effects, f));
     }
 };
 }

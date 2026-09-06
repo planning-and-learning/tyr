@@ -29,24 +29,25 @@
 namespace ygg
 {
 
-template<typename T>
+template<::tyr::TaskKind T>
 struct Data<::tyr::formalism::planning::MultiOperator<T>>
 {
+    using Operand = ygg::Data<::tyr::formalism::planning::FunctionExpression<T>>;
     using OperatorType = ::tyr::formalism::ArithmeticOperatorKind;
 
     ygg::Index<::tyr::formalism::planning::MultiOperator<T>> index;
     OperatorType operator_kind = OperatorType::Add;
-    ::cista::offset::vector<T> args;
+    ::cista::offset::vector<Operand> args;
 
     Data() = default;
-    Data(OperatorType operator_kind_, ::cista::offset::vector<T> args_) : index(), operator_kind(operator_kind_), args(std::move(args_))
+    Data(OperatorType operator_kind_, ::cista::offset::vector<Operand> args_) : index(), operator_kind(operator_kind_), args(std::move(args_))
     {
         if (!is_multi(operator_kind))
             throw std::invalid_argument("multi operator must be Add or Mul");
     }
     // Python constructor
     template<typename C>
-    Data(OperatorType operator_kind_, const std::vector<::ygg::View<T, C>>& args_) : index(), operator_kind(operator_kind_), args()
+    Data(OperatorType operator_kind_, const std::vector<::ygg::View<Operand, C>>& args_) : index(), operator_kind(operator_kind_), args()
     {
         if (!is_multi(operator_kind))
             throw std::invalid_argument("multi operator must be Add or Mul");
@@ -68,8 +69,7 @@ struct Data<::tyr::formalism::planning::MultiOperator<T>>
     auto identifying_members() const noexcept { return std::tie(operator_kind, args); }
 };
 
-static_assert(
-    !ygg::uses_trivial_storage_v<::tyr::formalism::planning::MultiOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>>>);
+static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::MultiOperator<::tyr::LiftedTag>>);
 
 }
 

@@ -48,13 +48,13 @@ template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicy
 struct ProgramWorkspace<LiftedTag, AP, TP, CP>
 {
     const ConstProgramWorkspace<LiftedTag>& const_workspace;
-    const ::tyr::formalism::datalog::Repository& program_repository;
+    const formalism::datalog::Repository& program_repository;
 
 private:
-    ::tyr::formalism::datalog::RepositoryPtr m_workspace_repository;
+    formalism::datalog::RepositoryPtr m_workspace_repository;
 
 public:
-    ::tyr::formalism::datalog::Repository& workspace_repository;
+    formalism::datalog::Repository& workspace_repository;
 
     FactsWorkspace<LiftedTag> facts;
 
@@ -68,35 +68,35 @@ public:
     TP tp;
     CP cost_policy;
 
-    std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, ::tyr::formalism::PredicateTag>>> predicate_rules;
-    std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, ::tyr::formalism::FunctionTag>>> function_rules;
+    std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, formalism::PredicateTag>>> predicate_rules;
+    std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, formalism::FunctionTag>>> function_rules;
 
-    template<::tyr::formalism::RelationKind R>
+    template<formalism::RelationKind R>
     auto& get_rules() noexcept
     {
-        if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
+        if constexpr (std::same_as<R, formalism::PredicateTag>)
             return predicate_rules;
-        else if constexpr (std::same_as<R, ::tyr::formalism::FunctionTag>)
+        else if constexpr (std::same_as<R, formalism::FunctionTag>)
             return function_rules;
         else
             static_assert(ygg::dependent_false<R>::value, "Missing case");
     }
 
-    template<::tyr::formalism::RelationKind R>
+    template<formalism::RelationKind R>
     const auto& get_rules() const noexcept
     {
-        if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
+        if constexpr (std::same_as<R, formalism::PredicateTag>)
             return predicate_rules;
-        else if constexpr (std::same_as<R, ::tyr::formalism::FunctionTag>)
+        else if constexpr (std::same_as<R, formalism::FunctionTag>)
             return function_rules;
         else
             static_assert(ygg::dependent_false<R>::value, "Missing case");
     }
 
-    ::tyr::formalism::planning::Builder planning_builder;
-    ::tyr::formalism::datalog::Builder datalog_builder;
+    formalism::planning::Builder planning_builder;
+    formalism::datalog::Builder datalog_builder;
 
-    ygg::IndexList<::tyr::formalism::Object> binding;
+    ygg::IndexList<formalism::Object> binding;
 
     std::vector<Scheduler<LiftedTag>> schedulers;
 
@@ -123,26 +123,26 @@ struct ConstProgramWorkspace<LiftedTag>
 {
     ConstFactsWorkspace<LiftedTag> facts;
 
-    std::vector<std::optional<ConstRuleWorkspace<LiftedTag, ::tyr::formalism::PredicateTag>>> predicate_rules;
-    std::vector<std::optional<ConstRuleWorkspace<LiftedTag, ::tyr::formalism::FunctionTag>>> function_rules;
+    std::vector<std::optional<ConstRuleWorkspace<LiftedTag, formalism::PredicateTag>>> predicate_rules;
+    std::vector<std::optional<ConstRuleWorkspace<LiftedTag, formalism::FunctionTag>>> function_rules;
 
-    template<::tyr::formalism::RelationKind R>
+    template<formalism::RelationKind R>
     auto& get_rules() noexcept
     {
-        if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
+        if constexpr (std::same_as<R, formalism::PredicateTag>)
             return predicate_rules;
-        else if constexpr (std::same_as<R, ::tyr::formalism::FunctionTag>)
+        else if constexpr (std::same_as<R, formalism::FunctionTag>)
             return function_rules;
         else
             static_assert(ygg::dependent_false<R>::value, "Missing case");
     }
 
-    template<::tyr::formalism::RelationKind R>
+    template<formalism::RelationKind R>
     const auto& get_rules() const noexcept
     {
-        if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
+        if constexpr (std::same_as<R, formalism::PredicateTag>)
             return predicate_rules;
-        else if constexpr (std::same_as<R, ::tyr::formalism::FunctionTag>)
+        else if constexpr (std::same_as<R, formalism::FunctionTag>)
             return function_rules;
         else
             static_assert(ygg::dependent_false<R>::value, "Missing case");

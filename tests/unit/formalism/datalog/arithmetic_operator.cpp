@@ -14,12 +14,12 @@ concept ArithmeticOperatorContract = std::totally_ordered<ygg::Data<Entity>> && 
                                             view.get_variant();
                                         };
 
-using Lifted = fd::ArithmeticOperator<ygg::Data<fd::FunctionExpression<::tyr::LiftedTag>>>;
-using Ground = fd::ArithmeticOperator<ygg::Data<fd::FunctionExpression<::tyr::GroundTag>>>;
+using Lifted = fd::ArithmeticOperator<::tyr::LiftedTag>;
+using Ground = fd::ArithmeticOperator<::tyr::GroundTag>;
 
 static_assert(ArithmeticOperatorContract<Lifted>);
 static_assert(ArithmeticOperatorContract<Ground>);
-static_assert(std::same_as<ygg::View<ygg::Data<Lifted>, fd::Repository>, fd::LiftedArithmeticOperatorView>);
-static_assert(std::same_as<ygg::View<ygg::Data<Ground>, fd::Repository>, fd::GroundArithmeticOperatorView>);
+static_assert(std::same_as<ygg::View<ygg::Data<Lifted>, fd::Repository>, fd::ArithmeticOperatorView<::tyr::LiftedTag>>);
+static_assert(std::same_as<ygg::View<ygg::Data<Ground>, fd::Repository>, fd::ArithmeticOperatorView<::tyr::GroundTag>>);
 static_assert(std::constructible_from<ygg::Data<Lifted>, ygg::Data<Lifted>::ViewVariant<fd::Repository>>);
 static_assert(std::constructible_from<ygg::Data<Ground>, ygg::Data<Ground>::ViewVariant<fd::Repository>>);

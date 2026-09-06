@@ -12,15 +12,15 @@
 namespace tyr::serialization
 {
 
-template<::tyr::TaskKind T>
-struct Serializer<::tyr::formalism::planning::AxiomView<T>>
+template<TaskKind T>
+struct Serializer<formalism::planning::AxiomView<T>>
 {
-    static std::string name() { return std::string(std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "Axiom"; }
+    static std::string name() { return std::string(std::same_as<T, GroundTag> ? T::name : "") + "Axiom"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::AxiomView<T>& value)
+    static void save(Archive& ar, const formalism::planning::AxiomView<T>& value)
     {
-        if constexpr (std::same_as<T, ::tyr::LiftedTag>)
+        if constexpr (std::same_as<T, LiftedTag>)
         {
             ar.field("variables", value.get_variables());
         }

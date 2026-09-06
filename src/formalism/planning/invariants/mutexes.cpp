@@ -34,7 +34,7 @@ namespace
 {
 
 std::optional<std::vector<ygg::Index<Object>>>
-extract_rigid_values(const Invariant& inv, const MutableAtom<FluentTag>& pattern, AtomView<::tyr::GroundTag, FluentTag> atom)
+extract_rigid_values(const Invariant& inv, const MutableAtom<FluentTag>& pattern, AtomView<GroundTag, FluentTag> atom)
 {
     const auto sigma = match_invariant_against_ground_atom(inv, pattern, MutableAtom<FluentTag>(atom));
     if (!sigma.has_value())
@@ -80,7 +80,7 @@ extract_rigid_values(const Invariant& inv, const MutableAtom<FluentTag>& pattern
 bool instantiate_matches_ground_atom(const MutableAtom<FluentTag>& pattern,
                                      const std::vector<ygg::Index<Object>>& rigid_values,
                                      std::optional<ygg::Index<Object>> counted_value,
-                                     AtomView<::tyr::GroundTag, FluentTag> ground_atom)
+                                     AtomView<GroundTag, FluentTag> ground_atom)
 {
     if (pattern.predicate != ground_atom.get_predicate())
         return false;
@@ -121,17 +121,17 @@ bool instantiate_matches_ground_atom(const MutableAtom<FluentTag>& pattern,
     return true;
 }
 
-bool initial_atom_matches_part(const Invariant& inv, const MutableAtom<FluentTag>& part, AtomView<::tyr::GroundTag, FluentTag> atom)
+bool initial_atom_matches_part(const Invariant& inv, const MutableAtom<FluentTag>& part, AtomView<GroundTag, FluentTag> atom)
 {
     return match_invariant_against_ground_atom(inv, part, MutableAtom<FluentTag>(atom)).has_value();
 }
 
-AtomViewList<::tyr::GroundTag, FluentTag>
-instantiate_group(const Invariant& inv, const std::vector<ygg::Index<Object>>& rigid_values, const AtomViewList<::tyr::GroundTag, FluentTag>& all_atoms)
+AtomViewList<GroundTag, FluentTag>
+instantiate_group(const Invariant& inv, const std::vector<ygg::Index<Object>>& rigid_values, const AtomViewList<GroundTag, FluentTag>& all_atoms)
 {
     assert(inv.num_counted_variables <= 1);
 
-    AtomViewList<::tyr::GroundTag, FluentTag> result;
+    AtomViewList<GroundTag, FluentTag> result;
     std::vector<bool> seen(all_atoms.size(), false);
 
     for (const auto& pattern : inv.atoms)
@@ -186,9 +186,9 @@ struct PrecomputedGroup : ygg::comparison::Mixin<PrecomputedGroup>
 {
     size_t inv_index;
     std::vector<ygg::Index<Object>> rigid_values;
-    AtomViewList<::tyr::GroundTag, FluentTag> atoms;
+    AtomViewList<GroundTag, FluentTag> atoms;
 
-    PrecomputedGroup(size_t inv_index, std::vector<ygg::Index<Object>> rigid_values, AtomViewList<::tyr::GroundTag, FluentTag> atoms) :
+    PrecomputedGroup(size_t inv_index, std::vector<ygg::Index<Object>> rigid_values, AtomViewList<GroundTag, FluentTag> atoms) :
         inv_index(inv_index),
         rigid_values(std::move(rigid_values)),
         atoms(std::move(atoms))
@@ -208,7 +208,7 @@ struct GroupKey : ygg::comparison::Mixin<GroupKey>
     auto identifying_members() const noexcept { return std::tie(invariant_index, rigid_values); }
 };
 
-bool structural_less(AtomView<::tyr::GroundTag, FluentTag> lhs, AtomView<::tyr::GroundTag, FluentTag> rhs)
+bool structural_less(AtomView<GroundTag, FluentTag> lhs, AtomView<GroundTag, FluentTag> rhs)
 {
     const auto lhs_key = std::tuple(lhs.get_predicate(), lhs.get_objects());
     const auto rhs_key = std::tuple(rhs.get_predicate(), rhs.get_objects());
@@ -216,7 +216,7 @@ bool structural_less(AtomView<::tyr::GroundTag, FluentTag> lhs, AtomView<::tyr::
     return ygg::Less<std::remove_cvref_t<decltype(lhs_key)>> {}(lhs_key, rhs_key);
 }
 
-bool structural_less(const AtomViewList<::tyr::GroundTag, FluentTag>& lhs, const AtomViewList<::tyr::GroundTag, FluentTag>& rhs)
+bool structural_less(const AtomViewList<GroundTag, FluentTag>& lhs, const AtomViewList<GroundTag, FluentTag>& rhs)
 {
     return std::lexicographical_compare(lhs.begin(),
                                         lhs.end(),
@@ -225,9 +225,9 @@ bool structural_less(const AtomViewList<::tyr::GroundTag, FluentTag>& lhs, const
                                         [](const auto lhs_atom, const auto rhs_atom) { return structural_less(lhs_atom, rhs_atom); });
 }
 
-AtomViewList<::tyr::GroundTag, FluentTag> uncovered_atoms(const PrecomputedGroup& group, const std::vector<bool>& uncovered)
+AtomViewList<GroundTag, FluentTag> uncovered_atoms(const PrecomputedGroup& group, const std::vector<bool>& uncovered)
 {
-    auto result = AtomViewList<::tyr::GroundTag, FluentTag> {};
+    auto result = AtomViewList<GroundTag, FluentTag> {};
     result.reserve(group.atoms.size());
 
     for (const auto atom : group.atoms)
@@ -261,8 +261,8 @@ bool uncovered_structural_less(const PrecomputedGroup& lhs, const PrecomputedGro
     return deterministic_group_less(lhs, rhs);
 }
 
-std::vector<PrecomputedGroup> precompute_groups(const AtomViewList<::tyr::GroundTag, FluentTag>& initial_atoms,
-                                                const AtomViewList<::tyr::GroundTag, FluentTag>& all_atoms,
+std::vector<PrecomputedGroup> precompute_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
+                                                const AtomViewList<GroundTag, FluentTag>& all_atoms,
                                                 const InvariantList& invariants)
 {
     std::vector<PrecomputedGroup> groups;
@@ -348,9 +348,9 @@ std::optional<size_t> select_best_group(const std::vector<PrecomputedGroup>& gro
     return best_group_index;
 }
 
-AtomViewList<::tyr::GroundTag, FluentTag> build_uncovered_subgroup(const PrecomputedGroup& group, const std::vector<bool>& uncovered)
+AtomViewList<GroundTag, FluentTag> build_uncovered_subgroup(const PrecomputedGroup& group, const std::vector<bool>& uncovered)
 {
-    AtomViewList<::tyr::GroundTag, FluentTag> result;
+    AtomViewList<GroundTag, FluentTag> result;
     result.reserve(group.atoms.size());
 
     for (const auto atom : group.atoms)
@@ -363,7 +363,7 @@ AtomViewList<::tyr::GroundTag, FluentTag> build_uncovered_subgroup(const Precomp
     return result;
 }
 
-void mark_group_covered(const AtomViewList<::tyr::GroundTag, FluentTag>& group, std::vector<bool>& uncovered, size_t& num_uncovered)
+void mark_group_covered(const AtomViewList<GroundTag, FluentTag>& group, std::vector<bool>& uncovered, size_t& num_uncovered)
 {
     for (const auto atom : group)
     {
@@ -376,13 +376,13 @@ void mark_group_covered(const AtomViewList<::tyr::GroundTag, FluentTag>& group, 
     }
 }
 
-std::vector<AtomViewList<::tyr::GroundTag, FluentTag>> choose_groups_greedily(const std::vector<PrecomputedGroup>& groups,
-                                                                              const AtomViewList<::tyr::GroundTag, FluentTag>& all_atoms)
+std::vector<AtomViewList<GroundTag, FluentTag>> choose_groups_greedily(const std::vector<PrecomputedGroup>& groups,
+                                                                              const AtomViewList<GroundTag, FluentTag>& all_atoms)
 {
     std::vector<bool> uncovered(all_atoms.size(), true);
     size_t num_uncovered = all_atoms.size();
 
-    std::vector<AtomViewList<::tyr::GroundTag, FluentTag>> result;
+    std::vector<AtomViewList<GroundTag, FluentTag>> result;
     result.reserve(groups.size() + all_atoms.size());
 
     while (num_uncovered > 0)
@@ -402,7 +402,7 @@ std::vector<AtomViewList<::tyr::GroundTag, FluentTag>> choose_groups_greedily(co
     for (size_t pos = 0; pos < all_atoms.size(); ++pos)
     {
         if (uncovered[pos])
-            result.push_back(AtomViewList<::tyr::GroundTag, FluentTag> { all_atoms[pos] });
+            result.push_back(AtomViewList<GroundTag, FluentTag> { all_atoms[pos] });
     }
 
     return result;
@@ -410,8 +410,8 @@ std::vector<AtomViewList<::tyr::GroundTag, FluentTag>> choose_groups_greedily(co
 
 }  // namespace
 
-std::vector<AtomViewList<::tyr::GroundTag, FluentTag>> compute_mutex_groups(const AtomViewList<::tyr::GroundTag, FluentTag>& initial_atoms,
-                                                                            const AtomViewList<::tyr::GroundTag, FluentTag>& all_atoms,
+std::vector<AtomViewList<GroundTag, FluentTag>> compute_mutex_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
+                                                                            const AtomViewList<GroundTag, FluentTag>& all_atoms,
                                                                             const InvariantList& invariants)
 {
     for (ygg::uint_t i = 0; i < all_atoms.size(); ++i)

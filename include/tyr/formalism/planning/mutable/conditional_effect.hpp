@@ -48,7 +48,7 @@ struct MutableConditionalEffect : ygg::comparison::Mixin<MutableConditionalEffec
         effect(std::move(effect))
     {
     }
-    MutableConditionalEffect(size_t num_parent_variables, ConditionalEffectView<::tyr::LiftedTag> element) :
+    MutableConditionalEffect(size_t num_parent_variables, ConditionalEffectView<LiftedTag> element) :
         num_parent_variables(num_parent_variables),
         num_variables(element.get_arity()),
         condition(num_parent_variables, element.get_condition()),
@@ -65,9 +65,9 @@ using MutableConditionalEffectList = std::vector<MutableConditionalEffect>;
 namespace tyr::formalism::unification
 {
 template<>
-struct structure_traits<tyr::formalism::planning::MutableConditionalEffect>
+struct structure_traits<planning::MutableConditionalEffect>
 {
-    using Type = tyr::formalism::planning::MutableConditionalEffect;
+    using Type = planning::MutableConditionalEffect;
 
     template<typename F>
     static bool zip_terms(const Type& lhs, const Type& rhs, F&& f)
@@ -78,7 +78,7 @@ struct structure_traits<tyr::formalism::planning::MutableConditionalEffect>
         if (lhs.num_variables != rhs.num_variables)
             return false;
 
-        return tyr::formalism::unification::zip_terms(lhs.condition, rhs.condition, f) && tyr::formalism::unification::zip_terms(lhs.effect, rhs.effect, f);
+        return unification::zip_terms(lhs.condition, rhs.condition, f) && unification::zip_terms(lhs.effect, rhs.effect, f);
     }
 
     template<typename F>
@@ -86,8 +86,8 @@ struct structure_traits<tyr::formalism::planning::MutableConditionalEffect>
     {
         return Type(value.num_parent_variables,
                     value.num_variables,
-                    tyr::formalism::unification::transform_terms(value.condition, f),
-                    tyr::formalism::unification::transform_terms(value.effect, f));
+                    unification::transform_terms(value.condition, f),
+                    unification::transform_terms(value.effect, f));
     }
 };
 }

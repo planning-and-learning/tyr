@@ -44,8 +44,8 @@ struct FFRPGHeuristic<Kind>::Impl :
 {
     using Base =
         detail::RPGEvaluator<Impl, Kind, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>, datalog::TerminationPolicy<datalog::SumAggregation>>;
-    using PredicateHead = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
-    using FunctionHead = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
+    using PredicateHead = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
+    using FunctionHead = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
     using NumericSupportWorkspace = datalog::NumericSupportSelectorWorkspace;
 
     struct NumericCertificate : ygg::comparison::Mixin<NumericCertificate>
@@ -70,7 +70,7 @@ struct FFRPGHeuristic<Kind>::Impl :
     {
     }
 
-    void set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal)
+    void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
     {
         Base::set_goal(goal);
         m_relaxed_plan.clear();
@@ -94,7 +94,7 @@ struct FFRPGHeuristic<Kind>::Impl :
         const auto state_context = StateContext<Kind>(this->get_task(), state, ygg::float_t(0));
         if (const auto& goal = this->m_workspace.tp.get_goal())
         {
-            for (const auto literal : goal->template get_literals<::tyr::formalism::FluentTag>())
+            for (const auto literal : goal->template get_literals<formalism::FluentTag>())
             {
                 assert(literal.get_polarity());
                 extract_relaxed_plan(literal.get_atom().get_row(), state_context);
@@ -133,12 +133,12 @@ private:
         if (!annotation)
             return;
 
-        const auto* witness = std::get_if<datalog::WitnessAnnotation<::tyr::formalism::FunctionTag>>(annotation);
+        const auto* witness = std::get_if<datalog::WitnessAnnotation<formalism::FunctionTag>>(annotation);
         if (witness)
             extract_relaxed_plan(*witness, state_context);
     }
 
-    void extract_numeric_constraint_support(::tyr::formalism::datalog::GroundBooleanOperatorView constraint, const StateContext<Kind>& state_context)
+    void extract_numeric_constraint_support(formalism::datalog::BooleanOperatorView<GroundTag> constraint, const StateContext<Kind>& state_context)
     {
         const auto& selector = this->m_workspace.get_numeric_support_selector();
         selector.for_each_constraint_support(constraint,
@@ -147,7 +147,7 @@ private:
                                              [&](const auto head, const auto interval, const auto&) { extract_relaxed_plan(head, interval, state_context); });
     }
 
-    template<::tyr::formalism::RelationKind R>
+    template<formalism::RelationKind R>
     void extract_relaxed_plan(const datalog::WitnessAnnotation<R>& witness, const StateContext<Kind>& state_context)
     {
         if (const auto action = this->get_action(witness))
@@ -179,8 +179,8 @@ private:
     ygg::UnorderedSet<NumericCertificate> m_numeric_markings;
     ActionExecutor m_executor;
     NumericSupportWorkspace m_numeric_support_workspace;
-    ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView> m_relaxed_plan;
-    ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView> m_preferred_actions;
+    ygg::UnorderedSet<formalism::planning::ActionBindingView> m_relaxed_plan;
+    ygg::UnorderedSet<formalism::planning::ActionBindingView> m_preferred_actions;
 };
 
 template<TaskKind Kind>
@@ -210,7 +210,7 @@ FFRPGHeuristicPtr<Kind> FFRPGHeuristic<Kind>::create(TaskPtr<Kind> task, ygg::Ex
 }
 
 template<TaskKind Kind>
-void FFRPGHeuristic<Kind>::set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal)
+void FFRPGHeuristic<Kind>::set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
 {
     m_impl->set_goal(goal);
 }
@@ -228,7 +228,7 @@ HeuristicPtr<Kind> FFRPGHeuristic<Kind>::make_worker(ygg::ExecutionContextPtr ex
 }
 
 template<TaskKind Kind>
-const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>& FFRPGHeuristic<Kind>::get_preferred_actions()
+const ygg::UnorderedSet<formalism::planning::ActionBindingView>& FFRPGHeuristic<Kind>::get_preferred_actions()
 {
     return m_impl->get_preferred_actions();
 }

@@ -47,8 +47,8 @@ concept SuccessorGeneratorConcept = requires(T& r,
                                              const Node<Kind>& node,
                                              NodeList<Kind>& successor_nodes,
                                              LabeledNodeList<Kind>& labeled_successor_nodes,
-                                             std::vector<::tyr::formalism::planning::ActionBindingView>& action_bindings,
-                                             ::tyr::formalism::planning::ActionBindingView binding,
+                                             std::vector<formalism::planning::ActionBindingView>& action_bindings,
+                                             formalism::planning::ActionBindingView binding,
                                              StateRepository<Kind>& state_repository,
                                              AxiomEvaluator<Kind>& axiom_evaluator,
                                              ygg::Builder<State<Kind>>& state_builder,
@@ -61,7 +61,7 @@ concept SuccessorGeneratorConcept = requires(T& r,
     { r.get_successor_nodes(node, state_repository, axiom_evaluator, successor_nodes) } -> std::same_as<void>;
     { r.get_labeled_successor_nodes(node, state_repository, axiom_evaluator) } -> std::same_as<LabeledNodeList<Kind>>;
     { r.get_labeled_successor_nodes(node, state_repository, axiom_evaluator, labeled_successor_nodes) } -> std::same_as<void>;
-    { r.get_applicable_action_bindings(node) } -> std::same_as<std::vector<::tyr::formalism::planning::ActionBindingView>>;
+    { r.get_applicable_action_bindings(node) } -> std::same_as<std::vector<formalism::planning::ActionBindingView>>;
     { r.get_applicable_action_bindings(node, action_bindings) } -> std::same_as<void>;
     { r.get_successor_node(node, binding, state_repository, axiom_evaluator) } -> std::same_as<Node<Kind>>;
     { r.generate_successor_state(node, binding, state_builder) } -> std::same_as<PendingActionResult>;

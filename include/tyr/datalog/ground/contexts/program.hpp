@@ -50,7 +50,7 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
 
         auto program() const noexcept { return m_cws.program; }
         const auto& facts() const noexcept { return m_cws.facts; }
-        template<::tyr::formalism::RelationKind R>
+        template<formalism::RelationKind R>
         const auto& dependencies() const noexcept
         {
             return m_cws.template get_dependencies<R>();
@@ -95,7 +95,7 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
     void initialize(const Range& fluent_atoms)
     {
         m_out.facts().reset();
-        m_out.facts().fact_sets.function.insert(m_in.program().template get_fterm_values<::tyr::formalism::FluentTag>());
+        m_out.facts().fact_sets.function.insert(m_in.program().template get_fterm_values<formalism::FluentTag>());
         for (const auto atom : fluent_atoms)
             m_out.facts().fact_sets.predicate.insert(atom);
         initialize();

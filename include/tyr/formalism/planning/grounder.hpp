@@ -41,69 +41,68 @@ template<FactKind T>
 std::pair<FunctionBindingView<T>, bool> ground(TermListView terms, FunctionView<T> function, GrounderContext& context);
 
 template<FactKind T>
-std::pair<FunctionTermView<::tyr::GroundTag, T>, bool> ground(FunctionTermView<::tyr::LiftedTag, T> element, GrounderContext& context);
+std::pair<FunctionTermView<GroundTag, T>, bool> ground(FunctionTermView<LiftedTag, T> element, GrounderContext& context);
 
-FunctionExpressionView<::tyr::GroundTag> ground(FunctionExpressionView<::tyr::LiftedTag> element, GrounderContext& context);
+FunctionExpressionView<GroundTag> ground(FunctionExpressionView<LiftedTag> element, GrounderContext& context);
 
-std::pair<GroundUnaryOperatorView, bool> ground(LiftedUnaryOperatorView element, GrounderContext& context);
+std::pair<UnaryOperatorView<GroundTag>, bool> ground(UnaryOperatorView<LiftedTag> element, GrounderContext& context);
 
 template<BinaryOperatorKind O>
-std::pair<GroundBinaryOperatorView<O>, bool> ground(LiftedBinaryOperatorView<O> element, GrounderContext& context);
+std::pair<BinaryOperatorView<GroundTag, O>, bool> ground(BinaryOperatorView<LiftedTag, O> element, GrounderContext& context);
 
-std::pair<GroundMultiOperatorView, bool> ground(LiftedMultiOperatorView element, GrounderContext& context);
+std::pair<MultiOperatorView<GroundTag>, bool> ground(MultiOperatorView<LiftedTag> element, GrounderContext& context);
 
-GroundBooleanOperatorView ground(LiftedBooleanOperatorView element, GrounderContext& context);
+BooleanOperatorView<GroundTag> ground(BooleanOperatorView<LiftedTag> element, GrounderContext& context);
 
-GroundArithmeticOperatorView ground(LiftedArithmeticOperatorView element, GrounderContext& context);
+ArithmeticOperatorView<GroundTag> ground(ArithmeticOperatorView<LiftedTag> element, GrounderContext& context);
 
 template<FactKind T>
 std::pair<PredicateBindingView<T>, bool> ground(TermListView terms, PredicateView<T> predicate, GrounderContext& context);
 
 template<FactKind T>
-std::pair<AtomView<::tyr::GroundTag, T>, bool> ground(AtomView<::tyr::LiftedTag, T> element, GrounderContext& context);
+std::pair<AtomView<GroundTag, T>, bool> ground(AtomView<LiftedTag, T> element, GrounderContext& context);
 
-ygg::Data<FDRFact<FluentTag>> ground(AtomView<::tyr::LiftedTag, FluentTag> element, GrounderContext& context, FDRContext& fdr);
-
-template<FactKind T>
-std::pair<LiteralView<::tyr::GroundTag, T>, bool> ground(LiteralView<::tyr::LiftedTag, T> element, GrounderContext& context);
-
-ygg::Data<FDRFact<FluentTag>> ground(LiteralView<::tyr::LiftedTag, FluentTag> element, GrounderContext& context, FDRContext& fdr);
-
-std::pair<ConjunctiveConditionView<::tyr::GroundTag>, bool>
-ground(ConjunctiveConditionView<::tyr::LiftedTag> element, GrounderContext& context, FDRContext& fdr);
+ygg::Data<FDRFact<FluentTag>> ground(AtomView<LiftedTag, FluentTag> element, GrounderContext& context, FDRContext& fdr);
 
 template<FactKind T>
-std::pair<NumericEffectView<::tyr::GroundTag, T>, bool> ground(NumericEffectView<::tyr::LiftedTag, T> element, GrounderContext& context);
+std::pair<LiteralView<GroundTag, T>, bool> ground(LiteralView<LiftedTag, T> element, GrounderContext& context);
+
+ygg::Data<FDRFact<FluentTag>> ground(LiteralView<LiftedTag, FluentTag> element, GrounderContext& context, FDRContext& fdr);
+
+std::pair<ConjunctiveConditionView<GroundTag>, bool> ground(ConjunctiveConditionView<LiftedTag> element, GrounderContext& context, FDRContext& fdr);
 
 template<FactKind T>
-NumericEffectOperatorView<::tyr::GroundTag, T> ground(NumericEffectOperatorView<::tyr::LiftedTag, T> element, GrounderContext& context);
+std::pair<NumericEffectView<GroundTag, T>, bool> ground(NumericEffectView<LiftedTag, T> element, GrounderContext& context);
 
-std::pair<ConjunctiveEffectView<::tyr::GroundTag>, bool> ground(ConjunctiveEffectView<::tyr::LiftedTag> element, GrounderContext& context, FDRContext& fdr);
+template<FactKind T>
+NumericEffectOperatorView<GroundTag, T> ground(NumericEffectOperatorView<LiftedTag, T> element, GrounderContext& context);
 
-std::pair<ConditionalEffectView<::tyr::GroundTag>, bool> ground(ConditionalEffectView<::tyr::LiftedTag> element, GrounderContext& context, FDRContext& fdr);
+std::pair<ConjunctiveEffectView<GroundTag>, bool> ground(ConjunctiveEffectView<LiftedTag> element, GrounderContext& context, FDRContext& fdr);
 
-std::pair<ActionBindingView, bool> ground(ActionView<::tyr::LiftedTag> action, GrounderContext& context);
+std::pair<ConditionalEffectView<GroundTag>, bool> ground(ConditionalEffectView<LiftedTag> element, GrounderContext& context, FDRContext& fdr);
 
-std::pair<ActionView<::tyr::GroundTag>, bool> ground(ActionView<::tyr::LiftedTag> element,
-                                                     GrounderContext& context,
-                                                     const analysis::ActionDomain& action_domains,
-                                                     analysis::CompatibilityWorkspace& compatibility_workspace,
-                                                     FDRContext& fdr);
+std::pair<ActionBindingView, bool> ground(ActionView<LiftedTag> action, GrounderContext& context);
 
-std::pair<AxiomBindingView, bool> ground(AxiomView<::tyr::LiftedTag> axiom, GrounderContext& context);
+std::pair<ActionView<GroundTag>, bool> ground(ActionView<LiftedTag> element,
+                                              GrounderContext& context,
+                                              const analysis::ActionDomain& action_domains,
+                                              analysis::CompatibilityWorkspace& compatibility_workspace,
+                                              FDRContext& fdr);
 
-std::pair<AxiomView<::tyr::GroundTag>, bool>
-ground(AxiomView<::tyr::LiftedTag> element, GrounderContext& context, GrounderCacheEntry<Axiom<::tyr::LiftedTag>>& cache, FDRContext& fdr);
+std::pair<AxiomBindingView, bool> ground(AxiomView<LiftedTag> axiom, GrounderContext& context);
+
+std::pair<AxiomView<GroundTag>, bool>
+ground(AxiomView<LiftedTag> element, GrounderContext& context, GrounderCacheEntry<Axiom<LiftedTag>>& cache, FDRContext& fdr);
 
 /**
  * try_ground
  */
 
 template<FactKind T>
-std::optional<FunctionTermView<::tyr::GroundTag, T>> try_ground(FunctionTermView<::tyr::LiftedTag, T> element, GrounderContext& context);
+std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<LiftedTag, T> element, GrounderContext& context);
 
 template<FactKind T>
-std::optional<AtomView<::tyr::GroundTag, T>> try_ground(AtomView<::tyr::LiftedTag, T> element, GrounderContext& context);
+std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element, GrounderContext& context);
 
 /**
  * ground
@@ -112,7 +111,7 @@ std::optional<AtomView<::tyr::GroundTag, T>> try_ground(AtomView<::tyr::LiftedTa
 template<FactKind T>
 std::pair<FunctionBindingView<T>, bool> ground(TermListView terms, FunctionView<T> function, GrounderContext& context)
 {
-    auto binding = ::tyr::formalism::planning::checkout<RelationBinding<Function<T>>>(context.builder);
+    auto binding = planning::checkout<RelationBinding<Function<T>>>(context.builder);
 
     binding->relation = function.get_index();
     for (const auto term : terms)
@@ -133,23 +132,23 @@ std::pair<FunctionBindingView<T>, bool> ground(TermListView terms, FunctionView<
     }
 
     // Canonicalize and Serialize
-    return ::tyr::formalism::planning::get_or_create(context.destination, *binding);
+    return planning::get_or_create(context.destination, *binding);
 }
 
 template<FactKind T>
-std::pair<FunctionTermView<::tyr::GroundTag, T>, bool> ground(FunctionTermView<::tyr::LiftedTag, T> element, GrounderContext& context)
+std::pair<FunctionTermView<GroundTag, T>, bool> ground(FunctionTermView<LiftedTag, T> element, GrounderContext& context)
 {
     // Fetch and clear
-    auto fterm = ::tyr::formalism::planning::checkout<FunctionTerm<::tyr::GroundTag, T>>(context.builder);
+    auto fterm = planning::checkout<FunctionTerm<GroundTag, T>>(context.builder);
 
     // Fill data
     fterm->binding = ground(element.get_terms(), element.get_function(), context).first.get_index();
 
     // Canonicalize and Serialize
-    return ::tyr::formalism::planning::get_or_create(context.destination, *fterm);
+    return planning::get_or_create(context.destination, *fterm);
 }
 
-inline FunctionExpressionView<::tyr::GroundTag> ground(FunctionExpressionView<::tyr::LiftedTag> element, GrounderContext& context)
+inline FunctionExpressionView<GroundTag> ground(FunctionExpressionView<LiftedTag> element, GrounderContext& context)
 {
     const auto data = visit(
         [&](auto&& arg)
@@ -157,34 +156,34 @@ inline FunctionExpressionView<::tyr::GroundTag> ground(FunctionExpressionView<::
             using Alternative = std::decay_t<decltype(arg)>;
 
             if constexpr (std::is_same_v<Alternative, ygg::float_t>)
-                return ygg::Data<FunctionExpression<::tyr::GroundTag>>(arg);
-            else if constexpr (std::is_same_v<Alternative, LiftedArithmeticOperatorView>)
-                return ygg::Data<FunctionExpression<::tyr::GroundTag>>(ground(arg, context).get_data());
+                return ygg::Data<FunctionExpression<GroundTag>>(arg);
+            else if constexpr (std::is_same_v<Alternative, ArithmeticOperatorView<LiftedTag>>)
+                return ygg::Data<FunctionExpression<GroundTag>>(ground(arg, context).get_data());
             else
-                return ygg::Data<FunctionExpression<::tyr::GroundTag>>(ground(arg, context).first.get_index());
+                return ygg::Data<FunctionExpression<GroundTag>>(ground(arg, context).first.get_index());
         },
         element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
-inline std::pair<GroundUnaryOperatorView, bool> ground(LiftedUnaryOperatorView element, GrounderContext& context)
+inline std::pair<UnaryOperatorView<GroundTag>, bool> ground(UnaryOperatorView<LiftedTag> element, GrounderContext& context)
 {
     // Fetch and clear
-    auto unary = ::tyr::formalism::planning::checkout<UnaryOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>(context.builder);
+    auto unary = planning::checkout<UnaryOperator<GroundTag>>(context.builder);
 
     // Fill data
     unary->operator_kind = element.get_operator();
     unary->arg = ground(element.get_arg(), context).get_data();
 
     // Canonicalize and Serialize
-    return ::tyr::formalism::planning::get_or_create(context.destination, *unary);
+    return planning::get_or_create(context.destination, *unary);
 }
 
 template<BinaryOperatorKind O>
-std::pair<GroundBinaryOperatorView<O>, bool> ground(LiftedBinaryOperatorView<O> element, GrounderContext& context)
+std::pair<BinaryOperatorView<GroundTag, O>, bool> ground(BinaryOperatorView<LiftedTag, O> element, GrounderContext& context)
 {
     // Fetch and clear
-    auto binary = ::tyr::formalism::planning::checkout<BinaryOperator<O, ygg::Data<FunctionExpression<::tyr::GroundTag>>>>(context.builder);
+    auto binary = planning::checkout<BinaryOperator<GroundTag, O>>(context.builder);
 
     // Fill data
     binary->operator_kind = element.get_operator();
@@ -192,13 +191,13 @@ std::pair<GroundBinaryOperatorView<O>, bool> ground(LiftedBinaryOperatorView<O> 
     binary->rhs = ground(element.get_rhs(), context).get_data();
 
     // Canonicalize and Serialize
-    return ::tyr::formalism::planning::get_or_create(context.destination, *binary);
+    return planning::get_or_create(context.destination, *binary);
 }
 
-inline std::pair<GroundMultiOperatorView, bool> ground(LiftedMultiOperatorView element, GrounderContext& context)
+inline std::pair<MultiOperatorView<GroundTag>, bool> ground(MultiOperatorView<LiftedTag> element, GrounderContext& context)
 {
     // Fetch and clear
-    auto multi = ::tyr::formalism::planning::checkout<MultiOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>(context.builder);
+    auto multi = planning::checkout<MultiOperator<GroundTag>>(context.builder);
 
     // Fill data
     multi->operator_kind = element.get_operator();
@@ -206,31 +205,27 @@ inline std::pair<GroundMultiOperatorView, bool> ground(LiftedMultiOperatorView e
         multi->args.push_back(ground(arg, context).get_data());
 
     // Canonicalize and Serialize
-    return ::tyr::formalism::planning::get_or_create(context.destination, *multi);
+    return planning::get_or_create(context.destination, *multi);
 }
 
-inline GroundBooleanOperatorView ground(LiftedBooleanOperatorView element, GrounderContext& context)
+inline BooleanOperatorView<GroundTag> ground(BooleanOperatorView<LiftedTag> element, GrounderContext& context)
 {
-    const auto data = visit(
-        [&](auto&& arg)
-        { return ygg::Data<BooleanOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>(arg.get_operator(), ground(arg, context).first.get_index()); },
-        element.get_variant());
+    const auto data = visit([&](auto&& arg) { return ygg::Data<BooleanOperator<GroundTag>>(arg.get_operator(), ground(arg, context).first.get_index()); },
+                            element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
-inline GroundArithmeticOperatorView ground(LiftedArithmeticOperatorView element, GrounderContext& context)
+inline ArithmeticOperatorView<GroundTag> ground(ArithmeticOperatorView<LiftedTag> element, GrounderContext& context)
 {
-    const auto data = visit(
-        [&](auto&& arg)
-        { return ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>(arg.get_operator(), ground(arg, context).first.get_index()); },
-        element.get_variant());
+    const auto data = visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<GroundTag>>(arg.get_operator(), ground(arg, context).first.get_index()); },
+                            element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
 template<FactKind T>
 std::pair<PredicateBindingView<T>, bool> ground(TermListView terms, PredicateView<T> predicate, GrounderContext& context)
 {
-    auto binding = ::tyr::formalism::planning::checkout<RelationBinding<Predicate<T>>>(context.builder);
+    auto binding = planning::checkout<RelationBinding<Predicate<T>>>(context.builder);
 
     binding->relation = predicate.get_index();
     for (const auto term : terms)
@@ -251,42 +246,42 @@ std::pair<PredicateBindingView<T>, bool> ground(TermListView terms, PredicateVie
     }
 
     // Canonicalize and Serialize
-    return ::tyr::formalism::planning::get_or_create(context.destination, *binding);
+    return planning::get_or_create(context.destination, *binding);
 }
 
 template<FactKind T>
-std::pair<AtomView<::tyr::GroundTag, T>, bool> ground(AtomView<::tyr::LiftedTag, T> element, GrounderContext& context)
+std::pair<AtomView<GroundTag, T>, bool> ground(AtomView<LiftedTag, T> element, GrounderContext& context)
 {
     // Fetch and clear
-    auto atom = ::tyr::formalism::planning::checkout<Atom<::tyr::GroundTag, T>>(context.builder);
+    auto atom = planning::checkout<Atom<GroundTag, T>>(context.builder);
 
     // Fill data
     atom->binding = ground(element.get_terms(), element.get_predicate(), context).first.get_index();
 
     // Canonicalize and Serialize
-    return ::tyr::formalism::planning::get_or_create(context.destination, *atom);
+    return planning::get_or_create(context.destination, *atom);
 }
 
-inline ygg::Data<FDRFact<FluentTag>> ground(AtomView<::tyr::LiftedTag, FluentTag> element, GrounderContext& context, FDRContext& fdr)
+inline ygg::Data<FDRFact<FluentTag>> ground(AtomView<LiftedTag, FluentTag> element, GrounderContext& context, FDRContext& fdr)
 {
     return fdr.get_fact(ground(element, context).first).get_data();
 }
 
 template<FactKind T>
-std::pair<LiteralView<::tyr::GroundTag, T>, bool> ground(LiteralView<::tyr::LiftedTag, T> element, GrounderContext& context)
+std::pair<LiteralView<GroundTag, T>, bool> ground(LiteralView<LiftedTag, T> element, GrounderContext& context)
 {
     // Fetch and clear
-    auto ground_literal = ::tyr::formalism::planning::checkout<Literal<::tyr::GroundTag, T>>(context.builder);
+    auto ground_literal = planning::checkout<Literal<GroundTag, T>>(context.builder);
 
     // Fill data
     ground_literal->polarity = element.get_polarity();
     ground_literal->atom = ground(element.get_atom(), context).first.get_index();
 
     // Canonicalize and Serialize
-    return ::tyr::formalism::planning::get_or_create(context.destination, *ground_literal);
+    return planning::get_or_create(context.destination, *ground_literal);
 }
 
-inline ygg::Data<FDRFact<FluentTag>> ground(LiteralView<::tyr::LiftedTag, FluentTag> element, GrounderContext& context, FDRContext& fdr)
+inline ygg::Data<FDRFact<FluentTag>> ground(LiteralView<LiftedTag, FluentTag> element, GrounderContext& context, FDRContext& fdr)
 {
     auto fact = ground(element.get_atom(), context, fdr);
     if (!element.get_polarity())
@@ -295,11 +290,10 @@ inline ygg::Data<FDRFact<FluentTag>> ground(LiteralView<::tyr::LiftedTag, Fluent
     return fact;
 }
 
-inline std::pair<ConjunctiveConditionView<::tyr::GroundTag>, bool>
-ground(ConjunctiveConditionView<::tyr::LiftedTag> element, GrounderContext& context, FDRContext& fdr)
+inline std::pair<ConjunctiveConditionView<GroundTag>, bool> ground(ConjunctiveConditionView<LiftedTag> element, GrounderContext& context, FDRContext& fdr)
 {
     // Fetch and clear
-    auto conj_cond = ::tyr::formalism::planning::checkout<ConjunctiveCondition<::tyr::GroundTag>>(context.builder);
+    auto conj_cond = planning::checkout<ConjunctiveCondition<GroundTag>>(context.builder);
 
     // Fill data
     for (const auto literal : element.template get_literals<StaticTag>())
@@ -317,14 +311,14 @@ ground(ConjunctiveConditionView<::tyr::LiftedTag> element, GrounderContext& cont
         conj_cond->numeric_constraints.push_back(ground(numeric_constraint, context).get_data());
 
     // Canonicalize and Serialize
-    return ::tyr::formalism::planning::get_or_create(context.destination, *conj_cond);
+    return planning::get_or_create(context.destination, *conj_cond);
 }
 
 template<FactKind T>
-std::pair<NumericEffectView<::tyr::GroundTag, T>, bool> ground(NumericEffectView<::tyr::LiftedTag, T> element, GrounderContext& context)
+std::pair<NumericEffectView<GroundTag, T>, bool> ground(NumericEffectView<LiftedTag, T> element, GrounderContext& context)
 {
     // Fetch and clear
-    auto numeric_effect = ::tyr::formalism::planning::checkout<NumericEffect<::tyr::GroundTag, T>>(context.builder);
+    auto numeric_effect = planning::checkout<NumericEffect<GroundTag, T>>(context.builder);
 
     // Fill data
     numeric_effect->operator_kind = element.get_operator();
@@ -332,23 +326,22 @@ std::pair<NumericEffectView<::tyr::GroundTag, T>, bool> ground(NumericEffectView
     numeric_effect->fexpr = ground(element.get_fexpr(), context).get_data();
 
     // Canonicalize and Serialize
-    return ::tyr::formalism::planning::get_or_create(context.destination, *numeric_effect);
+    return planning::get_or_create(context.destination, *numeric_effect);
 }
 
 template<FactKind T>
-NumericEffectOperatorView<::tyr::GroundTag, T> ground(NumericEffectOperatorView<::tyr::LiftedTag, T> element, GrounderContext& context)
+NumericEffectOperatorView<GroundTag, T> ground(NumericEffectOperatorView<LiftedTag, T> element, GrounderContext& context)
 {
     const auto data =
-        visit([&](auto&& arg) { return ygg::Data<NumericEffectOperator<::tyr::GroundTag, T>>(arg.get_operator(), ground(arg, context).first.get_index()); },
+        visit([&](auto&& arg) { return ygg::Data<NumericEffectOperator<GroundTag, T>>(arg.get_operator(), ground(arg, context).first.get_index()); },
               element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
-inline std::pair<ConjunctiveEffectView<::tyr::GroundTag>, bool>
-ground(ConjunctiveEffectView<::tyr::LiftedTag> element, GrounderContext& context, FDRContext& fdr)
+inline std::pair<ConjunctiveEffectView<GroundTag>, bool> ground(ConjunctiveEffectView<LiftedTag> element, GrounderContext& context, FDRContext& fdr)
 {
     // Fetch and clear
-    auto conj_eff = ::tyr::formalism::planning::checkout<ConjunctiveEffect<::tyr::GroundTag>>(context.builder);
+    auto conj_eff = planning::checkout<ConjunctiveEffect<GroundTag>>(context.builder);
 
     for (const auto literal : element.get_literals())
     {
@@ -364,44 +357,43 @@ ground(ConjunctiveEffectView<::tyr::LiftedTag> element, GrounderContext& context
         conj_eff->auxiliary_numeric_effect = ground(element.get_auxiliary_numeric_effect().value(), context).get_data();
 
     // Canonicalize and Serialize
-    return ::tyr::formalism::planning::get_or_create(context.destination, *conj_eff);
+    return planning::get_or_create(context.destination, *conj_eff);
 }
 
-inline std::pair<ConditionalEffectView<::tyr::GroundTag>, bool>
-ground(ConditionalEffectView<::tyr::LiftedTag> element, GrounderContext& context, FDRContext& fdr)
+inline std::pair<ConditionalEffectView<GroundTag>, bool> ground(ConditionalEffectView<LiftedTag> element, GrounderContext& context, FDRContext& fdr)
 {
     // Fetch and clear
-    auto cond_effect = ::tyr::formalism::planning::checkout<ConditionalEffect<::tyr::GroundTag>>(context.builder);
+    auto cond_effect = planning::checkout<ConditionalEffect<GroundTag>>(context.builder);
 
     // Fill data
     cond_effect->condition = ground(element.get_condition(), context, fdr).first.get_index();
     cond_effect->effect = ground(element.get_effect(), context, fdr).first.get_index();
 
     // Canonicalize and Serialize
-    return ::tyr::formalism::planning::get_or_create(context.destination, *cond_effect);
+    return planning::get_or_create(context.destination, *cond_effect);
 }
 
-inline std::pair<ActionBindingView, bool> ground(ActionView<::tyr::LiftedTag> action, GrounderContext& context)
+inline std::pair<ActionBindingView, bool> ground(ActionView<LiftedTag> action, GrounderContext& context)
 {
-    auto binding = ::tyr::formalism::planning::checkout<RelationBinding<Action<::tyr::LiftedTag>>>(context.builder);
+    auto binding = planning::checkout<RelationBinding<Action<LiftedTag>>>(context.builder);
 
     binding->relation = action.get_index();
     for (ygg::uint_t i = 0; i < action.get_arity(); ++i)
         binding->objects.push_back(context.binding[i]);
 
     // Canonicalize and Serialize
-    return ::tyr::formalism::planning::get_or_create(context.destination, *binding);
+    return planning::get_or_create(context.destination, *binding);
 }
 
-inline std::pair<ActionView<::tyr::GroundTag>, bool> ground(ActionView<::tyr::LiftedTag> element,
-                                                            GrounderContext& context,
-                                                            const analysis::ActionDomain& action_domains,
-                                                            analysis::CompatibilityWorkspace& compatibility_workspace,
-                                                            FDRContext& fdr)
+inline std::pair<ActionView<GroundTag>, bool> ground(ActionView<LiftedTag> element,
+                                                     GrounderContext& context,
+                                                     const analysis::ActionDomain& action_domains,
+                                                     analysis::CompatibilityWorkspace& compatibility_workspace,
+                                                     FDRContext& fdr)
 {
     const auto binding = ground(element, context).first.get_index();
 
-    auto action = ::tyr::formalism::planning::checkout<Action<::tyr::GroundTag>>(context.builder);
+    auto action = planning::checkout<Action<GroundTag>>(context.builder);
 
     action->binding = binding;
     action->condition = ground(element.get_condition(), context, fdr).first.get_index();
@@ -413,7 +405,7 @@ inline std::pair<ActionView<::tyr::GroundTag>, bool> ground(ActionView<::tyr::Li
         const auto cond_effect = element.get_effects()[cond_effect_index];
         const auto& effect_domain = action_domains.payload.effect_domains.at(cond_effect.get_index()).payload;
         context.binding.resize(binding_size);
-        const auto prefix = std::span<const ygg::Index<::tyr::formalism::Object>>(context.binding.data(), element.get_arity());
+        const auto prefix = std::span<const ygg::Index<Object>>(context.binding.data(), element.get_arity());
 
         analysis::for_each_compatible_extension(effect_domain,
                                                 prefix,
@@ -428,23 +420,23 @@ inline std::pair<ActionView<::tyr::GroundTag>, bool> ground(ActionView<::tyr::Li
 
     context.binding.resize(binding_size);
 
-    return ::tyr::formalism::planning::get_or_create(context.destination, *action);
+    return planning::get_or_create(context.destination, *action);
 }
 
-inline std::pair<AxiomBindingView, bool> ground(AxiomView<::tyr::LiftedTag> axiom, GrounderContext& context)
+inline std::pair<AxiomBindingView, bool> ground(AxiomView<LiftedTag> axiom, GrounderContext& context)
 {
-    auto binding = ::tyr::formalism::planning::checkout<RelationBinding<Axiom<::tyr::LiftedTag>>>(context.builder);
+    auto binding = planning::checkout<RelationBinding<Axiom<LiftedTag>>>(context.builder);
 
     binding->relation = axiom.get_index();
     for (ygg::uint_t i = 0; i < axiom.get_arity(); ++i)
         binding->objects.push_back(context.binding[i]);
 
     // Canonicalize and Serialize
-    return ::tyr::formalism::planning::get_or_create(context.destination, *binding);
+    return planning::get_or_create(context.destination, *binding);
 }
 
-inline std::pair<AxiomView<::tyr::GroundTag>, bool>
-ground(AxiomView<::tyr::LiftedTag> element, GrounderContext& context, GrounderCacheEntry<Axiom<::tyr::LiftedTag>>& cache, FDRContext& fdr)
+inline std::pair<AxiomView<GroundTag>, bool>
+ground(AxiomView<LiftedTag> element, GrounderContext& context, GrounderCacheEntry<Axiom<LiftedTag>>& cache, FDRContext& fdr)
 {
     const auto binding = ground(element, context).first.get_index();
 
@@ -452,13 +444,13 @@ ground(AxiomView<::tyr::LiftedTag> element, GrounderContext& context, GrounderCa
     if (auto it = axiom_cache.find(binding); it != axiom_cache.end())
         return { ygg::make_view(it->second, context.destination), false };
 
-    auto axiom = ::tyr::formalism::planning::checkout<Axiom<::tyr::GroundTag>>(context.builder);
+    auto axiom = planning::checkout<Axiom<GroundTag>>(context.builder);
 
     axiom->binding = binding;
     axiom->body = ground(element.get_body(), context, fdr).first.get_index();
     axiom->head = ground(element.get_head(), context).first.get_index();
 
-    const auto result = ::tyr::formalism::planning::get_or_create(context.destination, *axiom);
+    const auto result = planning::get_or_create(context.destination, *axiom);
 
     axiom_cache.emplace(binding, result.first.get_index());
 
@@ -470,9 +462,9 @@ ground(AxiomView<::tyr::LiftedTag> element, GrounderContext& context, GrounderCa
  */
 
 template<FactKind T>
-std::optional<FunctionTermView<::tyr::GroundTag, T>> try_ground(FunctionTermView<::tyr::LiftedTag, T> element, GrounderContext& context)
+std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<LiftedTag, T> element, GrounderContext& context)
 {
-    auto binding = ::tyr::formalism::planning::checkout<RelationBinding<Function<T>>>(context.builder);
+    auto binding = planning::checkout<RelationBinding<Function<T>>>(context.builder);
 
     binding->relation = element.get_function().get_index();
     for (const auto term : element.get_terms())
@@ -497,7 +489,7 @@ std::optional<FunctionTermView<::tyr::GroundTag, T>> try_ground(FunctionTermView
     if (!binding_or_nullopt.has_value())
         return std::nullopt;
 
-    auto fterm = ::tyr::formalism::planning::checkout<FunctionTerm<::tyr::GroundTag, T>>(context.builder);
+    auto fterm = planning::checkout<FunctionTerm<GroundTag, T>>(context.builder);
 
     fterm->binding = binding_or_nullopt->get_index();
 
@@ -505,9 +497,9 @@ std::optional<FunctionTermView<::tyr::GroundTag, T>> try_ground(FunctionTermView
 }
 
 template<FactKind T>
-std::optional<AtomView<::tyr::GroundTag, T>> try_ground(AtomView<::tyr::LiftedTag, T> element, GrounderContext& context)
+std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element, GrounderContext& context)
 {
-    auto binding = ::tyr::formalism::planning::checkout<RelationBinding<Predicate<T>>>(context.builder);
+    auto binding = planning::checkout<RelationBinding<Predicate<T>>>(context.builder);
 
     binding->relation = element.get_predicate().get_index();
     for (const auto term : element.get_terms())
@@ -532,7 +524,7 @@ std::optional<AtomView<::tyr::GroundTag, T>> try_ground(AtomView<::tyr::LiftedTa
     if (!binding_or_nullopt.has_value())
         return std::nullopt;
 
-    auto atom = ::tyr::formalism::planning::checkout<Atom<::tyr::GroundTag, T>>(context.builder);
+    auto atom = planning::checkout<Atom<GroundTag, T>>(context.builder);
 
     atom->binding = binding_or_nullopt->get_index();
 
@@ -549,51 +541,42 @@ extern template std::pair<FunctionBindingView<StaticTag>, bool> ground(TermListV
 extern template std::pair<FunctionBindingView<FluentTag>, bool> ground(TermListView terms, FunctionView<FluentTag> function, GrounderContext& context);
 extern template std::pair<FunctionBindingView<AuxiliaryTag>, bool> ground(TermListView terms, FunctionView<AuxiliaryTag> function, GrounderContext& context);
 
-extern template std::pair<FunctionTermView<::tyr::GroundTag, StaticTag>, bool> ground(FunctionTermView<::tyr::LiftedTag, StaticTag> element,
-                                                                                      GrounderContext& context);
-extern template std::pair<FunctionTermView<::tyr::GroundTag, FluentTag>, bool> ground(FunctionTermView<::tyr::LiftedTag, FluentTag> element,
-                                                                                      GrounderContext& context);
-extern template std::pair<FunctionTermView<::tyr::GroundTag, AuxiliaryTag>, bool> ground(FunctionTermView<::tyr::LiftedTag, AuxiliaryTag> element,
-                                                                                         GrounderContext& context);
+extern template std::pair<FunctionTermView<GroundTag, StaticTag>, bool> ground(FunctionTermView<LiftedTag, StaticTag> element, GrounderContext& context);
+extern template std::pair<FunctionTermView<GroundTag, FluentTag>, bool> ground(FunctionTermView<LiftedTag, FluentTag> element, GrounderContext& context);
+extern template std::pair<FunctionTermView<GroundTag, AuxiliaryTag>, bool> ground(FunctionTermView<LiftedTag, AuxiliaryTag> element, GrounderContext& context);
 
-extern template std::pair<GroundBinaryOperatorView<ArithmeticOperatorKind>, bool> ground(LiftedBinaryOperatorView<ArithmeticOperatorKind> element,
-                                                                                         GrounderContext& context);
-extern template std::pair<GroundBinaryOperatorView<BooleanOperatorKind>, bool> ground(LiftedBinaryOperatorView<BooleanOperatorKind> element,
-                                                                                      GrounderContext& context);
+extern template std::pair<BinaryOperatorView<GroundTag, ArithmeticOperatorKind>, bool> ground(BinaryOperatorView<LiftedTag, ArithmeticOperatorKind> element,
+                                                                                              GrounderContext& context);
+extern template std::pair<BinaryOperatorView<GroundTag, BooleanOperatorKind>, bool> ground(BinaryOperatorView<LiftedTag, BooleanOperatorKind> element,
+                                                                                           GrounderContext& context);
 
 extern template std::pair<PredicateBindingView<StaticTag>, bool> ground(TermListView terms, PredicateView<StaticTag> predicate, GrounderContext& context);
 extern template std::pair<PredicateBindingView<FluentTag>, bool> ground(TermListView terms, PredicateView<FluentTag> predicate, GrounderContext& context);
 extern template std::pair<PredicateBindingView<DerivedTag>, bool> ground(TermListView terms, PredicateView<DerivedTag> predicate, GrounderContext& context);
 
-extern template std::pair<AtomView<::tyr::GroundTag, StaticTag>, bool> ground(AtomView<::tyr::LiftedTag, StaticTag> element, GrounderContext& grounder_context);
-extern template std::pair<AtomView<::tyr::GroundTag, FluentTag>, bool> ground(AtomView<::tyr::LiftedTag, FluentTag> element, GrounderContext& grounder_context);
-extern template std::pair<AtomView<::tyr::GroundTag, DerivedTag>, bool> ground(AtomView<::tyr::LiftedTag, DerivedTag> element,
-                                                                               GrounderContext& grounder_context);
+extern template std::pair<AtomView<GroundTag, StaticTag>, bool> ground(AtomView<LiftedTag, StaticTag> element, GrounderContext& grounder_context);
+extern template std::pair<AtomView<GroundTag, FluentTag>, bool> ground(AtomView<LiftedTag, FluentTag> element, GrounderContext& grounder_context);
+extern template std::pair<AtomView<GroundTag, DerivedTag>, bool> ground(AtomView<LiftedTag, DerivedTag> element, GrounderContext& grounder_context);
 
-extern template std::pair<LiteralView<::tyr::GroundTag, StaticTag>, bool> ground(LiteralView<::tyr::LiftedTag, StaticTag> element, GrounderContext& context);
-extern template std::pair<LiteralView<::tyr::GroundTag, FluentTag>, bool> ground(LiteralView<::tyr::LiftedTag, FluentTag> element, GrounderContext& context);
-extern template std::pair<LiteralView<::tyr::GroundTag, DerivedTag>, bool> ground(LiteralView<::tyr::LiftedTag, DerivedTag> element, GrounderContext& context);
+extern template std::pair<LiteralView<GroundTag, StaticTag>, bool> ground(LiteralView<LiftedTag, StaticTag> element, GrounderContext& context);
+extern template std::pair<LiteralView<GroundTag, FluentTag>, bool> ground(LiteralView<LiftedTag, FluentTag> element, GrounderContext& context);
+extern template std::pair<LiteralView<GroundTag, DerivedTag>, bool> ground(LiteralView<LiftedTag, DerivedTag> element, GrounderContext& context);
 
-extern template std::pair<NumericEffectView<::tyr::GroundTag, FluentTag>, bool> ground(NumericEffectView<::tyr::LiftedTag, FluentTag> element,
-                                                                                       GrounderContext& context);
-extern template std::pair<NumericEffectView<::tyr::GroundTag, AuxiliaryTag>, bool> ground(NumericEffectView<::tyr::LiftedTag, AuxiliaryTag> element,
-                                                                                          GrounderContext& context);
+extern template std::pair<NumericEffectView<GroundTag, FluentTag>, bool> ground(NumericEffectView<LiftedTag, FluentTag> element, GrounderContext& context);
+extern template std::pair<NumericEffectView<GroundTag, AuxiliaryTag>, bool> ground(NumericEffectView<LiftedTag, AuxiliaryTag> element,
+                                                                                   GrounderContext& context);
 
-extern template NumericEffectOperatorView<::tyr::GroundTag, FluentTag> ground(NumericEffectOperatorView<::tyr::LiftedTag, FluentTag> element,
-                                                                              GrounderContext& context);
-extern template NumericEffectOperatorView<::tyr::GroundTag, AuxiliaryTag> ground(NumericEffectOperatorView<::tyr::LiftedTag, AuxiliaryTag> element,
-                                                                                 GrounderContext& context);
+extern template NumericEffectOperatorView<GroundTag, FluentTag> ground(NumericEffectOperatorView<LiftedTag, FluentTag> element, GrounderContext& context);
+extern template NumericEffectOperatorView<GroundTag, AuxiliaryTag> ground(NumericEffectOperatorView<LiftedTag, AuxiliaryTag> element, GrounderContext& context);
 
-extern template std::optional<FunctionTermView<::tyr::GroundTag, StaticTag>> try_ground(FunctionTermView<::tyr::LiftedTag, StaticTag> element,
-                                                                                        GrounderContext& context);
-extern template std::optional<FunctionTermView<::tyr::GroundTag, FluentTag>> try_ground(FunctionTermView<::tyr::LiftedTag, FluentTag> element,
-                                                                                        GrounderContext& context);
-extern template std::optional<FunctionTermView<::tyr::GroundTag, AuxiliaryTag>> try_ground(FunctionTermView<::tyr::LiftedTag, AuxiliaryTag> element,
-                                                                                           GrounderContext& context);
+extern template std::optional<FunctionTermView<GroundTag, StaticTag>> try_ground(FunctionTermView<LiftedTag, StaticTag> element, GrounderContext& context);
+extern template std::optional<FunctionTermView<GroundTag, FluentTag>> try_ground(FunctionTermView<LiftedTag, FluentTag> element, GrounderContext& context);
+extern template std::optional<FunctionTermView<GroundTag, AuxiliaryTag>> try_ground(FunctionTermView<LiftedTag, AuxiliaryTag> element,
+                                                                                    GrounderContext& context);
 
-extern template std::optional<AtomView<::tyr::GroundTag, StaticTag>> try_ground(AtomView<::tyr::LiftedTag, StaticTag> element, GrounderContext& context);
-extern template std::optional<AtomView<::tyr::GroundTag, FluentTag>> try_ground(AtomView<::tyr::LiftedTag, FluentTag> element, GrounderContext& context);
-extern template std::optional<AtomView<::tyr::GroundTag, DerivedTag>> try_ground(AtomView<::tyr::LiftedTag, DerivedTag> element, GrounderContext& context);
+extern template std::optional<AtomView<GroundTag, StaticTag>> try_ground(AtomView<LiftedTag, StaticTag> element, GrounderContext& context);
+extern template std::optional<AtomView<GroundTag, FluentTag>> try_ground(AtomView<LiftedTag, FluentTag> element, GrounderContext& context);
+extern template std::optional<AtomView<GroundTag, DerivedTag>> try_ground(AtomView<LiftedTag, DerivedTag> element, GrounderContext& context);
 }
 
 #endif

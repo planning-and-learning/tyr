@@ -26,13 +26,13 @@
 namespace tyr::datalog
 {
 
-template<::tyr::formalism::RelationKind R>
+template<formalism::RelationKind R>
 class RuleInstance<GroundTag, R>
 {
 public:
     using Task = GroundTag;
     using Relation = R;
-    using SourceRule = ::tyr::formalism::datalog::RuleView<::tyr::GroundTag, R>;
+    using SourceRule = formalism::datalog::RuleView<GroundTag, R>;
 
     explicit RuleInstance(SourceRule rule) : m_rule(rule) {}
 
@@ -40,11 +40,11 @@ public:
     auto get_body() const noexcept { return m_rule.get_body(); }
     auto get_head() const noexcept { return m_rule.get_head(); }
 
-    auto resolve(::tyr::formalism::datalog::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag> atom) const noexcept { return atom.get_row(); }
+    auto resolve(formalism::datalog::AtomView<GroundTag, formalism::FluentTag> atom) const noexcept { return atom.get_row(); }
 
-    auto resolve(::tyr::formalism::datalog::GroundBooleanOperatorView constraint) const noexcept { return constraint; }
+    auto resolve(formalism::datalog::BooleanOperatorView<GroundTag> constraint) const noexcept { return constraint; }
 
-    ResolvedNumericEffect resolve(::tyr::formalism::datalog::NumericEffectView<::tyr::GroundTag, ::tyr::formalism::FluentTag> effect) const noexcept
+    ResolvedNumericEffect resolve(formalism::datalog::NumericEffectView<GroundTag, formalism::FluentTag> effect) const noexcept
     {
         return { effect.get_operator(), effect.get_fterm().get_row(), effect.get_fexpr() };
     }

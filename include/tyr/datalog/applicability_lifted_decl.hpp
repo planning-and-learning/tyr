@@ -26,7 +26,7 @@ namespace tyr::datalog
 struct ApplicabilityContext
 {
     const FactSets& fact_sets;
-    ::tyr::formalism::datalog::GrounderContext& grounder;
+    formalism::datalog::GrounderContext& grounder;
 };
 }
 

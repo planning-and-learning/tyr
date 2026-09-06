@@ -29,13 +29,13 @@ concept UnaryOperatorContract = std::constructible_from<ygg::Index<Entity>, ygg:
                                        { view < view } -> std::same_as<bool>;
                                    };
 
-using Lifted = fp::LiftedUnaryOperatorType;
-using Ground = fp::GroundUnaryOperatorType;
+using Lifted = fp::UnaryOperator<::tyr::LiftedTag>;
+using Ground = fp::UnaryOperator<::tyr::GroundTag>;
 
 static_assert(UnaryOperatorContract<Lifted>);
 static_assert(UnaryOperatorContract<Ground>);
-static_assert(std::same_as<ygg::View<ygg::Index<Lifted>, fp::Repository>, fp::LiftedUnaryOperatorView>);
-static_assert(std::same_as<ygg::View<ygg::Index<Ground>, fp::Repository>, fp::GroundUnaryOperatorView>);
+static_assert(std::same_as<ygg::View<ygg::Index<Lifted>, fp::Repository>, fp::UnaryOperatorView<::tyr::LiftedTag>>);
+static_assert(std::same_as<ygg::View<ygg::Index<Ground>, fp::Repository>, fp::UnaryOperatorView<::tyr::GroundTag>>);
 static_assert(std::constructible_from<ygg::Data<Lifted>, f::ArithmeticOperatorKind, fp::FunctionExpressionView<::tyr::LiftedTag>>);
 static_assert(std::constructible_from<ygg::Data<Ground>, f::ArithmeticOperatorKind, fp::FunctionExpressionView<::tyr::GroundTag>>);
 

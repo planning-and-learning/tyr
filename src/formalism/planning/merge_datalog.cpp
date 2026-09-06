@@ -22,173 +22,156 @@
 namespace tyr::formalism::planning
 {
 
-template std::pair<::tyr::formalism::datalog::PredicateView<StaticTag>, bool> merge_p2d(PredicateView<StaticTag> element, MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::PredicateView<FluentTag>, bool> merge_p2d(PredicateView<FluentTag> element, MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::PredicateView<FluentTag>, bool> merge_p2d(PredicateView<DerivedTag> element, MergeDatalogContext& context);
+template std::pair<datalog::PredicateView<StaticTag>, bool> merge_p2d(PredicateView<StaticTag> element, MergeDatalogContext& context);
+template std::pair<datalog::PredicateView<FluentTag>, bool> merge_p2d(PredicateView<FluentTag> element, MergeDatalogContext& context);
+template std::pair<datalog::PredicateView<FluentTag>, bool> merge_p2d(PredicateView<DerivedTag> element, MergeDatalogContext& context);
 
-template std::pair<::tyr::formalism::datalog::AtomView<::tyr::LiftedTag, StaticTag>, bool>
-merge_p2d(AtomView<::tyr::LiftedTag, StaticTag> element,
-          const ygg::UnorderedMap<PredicateView<StaticTag>, ::tyr::formalism::datalog::PredicateView<StaticTag>>& predicate_mapping,
+template std::pair<datalog::AtomView<LiftedTag, StaticTag>, bool>
+merge_p2d(AtomView<LiftedTag, StaticTag> element,
+          const ygg::UnorderedMap<PredicateView<StaticTag>, datalog::PredicateView<StaticTag>>& predicate_mapping,
           MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::AtomView<::tyr::LiftedTag, FluentTag>, bool>
-merge_p2d(AtomView<::tyr::LiftedTag, FluentTag> element,
-          const ygg::UnorderedMap<PredicateView<FluentTag>, ::tyr::formalism::datalog::PredicateView<FluentTag>>& predicate_mapping,
+template std::pair<datalog::AtomView<LiftedTag, FluentTag>, bool>
+merge_p2d(AtomView<LiftedTag, FluentTag> element,
+          const ygg::UnorderedMap<PredicateView<FluentTag>, datalog::PredicateView<FluentTag>>& predicate_mapping,
           MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::AtomView<::tyr::LiftedTag, FluentTag>, bool>
-merge_p2d(AtomView<::tyr::LiftedTag, DerivedTag> element,
-          const ygg::UnorderedMap<PredicateView<DerivedTag>, ::tyr::formalism::datalog::PredicateView<FluentTag>>& predicate_mapping,
+template std::pair<datalog::AtomView<LiftedTag, FluentTag>, bool>
+merge_p2d(AtomView<LiftedTag, DerivedTag> element,
+          const ygg::UnorderedMap<PredicateView<DerivedTag>, datalog::PredicateView<FluentTag>>& predicate_mapping,
           MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::PredicateBindingView<StaticTag>, bool>
+template std::pair<datalog::PredicateBindingView<StaticTag>, bool>
 merge_p2d(PredicateBindingView<StaticTag> element,
-          const ygg::UnorderedMap<PredicateView<StaticTag>, ::tyr::formalism::datalog::PredicateView<StaticTag>>& predicate_mapping,
+          const ygg::UnorderedMap<PredicateView<StaticTag>, datalog::PredicateView<StaticTag>>& predicate_mapping,
           MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::PredicateBindingView<FluentTag>, bool>
+template std::pair<datalog::PredicateBindingView<FluentTag>, bool>
 merge_p2d(PredicateBindingView<FluentTag> element,
-          const ygg::UnorderedMap<PredicateView<FluentTag>, ::tyr::formalism::datalog::PredicateView<FluentTag>>& predicate_mapping,
+          const ygg::UnorderedMap<PredicateView<FluentTag>, datalog::PredicateView<FluentTag>>& predicate_mapping,
           MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::PredicateBindingView<FluentTag>, bool>
+template std::pair<datalog::PredicateBindingView<FluentTag>, bool>
 merge_p2d(PredicateBindingView<DerivedTag> element,
-          const ygg::UnorderedMap<PredicateView<DerivedTag>, ::tyr::formalism::datalog::PredicateView<FluentTag>>& predicate_mapping,
+          const ygg::UnorderedMap<PredicateView<DerivedTag>, datalog::PredicateView<FluentTag>>& predicate_mapping,
           MergeDatalogContext& context);
 
-template std::pair<::tyr::formalism::datalog::AtomView<::tyr::GroundTag, StaticTag>, bool>
-merge_p2d(AtomView<::tyr::GroundTag, StaticTag> element,
-          const ygg::UnorderedMap<PredicateView<StaticTag>, ::tyr::formalism::datalog::PredicateView<StaticTag>>& predicate_mapping,
+template std::pair<datalog::AtomView<GroundTag, StaticTag>, bool>
+merge_p2d(AtomView<GroundTag, StaticTag> element,
+          const ygg::UnorderedMap<PredicateView<StaticTag>, datalog::PredicateView<StaticTag>>& predicate_mapping,
           MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::AtomView<::tyr::GroundTag, FluentTag>, bool>
-merge_p2d(AtomView<::tyr::GroundTag, FluentTag> element,
-          const ygg::UnorderedMap<PredicateView<FluentTag>, ::tyr::formalism::datalog::PredicateView<FluentTag>>& predicate_mapping,
+template std::pair<datalog::AtomView<GroundTag, FluentTag>, bool>
+merge_p2d(AtomView<GroundTag, FluentTag> element,
+          const ygg::UnorderedMap<PredicateView<FluentTag>, datalog::PredicateView<FluentTag>>& predicate_mapping,
           MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::AtomView<::tyr::GroundTag, FluentTag>, bool>
-merge_p2d(AtomView<::tyr::GroundTag, DerivedTag> element,
-          const ygg::UnorderedMap<PredicateView<DerivedTag>, ::tyr::formalism::datalog::PredicateView<FluentTag>>& predicate_mapping,
-          MergeDatalogContext& context);
-
-template std::pair<::tyr::formalism::datalog::LiteralView<::tyr::LiftedTag, StaticTag>, bool>
-merge_p2d(LiteralView<::tyr::LiftedTag, StaticTag> element,
-          const ygg::UnorderedMap<PredicateView<StaticTag>, ::tyr::formalism::datalog::PredicateView<StaticTag>>& predicate_mapping,
-          MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::LiteralView<::tyr::LiftedTag, FluentTag>, bool>
-merge_p2d(LiteralView<::tyr::LiftedTag, FluentTag> element,
-          const ygg::UnorderedMap<PredicateView<FluentTag>, ::tyr::formalism::datalog::PredicateView<FluentTag>>& predicate_mapping,
-          MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::LiteralView<::tyr::LiftedTag, FluentTag>, bool>
-merge_p2d(LiteralView<::tyr::LiftedTag, DerivedTag> element,
-          const ygg::UnorderedMap<PredicateView<DerivedTag>, ::tyr::formalism::datalog::PredicateView<FluentTag>>& predicate_mapping,
-          MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::LiteralView<::tyr::GroundTag, StaticTag>, bool>
-merge_p2d(LiteralView<::tyr::GroundTag, StaticTag> element,
-          const ygg::UnorderedMap<PredicateView<StaticTag>, ::tyr::formalism::datalog::PredicateView<StaticTag>>& predicate_mapping,
-          MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::LiteralView<::tyr::GroundTag, FluentTag>, bool>
-merge_p2d(LiteralView<::tyr::GroundTag, FluentTag> element,
-          const ygg::UnorderedMap<PredicateView<FluentTag>, ::tyr::formalism::datalog::PredicateView<FluentTag>>& predicate_mapping,
-          MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::LiteralView<::tyr::GroundTag, FluentTag>, bool>
-merge_p2d(LiteralView<::tyr::GroundTag, DerivedTag> element,
-          const ygg::UnorderedMap<PredicateView<DerivedTag>, ::tyr::formalism::datalog::PredicateView<FluentTag>>& predicate_mapping,
+template std::pair<datalog::AtomView<GroundTag, FluentTag>, bool>
+merge_p2d(AtomView<GroundTag, DerivedTag> element,
+          const ygg::UnorderedMap<PredicateView<DerivedTag>, datalog::PredicateView<FluentTag>>& predicate_mapping,
           MergeDatalogContext& context);
 
-std::optional<::tyr::formalism::datalog::LiteralView<::tyr::GroundTag, FluentTag>>
+template std::pair<datalog::LiteralView<LiftedTag, StaticTag>, bool>
+merge_p2d(LiteralView<LiftedTag, StaticTag> element,
+          const ygg::UnorderedMap<PredicateView<StaticTag>, datalog::PredicateView<StaticTag>>& predicate_mapping,
+          MergeDatalogContext& context);
+template std::pair<datalog::LiteralView<LiftedTag, FluentTag>, bool>
+merge_p2d(LiteralView<LiftedTag, FluentTag> element,
+          const ygg::UnorderedMap<PredicateView<FluentTag>, datalog::PredicateView<FluentTag>>& predicate_mapping,
+          MergeDatalogContext& context);
+template std::pair<datalog::LiteralView<LiftedTag, FluentTag>, bool>
+merge_p2d(LiteralView<LiftedTag, DerivedTag> element,
+          const ygg::UnorderedMap<PredicateView<DerivedTag>, datalog::PredicateView<FluentTag>>& predicate_mapping,
+          MergeDatalogContext& context);
+template std::pair<datalog::LiteralView<GroundTag, StaticTag>, bool>
+merge_p2d(LiteralView<GroundTag, StaticTag> element,
+          const ygg::UnorderedMap<PredicateView<StaticTag>, datalog::PredicateView<StaticTag>>& predicate_mapping,
+          MergeDatalogContext& context);
+template std::pair<datalog::LiteralView<GroundTag, FluentTag>, bool>
+merge_p2d(LiteralView<GroundTag, FluentTag> element,
+          const ygg::UnorderedMap<PredicateView<FluentTag>, datalog::PredicateView<FluentTag>>& predicate_mapping,
+          MergeDatalogContext& context);
+template std::pair<datalog::LiteralView<GroundTag, FluentTag>, bool>
+merge_p2d(LiteralView<GroundTag, DerivedTag> element,
+          const ygg::UnorderedMap<PredicateView<DerivedTag>, datalog::PredicateView<FluentTag>>& predicate_mapping,
+          MergeDatalogContext& context);
+
+std::optional<datalog::LiteralView<GroundTag, FluentTag>>
 merge_p2d(FDRFactView<FluentTag> element,
           bool polarity,
-          const ygg::UnorderedMap<PredicateView<FluentTag>, ::tyr::formalism::datalog::PredicateView<FluentTag>>& predicate_mapping,
+          const ygg::UnorderedMap<PredicateView<FluentTag>, datalog::PredicateView<FluentTag>>& predicate_mapping,
           MergeDatalogContext& context);
 
-std::pair<::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::GroundTag>, bool>
-merge_p2d(ConjunctiveConditionView<::tyr::GroundTag> element,
-          const ygg::UnorderedMap<PredicateView<FluentTag>, ::tyr::formalism::datalog::PredicateView<FluentTag>>& fluent_predicate_mapping,
-          const ygg::UnorderedMap<PredicateView<DerivedTag>, ::tyr::formalism::datalog::PredicateView<FluentTag>>& derived_predicate_mapping,
+std::pair<datalog::ConjunctiveConditionView<GroundTag>, bool>
+merge_p2d(ConjunctiveConditionView<GroundTag> element,
+          const ygg::UnorderedMap<PredicateView<FluentTag>, datalog::PredicateView<FluentTag>>& fluent_predicate_mapping,
+          const ygg::UnorderedMap<PredicateView<DerivedTag>, datalog::PredicateView<FluentTag>>& derived_predicate_mapping,
           MergeDatalogContext& context);
 
 // Numeric
 
-template std::pair<::tyr::formalism::datalog::FunctionView<StaticTag>, bool> merge_p2d(FunctionView<StaticTag> element, MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::FunctionView<FluentTag>, bool> merge_p2d(FunctionView<FluentTag> element, MergeDatalogContext& context);
+template std::pair<datalog::FunctionView<StaticTag>, bool> merge_p2d(FunctionView<StaticTag> element, MergeDatalogContext& context);
+template std::pair<datalog::FunctionView<FluentTag>, bool> merge_p2d(FunctionView<FluentTag> element, MergeDatalogContext& context);
 
-template std::pair<::tyr::formalism::datalog::FunctionTermView<::tyr::LiftedTag, StaticTag>, bool>
-merge_p2d(FunctionTermView<::tyr::LiftedTag, StaticTag> element, MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::FunctionTermView<::tyr::LiftedTag, FluentTag>, bool>
-merge_p2d(FunctionTermView<::tyr::LiftedTag, FluentTag> element, MergeDatalogContext& context);
+template std::pair<datalog::FunctionTermView<LiftedTag, StaticTag>, bool> merge_p2d(FunctionTermView<LiftedTag, StaticTag> element,
+                                                                                    MergeDatalogContext& context);
+template std::pair<datalog::FunctionTermView<LiftedTag, FluentTag>, bool> merge_p2d(FunctionTermView<LiftedTag, FluentTag> element,
+                                                                                    MergeDatalogContext& context);
 
-template std::pair<::tyr::formalism::datalog::FunctionBindingView<StaticTag>, bool> merge_p2d(FunctionBindingView<StaticTag> element,
-                                                                                              MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::FunctionBindingView<FluentTag>, bool> merge_p2d(FunctionBindingView<FluentTag> element,
-                                                                                              MergeDatalogContext& context);
+template std::pair<datalog::FunctionBindingView<StaticTag>, bool> merge_p2d(FunctionBindingView<StaticTag> element, MergeDatalogContext& context);
+template std::pair<datalog::FunctionBindingView<FluentTag>, bool> merge_p2d(FunctionBindingView<FluentTag> element, MergeDatalogContext& context);
 
-template std::pair<::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, StaticTag>, bool>
-merge_p2d(FunctionTermView<::tyr::GroundTag, StaticTag> element, MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, FluentTag>, bool>
-merge_p2d(FunctionTermView<::tyr::GroundTag, FluentTag> element, MergeDatalogContext& context);
+template std::pair<datalog::FunctionTermView<GroundTag, StaticTag>, bool> merge_p2d(FunctionTermView<GroundTag, StaticTag> element,
+                                                                                    MergeDatalogContext& context);
+template std::pair<datalog::FunctionTermView<GroundTag, FluentTag>, bool> merge_p2d(FunctionTermView<GroundTag, FluentTag> element,
+                                                                                    MergeDatalogContext& context);
 
-template std::pair<::tyr::formalism::datalog::FunctionTermValueView<::tyr::GroundTag, StaticTag>, bool>
-merge_p2d(FunctionTermValueView<::tyr::GroundTag, StaticTag> element, MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::FunctionTermValueView<::tyr::GroundTag, FluentTag>, bool>
-merge_p2d(FunctionTermValueView<::tyr::GroundTag, FluentTag> element, MergeDatalogContext& context);
+template std::pair<datalog::FunctionTermValueView<GroundTag, StaticTag>, bool> merge_p2d(FunctionTermValueView<GroundTag, StaticTag> element,
+                                                                                         MergeDatalogContext& context);
+template std::pair<datalog::FunctionTermValueView<GroundTag, FluentTag>, bool> merge_p2d(FunctionTermValueView<GroundTag, FluentTag> element,
+                                                                                         MergeDatalogContext& context);
 
-template std::pair<::tyr::formalism::datalog::FunctionView<FluentTag>, bool> merge_p2d<AuxiliaryTag, FluentTag>(FunctionView<AuxiliaryTag> element,
-                                                                                                                MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::FunctionTermView<::tyr::LiftedTag, FluentTag>, bool>
-merge_p2d<AuxiliaryTag, FluentTag>(FunctionTermView<::tyr::LiftedTag, AuxiliaryTag> element, MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::FunctionBindingView<FluentTag>, bool>
-merge_p2d<AuxiliaryTag, FluentTag>(FunctionBindingView<AuxiliaryTag> element, MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, FluentTag>, bool>
-merge_p2d<AuxiliaryTag, FluentTag>(FunctionTermView<::tyr::GroundTag, AuxiliaryTag> element, MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::FunctionTermValueView<::tyr::GroundTag, FluentTag>, bool>
-merge_p2d<AuxiliaryTag, FluentTag>(FunctionTermValueView<::tyr::GroundTag, AuxiliaryTag> element, MergeDatalogContext& context);
+template std::pair<datalog::FunctionView<FluentTag>, bool> merge_p2d<AuxiliaryTag, FluentTag>(FunctionView<AuxiliaryTag> element, MergeDatalogContext& context);
+template std::pair<datalog::FunctionTermView<LiftedTag, FluentTag>, bool> merge_p2d<AuxiliaryTag, FluentTag>(FunctionTermView<LiftedTag, AuxiliaryTag> element,
+                                                                                                             MergeDatalogContext& context);
+template std::pair<datalog::FunctionBindingView<FluentTag>, bool> merge_p2d<AuxiliaryTag, FluentTag>(FunctionBindingView<AuxiliaryTag> element,
+                                                                                                     MergeDatalogContext& context);
+template std::pair<datalog::FunctionTermView<GroundTag, FluentTag>, bool> merge_p2d<AuxiliaryTag, FluentTag>(FunctionTermView<GroundTag, AuxiliaryTag> element,
+                                                                                                             MergeDatalogContext& context);
+template std::pair<datalog::FunctionTermValueView<GroundTag, FluentTag>, bool>
+merge_p2d<AuxiliaryTag, FluentTag>(FunctionTermValueView<GroundTag, AuxiliaryTag> element, MergeDatalogContext& context);
 
-template std::pair<::tyr::formalism::datalog::NumericEffectView<::tyr::LiftedTag, FluentTag>, bool>
-merge_p2d<FluentTag, FluentTag>(NumericEffectView<::tyr::LiftedTag, FluentTag> element, MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::NumericEffectView<::tyr::LiftedTag, FluentTag>, bool>
-merge_p2d<AuxiliaryTag, FluentTag>(NumericEffectView<::tyr::LiftedTag, AuxiliaryTag> element, MergeDatalogContext& context);
-template ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<::tyr::LiftedTag, FluentTag>>
-merge_p2d<FluentTag, FluentTag>(NumericEffectOperatorView<::tyr::LiftedTag, FluentTag> element, MergeDatalogContext& context);
-template ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<::tyr::LiftedTag, FluentTag>>
-merge_p2d<AuxiliaryTag, FluentTag>(NumericEffectOperatorView<::tyr::LiftedTag, AuxiliaryTag> element, MergeDatalogContext& context);
+template std::pair<datalog::NumericEffectView<LiftedTag, FluentTag>, bool> merge_p2d<FluentTag, FluentTag>(NumericEffectView<LiftedTag, FluentTag> element,
+                                                                                                           MergeDatalogContext& context);
+template std::pair<datalog::NumericEffectView<LiftedTag, FluentTag>, bool>
+merge_p2d<AuxiliaryTag, FluentTag>(NumericEffectView<LiftedTag, AuxiliaryTag> element, MergeDatalogContext& context);
+template ygg::Data<datalog::NumericEffectOperator<LiftedTag, FluentTag>>
+merge_p2d<FluentTag, FluentTag>(NumericEffectOperatorView<LiftedTag, FluentTag> element, MergeDatalogContext& context);
+template ygg::Data<datalog::NumericEffectOperator<LiftedTag, FluentTag>>
+merge_p2d<AuxiliaryTag, FluentTag>(NumericEffectOperatorView<LiftedTag, AuxiliaryTag> element, MergeDatalogContext& context);
 
-template std::pair<::tyr::formalism::datalog::NumericEffectView<::tyr::GroundTag, FluentTag>, bool>
-merge_p2d<FluentTag, FluentTag>(NumericEffectView<::tyr::GroundTag, FluentTag> element, MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::NumericEffectView<::tyr::GroundTag, FluentTag>, bool>
-merge_p2d<AuxiliaryTag, FluentTag>(NumericEffectView<::tyr::GroundTag, AuxiliaryTag> element, MergeDatalogContext& context);
-template ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<::tyr::GroundTag, FluentTag>>
-merge_p2d<FluentTag, FluentTag>(NumericEffectOperatorView<::tyr::GroundTag, FluentTag> element, MergeDatalogContext& context);
-template ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<::tyr::GroundTag, FluentTag>>
-merge_p2d<AuxiliaryTag, FluentTag>(NumericEffectOperatorView<::tyr::GroundTag, AuxiliaryTag> element, MergeDatalogContext& context);
+template std::pair<datalog::NumericEffectView<GroundTag, FluentTag>, bool> merge_p2d<FluentTag, FluentTag>(NumericEffectView<GroundTag, FluentTag> element,
+                                                                                                           MergeDatalogContext& context);
+template std::pair<datalog::NumericEffectView<GroundTag, FluentTag>, bool>
+merge_p2d<AuxiliaryTag, FluentTag>(NumericEffectView<GroundTag, AuxiliaryTag> element, MergeDatalogContext& context);
+template ygg::Data<datalog::NumericEffectOperator<GroundTag, FluentTag>>
+merge_p2d<FluentTag, FluentTag>(NumericEffectOperatorView<GroundTag, FluentTag> element, MergeDatalogContext& context);
+template ygg::Data<datalog::NumericEffectOperator<GroundTag, FluentTag>>
+merge_p2d<AuxiliaryTag, FluentTag>(NumericEffectOperatorView<GroundTag, AuxiliaryTag> element, MergeDatalogContext& context);
 
-template std::pair<::tyr::formalism::datalog::UnaryOperatorView<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>>, bool>
-merge_p2d(UnaryOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>> element, MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::UnaryOperatorView<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::GroundTag>>>, bool>
-merge_p2d(UnaryOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>> element, MergeDatalogContext& context);
+template std::pair<datalog::UnaryOperatorView<LiftedTag>, bool> merge_p2d(UnaryOperatorView<LiftedTag> element, MergeDatalogContext& context);
+template std::pair<datalog::UnaryOperatorView<GroundTag>, bool> merge_p2d(UnaryOperatorView<GroundTag> element, MergeDatalogContext& context);
 
-template std::
-    pair<::tyr::formalism::datalog::BinaryOperatorView<BooleanOperatorKind, ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>>, bool>
-    merge_p2d(BinaryOperatorView<BooleanOperatorKind, ygg::Data<FunctionExpression<::tyr::LiftedTag>>> element, MergeDatalogContext& context);
-template std::pair<
-    ::tyr::formalism::datalog::BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>>,
-    bool>
-merge_p2d(BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<FunctionExpression<::tyr::LiftedTag>>> element, MergeDatalogContext& context);
-template std::
-    pair<::tyr::formalism::datalog::BinaryOperatorView<BooleanOperatorKind, ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::GroundTag>>>, bool>
-    merge_p2d(BinaryOperatorView<BooleanOperatorKind, ygg::Data<FunctionExpression<::tyr::GroundTag>>> element, MergeDatalogContext& context);
-template std::pair<
-    ::tyr::formalism::datalog::BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::GroundTag>>>,
-    bool>
-merge_p2d(BinaryOperatorView<ArithmeticOperatorKind, ygg::Data<FunctionExpression<::tyr::GroundTag>>> element, MergeDatalogContext& context);
+template std::pair<datalog::BinaryOperatorView<LiftedTag, BooleanOperatorKind>, bool> merge_p2d(BinaryOperatorView<LiftedTag, BooleanOperatorKind> element,
+                                                                                                MergeDatalogContext& context);
+template std::pair<datalog::BinaryOperatorView<LiftedTag, ArithmeticOperatorKind>, bool>
+merge_p2d(BinaryOperatorView<LiftedTag, ArithmeticOperatorKind> element, MergeDatalogContext& context);
+template std::pair<datalog::BinaryOperatorView<GroundTag, BooleanOperatorKind>, bool> merge_p2d(BinaryOperatorView<GroundTag, BooleanOperatorKind> element,
+                                                                                                MergeDatalogContext& context);
+template std::pair<datalog::BinaryOperatorView<GroundTag, ArithmeticOperatorKind>, bool>
+merge_p2d(BinaryOperatorView<GroundTag, ArithmeticOperatorKind> element, MergeDatalogContext& context);
 
-template std::pair<::tyr::formalism::datalog::MultiOperatorView<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>>, bool>
-merge_p2d(MultiOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>> element, MergeDatalogContext& context);
-template std::pair<::tyr::formalism::datalog::MultiOperatorView<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::GroundTag>>>, bool>
-merge_p2d(MultiOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>> element, MergeDatalogContext& context);
+template std::pair<datalog::MultiOperatorView<LiftedTag>, bool> merge_p2d(MultiOperatorView<LiftedTag> element, MergeDatalogContext& context);
+template std::pair<datalog::MultiOperatorView<GroundTag>, bool> merge_p2d(MultiOperatorView<GroundTag> element, MergeDatalogContext& context);
 
-template ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>>>
-merge_p2d(ArithmeticOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>> element, MergeDatalogContext& context);
-template ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::GroundTag>>>>
-merge_p2d(ArithmeticOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>> element, MergeDatalogContext& context);
+template ygg::Data<datalog::ArithmeticOperator<LiftedTag>> merge_p2d(ArithmeticOperatorView<LiftedTag> element, MergeDatalogContext& context);
+template ygg::Data<datalog::ArithmeticOperator<GroundTag>> merge_p2d(ArithmeticOperatorView<GroundTag> element, MergeDatalogContext& context);
 
-template ygg::Data<::tyr::formalism::datalog::BooleanOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>>>
-merge_p2d(BooleanOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>> element, MergeDatalogContext& context);
-template ygg::Data<::tyr::formalism::datalog::BooleanOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::GroundTag>>>>
-merge_p2d(BooleanOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>> element, MergeDatalogContext& context);
+template ygg::Data<datalog::BooleanOperator<LiftedTag>> merge_p2d(BooleanOperatorView<LiftedTag> element, MergeDatalogContext& context);
+template ygg::Data<datalog::BooleanOperator<GroundTag>> merge_p2d(BooleanOperatorView<GroundTag> element, MergeDatalogContext& context);
 
 }
 

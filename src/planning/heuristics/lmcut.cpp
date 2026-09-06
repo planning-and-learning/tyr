@@ -44,8 +44,8 @@ namespace tyr::planning
 {
 namespace
 {
-namespace f = ::tyr::formalism;
-namespace fd = ::tyr::formalism::datalog;
+namespace f = formalism;
+namespace fd = formalism::datalog;
 
 struct LMCutNumericNode : ygg::comparison::Mixin<LMCutNumericNode>
 {
@@ -80,13 +80,13 @@ struct LMCutImplementation :
                                       datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>,
                                       datalog::TerminationPolicy<datalog::MaxAggregation>,
                                       datalog::RuleCostOverridePolicy<Kind>>;
-    using ActionBinding = ::tyr::formalism::planning::ActionBindingView;
+    using ActionBinding = formalism::planning::ActionBindingView;
     using PredicateHead = fd::PredicateBindingView<f::FluentTag>;
     using NumericNode = LMCutNumericNode;
     using RuleEdge = fd::RuleBindingView<f::PredicateTag>;
     using NumericEdge = datalog::NumericTransitionCostKey<f::FunctionTag>;
     using Precondition = std::variant<PredicateHead, NumericNode>;
-    using CutFrontierAtoms = f::planning::AtomViewList<::tyr::GroundTag, f::FluentTag>;
+    using CutFrontierAtoms = f::planning::AtomViewList<GroundTag, f::FluentTag>;
 
     LMCutImplementation(std::shared_ptr<detail::RPGDefinition<Kind>> definition,
                         ygg::ExecutionContextPtr execution_context,
@@ -666,7 +666,7 @@ template<TaskKind Kind>
 struct LMCutHeuristic<Kind>::Impl
 {
     using Implementation = LMCutImplementation<Kind>;
-    using CutFrontierAtoms = f::planning::AtomViewList<::tyr::GroundTag, f::FluentTag>;
+    using CutFrontierAtoms = f::planning::AtomViewList<GroundTag, f::FluentTag>;
 
     Impl(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
         m_implementation(make_implementation(std::move(task), std::move(execution_context), cost_mode))
@@ -675,7 +675,7 @@ struct LMCutHeuristic<Kind>::Impl
 
     Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) : m_implementation(source.m_implementation, std::move(execution_context)) {}
 
-    void set_goal(f::planning::ConjunctiveConditionView<::tyr::GroundTag> goal) { m_implementation.set_goal(goal); }
+    void set_goal(f::planning::ConjunctiveConditionView<GroundTag> goal) { m_implementation.set_goal(goal); }
 
     ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state, CutFrontierAtoms* cut_frontier_atoms = nullptr)
     {
@@ -722,7 +722,7 @@ LMCutHeuristicPtr<Kind> LMCutHeuristic<Kind>::create(TaskPtr<Kind> task, ygg::Ex
 }
 
 template<TaskKind Kind>
-void LMCutHeuristic<Kind>::set_goal(f::planning::ConjunctiveConditionView<::tyr::GroundTag> goal)
+void LMCutHeuristic<Kind>::set_goal(f::planning::ConjunctiveConditionView<GroundTag> goal)
 {
     m_impl->set_goal(goal);
 }
@@ -734,9 +734,9 @@ ygg::float_t LMCutHeuristic<Kind>::evaluate(const ygg::Builder<State<Kind>>& sta
 }
 
 template<TaskKind Kind>
-f::planning::AtomViewList<::tyr::GroundTag, f::FluentTag> LMCutHeuristic<Kind>::compute_cut_frontier_atoms(const ygg::Builder<State<Kind>>& state)
+f::planning::AtomViewList<GroundTag, f::FluentTag> LMCutHeuristic<Kind>::compute_cut_frontier_atoms(const ygg::Builder<State<Kind>>& state)
 {
-    auto atoms = f::planning::AtomViewList<::tyr::GroundTag, f::FluentTag> {};
+    auto atoms = f::planning::AtomViewList<GroundTag, f::FluentTag> {};
     static_cast<void>(m_impl->evaluate(state, &atoms));
     std::sort(atoms.begin(), atoms.end());
     atoms.erase(std::unique(atoms.begin(), atoms.end()), atoms.end());

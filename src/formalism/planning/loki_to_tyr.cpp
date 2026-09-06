@@ -222,10 +222,10 @@ FunctionViewVariant LokiToTyrTranslator::translate_common(loki::formalism::Funct
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto function = ::tyr::formalism::planning::checkout<Function<Tag>>(builder);
+        auto function = planning::checkout<Function<Tag>>(builder);
         function->name = element.get_name();
         function->arity = element.get_parameters().size();
-        return ::tyr::formalism::planning::get_or_create(context, *function).first;
+        return planning::get_or_create(context, *function).first;
     };
 
     if (element.get_name() == "total-cost")
@@ -238,9 +238,9 @@ FunctionViewVariant LokiToTyrTranslator::translate_common(loki::formalism::Funct
 
 ygg::Index<Object> LokiToTyrTranslator::translate_common(loki::formalism::ObjectView element, Builder& builder, Repository& context)
 {
-    auto object = ::tyr::formalism::planning::checkout<Object>(builder);
+    auto object = planning::checkout<Object>(builder);
     object->name = element.get_name();
-    return ::tyr::formalism::planning::get_or_create(context, *object).first.get_index();
+    return planning::get_or_create(context, *object).first.get_index();
 }
 
 ygg::Index<Variable> LokiToTyrTranslator::translate_common(loki::formalism::ParameterView element, Builder& builder, Repository& context)
@@ -254,10 +254,10 @@ PredicateViewVariant LokiToTyrTranslator::translate_common(loki::formalism::Pred
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto predicate = ::tyr::formalism::planning::checkout<Predicate<Tag>>(builder);
+        auto predicate = planning::checkout<Predicate<Tag>>(builder);
         predicate->name = element.get_name();
         predicate->arity = element.get_parameters().size();
-        return ::tyr::formalism::planning::get_or_create(context, *predicate).first;
+        return planning::get_or_create(context, *predicate).first;
     };
 
     if (m_fluent_predicates.count(element.get_name().str()) && !m_derived_predicates.count(element.get_name().str()))
@@ -270,9 +270,9 @@ PredicateViewVariant LokiToTyrTranslator::translate_common(loki::formalism::Pred
 
 ygg::Index<Variable> LokiToTyrTranslator::translate_common(loki::formalism::VariableView element, Builder& builder, Repository& context)
 {
-    auto variable = ::tyr::formalism::planning::checkout<Variable>(builder);
+    auto variable = planning::checkout<Variable>(builder);
     variable->name = element.get_name();
-    return ::tyr::formalism::planning::get_or_create(context, *variable).first.get_index();
+    return planning::get_or_create(context, *variable).first.get_index();
 }
 
 namespace
@@ -284,12 +284,12 @@ auto to_binding(ygg::View<ygg::Index<T>, Repository> element, const Range& terms
     if (std::ranges::size(terms) != element.get_arity())
         throw std::invalid_argument("RelationBinding object count does not match relation arity.");
 
-    auto binding = ::tyr::formalism::planning::checkout<RelationBinding<T>>(builder);
+    auto binding = planning::checkout<RelationBinding<T>>(builder);
     binding->relation = element.get_index();
     binding->objects.reserve(std::ranges::size(terms));
     for (const auto term : terms)
         binding->objects.push_back(translate(term));
-    return ::tyr::formalism::planning::get_or_create(context, *binding);
+    return planning::get_or_create(context, *binding);
 }
 
 }
@@ -321,10 +321,10 @@ AtomViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::AtomView 
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto atom = ::tyr::formalism::planning::checkout<Atom<::tyr::LiftedTag, Tag>>(builder);
+        auto atom = planning::checkout<Atom<LiftedTag, Tag>>(builder);
         atom->predicate = predicate.get_index();
         this->translate_lifted(element.get_terms(), builder, context, atom->terms);
-        return ::tyr::formalism::planning::get_or_create(context, *atom).first;
+        return planning::get_or_create(context, *atom).first;
     };
 
     return std::visit(
@@ -351,21 +351,21 @@ LiteralViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::Litera
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto literal = ::tyr::formalism::planning::checkout<Literal<::tyr::LiftedTag, Tag>>(builder);
+        auto literal = planning::checkout<Literal<LiftedTag, Tag>>(builder);
         literal->atom = atom.get_index();
         literal->polarity = element.get_polarity();
-        return ::tyr::formalism::planning::get_or_create(context, *literal).first;
+        return planning::get_or_create(context, *literal).first;
     };
 
     return std::visit(
         [&](auto&& arg) -> LiteralViewVariant
         {
             using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<T, AtomView<::tyr::LiftedTag, StaticTag>>)
+            if constexpr (std::is_same_v<T, AtomView<LiftedTag, StaticTag>>)
                 return build_literal(StaticTag {}, arg);
-            else if constexpr (std::is_same_v<T, AtomView<::tyr::LiftedTag, FluentTag>>)
+            else if constexpr (std::is_same_v<T, AtomView<LiftedTag, FluentTag>>)
                 return build_literal(FluentTag {}, arg);
-            else if constexpr (std::is_same_v<T, AtomView<::tyr::LiftedTag, DerivedTag>>)
+            else if constexpr (std::is_same_v<T, AtomView<LiftedTag, DerivedTag>>)
                 return build_literal(DerivedTag {}, arg);
             else
                 static_assert(ygg::dependent_false<T>::value, "Missing case for type");
@@ -373,24 +373,22 @@ LiteralViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::Litera
         atom_view_variant);
 }
 
-ygg::Data<FunctionExpression<::tyr::LiftedTag>>
-LokiToTyrTranslator::translate_lifted(loki::formalism::FunctionExpressionNumberView element, Builder&, Repository&)
+ygg::Data<FunctionExpression<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formalism::FunctionExpressionNumberView element, Builder&, Repository&)
 {
-    return ygg::Data<FunctionExpression<::tyr::LiftedTag>>(ygg::float_t(element.get_value()));
+    return ygg::Data<FunctionExpression<LiftedTag>>(ygg::float_t(element.get_value()));
 }
 
-ygg::Data<FunctionExpression<::tyr::LiftedTag>>
+ygg::Data<FunctionExpression<LiftedTag>>
 LokiToTyrTranslator::translate_lifted(loki::formalism::BinaryFunctionExpressionView element, Builder& builder, Repository& context)
 {
-    auto build_binary_op = [&](ArithmeticOperatorKind operator_kind) -> ygg::Data<FunctionExpression<::tyr::LiftedTag>>
+    auto build_binary_op = [&](ArithmeticOperatorKind operator_kind) -> ygg::Data<FunctionExpression<LiftedTag>>
     {
-        auto binary = ::tyr::formalism::planning::checkout<BinaryOperator<ArithmeticOperatorKind, ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>(builder);
+        auto binary = planning::checkout<BinaryOperator<LiftedTag, ArithmeticOperatorKind>>(builder);
         binary->operator_kind = operator_kind;
         binary->lhs = translate_lifted(element.get_left(), builder, context);
         binary->rhs = translate_lifted(element.get_right(), builder, context);
-        return ygg::Data<FunctionExpression<::tyr::LiftedTag>>(ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>(
-            operator_kind,
-            ::tyr::formalism::planning::get_or_create(context, *binary).first.get_index()));
+        return ygg::Data<FunctionExpression<LiftedTag>>(
+            ygg::Data<ArithmeticOperator<LiftedTag>>(operator_kind, planning::get_or_create(context, *binary).first.get_index()));
     };
 
     switch (element.get_operator())
@@ -408,17 +406,16 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::BinaryFunctionExpressionV
     }
 }
 
-ygg::Data<FunctionExpression<::tyr::LiftedTag>>
+ygg::Data<FunctionExpression<LiftedTag>>
 LokiToTyrTranslator::translate_lifted(loki::formalism::MultiFunctionExpressionView element, Builder& builder, Repository& context)
 {
-    auto build_multi_op = [&](ArithmeticOperatorKind operator_kind) -> ygg::Data<FunctionExpression<::tyr::LiftedTag>>
+    auto build_multi_op = [&](ArithmeticOperatorKind operator_kind) -> ygg::Data<FunctionExpression<LiftedTag>>
     {
-        auto multi = ::tyr::formalism::planning::checkout<MultiOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>(builder);
+        auto multi = planning::checkout<MultiOperator<LiftedTag>>(builder);
         multi->operator_kind = operator_kind;
         translate_lifted(element.get_args(), builder, context, multi->args);
-        return ygg::Data<FunctionExpression<::tyr::LiftedTag>>(ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>(
-            operator_kind,
-            ::tyr::formalism::planning::get_or_create(context, *multi).first.get_index()));
+        return ygg::Data<FunctionExpression<LiftedTag>>(
+            ygg::Data<ArithmeticOperator<LiftedTag>>(operator_kind, planning::get_or_create(context, *multi).first.get_index()));
     };
 
     switch (element.get_operator())
@@ -432,35 +429,34 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::MultiFunctionExpressionVi
     }
 }
 
-ygg::Data<FunctionExpression<::tyr::LiftedTag>>
+ygg::Data<FunctionExpression<LiftedTag>>
 LokiToTyrTranslator::translate_lifted(loki::formalism::UnaryFunctionExpressionView element, Builder& builder, Repository& context)
 {
-    auto minus = ::tyr::formalism::planning::checkout<UnaryOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>(builder);
+    auto minus = planning::checkout<UnaryOperator<LiftedTag>>(builder);
     minus->operator_kind = ArithmeticOperatorKind::Sub;
     minus->arg = translate_lifted(element.get_expression(), builder, context);
-    return ygg::Data<FunctionExpression<::tyr::LiftedTag>>(ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>(
-        ArithmeticOperatorKind::Sub,
-        ::tyr::formalism::planning::get_or_create(context, *minus).first.get_index()));
+    return ygg::Data<FunctionExpression<LiftedTag>>(
+        ygg::Data<ArithmeticOperator<LiftedTag>>(ArithmeticOperatorKind::Sub, planning::get_or_create(context, *minus).first.get_index()));
 }
 
-ygg::Data<FunctionExpression<::tyr::LiftedTag>>
+ygg::Data<FunctionExpression<LiftedTag>>
 LokiToTyrTranslator::translate_lifted(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context)
 {
     return ygg::visit(
-        [&](auto&& arg) -> ygg::Data<FunctionExpression<::tyr::LiftedTag>>
+        [&](auto&& arg) -> ygg::Data<FunctionExpression<LiftedTag>>
         {
             using T = std::decay_t<decltype(arg)>;
             if constexpr (std::is_same_v<T, loki::formalism::FunctionTermView>)
             {
                 const auto fterm_view_variant = translate_lifted(arg, builder, context);
                 return std::visit(
-                    [](auto&& fterm) -> ygg::Data<FunctionExpression<::tyr::LiftedTag>>
+                    [](auto&& fterm) -> ygg::Data<FunctionExpression<LiftedTag>>
                     {
                         using FunctionTermT = std::decay_t<decltype(fterm)>;
-                        if constexpr (std::is_same_v<FunctionTermT, FunctionTermView<::tyr::LiftedTag, AuxiliaryTag>>)
+                        if constexpr (std::is_same_v<FunctionTermT, FunctionTermView<LiftedTag, AuxiliaryTag>>)
                             throw std::runtime_error("Cannot create FunctionExpression over auxiliary function term.");
                         else
-                            return ygg::Data<FunctionExpression<::tyr::LiftedTag>>(fterm.get_index());
+                            return ygg::Data<FunctionExpression<LiftedTag>>(fterm.get_index());
                     },
                     fterm_view_variant);
             }
@@ -480,10 +476,10 @@ FunctionTermViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::F
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto fterm = ::tyr::formalism::planning::checkout<FunctionTerm<::tyr::LiftedTag, Tag>>(builder);
+        auto fterm = planning::checkout<FunctionTerm<LiftedTag, Tag>>(builder);
         fterm->function = function.get_index();
         this->translate_lifted(element.get_terms(), builder, context, fterm->terms);
-        return ::tyr::formalism::planning::get_or_create(context, *fterm).first;
+        return planning::get_or_create(context, *fterm).first;
     };
 
     return std::visit(
@@ -503,18 +499,16 @@ FunctionTermViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::F
         function_view_variant);
 }
 
-ygg::Data<BooleanOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>
+ygg::Data<BooleanOperator<LiftedTag>>
 LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionNumericConstraintView element, Builder& builder, Repository& context)
 {
-    auto build_binary_op = [&](BooleanOperatorKind operator_kind) -> ygg::Data<BooleanOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>
+    auto build_binary_op = [&](BooleanOperatorKind operator_kind) -> ygg::Data<BooleanOperator<LiftedTag>>
     {
-        auto binary = ::tyr::formalism::planning::checkout<BinaryOperator<BooleanOperatorKind, ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>(builder);
+        auto binary = planning::checkout<BinaryOperator<LiftedTag, BooleanOperatorKind>>(builder);
         binary->operator_kind = operator_kind;
         binary->lhs = translate_lifted(element.get_left(), builder, context);
         binary->rhs = translate_lifted(element.get_right(), builder, context);
-        return ygg::Data<BooleanOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>(
-            operator_kind,
-            ::tyr::formalism::planning::get_or_create(context, *binary).first.get_index());
+        return ygg::Data<BooleanOperator<LiftedTag>>(operator_kind, planning::get_or_create(context, *binary).first.get_index());
     };
 
     switch (element.get_comparator())
@@ -536,28 +530,28 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionNumericConstrain
     }
 }
 
-ygg::Index<ConjunctiveCondition<::tyr::LiftedTag>>
+ygg::Index<ConjunctiveCondition<LiftedTag>>
 LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionView element, const ygg::IndexList<Variable>& parameters, Builder& builder, Repository& context)
 {
-    auto conj_condition = ::tyr::formalism::planning::checkout<ConjunctiveCondition<::tyr::LiftedTag>>(builder);
+    auto conj_condition = planning::checkout<ConjunctiveCondition<LiftedTag>>(builder);
 
     conj_condition->variables.insert(conj_condition->variables.end(), parameters.begin(), parameters.end());
 
     const auto func_insert_literal = [](LiteralViewVariant literal_view_variant,
-                                        ygg::IndexList<Literal<::tyr::LiftedTag, StaticTag>>& static_literals,
-                                        ygg::IndexList<Literal<::tyr::LiftedTag, FluentTag>>& fluent_literals,
-                                        ygg::IndexList<Literal<::tyr::LiftedTag, DerivedTag>>& derived_literals)
+                                        ygg::IndexList<Literal<LiftedTag, StaticTag>>& static_literals,
+                                        ygg::IndexList<Literal<LiftedTag, FluentTag>>& fluent_literals,
+                                        ygg::IndexList<Literal<LiftedTag, DerivedTag>>& derived_literals)
     {
         std::visit(
             [&](auto&& arg)
             {
                 using T = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<T, LiteralView<::tyr::LiftedTag, StaticTag>>)
+                if constexpr (std::is_same_v<T, LiteralView<LiftedTag, StaticTag>>)
                     static_literals.push_back(arg.get_index());
-                else if constexpr (std::is_same_v<T, LiteralView<::tyr::LiftedTag, FluentTag>>)
+                else if constexpr (std::is_same_v<T, LiteralView<LiftedTag, FluentTag>>)
                     fluent_literals.push_back(arg.get_index());
-                else if constexpr (std::is_same_v<T, LiteralView<::tyr::LiftedTag, DerivedTag>>)
+                else if constexpr (std::is_same_v<T, LiteralView<LiftedTag, DerivedTag>>)
                     derived_literals.push_back(arg.get_index());
                 else
                     static_assert(ygg::dependent_false<T>::value, "Missing case for type");
@@ -566,7 +560,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionView element, co
     };
 
     return ygg::visit(
-        [&](auto&& condition) -> ygg::Index<ConjunctiveCondition<::tyr::LiftedTag>>
+        [&](auto&& condition) -> ygg::Index<ConjunctiveCondition<LiftedTag>>
         {
             using ConditionT = std::decay_t<decltype(condition)>;
 
@@ -603,7 +597,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionView element, co
                         part.get_value());
                 }
 
-                return ::tyr::formalism::planning::get_or_create(context, *conj_condition).first.get_index();
+                return planning::get_or_create(context, *conj_condition).first.get_index();
             }
             else if constexpr (std::is_same_v<ConditionT, loki::formalism::ConditionLiteralView>)
             {
@@ -611,7 +605,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionView element, co
 
                 func_insert_literal(literal_view_variant, conj_condition->static_literals, conj_condition->fluent_literals, conj_condition->derived_literals);
 
-                return ::tyr::formalism::planning::get_or_create(context, *conj_condition).first.get_index();
+                return planning::get_or_create(context, *conj_condition).first.get_index();
             }
             else if constexpr (std::is_same_v<ConditionT, loki::formalism::ConditionNumericConstraintView>)
             {
@@ -619,7 +613,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionView element, co
 
                 conj_condition->numeric_constraints.push_back(numeric_constraint);
 
-                return ::tyr::formalism::planning::get_or_create(context, *conj_condition).first.get_index();
+                return planning::get_or_create(context, *conj_condition).first.get_index();
             }
             else
             {
@@ -638,12 +632,12 @@ NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto numeric_effect = ::tyr::formalism::planning::checkout<NumericEffect<::tyr::LiftedTag, Tag>>(builder);
+        auto numeric_effect = planning::checkout<NumericEffect<LiftedTag, Tag>>(builder);
 
         numeric_effect->operator_kind = operator_kind;
         numeric_effect->fterm = fterm.get_index();
         numeric_effect->fexpr = this->translate_lifted(element.get_expression(), builder, context);
-        return ::tyr::formalism::planning::get_or_create(context, *numeric_effect).first;
+        return planning::get_or_create(context, *numeric_effect).first;
     };
 
     auto build_numeric_effect_term = [&](auto fact_tag, auto fterm) -> NumericEffectViewVariant
@@ -682,11 +676,11 @@ NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::
         {
             using T = std::decay_t<decltype(arg)>;
 
-            if constexpr (std::is_same_v<T, FunctionTermView<::tyr::LiftedTag, StaticTag>>)
+            if constexpr (std::is_same_v<T, FunctionTermView<LiftedTag, StaticTag>>)
                 throw std::runtime_error("Cannot create NumericEffect over static function term.");
-            else if constexpr (std::is_same_v<T, FunctionTermView<::tyr::LiftedTag, FluentTag>>)
+            else if constexpr (std::is_same_v<T, FunctionTermView<LiftedTag, FluentTag>>)
                 return build_numeric_effect_term(FluentTag {}, arg);
-            else if constexpr (std::is_same_v<T, FunctionTermView<::tyr::LiftedTag, AuxiliaryTag>>)
+            else if constexpr (std::is_same_v<T, FunctionTermView<LiftedTag, AuxiliaryTag>>)
                 return build_numeric_effect_term(AuxiliaryTag {}, arg);
             else
                 static_assert(ygg::dependent_false<T>::value, "Missing case for type");
@@ -698,13 +692,13 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
                                            const ygg::IndexList<Variable>& parameters,
                                            Builder& builder,
                                            Repository& context,
-                                           ygg::IndexList<ConditionalEffect<::tyr::LiftedTag>>& output)
+                                           ygg::IndexList<ConditionalEffect<LiftedTag>>& output)
 {
-    using ConditionalEffectData = ygg::Map<ygg::Index<ConjunctiveCondition<::tyr::LiftedTag>>,
+    using ConditionalEffectData = ygg::Map<ygg::Index<ConjunctiveCondition<LiftedTag>>,
                                            std::tuple<ygg::IndexList<Variable>,
-                                                      ygg::IndexList<Literal<::tyr::LiftedTag, FluentTag>>,
-                                                      ygg::DataList<NumericEffectOperator<::tyr::LiftedTag, FluentTag>>,
-                                                      ::cista::optional<ygg::Data<NumericEffectOperator<::tyr::LiftedTag, AuxiliaryTag>>>>>;
+                                                      ygg::IndexList<Literal<LiftedTag, FluentTag>>,
+                                                      ygg::DataList<NumericEffectOperator<LiftedTag, FluentTag>>,
+                                                      ::cista::optional<ygg::Data<NumericEffectOperator<LiftedTag, AuxiliaryTag>>>>>;
 
     const auto translate_effect_func = [&](loki::formalism::EffectView effect, ConditionalEffectData& ref_conditional_effect_data)
     {
@@ -751,8 +745,8 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
                     else
                     {
                         // Create empty conjunctive condition for unconditional effects
-                        auto conj_cond = ::tyr::formalism::planning::checkout<ConjunctiveCondition<::tyr::LiftedTag>>(builder);
-                        return ::tyr::formalism::planning::get_or_create(context, *conj_cond).first.get_index();
+                        auto conj_cond = planning::checkout<ConjunctiveCondition<LiftedTag>>(builder);
+                        return planning::get_or_create(context, *conj_cond).first.get_index();
                     }
                 },
                 tmp_effect.get_value());
@@ -783,11 +777,11 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
                             {
                                 using SubSubEffectT = std::decay_t<decltype(subsubeffect)>;
 
-                                if constexpr (std::is_same_v<SubSubEffectT, LiteralView<::tyr::LiftedTag, StaticTag>>)
+                                if constexpr (std::is_same_v<SubSubEffectT, LiteralView<LiftedTag, StaticTag>>)
                                     throw std::logic_error("Effect literal cannot be Static!");
-                                else if constexpr (std::is_same_v<SubSubEffectT, LiteralView<::tyr::LiftedTag, FluentTag>>)
+                                else if constexpr (std::is_same_v<SubSubEffectT, LiteralView<LiftedTag, FluentTag>>)
                                     data_fluent_literals.push_back(subsubeffect.get_index());
-                                else if constexpr (std::is_same_v<SubSubEffectT, LiteralView<::tyr::LiftedTag, DerivedTag>>)
+                                else if constexpr (std::is_same_v<SubSubEffectT, LiteralView<LiftedTag, DerivedTag>>)
                                     throw std::runtime_error("Effect literal cannot be Derived!");
                                 else
                                     static_assert(ygg::dependent_false<SubSubEffectT>::value, "Unexpected case.");
@@ -803,14 +797,14 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
                             {
                                 using SubSubEffectT = std::decay_t<decltype(subsubeffect)>;
 
-                                if constexpr (std::is_same_v<SubSubEffectT, NumericEffectView<::tyr::LiftedTag, FluentTag>>)
+                                if constexpr (std::is_same_v<SubSubEffectT, NumericEffectView<LiftedTag, FluentTag>>)
                                     data_fluent_numeric_effects.push_back(
-                                        ygg::Data<NumericEffectOperator<::tyr::LiftedTag, FluentTag>>(subsubeffect.get_operator(), subsubeffect.get_index()));
-                                else if constexpr (std::is_same_v<SubSubEffectT, NumericEffectView<::tyr::LiftedTag, AuxiliaryTag>>)
+                                        ygg::Data<NumericEffectOperator<LiftedTag, FluentTag>>(subsubeffect.get_operator(), subsubeffect.get_index()));
+                                else if constexpr (std::is_same_v<SubSubEffectT, NumericEffectView<LiftedTag, AuxiliaryTag>>)
                                 {
                                     assert(!data_auxiliary_numeric_effect);
                                     data_auxiliary_numeric_effect =
-                                        ygg::Data<NumericEffectOperator<::tyr::LiftedTag, AuxiliaryTag>>(subsubeffect.get_operator(), subsubeffect.get_index());
+                                        ygg::Data<NumericEffectOperator<LiftedTag, AuxiliaryTag>>(subsubeffect.get_operator(), subsubeffect.get_index());
                                 }
                                 else
                                     static_assert(ygg::dependent_false<SubSubEffectT>::value, "Unexpected case.");
@@ -856,27 +850,27 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
         const auto& [cond_effect_universal_parameters, cond_effect_fluent_literals, cond_effect_fluent_numeric_effects, cond_effect_auxiliary_numeric_effects] =
             value;
 
-        auto conj_effect = ::tyr::formalism::planning::checkout<ConjunctiveEffect<::tyr::LiftedTag>>(builder);
+        auto conj_effect = planning::checkout<ConjunctiveEffect<LiftedTag>>(builder);
         conj_effect->literals.insert(conj_effect->literals.end(), cond_effect_fluent_literals.begin(), cond_effect_fluent_literals.end());
         conj_effect->numeric_effects.insert(conj_effect->numeric_effects.end(),
                                             cond_effect_fluent_numeric_effects.begin(),
                                             cond_effect_fluent_numeric_effects.end());
         conj_effect->auxiliary_numeric_effect = cond_effect_auxiliary_numeric_effects;
-        const auto conj_effect_index = ::tyr::formalism::planning::get_or_create(context, *conj_effect).first.get_index();
+        const auto conj_effect_index = planning::get_or_create(context, *conj_effect).first.get_index();
 
-        auto cond_effect = ::tyr::formalism::planning::checkout<ConditionalEffect<::tyr::LiftedTag>>(builder);
+        auto cond_effect = planning::checkout<ConditionalEffect<LiftedTag>>(builder);
         cond_effect->variables.insert(cond_effect->variables.end(), cond_effect_universal_parameters.begin(), cond_effect_universal_parameters.end());
         cond_effect->condition = cond_conjunctive_condition;
         cond_effect->effect = conj_effect_index;
-        const auto cond_effect_index = ::tyr::formalism::planning::get_or_create(context, *cond_effect).first.get_index();
+        const auto cond_effect_index = planning::get_or_create(context, *cond_effect).first.get_index();
 
         output.push_back(cond_effect_index);
     }
 }
 
-ygg::Index<Action<::tyr::LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formalism::ActionView element, Builder& builder, Repository& context)
+ygg::Index<Action<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formalism::ActionView element, Builder& builder, Repository& context)
 {
-    auto action = ::tyr::formalism::planning::checkout<Action<::tyr::LiftedTag>>(builder);
+    auto action = planning::checkout<Action<LiftedTag>>(builder);
     action->original_arity = element.get_parameters().size();
     action->name = std::string(element.get_name());
     action->original_name = std::string(element.get_original_name());
@@ -887,7 +881,7 @@ ygg::Index<Action<::tyr::LiftedTag>> LokiToTyrTranslator::translate_lifted(loki:
     ///---------- Push parameters and parse scope -------------
     m_param_map.push_parameters(action->variables);
     {
-        auto conjunctive_condition = ygg::Index<ConjunctiveCondition<::tyr::LiftedTag>>::max();
+        auto conjunctive_condition = ygg::Index<ConjunctiveCondition<LiftedTag>>::max();
         if (element.get_precondition().has_value())
         {
             conjunctive_condition = translate_lifted(element.get_precondition().value(), action->variables, builder, context);
@@ -895,8 +889,8 @@ ygg::Index<Action<::tyr::LiftedTag>> LokiToTyrTranslator::translate_lifted(loki:
         else
         {
             // Create empty one
-            auto conj_cond = ::tyr::formalism::planning::checkout<ConjunctiveCondition<::tyr::LiftedTag>>(builder);
-            conjunctive_condition = ::tyr::formalism::planning::get_or_create(context, *conj_cond).first.get_index();
+            auto conj_cond = planning::checkout<ConjunctiveCondition<LiftedTag>>(builder);
+            conjunctive_condition = planning::get_or_create(context, *conj_cond).first.get_index();
         }
         action->condition = conjunctive_condition;
 
@@ -907,12 +901,12 @@ ygg::Index<Action<::tyr::LiftedTag>> LokiToTyrTranslator::translate_lifted(loki:
     ///---------- Pop parameters -------------
     m_param_map.pop_parameters(action->variables);
 
-    return ::tyr::formalism::planning::get_or_create(context, *action).first.get_index();
+    return planning::get_or_create(context, *action).first.get_index();
 }
 
-ygg::Index<Axiom<::tyr::LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formalism::AxiomView element, Builder& builder, Repository& context)
+ygg::Index<Axiom<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formalism::AxiomView element, Builder& builder, Repository& context)
 {
-    auto axiom = ::tyr::formalism::planning::checkout<Axiom<::tyr::LiftedTag>>(builder);
+    auto axiom = planning::checkout<Axiom<LiftedTag>>(builder);
 
     translate_common(element.get_parameters(), builder, context, axiom->variables);
 
@@ -926,7 +920,7 @@ ygg::Index<Axiom<::tyr::LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::
             [&](auto&& arg)
             {
                 using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_same_v<T, LiteralView<::tyr::LiftedTag, DerivedTag>>)
+                if constexpr (std::is_same_v<T, LiteralView<LiftedTag, DerivedTag>>)
                     axiom->head = arg.get_atom().get_index();
                 else
                     throw std::runtime_error("ToMimirStructures::translate_lifted: Expected Literal<DerivedTag> in axiom head.");
@@ -936,7 +930,7 @@ ygg::Index<Axiom<::tyr::LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::
     ///---------- Pop parameters -------------
     m_param_map.pop_parameters(axiom->variables);
 
-    return ::tyr::formalism::planning::get_or_create(context, *axiom).first.get_index();
+    return planning::get_or_create(context, *axiom).first.get_index();
 }
 
 /**
@@ -967,11 +961,11 @@ GroundAtomViewVariant LokiToTyrTranslator::translate_grounded(loki::formalism::A
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto atom = ::tyr::formalism::planning::checkout<Atom<::tyr::GroundTag, Tag>>(builder);
+        auto atom = planning::checkout<Atom<GroundTag, Tag>>(builder);
         atom->binding =
             to_binding(predicate, element.get_terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
                 .first.get_index();
-        return ::tyr::formalism::planning::get_or_create(context, *atom).first;
+        return planning::get_or_create(context, *atom).first;
     };
 
     return std::visit(
@@ -999,11 +993,11 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::AtomView element, Build
         [&](auto&& arg) -> GroundAtomOrFactViewVariant
         {
             using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<T, AtomView<::tyr::GroundTag, StaticTag>>)
+            if constexpr (std::is_same_v<T, AtomView<GroundTag, StaticTag>>)
                 return arg;
-            else if constexpr (std::is_same_v<T, AtomView<::tyr::GroundTag, FluentTag>>)
+            else if constexpr (std::is_same_v<T, AtomView<GroundTag, FluentTag>>)
                 return fdr_context.get_fact(arg);
-            else if constexpr (std::is_same_v<T, AtomView<::tyr::GroundTag, DerivedTag>>)
+            else if constexpr (std::is_same_v<T, AtomView<GroundTag, DerivedTag>>)
                 return arg;
             else
                 static_assert(ygg::dependent_false<T>::value, "Missing case for type");
@@ -1019,21 +1013,21 @@ GroundLiteralViewVariant LokiToTyrTranslator::translate_grounded(loki::formalism
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto literal = ::tyr::formalism::planning::checkout<Literal<::tyr::GroundTag, Tag>>(builder);
+        auto literal = planning::checkout<Literal<GroundTag, Tag>>(builder);
         literal->atom = atom.get_index();
         literal->polarity = element.get_polarity();
-        return ::tyr::formalism::planning::get_or_create(context, *literal).first;
+        return planning::get_or_create(context, *literal).first;
     };
 
     return std::visit(
         [&](auto&& arg) -> GroundLiteralViewVariant
         {
             using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<T, AtomView<::tyr::GroundTag, StaticTag>>)
+            if constexpr (std::is_same_v<T, AtomView<GroundTag, StaticTag>>)
                 return build_literal(StaticTag {}, arg);
-            else if constexpr (std::is_same_v<T, AtomView<::tyr::GroundTag, FluentTag>>)
+            else if constexpr (std::is_same_v<T, AtomView<GroundTag, FluentTag>>)
                 return build_literal(FluentTag {}, arg);
-            else if constexpr (std::is_same_v<T, AtomView<::tyr::GroundTag, DerivedTag>>)
+            else if constexpr (std::is_same_v<T, AtomView<GroundTag, DerivedTag>>)
                 return build_literal(DerivedTag {}, arg);
             else
                 static_assert(ygg::dependent_false<T>::value, "Missing case for type");
@@ -1050,11 +1044,11 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::LiteralView element, Bu
         [&](auto&& arg) -> GroundLiteralOrFactViewVariant
         {
             using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<T, LiteralView<::tyr::GroundTag, StaticTag>>)
+            if constexpr (std::is_same_v<T, LiteralView<GroundTag, StaticTag>>)
                 return arg;
-            else if constexpr (std::is_same_v<T, LiteralView<::tyr::GroundTag, FluentTag>>)
+            else if constexpr (std::is_same_v<T, LiteralView<GroundTag, FluentTag>>)
                 return std::make_pair(fdr_context.get_fact(arg.get_atom()), arg.get_polarity());
-            else if constexpr (std::is_same_v<T, LiteralView<::tyr::GroundTag, DerivedTag>>)
+            else if constexpr (std::is_same_v<T, LiteralView<GroundTag, DerivedTag>>)
                 return arg;
             else
                 static_assert(ygg::dependent_false<T>::value, "Missing case for type");
@@ -1062,24 +1056,22 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::LiteralView element, Bu
         literal_view_variant);
 }
 
-ygg::Data<FunctionExpression<::tyr::GroundTag>>
-LokiToTyrTranslator::translate_grounded(loki::formalism::FunctionExpressionNumberView element, Builder&, Repository&)
+ygg::Data<FunctionExpression<GroundTag>> LokiToTyrTranslator::translate_grounded(loki::formalism::FunctionExpressionNumberView element, Builder&, Repository&)
 {
-    return ygg::Data<FunctionExpression<::tyr::GroundTag>>(ygg::float_t(element.get_value()));
+    return ygg::Data<FunctionExpression<GroundTag>>(ygg::float_t(element.get_value()));
 }
 
-ygg::Data<FunctionExpression<::tyr::GroundTag>>
+ygg::Data<FunctionExpression<GroundTag>>
 LokiToTyrTranslator::translate_grounded(loki::formalism::BinaryFunctionExpressionView element, Builder& builder, Repository& context)
 {
-    auto build_binary_op = [&](ArithmeticOperatorKind operator_kind) -> ygg::Data<FunctionExpression<::tyr::GroundTag>>
+    auto build_binary_op = [&](ArithmeticOperatorKind operator_kind) -> ygg::Data<FunctionExpression<GroundTag>>
     {
-        auto binary = ::tyr::formalism::planning::checkout<BinaryOperator<ArithmeticOperatorKind, ygg::Data<FunctionExpression<::tyr::GroundTag>>>>(builder);
+        auto binary = planning::checkout<BinaryOperator<GroundTag, ArithmeticOperatorKind>>(builder);
         binary->operator_kind = operator_kind;
         binary->lhs = translate_grounded(element.get_left(), builder, context);
         binary->rhs = translate_grounded(element.get_right(), builder, context);
-        return ygg::Data<FunctionExpression<::tyr::GroundTag>>(ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>(
-            operator_kind,
-            ::tyr::formalism::planning::get_or_create(context, *binary).first.get_index()));
+        return ygg::Data<FunctionExpression<GroundTag>>(
+            ygg::Data<ArithmeticOperator<GroundTag>>(operator_kind, planning::get_or_create(context, *binary).first.get_index()));
     };
 
     switch (element.get_operator())
@@ -1097,17 +1089,16 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::BinaryFunctionExpressio
     }
 }
 
-ygg::Data<FunctionExpression<::tyr::GroundTag>>
+ygg::Data<FunctionExpression<GroundTag>>
 LokiToTyrTranslator::translate_grounded(loki::formalism::MultiFunctionExpressionView element, Builder& builder, Repository& context)
 {
-    auto build_multi_op = [&](ArithmeticOperatorKind operator_kind) -> ygg::Data<FunctionExpression<::tyr::GroundTag>>
+    auto build_multi_op = [&](ArithmeticOperatorKind operator_kind) -> ygg::Data<FunctionExpression<GroundTag>>
     {
-        auto multi = ::tyr::formalism::planning::checkout<MultiOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>(builder);
+        auto multi = planning::checkout<MultiOperator<GroundTag>>(builder);
         multi->operator_kind = operator_kind;
         translate_grounded(element.get_args(), builder, context, multi->args);
-        return ygg::Data<FunctionExpression<::tyr::GroundTag>>(ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>(
-            operator_kind,
-            ::tyr::formalism::planning::get_or_create(context, *multi).first.get_index()));
+        return ygg::Data<FunctionExpression<GroundTag>>(
+            ygg::Data<ArithmeticOperator<GroundTag>>(operator_kind, planning::get_or_create(context, *multi).first.get_index()));
     };
 
     switch (element.get_operator())
@@ -1121,29 +1112,28 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::MultiFunctionExpression
     }
 }
 
-ygg::Data<FunctionExpression<::tyr::GroundTag>>
+ygg::Data<FunctionExpression<GroundTag>>
 LokiToTyrTranslator::translate_grounded(loki::formalism::UnaryFunctionExpressionView element, Builder& builder, Repository& context)
 {
-    auto minus = ::tyr::formalism::planning::checkout<UnaryOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>(builder);
+    auto minus = planning::checkout<UnaryOperator<GroundTag>>(builder);
     minus->operator_kind = ArithmeticOperatorKind::Sub;
     minus->arg = translate_grounded(element.get_expression(), builder, context);
-    return ygg::Data<FunctionExpression<::tyr::GroundTag>>(ygg::Data<ArithmeticOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>(
-        ArithmeticOperatorKind::Sub,
-        ::tyr::formalism::planning::get_or_create(context, *minus).first.get_index()));
+    return ygg::Data<FunctionExpression<GroundTag>>(
+        ygg::Data<ArithmeticOperator<GroundTag>>(ArithmeticOperatorKind::Sub, planning::get_or_create(context, *minus).first.get_index()));
 }
 
-ygg::Data<FunctionExpression<::tyr::GroundTag>>
+ygg::Data<FunctionExpression<GroundTag>>
 LokiToTyrTranslator::translate_grounded(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context)
 {
     return ygg::visit(
-        [&](auto&& arg) -> ygg::Data<FunctionExpression<::tyr::GroundTag>>
+        [&](auto&& arg) -> ygg::Data<FunctionExpression<GroundTag>>
         {
             using T = std::decay_t<decltype(arg)>;
             if constexpr (std::is_same_v<T, loki::formalism::FunctionTermView>)
             {
                 const auto fterm_view_variant = translate_grounded(arg, builder, context);
-                return std::visit([](auto&& fterm) -> ygg::Data<FunctionExpression<::tyr::GroundTag>>
-                                  { return ygg::Data<FunctionExpression<::tyr::GroundTag>>(fterm.get_index()); },
+                return std::visit([](auto&& fterm) -> ygg::Data<FunctionExpression<GroundTag>>
+                                  { return ygg::Data<FunctionExpression<GroundTag>>(fterm.get_index()); },
                                   fterm_view_variant);
             }
             else
@@ -1162,11 +1152,11 @@ GroundFunctionTermViewVariant LokiToTyrTranslator::translate_grounded(loki::form
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto fterm = ::tyr::formalism::planning::checkout<FunctionTerm<::tyr::GroundTag, Tag>>(builder);
+        auto fterm = planning::checkout<FunctionTerm<GroundTag, Tag>>(builder);
         fterm->binding =
             to_binding(function, element.get_terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
                 .first.get_index();
-        return ::tyr::formalism::planning::get_or_create(context, *fterm).first;
+        return planning::get_or_create(context, *fterm).first;
     };
 
     return std::visit(
@@ -1194,7 +1184,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::InitialFunctionValueVie
     {
         using Tag = std::decay_t<decltype(fact_tag)>;
 
-        auto fterm_value = ::tyr::formalism::planning::checkout<FunctionTermValue<::tyr::GroundTag, Tag>>(builder);
+        auto fterm_value = planning::checkout<FunctionTermValue<GroundTag, Tag>>(builder);
         fterm_value->fterm = fterm.get_index();
         fterm_value->value = ygg::visit(
             [](auto&& expression) -> ygg::float_t
@@ -1206,18 +1196,18 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::InitialFunctionValueVie
                     throw std::runtime_error("Expected numeric initial function value.");
             },
             element.get_value().get_value());
-        return ::tyr::formalism::planning::get_or_create(context, *fterm_value).first;
+        return planning::get_or_create(context, *fterm_value).first;
     };
 
     return std::visit(
         [&](auto&& arg) -> GroundFunctionTermValueViewVariant
         {
             using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<T, FunctionTermView<::tyr::GroundTag, StaticTag>>)
+            if constexpr (std::is_same_v<T, FunctionTermView<GroundTag, StaticTag>>)
                 return build_fterm_value(StaticTag {}, arg);
-            else if constexpr (std::is_same_v<T, FunctionTermView<::tyr::GroundTag, FluentTag>>)
+            else if constexpr (std::is_same_v<T, FunctionTermView<GroundTag, FluentTag>>)
                 return build_fterm_value(FluentTag {}, arg);
-            else if constexpr (std::is_same_v<T, FunctionTermView<::tyr::GroundTag, AuxiliaryTag>>)
+            else if constexpr (std::is_same_v<T, FunctionTermView<GroundTag, AuxiliaryTag>>)
                 return build_fterm_value(AuxiliaryTag {}, arg);
             else
                 static_assert(ygg::dependent_false<T>::value, "Missing case for type");
@@ -1225,18 +1215,16 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::InitialFunctionValueVie
         fterm_view_variant);
 }
 
-ygg::Data<BooleanOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>
+ygg::Data<BooleanOperator<GroundTag>>
 LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionNumericConstraintView element, Builder& builder, Repository& context)
 {
-    auto build_binary_op = [&](BooleanOperatorKind operator_kind) -> ygg::Data<BooleanOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>
+    auto build_binary_op = [&](BooleanOperatorKind operator_kind) -> ygg::Data<BooleanOperator<GroundTag>>
     {
-        auto binary = ::tyr::formalism::planning::checkout<BinaryOperator<BooleanOperatorKind, ygg::Data<FunctionExpression<::tyr::GroundTag>>>>(builder);
+        auto binary = planning::checkout<BinaryOperator<GroundTag, BooleanOperatorKind>>(builder);
         binary->operator_kind = operator_kind;
         binary->lhs = translate_grounded(element.get_left(), builder, context);
         binary->rhs = translate_grounded(element.get_right(), builder, context);
-        return ygg::Data<BooleanOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>(
-            operator_kind,
-            ::tyr::formalism::planning::get_or_create(context, *binary).first.get_index());
+        return ygg::Data<BooleanOperator<GroundTag>>(operator_kind, planning::get_or_create(context, *binary).first.get_index());
     };
 
     switch (element.get_comparator())
@@ -1258,14 +1246,14 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionNumericConstra
     }
 }
 
-ygg::Index<ConjunctiveCondition<::tyr::GroundTag>>
+ygg::Index<ConjunctiveCondition<GroundTag>>
 LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, Builder& builder, Repository& context, FDRContext& fdr_context)
 {
-    auto conj_condition = ::tyr::formalism::planning::checkout<ConjunctiveCondition<::tyr::GroundTag>>(builder);
+    auto conj_condition = planning::checkout<ConjunctiveCondition<GroundTag>>(builder);
 
     const auto func_insert_literal = [](GroundLiteralOrFactViewVariant literal_or_fact_view_variant,
-                                        ygg::IndexList<Literal<::tyr::GroundTag, StaticTag>>& static_literals,
-                                        ygg::IndexList<Literal<::tyr::GroundTag, DerivedTag>>& derived_literals,
+                                        ygg::IndexList<Literal<GroundTag, StaticTag>>& static_literals,
+                                        ygg::IndexList<Literal<GroundTag, DerivedTag>>& derived_literals,
                                         ygg::DataList<FDRFact<FluentTag>>& positive_facts,
                                         ygg::DataList<FDRFact<FluentTag>>& negative_facts)
     {
@@ -1274,7 +1262,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
             {
                 using T = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<T, LiteralView<::tyr::GroundTag, StaticTag>>)
+                if constexpr (std::is_same_v<T, LiteralView<GroundTag, StaticTag>>)
                     static_literals.push_back(arg.get_index());
                 else if constexpr (std::is_same_v<T, std::pair<FDRFactView<FluentTag>, bool>>)
                 {
@@ -1283,7 +1271,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
                     else
                         negative_facts.push_back(arg.first.get_data());
                 }
-                else if constexpr (std::is_same_v<T, LiteralView<::tyr::GroundTag, DerivedTag>>)
+                else if constexpr (std::is_same_v<T, LiteralView<GroundTag, DerivedTag>>)
                     derived_literals.push_back(arg.get_index());
                 else
                     static_assert(ygg::dependent_false<T>::value, "Missing case for type");
@@ -1292,7 +1280,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
     };
 
     return ygg::visit(
-        [&](auto&& condition) -> ygg::Index<ConjunctiveCondition<::tyr::GroundTag>>
+        [&](auto&& condition) -> ygg::Index<ConjunctiveCondition<GroundTag>>
         {
             using ConditionT = std::decay_t<decltype(condition)>;
 
@@ -1330,7 +1318,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
                         part.get_value());
                 }
 
-                return ::tyr::formalism::planning::get_or_create(context, *conj_condition).first.get_index();
+                return planning::get_or_create(context, *conj_condition).first.get_index();
             }
             else if constexpr (std::is_same_v<ConditionT, loki::formalism::ConditionLiteralView>)
             {
@@ -1342,7 +1330,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
                                     conj_condition->positive_facts,
                                     conj_condition->negative_facts);
 
-                return ::tyr::formalism::planning::get_or_create(context, *conj_condition).first.get_index();
+                return planning::get_or_create(context, *conj_condition).first.get_index();
             }
             else if constexpr (std::is_same_v<ConditionT, loki::formalism::ConditionNumericConstraintView>)
             {
@@ -1350,7 +1338,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
 
                 conj_condition->numeric_constraints.push_back(numeric_constraint);
 
-                return ::tyr::formalism::planning::get_or_create(context, *conj_condition).first.get_index();
+                return planning::get_or_create(context, *conj_condition).first.get_index();
             }
             else
             {
@@ -1363,14 +1351,14 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
 
 ygg::Index<Metric> LokiToTyrTranslator::translate_grounded(loki::formalism::MetricView element, Builder& builder, Repository& context)
 {
-    auto metric = ::tyr::formalism::planning::checkout<Metric>(builder);
+    auto metric = planning::checkout<Metric>(builder);
 
     metric->fexpr = translate_grounded(element.get_expression(), builder, context);
     metric->optimization_direction = element.get_optimization_direction() == loki::formalism::OptimizationDirection::Minimize ?
                                          OptimizationDirection::Minimize :
                                          OptimizationDirection::Maximize;
 
-    return ::tyr::formalism::planning::get_or_create(context, *metric).first.get_index();
+    return planning::get_or_create(context, *metric).first.get_index();
 }
 
 PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView& element, std::optional<std::filesystem::path> path)
@@ -1382,7 +1370,7 @@ PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView&
     /* Perform static type analysis */
     prepare(element);
 
-    auto domain = ::tyr::formalism::planning::checkout<planning::Domain>(builder);
+    auto domain = planning::checkout<planning::Domain>(builder);
 
     /* Name */
     domain->name = element.get_name();
@@ -1451,7 +1439,7 @@ PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView&
     translate_lifted(element.get_actions(), builder, *context, domain->actions);
     translate_lifted(element.get_axioms(), builder, *context, domain->axioms);
 
-    return PlanningDomain(::tyr::formalism::planning::get_or_create(*context, *domain).first, context, std::move(factory), std::move(path));
+    return PlanningDomain(planning::get_or_create(*context, *domain).first, context, std::move(factory), std::move(path));
 }
 
 PlanningTask LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, PlanningDomain domain, std::optional<std::filesystem::path> path)
@@ -1461,7 +1449,7 @@ PlanningTask LokiToTyrTranslator::translate(const loki::formalism::TaskView& ele
     /* Perform static type analysis */
     prepare(element);
 
-    auto task = ::tyr::formalism::planning::checkout<planning::Task>(builder);
+    auto task = planning::checkout<planning::Task>(builder);
 
     const auto& factory = domain.get_repository_factory();
     auto task_context = factory->create_shared(domain.get_domain().get_constants().size() + element.get_objects().size(), domain.get_repository().get());
@@ -1506,19 +1494,19 @@ PlanningTask LokiToTyrTranslator::translate(const loki::formalism::TaskView& ele
 
     /* Initial section */
     const auto func_insert_ground_atom = [&](GroundLiteralOrFactViewVariant literal_or_fact_view_variant,
-                                             ygg::IndexList<Atom<::tyr::GroundTag, StaticTag>>& static_atoms,
-                                             ygg::IndexList<Atom<::tyr::GroundTag, FluentTag>>& fluent_atoms)
+                                             ygg::IndexList<Atom<GroundTag, StaticTag>>& static_atoms,
+                                             ygg::IndexList<Atom<GroundTag, FluentTag>>& fluent_atoms)
     {
         std::visit(
             [&](auto&& arg)
             {
                 using T = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<T, LiteralView<::tyr::GroundTag, StaticTag>>)
+                if constexpr (std::is_same_v<T, LiteralView<GroundTag, StaticTag>>)
                     static_atoms.push_back(arg.get_atom().get_index());
                 else if constexpr (std::is_same_v<T, std::pair<FDRFactView<FluentTag>, bool>>)
                     fluent_atoms.push_back(arg.first.get_atom().value().get_index());  // we know it must have a value
-                else if constexpr (std::is_same_v<T, LiteralView<::tyr::GroundTag, DerivedTag>>)
+                else if constexpr (std::is_same_v<T, LiteralView<GroundTag, DerivedTag>>)
                     throw std::runtime_error("Derived ground atoms are not allowed to be defined in the initial section.");
                 else
                     static_assert(ygg::dependent_false<T>::value, "Missing case for type");
@@ -1534,20 +1522,20 @@ PlanningTask LokiToTyrTranslator::translate(const loki::formalism::TaskView& ele
     }
 
     const auto func_insert_fterm_values = [](GroundFunctionTermValueViewVariant fterm_value_view_variant,
-                                             ygg::IndexList<FunctionTermValue<::tyr::GroundTag, StaticTag>>& static_fterm_values,
-                                             ygg::IndexList<FunctionTermValue<::tyr::GroundTag, FluentTag>>& fluent_fterm_values,
-                                             ::cista::optional<ygg::Index<FunctionTermValue<::tyr::GroundTag, AuxiliaryTag>>>& auxiliary_fterm_value)
+                                             ygg::IndexList<FunctionTermValue<GroundTag, StaticTag>>& static_fterm_values,
+                                             ygg::IndexList<FunctionTermValue<GroundTag, FluentTag>>& fluent_fterm_values,
+                                             ::cista::optional<ygg::Index<FunctionTermValue<GroundTag, AuxiliaryTag>>>& auxiliary_fterm_value)
     {
         std::visit(
             [&](auto&& arg)
             {
                 using T = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<T, FunctionTermValueView<::tyr::GroundTag, StaticTag>>)
+                if constexpr (std::is_same_v<T, FunctionTermValueView<GroundTag, StaticTag>>)
                     static_fterm_values.push_back(arg.get_index());
-                else if constexpr (std::is_same_v<T, FunctionTermValueView<::tyr::GroundTag, FluentTag>>)
+                else if constexpr (std::is_same_v<T, FunctionTermValueView<GroundTag, FluentTag>>)
                     fluent_fterm_values.push_back(arg.get_index());
-                else if constexpr (std::is_same_v<T, FunctionTermValueView<::tyr::GroundTag, AuxiliaryTag>>)
+                else if constexpr (std::is_same_v<T, FunctionTermValueView<GroundTag, AuxiliaryTag>>)
                 {
                     assert(!auxiliary_fterm_value);
                     auxiliary_fterm_value = arg.get_index();
@@ -1573,8 +1561,8 @@ PlanningTask LokiToTyrTranslator::translate(const loki::formalism::TaskView& ele
     else
     {
         // Create empty conjunctive condition
-        auto conj_cond = ::tyr::formalism::planning::checkout<ConjunctiveCondition<::tyr::GroundTag>>(builder);
-        task->goal = ::tyr::formalism::planning::get_or_create(*task_context, *conj_cond).first.get_index();
+        auto conj_cond = planning::checkout<ConjunctiveCondition<GroundTag>>(builder);
+        task->goal = planning::get_or_create(*task_context, *conj_cond).first.get_index();
     }
 
     /* Metric section */
@@ -1590,11 +1578,7 @@ PlanningTask LokiToTyrTranslator::translate(const loki::formalism::TaskView& ele
     /* Structures section */
     translate_lifted(element.get_axioms(), builder, *task_context, task->axioms);
 
-    return PlanningTask(::tyr::formalism::planning::get_or_create(*task_context, *task).first,
-                        std::move(fdr_context),
-                        task_context,
-                        std::move(domain),
-                        std::move(path));
+    return PlanningTask(planning::get_or_create(*task_context, *task).first, std::move(fdr_context), task_context, std::move(domain), std::move(path));
 }
 
 }

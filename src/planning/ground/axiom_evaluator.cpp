@@ -46,11 +46,11 @@ struct AxiomEvaluator<GroundTag>::Impl
             auto axiom_strata = compute_ground_axiom_stratification(task->get_task());
             match_tree_prototypes.reserve(axiom_strata.data.size());
             for (const auto& stratum : axiom_strata.data)
-                match_tree_prototypes.emplace_back(match_tree::MatchTree<fp::Axiom<::tyr::GroundTag>>::create(stratum, task->get_task().get_context()));
+                match_tree_prototypes.emplace_back(match_tree::MatchTree<fp::Axiom<GroundTag>>::create(stratum, task->get_task().get_context()));
         }
 
         TaskPtr<GroundTag> task;
-        std::vector<match_tree::MatchTreePtr<fp::Axiom<::tyr::GroundTag>>> match_tree_prototypes;
+        std::vector<match_tree::MatchTreePtr<fp::Axiom<GroundTag>>> match_tree_prototypes;
     };
 
     struct Evaluator
@@ -66,8 +66,8 @@ struct AxiomEvaluator<GroundTag>::Impl
         }
 
         ygg::ExecutionContextPtr execution_context;
-        std::vector<match_tree::MatchTreePtr<fp::Axiom<::tyr::GroundTag>>> match_tree_workers;
-        fp::AxiomViewList<::tyr::GroundTag> applicable_axioms;
+        std::vector<match_tree::MatchTreePtr<fp::Axiom<GroundTag>>> match_tree_workers;
+        fp::AxiomViewList<GroundTag> applicable_axioms;
     };
 
     Impl(ygg::uint_t index_, TaskPtr<GroundTag> task, ygg::ExecutionContextPtr execution_context_, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :

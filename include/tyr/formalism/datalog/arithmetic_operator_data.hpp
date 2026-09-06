@@ -31,12 +31,12 @@
 namespace ygg
 {
 
-template<typename T>
+template<::tyr::TaskKind T>
 struct Data<::tyr::formalism::datalog::ArithmeticOperator<T>>
 {
     using OperatorType = ::tyr::formalism::ArithmeticOperatorKind;
     using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::datalog::UnaryOperator<T>>,
-                                             ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::ArithmeticOperatorKind, T>>,
+                                             ygg::Index<::tyr::formalism::datalog::BinaryOperator<T, ::tyr::formalism::ArithmeticOperatorKind>>,
                                              ygg::Index<::tyr::formalism::datalog::MultiOperator<T>>>;
 
     OperatorType operator_kind = OperatorType::Sub;
@@ -44,7 +44,7 @@ struct Data<::tyr::formalism::datalog::ArithmeticOperator<T>>
 
     template<typename C>
     using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::UnaryOperator<T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<::tyr::formalism::ArithmeticOperatorKind, T>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<T, ::tyr::formalism::ArithmeticOperatorKind>>, C>,
                                      ::ygg::View<ygg::Index<::tyr::formalism::datalog::MultiOperator<T>>, C>>;
 
     Data() = default;
@@ -71,8 +71,7 @@ struct Data<::tyr::formalism::datalog::ArithmeticOperator<T>>
     auto identifying_members() const noexcept { return std::tuple<std::size_t, const OperatorType&, const Variant&>(value.index(), operator_kind, value); }
 };
 
-static_assert(
-    !ygg::uses_trivial_storage_v<::tyr::formalism::datalog::ArithmeticOperator<ygg::Data<::tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>>>);
+static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::ArithmeticOperator<::tyr::LiftedTag>>);
 
 }
 

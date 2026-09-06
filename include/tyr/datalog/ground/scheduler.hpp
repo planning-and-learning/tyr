@@ -41,14 +41,14 @@
 namespace tyr::datalog
 {
 
-template<::tyr::formalism::RelationKind R>
+template<formalism::RelationKind R>
 struct GroundQueueEntry : ygg::comparison::Mixin<GroundQueueEntry<R>>
 {
     Cost cost;
-    ::tyr::formalism::datalog::RuleView<::tyr::GroundTag, R> rule;
+    formalism::datalog::RuleView<GroundTag, R> rule;
 
     GroundQueueEntry() = delete;
-    GroundQueueEntry(Cost cost, ::tyr::formalism::datalog::RuleView<::tyr::GroundTag, R> rule) : cost(cost), rule(rule) {}
+    GroundQueueEntry(Cost cost, formalism::datalog::RuleView<GroundTag, R> rule) : cost(cost), rule(rule) {}
 
     auto identifying_members() const noexcept { return std::make_tuple(cost, rule); }
 };
@@ -73,9 +73,9 @@ struct GroundSchedulerScratch
     std::vector<CostBuckets::PredicateKey> changed_facts;
     std::vector<CostBuckets::FunctionKey> changed_terms;
 
-    explicit GroundSchedulerScratch(::tyr::formalism::datalog::ProgramView<GroundTag> program) :
-        delta_annotations(program.template get_predicates<::tyr::formalism::FluentTag>().size()),
-        delta_numeric_annotations(program.template get_functions<::tyr::formalism::FluentTag>().size())
+    explicit GroundSchedulerScratch(formalism::datalog::ProgramView<GroundTag> program) :
+        delta_annotations(program.template get_predicates<formalism::FluentTag>().size()),
+        delta_numeric_annotations(program.template get_functions<formalism::FluentTag>().size())
     {
     }
 
@@ -101,14 +101,14 @@ template<>
 class Scheduler<GroundTag>
 {
 public:
-    explicit Scheduler(::tyr::formalism::datalog::ProgramView<GroundTag> program) :
+    explicit Scheduler(formalism::datalog::ProgramView<GroundTag> program) :
         m_program(program),
         m_predicate_rules(program),
         m_function_rules(program),
         m_scratch(program)
     {
-        m_predicate_queue.reserve(program.template get_rules<::tyr::formalism::PredicateTag>().size());
-        m_function_queue.reserve(program.template get_rules<::tyr::formalism::FunctionTag>().size());
+        m_predicate_queue.reserve(program.template get_rules<formalism::PredicateTag>().size());
+        m_function_queue.reserve(program.template get_rules<formalism::FunctionTag>().size());
     }
 
     void reset(const FactSets& fact_sets)
@@ -117,12 +117,12 @@ public:
         m_function_queue.clear();
         m_statistics = {};
         m_scratch.clear();
-        initialize_rule_states<::tyr::formalism::PredicateTag>(fact_sets);
-        initialize_rule_states<::tyr::formalism::FunctionTag>(fact_sets);
+        initialize_rule_states<formalism::PredicateTag>(fact_sets);
+        initialize_rule_states<formalism::FunctionTag>(fact_sets);
     }
 
-    template<::tyr::formalism::RelationKind R>
-    void enqueue(::tyr::formalism::datalog::RuleView<::tyr::GroundTag, R> rule, Cost queue_label)
+    template<formalism::RelationKind R>
+    void enqueue(formalism::datalog::RuleView<GroundTag, R> rule, Cost queue_label)
     {
         auto& state = get_states<R>()[ygg::uint_t(rule.get_index())];
         if (state.unsatisfied_count != 0)
@@ -140,7 +140,7 @@ public:
         m_statistics.max_queue_size = std::max(m_statistics.max_queue_size, static_cast<ygg::uint_t>(m_predicate_queue.size() + m_function_queue.size()));
     }
 
-    template<::tyr::formalism::RelationKind R>
+    template<formalism::RelationKind R>
     std::optional<GroundQueueEntry<R>> pop()
     {
         auto& queue = get_queue<R>();
@@ -154,7 +154,7 @@ public:
         return entry;
     }
 
-    template<::tyr::formalism::RelationKind R>
+    template<formalism::RelationKind R>
     bool claim(const GroundQueueEntry<R>& entry)
     {
         auto& queued_cost = get_states<R>()[ygg::uint_t(entry.rule.get_index())].queued_cost;
@@ -167,14 +167,14 @@ public:
         return true;
     }
 
-    template<::tyr::formalism::RelationKind R>
+    template<formalism::RelationKind R>
     Cost next_cost() const noexcept
     {
         const auto& queue = get_queue<R>();
         return queue.empty() ? std::numeric_limits<Cost>::max() : queue.front().cost;
     }
 
-    Cost next_cost() const noexcept { return std::min(next_cost<::tyr::formalism::PredicateTag>(), next_cost<::tyr::formalism::FunctionTag>()); }
+    Cost next_cost() const noexcept { return std::min(next_cost<formalism::PredicateTag>(), next_cost<formalism::FunctionTag>()); }
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void begin_stratum(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
@@ -187,19 +187,19 @@ public:
     void finish_iteration(SchedulerIterationTrigger) noexcept {}
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_numeric_changed(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> term,
+    void notify_numeric_changed(formalism::datalog::FunctionBindingView<formalism::FluentTag> term,
                                 ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void notify_generated(const CostBuckets::Bucket& bucket, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
-    template<::tyr::formalism::RelationKind R>
+    template<formalism::RelationKind R>
     auto& get_states() noexcept
     {
         return get_rules(R {}).states;
     }
 
-    template<::tyr::formalism::RelationKind R>
+    template<formalism::RelationKind R>
     const auto& get_states() const noexcept
     {
         return get_rules(R {}).states;
@@ -211,14 +211,14 @@ public:
     const GroundSchedulerScratch& scratch() const noexcept { return m_scratch; }
 
 private:
-    template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void schedule(::tyr::formalism::datalog::RuleView<::tyr::GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+    void schedule(formalism::datalog::RuleView<GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_predicate_generated(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> fact,
+    void notify_predicate_generated(formalism::datalog::PredicateBindingView<formalism::FluentTag> fact,
                                     ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
-    template<::tyr::formalism::RelationKind R>
+    template<formalism::RelationKind R>
     void initialize_rule_states(const FactSets& fact_sets)
     {
         const auto rules = m_program.template get_rules<R>();
@@ -230,7 +230,7 @@ private:
             auto& state = states[rule_index];
 
             auto unsatisfied_count = ygg::uint_t(0);
-            for (const auto literal : rule.get_body().template get_literals<::tyr::formalism::FluentTag>())
+            for (const auto literal : rule.get_body().template get_literals<formalism::FluentTag>())
                 if (!is_applicable(literal, fact_sets))
                     ++unsatisfied_count;
 
@@ -242,44 +242,44 @@ private:
         }
     }
 
-    template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void update_numeric_constraint_satisfaction(::tyr::formalism::datalog::RuleView<::tyr::GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+    void update_numeric_constraint_satisfaction(formalism::datalog::RuleView<GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
-    template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_predicate_generated_for(::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag> fact,
+    template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+    void notify_predicate_generated_for(formalism::datalog::PredicateBindingView<formalism::FluentTag> fact,
                                         ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
-    template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_numeric_changed_for(::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag> term,
+    template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+    void notify_numeric_changed_for(formalism::datalog::FunctionBindingView<formalism::FluentTag> term,
                                     ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
-    auto& get_queue(::tyr::formalism::PredicateTag) noexcept { return m_predicate_queue; }
-    auto& get_queue(::tyr::formalism::FunctionTag) noexcept { return m_function_queue; }
-    const auto& get_queue(::tyr::formalism::PredicateTag) const noexcept { return m_predicate_queue; }
-    const auto& get_queue(::tyr::formalism::FunctionTag) const noexcept { return m_function_queue; }
+    auto& get_queue(formalism::PredicateTag) noexcept { return m_predicate_queue; }
+    auto& get_queue(formalism::FunctionTag) noexcept { return m_function_queue; }
+    const auto& get_queue(formalism::PredicateTag) const noexcept { return m_predicate_queue; }
+    const auto& get_queue(formalism::FunctionTag) const noexcept { return m_function_queue; }
 
-    template<::tyr::formalism::RelationKind R>
+    template<formalism::RelationKind R>
     auto& get_queue() noexcept
     {
         return get_queue(R {});
     }
 
-    template<::tyr::formalism::RelationKind R>
+    template<formalism::RelationKind R>
     const auto& get_queue() const noexcept
     {
         return get_queue(R {});
     }
 
-    auto& get_rules(::tyr::formalism::PredicateTag) noexcept { return m_predicate_rules; }
-    auto& get_rules(::tyr::formalism::FunctionTag) noexcept { return m_function_rules; }
-    const auto& get_rules(::tyr::formalism::PredicateTag) const noexcept { return m_predicate_rules; }
-    const auto& get_rules(::tyr::formalism::FunctionTag) const noexcept { return m_function_rules; }
+    auto& get_rules(formalism::PredicateTag) noexcept { return m_predicate_rules; }
+    auto& get_rules(formalism::FunctionTag) noexcept { return m_function_rules; }
+    const auto& get_rules(formalism::PredicateTag) const noexcept { return m_predicate_rules; }
+    const auto& get_rules(formalism::FunctionTag) const noexcept { return m_function_rules; }
 
-    ::tyr::formalism::datalog::ProgramView<GroundTag> m_program;
-    RuleWorkspace<GroundTag, ::tyr::formalism::PredicateTag> m_predicate_rules;
-    RuleWorkspace<GroundTag, ::tyr::formalism::FunctionTag> m_function_rules;
-    std::vector<GroundQueueEntry<::tyr::formalism::PredicateTag>> m_predicate_queue;
-    std::vector<GroundQueueEntry<::tyr::formalism::FunctionTag>> m_function_queue;
+    formalism::datalog::ProgramView<GroundTag> m_program;
+    RuleWorkspace<GroundTag, formalism::PredicateTag> m_predicate_rules;
+    RuleWorkspace<GroundTag, formalism::FunctionTag> m_function_rules;
+    std::vector<GroundQueueEntry<formalism::PredicateTag>> m_predicate_queue;
+    std::vector<GroundQueueEntry<formalism::FunctionTag>> m_function_queue;
     GroundQueueStatistics m_statistics;
     GroundSchedulerScratch m_scratch;
 };

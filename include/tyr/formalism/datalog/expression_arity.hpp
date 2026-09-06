@@ -39,28 +39,28 @@ void collect_parameters(ygg::float_t element, ygg::UnorderedSet<ParameterIndex>&
 void collect_parameters(TermView element, ygg::UnorderedSet<ParameterIndex>& result);
 
 template<FactKind F>
-void collect_parameters(AtomView<::tyr::LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result);
+void collect_parameters(AtomView<LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result);
 
 template<FactKind F>
-void collect_parameters(LiteralView<::tyr::LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result);
+void collect_parameters(LiteralView<LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result);
 
 template<FactKind F>
-void collect_parameters(FunctionTermView<::tyr::LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result);
+void collect_parameters(FunctionTermView<LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result);
 
-void collect_parameters(FunctionExpressionView<::tyr::LiftedTag> element, ygg::UnorderedSet<ParameterIndex>& result);
+void collect_parameters(FunctionExpressionView<LiftedTag> element, ygg::UnorderedSet<ParameterIndex>& result);
 
-void collect_parameters(LiftedUnaryOperatorView element, ygg::UnorderedSet<ParameterIndex>& result);
+void collect_parameters(UnaryOperatorView<LiftedTag> element, ygg::UnorderedSet<ParameterIndex>& result);
 
 template<BinaryOperatorKind O>
-void collect_parameters(LiftedBinaryOperatorView<O> element, ygg::UnorderedSet<ParameterIndex>& result);
+void collect_parameters(BinaryOperatorView<LiftedTag, O> element, ygg::UnorderedSet<ParameterIndex>& result);
 
-void collect_parameters(LiftedMultiOperatorView element, ygg::UnorderedSet<ParameterIndex>& result);
+void collect_parameters(MultiOperatorView<LiftedTag> element, ygg::UnorderedSet<ParameterIndex>& result);
 
-void collect_parameters(LiftedArithmeticOperatorView element, ygg::UnorderedSet<ParameterIndex>& result);
+void collect_parameters(ArithmeticOperatorView<LiftedTag> element, ygg::UnorderedSet<ParameterIndex>& result);
 
-void collect_parameters(LiftedBooleanOperatorView element, ygg::UnorderedSet<ParameterIndex>& result);
+void collect_parameters(BooleanOperatorView<LiftedTag> element, ygg::UnorderedSet<ParameterIndex>& result);
 
-auto collect_parameters(LiftedBooleanOperatorView element);
+auto collect_parameters(BooleanOperatorView<LiftedTag> element);
 
 /**
  * Implementations
@@ -85,57 +85,60 @@ inline void collect_parameters(TermView element, ygg::UnorderedSet<ParameterInde
 }
 
 template<FactKind F>
-inline void collect_parameters(AtomView<::tyr::LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result)
+inline void collect_parameters(AtomView<LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result)
 {
     for (const auto term : element.get_terms())
         collect_parameters(term, result);
 }
 
 template<FactKind F>
-inline void collect_parameters(LiteralView<::tyr::LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result)
+inline void collect_parameters(LiteralView<LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result)
 {
     collect_parameters(element.get_atom(), result);
 }
 
 template<FactKind F>
-inline void collect_parameters(FunctionTermView<::tyr::LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result)
+inline void collect_parameters(FunctionTermView<LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result)
 {
     for (const auto term : element.get_terms())
         collect_parameters(term, result);
 }
 
-inline void collect_parameters(FunctionExpressionView<::tyr::LiftedTag> element, ygg::UnorderedSet<ParameterIndex>& result)
+inline void collect_parameters(FunctionExpressionView<LiftedTag> element, ygg::UnorderedSet<ParameterIndex>& result)
 {
     visit([&](auto&& arg) { collect_parameters(arg, result); }, element.get_variant());
 }
 
-inline void collect_parameters(LiftedUnaryOperatorView element, ygg::UnorderedSet<ParameterIndex>& result) { collect_parameters(element.get_arg(), result); }
+inline void collect_parameters(UnaryOperatorView<LiftedTag> element, ygg::UnorderedSet<ParameterIndex>& result)
+{
+    collect_parameters(element.get_arg(), result);
+}
 
 template<BinaryOperatorKind O>
-inline void collect_parameters(LiftedBinaryOperatorView<O> element, ygg::UnorderedSet<ParameterIndex>& result)
+inline void collect_parameters(BinaryOperatorView<LiftedTag, O> element, ygg::UnorderedSet<ParameterIndex>& result)
 {
     collect_parameters(element.get_lhs(), result);
     collect_parameters(element.get_rhs(), result);
 }
 
-inline void collect_parameters(LiftedMultiOperatorView element, ygg::UnorderedSet<ParameterIndex>& result)
+inline void collect_parameters(MultiOperatorView<LiftedTag> element, ygg::UnorderedSet<ParameterIndex>& result)
 {
     for (const auto arg : element.get_args())
         collect_parameters(arg, result);
 }
 
-inline void collect_parameters(LiftedArithmeticOperatorView element, ygg::UnorderedSet<ParameterIndex>& result)
+inline void collect_parameters(ArithmeticOperatorView<LiftedTag> element, ygg::UnorderedSet<ParameterIndex>& result)
 {
     visit([&](auto&& arg) { collect_parameters(arg, result); }, element.get_variant());
 }
 
-inline void collect_parameters(LiftedBooleanOperatorView element, ygg::UnorderedSet<ParameterIndex>& result)
+inline void collect_parameters(BooleanOperatorView<LiftedTag> element, ygg::UnorderedSet<ParameterIndex>& result)
 {
     visit([&](auto&& arg) { collect_parameters(arg, result); }, element.get_variant());
 }
 
 template<FactKind F>
-inline auto collect_parameters(AtomView<::tyr::LiftedTag, F> element)
+inline auto collect_parameters(AtomView<LiftedTag, F> element)
 {
     auto result = ygg::UnorderedSet<ParameterIndex> {};
     collect_parameters(element, result);
@@ -143,7 +146,7 @@ inline auto collect_parameters(AtomView<::tyr::LiftedTag, F> element)
 }
 
 template<FactKind F>
-inline auto collect_parameters(LiteralView<::tyr::LiftedTag, F> element)
+inline auto collect_parameters(LiteralView<LiftedTag, F> element)
 {
     auto result = ygg::UnorderedSet<ParameterIndex> {};
     collect_parameters(element, result);
@@ -151,14 +154,14 @@ inline auto collect_parameters(LiteralView<::tyr::LiftedTag, F> element)
 }
 
 template<FactKind F>
-inline auto collect_parameters(FunctionTermView<::tyr::LiftedTag, F> element)
+inline auto collect_parameters(FunctionTermView<LiftedTag, F> element)
 {
     auto result = ygg::UnorderedSet<ParameterIndex> {};
     collect_parameters(element, result);
     return result;
 }
 
-inline auto collect_parameters(LiftedBooleanOperatorView element)
+inline auto collect_parameters(BooleanOperatorView<LiftedTag> element)
 {
     auto result = ygg::UnorderedSet<ParameterIndex> {};
     visit([&](auto&& arg) { collect_parameters(arg, result); }, element.get_variant());
@@ -172,20 +175,20 @@ inline auto collect_parameters(LiftedBooleanOperatorView element)
 inline size_t max_fterm_arity(ygg::float_t element);
 
 template<FactKind F>
-size_t max_fterm_arity(FunctionTermView<::tyr::LiftedTag, F> element);
+size_t max_fterm_arity(FunctionTermView<LiftedTag, F> element);
 
-size_t max_fterm_arity(FunctionExpressionView<::tyr::LiftedTag> element);
+size_t max_fterm_arity(FunctionExpressionView<LiftedTag> element);
 
-size_t max_fterm_arity(LiftedUnaryOperatorView element);
+size_t max_fterm_arity(UnaryOperatorView<LiftedTag> element);
 
 template<BinaryOperatorKind O>
-size_t max_fterm_arity(LiftedBinaryOperatorView<O> element);
+size_t max_fterm_arity(BinaryOperatorView<LiftedTag, O> element);
 
-size_t max_fterm_arity(LiftedMultiOperatorView element);
+size_t max_fterm_arity(MultiOperatorView<LiftedTag> element);
 
-size_t max_fterm_arity(LiftedArithmeticOperatorView element);
+size_t max_fterm_arity(ArithmeticOperatorView<LiftedTag> element);
 
-size_t max_fterm_arity(LiftedBooleanOperatorView element);
+size_t max_fterm_arity(BooleanOperatorView<LiftedTag> element);
 
 /**
  * Implementations
@@ -194,25 +197,25 @@ size_t max_fterm_arity(LiftedBooleanOperatorView element);
 inline size_t max_fterm_arity(ygg::float_t) { return 0; }
 
 template<FactKind F>
-inline size_t max_fterm_arity(FunctionTermView<::tyr::LiftedTag, F> element)
+inline size_t max_fterm_arity(FunctionTermView<LiftedTag, F> element)
 {
     return max_fterm_arity(element.get_function().get_arity());
 }
 
-inline size_t max_fterm_arity(FunctionExpressionView<::tyr::LiftedTag> element)
+inline size_t max_fterm_arity(FunctionExpressionView<LiftedTag> element)
 {
     return visit([&](auto&& arg) { return max_fterm_arity(arg); }, element.get_variant());
 }
 
-inline size_t max_fterm_arity(LiftedUnaryOperatorView element) { return max_fterm_arity(element.get_arg()); }
+inline size_t max_fterm_arity(UnaryOperatorView<LiftedTag> element) { return max_fterm_arity(element.get_arg()); }
 
 template<BinaryOperatorKind O>
-inline size_t max_fterm_arity(LiftedBinaryOperatorView<O> element)
+inline size_t max_fterm_arity(BinaryOperatorView<LiftedTag, O> element)
 {
     return std::max(max_fterm_arity(element.get_lhs()), max_fterm_arity(element.get_rhs()));
 }
 
-inline size_t max_fterm_arity(LiftedMultiOperatorView element)
+inline size_t max_fterm_arity(MultiOperatorView<LiftedTag> element)
 {
     const auto child_fexprs = element.get_args();
 
@@ -222,12 +225,12 @@ inline size_t max_fterm_arity(LiftedMultiOperatorView element)
                            [&](const auto& value, const auto& child_expr) { return std::max(value, max_fterm_arity(child_expr)); });
 }
 
-inline size_t max_fterm_arity(LiftedArithmeticOperatorView element)
+inline size_t max_fterm_arity(ArithmeticOperatorView<LiftedTag> element)
 {
     return visit([&](auto&& arg) { return max_fterm_arity(arg); }, element.get_variant());
 }
 
-inline size_t max_fterm_arity(LiftedBooleanOperatorView element)
+inline size_t max_fterm_arity(BooleanOperatorView<LiftedTag> element)
 {
     return visit([&](auto&& arg) { return max_fterm_arity(arg); }, element.get_variant());
 }
@@ -237,36 +240,36 @@ inline size_t max_fterm_arity(LiftedBooleanOperatorView element)
  */
 
 template<FactKind F>
-inline size_t kckp_arity(LiteralView<::tyr::LiftedTag, F> element)
+inline size_t kckp_arity(LiteralView<LiftedTag, F> element)
 {
     return element.get_atom().get_predicate().get_arity();
 }
 
 template<FactKind F>
-inline size_t kckp_arity(FunctionTermView<::tyr::LiftedTag, F> element)
+inline size_t kckp_arity(FunctionTermView<LiftedTag, F> element)
 {
     return element.get_function().get_arity();
 }
 
-inline size_t kckp_arity(LiftedBooleanOperatorView element) { return std::max(max_fterm_arity(element), collect_parameters(element).size()); }
+inline size_t kckp_arity(BooleanOperatorView<LiftedTag> element) { return std::max(max_fterm_arity(element), collect_parameters(element).size()); }
 
 /**
  * parameter_arity
  */
 
 template<FactKind F>
-inline size_t parameter_arity(LiteralView<::tyr::LiftedTag, F> element)
+inline size_t parameter_arity(LiteralView<LiftedTag, F> element)
 {
     return collect_parameters(element).size();
 }
 
 template<FactKind F>
-inline size_t parameter_arity(FunctionTermView<::tyr::LiftedTag, F> element)
+inline size_t parameter_arity(FunctionTermView<LiftedTag, F> element)
 {
     return collect_parameters(element).size();
 }
 
-inline size_t parameter_arity(LiftedBooleanOperatorView element) { return collect_parameters(element).size(); }
+inline size_t parameter_arity(BooleanOperatorView<LiftedTag> element) { return collect_parameters(element).size(); }
 
 }
 

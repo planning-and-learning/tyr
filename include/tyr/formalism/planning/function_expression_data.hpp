@@ -31,20 +31,18 @@ namespace ygg
 template<>
 struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>
 {
-    using Variant = ::cista::offset::variant<
-        ygg::float_t,
-        ygg::Data<::tyr::formalism::planning::ArithmeticOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>>>,
-        ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>,
-        ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>;
+    using Variant = ::cista::offset::variant<ygg::float_t,
+                                             ygg::Data<::tyr::formalism::planning::ArithmeticOperator<::tyr::LiftedTag>>,
+                                             ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>,
+                                             ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>;
 
     Variant value;
 
     template<typename C>
-    using ViewVariant = std::variant<
-        ygg::float_t,
-        ::ygg::View<ygg::Data<::tyr::formalism::planning::ArithmeticOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>>>, C>,
-        ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>, C>,
-        ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>, C>>;
+    using ViewVariant = std::variant<ygg::float_t,
+                                     ::ygg::View<ygg::Data<::tyr::formalism::planning::ArithmeticOperator<::tyr::LiftedTag>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>, C>>;
 
     Data() = default;
     Data(Variant value_) : value(value_) {}
@@ -58,10 +56,7 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>
 
                 if constexpr (std::is_same_v<Alternative, ygg::float_t>)
                     return Variant(arg);
-                else if constexpr (std::is_same_v<Alternative,
-                                                  ::ygg::View<ygg::Data<::tyr::formalism::planning::ArithmeticOperator<
-                                                                  ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>>>,
-                                                              C>>)
+                else if constexpr (std::is_same_v<Alternative, ::ygg::View<ygg::Data<::tyr::formalism::planning::ArithmeticOperator<::tyr::LiftedTag>>, C>>)
                     return Variant(arg.get_data());
                 else if constexpr (std::is_same_v<
                                        Alternative,
@@ -89,22 +84,20 @@ static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::FunctionE
 template<>
 struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>
 {
-    using Variant = ::cista::offset::variant<
-        ygg::float_t,
-        ygg::Data<::tyr::formalism::planning::ArithmeticOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>>>,
-        ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>>,
-        ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>>,
-        ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>;
+    using Variant = ::cista::offset::variant<ygg::float_t,
+                                             ygg::Data<::tyr::formalism::planning::ArithmeticOperator<::tyr::GroundTag>>,
+                                             ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>>,
+                                             ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>>,
+                                             ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>;
 
     Variant value;
 
     template<typename C>
-    using ViewVariant = std::variant<
-        ygg::float_t,
-        ::ygg::View<ygg::Data<::tyr::formalism::planning::ArithmeticOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>>>, C>,
-        ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>>, C>,
-        ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>>, C>,
-        ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>, C>>;
+    using ViewVariant = std::variant<ygg::float_t,
+                                     ::ygg::View<ygg::Data<::tyr::formalism::planning::ArithmeticOperator<::tyr::GroundTag>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>>, C>,
+                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>, C>>;
 
     Data() = default;
     Data(Variant value_) : value(value_) {}
@@ -118,10 +111,7 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>
 
                 if constexpr (std::is_same_v<Alternative, ygg::float_t>)
                     return Variant(arg);
-                else if constexpr (std::is_same_v<Alternative,
-                                                  ::ygg::View<ygg::Data<::tyr::formalism::planning::ArithmeticOperator<
-                                                                  ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>>>,
-                                                              C>>)
+                else if constexpr (std::is_same_v<Alternative, ::ygg::View<ygg::Data<::tyr::formalism::planning::ArithmeticOperator<::tyr::GroundTag>>, C>>)
                     return Variant(arg.get_data());
                 else if constexpr (std::is_same_v<
                                        Alternative,

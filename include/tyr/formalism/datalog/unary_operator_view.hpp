@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_DATALOG_UNARY_OPERATOR_VIEW_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/datalog/function_expression_view.hpp"
 #include "tyr/formalism/datalog/unary_operator_index.hpp"
 
 #include <yggdrasil/containers/variant.hpp>
@@ -26,7 +27,7 @@
 
 namespace ygg
 {
-template<typename T, ::tyr::formalism::datalog::Context C>
+template<::tyr::TaskKind T, ::tyr::formalism::datalog::Context C>
 class View<ygg::Index<::tyr::formalism::datalog::UnaryOperator<T>>, C>
 {
 private:
@@ -44,17 +45,7 @@ public:
 
     auto get_index() const noexcept { return m_handle; }
     auto get_operator() const noexcept { return get_data().operator_kind; }
-    auto get_arg() const noexcept
-    {
-        if constexpr (ygg::ViewConcept<T, C>)
-        {
-            return ygg::make_view(get_data().arg, *m_context);
-        }
-        else
-        {
-            return get_data().arg;
-        }
-    }
+    auto get_arg() const noexcept { return ygg::make_view(get_data().arg, *m_context); }
 
     auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }
 };

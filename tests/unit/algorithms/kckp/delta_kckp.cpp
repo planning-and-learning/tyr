@@ -75,7 +75,7 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
 {
     const auto root = std::filesystem::path(BENCHMARKS_DIR);
     auto task = make_test_parser(root / "classical/tests/gripper/domain.pddl").parse_task(root / "classical/tests/gripper/test-1.pddl");
-    auto action_program = p::ApplicableActionProgram<::tyr::LiftedTag>(task.get_task());
+    auto action_program = p::ApplicableActionProgram<LiftedTag>(task.get_task());
     auto& program = action_program.get_datalog_program();
     const auto program_view = program.get_program();
 
@@ -209,7 +209,7 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
 {
     const auto root = std::filesystem::path(BENCHMARKS_DIR);
     auto task = make_test_parser(root / "classical/tests/visitall/domain.pddl").parse_task(root / "classical/tests/visitall/test-1.pddl");
-    auto action_program = p::ApplicableActionProgram<::tyr::LiftedTag>(task.get_task());
+    auto action_program = p::ApplicableActionProgram<LiftedTag>(task.get_task());
     auto& program = action_program.get_datalog_program();
     const auto program_view = program.get_program();
 
@@ -303,7 +303,7 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
 {
     const auto root = std::filesystem::path(BENCHMARKS_DIR);
     auto task = make_test_parser(root / "classical/tests/transport/domain.pddl").parse_task(root / "classical/tests/transport/test-1.pddl");
-    auto action_program = p::ApplicableActionProgram<::tyr::LiftedTag>(task.get_task());
+    auto action_program = p::ApplicableActionProgram<LiftedTag>(task.get_task());
     auto& program = action_program.get_datalog_program();
     const auto program_view = program.get_program();
 
@@ -447,18 +447,18 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
 TEST(TyrKCKPDelta, InnerParallelismMatchesSequentialRPG)
 {
     const auto root = std::filesystem::path(BENCHMARKS_DIR);
-    auto task = p::Task<::tyr::LiftedTag>::create(make_test_parser(root / "classical/profiling/rovers-large-simple/domain.pddl")
+    auto task = p::Task<LiftedTag>::create(make_test_parser(root / "classical/profiling/rovers-large-simple/domain.pddl")
                                                       .parse_task(root / "classical/profiling/rovers-large-simple/p-r1-w1000-o1-1-g2.pddl"));
 
     auto sequential_context = ygg::ExecutionContext::create(1);
     auto parallel_context = ygg::ExecutionContext::create(ygg::ExecutionContext::get_max_num_threads());
-    auto axiom_evaluator = p::AxiomEvaluatorFactory<::tyr::LiftedTag>().create(task, sequential_context);
-    auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(task);
-    auto successor_generator = p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, sequential_context);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<LiftedTag>().create(task, sequential_context);
+    auto state_repository = p::StateRepositoryFactory<LiftedTag>().create(task);
+    auto successor_generator = p::SuccessorGeneratorFactory<LiftedTag>().create(task, sequential_context);
     const auto initial_state = successor_generator->get_initial_node(*state_repository, *axiom_evaluator).get_state();
 
-    auto sequential_heuristic = p::FFRPGHeuristic<::tyr::LiftedTag>::create(task, sequential_context);
-    auto parallel_heuristic = p::FFRPGHeuristic<::tyr::LiftedTag>::create(task, parallel_context);
+    auto sequential_heuristic = p::FFRPGHeuristic<LiftedTag>::create(task, sequential_context);
+    auto parallel_heuristic = p::FFRPGHeuristic<LiftedTag>::create(task, parallel_context);
     const auto sequential_value = sequential_heuristic->evaluate(initial_state);
     const auto parallel_value = parallel_heuristic->evaluate(initial_state);
     EXPECT_EQ(parallel_value, sequential_value);

@@ -14,12 +14,12 @@ namespace tyr::serialization
 {
 
 template<typename T>
-struct Serializer<ygg::View<ygg::Index<::tyr::formalism::RelationBinding<T>>, ::tyr::formalism::planning::Repository>>
+struct Serializer<ygg::View<ygg::Index<formalism::RelationBinding<T>>, formalism::planning::Repository>>
 {
-    static std::string name() { return Serializer<ygg::View<ygg::Index<T>, ::tyr::formalism::planning::Repository>>::name() + "Binding"; }
+    static std::string name() { return Serializer<ygg::View<ygg::Index<T>, formalism::planning::Repository>>::name() + "Binding"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ygg::View<ygg::Index<::tyr::formalism::RelationBinding<T>>, ::tyr::formalism::planning::Repository>& value)
+    static void save(Archive& ar, const ygg::View<ygg::Index<formalism::RelationBinding<T>>, formalism::planning::Repository>& value)
     {
         ar.field("relation", value.get_relation());
         ar.field("objects", value.get_objects());

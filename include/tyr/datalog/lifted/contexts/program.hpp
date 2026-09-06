@@ -42,7 +42,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         explicit In(const ConstProgramWorkspace<LiftedTag>& cws) : m_cws(cws) {}
 
         const auto& facts() const noexcept { return m_cws.facts; }
-        template<::tyr::formalism::RelationKind R>
+        template<formalism::RelationKind R>
         const auto& get_rules() const noexcept
         {
             return m_cws.template get_rules<R>();
@@ -70,7 +70,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         auto& delta_numeric_annotations() noexcept { return m_ws.delta_numeric_annotations; }
         const auto& delta_numeric_annotations() const noexcept { return m_ws.delta_numeric_annotations; }
         const auto& numeric_support_selector() const noexcept { return m_ws.get_numeric_support_selector(); }
-        void rebuild_numeric_support_selector(const TaggedFactSets<::tyr::formalism::StaticTag>& static_fact_sets)
+        void rebuild_numeric_support_selector(const TaggedFactSets<formalism::StaticTag>& static_fact_sets)
         {
             m_ws.numeric_support_selector.emplace(FactSets { static_fact_sets, m_ws.facts.fact_sets }, m_ws.numeric_annotations, !AP::stores_annotations);
         }
@@ -79,12 +79,12 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         const auto& tp() const noexcept { return m_ws.tp; }
         auto& cost_policy() noexcept { return m_ws.cost_policy; }
         const auto& cost_policy() const noexcept { return m_ws.cost_policy; }
-        template<::tyr::formalism::RelationKind R>
+        template<formalism::RelationKind R>
         auto& get_rules() noexcept
         {
             return m_ws.template get_rules<R>();
         }
-        template<::tyr::formalism::RelationKind R>
+        template<formalism::RelationKind R>
         const auto& get_rules() const noexcept
         {
             return m_ws.template get_rules<R>();
@@ -121,8 +121,8 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
                 if (rule)
                     rule->clear();
         };
-        clear_rules(out.template get_rules<::tyr::formalism::PredicateTag>());
-        clear_rules(out.template get_rules<::tyr::formalism::FunctionTag>());
+        clear_rules(out.template get_rules<formalism::PredicateTag>());
+        clear_rules(out.template get_rules<formalism::FunctionTag>());
 
         out.tp().reset();
         out.reset_numeric_support_selector();

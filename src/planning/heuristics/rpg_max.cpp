@@ -66,7 +66,7 @@ MaxRPGHeuristicPtr<Kind> MaxRPGHeuristic<Kind>::create(TaskPtr<Kind> task, ygg::
 }
 
 template<TaskKind Kind>
-void MaxRPGHeuristic<Kind>::set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal)
+void MaxRPGHeuristic<Kind>::set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
 {
     m_impl->set_goal(goal);
 }

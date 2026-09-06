@@ -11,13 +11,13 @@
 namespace tyr::serialization
 {
 
-template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
-struct Serializer<::tyr::formalism::planning::NumericEffectView<T, F>>
+template<TaskKind T, formalism::FactKind F>
+struct Serializer<formalism::planning::NumericEffectView<T, F>>
 {
-    static std::string name() { return std::string(F::name) + (std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "NumericEffect"; }
+    static std::string name() { return std::string(F::name) + (std::same_as<T, GroundTag> ? T::name : "") + "NumericEffect"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::NumericEffectView<T, F>& value)
+    static void save(Archive& ar, const formalism::planning::NumericEffectView<T, F>& value)
     {
         ar.field("operator", value.get_operator());
         ar.field("fterm", value.get_fterm());

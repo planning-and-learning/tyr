@@ -40,15 +40,14 @@ struct Data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>
     ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>> static_literals;
     ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>> fluent_literals;
     ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>> derived_literals;
-    ygg::DataList<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>>> numeric_constraints;
+    ygg::DataList<::tyr::formalism::planning::BooleanOperator<::tyr::LiftedTag>> numeric_constraints;
 
     Data() = default;
     Data(ygg::IndexList<::tyr::formalism::Variable> variables_,
          ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>> static_literals_,
          ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>> fluent_literals_,
          ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>> derived_literals_,
-         ygg::DataList<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>>>
-             numeric_constraints_) :
+         ygg::DataList<::tyr::formalism::planning::BooleanOperator<::tyr::LiftedTag>> numeric_constraints_) :
         index(),
         variables(std::move(variables_)),
         static_literals(std::move(static_literals_)),
@@ -63,9 +62,7 @@ struct Data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>
          const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>, C>>& static_literals_,
          const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>, C>>& fluent_literals_,
          const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>>, C>>& derived_literals_,
-         const std::vector<
-             ::ygg::View<ygg::Data<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>>>,
-                         C>>& numeric_constraints_) :
+         const std::vector<::ygg::View<ygg::Data<::tyr::formalism::planning::BooleanOperator<::tyr::LiftedTag>>, C>>& numeric_constraints_) :
         index(),
         variables(),
         static_literals(),
@@ -121,15 +118,14 @@ struct Data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>
     ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> derived_literals;
     ygg::DataList<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> positive_facts;
     ygg::DataList<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> negative_facts;
-    ygg::DataList<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>>> numeric_constraints;
+    ygg::DataList<::tyr::formalism::planning::BooleanOperator<::tyr::GroundTag>> numeric_constraints;
 
     Data() = default;
     Data(ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>> static_literals_,
          ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> derived_literals_,
          ygg::DataList<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> positive_facts_,
          ygg::DataList<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> negative_facts_,
-         ygg::DataList<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>>>
-             numeric_constraints_) :
+         ygg::DataList<::tyr::formalism::planning::BooleanOperator<::tyr::GroundTag>> numeric_constraints_) :
         index(),
         static_literals(std::move(static_literals_)),
         derived_literals(std::move(derived_literals_)),
@@ -144,9 +140,7 @@ struct Data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>
          const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>, C>>& derived_literals_,
          const std::vector<::ygg::View<ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>, C>>& positive_facts_,
          const std::vector<::ygg::View<ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>, C>>& negative_facts_,
-         const std::vector<
-             ::ygg::View<ygg::Data<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>>>,
-                         C>>& numeric_constraints_) :
+         const std::vector<::ygg::View<ygg::Data<::tyr::formalism::planning::BooleanOperator<::tyr::GroundTag>>, C>>& numeric_constraints_) :
         index(),
         static_literals(),
         derived_literals(),

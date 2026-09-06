@@ -39,27 +39,27 @@ template<TaskKind Kind>
 class RPGProgram
 {
 public:
-    using Task = std::conditional_t<std::same_as<Kind, GroundTag>, ::tyr::formalism::planning::FDRTaskView, ::tyr::formalism::planning::TaskView>;
-    using Action = std::conditional_t<std::same_as<Kind, GroundTag>, ::tyr::formalism::planning::ActionView<::tyr::GroundTag>, ::tyr::formalism::planning::ActionView<::tyr::LiftedTag>>;
-    template<::tyr::formalism::RelationKind R>
-    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, ::tyr::formalism::datalog::RuleBindingView<R>, ::tyr::formalism::datalog::RuleView<::tyr::LiftedTag, R>>;
-    template<::tyr::formalism::RelationKind R>
+    using Task = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::FDRTaskView, formalism::planning::TaskView>;
+    using Action = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionView<GroundTag>, formalism::planning::ActionView<LiftedTag>>;
+    template<formalism::RelationKind R>
+    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::datalog::RuleBindingView<R>, formalism::datalog::RuleView<LiftedTag, R>>;
+    template<formalism::RelationKind R>
     using RuleToActionMapping = ygg::UnorderedMap<Rule<R>, Action>;
 
     struct RuleToActionMappings
     {
-        RuleToActionMapping<::tyr::formalism::PredicateTag> predicate;
-        RuleToActionMapping<::tyr::formalism::FunctionTag> function;
+        RuleToActionMapping<formalism::PredicateTag> predicate;
+        RuleToActionMapping<formalism::FunctionTag> function;
     };
 
     explicit RPGProgram(Task task, CostMode cost_mode = CostMode::GENERAL);
 
     const TranslationContext<Kind>& get_translation_context() const noexcept { return m_translation_context; }
 
-    template<::tyr::formalism::RelationKind R>
+    template<formalism::RelationKind R>
     const RuleToActionMapping<R>& get_rule_to_action_mapping() const noexcept
     {
-        if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
+        if constexpr (std::same_as<R, formalism::PredicateTag>)
             return m_rule_to_action.predicate;
         else
             return m_rule_to_action.function;
@@ -67,7 +67,7 @@ public:
 
     datalog::Program<Kind>& get_datalog_program() noexcept { return m_datalog_program; }
     const datalog::Program<Kind>& get_datalog_program() const noexcept { return m_datalog_program; }
-    ::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::GroundTag> get_goal() const noexcept { return m_datalog_program.get_program().get_goal().value(); }
+    formalism::datalog::ConjunctiveConditionView<GroundTag> get_goal() const noexcept { return m_datalog_program.get_program().get_goal().value(); }
 
 private:
     TranslationContext<Kind> m_translation_context;
@@ -76,10 +76,10 @@ private:
 };
 
 template<>
-RPGProgram<GroundTag>::RPGProgram(::tyr::formalism::planning::FDRTaskView task, CostMode cost_mode);
+RPGProgram<GroundTag>::RPGProgram(formalism::planning::FDRTaskView task, CostMode cost_mode);
 
 template<>
-RPGProgram<LiftedTag>::RPGProgram(::tyr::formalism::planning::TaskView task, CostMode cost_mode);
+RPGProgram<LiftedTag>::RPGProgram(formalism::planning::TaskView task, CostMode cost_mode);
 
 }
 

@@ -25,7 +25,7 @@
 
 namespace ygg
 {
-template<typename T>
+template<::tyr::TaskKind T>
 struct Index<tyr::formalism::planning::MultiOperator<T>> : ygg::IndexMixin<ygg::Index<tyr::formalism::planning::MultiOperator<T>>>
 {
     using OperatorType = tyr::formalism::ArithmeticOperatorKind;

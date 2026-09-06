@@ -61,7 +61,7 @@ public:
     ygg::hash_t hash(const ygg::Builder<State<Kind>>& state) const noexcept
     {
         auto result = static_cast<ygg::hash_t>(m_seed);
-        ygg::hash_combine(result, state.template get_atoms<::tyr::formalism::FluentTag>());
+        ygg::hash_combine(result, state.template get_atoms<formalism::FluentTag>());
         ygg::hash_combine(result, state.get_numeric_variables());
         return ygg::fmix64(result);
     }
@@ -97,8 +97,8 @@ public:
 private:
     struct Feature
     {
-        ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>> atom;
-        ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact;
+        ygg::Index<formalism::planning::Atom<GroundTag, formalism::FluentTag>> atom;
+        ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>> fact;
     };
 
     DistHash<Kind, RandomDistHashTag> m_fallback;

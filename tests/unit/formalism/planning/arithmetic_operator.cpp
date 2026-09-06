@@ -18,13 +18,13 @@ concept ArithmeticOperatorContract = std::totally_ordered<ygg::Data<Entity>> && 
                                             { view < view } -> std::same_as<bool>;
                                         };
 
-using LiftedArithmeticOperator = fp::ArithmeticOperator<ygg::Data<fp::FunctionExpression<::tyr::LiftedTag>>>;
-using GroundArithmeticOperator = fp::ArithmeticOperator<ygg::Data<fp::FunctionExpression<::tyr::GroundTag>>>;
+using LiftedArithmeticOperator = fp::ArithmeticOperator<::tyr::LiftedTag>;
+using GroundArithmeticOperator = fp::ArithmeticOperator<::tyr::GroundTag>;
 
 static_assert(ArithmeticOperatorContract<LiftedArithmeticOperator>);
-static_assert(std::same_as<ygg::View<ygg::Data<LiftedArithmeticOperator>, fp::Repository>, fp::LiftedArithmeticOperatorView>);
+static_assert(std::same_as<ygg::View<ygg::Data<LiftedArithmeticOperator>, fp::Repository>, fp::ArithmeticOperatorView<::tyr::LiftedTag>>);
 static_assert(ArithmeticOperatorContract<GroundArithmeticOperator>);
-static_assert(std::same_as<ygg::View<ygg::Data<GroundArithmeticOperator>, fp::Repository>, fp::GroundArithmeticOperatorView>);
+static_assert(std::same_as<ygg::View<ygg::Data<GroundArithmeticOperator>, fp::Repository>, fp::ArithmeticOperatorView<::tyr::GroundTag>>);
 
 static_assert(f::ArithmeticOperatorKind::Add == f::ArithmeticOperatorKind::Add);
 static_assert(f::ArithmeticOperatorKind::Add < f::ArithmeticOperatorKind::Sub);

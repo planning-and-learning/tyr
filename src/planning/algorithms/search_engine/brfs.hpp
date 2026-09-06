@@ -163,7 +163,7 @@ public:
         return ExpansionResult::EXPAND;
     }
 
-    static SuccessorMetadata make_successor_metadata(ygg::Index<Worker> worker, const Node<Kind>& node, ::tyr::formalism::planning::ActionBindingView)
+    static SuccessorMetadata make_successor_metadata(ygg::Index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionBindingView)
     {
         return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().get_index() }, node.get_metric() };
     }

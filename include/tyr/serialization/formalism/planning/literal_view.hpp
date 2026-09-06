@@ -10,13 +10,13 @@
 namespace tyr::serialization
 {
 
-template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
-struct Serializer<::tyr::formalism::planning::LiteralView<T, F>>
+template<TaskKind T, formalism::FactKind F>
+struct Serializer<formalism::planning::LiteralView<T, F>>
 {
-    static std::string name() { return std::string(F::name) + (std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "Literal"; }
+    static std::string name() { return std::string(F::name) + (std::same_as<T, GroundTag> ? T::name : "") + "Literal"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::LiteralView<T, F>& value)
+    static void save(Archive& ar, const formalism::planning::LiteralView<T, F>& value)
     {
         ar.field("atom", value.get_atom());
         ar.field("polarity", value.get_polarity());

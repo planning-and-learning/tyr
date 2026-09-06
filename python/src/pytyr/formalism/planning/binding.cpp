@@ -62,7 +62,7 @@ void bind_binding(nb::module_& m, RepositoryBinding& repository)
     }
 
     {
-        using V = ygg::Index<RelationBinding<Action<::tyr::LiftedTag>>>;
+        using V = ygg::Index<RelationBinding<Action<LiftedTag>>>;
         auto cls = nb::class_<V>(m, "ActionBindingIndex").def_ro("relation_index", &V::relation).def_ro("row_index", &V::row);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
@@ -70,7 +70,7 @@ void bind_binding(nb::module_& m, RepositoryBinding& repository)
     }
 
     {
-        using V = ygg::Index<RelationBinding<Axiom<::tyr::LiftedTag>>>;
+        using V = ygg::Index<RelationBinding<Axiom<LiftedTag>>>;
         auto cls = nb::class_<V>(m, "AxiomBindingIndex").def_ro("relation_index", &V::relation).def_ro("row_index", &V::row);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
@@ -78,12 +78,12 @@ void bind_binding(nb::module_& m, RepositoryBinding& repository)
     }
 
     bind_binding_data<Predicate<DerivedTag>>(m, "DerivedPredicateBindingData");
-    bind_binding_data<Action<::tyr::LiftedTag>>(m, "ActionBindingData");
-    bind_binding_data<Axiom<::tyr::LiftedTag>>(m, "AxiomBindingData");
+    bind_binding_data<Action<LiftedTag>>(m, "ActionBindingData");
+    bind_binding_data<Axiom<LiftedTag>>(m, "AxiomBindingData");
 
     bind_binding_view<Predicate<DerivedTag>>(m, "DerivedPredicateBinding");
-    bind_binding_view<Action<::tyr::LiftedTag>>(m, "ActionBinding");
-    bind_binding_view<Axiom<::tyr::LiftedTag>>(m, "AxiomBinding");
+    bind_binding_view<Action<LiftedTag>>(m, "ActionBinding");
+    bind_binding_view<Axiom<LiftedTag>>(m, "AxiomBinding");
     bind_binding_view<Predicate<StaticTag>>(m, "StaticPredicateBinding");
     bind_binding_view<Predicate<FluentTag>>(m, "FluentPredicateBinding");
     bind_binding_view<Function<StaticTag>>(m, "StaticFunctionBinding");
@@ -91,8 +91,8 @@ void bind_binding(nb::module_& m, RepositoryBinding& repository)
     bind_binding_view<Function<AuxiliaryTag>>(m, "AuxiliaryFunctionBinding");
 
     repository.def("get_or_create", &get_or_create_relation_data<Predicate<DerivedTag>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_relation_data<Action<::tyr::LiftedTag>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_relation_data<Axiom<::tyr::LiftedTag>>, "data"_a, nb::keep_alive<0, 1>());
+    repository.def("get_or_create", &get_or_create_relation_data<Action<LiftedTag>>, "data"_a, nb::keep_alive<0, 1>());
+    repository.def("get_or_create", &get_or_create_relation_data<Axiom<LiftedTag>>, "data"_a, nb::keep_alive<0, 1>());
     repository.def("get_or_create", &get_or_create_relation_data<Predicate<StaticTag>>, "data"_a, nb::keep_alive<0, 1>());
     repository.def("get_or_create", &get_or_create_relation_data<Predicate<FluentTag>>, "data"_a, nb::keep_alive<0, 1>());
     repository.def("get_or_create", &get_or_create_relation_data<Function<StaticTag>>, "data"_a, nb::keep_alive<0, 1>());

@@ -526,7 +526,7 @@ void expect_sequential_reconstruction(const p::TaskPtr<Kind>& task)
     const auto selected = find_successor(successors, "pick");
     ASSERT_NE(selected, successors.end());
 
-    const auto g_value = p::compute_successor_g_value(start.get_metric(), selected->node.get_metric(), ::tyr::CostMode::GENERAL);
+    const auto g_value = p::compute_successor_g_value(start.get_metric(), selected->node.get_metric(), CostMode::GENERAL);
     const auto final_node = p::Node<Kind>(selected->node.get_state(), g_value);
     const auto default_node = SequentialSearchNode<Kind> { std::numeric_limits<ygg::float_t>::infinity(), ygg::Index<p::State<Kind>>::max() };
     auto search_nodes = ygg::SegmentedVector<SequentialSearchNode<Kind>> {};
@@ -542,7 +542,7 @@ void expect_sequential_reconstruction(const p::TaskPtr<Kind>& task)
                                                                                                    *repository,
                                                                                                    *axiom_evaluator,
                                                                                                    *generator,
-                                                                                                   ::tyr::CostMode::GENERAL);
+                                                                                                   CostMode::GENERAL);
 
     ASSERT_EQ(plan.get_length(), 1);
     EXPECT_EQ(repository->num_states(), num_states);
@@ -579,14 +579,14 @@ void expect_parallel_reconstruction(const p::TaskPtr<Kind>& task)
         const auto start_successors = first_generator->get_labeled_successor_nodes(start, *first_repository_owner, *first_axiom_evaluator);
         const auto selected_middle = find_successor(start_successors, "pick");
         ASSERT_NE(selected_middle, start_successors.end());
-        const auto middle_g_value = p::compute_successor_g_value(start.get_metric(), selected_middle->node.get_metric(), ::tyr::CostMode::GENERAL);
+        const auto middle_g_value = p::compute_successor_g_value(start.get_metric(), selected_middle->node.get_metric(), CostMode::GENERAL);
         const auto middle_state = copy_state(selected_middle->node.get_state(), *second_repository_owner, *second_axiom_evaluator);
         const auto middle = p::Node<Kind>(middle_state, middle_g_value);
 
         const auto middle_successors = second_generator->get_labeled_successor_nodes(middle, *second_repository_owner, *second_axiom_evaluator);
         const auto selected_final = find_successor(middle_successors, "move", std::optional { middle_state.get_index() });
         ASSERT_NE(selected_final, middle_successors.end());
-        const auto final_g_value = p::compute_successor_g_value(middle_g_value, selected_final->node.get_metric(), ::tyr::CostMode::GENERAL);
+        const auto final_g_value = p::compute_successor_g_value(middle_g_value, selected_final->node.get_metric(), CostMode::GENERAL);
         const auto final_state = copy_state(selected_final->node.get_state(), *first_repository_owner, *first_axiom_evaluator);
 
         const auto root = p::WorkerStateIndex<Kind> { ygg::Index<p::Worker>(0), start.get_state().get_index() };
@@ -610,7 +610,7 @@ void expect_parallel_reconstruction(const p::TaskPtr<Kind>& task)
             std::span<const p::WorkerSearchSpaceView<Kind, ParallelSearchNode<Kind>>>(workers),
             *caller_repository,
             *axiom_evaluator,
-            ::tyr::CostMode::GENERAL);
+            CostMode::GENERAL);
         EXPECT_EQ(caller_repository->num_states(), 3);
     }
 

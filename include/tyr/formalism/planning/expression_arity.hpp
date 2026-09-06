@@ -36,7 +36,7 @@ namespace tyr::formalism::planning
 void collect_parameters(TermView element, ParameterList& result);
 
 template<FactKind T>
-void collect_parameters(AtomView<::tyr::LiftedTag, T> element, ParameterList& result);
+void collect_parameters(AtomView<LiftedTag, T> element, ParameterList& result);
 
 /**
  * Implementations
@@ -59,14 +59,14 @@ inline void collect_parameters(TermView element, ParameterList& result)
 }
 
 template<FactKind T>
-inline void collect_parameters(AtomView<::tyr::LiftedTag, T> element, ParameterList& result)
+inline void collect_parameters(AtomView<LiftedTag, T> element, ParameterList& result)
 {
     for (const auto term : element.get_terms())
         collect_parameters(term, result);
 }
 
 template<FactKind T>
-inline auto collect_parameters(AtomView<::tyr::LiftedTag, T> element)
+inline auto collect_parameters(AtomView<LiftedTag, T> element)
 {
     auto result = ParameterList {};
     collect_parameters(element, result);

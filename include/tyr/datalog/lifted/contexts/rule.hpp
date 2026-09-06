@@ -36,10 +36,10 @@ namespace tyr::datalog
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 struct StratumExecutionContext;
 
-template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 struct RuleExecutionContext;
 
-template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 class RuleWorkerExecutionContext
 {
 public:
@@ -102,7 +102,7 @@ public:
         RuleExecutionContext<R, AP, TP, CP>& m_rctx;
         typename RuleWorkspace<LiftedTag, R>::Worker& m_ws_worker;
 
-        ::tyr::formalism::datalog::GrounderContext m_ground_context;
+        formalism::datalog::GrounderContext m_ground_context;
     };
 
     RuleWorkerExecutionContext(RuleExecutionContext<R, AP, TP, CP>& rctx, typename RuleWorkspace<LiftedTag, R>::Worker& ws_worker) :
@@ -122,7 +122,7 @@ private:
     Out m_out;
 };
 
-template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 struct RuleExecutionContext
 {
     class In
@@ -154,7 +154,7 @@ struct RuleExecutionContext
         RuleWorkspace<LiftedTag, R>& m_ws_rule;
     };
 
-    RuleExecutionContext(ygg::Index<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>> rule, StratumExecutionContext<AP, TP, CP>& ctx) :
+    RuleExecutionContext(ygg::Index<formalism::datalog::Rule<LiftedTag, R>> rule, StratumExecutionContext<AP, TP, CP>& ctx) :
         m_ctx(ctx),
         m_in(*ctx.in().program().template get_rules<R>()[ygg::uint_t(rule)]),
         m_out(*ctx.out().program().template get_rules<R>()[ygg::uint_t(rule)])

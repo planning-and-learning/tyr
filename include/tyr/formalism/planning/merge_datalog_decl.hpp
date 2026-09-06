@@ -27,24 +27,9 @@ namespace tyr::formalism::planning
 
 struct MergeDatalogContext
 {
-    ::tyr::formalism::datalog::Builder& builder;
-    ::tyr::formalism::datalog::Repository& destination;
+    datalog::Builder& builder;
+    datalog::Repository& destination;
 };
-
-template<typename T>
-struct to_datalog_payload
-{
-    using type = T;  // default: unchanged
-};
-
-template<::tyr::TaskKind T>
-struct to_datalog_payload<ygg::Data<::tyr::formalism::planning::FunctionExpression<T>>>
-{
-    using type = ygg::Data<::tyr::formalism::datalog::FunctionExpression<T>>;
-};
-
-template<typename T>
-using to_datalog_payload_t = typename to_datalog_payload<T>::type;
 
 }
 

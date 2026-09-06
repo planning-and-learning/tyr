@@ -39,7 +39,7 @@ template<class Tag>
 class FDRFactIterator<LiftedTag, Tag>
 {
 public:
-    using value_type = ygg::Data<::tyr::formalism::planning::FDRFact<Tag>>;
+    using value_type = ygg::Data<formalism::planning::FDRFact<Tag>>;
     using reference = value_type;
     using difference_type = std::ptrdiff_t;
     using iterator_category = std::input_iterator_tag;
@@ -57,8 +57,8 @@ public:
     {
         assert(m_storage);
         assert(m_storage->indices.test(m_i));
-        return ygg::Data<::tyr::formalism::planning::FDRFact<Tag>> { ygg::Index<::tyr::formalism::planning::FDRVariable<Tag>> { static_cast<ygg::uint_t>(m_i) },
-                                                                     ::tyr::formalism::planning::FDRValue { 1 } };
+        return ygg::Data<formalism::planning::FDRFact<Tag>> { ygg::Index<formalism::planning::FDRVariable<Tag>> { static_cast<ygg::uint_t>(m_i) },
+                                                                     formalism::planning::FDRValue { 1 } };
     }
 
     FDRFactIterator& operator++() noexcept

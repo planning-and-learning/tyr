@@ -36,40 +36,40 @@ public:
     // Ground action API
 
     template<TaskKind Kind>
-    bool is_applicable(::tyr::formalism::planning::ActionView<::tyr::GroundTag> action, const StateContext<Kind>& state);
+    bool is_applicable(formalism::planning::ActionView<GroundTag> action, const StateContext<Kind>& state);
 
     template<TaskKind Kind>
-    bool is_applicable_if_fires(::tyr::formalism::planning::ActionView<::tyr::GroundTag> action, const StateContext<Kind>& state);
+    bool is_applicable_if_fires(formalism::planning::ActionView<GroundTag> action, const StateContext<Kind>& state);
 
     /// Applies the action into caller-owned storage without interning the successor; returns the updated auxiliary metric value.
     template<TaskKind Kind>
     ygg::float_t apply_action_unregistered(const StateContext<Kind>& state_context,
-                                           ::tyr::formalism::planning::ActionView<::tyr::GroundTag> action,
+                                           formalism::planning::ActionView<GroundTag> action,
                                            ygg::Builder<State<Kind>>& successor_state_builder);
 
     // Lifted action API
 
-    bool is_applicable(::tyr::formalism::planning::ActionView<::tyr::LiftedTag> action,
+    bool is_applicable(formalism::planning::ActionView<LiftedTag> action,
                        const StateContext<LiftedTag>& state_context,
-                       ::tyr::formalism::planning::GrounderContext& grounder,
-                       const ::tyr::formalism::planning::FDRContext& fdr);
+                       formalism::planning::GrounderContext& grounder,
+                       const formalism::planning::FDRContext& fdr);
 
-    bool is_applicable_if_fires(::tyr::formalism::planning::ActionView<::tyr::LiftedTag> action,
+    bool is_applicable_if_fires(formalism::planning::ActionView<LiftedTag> action,
                                 const StateContext<LiftedTag>& state_context,
-                                ::tyr::formalism::planning::GrounderContext& grounder,
-                                const ::tyr::formalism::planning::FDRContext& fdr);
+                                formalism::planning::GrounderContext& grounder,
+                                const formalism::planning::FDRContext& fdr);
 
     /// Applies the action into caller-owned storage without interning the successor; returns the updated auxiliary metric value.
     ygg::float_t apply_action_unregistered(const StateContext<LiftedTag>& state_context,
-                                           ::tyr::formalism::planning::ActionView<::tyr::LiftedTag> action,
-                                           ::tyr::formalism::planning::GrounderContext& grounder,
-                                           ::tyr::formalism::planning::FDRContext& fdr,
+                                           formalism::planning::ActionView<LiftedTag> action,
+                                           formalism::planning::GrounderContext& grounder,
+                                           formalism::planning::FDRContext& fdr,
                                            ygg::Builder<State<LiftedTag>>& successor_state_builder);
 
 private:
-    ygg::DataList<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> m_del_effects;
-    ygg::DataList<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> m_add_effects;
-    ::tyr::formalism::planning::EffectFamilyList m_effect_families;
+    ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>> m_del_effects;
+    ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>> m_add_effects;
+    formalism::planning::EffectFamilyList m_effect_families;
     analysis::CompatibilityWorkspace m_compatibility_workspace;
 };
 }

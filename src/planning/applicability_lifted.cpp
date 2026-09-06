@@ -27,13 +27,13 @@ namespace tyr::planning
 
 // NumericEffectView
 
-template ygg::float_t evaluate(::tyr::formalism::planning::NumericEffectView<::tyr::LiftedTag, ::tyr::formalism::FluentTag> element, const ApplicabilityContext& context);
-template ygg::float_t evaluate(::tyr::formalism::planning::NumericEffectView<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag> element, const ApplicabilityContext& context);
+template ygg::float_t evaluate(formalism::planning::NumericEffectView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context);
+template ygg::float_t evaluate(formalism::planning::NumericEffectView<LiftedTag, formalism::AuxiliaryTag> element, const ApplicabilityContext& context);
 
 // NumericEffectOperatorView
 
-template ygg::float_t evaluate(::tyr::formalism::planning::NumericEffectOperatorView<::tyr::LiftedTag, ::tyr::formalism::FluentTag> element, const ApplicabilityContext& context);
-template ygg::float_t evaluate(::tyr::formalism::planning::NumericEffectOperatorView<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag> element,
+template ygg::float_t evaluate(formalism::planning::NumericEffectOperatorView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context);
+template ygg::float_t evaluate(formalism::planning::NumericEffectOperatorView<LiftedTag, formalism::AuxiliaryTag> element,
                                const ApplicabilityContext& context);
 
 /**
@@ -42,9 +42,9 @@ template ygg::float_t evaluate(::tyr::formalism::planning::NumericEffectOperator
 
 // LiteralListView
 
-template bool is_applicable(::tyr::formalism::planning::LiteralListView<::tyr::LiftedTag, ::tyr::formalism::StaticTag> elements, const ApplicabilityContext& context);
-template bool is_applicable(::tyr::formalism::planning::LiteralListView<::tyr::LiftedTag, ::tyr::formalism::FluentTag> elements, const ApplicabilityContext& context);
-template bool is_applicable(::tyr::formalism::planning::LiteralListView<::tyr::LiftedTag, ::tyr::formalism::DerivedTag> elements, const ApplicabilityContext& context);
+template bool is_applicable(formalism::planning::LiteralListView<LiftedTag, formalism::StaticTag> elements, const ApplicabilityContext& context);
+template bool is_applicable(formalism::planning::LiteralListView<LiftedTag, formalism::FluentTag> elements, const ApplicabilityContext& context);
+template bool is_applicable(formalism::planning::LiteralListView<LiftedTag, formalism::DerivedTag> elements, const ApplicabilityContext& context);
 
 }
 

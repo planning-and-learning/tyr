@@ -14,14 +14,12 @@ concept BooleanOperatorContract = std::totally_ordered<ygg::Data<Entity>> && std
                                          view.get_variant();
                                      };
 
-using Lifted = fd::BooleanOperator<ygg::Data<fd::FunctionExpression<::tyr::LiftedTag>>>;
-using Ground = fd::BooleanOperator<ygg::Data<fd::FunctionExpression<::tyr::GroundTag>>>;
+using Lifted = fd::BooleanOperator<::tyr::LiftedTag>;
+using Ground = fd::BooleanOperator<::tyr::GroundTag>;
 
 static_assert(BooleanOperatorContract<Lifted>);
 static_assert(BooleanOperatorContract<Ground>);
-static_assert(std::same_as<ygg::Data<Lifted>, fd::BooleanOperatorData>);
-static_assert(std::same_as<ygg::Data<Ground>, fd::GroundBooleanOperatorData>);
-static_assert(std::same_as<ygg::View<ygg::Data<Lifted>, fd::Repository>, fd::LiftedBooleanOperatorView>);
-static_assert(std::same_as<ygg::View<ygg::Data<Ground>, fd::Repository>, fd::GroundBooleanOperatorView>);
+static_assert(std::same_as<ygg::View<ygg::Data<Lifted>, fd::Repository>, fd::BooleanOperatorView<::tyr::LiftedTag>>);
+static_assert(std::same_as<ygg::View<ygg::Data<Ground>, fd::Repository>, fd::BooleanOperatorView<::tyr::GroundTag>>);
 static_assert(std::constructible_from<ygg::Data<Lifted>, ygg::Data<Lifted>::ViewVariant<fd::Repository>>);
 static_assert(std::constructible_from<ygg::Data<Ground>, ygg::Data<Ground>::ViewVariant<fd::Repository>>);

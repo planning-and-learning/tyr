@@ -25,8 +25,8 @@
 
 namespace tyr::formalism::planning::invariant
 {
-std::vector<AtomViewList<::tyr::GroundTag, FluentTag>> compute_mutex_groups(const AtomViewList<::tyr::GroundTag, FluentTag>& initial_atoms,
-                                                                            const AtomViewList<::tyr::GroundTag, FluentTag>& all_atoms,
+std::vector<AtomViewList<GroundTag, FluentTag>> compute_mutex_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
+                                                                            const AtomViewList<GroundTag, FluentTag>& all_atoms,
                                                                             const InvariantList& invariants);
 }
 

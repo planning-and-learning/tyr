@@ -51,7 +51,7 @@ void expect_distinct(const std::shared_ptr<T>& source, const std::shared_ptr<T>&
     EXPECT_NE(worker->get_index(), nested->get_index());
 }
 
-template<::tyr::TaskKind Kind>
+template<TaskKind Kind>
 void expect_worker_chain(const p::TaskPtr<Kind>& task)
 {
     ASSERT_TRUE(task->has_axioms());
@@ -91,7 +91,7 @@ void expect_worker_chain(const p::TaskPtr<Kind>& task)
     EXPECT_EQ(worker_axiom_evaluator->get_execution_context(), worker_context);
     EXPECT_EQ(nested_axiom_evaluator->get_execution_context(), nested_context);
 
-    if constexpr (std::same_as<Kind, ::tyr::LiftedTag>)
+    if constexpr (std::same_as<Kind, LiftedTag>)
     {
         EXPECT_EQ(&source->get_action_program(), &worker->get_action_program());
         EXPECT_EQ(&source->get_action_program(), &nested->get_action_program());
@@ -119,7 +119,7 @@ void expect_worker_chain(const p::TaskPtr<Kind>& task)
     EXPECT_EQ(source_initial.get_metric(), nested_initial.get_metric());
 
     auto initial_fdr_variable_count = size_t { 0 };
-    if constexpr (std::same_as<Kind, ::tyr::LiftedTag>)
+    if constexpr (std::same_as<Kind, LiftedTag>)
         initial_fdr_variable_count = task->get_fdr_context()->get_variables().size();
 
     auto worker_successors_future =
@@ -130,7 +130,7 @@ void expect_worker_chain(const p::TaskPtr<Kind>& task)
     const auto nested_successors = nested_successors_future.get();
 
     auto worker_fdr_variable_count = size_t { 0 };
-    if constexpr (std::same_as<Kind, ::tyr::LiftedTag>)
+    if constexpr (std::same_as<Kind, LiftedTag>)
     {
         const auto& variables = task->get_fdr_context()->get_variables();
         worker_fdr_variable_count = variables.size();
@@ -143,7 +143,7 @@ void expect_worker_chain(const p::TaskPtr<Kind>& task)
     }
 
     const auto source_successors = source->get_labeled_successor_nodes(source_initial, *source_state_repository, *source_axiom_evaluator);
-    if constexpr (std::same_as<Kind, ::tyr::LiftedTag>)
+    if constexpr (std::same_as<Kind, LiftedTag>)
     {
         EXPECT_EQ(task->get_fdr_context()->get_variables().size(), worker_fdr_variable_count);
     }
@@ -200,7 +200,7 @@ void expect_worker_chain(const p::TaskPtr<Kind>& task)
     EXPECT_FALSE(exhaustive_goal_worker->is_dynamic_goal_satisfied(worker_initial.get_state(), worker_initial.get_state()));
 }
 
-template<::tyr::TaskKind Kind>
+template<TaskKind Kind>
 void expect_independent_repository_identity(const p::TaskPtr<Kind>& task)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
@@ -225,7 +225,7 @@ void expect_independent_repository_identity(const p::TaskPtr<Kind>& task)
     EXPECT_EQ(p::materialize_state(second_state, *first_repository, *first_axiom_evaluator), first_state);
 }
 
-template<::tyr::TaskKind Kind>
+template<TaskKind Kind>
 void expect_shared_worker_cohort(const p::TaskPtr<Kind>& task)
 {
     auto source_context = ygg::ExecutionContext::create(1);
@@ -320,7 +320,7 @@ void expect_shared_worker_cohort(const p::TaskPtr<Kind>& task)
 TEST(TyrPlanningWorkerTest, GroundAndLiftedWorkersOwnMutableStateAndShareDefinitions)
 {
     const auto root = std::filesystem::path(BENCHMARKS_DIR);
-    auto lifted_task = p::Task<::tyr::LiftedTag>::create(
+    auto lifted_task = p::Task<LiftedTag>::create(
         make_test_parser(root / "classical/tests/philosophers/domain.pddl").parse_task(root / "classical/tests/philosophers/test-1.pddl"));
     auto grounding_context = ygg::ExecutionContext::create(1);
     auto ground_task = lifted_task->instantiate_ground_task(*grounding_context).task;
@@ -336,7 +336,7 @@ TEST(TyrPlanningWorkerTest, GroundAndLiftedWorkersOwnMutableStateAndShareDefinit
 
 TEST(TyrPlanningWorkerTest, UtilizationUsesAggregateWorkerCapacity)
 {
-    auto result = p::SearchResult<::tyr::GroundTag> {};
+    auto result = p::SearchResult<GroundTag> {};
     const auto start = std::chrono::steady_clock::time_point {};
     result.statistics.set_search_start_time_point(start);
     result.statistics.set_search_end_time_point(start + std::chrono::nanoseconds(100));

@@ -10,16 +10,13 @@
 namespace tyr::serialization
 {
 
-template<typename T>
-struct Serializer<::tyr::formalism::planning::MultiOperatorView<T>>
+template<TaskKind T>
+struct Serializer<formalism::planning::MultiOperatorView<T>>
 {
-    static std::string name()
-    {
-        return std::string(std::same_as<T, ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>> ? "Ground" : "") + "MultiOperator";
-    }
+    static std::string name() { return std::string(std::same_as<T, GroundTag> ? T::name : "") + "MultiOperator"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::MultiOperatorView<T>& value)
+    static void save(Archive& ar, const formalism::planning::MultiOperatorView<T>& value)
     {
         ar.field("operator", value.get_operator());
         ar.field("args", value.get_args());

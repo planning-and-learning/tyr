@@ -26,7 +26,7 @@
 namespace tyr::planning
 {
 
-using GroundAxiomStratum = ::tyr::formalism::planning::AxiomViewList<::tyr::GroundTag>;
+using GroundAxiomStratum = formalism::planning::AxiomViewList<GroundTag>;
 
 struct GroundAxiomStrata
 {
@@ -38,7 +38,7 @@ struct GroundAxiomStrata
 /// Source: https://users.cecs.anu.edu.au/~thiebaux/papers/ijcai03.pdf
 /// @param task is the task
 /// @return is the GroundAxiomStrata
-extern GroundAxiomStrata compute_ground_axiom_stratification(::tyr::formalism::planning::FDRTaskView task);
+extern GroundAxiomStrata compute_ground_axiom_stratification(formalism::planning::FDRTaskView task);
 }
 
 #endif

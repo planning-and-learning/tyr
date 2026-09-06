@@ -34,13 +34,13 @@ template<typename Tag>
 struct Data<planning::match_tree::NumericConstraintSelectorNode<Tag>>
 {
     ygg::Index<planning::match_tree::NumericConstraintSelectorNode<Tag>> index;
-    ygg::Data<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>>> constraint;
+    ygg::Data<::tyr::formalism::planning::BooleanOperator<::tyr::GroundTag>> constraint;
     ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> true_child;
     ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> dontcare_child;
 
     Data() = default;
     Data(ygg::Index<planning::match_tree::NumericConstraintSelectorNode<Tag>> index,
-         ygg::Data<::tyr::formalism::planning::BooleanOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>>> constraint,
+         ygg::Data<::tyr::formalism::planning::BooleanOperator<::tyr::GroundTag>> constraint,
          ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> true_child,
          ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> dontcare_child) :
         index(index),

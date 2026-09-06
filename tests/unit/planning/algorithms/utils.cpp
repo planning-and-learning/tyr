@@ -48,32 +48,32 @@ void expect_invalid_argument_message(Callable&& callable, std::string_view expec
 }
 }
 
-TEST(PlanningAlgorithmUtilsTest, ComputeSuccessorGValueUsesUnitActionCosts) { EXPECT_EQ(p::compute_successor_g_value(3.0, 9.0, ::tyr::CostMode::UNIT), 4.0); }
+TEST(PlanningAlgorithmUtilsTest, ComputeSuccessorGValueUsesUnitActionCosts) { EXPECT_EQ(p::compute_successor_g_value(3.0, 9.0, CostMode::UNIT), 4.0); }
 
 TEST(PlanningAlgorithmUtilsTest, ComputeSuccessorGValueUsesGeneratedMetricWithGeneralActionCosts)
 {
-    EXPECT_EQ(p::compute_successor_g_value(3.0, 9.0, ::tyr::CostMode::GENERAL), 9.0);
+    EXPECT_EQ(p::compute_successor_g_value(3.0, 9.0, CostMode::GENERAL), 9.0);
 }
 
 TEST(PlanningAlgorithmUtilsTest, ComputeSuccessorGValueRejectsUnknownCostMode)
 {
-    EXPECT_THROW((void) p::compute_successor_g_value(3.0, 9.0, static_cast<::tyr::CostMode>(255)), std::runtime_error);
+    EXPECT_THROW((void) p::compute_successor_g_value(3.0, 9.0, static_cast<CostMode>(255)), std::runtime_error);
 }
 
 TEST(PlanningAlgorithmUtilsTest, BlindHeuristicHasNoPreferredActionsByDefault)
 {
-    auto heuristic = p::BlindHeuristic<::tyr::GroundTag> {};
+    auto heuristic = p::BlindHeuristic<GroundTag> {};
 
     EXPECT_TRUE(heuristic.get_preferred_actions().empty());
 }
 
 TEST(PlanningAlgorithmUtilsTest, DefaultConstructedBasicSolverAdaptersRejectMissingRequiredMembers)
 {
-    auto astar_solver = p::astar_eager::Solver<::tyr::GroundTag> {};
-    auto brfs_solver = p::brfs::Solver<::tyr::GroundTag> {};
-    auto gbfs_solver = p::gbfs_lazy::Solver<::tyr::GroundTag> {};
-    auto iw_solver = p::iw::Solver<::tyr::GroundTag> {};
-    auto siw_solver = p::siw::Solver<::tyr::GroundTag> {};
+    auto astar_solver = p::astar_eager::Solver<GroundTag> {};
+    auto brfs_solver = p::brfs::Solver<GroundTag> {};
+    auto gbfs_solver = p::gbfs_lazy::Solver<GroundTag> {};
+    auto iw_solver = p::iw::Solver<GroundTag> {};
+    auto siw_solver = p::siw::Solver<GroundTag> {};
 
     expect_invalid_argument_message([&]() { (void) astar_solver.solve(); }, "astar_eager::Solver::solve(): task is required");
     expect_invalid_argument_message([&]() { (void) brfs_solver.solve(); }, "brfs::Solver::solve(): task is required");
@@ -84,7 +84,7 @@ TEST(PlanningAlgorithmUtilsTest, DefaultConstructedBasicSolverAdaptersRejectMiss
 
 TEST(PlanningAlgorithmUtilsTest, DefaultConstructedWidthSolverAdaptersExposeNestedDefaults)
 {
-    auto iw_solver = p::iw::Solver<::tyr::GroundTag> {};
+    auto iw_solver = p::iw::Solver<GroundTag> {};
 
     EXPECT_EQ(iw_solver.brfs_solver.task, nullptr);
     EXPECT_EQ(iw_solver.brfs_solver.state_repository, nullptr);
@@ -93,7 +93,7 @@ TEST(PlanningAlgorithmUtilsTest, DefaultConstructedWidthSolverAdaptersExposeNest
     EXPECT_EQ(iw_solver.max_arity, p::iw::MaxArity);
     EXPECT_EQ(iw_solver.options.event_handler, nullptr);
 
-    auto siw_solver = p::siw::Solver<::tyr::GroundTag> {};
+    auto siw_solver = p::siw::Solver<GroundTag> {};
 
     EXPECT_EQ(siw_solver.iw_solver.brfs_solver.task, nullptr);
     EXPECT_EQ(siw_solver.iw_solver.brfs_solver.state_repository, nullptr);

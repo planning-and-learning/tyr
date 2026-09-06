@@ -31,12 +31,12 @@ namespace tyr::datalog
 {
 namespace scheduler_impl
 {
-namespace f = ::tyr::formalism;
-namespace fd = ::tyr::formalism::datalog;
+namespace f = formalism;
+namespace fd = formalism::datalog;
 }
 
-template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::schedule(scheduler_impl::fd::RuleView<::tyr::GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
+template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+void Scheduler<GroundTag>::schedule(scheduler_impl::fd::RuleView<GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     if (get_states<R>()[ygg::uint_t(rule.get_index())].unsatisfied_count != 0)
         return;
@@ -50,8 +50,8 @@ void Scheduler<GroundTag>::schedule(scheduler_impl::fd::RuleView<::tyr::GroundTa
         enqueue(rule, *priority);
 }
 
-template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(scheduler_impl::fd::RuleView<::tyr::GroundTag, R> rule,
+template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(scheduler_impl::fd::RuleView<GroundTag, R> rule,
                                                                   ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     const auto rule_index = rule.get_index();
@@ -74,7 +74,7 @@ void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(scheduler_impl
     }
 }
 
-template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void Scheduler<GroundTag>::notify_predicate_generated_for(scheduler_impl::fd::PredicateBindingView<scheduler_impl::f::FluentTag> fact,
                                                           ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
@@ -93,7 +93,7 @@ void Scheduler<GroundTag>::notify_predicate_generated_for(scheduler_impl::fd::Pr
     }
 }
 
-template<::tyr::formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void Scheduler<GroundTag>::notify_numeric_changed_for(scheduler_impl::fd::FunctionBindingView<scheduler_impl::f::FluentTag> term,
                                                       ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {

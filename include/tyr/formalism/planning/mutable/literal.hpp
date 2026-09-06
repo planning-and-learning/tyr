@@ -40,7 +40,7 @@ struct MutableLiteral : ygg::comparison::Mixin<MutableLiteral<T>>
 
     MutableLiteral() = default;
     MutableLiteral(MutableAtom<T> atom, bool polarity) : atom(std::move(atom)), polarity(polarity) {}
-    MutableLiteral(LiteralView<::tyr::LiftedTag, T> element) : atom(element.get_atom()), polarity(element.get_polarity()) {}
+    MutableLiteral(LiteralView<LiftedTag, T> element) : atom(element.get_atom()), polarity(element.get_polarity()) {}
 
     auto identifying_members() const noexcept { return std::tie(atom, polarity); }
 };
@@ -52,9 +52,9 @@ using MutableLiteralList = std::vector<MutableLiteral<T>>;
 namespace tyr::formalism::unification
 {
 template<FactKind T>
-struct structure_traits<tyr::formalism::planning::MutableLiteral<T>>
+struct structure_traits<planning::MutableLiteral<T>>
 {
-    using Type = tyr::formalism::planning::MutableLiteral<T>;
+    using Type = planning::MutableLiteral<T>;
 
     template<typename F>
     static bool zip_terms(const Type& lhs, const Type& rhs, F&& f)
@@ -62,13 +62,13 @@ struct structure_traits<tyr::formalism::planning::MutableLiteral<T>>
         if (lhs.polarity != rhs.polarity)
             return false;
 
-        return tyr::formalism::unification::zip_terms(lhs.atom, rhs.atom, f);
+        return unification::zip_terms(lhs.atom, rhs.atom, f);
     }
 
     template<typename F>
     static Type transform_terms(const Type& value, F&& f)
     {
-        return Type(tyr::formalism::unification::transform_terms(value.atom, f), value.polarity);
+        return Type(unification::transform_terms(value.atom, f), value.polarity);
     }
 };
 }

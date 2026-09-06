@@ -22,20 +22,20 @@
 namespace tyr::datalog
 {
 
-template ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> element,
+template ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionTermView<GroundTag, formalism::StaticTag> element,
                                                     const FactSets& fact_sets);
-template ygg::ClosedInterval<ygg::float_t> evaluate(::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> element,
+template ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionTermView<GroundTag, formalism::FluentTag> element,
                                                     const FactSets& fact_sets);
 
 /**
  * is_applicable
  */
 
-template bool is_applicable(::tyr::formalism::datalog::LiteralView<::tyr::GroundTag, ::tyr::formalism::StaticTag> element, const FactSets& fact_sets);
-template bool is_applicable(::tyr::formalism::datalog::LiteralView<::tyr::GroundTag, ::tyr::formalism::FluentTag> element, const FactSets& fact_sets);
+template bool is_applicable(formalism::datalog::LiteralView<GroundTag, formalism::StaticTag> element, const FactSets& fact_sets);
+template bool is_applicable(formalism::datalog::LiteralView<GroundTag, formalism::FluentTag> element, const FactSets& fact_sets);
 
-template bool is_applicable(::tyr::formalism::datalog::LiteralListView<::tyr::GroundTag, ::tyr::formalism::StaticTag> elements, const FactSets& fact_sets);
-template bool is_applicable(::tyr::formalism::datalog::LiteralListView<::tyr::GroundTag, ::tyr::formalism::FluentTag> elements, const FactSets& fact_sets);
+template bool is_applicable(formalism::datalog::LiteralListView<GroundTag, formalism::StaticTag> elements, const FactSets& fact_sets);
+template bool is_applicable(formalism::datalog::LiteralListView<GroundTag, formalism::FluentTag> elements, const FactSets& fact_sets);
 
 // GroundConjunctiveCondition
 

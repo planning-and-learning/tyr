@@ -14,19 +14,19 @@ namespace tyr::serialization
 {
 
 template<>
-struct Serializer<::tyr::formalism::planning::DomainView>
+struct Serializer<formalism::planning::DomainView>
 {
     static std::string name() { return "Domain"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::DomainView& value)
+    static void save(Archive& ar, const formalism::planning::DomainView& value)
     {
         ar.field("name", value.get_name());
-        ar.field("static_predicates", value.get_predicates<::tyr::formalism::StaticTag>());
-        ar.field("fluent_predicates", value.get_predicates<::tyr::formalism::FluentTag>());
-        ar.field("derived_predicates", value.get_predicates<::tyr::formalism::DerivedTag>());
-        ar.field("static_functions", value.get_functions<::tyr::formalism::StaticTag>());
-        ar.field("fluent_functions", value.get_functions<::tyr::formalism::FluentTag>());
+        ar.field("static_predicates", value.get_predicates<formalism::StaticTag>());
+        ar.field("fluent_predicates", value.get_predicates<formalism::FluentTag>());
+        ar.field("derived_predicates", value.get_predicates<formalism::DerivedTag>());
+        ar.field("static_functions", value.get_functions<formalism::StaticTag>());
+        ar.field("fluent_functions", value.get_functions<formalism::FluentTag>());
         ar.field("auxiliary_function", value.get_auxiliary_function());
         ar.field("constants", value.get_constants());
         ar.field("actions", value.get_actions());

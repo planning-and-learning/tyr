@@ -175,12 +175,12 @@ void bind_matcher(nb::module_& m, const std::string& name)
              "result"_a,
              "workspace"_a)
         .def("query",
-             nb::overload_cast<AtomView<::tyr::GroundTag, FluentTag>, QueryResult&, QueryWorkspace&>(&V::query, nb::const_),
+             nb::overload_cast<AtomView<GroundTag, FluentTag>, QueryResult&, QueryWorkspace&>(&V::query, nb::const_),
              "atom"_a,
              "result"_a,
              "workspace"_a)
         .def("query", nb::overload_cast<const MutableAtom<FluentTag>&>(&V::query, nb::const_), "atom"_a)
-        .def("query", nb::overload_cast<AtomView<::tyr::GroundTag, FluentTag>>(&V::query, nb::const_), "atom"_a);
+        .def("query", nb::overload_cast<AtomView<GroundTag, FluentTag>>(&V::query, nb::const_), "atom"_a);
 }
 }
 

@@ -183,7 +183,7 @@ StateView<Kind> StateRepository<Kind>::get_initial_state(AxiomEvaluator<Kind>& a
     auto state_builder = get_state_builder();
     detail::StateRepositoryPolicy<Kind>::insert_initial_fluent_facts(*m_impl->definition->task, *state_builder);
 
-    for (const auto fterm_value : m_impl->definition->task->get_task().template get_fterm_values<::tyr::formalism::FluentTag>())
+    for (const auto fterm_value : m_impl->definition->task->get_task().template get_fterm_values<formalism::FluentTag>())
         state_builder->set(fterm_value.get_fterm().get_index(), fterm_value.get_value());
 
     return register_state(axiom_evaluator, std::move(state_builder));
@@ -199,10 +199,10 @@ StateView<Kind> StateRepository<Kind>::get_registered_state(ygg::Index<State<Kin
         [&](auto& evaluator)
         {
             const auto& packed_state = evaluator.storage->packed_states[state_index];
-            evaluator.fluent_backend.unpack(packed_state.template get_atoms<::tyr::formalism::FluentTag>(),
-                                            state_builder->template get_atoms<::tyr::formalism::FluentTag>());
-            evaluator.derived_backend.unpack(packed_state.template get_atoms<::tyr::formalism::DerivedTag>(),
-                                             state_builder->template get_atoms<::tyr::formalism::DerivedTag>());
+            evaluator.fluent_backend.unpack(packed_state.template get_atoms<formalism::FluentTag>(),
+                                            state_builder->template get_atoms<formalism::FluentTag>());
+            evaluator.derived_backend.unpack(packed_state.template get_atoms<formalism::DerivedTag>(),
+                                             state_builder->template get_atoms<formalism::DerivedTag>());
             evaluator.numeric_backend.unpack(packed_state.get_numeric_variables(), state_builder->get_numeric_variables());
         });
 
@@ -212,8 +212,8 @@ StateView<Kind> StateRepository<Kind>::get_registered_state(ygg::Index<State<Kin
 template<TaskKind Kind>
 StateView<Kind> StateRepository<Kind>::create_state(
     AxiomEvaluator<Kind>& axiom_evaluator,
-    const std::vector<ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>& fluent_facts,
-    const std::vector<std::pair<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>>, ygg::float_t>>& fterm_values)
+    const std::vector<ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>>>& fluent_facts,
+    const std::vector<std::pair<ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>& fterm_values)
 {
     auto state_builder = get_state_builder();
 
@@ -228,8 +228,8 @@ StateView<Kind> StateRepository<Kind>::create_state(
 template<TaskKind Kind>
 StateView<Kind>
 StateRepository<Kind>::create_state(AxiomEvaluator<Kind>& axiom_evaluator,
-                                    const std::vector<::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag>>& fluent_facts,
-                                    const std::vector<::tyr::formalism::planning::FunctionTermViewValuePair<::tyr::GroundTag, ::tyr::formalism::FluentTag>>& fterm_values)
+                                    const std::vector<formalism::planning::FDRFactView<formalism::FluentTag>>& fluent_facts,
+                                    const std::vector<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>& fterm_values)
 {
     auto state_builder = get_state_builder();
 
@@ -270,16 +270,16 @@ StateView<Kind> StateRepository<Kind>::register_extended_state(ygg::SharedObject
             {
                 state->set(packed_states
                                .insert(ygg::Data<State<Kind>>(ygg::Index<State<Kind>>(packed_states.size()),
-                                                              evaluator.fluent_backend.insert(state->template get_atoms<::tyr::formalism::FluentTag>()),
-                                                              evaluator.derived_backend.insert(state->template get_atoms<::tyr::formalism::DerivedTag>()),
+                                                              evaluator.fluent_backend.insert(state->template get_atoms<formalism::FluentTag>()),
+                                                              evaluator.derived_backend.insert(state->template get_atoms<formalism::DerivedTag>()),
                                                               evaluator.numeric_backend.insert(state->get_numeric_variables())))
                                .first);
             }
             else
             {
                 const auto candidate = ygg::Data<State<Kind>>(ygg::Index<State<Kind>>::max(),
-                                                              evaluator.fluent_backend.insert(state->template get_atoms<::tyr::formalism::FluentTag>()),
-                                                              evaluator.derived_backend.insert(state->template get_atoms<::tyr::formalism::DerivedTag>()),
+                                                              evaluator.fluent_backend.insert(state->template get_atoms<formalism::FluentTag>()),
+                                                              evaluator.derived_backend.insert(state->template get_atoms<formalism::DerivedTag>()),
                                                               evaluator.numeric_backend.insert(state->get_numeric_variables()));
                 const auto hash = PackedStates::hash(candidate);
                 auto state_index = packed_states.find_with_hash(candidate, hash);
@@ -292,8 +292,8 @@ StateView<Kind> StateRepository<Kind>::register_extended_state(ygg::SharedObject
                                                                      {
                                                                          return ygg::Data<State<Kind>>(
                                                                              index,
-                                                                             candidate.template get_atoms<::tyr::formalism::FluentTag>(),
-                                                                             candidate.template get_atoms<::tyr::formalism::DerivedTag>(),
+                                                                             candidate.template get_atoms<formalism::FluentTag>(),
+                                                                             candidate.template get_atoms<formalism::DerivedTag>(),
                                                                              candidate.get_numeric_variables());
                                                                      })
                                             .first);

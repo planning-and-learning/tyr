@@ -31,9 +31,9 @@ static_assert(TerminationPolicyConcept<TerminationPolicy<SumAggregation>>);
 static_assert(TerminationPolicyConcept<TerminationPolicy<MaxAggregation>>);
 
 template<typename AggregationFunction>
-void TerminationPolicy<AggregationFunction>::set_goals(::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::GroundTag> goals_)
+void TerminationPolicy<AggregationFunction>::set_goals(formalism::datalog::ConjunctiveConditionView<GroundTag> goals_)
 {
-    for (const auto literal : goals_.template get_literals<::tyr::formalism::FluentTag>())
+    for (const auto literal : goals_.template get_literals<formalism::FluentTag>())
         if (!literal.get_polarity())
             throw std::invalid_argument("TerminationPolicy requires positive fluent goals");
 
@@ -66,7 +66,7 @@ Cost TerminationPolicy<AggregationFunction>::get_total_cost(const FactSets&,
         return AggregationFunction::identity();
 
     auto total = AggregationFunction::identity();
-    for (const auto literal : goals->template get_literals<::tyr::formalism::FluentTag>())
+    for (const auto literal : goals->template get_literals<formalism::FluentTag>())
     {
         const auto* annotation = annotations.find(literal.get_atom().get_row());
         assert(annotation);

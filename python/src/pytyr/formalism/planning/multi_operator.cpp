@@ -25,47 +25,39 @@
 namespace tyr::formalism::planning
 {
 
+namespace
+{
+template<TaskKind T>
+void bind_multi_operator_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
+{
+    using Tag = MultiOperator<T>;
+    ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
+
+    {
+        using V = ygg::Data<Tag>;
+        auto cls = nb::class_<V>(m, (name + "Data").c_str())
+                       .def(nb::init<ArithmeticOperatorKind, const std::vector<FunctionExpressionView<T>>&>(), "operator"_a, "args"_a);
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+
+    {
+        using V = MultiOperatorView<T>;
+        auto cls = nb::class_<V>(m, name.c_str()).def("get_index", &V::get_index).def("get_operator", &V::get_operator).def("get_args", &V::get_args);
+        ygg::add_print(cls);
+        ygg::add_comparison(cls);
+        ygg::add_hash(cls);
+    }
+
+    repository.def("get_or_create", &get_or_create_data<Tag>, "data"_a, nb::keep_alive<0, 1>());
+}
+}  // namespace
+
 void bind_multi_operator(nb::module_& m, RepositoryBinding& repository)
 {
-    ygg::bind_index<ygg::Index<MultiOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>>(m, "MultiOperatorIndex");
-    ygg::bind_index<ygg::Index<MultiOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>>(m, "GroundMultiOperatorIndex");
-
-    {
-        using ExpressionData = ygg::Data<FunctionExpression<::tyr::LiftedTag>>;
-        using ExpressionView = ygg::View<ExpressionData, Repository>;
-        using V = ygg::Data<MultiOperator<ExpressionData>>;
-        auto cls = nb::class_<V>(m, "MultiOperatorData").def(nb::init<ArithmeticOperatorKind, const std::vector<ExpressionView>&>(), "operator"_a, "args"_a);
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-    {
-        using ExpressionData = ygg::Data<FunctionExpression<::tyr::GroundTag>>;
-        using ExpressionView = ygg::View<ExpressionData, Repository>;
-        using V = ygg::Data<MultiOperator<ExpressionData>>;
-        auto cls =
-            nb::class_<V>(m, "GroundMultiOperatorData").def(nb::init<ArithmeticOperatorKind, const std::vector<ExpressionView>&>(), "operator"_a, "args"_a);
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-    {
-        using V = MultiOperatorView<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>;
-        auto cls = nb::class_<V>(m, "MultiOperator").def("get_index", &V::get_index).def("get_operator", &V::get_operator).def("get_args", &V::get_args);
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-    {
-        using V = MultiOperatorView<ygg::Data<FunctionExpression<::tyr::GroundTag>>>;
-        auto cls = nb::class_<V>(m, "GroundMultiOperator").def("get_index", &V::get_index).def("get_operator", &V::get_operator).def("get_args", &V::get_args);
-        ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
-    }
-
-    repository.def("get_or_create", &get_or_create_data<MultiOperator<ygg::Data<FunctionExpression<::tyr::LiftedTag>>>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_data<MultiOperator<ygg::Data<FunctionExpression<::tyr::GroundTag>>>>, "data"_a, nb::keep_alive<0, 1>());
+    bind_multi_operator_kind<LiftedTag>(m, repository, "MultiOperator");
+    bind_multi_operator_kind<GroundTag>(m, repository, "GroundMultiOperator");
 }
 
 }  // namespace tyr::formalism::planning

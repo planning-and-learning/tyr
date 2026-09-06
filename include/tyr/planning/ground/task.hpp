@@ -40,20 +40,20 @@ template<>
 class Task<GroundTag>
 {
 public:
-    explicit Task(::tyr::formalism::planning::PlanningFDRTask task);
+    explicit Task(formalism::planning::PlanningFDRTask task);
 
-    template<::tyr::formalism::FactKind T>
+    template<formalism::FactKind T>
     size_t get_num_atoms() const noexcept;
     size_t get_num_actions() const noexcept;
     size_t get_num_axioms() const noexcept;
 
     const auto& get_static_atoms_bitset() const noexcept { return m_static_atoms_bitset; }
     const auto& get_static_numeric_variables() const noexcept { return m_static_numeric_variables; }
-    bool test(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
+    bool test(ygg::Index<formalism::planning::Atom<GroundTag, formalism::StaticTag>> index) const
     {
         return ygg::test(ygg::uint_t(index), m_static_atoms_bitset);
     }
-    ygg::float_t get(ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const noexcept
+    ygg::float_t get(ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>> index) const noexcept
     {
         return ygg::get(ygg::uint_t(index), m_static_numeric_variables, std::numeric_limits<ygg::float_t>::quiet_NaN());
     }
@@ -66,7 +66,7 @@ public:
     bool has_axioms() const noexcept { return !get_task().get_ground_axioms().empty(); }
 
 private:
-    ::tyr::formalism::planning::PlanningFDRTask m_task;
+    formalism::planning::PlanningFDRTask m_task;
 
     boost::dynamic_bitset<> m_static_atoms_bitset;
     std::vector<ygg::float_t> m_static_numeric_variables;

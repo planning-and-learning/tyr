@@ -56,22 +56,22 @@ struct PerfectAssignmentHash
     size_t size() const noexcept;
 };
 
-template<::tyr::formalism::FactKind T>
+template<formalism::FactKind T>
 class PredicateAssignmentSet
 {
 private:
-    ::tyr::formalism::datalog::PredicateView<T> m_predicate;
-    ygg::Index<::tyr::formalism::Predicate<T>> m_predicate_index;
+    formalism::datalog::PredicateView<T> m_predicate;
+    ygg::Index<formalism::Predicate<T>> m_predicate_index;
 
     PerfectAssignmentHash m_hash;
     boost::dynamic_bitset<> m_set;
 
 public:
-    PredicateAssignmentSet(::tyr::formalism::datalog::PredicateView<T> predicate, const analysis::VariableDomainList& parameter_domains, size_t num_objects);
+    PredicateAssignmentSet(formalism::datalog::PredicateView<T> predicate, const analysis::VariableDomainList& parameter_domains, size_t num_objects);
 
     void reset() noexcept;
 
-    void insert(::tyr::formalism::datalog::PredicateBindingView<T> binding);
+    void insert(formalism::datalog::PredicateBindingView<T> binding);
 
     bool operator[](const VertexAssignment& assignment) const noexcept;
     bool operator[](const EdgeAssignment& assignment) const noexcept;
@@ -83,7 +83,7 @@ public:
     const boost::dynamic_bitset<>& get_set() const noexcept;
 };
 
-template<::tyr::formalism::FactKind T>
+template<formalism::FactKind T>
 class PredicateAssignmentSets
 {
 private:
@@ -91,57 +91,57 @@ private:
 
 public:
     PredicateAssignmentSets();
-    PredicateAssignmentSets(::tyr::formalism::datalog::PredicateListView<T> predicates,
+    PredicateAssignmentSets(formalism::datalog::PredicateListView<T> predicates,
                             const analysis::PredicateDomainMap<T>& predicate_domains,
                             size_t num_objects);
 
     void reset() noexcept;
 
-    void insert(::tyr::formalism::datalog::AtomView<::tyr::GroundTag, T> ground_atom);
-    void insert(::tyr::formalism::datalog::PredicateBindingView<T> binding);
-    void insert(::tyr::formalism::datalog::PredicateBindingForwardRangeView<T> bindings);
+    void insert(formalism::datalog::AtomView<GroundTag, T> ground_atom);
+    void insert(formalism::datalog::PredicateBindingView<T> binding);
+    void insert(formalism::datalog::PredicateBindingForwardRangeView<T> bindings);
 
-    const PredicateAssignmentSet<T>& get_set(ygg::Index<::tyr::formalism::Predicate<T>> index) const noexcept;
+    const PredicateAssignmentSet<T>& get_set(ygg::Index<formalism::Predicate<T>> index) const noexcept;
 
     size_t size() const noexcept;
 
     const std::vector<PredicateAssignmentSet<T>>& get_sets() const noexcept;
 };
 
-template<::tyr::formalism::FactKind T>
+template<formalism::FactKind T>
 class FunctionAssignmentSet
 {
 private:
-    ::tyr::formalism::datalog::FunctionView<T> m_function;
-    ygg::Index<::tyr::formalism::Function<T>> m_function_index;
+    formalism::datalog::FunctionView<T> m_function;
+    ygg::Index<formalism::Function<T>> m_function_index;
 
     PerfectAssignmentHash m_hash;
     std::vector<ygg::ClosedInterval<ygg::float_t>> m_set;
 
 public:
-    FunctionAssignmentSet(::tyr::formalism::datalog::FunctionView<T> function, const analysis::VariableDomainList& parameter_domains, size_t num_objects);
+    FunctionAssignmentSet(formalism::datalog::FunctionView<T> function, const analysis::VariableDomainList& parameter_domains, size_t num_objects);
 
     void reset() noexcept;
 
-    bool insert(::tyr::formalism::datalog::FunctionBindingView<T> binding, ygg::ClosedInterval<ygg::float_t> interval);
-    bool insert(::tyr::formalism::datalog::FunctionBindingView<T> binding, ygg::float_t value);
-    bool insert(::tyr::formalism::datalog::FunctionTermValueView<::tyr::GroundTag, T> fterm_value);
+    bool insert(formalism::datalog::FunctionBindingView<T> binding, ygg::ClosedInterval<ygg::float_t> interval);
+    bool insert(formalism::datalog::FunctionBindingView<T> binding, ygg::float_t value);
+    bool insert(formalism::datalog::FunctionTermValueView<GroundTag, T> fterm_value);
 
     ygg::ClosedInterval<ygg::float_t> operator[](const EmptyAssignment& assignment) const noexcept;
     ygg::ClosedInterval<ygg::float_t> operator[](const VertexAssignment& assignment) const noexcept;
     ygg::ClosedInterval<ygg::float_t> operator[](const EdgeAssignment& assignment) const noexcept;
-    ygg::ClosedInterval<ygg::float_t> operator[](::tyr::formalism::datalog::FunctionBindingView<T> binding) const noexcept;
+    ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionBindingView<T> binding) const noexcept;
 
     ygg::ClosedInterval<ygg::float_t> at(const EmptyAssignment& assignment) const noexcept;
     ygg::ClosedInterval<ygg::float_t> at(const VertexAssignment& assignment) const noexcept;
     ygg::ClosedInterval<ygg::float_t> at(const EdgeAssignment& assignment) const noexcept;
-    ygg::ClosedInterval<ygg::float_t> at(::tyr::formalism::datalog::FunctionBindingView<T> binding) const noexcept;
+    ygg::ClosedInterval<ygg::float_t> at(formalism::datalog::FunctionBindingView<T> binding) const noexcept;
 
     size_t size() const noexcept;
     const PerfectAssignmentHash& get_hash() const noexcept;
 };
 
-template<::tyr::formalism::FactKind T>
+template<formalism::FactKind T>
 class FunctionAssignmentSets
 {
 private:
@@ -149,41 +149,41 @@ private:
 
 public:
     FunctionAssignmentSets();
-    FunctionAssignmentSets(::tyr::formalism::datalog::FunctionListView<T> functions,
+    FunctionAssignmentSets(formalism::datalog::FunctionListView<T> functions,
                            const analysis::FunctionDomainMap<T>& function_domains,
                            size_t num_objects);
 
     void reset() noexcept;
 
-    bool insert(::tyr::formalism::datalog::FunctionBindingView<T> binding, ygg::ClosedInterval<ygg::float_t> interval);
-    bool insert(::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, T> function_term, ygg::float_t value);
-    bool insert(::tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, T> function_term, ygg::ClosedInterval<ygg::float_t> interval);
-    void insert(::tyr::formalism::datalog::FunctionTermListView<::tyr::GroundTag, T> function_terms, const std::vector<ygg::float_t>& values);
-    void insert(::tyr::formalism::datalog::FunctionTermValueListView<::tyr::GroundTag, T> fterm_values);
+    bool insert(formalism::datalog::FunctionBindingView<T> binding, ygg::ClosedInterval<ygg::float_t> interval);
+    bool insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, ygg::float_t value);
+    bool insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, ygg::ClosedInterval<ygg::float_t> interval);
+    void insert(formalism::datalog::FunctionTermListView<GroundTag, T> function_terms, const std::vector<ygg::float_t>& values);
+    void insert(formalism::datalog::FunctionTermValueListView<GroundTag, T> fterm_values);
 
-    const FunctionAssignmentSet<T>& get_set(ygg::Index<::tyr::formalism::Function<T>> index) const noexcept;
-    ygg::ClosedInterval<ygg::float_t> operator[](::tyr::formalism::datalog::FunctionBindingView<T> binding) const noexcept;
-    ygg::ClosedInterval<ygg::float_t> at(::tyr::formalism::datalog::FunctionBindingView<T> binding) const noexcept;
+    const FunctionAssignmentSet<T>& get_set(ygg::Index<formalism::Function<T>> index) const noexcept;
+    ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionBindingView<T> binding) const noexcept;
+    ygg::ClosedInterval<ygg::float_t> at(formalism::datalog::FunctionBindingView<T> binding) const noexcept;
     std::vector<FunctionAssignmentSet<T>>& get_sets() noexcept;
     const std::vector<FunctionAssignmentSet<T>>& get_sets() const noexcept;
 
     size_t size() const noexcept;
 };
 
-template<::tyr::formalism::FactKind T>
+template<formalism::FactKind T>
 struct TaggedAssignmentSets
 {
     PredicateAssignmentSets<T> predicate;
     FunctionAssignmentSets<T> function;
 
     TaggedAssignmentSets();
-    TaggedAssignmentSets(::tyr::formalism::datalog::PredicateListView<T> predicates,
-                         ::tyr::formalism::datalog::FunctionListView<T> functions,
+    TaggedAssignmentSets(formalism::datalog::PredicateListView<T> predicates,
+                         formalism::datalog::FunctionListView<T> functions,
                          const analysis::PredicateDomainMap<T>& predicate_domains,
                          const analysis::FunctionDomainMap<T>& function_domains,
                          size_t num_objects);
-    TaggedAssignmentSets(::tyr::formalism::datalog::PredicateListView<T> predicates,
-                         ::tyr::formalism::datalog::FunctionListView<T> functions,
+    TaggedAssignmentSets(formalism::datalog::PredicateListView<T> predicates,
+                         formalism::datalog::FunctionListView<T> functions,
                          const analysis::PredicateDomainMap<T>& predicate_domains,
                          const analysis::FunctionDomainMap<T>& function_domains,
                          size_t num_objects,
@@ -196,12 +196,12 @@ struct TaggedAssignmentSets
 
 struct AssignmentSets
 {
-    const TaggedAssignmentSets<::tyr::formalism::StaticTag>& static_sets;
-    const TaggedAssignmentSets<::tyr::formalism::FluentTag>& fluent_sets;
+    const TaggedAssignmentSets<formalism::StaticTag>& static_sets;
+    const TaggedAssignmentSets<formalism::FluentTag>& fluent_sets;
 
-    AssignmentSets(const TaggedAssignmentSets<::tyr::formalism::StaticTag>& static_sets, const TaggedAssignmentSets<::tyr::formalism::FluentTag>& fluent_sets);
+    AssignmentSets(const TaggedAssignmentSets<formalism::StaticTag>& static_sets, const TaggedAssignmentSets<formalism::FluentTag>& fluent_sets);
 
-    template<::tyr::formalism::FactKind T>
+    template<formalism::FactKind T>
     const TaggedAssignmentSets<T>& get() const noexcept;
 };
 

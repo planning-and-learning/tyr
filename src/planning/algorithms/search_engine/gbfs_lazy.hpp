@@ -167,7 +167,7 @@ public:
         return ExpansionResult::EXPAND;
     }
 
-    SuccessorMetadata make_successor_metadata(ygg::Index<Worker> worker, const Node<Kind>& node, ::tyr::formalism::planning::ActionBindingView action) const
+    SuccessorMetadata make_successor_metadata(ygg::Index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionBindingView action) const
     {
         const auto preferred = m_preferred_actions && m_preferred_actions->contains(action);
         return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().get_index() }, node.get_metric(), m_state_h_value, preferred };
@@ -274,7 +274,7 @@ private:
     ygg::uint_t m_step { 0 };
     ygg::float_t m_start_h_value { 0 };
     ygg::float_t m_state_h_value { 0 };
-    const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>* m_preferred_actions { nullptr };
+    const ygg::UnorderedSet<formalism::planning::ActionBindingView>* m_preferred_actions { nullptr };
     ygg::SegmentedVector<SearchNode> m_search_nodes;
     Queue m_preferred_openlist;
     Queue m_standard_openlist;

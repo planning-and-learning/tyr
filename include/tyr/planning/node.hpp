@@ -58,7 +58,7 @@ using NodeList = std::vector<Node<Kind>>;
 template<TaskKind Kind>
 struct LabeledNode
 {
-    ::tyr::formalism::planning::ActionBindingView label;
+    formalism::planning::ActionBindingView label;
     Node<Kind> node;
 };
 

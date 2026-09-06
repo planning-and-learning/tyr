@@ -24,7 +24,7 @@ static_assert(std::constructible_from<Data,
                                       fd::VariableViewList,
                                       fd::LiteralViewList<::tyr::LiftedTag, f::StaticTag>,
                                       fd::LiteralViewList<::tyr::LiftedTag, f::FluentTag>,
-                                      fd::LiftedBooleanOperatorViewList>);
+                                      fd::BooleanOperatorViewList<::tyr::LiftedTag>>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.variables;
@@ -61,7 +61,7 @@ static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
 static_assert(std::same_as<View, fd::ConjunctiveConditionView<::tyr::GroundTag>>);
 static_assert(
-    std::constructible_from<Data, fd::LiteralViewList<::tyr::GroundTag, f::StaticTag>, fd::LiteralViewList<::tyr::GroundTag, f::FluentTag>, fd::GroundBooleanOperatorViewList>);
+    std::constructible_from<Data, fd::LiteralViewList<::tyr::GroundTag, f::StaticTag>, fd::LiteralViewList<::tyr::GroundTag, f::FluentTag>, fd::BooleanOperatorViewList<::tyr::GroundTag>>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.static_literals;

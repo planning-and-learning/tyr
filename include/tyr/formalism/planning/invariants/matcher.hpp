@@ -75,10 +75,10 @@ public:
 
     void query(const MutableAtom<FluentTag>& atom, QueryResult& result, QueryWorkspace& ws) const;
 
-    void query(AtomView<::tyr::GroundTag, FluentTag> atom, QueryResult& result, QueryWorkspace& workspace) const;
+    void query(AtomView<GroundTag, FluentTag> atom, QueryResult& result, QueryWorkspace& workspace) const;
 
     QueryResult query(const MutableAtom<FluentTag>& atom) const;
-    QueryResult query(AtomView<::tyr::GroundTag, FluentTag> atom) const;
+    QueryResult query(AtomView<GroundTag, FluentTag> atom) const;
 
 private:
     InvariantMatchDataList m_invariant_match_data;

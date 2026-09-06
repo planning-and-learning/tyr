@@ -28,9 +28,9 @@ template<>
 class Program<GroundTag>
 {
 public:
-    Program(::tyr::formalism::datalog::ProgramView<GroundTag> program,
-            ::tyr::formalism::datalog::RepositoryPtr program_repository,
-            ::tyr::formalism::datalog::RepositoryFactoryPtr repository_factory);
+    Program(formalism::datalog::ProgramView<GroundTag> program,
+            formalism::datalog::RepositoryPtr program_repository,
+            formalism::datalog::RepositoryFactoryPtr repository_factory);
 
     auto get_program() const noexcept { return m_const_program_workspace.program; }
     auto& get_program_repository() noexcept { return *m_program_repository; }
@@ -39,8 +39,8 @@ public:
     const auto& get_const_program_workspace() const noexcept { return m_const_program_workspace; }
 
 private:
-    ::tyr::formalism::datalog::RepositoryPtr m_program_repository;
-    ::tyr::formalism::datalog::RepositoryFactoryPtr m_repository_factory;
+    formalism::datalog::RepositoryPtr m_program_repository;
+    formalism::datalog::RepositoryFactoryPtr m_repository_factory;
     ConstProgramWorkspace<GroundTag> m_const_program_workspace;
 };
 

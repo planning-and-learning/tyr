@@ -11,12 +11,12 @@ namespace tyr::serialization
 {
 
 template<>
-struct Serializer<::tyr::formalism::planning::PlanningTask>
+struct Serializer<formalism::planning::PlanningTask>
 {
     static std::string name() { return "PlanningTask"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::PlanningTask& value)
+    static void save(Archive& ar, const formalism::planning::PlanningTask& value)
     {
         ar.field("task", value.get_task());
         ar.field("domain", value.get_domain());

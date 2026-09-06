@@ -35,19 +35,19 @@
 
 namespace tyr::analysis
 {
-ProgramVariableDomains compute_variable_domains(::tyr::formalism::datalog::ProgramView<LiftedTag> program);
+ProgramVariableDomains compute_variable_domains(formalism::datalog::ProgramView<LiftedTag> program);
 
-ProgramAnalysis analyze_program(::tyr::formalism::datalog::ProgramView<LiftedTag> program);
+ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> program);
 
-TaskVariableDomains compute_variable_domains(::tyr::formalism::planning::TaskView task);
+TaskVariableDomains compute_variable_domains(formalism::planning::TaskView task);
 
-ProgramVariableDomainsView compute_variable_domain_views(const ProgramVariableDomains& domains, const ::tyr::formalism::datalog::Repository& repository);
+ProgramVariableDomainsView compute_variable_domain_views(const ProgramVariableDomains& domains, const formalism::datalog::Repository& repository);
 
-TaskVariableDomainsView compute_variable_domain_views(const TaskVariableDomains& domains, const ::tyr::formalism::planning::Repository& repository);
+TaskVariableDomainsView compute_variable_domain_views(const TaskVariableDomains& domains, const formalism::planning::Repository& repository);
 
 template<typename Callback>
 void for_each_compatible_extension(const ConditionalEffectDomainData& domains,
-                                   std::span<const ygg::Index<::tyr::formalism::Object>> prefix,
+                                   std::span<const ygg::Index<formalism::Object>> prefix,
                                    CompatibilityWorkspace& workspace,
                                    Callback&& callback)
 {

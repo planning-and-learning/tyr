@@ -29,24 +29,25 @@
 namespace ygg
 {
 
-template<typename T>
+template<::tyr::TaskKind T>
 struct Data<::tyr::formalism::planning::UnaryOperator<T>>
 {
+    using Operand = ygg::Data<::tyr::formalism::planning::FunctionExpression<T>>;
     using OperatorType = ::tyr::formalism::ArithmeticOperatorKind;
 
     ygg::Index<::tyr::formalism::planning::UnaryOperator<T>> index;
     OperatorType operator_kind = OperatorType::Sub;
-    T arg;
+    Operand arg;
 
     Data() = default;
-    Data(OperatorType operator_kind_, T arg_) : index(), operator_kind(operator_kind_), arg(arg_)
+    Data(OperatorType operator_kind_, Operand arg_) : index(), operator_kind(operator_kind_), arg(arg_)
     {
         if (!is_unary(operator_kind))
             throw std::invalid_argument("unary operator must be Sub");
     }
     // Python constructor
     template<typename C>
-    Data(OperatorType operator_kind_, ::ygg::View<T, C> arg_) : index(), operator_kind(operator_kind_), arg()
+    Data(OperatorType operator_kind_, ::ygg::View<Operand, C> arg_) : index(), operator_kind(operator_kind_), arg()
     {
         if (!is_unary(operator_kind))
             throw std::invalid_argument("unary operator must be Sub");
@@ -68,8 +69,7 @@ struct Data<::tyr::formalism::planning::UnaryOperator<T>>
     auto identifying_members() const noexcept { return std::tie(operator_kind, arg); }
 };
 
-static_assert(
-    !ygg::uses_trivial_storage_v<::tyr::formalism::planning::UnaryOperator<ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>>>);
+static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::UnaryOperator<::tyr::LiftedTag>>);
 
 }
 

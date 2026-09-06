@@ -10,17 +10,17 @@
 namespace tyr::serialization
 {
 
-template<::tyr::formalism::BinaryOperatorKind Operator, typename T>
-struct Serializer<::tyr::formalism::planning::BinaryOperatorView<Operator, T>>
+template<TaskKind T, formalism::BinaryOperatorKind O>
+struct Serializer<formalism::planning::BinaryOperatorView<T, O>>
 {
     static std::string name()
     {
-        return std::string(std::same_as<T, ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>> ? "GroundBinary" : "Binary")
-               + (std::same_as<Operator, ::tyr::formalism::ArithmeticOperatorKind> ? "ArithmeticOperator" : "BooleanOperator");
+        return std::string(std::same_as<T, GroundTag> ? T::name : "") + "Binary"
+               + (std::same_as<O, formalism::ArithmeticOperatorKind> ? "ArithmeticOperator" : "BooleanOperator");
     }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::BinaryOperatorView<Operator, T>& value)
+    static void save(Archive& ar, const formalism::planning::BinaryOperatorView<T, O>& value)
     {
         ar.field("operator", value.get_operator());
         ar.field("lhs", value.get_lhs());

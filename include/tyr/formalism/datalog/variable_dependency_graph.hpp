@@ -32,7 +32,7 @@ namespace tyr::formalism::datalog
 class VariableDependencyGraph
 {
 public:
-    explicit VariableDependencyGraph(ConjunctiveConditionView<::tyr::LiftedTag> condition);
+    explicit VariableDependencyGraph(ConjunctiveConditionView<LiftedTag> condition);
 
     const auto& unary() const noexcept { return m_unary_dependencies; }
     const auto& binary() const noexcept { return m_binary_dependencies; }

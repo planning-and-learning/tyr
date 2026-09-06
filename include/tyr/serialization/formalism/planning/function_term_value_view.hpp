@@ -9,13 +9,13 @@
 namespace tyr::serialization
 {
 
-template<::tyr::formalism::FactKind F>
-struct Serializer<::tyr::formalism::planning::FunctionTermValueView<::tyr::GroundTag, F>>
+template<formalism::FactKind F>
+struct Serializer<formalism::planning::FunctionTermValueView<GroundTag, F>>
 {
     static std::string name() { return std::string(F::name) + "GroundFunctionTermValue"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::FunctionTermValueView<::tyr::GroundTag, F>& value)
+    static void save(Archive& ar, const formalism::planning::FunctionTermValueView<GroundTag, F>& value)
     {
         ar.field("fterm", value.get_fterm());
         ar.field("value", value.get_value());

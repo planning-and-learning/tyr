@@ -25,19 +25,19 @@ concept BinaryOperatorContract = std::constructible_from<ygg::Index<Entity>, ygg
                                         view.get_rhs();
                                     };
 
-using LiftedArithmetic = fd::LiftedBinaryOperatorType<f::ArithmeticOperatorKind>;
-using LiftedBoolean = fd::LiftedBinaryOperatorType<f::BooleanOperatorKind>;
-using GroundArithmetic = fd::GroundBinaryOperatorType<f::ArithmeticOperatorKind>;
-using GroundBoolean = fd::GroundBinaryOperatorType<f::BooleanOperatorKind>;
+using LiftedArithmetic = fd::BinaryOperator<::tyr::LiftedTag, f::ArithmeticOperatorKind>;
+using LiftedBoolean = fd::BinaryOperator<::tyr::LiftedTag, f::BooleanOperatorKind>;
+using GroundArithmetic = fd::BinaryOperator<::tyr::GroundTag, f::ArithmeticOperatorKind>;
+using GroundBoolean = fd::BinaryOperator<::tyr::GroundTag, f::BooleanOperatorKind>;
 
 static_assert(BinaryOperatorContract<LiftedArithmetic>);
 static_assert(BinaryOperatorContract<LiftedBoolean>);
 static_assert(BinaryOperatorContract<GroundArithmetic>);
 static_assert(BinaryOperatorContract<GroundBoolean>);
-static_assert(std::same_as<ygg::View<ygg::Index<LiftedArithmetic>, fd::Repository>, fd::LiftedBinaryOperatorView<f::ArithmeticOperatorKind>>);
-static_assert(std::same_as<ygg::View<ygg::Index<LiftedBoolean>, fd::Repository>, fd::LiftedBinaryOperatorView<f::BooleanOperatorKind>>);
-static_assert(std::same_as<ygg::View<ygg::Index<GroundArithmetic>, fd::Repository>, fd::GroundBinaryOperatorView<f::ArithmeticOperatorKind>>);
-static_assert(std::same_as<ygg::View<ygg::Index<GroundBoolean>, fd::Repository>, fd::GroundBinaryOperatorView<f::BooleanOperatorKind>>);
+static_assert(std::same_as<ygg::View<ygg::Index<LiftedArithmetic>, fd::Repository>, fd::BinaryOperatorView<::tyr::LiftedTag, f::ArithmeticOperatorKind>>);
+static_assert(std::same_as<ygg::View<ygg::Index<LiftedBoolean>, fd::Repository>, fd::BinaryOperatorView<::tyr::LiftedTag, f::BooleanOperatorKind>>);
+static_assert(std::same_as<ygg::View<ygg::Index<GroundArithmetic>, fd::Repository>, fd::BinaryOperatorView<::tyr::GroundTag, f::ArithmeticOperatorKind>>);
+static_assert(std::same_as<ygg::View<ygg::Index<GroundBoolean>, fd::Repository>, fd::BinaryOperatorView<::tyr::GroundTag, f::BooleanOperatorKind>>);
 static_assert(std::constructible_from<ygg::Data<LiftedArithmetic>, f::ArithmeticOperatorKind, fd::FunctionExpressionView<::tyr::LiftedTag>, fd::FunctionExpressionView<::tyr::LiftedTag>>);
 static_assert(std::constructible_from<ygg::Data<LiftedBoolean>, f::BooleanOperatorKind, fd::FunctionExpressionView<::tyr::LiftedTag>, fd::FunctionExpressionView<::tyr::LiftedTag>>);
 static_assert(

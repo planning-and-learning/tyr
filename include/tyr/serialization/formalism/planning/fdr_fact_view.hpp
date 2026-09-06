@@ -9,13 +9,13 @@
 namespace tyr::serialization
 {
 
-template<::tyr::formalism::FactKind T>
-struct Serializer<::tyr::formalism::planning::FDRFactView<T>>
+template<formalism::FactKind T>
+struct Serializer<formalism::planning::FDRFactView<T>>
 {
     static std::string name() { return std::string(T::name) + "FDRFact"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::FDRFactView<T>& value)
+    static void save(Archive& ar, const formalism::planning::FDRFactView<T>& value)
     {
         ar.field("variable", value.get_variable());
         ar.field("value", ygg::uint_t(value.get_value()));

@@ -30,13 +30,13 @@ concept MultiOperatorContract = std::constructible_from<ygg::Index<Entity>, ygg:
                                        { view < view } -> std::same_as<bool>;
                                    };
 
-using Lifted = fp::LiftedMultiOperatorType;
-using Ground = fp::GroundMultiOperatorType;
+using Lifted = fp::MultiOperator<::tyr::LiftedTag>;
+using Ground = fp::MultiOperator<::tyr::GroundTag>;
 
 static_assert(MultiOperatorContract<Lifted>);
 static_assert(MultiOperatorContract<Ground>);
-static_assert(std::same_as<ygg::View<ygg::Index<Lifted>, fp::Repository>, fp::LiftedMultiOperatorView>);
-static_assert(std::same_as<ygg::View<ygg::Index<Ground>, fp::Repository>, fp::GroundMultiOperatorView>);
+static_assert(std::same_as<ygg::View<ygg::Index<Lifted>, fp::Repository>, fp::MultiOperatorView<::tyr::LiftedTag>>);
+static_assert(std::same_as<ygg::View<ygg::Index<Ground>, fp::Repository>, fp::MultiOperatorView<::tyr::GroundTag>>);
 static_assert(std::constructible_from<ygg::Data<Lifted>, f::ArithmeticOperatorKind, std::vector<fp::FunctionExpressionView<::tyr::LiftedTag>>>);
 static_assert(std::constructible_from<ygg::Data<Ground>, f::ArithmeticOperatorKind, std::vector<fp::FunctionExpressionView<::tyr::GroundTag>>>);
 

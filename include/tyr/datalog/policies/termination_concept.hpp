@@ -31,7 +31,7 @@ namespace tyr::datalog
 template<typename T>
 concept TerminationPolicyConcept = requires(T& p,
                                             const T& cp,
-                                            ::tyr::formalism::datalog::ConjunctiveConditionView<::tyr::GroundTag> goals,
+                                            formalism::datalog::ConjunctiveConditionView<GroundTag> goals,
                                             const FactSets& fact_sets,
                                             const PredicateAnnotations<>& annotations,
                                             const FunctionAnnotations<>& numeric_annotations,

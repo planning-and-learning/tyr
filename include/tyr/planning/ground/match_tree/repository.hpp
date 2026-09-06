@@ -53,8 +53,8 @@
 namespace tyr::planning::match_tree
 {
 
-using GroundActionBuilder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, RepositoryTypes<::tyr::formalism::planning::Action<::tyr::GroundTag>>>;
-using GroundAxiomBuilder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, RepositoryTypes<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>>;
+using GroundActionBuilder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, RepositoryTypes<formalism::planning::Action<GroundTag>>>;
+using GroundAxiomBuilder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, RepositoryTypes<formalism::planning::Axiom<GroundTag>>>;
 
 template<typename T>
 [[nodiscard]] auto checkout(GroundActionBuilder& builder)
@@ -78,12 +78,12 @@ class Repository
 private:
     using SymbolRepository = ygg::ApplyTypeListT<::ygg::formalism::SymbolRepository, RepositoryTypes<Tag>>;
 
-    const ::tyr::formalism::planning::Repository& m_formalism_repository;
+    const formalism::planning::Repository& m_formalism_repository;
     SymbolRepository m_repository;
     ygg::uint_t m_index;
 
 public:
-    explicit Repository(ygg::uint_t index, const ::tyr::formalism::planning::Repository& formalism_repository) :
+    explicit Repository(ygg::uint_t index, const formalism::planning::Repository& formalism_repository) :
         m_formalism_repository(formalism_repository),
         m_repository(),
         m_index(index)
@@ -96,7 +96,7 @@ public:
 
     const auto& get_index() const noexcept { return m_index; }
 
-    const ::tyr::formalism::planning::Repository& get_formalism_repository() const noexcept { return m_formalism_repository; }
+    const formalism::planning::Repository& get_formalism_repository() const noexcept { return m_formalism_repository; }
 
     template<typename T>
     std::optional<ygg::View<ygg::Index<T>, Repository>> find(const ygg::Data<T>& builder) const noexcept
@@ -139,9 +139,9 @@ public:
     void clear() noexcept { m_repository.clear(); }
 };
 
-static_assert(RepositoryConcept<Repository<::tyr::formalism::planning::Action<::tyr::GroundTag>>, ::tyr::formalism::planning::Action<::tyr::GroundTag>>);
+static_assert(RepositoryConcept<Repository<formalism::planning::Action<GroundTag>>, formalism::planning::Action<GroundTag>>);
 
-static_assert(Context<Repository<::tyr::formalism::planning::Action<::tyr::GroundTag>>, ::tyr::formalism::planning::Action<::tyr::GroundTag>>);
+static_assert(Context<Repository<formalism::planning::Action<GroundTag>>, formalism::planning::Action<GroundTag>>);
 
 template<typename Tag, typename T>
 [[nodiscard]] auto get_or_create(Repository<Tag>& repository, ygg::Data<T>& data)

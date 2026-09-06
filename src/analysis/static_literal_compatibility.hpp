@@ -36,7 +36,7 @@ namespace tyr::analysis::detail
 class StaticLiteralCompatibility
 {
 private:
-    using Object = ygg::Index<::tyr::formalism::Object>;
+    using Object = ygg::Index<formalism::Object>;
     using Bitset = boost::dynamic_bitset<>;
 
     static constexpr size_t invalid_bit = std::numeric_limits<size_t>::max();

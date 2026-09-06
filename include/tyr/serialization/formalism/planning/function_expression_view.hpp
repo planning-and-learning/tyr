@@ -10,13 +10,13 @@
 namespace tyr::serialization
 {
 
-template<::tyr::TaskKind T>
-struct Serializer<::tyr::formalism::planning::FunctionExpressionView<T>>
+template<TaskKind T>
+struct Serializer<formalism::planning::FunctionExpressionView<T>>
 {
-    static std::string name() { return std::string(std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "FunctionExpression"; }
+    static std::string name() { return std::string(std::same_as<T, GroundTag> ? T::name : "") + "FunctionExpression"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::FunctionExpressionView<T>& value)
+    static void save(Archive& ar, const formalism::planning::FunctionExpressionView<T>& value)
     {
         ar.variant(value.get_variant());
     }

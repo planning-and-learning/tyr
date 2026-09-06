@@ -8,10 +8,10 @@ namespace tyr::serialization
 {
 
 template<>
-struct PrimitiveSerializer<::tyr::formalism::ParameterIndex>
+struct PrimitiveSerializer<formalism::ParameterIndex>
 {
     static std::string name() { return "ParameterIndex"; }
-    static ygg::uint_t value(::tyr::formalism::ParameterIndex index) { return ygg::uint_t(index); }
+    static ygg::uint_t value(formalism::ParameterIndex index) { return ygg::uint_t(index); }
 };
 
 }

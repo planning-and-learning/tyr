@@ -30,7 +30,7 @@ namespace tyr::datalog
 {
 namespace
 {
-bool contains_parameters(fd::NumericEffectOperatorView<::tyr::LiftedTag, f::FluentTag> effect_operator)
+bool contains_parameters(fd::NumericEffectOperatorView<LiftedTag, f::FluentTag> effect_operator)
 {
     auto parameters = ygg::UnorderedSet<f::ParameterIndex> {};
     visit(
@@ -43,20 +43,20 @@ bool contains_parameters(fd::NumericEffectOperatorView<::tyr::LiftedTag, f::Flue
     return !parameters.empty();
 }
 
-fd::NumericEffectOperatorViewList<::tyr::LiftedTag, f::FluentTag> create_lifted_effects(fd::NumericEffectOperatorListView<::tyr::LiftedTag, f::FluentTag> effects)
+fd::NumericEffectOperatorViewList<LiftedTag, f::FluentTag> create_lifted_effects(fd::NumericEffectOperatorListView<LiftedTag, f::FluentTag> effects)
 {
-    auto result = fd::NumericEffectOperatorViewList<::tyr::LiftedTag, f::FluentTag> {};
+    auto result = fd::NumericEffectOperatorViewList<LiftedTag, f::FluentTag> {};
     for (const auto effect : effects)
         if (contains_parameters(effect))
             result.push_back(effect);
     return result;
 }
 
-fd::NumericEffectOperatorViewList<::tyr::GroundTag, f::FluentTag> create_ground_nullary_effects(fd::NumericEffectOperatorListView<::tyr::LiftedTag, f::FluentTag> effects,
+fd::NumericEffectOperatorViewList<GroundTag, f::FluentTag> create_ground_nullary_effects(fd::NumericEffectOperatorListView<LiftedTag, f::FluentTag> effects,
                                                                                     fd::Repository& repository)
 {
     auto builder = fd::Builder {};
-    auto result = fd::NumericEffectOperatorViewList<::tyr::GroundTag, f::FluentTag> {};
+    auto result = fd::NumericEffectOperatorViewList<GroundTag, f::FluentTag> {};
     auto binding = ygg::IndexList<f::Object> {};
     auto grounder_context = fd::GrounderContext { builder, repository, binding };
     for (const auto effect : effects)
@@ -71,7 +71,7 @@ fd::NumericEffectOperatorViewList<::tyr::GroundTag, f::FluentTag> create_ground_
  */
 
 template<f::RelationKind R>
-ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(fd::RuleView<::tyr::LiftedTag, R> rule, fd::Repository& repository, kckp::Graph compatibility_graph) :
+ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(fd::RuleView<LiftedTag, R> rule, fd::Repository& repository, kckp::Graph compatibility_graph) :
     rule(rule),
     nullary_condition(create_ground_nullary_conjunctive_condition(get_rule().get_body(), repository).first),
     lifted_effects(create_lifted_effects(get_rule().get_metric_effects())),

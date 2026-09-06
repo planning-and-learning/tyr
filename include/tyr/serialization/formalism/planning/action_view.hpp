@@ -12,15 +12,15 @@
 namespace tyr::serialization
 {
 
-template<::tyr::TaskKind T>
-struct Serializer<::tyr::formalism::planning::ActionView<T>>
+template<TaskKind T>
+struct Serializer<formalism::planning::ActionView<T>>
 {
-    static std::string name() { return std::string(std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "Action"; }
+    static std::string name() { return std::string(std::same_as<T, GroundTag> ? T::name : "") + "Action"; }
 
     template<class Archive>
-    static void save(Archive& ar, const ::tyr::formalism::planning::ActionView<T>& value)
+    static void save(Archive& ar, const formalism::planning::ActionView<T>& value)
     {
-        if constexpr (std::same_as<T, ::tyr::LiftedTag>)
+        if constexpr (std::same_as<T, LiftedTag>)
         {
             ar.field("name", value.get_name());
             ar.field("original_name", value.get_original_name());

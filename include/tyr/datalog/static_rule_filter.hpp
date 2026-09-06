@@ -23,8 +23,8 @@
 namespace tyr::datalog
 {
 
-::tyr::formalism::datalog::ProgramView<::tyr::GroundTag> remove_statically_inapplicable_rules(::tyr::formalism::datalog::ProgramView<::tyr::GroundTag> program,
-                                                                                  ::tyr::formalism::datalog::Repository& repository);
+formalism::datalog::ProgramView<GroundTag> remove_statically_inapplicable_rules(formalism::datalog::ProgramView<GroundTag> program,
+                                                                                  formalism::datalog::Repository& repository);
 
 }
 

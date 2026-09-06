@@ -546,7 +546,7 @@ public:
                            const Node<Kind>& source,
                            BuilderPtr target,
                            PendingActionResult action_result,
-                           ::tyr::formalism::planning::ActionBindingView action,
+                           formalism::planning::ActionBindingView action,
                            Metadata metadata)
     {
         const auto metric = engine.complete_successor_state(sender, *target, action_result);

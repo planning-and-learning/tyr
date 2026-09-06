@@ -30,26 +30,26 @@
 namespace tyr::analysis
 {
 
-template<::tyr::formalism::RelationKind R>
-using TypedRuleStratum = ygg::IndexList<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>>;
+template<formalism::RelationKind R>
+using TypedRuleStratum = ygg::IndexList<formalism::datalog::Rule<LiftedTag, R>>;
 
 struct RuleStratum
 {
-    TypedRuleStratum<::tyr::formalism::PredicateTag> predicate_rules;
-    TypedRuleStratum<::tyr::formalism::FunctionTag> function_rules;
+    TypedRuleStratum<formalism::PredicateTag> predicate_rules;
+    TypedRuleStratum<formalism::FunctionTag> function_rules;
 
-    auto& get(::tyr::formalism::PredicateTag) noexcept { return predicate_rules; }
-    auto& get(::tyr::formalism::FunctionTag) noexcept { return function_rules; }
-    const auto& get(::tyr::formalism::PredicateTag) const noexcept { return predicate_rules; }
-    const auto& get(::tyr::formalism::FunctionTag) const noexcept { return function_rules; }
+    auto& get(formalism::PredicateTag) noexcept { return predicate_rules; }
+    auto& get(formalism::FunctionTag) noexcept { return function_rules; }
+    const auto& get(formalism::PredicateTag) const noexcept { return predicate_rules; }
+    const auto& get(formalism::FunctionTag) const noexcept { return function_rules; }
 
-    template<::tyr::formalism::RelationKind R>
+    template<formalism::RelationKind R>
     auto& get() noexcept
     {
         return get(R {});
     }
 
-    template<::tyr::formalism::RelationKind R>
+    template<formalism::RelationKind R>
     const auto& get() const noexcept
     {
         return get(R {});
@@ -61,7 +61,7 @@ struct RuleStrata
     std::vector<RuleStratum> data;
 };
 
-RuleStrata compute_rule_stratification(::tyr::formalism::datalog::ProgramView<LiftedTag> program);
+RuleStrata compute_rule_stratification(formalism::datalog::ProgramView<LiftedTag> program);
 }
 
 #endif

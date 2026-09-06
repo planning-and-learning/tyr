@@ -48,14 +48,14 @@ class Heuristic
 public:
     virtual ~Heuristic() = default;
 
-    virtual void set_goal(::tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag> goal) = 0;
+    virtual void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) = 0;
 
     ygg::float_t evaluate(const StateView<Kind>& state);
     virtual ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state) = 0;
 
     [[nodiscard]] virtual HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const = 0;
 
-    virtual const ygg::UnorderedSet<::tyr::formalism::planning::ActionBindingView>& get_preferred_actions();
+    virtual const ygg::UnorderedSet<formalism::planning::ActionBindingView>& get_preferred_actions();
 
     virtual void print_summary([[maybe_unused]] size_t verbosity) const {}
 };

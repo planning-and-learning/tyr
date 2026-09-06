@@ -81,7 +81,6 @@ struct Data<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>);
 
-
 template<>
 struct Data<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>
 {

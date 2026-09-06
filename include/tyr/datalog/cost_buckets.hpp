@@ -36,8 +36,8 @@ namespace tyr::datalog
 class CostBuckets
 {
 public:
-    using PredicateKey = ::tyr::formalism::datalog::PredicateBindingView<::tyr::formalism::FluentTag>;
-    using FunctionKey = ::tyr::formalism::datalog::FunctionBindingView<::tyr::formalism::FluentTag>;
+    using PredicateKey = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
+    using FunctionKey = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
     using Interval = ygg::ClosedInterval<ygg::float_t>;
     using PredicateBucket = ygg::UnorderedSet<PredicateKey>;
     using FunctionBucket = ygg::UnorderedMap<FunctionKey, Interval>;
