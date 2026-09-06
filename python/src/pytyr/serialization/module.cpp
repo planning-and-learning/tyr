@@ -1,6 +1,8 @@
 #include "module.hpp"
 
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/string.h>
+#include <nanobind/stl/vector.h>
 #include <type_traits>
 #include <tyr/serialization/serialization.hpp>
 #include <tyr/serialization/types.hpp>
@@ -16,17 +18,6 @@ using ygg::serialization::Dictionaries;
 
 namespace
 {
-using RuntimeStates = ygg::TypeList<planning::StateView<GroundTag>, planning::StateView<LiftedTag>>;
-using RuntimeOwners = ygg::TypeList<planning::Task<GroundTag>,
-                                    planning::Task<LiftedTag>,
-                                    planning::Node<GroundTag>,
-                                    planning::Node<LiftedTag>,
-                                    planning::LabeledNode<GroundTag>,
-                                    planning::LabeledNode<LiftedTag>,
-                                    planning::Plan<GroundTag>,
-                                    planning::Plan<LiftedTag>>;
-using SerializedTypes = ygg::ConcatTypeListsT<FormalismViews, RuntimeStates, FormalismOwners, RuntimeOwners>;
-
 template<typename T>
 using HashableTypeList = std::conditional_t<ygg::Hashable<T>, ygg::TypeList<T>, ygg::TypeList<>>;
 
@@ -40,11 +31,14 @@ void bind_module_definitions(nb::module_& m)
         .def(nb::init<>())
         .def(
             "register_table",
-            [](Dictionaries& self, nb::type_object native_type, const std::string& name, const std::string& prefix)
-            { ygg::python::register_table(self, native_type, name, prefix, RegisteredTypes {}); },
+            [](Dictionaries& self, nb::type_object native_type, const std::string& name, const std::string& prefix,
+               const std::optional<std::vector<std::string>>& fields, nb::object project)
+            { ygg::python::register_table(self, native_type, name, prefix, RegisteredTypes {}, ProjectionTypes {}, fields, project); },
             "native_type"_a,
             "name"_a,
-            "prefix"_a)
+            "prefix"_a,
+            "fields"_a = nb::none(),
+            "project"_a = nb::none())
         .def(
             "serialize",
             [](Dictionaries& self, nb::handle value) { return ygg::python::serialize(self, value, SerializedTypes {}); },

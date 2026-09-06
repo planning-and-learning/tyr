@@ -83,6 +83,7 @@ yggdrasil_install_python_files(
         pytyr/__init__.py
         pytyr/__main__.py
         pytyr/__init__.pyi
+        pytyr/serialization/__init__.py
         pytyr/formalism/__init__.py
         pytyr/formalism/datalog/__init__.py
         pytyr/formalism/planning/__init__.py
@@ -102,18 +103,6 @@ yggdrasil_install_python_files(
         pytyr/planning/lifted/gbfs_lazy/__init__.py
         pytyr/planning/lifted/iw/__init__.py
         pytyr/planning/lifted/siw/__init__.py
-)
-
-file(
-    GLOB_RECURSE PYTYR_SERIALIZATION_PYTHON_FILES
-    CONFIGURE_DEPENDS
-    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
-    "pytyr/serialization/*.py"
-    "pytyr/serialization/*.pyi"
-)
-yggdrasil_install_python_files(
-    pytyr "${CMAKE_CURRENT_SOURCE_DIR}"
-    FILES ${PYTYR_SERIALIZATION_PYTHON_FILES}
 )
 
 yggdrasil_install_provider_env(

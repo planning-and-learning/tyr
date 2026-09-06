@@ -1,7 +1,8 @@
 import gc
 import json
 import sys
-from typing import Literal, get_type_hints
+from collections.abc import Iterator
+from typing import Literal
 
 import pytest
 from pypddl.formalism import ParserOptions
@@ -9,9 +10,6 @@ from pyyggdrasil.execution import ExecutionContext
 from pytyr.formalism import planning as fp
 from pytyr.planning import SearchStatus, ground, lifted
 from pytyr.serialization import Dictionaries
-from pytyr.serialization.formalism.binding import ActionBinding
-from pytyr.serialization.formalism.planning.function_expression import FunctionExpression
-from pytyr.serialization.planning.state import State
 
 
 DOMAIN = """(define (domain serialize)
@@ -27,11 +25,6 @@ PROBLEM = """(define (problem serialize-1) (:domain serialize)
   (:init (ready) (start) (= (capacity) 10) (= (fuel) 3))
   (:goal (done)))
 """
-
-
-def test_schema_annotations_resolve() -> None:
-    for schema in (ActionBinding, FunctionExpression, State):
-        assert get_type_hints(schema)
 
 
 @pytest.mark.parametrize("backend", ["ground", "lifted"])
@@ -79,6 +72,7 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     assert dictionaries.serialize(step) == str(step)
     assert dictionaries.serialize(step.node) == "v1"
     assert dictionaries.serialize(step.label) == "a0"
+    assert dictionaries.table(fp.ActionBinding) == [{"relation": str(step.label.get_relation()), "objects": []}]
     assert [row["state"] for row in dictionaries.table(node_type)] == ["s0", "s1"]
     assert dictionaries.serialize(plan) == data
     states = dictionaries.table(state_type)
@@ -146,3 +140,134 @@ def test_registered_variant_preserves_numeric_constant() -> None:
     snapshot["expressions"]["rows"][0]["value"] = 8
     assert dictionaries.serialize(expression) == "e0"
     assert dictionaries.table(fp.FunctionExpression) == expected
+
+
+@pytest.mark.parametrize("fields", [None, [], ["static_ground_atoms", "name"]])
+def test_task_field_selection_limits_collected_descendants(fields: list[str] | None) -> None:
+    parser = fp.Parser(DOMAIN, None, ParserOptions())
+    task = parser.parse_task(PROBLEM, None, ParserOptions())
+    dictionaries = Dictionaries()
+    dictionaries.register_table(fp.LiftedTask, "tasks", "t", fields=fields)
+    dictionaries.register_table(fp.StaticGroundAtom, "static_atoms", "a")
+    dictionaries.register_table(fp.StaticPredicateBinding, "bindings", "b")
+    dictionaries.register_table(fp.StaticPredicate, "predicates", "p")
+    dictionaries.register_table(fp.FluentGroundAtom, "fluent_atoms", "f")
+
+    assert dictionaries.serialize(task.get_task()) == "t0"
+    row, = dictionaries.table(fp.LiftedTask)
+    if fields == []:
+        assert row == {}
+        assert all(not snapshot["rows"] for name, snapshot in dictionaries.tables().items() if name != "tasks")
+    else:
+        assert row["name"] == "serialize-1"
+        assert row["static_ground_atoms"] == ["a0"]
+        assert dictionaries.table(fp.StaticGroundAtom) == [{"binding": "b0"}]
+        assert dictionaries.table(fp.StaticPredicateBinding) == [{"relation": "p0", "objects": []}]
+        assert [predicate["name"] for predicate in dictionaries.table(fp.StaticPredicate)] == ["ready"]
+        if fields is None:
+            assert row["fluent_ground_atoms"] == ["f0"]
+            assert len(dictionaries.table(fp.FluentGroundAtom)) == 1
+        else:
+            assert list(row) == ["name", "static_ground_atoms"]
+            assert dictionaries.table(fp.FluentGroundAtom) == []
+
+
+def test_registered_variant_kind_does_not_collect_omitted_value() -> None:
+    parser = fp.Parser(DOMAIN, None, ParserOptions())
+    task = parser.parse_task(PROBLEM, None, ParserOptions())
+    term = next(iter(task.get_task().get_static_fterm_values())).get_fterm()
+    expression = task.get_repository().create(fp.GroundFunctionExpressionData(term))
+    dictionaries = Dictionaries()
+    dictionaries.register_table(fp.GroundFunctionExpression, "expressions", "e", fields=("kind",))
+    dictionaries.register_table(fp.StaticGroundFunctionTerm, "terms", "t")
+
+    assert dictionaries.serialize(expression) == "e0"
+    assert dictionaries.table(fp.GroundFunctionExpression) == [{"kind": "StaticGroundFunctionTerm"}]
+    assert dictionaries.table(fp.StaticGroundFunctionTerm) == []
+
+
+@pytest.mark.parametrize("fields", [None, ["name"]])
+def test_projected_binding_collects_only_selected_output_fields(fields: list[str] | None) -> None:
+    parser = fp.Parser("""(define (domain bindings)
+      (:requirements :strips)
+      (:predicates (ready ?item) (done ?item))
+      (:action finish :parameters (?item) :precondition (ready ?item)
+        :effect (and (not (ready ?item)) (done ?item))))""", None, ParserOptions())
+    task = parser.parse_task("""(define (problem binding-1) (:domain bindings)
+      (:objects item) (:init (ready item)) (:goal (done item)))""", None, ParserOptions())
+    action, = parser.get_domain().get_domain().get_actions()
+    item, = task.get_task().get_objects()
+    binding = task.get_repository().get_or_create(fp.ActionBindingData(action, [item]))
+    calls: list[fp.ActionBinding] = []
+
+    def project(value: fp.ActionBinding) -> dict[str, object]:
+        calls.append(value)
+        return {"name": value.get_relation().get_name(), "objects": value.get_objects()}
+
+    dictionaries = Dictionaries()
+    dictionaries.register_table(fp.ActionBinding, "bindings", "b", fields=fields, project=project)
+    dictionaries.register_table(fp.Object, "objects", "o")
+    dictionaries.register_table(fp.Action, "actions", "a")
+    assert dictionaries.serialize(binding) == "b0"
+    assert dictionaries.serialize(binding) == "b0"
+    assert calls == [binding]
+    assert dictionaries.table(fp.Action) == []
+    if fields is None:
+        assert dictionaries.table(fp.ActionBinding) == [{"name": "finish", "objects": ["o0"]}]
+        assert [row["name"] for row in dictionaries.table(fp.Object)] == ["item"]
+    else:
+        assert dictionaries.table(fp.ActionBinding) == [{"name": "finish"}]
+        assert dictionaries.table(fp.Object) == []
+
+
+@pytest.mark.parametrize("bad_value", [[], {"unknown": object()}])
+def test_invalid_projection_invalidates_registry(bad_value: object) -> None:
+    parser = fp.Parser(DOMAIN, None, ParserOptions())
+    expression = parser.get_domain().get_repository().create(fp.FunctionExpressionData(3.5))
+    dictionaries = Dictionaries()
+    dictionaries.register_table(
+        fp.FunctionExpression, "expressions", "e",
+        project=lambda _value: bad_value,  # pyright: ignore[reportArgumentType]
+    )
+    with pytest.raises(TypeError):
+        dictionaries.serialize(expression)
+    with pytest.raises(RuntimeError):
+        dictionaries.tables()
+
+
+@pytest.mark.parametrize("value,expected", [
+    (fp.ArithmeticOperatorKind.Add, "+"),
+    (fp.BooleanOperatorKind.Ge, ">="),
+    (fp.NumericEffectOperatorKind.Increase, "increase"),
+    (fp.OptimizationDirection.Minimize, "minimize"),
+])
+def test_projection_uses_native_enum_text(value: object, expected: str) -> None:
+    parser = fp.Parser(DOMAIN, None, ParserOptions())
+    expression = parser.get_domain().get_repository().create(fp.FunctionExpressionData(3.5))
+    dictionaries = Dictionaries()
+    dictionaries.register_table(
+        fp.FunctionExpression, "expressions", "e", project=lambda _expression: {"operator": value},
+    )
+    assert dictionaries.serialize(expression) == "e0"
+    assert dictionaries.table(fp.FunctionExpression) == [{"operator": expected}]
+
+
+def test_projection_retains_native_values_from_exhausted_generator() -> None:
+    def objects() -> Iterator[fp.Object | None]:
+        repository = fp.RepositoryFactory().create_repository()
+        yield repository.get_or_create(fp.ObjectData("generated"))
+        yield None  # Move the iterator past the native object before checking its owner.
+        gc.collect()
+        assert sys.getrefcount(repository) > 2  # Generator local + getrefcount argument + retained object.
+
+    parser = fp.Parser(DOMAIN, None, ParserOptions())
+    expression = parser.get_domain().get_repository().create(fp.FunctionExpressionData(3.5))
+    dictionaries = Dictionaries()
+    dictionaries.register_table(
+        fp.FunctionExpression, "expressions", "e", project=lambda _expression: {"objects": objects()},
+    )
+    dictionaries.register_table(fp.Object, "objects", "o")
+    assert dictionaries.serialize(expression) == "e0"
+    gc.collect()
+    assert dictionaries.table(fp.FunctionExpression) == [{"objects": ["o0", None]}]
+    assert dictionaries.table(fp.Object) == [{"name": "generated"}]

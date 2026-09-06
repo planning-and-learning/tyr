@@ -1,6 +1,8 @@
 #ifndef TYR_SERIALIZATION_TYPES_HPP_
 #define TYR_SERIALIZATION_TYPES_HPP_
 
+#include "tyr/planning/declarations.hpp"
+#include "tyr/serialization/formalism/enums.hpp"
 #include "tyr/serialization/formalism/planning/planning.hpp"
 
 #include <yggdrasil/core/type_list.hpp>
@@ -27,6 +29,22 @@ using FormalismValueViews = ygg::TypeList<formalism::planning::TermView,
 using FormalismViews = ygg::ConcatTypeListsT<ygg::MapTypeListT<FormalismIndexView, formalism::planning::BuilderTypes>, FormalismValueViews>;
 
 using FormalismOwners = ygg::TypeList<formalism::planning::PlanningDomain, formalism::planning::PlanningTask, formalism::planning::PlanningFDRTask>;
+
+using RuntimeStates = ygg::TypeList<planning::StateView<GroundTag>, planning::StateView<LiftedTag>>;
+using RuntimeOwners = ygg::TypeList<planning::Task<GroundTag>,
+                                   planning::Task<LiftedTag>,
+                                   planning::Node<GroundTag>,
+                                   planning::Node<LiftedTag>,
+                                   planning::LabeledNode<GroundTag>,
+                                   planning::LabeledNode<LiftedTag>,
+                                   planning::Plan<GroundTag>,
+                                   planning::Plan<LiftedTag>>;
+using SerializedTypes = ygg::ConcatTypeListsT<FormalismViews, RuntimeStates, FormalismOwners, RuntimeOwners>;
+using ProjectionTypes = ygg::ConcatTypeListsT<SerializedTypes,
+                                             ygg::TypeList<formalism::BooleanOperatorKind,
+                                                           formalism::ArithmeticOperatorKind,
+                                                           formalism::NumericEffectOperatorKind,
+                                                           formalism::OptimizationDirection>>;
 
 }
 

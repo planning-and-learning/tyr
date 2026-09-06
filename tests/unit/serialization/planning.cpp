@@ -8,6 +8,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace tyr::tests
 {
@@ -102,6 +103,57 @@ TEST(TyrSerialization, RegisteredDescendantsAreCollectedOnceAndSnapshotsAreIndep
     EXPECT_EQ(boost::json::parse(boost::json::serialize(dictionaries.tables())), dictionaries.tables());
 }
 
+TEST(TyrSerialization, FieldSelectionSkipsDescendantsBeforeSerialization)
+{
+    auto repository = fp::RepositoryFactory().create();
+    const auto binding = make_atom(repository, "truck").get_row();
+    for (const auto& fields : {std::vector<std::string> {"objects"}, std::vector<std::string> {}})
+    {
+        auto dictionaries = s::Dictionaries {};
+        dictionaries.register_table<fp::PredicateBindingView<f::FluentTag>>("bindings", "b", fields);
+        dictionaries.register_table<fp::PredicateView<f::FluentTag>>("predicates", "p");
+        dictionaries.register_table<fp::ObjectView>("objects", "o");
+
+        EXPECT_EQ(dictionaries.serialize(binding).as_string(), "b0");
+        EXPECT_EQ(dictionaries.serialize(binding).as_string(), "b0");
+        const auto rows = dictionaries.table<fp::PredicateBindingView<f::FluentTag>>();
+        ASSERT_EQ(rows.size(), 1);
+        EXPECT_EQ(rows[0].as_object().size(), fields.size());
+        EXPECT_TRUE(dictionaries.table<fp::PredicateView<f::FluentTag>>().empty());
+        EXPECT_EQ(dictionaries.table<fp::ObjectView>().size(), fields.size());
+        if (!fields.empty())
+        {
+            EXPECT_EQ(rows[0].as_object().at("objects").as_array()[0].as_string(), "o0");
+        }
+    }
+}
+
+TEST(TyrSerialization, ProjectionReplacesFieldsBeforeCollectingDescendants)
+{
+    auto repository = fp::RepositoryFactory().create();
+    const auto binding = make_atom(repository, "truck").get_row();
+    auto dictionaries = s::Dictionaries {};
+    size_t calls = 0;
+    dictionaries.register_table<fp::PredicateBindingView<f::FluentTag>>(
+        "bindings", "b", std::nullopt,
+        [&](auto& ar, const auto& value)
+        {
+            ++calls;
+            ar.field("predicate_name", value.get_relation().get_name());
+            ar.field("arguments", value.get_objects());
+        });
+    dictionaries.register_table<fp::PredicateView<f::FluentTag>>("predicates", "p");
+    dictionaries.register_table<fp::ObjectView>("objects", "o");
+
+    EXPECT_EQ(dictionaries.serialize(binding).as_string(), "b0");
+    EXPECT_EQ(dictionaries.serialize(binding).as_string(), "b0");
+    EXPECT_EQ(calls, 1);
+    EXPECT_EQ(dictionaries.table<fp::PredicateBindingView<f::FluentTag>>()[0].as_object(),
+              (boost::json::object {{"predicate_name", "at"}, {"arguments", boost::json::array {"o0"}}}));
+    EXPECT_TRUE(dictionaries.table<fp::PredicateView<f::FluentTag>>().empty());
+    EXPECT_EQ(dictionaries.table<fp::ObjectView>()[0].as_object().at("name").as_string(), "truck");
+}
+
 TEST(TyrSerialization, UnregisteredObjectsUseNativeTextAndNativeViewIdentityIsPreserved)
 {
     auto factory = fp::RepositoryFactory();
@@ -177,6 +229,13 @@ TEST(TyrSerialization, RecursiveExpressionsReferenceSharedDescendantsAndKeepCons
     const auto snapshot = dictionaries.tables();
     EXPECT_EQ(dictionaries.serialize(expression).as_string(), "e0");
     EXPECT_EQ(dictionaries.tables(), snapshot);
+
+    auto kinds_only = s::Dictionaries {};
+    kinds_only.register_table<fp::FunctionExpressionView<LiftedTag>>("expressions", "e", std::vector<std::string> {"kind"});
+    kinds_only.register_table<fp::ArithmeticOperatorView<LiftedTag>>("arithmetic", "a");
+    EXPECT_EQ(kinds_only.serialize(expression).as_string(), "e0");
+    EXPECT_EQ(kinds_only.table<fp::FunctionExpressionView<LiftedTag>>()[0].as_object(), (boost::json::object {{"kind", "ArithmeticOperator"}}));
+    EXPECT_TRUE(kinds_only.table<fp::ArithmeticOperatorView<LiftedTag>>().empty());
 }
 
 TEST(TyrSerialization, EnumsUseNativeText)
