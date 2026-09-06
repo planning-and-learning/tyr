@@ -33,4 +33,7 @@
 // Planning
 #include "tyr/planning/planning.hpp"
 
+// Serialization
+#include "tyr/serialization/serialization.hpp"
+
 #endif

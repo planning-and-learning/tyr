@@ -53,6 +53,7 @@ include = [
     "pyproject.toml",
     "python/**",
     "docs/tools/**",
+    "docs/serialization/**",
     "cmake/**",
     "include/**",
     "src/**",

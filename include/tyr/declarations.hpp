@@ -25,10 +25,12 @@ namespace tyr
 
 struct GroundTag
 {
+    static constexpr auto name = "Ground";
 };
 
 struct LiftedTag
 {
+    static constexpr auto name = "Lifted";
 };
 
 template<typename Tag>

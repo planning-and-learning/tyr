@@ -1,4 +1,4 @@
-set(SUBDIRECTORIES "algorithms" "analysis" "buffer" "common" "formalism" "datalog" "planning")
+set(SUBDIRECTORIES "algorithms" "analysis" "buffer" "common" "formalism" "datalog" "planning" "serialization")
 
 set(TYR_SRC_FILES "")
 set(TYR_PRIVATE_HEADER_FILES "")
@@ -42,6 +42,7 @@ endif()
 
 add_library(
     core SHARED ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
+    serialization/dictionaries.cpp
     algorithms/kckp/graphs.cpp
     algorithms/kckp/kckp.cpp
     algorithms/kckp/delta_kckp.cpp
@@ -205,6 +206,7 @@ target_link_libraries(
         fmt::fmt-header-only
         gtl::gtl
         loki::parsers
+        Boost::json
     PRIVATE
         Threads::Threads
 )

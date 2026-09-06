@@ -1,0 +1,28 @@
+#ifndef TYR_SERIALIZATION_FORMALISM_PLANNING_METRIC_VIEW_HPP_
+#define TYR_SERIALIZATION_FORMALISM_PLANNING_METRIC_VIEW_HPP_
+
+#include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/serialization/formalism/enums.hpp"
+#include "tyr/serialization/formalism/planning/ground_function_expression_view.hpp"
+#include "tyr/serialization/serializer.hpp"
+
+namespace tyr::serialization
+{
+
+template<>
+struct Serializer<::tyr::formalism::planning::MetricView>
+{
+    static std::string name() { return "Metric"; }
+
+    template<class Archive>
+    static void save(Archive& ar, const ::tyr::formalism::planning::MetricView& value)
+    {
+        ar.field("optimization_direction", value.get_optimization_direction());
+        ar.field("fexpr", value.get_fexpr());
+    }
+};
+
+}
+
+#endif

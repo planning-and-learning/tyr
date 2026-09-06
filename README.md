@@ -34,6 +34,9 @@ Pytyr is available at [PyPI](https://pypi.org/project/pytyr/) and can be install
 entities. Shared dictionaries identify states, actions, atoms, and function terms;
 static facts appear once in the task representation.
 
+[`pytyr.serialization`](docs/serialization/index.md) provides structured native
+representations with caller-selected dictionary tables and reference prefixes.
+
 Detailed examples are available in the `python/examples` directory:
 
 - [`structures.py`](python/examples/formalism/planning/structures.py) – Parse and traverse all planning formalism structures.
