@@ -1,4 +1,5 @@
 #include "tyr/formalism/planning/canonicalization.hpp"
+#include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/planning.hpp"
 #include "tyr/serialization/serialization.hpp"
@@ -163,6 +164,7 @@ TEST(TyrSerialization, ProjectionReplacesFieldsBeforeCollectingDescendants)
             ++calls;
             ar.field("predicate_name", value.get_relation().get_name());
             ar.field("arguments", value.get_objects());
+            ar.field("text", ygg::to_string(value));
         });
     dictionaries.register_table<fp::PredicateView<f::FluentTag>>("predicates", "p");
     dictionaries.register_table<fp::ObjectView>("objects", "o");
@@ -171,12 +173,12 @@ TEST(TyrSerialization, ProjectionReplacesFieldsBeforeCollectingDescendants)
     EXPECT_EQ(dictionaries.serialize(binding).as_string(), "b0");
     EXPECT_EQ(calls, 1);
     EXPECT_EQ(dictionaries.table<fp::PredicateBindingView<f::FluentTag>>()[0].as_object(),
-              (boost::json::object {{"predicate_name", "at"}, {"arguments", boost::json::array {"o0"}}}));
+              (boost::json::object {{"predicate_name", "at"}, {"arguments", boost::json::array {"o0"}}, {"text", ygg::to_string(binding)}}));
     EXPECT_TRUE(dictionaries.table<fp::PredicateView<f::FluentTag>>().empty());
     EXPECT_EQ(dictionaries.table<fp::ObjectView>()[0].as_object().at("name").as_string(), "truck");
 }
 
-TEST(TyrSerialization, UnregisteredObjectsUseNativeTextAndNativeViewIdentityIsPreserved)
+TEST(TyrSerialization, UnregisteredEntitiesFailAndNativeViewIdentityIsPreserved)
 {
     auto factory = fp::RepositoryFactory();
     auto first_repository = factory.create();
@@ -185,12 +187,26 @@ TEST(TyrSerialization, UnregisteredObjectsUseNativeTextAndNativeViewIdentityIsPr
     const auto second = make_atom(second_repository, "truck");
     ASSERT_EQ(first.get_index(), second.get_index());
     ASSERT_NE(first.get_context().get_index(), second.get_context().get_index());
-    auto inline_dictionaries = s::Dictionaries {};
-    EXPECT_EQ(inline_dictionaries.serialize(first).as_string(), ygg::to_string(first));
-    EXPECT_TRUE(inline_dictionaries.tables().empty());
+    for (const bool nested : {false, true})
+    {
+        auto incomplete = s::Dictionaries {};
+        if (nested)
+            incomplete.register_table<fp::AtomView<GroundTag, f::FluentTag>>("atoms", "a");
+        try
+        {
+            incomplete.serialize(first);
+            FAIL() << "Unregistered entity did not fail";
+        }
+        catch (const std::invalid_argument& error)
+        {
+            EXPECT_STREQ(error.what(), nested ? "Unregistered serialization type: FluentPredicateBinding" : "Unregistered serialization type: FluentGroundAtom");
+        }
+        EXPECT_THROW(incomplete.serialize(first), std::logic_error);
+        EXPECT_THROW(incomplete.tables(), std::logic_error);
+    }
 
     auto dictionaries = s::Dictionaries {};
-    dictionaries.register_table<fp::AtomView<GroundTag, f::FluentTag>>("atoms", "a");
+    dictionaries.register_table<fp::AtomView<GroundTag, f::FluentTag>>("atoms", "a", std::vector<std::string> {});
     EXPECT_EQ(dictionaries.serialize(first).as_string(), "a0");
     EXPECT_EQ(dictionaries.serialize(second).as_string(), "a1");
     EXPECT_EQ((dictionaries.table<fp::AtomView<GroundTag, f::FluentTag>>().size()), 2);
@@ -209,6 +225,7 @@ TEST(TyrSerialization, FdrNoneRetainsItsVariableAndZeroValue)
     auto dictionaries = s::Dictionaries {};
     dictionaries.register_table<fp::FDRFactView<f::FluentTag>>("facts", "f");
     dictionaries.register_table<fp::FDRVariableView<f::FluentTag>>("variables", "v");
+    dictionaries.register_table<fp::AtomView<GroundTag, f::FluentTag>>("atoms", "a", std::vector<std::string> {});
     EXPECT_EQ(dictionaries.serialize(fact).as_string(), "f0");
     const auto row = dictionaries.table<fp::FDRFactView<f::FluentTag>>()[0].as_object();
     EXPECT_EQ(row.at("fdr_variable").as_string(), "v0");
@@ -281,7 +298,7 @@ TEST(TyrSerialization, RegistrationRequiresUniqueNamesPrefixesAndPrecedesSeriali
     EXPECT_THROW(dictionaries.register_table<fp::PredicateView<f::FluentTag>>("objects", "p"), std::invalid_argument);
     EXPECT_THROW(dictionaries.register_table<fp::PredicateView<f::FluentTag>>("predicates", "o"), std::invalid_argument);
     auto repository = fp::RepositoryFactory().create();
-    dictionaries.serialize(make_atom(repository, "truck"));
+    dictionaries.serialize(make_atom(repository, "truck").get_objects()[0]);
     EXPECT_THROW(dictionaries.register_table<fp::PredicateView<f::FluentTag>>("predicates", "p"), std::logic_error);
 }
 
@@ -290,11 +307,15 @@ void check_runtime_serialization()
 {
     // The returned plan owns its states after the parser, task, evaluator and generator locals have gone away.
     const auto plan = make_plan<Kind>();
+    auto rejected = s::Dictionaries {};
+    EXPECT_THROW(rejected.serialize(plan), std::invalid_argument);
+    EXPECT_THROW(rejected.tables(), std::logic_error);
     auto dictionaries = s::Dictionaries {};
     dictionaries.template register_table<p::StateView<Kind>>("states", "s");
     dictionaries.template register_table<p::Node<Kind>>("nodes", "n");
-    const auto encoded = dictionaries.serialize(plan);
-    EXPECT_EQ(encoded.as_string(), ygg::to_string(plan));
+    dictionaries.template register_table<fp::AtomView<GroundTag, f::FluentTag>>("atoms", "a", std::vector<std::string> {});
+    dictionaries.template register_table<fp::AtomView<GroundTag, f::DerivedTag>>("derived", "d", std::vector<std::string> {});
+    dictionaries.template register_table<fp::FunctionTermView<GroundTag, f::FluentTag>>("functions", "f", std::vector<std::string> {});
     EXPECT_TRUE(dictionaries.template table<p::StateView<Kind>>().empty());
     EXPECT_EQ(dictionaries.serialize(plan.get_start_node()).as_string(), "n0");
     EXPECT_EQ(dictionaries.serialize(plan.get_labeled_succ_nodes()[0].node).as_string(), "n1");
@@ -319,15 +340,13 @@ void check_runtime_serialization()
         EXPECT_EQ(numeric[0].as_array().size(), 2);
     }
     const auto snapshot = dictionaries.tables();
-    EXPECT_EQ(dictionaries.serialize(plan), encoded);
+    EXPECT_EQ(dictionaries.serialize(plan.get_start_node()).as_string(), "n0");
     EXPECT_EQ(dictionaries.tables(), snapshot);
 
     const auto task = make_task<Kind>();
     ASSERT_NE(task, nullptr);
-    auto inline_dictionaries = s::Dictionaries {};
-    const auto encoded_task = inline_dictionaries.serialize(*task);
-    EXPECT_EQ(encoded_task.as_string(), ygg::to_string(*task));
-    EXPECT_EQ(boost::json::parse(boost::json::serialize(encoded_task)), encoded_task);
+    auto unsupported_task = s::Dictionaries {};
+    EXPECT_THROW(unsupported_task.serialize(*task), std::invalid_argument);
 }
 
 TEST(TyrSerialization, LiftedPlansAndTasksPreserveOwnersAndDeduplicateSelectedStates) { check_runtime_serialization<LiftedTag>(); }
