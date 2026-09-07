@@ -9,7 +9,7 @@ from pypddl.formalism import ParserOptions
 from pyyggdrasil.execution import ExecutionContext
 from pytyr.formalism import planning as fp
 from pytyr.planning import SearchStatus, ground, lifted
-from pytyr.serialization import fields, register_table, serialize, table
+from pytyr.serialization import register_table, serialize, table
 from pyyggdrasil.serialization import Dictionaries
 
 
@@ -29,12 +29,10 @@ PROBLEM = """(define (problem serialize-1) (:domain serialize)
 
 
 def test_default_fields_need_no_live_entity() -> None:
-    assert fields(fp.ActionBinding) == ["relation", "objects"]
-    assert fields(fp.FluentAtom) == ["predicate", "terms"]
-    assert fields(fp.FluentGroundAtom) == ["binding"]
-    assert fields(fp.FunctionExpression) == ["kind", "value"]
-    for native_type in (fp.ActionBinding, fp.FluentAtom, fp.FluentGroundAtom, fp.FunctionExpression):
-        assert list(native_type.Fields.__members__) == fields(native_type)
+    assert list(fp.ActionBinding.Fields.__members__) == ["relation", "objects"]
+    assert list(fp.FluentAtom.Fields.__members__) == ["predicate", "terms"]
+    assert list(fp.FluentGroundAtom.Fields.__members__) == ["binding"]
+    assert list(fp.FunctionExpression.Fields.__members__) == ["kind", "value"]
     assert fp.Object.Fields.name.name == "name"
     assert fp.Object.Fields.name.value == "name"
     assert fp.FunctionExpression.Fields.value.name == "value"
@@ -116,7 +114,7 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     assert serialize(dictionaries, step.label) == "a0"
     assert table(dictionaries, fp.ActionBinding) == [{"relation": "A0", "objects": []}]
     assert table(dictionaries, fp.Action) == [{"name": step.label.get_relation().get_name()}]
-    assert fields(fp.ActionBinding) == list(table(dictionaries, fp.ActionBinding)[0])
+    assert list(fp.ActionBinding.Fields.__members__) == list(table(dictionaries, fp.ActionBinding)[0])
     assert [row["state"] for row in table(dictionaries, node_type)] == ["s0", "s1"]
     assert serialize(dictionaries, start) == "v0"
     states = table(dictionaries, state_type)
@@ -252,10 +250,14 @@ def test_projected_binding_collects_only_selected_output_fields(fields: list[str
     item, = task.get_task().get_objects()
     binding = task.get_repository().get_or_create(fp.ActionBindingData(action, [item]))
     calls: list[fp.ActionBinding] = []
+    payload: dict[str, object] = {
+        "scalars": [None, True, False, -(2**63), 2**63 - 1, 2**64 - 1, 1.25],
+        "nested": [{"key\0é": "value\0雪"}, []],
+    }
 
     def project(value: fp.ActionBinding) -> dict[str, object]:
         calls.append(value)
-        return {"name": value.get_relation().get_name(), "objects": value.get_objects()}
+        return {"name": value.get_relation().get_name(), "objects": value.get_objects(), "details\0": payload}
 
     dictionaries = Dictionaries()
     register_table(dictionaries, fp.ActionBinding, "bindings", "b", fields=fields, project=project)
@@ -266,7 +268,9 @@ def test_projected_binding_collects_only_selected_output_fields(fields: list[str
     assert calls == [binding]
     assert table(dictionaries, fp.Action) == []
     if fields is None:
-        assert table(dictionaries, fp.ActionBinding) == [{"name": "finish", "objects": ["o0"]}]
+        expected = [{"name": "finish", "objects": ["o0"], "details\0": payload}]
+        assert table(dictionaries, fp.ActionBinding) == expected
+        assert json.dumps(dictionaries.tables()["bindings"]["rows"], ensure_ascii=False) == json.dumps(expected, ensure_ascii=False)
         assert [row["name"] for row in table(dictionaries, fp.Object)] == ["item"]
     else:
         assert table(dictionaries, fp.ActionBinding) == [{"name": "finish"}]

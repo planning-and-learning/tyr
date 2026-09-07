@@ -29,13 +29,13 @@ Table names and prefixes are chosen by the caller. Both must be nonempty and uni
 
 Import `Dictionaries` from `pyyggdrasil.serialization`, and `register_table`, `serialize`, and `table` from `pytyr.serialization`. These free functions accept the shared registry as their first argument. Its `tables()` method returns all snapshots.
 
-Use `fields(native_type)` to inspect the ordered default column names without creating an entity or registry:
+Use a native type's `Fields` enum to inspect the ordered default column names without creating an entity or registry:
 
 ```python
-from pytyr.serialization import fields
+from pytyr.formalism import planning as fp
 
-fields(fp.ActionBinding)  # ["relation", "objects"]
-fields(fp.FunctionExpression)  # ["kind", "value"]
+list(fp.ActionBinding.Fields.__members__)  # ["relation", "objects"]
+list(fp.FunctionExpression.Fields.__members__)  # ["kind", "value"]
 ```
 
 This describes the native declaration; registration's `fields` selection and `project` callback do not change it.
