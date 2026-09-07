@@ -27,10 +27,12 @@ A reference combines its table prefix and zero-based row position. For example, 
 
 Table names and prefixes are chosen by the caller. Both must be nonempty and unique; a prefix cannot end in a digit. Registrations are fixed when serialization begins. Rows follow first encounter order, including dependencies encountered inside other rows. Values that compare equal under their native equality share a row.
 
+Import `Dictionaries` from `pyyggdrasil.serialization`, and `register_table`, `serialize`, and `table` from `pytyr.serialization`. These free functions accept the shared registry as their first argument. Its `tables()` method returns all snapshots.
+
 Pass `fields` when registering a table to select its immediate fields:
 
 ```python
-dictionaries.register_table(fp.GroundTask, "tasks", "t", fields=["name", "static_ground_atoms"])
+register_table(dictionaries, fp.GroundTask, "tasks", "t", fields=["name", "static_ground_atoms"])
 ```
 
 `fields=None` keeps all declared fields; `fields=[]` creates empty rows. Selection happens before recursive serialization, so omitted fields do not collect descendants. Field names are immediate schema keys, and retained columns follow schema order rather than selection order.
@@ -38,7 +40,8 @@ dictionaries.register_table(fp.GroundTask, "tasks", "t", fields=["name", "static
 Pass `project` to define a complete row with your own column names and values:
 
 ```python
-dictionaries.register_table(
+register_table(
+    dictionaries,
     fp.ActionBinding,
     "actions",
     "a",
@@ -60,7 +63,7 @@ Sequences are JSON arrays, pairs are two-element arrays, absent optional values 
 Python callers can render snapshots with Yggdrasil's generic `tabulate` adapter:
 
 ```python
-from pyyggdrasil.serialization import render_table
+from pyyggdrasil.serialization.table import render_table
 
 for name, table in dictionaries.tables().items():
     print(name)
@@ -69,7 +72,7 @@ for name, table in dictionaries.tables().items():
 
 The optional prefix adds entity references in an index column. Nested dictionaries expand into columns with grouped headers. Lists become compact JSON cells; other leaves use scalar formatting. Scalar formatting and layouts come from `tabulate`. Pass `tablefmt="github"` for Markdown. The renderer returns text and leaves file handling and report layout to the caller.
 
-Snapshots are ordinary Python dictionaries and lists. Add application columns to snapshot rows before rendering, matching annotations by entity reference rather than evidence-list position. Preserve row order when using `prefix`; if sorting or filtering, put the original references into explicit cells first and omit `prefix`. These edits do not affect the registry or later snapshots. Shared `JSONValue`, `Row`, and `Table` types live in `pyyggdrasil.serialization`. Both `table()` and `tables()` expose generic rows because selection and projection can change their columns.
+Snapshots are ordinary Python dictionaries and lists. Add application columns to snapshot rows before rendering, matching annotations by entity reference rather than evidence-list position. Preserve row order when using `prefix`; if sorting or filtering, put the original references into explicit cells first and omit `prefix`. These edits do not affect the registry or later snapshots. Shared `JSONValue`, `Row`, and `Table` types live in `pyyggdrasil.serialization.table`. Both `table()` and `tables()` expose generic rows because selection and projection can change their columns.
 
 Registered planning states contain `fluent_ground_atoms`, `derived_ground_atoms`, and `fluent_ground_function_term_values`. Static facts belong to the task representation. Function-term values are pairs of a term representation or reference and its numeric value. A registered FDR fact preserves its `fdr_variable` and numeric `value`; zero represents the native none value.
 

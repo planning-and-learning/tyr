@@ -1,8 +1,5 @@
 #include "module.hpp"
 
-#include <nanobind/stl/optional.h>
-#include <nanobind/stl/string.h>
-#include <nanobind/stl/vector.h>
 #include <type_traits>
 #include <tyr/serialization/serialization.hpp>
 #include <tyr/serialization/types.hpp>
@@ -10,12 +7,9 @@
 #include <yggdrasil/python/serialization.hpp>
 
 namespace nb = nanobind;
-using namespace nb::literals;
 
 namespace tyr::serialization
 {
-using ygg::serialization::Dictionaries;
-
 namespace
 {
 template<typename T>
@@ -27,27 +21,7 @@ using RegisteredTypes = ygg::ApplyTypeListT<ygg::ConcatTypeListsT, ygg::MapTypeL
 
 void bind_module_definitions(nb::module_& m)
 {
-    nb::class_<Dictionaries>(m, "Dictionaries")
-        .def(nb::init<>())
-        .def(
-            "register_table",
-            [](Dictionaries& self, nb::type_object native_type, const std::string& name, const std::string& prefix,
-               const std::optional<std::vector<std::string>>& fields, nb::object project)
-            { ygg::python::register_table(self, native_type, name, prefix, RegisteredTypes {}, ProjectionTypes {}, fields, project); },
-            "native_type"_a,
-            "name"_a,
-            "prefix"_a,
-            "fields"_a = nb::none(),
-            "project"_a = nb::none())
-        .def(
-            "serialize",
-            [](Dictionaries& self, nb::handle value) { return ygg::python::serialize(self, value, SerializedTypes {}); },
-            "value"_a,
-            nb::keep_alive<1, 2>())
-        .def(
-            "table",
-            [](Dictionaries& self, nb::type_object native_type) { return ygg::python::table(self, native_type, RegisteredTypes {}); },
-            "native_type"_a)
-        .def("tables", [](Dictionaries& self) { return ygg::python::to_python(self.tables()); });
+    ygg::python::bind_serialization(m, RegisteredTypes {}, SerializedTypes {}, ProjectionTypes {});
 }
-}
+
+}  // namespace tyr::serialization
