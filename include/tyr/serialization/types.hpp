@@ -1,10 +1,10 @@
 #ifndef TYR_SERIALIZATION_TYPES_HPP_
 #define TYR_SERIALIZATION_TYPES_HPP_
 
-#include "tyr/planning/declarations.hpp"
-#include "tyr/serialization/formalism/enums.hpp"
-#include "tyr/serialization/formalism/planning/planning.hpp"
+#include "tyr/serialization/serialization.hpp"
 
+#include <type_traits>
+#include <yggdrasil/core/concepts.hpp>
 #include <yggdrasil/core/type_list.hpp>
 
 namespace tyr::serialization
@@ -40,6 +40,12 @@ using RuntimeOwners = ygg::TypeList<planning::Task<GroundTag>,
                                    planning::Plan<GroundTag>,
                                    planning::Plan<LiftedTag>>;
 using SerializedTypes = ygg::ConcatTypeListsT<FormalismViews, RuntimeStates, FormalismOwners, RuntimeOwners>;
+
+template<typename T>
+using HashableTypeList = std::conditional_t<ygg::Hashable<T>, ygg::TypeList<T>, ygg::TypeList<>>;
+
+using RegisteredTypes = ygg::ApplyTypeListT<ygg::ConcatTypeListsT, ygg::MapTypeListT<HashableTypeList, SerializedTypes>>;
+
 using ProjectionTypes = ygg::ConcatTypeListsT<SerializedTypes,
                                              ygg::TypeList<formalism::BooleanOperatorKind,
                                                            formalism::ArithmeticOperatorKind,
