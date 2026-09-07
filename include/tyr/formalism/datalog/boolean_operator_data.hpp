@@ -36,32 +36,32 @@ struct Data<::tyr::formalism::datalog::BooleanOperator<T>>
     using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::datalog::BinaryOperator<T, ::tyr::formalism::BooleanOperatorKind>>>;
 
     OperatorType operator_kind = OperatorType::Eq;
-    Variant value;
+    Variant variant;
 
     template<typename C>
     using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<T, ::tyr::formalism::BooleanOperatorKind>>, C>>;
 
     Data() = default;
-    Data(OperatorType operator_kind_, Variant value_) : operator_kind(operator_kind_), value(value_)
+    Data(OperatorType operator_kind_, Variant variant_) : operator_kind(operator_kind_), variant(variant_)
     {
-        if (!value.valid())
-            throw std::invalid_argument("BooleanOperator requires a valid value");
+        if (!variant.valid())
+            throw std::invalid_argument("BooleanOperator requires a valid variant");
     }
     template<typename C>
-    Data(ViewVariant<C> value_) :
-        operator_kind(std::visit([](const auto& view) { return view.get_operator(); }, value_)),
-        value(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, value_))
+    Data(ViewVariant<C> variant_) :
+        operator_kind(std::visit([](const auto& view) { return view.get_operator(); }, variant_)),
+        variant(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, variant_))
     {
     }
 
     void clear() noexcept
     {
         operator_kind = OperatorType::Eq;
-        ygg::clear(value);
+        ygg::clear(variant);
     }
 
-    auto cista_members() const noexcept { return std::tie(operator_kind, value); }
-    auto identifying_members() const noexcept { return std::tie(operator_kind, value); }
+    auto cista_members() const noexcept { return std::tie(operator_kind, variant); }
+    auto identifying_members() const noexcept { return std::tie(operator_kind, variant); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::BooleanOperator<::tyr::LiftedTag>>);

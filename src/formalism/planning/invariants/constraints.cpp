@@ -292,7 +292,7 @@ ConstraintTerm make_constraint_term(const ygg::Data<Term>& term)
             else
                 static_assert(ygg::dependent_false<T>::value, "Missing case");
         },
-        term.value);
+        term.variant);
 }
 
 ConstraintTerm make_invariant_parameter_term(size_t index) { return InvariantParameter { index }; }
@@ -320,7 +320,7 @@ EqualityConjunction make_cover_equality_conjunction(const MutableAtom<FluentTag>
                     }
                 }
             },
-            pattern.terms[pos].value);
+            pattern.terms[pos].variant);
     }
 
     return EqualityConjunction(std::move(equalities));

@@ -18,12 +18,6 @@
 namespace ygg::serialization
 {
 
-template<>
-struct TypeName<::tyr::formalism::planning::TaskView>
-{
-    static std::string get() { return "LiftedTask"; }
-};
-
 template<class Archive>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::TaskView>)
 {

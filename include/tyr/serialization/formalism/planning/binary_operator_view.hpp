@@ -10,16 +10,6 @@
 namespace ygg::serialization
 {
 
-template<::tyr::TaskKind T, ::tyr::formalism::BinaryOperatorKind O>
-struct TypeName<::tyr::formalism::planning::BinaryOperatorView<T, O>>
-{
-    static std::string get()
-    {
-        return std::string(std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "Binary"
-               + (std::same_as<O, ::tyr::formalism::ArithmeticOperatorKind> ? "ArithmeticOperator" : "BooleanOperator");
-    }
-};
-
 template<class Archive, ::tyr::TaskKind T, ::tyr::formalism::BinaryOperatorKind O>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::BinaryOperatorView<T, O>>)
 {

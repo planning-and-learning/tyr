@@ -50,7 +50,7 @@ inline size_t part_arity(const MutableAtom<FluentTag>& part, size_t num_rigid_va
                         has_counted = true;
                 }
             },
-            term.value);
+            term.variant);
     }
 
     return has_counted ? part.terms.size() - 1 : part.terms.size();
@@ -69,7 +69,7 @@ inline bool atom_uses_counted(const MutableAtom<FluentTag>& atom, size_t num_rig
                                                return static_cast<ygg::uint_t>(arg) >= num_rigid_variables;
                                            return false;
                                        },
-                                       term.value);
+                                       term.variant);
                                });
 }
 

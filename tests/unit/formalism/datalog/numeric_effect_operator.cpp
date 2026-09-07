@@ -21,7 +21,7 @@ template<typename Entity>
 concept NumericEffectOperatorContract = std::totally_ordered<ygg::Data<Entity>> && std::totally_ordered<ygg::View<ygg::Data<Entity>, fd::Repository>>
                                         && std::same_as<ygg::View<ygg::Data<Entity>, fd::Repository>, typename NumericEffectOperatorPublicView<Entity>::type>
                                         && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Data<Entity>, fd::Repository>& view) {
-                                               data.value;
+                                               data.variant;
                                                data.clear();
                                                view.get_variant();
                                            };
@@ -52,7 +52,7 @@ concept GroundNumericEffectOperatorContract =
     std::totally_ordered<ygg::Data<Entity>> && std::totally_ordered<ygg::View<ygg::Data<Entity>, fd::Repository>>
     && std::same_as<ygg::View<ygg::Data<Entity>, fd::Repository>, typename GroundNumericEffectOperatorPublicView<Entity>::type>
     && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Data<Entity>, fd::Repository>& view) {
-           data.value;
+           data.variant;
            data.clear();
            view.get_variant();
        };

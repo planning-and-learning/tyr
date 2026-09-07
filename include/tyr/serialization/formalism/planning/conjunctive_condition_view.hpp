@@ -12,12 +12,6 @@
 namespace ygg::serialization
 {
 
-template<::tyr::TaskKind T>
-struct TypeName<::tyr::formalism::planning::ConjunctiveConditionView<T>>
-{
-    static std::string get() { return std::string(std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "ConjunctiveCondition"; }
-};
-
 template<class Archive, ::tyr::TaskKind T>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ConjunctiveConditionView<T>>)
 {

@@ -42,7 +42,7 @@ def rigid_parameter_domains_from_task_variable_domains(
         predicate_domains = fluent_predicate_domains[atom.predicate]
 
         for position, term in enumerate(atom.terms):
-            value = term.value
+            value = term.variant
 
             if not isinstance(value, ParameterIndex):
                 continue

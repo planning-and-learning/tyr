@@ -42,7 +42,7 @@ public:
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_handle() const noexcept { return m_handle; }
 
-    auto get_variant() const noexcept { return ygg::make_view(m_handle.value, *m_context); }
+    auto get_variant() const noexcept { return ygg::make_view(m_handle.variant, *m_context); }
 
     auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }
 };
@@ -61,7 +61,7 @@ auto make_view(const ygg::Data<::tyr::formalism::datalog::FunctionExpression<T>>
                                                                                              else
                                                                                                  return ygg::make_view(arg, context).get_context();
                                                                                          },
-                                                                                         element.value));
+                                                                                         element.variant));
 }
 
 }

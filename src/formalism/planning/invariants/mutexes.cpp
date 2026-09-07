@@ -66,7 +66,7 @@ extract_rigid_values(const Invariant& inv, const MutableAtom<FluentTag>& pattern
                     static_assert(ygg::dependent_false<T>::value, "Unhandled case");
                 }
             },
-            value->value);
+            value->variant);
 
         if (!maybe_object.has_value())
             return std::nullopt;
@@ -112,7 +112,7 @@ bool instantiate_matches_ground_atom(const MutableAtom<FluentTag>& pattern,
                     static_assert(ygg::dependent_false<T>::value, "Unhandled case");
                 }
             },
-            pattern.terms[pos].value);
+            pattern.terms[pos].variant);
 
         if (!ok)
             return false;
@@ -150,7 +150,7 @@ instantiate_group(const Invariant& inv, const std::vector<ygg::Index<Object>>& r
                             counted_position = pos;
                     }
                 },
-                pattern.terms[pos].value);
+                pattern.terms[pos].variant);
 
             if (counted_position.has_value())
                 break;

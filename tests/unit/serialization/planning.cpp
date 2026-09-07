@@ -81,7 +81,7 @@ TEST(TyrSerialization, DefaultFieldsAndSelectionDoNotEvaluateAccessors)
     EXPECT_EQ(s::fields<fp::PredicateBindingView<f::FluentTag>>(), (std::vector<std::string> {"relation", "objects"}));
     EXPECT_EQ((s::fields<fp::AtomView<LiftedTag, f::FluentTag>>()), (std::vector<std::string> {"predicate", "terms"}));
     EXPECT_EQ((s::fields<fp::AtomView<GroundTag, f::FluentTag>>()), (std::vector<std::string> {"binding"}));
-    EXPECT_EQ(s::fields<fp::FunctionExpressionView<LiftedTag>>(), (std::vector<std::string> {"kind", "value"}));
+    EXPECT_EQ(s::fields<fp::FunctionExpressionView<LiftedTag>>(), (std::vector<std::string> {"variant"}));
 
     auto dictionaries = s::Dictionaries {};
     const auto selected_fields = std::optional<std::vector<std::string>>(std::in_place);
@@ -199,7 +199,9 @@ TEST(TyrSerialization, UnregisteredEntitiesFailAndNativeViewIdentityIsPreserved)
         }
         catch (const std::invalid_argument& error)
         {
-            EXPECT_STREQ(error.what(), nested ? "Unregistered serialization type: FluentPredicateBinding" : "Unregistered serialization type: FluentGroundAtom");
+            const auto message = std::string(error.what());
+            EXPECT_TRUE(message.starts_with("Unregistered serialization type: "));
+            EXPECT_NE(message.find(nested ? "RelationBinding" : "Atom"), std::string::npos);
         }
         EXPECT_THROW(incomplete.serialize(first), std::logic_error);
         EXPECT_THROW(incomplete.tables(), std::logic_error);
@@ -255,26 +257,24 @@ TEST(TyrSerialization, RecursiveExpressionsReferenceSharedDescendantsAndKeepCons
     const auto expressions = dictionaries.table<fp::FunctionExpressionView<LiftedTag>>();
     ASSERT_EQ(expressions.size(), 2);
     const auto& root = expressions[0].as_object();
-    EXPECT_EQ(root.at("kind").as_string(), "ArithmeticOperator");
-    EXPECT_EQ(root.at("value").as_string(), "a0");
-    EXPECT_EQ(dictionaries.table<fp::ArithmeticOperatorView<LiftedTag>>()[0].as_object().at("value").as_string(), "b0");
+    EXPECT_EQ(root, (boost::json::object {{"variant", "a0"}}));
+    EXPECT_EQ(dictionaries.table<fp::ArithmeticOperatorView<LiftedTag>>()[0].as_object().at("variant").as_string(), "b0");
     const auto operators = dictionaries.table<BinaryView>();
     ASSERT_EQ(operators.size(), 1);
     EXPECT_EQ(operators[0].as_object().at("lhs").as_string(), "e1");
     EXPECT_EQ(operators[0].as_object().at("rhs").as_string(), "e1");
-    EXPECT_EQ(expressions[1].as_object().at("value").as_double(), 3);
-    EXPECT_EQ(expressions[1].as_object().at("kind").as_string(), "constant");
+    EXPECT_EQ(expressions[1].as_object(), (boost::json::object {{"variant", 3.0}}));
     EXPECT_EQ(operators[0].as_object().at("operator").as_string(), "-");
     const auto snapshot = dictionaries.tables();
     EXPECT_EQ(dictionaries.serialize(expression).as_string(), "e0");
     EXPECT_EQ(dictionaries.tables(), snapshot);
 
-    auto kinds_only = s::Dictionaries {};
-    kinds_only.register_table<fp::FunctionExpressionView<LiftedTag>>("expressions", "e", std::vector<std::string> {"kind"});
-    kinds_only.register_table<fp::ArithmeticOperatorView<LiftedTag>>("arithmetic", "a");
-    EXPECT_EQ(kinds_only.serialize(expression).as_string(), "e0");
-    EXPECT_EQ(kinds_only.table<fp::FunctionExpressionView<LiftedTag>>()[0].as_object(), (boost::json::object {{"kind", "ArithmeticOperator"}}));
-    EXPECT_TRUE(kinds_only.table<fp::ArithmeticOperatorView<LiftedTag>>().empty());
+    auto payload_omitted = s::Dictionaries {};
+    payload_omitted.register_table<fp::FunctionExpressionView<LiftedTag>>("expressions", "e", std::vector<std::string> {});
+    payload_omitted.register_table<fp::ArithmeticOperatorView<LiftedTag>>("arithmetic", "a");
+    EXPECT_EQ(payload_omitted.serialize(expression).as_string(), "e0");
+    EXPECT_TRUE(payload_omitted.table<fp::FunctionExpressionView<LiftedTag>>()[0].as_object().empty());
+    EXPECT_TRUE(payload_omitted.table<fp::ArithmeticOperatorView<LiftedTag>>().empty());
 }
 
 TEST(TyrSerialization, EnumsUseNativeText)

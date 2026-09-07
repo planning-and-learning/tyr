@@ -8,12 +8,6 @@
 namespace ygg::serialization
 {
 
-template<>
-struct TypeName<::tyr::formalism::planning::ObjectView>
-{
-    static std::string get() { return "Object"; }
-};
-
 template<class Archive>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ObjectView>)
 {

@@ -16,7 +16,7 @@ using TermView = ygg::View<TermData, fp::Repository>;
 template<typename Repository>
 concept TermContract = std::totally_ordered<TermData> && std::totally_ordered<ygg::View<TermData, Repository>>
                        && requires(TermData& data, const ygg::View<TermData, Repository>& view) {
-                              data.value;
+                              data.variant;
                               data.clear();
                               view.get_variant();
                           };
@@ -30,7 +30,7 @@ TEST(TyrFormalismTerm, PreservesParameterAlternative)
 {
     auto data = TermData(f::ParameterIndex(3));
     auto is_parameter = false;
-    data.value.apply(
+    data.variant.apply(
         [&](const auto& value)
         {
             using Value = std::decay_t<decltype(value)>;

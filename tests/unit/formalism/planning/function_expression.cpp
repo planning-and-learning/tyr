@@ -12,7 +12,7 @@ namespace fp = tyr::formalism::planning;
 template<typename Entity>
 concept FunctionExpressionContract = std::totally_ordered<ygg::Data<Entity>> && std::totally_ordered<ygg::View<ygg::Data<Entity>, fp::Repository>>
                                      && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Data<Entity>, fp::Repository>& view) {
-                                            data.value;
+                                            data.variant;
                                             data.clear();
                                             { data == data } -> std::same_as<bool>;
                                             view.get_variant();
@@ -34,7 +34,7 @@ namespace fp = tyr::formalism::planning;
 template<typename Entity>
 concept GroundFunctionExpressionContract = std::totally_ordered<ygg::Data<Entity>> && std::totally_ordered<ygg::View<ygg::Data<Entity>, fp::Repository>>
                                            && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Data<Entity>, fp::Repository>& view) {
-                                                  data.value;
+                                                  data.variant;
                                                   data.clear();
                                                   { data == data } -> std::same_as<bool>;
                                                   view.get_variant();

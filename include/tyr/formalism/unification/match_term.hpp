@@ -74,9 +74,9 @@ bool match_term(const ygg::Data<Term>& pattern, const ygg::Data<Term>& element, 
                         static_assert(ygg::dependent_false<Lhs>::value, "Missing case");
                     }
                 },
-                element.value);
+                element.variant);
         },
-        pattern.value);
+        pattern.variant);
 }
 
 }  // namespace tyr::formalism::unification

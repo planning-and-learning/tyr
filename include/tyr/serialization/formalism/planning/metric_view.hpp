@@ -10,12 +10,6 @@
 namespace ygg::serialization
 {
 
-template<>
-struct TypeName<::tyr::formalism::planning::MetricView>
-{
-    static std::string get() { return "Metric"; }
-};
-
 template<class Archive>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::MetricView>)
 {

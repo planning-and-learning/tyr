@@ -23,13 +23,13 @@
 namespace tyr::formalism::unification
 {
 
-inline bool is_parameter(const ygg::Data<Term>& term) { return holds_alternative<ParameterIndex>(term.value); }
+inline bool is_parameter(const ygg::Data<Term>& term) { return holds_alternative<ParameterIndex>(term.variant); }
 
-inline bool is_object(const ygg::Data<Term>& term) { return holds_alternative<ygg::Index<Object>>(term.value); }
+inline bool is_object(const ygg::Data<Term>& term) { return holds_alternative<ygg::Index<Object>>(term.variant); }
 
-inline ParameterIndex get_parameter(const ygg::Data<Term>& term) { return std::get<ParameterIndex>(term.value); }
+inline ParameterIndex get_parameter(const ygg::Data<Term>& term) { return std::get<ParameterIndex>(term.variant); }
 
-inline ygg::Index<Object> get_object(const ygg::Data<Term>& term) { return std::get<ygg::Index<Object>>(term.value); }
+inline ygg::Index<Object> get_object(const ygg::Data<Term>& term) { return std::get<ygg::Index<Object>>(term.variant); }
 
 }
 

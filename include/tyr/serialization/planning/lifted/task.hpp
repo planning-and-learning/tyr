@@ -5,16 +5,8 @@
 #include "tyr/serialization/formalism/planning/planning_task.hpp"
 #include "yggdrasil/serialization/dictionaries.hpp"
 
-#include <string>
-
 namespace ygg::serialization
 {
-
-template<>
-struct TypeName<::tyr::planning::Task<::tyr::LiftedTag>>
-{
-    static std::string get() { return "LiftedTask"; }
-};
 
 template<class Archive>
 void describe_fields(Archive& ar, std::type_identity<::tyr::planning::Task<::tyr::LiftedTag>>)

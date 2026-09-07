@@ -16,7 +16,7 @@ static_assert(std::totally_ordered<View>);
 static_assert(std::same_as<View, fd::FunctionExpressionView<::tyr::LiftedTag>>);
 static_assert(std::constructible_from<Data, Data::ViewVariant<fd::Repository>>);
 static_assert(requires(Data& data, const View& view) {
-    data.value;
+    data.variant;
     data.clear();
     view.get_variant();
 });
@@ -36,7 +36,7 @@ static_assert(std::totally_ordered<View>);
 static_assert(std::same_as<View, fd::FunctionExpressionView<::tyr::GroundTag>>);
 static_assert(std::constructible_from<Data, Data::ViewVariant<fd::Repository>>);
 static_assert(requires(Data& data, const View& view) {
-    data.value;
+    data.variant;
     data.clear();
     view.get_variant();
 });

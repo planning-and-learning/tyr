@@ -13,12 +13,6 @@
 namespace ygg::serialization
 {
 
-template<>
-struct TypeName<::tyr::formalism::planning::DomainView>
-{
-    static std::string get() { return "Domain"; }
-};
-
 template<class Archive>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::DomainView>)
 {

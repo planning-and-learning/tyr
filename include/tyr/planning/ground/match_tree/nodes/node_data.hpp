@@ -42,15 +42,15 @@ struct Data<planning::match_tree::Node<Tag>>
                                              ygg::Index<planning::match_tree::NegativeFactSelectorNode<Tag>>,
                                              ygg::Index<planning::match_tree::ElementGeneratorNode<Tag>>>;
 
-    Variant value;
+    Variant variant;
 
     Data() = default;
-    Data(Variant value) : value(value) {}
+    Data(Variant variant) : variant(variant) {}
 
-    void clear() noexcept { ygg::clear(value); }
+    void clear() noexcept { ygg::clear(variant); }
 
-    auto cista_members() const noexcept { return std::tie(value); }
-    auto identifying_members() const noexcept { return std::tie(value); }
+    auto cista_members() const noexcept { return std::tie(variant); }
+    auto identifying_members() const noexcept { return std::tie(variant); }
 };
 
 }

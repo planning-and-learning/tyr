@@ -11,12 +11,6 @@
 namespace ygg::serialization
 {
 
-template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
-struct TypeName<::tyr::formalism::planning::AtomView<T, F>>
-{
-    static std::string get() { return std::string(F::name) + (std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "Atom"; }
-};
-
 template<class Archive, ::tyr::TaskKind T, ::tyr::formalism::FactKind F>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::AtomView<T, F>>)
 {

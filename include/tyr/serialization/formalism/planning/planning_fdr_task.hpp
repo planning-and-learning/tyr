@@ -10,12 +10,6 @@
 namespace ygg::serialization
 {
 
-template<>
-struct TypeName<::tyr::formalism::planning::PlanningFDRTask>
-{
-    static std::string get() { return "PlanningFDRTask"; }
-};
-
 template<class Archive>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::PlanningFDRTask>)
 {

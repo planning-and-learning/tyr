@@ -36,7 +36,7 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>
                                              ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>,
                                              ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>;
 
-    Variant value;
+    Variant variant;
 
     template<typename C>
     using ViewVariant = std::variant<ygg::float_t,
@@ -45,11 +45,11 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>
                                      ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>, C>>;
 
     Data() = default;
-    Data(Variant value_) : value(value_) {}
+    Data(Variant variant_) : variant(variant_) {}
     // Python constructor
     template<typename C>
-    Data(ViewVariant<C> value_) :
-        value(std::visit(
+    Data(ViewVariant<C> variant_) :
+        variant(std::visit(
             [](const auto& arg) -> Variant
             {
                 using Alternative = std::decay_t<decltype(arg)>;
@@ -69,14 +69,14 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>
                 else
                     static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
             },
-            value_))
+            variant_))
     {
     }
 
-    void clear() noexcept { ygg::clear(value); }
+    void clear() noexcept { ygg::clear(variant); }
 
-    auto cista_members() const noexcept { return std::tie(value); }
-    auto identifying_members() const noexcept { return std::tie(value); }
+    auto cista_members() const noexcept { return std::tie(variant); }
+    auto identifying_members() const noexcept { return std::tie(variant); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>);
@@ -90,7 +90,7 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>
                                              ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>>,
                                              ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>;
 
-    Variant value;
+    Variant variant;
 
     template<typename C>
     using ViewVariant = std::variant<ygg::float_t,
@@ -100,11 +100,11 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>
                                      ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>, C>>;
 
     Data() = default;
-    Data(Variant value_) : value(value_) {}
+    Data(Variant variant_) : variant(variant_) {}
     // Python constructor
     template<typename C>
-    Data(ViewVariant<C> value_) :
-        value(std::visit(
+    Data(ViewVariant<C> variant_) :
+        variant(std::visit(
             [](const auto& arg) -> Variant
             {
                 using Alternative = std::decay_t<decltype(arg)>;
@@ -128,14 +128,14 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>
                 else
                     static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
             },
-            value_))
+            variant_))
     {
     }
 
-    void clear() noexcept { ygg::clear(value); }
+    void clear() noexcept { ygg::clear(variant); }
 
-    auto cista_members() const noexcept { return std::tie(value); }
-    auto identifying_members() const noexcept { return std::tie(value); }
+    auto cista_members() const noexcept { return std::tie(variant); }
+    auto identifying_members() const noexcept { return std::tie(variant); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>);

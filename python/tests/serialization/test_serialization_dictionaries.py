@@ -32,11 +32,13 @@ def test_default_fields_need_no_live_entity() -> None:
     assert list(fp.ActionBinding.Fields.__members__) == ["relation", "objects"]
     assert list(fp.FluentAtom.Fields.__members__) == ["predicate", "terms"]
     assert list(fp.FluentGroundAtom.Fields.__members__) == ["binding"]
-    assert list(fp.FunctionExpression.Fields.__members__) == ["kind", "value"]
+    assert list(fp.FunctionExpression.Fields.__members__) == ["variant"]
     assert fp.Object.Fields.name.name == "name"
     assert fp.Object.Fields.name.value == "name"
-    assert fp.FunctionExpression.Fields.value.name == "value"
-    assert fp.FunctionExpression.Fields.value.value == "value"
+    assert fp.FunctionExpression.Fields.variant.name == "variant"
+    assert fp.FunctionExpression.Fields.variant.value == "variant"
+    assert fp.FluentFDRFact.Fields.value.name == "value"
+    assert fp.FluentFDRFact.Fields.value.value == "value"
 
 
 def test_field_enum_selection_validates_the_native_type_before_registration() -> None:
@@ -89,7 +91,7 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     plan = result.plan
     assert plan is not None
     rejected = Dictionaries()
-    with pytest.raises(ValueError, match=f"Unregistered serialization type: {backend.title()}Plan"):
+    with pytest.raises(ValueError, match=r"Unregistered serialization type: .*Plan"):
         serialize(rejected, plan)
     with pytest.raises(RuntimeError, match="Serialization failed"):
         rejected.tables()
@@ -173,8 +175,8 @@ def test_unregistered_entities_name_the_missing_type_and_invalidate_registry(nes
     dictionaries = Dictionaries()
     if nested:
         register_table(dictionaries, fp.StaticGroundFunctionTerm, "terms", "t")
-    missing = "StaticFunctionBinding" if nested else "StaticGroundFunctionTerm"
-    with pytest.raises(ValueError, match=f"^Unregistered serialization type: {missing}$"):
+    missing = "RelationBinding" if nested else "FunctionTerm"
+    with pytest.raises(ValueError, match=f"^Unregistered serialization type: .*{missing}"):
         serialize(dictionaries, term)
     with pytest.raises(RuntimeError, match="Serialization failed"):
         serialize(dictionaries, term)
@@ -185,14 +187,14 @@ def test_unregistered_entities_name_the_missing_type_and_invalidate_registry(nes
 def test_registered_variant_preserves_numeric_constant() -> None:
     parser = fp.Parser(DOMAIN, None, ParserOptions())
     repository = parser.get_domain().get_repository()
-    expression = repository.create(fp.FunctionExpressionData(3.5))
+    expression = repository.create(fp.FunctionExpressionData(variant=3.5))
     dictionaries = Dictionaries()
     register_table(dictionaries, fp.FunctionExpression, "expressions", "e", fields=None)
     assert serialize(dictionaries, expression) == "e0"
-    expected = [{"kind": "constant", "value": 3.5}]
+    expected = [{"variant": 3.5}]
     assert table(dictionaries, fp.FunctionExpression) == expected
     snapshot = dictionaries.tables()
-    snapshot["expressions"]["rows"][0]["value"] = 8
+    snapshot["expressions"]["rows"][0]["variant"] = 8
     assert serialize(dictionaries, expression) == "e0"
     assert table(dictionaries, fp.FunctionExpression) == expected
 
@@ -223,17 +225,17 @@ def test_task_field_selection_limits_collected_descendants(fields: list[str]) ->
         assert table(dictionaries, fp.FluentGroundAtom) == []
 
 
-def test_registered_variant_kind_does_not_collect_omitted_value() -> None:
+def test_registered_variant_does_not_collect_omitted_payload() -> None:
     parser = fp.Parser(DOMAIN, None, ParserOptions())
     task = parser.parse_task(PROBLEM, None, ParserOptions())
     term = next(iter(task.get_task().get_static_fterm_values())).get_fterm()
-    expression = task.get_repository().create(fp.GroundFunctionExpressionData(term))
+    expression = task.get_repository().create(fp.GroundFunctionExpressionData(variant=term))
     dictionaries = Dictionaries()
-    register_table(dictionaries, fp.GroundFunctionExpression, "expressions", "e", fields=("kind",))
+    register_table(dictionaries, fp.GroundFunctionExpression, "expressions", "e", fields=())
     register_table(dictionaries, fp.StaticGroundFunctionTerm, "terms", "t")
 
     assert serialize(dictionaries, expression) == "e0"
-    assert table(dictionaries, fp.GroundFunctionExpression) == [{"kind": "StaticGroundFunctionTerm"}]
+    assert table(dictionaries, fp.GroundFunctionExpression) == [{}]
     assert table(dictionaries, fp.StaticGroundFunctionTerm) == []
 
 
@@ -290,6 +292,30 @@ def test_invalid_projection_invalidates_registry(bad_value: object) -> None:
         serialize(dictionaries, expression)
     with pytest.raises(RuntimeError):
         dictionaries.tables()
+
+
+@pytest.mark.parametrize("kind", ["list", "dict"])
+def test_cyclic_projection_invalidates_registry_and_unwinds(kind: Literal["list", "dict"]) -> None:
+    repository = fp.RepositoryFactory().create_repository()
+    value = repository.get_or_create(fp.ObjectData("projected"))
+    cycle: list[object] | dict[str, object] = [] if kind == "list" else {}
+    if isinstance(cycle, list):
+        cycle.append(cycle)
+    else:
+        cycle["self"] = cycle
+
+    failed = Dictionaries()
+    register_table(failed, fp.Object, "objects", "o", project=lambda _value: {"cycle": cycle})
+    with pytest.raises(RecursionError):
+        serialize(failed, value)
+    with pytest.raises(RuntimeError, match="Serialization failed"):
+        failed.tables()
+
+    shared = {"nested": [1, 2]}
+    fresh = Dictionaries()
+    register_table(fresh, fp.Object, "objects", "o", project=lambda _value: {"first": shared, "second": shared})
+    assert serialize(fresh, value) == "o0"
+    assert table(fresh, fp.Object) == [{"first": shared, "second": shared}]
 
 
 @pytest.mark.parametrize("value,expected", [

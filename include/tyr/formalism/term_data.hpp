@@ -33,17 +33,17 @@ struct Data<::tyr::formalism::Term>
 {
     using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::Object>, ::tyr::formalism::ParameterIndex>;
 
-    Variant value;
+    Variant variant;
 
     template<typename C>
     using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::Object>, C>, ::tyr::formalism::ParameterIndex>;
 
     Data() = default;
-    Data(Variant value) : value(value) {}
+    Data(Variant variant) : variant(variant) {}
     // Python constructor
     template<typename C>
-    Data(ViewVariant<C> value_) :
-        value(std::visit(
+    Data(ViewVariant<C> variant_) :
+        variant(std::visit(
             [](const auto& arg) -> Variant
             {
                 using Alternative = std::decay_t<decltype(arg)>;
@@ -55,14 +55,14 @@ struct Data<::tyr::formalism::Term>
                 else
                     static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
             },
-            value_))
+            variant_))
     {
     }
 
-    void clear() noexcept { ygg::clear(value); }
+    void clear() noexcept { ygg::clear(variant); }
 
-    auto cista_members() const noexcept { return std::tie(value); }
-    auto identifying_members() const noexcept { return std::tie(value); }
+    auto cista_members() const noexcept { return std::tie(variant); }
+    auto identifying_members() const noexcept { return std::tie(variant); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::Term>);

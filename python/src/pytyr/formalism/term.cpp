@@ -27,9 +27,9 @@ void bind_term(nb::module_& m)
         using V = ygg::Data<Term>;
 
         auto cls = nb::class_<V>(m, "TermData")  //
-                       .def(nb::init<typename V::template ViewVariant<planning::Repository>>(), "value"_a)
-                       .def(nb::init<typename V::template ViewVariant<datalog::Repository>>(), "value"_a)
-                       .def_rw("value", &V::value);
+                       .def(nb::init<typename V::template ViewVariant<planning::Repository>>(), "variant"_a)
+                       .def(nb::init<typename V::template ViewVariant<datalog::Repository>>(), "variant"_a)
+                       .def_rw("variant", &V::variant);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);

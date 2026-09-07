@@ -9,12 +9,6 @@
 namespace ygg::serialization
 {
 
-template<::tyr::formalism::FactKind T>
-struct TypeName<::tyr::formalism::planning::FDRFactView<T>>
-{
-    static std::string get() { return std::string(T::name) + "FDRFact"; }
-};
-
 template<class Archive, ::tyr::formalism::FactKind T>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FDRFactView<T>>)
 {

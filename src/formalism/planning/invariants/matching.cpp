@@ -181,7 +181,7 @@ match_effect_cover_against_atom(const Invariant& inv, const MutableAtom<FluentTa
                     }
                 }
             },
-            term.value);
+            term.variant);
     }
 
     auto state = TermMatchState {

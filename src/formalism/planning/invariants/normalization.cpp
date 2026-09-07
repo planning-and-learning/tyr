@@ -37,7 +37,7 @@ bool uses_parameter(const ygg::Data<Term>& term, ParameterIndex parameter)
             else
                 static_assert(ygg::dependent_false<T>::value, "Missing case");
         },
-        term.value);
+        term.variant);
 }
 
 bool uses_parameter(const MutableAtom<FluentTag>& atom, ParameterIndex parameter)
@@ -119,7 +119,7 @@ void remove_unused_parameters(Invariant& inv)
                     else
                         static_assert(ygg::dependent_false<T>::value, "Missing case");
                 },
-                term.value);
+                term.variant);
         }
     }
 

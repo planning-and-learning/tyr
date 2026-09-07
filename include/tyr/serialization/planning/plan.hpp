@@ -5,16 +5,8 @@
 #include "tyr/serialization/planning/node.hpp"
 #include "yggdrasil/serialization/dictionaries.hpp"
 
-#include <string>
-
 namespace ygg::serialization
 {
-
-template<::tyr::TaskKind T>
-struct TypeName<::tyr::planning::Plan<T>>
-{
-    static std::string get() { return std::string(T::name) + "Plan"; }
-};
 
 template<class Archive, ::tyr::TaskKind T>
 void describe_fields(Archive& ar, std::type_identity<::tyr::planning::Plan<T>>)

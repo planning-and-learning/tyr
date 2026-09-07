@@ -13,12 +13,6 @@
 namespace ygg::serialization
 {
 
-template<typename T>
-struct TypeName<ygg::View<ygg::Index<::tyr::formalism::RelationBinding<T>>, ::tyr::formalism::planning::Repository>>
-{
-    static std::string get() { return TypeName<ygg::View<ygg::Index<T>, ::tyr::formalism::planning::Repository>>::get() + "Binding"; }
-};
-
 template<class Archive, typename T>
 void describe_fields(Archive& ar, std::type_identity<ygg::View<ygg::Index<::tyr::formalism::RelationBinding<T>>, ::tyr::formalism::planning::Repository>>)
 {

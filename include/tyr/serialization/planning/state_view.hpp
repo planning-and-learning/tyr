@@ -7,16 +7,8 @@
 #include "tyr/serialization/formalism/planning/function_term_view.hpp"
 #include "yggdrasil/serialization/dictionaries.hpp"
 
-#include <string>
-
 namespace ygg::serialization
 {
-
-template<::tyr::TaskKind T>
-struct TypeName<::tyr::planning::StateView<T>>
-{
-    static std::string get() { return std::string(T::name) + "State"; }
-};
 
 template<class Archive, ::tyr::TaskKind T>
 void describe_fields(Archive& ar, std::type_identity<::tyr::planning::StateView<T>>)

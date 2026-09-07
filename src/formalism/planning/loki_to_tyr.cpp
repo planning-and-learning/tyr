@@ -58,7 +58,7 @@ void LokiToTyrTranslator::prepare(loki::formalism::VariableView) {}
 
 void LokiToTyrTranslator::prepare(loki::formalism::TermView term)
 {
-    ygg::visit([&](auto&& arg) { return this->prepare(arg); }, term.get_value());
+    ygg::visit([&](auto&& arg) { return this->prepare(arg); }, term.get_variant());
 }
 
 void LokiToTyrTranslator::prepare(loki::formalism::AtomView atom)
@@ -83,7 +83,7 @@ void LokiToTyrTranslator::prepare(loki::formalism::FunctionTermView function_exp
 }
 void LokiToTyrTranslator::prepare(loki::formalism::FunctionExpressionView function_expression)
 {
-    ygg::visit([&](auto&& arg) { return this->prepare(arg); }, function_expression.get_value());
+    ygg::visit([&](auto&& arg) { return this->prepare(arg); }, function_expression.get_variant());
 }
 void LokiToTyrTranslator::prepare(loki::formalism::ConditionView condition)
 {
@@ -110,7 +110,7 @@ void LokiToTyrTranslator::prepare(loki::formalism::ConditionView condition)
                 throw std::logic_error("Expected conjunctive condition.");
             }
         },
-        condition.get_value());
+        condition.get_variant());
 }
 
 void LokiToTyrTranslator::prepare(loki::formalism::EffectView effect)
@@ -152,7 +152,7 @@ void LokiToTyrTranslator::prepare(loki::formalism::EffectView effect)
                     throw std::logic_error("Expected simple effect.");
                 }
             },
-            current.get_value());
+            current.get_variant());
     };
 
     prepare_effect(effect);
@@ -310,7 +310,7 @@ ygg::Data<Term> LokiToTyrTranslator::translate_lifted(loki::formalism::TermView 
             else
                 static_assert(ygg::dependent_false<T>::value, "Missing case for type");
         },
-        element.get_value());
+        element.get_variant());
 }
 
 AtomViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::AtomView element, Builder& builder, Repository& context)
@@ -465,7 +465,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::FunctionExpressionView el
                 return translate_lifted(arg, builder, context);
             }
         },
-        element.get_value());
+        element.get_variant());
 }
 
 FunctionTermViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::FunctionTermView element, Builder& builder, Repository& context)
@@ -594,7 +594,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionView element, co
                                 throw std::logic_error("Unexpected condition.");
                             }
                         },
-                        part.get_value());
+                        part.get_variant());
                 }
 
                 return planning::get_or_create(context, *conj_condition).first.get_index();
@@ -621,7 +621,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionView element, co
                 throw std::logic_error("Unexpected condition.");
             }
         },
-        element.get_value());
+        element.get_variant());
 }
 
 NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::EffectNumericView element, Builder& builder, Repository& context)
@@ -720,7 +720,7 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
                     tmp_effect = subeffect.get_effect();
                 }
             },
-            tmp_effect.get_value());
+            tmp_effect.get_variant());
 
         ///---------- Push parameters and parse scope -------------
         m_param_map.push_parameters(universal_parameters);
@@ -749,7 +749,7 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
                         return planning::get_or_create(context, *conj_cond).first.get_index();
                     }
                 },
-                tmp_effect.get_value());
+                tmp_effect.get_variant());
 
             // Fetch container to store the effects
             auto& effect_data = ref_conditional_effect_data[conjunctive_condition];
@@ -816,7 +816,7 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
                         throw std::runtime_error("Unexpected effect");
                     }
                 },
-                tmp_effect.get_value());
+                tmp_effect.get_variant());
         }
         ///---------- Pop parameters -------------
         m_param_map.pop_parameters(universal_parameters);
@@ -842,7 +842,7 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
                 translate_effect_func(element, conditional_effect_data);
             }
         },
-        element.get_value());
+        element.get_variant());
 
     /* Instantiate conditional effects. */
     for (const auto& [cond_conjunctive_condition, value] : conditional_effect_data)
@@ -950,7 +950,7 @@ ygg::Index<Object> LokiToTyrTranslator::translate_grounded(loki::formalism::Term
             else
                 static_assert(ygg::dependent_false<T>::value, "Missing case for type");
         },
-        element.get_value());
+        element.get_variant());
 }
 
 GroundAtomViewVariant LokiToTyrTranslator::translate_grounded(loki::formalism::AtomView element, Builder& builder, Repository& context)
@@ -1141,7 +1141,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::FunctionExpressionView 
                 return translate_grounded(arg, builder, context);
             }
         },
-        element.get_value());
+        element.get_variant());
 }
 
 GroundFunctionTermViewVariant LokiToTyrTranslator::translate_grounded(loki::formalism::FunctionTermView element, Builder& builder, Repository& context)
@@ -1195,7 +1195,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::InitialFunctionValueVie
                 else
                     throw std::runtime_error("Expected numeric initial function value.");
             },
-            element.get_value().get_value());
+            element.get_value().get_variant());
         return planning::get_or_create(context, *fterm_value).first;
     };
 
@@ -1315,7 +1315,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
                                 throw std::logic_error("Unexpected condition.");
                             }
                         },
-                        part.get_value());
+                        part.get_variant());
                 }
 
                 return planning::get_or_create(context, *conj_condition).first.get_index();
@@ -1346,7 +1346,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
                 throw std::logic_error("Unexpected condition.");
             }
         },
-        element.get_value());
+        element.get_variant());
 }
 
 ygg::Index<Metric> LokiToTyrTranslator::translate_grounded(loki::formalism::MetricView element, Builder& builder, Repository& context)

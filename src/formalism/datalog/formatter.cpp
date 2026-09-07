@@ -56,13 +56,13 @@ std::string format_data(const ygg::Data<MultiOperator<T>>& value)
 template<TaskKind T>
 std::string format_data(const ygg::Data<ArithmeticOperator<T>>& value)
 {
-    return fmt::format("{}", value.value);
+    return fmt::format("{}", value.variant);
 }
 
 template<TaskKind T>
 std::string format_data(const ygg::Data<BooleanOperator<T>>& value)
 {
-    return fmt::format("{}", value.value);
+    return fmt::format("{}", value.variant);
 }
 
 template<TaskKind T>
@@ -186,7 +186,7 @@ std::string format_view(NumericEffectView<T, F> value)
 template<TaskKind T, FactKind F>
 std::string format_data(const ygg::Data<NumericEffectOperator<T, F>>& value)
 {
-    return fmt::format("{}", value.value);
+    return fmt::format("{}", value.variant);
 }
 
 template<TaskKind T, FactKind F>
@@ -391,9 +391,9 @@ std::string to_string(const ygg::Data<RelationBinding<Rule<LiftedTag, FunctionTa
     return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.objects), " "));
 }
 
-std::string to_string(const ygg::Data<FunctionExpression<LiftedTag>>& value) { return fmt::format("{}", value.value); }
+std::string to_string(const ygg::Data<FunctionExpression<LiftedTag>>& value) { return fmt::format("{}", value.variant); }
 std::string to_string(FunctionExpressionView<LiftedTag> value) { return fmt::format("{}", value.get_variant()); }
-std::string to_string(const ygg::Data<FunctionExpression<GroundTag>>& value) { return fmt::format("{}", value.value); }
+std::string to_string(const ygg::Data<FunctionExpression<GroundTag>>& value) { return fmt::format("{}", value.variant); }
 std::string to_string(FunctionExpressionView<GroundTag> value) { return fmt::format("{}", value.get_variant()); }
 std::string to_string(const ygg::Data<Metric>& value) { return fmt::format("{}", value.fexpr); }
 std::string to_string(MetricView value) { return fmt::format("{}", value.get_fexpr()); }

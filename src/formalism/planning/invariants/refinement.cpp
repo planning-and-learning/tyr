@@ -52,7 +52,7 @@ get_parameters_from_part(const MutableAtom<FluentTag>& part, const MutableAtom<F
                         result.emplace(arg, literal.terms[pos]);
                 }
             },
-            part.terms[pos].value);
+            part.terms[pos].variant);
     }
 
     return result;

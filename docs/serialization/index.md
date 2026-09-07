@@ -1,6 +1,6 @@
 # Serialized representations
 
-Serialization produces JSON values for selected native entities. Registered entity types become compact references with their declared fields stored in table rows. Every native entity reached during serialization must be registered. A missing registration raises `ValueError` in Python (`std::invalid_argument` in C++), naming the missing type. After a serialization failure, create a new registry.
+Serialization produces JSON values for selected native entities. Registered entity types become compact references with their declared fields stored in table rows. Every native entity reached during serialization must be registered. A missing registration raises `ValueError` in Python (`std::invalid_argument` in C++), naming the missing C++ type; qualification can vary by compiler. After a serialization failure, create a new registry.
 
 A reference combines its table prefix and zero-based row position. For example, `a0` denotes the first row of the table whose prefix is `a`:
 
@@ -35,7 +35,7 @@ Use a native type's `Fields` enum to inspect the ordered default column names wi
 from pytyr.formalism import planning as fp
 
 list(fp.ActionBinding.Fields.__members__)  # ["relation", "objects"]
-list(fp.FunctionExpression.Fields.__members__)  # ["kind", "value"]
+list(fp.FunctionExpression.Fields.__members__)  # ["variant"]
 ```
 
 This describes the native declaration; registration's `fields` selection and `project` callback do not change it.
@@ -72,7 +72,7 @@ The result and table snapshot are separate values. Registered tables remain pres
 
 Register nested types whose selected fields you want to traverse. To represent an entity as text, explicitly return `str(entity)` from a Python projection or call `ygg::to_string(entity)` in a C++ projection. For example, a projection can return `{"condition": str(action.get_condition())}` without registering the condition. Excluded fields are never evaluated or traversed.
 
-Sequences are JSON arrays, pairs are two-element arrays, absent optional values are `null`, and paths are strings with `/` separators. Default registered rows retain their native field names. Registered variant wrappers contain `kind` and `value`, for example `{"kind":"constant","value":3}`. The kind is the native alternative's type name; `value` is its primitive value or dictionary reference. Enum fields use their native text, such as `+`, `>=`, or `increase`. Numeric data such as constants, costs, indices, and FDR values remain numbers.
+Sequences are JSON arrays, pairs are two-element arrays, absent optional values are `null`, and paths are strings with `/` separators. Default registered rows retain their native field names. Registered variant wrappers contain `variant`, for example `{"variant":3}` or `{"variant":"a0"}`. Native alternatives use references to their registered tables; primitive alternatives remain inline. Enum fields use their native text, such as `+`, `>=`, or `increase`. Numeric data such as constants, costs, indices, and FDR values remain numbers.
 
 Python callers can render snapshots with Yggdrasil's table renderer:
 
@@ -105,4 +105,4 @@ void describe_fields(Archive& ar, std::type_identity<tyr::formalism::planning::O
 }
 ```
 
-Serialization invokes the accessors; `ygg::serialization::fields<tyr::formalism::planning::ObjectView>()` returns `{"name"}` without invoking them or constructing a value. Both operations use this single declaration. Variant declarations use `ar.variant(accessor)` and expose `kind` and `value`.
+Serialization invokes the accessors; `ygg::serialization::fields<tyr::formalism::planning::ObjectView>()` returns `{"name"}` without invoking them or constructing a value. Both operations use this single declaration. Variant declarations use `ar.variant(accessor)` and expose `variant`.

@@ -9,12 +9,6 @@
 namespace ygg::serialization
 {
 
-template<::tyr::formalism::FactKind F>
-struct TypeName<::tyr::formalism::planning::FunctionTermValueView<::tyr::GroundTag, F>>
-{
-    static std::string get() { return std::string(F::name) + "GroundFunctionTermValue"; }
-};
-
 template<class Archive, ::tyr::formalism::FactKind F>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FunctionTermValueView<::tyr::GroundTag, F>>)
 {

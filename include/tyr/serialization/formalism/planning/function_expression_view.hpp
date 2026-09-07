@@ -10,18 +10,6 @@
 namespace ygg::serialization
 {
 
-template<>
-struct TypeName<ygg::float_t>
-{
-    static std::string get() { return "constant"; }
-};
-
-template<::tyr::TaskKind T>
-struct TypeName<::tyr::formalism::planning::FunctionExpressionView<T>>
-{
-    static std::string get() { return std::string(std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "FunctionExpression"; }
-};
-
 template<class Archive, ::tyr::TaskKind T>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FunctionExpressionView<T>>)
 {

@@ -8,12 +8,6 @@
 namespace ygg::serialization
 {
 
-template<::tyr::formalism::FactKind T>
-struct TypeName<::tyr::formalism::planning::FunctionView<T>>
-{
-    static std::string get() { return std::string(T::name) + "Function"; }
-};
-
 template<class Archive, ::tyr::formalism::FactKind T>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FunctionView<T>>)
 {

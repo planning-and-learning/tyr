@@ -10,7 +10,7 @@ namespace mt = tyr::planning::match_tree;
 template<typename Tag>
 concept NodeContract = std::totally_ordered<ygg::Data<mt::Node<Tag>>> && std::totally_ordered<ygg::View<ygg::Data<mt::Node<Tag>>, mt::Repository<Tag>>>
                        && requires(ygg::Data<mt::Node<Tag>>& data, const ygg::View<ygg::Data<mt::Node<Tag>>, mt::Repository<Tag>>& view) {
-                              data.value;
+                              data.variant;
                               data.clear();
                               view.get_variant();
                           };

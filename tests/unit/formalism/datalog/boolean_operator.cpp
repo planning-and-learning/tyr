@@ -9,7 +9,7 @@ namespace fd = tyr::formalism::datalog;
 template<typename Entity>
 concept BooleanOperatorContract = std::totally_ordered<ygg::Data<Entity>> && std::totally_ordered<ygg::View<ygg::Data<Entity>, fd::Repository>>
                                   && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Data<Entity>, fd::Repository>& view) {
-                                         data.value;
+                                         data.variant;
                                          data.clear();
                                          view.get_variant();
                                      };
