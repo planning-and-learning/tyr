@@ -16,19 +16,11 @@ struct TypeName<::tyr::formalism::planning::MultiOperatorView<T>>
     static std::string get() { return std::string(std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "MultiOperator"; }
 };
 
-template<::tyr::TaskKind T>
-void tag_invoke(boost::json::value_from_tag,
-                boost::json::value& result,
-                const ::tyr::formalism::planning::MultiOperatorView<T>& value,
-                Dictionaries* dictionaries)
+template<class Archive, ::tyr::TaskKind T>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::MultiOperatorView<T>>)
 {
-    dictionaries->object(result,
-                         value,
-                         [&](auto& ar)
-                         {
-                             ar.field("operator", value.get_operator());
-                             ar.field("args", value.get_args());
-                         });
+    ar.field("operator", [](const auto& value) -> decltype(auto) { return (value.get_operator()); });
+    ar.field("args", [](const auto& value) -> decltype(auto) { return (value.get_args()); });
 }
 
 }

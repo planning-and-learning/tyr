@@ -16,18 +16,13 @@ struct TypeName<::tyr::planning::Plan<T>>
     static std::string get() { return std::string(T::name) + "Plan"; }
 };
 
-template<::tyr::TaskKind T>
-void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::planning::Plan<T>& value, Dictionaries* dictionaries)
+template<class Archive, ::tyr::TaskKind T>
+void describe_fields(Archive& ar, std::type_identity<::tyr::planning::Plan<T>>)
 {
-    dictionaries->object(result,
-                         value,
-                         [&](auto& ar)
-                         {
-                             ar.field("start_node", value.get_start_node());
-                             ar.field("labeled_succ_nodes", value.get_labeled_succ_nodes());
-                             ar.field("length", value.get_length());
-                             ar.field("cost", value.get_cost());
-                         });
+    ar.field("start_node", [](const auto& value) -> decltype(auto) { return (value.get_start_node()); });
+    ar.field("labeled_succ_nodes", [](const auto& value) -> decltype(auto) { return (value.get_labeled_succ_nodes()); });
+    ar.field("length", [](const auto& value) -> decltype(auto) { return (value.get_length()); });
+    ar.field("cost", [](const auto& value) -> decltype(auto) { return (value.get_cost()); });
 }
 
 }

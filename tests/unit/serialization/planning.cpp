@@ -8,6 +8,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace tyr::tests
@@ -74,6 +75,23 @@ p::Plan<Kind> make_plan()
     return p::Plan<Kind>(initial, {successors.front(), successors.front()});
 }
 
+TEST(TyrSerialization, DefaultFieldsAndSelectionDoNotEvaluateAccessors)
+{
+    EXPECT_EQ(s::fields<fp::PredicateBindingView<f::FluentTag>>(), (std::vector<std::string> {"relation", "objects"}));
+    EXPECT_EQ((s::fields<fp::AtomView<LiftedTag, f::FluentTag>>()), (std::vector<std::string> {"predicate", "terms"}));
+    EXPECT_EQ((s::fields<fp::AtomView<GroundTag, f::FluentTag>>()), (std::vector<std::string> {"binding"}));
+    EXPECT_EQ(s::fields<fp::FunctionExpressionView<LiftedTag>>(), (std::vector<std::string> {"kind", "value"}));
+
+    auto dictionaries = s::Dictionaries {};
+    const auto selected_fields = std::optional<std::vector<std::string>>(std::in_place);
+    auto archive = s::Dictionaries::Archive(dictionaries, selected_fields);
+    const auto dummy = 0;
+    auto writer = s::FieldWriter {archive, dummy};
+    EXPECT_NO_THROW(writer.field("unused", [](int) -> int { throw std::runtime_error("excluded getter ran"); }));
+    EXPECT_NO_THROW(writer.variant([](int) -> decltype(std::declval<fp::TermView>().get_variant()) { throw std::runtime_error("excluded variant getter ran"); }));
+    EXPECT_TRUE(archive.fields.empty());
+}
+
 TEST(TyrSerialization, RegisteredDescendantsAreCollectedOnceAndSnapshotsAreIndependent)
 {
     auto repository = fp::RepositoryFactory().create();
@@ -92,6 +110,10 @@ TEST(TyrSerialization, RegisteredDescendantsAreCollectedOnceAndSnapshotsAreIndep
     const auto binding = dictionaries.table<fp::PredicateBindingView<f::FluentTag>>()[0].as_object();
     EXPECT_EQ(binding.at("relation").as_string(), "p0");
     EXPECT_EQ(binding.at("objects").as_array()[0].as_string(), "o0");
+    auto binding_fields = std::vector<std::string> {};
+    for (const auto& field : binding)
+        binding_fields.emplace_back(field.key().data(), field.key().size());
+    EXPECT_EQ(s::fields<fp::PredicateBindingView<f::FluentTag>>(), binding_fields);
     EXPECT_EQ(dictionaries.table<fp::ObjectView>()[0].as_object().at("name").as_string(), "truck");
     const auto before = dictionaries.tables();
     const auto other = make_atom(repository, "van");

@@ -15,13 +15,10 @@ struct TypeName<::tyr::formalism::planning::NumericEffectOperatorView<T, F>>
     static std::string get() { return std::string(F::name) + (std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "NumericEffectOperator"; }
 };
 
-template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
-void tag_invoke(boost::json::value_from_tag,
-                boost::json::value& result,
-                const ::tyr::formalism::planning::NumericEffectOperatorView<T, F>& value,
-                Dictionaries* dictionaries)
+template<class Archive, ::tyr::TaskKind T, ::tyr::formalism::FactKind F>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::NumericEffectOperatorView<T, F>>)
 {
-    dictionaries->object(result, value, [&](auto& ar) { ar.variant(value.get_variant()); });
+    ar.variant([](const auto& value) -> decltype(auto) { return (value.get_variant()); });
 }
 
 }

@@ -16,10 +16,10 @@ struct TypeName<::tyr::planning::Task<::tyr::LiftedTag>>
     static std::string get() { return "LiftedTask"; }
 };
 
-inline void
-tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::planning::Task<::tyr::LiftedTag>& value, Dictionaries* dictionaries)
+template<class Archive>
+void describe_fields(Archive& ar, std::type_identity<::tyr::planning::Task<::tyr::LiftedTag>>)
 {
-    dictionaries->object(result, value, [&](auto& ar) { ar.field("formalism_task", value.get_formalism_task()); });
+    ar.field("formalism_task", [](const auto& value) -> decltype(auto) { return (value.get_formalism_task()); });
 }
 
 }

@@ -17,23 +17,18 @@ struct TypeName<::tyr::formalism::planning::AtomView<T, F>>
     static std::string get() { return std::string(F::name) + (std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "Atom"; }
 };
 
-template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
-void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::planning::AtomView<T, F>& value, Dictionaries* dictionaries)
+template<class Archive, ::tyr::TaskKind T, ::tyr::formalism::FactKind F>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::AtomView<T, F>>)
 {
-    dictionaries->object(result,
-                         value,
-                         [&](auto& ar)
-                         {
-                             if constexpr (std::same_as<T, ::tyr::LiftedTag>)
-                             {
-                                 ar.field("predicate", value.get_predicate());
-                                 ar.field("terms", value.get_terms());
-                             }
-                             else
-                             {
-                                 ar.field("binding", value.get_row());
-                             }
-                         });
+    if constexpr (std::same_as<T, ::tyr::LiftedTag>)
+    {
+        ar.field("predicate", [](const auto& value) -> decltype(auto) { return (value.get_predicate()); });
+        ar.field("terms", [](const auto& value) -> decltype(auto) { return (value.get_terms()); });
+    }
+    else
+    {
+        ar.field("binding", [](const auto& value) -> decltype(auto) { return (value.get_row()); });
+    }
 }
 
 }

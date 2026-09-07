@@ -14,10 +14,10 @@ struct TypeName<::tyr::formalism::planning::VariableView>
     static std::string get() { return "Variable"; }
 };
 
-inline void
-tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::planning::VariableView& value, Dictionaries* dictionaries)
+template<class Archive>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::VariableView>)
 {
-    dictionaries->object(result, value, [&](auto& ar) { ar.field("name", value.get_name()); });
+    ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
 }
 
 }

@@ -18,24 +18,19 @@ struct TypeName<::tyr::formalism::planning::AxiomView<T>>
     static std::string get() { return std::string(std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "Axiom"; }
 };
 
-template<::tyr::TaskKind T>
-void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::planning::AxiomView<T>& value, Dictionaries* dictionaries)
+template<class Archive, ::tyr::TaskKind T>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::AxiomView<T>>)
 {
-    dictionaries->object(result,
-                         value,
-                         [&](auto& ar)
-                         {
-                             if constexpr (std::same_as<T, ::tyr::LiftedTag>)
-                             {
-                                 ar.field("variables", value.get_variables());
-                             }
-                             else
-                             {
-                                 ar.field("binding", value.get_row());
-                             }
-                             ar.field("body", value.get_body());
-                             ar.field("head", value.get_head());
-                         });
+    if constexpr (std::same_as<T, ::tyr::LiftedTag>)
+    {
+        ar.field("variables", [](const auto& value) -> decltype(auto) { return (value.get_variables()); });
+    }
+    else
+    {
+        ar.field("binding", [](const auto& value) -> decltype(auto) { return (value.get_row()); });
+    }
+    ar.field("body", [](const auto& value) -> decltype(auto) { return (value.get_body()); });
+    ar.field("head", [](const auto& value) -> decltype(auto) { return (value.get_head()); });
 }
 
 }

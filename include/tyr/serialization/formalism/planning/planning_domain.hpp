@@ -15,16 +15,11 @@ struct TypeName<::tyr::formalism::planning::PlanningDomain>
     static std::string get() { return "PlanningDomain"; }
 };
 
-inline void
-tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::planning::PlanningDomain& value, Dictionaries* dictionaries)
+template<class Archive>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::PlanningDomain>)
 {
-    dictionaries->object(result,
-                         value,
-                         [&](auto& ar)
-                         {
-                             ar.field("domain", value.get_domain());
-                             ar.field("path", value.get_path());
-                         });
+    ar.field("domain", [](const auto& value) -> decltype(auto) { return (value.get_domain()); });
+    ar.field("path", [](const auto& value) -> decltype(auto) { return (value.get_path()); });
 }
 
 }

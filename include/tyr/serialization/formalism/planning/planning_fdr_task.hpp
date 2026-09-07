@@ -16,17 +16,12 @@ struct TypeName<::tyr::formalism::planning::PlanningFDRTask>
     static std::string get() { return "PlanningFDRTask"; }
 };
 
-inline void
-tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::planning::PlanningFDRTask& value, Dictionaries* dictionaries)
+template<class Archive>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::PlanningFDRTask>)
 {
-    dictionaries->object(result,
-                         value,
-                         [&](auto& ar)
-                         {
-                             ar.field("task", value.get_task());
-                             ar.field("domain", value.get_domain());
-                             ar.field("path", value.get_path());
-                         });
+    ar.field("task", [](const auto& value) -> decltype(auto) { return (value.get_task()); });
+    ar.field("domain", [](const auto& value) -> decltype(auto) { return (value.get_domain()); });
+    ar.field("path", [](const auto& value) -> decltype(auto) { return (value.get_path()); });
 }
 
 }

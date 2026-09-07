@@ -17,20 +17,12 @@ struct TypeName<::tyr::formalism::planning::NumericEffectView<T, F>>
     static std::string get() { return std::string(F::name) + (std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "NumericEffect"; }
 };
 
-template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
-void tag_invoke(boost::json::value_from_tag,
-                boost::json::value& result,
-                const ::tyr::formalism::planning::NumericEffectView<T, F>& value,
-                Dictionaries* dictionaries)
+template<class Archive, ::tyr::TaskKind T, ::tyr::formalism::FactKind F>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::NumericEffectView<T, F>>)
 {
-    dictionaries->object(result,
-                         value,
-                         [&](auto& ar)
-                         {
-                             ar.field("operator", value.get_operator());
-                             ar.field("function_term", value.get_fterm());
-                             ar.field("function_expression", value.get_fexpr());
-                         });
+    ar.field("operator", [](const auto& value) -> decltype(auto) { return (value.get_operator()); });
+    ar.field("function_term", [](const auto& value) -> decltype(auto) { return (value.get_fterm()); });
+    ar.field("function_expression", [](const auto& value) -> decltype(auto) { return (value.get_fexpr()); });
 }
 
 }

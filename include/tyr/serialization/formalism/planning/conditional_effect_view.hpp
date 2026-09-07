@@ -17,23 +17,15 @@ struct TypeName<::tyr::formalism::planning::ConditionalEffectView<T>>
     static std::string get() { return std::string(std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "ConditionalEffect"; }
 };
 
-template<::tyr::TaskKind T>
-void tag_invoke(boost::json::value_from_tag,
-                boost::json::value& result,
-                const ::tyr::formalism::planning::ConditionalEffectView<T>& value,
-                Dictionaries* dictionaries)
+template<class Archive, ::tyr::TaskKind T>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ConditionalEffectView<T>>)
 {
-    dictionaries->object(result,
-                         value,
-                         [&](auto& ar)
-                         {
-                             if constexpr (std::same_as<T, ::tyr::LiftedTag>)
-                             {
-                                 ar.field("variables", value.get_variables());
-                             }
-                             ar.field("condition", value.get_condition());
-                             ar.field("effect", value.get_effect());
-                         });
+    if constexpr (std::same_as<T, ::tyr::LiftedTag>)
+    {
+        ar.field("variables", [](const auto& value) -> decltype(auto) { return (value.get_variables()); });
+    }
+    ar.field("condition", [](const auto& value) -> decltype(auto) { return (value.get_condition()); });
+    ar.field("effect", [](const auto& value) -> decltype(auto) { return (value.get_effect()); });
 }
 
 }

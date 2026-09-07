@@ -15,13 +15,10 @@ struct TypeName<::tyr::formalism::planning::FDRVariableView<T>>
     static std::string get() { return std::string(T::name) + "FDRVariable"; }
 };
 
-template<::tyr::formalism::FactKind T>
-void tag_invoke(boost::json::value_from_tag,
-                boost::json::value& result,
-                const ::tyr::formalism::planning::FDRVariableView<T>& value,
-                Dictionaries* dictionaries)
+template<class Archive, ::tyr::formalism::FactKind T>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FDRVariableView<T>>)
 {
-    dictionaries->object(result, value, [&](auto& ar) { ar.field("atoms", value.get_atoms()); });
+    ar.field("atoms", [](const auto& value) -> decltype(auto) { return (value.get_atoms()); });
 }
 
 }

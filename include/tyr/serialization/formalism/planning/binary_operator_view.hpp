@@ -20,20 +20,12 @@ struct TypeName<::tyr::formalism::planning::BinaryOperatorView<T, O>>
     }
 };
 
-template<::tyr::TaskKind T, ::tyr::formalism::BinaryOperatorKind O>
-void tag_invoke(boost::json::value_from_tag,
-                boost::json::value& result,
-                const ::tyr::formalism::planning::BinaryOperatorView<T, O>& value,
-                Dictionaries* dictionaries)
+template<class Archive, ::tyr::TaskKind T, ::tyr::formalism::BinaryOperatorKind O>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::BinaryOperatorView<T, O>>)
 {
-    dictionaries->object(result,
-                         value,
-                         [&](auto& ar)
-                         {
-                             ar.field("operator", value.get_operator());
-                             ar.field("lhs", value.get_lhs());
-                             ar.field("rhs", value.get_rhs());
-                         });
+    ar.field("operator", [](const auto& value) -> decltype(auto) { return (value.get_operator()); });
+    ar.field("lhs", [](const auto& value) -> decltype(auto) { return (value.get_lhs()); });
+    ar.field("rhs", [](const auto& value) -> decltype(auto) { return (value.get_rhs()); });
 }
 
 }

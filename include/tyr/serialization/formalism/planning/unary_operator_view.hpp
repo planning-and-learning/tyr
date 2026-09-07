@@ -16,19 +16,11 @@ struct TypeName<::tyr::formalism::planning::UnaryOperatorView<T>>
     static std::string get() { return std::string(std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "UnaryOperator"; }
 };
 
-template<::tyr::TaskKind T>
-void tag_invoke(boost::json::value_from_tag,
-                boost::json::value& result,
-                const ::tyr::formalism::planning::UnaryOperatorView<T>& value,
-                Dictionaries* dictionaries)
+template<class Archive, ::tyr::TaskKind T>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::UnaryOperatorView<T>>)
 {
-    dictionaries->object(result,
-                         value,
-                         [&](auto& ar)
-                         {
-                             ar.field("operator", value.get_operator());
-                             ar.field("arg", value.get_arg());
-                         });
+    ar.field("operator", [](const auto& value) -> decltype(auto) { return (value.get_operator()); });
+    ar.field("arg", [](const auto& value) -> decltype(auto) { return (value.get_arg()); });
 }
 
 }

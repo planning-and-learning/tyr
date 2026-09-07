@@ -14,16 +14,11 @@ struct TypeName<::tyr::formalism::planning::PredicateView<T>>
     static std::string get() { return std::string(T::name) + "Predicate"; }
 };
 
-template<::tyr::formalism::FactKind T>
-void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::planning::PredicateView<T>& value, Dictionaries* dictionaries)
+template<class Archive, ::tyr::formalism::FactKind T>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::PredicateView<T>>)
 {
-    dictionaries->object(result,
-                         value,
-                         [&](auto& ar)
-                         {
-                             ar.field("name", value.get_name());
-                             ar.field("arity", value.get_arity());
-                         });
+    ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
+    ar.field("arity", [](const auto& value) -> decltype(auto) { return (value.get_arity()); });
 }
 
 }

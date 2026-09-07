@@ -16,9 +16,10 @@ struct TypeName<::tyr::formalism::planning::TermView>
     static std::string get() { return "Term"; }
 };
 
-inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::planning::TermView& value, Dictionaries* dictionaries)
+template<class Archive>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::TermView>)
 {
-    dictionaries->object(result, value, [&](auto& ar) { ar.variant(value.get_variant()); });
+    ar.variant([](const auto& value) -> decltype(auto) { return (value.get_variant()); });
 }
 
 }

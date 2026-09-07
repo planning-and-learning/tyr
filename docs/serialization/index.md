@@ -29,13 +29,27 @@ Table names and prefixes are chosen by the caller. Both must be nonempty and uni
 
 Import `Dictionaries` from `pyyggdrasil.serialization`, and `register_table`, `serialize`, and `table` from `pytyr.serialization`. These free functions accept the shared registry as their first argument. Its `tables()` method returns all snapshots.
 
-Pass `fields` when registering a table to select its immediate fields:
+Use `fields(native_type)` to inspect the ordered default column names without creating an entity or registry:
 
 ```python
-register_table(dictionaries, fp.GroundTask, "tasks", "t", fields=["name", "static_ground_atoms"])
+from pytyr.serialization import fields
+
+fields(fp.ActionBinding)  # ["relation", "objects"]
+fields(fp.FunctionExpression)  # ["kind", "value"]
 ```
 
-`fields=None` keeps all declared fields; `fields=[]` creates empty rows. Selection happens before recursive serialization, so omitted fields do not collect descendants. Field names are immediate schema keys, and retained columns follow schema order rather than selection order.
+This describes the native declaration; registration's `fields` selection and `project` callback do not change it.
+
+Each native class exposes a nested `Fields` enum generated from the same C++ declaration. Its members support IDE completion and selections checked against the registered native type:
+
+```python
+register_table(
+    dictionaries, fp.ActionBinding, "actions", "a",
+    fields=[fp.ActionBinding.Fields.objects],
+)
+```
+
+`fields=None` keeps all declared fields; `fields=[]` creates empty rows. Selection happens before recursive serialization, so omitted fields do not collect descendants. Field names are immediate schema keys, and retained columns follow schema order rather than selection order. Members from another type's `Fields` enum are rejected. String selections remain supported, including custom column names returned by `project`.
 
 Pass `project` to define a complete row with your own column names and values:
 
@@ -77,3 +91,18 @@ Snapshots are ordinary Python dictionaries and lists. Add application columns to
 Registered planning states contain `fluent_ground_atoms`, `derived_ground_atoms`, and `fluent_ground_function_term_values`. Static facts belong to the task representation. Function-term values are pairs of a term representation or reference and its numeric value. A registered FDR fact preserves its `fdr_variable` and numeric `value`; zero represents the native none value.
 
 Registered nodes contain `state` and `metric`. Plans, labeled nodes, and task owners are not registerable and return their native text. Serialize their states, nodes, actions, or underlying formalism views directly when those tables are needed. Every serialized native type must provide a text formatter; a missing formatter intentionally causes a compile-time error.
+
+In C++, `describe_fields` declares each name and accessor together. For example, the object declaration is:
+
+```cpp
+namespace ygg::serialization
+{
+template<class Archive>
+void describe_fields(Archive& ar, std::type_identity<tyr::formalism::planning::ObjectView>)
+{
+    ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
+}
+}
+```
+
+Serialization invokes the accessors; `ygg::serialization::fields<tyr::formalism::planning::ObjectView>()` returns `{"name"}` without invoking them or constructing a value. Both operations use this single declaration. Variant declarations use `ar.variant(accessor)` and expose `kind` and `value`.

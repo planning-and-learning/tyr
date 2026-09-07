@@ -19,23 +19,19 @@ struct TypeName<::tyr::formalism::planning::DomainView>
     static std::string get() { return "Domain"; }
 };
 
-inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::planning::DomainView& value, Dictionaries* dictionaries)
+template<class Archive>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::DomainView>)
 {
-    dictionaries->object(result,
-                         value,
-                         [&](auto& ar)
-                         {
-                             ar.field("name", value.get_name());
-                             ar.field("static_predicates", value.get_predicates<::tyr::formalism::StaticTag>());
-                             ar.field("fluent_predicates", value.get_predicates<::tyr::formalism::FluentTag>());
-                             ar.field("derived_predicates", value.get_predicates<::tyr::formalism::DerivedTag>());
-                             ar.field("static_functions", value.get_functions<::tyr::formalism::StaticTag>());
-                             ar.field("fluent_functions", value.get_functions<::tyr::formalism::FluentTag>());
-                             ar.field("auxiliary_function", value.get_auxiliary_function());
-                             ar.field("constants", value.get_constants());
-                             ar.field("actions", value.get_actions());
-                             ar.field("axioms", value.get_axioms());
-                         });
+    ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
+    ar.field("static_predicates", [](const auto& value) -> decltype(auto) { return (value.template get_predicates<::tyr::formalism::StaticTag>()); });
+    ar.field("fluent_predicates", [](const auto& value) -> decltype(auto) { return (value.template get_predicates<::tyr::formalism::FluentTag>()); });
+    ar.field("derived_predicates", [](const auto& value) -> decltype(auto) { return (value.template get_predicates<::tyr::formalism::DerivedTag>()); });
+    ar.field("static_functions", [](const auto& value) -> decltype(auto) { return (value.template get_functions<::tyr::formalism::StaticTag>()); });
+    ar.field("fluent_functions", [](const auto& value) -> decltype(auto) { return (value.template get_functions<::tyr::formalism::FluentTag>()); });
+    ar.field("auxiliary_function", [](const auto& value) -> decltype(auto) { return (value.get_auxiliary_function()); });
+    ar.field("constants", [](const auto& value) -> decltype(auto) { return (value.get_constants()); });
+    ar.field("actions", [](const auto& value) -> decltype(auto) { return (value.get_actions()); });
+    ar.field("axioms", [](const auto& value) -> decltype(auto) { return (value.get_axioms()); });
 }
 
 }

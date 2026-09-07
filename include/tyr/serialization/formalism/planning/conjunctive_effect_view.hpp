@@ -17,28 +17,20 @@ struct TypeName<::tyr::formalism::planning::ConjunctiveEffectView<T>>
     static std::string get() { return std::string(std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "ConjunctiveEffect"; }
 };
 
-template<::tyr::TaskKind T>
-void tag_invoke(boost::json::value_from_tag,
-                boost::json::value& result,
-                const ::tyr::formalism::planning::ConjunctiveEffectView<T>& value,
-                Dictionaries* dictionaries)
+template<class Archive, ::tyr::TaskKind T>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ConjunctiveEffectView<T>>)
 {
-    dictionaries->object(result,
-                         value,
-                         [&](auto& ar)
-                         {
-                             if constexpr (std::same_as<T, ::tyr::LiftedTag>)
-                             {
-                                 ar.field("literals", value.get_literals());
-                             }
-                             else
-                             {
-                                 ar.field("add_fdr_facts", value.template get_facts<::tyr::formalism::PositiveTag>());
-                                 ar.field("delete_fdr_facts", value.template get_facts<::tyr::formalism::NegativeTag>());
-                             }
-                             ar.field("numeric_effects", value.get_numeric_effects());
-                             ar.field("auxiliary_numeric_effect", value.get_auxiliary_numeric_effect());
-                         });
+    if constexpr (std::same_as<T, ::tyr::LiftedTag>)
+    {
+        ar.field("literals", [](const auto& value) -> decltype(auto) { return (value.get_literals()); });
+    }
+    else
+    {
+        ar.field("add_fdr_facts", [](const auto& value) -> decltype(auto) { return (value.template get_facts<::tyr::formalism::PositiveTag>()); });
+        ar.field("delete_fdr_facts", [](const auto& value) -> decltype(auto) { return (value.template get_facts<::tyr::formalism::NegativeTag>()); });
+    }
+    ar.field("numeric_effects", [](const auto& value) -> decltype(auto) { return (value.get_numeric_effects()); });
+    ar.field("auxiliary_numeric_effect", [](const auto& value) -> decltype(auto) { return (value.get_auxiliary_numeric_effect()); });
 }
 
 }

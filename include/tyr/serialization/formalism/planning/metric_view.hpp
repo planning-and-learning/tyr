@@ -16,15 +16,11 @@ struct TypeName<::tyr::formalism::planning::MetricView>
     static std::string get() { return "Metric"; }
 };
 
-inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::planning::MetricView& value, Dictionaries* dictionaries)
+template<class Archive>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::MetricView>)
 {
-    dictionaries->object(result,
-                         value,
-                         [&](auto& ar)
-                         {
-                             ar.field("optimization_direction", value.get_optimization_direction());
-                             ar.field("function_expression", value.get_fexpr());
-                         });
+    ar.field("optimization_direction", [](const auto& value) -> decltype(auto) { return (value.get_optimization_direction()); });
+    ar.field("function_expression", [](const auto& value) -> decltype(auto) { return (value.get_fexpr()); });
 }
 
 }

@@ -14,9 +14,10 @@ struct TypeName<::tyr::formalism::planning::ObjectView>
     static std::string get() { return "Object"; }
 };
 
-inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::planning::ObjectView& value, Dictionaries* dictionaries)
+template<class Archive>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ObjectView>)
 {
-    dictionaries->object(result, value, [&](auto& ar) { ar.field("name", value.get_name()); });
+    ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
 }
 
 }

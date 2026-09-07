@@ -27,31 +27,26 @@ struct TypeName<::tyr::formalism::planning::FDRTaskView>
     static std::string get() { return "GroundTask"; }
 };
 
-inline void
-tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::planning::FDRTaskView& value, Dictionaries* dictionaries)
+template<class Archive>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FDRTaskView>)
 {
-    dictionaries->object(result,
-                         value,
-                         [&](auto& ar)
-                         {
-                             ar.field("name", value.get_name());
-                             ar.field("domain", value.get_domain());
-                             ar.field("derived_predicates", value.get_derived_predicates());
-                             ar.field("objects", value.get_objects());
-                             ar.field("static_ground_atoms", value.get_atoms<::tyr::formalism::StaticTag>());
-                             ar.field("fluent_ground_atoms", value.get_atoms<::tyr::formalism::FluentTag>());
-                             ar.field("derived_ground_atoms", value.get_atoms<::tyr::formalism::DerivedTag>());
-                             ar.field("static_ground_function_term_values", value.get_fterm_values<::tyr::formalism::StaticTag>());
-                             ar.field("fluent_ground_function_term_values", value.get_fterm_values<::tyr::formalism::FluentTag>());
-                             ar.field("auxiliary_ground_function_term_value", value.get_auxiliary_fterm_value());
-                             ar.field("goal", value.get_goal());
-                             ar.field("metric", value.get_metric());
-                             ar.field("axioms", value.get_axioms());
-                             ar.field("fdr_variables", value.get_fluent_variables());
-                             ar.field("fdr_facts", value.get_fluent_facts());
-                             ar.field("ground_actions", value.get_ground_actions());
-                             ar.field("ground_axioms", value.get_ground_axioms());
-                         });
+    ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
+    ar.field("domain", [](const auto& value) -> decltype(auto) { return (value.get_domain()); });
+    ar.field("derived_predicates", [](const auto& value) -> decltype(auto) { return (value.get_derived_predicates()); });
+    ar.field("objects", [](const auto& value) -> decltype(auto) { return (value.get_objects()); });
+    ar.field("static_ground_atoms", [](const auto& value) -> decltype(auto) { return (value.template get_atoms<::tyr::formalism::StaticTag>()); });
+    ar.field("fluent_ground_atoms", [](const auto& value) -> decltype(auto) { return (value.template get_atoms<::tyr::formalism::FluentTag>()); });
+    ar.field("derived_ground_atoms", [](const auto& value) -> decltype(auto) { return (value.template get_atoms<::tyr::formalism::DerivedTag>()); });
+    ar.field("static_ground_function_term_values", [](const auto& value) -> decltype(auto) { return (value.template get_fterm_values<::tyr::formalism::StaticTag>()); });
+    ar.field("fluent_ground_function_term_values", [](const auto& value) -> decltype(auto) { return (value.template get_fterm_values<::tyr::formalism::FluentTag>()); });
+    ar.field("auxiliary_ground_function_term_value", [](const auto& value) -> decltype(auto) { return (value.get_auxiliary_fterm_value()); });
+    ar.field("goal", [](const auto& value) -> decltype(auto) { return (value.get_goal()); });
+    ar.field("metric", [](const auto& value) -> decltype(auto) { return (value.get_metric()); });
+    ar.field("axioms", [](const auto& value) -> decltype(auto) { return (value.get_axioms()); });
+    ar.field("fdr_variables", [](const auto& value) -> decltype(auto) { return (value.get_fluent_variables()); });
+    ar.field("fdr_facts", [](const auto& value) -> decltype(auto) { return (value.get_fluent_facts()); });
+    ar.field("ground_actions", [](const auto& value) -> decltype(auto) { return (value.get_ground_actions()); });
+    ar.field("ground_axioms", [](const auto& value) -> decltype(auto) { return (value.get_ground_axioms()); });
 }
 
 }

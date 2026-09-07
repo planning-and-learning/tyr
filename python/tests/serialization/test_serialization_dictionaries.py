@@ -9,7 +9,7 @@ from pypddl.formalism import ParserOptions
 from pyyggdrasil.execution import ExecutionContext
 from pytyr.formalism import planning as fp
 from pytyr.planning import SearchStatus, ground, lifted
-from pytyr.serialization import register_table, serialize, table
+from pytyr.serialization import fields, register_table, serialize, table
 from pyyggdrasil.serialization import Dictionaries
 
 
@@ -26,6 +26,43 @@ PROBLEM = """(define (problem serialize-1) (:domain serialize)
   (:init (ready) (start) (= (capacity) 10) (= (fuel) 3))
   (:goal (done)))
 """
+
+
+def test_default_fields_need_no_live_entity() -> None:
+    assert fields(fp.ActionBinding) == ["relation", "objects"]
+    assert fields(fp.FluentAtom) == ["predicate", "terms"]
+    assert fields(fp.FluentGroundAtom) == ["binding"]
+    assert fields(fp.FunctionExpression) == ["kind", "value"]
+    for native_type in (fp.ActionBinding, fp.FluentAtom, fp.FluentGroundAtom, fp.FunctionExpression):
+        assert list(native_type.Fields.__members__) == fields(native_type)
+    assert fp.Object.Fields.name.name == "name"
+    assert fp.Object.Fields.name.value == "name"
+    assert fp.FunctionExpression.Fields.value.name == "value"
+    assert fp.FunctionExpression.Fields.value.value == "value"
+
+
+def test_field_enum_selection_validates_the_native_type_before_registration() -> None:
+    parser = fp.Parser(DOMAIN, None, ParserOptions())
+    task = parser.parse_task(PROBLEM, None, ParserOptions())
+    atom, = task.get_task().get_static_atoms()
+    dictionaries = Dictionaries()
+    with pytest.raises(TypeError):
+        register_table(  # pyright: ignore[reportCallIssue]
+            dictionaries, fp.StaticPredicateBinding, "bindings", "b",
+            fields=[fp.ActionBinding.Fields.relation],  # pyright: ignore[reportArgumentType]
+        )
+    with pytest.raises(TypeError):
+        register_table(dictionaries, fp.StaticPredicateBinding, "bindings", "b", fields="relation")
+    register_table(
+        dictionaries, fp.StaticPredicateBinding, "bindings", "b",
+        fields=[fp.StaticPredicateBinding.Fields.relation],
+    )
+    register_table(dictionaries, fp.StaticPredicate, "predicates", "p", fields=[fp.StaticPredicate.Fields.name])
+    register_table(dictionaries, fp.StaticGroundAtom, "atoms", "a")
+    assert serialize(dictionaries, atom) == "a0"
+    assert table(dictionaries, fp.StaticGroundAtom) == [{"binding": "b0"}]
+    assert table(dictionaries, fp.StaticPredicateBinding) == [{"relation": "p0"}]
+    assert table(dictionaries, fp.StaticPredicate) == [{"name": "ready"}]
 
 
 @pytest.mark.parametrize("backend", ["ground", "lifted"])
@@ -74,6 +111,7 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     assert serialize(dictionaries, step.node) == "v1"
     assert serialize(dictionaries, step.label) == "a0"
     assert table(dictionaries, fp.ActionBinding) == [{"relation": str(step.label.get_relation()), "objects": []}]
+    assert fields(fp.ActionBinding) == list(table(dictionaries, fp.ActionBinding)[0])
     assert [row["state"] for row in table(dictionaries, node_type)] == ["s0", "s1"]
     assert serialize(dictionaries, plan) == data
     states = table(dictionaries, state_type)

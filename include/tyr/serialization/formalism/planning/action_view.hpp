@@ -18,27 +18,22 @@ struct TypeName<::tyr::formalism::planning::ActionView<T>>
     static std::string get() { return std::string(std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "Action"; }
 };
 
-template<::tyr::TaskKind T>
-void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::planning::ActionView<T>& value, Dictionaries* dictionaries)
+template<class Archive, ::tyr::TaskKind T>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ActionView<T>>)
 {
-    dictionaries->object(result,
-                         value,
-                         [&](auto& ar)
-                         {
-                             if constexpr (std::same_as<T, ::tyr::LiftedTag>)
-                             {
-                                 ar.field("name", value.get_name());
-                                 ar.field("original_name", value.get_original_name());
-                                 ar.field("original_arity", value.get_original_arity());
-                                 ar.field("variables", value.get_variables());
-                             }
-                             else
-                             {
-                                 ar.field("binding", value.get_row());
-                             }
-                             ar.field("condition", value.get_condition());
-                             ar.field("effects", value.get_effects());
-                         });
+    if constexpr (std::same_as<T, ::tyr::LiftedTag>)
+    {
+        ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
+        ar.field("original_name", [](const auto& value) -> decltype(auto) { return (value.get_original_name()); });
+        ar.field("original_arity", [](const auto& value) -> decltype(auto) { return (value.get_original_arity()); });
+        ar.field("variables", [](const auto& value) -> decltype(auto) { return (value.get_variables()); });
+    }
+    else
+    {
+        ar.field("binding", [](const auto& value) -> decltype(auto) { return (value.get_row()); });
+    }
+    ar.field("condition", [](const auto& value) -> decltype(auto) { return (value.get_condition()); });
+    ar.field("effects", [](const auto& value) -> decltype(auto) { return (value.get_effects()); });
 }
 
 }

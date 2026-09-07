@@ -17,16 +17,11 @@ struct TypeName<::tyr::planning::Node<T>>
     static std::string get() { return std::string(T::name) + "Node"; }
 };
 
-template<::tyr::TaskKind T>
-void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::planning::Node<T>& value, Dictionaries* dictionaries)
+template<class Archive, ::tyr::TaskKind T>
+void describe_fields(Archive& ar, std::type_identity<::tyr::planning::Node<T>>)
 {
-    dictionaries->object(result,
-                         value,
-                         [&](auto& ar)
-                         {
-                             ar.field("state", value.get_state());
-                             ar.field("metric", value.get_metric());
-                         });
+    ar.field("state", [](const auto& value) -> decltype(auto) { return (value.get_state()); });
+    ar.field("metric", [](const auto& value) -> decltype(auto) { return (value.get_metric()); });
 }
 
 template<::tyr::TaskKind T>
@@ -35,16 +30,11 @@ struct TypeName<::tyr::planning::LabeledNode<T>>
     static std::string get() { return std::string(T::name) + "LabeledNode"; }
 };
 
-template<::tyr::TaskKind T>
-void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::planning::LabeledNode<T>& value, Dictionaries* dictionaries)
+template<class Archive, ::tyr::TaskKind T>
+void describe_fields(Archive& ar, std::type_identity<::tyr::planning::LabeledNode<T>>)
 {
-    dictionaries->object(result,
-                         value,
-                         [&](auto& ar)
-                         {
-                             ar.field("label", value.label);
-                             ar.field("node", value.node);
-                         });
+    ar.field("label", [](const auto& value) -> decltype(auto) { return (value.label); });
+    ar.field("node", [](const auto& value) -> decltype(auto) { return (value.node); });
 }
 
 }

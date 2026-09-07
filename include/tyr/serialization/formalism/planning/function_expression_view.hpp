@@ -22,13 +22,10 @@ struct TypeName<::tyr::formalism::planning::FunctionExpressionView<T>>
     static std::string get() { return std::string(std::same_as<T, ::tyr::GroundTag> ? T::name : "") + "FunctionExpression"; }
 };
 
-template<::tyr::TaskKind T>
-void tag_invoke(boost::json::value_from_tag,
-                boost::json::value& result,
-                const ::tyr::formalism::planning::FunctionExpressionView<T>& value,
-                Dictionaries* dictionaries)
+template<class Archive, ::tyr::TaskKind T>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FunctionExpressionView<T>>)
 {
-    dictionaries->object(result, value, [&](auto& ar) { ar.variant(value.get_variant()); });
+    ar.variant([](const auto& value) -> decltype(auto) { return (value.get_variant()); });
 }
 
 }

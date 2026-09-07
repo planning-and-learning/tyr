@@ -19,19 +19,11 @@ struct TypeName<ygg::View<ygg::Index<::tyr::formalism::RelationBinding<T>>, ::ty
     static std::string get() { return TypeName<ygg::View<ygg::Index<T>, ::tyr::formalism::planning::Repository>>::get() + "Binding"; }
 };
 
-template<typename T>
-void tag_invoke(boost::json::value_from_tag,
-                boost::json::value& result,
-                const ygg::View<ygg::Index<::tyr::formalism::RelationBinding<T>>, ::tyr::formalism::planning::Repository>& value,
-                Dictionaries* dictionaries)
+template<class Archive, typename T>
+void describe_fields(Archive& ar, std::type_identity<ygg::View<ygg::Index<::tyr::formalism::RelationBinding<T>>, ::tyr::formalism::planning::Repository>>)
 {
-    dictionaries->object(result,
-                         value,
-                         [&](auto& ar)
-                         {
-                             ar.field("relation", value.get_relation());
-                             ar.field("objects", value.get_objects());
-                         });
+    ar.field("relation", [](const auto& value) -> decltype(auto) { return (value.get_relation()); });
+    ar.field("objects", [](const auto& value) -> decltype(auto) { return (value.get_objects()); });
 }
 
 }

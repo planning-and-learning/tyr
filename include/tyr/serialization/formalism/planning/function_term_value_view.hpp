@@ -15,19 +15,11 @@ struct TypeName<::tyr::formalism::planning::FunctionTermValueView<::tyr::GroundT
     static std::string get() { return std::string(F::name) + "GroundFunctionTermValue"; }
 };
 
-template<::tyr::formalism::FactKind F>
-void tag_invoke(boost::json::value_from_tag,
-                boost::json::value& result,
-                const ::tyr::formalism::planning::FunctionTermValueView<::tyr::GroundTag, F>& value,
-                Dictionaries* dictionaries)
+template<class Archive, ::tyr::formalism::FactKind F>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FunctionTermValueView<::tyr::GroundTag, F>>)
 {
-    dictionaries->object(result,
-                         value,
-                         [&](auto& ar)
-                         {
-                             ar.field("function_term", value.get_fterm());
-                             ar.field("value", value.get_value());
-                         });
+    ar.field("function_term", [](const auto& value) -> decltype(auto) { return (value.get_fterm()); });
+    ar.field("value", [](const auto& value) -> decltype(auto) { return (value.get_value()); });
 }
 
 }
