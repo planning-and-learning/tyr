@@ -56,7 +56,7 @@ auto create_applicability_atom(fp::ActionView<LiftedTag> action, fp::MergeDatalo
     return fd::get_or_create(context.destination, *atom);
 }
 
-auto create_program(fp::TaskView task,
+auto create_program(fp::TaskView<LiftedTag> task,
                     TranslationContext<LiftedTag>& translation_context,
                     ApplicableActionProgram<LiftedTag>::AppPredicateToActionMapping& predicate_to_actions,
                     fd::Repository& repository)
@@ -162,7 +162,7 @@ auto create_program(fp::TaskView task,
     return fd::get_or_create(repository, *program).first;
 }
 
-auto create_datalog_program(fp::TaskView task,
+auto create_datalog_program(fp::TaskView<LiftedTag> task,
                             TranslationContext<LiftedTag>& translation_context,
                             ApplicableActionProgram<LiftedTag>::AppPredicateToActionMapping& mapping)
 {
@@ -173,7 +173,7 @@ auto create_datalog_program(fp::TaskView task,
 }
 }
 
-ApplicableActionProgram<LiftedTag>::ApplicableActionProgram(fp::TaskView task) :
+ApplicableActionProgram<LiftedTag>::ApplicableActionProgram(fp::TaskView<LiftedTag> task) :
     m_translation_context(),
     m_predicate_to_actions(),
     m_datalog_program(create_datalog_program(task, m_translation_context, m_predicate_to_actions))

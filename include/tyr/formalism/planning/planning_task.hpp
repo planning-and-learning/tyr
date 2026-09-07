@@ -31,10 +31,11 @@
 namespace tyr::formalism::planning
 {
 
-class PlanningTask
+template<>
+class PlanningTask<LiftedTag>
 {
 public:
-    PlanningTask(TaskView task,
+    PlanningTask(TaskView<LiftedTag> task,
                  FDRContextPtr fdr_context,
                  std::shared_ptr<Repository> repository,
                  PlanningDomain domain,
@@ -50,12 +51,45 @@ public:
 
 private:
     std::shared_ptr<Repository> m_repository;
-    TaskView m_task;
+    TaskView<LiftedTag> m_task;
     FDRContextPtr m_fdr_context;
     PlanningDomain m_domain;
     std::optional<std::filesystem::path> m_path;
     analysis::TaskVariableDomains m_variable_domains;
     analysis::TaskVariableDomainsView m_variable_domains_view;
+};
+
+template<>
+class PlanningTask<GroundTag>
+{
+public:
+    PlanningTask(TaskView<GroundTag> task,
+                 FDRContextPtr fdr_context,
+                 std::shared_ptr<Repository> repository,
+                 PlanningDomain domain,
+                 std::optional<std::filesystem::path> path = std::nullopt) :
+        m_repository(std::move(repository)),
+        m_task(task),
+        m_fdr_context(std::move(fdr_context)),
+        m_domain(std::move(domain)),
+        m_path(std::move(path))
+    {
+        if (&m_task.get_context() != m_repository.get())
+            throw std::invalid_argument("Task context does not match the given Repository.");
+    }
+
+    const auto& get_repository() const noexcept { return m_repository; }
+    auto get_task() const noexcept { return m_task; }
+    const auto& get_fdr_context() const noexcept { return m_fdr_context; }
+    const auto& get_domain() const noexcept { return m_domain; }
+    const auto& get_path() const noexcept { return m_path; }
+
+private:
+    std::shared_ptr<Repository> m_repository;
+    TaskView<GroundTag> m_task;
+    FDRContextPtr m_fdr_context;
+    PlanningDomain m_domain;
+    std::optional<std::filesystem::path> m_path;
 };
 
 }

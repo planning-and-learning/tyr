@@ -32,7 +32,7 @@ import pypddl_datasets
 from pypddl.formalism import ParserOptions
 from pyyggdrasil.execution import ExecutionContext
 
-from pytyr.formalism.planning import Parser, PlanningTask
+from pytyr.formalism.planning import LiftedPlanningTask, Parser
 from pytyr.planning import CostMode, SearchBudget, SearchStatus, Statistics
 from pytyr.planning import ground as ground_planning
 from pytyr.planning import lifted as lifted_planning
@@ -41,7 +41,7 @@ from pytyr.planning import lifted as lifted_planning
 class _ParserLike(Protocol):
     # Precise view of the one overload we use; pytyr's stub types the path as an
     # unparametrized PathLike, which reads as partially-unknown under strict mode.
-    def parse_task(self, task_filepath: str, parser_options: ParserOptions) -> PlanningTask: ...
+    def parse_task(self, task_filepath: str, parser_options: ParserOptions) -> LiftedPlanningTask: ...
 
 ROOT = Path(__file__).resolve().parents[4]
 BENCHMARKS_ROOT = pypddl_datasets.data_root()
@@ -138,7 +138,7 @@ def as_json_number(value: float) -> JsonNumber:
     return value
 
 
-def parse_task(domain_file: Path, task_file: Path) -> PlanningTask:
+def parse_task(domain_file: Path, task_file: Path) -> LiftedPlanningTask:
     parser_options = ParserOptions()
     parser_options.add_action_costs = True
     parser = cast(_ParserLike, Parser(str(domain_file), parser_options))

@@ -33,8 +33,8 @@ struct PlanFormatting
 };
 
 std::string to_string(const PlanningDomain& value);
-std::string to_string(const PlanningTask& value);
-std::string to_string(const PlanningFDRTask& value);
+std::string to_string(const PlanningTask<LiftedTag>& value);
+std::string to_string(const PlanningTask<GroundTag>& value);
 
 }  // namespace tyr::formalism::planning
 
@@ -53,25 +53,13 @@ struct formatter<tyr::formalism::planning::PlanningDomain, char>
     }
 };
 
-template<>
-struct formatter<tyr::formalism::planning::PlanningTask, char>
+template<tyr::TaskKind T>
+struct formatter<tyr::formalism::planning::PlanningTask<T>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
 
     template<typename FormatContext>
-    auto format(const tyr::formalism::planning::PlanningTask& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
-    }
-};
-
-template<>
-struct formatter<tyr::formalism::planning::PlanningFDRTask, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::PlanningFDRTask& value, FormatContext& ctx) const
+    auto format(const tyr::formalism::planning::PlanningTask<T>& value, FormatContext& ctx) const
     {
         return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
     }
@@ -140,9 +128,9 @@ std::string to_string(const ygg::Data<Action<GroundTag>>& value);
 std::string to_string(const ygg::Data<Axiom<LiftedTag>>& value);
 std::string to_string(const ygg::Data<Axiom<GroundTag>>& value);
 std::string to_string(const ygg::Data<Metric>& value);
-std::string to_string(const ygg::Data<Task>& value);
+std::string to_string(const ygg::Data<Task<LiftedTag>>& value);
 std::string to_string(const ygg::Data<Domain>& value);
-std::string to_string(const ygg::Data<FDRTask>& value);
+std::string to_string(const ygg::Data<Task<GroundTag>>& value);
 std::string to_string(const ygg::Data<RelationBinding<Action<LiftedTag>>>& value);
 std::string to_string(const ygg::Data<RelationBinding<Axiom<LiftedTag>>>& value);
 
@@ -222,9 +210,9 @@ std::string to_string(ActionView<GroundTag> value);
 std::string to_string(AxiomView<LiftedTag> value);
 std::string to_string(AxiomView<GroundTag> value);
 std::string to_string(MetricView value);
-std::string to_string(TaskView value);
+std::string to_string(TaskView<LiftedTag> value);
 std::string to_string(DomainView value);
-std::string to_string(FDRTaskView value);
+std::string to_string(TaskView<GroundTag> value);
 
 }  // namespace tyr::formalism::planning
 

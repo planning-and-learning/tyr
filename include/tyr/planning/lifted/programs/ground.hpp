@@ -42,7 +42,7 @@ public:
     using AppPredicateToAxiomMapping =
         ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, std::vector<formalism::planning::AxiomView<LiftedTag>>>;
 
-    explicit GroundTaskProgram(formalism::planning::TaskView task);
+    explicit GroundTaskProgram(formalism::planning::TaskView<LiftedTag> task);
 
     const TranslationContext<LiftedTag>& get_translation_context() const noexcept;
     const AppPredicateToActionMapping& get_predicate_to_action_mapping() const noexcept;

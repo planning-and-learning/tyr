@@ -77,7 +77,7 @@ auto create_axiom_rule(fp::AxiomView<LiftedTag> axiom, const TranslationContext<
     return fd::get_or_create(context.destination, *rule);
 }
 
-auto create_program(fp::TaskView task, TranslationContext<LiftedTag>& translation_context, fd::Repository& repository)
+auto create_program(fp::TaskView<LiftedTag> task, TranslationContext<LiftedTag>& translation_context, fd::Repository& repository)
 {
     auto builder = fd::Builder();
     auto context = fp::MergeDatalogContext(builder, repository);
@@ -140,7 +140,7 @@ auto create_program(fp::TaskView task, TranslationContext<LiftedTag>& translatio
     return fd::get_or_create(repository, *program).first;
 }
 
-auto create_datalog_program(fp::TaskView task, TranslationContext<LiftedTag>& translation_context)
+auto create_datalog_program(fp::TaskView<LiftedTag> task, TranslationContext<LiftedTag>& translation_context)
 {
     auto factory = std::make_shared<fd::RepositoryFactory>();
     auto repository = factory->create_shared(task.get_domain().get_constants().size() + task.get_objects().size());
@@ -149,7 +149,7 @@ auto create_datalog_program(fp::TaskView task, TranslationContext<LiftedTag>& tr
 }
 }
 
-AxiomEvaluatorProgram<LiftedTag>::AxiomEvaluatorProgram(fp::TaskView task) :
+AxiomEvaluatorProgram<LiftedTag>::AxiomEvaluatorProgram(fp::TaskView<LiftedTag> task) :
     m_translation_context(),
     m_datalog_program(create_datalog_program(task, m_translation_context))
 {

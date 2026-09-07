@@ -93,6 +93,43 @@ TEST(TyrSerialization, DefaultFieldsAndSelectionDoNotEvaluateAccessors)
     EXPECT_TRUE(archive.fields.empty());
 }
 
+TEST(TyrSerialization, TaskTagsPreserveSerializationFields)
+{
+    EXPECT_EQ(s::fields<fp::TaskView<LiftedTag>>(),
+              (std::vector<std::string> { "name",
+                                          "domain",
+                                          "derived_predicates",
+                                          "objects",
+                                          "static_ground_atoms",
+                                          "fluent_ground_atoms",
+                                          "static_ground_function_term_values",
+                                          "fluent_ground_function_term_values",
+                                          "auxiliary_ground_function_term_value",
+                                          "goal",
+                                          "metric",
+                                          "axioms" }));
+    EXPECT_EQ(s::fields<fp::TaskView<GroundTag>>(),
+              (std::vector<std::string> { "name",
+                                          "domain",
+                                          "derived_predicates",
+                                          "objects",
+                                          "static_ground_atoms",
+                                          "fluent_ground_atoms",
+                                          "derived_ground_atoms",
+                                          "static_ground_function_term_values",
+                                          "fluent_ground_function_term_values",
+                                          "auxiliary_ground_function_term_value",
+                                          "goal",
+                                          "metric",
+                                          "axioms",
+                                          "fdr_variables",
+                                          "fdr_facts",
+                                          "ground_actions",
+                                          "ground_axioms" }));
+    EXPECT_EQ(s::fields<fp::PlanningTask<LiftedTag>>(), (std::vector<std::string> { "task", "domain", "path" }));
+    EXPECT_EQ(s::fields<fp::PlanningTask<GroundTag>>(), (std::vector<std::string> { "task", "domain", "path" }));
+}
+
 TEST(TyrSerialization, RegisteredDescendantsAreCollectedOnceAndSnapshotsAreIndependent)
 {
     auto repository = fp::RepositoryFactory().create();
@@ -347,6 +384,16 @@ void check_runtime_serialization()
     ASSERT_NE(task, nullptr);
     auto unsupported_task = s::Dictionaries {};
     EXPECT_THROW(unsupported_task.serialize(*task), std::invalid_argument);
+
+    auto task_dictionaries = s::Dictionaries {};
+    task_dictionaries.template register_table<fp::TaskView<Kind>>("tasks", "t", std::vector<std::string> { "name" });
+    task_dictionaries.template register_table<fp::DomainView>("domains", "d", std::vector<std::string> {});
+    const auto owner = task_dictionaries.serialize(task->get_formalism_task()).as_object();
+    EXPECT_EQ(owner.at("task").as_string(), "t0");
+    EXPECT_EQ(owner.at("domain").as_object().at("domain").as_string(), "d0");
+    EXPECT_TRUE(owner.at("path").is_null());
+    EXPECT_EQ(task_dictionaries.template table<fp::TaskView<Kind>>()[0].as_object().at("name").as_string(), "serialization-1");
+    EXPECT_EQ(task_dictionaries.serialize(*task).as_object().at("formalism_task").as_object(), owner);
 }
 
 TEST(TyrSerialization, LiftedPlansAndTasksPreserveOwnersAndDeduplicateSelectedStates) { check_runtime_serialization<LiftedTag>(); }

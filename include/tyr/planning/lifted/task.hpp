@@ -43,9 +43,9 @@ template<>
 class Task<LiftedTag>
 {
 public:
-    explicit Task(formalism::planning::PlanningTask task);
+    explicit Task(formalism::planning::PlanningTask<LiftedTag> task);
 
-    static TaskPtr<LiftedTag> create(formalism::planning::PlanningTask task);
+    static TaskPtr<LiftedTag> create(formalism::planning::PlanningTask<LiftedTag> task);
 
     GroundTaskInstantiationResult instantiate_ground_task(ygg::ExecutionContext& execution_context,
                                                           const GroundTaskInstantiationOptions& options = GroundTaskInstantiationOptions());
@@ -74,7 +74,7 @@ public:
     }
 
 private:
-    formalism::planning::PlanningTask m_task;
+    formalism::planning::PlanningTask<LiftedTag> m_task;
 
     boost::dynamic_bitset<> m_static_atoms_bitset;
     std::vector<ygg::float_t> m_static_numeric_variables;

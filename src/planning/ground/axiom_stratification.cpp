@@ -29,7 +29,7 @@ namespace tyr::planning
 {
 
 // Build dependency graph: nodes = derived ground atoms
-static as::DepGraph build_dependency_graph(fp::FDRTaskView task, size_t num_atoms)
+static as::DepGraph build_dependency_graph(fp::TaskView<GroundTag> task, size_t num_atoms)
 {
     as::DepGraph graph(num_atoms);
 
@@ -50,7 +50,7 @@ static as::DepGraph build_dependency_graph(fp::FDRTaskView task, size_t num_atom
     return graph;
 }
 
-GroundAxiomStrata compute_ground_axiom_stratification(fp::FDRTaskView task)
+GroundAxiomStrata compute_ground_axiom_stratification(fp::TaskView<GroundTag> task)
 {
     const auto num_atoms = task.get_atoms<f::DerivedTag>().size();
 

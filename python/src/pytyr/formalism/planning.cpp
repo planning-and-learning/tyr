@@ -19,7 +19,6 @@
 #include "planning/module.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
-#include "tyr/formalism/planning/planning_fdr_task.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 
 #include <cstddef>
@@ -102,47 +101,49 @@ void bind_module_definitions(nb::module_& m)
 
     {
         auto cls = nb::class_<PlanningDomain>(m, "PlanningDomain")  //
-            .def(nb::init<DomainView, RepositoryPtr, RepositoryFactoryPtr, std::optional<std::filesystem::path>>(),
-                 "domain"_a,
-                 "repository"_a,
-                 "repository_factory"_a,
-                 "path"_a = nb::none())
-            .def("get_domain", &PlanningDomain::get_domain, nb::keep_alive<0, 1>())
-            .def("get_repository", &PlanningDomain::get_repository)
-            .def("get_repository_factory", &PlanningDomain::get_repository_factory)
-            .def("get_path", &PlanningDomain::get_path);
+                       .def(nb::init<DomainView, RepositoryPtr, RepositoryFactoryPtr, std::optional<std::filesystem::path>>(),
+                            "domain"_a,
+                            "repository"_a,
+                            "repository_factory"_a,
+                            "path"_a = nb::none())
+                       .def("get_domain", &PlanningDomain::get_domain, nb::keep_alive<0, 1>())
+                       .def("get_repository", &PlanningDomain::get_repository)
+                       .def("get_repository_factory", &PlanningDomain::get_repository_factory)
+                       .def("get_path", &PlanningDomain::get_path);
         ygg::add_print(cls);
     }
 
     {
-        auto cls = nb::class_<PlanningTask>(m, "PlanningTask")  //
-            .def(nb::new_([](TaskView task,
-                             FDRContextPtr fdr_context,
-                             RepositoryPtr repository,
-                             PlanningDomain planning_domain,
-                             std::optional<std::filesystem::path> path)
-                          { return PlanningTask(task, std::move(fdr_context), std::move(repository), std::move(planning_domain), std::move(path)); }),
-                 "task"_a,
-                 "fdr_context"_a,
-                 "repository"_a,
-                 "planning_domain"_a,
-                 "path"_a = nb::none())
-            .def("get_task", &PlanningTask::get_task, nb::keep_alive<0, 1>())
-            .def("get_repository", &PlanningTask::get_repository)
-            .def("get_fdr_context", &PlanningTask::get_fdr_context, nb::rv_policy::reference_internal)
-            .def("get_domain", &PlanningTask::get_domain, nb::rv_policy::reference_internal)
-            .def("get_path", &PlanningTask::get_path)
-            .def("get_variable_domains", &PlanningTask::get_variable_domains_view, nb::rv_policy::reference_internal);
+        using V = PlanningTask<LiftedTag>;
+        auto cls = nb::class_<V>(m, "LiftedPlanningTask")  //
+                       .def(nb::new_([](TaskView<LiftedTag> task,
+                                        FDRContextPtr fdr_context,
+                                        RepositoryPtr repository,
+                                        PlanningDomain planning_domain,
+                                        std::optional<std::filesystem::path> path)
+                                     { return V(task, std::move(fdr_context), std::move(repository), std::move(planning_domain), std::move(path)); }),
+                            "task"_a,
+                            "fdr_context"_a,
+                            "repository"_a,
+                            "planning_domain"_a,
+                            "path"_a = nb::none())
+                       .def("get_task", &V::get_task, nb::keep_alive<0, 1>())
+                       .def("get_repository", &V::get_repository)
+                       .def("get_fdr_context", &V::get_fdr_context, nb::rv_policy::reference_internal)
+                       .def("get_domain", &V::get_domain, nb::rv_policy::reference_internal)
+                       .def("get_path", &V::get_path)
+                       .def("get_variable_domains", &V::get_variable_domains_view, nb::rv_policy::reference_internal);
         ygg::add_print(cls);
     }
 
     {
-        auto cls = nb::class_<PlanningFDRTask>(m, "PlanningFDRTask")  //
-            .def("get_task", &PlanningFDRTask::get_task, nb::keep_alive<0, 1>())
-            .def("get_repository", &PlanningFDRTask::get_repository)
-            .def("get_fdr_context", &PlanningFDRTask::get_fdr_context, nb::rv_policy::reference_internal)
-            .def("get_domain", &PlanningFDRTask::get_domain, nb::rv_policy::reference_internal)
-            .def("get_path", &PlanningFDRTask::get_path);
+        using V = PlanningTask<GroundTag>;
+        auto cls = nb::class_<V>(m, "GroundPlanningTask")  //
+                       .def("get_task", &V::get_task, nb::keep_alive<0, 1>())
+                       .def("get_repository", &V::get_repository)
+                       .def("get_fdr_context", &V::get_fdr_context, nb::rv_policy::reference_internal)
+                       .def("get_domain", &V::get_domain, nb::rv_policy::reference_internal)
+                       .def("get_path", &V::get_path);
         ygg::add_print(cls);
     }
 }

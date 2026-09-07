@@ -18,7 +18,6 @@
 #include "tyr/formalism/planning/formatter.hpp"
 
 #include "tyr/formalism/planning/planning_domain.hpp"
-#include "tyr/formalism/planning/planning_fdr_task.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
@@ -464,9 +463,9 @@ std::string to_string(const ygg::Data<Axiom<GroundTag>>& value)
 
 std::string to_string(const ygg::Data<Metric>& value) { return fmt::format("({} {})", value.optimization_direction, value.fexpr); }
 
-std::string to_string(const ygg::Data<Task>& value)
+std::string to_string(const ygg::Data<Task<LiftedTag>>& value)
 {
-    return detail::structured("Task",
+    return detail::structured("LiftedTask",
                               [&](auto& os)
                               {
                                   detail::field(os, "index = ", value.index);
@@ -503,9 +502,9 @@ std::string to_string(const ygg::Data<Domain>& value)
                               });
 }
 
-std::string to_string(const ygg::Data<FDRTask>& value)
+std::string to_string(const ygg::Data<Task<GroundTag>>& value)
 {
-    return detail::structured("FDRTask",
+    return detail::structured("GroundTask",
                               [&](auto& os)
                               {
                                   detail::field(os, "index = ", value.index);
@@ -729,9 +728,9 @@ std::string to_string(AxiomView<GroundTag> value)
 
 std::string to_string(MetricView value) { return fmt::format("({} {})", value.get_optimization_direction(), value.get_fexpr()); }
 
-std::string to_string(TaskView value)
+std::string to_string(TaskView<LiftedTag> value)
 {
-    return detail::structured("Task",
+    return detail::structured("LiftedTask",
                               [&](auto& os)
                               {
                                   detail::field(os, "index = ", value.get_index());
@@ -768,9 +767,9 @@ std::string to_string(DomainView value)
                               });
 }
 
-std::string to_string(FDRTaskView value)
+std::string to_string(TaskView<GroundTag> value)
 {
-    return detail::structured("FDRTask",
+    return detail::structured("GroundTask",
                               [&](auto& os)
                               {
                                   detail::field(os, "index = ", value.get_index());
@@ -795,8 +794,8 @@ std::string to_string(FDRTaskView value)
 }
 
 std::string to_string(const PlanningDomain& value) { return fmt::format("{}", value.get_domain()); }
-std::string to_string(const PlanningTask& value) { return fmt::format("{}", value.get_task()); }
-std::string to_string(const PlanningFDRTask& value) { return fmt::format("{}", value.get_task()); }
+std::string to_string(const PlanningTask<LiftedTag>& value) { return fmt::format("{}", value.get_task()); }
+std::string to_string(const PlanningTask<GroundTag>& value) { return fmt::format("{}", value.get_task()); }
 
 std::string to_string(const std::pair<ActionBindingView, PlanFormatting>& value)
 {

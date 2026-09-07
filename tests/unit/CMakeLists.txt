@@ -57,7 +57,6 @@ add_gtest(
     "formalism/planning/conjunctive_effect.cpp"
     "formalism/planning/domain.cpp"
     "formalism/planning/fdr_fact.cpp"
-    "formalism/planning/fdr_task.cpp"
     "formalism/planning/fdr_variable.cpp"
     "formalism/planning/function_expression.cpp"
     "formalism/planning/function_term.cpp"

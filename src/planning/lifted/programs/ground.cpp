@@ -275,7 +275,7 @@ void translate_axiom_to_delete_free_axiom_rules(fp::AxiomView<LiftedTag> axiom,
             .first.get_index());
 }
 
-auto create_program(fp::TaskView task,
+auto create_program(fp::TaskView<LiftedTag> task,
                     TranslationContext<LiftedTag>& translation_context,
                     GroundTaskProgram::AppPredicateToActionMapping& predicate_to_actions,
                     GroundTaskProgram::AppPredicateToAxiomMapping& predicate_to_axioms,
@@ -346,7 +346,7 @@ auto create_program(fp::TaskView task,
     return fd::get_or_create(destination, *program).first;
 }
 
-static auto create_datalog_program(fp::TaskView task,
+static auto create_datalog_program(fp::TaskView<LiftedTag> task,
                                    TranslationContext<LiftedTag>& translation_context,
                                    GroundTaskProgram::AppPredicateToActionMapping& predicate_to_actions,
                                    GroundTaskProgram::AppPredicateToAxiomMapping& predicate_to_axioms)
@@ -359,7 +359,7 @@ static auto create_datalog_program(fp::TaskView task,
 
 }
 
-GroundTaskProgram::GroundTaskProgram(fp::TaskView task) :
+GroundTaskProgram::GroundTaskProgram(fp::TaskView<LiftedTag> task) :
     m_translation_context(),
     m_predicate_to_actions(),
     m_predicate_to_axioms(),

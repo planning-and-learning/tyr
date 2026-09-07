@@ -265,7 +265,7 @@ void translate_action_to_delete_free_rules(fp::ActionView<LiftedTag> action,
     }
 }
 
-auto create_program(fp::TaskView task,
+auto create_program(fp::TaskView<LiftedTag> task,
                     CostMode cost_mode,
                     TranslationContext<LiftedTag>& translation_context,
                     RPGProgram<LiftedTag>::RuleToActionMappings& rule_to_action,
@@ -338,7 +338,7 @@ auto create_program(fp::TaskView task,
     return fd::get_or_create(destination, *program).first;
 }
 
-auto create_datalog_program(fp::TaskView task,
+auto create_datalog_program(fp::TaskView<LiftedTag> task,
                             CostMode cost_mode,
                             TranslationContext<LiftedTag>& translation_context,
                             RPGProgram<LiftedTag>::RuleToActionMappings& rule_to_action)
@@ -352,7 +352,7 @@ auto create_datalog_program(fp::TaskView task,
 }
 
 template<>
-RPGProgram<LiftedTag>::RPGProgram(fp::TaskView task, CostMode cost_mode) :
+RPGProgram<LiftedTag>::RPGProgram(fp::TaskView<LiftedTag> task, CostMode cost_mode) :
     m_translation_context(),
     m_rule_to_action(),
     m_datalog_program(create_datalog_program(task, cost_mode, m_translation_context, m_rule_to_action))

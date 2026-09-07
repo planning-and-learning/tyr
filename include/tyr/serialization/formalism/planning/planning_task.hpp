@@ -10,8 +10,8 @@
 namespace ygg::serialization
 {
 
-template<class Archive>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::PlanningTask>)
+template<class Archive, ::tyr::TaskKind T>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::PlanningTask<T>>)
 {
     ar.field("task", [](const auto& value) -> decltype(auto) { return (value.get_task()); });
     ar.field("domain", [](const auto& value) -> decltype(auto) { return (value.get_domain()); });

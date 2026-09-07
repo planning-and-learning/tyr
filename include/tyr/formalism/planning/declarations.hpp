@@ -130,6 +130,7 @@ struct Metric
 {
 };
 
+template<TaskKind T>
 struct Task
 {
 };
@@ -158,10 +159,6 @@ struct FDRAction
 };
 
 struct FDRAxiom
-{
-};
-
-struct FDRTask
 {
 };
 
@@ -208,7 +205,7 @@ using ControlTypes = ygg::TypeList<ConditionalEffect<LiftedTag>,
                                    Axiom<LiftedTag>,
                                    Axiom<GroundTag>>;
 using StructureTypes = ygg::TypeList<Action<LiftedTag>, Axiom<LiftedTag>>;
-using ProblemTypes = ygg::TypeList<Metric, Domain, Task, FDRTask>;
+using ProblemTypes = ygg::TypeList<Metric, Domain, Task<LiftedTag>, Task<GroundTag>>;
 using ConditionTypes = ygg::TypeList<ConjunctiveCondition<LiftedTag>, ConjunctiveCondition<GroundTag>>;
 
 using SymbolRepositoryTypes = ygg::ConcatTypeListsT<CoreTypes,
@@ -324,9 +321,6 @@ using FDRFactListView = ygg::View<ygg::DataList<FDRFact<T>>, Repository>;
 template<FactKind T>
 using FDRFactViewList = std::vector<FDRFactView<T>>;
 
-using FDRTaskView = ygg::View<ygg::Index<FDRTask>, Repository>;
-using FDRTaskListView = ygg::View<ygg::IndexList<FDRTask>, Repository>;
-
 template<FactKind T>
 using FDRVariableView = ygg::View<ygg::Index<FDRVariable<T>>, Repository>;
 template<FactKind T>
@@ -405,8 +399,10 @@ using PredicateListView = ygg::View<ygg::IndexList<Predicate<T>>, Repository>;
 template<FactKind T>
 using PredicateViewList = std::vector<PredicateView<T>>;
 
-using TaskView = ygg::View<ygg::Index<Task>, Repository>;
-using TaskListView = ygg::View<ygg::IndexList<Task>, Repository>;
+template<TaskKind T>
+using TaskView = ygg::View<ygg::Index<Task<T>>, Repository>;
+template<TaskKind T>
+using TaskListView = ygg::View<ygg::IndexList<Task<T>>, Repository>;
 
 using TermView = ygg::View<ygg::Data<Term>, Repository>;
 using TermListView = ygg::View<ygg::DataList<Term>, Repository>;
@@ -457,7 +453,7 @@ class FDRContext;
 using FDRContextPtr = std::shared_ptr<FDRContext>;
 struct GrounderContext;
 class PlanningDomain;
-class PlanningFDRTask;
+template<TaskKind T>
 class PlanningTask;
 
 }

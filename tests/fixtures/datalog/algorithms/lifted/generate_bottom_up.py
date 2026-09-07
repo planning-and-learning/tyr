@@ -17,7 +17,7 @@ from typing import Literal, TypedDict, cast
 import pypddl_datasets
 from pypddl.formalism import ParserOptions
 from pytyr import datalog
-from pytyr.formalism.planning import Parser, PlanningTask
+from pytyr.formalism.planning import LiftedPlanningTask, Parser
 from pytyr.planning import lifted as planning
 from pyyggdrasil.execution import ExecutionContext
 
@@ -59,7 +59,7 @@ class Context:
     task: planning.Task
 
 
-def parse_task(domain_file: Path, task_file: Path) -> PlanningTask:
+def parse_task(domain_file: Path, task_file: Path) -> LiftedPlanningTask:
     parser_options = ParserOptions()
     parser_options.add_action_costs = True
     parser = Parser(str(domain_file), parser_options)

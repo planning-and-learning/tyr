@@ -16,15 +16,14 @@
  */
 
 #include <nanobind/nanobind.h>
-
-#include <yggdrasil/core/config.hpp>
 #include <tyr/formalism/planning/repository.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace nb = nanobind;
 
 namespace
 {
-[[maybe_unused]] [[gnu::used]] void link_planning_view_methods(tyr::formalism::planning::TaskView task,
+[[maybe_unused]] [[gnu::used]] void link_planning_view_methods(tyr::formalism::planning::TaskView<tyr::LiftedTag> task,
                                                                tyr::formalism::planning::FDRFactView<tyr::formalism::FluentTag> fact)
 {
     static_cast<void>(task.get_goal());

@@ -38,12 +38,12 @@ Parser::Parser(const std::string& domain_description,
 {
 }
 
-PlanningTask Parser::parse_task(const fs::path& task_filepath, const loki::ParserOptions& options)
+PlanningTask<LiftedTag> Parser::parse_task(const fs::path& task_filepath, const loki::ParserOptions& options)
 {
     return parse_task(loki::semantic::read_file(task_filepath), task_filepath, options);
 }
 
-PlanningTask Parser::parse_task(const std::string& task_description, std::optional<fs::path> task_filepath, const loki::ParserOptions&)
+PlanningTask<LiftedTag> Parser::parse_task(const std::string& task_description, std::optional<fs::path> task_filepath, const loki::ParserOptions&)
 {
     return LokiToTyrTranslator().translate(
         loki::translate(m_loki_parser.parse_task(task_description), m_loki_domain_translation_result, m_loki_translator_options).get_translated_task(),

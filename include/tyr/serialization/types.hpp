@@ -28,7 +28,8 @@ using FormalismValueViews = ygg::TypeList<formalism::planning::TermView,
 
 using FormalismViews = ygg::ConcatTypeListsT<ygg::MapTypeListT<FormalismIndexView, formalism::planning::BuilderTypes>, FormalismValueViews>;
 
-using FormalismOwners = ygg::TypeList<formalism::planning::PlanningDomain, formalism::planning::PlanningTask, formalism::planning::PlanningFDRTask>;
+using FormalismOwners =
+    ygg::TypeList<formalism::planning::PlanningDomain, formalism::planning::PlanningTask<LiftedTag>, formalism::planning::PlanningTask<GroundTag>>;
 
 using RuntimeStates = ygg::TypeList<planning::StateView<GroundTag>, planning::StateView<LiftedTag>>;
 using RuntimeOwners = ygg::TypeList<planning::Task<GroundTag>,

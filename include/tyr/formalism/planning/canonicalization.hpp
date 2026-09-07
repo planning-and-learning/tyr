@@ -147,7 +147,7 @@ inline bool is_canonical(const ygg::Data<Axiom<GroundTag>>&) { return true; }
 
 inline bool is_canonical(const ygg::Data<Metric>&) { return true; }
 
-inline bool is_canonical(const ygg::Data<Task>& data)
+inline bool is_canonical(const ygg::Data<Task<LiftedTag>>& data)
 {
     return is_canonical(data.derived_predicates) && is_canonical(data.objects) && is_canonical(data.static_atoms) && is_canonical(data.fluent_atoms)
            && is_canonical(data.static_fterm_values) && is_canonical(data.fluent_fterm_values) && is_canonical(data.axioms);
@@ -184,7 +184,7 @@ inline bool is_canonical(const ygg::Data<ConjunctiveCondition<GroundTag>>& data)
            && is_canonical(data.numeric_constraints);
 }
 
-inline bool is_canonical(const ygg::Data<FDRTask>& data)
+inline bool is_canonical(const ygg::Data<Task<GroundTag>>& data)
 {
     return is_canonical(data.derived_predicates) && is_canonical(data.objects) && is_canonical(data.static_atoms) && is_canonical(data.fluent_atoms)
            && is_canonical(data.derived_atoms) && is_canonical(data.static_fterm_values) && is_canonical(data.fluent_fterm_values) && is_canonical(data.axioms)
@@ -323,7 +323,7 @@ inline void canonicalize(ygg::Data<Axiom<GroundTag>>&) {}
 
 inline void canonicalize(ygg::Data<Metric>&) {}
 
-inline void canonicalize(ygg::Data<Task>& data)
+inline void canonicalize(ygg::Data<Task<LiftedTag>>& data)
 {
     canonicalize(data.derived_predicates);
     canonicalize(data.objects);
@@ -375,7 +375,7 @@ inline void canonicalize(ygg::Data<ConjunctiveCondition<GroundTag>>& data)
     canonicalize(data.numeric_constraints);
 }
 
-inline void canonicalize(ygg::Data<FDRTask>& data)
+inline void canonicalize(ygg::Data<Task<GroundTag>>& data)
 {
     canonicalize(data.derived_predicates);
     canonicalize(data.objects);

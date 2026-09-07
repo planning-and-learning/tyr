@@ -298,8 +298,8 @@ from ..._pytyr.formalism.planning import (
     GroundTaskIndex,
     GroundTaskData,
     PlanningDomain,
-    PlanningTask,
-    PlanningFDRTask,
+    LiftedPlanningTask,
+    GroundPlanningTask,
 
     # Parser
     Parser,

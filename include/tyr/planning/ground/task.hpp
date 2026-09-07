@@ -20,7 +20,7 @@
 
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
-#include "tyr/formalism/planning/planning_fdr_task.hpp"
+#include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/task.hpp"
@@ -40,7 +40,7 @@ template<>
 class Task<GroundTag>
 {
 public:
-    explicit Task(formalism::planning::PlanningFDRTask task);
+    explicit Task(formalism::planning::PlanningTask<GroundTag> task);
 
     template<formalism::FactKind T>
     size_t get_num_atoms() const noexcept;
@@ -66,7 +66,7 @@ public:
     bool has_axioms() const noexcept { return !get_task().get_ground_axioms().empty(); }
 
 private:
-    formalism::planning::PlanningFDRTask m_task;
+    formalism::planning::PlanningTask<GroundTag> m_task;
 
     boost::dynamic_bitset<> m_static_atoms_bitset;
     std::vector<ygg::float_t> m_static_numeric_variables;

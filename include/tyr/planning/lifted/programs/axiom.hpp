@@ -30,7 +30,7 @@ template<>
 class AxiomEvaluatorProgram<LiftedTag>
 {
 public:
-    explicit AxiomEvaluatorProgram(formalism::planning::TaskView task);
+    explicit AxiomEvaluatorProgram(formalism::planning::TaskView<LiftedTag> task);
 
     const TranslationContext<LiftedTag>& get_translation_context() const noexcept;
     datalog::Program<LiftedTag>& get_datalog_program() noexcept;

@@ -44,7 +44,6 @@ void bind_formalism(nb::module_& m)
     bind_metric(m, repository);
     bind_domain(m, repository);
     bind_task(m, repository);
-    bind_fdr_task(m, repository);
     bind_fdr_fact(m, repository);
     bind_arithmetic_operator(m, repository);
     bind_boolean_operator(m, repository);

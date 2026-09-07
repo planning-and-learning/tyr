@@ -549,7 +549,7 @@ void apply_policy(fp::NumericEffectOperatorView<LiftedTag, T> element, Policy& p
 
 }  // namespace
 
-TaskVariableDomains compute_variable_domains(fp::TaskView task)
+TaskVariableDomains compute_variable_domains(fp::TaskView<LiftedTag> task)
 {
     auto universe = ygg::UnorderedSet<ygg::Index<f::Object>> {};
     for (const auto object : task.get_domain().get_constants())

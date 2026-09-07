@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 from pypddl.formalism import ParserOptions
-from pytyr.formalism.planning import Parser, PlanningDomain, PlanningTask
+from pytyr.formalism.planning import GroundPlanningTask, GroundTask, LiftedPlanningTask, LiftedTask, Parser, PlanningDomain
 from pytyr.planning import lifted
 from pyyggdrasil.execution import ExecutionContext
 
@@ -25,6 +25,8 @@ def test_pddl_parser():
     parser, task = _parse_gripper_task()
     domain = parser.get_domain()
 
+    assert isinstance(task, LiftedPlanningTask)
+    assert isinstance(task.get_task(), LiftedTask)
     assert domain.get_domain() == task.get_domain().get_domain()
     assert domain.get_path() == GRIPPER.domain_path
     assert task.get_path() == GRIPPER.task_path
@@ -50,6 +52,8 @@ def test_in_memory_paths_are_optional_and_preserved_through_grounding(
         ExecutionContext(1), lifted.GroundTaskInstantiationOptions(),
     )
     assert grounded.status == lifted.GroundTaskInstantiationStatus.SUCCESS
+    assert isinstance(grounded.task.get_formalism_task(), GroundPlanningTask)
+    assert isinstance(grounded.task.get_task(), GroundTask)
     assert grounded.task.get_formalism_task().get_path() == task_path
     assert grounded.task.get_formalism_task().get_domain().get_path() == domain_path
 
@@ -61,7 +65,7 @@ def test_programmatic_wrappers_default_to_no_path() -> None:
         parsed_domain.get_domain(), parsed_domain.get_repository(),
         parsed_domain.get_repository_factory(),
     )
-    task = PlanningTask(
+    task = LiftedPlanningTask(
         parsed_task.get_task(), parsed_task.get_fdr_context(),
         parsed_task.get_repository(), domain,
     )

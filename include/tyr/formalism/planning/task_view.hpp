@@ -26,7 +26,10 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/domain_index.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
+#include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/function_term_value_view.hpp"
+#include "tyr/formalism/planning/function_term_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
 #include "tyr/formalism/planning/task_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
@@ -38,15 +41,15 @@
 namespace ygg
 {
 
-template<::tyr::formalism::planning::Context C>
-class View<ygg::Index<::tyr::formalism::planning::Task>, C>
+template<::tyr::TaskKind Kind, ::tyr::formalism::planning::Context C>
+class View<ygg::Index<::tyr::formalism::planning::Task<Kind>>, C>
 {
 private:
     const C* m_context;
-    ygg::Index<::tyr::formalism::planning::Task> m_handle;
+    ygg::Index<::tyr::formalism::planning::Task<Kind>> m_handle;
 
 public:
-    View(ygg::Index<::tyr::formalism::planning::Task> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+    View(ygg::Index<::tyr::formalism::planning::Task<Kind>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
@@ -71,6 +74,27 @@ public:
     auto get_goal() const noexcept { return ygg::make_view(get_data().goal, *m_context); }
     auto get_metric() const noexcept { return ygg::make_view(get_data().metric, *m_context); }
     auto get_axioms() const noexcept { return ygg::make_view(get_data().axioms, *m_context); }
+
+    auto get_fluent_variables() const noexcept
+        requires std::same_as<Kind, ::tyr::GroundTag>
+    {
+        return ygg::make_view(get_data().fluent_variables, *m_context);
+    }
+    auto get_fluent_facts() const noexcept
+        requires std::same_as<Kind, ::tyr::GroundTag>
+    {
+        return ygg::make_view(get_data().fluent_facts, *m_context);
+    }
+    auto get_ground_actions() const noexcept
+        requires std::same_as<Kind, ::tyr::GroundTag>
+    {
+        return ygg::make_view(get_data().ground_actions, *m_context);
+    }
+    auto get_ground_axioms() const noexcept
+        requires std::same_as<Kind, ::tyr::GroundTag>
+    {
+        return ygg::make_view(get_data().ground_axioms, *m_context);
+    }
 
     auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }
 };

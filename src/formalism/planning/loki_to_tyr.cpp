@@ -1442,14 +1442,15 @@ PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView&
     return PlanningDomain(planning::get_or_create(*context, *domain).first, context, std::move(factory), std::move(path));
 }
 
-PlanningTask LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, PlanningDomain domain, std::optional<std::filesystem::path> path)
+PlanningTask<LiftedTag>
+LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, PlanningDomain domain, std::optional<std::filesystem::path> path)
 {
     auto builder = Builder();
 
     /* Perform static type analysis */
     prepare(element);
 
-    auto task = planning::checkout<planning::Task>(builder);
+    auto task = planning::checkout<planning::Task<LiftedTag>>(builder);
 
     const auto& factory = domain.get_repository_factory();
     auto task_context = factory->create_shared(domain.get_domain().get_constants().size() + element.get_objects().size(), domain.get_repository().get());
@@ -1578,7 +1579,10 @@ PlanningTask LokiToTyrTranslator::translate(const loki::formalism::TaskView& ele
     /* Structures section */
     translate_lifted(element.get_axioms(), builder, *task_context, task->axioms);
 
-    return PlanningTask(planning::get_or_create(*task_context, *task).first, std::move(fdr_context), task_context, std::move(domain), std::move(path));
+    return PlanningTask<LiftedTag>(planning::get_or_create(*task_context, *task).first,
+                                   std::move(fdr_context),
+                                   task_context,
+                                   std::move(domain),
+                                   std::move(path));
 }
-
 }

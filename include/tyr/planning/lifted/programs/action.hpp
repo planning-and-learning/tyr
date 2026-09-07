@@ -38,7 +38,7 @@ public:
     using AppPredicateToActionMapping =
         ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::ActionView<LiftedTag>>;
 
-    explicit ApplicableActionProgram(formalism::planning::TaskView task);
+    explicit ApplicableActionProgram(formalism::planning::TaskView<LiftedTag> task);
 
     const TranslationContext<LiftedTag>& get_translation_context() const noexcept;
     const AppPredicateToActionMapping& get_predicate_to_action_mapping() const noexcept;

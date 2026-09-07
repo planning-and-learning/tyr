@@ -275,7 +275,8 @@ public:
 
     PlanningDomain translate(const loki::formalism::DomainView& domain, std::optional<std::filesystem::path> path = std::nullopt);
 
-    PlanningTask translate(const loki::formalism::TaskView& problem, PlanningDomain domain, std::optional<std::filesystem::path> path = std::nullopt);
+    PlanningTask<LiftedTag>
+    translate(const loki::formalism::TaskView& problem, PlanningDomain domain, std::optional<std::filesystem::path> path = std::nullopt);
 };
 
 }

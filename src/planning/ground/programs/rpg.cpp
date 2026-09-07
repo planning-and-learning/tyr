@@ -357,7 +357,7 @@ void translate_action_to_delete_free_rules(fp::ActionView<GroundTag> action,
     }
 }
 
-fd::ProgramView<GroundTag> create_rpg_ground_program(fp::FDRTaskView task,
+fd::ProgramView<GroundTag> create_rpg_ground_program(fp::TaskView<GroundTag> task,
                                                      CostMode cost_mode,
                                                      TranslationContext<GroundTag>& translation_context,
                                                      RPGProgram<GroundTag>::RuleToActionMappings& mapping,
@@ -503,7 +503,7 @@ void remap_rule_to_action(const RPGProgram<GroundTag>::RuleToActionMapping<R>& s
     }
 }
 
-d::Program<GroundTag> create_rpg_datalog_program(fp::FDRTaskView task,
+d::Program<GroundTag> create_rpg_datalog_program(fp::TaskView<GroundTag> task,
                                                  CostMode cost_mode,
                                                  TranslationContext<GroundTag>& translation_context,
                                                  RPGProgram<GroundTag>::RuleToActionMappings& mapping)
@@ -539,7 +539,7 @@ d::Program<GroundTag> create_rpg_datalog_program(fp::FDRTaskView task,
 }  // namespace
 
 template<>
-RPGProgram<GroundTag>::RPGProgram(fp::FDRTaskView task, CostMode cost_mode) :
+RPGProgram<GroundTag>::RPGProgram(fp::TaskView<GroundTag> task, CostMode cost_mode) :
     m_translation_context(),
     m_rule_to_action(),
     m_datalog_program(create_rpg_datalog_program(task, cost_mode, m_translation_context, m_rule_to_action))

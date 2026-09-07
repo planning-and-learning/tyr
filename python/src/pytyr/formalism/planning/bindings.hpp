@@ -56,7 +56,6 @@ void bind_function_expression(nb::module_& m, RepositoryBinding& repository);
 void bind_metric(nb::module_& m, RepositoryBinding& repository);
 void bind_domain(nb::module_& m, RepositoryBinding& repository);
 void bind_task(nb::module_& m, RepositoryBinding& repository);
-void bind_fdr_task(nb::module_& m, RepositoryBinding& repository);
 void bind_fdr_variable(nb::module_& m, RepositoryBinding& repository);
 void bind_fdr_fact(nb::module_& m, RepositoryBinding& repository);
 void bind_variable_domains(nb::module_& m);

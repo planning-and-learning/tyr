@@ -39,7 +39,7 @@ template<TaskKind Kind>
 class RPGProgram
 {
 public:
-    using Task = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::FDRTaskView, formalism::planning::TaskView>;
+    using Task = formalism::planning::TaskView<Kind>;
     using Action = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionView<GroundTag>, formalism::planning::ActionView<LiftedTag>>;
     template<formalism::RelationKind R>
     using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::datalog::RuleBindingView<R>, formalism::datalog::RuleView<LiftedTag, R>>;
@@ -76,10 +76,10 @@ private:
 };
 
 template<>
-RPGProgram<GroundTag>::RPGProgram(formalism::planning::FDRTaskView task, CostMode cost_mode);
+RPGProgram<GroundTag>::RPGProgram(formalism::planning::TaskView<GroundTag> task, CostMode cost_mode);
 
 template<>
-RPGProgram<LiftedTag>::RPGProgram(formalism::planning::TaskView task, CostMode cost_mode);
+RPGProgram<LiftedTag>::RPGProgram(formalism::planning::TaskView<LiftedTag> task, CostMode cost_mode);
 
 }
 

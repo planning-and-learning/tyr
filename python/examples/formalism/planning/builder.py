@@ -50,7 +50,7 @@ from pytyr.formalism.planning import (
     LiftedTaskData,
     FDRContext,
     PlanningDomain,
-    PlanningTask,
+    LiftedPlanningTask,
 )
 
 from pytyr.planning.lifted import (
@@ -448,7 +448,7 @@ def main() -> None:
     planning_domain = PlanningDomain(domain, domain_repository, factory)
 
     # Combine the lifted task with the FDR context, task repository, and domain.
-    planning_task = PlanningTask(task, fdr_context, task_repository, planning_domain)
+    planning_task = LiftedPlanningTask(task, fdr_context, task_repository, planning_domain)
 
     # Create a search task from the planning task.
     search_task = Task(planning_task)

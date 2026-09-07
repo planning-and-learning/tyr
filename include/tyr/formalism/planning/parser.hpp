@@ -42,8 +42,8 @@ public:
            const loki::ParserOptions& options = loki::ParserOptions(),
            const loki::TranslatorOptions& translator_options = loki::TranslatorOptions());
 
-    PlanningTask parse_task(const fs::path& task_filepath, const loki::ParserOptions& options = loki::ParserOptions());
-    PlanningTask
+    PlanningTask<LiftedTag> parse_task(const fs::path& task_filepath, const loki::ParserOptions& options = loki::ParserOptions());
+    PlanningTask<LiftedTag>
     parse_task(const std::string& task_description, std::optional<fs::path> task_filepath, const loki::ParserOptions& options = loki::ParserOptions());
 
     PlanningDomain get_domain() const;

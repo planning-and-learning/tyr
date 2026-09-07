@@ -2,7 +2,7 @@
 #define TYR_SERIALIZATION_PLANNING_GROUND_TASK_HPP_
 
 #include "tyr/planning/ground/task.hpp"
-#include "tyr/serialization/formalism/planning/planning_fdr_task.hpp"
+#include "tyr/serialization/formalism/planning/planning_task.hpp"
 #include "yggdrasil/serialization/dictionaries.hpp"
 
 namespace ygg::serialization

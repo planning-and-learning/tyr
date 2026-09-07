@@ -432,16 +432,16 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
                                                                               planning_domain.get_repository().get());
     auto builder = fp::Builder();
 
-    auto fdr_task = fp::checkout<fp::FDRTask>(builder);
+    auto ground_task = fp::checkout<fp::Task<GroundTag>>(builder);
 
     auto merge_context = fp::MergeContext { builder, *repository };
 
-    fdr_task->name = task.get_name();
-    fdr_task->domain = task.get_domain().get_index();
+    ground_task->name = task.get_name();
+    ground_task->domain = task.get_domain().get_index();
     for (const auto predicate : task.get_derived_predicates())
-        fdr_task->derived_predicates.push_back(merge_p2p(predicate, merge_context).first.get_index());
+        ground_task->derived_predicates.push_back(merge_p2p(predicate, merge_context).first.get_index());
     for (const auto object : task.get_objects())
-        fdr_task->objects.push_back(merge_p2p(object, merge_context).first.get_index());
+        ground_task->objects.push_back(merge_p2p(object, merge_context).first.get_index());
 
     auto initial_atoms = fp::AtomViewList<GroundTag, f::FluentTag> {};
     for (const auto atom : task.get_atoms<f::FluentTag>())
@@ -517,30 +517,30 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     }
 
     for (const auto atom : task.get_atoms<f::StaticTag>())
-        fdr_task->static_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
+        ground_task->static_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
     for (const auto atom : fluent_atoms)
-        fdr_task->fluent_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
+        ground_task->fluent_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
     for (const auto atom : derived_atoms)
-        fdr_task->derived_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
+        ground_task->derived_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
     for (const auto fterm_value : task.get_fterm_values<f::StaticTag>())
-        fdr_task->static_fterm_values.push_back(merge_p2p(fterm_value, merge_context).first.get_index());
+        ground_task->static_fterm_values.push_back(merge_p2p(fterm_value, merge_context).first.get_index());
     for (const auto fterm_value : task.get_fterm_values<f::FluentTag>())
-        fdr_task->fluent_fterm_values.push_back(merge_p2p(fterm_value, merge_context).first.get_index());
+        ground_task->fluent_fterm_values.push_back(merge_p2p(fterm_value, merge_context).first.get_index());
     if (task.get_auxiliary_fterm_value().has_value())
-        fdr_task->auxiliary_fterm_value = merge_p2p(task.get_auxiliary_fterm_value().value(), merge_context).first.get_index();
+        ground_task->auxiliary_fterm_value = merge_p2p(task.get_auxiliary_fterm_value().value(), merge_context).first.get_index();
     if (task.get_metric())
-        fdr_task->metric = merge_p2p(task.get_metric().value(), merge_context).first.get_index();
+        ground_task->metric = merge_p2p(task.get_metric().value(), merge_context).first.get_index();
     for (const auto axiom : task.get_axioms())
-        fdr_task->axioms.push_back(merge_p2p(axiom, merge_context).first.get_index());
+        ground_task->axioms.push_back(merge_p2p(axiom, merge_context).first.get_index());
 
     /// --- Create FDR variables
     for (const auto variable : fdr_context->get_variables())
-        fdr_task->fluent_variables.push_back(variable.get_index());
+        ground_task->fluent_variables.push_back(variable.get_index());
 
     /// --- Create FDR fluent facts
     for (const auto atom : task.get_atoms<f::FluentTag>())
         if (const auto fact = std::as_const(*fdr_context).get_fact(merge_p2p(atom, merge_context).first))
-            fdr_task->fluent_facts.push_back(fact->get_data());
+            ground_task->fluent_facts.push_back(fact->get_data());
 
     auto static_atoms_bitset = boost::dynamic_bitset<>();
     for (const auto atom : task.get_atoms<f::StaticTag>())
@@ -550,7 +550,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     const auto goal_or_nullopt =
         create_ground_fdr_conjunctive_condition(task.get_goal(), fluent_atoms_set, derived_atoms_set, static_atoms_bitset, *fdr_context, merge_context);
     if (goal_or_nullopt.has_value())
-        fdr_task->goal = goal_or_nullopt->get_index();
+        ground_task->goal = goal_or_nullopt->get_index();
     else
         return GroundTaskInstantiationResult { nullptr, GroundTaskInstantiationStatus::PROVEN_UNSOLVABLE };
 
@@ -593,7 +593,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
                 if (is_consistent(ground_action, fluent_assign, derived_assign))
                 {
-                    fdr_task->ground_actions.push_back(ground_action.get_index());
+                    ground_task->ground_actions.push_back(ground_action.get_index());
                 }
             }
         });
@@ -626,18 +626,17 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
                     if (is_consistent(ground_axiom, fluent_assign, derived_assign))
                     {
-                        fdr_task->ground_axioms.push_back(ground_axiom.get_index());
+                        ground_task->ground_axioms.push_back(ground_axiom.get_index());
                     }
                 }
             }
         });
 
-    return GroundTaskInstantiationResult { std::make_shared<Task<GroundTag>>(fp::PlanningFDRTask(fp::get_or_create(*repository, *fdr_task).first,
-                                                                                                 std::move(fdr_context),
-                                                                                                 repository,
-                                                                                                 planning_task.get_domain(),
-                                                                                                 planning_task.get_path())),
+    return GroundTaskInstantiationResult { std::make_shared<Task<GroundTag>>(fp::PlanningTask<GroundTag>(fp::get_or_create(*repository, *ground_task).first,
+                                                                                                         std::move(fdr_context),
+                                                                                                         repository,
+                                                                                                         planning_task.get_domain(),
+                                                                                                         planning_task.get_path())),
                                            GroundTaskInstantiationStatus::SUCCESS };
 }
-
 }
