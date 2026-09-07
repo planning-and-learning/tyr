@@ -84,7 +84,7 @@ for name, table in dictionaries.tables().items():
     print(render_table(table["rows"], prefix=table["prefix"]))
 ```
 
-The optional prefix adds entity references in an index column. Nested dictionaries expand into columns with grouped headers. Simple lists use comma-separated cells; nested or ambiguous lists use compact JSON. Columns use `|` separators; pass `aligned=True` to pad them. The renderer returns text and leaves file handling and report layout to the caller.
+The optional prefix adds entity references in an index column. Nested dictionaries expand into columns with grouped headers. Simple lists use brackets and commas, such as `[a0,a1]`; nested or ambiguous lists use compact JSON. Columns use `|` separators; pass `aligned=True` to pad them. The renderer returns text and leaves file handling and report layout to the caller.
 
 Snapshots are ordinary Python dictionaries and lists. Add application columns to snapshot rows before rendering, matching annotations by entity reference rather than evidence-list position. Preserve row order when using `prefix`; if sorting or filtering, put the original references into explicit cells first and omit `prefix`. These edits do not affect the registry or later snapshots. Shared `JSONValue`, `Row`, and `Table` types live in `pyyggdrasil.serialization.table`. Both `table()` and `tables()` expose generic rows because selection and projection can change their columns.
 
