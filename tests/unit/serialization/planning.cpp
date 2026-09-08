@@ -382,18 +382,27 @@ void check_runtime_serialization()
 
     const auto task = make_task<Kind>();
     ASSERT_NE(task, nullptr);
-    auto unsupported_task = s::Dictionaries {};
-    EXPECT_THROW(unsupported_task.serialize(*task), std::invalid_argument);
+    const auto& formalism_task = task->get_formalism_task();
 
     auto task_dictionaries = s::Dictionaries {};
     task_dictionaries.template register_table<fp::TaskView<Kind>>("tasks", "t", std::vector<std::string> { "name" });
     task_dictionaries.template register_table<fp::DomainView>("domains", "d", std::vector<std::string> {});
-    const auto owner = task_dictionaries.serialize(task->get_formalism_task()).as_object();
-    EXPECT_EQ(owner.at("task").as_string(), "t0");
-    EXPECT_EQ(owner.at("domain").as_object().at("domain").as_string(), "d0");
-    EXPECT_TRUE(owner.at("path").is_null());
+    EXPECT_EQ(task_dictionaries.serialize(formalism_task.get_task()).as_string(), "t0");
+    EXPECT_EQ(task_dictionaries.serialize(formalism_task.get_domain().get_domain()).as_string(), "d0");
     EXPECT_EQ(task_dictionaries.template table<fp::TaskView<Kind>>()[0].as_object().at("name").as_string(), "serialization-1");
-    EXPECT_EQ(task_dictionaries.serialize(*task).as_object().at("formalism_task").as_object(), owner);
+    EXPECT_EQ(task_dictionaries.template table<fp::DomainView>(), (boost::json::array { boost::json::object {} }));
+
+    const auto check_rejected_owner = [](const auto& owner)
+    {
+        auto dictionaries = s::Dictionaries {};
+        dictionaries.template register_table<fp::TaskView<Kind>>("tasks", "t", std::vector<std::string> { "name" });
+        dictionaries.template register_table<fp::DomainView>("domains", "d", std::vector<std::string> {});
+        EXPECT_THROW(dictionaries.serialize(owner), std::invalid_argument);
+        EXPECT_THROW(dictionaries.tables(), std::logic_error);
+    };
+    check_rejected_owner(formalism_task.get_domain());
+    check_rejected_owner(formalism_task);
+    check_rejected_owner(*task);
 }
 
 TEST(TyrSerialization, LiftedPlansAndTasksPreserveOwnersAndDeduplicateSelectedStates) { check_runtime_serialization<LiftedTag>(); }
