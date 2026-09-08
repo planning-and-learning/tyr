@@ -66,9 +66,9 @@ From: ubuntu:22.04
 Stage: runtime
 
 %files from build
-    /opt/tyr/install /usr/local
+    /opt/tyr/install/* /usr/local/
     /opt/tyr/build/exe/gbfs_lazy /usr/local/bin/gbfs_lazy
-    /opt/tyr/runtime-lib /usr/local/lib
+    /opt/tyr/runtime-lib/* /usr/local/lib/
 
 %post
     # Install only runtime dependencies
@@ -90,6 +90,9 @@ Stage: runtime
 
 %runscript
     exec /usr/local/bin/gbfs_lazy -D "$1" -P "$2" -O "$3" -N 1 -H rpg_ff -S 
+
+%test
+    /usr/local/bin/gbfs_lazy --help > /dev/null
 
 %labels
     Author Dominik Drexler
