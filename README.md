@@ -131,7 +131,7 @@ Install Tyr's native dependency providers into the active Python environment,
 then configure CMake with their native prefixes:
 
 ```console
-python -m pip install 'pyyggdrasil>=0.2,<0.3' 'pypddl>=1.2,<1.3' 'pypddl-datasets>=0.0.12,<0.1'
+python -m pip install 'pyyggdrasil>=0.2.1,<0.3' 'pypddl>=1.2.1,<1.3' 'pypddl-datasets>=0.0.12,<0.1'
 
 cmake -S . -B build \
   -DPython_EXECUTABLE="$(python -c 'import sys; print(sys.executable)')"
