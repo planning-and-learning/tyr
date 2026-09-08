@@ -48,6 +48,7 @@ jobs:
         run: |
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
                 -DTYR_BUILD_TESTS=ON \
+                -DTYR_BUILD_EXECUTABLES=ON \
                 -DTYR_BUILD_SHARED=ON \
                 -DTYR_LINK_STATIC_DEPENDENCIES=OFF \
                 -DTYR_RELATION_STORAGE_POLICY=${{ matrix.relation_storage_policy }} \
