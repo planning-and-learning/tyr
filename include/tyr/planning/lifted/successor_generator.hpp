@@ -133,6 +133,7 @@ public:
     // Diagnostics
     void print_summary(size_t verbosity) const;
 
+    // Getters
     const ApplicableActionProgram<LiftedTag>& get_action_program() const noexcept;
     const TaskPtr<LiftedTag>& get_task() const noexcept;
     ygg::uint_t get_index() const noexcept;
