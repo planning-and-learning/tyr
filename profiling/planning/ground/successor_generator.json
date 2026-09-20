@@ -1,0 +1,28 @@
+{
+    "domains": {
+        "blocks": {
+            "domain_file": "classical/tests/blocks_4/domain.pddl",
+            "tasks": { "test-1": "classical/tests/blocks_4/test-1.pddl" }
+        },
+        "blocksworld-large-simple": {
+            "domain_file": "classical/profiling/blocksworld-large-simple/domain.pddl",
+            "tasks": { "p-100-2": "classical/profiling/blocksworld-large-simple/p-100-2.pddl" }
+        },
+        "barman": {
+            "domain_file": "classical/tests/barman/domain.pddl",
+            "tasks": { "test-1": "classical/tests/barman/test-1.pddl" }
+        },
+        "logistics": {
+            "domain_file": "classical/autoscale-benchmarks-main/21.11-optimal-strips/logistics/domain.pddl",
+            "tasks": { "p01": "classical/autoscale-benchmarks-main/21.11-optimal-strips/logistics/p01.pddl" }
+        },
+        "zenotravel": {
+            "domain_file": "numeric/ipc2023/zenotravel/domain.pddl",
+            "tasks": { "pfile5": "numeric/ipc2023/zenotravel/pfile5.pddl" }
+        }
+    },
+    "attributes": {
+        "num_ground_actions": { "type": "int", "compare": "strict_equality" },
+        "num_schemas": { "type": "int", "compare": "strict_equality" }
+    }
+}

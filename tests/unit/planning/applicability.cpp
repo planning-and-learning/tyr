@@ -7,6 +7,7 @@
 #include <array>
 #include <filesystem>
 #include <gtest/gtest.h>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -21,7 +22,7 @@ namespace
 inline constexpr std::string_view kEffectValidityDomain = R"(
 (define (domain effect-validity)
   (:requirements :adl :numeric-fluents)
-  (:types item)
+  (:types item unused)
   (:constants low high - item)
   (:predicates (enabled ?x - item))
   (:functions (value ?x - item))
@@ -51,6 +52,11 @@ inline constexpr std::string_view kEffectValidityDomain = R"(
     :effect (and
       (assign (value ?x) 1)
       (increase (value ?y) 1)))
+
+  (:action dormant
+    :parameters (?x - unused)
+    :precondition (and)
+    :effect (increase (value low) 1))
 )
 )";
 
@@ -174,6 +180,83 @@ TEST(TyrPlanningApplicabilityTest, EffectFamiliesUseGroundedTargetsAndNeverShrin
 
     auto execution_context = ygg::ExecutionContext::create(1);
     expect_effect_validity_successors(lifted_task->instantiate_ground_task(*execution_context).task);
+}
+
+TEST(TyrPlanningApplicabilityTest, GroundSchemaQueriesMatchFilteredSuccessors)
+{
+    const auto make_lifted_task = []
+    {
+        return p::Task<LiftedTag>::create(fp::Parser(std::string(kEffectValidityDomain), "effect-validity-domain.pddl")
+                                            .parse_task(R"(
+(define (problem schema-successors)
+  (:domain effect-validity)
+  (:init (enabled low) (enabled high) (= (value low) 1) (= (value high) 1))
+  (:goal (enabled low)))
+)",
+                                                        "schema-successors.pddl"));
+    };
+    auto execution_context = ygg::ExecutionContext::create(1);
+    const auto task = make_lifted_task()->instantiate_ground_task(*execution_context).task;
+    ASSERT_TRUE(task);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<GroundTag>().create(task, execution_context);
+    auto state_repository = p::StateRepositoryFactory<GroundTag>().create(task);
+    auto source = p::SuccessorGeneratorFactory<GroundTag>().create(task, execution_context);
+    auto worker = source->make_worker(ygg::ExecutionContext::create(1));
+    const auto initial_node = source->get_initial_node(*state_repository, *axiom_evaluator);
+    const auto all_successors = source->get_labeled_successor_nodes(initial_node, *state_repository, *axiom_evaluator);
+    const auto all_bindings = source->get_applicable_action_bindings(initial_node);
+    const auto same_successor = [](const auto& lhs, const auto& rhs) { return lhs.label == rhs.label && lhs.node == rhs.node; };
+    ASSERT_EQ(all_successors.size(), 4);
+    auto schemas = fp::ActionViewList<LiftedTag> {};
+    for (const auto actions : { task->get_domain().get_domain().get_actions(), task->get_task().get_domain().get_actions() })
+        schemas.insert(schemas.end(), actions.begin(), actions.end());
+
+    for (auto* generator : { source.get(), worker.get() })
+    {
+        for (const auto action : schemas)
+        {
+            SCOPED_TRACE(action.get_name().str());
+            auto expected_successors = p::LabeledNodeList<GroundTag> {};
+            auto expected_nodes = p::NodeList<GroundTag> {};
+            auto expected_bindings = std::vector<fp::ActionBindingView> {};
+            for (const auto& successor : all_successors)
+                if (successor.label.get_relation().get_index() == action.get_index())
+                {
+                    expected_successors.push_back(successor);
+                    expected_nodes.push_back(successor.node);
+                }
+            for (const auto binding : all_bindings)
+                if (binding.get_relation().get_index() == action.get_index())
+                    expected_bindings.push_back(binding);
+
+            EXPECT_TRUE(std::ranges::is_permutation(
+                generator->get_labeled_successor_nodes(initial_node, action, *state_repository, *axiom_evaluator), expected_successors, same_successor));
+            EXPECT_TRUE(std::ranges::is_permutation(generator->get_successor_nodes(initial_node, action, *state_repository, *axiom_evaluator), expected_nodes));
+            EXPECT_TRUE(std::ranges::is_permutation(generator->get_applicable_action_bindings(initial_node, action), expected_bindings));
+
+            auto successors = all_successors;
+            auto nodes = source->get_successor_nodes(initial_node, *state_repository, *axiom_evaluator);
+            auto bindings = all_bindings;
+            generator->get_labeled_successor_nodes(initial_node, action, *state_repository, *axiom_evaluator, successors);
+            generator->get_successor_nodes(initial_node, action, *state_repository, *axiom_evaluator, nodes);
+            generator->get_applicable_action_bindings(initial_node, action, bindings);
+            EXPECT_TRUE(std::ranges::is_permutation(successors, expected_successors, same_successor));
+            EXPECT_TRUE(std::ranges::is_permutation(nodes, expected_nodes));
+            EXPECT_TRUE(std::ranges::is_permutation(bindings, expected_bindings));
+
+            if (action.get_name().str() == "dormant")
+            {
+                EXPECT_TRUE(std::ranges::none_of(task->get_task().get_ground_actions(), [&](const auto ground_action)
+                                                { return ground_action.get_row().get_relation().get_index() == action.get_index(); }));
+            }
+        }
+    }
+
+    const auto foreign_task = make_lifted_task();
+    const auto foreign_action = foreign_task->get_domain().get_domain().get_actions()[0];
+    EXPECT_THROW(source->get_applicable_action_bindings(initial_node, foreign_action), std::invalid_argument);
+    EXPECT_THROW(source->get_successor_nodes(initial_node, foreign_action, *state_repository, *axiom_evaluator), std::invalid_argument);
+    EXPECT_THROW(source->get_labeled_successor_nodes(initial_node, foreign_action, *state_repository, *axiom_evaluator), std::invalid_argument);
 }
 
 TEST(TyrPlanningApplicabilityTest, TppUndefinedDriveCostIsFilteredAsAnEffect)

@@ -65,6 +65,7 @@ void validate_task(const TaskPtr<GroundTag>& task, const StateView<GroundTag>& s
 struct SuccessorGenerator<GroundTag>::Impl
 {
     using ActionBindingMap = ygg::UnorderedMap<fp::ActionBindingView, fp::ActionView<GroundTag>>;
+    using ActionMatchTrees = ygg::UnorderedMap<fp::ActionView<LiftedTag>, match_tree::MatchTreePtr<fp::Action<GroundTag>>>;
 
     struct Definition
     {
@@ -72,6 +73,7 @@ struct SuccessorGenerator<GroundTag>::Impl
 
         TaskPtr<GroundTag> task;
         match_tree::MatchTreePtr<fp::Action<GroundTag>> action_match_tree_prototype;
+        ActionMatchTrees schema_match_tree_prototypes;
         ActionBindingMap action_binding_to_ground_action;
     };
 
@@ -80,6 +82,7 @@ struct SuccessorGenerator<GroundTag>::Impl
         explicit Evaluator(const Definition& definition);
 
         match_tree::MatchTreePtr<fp::Action<GroundTag>> action_match_tree;
+        ActionMatchTrees schema_match_trees;
         fp::ActionViewList<GroundTag> applicable_actions;
         ActionExecutor executor;
     };
@@ -100,6 +103,30 @@ struct SuccessorGenerator<GroundTag>::Impl
     {
     }
 
+    match_tree::MatchTree<fp::Action<GroundTag>>& get_schema_match_tree(fp::ActionView<LiftedTag> action)
+    {
+        const auto it = evaluator.schema_match_trees.find(action);
+        // Repository indices can collide across independent factories.
+        if (it == evaluator.schema_match_trees.end() || &action.get_context() != &it->first.get_context())
+            throw std::invalid_argument("SuccessorGenerator: action schema does not belong to the task domain.");
+        return *it->second;
+    }
+
+    template<typename Callback>
+    void for_each_applicable_action(const Node<GroundTag>& node, match_tree::MatchTree<fp::Action<GroundTag>>& tree, Callback&& callback)
+    {
+        const auto state_context = StateContext<GroundTag>(*definition->task, node.get_state().get_state_builder(), node.get_metric());
+        tree.generate(state_context, evaluator.applicable_actions);
+        for (const auto action : evaluator.applicable_actions)
+        {
+            assert(is_applicable(action.get_condition(), state_context));
+            if (!evaluator.executor.is_applicable_if_fires(action, state_context))
+                continue;
+            assert(evaluator.executor.is_applicable(action, state_context));
+            callback(action);
+        }
+    }
+
     ygg::uint_t index;
     std::shared_ptr<std::atomic<ygg::uint_t>> next_index;
     std::shared_ptr<const Definition> definition;
@@ -113,8 +140,16 @@ SuccessorGenerator<GroundTag>::Impl::Definition::Definition(TaskPtr<GroundTag> t
         task->get_task().get_context())),
     action_binding_to_ground_action()
 {
+    auto schema_actions = ygg::UnorderedMap<fp::ActionView<LiftedTag>, fp::ActionViewList<GroundTag>> {};
+    for (const auto action : task->get_task().get_domain().get_actions())
+        schema_actions.try_emplace(action);
     for (const auto action : task->get_task().get_ground_actions())
+    {
         action_binding_to_ground_action.emplace(action.get_row(), action);
+        schema_actions.at(action.get_action()).push_back(action);
+    }
+    for (auto& [schema, actions] : schema_actions)
+        schema_match_tree_prototypes.emplace(schema, match_tree::MatchTree<fp::Action<GroundTag>>::create(std::move(actions), task->get_task().get_context()));
 }
 
 SuccessorGenerator<GroundTag>::Impl::Evaluator::Evaluator(const Definition& definition) :
@@ -122,6 +157,8 @@ SuccessorGenerator<GroundTag>::Impl::Evaluator::Evaluator(const Definition& defi
     applicable_actions(),
     executor()
 {
+    for (const auto& [schema, tree] : definition.schema_match_tree_prototypes)
+        schema_match_trees.emplace(schema, tree->make_worker());
 }
 
 SuccessorGenerator<GroundTag>::SuccessorGenerator(ygg::uint_t index,
@@ -181,22 +218,36 @@ void SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<GroundTag>& n
     validate_task(m_impl->definition->task, axiom_evaluator);
     out_nodes.clear();
 
-    const auto state = node.get_state();
+    m_impl->for_each_applicable_action(node,
+                                       *m_impl->evaluator.action_match_tree,
+                                       [&](const auto action) { out_nodes.emplace_back(get_successor_node(node, action, state_repository, axiom_evaluator)); });
+}
 
-    const auto state_context = StateContext<GroundTag>(*m_impl->definition->task, state.get_state_builder(), node.get_metric());
+NodeList<GroundTag> SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<GroundTag>& node,
+                                                                       fp::ActionView<LiftedTag> action,
+                                                                       StateRepository<GroundTag>& state_repository,
+                                                                       AxiomEvaluator<GroundTag>& axiom_evaluator)
+{
+    auto result = NodeList<GroundTag> {};
+    get_successor_nodes(node, action, state_repository, axiom_evaluator, result);
+    return result;
+}
 
-    m_impl->evaluator.action_match_tree->generate(state_context, m_impl->evaluator.applicable_actions);
-
-    for (const auto ground_action : m_impl->evaluator.applicable_actions)
-    {
-        assert(is_applicable(ground_action.get_condition(), state_context));
-
-        if (!m_impl->evaluator.executor.is_applicable_if_fires(ground_action, state_context))
-            continue;
-
-        assert(m_impl->evaluator.executor.is_applicable(ground_action, state_context));
-        out_nodes.emplace_back(get_successor_node(node, ground_action, state_repository, axiom_evaluator));
-    }
+void SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<GroundTag>& node,
+                                                        fp::ActionView<LiftedTag> action,
+                                                        StateRepository<GroundTag>& state_repository,
+                                                        AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                        NodeList<GroundTag>& out_nodes)
+{
+    validate_task(m_impl->definition->task, node.get_state());
+    validate_task(m_impl->definition->task, state_repository);
+    validate_task(m_impl->definition->task, axiom_evaluator);
+    auto& tree = m_impl->get_schema_match_tree(action);
+    out_nodes.clear();
+    m_impl->for_each_applicable_action(node,
+                                       tree,
+                                       [&](const auto ground_action)
+                                       { out_nodes.emplace_back(get_successor_node(node, ground_action, state_repository, axiom_evaluator)); });
 }
 
 LabeledNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<GroundTag>& node,
@@ -220,22 +271,38 @@ void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<Groun
     validate_task(m_impl->definition->task, axiom_evaluator);
     out_nodes.clear();
 
-    const auto state = node.get_state();
+    m_impl->for_each_applicable_action(node,
+                                       *m_impl->evaluator.action_match_tree,
+                                       [&](const auto action)
+                                       { out_nodes.emplace_back(action.get_row(), get_successor_node(node, action, state_repository, axiom_evaluator)); });
+}
 
-    const auto state_context = StateContext<GroundTag>(*m_impl->definition->task, state.get_state_builder(), node.get_metric());
+LabeledNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<GroundTag>& node,
+                                                                                      fp::ActionView<LiftedTag> action,
+                                                                                      StateRepository<GroundTag>& state_repository,
+                                                                                      AxiomEvaluator<GroundTag>& axiom_evaluator)
+{
+    auto result = LabeledNodeList<GroundTag> {};
+    get_labeled_successor_nodes(node, action, state_repository, axiom_evaluator, result);
+    return result;
+}
 
-    m_impl->evaluator.action_match_tree->generate(state_context, m_impl->evaluator.applicable_actions);
-
-    for (const auto ground_action : m_impl->evaluator.applicable_actions)
-    {
-        assert(is_applicable(ground_action.get_condition(), state_context));
-
-        if (!m_impl->evaluator.executor.is_applicable_if_fires(ground_action, state_context))
-            continue;
-
-        assert(m_impl->evaluator.executor.is_applicable(ground_action, state_context));
-        out_nodes.emplace_back(ground_action.get_row(), get_successor_node(node, ground_action, state_repository, axiom_evaluator));
-    }
+void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<GroundTag>& node,
+                                                                fp::ActionView<LiftedTag> action,
+                                                                StateRepository<GroundTag>& state_repository,
+                                                                AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                LabeledNodeList<GroundTag>& out_nodes)
+{
+    validate_task(m_impl->definition->task, node.get_state());
+    validate_task(m_impl->definition->task, state_repository);
+    validate_task(m_impl->definition->task, axiom_evaluator);
+    auto& tree = m_impl->get_schema_match_tree(action);
+    out_nodes.clear();
+    m_impl->for_each_applicable_action(
+        node,
+        tree,
+        [&](const auto ground_action)
+        { out_nodes.emplace_back(ground_action.get_row(), get_successor_node(node, ground_action, state_repository, axiom_evaluator)); });
 }
 
 Node<GroundTag> SuccessorGenerator<GroundTag>::get_successor_node(const Node<GroundTag>& node,
@@ -273,19 +340,24 @@ void SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<Gr
     validate_task(m_impl->definition->task, node.get_state());
     out_bindings.clear();
 
-    const auto state_context = StateContext<GroundTag>(*m_impl->definition->task, node.get_state().get_state_builder(), node.get_metric());
-    m_impl->evaluator.action_match_tree->generate(state_context, m_impl->evaluator.applicable_actions);
+    m_impl->for_each_applicable_action(node, *m_impl->evaluator.action_match_tree, [&](const auto action) { out_bindings.push_back(action.get_row()); });
+}
 
-    for (const auto action : m_impl->evaluator.applicable_actions)
-    {
-        assert(is_applicable(action.get_condition(), state_context));
+std::vector<fp::ActionBindingView> SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<GroundTag>& node, fp::ActionView<LiftedTag> action)
+{
+    auto result = std::vector<fp::ActionBindingView> {};
+    get_applicable_action_bindings(node, action, result);
+    return result;
+}
 
-        if (!m_impl->evaluator.executor.is_applicable_if_fires(action, state_context))
-            continue;
-
-        assert(m_impl->evaluator.executor.is_applicable(action, state_context));
-        out_bindings.push_back(action.get_row());
-    }
+void SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<GroundTag>& node,
+                                                                   fp::ActionView<LiftedTag> action,
+                                                                   std::vector<fp::ActionBindingView>& out_bindings)
+{
+    validate_task(m_impl->definition->task, node.get_state());
+    auto& tree = m_impl->get_schema_match_tree(action);
+    out_bindings.clear();
+    m_impl->for_each_applicable_action(node, tree, [&](const auto ground_action) { out_bindings.push_back(ground_action.get_row()); });
 }
 
 PendingActionResult

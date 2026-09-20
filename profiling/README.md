@@ -71,7 +71,7 @@ Configure with profiling enabled:
 
 ```bash
 cmake -S . -B build -DTYR_BUILD_PROFILING=ON
-cmake --build build --target successor_generator -j24
+cmake --build build --target successor_generator -j16
 ```
 
 ## Run
@@ -145,3 +145,44 @@ profiling/compare.py \
   profiling-results/planning/lifted/successor_generator/summary.json \
   --output profiling-results/planning/lifted/successor_generator/compare.json
 ```
+
+## Ground schema selection
+
+The ground suite compares a global match tree with one tree per lifted action
+schema, using the initial state of five classical/numeric tasks, including
+100-block Blocksworld. Each pair checks
+that both implementations produce the same actions or labeled successors before
+timing. The selected schema is the first domain schema with an initially
+applicable binding; its name appears in the benchmark label.
+
+```bash
+cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release -DTYR_BUILD_PROFILING=ON
+cmake --build build-release --target ground_successor_generator -j16
+profiling/runner.py \
+  --executable build-release/profiling/planning/ground/ground_successor_generator \
+  --output-dir /tmp/tyr-ground-successor-profiling \
+  --suite-json profiling/planning/ground/successor_generator.json \
+  --benchmark-min-time 0.1s \
+  --benchmark-timeout 300 \
+  --benchmark-repetitions 5 \
+  --benchmark-report-aggregates-only
+```
+
+Compare the CPU-time medians of each `/global` and `/per_schema` pair:
+
+| Pair | Global baseline | Per-schema implementation |
+| --- | --- | --- |
+| `one_schema` | Generate all applicable actions, then filter | Query the selected schema tree |
+| `all_schemas` | Query the global tree | Query every schema tree and concatenate |
+| `construction` | Construct and destroy the global tree | Group actions, construct and destroy every schema tree |
+| `bindings` | Public binding API, then filter | Public schema binding API |
+| `successors` | Global tree, filter before checking effects and generating successors | Public schema labeled-successor API |
+
+Parsing, grounding, equality checks, and initial setup are outside the timed loop.
+Each case reuses its grounded task and immutable index definitions across modes
+and repetitions; every benchmark run uses fresh workers, an axiom evaluator,
+and a state repository. The construction pair still builds fresh indexes.
+Successor measurements reuse interned states. The construction pair measures the
+additional forest cost separately: the implementation retains its global tree
+for calls that request all actions. These are initial-state microbenchmarks,
+not whole-search measurements.
