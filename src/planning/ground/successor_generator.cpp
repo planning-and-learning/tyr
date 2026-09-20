@@ -375,8 +375,8 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::finalize_successor_state(StateRep
 {
     validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
-    const auto metric = complete_successor_state(*m_impl->definition->task, axiom_evaluator, *state, result.auxiliary_value);
-    return Node<GroundTag>(state_repository.register_extended_state(std::move(state)), metric);
+    const auto metric = evaluate_successor_metric(*m_impl->definition->task, *state, result.auxiliary_value);
+    return Node<GroundTag>(state_repository.register_state(axiom_evaluator, std::move(state)), metric);
 }
 
 fp::ActionView<GroundTag> SuccessorGenerator<GroundTag>::ground_action(fp::ActionBindingView binding) const

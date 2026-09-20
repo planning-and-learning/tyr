@@ -508,9 +508,9 @@ private:
         }
     }
 
-    ygg::float_t complete_successor_state(WorkerData& worker, ygg::Builder<State<Kind>>& state, PendingActionResult result)
+    ygg::float_t evaluate_successor_metric(const ygg::Builder<State<Kind>>& state, PendingActionResult result)
     {
-        return planning::complete_successor_state(m_task, worker.axiom_evaluator, state, result.auxiliary_value);
+        return planning::evaluate_successor_metric(m_task, state, result.auxiliary_value);
     }
 
     void solve(WorkerData& worker, const Node<Kind>& node)

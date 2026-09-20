@@ -93,6 +93,38 @@ struct StateRepository<Kind>::Impl
         AtomStorageBackend<Kind, StateStoragePolicyTag, ThreadSafe> derived_backend;
         NumericStorageBackend<Kind, StateStoragePolicyTag, ThreadSafe> numeric_backend;
         ygg::SharedObjectPool<ygg::Builder<State<Kind>>, true> state_builder_pool;
+
+        template<typename ExtendState>
+        void register_state(ygg::Builder<State<Kind>>& state, ExtendState&& extend_state)
+        {
+            auto& packed_states = storage->packed_states;
+            using PackedStates = typename Storage<ThreadSafe>::PackedStates;
+            const auto fluent = fluent_backend.insert(state.template get_atoms<formalism::FluentTag>());
+            const auto numeric = numeric_backend.insert(state.get_numeric_variables());
+            const auto key = ygg::Data<State<Kind>>(ygg::Index<State<Kind>>::max(), fluent, {}, numeric);
+            const auto hash = PackedStates::hash(key);
+            auto state_index = packed_states.find_with_hash(key, hash);
+
+            if (!state_index)
+            {
+                std::forward<ExtendState>(extend_state)();
+                const auto derived = derived_backend.insert(state.template get_atoms<formalism::DerivedTag>());
+                const auto [index, inserted] = packed_states.complete_miss_with_hash(hash,
+                                                                                   key,
+                                                                                   [&](ygg::Index<State<Kind>> index)
+                                                                                   { return ygg::Data<State<Kind>>(index, fluent, derived, numeric); });
+                state_index = index;
+                if (inserted)
+                {
+                    state.set(index);
+                    return;
+                }
+            }
+
+            derived_backend.unpack(packed_states[*state_index].template get_atoms<formalism::DerivedTag>(),
+                                   state.template get_atoms<formalism::DerivedTag>());
+            state.set(*state_index);
+        }
     };
 
     Impl(ygg::uint_t index_, TaskPtr<Kind> task, bool concurrent, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
@@ -254,54 +286,15 @@ StateView<Kind> StateRepository<Kind>::register_state(AxiomEvaluator<Kind>& axio
 {
     if (axiom_evaluator.get_task() != m_impl->definition->task)
         throw std::invalid_argument("StateRepository::register_state(...): axiom evaluator belongs to a different task.");
-    axiom_evaluator.compute_extended_state(*state);
-    return register_extended_state(std::move(state));
+    m_impl->visit_evaluator([&](auto& evaluator)
+                           { evaluator.register_state(*state, [&] { axiom_evaluator.compute_extended_state(*state); }); });
+    return StateView<Kind>(this->shared_from_this(), std::move(state));
 }
 
 template<TaskKind Kind>
 StateView<Kind> StateRepository<Kind>::register_extended_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state)
 {
-    m_impl->visit_evaluator(
-        [&](auto& evaluator)
-        {
-            auto& packed_states = evaluator.storage->packed_states;
-            using PackedStates = std::remove_cvref_t<decltype(packed_states)>;
-            if constexpr (!PackedStates::thread_safe)
-            {
-                state->set(packed_states
-                               .insert(ygg::Data<State<Kind>>(ygg::Index<State<Kind>>(packed_states.size()),
-                                                              evaluator.fluent_backend.insert(state->template get_atoms<formalism::FluentTag>()),
-                                                              evaluator.derived_backend.insert(state->template get_atoms<formalism::DerivedTag>()),
-                                                              evaluator.numeric_backend.insert(state->get_numeric_variables())))
-                               .first);
-            }
-            else
-            {
-                const auto candidate = ygg::Data<State<Kind>>(ygg::Index<State<Kind>>::max(),
-                                                              evaluator.fluent_backend.insert(state->template get_atoms<formalism::FluentTag>()),
-                                                              evaluator.derived_backend.insert(state->template get_atoms<formalism::DerivedTag>()),
-                                                              evaluator.numeric_backend.insert(state->get_numeric_variables()));
-                const auto hash = PackedStates::hash(candidate);
-                auto state_index = packed_states.find_with_hash(candidate, hash);
-                if (!state_index)
-                {
-                    state_index.emplace(packed_states
-                                            .complete_miss_with_hash(hash,
-                                                                     candidate,
-                                                                     [&](ygg::Index<State<Kind>> index)
-                                                                     {
-                                                                         return ygg::Data<State<Kind>>(
-                                                                             index,
-                                                                             candidate.template get_atoms<formalism::FluentTag>(),
-                                                                             candidate.template get_atoms<formalism::DerivedTag>(),
-                                                                             candidate.get_numeric_variables());
-                                                                     })
-                                            .first);
-                }
-                state->set(*state_index);
-            }
-        });
-
+    m_impl->visit_evaluator([&](auto& evaluator) { evaluator.register_state(*state, [] {}); });
     return StateView<Kind>(this->shared_from_this(), std::move(state));
 }
 

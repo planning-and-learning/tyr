@@ -67,7 +67,7 @@ public:
 
     auto get_numeric_variables() const noexcept { return m_numeric_storage; }
 
-    auto identifying_members() const noexcept { return std::tie(m_fact_storage, m_atom_storage, m_numeric_storage); }
+    auto identifying_members() const noexcept { return std::tie(m_fact_storage, m_numeric_storage); }
 
 private:
     ygg::Index<planning::State<Kind>> m_index;

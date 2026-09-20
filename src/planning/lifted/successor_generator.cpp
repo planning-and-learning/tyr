@@ -502,8 +502,8 @@ Node<LiftedTag> SuccessorGenerator<LiftedTag>::finalize_successor_state(StateRep
 {
     validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
-    const auto metric = complete_successor_state(*m_impl->definition->task, axiom_evaluator, *state, result.auxiliary_value);
-    return Node<LiftedTag>(state_repository.register_extended_state(std::move(state)), metric);
+    const auto metric = evaluate_successor_metric(*m_impl->definition->task, *state, result.auxiliary_value);
+    return Node<LiftedTag>(state_repository.register_state(axiom_evaluator, std::move(state)), metric);
 }
 
 // Action binding API (no interning)

@@ -25,6 +25,7 @@
 #include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
 #include "tyr/planning/ground/match_tree/nodes/variable_view.hpp"
 
+#include <utility>
 #include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/core/types.hpp>
 
@@ -39,7 +40,7 @@ private:
     ygg::Data<planning::match_tree::Node<Tag>> m_handle;
 
 public:
-    View(ygg::Data<planning::match_tree::Node<Tag>> data, const C& context) noexcept : m_context(&context), m_handle(data) {}
+    View(ygg::Data<planning::match_tree::Node<Tag>> data, const C& context) noexcept : m_context(&context), m_handle(std::move(data)) {}
 
     const auto& get_data() const noexcept { return m_handle; }
     const auto& get_context() const noexcept { return *m_context; }

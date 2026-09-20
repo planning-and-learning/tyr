@@ -60,7 +60,7 @@ void process_effects(fp::ActionView<GroundTag> action,
                 tmp_add_effects.push_back(fact.get_data());
 
             for (const auto numeric_effect : effect.get_numeric_effects())
-                visit([&](auto&& arg) { successor_state_builder.set(arg.get_fterm().get_index(), evaluate(numeric_effect, state_context)); },
+                visit([&](auto&& arg) { successor_state_builder.set(arg.get_fterm().get_index(), evaluate(arg, state_context)); },
                       numeric_effect.get_variant());
 
             /// Collect the increment (total-cost) in the state_context
