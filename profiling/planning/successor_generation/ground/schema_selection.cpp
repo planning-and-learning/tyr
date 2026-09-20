@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "../../common.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/action_executor.hpp"
@@ -27,14 +28,12 @@
 
 #include <algorithm>
 #include <benchmark/benchmark.h>
-#include <filesystem>
+#include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/serialization/json.hpp>
-#include <yggdrasil/serialization/json_suite.hpp>
 
 namespace fp = tyr::formalism::planning;
 namespace p = tyr::planning;
@@ -56,9 +55,7 @@ struct PreparedCase
 
 struct BenchmarkCase
 {
-    std::string name;
-    std::filesystem::path domain;
-    std::filesystem::path task;
+    tyr::profiling::BenchmarkCase paths;
     std::shared_ptr<PreparedCase> prepared = std::make_shared<PreparedCase>();
 };
 
@@ -96,12 +93,13 @@ enum class Operation
 
 template<Operation operation, bool per_schema>
 void run(benchmark::State& state, const BenchmarkCase& benchmark_case)
+try
 {
     auto execution_context = ygg::ExecutionContext::create(1);
     auto& prepared = *benchmark_case.prepared;
     if (!prepared.task)
     {
-        auto lifted_task = p::Task<LiftedTag>::create(fp::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
+        auto lifted_task = p::Task<LiftedTag>::create(fp::Parser(benchmark_case.paths.domain).parse_task(benchmark_case.paths.task));
         prepared.task = lifted_task->instantiate_ground_task(*execution_context).task;
         if (prepared.task)
         {
@@ -247,38 +245,42 @@ void run(benchmark::State& state, const BenchmarkCase& benchmark_case)
     state.counters["num_schemas"] = static_cast<double>(schemas.size());
     state.counters["num_selected_actions"] = static_cast<double>(expected.size());
 }
+catch (const std::exception& error)
+{
+    state.SkipWithError(error.what());
+}
 
 template<Operation operation>
 void register_pair(const BenchmarkCase& benchmark_case, const std::string& name)
 {
-    benchmark::RegisterBenchmark((benchmark_case.name + "/" + name + "/global").c_str(),
+    benchmark::RegisterBenchmark((benchmark_case.paths.name + "/" + name + "/global").c_str(),
                                  [benchmark_case](benchmark::State& state) { run<operation, false>(state, benchmark_case); });
-    benchmark::RegisterBenchmark((benchmark_case.name + "/" + name + "/per_schema").c_str(),
+    benchmark::RegisterBenchmark((benchmark_case.paths.name + "/" + name + "/per_schema").c_str(),
                                  [benchmark_case](benchmark::State& state) { run<operation, true>(state, benchmark_case); });
 }
 }
 
 int main(int argc, char** argv)
+try
 {
+    const auto suite_path = tyr::profiling::extract_suite_path(argc, argv);
     benchmark::Initialize(&argc, argv);
-    const auto document = ygg::common::load_json_file(ygg::common::profiling_path("planning/ground/successor_generator.json"));
-    const auto& root = ygg::common::as_object(document, "suite");
-    const auto prefix = std::filesystem::path(BENCHMARKS_DIR);
-    for (const auto& [domain_name, domain_value] : ygg::common::as_object(root, "domains", "suite"))
+    if (benchmark::ReportUnrecognizedArguments(argc, argv))
+        return 1;
+    for (const auto& paths : tyr::profiling::load_suite(suite_path))
     {
-        const auto& domain = ygg::common::as_object(domain_value, "domain");
-        for (const auto& [task_name, task_value] : ygg::common::as_object(domain, "tasks", "domain"))
-        {
-            const auto benchmark_case = BenchmarkCase { std::string(domain_name) + "/" + std::string(task_name),
-                                                        ygg::common::resolve_path(prefix, ygg::common::as_string(domain, "domain_file", "domain")),
-                                                        ygg::common::resolve_path(prefix, ygg::common::as_string(task_value, "task")) };
-            register_pair<Operation::ONE>(benchmark_case, "one_schema");
-            register_pair<Operation::ALL>(benchmark_case, "all_schemas");
-            register_pair<Operation::BUILD>(benchmark_case, "construction");
-            register_pair<Operation::BINDINGS>(benchmark_case, "bindings");
-            register_pair<Operation::SUCCESSORS>(benchmark_case, "successors");
-        }
+        const auto benchmark_case = BenchmarkCase { paths };
+        register_pair<Operation::ONE>(benchmark_case, "one_schema");
+        register_pair<Operation::ALL>(benchmark_case, "all_schemas");
+        register_pair<Operation::BUILD>(benchmark_case, "construction");
+        register_pair<Operation::BINDINGS>(benchmark_case, "bindings");
+        register_pair<Operation::SUCCESSORS>(benchmark_case, "successors");
     }
     benchmark::RunSpecifiedBenchmarks();
     benchmark::Shutdown();
+}
+catch (const std::exception& error)
+{
+    std::cerr << error.what() << '\n';
+    return 1;
 }

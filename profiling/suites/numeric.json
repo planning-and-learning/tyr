@@ -1,0 +1,349 @@
+{
+    "domains": {
+        "classical-downward-benchmarks-cavediving-14-adl": {
+            "domain_file": "classical/downward-benchmarks/cavediving-14-adl/domain.pddl",
+            "tasks": {
+                "testing01": "classical/downward-benchmarks/cavediving-14-adl/testing01.pddl",
+                "testing03_easy": "classical/downward-benchmarks/cavediving-14-adl/testing03_easy.pddl",
+                "testing15_easy": "classical/downward-benchmarks/cavediving-14-adl/testing15_easy.pddl"
+            }
+        },
+        "numeric-ipc2023-block-grouping": {
+            "domain_file": "numeric/ipc2023/block-grouping/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2023/block-grouping/pfile1.pddl",
+                "pfile4": "numeric/ipc2023/block-grouping/pfile4.pddl",
+                "pfile16": "numeric/ipc2023/block-grouping/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2023-counters": {
+            "domain_file": "numeric/ipc2023/counters/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2023/counters/pfile1.pddl",
+                "pfile4": "numeric/ipc2023/counters/pfile4.pddl",
+                "pfile16": "numeric/ipc2023/counters/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2023-delivery": {
+            "domain_file": "numeric/ipc2023/delivery/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2023/delivery/pfile1.pddl",
+                "pfile4": "numeric/ipc2023/delivery/pfile4.pddl",
+                "pfile16": "numeric/ipc2023/delivery/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2023-drone": {
+            "domain_file": "numeric/ipc2023/drone/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2023/drone/pfile1.pddl",
+                "pfile4": "numeric/ipc2023/drone/pfile4.pddl",
+                "pfile16": "numeric/ipc2023/drone/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2023-expedition": {
+            "domain_file": "numeric/ipc2023/expedition/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2023/expedition/pfile1.pddl",
+                "pfile4": "numeric/ipc2023/expedition/pfile4.pddl",
+                "pfile16": "numeric/ipc2023/expedition/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2023-ext-plant-watering": {
+            "domain_file": "numeric/ipc2023/ext-plant-watering/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2023/ext-plant-watering/pfile1.pddl",
+                "pfile4": "numeric/ipc2023/ext-plant-watering/pfile4.pddl",
+                "pfile16": "numeric/ipc2023/ext-plant-watering/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2023-farmland": {
+            "domain_file": "numeric/ipc2023/farmland/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2023/farmland/pfile1.pddl",
+                "pfile4": "numeric/ipc2023/farmland/pfile4.pddl",
+                "pfile16": "numeric/ipc2023/farmland/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2023-fo-counters": {
+            "domain_file": "numeric/ipc2023/fo-counters/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2023/fo-counters/pfile1.pddl",
+                "pfile4": "numeric/ipc2023/fo-counters/pfile4.pddl",
+                "pfile16": "numeric/ipc2023/fo-counters/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2023-fo-farmland": {
+            "domain_file": "numeric/ipc2023/fo-farmland/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2023/fo-farmland/pfile1.pddl",
+                "pfile4": "numeric/ipc2023/fo-farmland/pfile4.pddl",
+                "pfile16": "numeric/ipc2023/fo-farmland/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2023-fo-sailing": {
+            "domain_file": "numeric/ipc2023/fo-sailing/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2023/fo-sailing/pfile1.pddl",
+                "pfile4": "numeric/ipc2023/fo-sailing/pfile4.pddl",
+                "pfile16": "numeric/ipc2023/fo-sailing/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2023-hydropower": {
+            "domain_file": "numeric/ipc2023/hydropower/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2023/hydropower/pfile1.pddl",
+                "pfile4": "numeric/ipc2023/hydropower/pfile4.pddl",
+                "pfile16": "numeric/ipc2023/hydropower/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2023-markettrader": {
+            "domain_file": "numeric/ipc2023/markettrader/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2023/markettrader/pfile1.pddl",
+                "pfile4": "numeric/ipc2023/markettrader/pfile4.pddl",
+                "pfile16": "numeric/ipc2023/markettrader/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2023-mprime": {
+            "domain_file": "numeric/ipc2023/mprime/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2023/mprime/pfile1.pddl",
+                "pfile4": "numeric/ipc2023/mprime/pfile4.pddl",
+                "pfile16": "numeric/ipc2023/mprime/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2023-pathwaysmetric": {
+            "domain_file": "numeric/ipc2023/pathwaysmetric/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2023/pathwaysmetric/pfile1.pddl",
+                "pfile4": "numeric/ipc2023/pathwaysmetric/pfile4.pddl",
+                "pfile16": "numeric/ipc2023/pathwaysmetric/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2023-rover": {
+            "domain_file": "numeric/ipc2023/rover/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2023/rover/pfile1.pddl",
+                "pfile4": "numeric/ipc2023/rover/pfile4.pddl",
+                "pfile16": "numeric/ipc2023/rover/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2023-sailing": {
+            "domain_file": "numeric/ipc2023/sailing/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2023/sailing/pfile1.pddl",
+                "pfile4": "numeric/ipc2023/sailing/pfile4.pddl",
+                "pfile16": "numeric/ipc2023/sailing/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2023-settlersnumeric": {
+            "domain_file": "numeric/ipc2023/settlersnumeric/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2023/settlersnumeric/pfile1.pddl",
+                "pfile4": "numeric/ipc2023/settlersnumeric/pfile4.pddl",
+                "pfile16": "numeric/ipc2023/settlersnumeric/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2023-sugar": {
+            "domain_file": "numeric/ipc2023/sugar/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2023/sugar/pfile1.pddl",
+                "pfile4": "numeric/ipc2023/sugar/pfile4.pddl",
+                "pfile16": "numeric/ipc2023/sugar/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2023-tpp": {
+            "domain_file": "numeric/ipc2023/tpp/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2023/tpp/pfile1.pddl",
+                "pfile4": "numeric/ipc2023/tpp/pfile4.pddl",
+                "pfile16": "numeric/ipc2023/tpp/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2023-zenotravel": {
+            "domain_file": "numeric/ipc2023/zenotravel/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2023/zenotravel/pfile1.pddl",
+                "pfile4": "numeric/ipc2023/zenotravel/pfile4.pddl",
+                "pfile16": "numeric/ipc2023/zenotravel/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2026-2048": {
+            "domain_file": "numeric/ipc2026/2048/domain.pddl",
+            "tasks": {
+                "pfile8": "numeric/ipc2026/2048/pfile8.pddl",
+                "pfile11": "numeric/ipc2026/2048/pfile11.pddl",
+                "pfile23": "numeric/ipc2026/2048/pfile23.pddl"
+            }
+        },
+        "numeric-ipc2026-coins": {
+            "domain_file": "numeric/ipc2026/coins/domain.pddl",
+            "tasks": {
+                "pfile01": "numeric/ipc2026/coins/pfile01.pddl",
+                "pfile04": "numeric/ipc2026/coins/pfile04.pddl",
+                "pfile16": "numeric/ipc2026/coins/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2026-expedition": {
+            "domain_file": "numeric/ipc2026/expedition/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2026/expedition/pfile1.pddl",
+                "pfile4": "numeric/ipc2026/expedition/pfile4.pddl",
+                "pfile16": "numeric/ipc2026/expedition/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2026-factory-robot": {
+            "domain_file": "numeric/ipc2026/factory-robot/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2026/factory-robot/pfile1.pddl",
+                "pfile4": "numeric/ipc2026/factory-robot/pfile4.pddl",
+                "pfile16": "numeric/ipc2026/factory-robot/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2026-forestfire": {
+            "domain_file": "numeric/ipc2026/forestfire/domain.pddl",
+            "tasks": {
+                "prob01": "numeric/ipc2026/forestfire/prob01.pddl",
+                "prob04": "numeric/ipc2026/forestfire/prob04.pddl",
+                "prob16": "numeric/ipc2026/forestfire/prob16.pddl"
+            }
+        },
+        "numeric-ipc2026-gear-car": {
+            "domain_file": "numeric/ipc2026/gear-car/domain.pddl",
+            "tasks": {
+                "p000": "numeric/ipc2026/gear-car/p000.pddl",
+                "p03": "numeric/ipc2026/gear-car/p03.pddl",
+                "p15": "numeric/ipc2026/gear-car/p15.pddl"
+            }
+        },
+        "numeric-ipc2026-line-exchange-snp": {
+            "domain_file": "numeric/ipc2026/line-exchange-snp/domain_snp.pddl",
+            "tasks": {
+                "3_5_50_50": "numeric/ipc2026/line-exchange-snp/3_5_50_50.pddl",
+                "3_10_90_50": "numeric/ipc2026/line-exchange-snp/3_10_90_50.pddl",
+                "5_10_25_50": "numeric/ipc2026/line-exchange-snp/5_10_25_50.pddl"
+            }
+        },
+        "numeric-ipc2026-onlycraft-opt": {
+            "domain_file": "numeric/ipc2026/onlycraft-opt/domain.pddl",
+            "tasks": {
+                "P01_opt": "numeric/ipc2026/onlycraft-opt/P01_opt.pddl",
+                "P04_opt": "numeric/ipc2026/onlycraft-opt/P04_opt.pddl",
+                "P16_opt": "numeric/ipc2026/onlycraft-opt/P16_opt.pddl"
+            }
+        },
+        "numeric-ipc2026-onlycraft-sat": {
+            "domain_file": "numeric/ipc2026/onlycraft-sat/domain.pddl",
+            "tasks": {
+                "P01_sat": "numeric/ipc2026/onlycraft-sat/P01_sat.pddl",
+                "P04_sat": "numeric/ipc2026/onlycraft-sat/P04_sat.pddl",
+                "P16_sat": "numeric/ipc2026/onlycraft-sat/P16_sat.pddl"
+            }
+        },
+        "numeric-ipc2026-petri-net": {
+            "domain_file": "numeric/ipc2026/petri-net/domain.pddl",
+            "tasks": {
+                "prob06-1": "numeric/ipc2026/petri-net/prob06-1.pddl",
+                "prob06-4": "numeric/ipc2026/petri-net/prob06-4.pddl",
+                "prob09-4": "numeric/ipc2026/petri-net/prob09-4.pddl"
+            }
+        },
+        "numeric-ipc2026-rainbowttles-opt": {
+            "domain_file": "numeric/ipc2026/rainbowttles-opt/domain.pddl",
+            "tasks": {
+                "p11": "numeric/ipc2026/rainbowttles-opt/p11.pddl",
+                "p14": "numeric/ipc2026/rainbowttles-opt/p14.pddl",
+                "p26": "numeric/ipc2026/rainbowttles-opt/p26.pddl"
+            }
+        },
+        "numeric-ipc2026-rainbowttles-sat": {
+            "domain_file": "numeric/ipc2026/rainbowttles-sat/domain.pddl",
+            "tasks": {
+                "p31": "numeric/ipc2026/rainbowttles-sat/p31.pddl",
+                "p34": "numeric/ipc2026/rainbowttles-sat/p34.pddl",
+                "p46": "numeric/ipc2026/rainbowttles-sat/p46.pddl"
+            }
+        },
+        "numeric-ipc2026-sailing-wind-opt": {
+            "domain_file": "numeric/ipc2026/sailing-wind-opt/domain.pddl",
+            "tasks": {
+                "problem_0": "numeric/ipc2026/sailing-wind-opt/problem_0.pddl",
+                "problem_3": "numeric/ipc2026/sailing-wind-opt/problem_3.pddl",
+                "problem_15": "numeric/ipc2026/sailing-wind-opt/problem_15.pddl"
+            }
+        },
+        "numeric-ipc2026-sailing-wind-sat": {
+            "domain_file": "numeric/ipc2026/sailing-wind-sat/domain.pddl",
+            "tasks": {
+                "problem_0": "numeric/ipc2026/sailing-wind-sat/problem_0.pddl",
+                "problem_3": "numeric/ipc2026/sailing-wind-sat/problem_3.pddl",
+                "problem_15": "numeric/ipc2026/sailing-wind-sat/problem_15.pddl"
+            }
+        },
+        "numeric-ipc2026-settlers-snp": {
+            "domain_file": "numeric/ipc2026/settlers-snp/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2026/settlers-snp/pfile1.pddl",
+                "pfile4": "numeric/ipc2026/settlers-snp/pfile4.pddl",
+                "pfile16": "numeric/ipc2026/settlers-snp/pfile16.pddl"
+            }
+        },
+        "numeric-ipc2026-ztalloc-sum": {
+            "domain_file": "numeric/ipc2026/ztalloc-sum/domain.pddl",
+            "tasks": {
+                "pfile1": "numeric/ipc2026/ztalloc-sum/pfile1.pddl",
+                "pfile4": "numeric/ipc2026/ztalloc-sum/pfile4.pddl",
+                "pfile16": "numeric/ipc2026/ztalloc-sum/pfile16.pddl"
+            }
+        }
+    },
+    "attributes": {
+        "solved": {
+            "type": "float",
+            "compare": "strict_equality"
+        },
+        "cost": {
+            "type": "float",
+            "compare": "strict_equality"
+        },
+        "num_expanded": {
+            "type": "float",
+            "compare": "undefined"
+        },
+        "num_generated_successors": {
+            "type": "float",
+            "compare": "undefined"
+        },
+        "num_registered_states": {
+            "type": "float",
+            "compare": "undefined"
+        },
+        "num_successors": {
+            "type": "float",
+            "compare": "undefined"
+        },
+        "num_selected_bindings": {
+            "type": "float",
+            "compare": "undefined"
+        },
+        "num_applicable_bindings": {
+            "type": "float",
+            "compare": "undefined"
+        }
+    },
+    "metadata": {
+        "pypddl_datasets_version": "0.0.9",
+        "data_version": "data-v0.0.3",
+        "catalog_suites": [
+            "ipc-optimal-adl",
+            "ipc-optimal-strips",
+            "ipc-satisficing-adl",
+            "ipc-satisficing-strips",
+            "ipc2023-learning",
+            "ipc2023-numeric",
+            "ipc2026-numeric"
+        ],
+        "sampling": "One-based positions 1, 4, 16, 64, ... in natural filename order within each IPC domain.",
+        "classification": "Numeric fluents take priority; STRIPS allows typing, equality, negative preconditions and action costs; other supported requirements are non-STRIPS."
+    }
+}

@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "../../common.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/factory.hpp"
@@ -24,13 +25,11 @@
 #include <algorithm>
 #include <benchmark/benchmark.h>
 #include <cstdint>
-#include <filesystem>
+#include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <yggdrasil/serialization/json.hpp>
-#include <yggdrasil/serialization/json_suite.hpp>
 #if defined(__GLIBC__)
 #include <malloc.h>
 #endif
@@ -58,9 +57,7 @@ struct PreparedCase
 
 struct BenchmarkCase
 {
-    std::string name;
-    std::filesystem::path domain;
-    std::filesystem::path task;
+    tyr::profiling::BenchmarkCase paths;
     std::shared_ptr<PreparedCase> prepared = std::make_shared<PreparedCase>();
 };
 
@@ -78,12 +75,13 @@ enum class Operation
 
 template<Operation operation>
 void run(benchmark::State& state, const BenchmarkCase& benchmark_case)
+try
 {
     auto execution_context = ygg::ExecutionContext::create(1);
     auto& prepared = *benchmark_case.prepared;
     if (!prepared.task)
     {
-        prepared.task = p::Task<LiftedTag>::create(fp::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
+        prepared.task = p::Task<LiftedTag>::create(fp::Parser(benchmark_case.paths.domain).parse_task(benchmark_case.paths.task));
 #if defined(__GLIBC__)
         const auto before = allocated_bytes();
 #endif
@@ -186,39 +184,43 @@ void run(benchmark::State& state, const BenchmarkCase& benchmark_case)
     for (auto _ : state)
         generate();
 }
+catch (const std::exception& error)
+{
+    state.SkipWithError(error.what());
+}
 
 template<Operation operation>
 void register_case(const BenchmarkCase& benchmark_case, const std::string& name)
 {
-    benchmark::RegisterBenchmark((benchmark_case.name + "/" + name).c_str(),
+    benchmark::RegisterBenchmark((benchmark_case.paths.name + "/" + name).c_str(),
                                  [benchmark_case](benchmark::State& state) { run<operation>(state, benchmark_case); });
 }
 }
 
 int main(int argc, char** argv)
+try
 {
+    const auto suite_path = tyr::profiling::extract_suite_path(argc, argv);
     benchmark::Initialize(&argc, argv);
-    const auto document = ygg::common::load_json_file(ygg::common::profiling_path("planning/lifted/schema_successor_generator.json"));
-    const auto& root = ygg::common::as_object(document, "suite");
-    const auto prefix = std::filesystem::path(BENCHMARKS_DIR);
-    for (const auto& [domain_name, domain_value] : ygg::common::as_object(root, "domains", "suite"))
+    if (benchmark::ReportUnrecognizedArguments(argc, argv))
+        return 1;
+    for (const auto& paths : tyr::profiling::load_suite(suite_path))
     {
-        const auto& domain = ygg::common::as_object(domain_value, "domain");
-        for (const auto& [task_name, task_value] : ygg::common::as_object(domain, "tasks", "domain"))
-        {
-            const auto benchmark_case = BenchmarkCase { std::string(domain_name) + "/" + std::string(task_name),
-                                                        ygg::common::resolve_path(prefix, ygg::common::as_string(domain, "domain_file", "domain")),
-                                                        ygg::common::resolve_path(prefix, ygg::common::as_string(task_value, "task")) };
-            register_case<Operation::ALL_SUCCESSORS>(benchmark_case, "labeled_successors");
-            register_case<Operation::ALL_BINDINGS>(benchmark_case, "interned_bindings");
-            register_case<Operation::FILTER_BINDINGS>(benchmark_case, "schema_bindings/global");
-            register_case<Operation::FILTER_SUCCESSORS>(benchmark_case, "schema_successors/global");
-            register_case<Operation::SCHEMA_BINDINGS>(benchmark_case, "schema_bindings/per_schema");
-            register_case<Operation::SCHEMA_SUCCESSORS>(benchmark_case, "schema_successors/per_schema");
-            register_case<Operation::CONSTRUCTION>(benchmark_case, "construction");
-            register_case<Operation::WORKER>(benchmark_case, "worker");
-        }
+        const auto benchmark_case = BenchmarkCase { paths };
+        register_case<Operation::ALL_SUCCESSORS>(benchmark_case, "labeled_successors");
+        register_case<Operation::ALL_BINDINGS>(benchmark_case, "interned_bindings");
+        register_case<Operation::FILTER_BINDINGS>(benchmark_case, "schema_bindings/global");
+        register_case<Operation::FILTER_SUCCESSORS>(benchmark_case, "schema_successors/global");
+        register_case<Operation::SCHEMA_BINDINGS>(benchmark_case, "schema_bindings/per_schema");
+        register_case<Operation::SCHEMA_SUCCESSORS>(benchmark_case, "schema_successors/per_schema");
+        register_case<Operation::CONSTRUCTION>(benchmark_case, "construction");
+        register_case<Operation::WORKER>(benchmark_case, "worker");
     }
     benchmark::RunSpecifiedBenchmarks();
     benchmark::Shutdown();
+}
+catch (const std::exception& error)
+{
+    std::cerr << error.what() << '\n';
+    return 1;
 }

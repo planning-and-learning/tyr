@@ -15,26 +15,32 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/heuristics/rpg_ff.hpp"
-
+#include "../common.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/algorithms/gbfs_lazy.hpp"
 #include "tyr/planning/factory.hpp"
-#include "tyr/planning/lifted/successor_generator.hpp"
+#include "tyr/planning/ground/task.hpp"
+#include "tyr/planning/heuristics/lmcut.hpp"
+#include "tyr/planning/heuristics/rpg_add.hpp"
+#include "tyr/planning/heuristics/rpg_ff.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
 
 #include <benchmark/benchmark.h>
-#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <string>
-#include <vector>
-#include <yggdrasil/serialization/json.hpp>
-#include <yggdrasil/serialization/json_suite.hpp>
+#include <type_traits>
 
 namespace fp = tyr::formalism::planning;
 namespace p = tyr::planning;
+#if defined(TYR_PROFILE_GROUND)
+using Kind = tyr::GroundTag;
+#else
+using Kind = tyr::LiftedTag;
+#endif
+using Heuristic = p::TYR_PROFILE_HEURISTIC<Kind>;
 
 namespace
 {
@@ -52,51 +58,27 @@ private:
     std::streambuf* m_old_buffer;
 };
 
-struct BenchmarkCase
+using tyr::profiling::BenchmarkCase;
+
+p::TaskPtr<Kind> create_task(const BenchmarkCase& benchmark_case, ygg::ExecutionContext& execution_context)
 {
-    std::string name;
-    std::filesystem::path domain;
-    std::filesystem::path task;
-};
-
-std::vector<BenchmarkCase> load_cases()
-{
-    const auto document = ygg::common::load_json_file(ygg::common::profiling_path("planning/lifted/heuristics/rpg.json"));
-    const auto& root = ygg::common::as_object(document, "suite");
-    const auto prefix = std::filesystem::path(BENCHMARKS_DIR);
-    const auto& domains = ygg::common::as_object(root, "domains", "suite");
-
-    auto result = std::vector<BenchmarkCase>();
-
-    for (const auto& [domain_name_key, domain_value] : domains)
-    {
-        const auto& domain_object = ygg::common::as_object(domain_value, "domain");
-        const auto domain_name = std::string(domain_name_key);
-        const auto domain = ygg::common::resolve_path(prefix, ygg::common::as_string(domain_object, "domain_file", "domain"));
-        const auto& tasks = ygg::common::as_object(domain_object, "tasks", "domain");
-
-        for (const auto& [task_name_key, task_value] : tasks)
-        {
-            const auto task_name = std::string(task_name_key);
-            const auto run_name = domain_name + "/" + task_name;
-            const auto task = ygg::common::resolve_path(prefix, ygg::common::as_string(task_value, "task"));
-
-            result.push_back(BenchmarkCase { run_name, domain, task });
-        }
-    }
-
-    return result;
+    auto lifted = p::Task<tyr::LiftedTag>::create(fp::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
+#if defined(TYR_PROFILE_GROUND)
+    auto ground = lifted->instantiate_ground_task(execution_context).task;
+    if (!ground)
+        throw std::runtime_error("Grounding failed.");
+    return ground;
+#else
+    static_cast<void>(execution_context);
+    return lifted;
+#endif
 }
 
-p::TaskPtr<::tyr::LiftedTag> create_task(const BenchmarkCase& benchmark_case)
+void benchmark_gbfs_lazy(benchmark::State& state, const BenchmarkCase& benchmark_case, ygg::ExecutionContext::uint_t evaluation_threads)
+try
 {
-    return p::Task<::tyr::LiftedTag>::create(fp::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
-}
-
-void benchmark_gbfs_lazy_rpg_ff(benchmark::State& state, const BenchmarkCase& benchmark_case, ygg::ExecutionContext::uint_t num_threads)
-{
-    auto task = create_task(benchmark_case);
-    auto execution_context = ygg::ExecutionContext::create(num_threads);
+    auto execution_context = ygg::ExecutionContext::create(evaluation_threads);
+    auto task = create_task(benchmark_case, *execution_context);
     auto initial_h_value = ygg::float_t(0);
     auto cost = ygg::float_t(0);
     auto length = std::size_t(0);
@@ -106,15 +88,15 @@ void benchmark_gbfs_lazy_rpg_ff(benchmark::State& state, const BenchmarkCase& be
 
     for (auto _ : state)
     {
-        auto axiom_evaluator = p::AxiomEvaluatorFactory<::tyr::LiftedTag>().create(task, execution_context);
-        auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(task);
-        auto successor_generator = p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, execution_context);
-        auto heuristic = p::FFRPGHeuristic<::tyr::LiftedTag>::create(task, execution_context);
-        auto options = p::gbfs_lazy::Options<::tyr::LiftedTag>();
+        auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+        auto state_repository = p::StateRepositoryFactory<Kind>().create(task);
+        auto successor_generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+        auto heuristic = Heuristic::create(task, execution_context);
+        auto options = p::gbfs_lazy::Options<Kind>();
         options.start_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
         initial_h_value = heuristic->evaluate(options.start_node->get_state());
 
-        auto result = p::SearchResult<::tyr::LiftedTag>();
+        auto result = p::SearchResult<Kind>();
         {
             const auto silence_cout = ScopedCoutSilencer();
             result = p::gbfs_lazy::find_solution(*task, *state_repository, *axiom_evaluator, *successor_generator, *heuristic, options);
@@ -141,21 +123,42 @@ void benchmark_gbfs_lazy_rpg_ff(benchmark::State& state, const BenchmarkCase& be
     state.counters["num_expanded"] = benchmark::Counter(static_cast<double>(num_expanded));
     state.counters["num_generated_successors"] = benchmark::Counter(static_cast<double>(num_generated_successors));
     state.counters["solved"] = benchmark::Counter(solved ? 1.0 : 0.0);
+    state.counters["evaluation_threads"] = static_cast<double>(evaluation_threads);
+    state.counters["search_workers"] = 1;
+}
+catch (const std::exception& error)
+{
+    state.SkipWithError(error.what());
 }
 }
 
 int main(int argc, char** argv)
+try
 {
+    const auto suite_path = tyr::profiling::extract_suite_path(argc, argv);
     benchmark::Initialize(&argc, argv);
+    if (benchmark::ReportUnrecognizedArguments(argc, argv))
+        return 1;
 
-    for (const auto& benchmark_case : load_cases())
+    for (const auto& benchmark_case : tyr::profiling::load_suite(suite_path))
     {
-        for (const auto num_threads : { ygg::ExecutionContext::uint_t(1), ygg::ExecutionContext::uint_t(8) })
-            benchmark::RegisterBenchmark((benchmark_case.name + "/gbfs_lazy/threads:" + std::to_string(num_threads)).c_str(),
-                                         [benchmark_case, num_threads](benchmark::State& state)
-                                         { benchmark_gbfs_lazy_rpg_ff(state, benchmark_case, num_threads); });
+        for (const auto evaluation_threads : { ygg::ExecutionContext::uint_t(1), ygg::ExecutionContext::uint_t(8) })
+        {
+            if (evaluation_threads != 1 && !std::is_same_v<Heuristic, p::FFRPGHeuristic<Kind>>)
+                continue;
+            const auto name = benchmark_case.name + "/gbfs_lazy/evaluation_threads:" + std::to_string(evaluation_threads);
+            benchmark::RegisterBenchmark(name.c_str(),
+                                         [benchmark_case, evaluation_threads](benchmark::State& state)
+                                         { benchmark_gbfs_lazy(state, benchmark_case, evaluation_threads); })
+                ->UseRealTime();
+        }
     }
 
     benchmark::RunSpecifiedBenchmarks();
     benchmark::Shutdown();
+}
+catch (const std::exception& error)
+{
+    std::cerr << error.what() << '\n';
+    return 1;
 }

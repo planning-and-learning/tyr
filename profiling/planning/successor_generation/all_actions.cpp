@@ -15,76 +15,56 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/lifted/successor_generator.hpp"
-
+#include "../common.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/factory.hpp"
+#include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
 
 #include <benchmark/benchmark.h>
-#include <filesystem>
+#include <iostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
-#include <yggdrasil/serialization/json.hpp>
-#include <yggdrasil/serialization/json_suite.hpp>
 
 namespace fp = tyr::formalism::planning;
 namespace p = tyr::planning;
+#if defined(TYR_PROFILE_GROUND)
+using Kind = tyr::GroundTag;
+#else
+using Kind = tyr::LiftedTag;
+#endif
 
 namespace
 {
-struct BenchmarkCase
+using tyr::profiling::BenchmarkCase;
+
+p::TaskPtr<Kind> create_task(const BenchmarkCase& benchmark_case, ygg::ExecutionContext& execution_context)
 {
-    std::string name;
-    std::filesystem::path domain;
-    std::filesystem::path task;
-};
-
-std::vector<BenchmarkCase> load_cases()
-{
-    const auto document = ygg::common::load_json_file(ygg::common::profiling_path("planning/lifted/successor_generator.json"));
-    const auto& root = ygg::common::as_object(document, "suite");
-    const auto prefix = std::filesystem::path(BENCHMARKS_DIR);
-    const auto& domains = ygg::common::as_object(root, "domains", "suite");
-
-    auto result = std::vector<BenchmarkCase>();
-
-    for (const auto& [domain_name_key, domain_value] : domains)
-    {
-        const auto& domain_object = ygg::common::as_object(domain_value, "domain");
-        const auto domain_name = std::string(domain_name_key);
-        const auto domain = ygg::common::resolve_path(prefix, ygg::common::as_string(domain_object, "domain_file", "domain"));
-        const auto& tasks = ygg::common::as_object(domain_object, "tasks", "domain");
-
-        for (const auto& [task_name_key, task_value] : tasks)
-        {
-            const auto task_name = std::string(task_name_key);
-            const auto run_name = domain_name + "/" + task_name;
-            const auto task = ygg::common::resolve_path(prefix, ygg::common::as_string(task_value, "task"));
-
-            result.push_back(BenchmarkCase { run_name, domain, task });
-        }
-    }
-
-    return result;
-}
-
-p::TaskPtr<::tyr::LiftedTag> create_task(const BenchmarkCase& benchmark_case)
-{
-    return p::Task<::tyr::LiftedTag>::create(fp::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
+    auto lifted = p::Task<tyr::LiftedTag>::create(fp::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
+#if defined(TYR_PROFILE_GROUND)
+    auto ground = lifted->instantiate_ground_task(execution_context).task;
+    if (!ground)
+        throw std::runtime_error("Grounding failed.");
+    return ground;
+#else
+    static_cast<void>(execution_context);
+    return lifted;
+#endif
 }
 
 void benchmark_initial_successors(benchmark::State& state, const BenchmarkCase& benchmark_case)
+try
 {
-    auto task = create_task(benchmark_case);
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = p::AxiomEvaluatorFactory<::tyr::LiftedTag>().create(task, execution_context);
-    auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(task);
-    auto successor_generator = p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, execution_context);
+    auto task = create_task(benchmark_case, *execution_context);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto state_repository = p::StateRepositoryFactory<Kind>().create(task);
+    auto successor_generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
     const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
-    auto successors = std::vector<p::LabeledNode<::tyr::LiftedTag>>();
+    auto successors = std::vector<p::LabeledNode<Kind>>();
 
     for (auto _ : state)
     {
@@ -95,14 +75,19 @@ void benchmark_initial_successors(benchmark::State& state, const BenchmarkCase& 
 
     state.counters["num_successors"] = benchmark::Counter(static_cast<double>(successors.size()));
 }
+catch (const std::exception& error)
+{
+    state.SkipWithError(error.what());
+}
 
 void benchmark_interned_action_bindings(benchmark::State& state, const BenchmarkCase& benchmark_case)
+try
 {
-    auto task = create_task(benchmark_case);
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = p::AxiomEvaluatorFactory<::tyr::LiftedTag>().create(task, execution_context);
-    auto state_repository = p::StateRepositoryFactory<::tyr::LiftedTag>().create(task);
-    auto successor_generator = p::SuccessorGeneratorFactory<::tyr::LiftedTag>().create(task, execution_context);
+    auto task = create_task(benchmark_case, *execution_context);
+    auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto state_repository = p::StateRepositoryFactory<Kind>().create(task);
+    auto successor_generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
     const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
     auto bindings = std::vector<fp::ActionBindingView>();
 
@@ -115,14 +100,22 @@ void benchmark_interned_action_bindings(benchmark::State& state, const Benchmark
 
     state.counters["num_successors"] = benchmark::Counter(static_cast<double>(bindings.size()));
 }
+catch (const std::exception& error)
+{
+    state.SkipWithError(error.what());
+}
 
 }
 
 int main(int argc, char** argv)
+try
 {
+    const auto suite_path = tyr::profiling::extract_suite_path(argc, argv);
     benchmark::Initialize(&argc, argv);
+    if (benchmark::ReportUnrecognizedArguments(argc, argv))
+        return 1;
 
-    for (const auto& benchmark_case : load_cases())
+    for (const auto& benchmark_case : tyr::profiling::load_suite(suite_path))
     {
         benchmark::RegisterBenchmark((benchmark_case.name + "/labeled_successors").c_str(),
                                      [benchmark_case](benchmark::State& state) { benchmark_initial_successors(state, benchmark_case); });
@@ -132,4 +125,9 @@ int main(int argc, char** argv)
 
     benchmark::RunSpecifiedBenchmarks();
     benchmark::Shutdown();
+}
+catch (const std::exception& error)
+{
+    std::cerr << error.what() << '\n';
+    return 1;
 }

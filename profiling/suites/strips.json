@@ -1,0 +1,1157 @@
+{
+    "domains": {
+        "classical-downward-benchmarks-agricola-opt18-strips": {
+            "domain_file": "classical/downward-benchmarks/agricola-opt18-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/agricola-opt18-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/agricola-opt18-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/agricola-opt18-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-agricola-sat18-strips": {
+            "domain_file": "classical/downward-benchmarks/agricola-sat18-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/agricola-sat18-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/agricola-sat18-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/agricola-sat18-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-airport--p01-domain": {
+            "domain_file": "classical/downward-benchmarks/airport/p01-domain.pddl",
+            "tasks": {
+                "p01-airport1-p1": "classical/downward-benchmarks/airport/p01-airport1-p1.pddl"
+            }
+        },
+        "classical-downward-benchmarks-airport--p04-domain": {
+            "domain_file": "classical/downward-benchmarks/airport/p04-domain.pddl",
+            "tasks": {
+                "p04-airport2-p1": "classical/downward-benchmarks/airport/p04-airport2-p1.pddl"
+            }
+        },
+        "classical-downward-benchmarks-airport--p16-domain": {
+            "domain_file": "classical/downward-benchmarks/airport/p16-domain.pddl",
+            "tasks": {
+                "p16-airport3-p4": "classical/downward-benchmarks/airport/p16-airport3-p4.pddl"
+            }
+        },
+        "classical-downward-benchmarks-barman-opt11-strips": {
+            "domain_file": "classical/downward-benchmarks/barman-opt11-strips/domain.pddl",
+            "tasks": {
+                "pfile01-001": "classical/downward-benchmarks/barman-opt11-strips/pfile01-001.pddl",
+                "pfile01-004": "classical/downward-benchmarks/barman-opt11-strips/pfile01-004.pddl",
+                "pfile04-016": "classical/downward-benchmarks/barman-opt11-strips/pfile04-016.pddl"
+            }
+        },
+        "classical-downward-benchmarks-barman-opt14-strips": {
+            "domain_file": "classical/downward-benchmarks/barman-opt14-strips/domain.pddl",
+            "tasks": {
+                "p435-1": "classical/downward-benchmarks/barman-opt14-strips/p435-1.pddl",
+                "p536-1": "classical/downward-benchmarks/barman-opt14-strips/p536-1.pddl"
+            }
+        },
+        "classical-downward-benchmarks-barman-sat11-strips": {
+            "domain_file": "classical/downward-benchmarks/barman-sat11-strips/domain.pddl",
+            "tasks": {
+                "pfile06-021": "classical/downward-benchmarks/barman-sat11-strips/pfile06-021.pddl",
+                "pfile06-024": "classical/downward-benchmarks/barman-sat11-strips/pfile06-024.pddl",
+                "pfile09-036": "classical/downward-benchmarks/barman-sat11-strips/pfile09-036.pddl"
+            }
+        },
+        "classical-downward-benchmarks-barman-sat14-strips": {
+            "domain_file": "classical/downward-benchmarks/barman-sat14-strips/domain.pddl",
+            "tasks": {
+                "p1-11-4-15": "classical/downward-benchmarks/barman-sat14-strips/p1-11-4-15.pddl",
+                "p2-10-4-13": "classical/downward-benchmarks/barman-sat14-strips/p2-10-4-13.pddl",
+                "p4-11-5-15": "classical/downward-benchmarks/barman-sat14-strips/p4-11-5-15.pddl"
+            }
+        },
+        "classical-downward-benchmarks-blocks": {
+            "domain_file": "classical/downward-benchmarks/blocks/domain.pddl",
+            "tasks": {
+                "probBLOCKS-4-0": "classical/downward-benchmarks/blocks/probBLOCKS-4-0.pddl",
+                "probBLOCKS-5-0": "classical/downward-benchmarks/blocks/probBLOCKS-5-0.pddl",
+                "probBLOCKS-9-0": "classical/downward-benchmarks/blocks/probBLOCKS-9-0.pddl"
+            }
+        },
+        "classical-downward-benchmarks-childsnack-opt14-strips": {
+            "domain_file": "classical/downward-benchmarks/childsnack-opt14-strips/domain.pddl",
+            "tasks": {
+                "child-snack_pfile01-2": "classical/downward-benchmarks/childsnack-opt14-strips/child-snack_pfile01-2.pddl",
+                "child-snack_pfile02": "classical/downward-benchmarks/childsnack-opt14-strips/child-snack_pfile02.pddl",
+                "child-snack_pfile08": "classical/downward-benchmarks/childsnack-opt14-strips/child-snack_pfile08.pddl"
+            }
+        },
+        "classical-downward-benchmarks-childsnack-sat14-strips": {
+            "domain_file": "classical/downward-benchmarks/childsnack-sat14-strips/domain.pddl",
+            "tasks": {
+                "child-snack_pfile05-2": "classical/downward-benchmarks/childsnack-sat14-strips/child-snack_pfile05-2.pddl",
+                "child-snack_pfile07-2": "classical/downward-benchmarks/childsnack-sat14-strips/child-snack_pfile07-2.pddl",
+                "child-snack_pfile14": "classical/downward-benchmarks/childsnack-sat14-strips/child-snack_pfile14.pddl"
+            }
+        },
+        "classical-downward-benchmarks-data-network-opt18-strips": {
+            "domain_file": "classical/downward-benchmarks/data-network-opt18-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/data-network-opt18-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/data-network-opt18-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/data-network-opt18-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-data-network-sat18-strips": {
+            "domain_file": "classical/downward-benchmarks/data-network-sat18-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/data-network-sat18-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/data-network-sat18-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/data-network-sat18-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-depot": {
+            "domain_file": "classical/downward-benchmarks/depot/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/depot/p01.pddl",
+                "p04": "classical/downward-benchmarks/depot/p04.pddl",
+                "p16": "classical/downward-benchmarks/depot/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-driverlog": {
+            "domain_file": "classical/downward-benchmarks/driverlog/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/driverlog/p01.pddl",
+                "p04": "classical/downward-benchmarks/driverlog/p04.pddl",
+                "p16": "classical/downward-benchmarks/driverlog/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-elevators-opt08-strips": {
+            "domain_file": "classical/downward-benchmarks/elevators-opt08-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/elevators-opt08-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/elevators-opt08-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/elevators-opt08-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-elevators-opt11-strips": {
+            "domain_file": "classical/downward-benchmarks/elevators-opt11-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/elevators-opt11-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/elevators-opt11-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/elevators-opt11-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-elevators-sat08-strips": {
+            "domain_file": "classical/downward-benchmarks/elevators-sat08-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/elevators-sat08-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/elevators-sat08-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/elevators-sat08-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-elevators-sat11-strips": {
+            "domain_file": "classical/downward-benchmarks/elevators-sat11-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/elevators-sat11-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/elevators-sat11-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/elevators-sat11-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-floortile-opt11-strips": {
+            "domain_file": "classical/downward-benchmarks/floortile-opt11-strips/domain.pddl",
+            "tasks": {
+                "opt-p01-001": "classical/downward-benchmarks/floortile-opt11-strips/opt-p01-001.pddl",
+                "opt-p02-004": "classical/downward-benchmarks/floortile-opt11-strips/opt-p02-004.pddl",
+                "opt-p08-016": "classical/downward-benchmarks/floortile-opt11-strips/opt-p08-016.pddl"
+            }
+        },
+        "classical-downward-benchmarks-floortile-opt14-strips": {
+            "domain_file": "classical/downward-benchmarks/floortile-opt14-strips/domain.pddl",
+            "tasks": {
+                "p01-4-3-2": "classical/downward-benchmarks/floortile-opt14-strips/p01-4-3-2.pddl",
+                "p01-5-4-2": "classical/downward-benchmarks/floortile-opt14-strips/p01-5-4-2.pddl",
+                "p03-5-3-2": "classical/downward-benchmarks/floortile-opt14-strips/p03-5-3-2.pddl"
+            }
+        },
+        "classical-downward-benchmarks-floortile-sat11-strips": {
+            "domain_file": "classical/downward-benchmarks/floortile-sat11-strips/domain.pddl",
+            "tasks": {
+                "seq-p01-001": "classical/downward-benchmarks/floortile-sat11-strips/seq-p01-001.pddl",
+                "seq-p02-004": "classical/downward-benchmarks/floortile-sat11-strips/seq-p02-004.pddl",
+                "seq-p08-016": "classical/downward-benchmarks/floortile-sat11-strips/seq-p08-016.pddl"
+            }
+        },
+        "classical-downward-benchmarks-floortile-sat14-strips": {
+            "domain_file": "classical/downward-benchmarks/floortile-sat14-strips/domain.pddl",
+            "tasks": {
+                "p01-4-3-2": "classical/downward-benchmarks/floortile-sat14-strips/p01-4-3-2.pddl",
+                "p01-6-4-2": "classical/downward-benchmarks/floortile-sat14-strips/p01-6-4-2.pddl",
+                "p04-6-5-2": "classical/downward-benchmarks/floortile-sat14-strips/p04-6-5-2.pddl"
+            }
+        },
+        "classical-downward-benchmarks-freecell": {
+            "domain_file": "classical/downward-benchmarks/freecell/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/freecell/p01.pddl",
+                "p04": "classical/downward-benchmarks/freecell/p04.pddl",
+                "p16": "classical/downward-benchmarks/freecell/p16.pddl",
+                "probfreecell-10-4": "classical/downward-benchmarks/freecell/probfreecell-10-4.pddl"
+            }
+        },
+        "classical-downward-benchmarks-ged-opt14-strips": {
+            "domain_file": "classical/downward-benchmarks/ged-opt14-strips/domain.pddl",
+            "tasks": {
+                "d-1-2": "classical/downward-benchmarks/ged-opt14-strips/d-1-2.pddl",
+                "d-1-8": "classical/downward-benchmarks/ged-opt14-strips/d-1-8.pddl",
+                "d-7-6": "classical/downward-benchmarks/ged-opt14-strips/d-7-6.pddl"
+            }
+        },
+        "classical-downward-benchmarks-ged-sat14-strips": {
+            "domain_file": "classical/downward-benchmarks/ged-sat14-strips/domain.pddl",
+            "tasks": {
+                "d-3-6": "classical/downward-benchmarks/ged-sat14-strips/d-3-6.pddl",
+                "d-10-2": "classical/downward-benchmarks/ged-sat14-strips/d-10-2.pddl",
+                "d-12-6": "classical/downward-benchmarks/ged-sat14-strips/d-12-6.pddl"
+            }
+        },
+        "classical-downward-benchmarks-grid": {
+            "domain_file": "classical/downward-benchmarks/grid/domain.pddl",
+            "tasks": {
+                "prob01": "classical/downward-benchmarks/grid/prob01.pddl",
+                "prob04": "classical/downward-benchmarks/grid/prob04.pddl"
+            }
+        },
+        "classical-downward-benchmarks-gripper": {
+            "domain_file": "classical/downward-benchmarks/gripper/domain.pddl",
+            "tasks": {
+                "prob01": "classical/downward-benchmarks/gripper/prob01.pddl",
+                "prob04": "classical/downward-benchmarks/gripper/prob04.pddl",
+                "prob16": "classical/downward-benchmarks/gripper/prob16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-hiking-opt14-strips": {
+            "domain_file": "classical/downward-benchmarks/hiking-opt14-strips/domain.pddl",
+            "tasks": {
+                "ptesting-1-2-3": "classical/downward-benchmarks/hiking-opt14-strips/ptesting-1-2-3.pddl",
+                "ptesting-1-2-7": "classical/downward-benchmarks/hiking-opt14-strips/ptesting-1-2-7.pddl",
+                "ptesting-2-4-3": "classical/downward-benchmarks/hiking-opt14-strips/ptesting-2-4-3.pddl"
+            }
+        },
+        "classical-downward-benchmarks-hiking-sat14-strips": {
+            "domain_file": "classical/downward-benchmarks/hiking-sat14-strips/domain.pddl",
+            "tasks": {
+                "ptesting-1-2-7": "classical/downward-benchmarks/hiking-sat14-strips/ptesting-1-2-7.pddl",
+                "ptesting-2-2-7": "classical/downward-benchmarks/hiking-sat14-strips/ptesting-2-2-7.pddl",
+                "ptesting-3-3-8": "classical/downward-benchmarks/hiking-sat14-strips/ptesting-3-3-8.pddl"
+            }
+        },
+        "classical-downward-benchmarks-labyrinth-opt23-adl": {
+            "domain_file": "classical/downward-benchmarks/labyrinth-opt23-adl/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/labyrinth-opt23-adl/p01.pddl",
+                "p04": "classical/downward-benchmarks/labyrinth-opt23-adl/p04.pddl",
+                "p16": "classical/downward-benchmarks/labyrinth-opt23-adl/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-logistics00": {
+            "domain_file": "classical/downward-benchmarks/logistics00/domain.pddl",
+            "tasks": {
+                "probLOGISTICS-4-0": "classical/downward-benchmarks/logistics00/probLOGISTICS-4-0.pddl",
+                "probLOGISTICS-5-0": "classical/downward-benchmarks/logistics00/probLOGISTICS-5-0.pddl",
+                "probLOGISTICS-9-1": "classical/downward-benchmarks/logistics00/probLOGISTICS-9-1.pddl"
+            }
+        },
+        "classical-downward-benchmarks-logistics98": {
+            "domain_file": "classical/downward-benchmarks/logistics98/domain.pddl",
+            "tasks": {
+                "prob01": "classical/downward-benchmarks/logistics98/prob01.pddl",
+                "prob04": "classical/downward-benchmarks/logistics98/prob04.pddl",
+                "prob16": "classical/downward-benchmarks/logistics98/prob16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-miconic": {
+            "domain_file": "classical/downward-benchmarks/miconic/domain.pddl",
+            "tasks": {
+                "s1-0": "classical/downward-benchmarks/miconic/s1-0.pddl",
+                "s1-3": "classical/downward-benchmarks/miconic/s1-3.pddl",
+                "s4-0": "classical/downward-benchmarks/miconic/s4-0.pddl",
+                "s13-3": "classical/downward-benchmarks/miconic/s13-3.pddl"
+            }
+        },
+        "classical-downward-benchmarks-movie": {
+            "domain_file": "classical/downward-benchmarks/movie/domain.pddl",
+            "tasks": {
+                "prob01": "classical/downward-benchmarks/movie/prob01.pddl",
+                "prob04": "classical/downward-benchmarks/movie/prob04.pddl",
+                "prob16": "classical/downward-benchmarks/movie/prob16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-mprime": {
+            "domain_file": "classical/downward-benchmarks/mprime/domain.pddl",
+            "tasks": {
+                "prob01": "classical/downward-benchmarks/mprime/prob01.pddl",
+                "prob04": "classical/downward-benchmarks/mprime/prob04.pddl",
+                "prob16": "classical/downward-benchmarks/mprime/prob16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-mystery": {
+            "domain_file": "classical/downward-benchmarks/mystery/domain.pddl",
+            "tasks": {
+                "prob01": "classical/downward-benchmarks/mystery/prob01.pddl",
+                "prob04": "classical/downward-benchmarks/mystery/prob04.pddl",
+                "prob16": "classical/downward-benchmarks/mystery/prob16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-nomystery-opt11-strips": {
+            "domain_file": "classical/downward-benchmarks/nomystery-opt11-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/nomystery-opt11-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/nomystery-opt11-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/nomystery-opt11-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-nomystery-sat11-strips": {
+            "domain_file": "classical/downward-benchmarks/nomystery-sat11-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/nomystery-sat11-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/nomystery-sat11-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/nomystery-sat11-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-opt08-strips--p01-domain": {
+            "domain_file": "classical/downward-benchmarks/openstacks-opt08-strips/p01-domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/openstacks-opt08-strips/p01.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-opt08-strips--p04-domain": {
+            "domain_file": "classical/downward-benchmarks/openstacks-opt08-strips/p04-domain.pddl",
+            "tasks": {
+                "p04": "classical/downward-benchmarks/openstacks-opt08-strips/p04.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-opt08-strips--p16-domain": {
+            "domain_file": "classical/downward-benchmarks/openstacks-opt08-strips/p16-domain.pddl",
+            "tasks": {
+                "p16": "classical/downward-benchmarks/openstacks-opt08-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-opt11-strips--p01-domain": {
+            "domain_file": "classical/downward-benchmarks/openstacks-opt11-strips/p01-domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/openstacks-opt11-strips/p01.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-opt11-strips--p04-domain": {
+            "domain_file": "classical/downward-benchmarks/openstacks-opt11-strips/p04-domain.pddl",
+            "tasks": {
+                "p04": "classical/downward-benchmarks/openstacks-opt11-strips/p04.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-opt11-strips--p16-domain": {
+            "domain_file": "classical/downward-benchmarks/openstacks-opt11-strips/p16-domain.pddl",
+            "tasks": {
+                "p16": "classical/downward-benchmarks/openstacks-opt11-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-opt14-strips--domain_p20_1": {
+            "domain_file": "classical/downward-benchmarks/openstacks-opt14-strips/domain_p20_1.pddl",
+            "tasks": {
+                "p20_1": "classical/downward-benchmarks/openstacks-opt14-strips/p20_1.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-opt14-strips--domain_p25_1": {
+            "domain_file": "classical/downward-benchmarks/openstacks-opt14-strips/domain_p25_1.pddl",
+            "tasks": {
+                "p25_1": "classical/downward-benchmarks/openstacks-opt14-strips/p25_1.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-opt14-strips--domain_p45_2": {
+            "domain_file": "classical/downward-benchmarks/openstacks-opt14-strips/domain_p45_2.pddl",
+            "tasks": {
+                "p45_2": "classical/downward-benchmarks/openstacks-opt14-strips/p45_2.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-sat08-strips--p01-domain": {
+            "domain_file": "classical/downward-benchmarks/openstacks-sat08-strips/p01-domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/openstacks-sat08-strips/p01.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-sat08-strips--p04-domain": {
+            "domain_file": "classical/downward-benchmarks/openstacks-sat08-strips/p04-domain.pddl",
+            "tasks": {
+                "p04": "classical/downward-benchmarks/openstacks-sat08-strips/p04.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-sat08-strips--p16-domain": {
+            "domain_file": "classical/downward-benchmarks/openstacks-sat08-strips/p16-domain.pddl",
+            "tasks": {
+                "p16": "classical/downward-benchmarks/openstacks-sat08-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-sat11-strips--p01-domain": {
+            "domain_file": "classical/downward-benchmarks/openstacks-sat11-strips/p01-domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/openstacks-sat11-strips/p01.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-sat11-strips--p04-domain": {
+            "domain_file": "classical/downward-benchmarks/openstacks-sat11-strips/p04-domain.pddl",
+            "tasks": {
+                "p04": "classical/downward-benchmarks/openstacks-sat11-strips/p04.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-sat11-strips--p16-domain": {
+            "domain_file": "classical/downward-benchmarks/openstacks-sat11-strips/p16-domain.pddl",
+            "tasks": {
+                "p16": "classical/downward-benchmarks/openstacks-sat11-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-sat14-strips--domain_p170_2": {
+            "domain_file": "classical/downward-benchmarks/openstacks-sat14-strips/domain_p170_2.pddl",
+            "tasks": {
+                "p170_2": "classical/downward-benchmarks/openstacks-sat14-strips/p170_2.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-sat14-strips--domain_p190_2": {
+            "domain_file": "classical/downward-benchmarks/openstacks-sat14-strips/domain_p190_2.pddl",
+            "tasks": {
+                "p190_2": "classical/downward-benchmarks/openstacks-sat14-strips/p190_2.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-sat14-strips--domain_p270_2": {
+            "domain_file": "classical/downward-benchmarks/openstacks-sat14-strips/domain_p270_2.pddl",
+            "tasks": {
+                "p270_2": "classical/downward-benchmarks/openstacks-sat14-strips/p270_2.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-strips--domain_p01": {
+            "domain_file": "classical/downward-benchmarks/openstacks-strips/domain_p01.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/openstacks-strips/p01.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-strips--domain_p04": {
+            "domain_file": "classical/downward-benchmarks/openstacks-strips/domain_p04.pddl",
+            "tasks": {
+                "p04": "classical/downward-benchmarks/openstacks-strips/p04.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-strips--domain_p16": {
+            "domain_file": "classical/downward-benchmarks/openstacks-strips/domain_p16.pddl",
+            "tasks": {
+                "p16": "classical/downward-benchmarks/openstacks-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-organic-synthesis-opt18-strips--domain-p01": {
+            "domain_file": "classical/downward-benchmarks/organic-synthesis-opt18-strips/domain-p01.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/organic-synthesis-opt18-strips/p01.pddl"
+            }
+        },
+        "classical-downward-benchmarks-organic-synthesis-opt18-strips--domain-p04": {
+            "domain_file": "classical/downward-benchmarks/organic-synthesis-opt18-strips/domain-p04.pddl",
+            "tasks": {
+                "p04": "classical/downward-benchmarks/organic-synthesis-opt18-strips/p04.pddl"
+            }
+        },
+        "classical-downward-benchmarks-organic-synthesis-opt18-strips--domain-p16": {
+            "domain_file": "classical/downward-benchmarks/organic-synthesis-opt18-strips/domain-p16.pddl",
+            "tasks": {
+                "p16": "classical/downward-benchmarks/organic-synthesis-opt18-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-organic-synthesis-sat18-strips--domain-p01": {
+            "domain_file": "classical/downward-benchmarks/organic-synthesis-sat18-strips/domain-p01.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/organic-synthesis-sat18-strips/p01.pddl"
+            }
+        },
+        "classical-downward-benchmarks-organic-synthesis-sat18-strips--domain-p04": {
+            "domain_file": "classical/downward-benchmarks/organic-synthesis-sat18-strips/domain-p04.pddl",
+            "tasks": {
+                "p04": "classical/downward-benchmarks/organic-synthesis-sat18-strips/p04.pddl"
+            }
+        },
+        "classical-downward-benchmarks-organic-synthesis-sat18-strips--domain-p16": {
+            "domain_file": "classical/downward-benchmarks/organic-synthesis-sat18-strips/domain-p16.pddl",
+            "tasks": {
+                "p16": "classical/downward-benchmarks/organic-synthesis-sat18-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-organic-synthesis-split-opt18-strips--domain-p01": {
+            "domain_file": "classical/downward-benchmarks/organic-synthesis-split-opt18-strips/domain-p01.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/organic-synthesis-split-opt18-strips/p01.pddl"
+            }
+        },
+        "classical-downward-benchmarks-organic-synthesis-split-opt18-strips--domain-p04": {
+            "domain_file": "classical/downward-benchmarks/organic-synthesis-split-opt18-strips/domain-p04.pddl",
+            "tasks": {
+                "p04": "classical/downward-benchmarks/organic-synthesis-split-opt18-strips/p04.pddl"
+            }
+        },
+        "classical-downward-benchmarks-organic-synthesis-split-opt18-strips--domain-p16": {
+            "domain_file": "classical/downward-benchmarks/organic-synthesis-split-opt18-strips/domain-p16.pddl",
+            "tasks": {
+                "p16": "classical/downward-benchmarks/organic-synthesis-split-opt18-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-organic-synthesis-split-sat18-strips--domain-p01": {
+            "domain_file": "classical/downward-benchmarks/organic-synthesis-split-sat18-strips/domain-p01.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/organic-synthesis-split-sat18-strips/p01.pddl"
+            }
+        },
+        "classical-downward-benchmarks-organic-synthesis-split-sat18-strips--domain-p04": {
+            "domain_file": "classical/downward-benchmarks/organic-synthesis-split-sat18-strips/domain-p04.pddl",
+            "tasks": {
+                "p04": "classical/downward-benchmarks/organic-synthesis-split-sat18-strips/p04.pddl"
+            }
+        },
+        "classical-downward-benchmarks-organic-synthesis-split-sat18-strips--domain-p16": {
+            "domain_file": "classical/downward-benchmarks/organic-synthesis-split-sat18-strips/domain-p16.pddl",
+            "tasks": {
+                "p16": "classical/downward-benchmarks/organic-synthesis-split-sat18-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-parcprinter-08-strips--p01-domain": {
+            "domain_file": "classical/downward-benchmarks/parcprinter-08-strips/p01-domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/parcprinter-08-strips/p01.pddl"
+            }
+        },
+        "classical-downward-benchmarks-parcprinter-08-strips--p04-domain": {
+            "domain_file": "classical/downward-benchmarks/parcprinter-08-strips/p04-domain.pddl",
+            "tasks": {
+                "p04": "classical/downward-benchmarks/parcprinter-08-strips/p04.pddl"
+            }
+        },
+        "classical-downward-benchmarks-parcprinter-08-strips--p16-domain": {
+            "domain_file": "classical/downward-benchmarks/parcprinter-08-strips/p16-domain.pddl",
+            "tasks": {
+                "p16": "classical/downward-benchmarks/parcprinter-08-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-parcprinter-opt11-strips--p01-domain": {
+            "domain_file": "classical/downward-benchmarks/parcprinter-opt11-strips/p01-domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/parcprinter-opt11-strips/p01.pddl"
+            }
+        },
+        "classical-downward-benchmarks-parcprinter-opt11-strips--p04-domain": {
+            "domain_file": "classical/downward-benchmarks/parcprinter-opt11-strips/p04-domain.pddl",
+            "tasks": {
+                "p04": "classical/downward-benchmarks/parcprinter-opt11-strips/p04.pddl"
+            }
+        },
+        "classical-downward-benchmarks-parcprinter-opt11-strips--p16-domain": {
+            "domain_file": "classical/downward-benchmarks/parcprinter-opt11-strips/p16-domain.pddl",
+            "tasks": {
+                "p16": "classical/downward-benchmarks/parcprinter-opt11-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-parcprinter-sat11-strips--p01-domain": {
+            "domain_file": "classical/downward-benchmarks/parcprinter-sat11-strips/p01-domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/parcprinter-sat11-strips/p01.pddl"
+            }
+        },
+        "classical-downward-benchmarks-parcprinter-sat11-strips--p04-domain": {
+            "domain_file": "classical/downward-benchmarks/parcprinter-sat11-strips/p04-domain.pddl",
+            "tasks": {
+                "p04": "classical/downward-benchmarks/parcprinter-sat11-strips/p04.pddl"
+            }
+        },
+        "classical-downward-benchmarks-parcprinter-sat11-strips--p16-domain": {
+            "domain_file": "classical/downward-benchmarks/parcprinter-sat11-strips/p16-domain.pddl",
+            "tasks": {
+                "p16": "classical/downward-benchmarks/parcprinter-sat11-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-parking-opt11-strips": {
+            "domain_file": "classical/downward-benchmarks/parking-opt11-strips/domain.pddl",
+            "tasks": {
+                "pfile03-011": "classical/downward-benchmarks/parking-opt11-strips/pfile03-011.pddl",
+                "pfile04-014": "classical/downward-benchmarks/parking-opt11-strips/pfile04-014.pddl",
+                "pfile07-026": "classical/downward-benchmarks/parking-opt11-strips/pfile07-026.pddl"
+            }
+        },
+        "classical-downward-benchmarks-parking-opt14-strips": {
+            "domain_file": "classical/downward-benchmarks/parking-opt14-strips/domain.pddl",
+            "tasks": {
+                "p_12_7-01": "classical/downward-benchmarks/parking-opt14-strips/p_12_7-01.pddl",
+                "p_12_7-04": "classical/downward-benchmarks/parking-opt14-strips/p_12_7-04.pddl",
+                "p_18_10-04": "classical/downward-benchmarks/parking-opt14-strips/p_18_10-04.pddl"
+            }
+        },
+        "classical-downward-benchmarks-parking-sat11-strips": {
+            "domain_file": "classical/downward-benchmarks/parking-sat11-strips/domain.pddl",
+            "tasks": {
+                "pfile08-031": "classical/downward-benchmarks/parking-sat11-strips/pfile08-031.pddl",
+                "pfile09-034": "classical/downward-benchmarks/parking-sat11-strips/pfile09-034.pddl",
+                "pfile12-046": "classical/downward-benchmarks/parking-sat11-strips/pfile12-046.pddl"
+            }
+        },
+        "classical-downward-benchmarks-parking-sat14-strips": {
+            "domain_file": "classical/downward-benchmarks/parking-sat14-strips/domain.pddl",
+            "tasks": {
+                "p_28_2": "classical/downward-benchmarks/parking-sat14-strips/p_28_2.pddl",
+                "p_30_2": "classical/downward-benchmarks/parking-sat14-strips/p_30_2.pddl",
+                "p_38_2": "classical/downward-benchmarks/parking-sat14-strips/p_38_2.pddl"
+            }
+        },
+        "classical-downward-benchmarks-pegsol-08-strips": {
+            "domain_file": "classical/downward-benchmarks/pegsol-08-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/pegsol-08-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/pegsol-08-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/pegsol-08-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-pegsol-opt11-strips": {
+            "domain_file": "classical/downward-benchmarks/pegsol-opt11-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/pegsol-opt11-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/pegsol-opt11-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/pegsol-opt11-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-pegsol-sat11-strips": {
+            "domain_file": "classical/downward-benchmarks/pegsol-sat11-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/pegsol-sat11-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/pegsol-sat11-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/pegsol-sat11-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-petri-net-alignment-opt18-strips--domain-p01": {
+            "domain_file": "classical/downward-benchmarks/petri-net-alignment-opt18-strips/domain-p01.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/petri-net-alignment-opt18-strips/p01.pddl"
+            }
+        },
+        "classical-downward-benchmarks-petri-net-alignment-opt18-strips--domain-p04": {
+            "domain_file": "classical/downward-benchmarks/petri-net-alignment-opt18-strips/domain-p04.pddl",
+            "tasks": {
+                "p04": "classical/downward-benchmarks/petri-net-alignment-opt18-strips/p04.pddl"
+            }
+        },
+        "classical-downward-benchmarks-petri-net-alignment-opt18-strips--domain-p16": {
+            "domain_file": "classical/downward-benchmarks/petri-net-alignment-opt18-strips/domain-p16.pddl",
+            "tasks": {
+                "p16": "classical/downward-benchmarks/petri-net-alignment-opt18-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-pipesworld-notankage": {
+            "domain_file": "classical/downward-benchmarks/pipesworld-notankage/domain.pddl",
+            "tasks": {
+                "p01-net1-b6-g2": "classical/downward-benchmarks/pipesworld-notankage/p01-net1-b6-g2.pddl",
+                "p04-net1-b8-g5": "classical/downward-benchmarks/pipesworld-notankage/p04-net1-b8-g5.pddl",
+                "p16-net2-b14-g6": "classical/downward-benchmarks/pipesworld-notankage/p16-net2-b14-g6.pddl"
+            }
+        },
+        "classical-downward-benchmarks-pipesworld-tankage": {
+            "domain_file": "classical/downward-benchmarks/pipesworld-tankage/domain.pddl",
+            "tasks": {
+                "p01-net1-b6-g2-t50": "classical/downward-benchmarks/pipesworld-tankage/p01-net1-b6-g2-t50.pddl",
+                "p04-net1-b8-g5-t80": "classical/downward-benchmarks/pipesworld-tankage/p04-net1-b8-g5-t80.pddl",
+                "p16-net2-b14-g6-t80": "classical/downward-benchmarks/pipesworld-tankage/p16-net2-b14-g6-t80.pddl"
+            }
+        },
+        "classical-downward-benchmarks-psr-small--p01-domain": {
+            "domain_file": "classical/downward-benchmarks/psr-small/p01-domain.pddl",
+            "tasks": {
+                "p01-s2-n1-l2-f50": "classical/downward-benchmarks/psr-small/p01-s2-n1-l2-f50.pddl"
+            }
+        },
+        "classical-downward-benchmarks-psr-small--p04-domain": {
+            "domain_file": "classical/downward-benchmarks/psr-small/p04-domain.pddl",
+            "tasks": {
+                "p04-s8-n1-l4-f10": "classical/downward-benchmarks/psr-small/p04-s8-n1-l4-f10.pddl"
+            }
+        },
+        "classical-downward-benchmarks-psr-small--p16-domain": {
+            "domain_file": "classical/downward-benchmarks/psr-small/p16-domain.pddl",
+            "tasks": {
+                "p16-s29-n2-l5-f30": "classical/downward-benchmarks/psr-small/p16-s29-n2-l5-f30.pddl"
+            }
+        },
+        "classical-downward-benchmarks-quantum-layout-opt23-strips--domain_p01": {
+            "domain_file": "classical/downward-benchmarks/quantum-layout-opt23-strips/domain_p01.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/quantum-layout-opt23-strips/p01.pddl"
+            }
+        },
+        "classical-downward-benchmarks-quantum-layout-opt23-strips--domain_p04": {
+            "domain_file": "classical/downward-benchmarks/quantum-layout-opt23-strips/domain_p04.pddl",
+            "tasks": {
+                "p04": "classical/downward-benchmarks/quantum-layout-opt23-strips/p04.pddl"
+            }
+        },
+        "classical-downward-benchmarks-quantum-layout-opt23-strips--domain_p16": {
+            "domain_file": "classical/downward-benchmarks/quantum-layout-opt23-strips/domain_p16.pddl",
+            "tasks": {
+                "p16": "classical/downward-benchmarks/quantum-layout-opt23-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-ricochet-robots-opt23-adl": {
+            "domain_file": "classical/downward-benchmarks/ricochet-robots-opt23-adl/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/ricochet-robots-opt23-adl/p01.pddl",
+                "p04": "classical/downward-benchmarks/ricochet-robots-opt23-adl/p04.pddl",
+                "p16": "classical/downward-benchmarks/ricochet-robots-opt23-adl/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-rovers": {
+            "domain_file": "classical/downward-benchmarks/rovers/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/rovers/p01.pddl",
+                "p04": "classical/downward-benchmarks/rovers/p04.pddl",
+                "p16": "classical/downward-benchmarks/rovers/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-satellite": {
+            "domain_file": "classical/downward-benchmarks/satellite/domain.pddl",
+            "tasks": {
+                "p01-pfile1": "classical/downward-benchmarks/satellite/p01-pfile1.pddl",
+                "p04-pfile4": "classical/downward-benchmarks/satellite/p04-pfile4.pddl",
+                "p16-pfile16": "classical/downward-benchmarks/satellite/p16-pfile16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-scanalyzer-08-strips": {
+            "domain_file": "classical/downward-benchmarks/scanalyzer-08-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/scanalyzer-08-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/scanalyzer-08-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/scanalyzer-08-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-scanalyzer-opt11-strips": {
+            "domain_file": "classical/downward-benchmarks/scanalyzer-opt11-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/scanalyzer-opt11-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/scanalyzer-opt11-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/scanalyzer-opt11-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-scanalyzer-sat11-strips": {
+            "domain_file": "classical/downward-benchmarks/scanalyzer-sat11-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/scanalyzer-sat11-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/scanalyzer-sat11-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/scanalyzer-sat11-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-slitherlink-opt23-adl": {
+            "domain_file": "classical/downward-benchmarks/slitherlink-opt23-adl/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/slitherlink-opt23-adl/p01.pddl",
+                "p04": "classical/downward-benchmarks/slitherlink-opt23-adl/p04.pddl",
+                "p16": "classical/downward-benchmarks/slitherlink-opt23-adl/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-snake-opt18-strips": {
+            "domain_file": "classical/downward-benchmarks/snake-opt18-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/snake-opt18-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/snake-opt18-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/snake-opt18-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-snake-sat18-strips": {
+            "domain_file": "classical/downward-benchmarks/snake-sat18-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/snake-sat18-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/snake-sat18-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/snake-sat18-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-sokoban-opt08-strips": {
+            "domain_file": "classical/downward-benchmarks/sokoban-opt08-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/sokoban-opt08-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/sokoban-opt08-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/sokoban-opt08-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-sokoban-opt11-strips": {
+            "domain_file": "classical/downward-benchmarks/sokoban-opt11-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/sokoban-opt11-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/sokoban-opt11-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/sokoban-opt11-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-sokoban-sat08-strips": {
+            "domain_file": "classical/downward-benchmarks/sokoban-sat08-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/sokoban-sat08-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/sokoban-sat08-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/sokoban-sat08-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-sokoban-sat11-strips": {
+            "domain_file": "classical/downward-benchmarks/sokoban-sat11-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/sokoban-sat11-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/sokoban-sat11-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/sokoban-sat11-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-storage": {
+            "domain_file": "classical/downward-benchmarks/storage/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/storage/p01.pddl",
+                "p04": "classical/downward-benchmarks/storage/p04.pddl",
+                "p16": "classical/downward-benchmarks/storage/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-termes-opt18-strips": {
+            "domain_file": "classical/downward-benchmarks/termes-opt18-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/termes-opt18-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/termes-opt18-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/termes-opt18-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-termes-sat18-strips": {
+            "domain_file": "classical/downward-benchmarks/termes-sat18-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/termes-sat18-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/termes-sat18-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/termes-sat18-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-tetris-opt14-strips": {
+            "domain_file": "classical/downward-benchmarks/tetris-opt14-strips/domain.pddl",
+            "tasks": {
+                "p01-6": "classical/downward-benchmarks/tetris-opt14-strips/p01-6.pddl",
+                "p02-4": "classical/downward-benchmarks/tetris-opt14-strips/p02-4.pddl",
+                "p05-8": "classical/downward-benchmarks/tetris-opt14-strips/p05-8.pddl"
+            }
+        },
+        "classical-downward-benchmarks-tetris-sat14-strips": {
+            "domain_file": "classical/downward-benchmarks/tetris-sat14-strips/domain.pddl",
+            "tasks": {
+                "p020": "classical/downward-benchmarks/tetris-sat14-strips/p020.pddl",
+                "p023": "classical/downward-benchmarks/tetris-sat14-strips/p023.pddl",
+                "p036": "classical/downward-benchmarks/tetris-sat14-strips/p036.pddl"
+            }
+        },
+        "classical-downward-benchmarks-thoughtful-sat14-strips": {
+            "domain_file": "classical/downward-benchmarks/thoughtful-sat14-strips/domain.pddl",
+            "tasks": {
+                "bootstrap-typed-01": "classical/downward-benchmarks/thoughtful-sat14-strips/bootstrap-typed-01.pddl",
+                "bootstrap-typed-04": "classical/downward-benchmarks/thoughtful-sat14-strips/bootstrap-typed-04.pddl",
+                "target-typed-24": "classical/downward-benchmarks/thoughtful-sat14-strips/target-typed-24.pddl"
+            }
+        },
+        "classical-downward-benchmarks-tidybot-opt11-strips": {
+            "domain_file": "classical/downward-benchmarks/tidybot-opt11-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/tidybot-opt11-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/tidybot-opt11-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/tidybot-opt11-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-tidybot-opt14-strips": {
+            "domain_file": "classical/downward-benchmarks/tidybot-opt14-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/tidybot-opt14-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/tidybot-opt14-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/tidybot-opt14-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-tidybot-sat11-strips": {
+            "domain_file": "classical/downward-benchmarks/tidybot-sat11-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/tidybot-sat11-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/tidybot-sat11-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/tidybot-sat11-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-tpp": {
+            "domain_file": "classical/downward-benchmarks/tpp/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/tpp/p01.pddl",
+                "p04": "classical/downward-benchmarks/tpp/p04.pddl",
+                "p16": "classical/downward-benchmarks/tpp/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-transport-opt08-strips": {
+            "domain_file": "classical/downward-benchmarks/transport-opt08-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/transport-opt08-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/transport-opt08-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/transport-opt08-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-transport-opt11-strips": {
+            "domain_file": "classical/downward-benchmarks/transport-opt11-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/transport-opt11-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/transport-opt11-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/transport-opt11-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-transport-opt14-strips": {
+            "domain_file": "classical/downward-benchmarks/transport-opt14-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/transport-opt14-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/transport-opt14-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/transport-opt14-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-transport-sat08-strips": {
+            "domain_file": "classical/downward-benchmarks/transport-sat08-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/transport-sat08-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/transport-sat08-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/transport-sat08-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-transport-sat11-strips": {
+            "domain_file": "classical/downward-benchmarks/transport-sat11-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/transport-sat11-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/transport-sat11-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/transport-sat11-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-transport-sat14-strips": {
+            "domain_file": "classical/downward-benchmarks/transport-sat14-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/transport-sat14-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/transport-sat14-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/transport-sat14-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-trucks-strips--domain_p01": {
+            "domain_file": "classical/downward-benchmarks/trucks-strips/domain_p01.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/trucks-strips/p01.pddl"
+            }
+        },
+        "classical-downward-benchmarks-trucks-strips--domain_p04": {
+            "domain_file": "classical/downward-benchmarks/trucks-strips/domain_p04.pddl",
+            "tasks": {
+                "p04": "classical/downward-benchmarks/trucks-strips/p04.pddl"
+            }
+        },
+        "classical-downward-benchmarks-trucks-strips--domain_p16": {
+            "domain_file": "classical/downward-benchmarks/trucks-strips/domain_p16.pddl",
+            "tasks": {
+                "p16": "classical/downward-benchmarks/trucks-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-visitall-opt11-strips": {
+            "domain_file": "classical/downward-benchmarks/visitall-opt11-strips/domain.pddl",
+            "tasks": {
+                "problem02-full": "classical/downward-benchmarks/visitall-opt11-strips/problem02-full.pddl",
+                "problem03-half": "classical/downward-benchmarks/visitall-opt11-strips/problem03-half.pddl",
+                "problem09-half": "classical/downward-benchmarks/visitall-opt11-strips/problem09-half.pddl"
+            }
+        },
+        "classical-downward-benchmarks-visitall-opt14-strips": {
+            "domain_file": "classical/downward-benchmarks/visitall-opt14-strips/domain.pddl",
+            "tasks": {
+                "p-1-5": "classical/downward-benchmarks/visitall-opt14-strips/p-1-5.pddl",
+                "p-1-8": "classical/downward-benchmarks/visitall-opt14-strips/p-1-8.pddl",
+                "p-05-6": "classical/downward-benchmarks/visitall-opt14-strips/p-05-6.pddl"
+            }
+        },
+        "classical-downward-benchmarks-visitall-sat11-strips": {
+            "domain_file": "classical/downward-benchmarks/visitall-sat11-strips/domain.pddl",
+            "tasks": {
+                "problem12": "classical/downward-benchmarks/visitall-sat11-strips/problem12.pddl",
+                "problem18": "classical/downward-benchmarks/visitall-sat11-strips/problem18.pddl",
+                "problem42": "classical/downward-benchmarks/visitall-sat11-strips/problem42.pddl"
+            }
+        },
+        "classical-downward-benchmarks-visitall-sat14-strips": {
+            "domain_file": "classical/downward-benchmarks/visitall-sat14-strips/domain.pddl",
+            "tasks": {
+                "pfile30": "classical/downward-benchmarks/visitall-sat14-strips/pfile30.pddl",
+                "pfile33": "classical/downward-benchmarks/visitall-sat14-strips/pfile33.pddl",
+                "pfile61": "classical/downward-benchmarks/visitall-sat14-strips/pfile61.pddl"
+            }
+        },
+        "classical-downward-benchmarks-woodworking-opt08-strips": {
+            "domain_file": "classical/downward-benchmarks/woodworking-opt08-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/woodworking-opt08-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/woodworking-opt08-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/woodworking-opt08-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-woodworking-opt11-strips": {
+            "domain_file": "classical/downward-benchmarks/woodworking-opt11-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/woodworking-opt11-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/woodworking-opt11-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/woodworking-opt11-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-woodworking-sat08-strips": {
+            "domain_file": "classical/downward-benchmarks/woodworking-sat08-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/woodworking-sat08-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/woodworking-sat08-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/woodworking-sat08-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-woodworking-sat11-strips": {
+            "domain_file": "classical/downward-benchmarks/woodworking-sat11-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/woodworking-sat11-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/woodworking-sat11-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/woodworking-sat11-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-zenotravel": {
+            "domain_file": "classical/downward-benchmarks/zenotravel/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/zenotravel/p01.pddl",
+                "p04": "classical/downward-benchmarks/zenotravel/p04.pddl",
+                "p16": "classical/downward-benchmarks/zenotravel/p16.pddl"
+            }
+        },
+        "classical-ipc2023-learning-blocksworld_ipc2023_learning": {
+            "domain_file": "classical/ipc2023-learning/blocksworld_ipc2023_learning/domain.pddl",
+            "tasks": {
+                "easy_p01": "classical/ipc2023-learning/blocksworld_ipc2023_learning/easy_p01.pddl",
+                "easy_p04": "classical/ipc2023-learning/blocksworld_ipc2023_learning/easy_p04.pddl",
+                "easy_p16": "classical/ipc2023-learning/blocksworld_ipc2023_learning/easy_p16.pddl",
+                "medium_p04": "classical/ipc2023-learning/blocksworld_ipc2023_learning/medium_p04.pddl"
+            }
+        },
+        "classical-ipc2023-learning-childsnack_ipc2023_learning": {
+            "domain_file": "classical/ipc2023-learning/childsnack_ipc2023_learning/domain.pddl",
+            "tasks": {
+                "easy_p01": "classical/ipc2023-learning/childsnack_ipc2023_learning/easy_p01.pddl",
+                "easy_p04": "classical/ipc2023-learning/childsnack_ipc2023_learning/easy_p04.pddl",
+                "easy_p16": "classical/ipc2023-learning/childsnack_ipc2023_learning/easy_p16.pddl",
+                "medium_p04": "classical/ipc2023-learning/childsnack_ipc2023_learning/medium_p04.pddl"
+            }
+        },
+        "classical-ipc2023-learning-ferry_ipc2023_learning": {
+            "domain_file": "classical/ipc2023-learning/ferry_ipc2023_learning/domain.pddl",
+            "tasks": {
+                "easy_p01": "classical/ipc2023-learning/ferry_ipc2023_learning/easy_p01.pddl",
+                "easy_p04": "classical/ipc2023-learning/ferry_ipc2023_learning/easy_p04.pddl",
+                "easy_p16": "classical/ipc2023-learning/ferry_ipc2023_learning/easy_p16.pddl",
+                "medium_p04": "classical/ipc2023-learning/ferry_ipc2023_learning/medium_p04.pddl"
+            }
+        },
+        "classical-ipc2023-learning-floortile_ipc2023_learning": {
+            "domain_file": "classical/ipc2023-learning/floortile_ipc2023_learning/domain.pddl",
+            "tasks": {
+                "easy_p01": "classical/ipc2023-learning/floortile_ipc2023_learning/easy_p01.pddl",
+                "easy_p04": "classical/ipc2023-learning/floortile_ipc2023_learning/easy_p04.pddl",
+                "easy_p16": "classical/ipc2023-learning/floortile_ipc2023_learning/easy_p16.pddl",
+                "medium_p04": "classical/ipc2023-learning/floortile_ipc2023_learning/medium_p04.pddl"
+            }
+        },
+        "classical-ipc2023-learning-miconic_ipc2023_learning": {
+            "domain_file": "classical/ipc2023-learning/miconic_ipc2023_learning/domain.pddl",
+            "tasks": {
+                "easy_p01": "classical/ipc2023-learning/miconic_ipc2023_learning/easy_p01.pddl",
+                "easy_p04": "classical/ipc2023-learning/miconic_ipc2023_learning/easy_p04.pddl",
+                "easy_p16": "classical/ipc2023-learning/miconic_ipc2023_learning/easy_p16.pddl",
+                "medium_p04": "classical/ipc2023-learning/miconic_ipc2023_learning/medium_p04.pddl"
+            }
+        },
+        "classical-ipc2023-learning-rovers_ipc2023_learning": {
+            "domain_file": "classical/ipc2023-learning/rovers_ipc2023_learning/domain.pddl",
+            "tasks": {
+                "easy_p01": "classical/ipc2023-learning/rovers_ipc2023_learning/easy_p01.pddl",
+                "easy_p04": "classical/ipc2023-learning/rovers_ipc2023_learning/easy_p04.pddl",
+                "easy_p16": "classical/ipc2023-learning/rovers_ipc2023_learning/easy_p16.pddl",
+                "medium_p04": "classical/ipc2023-learning/rovers_ipc2023_learning/medium_p04.pddl"
+            }
+        },
+        "classical-ipc2023-learning-satellite_ipc2023_learning": {
+            "domain_file": "classical/ipc2023-learning/satellite_ipc2023_learning/domain.pddl",
+            "tasks": {
+                "easy_p01": "classical/ipc2023-learning/satellite_ipc2023_learning/easy_p01.pddl",
+                "easy_p04": "classical/ipc2023-learning/satellite_ipc2023_learning/easy_p04.pddl",
+                "easy_p16": "classical/ipc2023-learning/satellite_ipc2023_learning/easy_p16.pddl",
+                "medium_p04": "classical/ipc2023-learning/satellite_ipc2023_learning/medium_p04.pddl"
+            }
+        },
+        "classical-ipc2023-learning-sokoban_ipc2023_learning": {
+            "domain_file": "classical/ipc2023-learning/sokoban_ipc2023_learning/domain.pddl",
+            "tasks": {
+                "easy_p01": "classical/ipc2023-learning/sokoban_ipc2023_learning/easy_p01.pddl",
+                "easy_p04": "classical/ipc2023-learning/sokoban_ipc2023_learning/easy_p04.pddl",
+                "easy_p16": "classical/ipc2023-learning/sokoban_ipc2023_learning/easy_p16.pddl",
+                "medium_p04": "classical/ipc2023-learning/sokoban_ipc2023_learning/medium_p04.pddl"
+            }
+        },
+        "classical-ipc2023-learning-spanner_ipc2023_learning": {
+            "domain_file": "classical/ipc2023-learning/spanner_ipc2023_learning/domain.pddl",
+            "tasks": {
+                "easy_p01": "classical/ipc2023-learning/spanner_ipc2023_learning/easy_p01.pddl",
+                "easy_p04": "classical/ipc2023-learning/spanner_ipc2023_learning/easy_p04.pddl",
+                "easy_p16": "classical/ipc2023-learning/spanner_ipc2023_learning/easy_p16.pddl",
+                "medium_p04": "classical/ipc2023-learning/spanner_ipc2023_learning/medium_p04.pddl"
+            }
+        },
+        "classical-ipc2023-learning-transport_ipc2023_learning": {
+            "domain_file": "classical/ipc2023-learning/transport_ipc2023_learning/domain.pddl",
+            "tasks": {
+                "easy_p01": "classical/ipc2023-learning/transport_ipc2023_learning/easy_p01.pddl",
+                "easy_p04": "classical/ipc2023-learning/transport_ipc2023_learning/easy_p04.pddl",
+                "easy_p16": "classical/ipc2023-learning/transport_ipc2023_learning/easy_p16.pddl",
+                "medium_p04": "classical/ipc2023-learning/transport_ipc2023_learning/medium_p04.pddl"
+            }
+        }
+    },
+    "attributes": {
+        "solved": {
+            "type": "float",
+            "compare": "strict_equality"
+        },
+        "cost": {
+            "type": "float",
+            "compare": "strict_equality"
+        },
+        "num_expanded": {
+            "type": "float",
+            "compare": "undefined"
+        },
+        "num_generated_successors": {
+            "type": "float",
+            "compare": "undefined"
+        },
+        "num_registered_states": {
+            "type": "float",
+            "compare": "undefined"
+        },
+        "num_successors": {
+            "type": "float",
+            "compare": "undefined"
+        },
+        "num_selected_bindings": {
+            "type": "float",
+            "compare": "undefined"
+        },
+        "num_applicable_bindings": {
+            "type": "float",
+            "compare": "undefined"
+        }
+    },
+    "metadata": {
+        "pypddl_datasets_version": "0.0.9",
+        "data_version": "data-v0.0.3",
+        "catalog_suites": [
+            "ipc-optimal-adl",
+            "ipc-optimal-strips",
+            "ipc-satisficing-adl",
+            "ipc-satisficing-strips",
+            "ipc2023-learning",
+            "ipc2023-numeric",
+            "ipc2026-numeric"
+        ],
+        "sampling": "One-based positions 1, 4, 16, 64, ... in natural filename order within each IPC domain.",
+        "classification": "Numeric fluents take priority; STRIPS allows typing, equality, negative preconditions and action costs; other supported requirements are non-STRIPS."
+    }
+}

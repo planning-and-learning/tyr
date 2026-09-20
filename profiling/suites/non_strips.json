@@ -1,0 +1,323 @@
+{
+    "domains": {
+        "classical-downward-benchmarks-assembly": {
+            "domain_file": "classical/downward-benchmarks/assembly/domain.pddl",
+            "tasks": {
+                "prob01": "classical/downward-benchmarks/assembly/prob01.pddl",
+                "prob04": "classical/downward-benchmarks/assembly/prob04.pddl",
+                "prob16": "classical/downward-benchmarks/assembly/prob16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-caldera-opt18-adl": {
+            "domain_file": "classical/downward-benchmarks/caldera-opt18-adl/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/caldera-opt18-adl/p01.pddl",
+                "p04": "classical/downward-benchmarks/caldera-opt18-adl/p04.pddl",
+                "p16": "classical/downward-benchmarks/caldera-opt18-adl/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-caldera-sat18-adl": {
+            "domain_file": "classical/downward-benchmarks/caldera-sat18-adl/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/caldera-sat18-adl/p01.pddl",
+                "p04": "classical/downward-benchmarks/caldera-sat18-adl/p04.pddl",
+                "p16": "classical/downward-benchmarks/caldera-sat18-adl/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-caldera-split-opt18-adl": {
+            "domain_file": "classical/downward-benchmarks/caldera-split-opt18-adl/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/caldera-split-opt18-adl/p01.pddl",
+                "p04": "classical/downward-benchmarks/caldera-split-opt18-adl/p04.pddl",
+                "p16": "classical/downward-benchmarks/caldera-split-opt18-adl/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-caldera-split-sat18-adl": {
+            "domain_file": "classical/downward-benchmarks/caldera-split-sat18-adl/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/caldera-split-sat18-adl/p01.pddl",
+                "p04": "classical/downward-benchmarks/caldera-split-sat18-adl/p04.pddl",
+                "p16": "classical/downward-benchmarks/caldera-split-sat18-adl/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-citycar-opt14-adl": {
+            "domain_file": "classical/downward-benchmarks/citycar-opt14-adl/domain.pddl",
+            "tasks": {
+                "p2-2-2-1-2": "classical/downward-benchmarks/citycar-opt14-adl/p2-2-2-1-2.pddl",
+                "p2-2-3-2-1": "classical/downward-benchmarks/citycar-opt14-adl/p2-2-3-2-1.pddl",
+                "p3-3-2-2-2": "classical/downward-benchmarks/citycar-opt14-adl/p3-3-2-2-2.pddl"
+            }
+        },
+        "classical-downward-benchmarks-citycar-sat14-adl": {
+            "domain_file": "classical/downward-benchmarks/citycar-sat14-adl/domain.pddl",
+            "tasks": {
+                "p3-2-2-0-1": "classical/downward-benchmarks/citycar-sat14-adl/p3-2-2-0-1.pddl",
+                "p3-5-2-0-1": "classical/downward-benchmarks/citycar-sat14-adl/p3-5-2-0-1.pddl",
+                "p4-4-3-0-2": "classical/downward-benchmarks/citycar-sat14-adl/p4-4-3-0-2.pddl"
+            }
+        },
+        "classical-downward-benchmarks-flashfill-sat18-adl--domain-p01": {
+            "domain_file": "classical/downward-benchmarks/flashfill-sat18-adl/domain-p01.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/flashfill-sat18-adl/p01.pddl"
+            }
+        },
+        "classical-downward-benchmarks-flashfill-sat18-adl--domain-p04": {
+            "domain_file": "classical/downward-benchmarks/flashfill-sat18-adl/domain-p04.pddl",
+            "tasks": {
+                "p04": "classical/downward-benchmarks/flashfill-sat18-adl/p04.pddl"
+            }
+        },
+        "classical-downward-benchmarks-flashfill-sat18-adl--domain-p16": {
+            "domain_file": "classical/downward-benchmarks/flashfill-sat18-adl/domain-p16.pddl",
+            "tasks": {
+                "p16": "classical/downward-benchmarks/flashfill-sat18-adl/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-folding-opt23-adl": {
+            "domain_file": "classical/downward-benchmarks/folding-opt23-adl/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/folding-opt23-adl/p01.pddl",
+                "p04": "classical/downward-benchmarks/folding-opt23-adl/p04.pddl",
+                "p16": "classical/downward-benchmarks/folding-opt23-adl/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-maintenance-opt14-adl": {
+            "domain_file": "classical/downward-benchmarks/maintenance-opt14-adl/domain.pddl",
+            "tasks": {
+                "maintenance-1-3-010-010-2-000": "classical/downward-benchmarks/maintenance-opt14-adl/maintenance-1-3-010-010-2-000.pddl",
+                "maintenance-1-3-015-020-2-001": "classical/downward-benchmarks/maintenance-opt14-adl/maintenance-1-3-015-020-2-001.pddl"
+            }
+        },
+        "classical-downward-benchmarks-maintenance-sat14-adl": {
+            "domain_file": "classical/downward-benchmarks/maintenance-sat14-adl/domain.pddl",
+            "tasks": {
+                "maintenance-1-3-060-180-5-000": "classical/downward-benchmarks/maintenance-sat14-adl/maintenance-1-3-060-180-5-000.pddl",
+                "maintenance-1-3-100-300-5-000": "classical/downward-benchmarks/maintenance-sat14-adl/maintenance-1-3-100-300-5-000.pddl",
+                "maintenance-1-3-200-900-5-001": "classical/downward-benchmarks/maintenance-sat14-adl/maintenance-1-3-200-900-5-001.pddl"
+            }
+        },
+        "classical-downward-benchmarks-miconic-fulladl": {
+            "domain_file": "classical/downward-benchmarks/miconic-fulladl/domain.pddl",
+            "tasks": {
+                "f1-0": "classical/downward-benchmarks/miconic-fulladl/f1-0.pddl",
+                "f1-3": "classical/downward-benchmarks/miconic-fulladl/f1-3.pddl",
+                "f4-0": "classical/downward-benchmarks/miconic-fulladl/f4-0.pddl",
+                "f13-3": "classical/downward-benchmarks/miconic-fulladl/f13-3.pddl"
+            }
+        },
+        "classical-downward-benchmarks-miconic-simpleadl": {
+            "domain_file": "classical/downward-benchmarks/miconic-simpleadl/domain.pddl",
+            "tasks": {
+                "s1-0": "classical/downward-benchmarks/miconic-simpleadl/s1-0.pddl",
+                "s1-3": "classical/downward-benchmarks/miconic-simpleadl/s1-3.pddl",
+                "s4-0": "classical/downward-benchmarks/miconic-simpleadl/s4-0.pddl",
+                "s13-3": "classical/downward-benchmarks/miconic-simpleadl/s13-3.pddl"
+            }
+        },
+        "classical-downward-benchmarks-nurikabe-opt18-adl": {
+            "domain_file": "classical/downward-benchmarks/nurikabe-opt18-adl/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/nurikabe-opt18-adl/p01.pddl",
+                "p04": "classical/downward-benchmarks/nurikabe-opt18-adl/p04.pddl",
+                "p16": "classical/downward-benchmarks/nurikabe-opt18-adl/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-nurikabe-sat18-adl": {
+            "domain_file": "classical/downward-benchmarks/nurikabe-sat18-adl/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/nurikabe-sat18-adl/p01.pddl",
+                "p04": "classical/downward-benchmarks/nurikabe-sat18-adl/p04.pddl",
+                "p16": "classical/downward-benchmarks/nurikabe-sat18-adl/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks": {
+            "domain_file": "classical/downward-benchmarks/openstacks/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/openstacks/p01.pddl",
+                "p04": "classical/downward-benchmarks/openstacks/p04.pddl",
+                "p16": "classical/downward-benchmarks/openstacks/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-opt08-adl": {
+            "domain_file": "classical/downward-benchmarks/openstacks-opt08-adl/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/openstacks-opt08-adl/p01.pddl",
+                "p04": "classical/downward-benchmarks/openstacks-opt08-adl/p04.pddl",
+                "p16": "classical/downward-benchmarks/openstacks-opt08-adl/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-openstacks-sat08-adl": {
+            "domain_file": "classical/downward-benchmarks/openstacks-sat08-adl/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/openstacks-sat08-adl/p01.pddl",
+                "p04": "classical/downward-benchmarks/openstacks-sat08-adl/p04.pddl",
+                "p16": "classical/downward-benchmarks/openstacks-sat08-adl/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-optical-telegraphs": {
+            "domain_file": "classical/downward-benchmarks/optical-telegraphs/domain.pddl",
+            "tasks": {
+                "p01-opt2": "classical/downward-benchmarks/optical-telegraphs/p01-opt2.pddl",
+                "p04-opt5": "classical/downward-benchmarks/optical-telegraphs/p04-opt5.pddl",
+                "p16-opt17": "classical/downward-benchmarks/optical-telegraphs/p16-opt17.pddl"
+            }
+        },
+        "classical-downward-benchmarks-pathways--domain_p01": {
+            "domain_file": "classical/downward-benchmarks/pathways/domain_p01.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/pathways/p01.pddl"
+            }
+        },
+        "classical-downward-benchmarks-pathways--domain_p04": {
+            "domain_file": "classical/downward-benchmarks/pathways/domain_p04.pddl",
+            "tasks": {
+                "p04": "classical/downward-benchmarks/pathways/p04.pddl"
+            }
+        },
+        "classical-downward-benchmarks-pathways--domain_p16": {
+            "domain_file": "classical/downward-benchmarks/pathways/domain_p16.pddl",
+            "tasks": {
+                "p16": "classical/downward-benchmarks/pathways/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-philosophers": {
+            "domain_file": "classical/downward-benchmarks/philosophers/domain.pddl",
+            "tasks": {
+                "p01-phil2": "classical/downward-benchmarks/philosophers/p01-phil2.pddl",
+                "p04-phil5": "classical/downward-benchmarks/philosophers/p04-phil5.pddl",
+                "p16-phil17": "classical/downward-benchmarks/philosophers/p16-phil17.pddl"
+            }
+        },
+        "classical-downward-benchmarks-psr-large": {
+            "domain_file": "classical/downward-benchmarks/psr-large/domain.pddl",
+            "tasks": {
+                "p01-s29-n2-l5-f30": "classical/downward-benchmarks/psr-large/p01-s29-n2-l5-f30.pddl",
+                "p04-s66-n5-l2-f50": "classical/downward-benchmarks/psr-large/p04-s66-n5-l2-f50.pddl",
+                "p16-s119-n8-l3-f70": "classical/downward-benchmarks/psr-large/p16-s119-n8-l3-f70.pddl"
+            }
+        },
+        "classical-downward-benchmarks-psr-middle": {
+            "domain_file": "classical/downward-benchmarks/psr-middle/domain.pddl",
+            "tasks": {
+                "p01-s17-n2-l2-f30": "classical/downward-benchmarks/psr-middle/p01-s17-n2-l2-f30.pddl",
+                "p04-s31-n2-l5-f70": "classical/downward-benchmarks/psr-middle/p04-s31-n2-l5-f70.pddl",
+                "p16-s60-n4-l5-f10": "classical/downward-benchmarks/psr-middle/p16-s60-n4-l5-f10.pddl"
+            }
+        },
+        "classical-downward-benchmarks-recharging-robots-opt23-adl": {
+            "domain_file": "classical/downward-benchmarks/recharging-robots-opt23-adl/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/recharging-robots-opt23-adl/p01.pddl",
+                "p04": "classical/downward-benchmarks/recharging-robots-opt23-adl/p04.pddl",
+                "p16": "classical/downward-benchmarks/recharging-robots-opt23-adl/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-rubiks-cube-opt23-adl": {
+            "domain_file": "classical/downward-benchmarks/rubiks-cube-opt23-adl/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/rubiks-cube-opt23-adl/p01.pddl",
+                "p04": "classical/downward-benchmarks/rubiks-cube-opt23-adl/p04.pddl",
+                "p16": "classical/downward-benchmarks/rubiks-cube-opt23-adl/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-schedule": {
+            "domain_file": "classical/downward-benchmarks/schedule/domain.pddl",
+            "tasks": {
+                "probschedule-2-0": "classical/downward-benchmarks/schedule/probschedule-2-0.pddl",
+                "probschedule-3-0": "classical/downward-benchmarks/schedule/probschedule-3-0.pddl",
+                "probschedule-7-0": "classical/downward-benchmarks/schedule/probschedule-7-0.pddl",
+                "probschedule-23-0": "classical/downward-benchmarks/schedule/probschedule-23-0.pddl"
+            }
+        },
+        "classical-downward-benchmarks-settlers-opt18-adl": {
+            "domain_file": "classical/downward-benchmarks/settlers-opt18-adl/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/settlers-opt18-adl/p01.pddl",
+                "p04": "classical/downward-benchmarks/settlers-opt18-adl/p04.pddl",
+                "p16": "classical/downward-benchmarks/settlers-opt18-adl/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-settlers-sat18-adl": {
+            "domain_file": "classical/downward-benchmarks/settlers-sat18-adl/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/settlers-sat18-adl/p01.pddl",
+                "p04": "classical/downward-benchmarks/settlers-sat18-adl/p04.pddl",
+                "p16": "classical/downward-benchmarks/settlers-sat18-adl/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-spider-opt18-strips": {
+            "domain_file": "classical/downward-benchmarks/spider-opt18-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/spider-opt18-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/spider-opt18-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/spider-opt18-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-spider-sat18-strips": {
+            "domain_file": "classical/downward-benchmarks/spider-sat18-strips/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/spider-sat18-strips/p01.pddl",
+                "p04": "classical/downward-benchmarks/spider-sat18-strips/p04.pddl",
+                "p16": "classical/downward-benchmarks/spider-sat18-strips/p16.pddl"
+            }
+        },
+        "classical-downward-benchmarks-trucks": {
+            "domain_file": "classical/downward-benchmarks/trucks/domain.pddl",
+            "tasks": {
+                "p01": "classical/downward-benchmarks/trucks/p01.pddl",
+                "p04": "classical/downward-benchmarks/trucks/p04.pddl",
+                "p16": "classical/downward-benchmarks/trucks/p16.pddl"
+            }
+        }
+    },
+    "attributes": {
+        "solved": {
+            "type": "float",
+            "compare": "strict_equality"
+        },
+        "cost": {
+            "type": "float",
+            "compare": "strict_equality"
+        },
+        "num_expanded": {
+            "type": "float",
+            "compare": "undefined"
+        },
+        "num_generated_successors": {
+            "type": "float",
+            "compare": "undefined"
+        },
+        "num_registered_states": {
+            "type": "float",
+            "compare": "undefined"
+        },
+        "num_successors": {
+            "type": "float",
+            "compare": "undefined"
+        },
+        "num_selected_bindings": {
+            "type": "float",
+            "compare": "undefined"
+        },
+        "num_applicable_bindings": {
+            "type": "float",
+            "compare": "undefined"
+        }
+    },
+    "metadata": {
+        "pypddl_datasets_version": "0.0.9",
+        "data_version": "data-v0.0.3",
+        "catalog_suites": [
+            "ipc-optimal-adl",
+            "ipc-optimal-strips",
+            "ipc-satisficing-adl",
+            "ipc-satisficing-strips",
+            "ipc2023-learning",
+            "ipc2023-numeric",
+            "ipc2026-numeric"
+        ],
+        "sampling": "One-based positions 1, 4, 16, 64, ... in natural filename order within each IPC domain.",
+        "classification": "Numeric fluents take priority; STRIPS allows typing, equality, negative preconditions and action costs; other supported requirements are non-STRIPS."
+    }
+}

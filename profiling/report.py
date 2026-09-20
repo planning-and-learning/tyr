@@ -1,178 +1,112 @@
 import datetime as dt
 import json
 import pathlib
+import statistics
 import sys
+from typing import Any, TextIO
 
-from schema import AttributeType, normalize_attribute_value
+from schema import normalize_attribute_value
 
 
-def load_json(path: pathlib.Path):
+def load_json(path: pathlib.Path) -> dict[str, Any]:
     return json.loads(path.read_text())
 
 
-def group_cases(cases):
-    groups = {"passed": [], "timed_out": [], "failed": [], "not_run": []}
-    for case in cases:
-        groups[case["status"]].append(case)
-    return groups
-
-
-def load_result_benchmarks(result_file):
-    if not result_file:
-        return []
-
-    path = pathlib.Path(result_file)
-    if not path.exists():
-        return []
-
-    return load_json(path).get("benchmarks", [])
-
-
-def select_case_benchmark(run_name, benchmarks):
-    prefix = f"{run_name}/"
+def representative_benchmarks(benchmarks: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Prefer Google Benchmark's median; otherwise take the median of repetitions."""
+    groups: dict[str, list[dict[str, Any]]] = {}
     for benchmark in benchmarks:
-        if benchmark.get("name", "").startswith(prefix) and benchmark.get("run_type", "iteration") == "iteration":
-            return benchmark
-    for benchmark in benchmarks:
-        if benchmark.get("name", "").startswith(prefix):
-            return benchmark
-    return None
-
-
-def is_numeric_attribute(config):
-    try:
-        attribute_type = AttributeType(config["type"])
-    except (KeyError, ValueError):
-        return False
-    return attribute_type in {AttributeType.FLOAT, AttributeType.INT}
-
-
-def summarize_domains(cases, attributes):
-    summaries = {}
-    numeric_attributes = {name: config for name, config in attributes.items() if is_numeric_attribute(config)}
-
-    for case in cases:
-        domain = case["domain"]
-        summary = summaries.setdefault(
-            domain,
-            {
-                "total": 0,
-                "passed": 0,
-                "attributes": {name: {"count": 0, "sum": 0} for name in numeric_attributes},
-            },
-        )
-        summary["total"] += 1
-
-        if case.get("status") != "passed":
+        if benchmark.get("error_occurred"):
             continue
+        name = benchmark.get("run_name", benchmark["name"])
+        if "run_name" not in benchmark and benchmark.get("aggregate_name"):
+            name = name.removesuffix("_" + benchmark["aggregate_name"])
+        groups.setdefault(name, []).append(benchmark)
 
-        summary["passed"] += 1
-
-        benchmark = select_case_benchmark(case["run_name"], load_result_benchmarks(case.get("benchmark_result_file")))
-        if benchmark is None:
-            continue
-
-        for attribute_name, config in numeric_attributes.items():
-            value = normalize_attribute_value(attribute_name, config, benchmark.get(attribute_name))
-            if value is None:
-                continue
-
-            attribute_summary = summary["attributes"][attribute_name]
-            attribute_summary["count"] += 1
-            attribute_summary["sum"] += value
-
-    return dict(sorted(summaries.items()))
-
-
-def summarize_attributes(domain_summaries, attributes):
-    numeric_attributes = {name: config for name, config in attributes.items() if is_numeric_attribute(config)}
-    summaries = {name: {"count": 0, "sum": 0} for name in numeric_attributes}
-
-    for domain_summary in domain_summaries.values():
-        for attribute_name in numeric_attributes:
-            attribute_summary = domain_summary["attributes"][attribute_name]
-            summaries[attribute_name]["count"] += attribute_summary["count"]
-            summaries[attribute_name]["sum"] += attribute_summary["sum"]
-
-    return summaries
+    result: dict[str, dict[str, Any]] = {}
+    for name, records in groups.items():
+        median = next((record for record in records if record.get("aggregate_name") == "median"), None)
+        iterations = [record for record in records if record.get("run_type", "iteration") == "iteration"]
+        if median is not None:
+            result[name] = dict(median)
+        elif iterations:
+            row = dict(iterations[0])
+            for key, value in row.items():
+                if isinstance(value, (int, float)) and not isinstance(value, bool):
+                    row[key] = statistics.median(record[key] for record in iterations)
+            if len({record.get("label") for record in iterations}) > 1:
+                row["label"] = "mixed"
+            result[name] = row
+        if name in result and "solved" in result[name]:
+            mean = next((record for record in records if record.get("aggregate_name") == "mean"), None)
+            if mean is not None:
+                result[name]["solved"] = mean["solved"]
+            elif iterations:
+                result[name]["solved"] = statistics.mean(record["solved"] for record in iterations)
+            if 0 < result[name]["solved"] < 1:
+                result[name]["label"] = "mixed"
+    return result
 
 
-def build_summary(suite, cases, metadata, benchmark_results, benchmark_failures):
-    groups = group_cases(cases)
-    exit_code = 1 if groups["failed"] else 0
-    attributes = suite.get("attributes", {})
-    domain_summaries = summarize_domains(cases, attributes)
+def build_summary(
+    suite: dict[str, Any],
+    cases: list[dict[str, Any]],
+    metadata: dict[str, Any],
+    benchmark_results: list[dict[str, Any]],
+    benchmark_failures: list[dict[str, Any]],
+) -> dict[str, Any]:
+    groups = {status: [case for case in cases if case["status"] == status] for status in ("passed", "timed_out", "failed", "not_run")}
+    attributes: dict[str, dict[str, Any]] = suite.get("attributes", {})
+    rows: list[dict[str, Any]] = []
+    for case in groups["passed"]:
+        data = load_json(pathlib.Path(case["benchmark_result_file"]))
+        for name, benchmark in representative_benchmarks(data["benchmarks"]).items():
+            rows.append({
+                "name": name,
+                "real_time": benchmark["real_time"],
+                "cpu_time": benchmark["cpu_time"],
+                "time_unit": benchmark["time_unit"],
+                "label": benchmark.get("label", ""),
+                "attributes": {key: normalize_attribute_value(key, config, benchmark.get(key)) for key, config in attributes.items()},
+            })
 
     return {
         "generated": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
         "metadata": metadata,
         "attributes": attributes,
-        "exit_code": exit_code,
+        "exit_code": 1 if groups["failed"] or groups["timed_out"] else 0,
         "cases": cases,
-        "passed": groups["passed"],
-        "timed_out": groups["timed_out"],
-        "failed": groups["failed"],
-        "not_run": groups["not_run"],
+        **groups,
         "benchmark_results": benchmark_results,
         "benchmark_failures": benchmark_failures,
-        "attribute_summaries": summarize_attributes(domain_summaries, attributes),
-        "domain_summaries": domain_summaries,
-        "counts": {
-            "passed": len(groups["passed"]),
-            "timed_out": len(groups["timed_out"]),
-            "failed": len(groups["failed"]),
-            "not_run": len(groups["not_run"]),
-            "total": len(cases),
-        },
+        "benchmark_summaries": rows,
+        "counts": {**{status: len(values) for status, values in groups.items()}, "total": len(cases)},
     }
 
 
-def format_summary_value(value):
+def format_summary_value(value: object) -> str:
+    if value is None:
+        return "-"
     if isinstance(value, float):
         return f"{value:.6g}"
     return str(value)
 
 
-def print_summary(summary, file=None):
+def print_summary(summary: dict[str, Any], file: TextIO | None = None) -> None:
     if file is None:
         file = sys.stdout
-
-    attributes = summary.get("attributes", {})
-    attribute_names = list(attributes)
-    columns = ["domain", "passed/total", *attribute_names]
-    rows = []
-
-    for domain, domain_summary in summary.get("domain_summaries", {}).items():
-        attribute_summaries = domain_summary.get("attributes", {})
-        rows.append(
-            [
-                domain,
-                f"{domain_summary.get('passed', 0)}/{domain_summary.get('total', 0)}",
-                *[
-                    format_summary_value(attribute_summaries.get(attribute_name, {}).get("sum", 0))
-                    for attribute_name in attribute_names
-                ],
-            ]
-        )
-
-    totals = summary.get("attribute_summaries", {})
-    counts = summary.get("counts", {})
-    rows.append(
-        [
-            "TOTAL",
-            f"{counts.get('passed', 0)}/{counts.get('total', 0)}",
-            *[format_summary_value(totals.get(attribute_name, {}).get("sum", 0)) for attribute_name in attribute_names],
-        ]
-    )
-
-    widths = [len(column) for column in columns]
-    for row in rows:
-        widths = [max(width, len(cell)) for width, cell in zip(widths, row)]
-
-    def render_row(row):
-        return "  ".join(cell.ljust(width) for cell, width in zip(row, widths))
-
-    print(render_row(columns), file=file)
-    print(render_row(["-" * width for width in widths]), file=file)
-    for row in rows:
-        print(render_row(row), file=file)
+    attribute_names = [name for name in summary.get("attributes", {})
+                       if any(row["attributes"].get(name) is not None for row in summary.get("benchmark_summaries", []))]
+    columns = ["benchmark", "wall time", "status", *attribute_names]
+    rows = [[
+        entry["name"],
+        f"{entry['real_time']:.6g} {entry['time_unit']}",
+        entry["label"],
+        *[format_summary_value(entry["attributes"].get(name)) for name in attribute_names],
+    ] for entry in summary.get("benchmark_summaries", [])]
+    rows += [[case["run_name"], "-", case["status"], *["-" for _ in attribute_names]]
+             for case in summary.get("cases", []) if case["status"] != "passed"]
+    widths = [max(len(column), *(len(row[i]) for row in rows)) if rows else len(column) for i, column in enumerate(columns)]
+    for row in [columns, ["-" * width for width in widths], *rows]:
+        print("  ".join(cell.ljust(width) for cell, width in zip(row, widths)), file=file)
+    print("Cases: " + ", ".join(f"{count} {status}" for status, count in summary["counts"].items()), file=file)

@@ -1,4 +1,8 @@
 from enum import Enum
+from typing import Any, cast
+
+
+AttributeValue = bool | int | float | str | None
 
 
 class AttributeType(Enum):
@@ -15,24 +19,24 @@ class AttributeCompare(Enum):
     UNDEFINED = "undefined"
 
 
-def require_mapping(value, name):
+def require_mapping(value: object, name: str) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ValueError(f"'{name}' must be an object.")
-    return value
+    return cast(dict[str, Any], value)
 
 
-def require_non_empty_string(value, name):
+def require_non_empty_string(value: object, name: str) -> str:
     if not isinstance(value, str) or not value:
         raise ValueError(f"'{name}' must be a non-empty string.")
     return value
 
 
-def validate_attributes(attributes):
-    require_mapping(attributes, "attributes")
+def validate_attributes(attributes: object) -> None:
+    attributes = require_mapping(attributes, "attributes")
 
     for name, config in attributes.items():
         require_non_empty_string(name, "attribute name")
-        require_mapping(config, f"attributes.{name}")
+        config = require_mapping(config, f"attributes.{name}")
 
         try:
             AttributeType(config["type"])
@@ -51,8 +55,8 @@ def validate_attributes(attributes):
             raise ValueError(f"Attribute '{name}' has invalid compare '{config['compare']}'. Expected one of: {valid_values}.") from error
 
 
-def validate_suite(suite):
-    require_mapping(suite, "suite")
+def validate_suite(suite: object) -> None:
+    suite = require_mapping(suite, "suite")
     if "prefix" in suite:
         require_non_empty_string(suite["prefix"], "prefix")
 
@@ -68,7 +72,7 @@ def validate_suite(suite):
 
     for domain_name, domain_config in domains.items():
         require_non_empty_string(domain_name, "domain name")
-        require_mapping(domain_config, f"domains.{domain_name}")
+        domain_config = require_mapping(domain_config, f"domains.{domain_name}")
 
         try:
             require_non_empty_string(domain_config["domain_file"], f"domains.{domain_name}.domain_file")
@@ -88,11 +92,11 @@ def validate_suite(suite):
             require_non_empty_string(task_file, f"domains.{domain_name}.tasks.{task_name}")
 
 
-def validate_attribute_value(attribute_name, attribute_config, value):
+def validate_attribute_value(attribute_name: str, attribute_config: dict[str, Any], value: object) -> None:
     normalize_attribute_value(attribute_name, attribute_config, value)
 
 
-def normalize_attribute_value(attribute_name, attribute_config, value):
+def normalize_attribute_value(attribute_name: str, attribute_config: dict[str, Any], value: object) -> AttributeValue:
     if value is None:
         return None
 
