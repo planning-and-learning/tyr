@@ -7,6 +7,9 @@ target_link_libraries(
         Boost::json
 )
 
+add_executable(schema_successor_generator "schema_successor_generator.cpp")
+target_link_libraries(schema_successor_generator PRIVATE tyr::core benchmark::benchmark Boost::json)
+
 add_executable(rpg_add "heuristics/rpg_add.cpp")
 target_link_libraries(
     rpg_add

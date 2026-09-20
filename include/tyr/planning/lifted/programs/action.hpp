@@ -38,10 +38,22 @@ public:
     using AppPredicateToActionMapping =
         ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::ActionView<LiftedTag>>;
 
+    struct SchemaProgram
+    {
+        explicit SchemaProgram(formalism::datalog::ProgramView<LiftedTag> program);
+
+        formalism::datalog::ProgramView<LiftedTag> program;
+        analysis::RuleStrata strata;
+        analysis::ListenerStrata listeners;
+    };
+
+    using SchemaPrograms = ygg::UnorderedMap<formalism::planning::ActionView<LiftedTag>, SchemaProgram>;
+
     explicit ApplicableActionProgram(formalism::planning::TaskView<LiftedTag> task);
 
     const TranslationContext<LiftedTag>& get_translation_context() const noexcept;
     const AppPredicateToActionMapping& get_predicate_to_action_mapping() const noexcept;
+    const SchemaPrograms& get_schema_programs() const noexcept;
     datalog::Program<LiftedTag>& get_datalog_program() noexcept;
     const datalog::Program<LiftedTag>& get_datalog_program() const noexcept;
     const datalog::ConstProgramWorkspace<LiftedTag>& get_const_program_workspace() const noexcept;
@@ -49,6 +61,7 @@ public:
 private:
     TranslationContext<LiftedTag> m_translation_context;
     AppPredicateToActionMapping m_predicate_to_actions;
+    SchemaPrograms m_schema_programs;
     datalog::Program<LiftedTag> m_datalog_program;
 };
 

@@ -285,14 +285,13 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             nb::overload_cast<const Node<Kind>&>(&T::get_applicable_action_bindings),
             nb::rv_policy::move,
             "node"_a,
-            nb::call_guard<nb::gil_scoped_release>());
-    if constexpr (std::is_same_v<Kind, GroundTag>)
-        cls.def("get_applicable_action_bindings",
-                nb::overload_cast<const Node<Kind>&, fp::ActionView<LiftedTag>>(&T::get_applicable_action_bindings),
-                nb::rv_policy::move,
-                "node"_a,
-                "action"_a,
-                nb::call_guard<nb::gil_scoped_release>());
+            nb::call_guard<nb::gil_scoped_release>())
+        .def("get_applicable_action_bindings",
+             nb::overload_cast<const Node<Kind>&, fp::ActionView<LiftedTag>>(&T::get_applicable_action_bindings),
+             nb::rv_policy::move,
+             "node"_a,
+             "action"_a,
+             nb::call_guard<nb::gil_scoped_release>());
 
     cls.def("ground_action", &T::ground_action, "binding"_a);
 
@@ -309,22 +308,21 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
              "state_repository"_a,
              "axiom_evaluator"_a);
 
-    if constexpr (std::is_same_v<Kind, GroundTag>)
-        cls.def("get_successor_nodes",
-                nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::get_successor_nodes),
-                nb::rv_policy::move,
-                "node"_a,
-                "state_repository"_a,
-                "axiom_evaluator"_a,
-                nb::call_guard<nb::gil_scoped_release>())
-            .def("get_successor_nodes",
-                 nb::overload_cast<const Node<Kind>&, fp::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::get_successor_nodes),
-                 nb::rv_policy::move,
-                 "node"_a,
-                 "action"_a,
-                 "state_repository"_a,
-                 "axiom_evaluator"_a,
-                 nb::call_guard<nb::gil_scoped_release>());
+    cls.def("get_successor_nodes",
+            nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::get_successor_nodes),
+            nb::rv_policy::move,
+            "node"_a,
+            "state_repository"_a,
+            "axiom_evaluator"_a,
+            nb::call_guard<nb::gil_scoped_release>())
+        .def("get_successor_nodes",
+             nb::overload_cast<const Node<Kind>&, fp::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::get_successor_nodes),
+             nb::rv_policy::move,
+             "node"_a,
+             "action"_a,
+             "state_repository"_a,
+             "axiom_evaluator"_a,
+             nb::call_guard<nb::gil_scoped_release>());
 
     cls.def("get_labeled_successor_nodes",
             nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::get_labeled_successor_nodes),
@@ -332,16 +330,15 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             "node"_a,
             "state_repository"_a,
             "axiom_evaluator"_a,
-            nb::call_guard<nb::gil_scoped_release>());
-    if constexpr (std::is_same_v<Kind, GroundTag>)
-        cls.def("get_labeled_successor_nodes",
-                nb::overload_cast<const Node<Kind>&, fp::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::get_labeled_successor_nodes),
-                nb::rv_policy::move,
-                "node"_a,
-                "action"_a,
-                "state_repository"_a,
-                "axiom_evaluator"_a,
-                nb::call_guard<nb::gil_scoped_release>());
+            nb::call_guard<nb::gil_scoped_release>())
+        .def("get_labeled_successor_nodes",
+             nb::overload_cast<const Node<Kind>&, fp::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::get_labeled_successor_nodes),
+             nb::rv_policy::move,
+             "node"_a,
+             "action"_a,
+             "state_repository"_a,
+             "axiom_evaluator"_a,
+             nb::call_guard<nb::gil_scoped_release>());
 
     if constexpr (std::is_same_v<Kind, LiftedTag>)
         cls.def("get_action_program", &T::get_action_program, nb::rv_policy::reference_internal);

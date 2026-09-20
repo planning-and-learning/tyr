@@ -29,6 +29,7 @@
 
 #include <cassert>
 #include <cstddef>
+#include <vector>
 
 namespace tyr::datalog
 {
@@ -55,7 +56,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
     class Out
     {
     public:
-        explicit Out(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws) : m_ws(ws) {}
+        Out(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, std::vector<Scheduler<LiftedTag>>& schedulers) : m_ws(ws), m_schedulers(schedulers) {}
 
         auto& facts() noexcept { return m_ws.facts; }
         const auto& facts() const noexcept { return m_ws.facts; }
@@ -93,18 +94,25 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         const auto& datalog_builder() const noexcept { return m_ws.datalog_builder; }
         auto& workspace_repository() noexcept { return m_ws.workspace_repository; }
         const auto& workspace_repository() const noexcept { return m_ws.workspace_repository; }
-        auto& schedulers() noexcept { return m_ws.schedulers; }
-        const auto& schedulers() const noexcept { return m_ws.schedulers; }
+        auto& schedulers() noexcept { return m_schedulers; }
+        const auto& schedulers() const noexcept { return m_schedulers; }
         auto& statistics() noexcept { return m_ws.statistics; }
         const auto& statistics() const noexcept { return m_ws.statistics; }
 
     private:
         ProgramWorkspace<LiftedTag, AP, TP, CP>& m_ws;
+        std::vector<Scheduler<LiftedTag>>& m_schedulers;
     };
 
     explicit ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, size_t num_threads = 1) :
+        ProgramExecutionContext(ws, ws.schedulers, num_threads)
+    {
+    }
+
+    /// Schedulers must use the workspace's repository and a subset of its rules.
+    ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, std::vector<Scheduler<LiftedTag>>& schedulers, size_t num_threads = 1) :
         m_in(ws.const_workspace),
-        m_out(ws),
+        m_out(ws, schedulers),
         m_num_threads(num_threads)
     {
         assert(num_threads > 0);
@@ -178,6 +186,10 @@ ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>&) -> ProgramExec
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>&, size_t) -> ProgramExecutionContext<LiftedTag, AP, TP, CP>;
 
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>&,
+                        std::vector<Scheduler<LiftedTag>>&,
+                        size_t = 1) -> ProgramExecutionContext<LiftedTag, AP, TP, CP>;
 }
 
 #endif

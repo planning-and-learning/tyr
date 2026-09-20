@@ -63,11 +63,29 @@ public:
                              StateRepository<LiftedTag>& state_repository,
                              AxiomEvaluator<LiftedTag>& axiom_evaluator,
                              NodeList<LiftedTag>& out_nodes);
+    NodeList<LiftedTag> get_successor_nodes(const Node<LiftedTag>& node,
+                                            formalism::planning::ActionView<LiftedTag> action,
+                                            StateRepository<LiftedTag>& state_repository,
+                                            AxiomEvaluator<LiftedTag>& axiom_evaluator);
+    void get_successor_nodes(const Node<LiftedTag>& node,
+                             formalism::planning::ActionView<LiftedTag> action,
+                             StateRepository<LiftedTag>& state_repository,
+                             AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                             NodeList<LiftedTag>& out_nodes);
 
     // Labeled successor API. Interns action bindings.
     LabeledNodeList<LiftedTag>
     get_labeled_successor_nodes(const Node<LiftedTag>& node, StateRepository<LiftedTag>& state_repository, AxiomEvaluator<LiftedTag>& axiom_evaluator);
     void get_labeled_successor_nodes(const Node<LiftedTag>& node,
+                                     StateRepository<LiftedTag>& state_repository,
+                                     AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                     LabeledNodeList<LiftedTag>& out_nodes);
+    LabeledNodeList<LiftedTag> get_labeled_successor_nodes(const Node<LiftedTag>& node,
+                                                           formalism::planning::ActionView<LiftedTag> action,
+                                                           StateRepository<LiftedTag>& state_repository,
+                                                           AxiomEvaluator<LiftedTag>& axiom_evaluator);
+    void get_labeled_successor_nodes(const Node<LiftedTag>& node,
+                                     formalism::planning::ActionView<LiftedTag> action,
                                      StateRepository<LiftedTag>& state_repository,
                                      AxiomEvaluator<LiftedTag>& axiom_evaluator,
                                      LabeledNodeList<LiftedTag>& out_nodes);
@@ -87,6 +105,11 @@ public:
     std::vector<formalism::planning::ActionBindingView> get_applicable_action_bindings(const Node<LiftedTag>& node);
 
     void get_applicable_action_bindings(const Node<LiftedTag>& node, std::vector<formalism::planning::ActionBindingView>& out_bindings);
+    std::vector<formalism::planning::ActionBindingView> get_applicable_action_bindings(const Node<LiftedTag>& node,
+                                                                                       formalism::planning::ActionView<LiftedTag> action);
+    void get_applicable_action_bindings(const Node<LiftedTag>& node,
+                                        formalism::planning::ActionView<LiftedTag> action,
+                                        std::vector<formalism::planning::ActionBindingView>& out_bindings);
 
     /// Writes an unregistered successor. Pass the same pooled builder and result to finalize_successor_state().
     PendingActionResult

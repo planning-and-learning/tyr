@@ -76,6 +76,12 @@ struct SuccessorGenerator<LiftedTag>::Impl
     using Program = ApplicableActionProgram<LiftedTag>;
     using ActionBindingMap = ygg::UnorderedMap<fp::ActionBindingView, fp::ActionView<GroundTag>>;
 
+    struct SchemaEvaluator
+    {
+        df::ProgramView<LiftedTag> program;
+        std::vector<d::Scheduler<LiftedTag>> schedulers;
+    };
+
     struct Definition
     {
         explicit Definition(TaskPtr<LiftedTag> task);
@@ -93,6 +99,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
         ygg::UniqueObjectPoolPtr<ygg::Data<f::RelationBinding<fp::Action<LiftedTag>>>> scratch_action_binding;
         ActionBindingMap action_binding_to_ground_action;
         datalog::ProgramWorkspace<LiftedTag> workspace;
+        ygg::UnorderedMap<fp::ActionView<LiftedTag>, SchemaEvaluator> schema_evaluators;
         analysis::CompatibilityWorkspace compatibility_workspace;
         ActionExecutor executor;
     };
@@ -116,10 +123,23 @@ struct SuccessorGenerator<LiftedTag>::Impl
     {
     }
 
-    void compute_action_facts(const Node<LiftedTag>& node);
+    SchemaEvaluator& get_schema_evaluator(fp::ActionView<LiftedTag> action)
+    {
+        const auto it = evaluator.schema_evaluators.find(action);
+        // Repository indices can collide across independent factories.
+        if (it == evaluator.schema_evaluators.end() || &action.get_context() != &it->first.get_context())
+            throw std::invalid_argument("SuccessorGenerator: action schema does not belong to the task domain.");
+        return it->second;
+    }
+
+    void compute_action_facts(const Node<LiftedTag>& node, std::vector<d::Scheduler<LiftedTag>>& schedulers);
 
     template<typename Callback>
-    void for_each_applicable_action_binding(const Node<LiftedTag>& node, ygg::Data<f::RelationBinding<fp::Action<LiftedTag>>>& scratch_binding, Callback&& callback);
+    void for_each_applicable_action_binding(const Node<LiftedTag>& node,
+                                            ygg::Data<f::RelationBinding<fp::Action<LiftedTag>>>& scratch_binding,
+                                            df::ProgramView<LiftedTag> program,
+                                            std::vector<d::Scheduler<LiftedTag>>& schedulers,
+                                            Callback&& callback);
 
     ygg::float_t
     generate_successor_state(const Node<LiftedTag>& node, const ygg::Data<f::RelationBinding<fp::Action<LiftedTag>>>& binding, ygg::Builder<State<LiftedTag>>& out_state);
@@ -142,9 +162,17 @@ SuccessorGenerator<LiftedTag>::Impl::Evaluator::Evaluator(const Definition& defi
     executor()
 {
     assert(execution_context);
+    for (const auto& [action, schema] : definition.action_program.get_schema_programs())
+        schema_evaluators.emplace(action,
+                                  SchemaEvaluator { schema.program,
+                                                    d::create_schedulers(schema.strata,
+                                                                         schema.listeners,
+                                                                         schema.program.get_context(),
+                                                                         schema.program.get_predicates<f::FluentTag>().size(),
+                                                                         schema.program.get_functions<f::FluentTag>().size()) });
 }
 
-void SuccessorGenerator<LiftedTag>::Impl::compute_action_facts(const Node<LiftedTag>& node)
+void SuccessorGenerator<LiftedTag>::Impl::compute_action_facts(const Node<LiftedTag>& node, std::vector<d::Scheduler<LiftedTag>>& schedulers)
 {
     evaluator.workspace.reset_evaluation();
 
@@ -153,41 +181,42 @@ void SuccessorGenerator<LiftedTag>::Impl::compute_action_facts(const Node<Lifted
 
     insert_extended_state(state.get_state_builder(), *definition->task->get_repository(), program.get_translation_context().p2d, evaluator.workspace);
 
-    auto ctx = d::ProgramExecutionContext(evaluator.workspace);
+    auto ctx = d::ProgramExecutionContext(evaluator.workspace, schedulers);
     d::execute_model(ctx, *evaluator.execution_context);
 }
 
 template<typename Callback>
 void SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(const Node<LiftedTag>& node,
                                                                              ygg::Data<f::RelationBinding<fp::Action<LiftedTag>>>& scratch_binding,
+                                                                             df::ProgramView<LiftedTag> program,
+                                                                             std::vector<d::Scheduler<LiftedTag>>& schedulers,
                                                                              Callback&& callback)
 {
-    compute_action_facts(node);
+    compute_action_facts(node, schedulers);
 
     const auto state_context = StateContext<LiftedTag>(*definition->task, node.get_state().get_state_builder(), node.get_metric());
     auto grounder_context = fp::GrounderContext { evaluator.workspace.planning_builder, *definition->task->get_repository(), scratch_binding.objects };
     const auto& mapping = definition->action_program.get_predicate_to_action_mapping();
 
-    for (const auto& set : evaluator.workspace.facts.fact_sets.predicate.get_sets())
+    for (const auto rule : program.get_rules<f::PredicateTag>())
     {
+        const auto predicate = rule.get_head().get_predicate();
+        const auto action = mapping.at(predicate);
+        const auto& set = evaluator.workspace.facts.fact_sets.predicate.get_sets()[ygg::uint_t(predicate.get_index())];
         for (const auto& binding : set.get_bindings())
         {
-            const auto it = mapping.find(binding.get_relation());
-            if (it == mapping.end())
-                continue;
-
-            scratch_binding.relation = it->second.get_index();
+            scratch_binding.relation = action.get_index();
             scratch_binding.objects.clear();
             ygg::extend(binding.get_objects(), scratch_binding.objects);
 
-            assert(is_applicable(it->second.get_condition(), ApplicabilityContext { state_context, grounder_context, *definition->task->get_fdr_context() })
+            assert(is_applicable(action.get_condition(), ApplicabilityContext { state_context, grounder_context, *definition->task->get_fdr_context() })
                    && "ApplicableActionProgram emitted an action binding whose condition is not satisfied.");
 
             // Datalog certifies the action condition, not whether its grounded numeric effects are valid and mutually compatible.
-            if (!evaluator.executor.is_applicable_if_fires(it->second, state_context, grounder_context, *definition->task->get_fdr_context()))
+            if (!evaluator.executor.is_applicable_if_fires(action, state_context, grounder_context, *definition->task->get_fdr_context()))
                 continue;
 
-            assert(evaluator.executor.is_applicable(it->second, state_context, grounder_context, *definition->task->get_fdr_context()));
+            assert(evaluator.executor.is_applicable(action, state_context, grounder_context, *definition->task->get_fdr_context()));
             callback(scratch_binding);
         }
     }
@@ -263,6 +292,38 @@ void SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<LiftedTag>& n
 
     m_impl->for_each_applicable_action_binding(node,
                                                *m_impl->evaluator.scratch_action_binding,
+                                               m_impl->definition->action_program.get_datalog_program().get_program(),
+                                               m_impl->evaluator.workspace.schedulers,
+                                               [&](const auto& binding)
+                                               { out_nodes.emplace_back(get_successor_node(node, binding, state_repository, axiom_evaluator)); });
+}
+
+NodeList<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<LiftedTag>& node,
+                                                                       fp::ActionView<LiftedTag> action,
+                                                                       StateRepository<LiftedTag>& state_repository,
+                                                                       AxiomEvaluator<LiftedTag>& axiom_evaluator)
+{
+    auto result = NodeList<LiftedTag> {};
+    get_successor_nodes(node, action, state_repository, axiom_evaluator, result);
+    return result;
+}
+
+void SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<LiftedTag>& node,
+                                                        fp::ActionView<LiftedTag> action,
+                                                        StateRepository<LiftedTag>& state_repository,
+                                                        AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                                        NodeList<LiftedTag>& out_nodes)
+{
+    validate_task(m_impl->definition->task, node.get_state());
+    validate_task(m_impl->definition->task, state_repository);
+    validate_task(m_impl->definition->task, axiom_evaluator);
+    auto& schema = m_impl->get_schema_evaluator(action);
+    out_nodes.clear();
+
+    m_impl->for_each_applicable_action_binding(node,
+                                               *m_impl->evaluator.scratch_action_binding,
+                                               schema.program,
+                                               schema.schedulers,
                                                [&](const auto& binding)
                                                { out_nodes.emplace_back(get_successor_node(node, binding, state_repository, axiom_evaluator)); });
 }
@@ -288,6 +349,41 @@ void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<Lifte
 
     m_impl->for_each_applicable_action_binding(node,
                                                *m_impl->evaluator.scratch_action_binding,
+                                               m_impl->definition->action_program.get_datalog_program().get_program(),
+                                               m_impl->evaluator.workspace.schedulers,
+                                               [&](auto& binding)
+                                               {
+                                                   const auto action_binding = fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
+                                                   out_nodes.emplace_back(action_binding, get_successor_node(node, binding, state_repository, axiom_evaluator));
+                                               });
+}
+
+LabeledNodeList<LiftedTag> SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<LiftedTag>& node,
+                                                                                      fp::ActionView<LiftedTag> action,
+                                                                                      StateRepository<LiftedTag>& state_repository,
+                                                                                      AxiomEvaluator<LiftedTag>& axiom_evaluator)
+{
+    auto result = LabeledNodeList<LiftedTag> {};
+    get_labeled_successor_nodes(node, action, state_repository, axiom_evaluator, result);
+    return result;
+}
+
+void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<LiftedTag>& node,
+                                                                fp::ActionView<LiftedTag> action,
+                                                                StateRepository<LiftedTag>& state_repository,
+                                                                AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                                                LabeledNodeList<LiftedTag>& out_nodes)
+{
+    validate_task(m_impl->definition->task, node.get_state());
+    validate_task(m_impl->definition->task, state_repository);
+    validate_task(m_impl->definition->task, axiom_evaluator);
+    auto& schema = m_impl->get_schema_evaluator(action);
+    out_nodes.clear();
+
+    m_impl->for_each_applicable_action_binding(node,
+                                               *m_impl->evaluator.scratch_action_binding,
+                                               schema.program,
+                                               schema.schedulers,
                                                [&](auto& binding)
                                                {
                                                    const auto action_binding = fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
@@ -359,6 +455,31 @@ void SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<Li
 
     m_impl->for_each_applicable_action_binding(node,
                                                *m_impl->evaluator.scratch_action_binding,
+                                               m_impl->definition->action_program.get_datalog_program().get_program(),
+                                               m_impl->evaluator.workspace.schedulers,
+                                               [&](auto& binding)
+                                               { out_bindings.emplace_back(fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first); });
+}
+
+std::vector<fp::ActionBindingView> SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<LiftedTag>& node, fp::ActionView<LiftedTag> action)
+{
+    auto result = std::vector<fp::ActionBindingView> {};
+    get_applicable_action_bindings(node, action, result);
+    return result;
+}
+
+void SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<LiftedTag>& node,
+                                                                   fp::ActionView<LiftedTag> action,
+                                                                   std::vector<fp::ActionBindingView>& out_bindings)
+{
+    validate_task(m_impl->definition->task, node.get_state());
+    auto& schema = m_impl->get_schema_evaluator(action);
+    out_bindings.clear();
+
+    m_impl->for_each_applicable_action_binding(node,
+                                               *m_impl->evaluator.scratch_action_binding,
+                                               schema.program,
+                                               schema.schedulers,
                                                [&](auto& binding)
                                                { out_bindings.emplace_back(fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first); });
 }

@@ -1,4 +1,5 @@
 import gc
+from collections import Counter
 from datetime import timedelta
 from types import ModuleType
 
@@ -1058,6 +1059,37 @@ def test_successor_generators_expose_uniform_action_binding_api():
             labeled_successor.label == binding and labeled_successor.node == binding_successor
             for labeled_successor in labeled_successor_nodes
         )
+
+
+def test_successor_generation_for_a_lifted_action_schema():
+    ground_task, lifted_task = _make_gripper_tasks()
+
+    for task_module, task in (
+        (planning.ground, ground_task),
+        (planning.lifted, lifted_task),
+    ):
+        state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task)
+        actions = list(task.get_task().get_domain().get_actions())
+        initial_node = successor_generator.get_initial_node(state_repository, axiom_evaluator)
+        initial_successors = successor_generator.get_labeled_successor_nodes(initial_node, state_repository, axiom_evaluator)
+        picked_node = next(successor.node for successor in initial_successors if successor.label.get_relation().get_original_name() == "pick")
+
+        for node in (initial_node, picked_node):
+            all_successors = successor_generator.get_labeled_successor_nodes(node, state_repository, axiom_evaluator)
+            all_bindings = successor_generator.get_applicable_action_bindings(node)
+            assert Counter(successor_generator.get_successor_nodes(node, state_repository, axiom_evaluator)) == Counter(
+                successor.node for successor in all_successors
+            )
+            for action in actions:
+                expected = {successor.label: successor.node for successor in all_successors if successor.label.get_relation() == action}
+                selected = successor_generator.get_labeled_successor_nodes(node, action, state_repository, axiom_evaluator)
+                assert {successor.label: successor.node for successor in selected} == expected
+                assert set(successor_generator.get_applicable_action_bindings(node, action)) == {
+                    binding for binding in all_bindings if binding.get_relation() == action
+                }
+                assert Counter(successor_generator.get_successor_nodes(node, action, state_repository, axiom_evaluator)) == Counter(expected.values())
+                if action.get_original_name() == "drop":
+                    assert bool(expected) == (node == picked_node)
 
 
 def test_labeled_node_is_constructible_for_plan_construction():

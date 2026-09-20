@@ -186,3 +186,43 @@ Successor measurements reuse interned states. The construction pair measures the
 additional forest cost separately: the implementation retains its global tree
 for calls that request all actions. These are initial-state microbenchmarks,
 not whole-search measurements.
+
+## Lifted schema selection
+
+The lifted schema suite uses the same five tasks as the ground schema suite,
+including 100-block Blocksworld. The existing lifted profiling target and its
+larger suite remain available separately.
+
+```bash
+cmake --build build-release --target schema_successor_generator -j16
+profiling/runner.py \
+  --executable build-release/profiling/planning/lifted/schema_successor_generator \
+  --output-dir /tmp/tyr-lifted-schema-profiling \
+  --suite-json profiling/planning/lifted/schema_successor_generator.json \
+  --benchmark-min-time 0.1s \
+  --benchmark-timeout 300 \
+  --benchmark-repetitions 5 \
+  --benchmark-report-aggregates-only
+```
+
+`schema_bindings/global` generates all applicable bindings and filters to the
+first initially applicable schema; `schema_bindings/per_schema` calls the
+schema API directly. The `schema_successors` pair filters bindings before
+applying effects in the global baseline and calls the schema labeled-successor
+API in the other variant. Sorted bindings and labeled successor identities are
+checked for equality before timing. `labeled_successors` and `interned_bindings`
+measure the all-action APIs for before/after comparisons.
+
+`construction` measures generator construction and destruction with a parsed
+task. `worker` measures worker creation and destruction, sharing the generator
+definition. Parsing and initial setup are untimed. Query runs share immutable
+definitions and use fresh workers, evaluators, and repositories; timed successor
+calls reuse interned states. All evaluation uses one execution thread.
+
+On glibc, `generator_glibc_bytes` records the increase in `mallinfo2()` in-use
+heap and mmap bytes when creating the generator definition and its first worker.
+`worker_glibc_bytes` records the increase for an additional worker before any
+queries. These are allocator-visible retained allocation deltas, excluding
+parsing and execution-context creation. They are not peak memory or RSS, and
+exclude memory managed outside glibc. Heap counters are descriptive rather than
+strict comparison attributes; schema and applicable-binding counts are strict.

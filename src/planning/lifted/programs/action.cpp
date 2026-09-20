@@ -59,6 +59,7 @@ auto create_applicability_atom(fp::ActionView<LiftedTag> action, fp::MergeDatalo
 auto create_program(fp::TaskView<LiftedTag> task,
                     TranslationContext<LiftedTag>& translation_context,
                     ApplicableActionProgram<LiftedTag>::AppPredicateToActionMapping& predicate_to_actions,
+                    ApplicableActionProgram<LiftedTag>::SchemaPrograms& schema_programs,
                     fd::Repository& repository)
 {
     auto builder = fd::Builder();
@@ -159,24 +160,40 @@ auto create_program(fp::TaskView<LiftedTag> task,
         program->predicate_rules.push_back(new_rule);
     }
 
-    return fd::get_or_create(repository, *program).first;
+    const auto all_actions = fd::get_or_create(repository, *program).first;
+    for (const auto rule : all_actions.get_rules<f::PredicateTag>())
+    {
+        program->predicate_rules.clear();
+        program->predicate_rules.push_back(rule.get_index());
+        schema_programs.try_emplace(predicate_to_actions.at(rule.get_head().get_predicate()), fd::get_or_create(repository, *program).first);
+    }
+    return all_actions;
 }
 
 auto create_datalog_program(fp::TaskView<LiftedTag> task,
                             TranslationContext<LiftedTag>& translation_context,
-                            ApplicableActionProgram<LiftedTag>::AppPredicateToActionMapping& mapping)
+                            ApplicableActionProgram<LiftedTag>::AppPredicateToActionMapping& mapping,
+                            ApplicableActionProgram<LiftedTag>::SchemaPrograms& schema_programs)
 {
     auto factory = std::make_shared<fd::RepositoryFactory>();
     auto repository = factory->create_shared(task.get_domain().get_constants().size() + task.get_objects().size());
-    auto program = create_program(task, translation_context, mapping, *repository);
+    auto program = create_program(task, translation_context, mapping, schema_programs, *repository);
     return datalog::Program<LiftedTag>(program, std::move(repository), std::move(factory));
 }
+}
+
+ApplicableActionProgram<LiftedTag>::SchemaProgram::SchemaProgram(fd::ProgramView<LiftedTag> program_) :
+    program(program_),
+    strata(analysis::compute_rule_stratification(program)),
+    listeners(analysis::compute_listeners(strata, program.get_context()))
+{
 }
 
 ApplicableActionProgram<LiftedTag>::ApplicableActionProgram(fp::TaskView<LiftedTag> task) :
     m_translation_context(),
     m_predicate_to_actions(),
-    m_datalog_program(create_datalog_program(task, m_translation_context, m_predicate_to_actions))
+    m_schema_programs(),
+    m_datalog_program(create_datalog_program(task, m_translation_context, m_predicate_to_actions, m_schema_programs))
 {
     // std::cout << m_datalog_program.get_program() << std::endl;
 }
@@ -187,6 +204,8 @@ const ApplicableActionProgram<LiftedTag>::AppPredicateToActionMapping& Applicabl
 {
     return m_predicate_to_actions;
 }
+
+const ApplicableActionProgram<LiftedTag>::SchemaPrograms& ApplicableActionProgram<LiftedTag>::get_schema_programs() const noexcept { return m_schema_programs; }
 
 datalog::Program<LiftedTag>& ApplicableActionProgram<LiftedTag>::get_datalog_program() noexcept { return m_datalog_program; }
 
