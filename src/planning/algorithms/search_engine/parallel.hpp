@@ -545,11 +545,11 @@ public:
                            WorkerData& sender,
                            const Node<Kind>& source,
                            BuilderPtr target,
-                           PendingActionResult action_result,
+                           ygg::float_t auxiliary_value,
                            formalism::planning::ActionBindingView action,
                            Metadata metadata)
     {
-        const auto metric = engine.evaluate_successor_metric(*target, action_result);
+        const auto metric = engine.evaluate_successor_metric(*target, auxiliary_value);
         const auto g_value = compute_successor_g_value(metadata.source_g_value, metric, engine.m_options.cost_mode);
         if (!std::isfinite(g_value))
             throw std::runtime_error("find_solution(...): successor path cost is not finite.");

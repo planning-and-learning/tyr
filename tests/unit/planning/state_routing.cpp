@@ -173,15 +173,15 @@ void expect_state_routing(const p::TaskPtr<Kind>& task)
     const auto source_states_before_generation = repository->num_states();
 
     auto remote_state = repository->get_state_builder();
-    const auto remote_result = generator->generate_successor_state(initial, action, *remote_state);
+    const auto remote_auxiliary_value = generator->generate_successor_state(initial, action, *remote_state);
     axiom_evaluator->compute_extended_state(*remote_state);
-    const auto remote_metric = p::evaluate_successor_metric(*task, *remote_state, remote_result.auxiliary_value);
+    const auto remote_metric = p::evaluate_successor_metric(*task, *remote_state, remote_auxiliary_value);
     const auto remote_hash = dist_hash.hash(*remote_state);
     EXPECT_EQ(repository->num_states(), source_states_before_generation);
 
     auto local_state = repository->get_state_builder();
-    const auto local_result = generator->generate_successor_state(initial, action, *local_state);
-    const auto local_node = generator->finalize_successor_state(*repository, *axiom_evaluator, std::move(local_state), local_result);
+    const auto local_auxiliary_value = generator->generate_successor_state(initial, action, *local_state);
+    const auto local_node = generator->finalize_successor_state(*repository, *axiom_evaluator, std::move(local_state), local_auxiliary_value);
 
     const auto compatibility_node = generator->get_successor_node(initial, action, *repository, *axiom_evaluator);
     EXPECT_EQ(local_node, compatibility_node);

@@ -45,6 +45,8 @@ public:
     const StateView<Kind>& get_state() const noexcept { return m_state; }
     ygg::float_t get_metric() const noexcept { return m_metric; }
 
+    PackedNode<Kind> pack() const noexcept;
+
     auto identifying_members() const noexcept { return std::tie(m_state, m_metric); }
 
 private:
@@ -53,17 +55,66 @@ private:
 };
 
 template<TaskKind Kind>
+class PackedNode : public ygg::comparison::Mixin<PackedNode<Kind>>
+{
+public:
+    using TaskType = Task<Kind>;
+
+    PackedNode(PackedStateView<Kind> state, ygg::float_t metric) noexcept : m_state(std::move(state)), m_metric(metric) {}
+
+    const PackedStateView<Kind>& get_state() const noexcept { return m_state; }
+    ygg::float_t get_metric() const noexcept { return m_metric; }
+
+    Node<Kind> unpack() const { return Node<Kind>(m_state.unpack(), m_metric); }
+
+    auto identifying_members() const noexcept { return std::tie(m_state, m_metric); }
+
+private:
+    PackedStateView<Kind> m_state;
+    ygg::float_t m_metric;
+};
+
+template<TaskKind Kind>
+PackedNode<Kind> Node<Kind>::pack() const noexcept
+{
+    return PackedNode<Kind>(m_state.pack(), m_metric);
+}
+
+template<TaskKind Kind>
 using NodeList = std::vector<Node<Kind>>;
+
+template<TaskKind Kind>
+using PackedNodeList = std::vector<PackedNode<Kind>>;
 
 template<TaskKind Kind>
 struct LabeledNode
 {
     formalism::planning::ActionBindingView label;
     Node<Kind> node;
+
+    PackedLabeledNode<Kind> pack() const noexcept;
 };
 
 template<TaskKind Kind>
+struct PackedLabeledNode
+{
+    formalism::planning::ActionBindingView label;
+    PackedNode<Kind> node;
+
+    LabeledNode<Kind> unpack() const { return { label, node.unpack() }; }
+};
+
+template<TaskKind Kind>
+PackedLabeledNode<Kind> LabeledNode<Kind>::pack() const noexcept
+{
+    return { label, node.pack() };
+}
+
+template<TaskKind Kind>
 using LabeledNodeList = std::vector<LabeledNode<Kind>>;
+
+template<TaskKind Kind>
+using PackedLabeledNodeList = std::vector<PackedLabeledNode<Kind>>;
 
 template<typename T, typename Kind>
 concept NodeConcept = requires(const T& cn) {

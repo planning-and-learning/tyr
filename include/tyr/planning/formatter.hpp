@@ -348,11 +348,47 @@ struct formatter<tyr::planning::LabeledNode<Kind>, char>
 };
 
 template<::tyr::TaskKind Kind>
+struct formatter<tyr::planning::PackedNode<Kind>, char> : formatter<tyr::planning::Node<Kind>, char>
+{
+    template<typename FormatContext>
+    auto format(const tyr::planning::PackedNode<Kind>& value, FormatContext& ctx) const
+    {
+        return formatter<tyr::planning::Node<Kind>, char>::format(value.unpack(), ctx);
+    }
+};
+
+template<::tyr::TaskKind Kind>
+struct formatter<tyr::planning::PackedLabeledNode<Kind>, char> : formatter<tyr::planning::LabeledNode<Kind>, char>
+{
+    template<typename FormatContext>
+    auto format(const tyr::planning::PackedLabeledNode<Kind>& value, FormatContext& ctx) const
+    {
+        return formatter<tyr::planning::LabeledNode<Kind>, char>::format(value.unpack(), ctx);
+    }
+};
+
+template<::tyr::TaskKind Kind>
 struct formatter<tyr::planning::Plan<Kind>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(const tyr::planning::Plan<Kind>& value, FormatContext& ctx) const
+    {
+        auto out = ctx.out();
+        for (const auto& labeled_node : value.get_labeled_succ_nodes())
+        {
+            out = fmt::format_to(out, "{}\n", std::make_pair(labeled_node.label, tyr::formalism::planning::PlanFormatting()));
+        }
+        return out;
+    }
+};
+
+template<::tyr::TaskKind Kind>
+struct formatter<tyr::planning::PackedPlan<Kind>, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+    template<typename FormatContext>
+    auto format(const tyr::planning::PackedPlan<Kind>& value, FormatContext& ctx) const
     {
         auto out = ctx.out();
         for (const auto& labeled_node : value.get_labeled_succ_nodes())

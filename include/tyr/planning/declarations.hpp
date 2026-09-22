@@ -54,7 +54,11 @@ using TaskPtr = std::shared_ptr<Task<Kind>>;
 template<TaskKind Kind>
 class Node;
 template<TaskKind Kind>
+class PackedNode;
+template<TaskKind Kind>
 struct LabeledNode;
+template<TaskKind Kind>
+struct PackedLabeledNode;
 
 template<TaskKind Kind>
 class State;
@@ -133,6 +137,8 @@ using GoalStrategyPtr = std::shared_ptr<GoalStrategy<Kind>>;
 
 template<TaskKind Kind>
 class Plan;
+template<TaskKind Kind>
+class PackedPlan;
 
 class Statistics;
 class ProgressStatistics;

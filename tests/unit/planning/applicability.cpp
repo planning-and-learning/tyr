@@ -196,6 +196,13 @@ void expect_schema_queries_match_filtered_successors()
 )",
                                                         "schema-successors.pddl"));
     };
+    const auto count_action_bindings = [](const auto& task)
+    {
+        auto count = size_t { 0 };
+        for (const auto action : task->get_domain().get_domain().get_actions())
+            count += task->get_repository()->size(action.get_index());
+        return count;
+    };
     auto execution_context = ygg::ExecutionContext::create(1);
     const auto task = [&]
     {
@@ -210,6 +217,31 @@ void expect_schema_queries_match_filtered_successors()
     auto source = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
     auto worker = source->make_worker(ygg::ExecutionContext::create(1));
     const auto initial_node = source->get_initial_node(*state_repository, *axiom_evaluator);
+    const auto num_action_bindings = count_action_bindings(task);
+    auto packed_nodes = p::PackedNodeList<Kind> {};
+    const ygg::Builder<p::State<Kind>>* successor_builder = nullptr;
+    EXPECT_TRUE(source->for_each_successor_node(initial_node,
+                                                *state_repository,
+                                                *axiom_evaluator,
+                                                [&](auto successor)
+                                                {
+                                                    if (successor_builder)
+                                                    {
+                                                        EXPECT_EQ(&successor.get_state().get_state_builder(), successor_builder);
+                                                    }
+                                                    successor_builder = &successor.get_state().get_state_builder();
+                                                    packed_nodes.push_back(successor.pack());
+                                                    return true;
+                                                }));
+    ASSERT_EQ(packed_nodes.size(), 4);
+    const auto streamed_nodes = packed_nodes;
+    source->get_packed_successor_nodes(initial_node, *state_repository, *axiom_evaluator, packed_nodes);
+    EXPECT_EQ(packed_nodes, streamed_nodes);
+    EXPECT_EQ(count_action_bindings(task), num_action_bindings);
+    {
+        const auto recycled_builder = state_repository->get_state_builder();
+        EXPECT_EQ(recycled_builder.get(), successor_builder);
+    }
     const auto all_successors = source->get_labeled_successor_nodes(initial_node, *state_repository, *axiom_evaluator);
     const auto all_bindings = source->get_applicable_action_bindings(initial_node);
     const auto same_successor = [](const auto& lhs, const auto& rhs) { return lhs.label == rhs.label && lhs.node == rhs.node; };
@@ -251,6 +283,43 @@ void expect_schema_queries_match_filtered_successors()
             EXPECT_TRUE(std::ranges::is_permutation(nodes, expected_nodes));
             EXPECT_TRUE(std::ranges::is_permutation(bindings, expected_bindings));
 
+            auto callback_bindings = std::vector<fp::ActionBindingView> {};
+            auto callback_successors = p::LabeledNodeList<Kind> {};
+            EXPECT_TRUE(generator->for_each_applicable_action_binding(
+                initial_node,
+                action,
+                [&](auto binding)
+                {
+                    callback_bindings.push_back(binding);
+                    callback_successors.push_back({ binding, generator->get_successor_node(initial_node, binding, *state_repository, *axiom_evaluator) });
+                    return true;
+                }));
+            EXPECT_EQ(callback_bindings, bindings);
+            EXPECT_TRUE(std::ranges::equal(callback_successors, successors, same_successor));
+            callback_bindings.clear();
+            EXPECT_EQ(generator->for_each_applicable_action_binding(initial_node,
+                                                                    action,
+                                                                    [&](auto binding)
+                                                                    {
+                                                                        callback_bindings.push_back(binding);
+                                                                        return false;
+                                                                    }),
+                      bindings.empty());
+            ASSERT_EQ(callback_bindings.size(), bindings.empty() ? 0 : 1);
+            if (!bindings.empty())
+            {
+                EXPECT_EQ(callback_bindings.front(), bindings.front());
+            }
+
+            auto packed_successors = generator->get_packed_labeled_successor_nodes(initial_node, *state_repository, *axiom_evaluator);
+            generator->get_packed_labeled_successor_nodes(initial_node, action, *state_repository, *axiom_evaluator, packed_successors);
+            EXPECT_TRUE(std::ranges::equal(packed_successors,
+                                           successors,
+                                           [&](const auto& packed, const auto& unpacked) { return same_successor(packed.unpack(), unpacked); }));
+            packed_nodes = streamed_nodes;
+            generator->get_packed_successor_nodes(initial_node, action, *state_repository, *axiom_evaluator, packed_nodes);
+            EXPECT_TRUE(std::ranges::equal(packed_nodes, nodes, [](const auto& packed, const auto& unpacked) { return packed.unpack() == unpacked; }));
+
             if constexpr (std::same_as<Kind, GroundTag>)
             {
                 if (action.get_name().str() == "dormant")
@@ -260,9 +329,45 @@ void expect_schema_queries_match_filtered_successors()
                 }
             }
         }
+        auto callback_successors = p::LabeledNodeList<Kind> {};
+        EXPECT_TRUE(generator->for_each_applicable_action_binding(
+            initial_node,
+            [&](auto binding)
+            {
+                callback_successors.push_back({ binding, generator->get_successor_node(initial_node, binding, *state_repository, *axiom_evaluator) });
+                return true;
+            }));
+        EXPECT_TRUE(std::ranges::equal(callback_successors, all_successors, same_successor));
         EXPECT_TRUE(std::ranges::is_permutation(generator->get_applicable_action_bindings(initial_node), all_bindings));
         EXPECT_TRUE(std::ranges::is_permutation(
             generator->get_labeled_successor_nodes(initial_node, *state_repository, *axiom_evaluator), all_successors, same_successor));
+    }
+
+    if constexpr (std::same_as<Kind, LiftedTag>)
+    {
+        for (const bool schema_only : { false, true })
+        {
+            const auto fresh_task = make_lifted_task();
+            auto fresh_axioms = p::AxiomEvaluatorFactory<Kind>().create(fresh_task, execution_context);
+            auto fresh_repository = p::StateRepositoryFactory<Kind>().create(fresh_task);
+            auto fresh_generator = p::SuccessorGeneratorFactory<Kind>().create(fresh_task, execution_context);
+            const auto node = fresh_generator->get_initial_node(*fresh_repository, *fresh_axioms);
+            const auto actions = fresh_task->get_domain().get_domain().get_actions();
+            const auto alias = std::ranges::find_if(actions, [](auto action) { return action.get_name().str() == "alias"; });
+            ASSERT_NE(alias, actions.end());
+            ASSERT_EQ(count_action_bindings(fresh_task), 0);
+            auto calls = size_t { 0 };
+            const auto stop = [&](auto)
+            {
+                ++calls;
+                return false;
+            };
+            const auto exhausted = schema_only ? fresh_generator->for_each_applicable_action_binding(node, *alias, stop) :
+                                                 fresh_generator->for_each_applicable_action_binding(node, stop);
+            EXPECT_FALSE(exhausted);
+            EXPECT_EQ(calls, 1);
+            EXPECT_EQ(count_action_bindings(fresh_task), 1);
+        }
     }
 
     const auto foreign_task = make_lifted_task();

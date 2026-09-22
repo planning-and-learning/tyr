@@ -135,7 +135,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
     void compute_action_facts(const Node<LiftedTag>& node, std::vector<d::Scheduler<LiftedTag>>& schedulers);
 
     template<typename Callback>
-    void for_each_applicable_action_binding(const Node<LiftedTag>& node,
+    bool for_each_applicable_action_binding(const Node<LiftedTag>& node,
                                             ygg::Data<f::RelationBinding<fp::Action<LiftedTag>>>& scratch_binding,
                                             df::ProgramView<LiftedTag> program,
                                             std::vector<d::Scheduler<LiftedTag>>& schedulers,
@@ -186,7 +186,7 @@ void SuccessorGenerator<LiftedTag>::Impl::compute_action_facts(const Node<Lifted
 }
 
 template<typename Callback>
-void SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(const Node<LiftedTag>& node,
+bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(const Node<LiftedTag>& node,
                                                                              ygg::Data<f::RelationBinding<fp::Action<LiftedTag>>>& scratch_binding,
                                                                              df::ProgramView<LiftedTag> program,
                                                                              std::vector<d::Scheduler<LiftedTag>>& schedulers,
@@ -217,9 +217,11 @@ void SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
                 continue;
 
             assert(evaluator.executor.is_applicable(action, state_context, grounder_context, *definition->task->get_fdr_context()));
-            callback(scratch_binding);
+            if (!callback(scratch_binding))
+                return false;
         }
     }
+    return true;
 }
 
 ygg::float_t SuccessorGenerator<LiftedTag>::Impl::generate_successor_state(const Node<LiftedTag>& node,
@@ -289,13 +291,14 @@ void SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<LiftedTag>& n
     validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
     out_nodes.clear();
-
-    m_impl->for_each_applicable_action_binding(node,
-                                               *m_impl->evaluator.scratch_action_binding,
-                                               m_impl->definition->action_program.get_datalog_program().get_program(),
-                                               m_impl->evaluator.workspace.schedulers,
-                                               [&](const auto& binding)
-                                               { out_nodes.emplace_back(get_successor_node(node, binding, state_repository, axiom_evaluator)); });
+    for_each_successor_node(node,
+                            state_repository,
+                            axiom_evaluator,
+                            [&](auto value)
+                            {
+                                out_nodes.push_back(std::move(value));
+                                return true;
+                            });
 }
 
 NodeList<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<LiftedTag>& node,
@@ -317,15 +320,17 @@ void SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<LiftedTag>& n
     validate_task(m_impl->definition->task, node.get_state());
     validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
-    auto& schema = m_impl->get_schema_evaluator(action);
+    m_impl->get_schema_evaluator(action);
     out_nodes.clear();
-
-    m_impl->for_each_applicable_action_binding(node,
-                                               *m_impl->evaluator.scratch_action_binding,
-                                               schema.program,
-                                               schema.schedulers,
-                                               [&](const auto& binding)
-                                               { out_nodes.emplace_back(get_successor_node(node, binding, state_repository, axiom_evaluator)); });
+    for_each_successor_node(node,
+                            action,
+                            state_repository,
+                            axiom_evaluator,
+                            [&](auto value)
+                            {
+                                out_nodes.push_back(std::move(value));
+                                return true;
+                            });
 }
 
 LabeledNodeList<LiftedTag> SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<LiftedTag>& node,
@@ -346,16 +351,14 @@ void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<Lifte
     validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
     out_nodes.clear();
-
-    m_impl->for_each_applicable_action_binding(node,
-                                               *m_impl->evaluator.scratch_action_binding,
-                                               m_impl->definition->action_program.get_datalog_program().get_program(),
-                                               m_impl->evaluator.workspace.schedulers,
-                                               [&](auto& binding)
-                                               {
-                                                   const auto action_binding = fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
-                                                   out_nodes.emplace_back(action_binding, get_successor_node(node, binding, state_repository, axiom_evaluator));
-                                               });
+    for_each_labeled_successor_node(node,
+                                    state_repository,
+                                    axiom_evaluator,
+                                    [&](auto value)
+                                    {
+                                        out_nodes.push_back(std::move(value));
+                                        return true;
+                                    });
 }
 
 LabeledNodeList<LiftedTag> SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<LiftedTag>& node,
@@ -377,18 +380,17 @@ void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<Lifte
     validate_task(m_impl->definition->task, node.get_state());
     validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
-    auto& schema = m_impl->get_schema_evaluator(action);
+    m_impl->get_schema_evaluator(action);
     out_nodes.clear();
-
-    m_impl->for_each_applicable_action_binding(node,
-                                               *m_impl->evaluator.scratch_action_binding,
-                                               schema.program,
-                                               schema.schedulers,
-                                               [&](auto& binding)
-                                               {
-                                                   const auto action_binding = fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
-                                                   out_nodes.emplace_back(action_binding, get_successor_node(node, binding, state_repository, axiom_evaluator));
-                                               });
+    for_each_labeled_successor_node(node,
+                                    action,
+                                    state_repository,
+                                    axiom_evaluator,
+                                    [&](auto value)
+                                    {
+                                        out_nodes.push_back(std::move(value));
+                                        return true;
+                                    });
 }
 
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag>& node,
@@ -402,8 +404,8 @@ Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<Lif
     const auto& state = node.get_state();
     const auto state_context = StateContext<LiftedTag>(*m_impl->definition->task, state.get_state_builder(), node.get_metric());
     auto successor_state = state_repository.get_state_builder();
-    const auto result = PendingActionResult { m_impl->evaluator.executor.apply_action_unregistered(state_context, action, *successor_state) };
-    return finalize_successor_state(state_repository, axiom_evaluator, std::move(successor_state), result);
+    const auto auxiliary_value = m_impl->evaluator.executor.apply_action_unregistered(state_context, action, *successor_state);
+    return finalize_successor_state(state_repository, axiom_evaluator, std::move(successor_state), auxiliary_value);
 }
 
 fp::ActionView<GroundTag> SuccessorGenerator<LiftedTag>::ground_action(fp::ActionBindingView binding)
@@ -452,13 +454,12 @@ void SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<Li
 {
     validate_task(m_impl->definition->task, node.get_state());
     out_bindings.clear();
-
-    m_impl->for_each_applicable_action_binding(node,
-                                               *m_impl->evaluator.scratch_action_binding,
-                                               m_impl->definition->action_program.get_datalog_program().get_program(),
-                                               m_impl->evaluator.workspace.schedulers,
-                                               [&](auto& binding)
-                                               { out_bindings.emplace_back(fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first); });
+    for_each_applicable_action_binding(node,
+                                       [&](auto value)
+                                       {
+                                           out_bindings.push_back(std::move(value));
+                                           return true;
+                                       });
 }
 
 std::vector<fp::ActionBindingView> SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<LiftedTag>& node, fp::ActionView<LiftedTag> action)
@@ -473,18 +474,18 @@ void SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<Li
                                                                    std::vector<fp::ActionBindingView>& out_bindings)
 {
     validate_task(m_impl->definition->task, node.get_state());
-    auto& schema = m_impl->get_schema_evaluator(action);
+    m_impl->get_schema_evaluator(action);
     out_bindings.clear();
-
-    m_impl->for_each_applicable_action_binding(node,
-                                               *m_impl->evaluator.scratch_action_binding,
-                                               schema.program,
-                                               schema.schedulers,
-                                               [&](auto& binding)
-                                               { out_bindings.emplace_back(fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first); });
+    for_each_applicable_action_binding(node,
+                                       action,
+                                       [&](auto value)
+                                       {
+                                           out_bindings.push_back(std::move(value));
+                                           return true;
+                                       });
 }
 
-PendingActionResult
+ygg::float_t
 SuccessorGenerator<LiftedTag>::generate_successor_state(const Node<LiftedTag>& node, fp::ActionBindingView binding, ygg::Builder<State<LiftedTag>>& out_state)
 {
     validate_task(m_impl->definition->task, node.get_state());
@@ -492,17 +493,17 @@ SuccessorGenerator<LiftedTag>::generate_successor_state(const Node<LiftedTag>& n
     m_impl->evaluator.scratch_action_binding->objects.clear();
     ygg::extend(binding.get_objects(), m_impl->evaluator.scratch_action_binding->objects);
 
-    return PendingActionResult { m_impl->generate_successor_state(node, *m_impl->evaluator.scratch_action_binding, out_state) };
+    return m_impl->generate_successor_state(node, *m_impl->evaluator.scratch_action_binding, out_state);
 }
 
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::finalize_successor_state(StateRepository<LiftedTag>& state_repository,
                                                                         AxiomEvaluator<LiftedTag>& axiom_evaluator,
                                                                         ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state,
-                                                                        PendingActionResult result)
+                                                                        ygg::float_t auxiliary_value)
 {
     validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
-    const auto metric = evaluate_successor_metric(*m_impl->definition->task, *state, result.auxiliary_value);
+    const auto metric = evaluate_successor_metric(*m_impl->definition->task, *state, auxiliary_value);
     return Node<LiftedTag>(state_repository.register_state(axiom_evaluator, std::move(state)), metric);
 }
 
@@ -517,8 +518,8 @@ SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag>& node,
     validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
     auto state = state_repository.get_state_builder();
-    const auto result = PendingActionResult { m_impl->generate_successor_state(node, binding, *state) };
-    return finalize_successor_state(state_repository, axiom_evaluator, std::move(state), result);
+    const auto auxiliary_value = m_impl->generate_successor_state(node, binding, *state);
+    return finalize_successor_state(state_repository, axiom_evaluator, std::move(state), auxiliary_value);
 }
 
 // Lookup
@@ -530,6 +531,263 @@ Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_node(StateRepository<LiftedTa
     const auto state_metric =
         evaluate_metric(m_impl->definition->task->get_task().get_metric(), m_impl->definition->task->get_task().get_auxiliary_fterm_value(), state_context);
     return Node<LiftedTag>(std::move(state), state_metric);
+}
+
+bool SuccessorGenerator<LiftedTag>::for_each_successor_node(const Node<LiftedTag>& node,
+                                                            StateRepository<LiftedTag>& state_repository,
+                                                            AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                                            const std::function<bool(Node<LiftedTag>)>& callback)
+{
+    validate_task(m_impl->definition->task, node.get_state());
+    validate_task(m_impl->definition->task, state_repository);
+    validate_task(m_impl->definition->task, axiom_evaluator);
+    return m_impl->for_each_applicable_action_binding(node,
+                                                      *m_impl->evaluator.scratch_action_binding,
+                                                      m_impl->definition->action_program.get_datalog_program().get_program(),
+                                                      m_impl->evaluator.workspace.schedulers,
+                                                      [&](auto& binding)
+                                                      { return callback(get_successor_node(node, binding, state_repository, axiom_evaluator)); });
+}
+
+PackedNodeList<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_successor_nodes(const Node<LiftedTag>& node,
+                                                                                    StateRepository<LiftedTag>& state_repository,
+                                                                                    AxiomEvaluator<LiftedTag>& axiom_evaluator)
+{
+    auto result = PackedNodeList<LiftedTag> {};
+    get_packed_successor_nodes(node, state_repository, axiom_evaluator, result);
+    return result;
+}
+
+void SuccessorGenerator<LiftedTag>::get_packed_successor_nodes(const Node<LiftedTag>& node,
+                                                               StateRepository<LiftedTag>& state_repository,
+                                                               AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                                               PackedNodeList<LiftedTag>& out_nodes)
+{
+    validate_task(m_impl->definition->task, node.get_state());
+    validate_task(m_impl->definition->task, state_repository);
+    validate_task(m_impl->definition->task, axiom_evaluator);
+    out_nodes.clear();
+    for_each_successor_node(node,
+                            state_repository,
+                            axiom_evaluator,
+                            [&](auto value)
+                            {
+                                out_nodes.push_back(value.pack());
+                                return true;
+                            });
+}
+
+bool SuccessorGenerator<LiftedTag>::for_each_labeled_successor_node(const Node<LiftedTag>& node,
+                                                                    StateRepository<LiftedTag>& state_repository,
+                                                                    AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                                                    const std::function<bool(LabeledNode<LiftedTag>)>& callback)
+{
+    validate_task(m_impl->definition->task, node.get_state());
+    validate_task(m_impl->definition->task, state_repository);
+    validate_task(m_impl->definition->task, axiom_evaluator);
+    return m_impl->for_each_applicable_action_binding(
+        node,
+        *m_impl->evaluator.scratch_action_binding,
+        m_impl->definition->action_program.get_datalog_program().get_program(),
+        m_impl->evaluator.workspace.schedulers,
+        [&](auto& binding)
+        {
+            const auto action_binding = fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
+            return callback({ action_binding, get_successor_node(node, binding, state_repository, axiom_evaluator) });
+        });
+}
+
+PackedLabeledNodeList<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_labeled_successor_nodes(const Node<LiftedTag>& node,
+                                                                                                   StateRepository<LiftedTag>& state_repository,
+                                                                                                   AxiomEvaluator<LiftedTag>& axiom_evaluator)
+{
+    auto result = PackedLabeledNodeList<LiftedTag> {};
+    get_packed_labeled_successor_nodes(node, state_repository, axiom_evaluator, result);
+    return result;
+}
+
+void SuccessorGenerator<LiftedTag>::get_packed_labeled_successor_nodes(const Node<LiftedTag>& node,
+                                                                       StateRepository<LiftedTag>& state_repository,
+                                                                       AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                                                       PackedLabeledNodeList<LiftedTag>& out_nodes)
+{
+    validate_task(m_impl->definition->task, node.get_state());
+    validate_task(m_impl->definition->task, state_repository);
+    validate_task(m_impl->definition->task, axiom_evaluator);
+    out_nodes.clear();
+    for_each_labeled_successor_node(node,
+                                    state_repository,
+                                    axiom_evaluator,
+                                    [&](auto value)
+                                    {
+                                        out_nodes.push_back(value.pack());
+                                        return true;
+                                    });
+}
+
+bool SuccessorGenerator<LiftedTag>::for_each_applicable_action_binding(const Node<LiftedTag>& node, const std::function<bool(fp::ActionBindingView)>& callback)
+{
+    validate_task(m_impl->definition->task, node.get_state());
+    return m_impl->for_each_applicable_action_binding(node,
+                                                      *m_impl->evaluator.scratch_action_binding,
+                                                      m_impl->definition->action_program.get_datalog_program().get_program(),
+                                                      m_impl->evaluator.workspace.schedulers,
+                                                      [&](auto& binding)
+                                                      { return callback(fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first); });
+}
+
+bool SuccessorGenerator<LiftedTag>::for_each_successor_node(const Node<LiftedTag>& node,
+                                                            fp::ActionView<LiftedTag> action,
+                                                            StateRepository<LiftedTag>& state_repository,
+                                                            AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                                            const std::function<bool(Node<LiftedTag>)>& callback)
+{
+    validate_task(m_impl->definition->task, node.get_state());
+    validate_task(m_impl->definition->task, state_repository);
+    validate_task(m_impl->definition->task, axiom_evaluator);
+    auto& schema = m_impl->get_schema_evaluator(action);
+    return m_impl->for_each_applicable_action_binding(node,
+                                                      *m_impl->evaluator.scratch_action_binding,
+                                                      schema.program,
+                                                      schema.schedulers,
+                                                      [&](auto& binding)
+                                                      { return callback(get_successor_node(node, binding, state_repository, axiom_evaluator)); });
+}
+
+PackedNodeList<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_successor_nodes(const Node<LiftedTag>& node,
+                                                                                    fp::ActionView<LiftedTag> action,
+                                                                                    StateRepository<LiftedTag>& state_repository,
+                                                                                    AxiomEvaluator<LiftedTag>& axiom_evaluator)
+{
+    auto result = PackedNodeList<LiftedTag> {};
+    get_packed_successor_nodes(node, action, state_repository, axiom_evaluator, result);
+    return result;
+}
+
+void SuccessorGenerator<LiftedTag>::get_packed_successor_nodes(const Node<LiftedTag>& node,
+                                                               fp::ActionView<LiftedTag> action,
+                                                               StateRepository<LiftedTag>& state_repository,
+                                                               AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                                               PackedNodeList<LiftedTag>& out_nodes)
+{
+    validate_task(m_impl->definition->task, node.get_state());
+    validate_task(m_impl->definition->task, state_repository);
+    validate_task(m_impl->definition->task, axiom_evaluator);
+    m_impl->get_schema_evaluator(action);
+    out_nodes.clear();
+    for_each_successor_node(node,
+                            action,
+                            state_repository,
+                            axiom_evaluator,
+                            [&](auto value)
+                            {
+                                out_nodes.push_back(value.pack());
+                                return true;
+                            });
+}
+
+bool SuccessorGenerator<LiftedTag>::for_each_labeled_successor_node(const Node<LiftedTag>& node,
+                                                                    fp::ActionView<LiftedTag> action,
+                                                                    StateRepository<LiftedTag>& state_repository,
+                                                                    AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                                                    const std::function<bool(LabeledNode<LiftedTag>)>& callback)
+{
+    validate_task(m_impl->definition->task, node.get_state());
+    validate_task(m_impl->definition->task, state_repository);
+    validate_task(m_impl->definition->task, axiom_evaluator);
+    auto& schema = m_impl->get_schema_evaluator(action);
+    return m_impl->for_each_applicable_action_binding(
+        node,
+        *m_impl->evaluator.scratch_action_binding,
+        schema.program,
+        schema.schedulers,
+        [&](auto& binding)
+        {
+            const auto action_binding = fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
+            return callback({ action_binding, get_successor_node(node, binding, state_repository, axiom_evaluator) });
+        });
+}
+
+PackedLabeledNodeList<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_labeled_successor_nodes(const Node<LiftedTag>& node,
+                                                                                                   fp::ActionView<LiftedTag> action,
+                                                                                                   StateRepository<LiftedTag>& state_repository,
+                                                                                                   AxiomEvaluator<LiftedTag>& axiom_evaluator)
+{
+    auto result = PackedLabeledNodeList<LiftedTag> {};
+    get_packed_labeled_successor_nodes(node, action, state_repository, axiom_evaluator, result);
+    return result;
+}
+
+void SuccessorGenerator<LiftedTag>::get_packed_labeled_successor_nodes(const Node<LiftedTag>& node,
+                                                                       fp::ActionView<LiftedTag> action,
+                                                                       StateRepository<LiftedTag>& state_repository,
+                                                                       AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                                                       PackedLabeledNodeList<LiftedTag>& out_nodes)
+{
+    validate_task(m_impl->definition->task, node.get_state());
+    validate_task(m_impl->definition->task, state_repository);
+    validate_task(m_impl->definition->task, axiom_evaluator);
+    m_impl->get_schema_evaluator(action);
+    out_nodes.clear();
+    for_each_labeled_successor_node(node,
+                                    action,
+                                    state_repository,
+                                    axiom_evaluator,
+                                    [&](auto value)
+                                    {
+                                        out_nodes.push_back(value.pack());
+                                        return true;
+                                    });
+}
+
+bool SuccessorGenerator<LiftedTag>::for_each_applicable_action_binding(const Node<LiftedTag>& node,
+                                                                       fp::ActionView<LiftedTag> action,
+                                                                       const std::function<bool(fp::ActionBindingView)>& callback)
+{
+    validate_task(m_impl->definition->task, node.get_state());
+    auto& schema = m_impl->get_schema_evaluator(action);
+    return m_impl->for_each_applicable_action_binding(node,
+                                                      *m_impl->evaluator.scratch_action_binding,
+                                                      schema.program,
+                                                      schema.schedulers,
+                                                      [&](auto& binding)
+                                                      { return callback(fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first); });
+}
+
+PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_initial_node(StateRepository<LiftedTag>& state_repository,
+                                                                             AxiomEvaluator<LiftedTag>& axiom_evaluator)
+{
+    return get_initial_node(state_repository, axiom_evaluator).pack();
+}
+
+PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_node(StateRepository<LiftedTag>& state_repository, ygg::Index<State<LiftedTag>> state_index)
+{
+    return get_node(state_repository, state_index).pack();
+}
+
+PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_successor_node(const Node<LiftedTag>& node,
+                                                                               fp::ActionBindingView binding,
+                                                                               StateRepository<LiftedTag>& state_repository,
+                                                                               AxiomEvaluator<LiftedTag>& axiom_evaluator)
+{
+    return get_successor_node(node, binding, state_repository, axiom_evaluator).pack();
+}
+
+PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_successor_node(const Node<LiftedTag>& node,
+                                                                               fp::ActionView<GroundTag> binding,
+                                                                               StateRepository<LiftedTag>& state_repository,
+                                                                               AxiomEvaluator<LiftedTag>& axiom_evaluator)
+{
+    return get_successor_node(node, binding, state_repository, axiom_evaluator).pack();
+}
+
+PackedNode<LiftedTag>
+SuccessorGenerator<LiftedTag>::get_packed_successor_node(const Node<LiftedTag>& node,
+                                                         const ygg::Data<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>>& binding,
+                                                         StateRepository<LiftedTag>& state_repository,
+                                                         AxiomEvaluator<LiftedTag>& axiom_evaluator)
+{
+    return get_successor_node(node, binding, state_repository, axiom_evaluator).pack();
 }
 
 const ApplicableActionProgram<LiftedTag>& SuccessorGenerator<LiftedTag>::get_action_program() const noexcept { return m_impl->definition->action_program; }

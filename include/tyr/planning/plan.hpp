@@ -41,6 +41,28 @@ public:
     ygg::float_t get_cost() const noexcept;
     size_t get_length() const noexcept;
     bool empty() const noexcept;
+
+    PackedPlan<Kind> pack() const;
+};
+
+template<TaskKind Kind>
+class PackedPlan
+{
+private:
+    PackedNode<Kind> m_start_node;
+    PackedLabeledNodeList<Kind> m_labeled_succ_nodes;
+
+public:
+    PackedPlan(PackedNode<Kind> start_node);
+    PackedPlan(PackedNode<Kind> start_node, PackedLabeledNodeList<Kind> labeled_succ_nodes);
+
+    const PackedNode<Kind>& get_start_node() const noexcept;
+    const PackedLabeledNodeList<Kind>& get_labeled_succ_nodes() const noexcept;
+    ygg::float_t get_cost() const noexcept;
+    size_t get_length() const noexcept;
+    bool empty() const noexcept;
+
+    Plan<Kind> unpack() const;
 };
 }
 

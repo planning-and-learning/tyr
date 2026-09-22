@@ -167,11 +167,11 @@ public:
                            WorkerData& worker,
                            const Node<Kind>& source,
                            ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> target,
-                           PendingActionResult action_result,
+                           ygg::float_t auxiliary_value,
                            formalism::planning::ActionBindingView action,
                            typename SearchPolicy::SuccessorMetadata metadata)
     {
-        const auto metric = engine.evaluate_successor_metric(*target, action_result);
+        const auto metric = engine.evaluate_successor_metric(*target, auxiliary_value);
         auto node = Node<Kind>(worker.state_repository.register_state(worker.axiom_evaluator, std::move(target)), metric);
         const auto g_value = compute_successor_g_value(metadata.source_g_value, node.get_metric(), engine.m_options.cost_mode);
         if (!std::isfinite(g_value))

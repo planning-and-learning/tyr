@@ -974,10 +974,10 @@ find_weighted_astar_seed(p::SuccessorGenerator<Kind>& generator, p::StateReposit
     for (const auto action : generator.get_applicable_action_bindings(start))
     {
         auto state = state_repository.get_state_builder();
-        const auto result = generator.generate_successor_state(start, action, *state);
-        if (result.auxiliary_value == 100)
+        const auto auxiliary_value = generator.generate_successor_state(start, action, *state);
+        if (auxiliary_value == 100)
             direct.emplace(std::move(state));
-        else if (result.auxiliary_value == 1)
+        else if (auxiliary_value == 1)
             via.emplace(std::move(state));
     }
     if (!direct || !via)

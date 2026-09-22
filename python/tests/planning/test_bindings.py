@@ -936,6 +936,102 @@ def test_state_iterable_methods_return_stable_iterators():
         assert len(list(static_atoms)) == 12
 
 
+def test_packed_state_roundtrip_retains_repository():
+    ground_task, lifted_task = _make_gripper_tasks()
+
+    for task_module, task in (
+        (planning.ground, ground_task),
+        (planning.lifted, lifted_task),
+    ):
+        state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task)
+        state = state_repository.get_initial_state(axiom_evaluator)
+        state_index = state.get_index()
+        state_text = str(state)
+        packed = state.pack()
+
+        assert isinstance(packed, task_module.PackedState)
+        assert packed.get_index() == state_index
+        assert packed.get_state_repository() == state_repository
+        assert packed.unpack() == state
+        assert packed == state.pack()
+        assert hash(packed) == hash(state.pack())
+
+        del state, state_repository, axiom_evaluator, successor_generator
+        gc.collect()
+
+        unpacked = packed.unpack()
+        assert isinstance(unpacked, task_module.State)
+        assert unpacked.get_index() == state_index
+        assert str(unpacked) == state_text
+        assert unpacked.pack() == packed
+
+        del packed
+        gc.collect()
+        assert str(unpacked) == state_text
+
+
+def test_packed_nodes_preserve_state_metric_and_label():
+    ground_task, lifted_task = _make_gripper_tasks()
+
+    for task_module, task in (
+        (planning.ground, ground_task),
+        (planning.lifted, lifted_task),
+    ):
+        state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task)
+        initial_node = successor_generator.get_initial_node(state_repository, axiom_evaluator)
+        successor = successor_generator.get_labeled_successor_nodes(initial_node, state_repository, axiom_evaluator)[0]
+        node = task_module.Node(successor.node.get_state(), 17.5)
+        labeled = task_module.LabeledNode(successor.label, node)
+        state_text = str(node.get_state())
+        label_text = str(labeled.label)
+        packed = node.pack()
+        packed_labeled = labeled.pack()
+
+        assert isinstance(packed, task_module.PackedNode)
+        assert isinstance(packed.get_state(), task_module.PackedState)
+        assert packed.get_metric() == 17.5
+        assert packed == task_module.PackedNode(node.get_state().pack(), 17.5)
+        assert hash(packed) == hash(node.pack())
+        assert packed.unpack() == node
+        assert isinstance(packed_labeled, task_module.PackedLabeledNode)
+        assert packed_labeled.node == packed
+        assert packed_labeled.label == labeled.label
+        assert task_module.PackedLabeledNode(labeled.label, packed).unpack().node == node
+        assert repr(packed) == str(packed)
+        assert repr(packed_labeled) == str(packed_labeled)
+
+        del initial_node, successor, node, labeled, state_repository, axiom_evaluator, successor_generator
+        gc.collect()
+
+        assert str(packed.unpack().get_state()) == state_text
+        unpacked_labeled = packed_labeled.unpack()
+        del packed, packed_labeled
+        gc.collect()
+        assert isinstance(unpacked_labeled, task_module.LabeledNode)
+        assert unpacked_labeled.node.get_metric() == 17.5
+        assert str(unpacked_labeled.node.get_state()) == state_text
+        assert str(unpacked_labeled.label) == label_text
+
+
+@pytest.mark.parametrize("family", ["ground", "lifted"])
+@pytest.mark.parametrize("packed", [False, True])
+def test_labeled_node_label_keeps_owning_node_alive(family, packed):
+    def make_label():
+        task_module = getattr(planning, family)
+        ground_task, lifted_task = _make_gripper_tasks()
+        task = ground_task if family == "ground" else lifted_task
+        state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task)
+        initial_node = successor_generator.get_initial_node(state_repository, axiom_evaluator)
+        labeled = successor_generator.get_labeled_successor_nodes(initial_node, state_repository, axiom_evaluator)[0]
+        if packed:
+            labeled = labeled.pack()
+        return labeled.label, str(labeled.label)
+
+    label, expected = make_label()
+    gc.collect()
+    assert str(label) == expected
+
+
 def test_state_repository_create_state_accepts_state_iterables():
     ground_task, lifted_task = _make_gripper_tasks()
 
@@ -1028,6 +1124,8 @@ def test_successor_generator_accepts_explicit_repository_for_node_lookup():
         assert successor_generator.get_index() == 0
         assert not hasattr(successor_generator, "get_state_repository")
         assert looked_up_node == initial_node
+        assert successor_generator.get_packed_initial_node(state_repository, axiom_evaluator).unpack() == initial_node
+        assert successor_generator.get_packed_node(state_repository, initial_node.get_state().get_index()).unpack() == initial_node
 
 
 def test_successor_generators_expose_uniform_action_binding_api():
@@ -1055,6 +1153,10 @@ def test_successor_generators_expose_uniform_action_binding_api():
         assert successor_generator.ground_action(binding) == ground_action
         assert ground_action.get_action().get_arity() == len(list(ground_action.get_objects()))
         assert binding_successor == ground_action_successor
+        packed_binding_successor = successor_generator.get_packed_successor_node(start_node, binding, state_repository, axiom_evaluator)
+        packed_action_successor = successor_generator.get_packed_successor_node(start_node, ground_action, state_repository, axiom_evaluator)
+        assert packed_binding_successor.unpack() == binding_successor
+        assert packed_action_successor.unpack() == binding_successor
         assert any(
             labeled_successor.label == binding and labeled_successor.node == binding_successor
             for labeled_successor in labeled_successor_nodes
@@ -1077,6 +1179,12 @@ def test_successor_generation_for_a_lifted_action_schema():
         for node in (initial_node, picked_node):
             all_successors = successor_generator.get_labeled_successor_nodes(node, state_repository, axiom_evaluator)
             all_bindings = successor_generator.get_applicable_action_bindings(node)
+            packed = successor_generator.get_packed_labeled_successor_nodes(node, state_repository, axiom_evaluator)
+            assert [(successor.label, successor.node.unpack()) for successor in packed] == [
+                (successor.label, successor.node) for successor in all_successors
+            ]
+            packed_nodes = successor_generator.get_packed_successor_nodes(node, state_repository, axiom_evaluator)
+            assert [successor.unpack() for successor in packed_nodes] == [successor.node for successor in all_successors]
             assert Counter(successor_generator.get_successor_nodes(node, state_repository, axiom_evaluator)) == Counter(
                 successor.node for successor in all_successors
             )
@@ -1088,8 +1196,92 @@ def test_successor_generation_for_a_lifted_action_schema():
                     binding for binding in all_bindings if binding.get_relation() == action
                 }
                 assert Counter(successor_generator.get_successor_nodes(node, action, state_repository, axiom_evaluator)) == Counter(expected.values())
+                packed = successor_generator.get_packed_labeled_successor_nodes(node, action, state_repository, axiom_evaluator)
+                assert {successor.label: successor.node.unpack() for successor in packed} == expected
+                packed_nodes = successor_generator.get_packed_successor_nodes(node, action, state_repository, axiom_evaluator)
+                assert Counter(successor.unpack() for successor in packed_nodes) == Counter(expected.values())
                 if action.get_original_name() == "drop":
                     assert bool(expected) == (node == picked_node)
+
+
+@pytest.mark.parametrize("family", ["ground", "lifted"])
+@pytest.mark.parametrize("labeled", [False, True])
+def test_successor_callbacks_match_lists_stop_and_propagate_exceptions(family, labeled):
+    task_module = getattr(planning, family)
+    ground_task, lifted_task = _make_gripper_tasks()
+    task = ground_task if family == "ground" else lifted_task
+    state_repository, axiom_evaluator, generator = _make_components(task_module, task)
+    node = generator.get_initial_node(state_repository, axiom_evaluator)
+    getter = generator.get_labeled_successor_nodes if labeled else generator.get_successor_nodes
+    visit = generator.for_each_labeled_successor_node if labeled else generator.for_each_successor_node
+
+    def values(nodes):
+        return [(successor.label, successor.node) for successor in nodes] if labeled else nodes
+
+    for schema in [(), *((action,) for action in task.get_task().get_domain().get_actions())]:
+        args = (node, *schema, state_repository, axiom_evaluator)
+        expected = getter(*args)
+        seen = []
+        assert visit(*args, lambda successor: seen.append(successor) or True)
+        assert values(seen) == values(expected)
+        seen.clear()
+        assert visit(*args, lambda successor: seen.append(successor) or False) == (not expected)
+        assert values(seen) == values(expected[:1])
+
+    def fail(successor):
+        raise RuntimeError("callback failure")
+
+    with pytest.raises(RuntimeError, match="callback failure"):
+        visit(node, state_repository, axiom_evaluator, fail)
+    assert visit(node, state_repository, axiom_evaluator, lambda successor: True)
+
+
+@pytest.mark.parametrize("family", ["ground", "lifted"])
+@pytest.mark.parametrize("labeled", [False, True])
+def test_successor_callback_values_retain_their_repository(family, labeled):
+    def collect():
+        task_module = getattr(planning, family)
+        ground_task, lifted_task = _make_gripper_tasks()
+        task = ground_task if family == "ground" else lifted_task
+        state_repository, axiom_evaluator, generator = _make_components(task_module, task)
+        node = generator.get_initial_node(state_repository, axiom_evaluator)
+        visit = generator.for_each_labeled_successor_node if labeled else generator.for_each_successor_node
+        seen = []
+        assert visit(node, state_repository, axiom_evaluator, lambda successor: seen.append(successor) or True)
+        return seen, [str(successor) for successor in seen]
+
+    seen, expected = collect()
+    gc.collect()
+    assert seen
+    assert [str(successor) for successor in seen] == expected
+
+
+def test_packed_plans_preserve_empty_and_multistep_plans():
+    ground_task, lifted_task = _make_gripper_tasks()
+
+    for task_module, task in ((planning.ground, ground_task), (planning.lifted, lifted_task)):
+        state_repository, axiom_evaluator, generator = _make_components(task_module, task)
+        node = generator.get_initial_node(state_repository, axiom_evaluator)
+        first = generator.get_labeled_successor_nodes(node, state_repository, axiom_evaluator)[0]
+        second = generator.get_labeled_successor_nodes(first.node, state_repository, axiom_evaluator)[0]
+        for steps in ([], [first, second]):
+            expected = [(step.label, step.node) for step in steps]
+            plan = task_module.Plan(node, steps)
+            for packed in (plan.pack(), task_module.PackedPlan(node.pack(), [step.pack() for step in steps])):
+                assert isinstance(packed, task_module.PackedPlan)
+                assert packed.get_start_node().unpack() == node
+                assert packed.get_length() == plan.get_length() == len(steps)
+                assert packed.get_cost() == plan.get_cost()
+                assert packed.empty() == plan.empty()
+                assert [(step.label, step.node.unpack()) for step in packed.get_labeled_succ_nodes()] == expected
+                unpacked = packed.unpack()
+                assert isinstance(unpacked, task_module.Plan)
+                assert unpacked.get_start_node() == node
+                assert unpacked.get_cost() == plan.get_cost()
+                assert unpacked.get_length() == plan.get_length()
+                assert [(step.label, step.node) for step in unpacked.get_labeled_succ_nodes()] == expected
+                assert repr(packed) == str(packed)
+        assert task_module.PackedPlan(node.pack()).empty()
 
 
 def test_labeled_node_is_constructible_for_plan_construction():
@@ -1162,3 +1354,6 @@ def test_state_views_from_independent_repository_factories_use_distinct_storage_
         assert first_state.get_index() == second_state.get_index()
         assert first_state != second_state
         assert len({first_state, second_state}) == 2
+        assert first_state.pack().get_index() == second_state.pack().get_index()
+        assert first_state.pack() != second_state.pack()
+        assert len({first_state.pack(), second_state.pack()}) == 2

@@ -101,6 +101,15 @@ void expect_registered_closures_and_transition_costs(const p::TaskPtr<Kind>& tas
     EXPECT_EQ(cheap->node.get_state(), expensive->node.get_state());
     EXPECT_EQ(cheap->node.get_metric(), 1);
     EXPECT_EQ(expensive->node.get_metric(), 7);
+    const auto packed = cheap->pack();
+    EXPECT_EQ(packed.label, cheap->label);
+    EXPECT_EQ(packed.node.get_state(), cheap->node.get_state().pack());
+    EXPECT_EQ(packed.node.get_metric(), cheap->node.get_metric());
+    EXPECT_EQ(packed.node, cheap->node.pack());
+    EXPECT_NE(packed.node, expensive->node.pack());
+    EXPECT_EQ(packed.unpack().label, cheap->label);
+    EXPECT_EQ(packed.unpack().node, cheap->node);
+
     EXPECT_EQ(repository->num_states(), 2);
     EXPECT_EQ(derived_names(cheap->node.get_state()), (std::vector<std::string> { "live" }));
     EXPECT_EQ(derived_names(expensive->node.get_state()), derived_names(cheap->node.get_state()));
@@ -165,6 +174,32 @@ void expect_registered_closures_and_transition_costs(const p::TaskPtr<Kind>& tas
     EXPECT_EQ(derived_names(raised.get_state()), (std::vector<std::string> { "live", "ready" }));
     EXPECT_EQ(repository->num_states(), 3);
     expect_duplicate(raised.get_state());
+
+    const auto plan = p::Plan<Kind>(initial, { *cheap, { *raise, raised } });
+    const auto packed_plan = plan.pack();
+    const auto unpacked_plan = packed_plan.unpack();
+    EXPECT_EQ(packed_plan.get_start_node(), initial.pack());
+    EXPECT_EQ(unpacked_plan.get_start_node(), initial);
+    EXPECT_FALSE(packed_plan.empty());
+    EXPECT_EQ(packed_plan.get_length(), 2);
+    EXPECT_EQ(packed_plan.get_cost(), raised.get_metric());
+    EXPECT_EQ(unpacked_plan.get_length(), plan.get_length());
+    EXPECT_EQ(unpacked_plan.get_cost(), plan.get_cost());
+    for (size_t i = 0; i < plan.get_length(); ++i)
+    {
+        EXPECT_EQ(packed_plan.get_labeled_succ_nodes()[i].label, plan.get_labeled_succ_nodes()[i].label);
+        EXPECT_EQ(packed_plan.get_labeled_succ_nodes()[i].node, plan.get_labeled_succ_nodes()[i].node.pack());
+        EXPECT_EQ(unpacked_plan.get_labeled_succ_nodes()[i].label, plan.get_labeled_succ_nodes()[i].label);
+        EXPECT_EQ(unpacked_plan.get_labeled_succ_nodes()[i].node, plan.get_labeled_succ_nodes()[i].node);
+    }
+    const auto empty_plan = p::Plan<Kind>(raised).pack();
+    EXPECT_TRUE(empty_plan.empty());
+    EXPECT_EQ(empty_plan.get_length(), 0);
+    EXPECT_EQ(empty_plan.get_cost(), 0);
+    EXPECT_EQ(empty_plan.get_start_node(), raised.pack());
+    EXPECT_TRUE(empty_plan.unpack().empty());
+    EXPECT_EQ(empty_plan.unpack().get_start_node(), raised);
+    EXPECT_EQ(empty_plan.unpack().get_cost(), 0);
 
     const auto disabled = generator->get_successor_node(raised, *disable, *repository, *axioms);
     EXPECT_NE(disabled.get_state(), raised.get_state());

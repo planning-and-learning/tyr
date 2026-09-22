@@ -500,17 +500,17 @@ private:
                 break;
 
             auto successor_state = worker.state_repository.get_state_builder();
-            const auto action_result = worker.successor_generator.generate_successor_state(node, action, *successor_state);
+            const auto auxiliary_value = worker.successor_generator.generate_successor_state(node, action, *successor_state);
             auto metadata = worker.search.make_successor_metadata(worker.index, node, action);
-            if (m_execution.route(*this, worker, node, std::move(successor_state), action_result, action, std::move(metadata)) == AcceptanceResult::TERMINAL
+            if (m_execution.route(*this, worker, node, std::move(successor_state), auxiliary_value, action, std::move(metadata)) == AcceptanceResult::TERMINAL
                 || !m_execution.running())
                 break;
         }
     }
 
-    ygg::float_t evaluate_successor_metric(const ygg::Builder<State<Kind>>& state, PendingActionResult result)
+    ygg::float_t evaluate_successor_metric(const ygg::Builder<State<Kind>>& state, ygg::float_t auxiliary_value)
     {
-        return planning::evaluate_successor_metric(m_task, state, result.auxiliary_value);
+        return planning::evaluate_successor_metric(m_task, state, auxiliary_value);
     }
 
     void solve(WorkerData& worker, const Node<Kind>& node)

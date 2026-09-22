@@ -68,6 +68,71 @@ bool Plan<Kind>::empty() const noexcept
     return m_labeled_succ_nodes.empty();
 }
 
+template<TaskKind Kind>
+PackedPlan<Kind> Plan<Kind>::pack() const
+{
+    auto nodes = PackedLabeledNodeList<Kind> {};
+    nodes.reserve(m_labeled_succ_nodes.size());
+    for (const auto& node : m_labeled_succ_nodes)
+        nodes.push_back(node.pack());
+    return PackedPlan<Kind>(m_start_node.pack(), std::move(nodes));
+}
+
+template<TaskKind Kind>
+PackedPlan<Kind>::PackedPlan(PackedNode<Kind> start_node) : PackedPlan(std::move(start_node), PackedLabeledNodeList<Kind> {})
+{
+}
+
+template<TaskKind Kind>
+PackedPlan<Kind>::PackedPlan(PackedNode<Kind> start_node, PackedLabeledNodeList<Kind> labeled_succ_nodes) :
+    m_start_node(std::move(start_node)),
+    m_labeled_succ_nodes(std::move(labeled_succ_nodes))
+{
+}
+
+template<TaskKind Kind>
+const PackedNode<Kind>& PackedPlan<Kind>::get_start_node() const noexcept
+{
+    return m_start_node;
+}
+
+template<TaskKind Kind>
+const PackedLabeledNodeList<Kind>& PackedPlan<Kind>::get_labeled_succ_nodes() const noexcept
+{
+    return m_labeled_succ_nodes;
+}
+
+template<TaskKind Kind>
+ygg::float_t PackedPlan<Kind>::get_cost() const noexcept
+{
+    return !empty() ? m_labeled_succ_nodes.back().node.get_metric() : 0.;
+}
+
+template<TaskKind Kind>
+size_t PackedPlan<Kind>::get_length() const noexcept
+{
+    return m_labeled_succ_nodes.size();
+}
+
+template<TaskKind Kind>
+bool PackedPlan<Kind>::empty() const noexcept
+{
+    return m_labeled_succ_nodes.empty();
+}
+
+template<TaskKind Kind>
+Plan<Kind> PackedPlan<Kind>::unpack() const
+{
+    auto nodes = LabeledNodeList<Kind> {};
+    nodes.reserve(m_labeled_succ_nodes.size());
+    for (const auto& node : m_labeled_succ_nodes)
+        nodes.push_back(node.unpack());
+    return Plan<Kind>(m_start_node.unpack(), std::move(nodes));
+}
+
+template class PackedPlan<LiftedTag>;
+template class PackedPlan<GroundTag>;
+
 template class Plan<LiftedTag>;
 template class Plan<GroundTag>;
 

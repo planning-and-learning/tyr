@@ -52,11 +52,15 @@ void bind_ground_module_definitions(nb::module_& m)
     ygg::add_print(task);
 
     bind_index<ygg::Index<State<GroundTag>>>(m, "StateIndex");
+    bind_packed_state<GroundTag>(m, "PackedState");
     bind_state<GroundTag>(m, "State");
     bind_state_builder<GroundTag>(m, "StateBuilder");
     bind_node<GroundTag>(m, "Node");
+    bind_packed_node<GroundTag>(m, "PackedNode");
     bind_labeled_node<GroundTag>(m, "LabeledNode");
+    bind_packed_labeled_node<GroundTag>(m, "PackedLabeledNode");
     bind_plan<GroundTag>(m, "Plan");
+    bind_packed_plan<GroundTag>(m, "PackedPlan");
     bind_axiom_evaluator<GroundTag>(m, "AxiomEvaluator");
     bind_axiom_evaluator_factory<GroundTag>(m, "AxiomEvaluatorFactory");
     bind_state_repository<GroundTag>(m, "StateRepository");

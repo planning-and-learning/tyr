@@ -23,6 +23,7 @@
 #include "tyr/planning/state_index.hpp"
 
 #include <concepts>
+#include <functional>
 #include <utility>
 #include <vector>
 #include <yggdrasil/containers/shared_object_pool.hpp>
@@ -32,14 +33,6 @@
 namespace tyr::planning
 {
 
-template<TaskKind Kind>
-class SuccessorGenerator;
-
-struct PendingActionResult
-{
-    ygg::float_t auxiliary_value;
-};
-
 template<typename T, typename Kind>
 concept SuccessorGeneratorConcept = requires(T& r,
                                              const T& const_r,
@@ -47,13 +40,18 @@ concept SuccessorGeneratorConcept = requires(T& r,
                                              const Node<Kind>& node,
                                              NodeList<Kind>& successor_nodes,
                                              LabeledNodeList<Kind>& labeled_successor_nodes,
+                                             PackedNodeList<Kind>& packed_successor_nodes,
+                                             PackedLabeledNodeList<Kind>& packed_labeled_successor_nodes,
+                                             const std::function<bool(Node<Kind>)>& node_callback,
+                                             const std::function<bool(LabeledNode<Kind>)>& labeled_node_callback,
+                                             const std::function<bool(formalism::planning::ActionBindingView)>& binding_callback,
                                              std::vector<formalism::planning::ActionBindingView>& action_bindings,
                                              formalism::planning::ActionBindingView binding,
                                              StateRepository<Kind>& state_repository,
                                              AxiomEvaluator<Kind>& axiom_evaluator,
                                              ygg::Builder<State<Kind>>& state_builder,
                                              ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state_builder_ptr,
-                                             PendingActionResult pending_result,
+                                             ygg::float_t auxiliary_value,
                                              ygg::ExecutionContextPtr execution_context) {
     requires TaskKind<Kind>;
     { r.get_initial_node(state_repository, axiom_evaluator) } -> std::same_as<Node<Kind>>;
@@ -64,14 +62,23 @@ concept SuccessorGeneratorConcept = requires(T& r,
     { r.get_applicable_action_bindings(node) } -> std::same_as<std::vector<formalism::planning::ActionBindingView>>;
     { r.get_applicable_action_bindings(node, action_bindings) } -> std::same_as<void>;
     { r.get_successor_node(node, binding, state_repository, axiom_evaluator) } -> std::same_as<Node<Kind>>;
-    { r.generate_successor_state(node, binding, state_builder) } -> std::same_as<PendingActionResult>;
-    { r.finalize_successor_state(state_repository, axiom_evaluator, std::move(state_builder_ptr), pending_result) } -> std::same_as<Node<Kind>>;
+    { r.generate_successor_state(node, binding, state_builder) } -> std::same_as<ygg::float_t>;
+    { r.finalize_successor_state(state_repository, axiom_evaluator, std::move(state_builder_ptr), auxiliary_value) } -> std::same_as<Node<Kind>>;
     { r.get_node(state_repository, state_index) } -> std::same_as<Node<Kind>>;
+    { r.get_packed_initial_node(state_repository, axiom_evaluator) } -> std::same_as<PackedNode<Kind>>;
+    { r.get_packed_node(state_repository, state_index) } -> std::same_as<PackedNode<Kind>>;
+    { r.get_packed_successor_node(node, binding, state_repository, axiom_evaluator) } -> std::same_as<PackedNode<Kind>>;
+    { r.get_packed_successor_nodes(node, state_repository, axiom_evaluator) } -> std::same_as<PackedNodeList<Kind>>;
+    { r.get_packed_successor_nodes(node, state_repository, axiom_evaluator, packed_successor_nodes) } -> std::same_as<void>;
+    { r.get_packed_labeled_successor_nodes(node, state_repository, axiom_evaluator) } -> std::same_as<PackedLabeledNodeList<Kind>>;
+    { r.get_packed_labeled_successor_nodes(node, state_repository, axiom_evaluator, packed_labeled_successor_nodes) } -> std::same_as<void>;
+    { r.for_each_successor_node(node, state_repository, axiom_evaluator, node_callback) } -> std::same_as<bool>;
+    { r.for_each_labeled_successor_node(node, state_repository, axiom_evaluator, labeled_node_callback) } -> std::same_as<bool>;
+    { r.for_each_applicable_action_binding(node, binding_callback) } -> std::same_as<bool>;
     { const_r.make_worker(execution_context) } -> std::same_as<SuccessorGeneratorPtr<Kind>>;
     { const_r.get_task() } -> std::same_as<const TaskPtr<Kind>&>;
     { r.get_index() } -> std::same_as<ygg::uint_t>;
 };
-
 }
 
 #endif

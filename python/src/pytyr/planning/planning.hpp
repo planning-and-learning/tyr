@@ -21,6 +21,7 @@
 #include "module.hpp"
 
 #include <nanobind/stl/chrono.h>
+#include <nanobind/stl/function.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
@@ -92,6 +93,19 @@ nb::typed<nb::iterator, Value> make_owning_iterator(nb::handle scope, const char
 }
 
 template<TaskKind Kind>
+void bind_packed_state(nb::module_& m, const std::string& name)
+{
+    using T = PackedStateView<Kind>;
+
+    auto cls = nb::class_<T>(m, name.c_str())  //
+                   .def("get_index", &T::get_index, nb::rv_policy::copy)
+                   .def("get_state_repository", &T::get_state_repository, nb::rv_policy::copy)
+                   .def("unpack", &T::unpack);
+    ygg::add_comparison(cls);
+    ygg::add_hash(cls);
+}
+
+template<TaskKind Kind>
 void bind_state(nb::module_& m, const std::string& name)
 {
     using T = StateView<Kind>;
@@ -101,6 +115,7 @@ void bind_state(nb::module_& m, const std::string& name)
             .def("get_index", &T::get_index, nb::rv_policy::copy)
             .def("get_repository", &T::get_repository, nb::rv_policy::copy)
             .def("get_state_repository", &T::get_state_repository, nb::rv_policy::copy)
+            .def("pack", &T::pack)
             // AccessibleStateConcept
             .def("test",
                  nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::StaticTag>>(&T::test, nb::const_),
@@ -197,7 +212,23 @@ void bind_node(nb::module_& m, const std::string& name)
     auto cls = nb::class_<T>(m, name.c_str())
                    .def(nb::init<StateView<Kind>, ygg::float_t>(), "state"_a, "metric_value"_a)
                    .def("get_state", &T::get_state, nb::rv_policy::reference_internal)
-                   .def("get_metric", &T::get_metric, nb::rv_policy::copy);
+                   .def("get_metric", &T::get_metric, nb::rv_policy::copy)
+                   .def("pack", &T::pack);
+    ygg::add_print(cls);
+    ygg::add_comparison(cls);
+    ygg::add_hash(cls);
+}
+
+template<TaskKind Kind>
+void bind_packed_node(nb::module_& m, const std::string& name)
+{
+    using T = PackedNode<Kind>;
+
+    auto cls = nb::class_<T>(m, name.c_str())
+                   .def(nb::init<PackedStateView<Kind>, ygg::float_t>(), "state"_a, "metric_value"_a)
+                   .def("get_state", &T::get_state, nb::rv_policy::reference_internal)
+                   .def("get_metric", &T::get_metric, nb::rv_policy::copy)
+                   .def("unpack", &T::unpack);
     ygg::add_print(cls);
     ygg::add_comparison(cls);
     ygg::add_hash(cls);
@@ -210,8 +241,22 @@ void bind_labeled_node(nb::module_& m, const std::string& name)
 
     auto cls = nb::class_<T>(m, name.c_str())  //
                    .def(nb::init<fp::ActionBindingView, Node<Kind>>(), "label"_a, "node"_a)
-                   .def_ro("label", &T::label, nb::rv_policy::copy)
-                   .def_ro("node", &T::node, nb::rv_policy::copy);
+                   .def_ro("label", &T::label, nb::rv_policy::reference_internal)
+                   .def_ro("node", &T::node, nb::rv_policy::copy)
+                   .def("pack", &T::pack);
+    ygg::add_print(cls);
+}
+
+template<TaskKind Kind>
+void bind_packed_labeled_node(nb::module_& m, const std::string& name)
+{
+    using T = PackedLabeledNode<Kind>;
+
+    auto cls = nb::class_<T>(m, name.c_str())  //
+                   .def(nb::init<fp::ActionBindingView, PackedNode<Kind>>(), "label"_a, "node"_a)
+                   .def_ro("label", &T::label, nb::rv_policy::reference_internal)
+                   .def_ro("node", &T::node, nb::rv_policy::copy)
+                   .def("unpack", &T::unpack);
     ygg::add_print(cls);
 }
 
@@ -227,7 +272,25 @@ void bind_plan(nb::module_& m, const std::string& name)
                    .def("get_labeled_succ_nodes", &T::get_labeled_succ_nodes, nb::rv_policy::copy)
                    .def("get_cost", &T::get_cost)
                    .def("get_length", &T::get_length)
-                   .def("empty", &T::empty);
+                   .def("empty", &T::empty)
+                   .def("pack", &T::pack);
+    ygg::add_print(cls);
+}
+
+template<TaskKind Kind>
+void bind_packed_plan(nb::module_& m, const std::string& name)
+{
+    using T = PackedPlan<Kind>;
+
+    auto cls = nb::class_<T>(m, name.c_str())  //
+                   .def(nb::init<PackedNode<Kind>>(), "start_node"_a)
+                   .def(nb::init<PackedNode<Kind>, PackedLabeledNodeList<Kind>>(), "start_node"_a, "labeled_succ_nodes"_a)
+                   .def("get_start_node", &T::get_start_node, nb::rv_policy::copy)
+                   .def("get_labeled_succ_nodes", &T::get_labeled_succ_nodes, nb::rv_policy::copy)
+                   .def("get_cost", &T::get_cost)
+                   .def("get_length", &T::get_length)
+                   .def("empty", &T::empty)
+                   .def("unpack", &T::unpack);
     ygg::add_print(cls);
 }
 
@@ -279,7 +342,9 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
 
     cls.def("get_index", &T::get_index)
         .def("get_initial_node", &T::get_initial_node, nb::rv_policy::move, "state_repository"_a, "axiom_evaluator"_a)
-        .def("get_node", &T::get_node, nb::rv_policy::move, "state_repository"_a, "state_index"_a);
+        .def("get_node", &T::get_node, nb::rv_policy::move, "state_repository"_a, "state_index"_a)
+        .def("get_packed_initial_node", &T::get_packed_initial_node, nb::rv_policy::move, "state_repository"_a, "axiom_evaluator"_a)
+        .def("get_packed_node", &T::get_packed_node, nb::rv_policy::move, "state_repository"_a, "state_index"_a);
 
     cls.def("get_applicable_action_bindings",
             nb::overload_cast<const Node<Kind>&>(&T::get_applicable_action_bindings),
@@ -338,6 +403,86 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
              "action"_a,
              "state_repository"_a,
              "axiom_evaluator"_a,
+             nb::call_guard<nb::gil_scoped_release>());
+
+    cls.def("get_packed_successor_node",
+            nb::overload_cast<const Node<Kind>&, fp::ActionBindingView, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::get_packed_successor_node),
+            "node"_a,
+            "binding"_a,
+            "state_repository"_a,
+            "axiom_evaluator"_a)
+        .def("get_packed_successor_node",
+             nb::overload_cast<const Node<Kind>&, fp::ActionView<GroundTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::get_packed_successor_node),
+             "node"_a,
+             "action"_a,
+             "state_repository"_a,
+             "axiom_evaluator"_a);
+
+    cls.def("get_packed_successor_nodes",
+            nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::get_packed_successor_nodes),
+            nb::rv_policy::move,
+            "node"_a,
+            "state_repository"_a,
+            "axiom_evaluator"_a,
+            nb::call_guard<nb::gil_scoped_release>())
+        .def("get_packed_successor_nodes",
+             nb::overload_cast<const Node<Kind>&, fp::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::get_packed_successor_nodes),
+             nb::rv_policy::move,
+             "node"_a,
+             "action"_a,
+             "state_repository"_a,
+             "axiom_evaluator"_a,
+             nb::call_guard<nb::gil_scoped_release>());
+
+    cls.def("get_packed_labeled_successor_nodes",
+            nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::get_packed_labeled_successor_nodes),
+            nb::rv_policy::move,
+            "node"_a,
+            "state_repository"_a,
+            "axiom_evaluator"_a,
+            nb::call_guard<nb::gil_scoped_release>())
+        .def("get_packed_labeled_successor_nodes",
+             nb::overload_cast<const Node<Kind>&, fp::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::get_packed_labeled_successor_nodes),
+             nb::rv_policy::move,
+             "node"_a,
+             "action"_a,
+             "state_repository"_a,
+             "axiom_evaluator"_a,
+             nb::call_guard<nb::gil_scoped_release>());
+
+    cls.def("for_each_successor_node",
+            nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&, const std::function<bool(Node<Kind>)>&>(&T::for_each_successor_node),
+            "node"_a,
+            "state_repository"_a,
+            "axiom_evaluator"_a,
+            "callback"_a,
+            nb::call_guard<nb::gil_scoped_release>())
+        .def("for_each_successor_node",
+             nb::overload_cast<const Node<Kind>&, fp::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&, const std::function<bool(Node<Kind>)>&>(
+                 &T::for_each_successor_node),
+             "node"_a,
+             "action"_a,
+             "state_repository"_a,
+             "axiom_evaluator"_a,
+             "callback"_a,
+             nb::call_guard<nb::gil_scoped_release>());
+
+    cls.def("for_each_labeled_successor_node",
+            nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&, const std::function<bool(LabeledNode<Kind>)>&>(
+                &T::for_each_labeled_successor_node),
+            "node"_a,
+            "state_repository"_a,
+            "axiom_evaluator"_a,
+            "callback"_a,
+            nb::call_guard<nb::gil_scoped_release>())
+        .def("for_each_labeled_successor_node",
+             nb::overload_cast<const Node<Kind>&, fp::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&, const std::function<bool(LabeledNode<Kind>)>&>(
+                 &T::for_each_labeled_successor_node),
+             "node"_a,
+             "action"_a,
+             "state_repository"_a,
+             "axiom_evaluator"_a,
+             "callback"_a,
              nb::call_guard<nb::gil_scoped_release>());
 
     if constexpr (std::is_same_v<Kind, LiftedTag>)

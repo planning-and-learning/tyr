@@ -167,11 +167,15 @@ should not be used further.
             nb::rv_policy::reference_internal);
 
     bind_index<ygg::Index<State<LiftedTag>>>(m, "StateIndex");
+    bind_packed_state<LiftedTag>(m, "PackedState");
     bind_state<LiftedTag>(m, "State");
     bind_state_builder<LiftedTag>(m, "StateBuilder");
     bind_node<LiftedTag>(m, "Node");
+    bind_packed_node<LiftedTag>(m, "PackedNode");
     bind_labeled_node<LiftedTag>(m, "LabeledNode");
+    bind_packed_labeled_node<LiftedTag>(m, "PackedLabeledNode");
     bind_plan<LiftedTag>(m, "Plan");
+    bind_packed_plan<LiftedTag>(m, "PackedPlan");
     bind_axiom_evaluator<LiftedTag>(m, "AxiomEvaluator");
     bind_axiom_evaluator_factory<LiftedTag>(m, "AxiomEvaluatorFactory");
     bind_state_repository<LiftedTag>(m, "StateRepository");
