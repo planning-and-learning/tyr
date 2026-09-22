@@ -40,6 +40,7 @@ class StateRepository : public std::enable_shared_from_this<StateRepository<Kind
 {
     friend class StateRepositoryFactory<Kind>;
     friend struct ::ygg::View<ygg::Index<State<Kind>>, StateRepositoryPtr<Kind>>;
+    friend struct ::ygg::View<ygg::Index<PackedState<Kind>>, StateRepositoryPtr<Kind>>;
 
 private:
     struct Impl;

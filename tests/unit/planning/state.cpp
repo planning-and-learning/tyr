@@ -21,6 +21,8 @@ concept StateIndexContract = std::constructible_from<ygg::Index<p::State<Kind>>,
 
 using StateKinds = ygg::TypeList<tyr::GroundTag, tyr::LiftedTag>;
 static_assert([]<typename... Kinds>(ygg::TypeList<Kinds...>) { return (StateIndexContract<Kinds> && ...); }(StateKinds {}));
+static_assert([]<typename... Kinds>(ygg::TypeList<Kinds...>)
+              { return (std::totally_ordered<p::PackedStateView<Kinds>> && ...); }(StateKinds {}));
 
 namespace tyr::tests
 {
@@ -69,6 +71,26 @@ void expect_registered_closures_and_transition_costs(const p::TaskPtr<Kind>& tas
     auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, context);
     auto factory = p::StateRepositoryFactory<Kind> {};
     auto repository = concurrent ? factory.create_concurrent(task) : factory.create(task);
+    std::weak_ptr<p::StateRepository<Kind>> owner;
+    {
+        const ygg::Builder<p::State<Kind>>* released_builder = nullptr;
+        const auto packed = [&]
+        {
+            auto temporary_repository = factory.create(task);
+            owner = temporary_repository;
+            const auto state = temporary_repository->get_initial_state(*axioms);
+            released_builder = &state.get_state_builder();
+            return state.pack();
+        }();
+        EXPECT_FALSE(owner.expired());
+        auto recycled_builder = packed.get_state_repository()->get_state_builder();
+        EXPECT_EQ(recycled_builder.get(), released_builder);
+        recycled_builder = {};
+        EXPECT_EQ(packed.unpack().pack(), packed);
+        EXPECT_EQ(packed.get_state_repository()->num_states(), 1);
+    }
+    EXPECT_TRUE(owner.expired());
+
     const auto initial = generator->get_initial_node(*repository, *axioms);
     const auto successors = generator->get_labeled_successor_nodes(initial, *repository, *axioms);
     ASSERT_EQ(successors.size(), 2);
@@ -85,6 +107,16 @@ void expect_registered_closures_and_transition_costs(const p::TaskPtr<Kind>& tas
 
     const auto expect_duplicate = [&](const auto& state)
     {
+        const auto packed = state.pack();
+        const auto unpacked = packed.unpack();
+        EXPECT_EQ(packed.get_index(), state.get_index());
+        EXPECT_EQ(packed.get_state_repository(), repository);
+        EXPECT_EQ(unpacked, state);
+        EXPECT_EQ(unpacked.pack(), packed);
+        EXPECT_TRUE(std::ranges::equal(unpacked.get_fluent_facts(), state.get_fluent_facts()));
+        EXPECT_EQ(derived_names(unpacked), derived_names(state));
+        EXPECT_TRUE(std::ranges::equal(unpacked.get_fluent_fterm_values(), state.get_fluent_fterm_values()));
+
         auto builder = repository->get_state_builder();
         builder->assign_unextended_part(state.get_state_builder());
         const auto derived = builder->get_derived_atoms();

@@ -216,6 +216,7 @@ void expect_independent_repository_identity(const p::TaskPtr<Kind>& task)
     EXPECT_EQ(second_repository->get_index(), 0);
     EXPECT_EQ(first_state.get_index(), second_state.get_index());
     EXPECT_NE(first_state, second_state);
+    EXPECT_NE(first_state.pack(), second_state.pack());
 
     auto states = ygg::UnorderedSet<p::StateView<Kind>> {};
     states.insert(first_state);
@@ -277,6 +278,9 @@ void expect_shared_worker_cohort(const p::TaskPtr<Kind>& task)
     ASSERT_EQ(first_repository->num_states(), 1);
     ASSERT_EQ(second_repository->num_states(), 1);
     EXPECT_EQ(first_initial.get_state(), second_initial.get_state());
+    EXPECT_EQ(first_initial.get_state().pack(), second_initial.get_state().pack());
+    EXPECT_EQ(ygg::Hash<p::PackedStateView<Kind>> {}(first_initial.get_state().pack()),
+              ygg::Hash<p::PackedStateView<Kind>> {}(second_initial.get_state().pack()));
     EXPECT_EQ(first_initial.get_metric(), second_initial.get_metric());
     EXPECT_EQ(p::materialize_state(second_initial.get_state(), *source_repository, *source_axiom_evaluator).get_state_repository(), source_repository);
 

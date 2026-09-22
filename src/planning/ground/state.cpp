@@ -15,7 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "../state_view_impl.hpp"
 #include "tyr/planning/ground/state_builder.hpp"
 #include "tyr/planning/ground/state_repository.hpp"
 #include "tyr/planning/ground/state_view.hpp"
@@ -166,6 +165,7 @@ namespace ygg
 namespace planning = ::tyr::planning;
 
 template class View<Index<planning::State<::tyr::GroundTag>>, std::shared_ptr<planning::StateRepository<::tyr::GroundTag>>>;
+template class View<Index<planning::PackedState<::tyr::GroundTag>>, std::shared_ptr<planning::StateRepository<::tyr::GroundTag>>>;
 
 static_assert(planning::IterableStateConcept<GroundStateView>);
 static_assert(planning::IterableViewStateConcept<GroundStateView>);

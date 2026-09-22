@@ -58,6 +58,8 @@ struct LabeledNode;
 
 template<TaskKind Kind>
 class State;
+template<TaskKind Kind>
+class PackedState;
 
 template<TaskKind Kind>
 struct StateContext;
@@ -76,6 +78,8 @@ using StateRepositoryPtr = std::shared_ptr<StateRepository<Kind>>;
 
 template<TaskKind Kind>
 using StateView = ygg::View<ygg::Index<State<Kind>>, StateRepositoryPtr<Kind>>;
+template<TaskKind Kind>
+using PackedStateView = ygg::View<ygg::Index<PackedState<Kind>>, StateRepositoryPtr<Kind>>;
 template<TaskKind Kind>
 class StateRepositoryFactory;
 
