@@ -25,6 +25,7 @@
 #include "tyr/planning/lifted/state_builder.hpp"
 #include "tyr/planning/worker_index.hpp"
 
+#include <boost/hash2/xxhash.hpp>
 #include <cassert>
 #include <concepts>
 #include <cstddef>
@@ -63,7 +64,8 @@ public:
         auto result = static_cast<ygg::hash_t>(m_seed);
         ygg::hash_combine(result, state.template get_atoms<formalism::FluentTag>());
         ygg::hash_combine(result, state.get_numeric_variables());
-        return ygg::fmix64(result);
+        // Final avalanche over the accumulated hash, using XXH64's 64-bit seed and result.
+        return boost::hash2::xxhash_64(result).result();
     }
 
     ygg::Index<Worker> owner(const ygg::Builder<State<Kind>>& state, size_t num_workers) const noexcept
