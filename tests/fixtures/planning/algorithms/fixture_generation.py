@@ -18,6 +18,7 @@ Protocol so attribute/method access stays statically checked.
 
 from __future__ import annotations
 
+import argparse
 import json
 import math
 import subprocess
@@ -346,7 +347,13 @@ def generate_main(script: Path, fixtures: Mapping[TaskKind, Path], configs: Sequ
         run_worker(run_config, sys.argv[1:])
         return
 
-    filters = set(sys.argv[1:])
+    parser = argparse.ArgumentParser(description=script.stem.replace("_", " "))
+    parser.add_argument("--workers", type=int, default=PARALLEL_WORKERS, help="number of concurrent worker subprocesses")
+    parser.add_argument("cases", nargs="*", help="case names to regenerate (default: all)")
+    args = parser.parse_args()
+    if args.workers < 1:
+        parser.error("--workers must be positive")
+    filters = set(args.cases)
     benchmark_suite = cast(FixtureCase, json.loads(BENCHMARKS_FIXTURE.read_text()))
     cases_in = cast("list[FixtureCase]", benchmark_suite["cases"])
     module = ".".join(script.relative_to(ROOT).with_suffix("").parts)
@@ -354,7 +361,7 @@ def generate_main(script: Path, fixtures: Mapping[TaskKind, Path], configs: Sequ
         suite = cast(FixtureCase, json.loads(fixture.read_text()))
         selected = [case for case in cases_in if not filters or case["name"] in filters]
 
-        with ThreadPoolExecutor(max_workers=PARALLEL_WORKERS) as pool:
+        with ThreadPoolExecutor(max_workers=args.workers) as pool:
             futures = {
                 (str(case["name"]), config_label(heuristic_name, cost_suffix)):
                     pool.submit(run_config_external, module, fixture, str(case["name"]), kind, heuristic_name, cost_suffix,

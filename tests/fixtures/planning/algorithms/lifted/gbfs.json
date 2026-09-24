@@ -7326,11 +7326,35 @@
                     ]
                 }
             },
+            "hff_general": {
+                "num_generated_successors": 547,
+                "num_expanded": 63,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 13,
+                    "length": 13,
+                    "actions": [
+                        "(move_down agent1)",
+                        "(move_down agent1)",
+                        "(move_down agent1)",
+                        "(load agent1 tap1)",
+                        "(move_down_right agent1)",
+                        "(move_down_right agent1)",
+                        "(move_down agent2)",
+                        "(move_up agent1)",
+                        "(move_up agent1)",
+                        "(move_up agent1)",
+                        "(move_up agent1)",
+                        "(move_up agent1)",
+                        "(pour agent1 plant1)"
+                    ]
+                }
+            },
             "skipped": {
                 "hmax_general": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hadd_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hadd_general": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hff_general": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hlmcut_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hlmcut_general": "status OUT_OF_TIME within 1.0s/1000000 states"
             }

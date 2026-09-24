@@ -344,10 +344,10 @@
             "task_file": "classical/tests/sokoban/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 26
+                    "h": 24
                 },
                 "general": {
-                    "h": 26
+                    "h": 24
                 }
             }
         },
