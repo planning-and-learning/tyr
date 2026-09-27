@@ -459,7 +459,7 @@
                     "cost": 4,
                     "length": 4,
                     "actions": [
-                        "(wait cb2)",
+                        "(wait)",
                         "(open sd11)",
                         "(open sd7)",
                         "(close sd3)"

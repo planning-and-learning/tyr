@@ -3,8 +3,10 @@
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
+#include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/variable_data.hpp"
+
 #include <concepts>
 #include <gtest/gtest.h>
 #include <string>
@@ -47,6 +49,23 @@ static_assert(requires(const ActionView& view) {
     { view == view } -> std::same_as<bool>;
     { view < view } -> std::same_as<bool>;
 });
+
+TEST(TyrFormalismPlanningAction, PreservesOriginalArityAfterNormalization)
+{
+    const auto parser = fp::Parser(std::string(R"((define (domain witness)
+      (:requirements :strips :existential-preconditions)
+      (:predicates (edge ?x ?y) (done ?x))
+      (:action mark
+        :parameters (?x)
+        :precondition (exists (?w) (edge ?x ?w))
+        :effect (done ?x))))"),
+                                   std::nullopt);
+    const auto domain = parser.get_domain();
+    const auto actions = domain.get_domain().get_actions();
+    ASSERT_EQ(actions.size(), 1);
+    EXPECT_EQ(actions.front().get_original_arity(), 1);
+    EXPECT_EQ(actions.front().get_arity(), 2);
+}
 
 TEST(TyrFormalismPlanningAction, FormatsBinding)
 {

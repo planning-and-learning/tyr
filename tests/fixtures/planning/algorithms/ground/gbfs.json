@@ -3712,7 +3712,7 @@
                     "cost": 4,
                     "length": 4,
                     "actions": [
-                        "(wait cb2)",
+                        "(wait)",
                         "(open sd7)",
                         "(open sd11)",
                         "(close sd3)"
@@ -3728,7 +3728,7 @@
                     "cost": 4,
                     "length": 4,
                     "actions": [
-                        "(wait cb2)",
+                        "(wait)",
                         "(open sd7)",
                         "(open sd11)",
                         "(close sd3)"
@@ -3744,7 +3744,7 @@
                     "cost": 4,
                     "length": 4,
                     "actions": [
-                        "(wait cb2)",
+                        "(wait)",
                         "(open sd7)",
                         "(open sd11)",
                         "(close sd3)"
@@ -3760,7 +3760,7 @@
                     "cost": 4,
                     "length": 4,
                     "actions": [
-                        "(wait cb2)",
+                        "(wait)",
                         "(open sd7)",
                         "(open sd11)",
                         "(close sd3)"
@@ -3776,7 +3776,7 @@
                     "cost": 4,
                     "length": 4,
                     "actions": [
-                        "(wait cb2)",
+                        "(wait)",
                         "(open sd7)",
                         "(open sd11)",
                         "(close sd3)"
@@ -3792,7 +3792,7 @@
                     "cost": 4,
                     "length": 4,
                     "actions": [
-                        "(wait cb2)",
+                        "(wait)",
                         "(open sd7)",
                         "(open sd11)",
                         "(close sd3)"
@@ -3808,7 +3808,7 @@
                     "cost": 4,
                     "length": 4,
                     "actions": [
-                        "(wait cb2)",
+                        "(wait)",
                         "(open sd7)",
                         "(open sd11)",
                         "(close sd3)"
@@ -3824,7 +3824,7 @@
                     "cost": 4,
                     "length": 4,
                     "actions": [
-                        "(wait cb2)",
+                        "(wait)",
                         "(open sd7)",
                         "(open sd11)",
                         "(close sd3)"
@@ -3840,7 +3840,7 @@
                     "cost": 4,
                     "length": 4,
                     "actions": [
-                        "(wait cb2)",
+                        "(wait)",
                         "(open sd7)",
                         "(open sd11)",
                         "(close sd3)"
@@ -3856,7 +3856,7 @@
                     "cost": 4,
                     "length": 4,
                     "actions": [
-                        "(wait cb2)",
+                        "(wait)",
                         "(open sd7)",
                         "(open sd11)",
                         "(close sd3)"

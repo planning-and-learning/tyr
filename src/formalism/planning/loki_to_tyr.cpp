@@ -871,7 +871,7 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
 ygg::Index<Action<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formalism::ActionView element, Builder& builder, Repository& context)
 {
     auto action = planning::checkout<Action<LiftedTag>>(builder);
-    action->original_arity = element.get_parameters().size();
+    action->original_arity = element.get_original_arity();
     action->name = std::string(element.get_name());
     action->original_name = std::string(element.get_original_name());
 
