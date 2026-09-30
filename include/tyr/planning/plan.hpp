@@ -29,15 +29,15 @@ template<TaskKind Kind>
 class Plan
 {
 private:
-    Node<Kind> m_start_node;
-    LabeledNodeList<Kind> m_labeled_succ_nodes;
+    Node<StateView<Kind>> m_start_node;
+    LabeledNodeList<StateView<Kind>> m_labeled_succ_nodes;
 
 public:
-    Plan(Node<Kind> start_node);
-    Plan(Node<Kind> start_node, LabeledNodeList<Kind> labeled_succ_nodes);
+    Plan(Node<StateView<Kind>> start_node);
+    Plan(Node<StateView<Kind>> start_node, LabeledNodeList<StateView<Kind>> labeled_succ_nodes);
 
-    const Node<Kind>& get_start_node() const noexcept;
-    const LabeledNodeList<Kind>& get_labeled_succ_nodes() const noexcept;
+    const Node<StateView<Kind>>& get_start_node() const noexcept;
+    const LabeledNodeList<StateView<Kind>>& get_labeled_succ_nodes() const noexcept;
     ygg::float_t get_cost() const noexcept;
     size_t get_length() const noexcept;
     bool empty() const noexcept;

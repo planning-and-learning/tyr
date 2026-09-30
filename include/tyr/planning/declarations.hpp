@@ -52,11 +52,7 @@ template<TaskKind Kind>
 using TaskPtr = std::shared_ptr<Task<Kind>>;
 
 template<TaskKind Kind>
-class Node;
-template<TaskKind Kind>
 class PackedNode;
-template<TaskKind Kind>
-struct LabeledNode;
 template<TaskKind Kind>
 struct PackedLabeledNode;
 
@@ -82,6 +78,8 @@ using StateRepositoryPtr = std::shared_ptr<StateRepository<Kind>>;
 
 template<TaskKind Kind>
 using StateView = ygg::View<ygg::Index<State<Kind>>, StateRepositoryPtr<Kind>>;
+template<TaskKind Kind>
+using BuilderStateView = ygg::View<ygg::Builder<State<Kind>>, Task<Kind>>;
 template<TaskKind Kind>
 using PackedStateView = ygg::View<ygg::Index<PackedState<Kind>>, StateRepositoryPtr<Kind>>;
 template<TaskKind Kind>

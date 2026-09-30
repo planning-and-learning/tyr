@@ -152,7 +152,7 @@ public:
         options.event_handler = p::brfs::DefaultEventHandler<GroundTag>::create();
     }
 
-    p::Node<GroundTag> normalize_start_node(std::optional<p::Node<GroundTag>> start_node)
+    p::Node<p::StateView<GroundTag>> normalize_start_node(std::optional<p::Node<p::StateView<GroundTag>>> start_node)
     {
         if (!start_node)
             start_node = options.start_node;
@@ -416,7 +416,7 @@ TEST(TyrPlanningSerialized, ZeroSubsearchesMaterializesCompatibleForeignStart)
     auto context = create_gripper_context();
     auto foreign = make_worker_context(context);
     const auto foreign_start =
-        p::Node<GroundTag>(foreign.successor_generator->get_initial_node(*foreign.state_repository, *foreign.axiom_evaluator).get_state(), 7);
+        p::Node<p::StateView<GroundTag>>(foreign.successor_generator->get_initial_node(*foreign.state_repository, *foreign.axiom_evaluator).get_state(), 7);
     auto solver = p::brfs::Solver<GroundTag> { context.task, context.state_repository, context.axiom_evaluator, context.successor_generator, {} };
     auto options = p::serialized::Options<GroundTag, decltype(solver)> {};
     options.start_node = foreign_start;
@@ -452,8 +452,8 @@ TEST(TyrPlanningSerialized, RejectsNaNStartMetricBeforeZeroSubsearchShortcut)
     auto solver = p::brfs::Solver<GroundTag> { context.task, context.state_repository, context.axiom_evaluator, context.successor_generator, {} };
     auto options = p::serialized::Options<GroundTag, decltype(solver)> {};
     options.start_node =
-        p::Node<GroundTag>(context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator).get_state(),
-                                  std::numeric_limits<ygg::float_t>::quiet_NaN());
+        p::Node<p::StateView<GroundTag>>(context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator).get_state(),
+                                         std::numeric_limits<ygg::float_t>::quiet_NaN());
     options.subgoal_strategy = std::make_shared<NeverSatisfiedGoalStrategy>();
     options.goal_strategy = std::make_shared<NeverSatisfiedGoalStrategy>();
     options.max_num_subsearches = 0;
@@ -472,7 +472,7 @@ TEST(TyrPlanningSerialized, RejectsNonFiniteSubplanMetrics)
     sub_result.status = p::SearchStatus::SOLVED;
     sub_result.goal_node = successors.front().node;
     sub_result.plan =
-        p::Plan<GroundTag>(p::Node<GroundTag>(start.get_state(), std::numeric_limits<ygg::float_t>::infinity()), { successors.front() });
+        p::Plan<GroundTag>(p::Node<p::StateView<GroundTag>>(start.get_state(), std::numeric_limits<ygg::float_t>::infinity()), { successors.front() });
 
     auto solver = ScriptedSolver({ std::move(sub_result) }, context.task, context.state_repository, context.axiom_evaluator);
     auto options = p::serialized::Options<GroundTag, ScriptedSolver> {};
@@ -661,7 +661,7 @@ TEST(TyrPlanningSerialized, DetectsRepeatedSubgoalState)
 {
     auto context = create_gripper_context();
     auto start_node = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator);
-    auto labeled_succ_nodes = p::LabeledNodeList<GroundTag> {};
+    auto labeled_succ_nodes = p::LabeledNodeList<p::StateView<GroundTag>> {};
     context.successor_generator->get_labeled_successor_nodes(start_node, *context.state_repository, *context.axiom_evaluator, labeled_succ_nodes);
     ASSERT_FALSE(labeled_succ_nodes.empty());
 
@@ -672,8 +672,8 @@ TEST(TyrPlanningSerialized, DetectsRepeatedSubgoalState)
     ASSERT_NE(first_labeled_succ_node_it, labeled_succ_nodes.end());
     const auto first_labeled_succ_node = *first_labeled_succ_node_it;
     const auto first_goal_node = first_labeled_succ_node.node;
-    const auto second_start_node = p::Node<GroundTag>(first_goal_node.get_state(), 0);
-    const auto repeated_start_node = p::Node<GroundTag>(start_node.get_state(), 1);
+    const auto second_start_node = p::Node<p::StateView<GroundTag>>(first_goal_node.get_state(), 0);
+    const auto repeated_start_node = p::Node<p::StateView<GroundTag>>(start_node.get_state(), 1);
 
     auto first_subresult = p::SearchResult<GroundTag> {};
     first_subresult.status = p::SearchStatus::SOLVED;
@@ -686,7 +686,7 @@ TEST(TyrPlanningSerialized, DetectsRepeatedSubgoalState)
     first_subresult.statistics.set_axiom_bindings_memory_usage(5);
     first_subresult.statistics.set_function_bindings_memory_usage(80);
     first_subresult.goal_node = first_goal_node;
-    first_subresult.plan = p::Plan<GroundTag>(start_node, p::LabeledNodeList<GroundTag> { first_labeled_succ_node });
+    first_subresult.plan = p::Plan<GroundTag>(start_node, p::LabeledNodeList<p::StateView<GroundTag>> { first_labeled_succ_node });
 
     auto second_subresult = p::SearchResult<GroundTag> {};
     second_subresult.status = p::SearchStatus::SOLVED;
@@ -700,10 +700,10 @@ TEST(TyrPlanningSerialized, DetectsRepeatedSubgoalState)
     second_subresult.statistics.set_function_bindings_memory_usage(70);
     second_subresult.goal_node = repeated_start_node;
     second_subresult.plan = p::Plan<GroundTag>(second_start_node,
-                                                      p::LabeledNodeList<GroundTag> { p::LabeledNode<GroundTag> {
-                                                          first_labeled_succ_node.label,
-                                                          repeated_start_node,
-                                                      } });
+                                               p::LabeledNodeList<p::StateView<GroundTag>> { p::LabeledNode<p::StateView<GroundTag>> {
+                                                   first_labeled_succ_node.label,
+                                                   repeated_start_node,
+                                               } });
 
     auto solver = ScriptedSolver(std::deque<p::SearchResult<GroundTag>> { std::move(first_subresult), std::move(second_subresult) },
                                  context.task,
@@ -753,20 +753,22 @@ TEST(TyrPlanningSerialized, DetectsCycleUsingCanonicalSubplanStateIdentity)
     const auto foreign_successor_state = p::materialize_state(successor.node.get_state(), *foreign.state_repository, *foreign.axiom_evaluator);
     ASSERT_NE(foreign_successor_state, successor.node.get_state());
 
-    const auto first_goal = p::Node<GroundTag>(foreign_successor_state, 1);
+    const auto first_goal = p::Node<p::StateView<GroundTag>>(foreign_successor_state, 1);
     auto first_subresult = p::SearchResult<GroundTag> {};
     first_subresult.status = p::SearchStatus::SOLVED;
     first_subresult.goal_node = first_goal;
     first_subresult.plan =
-        p::Plan<GroundTag>(foreign_start, p::LabeledNodeList<GroundTag> { p::LabeledNode<GroundTag> { successor.label, first_goal } });
+        p::Plan<GroundTag>(foreign_start,
+                           p::LabeledNodeList<p::StateView<GroundTag>> { p::LabeledNode<p::StateView<GroundTag>> { successor.label, first_goal } });
 
-    const auto second_start = p::Node<GroundTag>(first_goal.get_state(), 0);
-    const auto second_goal = p::Node<GroundTag>(foreign_start.get_state(), 1);
+    const auto second_start = p::Node<p::StateView<GroundTag>>(first_goal.get_state(), 0);
+    const auto second_goal = p::Node<p::StateView<GroundTag>>(foreign_start.get_state(), 1);
     auto second_subresult = p::SearchResult<GroundTag> {};
     second_subresult.status = p::SearchStatus::SOLVED;
     second_subresult.goal_node = second_goal;
     second_subresult.plan =
-        p::Plan<GroundTag>(second_start, p::LabeledNodeList<GroundTag> { p::LabeledNode<GroundTag> { successor.label, second_goal } });
+        p::Plan<GroundTag>(second_start,
+                           p::LabeledNodeList<p::StateView<GroundTag>> { p::LabeledNode<p::StateView<GroundTag>> { successor.label, second_goal } });
 
     auto solver = ScriptedSolver(std::deque<p::SearchResult<GroundTag>> { std::move(first_subresult), std::move(second_subresult) },
                                  context.task,

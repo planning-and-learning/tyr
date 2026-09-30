@@ -11,9 +11,20 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <yggdrasil/containers/unique_object_pool.hpp>
 
 namespace fp = tyr::formalism::planning;
 namespace p = tyr::planning;
+
+template<typename Kind, typename State>
+concept HasBindingQuery = requires(p::SuccessorGenerator<Kind>& generator, const p::Node<State>& node) {
+    generator.get_applicable_action_bindings(node);
+};
+
+static_assert(!HasBindingQuery<tyr::GroundTag, p::BuilderStateView<tyr::LiftedTag>>);
+static_assert(!HasBindingQuery<tyr::LiftedTag, p::StateView<tyr::GroundTag>>);
+static_assert(p::SuccessorGeneratorConcept<p::SuccessorGenerator<tyr::GroundTag>, tyr::GroundTag, p::BuilderStateView<tyr::GroundTag>>);
+static_assert(p::SuccessorGeneratorConcept<p::SuccessorGenerator<tyr::LiftedTag>, tyr::LiftedTag, p::BuilderStateView<tyr::LiftedTag>>);
 
 namespace tyr::tests
 {
@@ -182,9 +193,10 @@ TEST(TyrPlanningApplicabilityTest, EffectFamiliesUseGroundedTargetsAndNeverShrin
     expect_effect_validity_successors(lifted_task->instantiate_ground_task(*execution_context).task);
 }
 
-template<TaskKind Kind>
+template<TaskKind Kind, bool Borrowed = false>
 void expect_schema_queries_match_filtered_successors()
 {
+    SCOPED_TRACE(Borrowed ? "borrowed source" : "registered source");
     const auto make_lifted_task = []
     {
         return p::Task<LiftedTag>::create(fp::Parser(std::string(kEffectValidityDomain), "effect-validity-domain.pddl")
@@ -216,7 +228,19 @@ void expect_schema_queries_match_filtered_successors()
     auto state_repository = p::StateRepositoryFactory<Kind>().create(task);
     auto source = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
     auto worker = source->make_worker(ygg::ExecutionContext::create(1));
-    const auto initial_node = source->get_initial_node(*state_repository, *axiom_evaluator);
+    const auto registered_initial = source->get_initial_node(*state_repository, *axiom_evaluator);
+    auto pool = ygg::UniqueObjectPool<ygg::Builder<p::State<Kind>>> {};
+    auto owned = pool.get_or_allocate();
+    *owned = registered_initial.get_state().get_state_builder();
+    owned->set(ygg::Index<p::State<Kind>> {});
+    ASSERT_TRUE(owned->get_index().is_max());
+    const auto initial_node = [&]
+    {
+        if constexpr (Borrowed)
+            return p::Node(ygg::make_view(*owned, *task), registered_initial.get_metric());
+        else
+            return registered_initial;
+    }();
     const auto num_action_bindings = count_action_bindings(task);
     auto packed_nodes = p::PackedNodeList<Kind> {};
     const ygg::Builder<p::State<Kind>>* successor_builder = nullptr;
@@ -243,7 +267,21 @@ void expect_schema_queries_match_filtered_successors()
         EXPECT_EQ(recycled_builder.get(), successor_builder);
     }
     const auto all_successors = source->get_labeled_successor_nodes(initial_node, *state_repository, *axiom_evaluator);
+    const auto num_states = state_repository->num_states();
     const auto all_bindings = source->get_applicable_action_bindings(initial_node);
+    EXPECT_EQ(all_bindings, source->get_applicable_action_bindings(registered_initial));
+    EXPECT_EQ(state_repository->num_states(), num_states);
+    for (const auto binding : all_bindings)
+    {
+        auto expected = pool.get_or_allocate();
+        auto actual = pool.get_or_allocate();
+        EXPECT_EQ(source->generate_successor_state(initial_node, binding, *actual),
+                  source->generate_successor_state(registered_initial, binding, *expected));
+        EXPECT_TRUE(std::ranges::equal(actual->get_fluent_facts(), expected->get_fluent_facts()));
+        EXPECT_TRUE(std::ranges::equal(actual->get_fluent_fterm_values(), expected->get_fluent_fterm_values()));
+        EXPECT_EQ(state_repository->num_states(), num_states);
+        EXPECT_TRUE(owned->get_index().is_max());
+    }
     const auto same_successor = [](const auto& lhs, const auto& rhs) { return lhs.label == rhs.label && lhs.node == rhs.node; };
     ASSERT_EQ(all_successors.size(), 4);
     auto schemas = fp::ActionViewList<LiftedTag> {};
@@ -255,8 +293,8 @@ void expect_schema_queries_match_filtered_successors()
         for (const auto action : schemas)
         {
             SCOPED_TRACE(action.get_name().str());
-            auto expected_successors = p::LabeledNodeList<Kind> {};
-            auto expected_nodes = p::NodeList<Kind> {};
+            auto expected_successors = p::LabeledNodeList<p::StateView<Kind>> {};
+            auto expected_nodes = p::NodeList<p::StateView<Kind>> {};
             auto expected_bindings = std::vector<fp::ActionBindingView> {};
             for (const auto& successor : all_successors)
                 if (successor.label.get_relation().get_index() == action.get_index())
@@ -284,7 +322,7 @@ void expect_schema_queries_match_filtered_successors()
             EXPECT_TRUE(std::ranges::is_permutation(bindings, expected_bindings));
 
             auto callback_bindings = std::vector<fp::ActionBindingView> {};
-            auto callback_successors = p::LabeledNodeList<Kind> {};
+            auto callback_successors = p::LabeledNodeList<p::StateView<Kind>> {};
             EXPECT_TRUE(generator->for_each_applicable_action_binding(
                 initial_node,
                 action,
@@ -329,7 +367,7 @@ void expect_schema_queries_match_filtered_successors()
                 }
             }
         }
-        auto callback_successors = p::LabeledNodeList<Kind> {};
+        auto callback_successors = p::LabeledNodeList<p::StateView<Kind>> {};
         EXPECT_TRUE(generator->for_each_applicable_action_binding(
             initial_node,
             [&](auto binding)
@@ -375,16 +413,31 @@ void expect_schema_queries_match_filtered_successors()
     EXPECT_THROW(source->get_applicable_action_bindings(initial_node, foreign_action), std::invalid_argument);
     EXPECT_THROW(source->get_successor_nodes(initial_node, foreign_action, *state_repository, *axiom_evaluator), std::invalid_argument);
     EXPECT_THROW(source->get_labeled_successor_nodes(initial_node, foreign_action, *state_repository, *axiom_evaluator), std::invalid_argument);
+    const auto foreign_same_kind = [&]
+    {
+        if constexpr (std::same_as<Kind, GroundTag>)
+            return foreign_task->instantiate_ground_task(*execution_context).task;
+        else
+            return foreign_task;
+    }();
+    const auto foreign_node = p::Node(ygg::make_view(*owned, *foreign_same_kind), initial_node.get_metric());
+    EXPECT_THROW(source->get_applicable_action_bindings(foreign_node), std::invalid_argument);
+    EXPECT_THROW(source->get_successor_nodes(foreign_node, *state_repository, *axiom_evaluator), std::invalid_argument);
+    ASSERT_FALSE(all_bindings.empty());
+    auto out_state = pool.get_or_allocate();
+    EXPECT_THROW(source->generate_successor_state(foreign_node, all_bindings.front(), *out_state), std::invalid_argument);
 }
 
 TEST(TyrPlanningApplicabilityTest, GroundSchemaQueriesMatchFilteredSuccessors)
 {
     expect_schema_queries_match_filtered_successors<GroundTag>();
+    expect_schema_queries_match_filtered_successors<GroundTag, true>();
 }
 
 TEST(TyrPlanningApplicabilityTest, LiftedSchemaQueriesMatchFilteredSuccessors)
 {
     expect_schema_queries_match_filtered_successors<LiftedTag>();
+    expect_schema_queries_match_filtered_successors<LiftedTag, true>();
 }
 
 TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)

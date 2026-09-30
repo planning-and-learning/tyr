@@ -79,8 +79,8 @@ class CountingGBFSWorkerEventHandler final : public p::gbfs_lazy::WorkerEventHan
 public:
     explicit CountingGBFSWorkerEventHandler(p::Statistics& statistics) : m_statistics(statistics) {}
 
-    void on_expand_node(const p::Node<Kind>&) override { m_statistics.increment_num_expanded(); }
-    void on_generate_transition(const p::Node<Kind>&, const p::LabeledNode<Kind>&, p::TransitionOutcome outcome) override
+    void on_expand_node(const p::Node<p::StateView<Kind>>&) override { m_statistics.increment_num_expanded(); }
+    void on_generate_transition(const p::Node<p::StateView<Kind>>&, const p::LabeledNode<p::StateView<Kind>>&, p::TransitionOutcome outcome) override
     {
         if (outcome == p::TransitionOutcome::OPENED || outcome == p::TransitionOutcome::GOAL)
             m_statistics.increment_num_generated_successors();
@@ -111,7 +111,7 @@ class CountingGBFSEventHandler final : public p::gbfs_lazy::EventHandler<Kind>
 public:
     explicit CountingGBFSEventHandler(const p::StateRepository<Kind>* caller_repository) : m_caller_repository(caller_repository) {}
 
-    void on_start_search(const p::Node<Kind>&, ygg::float_t) override {}
+    void on_start_search(const p::Node<p::StateView<Kind>>&, ygg::float_t) override {}
     void on_new_best_h_value(ygg::float_t) override {}
 
     void on_end_search(p::SearchStatus status, const p::Statistics& statistics) override
@@ -159,8 +159,8 @@ class CountingBrFSWorkerEventHandler final : public p::brfs::WorkerEventHandler<
 public:
     explicit CountingBrFSWorkerEventHandler(p::Statistics& statistics) : m_statistics(statistics) {}
 
-    void on_expand_node(const p::Node<Kind>&) override { m_statistics.increment_num_expanded(); }
-    void on_generate_transition(const p::Node<Kind>&, const p::LabeledNode<Kind>&, p::TransitionOutcome outcome) override
+    void on_expand_node(const p::Node<p::StateView<Kind>>&) override { m_statistics.increment_num_expanded(); }
+    void on_generate_transition(const p::Node<p::StateView<Kind>>&, const p::LabeledNode<p::StateView<Kind>>&, p::TransitionOutcome outcome) override
     {
         if (outcome == p::TransitionOutcome::OPENED || outcome == p::TransitionOutcome::GOAL)
             m_statistics.increment_num_generated_successors();
@@ -176,7 +176,7 @@ template<TaskKind Kind>
 class CountingBrFSEventHandler final : public p::brfs::EventHandler<Kind>
 {
 public:
-    void on_start_search(const p::Node<Kind>&) override { ++num_starts; }
+    void on_start_search(const p::Node<p::StateView<Kind>>&) override { ++num_starts; }
     void on_finish_layer(ygg::uint_t layer, const p::Statistics& statistics) override
     {
         finished_layers.push_back(layer);
@@ -302,9 +302,10 @@ class GuardedBrFSWorkerEventHandler final : public p::brfs::WorkerEventHandler<K
 public:
     GuardedBrFSWorkerEventHandler(ygg::Index<p::Worker> worker, std::shared_ptr<OwnerAccessGuard<Kind>> guard) : m_worker(worker), m_guard(std::move(guard)) {}
 
-    void on_expand_node(const p::Node<Kind>& node) override { m_guard->access(m_worker, node.get_state()); }
+    void on_expand_node(const p::Node<p::StateView<Kind>>& node) override { m_guard->access(m_worker, node.get_state()); }
 
-    void on_generate_transition(const p::Node<Kind>& source, const p::LabeledNode<Kind>& target, p::TransitionOutcome outcome) override
+    void
+    on_generate_transition(const p::Node<p::StateView<Kind>>& source, const p::LabeledNode<p::StateView<Kind>>& target, p::TransitionOutcome outcome) override
     {
         m_guard->access_transition(m_worker, source.get_state(), target.node.get_state());
         if (outcome == p::TransitionOutcome::DUPLICATE)
@@ -322,7 +323,7 @@ class GuardedBrFSEventHandler final : public p::brfs::EventHandler<Kind>
 public:
     explicit GuardedBrFSEventHandler(std::shared_ptr<OwnerAccessGuard<Kind>> guard) : m_guard(std::move(guard)) {}
 
-    void on_start_search(const p::Node<Kind>&) override {}
+    void on_start_search(const p::Node<p::StateView<Kind>>&) override {}
     void on_finish_layer(ygg::uint_t, const p::Statistics&) override {}
     void on_end_search(p::SearchStatus, const p::Statistics&) override {}
     void on_solved(const p::Plan<Kind>&) override {}
@@ -376,13 +377,13 @@ class GatedAStarWorkerEventHandler final : public p::astar_eager::WorkerEventHan
 public:
     explicit GatedAStarWorkerEventHandler(AStarGoalGate& gate) : m_gate(gate) {}
 
-    void on_expand_node(const p::Node<Kind>& node) override
+    void on_expand_node(const p::Node<p::StateView<Kind>>& node) override
     {
         if (node.get_metric() == 1 && !m_gate.cheap_path.try_acquire_for(std::chrono::seconds(5)))
             throw std::runtime_error("Timed out waiting for the expensive goal.");
     }
 
-    void on_generate_transition(const p::Node<Kind>&, const p::LabeledNode<Kind>& successor, p::TransitionOutcome outcome) override
+    void on_generate_transition(const p::Node<p::StateView<Kind>>&, const p::LabeledNode<p::StateView<Kind>>& successor, p::TransitionOutcome outcome) override
     {
         if (outcome == p::TransitionOutcome::GOAL && successor.node.get_metric() == 100)
         {
@@ -391,7 +392,7 @@ public:
         }
     }
 
-    void on_expand_goal_node(const p::Node<Kind>&) override { m_gate.num_expanded_goals.fetch_add(1, std::memory_order_relaxed); }
+    void on_expand_goal_node(const p::Node<p::StateView<Kind>>&) override { m_gate.num_expanded_goals.fetch_add(1, std::memory_order_relaxed); }
 
 private:
     AStarGoalGate& m_gate;
@@ -401,7 +402,7 @@ template<TaskKind Kind>
 class GatedAStarEventHandler final : public p::astar_eager::EventHandler<Kind>
 {
 public:
-    void on_start_search(const p::Node<Kind>&, ygg::float_t) override {}
+    void on_start_search(const p::Node<p::StateView<Kind>>&, ygg::float_t) override {}
     void on_end_search(p::SearchStatus, const p::Statistics&) override {}
     void on_solved(const p::Plan<Kind>&) override {}
 
@@ -426,7 +427,7 @@ class LayeredAStarWorkerEventHandler final : public p::astar_eager::WorkerEventH
 public:
     explicit LayeredAStarWorkerEventHandler(AStarLayerGate& gate) : m_gate(gate) {}
 
-    void on_expand_node(const p::Node<Kind>& node) override
+    void on_expand_node(const p::Node<p::StateView<Kind>>& node) override
     {
         if (node.get_metric() == 1)
         {
@@ -450,7 +451,7 @@ template<TaskKind Kind>
 class LayeredAStarEventHandler final : public p::astar_eager::EventHandler<Kind>
 {
 public:
-    void on_start_search(const p::Node<Kind>&, ygg::float_t) override {}
+    void on_start_search(const p::Node<p::StateView<Kind>>&, ygg::float_t) override {}
     void on_finish_f_layer(ygg::float_t f_value, const p::Statistics&) override { finished_f_layers.push_back(f_value); }
     void on_end_search(p::SearchStatus, const p::Statistics&) override {}
     void on_solved(const p::Plan<Kind>&) override {}
@@ -468,14 +469,14 @@ template<TaskKind Kind>
 class ThrowingAStarWorkerEventHandler final : public p::astar_eager::WorkerEventHandler<Kind>
 {
 public:
-    void on_expand_node(const p::Node<Kind>&) override { throw std::runtime_error("Worker event failure."); }
+    void on_expand_node(const p::Node<p::StateView<Kind>>&) override { throw std::runtime_error("Worker event failure."); }
 };
 
 template<TaskKind Kind>
 class ThrowingAStarEventHandler final : public p::astar_eager::EventHandler<Kind>
 {
 public:
-    void on_start_search(const p::Node<Kind>&, ygg::float_t) override {}
+    void on_start_search(const p::Node<p::StateView<Kind>>&, ygg::float_t) override {}
     void on_end_search(p::SearchStatus, const p::Statistics&) override {}
     void on_solved(const p::Plan<Kind>&) override {}
 
@@ -502,7 +503,7 @@ p::StateView<Kind> copy_state(const p::StateView<Kind>& source, p::StateReposito
 }
 
 template<TaskKind Kind>
-auto find_successor(const p::LabeledNodeList<Kind>& successors,
+auto find_successor(const p::LabeledNodeList<p::StateView<Kind>>& successors,
                     std::string_view action,
                     std::optional<ygg::Index<p::State<Kind>>> excluded_state = std::nullopt)
 {
@@ -527,7 +528,7 @@ void expect_sequential_reconstruction(const p::TaskPtr<Kind>& task)
     ASSERT_NE(selected, successors.end());
 
     const auto g_value = p::compute_successor_g_value(start.get_metric(), selected->node.get_metric(), CostMode::GENERAL);
-    const auto final_node = p::Node<Kind>(selected->node.get_state(), g_value);
+    const auto final_node = p::Node<p::StateView<Kind>>(selected->node.get_state(), g_value);
     const auto default_node = SequentialSearchNode<Kind> { std::numeric_limits<ygg::float_t>::infinity(), ygg::Index<p::State<Kind>>::max() };
     auto search_nodes = ygg::SegmentedVector<SequentialSearchNode<Kind>> {};
     get_or_create_search_node(ygg::uint_t(start.get_state().get_index()), search_nodes, default_node) =
@@ -581,7 +582,7 @@ void expect_parallel_reconstruction(const p::TaskPtr<Kind>& task)
         ASSERT_NE(selected_middle, start_successors.end());
         const auto middle_g_value = p::compute_successor_g_value(start.get_metric(), selected_middle->node.get_metric(), CostMode::GENERAL);
         const auto middle_state = copy_state(selected_middle->node.get_state(), *second_repository_owner, *second_axiom_evaluator);
-        const auto middle = p::Node<Kind>(middle_state, middle_g_value);
+        const auto middle = p::Node<p::StateView<Kind>>(middle_state, middle_g_value);
 
         const auto middle_successors = second_generator->get_labeled_successor_nodes(middle, *second_repository_owner, *second_axiom_evaluator);
         const auto selected_final = find_successor(middle_successors, "move", std::optional { middle_state.get_index() });

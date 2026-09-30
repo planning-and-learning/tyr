@@ -39,9 +39,9 @@ class WorkerEventHandler
 public:
     virtual ~WorkerEventHandler() = default;
 
-    virtual void on_expand_node(const Node<Kind>&) {}
-    virtual void on_expand_goal_node(const Node<Kind>&) {}
-    virtual void on_generate_transition(const Node<Kind>&, const LabeledNode<Kind>&, TransitionOutcome) {}
+    virtual void on_expand_node(const Node<StateView<Kind>>&) {}
+    virtual void on_expand_goal_node(const Node<StateView<Kind>>&) {}
+    virtual void on_generate_transition(const Node<StateView<Kind>>&, const LabeledNode<StateView<Kind>>&, TransitionOutcome) {}
     virtual void on_finish_f_layer(ygg::float_t) {}
 };
 
@@ -56,7 +56,7 @@ public:
 
     virtual ~EventHandler() = default;
 
-    virtual void on_start_search(const Node<Kind>& node, ygg::float_t f_value) = 0;
+    virtual void on_start_search(const Node<StateView<Kind>>& node, ygg::float_t f_value) = 0;
     virtual void on_finish_f_layer(ygg::float_t, const tyr::planning::Statistics&) {}
     virtual void on_end_search(SearchStatus status, const tyr::planning::Statistics& statistics) = 0;
     virtual void on_solved(const Plan<Kind>& plan) = 0;
@@ -69,7 +69,7 @@ class DefaultEventHandler : public EventHandler<Kind>
 public:
     explicit DefaultEventHandler(size_t verbosity = 0);
 
-    void on_start_search(const Node<Kind>& node, ygg::float_t f_value) override;
+    void on_start_search(const Node<StateView<Kind>>& node, ygg::float_t f_value) override;
     void on_finish_f_layer(ygg::float_t f_value, const tyr::planning::Statistics& statistics) override;
     void on_end_search(SearchStatus status, const tyr::planning::Statistics& statistics) override;
     void on_solved(const Plan<Kind>& plan) override;

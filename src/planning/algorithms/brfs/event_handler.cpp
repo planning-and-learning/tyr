@@ -40,7 +40,7 @@ class DefaultWorkerEventHandler final : public WorkerEventHandler<Kind>
 public:
     explicit DefaultWorkerEventHandler(ygg::Index<Worker> index) : m_index(index) {}
 
-    void on_expand_node(const Node<Kind>& node) override
+    void on_expand_node(const Node<StateView<Kind>>& node) override
     {
         fmt::print("[BRFS][Worker {}] ----------------------------------------\n[BRFS][Worker {}] Expanding node: {}\n\n",
                    ygg::uint_t(m_index),
@@ -48,7 +48,7 @@ public:
                    node);
     }
 
-    void on_generate_transition(const Node<Kind>&, const LabeledNode<Kind>& labeled_succ_node, TransitionOutcome outcome) override
+    void on_generate_transition(const Node<StateView<Kind>>&, const LabeledNode<StateView<Kind>>& labeled_succ_node, TransitionOutcome outcome) override
     {
         if (outcome != TransitionOutcome::OPENED && outcome != TransitionOutcome::GOAL)
             return;
@@ -72,7 +72,7 @@ DefaultEventHandler<Kind>::DefaultEventHandler(size_t verbosity) : m_verbosity(v
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_start_search(const Node<Kind>& node)
+void DefaultEventHandler<Kind>::on_start_search(const Node<StateView<Kind>>& node)
 {
     m_progress_statistics.clear();
     if (m_verbosity < 1)

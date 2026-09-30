@@ -38,6 +38,72 @@ namespace ygg
 {
 namespace planning = ::tyr::planning;
 
+/// Borrows the builder and task; both must outlive this view and its ranges.
+template<::tyr::TaskKind Kind>
+struct View<Builder<planning::State<Kind>>, planning::Task<Kind>>
+{
+public:
+    using KindType = Kind;
+    using TaskType = planning::Task<Kind>;
+
+    View(const Builder<planning::State<Kind>>& builder, const TaskType& task) noexcept : m_builder(&builder), m_task(&task) {}
+
+    const auto& get_handle() const noexcept { return *m_builder; }
+    const auto& get_context() const noexcept { return *m_task; }
+    const auto& get_state_builder() const noexcept { return *m_builder; }
+    const auto& get_task() const noexcept { return *m_task; }
+    const auto& get_repository() const noexcept { return m_task->get_repository(); }
+
+    bool test(Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const { return m_task->test(index); }
+    float_t get(Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const { return m_task->get(index); }
+    ::tyr::formalism::planning::FDRValue get(Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const
+    {
+        return m_builder->get(index);
+    }
+    float_t get(Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const { return m_builder->get(index); }
+    bool test(Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const { return m_builder->test(index); }
+
+    bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const { return test(view.get_index()); }
+    float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const { return get(view.get_index()); }
+    ::tyr::formalism::planning::FDRValue get(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const
+    {
+        return get(view.get_index());
+    }
+    float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const { return get(view.get_index()); }
+    bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const { return test(view.get_index()); }
+
+    auto get_static_atoms() const noexcept { return planning::AtomRange<::tyr::formalism::StaticTag>(m_task->get_static_atoms_bitset()); }
+    auto get_fluent_facts() const noexcept { return m_builder->get_fluent_facts(); }
+    auto get_derived_atoms() const noexcept { return m_builder->get_derived_atoms(); }
+    auto get_static_fterm_values() const noexcept
+    {
+        return planning::FunctionTermValueRange<::tyr::formalism::StaticTag>(m_task->get_static_numeric_variables());
+    }
+    auto get_fluent_fterm_values() const noexcept { return m_builder->get_fluent_fterm_values(); }
+
+    auto get_static_atoms_view() const noexcept
+    {
+        return get_static_atoms() | std::views::transform([repository = get_repository().get()](auto id) { return make_view(id, *repository); });
+    }
+    auto get_fluent_facts_view() const noexcept { return m_builder->get_fluent_facts_view(*get_repository()); }
+    auto get_fluent_atoms_view() const noexcept
+    {
+        return get_fluent_facts_view() | std::views::transform([](auto fact) { return *fact.get_atom(); });
+    }
+    auto get_derived_atoms_view() const noexcept { return m_builder->get_derived_atoms_view(*get_repository()); }
+    auto get_static_fterm_values_view() const noexcept
+    {
+        return get_static_fterm_values()
+               | std::views::transform([repository = get_repository().get()](auto&& pair)
+                                       { return std::make_pair(make_view(pair.first, *repository), pair.second); });
+    }
+    auto get_fluent_fterm_values_view() const noexcept { return m_builder->get_fluent_fterm_values_view(*get_repository()); }
+
+private:
+    const Builder<planning::State<Kind>>* m_builder;
+    const TaskType* m_task;
+};
+
 template<::tyr::TaskKind Kind, typename Context>
 struct View<ygg::Index<planning::PackedState<Kind>>, Context>
 {
@@ -77,6 +143,7 @@ template<::tyr::TaskKind Kind>
 struct View<ygg::Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>
 {
 public:
+    using KindType = Kind;
     using TaskType = planning::Task<Kind>;
 
     View(std::shared_ptr<planning::StateRepository<Kind>> owner, ygg::SharedObjectPoolPtr<Builder<planning::State<Kind>>, true> state_builder) noexcept;
@@ -115,6 +182,7 @@ public:
     auto get_fluent_fterm_values_view() const noexcept;
 
     const std::shared_ptr<::tyr::formalism::planning::Repository>& get_repository() const noexcept;
+    const TaskType& get_task() const noexcept;
     const std::shared_ptr<planning::StateRepository<Kind>>& get_state_repository() const noexcept;
     const Builder<planning::State<Kind>>& get_state_builder() const noexcept;
 
@@ -226,6 +294,12 @@ const std::shared_ptr<planning::StateRepository<Kind>>&
 View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::get_state_repository() const noexcept
 {
     return m_state_repository;
+}
+
+template<::tyr::TaskKind Kind>
+const planning::Task<Kind>& View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::get_task() const noexcept
+{
+    return *m_state_repository->get_task();
 }
 
 template<::tyr::TaskKind Kind>
@@ -425,6 +499,37 @@ concept IterableViewStateConcept = requires(const T& cs) {
     requires FunctionTermViewValueRangeConcept<decltype(cs.get_static_fterm_values_view()), formalism::StaticTag>;
     requires FunctionTermViewValueRangeConcept<decltype(cs.get_fluent_fterm_values_view()), formalism::FluentTag>;
 };
+
+/// State contents and task context, independent of ownership and repository identity.
+template<typename T, typename Kind = void>
+concept StateViewConcept = IterableStateConcept<T> && IterableViewStateConcept<T>
+                           && requires(const T& state,
+                                       ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>> variable,
+                                       ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>> static_fterm,
+                                       ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> fluent_fterm,
+                                       ygg::Index<formalism::planning::Atom<GroundTag, formalism::StaticTag>> static_atom,
+                                       ygg::Index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> derived_atom,
+                                       formalism::planning::FDRVariableView<formalism::FluentTag> variable_view,
+                                       formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> static_fterm_view,
+                                       formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag> fluent_fterm_view,
+                                       formalism::planning::AtomView<GroundTag, formalism::StaticTag> static_atom_view,
+                                       formalism::planning::AtomView<GroundTag, formalism::DerivedTag> derived_atom_view) {
+                                  requires TaskKind<typename T::KindType>;
+                                  requires(std::same_as<Kind, void> || std::same_as<typename T::KindType, Kind>);
+                                  requires std::same_as<typename T::TaskType, Task<typename T::KindType>>;
+                                  { state.get_task() } -> std::same_as<const typename T::TaskType&>;
+                                  { state.get_repository() } -> std::same_as<const formalism::planning::RepositoryPtr&>;
+                                  { state.get(variable) } -> std::same_as<formalism::planning::FDRValue>;
+                                  { state.get(static_fterm) } -> std::same_as<ygg::float_t>;
+                                  { state.get(fluent_fterm) } -> std::same_as<ygg::float_t>;
+                                  { state.test(static_atom) } -> std::same_as<bool>;
+                                  { state.test(derived_atom) } -> std::same_as<bool>;
+                                  { state.get(variable_view) } -> std::same_as<formalism::planning::FDRValue>;
+                                  { state.get(static_fterm_view) } -> std::same_as<ygg::float_t>;
+                                  { state.get(fluent_fterm_view) } -> std::same_as<ygg::float_t>;
+                                  { state.test(static_atom_view) } -> std::same_as<bool>;
+                                  { state.test(derived_atom_view) } -> std::same_as<bool>;
+                              };
 
 /**
  * IndexableStateConcept

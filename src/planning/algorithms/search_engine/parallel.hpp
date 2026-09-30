@@ -65,7 +65,7 @@ public:
     struct PreparedTarget
     {
         ygg::Index<Worker> owner;
-        Node<Kind> node;
+        Node<StateView<Kind>> node;
     };
 
     explicit HashDistributedStatePolicy(uint64_t seed) : m_dist_hash(seed) {}
@@ -94,7 +94,7 @@ public:
             target = std::move(receiver_target);
         }
 
-        auto node = Node<Kind>(repository.register_state(sender.axiom_evaluator, std::move(target)), metric);
+        auto node = Node<StateView<Kind>>(repository.register_state(sender.axiom_evaluator, std::move(target)), metric);
         assert(repository.shares_storage_with(engine.get_worker(owner).state_repository));
         return PreparedTarget { owner, std::move(node) };
     }
@@ -129,7 +129,7 @@ public:
     struct PreparedTarget
     {
         ygg::Index<Worker> owner;
-        Node<Kind> node;
+        Node<StateView<Kind>> node;
     };
 
     explicit SharedStatePolicy(uint64_t) noexcept {}
@@ -150,7 +150,7 @@ public:
     template<typename Engine, typename WorkerData>
     static PreparedTarget prepare_target(Engine&, WorkerData& worker, BuilderPtr target, ygg::float_t metric, size_t num_workers)
     {
-        auto node = Node<Kind>(worker.state_repository.register_state(worker.axiom_evaluator, std::move(target)), metric);
+        auto node = Node<StateView<Kind>>(worker.state_repository.register_state(worker.axiom_evaluator, std::move(target)), metric);
         return PreparedTarget { owner(node.get_state().get_index(), num_workers), std::move(node) };
     }
 
@@ -543,7 +543,7 @@ public:
     template<typename Engine, typename WorkerData>
     AcceptanceResult route(Engine& engine,
                            WorkerData& sender,
-                           const Node<Kind>& source,
+                           const Node<StateView<Kind>>& source,
                            BuilderPtr target,
                            ygg::float_t auxiliary_value,
                            formalism::planning::ActionBindingView action,
@@ -558,7 +558,8 @@ public:
         const auto is_goal = sender.goal_strategy->is_dynamic_goal_satisfied(engine.m_start_node.get_state(), prepared.node.get_state());
         sender.statistics.increment_num_generated_candidates(prepared.owner != sender.index);
         auto& receiver = engine.get_worker(prepared.owner);
-        auto routed = typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(prepared.node) }, std::move(metadata), g_value, is_goal };
+        auto routed =
+            typename Engine::RoutedSuccessor { LabeledNode<StateView<Kind>> { action, std::move(prepared.node) }, std::move(metadata), g_value, is_goal };
 
         auto result = AcceptanceResult::TERMINAL;
         {
@@ -846,7 +847,7 @@ public:
             callback(*worker);
     }
 
-    std::pair<Plan<Kind>, Node<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal, const typename SearchPolicy::Options& options)
+    std::pair<Plan<Kind>, Node<StateView<Kind>>> reconstruct_solution(WorkerStateIndex<Kind> goal, const typename SearchPolicy::Options& options)
     {
         auto views = std::vector<WorkerSearchSpaceView<Kind, typename SearchPolicy::SearchNode>> {};
         views.reserve(size());

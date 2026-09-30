@@ -10,7 +10,9 @@
 #include <future>
 #include <gtest/gtest.h>
 #include <string>
+#include <type_traits>
 #include <vector>
+#include <yggdrasil/containers/unique_object_pool.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 
 namespace fp = tyr::formalism::planning;
@@ -23,6 +25,42 @@ using StateKinds = ygg::TypeList<tyr::GroundTag, tyr::LiftedTag>;
 static_assert([]<typename... Kinds>(ygg::TypeList<Kinds...>) { return (StateIndexContract<Kinds> && ...); }(StateKinds {}));
 static_assert([]<typename... Kinds>(ygg::TypeList<Kinds...>)
               { return (std::totally_ordered<p::PackedStateView<Kinds>> && ...); }(StateKinds {}));
+static_assert([]<typename... Kinds>(ygg::TypeList<Kinds...>)
+              { return ((p::StateViewConcept<p::StateView<Kinds>> && p::StateViewConcept<p::BuilderStateView<Kinds>>) && ...); }(StateKinds {}));
+
+template<typename T>
+concept HasStateIdentity = requires(const T& state) { state.get_index(); }
+                          || requires(const T& state) { state.pack(); }
+                          || requires(const T& state) { state.get_state_repository(); };
+
+static_assert([]<typename... Kinds>(ygg::TypeList<Kinds...>)
+              { return ((!HasStateIdentity<p::BuilderStateView<Kinds>> && !p::StateViewConcept<ygg::Builder<p::State<Kinds>>>) && ...); }(StateKinds {}));
+static_assert(!p::StateViewConcept<int>);
+static_assert(p::StateViewConcept<p::BuilderStateView<tyr::GroundTag>, tyr::GroundTag>);
+static_assert(p::StateViewConcept<p::StateView<tyr::LiftedTag>, tyr::LiftedTag>);
+static_assert(!p::StateViewConcept<p::BuilderStateView<tyr::GroundTag>, tyr::LiftedTag>);
+static_assert(!p::StateViewConcept<p::StateView<tyr::LiftedTag>, tyr::GroundTag>);
+
+template<typename T>
+concept NodeState = requires { typename p::Node<T>; };
+
+template<typename T>
+concept Packable = requires(const T& value) { value.pack(); };
+
+static_assert([]<typename... Kinds>(ygg::TypeList<Kinds...>)
+              {
+                  return ((p::NodeConcept<p::Node<p::StateView<Kinds>>> && std::totally_ordered<p::Node<p::StateView<Kinds>>>
+                           && Packable<p::Node<p::StateView<Kinds>>> && Packable<p::LabeledNode<p::StateView<Kinds>>>)
+                          && ...);
+              }(StateKinds {}));
+static_assert([]<typename... Kinds>(ygg::TypeList<Kinds...>)
+              {
+                  return ((p::NodeConcept<p::Node<p::BuilderStateView<Kinds>>> && !ygg::Identifiable<p::Node<p::BuilderStateView<Kinds>>>
+                           && !std::equality_comparable<p::Node<p::BuilderStateView<Kinds>>> && !Packable<p::Node<p::BuilderStateView<Kinds>>>
+                           && !Packable<p::LabeledNode<p::BuilderStateView<Kinds>>> && !NodeState<Kinds>)
+                          && ...);
+              }(StateKinds {}));
+static_assert(!NodeState<int>);
 
 namespace tyr::tests
 {
@@ -60,6 +98,89 @@ auto derived_names(const p::StateView<Kind>& state)
         result.push_back(atom.get_predicate().get_name().str());
     std::ranges::sort(result);
     return result;
+}
+
+template<TaskKind Kind>
+void expect_borrowed_builder_view(const p::TaskPtr<Kind>& task, const p::StateView<Kind>& registered, fp::ActionBindingView label)
+{
+    const auto num_states = registered.get_state_repository()->num_states();
+    auto pool = ygg::UniqueObjectPool<ygg::Builder<p::State<Kind>>> {};
+    auto owned = pool.get_or_allocate();
+    *owned = registered.get_state_builder();
+    const auto state = ygg::make_view(*owned, *task);
+    static_assert(std::same_as<decltype(state), const p::BuilderStateView<Kind>>);
+    const auto node = p::Node(state, 3);
+    using BorrowedNode = std::remove_cvref_t<decltype(node)>;
+    static_assert(std::same_as<typename BorrowedNode::StateType, p::BuilderStateView<Kind>>);
+    static_assert(std::same_as<typename BorrowedNode::KindType, Kind>);
+    static_assert(std::same_as<typename BorrowedNode::TaskType, p::Task<Kind>>);
+    const auto labeled = p::LabeledNode { label, node };
+    const auto nodes = p::NodeList<p::BuilderStateView<Kind>> { node };
+    const auto labeled_nodes = p::LabeledNodeList<p::BuilderStateView<Kind>> { labeled };
+    EXPECT_EQ(&nodes.front().get_state().get_state_builder(), owned.get());
+    EXPECT_EQ(&labeled_nodes.front().node.get_state().get_state_builder(), owned.get());
+    EXPECT_EQ(nodes.front().get_metric(), 3);
+    EXPECT_EQ(labeled_nodes.front().node.get_metric(), 3);
+    EXPECT_EQ(labeled_nodes.front().label, label);
+    const auto formatted_node = fmt::format("{}", node);
+    EXPECT_NE(formatted_node.find("metric value = 3"), std::string::npos);
+    EXPECT_EQ(formatted_node.find("index = "), std::string::npos);
+    EXPECT_NE(fmt::format("{}", labeled).find(label.get_relation().get_name().str()), std::string::npos);
+    EXPECT_EQ(&state.get_handle(), owned.get());
+    EXPECT_EQ(&state.get_state_builder(), owned.get());
+    EXPECT_EQ(&state.get_context(), task.get());
+    EXPECT_EQ(&state.get_task(), &registered.get_task());
+    EXPECT_EQ(state.get_repository(), registered.get_repository());
+    EXPECT_TRUE(std::ranges::equal(state.get_static_atoms(), registered.get_static_atoms()));
+    EXPECT_TRUE(std::ranges::equal(state.get_fluent_facts(), registered.get_fluent_facts()));
+    EXPECT_TRUE(std::ranges::equal(state.get_derived_atoms(), registered.get_derived_atoms()));
+    EXPECT_TRUE(std::ranges::equal(state.get_static_fterm_values(), registered.get_static_fterm_values()));
+    EXPECT_TRUE(std::ranges::equal(state.get_fluent_fterm_values(), registered.get_fluent_fterm_values()));
+    EXPECT_TRUE(std::ranges::equal(state.get_static_atoms_view(), registered.get_static_atoms_view()));
+    EXPECT_TRUE(std::ranges::equal(state.get_fluent_facts_view(), registered.get_fluent_facts_view()));
+    EXPECT_TRUE(std::ranges::equal(state.get_fluent_atoms_view(), registered.get_fluent_atoms_view()));
+    EXPECT_TRUE(std::ranges::equal(state.get_derived_atoms_view(), registered.get_derived_atoms_view()));
+    EXPECT_TRUE(std::ranges::equal(state.get_static_fterm_values_view(), registered.get_static_fterm_values_view()));
+    EXPECT_TRUE(std::ranges::equal(state.get_fluent_fterm_values_view(), registered.get_fluent_fterm_values_view()));
+    for (const auto atom : registered.get_static_atoms_view())
+    {
+        EXPECT_EQ(state.test(atom.get_index()), registered.test(atom));
+        EXPECT_EQ(state.test(atom), registered.test(atom));
+    }
+    for (const auto fact : registered.get_fluent_facts_view())
+    {
+        EXPECT_EQ(state.get(fact.get_variable().get_index()), fact.get_value());
+        EXPECT_EQ(state.get(fact.get_variable()), fact.get_value());
+    }
+    for (const auto atom : registered.get_derived_atoms_view())
+    {
+        EXPECT_EQ(state.test(atom.get_index()), registered.test(atom));
+        EXPECT_EQ(state.test(atom), registered.test(atom));
+    }
+    for (const auto& [fterm, value] : registered.get_static_fterm_values_view())
+    {
+        EXPECT_EQ(state.get(fterm.get_index()), value);
+        EXPECT_EQ(state.get(fterm), value);
+    }
+    for (const auto& [fterm, value] : registered.get_fluent_fterm_values_view())
+    {
+        EXPECT_EQ(state.get(fterm.get_index()), value);
+        EXPECT_EQ(state.get(fterm), value);
+    }
+
+    auto moved = std::move(owned);
+    EXPECT_FALSE(owned);
+    EXPECT_EQ(&state.get_state_builder(), moved.get());
+    const auto numeric = registered.get_fluent_fterm_values_view();
+    ASSERT_NE(numeric.begin(), numeric.end());
+    const auto [fterm, value] = *numeric.begin();
+    moved->set(fterm, value + 1);
+    EXPECT_EQ(state.get(fterm), value + 1);
+    EXPECT_EQ(node.get_state().get(fterm), value + 1);
+    EXPECT_EQ(nodes.front().get_state().get(fterm), value + 1);
+    EXPECT_EQ(labeled_nodes.front().node.get_state().get(fterm), value + 1);
+    EXPECT_EQ(registered.get(fterm), value);
+    EXPECT_EQ(registered.get_state_repository()->num_states(), num_states);
 }
 
 template<TaskKind Kind>
@@ -113,6 +234,7 @@ void expect_registered_closures_and_transition_costs(const p::TaskPtr<Kind>& tas
     EXPECT_EQ(repository->num_states(), 2);
     EXPECT_EQ(derived_names(cheap->node.get_state()), (std::vector<std::string> { "live" }));
     EXPECT_EQ(derived_names(expensive->node.get_state()), derived_names(cheap->node.get_state()));
+    expect_borrowed_builder_view(task, cheap->node.get_state(), cheap->label);
 
     const auto expect_duplicate = [&](const auto& state)
     {
@@ -173,6 +295,29 @@ void expect_registered_closures_and_transition_costs(const p::TaskPtr<Kind>& tas
     EXPECT_NE(raised.get_state(), cheap->node.get_state());
     EXPECT_EQ(derived_names(raised.get_state()), (std::vector<std::string> { "live", "ready" }));
     EXPECT_EQ(repository->num_states(), 3);
+    {
+        auto pool = ygg::UniqueObjectPool<ygg::Builder<p::State<Kind>>> {};
+        auto owned = pool.get_or_allocate();
+        *owned = cheap->node.get_state().get_state_builder();
+        owned->set(ygg::Index<p::State<Kind>> {});
+        const auto borrowed = p::Node(ygg::make_view(*owned, *task), cheap->node.get_metric());
+        EXPECT_EQ(generator->get_applicable_action_bindings(borrowed), bindings);
+        const auto successor = generator->get_successor_node(borrowed, *raise, *repository, *axioms);
+        EXPECT_EQ(successor, raised);
+        EXPECT_EQ(derived_names(successor.get_state()), derived_names(raised.get_state()));
+        auto generated = pool.get_or_allocate();
+        // Ground axiom evaluation expects the capacity normally prepared by the state repository.
+        if constexpr (std::same_as<Kind, GroundTag>)
+            generated->resize_derived_atoms(task->get_task().template get_atoms<formalism::DerivedTag>().size());
+        generator->generate_successor_state(borrowed, *raise, *generated);
+        axioms->compute_extended_state(*generated);
+        const auto generated_view = ygg::make_view(*generated, *task);
+        EXPECT_TRUE(std::ranges::equal(generated_view.get_fluent_facts(), raised.get_state().get_fluent_facts()));
+        EXPECT_TRUE(std::ranges::equal(generated_view.get_derived_atoms(), raised.get_state().get_derived_atoms()));
+        EXPECT_TRUE(std::ranges::equal(generated_view.get_fluent_fterm_values(), raised.get_state().get_fluent_fterm_values()));
+        EXPECT_TRUE(owned->get_index().is_max());
+        EXPECT_EQ(repository->num_states(), 3);
+    }
     expect_duplicate(raised.get_state());
 
     const auto plan = p::Plan<Kind>(initial, { *cheap, { *raise, raised } });
@@ -219,16 +364,16 @@ TEST(TyrPlanningStateTest, DuplicateStatesRetainClosuresAndIndependentTransition
     const auto lifted_task = p::Task<LiftedTag>::create(fp::Parser(R"(
 (define (domain state-closure)
   (:requirements :adl :numeric-fluents :action-costs :derived-predicates)
-  (:predicates (on) (live) (ready))
-  (:functions (value) (total-cost))
+  (:predicates (enabled) (on) (live) (ready))
+  (:functions (step) (value) (total-cost))
   (:derived (live) (on))
   (:derived (ready) (and (live) (> (value) 0)))
-  (:action cheap :parameters () :precondition (not (on))
+  (:action cheap :parameters () :precondition (and (enabled) (not (on)))
     :effect (and (on) (increase (total-cost) 1)))
-  (:action expensive :parameters () :precondition (not (on))
+  (:action expensive :parameters () :precondition (and (enabled) (not (on)))
     :effect (and (on) (increase (total-cost) 7)))
   (:action raise :parameters () :precondition (on)
-    :effect (and (increase (value) 1) (increase (total-cost) 1)))
+    :effect (and (increase (value) (step)) (increase (total-cost) 1)))
   (:action disable :parameters () :precondition (on)
     :effect (and (not (on)) (increase (total-cost) 1))))
 )",
@@ -236,7 +381,7 @@ TEST(TyrPlanningStateTest, DuplicateStatesRetainClosuresAndIndependentTransition
                                                           .parse_task(R"(
 (define (problem state-closure-problem)
   (:domain state-closure)
-  (:init (= (value) 0) (= (total-cost) 0))
+  (:init (enabled) (= (step) 1) (= (value) 0) (= (total-cost) 0))
   (:goal (ready))
   (:metric minimize (total-cost)))
 )",

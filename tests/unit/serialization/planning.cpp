@@ -349,7 +349,7 @@ void check_runtime_serialization()
     EXPECT_THROW(rejected.tables(), std::logic_error);
     auto dictionaries = s::Dictionaries {};
     dictionaries.template register_table<p::StateView<Kind>>("states", "s");
-    dictionaries.template register_table<p::Node<Kind>>("nodes", "n");
+    dictionaries.template register_table<p::Node<p::StateView<Kind>>>("nodes", "n");
     dictionaries.template register_table<fp::AtomView<GroundTag, f::FluentTag>>("atoms", "a", std::vector<std::string> {});
     dictionaries.template register_table<fp::AtomView<GroundTag, f::DerivedTag>>("derived", "d", std::vector<std::string> {});
     dictionaries.template register_table<fp::FunctionTermView<GroundTag, f::FluentTag>>("functions", "f", std::vector<std::string> {});
@@ -357,7 +357,7 @@ void check_runtime_serialization()
     EXPECT_EQ(dictionaries.serialize(plan.get_start_node()).as_string(), "n0");
     EXPECT_EQ(dictionaries.serialize(plan.get_labeled_succ_nodes()[0].node).as_string(), "n1");
     EXPECT_EQ(dictionaries.serialize(plan.get_labeled_succ_nodes()[1].node).as_string(), "n1");
-    const auto nodes = dictionaries.template table<p::Node<Kind>>();
+    const auto nodes = dictionaries.template table<p::Node<p::StateView<Kind>>>();
     ASSERT_EQ(nodes.size(), 2);
     EXPECT_EQ(nodes[0].as_object().at("state").as_string(), "s0");
     EXPECT_EQ(nodes[0].as_object().at("metric").as_double(), plan.get_start_node().get_metric());

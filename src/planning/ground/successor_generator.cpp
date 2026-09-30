@@ -55,9 +55,10 @@ void validate_task(const TaskPtr<GroundTag>& task, const AxiomEvaluator<GroundTa
         throw std::invalid_argument("SuccessorGenerator: axiom evaluator belongs to a different task.");
 }
 
-void validate_task(const TaskPtr<GroundTag>& task, const StateView<GroundTag>& state)
+template<StateViewConcept<GroundTag> S>
+void validate_task(const TaskPtr<GroundTag>& task, const S& state)
 {
-    if (state.get_state_repository()->get_task() != task)
+    if (&state.get_task() != task.get())
         throw std::invalid_argument("SuccessorGenerator: state belongs to a different task.");
 }
 }
@@ -112,8 +113,8 @@ struct SuccessorGenerator<GroundTag>::Impl
         return *it->second;
     }
 
-    template<typename Callback>
-    bool for_each_applicable_action(const Node<GroundTag>& node, match_tree::MatchTree<fp::Action<GroundTag>>& tree, Callback&& callback)
+    template<StateViewConcept<GroundTag> S, typename Callback>
+    bool for_each_applicable_action(const Node<S>& node, match_tree::MatchTree<fp::Action<GroundTag>>& tree, Callback&& callback)
     {
         const auto state_context = StateContext<GroundTag>(*definition->task, node.get_state().get_state_builder(), node.get_metric());
         tree.generate(state_context, evaluator.applicable_actions);
@@ -185,7 +186,8 @@ SuccessorGeneratorPtr<GroundTag> SuccessorGenerator<GroundTag>::make_worker(ygg:
         std::make_unique<Impl>(m_impl->next_index->fetch_add(1, std::memory_order_relaxed), m_impl->definition, m_impl->next_index)));
 }
 
-Node<GroundTag> SuccessorGenerator<GroundTag>::get_initial_node(StateRepository<GroundTag>& state_repository, AxiomEvaluator<GroundTag>& axiom_evaluator)
+Node<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_initial_node(StateRepository<GroundTag>& state_repository,
+                                                                           AxiomEvaluator<GroundTag>& axiom_evaluator)
 {
     validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
@@ -196,24 +198,26 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::get_initial_node(StateRepository<
     const auto state_metric =
         evaluate_metric(m_impl->definition->task->get_task().get_metric(), m_impl->definition->task->get_task().get_auxiliary_fterm_value(), state_context);
 
-    return Node<GroundTag>(std::move(initial_state), state_metric);
+    return Node<StateView<GroundTag>>(std::move(initial_state), state_metric);
 }
 
-NodeList<GroundTag> SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<GroundTag>& node,
-                                                                       StateRepository<GroundTag>& state_repository,
-                                                                       AxiomEvaluator<GroundTag>& axiom_evaluator)
+template<StateViewConcept<GroundTag> S>
+NodeList<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<S>& node,
+                                                                                  StateRepository<GroundTag>& state_repository,
+                                                                                  AxiomEvaluator<GroundTag>& axiom_evaluator)
 {
-    auto result = NodeList<GroundTag> {};
+    auto result = NodeList<StateView<GroundTag>> {};
 
     get_successor_nodes(node, state_repository, axiom_evaluator, result);
 
     return result;
 }
 
-void SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<GroundTag>& node,
+template<StateViewConcept<GroundTag> S>
+void SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<S>& node,
                                                         StateRepository<GroundTag>& state_repository,
                                                         AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                        NodeList<GroundTag>& out_nodes)
+                                                        NodeList<StateView<GroundTag>>& out_nodes)
 {
     validate_task(m_impl->definition->task, node.get_state());
     validate_task(m_impl->definition->task, state_repository);
@@ -229,21 +233,23 @@ void SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<GroundTag>& n
                             });
 }
 
-NodeList<GroundTag> SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<GroundTag>& node,
-                                                                       fp::ActionView<LiftedTag> action,
-                                                                       StateRepository<GroundTag>& state_repository,
-                                                                       AxiomEvaluator<GroundTag>& axiom_evaluator)
+template<StateViewConcept<GroundTag> S>
+NodeList<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<S>& node,
+                                                                                  fp::ActionView<LiftedTag> action,
+                                                                                  StateRepository<GroundTag>& state_repository,
+                                                                                  AxiomEvaluator<GroundTag>& axiom_evaluator)
 {
-    auto result = NodeList<GroundTag> {};
+    auto result = NodeList<StateView<GroundTag>> {};
     get_successor_nodes(node, action, state_repository, axiom_evaluator, result);
     return result;
 }
 
-void SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<GroundTag>& node,
+template<StateViewConcept<GroundTag> S>
+void SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<S>& node,
                                                         fp::ActionView<LiftedTag> action,
                                                         StateRepository<GroundTag>& state_repository,
                                                         AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                        NodeList<GroundTag>& out_nodes)
+                                                        NodeList<StateView<GroundTag>>& out_nodes)
 {
     validate_task(m_impl->definition->task, node.get_state());
     validate_task(m_impl->definition->task, state_repository);
@@ -261,21 +267,23 @@ void SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<GroundTag>& n
                             });
 }
 
-LabeledNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<GroundTag>& node,
-                                                                                      StateRepository<GroundTag>& state_repository,
-                                                                                      AxiomEvaluator<GroundTag>& axiom_evaluator)
+template<StateViewConcept<GroundTag> S>
+LabeledNodeList<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<S>& node,
+                                                                                                 StateRepository<GroundTag>& state_repository,
+                                                                                                 AxiomEvaluator<GroundTag>& axiom_evaluator)
 {
-    auto result = LabeledNodeList<GroundTag> {};
+    auto result = LabeledNodeList<StateView<GroundTag>> {};
 
     get_labeled_successor_nodes(node, state_repository, axiom_evaluator, result);
 
     return result;
 }
 
-void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<GroundTag>& node,
+template<StateViewConcept<GroundTag> S>
+void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<S>& node,
                                                                 StateRepository<GroundTag>& state_repository,
                                                                 AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                                LabeledNodeList<GroundTag>& out_nodes)
+                                                                LabeledNodeList<StateView<GroundTag>>& out_nodes)
 {
     validate_task(m_impl->definition->task, node.get_state());
     validate_task(m_impl->definition->task, state_repository);
@@ -291,21 +299,23 @@ void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<Groun
                                     });
 }
 
-LabeledNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<GroundTag>& node,
-                                                                                      fp::ActionView<LiftedTag> action,
-                                                                                      StateRepository<GroundTag>& state_repository,
-                                                                                      AxiomEvaluator<GroundTag>& axiom_evaluator)
+template<StateViewConcept<GroundTag> S>
+LabeledNodeList<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<S>& node,
+                                                                                                 fp::ActionView<LiftedTag> action,
+                                                                                                 StateRepository<GroundTag>& state_repository,
+                                                                                                 AxiomEvaluator<GroundTag>& axiom_evaluator)
 {
-    auto result = LabeledNodeList<GroundTag> {};
+    auto result = LabeledNodeList<StateView<GroundTag>> {};
     get_labeled_successor_nodes(node, action, state_repository, axiom_evaluator, result);
     return result;
 }
 
-void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<GroundTag>& node,
+template<StateViewConcept<GroundTag> S>
+void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<S>& node,
                                                                 fp::ActionView<LiftedTag> action,
                                                                 StateRepository<GroundTag>& state_repository,
                                                                 AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                                LabeledNodeList<GroundTag>& out_nodes)
+                                                                LabeledNodeList<StateView<GroundTag>>& out_nodes)
 {
     validate_task(m_impl->definition->task, node.get_state());
     validate_task(m_impl->definition->task, state_repository);
@@ -323,18 +333,20 @@ void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<Groun
                                     });
 }
 
-Node<GroundTag> SuccessorGenerator<GroundTag>::get_successor_node(const Node<GroundTag>& node,
-                                                                  fp::ActionBindingView binding,
-                                                                  StateRepository<GroundTag>& state_repository,
-                                                                  AxiomEvaluator<GroundTag>& axiom_evaluator)
+template<StateViewConcept<GroundTag> S>
+Node<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_successor_node(const Node<S>& node,
+                                                                             fp::ActionBindingView binding,
+                                                                             StateRepository<GroundTag>& state_repository,
+                                                                             AxiomEvaluator<GroundTag>& axiom_evaluator)
 {
     return get_successor_node(node, ground_action(binding), state_repository, axiom_evaluator);
 }
 
-Node<GroundTag> SuccessorGenerator<GroundTag>::get_successor_node(const Node<GroundTag>& node,
-                                                                  fp::ActionView<GroundTag> action,
-                                                                  StateRepository<GroundTag>& state_repository,
-                                                                  AxiomEvaluator<GroundTag>& axiom_evaluator)
+template<StateViewConcept<GroundTag> S>
+Node<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_successor_node(const Node<S>& node,
+                                                                             fp::ActionView<GroundTag> action,
+                                                                             StateRepository<GroundTag>& state_repository,
+                                                                             AxiomEvaluator<GroundTag>& axiom_evaluator)
 {
     validate_task(m_impl->definition->task, node.get_state());
     validate_task(m_impl->definition->task, state_repository);
@@ -346,14 +358,16 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::get_successor_node(const Node<Gro
     return finalize_successor_state(state_repository, axiom_evaluator, std::move(successor_state), auxiliary_value);
 }
 
-std::vector<fp::ActionBindingView> SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<GroundTag>& node)
+template<StateViewConcept<GroundTag> S>
+std::vector<fp::ActionBindingView> SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<S>& node)
 {
     auto result = std::vector<fp::ActionBindingView> {};
     get_applicable_action_bindings(node, result);
     return result;
 }
 
-void SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<GroundTag>& node, std::vector<fp::ActionBindingView>& out_bindings)
+template<StateViewConcept<GroundTag> S>
+void SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<S>& node, std::vector<fp::ActionBindingView>& out_bindings)
 {
     validate_task(m_impl->definition->task, node.get_state());
     out_bindings.clear();
@@ -365,14 +379,16 @@ void SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<Gr
                                        });
 }
 
-std::vector<fp::ActionBindingView> SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<GroundTag>& node, fp::ActionView<LiftedTag> action)
+template<StateViewConcept<GroundTag> S>
+std::vector<fp::ActionBindingView> SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<S>& node, fp::ActionView<LiftedTag> action)
 {
     auto result = std::vector<fp::ActionBindingView> {};
     get_applicable_action_bindings(node, action, result);
     return result;
 }
 
-void SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<GroundTag>& node,
+template<StateViewConcept<GroundTag> S>
+void SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<S>& node,
                                                                    fp::ActionView<LiftedTag> action,
                                                                    std::vector<fp::ActionBindingView>& out_bindings)
 {
@@ -388,16 +404,18 @@ void SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<Gr
                                        });
 }
 
-bool SuccessorGenerator<GroundTag>::for_each_applicable_action_binding(const Node<GroundTag>& node, const std::function<bool(fp::ActionBindingView)>& callback)
+template<StateViewConcept<GroundTag> S>
+bool SuccessorGenerator<GroundTag>::for_each_applicable_action_binding(const Node<S>& node, const std::function<bool(fp::ActionBindingView)>& callback)
 {
     validate_task(m_impl->definition->task, node.get_state());
     return m_impl->for_each_applicable_action(node, *m_impl->evaluator.action_match_tree, [&](const auto action) { return callback(action.get_row()); });
 }
 
-bool SuccessorGenerator<GroundTag>::for_each_successor_node(const Node<GroundTag>& node,
+template<StateViewConcept<GroundTag> S>
+bool SuccessorGenerator<GroundTag>::for_each_successor_node(const Node<S>& node,
                                                             StateRepository<GroundTag>& state_repository,
                                                             AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                            const std::function<bool(Node<GroundTag>)>& callback)
+                                                            const std::function<bool(Node<StateView<GroundTag>>)>& callback)
 {
     validate_task(m_impl->definition->task, node.get_state());
     validate_task(m_impl->definition->task, state_repository);
@@ -408,10 +426,11 @@ bool SuccessorGenerator<GroundTag>::for_each_successor_node(const Node<GroundTag
                                               { return callback(get_successor_node(node, ground_action, state_repository, axiom_evaluator)); });
 }
 
-bool SuccessorGenerator<GroundTag>::for_each_labeled_successor_node(const Node<GroundTag>& node,
+template<StateViewConcept<GroundTag> S>
+bool SuccessorGenerator<GroundTag>::for_each_labeled_successor_node(const Node<S>& node,
                                                                     StateRepository<GroundTag>& state_repository,
                                                                     AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                                    const std::function<bool(LabeledNode<GroundTag>)>& callback)
+                                                                    const std::function<bool(LabeledNode<StateView<GroundTag>>)>& callback)
 {
     validate_task(m_impl->definition->task, node.get_state());
     validate_task(m_impl->definition->task, state_repository);
@@ -420,10 +439,14 @@ bool SuccessorGenerator<GroundTag>::for_each_labeled_successor_node(const Node<G
         node,
         *m_impl->evaluator.action_match_tree,
         [&](const auto ground_action)
-        { return callback(LabeledNode<GroundTag> { ground_action.get_row(), get_successor_node(node, ground_action, state_repository, axiom_evaluator) }); });
+        {
+            return callback(
+                LabeledNode<StateView<GroundTag>> { ground_action.get_row(), get_successor_node(node, ground_action, state_repository, axiom_evaluator) });
+        });
 }
 
-bool SuccessorGenerator<GroundTag>::for_each_applicable_action_binding(const Node<GroundTag>& node,
+template<StateViewConcept<GroundTag> S>
+bool SuccessorGenerator<GroundTag>::for_each_applicable_action_binding(const Node<S>& node,
                                                                        fp::ActionView<LiftedTag> action,
                                                                        const std::function<bool(fp::ActionBindingView)>& callback)
 {
@@ -432,11 +455,12 @@ bool SuccessorGenerator<GroundTag>::for_each_applicable_action_binding(const Nod
     return m_impl->for_each_applicable_action(node, tree, [&](const auto action) { return callback(action.get_row()); });
 }
 
-bool SuccessorGenerator<GroundTag>::for_each_successor_node(const Node<GroundTag>& node,
+template<StateViewConcept<GroundTag> S>
+bool SuccessorGenerator<GroundTag>::for_each_successor_node(const Node<S>& node,
                                                             fp::ActionView<LiftedTag> action,
                                                             StateRepository<GroundTag>& state_repository,
                                                             AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                            const std::function<bool(Node<GroundTag>)>& callback)
+                                                            const std::function<bool(Node<StateView<GroundTag>>)>& callback)
 {
     validate_task(m_impl->definition->task, node.get_state());
     validate_task(m_impl->definition->task, state_repository);
@@ -448,11 +472,12 @@ bool SuccessorGenerator<GroundTag>::for_each_successor_node(const Node<GroundTag
                                               { return callback(get_successor_node(node, ground_action, state_repository, axiom_evaluator)); });
 }
 
-bool SuccessorGenerator<GroundTag>::for_each_labeled_successor_node(const Node<GroundTag>& node,
+template<StateViewConcept<GroundTag> S>
+bool SuccessorGenerator<GroundTag>::for_each_labeled_successor_node(const Node<S>& node,
                                                                     fp::ActionView<LiftedTag> action,
                                                                     StateRepository<GroundTag>& state_repository,
                                                                     AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                                    const std::function<bool(LabeledNode<GroundTag>)>& callback)
+                                                                    const std::function<bool(LabeledNode<StateView<GroundTag>>)>& callback)
 {
     validate_task(m_impl->definition->task, node.get_state());
     validate_task(m_impl->definition->task, state_repository);
@@ -462,7 +487,10 @@ bool SuccessorGenerator<GroundTag>::for_each_labeled_successor_node(const Node<G
         node,
         tree,
         [&](const auto ground_action)
-        { return callback(LabeledNode<GroundTag> { ground_action.get_row(), get_successor_node(node, ground_action, state_repository, axiom_evaluator) }); });
+        {
+            return callback(
+                LabeledNode<StateView<GroundTag>> { ground_action.get_row(), get_successor_node(node, ground_action, state_repository, axiom_evaluator) });
+        });
 }
 
 PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_initial_node(StateRepository<GroundTag>& state_repository,
@@ -476,7 +504,8 @@ PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_node(StateReposi
     return get_node(state_repository, state_index).pack();
 }
 
-PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_node(const Node<GroundTag>& node,
+template<StateViewConcept<GroundTag> S>
+PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_node(const Node<S>& node,
                                                                                fp::ActionBindingView binding,
                                                                                StateRepository<GroundTag>& state_repository,
                                                                                AxiomEvaluator<GroundTag>& axiom_evaluator)
@@ -484,7 +513,8 @@ PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_node(c
     return get_successor_node(node, binding, state_repository, axiom_evaluator).pack();
 }
 
-PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_node(const Node<GroundTag>& node,
+template<StateViewConcept<GroundTag> S>
+PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_node(const Node<S>& node,
                                                                                fp::ActionView<GroundTag> action,
                                                                                StateRepository<GroundTag>& state_repository,
                                                                                AxiomEvaluator<GroundTag>& axiom_evaluator)
@@ -492,7 +522,8 @@ PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_node(c
     return get_successor_node(node, action, state_repository, axiom_evaluator).pack();
 }
 
-PackedNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_nodes(const Node<GroundTag>& node,
+template<StateViewConcept<GroundTag> S>
+PackedNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_nodes(const Node<S>& node,
                                                                                     StateRepository<GroundTag>& state_repository,
                                                                                     AxiomEvaluator<GroundTag>& axiom_evaluator)
 {
@@ -501,7 +532,8 @@ PackedNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_no
     return result;
 }
 
-void SuccessorGenerator<GroundTag>::get_packed_successor_nodes(const Node<GroundTag>& node,
+template<StateViewConcept<GroundTag> S>
+void SuccessorGenerator<GroundTag>::get_packed_successor_nodes(const Node<S>& node,
                                                                StateRepository<GroundTag>& state_repository,
                                                                AxiomEvaluator<GroundTag>& axiom_evaluator,
                                                                PackedNodeList<GroundTag>& out_nodes)
@@ -520,7 +552,8 @@ void SuccessorGenerator<GroundTag>::get_packed_successor_nodes(const Node<Ground
                             });
 }
 
-PackedNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_nodes(const Node<GroundTag>& node,
+template<StateViewConcept<GroundTag> S>
+PackedNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_nodes(const Node<S>& node,
                                                                                     fp::ActionView<LiftedTag> action,
                                                                                     StateRepository<GroundTag>& state_repository,
                                                                                     AxiomEvaluator<GroundTag>& axiom_evaluator)
@@ -530,7 +563,8 @@ PackedNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_no
     return result;
 }
 
-void SuccessorGenerator<GroundTag>::get_packed_successor_nodes(const Node<GroundTag>& node,
+template<StateViewConcept<GroundTag> S>
+void SuccessorGenerator<GroundTag>::get_packed_successor_nodes(const Node<S>& node,
                                                                fp::ActionView<LiftedTag> action,
                                                                StateRepository<GroundTag>& state_repository,
                                                                AxiomEvaluator<GroundTag>& axiom_evaluator,
@@ -552,7 +586,8 @@ void SuccessorGenerator<GroundTag>::get_packed_successor_nodes(const Node<Ground
                             });
 }
 
-PackedLabeledNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(const Node<GroundTag>& node,
+template<StateViewConcept<GroundTag> S>
+PackedLabeledNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(const Node<S>& node,
                                                                                                    StateRepository<GroundTag>& state_repository,
                                                                                                    AxiomEvaluator<GroundTag>& axiom_evaluator)
 {
@@ -561,7 +596,8 @@ PackedLabeledNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_packed_label
     return result;
 }
 
-void SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(const Node<GroundTag>& node,
+template<StateViewConcept<GroundTag> S>
+void SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(const Node<S>& node,
                                                                        StateRepository<GroundTag>& state_repository,
                                                                        AxiomEvaluator<GroundTag>& axiom_evaluator,
                                                                        PackedLabeledNodeList<GroundTag>& out_nodes)
@@ -580,7 +616,8 @@ void SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(const Nod
                                     });
 }
 
-PackedLabeledNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(const Node<GroundTag>& node,
+template<StateViewConcept<GroundTag> S>
+PackedLabeledNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(const Node<S>& node,
                                                                                                    fp::ActionView<LiftedTag> action,
                                                                                                    StateRepository<GroundTag>& state_repository,
                                                                                                    AxiomEvaluator<GroundTag>& axiom_evaluator)
@@ -590,7 +627,8 @@ PackedLabeledNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_packed_label
     return result;
 }
 
-void SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(const Node<GroundTag>& node,
+template<StateViewConcept<GroundTag> S>
+void SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(const Node<S>& node,
                                                                        fp::ActionView<LiftedTag> action,
                                                                        StateRepository<GroundTag>& state_repository,
                                                                        AxiomEvaluator<GroundTag>& axiom_evaluator,
@@ -612,23 +650,24 @@ void SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(const Nod
                                     });
 }
 
+template<StateViewConcept<GroundTag> S>
 ygg::float_t
-SuccessorGenerator<GroundTag>::generate_successor_state(const Node<GroundTag>& node, fp::ActionBindingView binding, ygg::Builder<State<GroundTag>>& out_state)
+SuccessorGenerator<GroundTag>::generate_successor_state(const Node<S>& node, fp::ActionBindingView binding, ygg::Builder<State<GroundTag>>& out_state)
 {
     validate_task(m_impl->definition->task, node.get_state());
     const auto state_context = StateContext<GroundTag>(*m_impl->definition->task, node.get_state().get_state_builder(), node.get_metric());
     return m_impl->evaluator.executor.apply_action_unregistered(state_context, ground_action(binding), out_state);
 }
 
-Node<GroundTag> SuccessorGenerator<GroundTag>::finalize_successor_state(StateRepository<GroundTag>& state_repository,
-                                                                        AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                                        ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state,
-                                                                        ygg::float_t auxiliary_value)
+Node<StateView<GroundTag>> SuccessorGenerator<GroundTag>::finalize_successor_state(StateRepository<GroundTag>& state_repository,
+                                                                                   AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                                   ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state,
+                                                                                   ygg::float_t auxiliary_value)
 {
     validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
     const auto metric = evaluate_successor_metric(*m_impl->definition->task, *state, auxiliary_value);
-    return Node<GroundTag>(state_repository.register_state(axiom_evaluator, std::move(state)), metric);
+    return Node<StateView<GroundTag>>(state_repository.register_state(axiom_evaluator, std::move(state)), metric);
 }
 
 fp::ActionView<GroundTag> SuccessorGenerator<GroundTag>::ground_action(fp::ActionBindingView binding) const
@@ -638,7 +677,7 @@ fp::ActionView<GroundTag> SuccessorGenerator<GroundTag>::ground_action(fp::Actio
     return it->second;
 }
 
-Node<GroundTag> SuccessorGenerator<GroundTag>::get_node(StateRepository<GroundTag>& state_repository, ygg::Index<State<GroundTag>> state_index)
+Node<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_node(StateRepository<GroundTag>& state_repository, ygg::Index<State<GroundTag>> state_index)
 {
     validate_task(m_impl->definition->task, state_repository);
     auto state = state_repository.get_registered_state(state_index);
@@ -646,12 +685,302 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::get_node(StateRepository<GroundTa
     const auto state_metric =
         evaluate_metric(m_impl->definition->task->get_task().get_metric(), m_impl->definition->task->get_task().get_auxiliary_fterm_value(), state_context);
 
-    return Node<GroundTag>(std::move(state), state_metric);
+    return Node<StateView<GroundTag>>(std::move(state), state_metric);
 }
 
 const TaskPtr<GroundTag>& SuccessorGenerator<GroundTag>::get_task() const noexcept { return m_impl->definition->task; }
 
 ygg::uint_t SuccessorGenerator<GroundTag>::get_index() const noexcept { return m_impl->index; }
+
+template NodeList<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<StateView<GroundTag>>& node,
+                                                                                           StateRepository<GroundTag>& state_repository,
+                                                                                           AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template NodeList<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<BuilderStateView<GroundTag>>& node,
+                                                                                           StateRepository<GroundTag>& state_repository,
+                                                                                           AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template void SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<StateView<GroundTag>>& node,
+                                                                 StateRepository<GroundTag>& state_repository,
+                                                                 AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                 NodeList<StateView<GroundTag>>& out_nodes);
+
+template void SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<BuilderStateView<GroundTag>>& node,
+                                                                 StateRepository<GroundTag>& state_repository,
+                                                                 AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                 NodeList<StateView<GroundTag>>& out_nodes);
+
+template NodeList<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<StateView<GroundTag>>& node,
+                                                                                           fp::ActionView<LiftedTag> action,
+                                                                                           StateRepository<GroundTag>& state_repository,
+                                                                                           AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template NodeList<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<BuilderStateView<GroundTag>>& node,
+                                                                                           fp::ActionView<LiftedTag> action,
+                                                                                           StateRepository<GroundTag>& state_repository,
+                                                                                           AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template void SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<StateView<GroundTag>>& node,
+                                                                 fp::ActionView<LiftedTag> action,
+                                                                 StateRepository<GroundTag>& state_repository,
+                                                                 AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                 NodeList<StateView<GroundTag>>& out_nodes);
+
+template void SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<BuilderStateView<GroundTag>>& node,
+                                                                 fp::ActionView<LiftedTag> action,
+                                                                 StateRepository<GroundTag>& state_repository,
+                                                                 AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                 NodeList<StateView<GroundTag>>& out_nodes);
+
+template LabeledNodeList<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<StateView<GroundTag>>& node,
+                                                                                                          StateRepository<GroundTag>& state_repository,
+                                                                                                          AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template LabeledNodeList<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<BuilderStateView<GroundTag>>& node,
+                                                                                                          StateRepository<GroundTag>& state_repository,
+                                                                                                          AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<StateView<GroundTag>>& node,
+                                                                         StateRepository<GroundTag>& state_repository,
+                                                                         AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                         LabeledNodeList<StateView<GroundTag>>& out_nodes);
+
+template void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<BuilderStateView<GroundTag>>& node,
+                                                                         StateRepository<GroundTag>& state_repository,
+                                                                         AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                         LabeledNodeList<StateView<GroundTag>>& out_nodes);
+
+template LabeledNodeList<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<StateView<GroundTag>>& node,
+                                                                                                          fp::ActionView<LiftedTag> action,
+                                                                                                          StateRepository<GroundTag>& state_repository,
+                                                                                                          AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template LabeledNodeList<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<BuilderStateView<GroundTag>>& node,
+                                                                                                          fp::ActionView<LiftedTag> action,
+                                                                                                          StateRepository<GroundTag>& state_repository,
+                                                                                                          AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<StateView<GroundTag>>& node,
+                                                                         fp::ActionView<LiftedTag> action,
+                                                                         StateRepository<GroundTag>& state_repository,
+                                                                         AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                         LabeledNodeList<StateView<GroundTag>>& out_nodes);
+
+template void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<BuilderStateView<GroundTag>>& node,
+                                                                         fp::ActionView<LiftedTag> action,
+                                                                         StateRepository<GroundTag>& state_repository,
+                                                                         AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                         LabeledNodeList<StateView<GroundTag>>& out_nodes);
+
+template Node<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_successor_node(const Node<StateView<GroundTag>>& node,
+                                                                                      fp::ActionBindingView binding,
+                                                                                      StateRepository<GroundTag>& state_repository,
+                                                                                      AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template Node<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_successor_node(const Node<BuilderStateView<GroundTag>>& node,
+                                                                                      fp::ActionBindingView binding,
+                                                                                      StateRepository<GroundTag>& state_repository,
+                                                                                      AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template Node<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_successor_node(const Node<StateView<GroundTag>>& node,
+                                                                                      fp::ActionView<GroundTag> action,
+                                                                                      StateRepository<GroundTag>& state_repository,
+                                                                                      AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template Node<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_successor_node(const Node<BuilderStateView<GroundTag>>& node,
+                                                                                      fp::ActionView<GroundTag> action,
+                                                                                      StateRepository<GroundTag>& state_repository,
+                                                                                      AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template std::vector<fp::ActionBindingView> SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<StateView<GroundTag>>& node);
+
+template std::vector<fp::ActionBindingView> SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<BuilderStateView<GroundTag>>& node);
+
+template void SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<StateView<GroundTag>>& node,
+                                                                            std::vector<fp::ActionBindingView>& out_bindings);
+
+template void SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<BuilderStateView<GroundTag>>& node,
+                                                                            std::vector<fp::ActionBindingView>& out_bindings);
+
+template std::vector<fp::ActionBindingView> SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<StateView<GroundTag>>& node,
+                                                                                                          fp::ActionView<LiftedTag> action);
+
+template std::vector<fp::ActionBindingView> SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<BuilderStateView<GroundTag>>& node,
+                                                                                                          fp::ActionView<LiftedTag> action);
+
+template void SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<StateView<GroundTag>>& node,
+                                                                            fp::ActionView<LiftedTag> action,
+                                                                            std::vector<fp::ActionBindingView>& out_bindings);
+
+template void SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Node<BuilderStateView<GroundTag>>& node,
+                                                                            fp::ActionView<LiftedTag> action,
+                                                                            std::vector<fp::ActionBindingView>& out_bindings);
+
+template bool SuccessorGenerator<GroundTag>::for_each_applicable_action_binding(const Node<StateView<GroundTag>>& node,
+                                                                                const std::function<bool(fp::ActionBindingView)>& callback);
+
+template bool SuccessorGenerator<GroundTag>::for_each_applicable_action_binding(const Node<BuilderStateView<GroundTag>>& node,
+                                                                                const std::function<bool(fp::ActionBindingView)>& callback);
+
+template bool SuccessorGenerator<GroundTag>::for_each_successor_node(const Node<StateView<GroundTag>>& node,
+                                                                     StateRepository<GroundTag>& state_repository,
+                                                                     AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                     const std::function<bool(Node<StateView<GroundTag>>)>& callback);
+
+template bool SuccessorGenerator<GroundTag>::for_each_successor_node(const Node<BuilderStateView<GroundTag>>& node,
+                                                                     StateRepository<GroundTag>& state_repository,
+                                                                     AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                     const std::function<bool(Node<StateView<GroundTag>>)>& callback);
+
+template bool SuccessorGenerator<GroundTag>::for_each_labeled_successor_node(const Node<StateView<GroundTag>>& node,
+                                                                             StateRepository<GroundTag>& state_repository,
+                                                                             AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                             const std::function<bool(LabeledNode<StateView<GroundTag>>)>& callback);
+
+template bool SuccessorGenerator<GroundTag>::for_each_labeled_successor_node(const Node<BuilderStateView<GroundTag>>& node,
+                                                                             StateRepository<GroundTag>& state_repository,
+                                                                             AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                             const std::function<bool(LabeledNode<StateView<GroundTag>>)>& callback);
+
+template bool SuccessorGenerator<GroundTag>::for_each_applicable_action_binding(const Node<StateView<GroundTag>>& node,
+                                                                                fp::ActionView<LiftedTag> action,
+                                                                                const std::function<bool(fp::ActionBindingView)>& callback);
+
+template bool SuccessorGenerator<GroundTag>::for_each_applicable_action_binding(const Node<BuilderStateView<GroundTag>>& node,
+                                                                                fp::ActionView<LiftedTag> action,
+                                                                                const std::function<bool(fp::ActionBindingView)>& callback);
+
+template bool SuccessorGenerator<GroundTag>::for_each_successor_node(const Node<StateView<GroundTag>>& node,
+                                                                     fp::ActionView<LiftedTag> action,
+                                                                     StateRepository<GroundTag>& state_repository,
+                                                                     AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                     const std::function<bool(Node<StateView<GroundTag>>)>& callback);
+
+template bool SuccessorGenerator<GroundTag>::for_each_successor_node(const Node<BuilderStateView<GroundTag>>& node,
+                                                                     fp::ActionView<LiftedTag> action,
+                                                                     StateRepository<GroundTag>& state_repository,
+                                                                     AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                     const std::function<bool(Node<StateView<GroundTag>>)>& callback);
+
+template bool SuccessorGenerator<GroundTag>::for_each_labeled_successor_node(const Node<StateView<GroundTag>>& node,
+                                                                             fp::ActionView<LiftedTag> action,
+                                                                             StateRepository<GroundTag>& state_repository,
+                                                                             AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                             const std::function<bool(LabeledNode<StateView<GroundTag>>)>& callback);
+
+template bool SuccessorGenerator<GroundTag>::for_each_labeled_successor_node(const Node<BuilderStateView<GroundTag>>& node,
+                                                                             fp::ActionView<LiftedTag> action,
+                                                                             StateRepository<GroundTag>& state_repository,
+                                                                             AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                             const std::function<bool(LabeledNode<StateView<GroundTag>>)>& callback);
+
+template PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_node(const Node<StateView<GroundTag>>& node,
+                                                                                        fp::ActionBindingView binding,
+                                                                                        StateRepository<GroundTag>& state_repository,
+                                                                                        AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_node(const Node<BuilderStateView<GroundTag>>& node,
+                                                                                        fp::ActionBindingView binding,
+                                                                                        StateRepository<GroundTag>& state_repository,
+                                                                                        AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_node(const Node<StateView<GroundTag>>& node,
+                                                                                        fp::ActionView<GroundTag> action,
+                                                                                        StateRepository<GroundTag>& state_repository,
+                                                                                        AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_node(const Node<BuilderStateView<GroundTag>>& node,
+                                                                                        fp::ActionView<GroundTag> action,
+                                                                                        StateRepository<GroundTag>& state_repository,
+                                                                                        AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template PackedNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_nodes(const Node<StateView<GroundTag>>& node,
+                                                                                             StateRepository<GroundTag>& state_repository,
+                                                                                             AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template PackedNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_nodes(const Node<BuilderStateView<GroundTag>>& node,
+                                                                                             StateRepository<GroundTag>& state_repository,
+                                                                                             AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template void SuccessorGenerator<GroundTag>::get_packed_successor_nodes(const Node<StateView<GroundTag>>& node,
+                                                                        StateRepository<GroundTag>& state_repository,
+                                                                        AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                        PackedNodeList<GroundTag>& out_nodes);
+
+template void SuccessorGenerator<GroundTag>::get_packed_successor_nodes(const Node<BuilderStateView<GroundTag>>& node,
+                                                                        StateRepository<GroundTag>& state_repository,
+                                                                        AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                        PackedNodeList<GroundTag>& out_nodes);
+
+template PackedNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_nodes(const Node<StateView<GroundTag>>& node,
+                                                                                             fp::ActionView<LiftedTag> action,
+                                                                                             StateRepository<GroundTag>& state_repository,
+                                                                                             AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template PackedNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_nodes(const Node<BuilderStateView<GroundTag>>& node,
+                                                                                             fp::ActionView<LiftedTag> action,
+                                                                                             StateRepository<GroundTag>& state_repository,
+                                                                                             AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template void SuccessorGenerator<GroundTag>::get_packed_successor_nodes(const Node<StateView<GroundTag>>& node,
+                                                                        fp::ActionView<LiftedTag> action,
+                                                                        StateRepository<GroundTag>& state_repository,
+                                                                        AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                        PackedNodeList<GroundTag>& out_nodes);
+
+template void SuccessorGenerator<GroundTag>::get_packed_successor_nodes(const Node<BuilderStateView<GroundTag>>& node,
+                                                                        fp::ActionView<LiftedTag> action,
+                                                                        StateRepository<GroundTag>& state_repository,
+                                                                        AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                        PackedNodeList<GroundTag>& out_nodes);
+
+template PackedLabeledNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(const Node<StateView<GroundTag>>& node,
+                                                                                                            StateRepository<GroundTag>& state_repository,
+                                                                                                            AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template PackedLabeledNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(const Node<BuilderStateView<GroundTag>>& node,
+                                                                                                            StateRepository<GroundTag>& state_repository,
+                                                                                                            AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template void SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(const Node<StateView<GroundTag>>& node,
+                                                                                StateRepository<GroundTag>& state_repository,
+                                                                                AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                                PackedLabeledNodeList<GroundTag>& out_nodes);
+
+template void SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(const Node<BuilderStateView<GroundTag>>& node,
+                                                                                StateRepository<GroundTag>& state_repository,
+                                                                                AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                                PackedLabeledNodeList<GroundTag>& out_nodes);
+
+template PackedLabeledNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(const Node<StateView<GroundTag>>& node,
+                                                                                                            fp::ActionView<LiftedTag> action,
+                                                                                                            StateRepository<GroundTag>& state_repository,
+                                                                                                            AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template PackedLabeledNodeList<GroundTag> SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(const Node<BuilderStateView<GroundTag>>& node,
+                                                                                                            fp::ActionView<LiftedTag> action,
+                                                                                                            StateRepository<GroundTag>& state_repository,
+                                                                                                            AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+template void SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(const Node<StateView<GroundTag>>& node,
+                                                                                fp::ActionView<LiftedTag> action,
+                                                                                StateRepository<GroundTag>& state_repository,
+                                                                                AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                                PackedLabeledNodeList<GroundTag>& out_nodes);
+
+template void SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(const Node<BuilderStateView<GroundTag>>& node,
+                                                                                fp::ActionView<LiftedTag> action,
+                                                                                StateRepository<GroundTag>& state_repository,
+                                                                                AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                                PackedLabeledNodeList<GroundTag>& out_nodes);
+
+template ygg::float_t SuccessorGenerator<GroundTag>::generate_successor_state(const Node<StateView<GroundTag>>& node,
+                                                                              fp::ActionBindingView binding,
+                                                                              ygg::Builder<State<GroundTag>>& out_state);
+
+template ygg::float_t SuccessorGenerator<GroundTag>::generate_successor_state(const Node<BuilderStateView<GroundTag>>& node,
+                                                                              fp::ActionBindingView binding,
+                                                                              ygg::Builder<State<GroundTag>>& out_state);
 
 static_assert(SuccessorGeneratorConcept<SuccessorGenerator<GroundTag>, GroundTag>);
 

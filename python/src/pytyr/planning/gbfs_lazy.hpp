@@ -31,7 +31,7 @@ public:
 
     NB_TRAMPOLINE(Base);
 
-    void on_start_search(const Node<Kind>& node, ygg::float_t h_value) override { NB_OVERRIDE_PURE(on_start_search, node, h_value); }
+    void on_start_search(const Node<StateView<Kind>>& node, ygg::float_t h_value) override { NB_OVERRIDE_PURE(on_start_search, node, h_value); }
 
     void on_new_best_h_value(ygg::float_t h_value) override { NB_OVERRIDE_PURE(on_new_best_h_value, h_value); }
 

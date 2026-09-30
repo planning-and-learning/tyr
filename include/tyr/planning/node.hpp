@@ -20,6 +20,8 @@
 
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/planning/ground/state_view.hpp"
+#include "tyr/planning/lifted/state_view.hpp"
 #include "tyr/planning/state_index.hpp"
 #include "tyr/planning/state_view.hpp"
 #include "tyr/planning/task.hpp"
@@ -34,23 +36,35 @@
 
 namespace tyr::planning
 {
-template<TaskKind Kind>
-class Node : public ygg::comparison::Mixin<Node<Kind>>
+template<StateViewConcept State>
+class Node : public ygg::comparison::Mixin<Node<State>>
 {
 public:
-    using TaskType = Task<Kind>;
+    using StateType = State;
+    using KindType = typename State::KindType;
+    using TaskType = typename State::TaskType;
 
-    Node(StateView<Kind> state, ygg::float_t metric) noexcept : m_state(std::move(state)), m_metric(metric) {}
+    Node(State state, ygg::float_t metric) noexcept : m_state(std::move(state)), m_metric(metric) {}
 
-    const StateView<Kind>& get_state() const noexcept { return m_state; }
+    const State& get_state() const noexcept { return m_state; }
     ygg::float_t get_metric() const noexcept { return m_metric; }
 
-    PackedNode<Kind> pack() const noexcept;
+    auto pack() const noexcept
+        requires requires(const State& state) {
+            { state.pack() } -> std::same_as<PackedStateView<KindType>>;
+        }
+    {
+        return PackedNode<KindType>(m_state.pack(), m_metric);
+    }
 
-    auto identifying_members() const noexcept { return std::tie(m_state, m_metric); }
+    auto identifying_members() const noexcept
+        requires ygg::Identifiable<State>
+    {
+        return std::tie(m_state, m_metric);
+    }
 
 private:
-    StateView<Kind> m_state;
+    State m_state;
     ygg::float_t m_metric;
 };
 
@@ -65,7 +79,7 @@ public:
     const PackedStateView<Kind>& get_state() const noexcept { return m_state; }
     ygg::float_t get_metric() const noexcept { return m_metric; }
 
-    Node<Kind> unpack() const { return Node<Kind>(m_state.unpack(), m_metric); }
+    Node<StateView<Kind>> unpack() const { return Node(m_state.unpack(), m_metric); }
 
     auto identifying_members() const noexcept { return std::tie(m_state, m_metric); }
 
@@ -74,25 +88,27 @@ private:
     ygg::float_t m_metric;
 };
 
-template<TaskKind Kind>
-PackedNode<Kind> Node<Kind>::pack() const noexcept
-{
-    return PackedNode<Kind>(m_state.pack(), m_metric);
-}
-
-template<TaskKind Kind>
-using NodeList = std::vector<Node<Kind>>;
+template<StateViewConcept State>
+using NodeList = std::vector<Node<State>>;
 
 template<TaskKind Kind>
 using PackedNodeList = std::vector<PackedNode<Kind>>;
 
-template<TaskKind Kind>
+template<StateViewConcept State>
 struct LabeledNode
 {
-    formalism::planning::ActionBindingView label;
-    Node<Kind> node;
+    using StateType = State;
+    using KindType = typename State::KindType;
+    using TaskType = typename State::TaskType;
 
-    PackedLabeledNode<Kind> pack() const noexcept;
+    formalism::planning::ActionBindingView label;
+    Node<State> node;
+
+    auto pack() const noexcept
+        requires requires(const Node<State>& value) { value.pack(); }
+    {
+        return PackedLabeledNode<KindType> { label, node.pack() };
+    }
 };
 
 template<TaskKind Kind>
@@ -101,25 +117,19 @@ struct PackedLabeledNode
     formalism::planning::ActionBindingView label;
     PackedNode<Kind> node;
 
-    LabeledNode<Kind> unpack() const { return { label, node.unpack() }; }
+    LabeledNode<StateView<Kind>> unpack() const { return { label, node.unpack() }; }
 };
 
-template<TaskKind Kind>
-PackedLabeledNode<Kind> LabeledNode<Kind>::pack() const noexcept
-{
-    return { label, node.pack() };
-}
-
-template<TaskKind Kind>
-using LabeledNodeList = std::vector<LabeledNode<Kind>>;
+template<StateViewConcept State>
+using LabeledNodeList = std::vector<LabeledNode<State>>;
 
 template<TaskKind Kind>
 using PackedLabeledNodeList = std::vector<PackedLabeledNode<Kind>>;
 
-template<typename T, typename Kind>
+template<typename T>
 concept NodeConcept = requires(const T& cn) {
-    requires TaskKind<Kind>;
-    { cn.get_state() } -> std::same_as<const StateView<Kind>&>;
+    requires StateViewConcept<typename T::StateType>;
+    { cn.get_state() } -> std::same_as<const typename T::StateType&>;
     { cn.get_metric() } -> std::same_as<ygg::float_t>;
 };
 

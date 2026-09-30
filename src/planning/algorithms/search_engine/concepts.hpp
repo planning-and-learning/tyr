@@ -48,38 +48,36 @@ enum class AcceptanceResult : uint8_t
 };
 
 template<typename T, typename Kind>
-concept SearchPolicyConcept =
-    TaskKind<Kind>
-    && requires {
-           typename T::SearchTag;
-           typename T::TaskTag;
-           typename T::Options;
-           typename T::EventHandlerPtr;
-           typename T::WorkerEventHandlerPtr;
-           typename T::SearchNode;
-           typename T::SuccessorMetadata;
-           typename T::PoppedEntry;
-           typename std::bool_constant<T::supports_priority_layer_synchronization>;
-           requires SearchKind<typename T::SearchTag>;
-           requires std::same_as<typename T::TaskTag, Kind>;
-       } && std::constructible_from<T, Heuristic<Kind>&, const typename T::Options&> && requires(T& policy, const T& const_policy, ygg::Index<Worker> worker, ygg::Index<State<Kind>> state, ygg::float_t value, const typename T::SearchNode& const_search_node, const Node<Kind>& node, const typename T::PoppedEntry& entry, formalism::planning::ActionBindingView action, const typename T::Options& options, const typename T::EventHandlerPtr& event_handler) {
-           { T::terminate_on_goal } -> std::convertible_to<bool>;
-           { T::supports_priority_layer_synchronization } -> std::convertible_to<bool>;
-           { policy.initialize_start(state, value, value) } -> std::same_as<typename T::SearchNode&>;
-           { const_policy.get_start_priority() } -> std::same_as<ygg::float_t>;
-           { policy.open_start(state, const_search_node) } -> std::same_as<void>;
-           { const_policy.empty() } -> std::convertible_to<bool>;
-           { policy.pop() } -> std::same_as<typename T::PoppedEntry>;
-           { const_policy.should_discard(entry, value) } -> std::convertible_to<bool>;
-           { policy.get_search_node(state) } -> std::same_as<typename T::SearchNode&>;
-           { const_policy.make_successor_metadata(worker, node, action) } -> std::same_as<typename T::SuccessorMetadata>;
-           { T::make_worker_event_handler(event_handler, worker) } -> std::same_as<typename T::WorkerEventHandlerPtr>;
-           { const_policy.get_search_nodes() } -> std::same_as<const ygg::SegmentedVector<typename T::SearchNode>&>;
-       } && (!T::supports_priority_layer_synchronization || requires(const T& policy, const typename T::Options& options) {
-           { T::synchronize_priority_layers(options) } -> std::convertible_to<bool>;
-           { policy.get_min_priority() } -> std::same_as<ygg::float_t>;
-           { policy.get_num_open_entries() } -> std::same_as<size_t>;
-       });
+concept SearchPolicyConcept = TaskKind<Kind> && requires {
+    typename T::SearchTag;
+    typename T::TaskTag;
+    typename T::Options;
+    typename T::EventHandlerPtr;
+    typename T::WorkerEventHandlerPtr;
+    typename T::SearchNode;
+    typename T::SuccessorMetadata;
+    typename T::PoppedEntry;
+    typename std::bool_constant<T::supports_priority_layer_synchronization>;
+    requires SearchKind<typename T::SearchTag>;
+    requires std::same_as<typename T::TaskTag, Kind>;
+} && std::constructible_from<T, Heuristic<Kind>&, const typename T::Options&> && requires(T& policy, const T& const_policy, ygg::Index<Worker> worker, ygg::Index<State<Kind>> state, ygg::float_t value, const typename T::SearchNode& const_search_node, const Node<StateView<Kind>>& node, const typename T::PoppedEntry& entry, formalism::planning::ActionBindingView action, const typename T::Options& options, const typename T::EventHandlerPtr& event_handler) {
+    { T::terminate_on_goal } -> std::convertible_to<bool>;
+    { T::supports_priority_layer_synchronization } -> std::convertible_to<bool>;
+    { policy.initialize_start(state, value, value) } -> std::same_as<typename T::SearchNode&>;
+    { const_policy.get_start_priority() } -> std::same_as<ygg::float_t>;
+    { policy.open_start(state, const_search_node) } -> std::same_as<void>;
+    { const_policy.empty() } -> std::convertible_to<bool>;
+    { policy.pop() } -> std::same_as<typename T::PoppedEntry>;
+    { const_policy.should_discard(entry, value) } -> std::convertible_to<bool>;
+    { policy.get_search_node(state) } -> std::same_as<typename T::SearchNode&>;
+    { const_policy.make_successor_metadata(worker, node, action) } -> std::same_as<typename T::SuccessorMetadata>;
+    { T::make_worker_event_handler(event_handler, worker) } -> std::same_as<typename T::WorkerEventHandlerPtr>;
+    { const_policy.get_search_nodes() } -> std::same_as<const ygg::SegmentedVector<typename T::SearchNode>&>;
+} && (!T::supports_priority_layer_synchronization || requires(const T& policy, const typename T::Options& options) {
+                                  { T::synchronize_priority_layers(options) } -> std::convertible_to<bool>;
+                                  { policy.get_min_priority() } -> std::same_as<ygg::float_t>;
+                                  { policy.get_num_open_entries() } -> std::same_as<size_t>;
+                              });
 
 template<typename T, typename Kind>
 concept StateRoutingPolicyConcept = TaskKind<Kind> && std::constructible_from<T, uint64_t> && requires {
@@ -91,7 +89,7 @@ concept StateRoutingPolicyConcept = TaskKind<Kind> && std::constructible_from<T,
     { T::search_node_divisor(num_workers) } -> std::same_as<size_t>;
     { T::search_node_index(state, worker, num_workers) } -> std::same_as<ygg::Index<State<Kind>>>;
     { prepared.owner } -> std::same_as<ygg::Index<Worker>&>;
-    { prepared.node } -> std::same_as<Node<Kind>&>;
+    { prepared.node } -> std::same_as<Node<StateView<Kind>>&>;
 };
 
 template<typename T, typename Kind, typename SearchPolicy>
@@ -127,7 +125,7 @@ concept WorkerPolicyConcept = TaskKind<Kind> && SearchPolicyConcept<SearchPolicy
                                      {
                                          policy.for_each([](WorkerData&) {})
                                      } -> std::same_as<void>;
-                                     { policy.reconstruct_solution(goal, options) } -> std::same_as<std::pair<Plan<Kind>, Node<Kind>>>;
+                                     { policy.reconstruct_solution(goal, options) } -> std::same_as<std::pair<Plan<Kind>, Node<StateView<Kind>>>>;
                                  };
 
 template<SearchKind Search,

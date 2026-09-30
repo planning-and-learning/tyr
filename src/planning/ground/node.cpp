@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/planning/ground/state_builder.hpp"
 #include "tyr/planning/ground/state_view.hpp"
 #include "tyr/planning/node.hpp"
 //
@@ -26,6 +27,10 @@
 namespace tyr::planning
 {
 
-static_assert(NodeConcept<Node<GroundTag>, GroundTag>);
+static_assert(NodeConcept<Node<StateView<GroundTag>>>);
 
+template class Node<StateView<GroundTag>>;
+template class Node<BuilderStateView<GroundTag>>;
+template struct LabeledNode<StateView<GroundTag>>;
+template struct LabeledNode<BuilderStateView<GroundTag>>;
 }

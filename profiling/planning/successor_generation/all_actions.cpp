@@ -64,7 +64,7 @@ try
     auto state_repository = p::StateRepositoryFactory<Kind>().create(task);
     auto successor_generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
     const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
-    auto successors = std::vector<p::LabeledNode<Kind>>();
+    auto successors = std::vector<p::LabeledNode<p::StateView<Kind>>>();
 
     for (auto _ : state)
     {

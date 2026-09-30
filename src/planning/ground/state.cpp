@@ -165,6 +165,7 @@ namespace ygg
 namespace planning = ::tyr::planning;
 
 template class View<Index<planning::State<::tyr::GroundTag>>, std::shared_ptr<planning::StateRepository<::tyr::GroundTag>>>;
+template class View<Builder<planning::State<::tyr::GroundTag>>, planning::Task<::tyr::GroundTag>>;
 template class View<Index<planning::PackedState<::tyr::GroundTag>>, std::shared_ptr<planning::StateRepository<::tyr::GroundTag>>>;
 
 static_assert(planning::IterableStateConcept<GroundStateView>);

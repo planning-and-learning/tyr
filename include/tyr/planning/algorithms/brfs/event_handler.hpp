@@ -39,9 +39,9 @@ class WorkerEventHandler
 public:
     virtual ~WorkerEventHandler() = default;
 
-    virtual void on_expand_node(const Node<Kind>&) {}
-    virtual void on_expand_goal_node(const Node<Kind>&) {}
-    virtual void on_generate_transition(const Node<Kind>&, const LabeledNode<Kind>&, TransitionOutcome) {}
+    virtual void on_expand_node(const Node<StateView<Kind>>&) {}
+    virtual void on_expand_goal_node(const Node<StateView<Kind>>&) {}
+    virtual void on_generate_transition(const Node<StateView<Kind>>&, const LabeledNode<StateView<Kind>>&, TransitionOutcome) {}
 };
 
 /// @brief Search-lifecycle events shared by all BrFS workers. on_finish_layer runs on the worker that completes the depth barrier.
@@ -54,7 +54,7 @@ public:
 
     virtual ~EventHandler() = default;
 
-    virtual void on_start_search(const Node<Kind>& node) = 0;
+    virtual void on_start_search(const Node<StateView<Kind>>& node) = 0;
     virtual void on_finish_layer(ygg::uint_t layer, const tyr::planning::Statistics& statistics) = 0;
     virtual void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) = 0;
     virtual void on_solved(const Plan<Kind>& plan) = 0;
@@ -67,7 +67,7 @@ class DefaultEventHandler : public EventHandler<Kind>
 public:
     explicit DefaultEventHandler(size_t verbosity = 0);
 
-    void on_start_search(const Node<Kind>& node) override;
+    void on_start_search(const Node<StateView<Kind>>& node) override;
     void on_finish_layer(ygg::uint_t layer, const tyr::planning::Statistics& statistics) override;
     void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override;
     void on_solved(const Plan<Kind>& plan) override;

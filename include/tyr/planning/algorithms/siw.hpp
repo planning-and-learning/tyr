@@ -38,7 +38,7 @@ template<TaskKind Kind>
 struct Options
 {
     /// Optional initial node for the first serialized IW subsearch; when a subsearch runs, it must belong to the underlying solver's task.
-    std::optional<Node<Kind>> start_node = std::nullopt;
+    std::optional<Node<StateView<Kind>>> start_node = std::nullopt;
     EventHandlerPtr<Kind> event_handler = nullptr;
     GoalStrategyPtr<Kind> subgoal_strategy = nullptr;
     GoalStrategyPtr<Kind> goal_strategy = nullptr;
@@ -83,7 +83,7 @@ struct Solver
     iw::Solver<Kind> iw_solver;
     Options<Kind> options;
 
-    Node<Kind> normalize_start_node(std::optional<Node<Kind>> start_node)
+    Node<StateView<Kind>> normalize_start_node(std::optional<Node<StateView<Kind>>> start_node)
     {
         if (!start_node)
             start_node = options.start_node;

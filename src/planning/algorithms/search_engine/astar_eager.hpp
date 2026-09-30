@@ -182,7 +182,7 @@ public:
 
     template<typename EvaluateUnlocked, typename ImproveBestH, typename EmitEvent, typename FinishPriorityLayer>
     ExpansionResult prepare_expansion(const PoppedEntry& entry,
-                                      const Node<Kind>& node,
+                                      const Node<StateView<Kind>>& node,
                                       SearchNode& search_node,
                                       Statistics& statistics,
                                       EvaluateUnlocked&&,
@@ -202,7 +202,7 @@ public:
         return ExpansionResult::EXPAND;
     }
 
-    SuccessorMetadata make_successor_metadata(ygg::Index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionBindingView) const
+    SuccessorMetadata make_successor_metadata(ygg::Index<Worker> worker, const Node<StateView<Kind>>& node, formalism::planning::ActionBindingView) const
     {
         return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().get_index() }, node.get_metric() };
     }
@@ -220,8 +220,8 @@ public:
     template<typename Engine, typename WorkerData, typename EvaluateHeuristic, typename EmitTransition>
     AcceptanceResult accept_successor(Engine& engine,
                                       WorkerData& worker,
-                                      const Node<Kind>& source_node,
-                                      const Node<Kind>& successor_node,
+                                      const Node<StateView<Kind>>& source_node,
+                                      const Node<StateView<Kind>>& successor_node,
                                       const typename Engine::RoutedSuccessor& routed_successor,
                                       SearchNode& successor_search_node,
                                       bool is_new,
@@ -311,7 +311,7 @@ public:
     }
 
     template<typename Handler>
-    static void on_start_search(Handler& handler, const Node<Kind>& node, ygg::float_t priority)
+    static void on_start_search(Handler& handler, const Node<StateView<Kind>>& node, ygg::float_t priority)
     {
         handler.on_start_search(node, priority);
     }

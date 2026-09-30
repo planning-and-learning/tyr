@@ -44,7 +44,7 @@ template<TaskKind Kind, SolverConcept<Kind> Subsolver>
 struct Options
 {
     /// Optional initial node for the first subsearch; when a subsearch runs, it must belong to the subsolver's task.
-    std::optional<Node<Kind>> start_node = std::nullopt;
+    std::optional<Node<StateView<Kind>>> start_node = std::nullopt;
     EventHandlerPtr<Kind, Subsolver> event_handler = nullptr;
     GoalStrategyPtr<Kind> subgoal_strategy = nullptr;
     GoalStrategyPtr<Kind> goal_strategy = nullptr;
@@ -58,10 +58,10 @@ struct Options
 template<typename T, typename Kind>
 concept SerializedSolverConcept =
     TaskKind<Kind> && SolverConcept<T, Kind>
-    && requires(T solver, std::optional<Node<Kind>> start_node, GoalStrategyPtr<Kind> goal_strategy, std::optional<std::chrono::steady_clock::duration> max_time) {
+    && requires(T solver, std::optional<Node<StateView<Kind>>> start_node, GoalStrategyPtr<Kind> goal_strategy, std::optional<std::chrono::steady_clock::duration> max_time) {
            typename T::EventHandlerType;
            typename T::EventHandlerType::StatisticsType;
-           { solver.normalize_start_node(start_node) } -> std::same_as<Node<Kind>>;
+           { solver.normalize_start_node(start_node) } -> std::same_as<Node<StateView<Kind>>>;
            solver.options.start_node = start_node;
            solver.options.goal_strategy = goal_strategy;
            solver.options.search_budget.max_time = max_time;
@@ -74,7 +74,7 @@ namespace detail
 {
 
 template<TaskKind Kind>
-SearchResult<Kind> make_empty_result(const Node<Kind>& start_node, SearchStatus status)
+SearchResult<Kind> make_empty_result(const Node<StateView<Kind>>& start_node, SearchStatus status)
 {
     auto result = SearchResult<Kind> {};
     result.status = status;
@@ -84,7 +84,7 @@ SearchResult<Kind> make_empty_result(const Node<Kind>& start_node, SearchStatus 
 }
 
 template<TaskKind Kind, SerializedSolverConcept<Kind> Solver>
-void append_plan(Solver& solver, const Plan<Kind>& subplan, Node<Kind>& current_node, LabeledNodeList<Kind>& labeled_succ_nodes)
+void append_plan(Solver& solver, const Plan<Kind>& subplan, Node<StateView<Kind>>& current_node, LabeledNodeList<StateView<Kind>>& labeled_succ_nodes)
 {
     auto previous_metric = solver.normalize_start_node(subplan.get_start_node()).get_metric();
     auto cumulative_metric = current_node.get_metric();
@@ -96,7 +96,7 @@ void append_plan(Solver& solver, const Plan<Kind>& subplan, Node<Kind>& current_
         cumulative_metric = ygg::FloatTolerance<ygg::float_t>::canonicalize(cumulative_metric + step_cost);
         if (!std::isfinite(cumulative_metric))
             throw std::runtime_error("serialized::find_solution(...): cumulative plan metric is not finite.");
-        current_node = Node<Kind>(normalized_succ_node.get_state(), cumulative_metric);
+        current_node = Node<StateView<Kind>>(normalized_succ_node.get_state(), cumulative_metric);
         labeled_succ_nodes.emplace_back(labeled_succ_node.label, current_node);
         previous_metric = normalized_succ_node.get_metric();
     }
@@ -105,12 +105,12 @@ void append_plan(Solver& solver, const Plan<Kind>& subplan, Node<Kind>& current_
 template<TaskKind Kind>
 struct ReachedSubgoal
 {
-    Node<Kind> node;
+    Node<StateView<Kind>> node;
     size_t plan_position;
 };
 
 template<TaskKind Kind>
-std::optional<size_t> find_reached_subgoal(const std::vector<ReachedSubgoal<Kind>>& reached_subgoals, const Node<Kind>& node)
+std::optional<size_t> find_reached_subgoal(const std::vector<ReachedSubgoal<Kind>>& reached_subgoals, const Node<StateView<Kind>>& node)
 {
     for (const auto& reached_subgoal : reached_subgoals)
     {
@@ -176,7 +176,7 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Solver>& op
     if (options.max_num_subsearches == 0)
         return finalize(detail::make_empty_result(combined_start_node, SearchStatus::EXHAUSTED));
 
-    auto combined_labeled_succ_nodes = LabeledNodeList<Kind> {};
+    auto combined_labeled_succ_nodes = LabeledNodeList<StateView<Kind>> {};
     auto reached_subgoals = std::vector<detail::ReachedSubgoal<Kind>> { { combined_start_node, 0 } };
 
     for (auto subsearch_index = ygg::uint_t { 0 }; subsearch_index < options.max_num_subsearches; ++subsearch_index)
@@ -260,7 +260,7 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Solver>& op
             return finalize(std::move(result));
         }
 
-        current_start_node = Node<Kind>(current_node.get_state(), 0);
+        current_start_node = Node<StateView<Kind>>(current_node.get_state(), 0);
         reached_subgoals.push_back(detail::ReachedSubgoal<Kind> { current_start_node, combined_labeled_succ_nodes.size() });
     }
 
@@ -279,7 +279,7 @@ struct Solver
     Subsolver subsolver;
     Options<Kind, Subsolver> options;
 
-    Node<Kind> normalize_start_node(std::optional<Node<Kind>> start_node)
+    Node<StateView<Kind>> normalize_start_node(std::optional<Node<StateView<Kind>>> start_node)
     {
         if (!start_node)
             start_node = options.start_node;
