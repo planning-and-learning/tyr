@@ -30,10 +30,13 @@
 
 #include <boost/dynamic_bitset.hpp>
 #include <ranges>
+#include <tuple>
 #include <vector>
 #include <yggdrasil/containers/dynamic_bitset.hpp>
 #include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/semantics/containers/dynamic_bitset_equal_to.hpp>
+#include <yggdrasil/semantics/containers/dynamic_bitset_hash.hpp>
 
 namespace tyr::planning
 {
@@ -113,6 +116,8 @@ public:
 
     ::tyr::planning::NumericUnpackedStorage<::tyr::LiftedTag>& get_numeric_variables() noexcept;
     const ::tyr::planning::NumericUnpackedStorage<::tyr::LiftedTag>& get_numeric_variables() const noexcept;
+
+    auto identifying_members() const noexcept { return std::tie(m_fact_storage, m_numeric_storage); }
 
 private:
     ygg::Index<StateType> m_index;

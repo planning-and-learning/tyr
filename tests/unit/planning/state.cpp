@@ -91,6 +91,36 @@ void expect_packed_state_identity()
 }
 
 template<TaskKind Kind>
+void expect_state_builder_identity()
+{
+    using Builder = ygg::Builder<p::State<Kind>>;
+    auto base = Builder {};
+    if constexpr (std::same_as<Kind, GroundTag>)
+        base.template get_atoms<formalism::FluentTag>().values = { 1, 0 };
+    else
+    {
+        base.template get_atoms<formalism::FluentTag>().indices.resize(2);
+        base.template get_atoms<formalism::FluentTag>().indices.set(0);
+    }
+    base.get_numeric_variables().values = { 3.0 };
+    auto other = base;
+    base.set(ygg::Index<p::State<Kind>>(0));
+    other.set(ygg::Index<p::State<Kind>>(1));
+    other.template get_atoms<formalism::DerivedTag>().indices.resize(3, true);
+    EXPECT_TRUE(ygg::EqualTo<Builder> {}(base, other));
+    EXPECT_EQ(ygg::Hash<Builder> {}(base), ygg::Hash<Builder> {}(other));
+
+    if constexpr (std::same_as<Kind, GroundTag>)
+        other.template get_atoms<formalism::FluentTag>().values.front() = 0;
+    else
+        other.template get_atoms<formalism::FluentTag>().indices.flip(0);
+    EXPECT_FALSE(ygg::EqualTo<Builder> {}(base, other));
+    other = base;
+    other.get_numeric_variables().values.front() = 4.0;
+    EXPECT_FALSE(ygg::EqualTo<Builder> {}(base, other));
+}
+
+template<TaskKind Kind>
 auto derived_names(const p::StateView<Kind>& state)
 {
     auto result = std::vector<std::string> {};
@@ -355,6 +385,12 @@ void expect_registered_closures_and_transition_costs(const p::TaskPtr<Kind>& tas
     expect_duplicate(cheap->node.get_state());
     EXPECT_EQ(repository->num_states(), 4);
 }
+}
+
+TEST(TyrPlanningStateTest, BuilderIdentityUsesOnlyFluentFactsAndNumericValues)
+{
+    expect_state_builder_identity<GroundTag>();
+    expect_state_builder_identity<LiftedTag>();
 }
 
 TEST(TyrPlanningStateTest, DuplicateStatesRetainClosuresAndIndependentTransitionCosts)

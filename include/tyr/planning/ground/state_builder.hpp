@@ -34,6 +34,7 @@
 #include <cassert>
 #include <limits>
 #include <ranges>
+#include <tuple>
 #include <vector>
 #include <yggdrasil/containers/dynamic_bitset.hpp>
 #include <yggdrasil/containers/vector.hpp>
@@ -124,6 +125,8 @@ public:
 
     ::tyr::planning::NumericUnpackedStorage<::tyr::GroundTag>& get_numeric_variables() noexcept;
     const ::tyr::planning::NumericUnpackedStorage<::tyr::GroundTag>& get_numeric_variables() const noexcept;
+
+    auto identifying_members() const noexcept { return std::tie(m_fact_storage, m_numeric_storage); }
 
 private:
     ygg::Index<StateType> m_index;
