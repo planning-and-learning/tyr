@@ -281,147 +281,196 @@ Node<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::get_initial_node(State
 }
 
 template<StateViewConcept<LiftedTag> S>
-NodeList<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<S>& node,
-                                                                                  StateRepository<LiftedTag>& state_repository,
-                                                                                  AxiomEvaluator<LiftedTag>& axiom_evaluator)
+NodeList<S>
+SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<S>& node, SuccessorListStorage<S>& storage, AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
-    auto result = NodeList<StateView<LiftedTag>> {};
-    get_successor_nodes(node, state_repository, axiom_evaluator, result);
+    auto result = NodeList<S> {};
+    get_successor_nodes(node, storage, axiom_evaluator, result);
     return result;
 }
 
 template<StateViewConcept<LiftedTag> S>
 void SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<S>& node,
-                                                        StateRepository<LiftedTag>& state_repository,
+                                                        SuccessorListStorage<S>& storage,
                                                         AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                        NodeList<StateView<LiftedTag>>& out_nodes)
+                                                        NodeList<S>& out_nodes)
 {
     validate_task(m_impl->definition->task, node.get_state());
-    validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
+    if constexpr (std::same_as<S, StateView<LiftedTag>>)
+        validate_task(m_impl->definition->task, storage);
     out_nodes.clear();
-    for_each_successor_node(node,
-                            state_repository,
-                            axiom_evaluator,
-                            [&](auto value)
-                            {
-                                out_nodes.push_back(std::move(value));
-                                return true;
-                            });
+    m_impl->for_each_applicable_action_binding(node,
+                                               *m_impl->evaluator.scratch_action_binding,
+                                               m_impl->definition->action_program.get_datalog_program().get_program(),
+                                               m_impl->evaluator.workspace.schedulers,
+                                               [&](auto& binding)
+                                               {
+                                                   auto& target = [&]() -> auto&
+                                                   {
+                                                       if constexpr (std::same_as<S, StateView<LiftedTag>>)
+                                                           return storage;
+                                                       else
+                                                           return storage.emplace_back();
+                                                   }();
+                                                   out_nodes.push_back(get_successor_node(node, binding, target, axiom_evaluator));
+                                                   return true;
+                                               });
 }
 
 template<StateViewConcept<LiftedTag> S>
-NodeList<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<S>& node,
-                                                                                  fp::ActionView<LiftedTag> action,
-                                                                                  StateRepository<LiftedTag>& state_repository,
-                                                                                  AxiomEvaluator<LiftedTag>& axiom_evaluator)
+NodeList<S> SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<S>& node,
+                                                               fp::ActionView<LiftedTag> action,
+                                                               SuccessorListStorage<S>& storage,
+                                                               AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
-    auto result = NodeList<StateView<LiftedTag>> {};
-    get_successor_nodes(node, action, state_repository, axiom_evaluator, result);
+    auto result = NodeList<S> {};
+    get_successor_nodes(node, action, storage, axiom_evaluator, result);
     return result;
 }
 
 template<StateViewConcept<LiftedTag> S>
 void SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<S>& node,
                                                         fp::ActionView<LiftedTag> action,
-                                                        StateRepository<LiftedTag>& state_repository,
+                                                        SuccessorListStorage<S>& storage,
                                                         AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                        NodeList<StateView<LiftedTag>>& out_nodes)
+                                                        NodeList<S>& out_nodes)
 {
     validate_task(m_impl->definition->task, node.get_state());
-    validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
-    m_impl->get_schema_evaluator(action);
+    if constexpr (std::same_as<S, StateView<LiftedTag>>)
+        validate_task(m_impl->definition->task, storage);
+    auto& schema = m_impl->get_schema_evaluator(action);
     out_nodes.clear();
-    for_each_successor_node(node,
-                            action,
-                            state_repository,
-                            axiom_evaluator,
-                            [&](auto value)
-                            {
-                                out_nodes.push_back(std::move(value));
-                                return true;
-                            });
+    m_impl->for_each_applicable_action_binding(node,
+                                               *m_impl->evaluator.scratch_action_binding,
+                                               schema.program,
+                                               schema.schedulers,
+                                               [&](auto& binding)
+                                               {
+                                                   auto& target = [&]() -> auto&
+                                                   {
+                                                       if constexpr (std::same_as<S, StateView<LiftedTag>>)
+                                                           return storage;
+                                                       else
+                                                           return storage.emplace_back();
+                                                   }();
+                                                   out_nodes.push_back(get_successor_node(node, binding, target, axiom_evaluator));
+                                                   return true;
+                                               });
 }
 
 template<StateViewConcept<LiftedTag> S>
-LabeledNodeList<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<S>& node,
-                                                                                                 StateRepository<LiftedTag>& state_repository,
-                                                                                                 AxiomEvaluator<LiftedTag>& axiom_evaluator)
+LabeledNodeList<S>
+SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<S>& node, SuccessorListStorage<S>& storage, AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
-    auto result = LabeledNodeList<StateView<LiftedTag>> {};
-    get_labeled_successor_nodes(node, state_repository, axiom_evaluator, result);
+    auto result = LabeledNodeList<S> {};
+    get_labeled_successor_nodes(node, storage, axiom_evaluator, result);
     return result;
 }
 
 template<StateViewConcept<LiftedTag> S>
 void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<S>& node,
-                                                                StateRepository<LiftedTag>& state_repository,
+                                                                SuccessorListStorage<S>& storage,
                                                                 AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                                LabeledNodeList<StateView<LiftedTag>>& out_nodes)
+                                                                LabeledNodeList<S>& out_nodes)
 {
     validate_task(m_impl->definition->task, node.get_state());
-    validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
+    if constexpr (std::same_as<S, StateView<LiftedTag>>)
+        validate_task(m_impl->definition->task, storage);
     out_nodes.clear();
-    for_each_labeled_successor_node(node,
-                                    state_repository,
-                                    axiom_evaluator,
-                                    [&](auto value)
-                                    {
-                                        out_nodes.push_back(std::move(value));
-                                        return true;
-                                    });
+    m_impl->for_each_applicable_action_binding(node,
+                                               *m_impl->evaluator.scratch_action_binding,
+                                               m_impl->definition->action_program.get_datalog_program().get_program(),
+                                               m_impl->evaluator.workspace.schedulers,
+                                               [&](auto& binding)
+                                               {
+                                                   const auto action_binding = fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
+                                                   auto& target = [&]() -> auto&
+                                                   {
+                                                       if constexpr (std::same_as<S, StateView<LiftedTag>>)
+                                                           return storage;
+                                                       else
+                                                           return storage.emplace_back();
+                                                   }();
+                                                   out_nodes.push_back({ action_binding, get_successor_node(node, binding, target, axiom_evaluator) });
+                                                   return true;
+                                               });
 }
 
 template<StateViewConcept<LiftedTag> S>
-LabeledNodeList<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<S>& node,
-                                                                                                 fp::ActionView<LiftedTag> action,
-                                                                                                 StateRepository<LiftedTag>& state_repository,
-                                                                                                 AxiomEvaluator<LiftedTag>& axiom_evaluator)
+LabeledNodeList<S> SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<S>& node,
+                                                                              fp::ActionView<LiftedTag> action,
+                                                                              SuccessorListStorage<S>& storage,
+                                                                              AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
-    auto result = LabeledNodeList<StateView<LiftedTag>> {};
-    get_labeled_successor_nodes(node, action, state_repository, axiom_evaluator, result);
+    auto result = LabeledNodeList<S> {};
+    get_labeled_successor_nodes(node, action, storage, axiom_evaluator, result);
     return result;
 }
 
 template<StateViewConcept<LiftedTag> S>
 void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<S>& node,
                                                                 fp::ActionView<LiftedTag> action,
-                                                                StateRepository<LiftedTag>& state_repository,
+                                                                SuccessorListStorage<S>& storage,
                                                                 AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                                LabeledNodeList<StateView<LiftedTag>>& out_nodes)
+                                                                LabeledNodeList<S>& out_nodes)
 {
     validate_task(m_impl->definition->task, node.get_state());
-    validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
-    m_impl->get_schema_evaluator(action);
+    if constexpr (std::same_as<S, StateView<LiftedTag>>)
+        validate_task(m_impl->definition->task, storage);
+    auto& schema = m_impl->get_schema_evaluator(action);
     out_nodes.clear();
-    for_each_labeled_successor_node(node,
-                                    action,
-                                    state_repository,
-                                    axiom_evaluator,
-                                    [&](auto value)
-                                    {
-                                        out_nodes.push_back(std::move(value));
-                                        return true;
-                                    });
+    m_impl->for_each_applicable_action_binding(node,
+                                               *m_impl->evaluator.scratch_action_binding,
+                                               schema.program,
+                                               schema.schedulers,
+                                               [&](auto& binding)
+                                               {
+                                                   const auto action_binding = fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
+                                                   auto& target = [&]() -> auto&
+                                                   {
+                                                       if constexpr (std::same_as<S, StateView<LiftedTag>>)
+                                                           return storage;
+                                                       else
+                                                           return storage.emplace_back();
+                                                   }();
+                                                   out_nodes.push_back({ action_binding, get_successor_node(node, binding, target, axiom_evaluator) });
+                                                   return true;
+                                               });
 }
 
 template<StateViewConcept<LiftedTag> S>
-Node<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<S>& node,
-                                                                             fp::ActionView<GroundTag> action,
-                                                                             StateRepository<LiftedTag>& state_repository,
-                                                                             AxiomEvaluator<LiftedTag>& axiom_evaluator)
+Node<S> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<S>& node,
+                                                          fp::ActionView<GroundTag> action,
+                                                          SuccessorStorage<S>& storage,
+                                                          AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
     validate_task(m_impl->definition->task, node.get_state());
-    validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
-    const auto& state = node.get_state();
-    const auto state_context = StateContext<LiftedTag>(*m_impl->definition->task, state.get_state_builder(), node.get_metric());
-    auto successor_state = state_repository.get_state_builder();
-    const auto auxiliary_value = m_impl->evaluator.executor.apply_action_unregistered(state_context, action, *successor_state);
-    return finalize_successor_state(state_repository, axiom_evaluator, std::move(successor_state), auxiliary_value);
+    if constexpr (std::same_as<S, StateView<LiftedTag>>)
+        validate_task(m_impl->definition->task, storage);
+    if constexpr (std::same_as<S, BuilderStateView<LiftedTag>>)
+        if (&node.get_state().get_state_builder() == &storage)
+            throw std::invalid_argument("SuccessorGenerator: source and output builder must not alias.");
+    const auto state_context = StateContext<LiftedTag>(*m_impl->definition->task, node.get_state().get_state_builder(), node.get_metric());
+    const auto generate = [&](auto& target) { return m_impl->evaluator.executor.apply_action_unregistered(state_context, action, target); };
+    if constexpr (std::same_as<S, StateView<LiftedTag>>)
+    {
+        auto successor = storage.get_state_builder();
+        const auto auxiliary_value = generate(*successor);
+        return finalize_successor_state(storage, axiom_evaluator, std::move(successor), auxiliary_value);
+    }
+    else
+    {
+        storage.clear();
+        const auto auxiliary_value = generate(storage);
+        const auto metric = evaluate_successor_metric(*m_impl->definition->task, storage, auxiliary_value);
+        axiom_evaluator.compute_extended_state(storage);
+        return Node<S>(S(storage, *m_impl->definition->task), metric);
+    }
 }
 
 fp::ActionView<GroundTag> SuccessorGenerator<LiftedTag>::ground_action(fp::ActionBindingView binding)
@@ -445,18 +494,18 @@ fp::ActionView<GroundTag> SuccessorGenerator<LiftedTag>::ground_action(fp::Actio
     return ground_action;
 }
 
-// Action binding API (interning)
+// Interned action-binding input; state storage follows S.
 template<StateViewConcept<LiftedTag> S>
-Node<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<S>& node,
-                                                                             formalism::planning::ActionBindingView binding,
-                                                                             StateRepository<LiftedTag>& state_repository,
-                                                                             AxiomEvaluator<LiftedTag>& axiom_evaluator)
+Node<S> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<S>& node,
+                                                          formalism::planning::ActionBindingView binding,
+                                                          SuccessorStorage<S>& storage,
+                                                          AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
     m_impl->evaluator.scratch_action_binding->relation = binding.get_relation().get_index();
     m_impl->evaluator.scratch_action_binding->objects.clear();
     ygg::extend(binding.get_objects(), m_impl->evaluator.scratch_action_binding->objects);
 
-    return get_successor_node(node, *m_impl->evaluator.scratch_action_binding, state_repository, axiom_evaluator);
+    return get_successor_node(node, *m_impl->evaluator.scratch_action_binding, storage, axiom_evaluator);
 }
 
 template<StateViewConcept<LiftedTag> S>
@@ -528,20 +577,35 @@ Node<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::finalize_successor_sta
     return Node<StateView<LiftedTag>>(state_repository.register_state(axiom_evaluator, std::move(state)), metric);
 }
 
-// Action binding API (no interning)
+// Raw action-binding input; bindings are not interned and state storage follows S.
 template<StateViewConcept<LiftedTag> S>
-Node<StateView<LiftedTag>>
-SuccessorGenerator<LiftedTag>::get_successor_node(const Node<S>& node,
-                                                  const ygg::Data<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>>& binding,
-                                                  StateRepository<LiftedTag>& state_repository,
-                                                  AxiomEvaluator<LiftedTag>& axiom_evaluator)
+Node<S> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<S>& node,
+                                                          const ygg::Data<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>>& binding,
+                                                          SuccessorStorage<S>& storage,
+                                                          AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
     validate_task(m_impl->definition->task, node.get_state());
-    validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
-    auto state = state_repository.get_state_builder();
-    const auto auxiliary_value = m_impl->generate_successor_state(node, binding, *state);
-    return finalize_successor_state(state_repository, axiom_evaluator, std::move(state), auxiliary_value);
+    if constexpr (std::same_as<S, StateView<LiftedTag>>)
+        validate_task(m_impl->definition->task, storage);
+    if constexpr (std::same_as<S, BuilderStateView<LiftedTag>>)
+        if (&node.get_state().get_state_builder() == &storage)
+            throw std::invalid_argument("SuccessorGenerator: source and output builder must not alias.");
+    const auto generate = [&](auto& target) { return m_impl->generate_successor_state(node, binding, target); };
+    if constexpr (std::same_as<S, StateView<LiftedTag>>)
+    {
+        auto successor = storage.get_state_builder();
+        const auto auxiliary_value = generate(*successor);
+        return finalize_successor_state(storage, axiom_evaluator, std::move(successor), auxiliary_value);
+    }
+    else
+    {
+        storage.clear();
+        const auto auxiliary_value = generate(storage);
+        const auto metric = evaluate_successor_metric(*m_impl->definition->task, storage, auxiliary_value);
+        axiom_evaluator.compute_extended_state(storage);
+        return Node<S>(S(storage, *m_impl->definition->task), metric);
+    }
 }
 
 // Lookup
@@ -557,19 +621,22 @@ Node<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::get_node(StateReposito
 
 template<StateViewConcept<LiftedTag> S>
 bool SuccessorGenerator<LiftedTag>::for_each_successor_node(const Node<S>& node,
-                                                            StateRepository<LiftedTag>& state_repository,
+                                                            SuccessorStorage<S>& storage,
                                                             AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                            const std::function<bool(Node<StateView<LiftedTag>>)>& callback)
+                                                            const std::type_identity_t<std::function<bool(Node<S>)>>& callback)
 {
     validate_task(m_impl->definition->task, node.get_state());
-    validate_task(m_impl->definition->task, state_repository);
+    if constexpr (std::same_as<S, StateView<LiftedTag>>)
+        validate_task(m_impl->definition->task, storage);
+    if constexpr (std::same_as<S, BuilderStateView<LiftedTag>>)
+        if (&node.get_state().get_state_builder() == &storage)
+            throw std::invalid_argument("SuccessorGenerator: source and output builder must not alias.");
     validate_task(m_impl->definition->task, axiom_evaluator);
     return m_impl->for_each_applicable_action_binding(node,
                                                       *m_impl->evaluator.scratch_action_binding,
                                                       m_impl->definition->action_program.get_datalog_program().get_program(),
                                                       m_impl->evaluator.workspace.schedulers,
-                                                      [&](auto& binding)
-                                                      { return callback(get_successor_node(node, binding, state_repository, axiom_evaluator)); });
+                                                      [&](auto& binding) { return callback(get_successor_node(node, binding, storage, axiom_evaluator)); });
 }
 
 template<StateViewConcept<LiftedTag> S>
@@ -589,38 +656,43 @@ void SuccessorGenerator<LiftedTag>::get_packed_successor_nodes(const Node<S>& no
                                                                PackedNodeList<LiftedTag>& out_nodes)
 {
     validate_task(m_impl->definition->task, node.get_state());
-    validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
+    validate_task(m_impl->definition->task, state_repository);
     out_nodes.clear();
-    for_each_successor_node(node,
-                            state_repository,
-                            axiom_evaluator,
-                            [&](auto value)
-                            {
-                                out_nodes.push_back(value.pack());
-                                return true;
-                            });
+    m_impl->for_each_applicable_action_binding(node,
+                                               *m_impl->evaluator.scratch_action_binding,
+                                               m_impl->definition->action_program.get_datalog_program().get_program(),
+                                               m_impl->evaluator.workspace.schedulers,
+                                               [&](auto& binding)
+                                               {
+                                                   out_nodes.push_back(get_packed_successor_node(node, binding, state_repository, axiom_evaluator));
+                                                   return true;
+                                               });
 }
 
 template<StateViewConcept<LiftedTag> S>
 bool SuccessorGenerator<LiftedTag>::for_each_labeled_successor_node(const Node<S>& node,
-                                                                    StateRepository<LiftedTag>& state_repository,
+                                                                    SuccessorStorage<S>& storage,
                                                                     AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                                    const std::function<bool(LabeledNode<StateView<LiftedTag>>)>& callback)
+                                                                    const std::type_identity_t<std::function<bool(LabeledNode<S>)>>& callback)
 {
     validate_task(m_impl->definition->task, node.get_state());
-    validate_task(m_impl->definition->task, state_repository);
+    if constexpr (std::same_as<S, StateView<LiftedTag>>)
+        validate_task(m_impl->definition->task, storage);
+    if constexpr (std::same_as<S, BuilderStateView<LiftedTag>>)
+        if (&node.get_state().get_state_builder() == &storage)
+            throw std::invalid_argument("SuccessorGenerator: source and output builder must not alias.");
     validate_task(m_impl->definition->task, axiom_evaluator);
-    return m_impl->for_each_applicable_action_binding(
-        node,
-        *m_impl->evaluator.scratch_action_binding,
-        m_impl->definition->action_program.get_datalog_program().get_program(),
-        m_impl->evaluator.workspace.schedulers,
-        [&](auto& binding)
-        {
-            const auto action_binding = fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
-            return callback({ action_binding, get_successor_node(node, binding, state_repository, axiom_evaluator) });
-        });
+    return m_impl->for_each_applicable_action_binding(node,
+                                                      *m_impl->evaluator.scratch_action_binding,
+                                                      m_impl->definition->action_program.get_datalog_program().get_program(),
+                                                      m_impl->evaluator.workspace.schedulers,
+                                                      [&](auto& binding)
+                                                      {
+                                                          const auto action_binding =
+                                                              fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
+                                                          return callback({ action_binding, get_successor_node(node, binding, storage, axiom_evaluator) });
+                                                      });
 }
 
 template<StateViewConcept<LiftedTag> S>
@@ -640,17 +712,20 @@ void SuccessorGenerator<LiftedTag>::get_packed_labeled_successor_nodes(const Nod
                                                                        PackedLabeledNodeList<LiftedTag>& out_nodes)
 {
     validate_task(m_impl->definition->task, node.get_state());
-    validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
+    validate_task(m_impl->definition->task, state_repository);
     out_nodes.clear();
-    for_each_labeled_successor_node(node,
-                                    state_repository,
-                                    axiom_evaluator,
-                                    [&](auto value)
-                                    {
-                                        out_nodes.push_back(value.pack());
-                                        return true;
-                                    });
+    m_impl->for_each_applicable_action_binding(node,
+                                               *m_impl->evaluator.scratch_action_binding,
+                                               m_impl->definition->action_program.get_datalog_program().get_program(),
+                                               m_impl->evaluator.workspace.schedulers,
+                                               [&](auto& binding)
+                                               {
+                                                   const auto action_binding = fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
+                                                   out_nodes.push_back(
+                                                       { action_binding, get_packed_successor_node(node, binding, state_repository, axiom_evaluator) });
+                                                   return true;
+                                               });
 }
 
 template<StateViewConcept<LiftedTag> S>
@@ -668,20 +743,23 @@ bool SuccessorGenerator<LiftedTag>::for_each_applicable_action_binding(const Nod
 template<StateViewConcept<LiftedTag> S>
 bool SuccessorGenerator<LiftedTag>::for_each_successor_node(const Node<S>& node,
                                                             fp::ActionView<LiftedTag> action,
-                                                            StateRepository<LiftedTag>& state_repository,
+                                                            SuccessorStorage<S>& storage,
                                                             AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                            const std::function<bool(Node<StateView<LiftedTag>>)>& callback)
+                                                            const std::type_identity_t<std::function<bool(Node<S>)>>& callback)
 {
     validate_task(m_impl->definition->task, node.get_state());
-    validate_task(m_impl->definition->task, state_repository);
+    if constexpr (std::same_as<S, StateView<LiftedTag>>)
+        validate_task(m_impl->definition->task, storage);
+    if constexpr (std::same_as<S, BuilderStateView<LiftedTag>>)
+        if (&node.get_state().get_state_builder() == &storage)
+            throw std::invalid_argument("SuccessorGenerator: source and output builder must not alias.");
     validate_task(m_impl->definition->task, axiom_evaluator);
     auto& schema = m_impl->get_schema_evaluator(action);
     return m_impl->for_each_applicable_action_binding(node,
                                                       *m_impl->evaluator.scratch_action_binding,
                                                       schema.program,
                                                       schema.schedulers,
-                                                      [&](auto& binding)
-                                                      { return callback(get_successor_node(node, binding, state_repository, axiom_evaluator)); });
+                                                      [&](auto& binding) { return callback(get_successor_node(node, binding, storage, axiom_evaluator)); });
 }
 
 template<StateViewConcept<LiftedTag> S>
@@ -703,42 +781,46 @@ void SuccessorGenerator<LiftedTag>::get_packed_successor_nodes(const Node<S>& no
                                                                PackedNodeList<LiftedTag>& out_nodes)
 {
     validate_task(m_impl->definition->task, node.get_state());
-    validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
-    m_impl->get_schema_evaluator(action);
+    validate_task(m_impl->definition->task, state_repository);
+    auto& schema = m_impl->get_schema_evaluator(action);
     out_nodes.clear();
-    for_each_successor_node(node,
-                            action,
-                            state_repository,
-                            axiom_evaluator,
-                            [&](auto value)
-                            {
-                                out_nodes.push_back(value.pack());
-                                return true;
-                            });
+    m_impl->for_each_applicable_action_binding(node,
+                                               *m_impl->evaluator.scratch_action_binding,
+                                               schema.program,
+                                               schema.schedulers,
+                                               [&](auto& binding)
+                                               {
+                                                   out_nodes.push_back(get_packed_successor_node(node, binding, state_repository, axiom_evaluator));
+                                                   return true;
+                                               });
 }
 
 template<StateViewConcept<LiftedTag> S>
 bool SuccessorGenerator<LiftedTag>::for_each_labeled_successor_node(const Node<S>& node,
                                                                     fp::ActionView<LiftedTag> action,
-                                                                    StateRepository<LiftedTag>& state_repository,
+                                                                    SuccessorStorage<S>& storage,
                                                                     AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                                    const std::function<bool(LabeledNode<StateView<LiftedTag>>)>& callback)
+                                                                    const std::type_identity_t<std::function<bool(LabeledNode<S>)>>& callback)
 {
     validate_task(m_impl->definition->task, node.get_state());
-    validate_task(m_impl->definition->task, state_repository);
+    if constexpr (std::same_as<S, StateView<LiftedTag>>)
+        validate_task(m_impl->definition->task, storage);
+    if constexpr (std::same_as<S, BuilderStateView<LiftedTag>>)
+        if (&node.get_state().get_state_builder() == &storage)
+            throw std::invalid_argument("SuccessorGenerator: source and output builder must not alias.");
     validate_task(m_impl->definition->task, axiom_evaluator);
     auto& schema = m_impl->get_schema_evaluator(action);
-    return m_impl->for_each_applicable_action_binding(
-        node,
-        *m_impl->evaluator.scratch_action_binding,
-        schema.program,
-        schema.schedulers,
-        [&](auto& binding)
-        {
-            const auto action_binding = fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
-            return callback({ action_binding, get_successor_node(node, binding, state_repository, axiom_evaluator) });
-        });
+    return m_impl->for_each_applicable_action_binding(node,
+                                                      *m_impl->evaluator.scratch_action_binding,
+                                                      schema.program,
+                                                      schema.schedulers,
+                                                      [&](auto& binding)
+                                                      {
+                                                          const auto action_binding =
+                                                              fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
+                                                          return callback({ action_binding, get_successor_node(node, binding, storage, axiom_evaluator) });
+                                                      });
 }
 
 template<StateViewConcept<LiftedTag> S>
@@ -760,19 +842,21 @@ void SuccessorGenerator<LiftedTag>::get_packed_labeled_successor_nodes(const Nod
                                                                        PackedLabeledNodeList<LiftedTag>& out_nodes)
 {
     validate_task(m_impl->definition->task, node.get_state());
-    validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
-    m_impl->get_schema_evaluator(action);
+    validate_task(m_impl->definition->task, state_repository);
+    auto& schema = m_impl->get_schema_evaluator(action);
     out_nodes.clear();
-    for_each_labeled_successor_node(node,
-                                    action,
-                                    state_repository,
-                                    axiom_evaluator,
-                                    [&](auto value)
-                                    {
-                                        out_nodes.push_back(value.pack());
-                                        return true;
-                                    });
+    m_impl->for_each_applicable_action_binding(node,
+                                               *m_impl->evaluator.scratch_action_binding,
+                                               schema.program,
+                                               schema.schedulers,
+                                               [&](auto& binding)
+                                               {
+                                                   const auto action_binding = fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
+                                                   out_nodes.push_back(
+                                                       { action_binding, get_packed_successor_node(node, binding, state_repository, axiom_evaluator) });
+                                                   return true;
+                                               });
 }
 
 template<StateViewConcept<LiftedTag> S>
@@ -807,7 +891,10 @@ PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_successor_node(c
                                                                                StateRepository<LiftedTag>& state_repository,
                                                                                AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
-    return get_successor_node(node, binding, state_repository, axiom_evaluator).pack();
+    m_impl->evaluator.scratch_action_binding->relation = binding.get_relation().get_index();
+    m_impl->evaluator.scratch_action_binding->objects.clear();
+    ygg::extend(binding.get_objects(), m_impl->evaluator.scratch_action_binding->objects);
+    return get_packed_successor_node(node, *m_impl->evaluator.scratch_action_binding, state_repository, axiom_evaluator);
 }
 
 template<StateViewConcept<LiftedTag> S>
@@ -816,7 +903,13 @@ PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_successor_node(c
                                                                                StateRepository<LiftedTag>& state_repository,
                                                                                AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
-    return get_successor_node(node, binding, state_repository, axiom_evaluator).pack();
+    validate_task(m_impl->definition->task, node.get_state());
+    validate_task(m_impl->definition->task, axiom_evaluator);
+    validate_task(m_impl->definition->task, state_repository);
+    auto successor = state_repository.get_state_builder();
+    const auto state_context = StateContext<LiftedTag>(*m_impl->definition->task, node.get_state().get_state_builder(), node.get_metric());
+    const auto auxiliary_value = m_impl->evaluator.executor.apply_action_unregistered(state_context, binding, *successor);
+    return finalize_successor_state(state_repository, axiom_evaluator, std::move(successor), auxiliary_value).pack();
 }
 
 template<StateViewConcept<LiftedTag> S>
@@ -826,7 +919,12 @@ SuccessorGenerator<LiftedTag>::get_packed_successor_node(const Node<S>& node,
                                                          StateRepository<LiftedTag>& state_repository,
                                                          AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
-    return get_successor_node(node, binding, state_repository, axiom_evaluator).pack();
+    validate_task(m_impl->definition->task, node.get_state());
+    validate_task(m_impl->definition->task, axiom_evaluator);
+    validate_task(m_impl->definition->task, state_repository);
+    auto successor = state_repository.get_state_builder();
+    const auto auxiliary_value = m_impl->generate_successor_state(node, binding, *successor);
+    return finalize_successor_state(state_repository, axiom_evaluator, std::move(successor), auxiliary_value).pack();
 }
 
 const ApplicableActionProgram<LiftedTag>& SuccessorGenerator<LiftedTag>::get_action_program() const noexcept { return m_impl->definition->action_program; }
@@ -858,9 +956,9 @@ template NodeList<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::get_succe
                                                                                                                  StateRepository<LiftedTag>& state_repository,
                                                                                                                  AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
-template NodeList<StateView<LiftedTag>>
+template NodeList<BuilderStateView<LiftedTag>>
 SuccessorGenerator<LiftedTag>::get_successor_nodes<BuilderStateView<LiftedTag>>(const Node<BuilderStateView<LiftedTag>>& node,
-                                                                                StateRepository<LiftedTag>& state_repository,
+                                                                                std::deque<ygg::Builder<State<LiftedTag>>>& storage,
                                                                                 AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
 template void SuccessorGenerator<LiftedTag>::get_successor_nodes<StateView<LiftedTag>>(const Node<StateView<LiftedTag>>& node,
@@ -869,19 +967,19 @@ template void SuccessorGenerator<LiftedTag>::get_successor_nodes<StateView<Lifte
                                                                                        NodeList<StateView<LiftedTag>>& out_nodes);
 
 template void SuccessorGenerator<LiftedTag>::get_successor_nodes<BuilderStateView<LiftedTag>>(const Node<BuilderStateView<LiftedTag>>& node,
-                                                                                              StateRepository<LiftedTag>& state_repository,
+                                                                                              std::deque<ygg::Builder<State<LiftedTag>>>& storage,
                                                                                               AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                                                              NodeList<StateView<LiftedTag>>& out_nodes);
+                                                                                              NodeList<BuilderStateView<LiftedTag>>& out_nodes);
 
 template NodeList<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::get_successor_nodes<StateView<LiftedTag>>(const Node<StateView<LiftedTag>>& node,
                                                                                                                  fp::ActionView<LiftedTag> action,
                                                                                                                  StateRepository<LiftedTag>& state_repository,
                                                                                                                  AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
-template NodeList<StateView<LiftedTag>>
+template NodeList<BuilderStateView<LiftedTag>>
 SuccessorGenerator<LiftedTag>::get_successor_nodes<BuilderStateView<LiftedTag>>(const Node<BuilderStateView<LiftedTag>>& node,
                                                                                 fp::ActionView<LiftedTag> action,
-                                                                                StateRepository<LiftedTag>& state_repository,
+                                                                                std::deque<ygg::Builder<State<LiftedTag>>>& storage,
                                                                                 AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
 template void SuccessorGenerator<LiftedTag>::get_successor_nodes<StateView<LiftedTag>>(const Node<StateView<LiftedTag>>& node,
@@ -892,18 +990,18 @@ template void SuccessorGenerator<LiftedTag>::get_successor_nodes<StateView<Lifte
 
 template void SuccessorGenerator<LiftedTag>::get_successor_nodes<BuilderStateView<LiftedTag>>(const Node<BuilderStateView<LiftedTag>>& node,
                                                                                               fp::ActionView<LiftedTag> action,
-                                                                                              StateRepository<LiftedTag>& state_repository,
+                                                                                              std::deque<ygg::Builder<State<LiftedTag>>>& storage,
                                                                                               AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                                                              NodeList<StateView<LiftedTag>>& out_nodes);
+                                                                                              NodeList<BuilderStateView<LiftedTag>>& out_nodes);
 
 template LabeledNodeList<StateView<LiftedTag>>
 SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes<StateView<LiftedTag>>(const Node<StateView<LiftedTag>>& node,
                                                                                  StateRepository<LiftedTag>& state_repository,
                                                                                  AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
-template LabeledNodeList<StateView<LiftedTag>>
+template LabeledNodeList<BuilderStateView<LiftedTag>>
 SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes<BuilderStateView<LiftedTag>>(const Node<BuilderStateView<LiftedTag>>& node,
-                                                                                        StateRepository<LiftedTag>& state_repository,
+                                                                                        std::deque<ygg::Builder<State<LiftedTag>>>& storage,
                                                                                         AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
 template void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes<StateView<LiftedTag>>(const Node<StateView<LiftedTag>>& node,
@@ -912,9 +1010,9 @@ template void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes<StateVi
                                                                                                LabeledNodeList<StateView<LiftedTag>>& out_nodes);
 
 template void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes<BuilderStateView<LiftedTag>>(const Node<BuilderStateView<LiftedTag>>& node,
-                                                                                                      StateRepository<LiftedTag>& state_repository,
+                                                                                                      std::deque<ygg::Builder<State<LiftedTag>>>& storage,
                                                                                                       AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                                                                      LabeledNodeList<StateView<LiftedTag>>& out_nodes);
+                                                                                                      LabeledNodeList<BuilderStateView<LiftedTag>>& out_nodes);
 
 template LabeledNodeList<StateView<LiftedTag>>
 SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes<StateView<LiftedTag>>(const Node<StateView<LiftedTag>>& node,
@@ -922,10 +1020,10 @@ SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes<StateView<LiftedTag>>
                                                                                  StateRepository<LiftedTag>& state_repository,
                                                                                  AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
-template LabeledNodeList<StateView<LiftedTag>>
+template LabeledNodeList<BuilderStateView<LiftedTag>>
 SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes<BuilderStateView<LiftedTag>>(const Node<BuilderStateView<LiftedTag>>& node,
                                                                                         fp::ActionView<LiftedTag> action,
-                                                                                        StateRepository<LiftedTag>& state_repository,
+                                                                                        std::deque<ygg::Builder<State<LiftedTag>>>& storage,
                                                                                         AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
 template void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes<StateView<LiftedTag>>(const Node<StateView<LiftedTag>>& node,
@@ -936,19 +1034,19 @@ template void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes<StateVi
 
 template void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes<BuilderStateView<LiftedTag>>(const Node<BuilderStateView<LiftedTag>>& node,
                                                                                                       fp::ActionView<LiftedTag> action,
-                                                                                                      StateRepository<LiftedTag>& state_repository,
+                                                                                                      std::deque<ygg::Builder<State<LiftedTag>>>& storage,
                                                                                                       AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                                                                      LabeledNodeList<StateView<LiftedTag>>& out_nodes);
+                                                                                                      LabeledNodeList<BuilderStateView<LiftedTag>>& out_nodes);
 
 template Node<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::get_successor_node<StateView<LiftedTag>>(const Node<StateView<LiftedTag>>& node,
                                                                                                             fp::ActionView<GroundTag> action,
                                                                                                             StateRepository<LiftedTag>& state_repository,
                                                                                                             AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
-template Node<StateView<LiftedTag>>
+template Node<BuilderStateView<LiftedTag>>
 SuccessorGenerator<LiftedTag>::get_successor_node<BuilderStateView<LiftedTag>>(const Node<BuilderStateView<LiftedTag>>& node,
                                                                                fp::ActionView<GroundTag> action,
-                                                                               StateRepository<LiftedTag>& state_repository,
+                                                                               ygg::Builder<State<LiftedTag>>& storage,
                                                                                AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
 template Node<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::get_successor_node<StateView<LiftedTag>>(const Node<StateView<LiftedTag>>& node,
@@ -956,10 +1054,10 @@ template Node<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::get_successor
                                                                                                             StateRepository<LiftedTag>& state_repository,
                                                                                                             AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
-template Node<StateView<LiftedTag>>
+template Node<BuilderStateView<LiftedTag>>
 SuccessorGenerator<LiftedTag>::get_successor_node<BuilderStateView<LiftedTag>>(const Node<BuilderStateView<LiftedTag>>& node,
                                                                                formalism::planning::ActionBindingView binding,
-                                                                               StateRepository<LiftedTag>& state_repository,
+                                                                               ygg::Builder<State<LiftedTag>>& storage,
                                                                                AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
 template std::vector<formalism::planning::ActionBindingView>
@@ -1005,10 +1103,10 @@ template Node<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::get_successor
     StateRepository<LiftedTag>& state_repository,
     AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
-template Node<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::get_successor_node<BuilderStateView<LiftedTag>>(
+template Node<BuilderStateView<LiftedTag>> SuccessorGenerator<LiftedTag>::get_successor_node<BuilderStateView<LiftedTag>>(
     const Node<BuilderStateView<LiftedTag>>& node,
     const ygg::Data<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>>& binding,
-    StateRepository<LiftedTag>& state_repository,
+    ygg::Builder<State<LiftedTag>>& storage,
     AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
 template bool SuccessorGenerator<LiftedTag>::for_each_successor_node<StateView<LiftedTag>>(const Node<StateView<LiftedTag>>& node,
@@ -1018,9 +1116,9 @@ template bool SuccessorGenerator<LiftedTag>::for_each_successor_node<StateView<L
 
 template bool
 SuccessorGenerator<LiftedTag>::for_each_successor_node<BuilderStateView<LiftedTag>>(const Node<BuilderStateView<LiftedTag>>& node,
-                                                                                    StateRepository<LiftedTag>& state_repository,
+                                                                                    ygg::Builder<State<LiftedTag>>& storage,
                                                                                     AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                                                    const std::function<bool(Node<StateView<LiftedTag>>)>& callback);
+                                                                                    const std::function<bool(Node<BuilderStateView<LiftedTag>>)>& callback);
 
 template PackedNodeList<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_successor_nodes<StateView<LiftedTag>>(const Node<StateView<LiftedTag>>& node,
                                                                                                                    StateRepository<LiftedTag>& state_repository,
@@ -1049,9 +1147,9 @@ SuccessorGenerator<LiftedTag>::for_each_labeled_successor_node<StateView<LiftedT
 
 template bool SuccessorGenerator<LiftedTag>::for_each_labeled_successor_node<BuilderStateView<LiftedTag>>(
     const Node<BuilderStateView<LiftedTag>>& node,
-    StateRepository<LiftedTag>& state_repository,
+    ygg::Builder<State<LiftedTag>>& storage,
     AxiomEvaluator<LiftedTag>& axiom_evaluator,
-    const std::function<bool(LabeledNode<StateView<LiftedTag>>)>& callback);
+    const std::function<bool(LabeledNode<BuilderStateView<LiftedTag>>)>& callback);
 
 template PackedLabeledNodeList<LiftedTag>
 SuccessorGenerator<LiftedTag>::get_packed_labeled_successor_nodes<StateView<LiftedTag>>(const Node<StateView<LiftedTag>>& node,
@@ -1090,9 +1188,9 @@ template bool SuccessorGenerator<LiftedTag>::for_each_successor_node<StateView<L
 template bool
 SuccessorGenerator<LiftedTag>::for_each_successor_node<BuilderStateView<LiftedTag>>(const Node<BuilderStateView<LiftedTag>>& node,
                                                                                     fp::ActionView<LiftedTag> action,
-                                                                                    StateRepository<LiftedTag>& state_repository,
+                                                                                    ygg::Builder<State<LiftedTag>>& storage,
                                                                                     AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                                                    const std::function<bool(Node<StateView<LiftedTag>>)>& callback);
+                                                                                    const std::function<bool(Node<BuilderStateView<LiftedTag>>)>& callback);
 
 template PackedNodeList<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_successor_nodes<StateView<LiftedTag>>(const Node<StateView<LiftedTag>>& node,
                                                                                                                    fp::ActionView<LiftedTag> action,
@@ -1127,9 +1225,9 @@ SuccessorGenerator<LiftedTag>::for_each_labeled_successor_node<StateView<LiftedT
 template bool SuccessorGenerator<LiftedTag>::for_each_labeled_successor_node<BuilderStateView<LiftedTag>>(
     const Node<BuilderStateView<LiftedTag>>& node,
     fp::ActionView<LiftedTag> action,
-    StateRepository<LiftedTag>& state_repository,
+    ygg::Builder<State<LiftedTag>>& storage,
     AxiomEvaluator<LiftedTag>& axiom_evaluator,
-    const std::function<bool(LabeledNode<StateView<LiftedTag>>)>& callback);
+    const std::function<bool(LabeledNode<BuilderStateView<LiftedTag>>)>& callback);
 
 template PackedLabeledNodeList<LiftedTag>
 SuccessorGenerator<LiftedTag>::get_packed_labeled_successor_nodes<StateView<LiftedTag>>(const Node<StateView<LiftedTag>>& node,

@@ -7,8 +7,10 @@
 #include <algorithm>
 #include <barrier>
 #include <concepts>
+#include <deque>
 #include <future>
 #include <gtest/gtest.h>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -332,10 +334,94 @@ void expect_registered_closures_and_transition_costs(const p::TaskPtr<Kind>& tas
         owned->set(ygg::Index<p::State<Kind>> {});
         const auto borrowed = p::Node(ygg::make_view(*owned, *task), cheap->node.get_metric());
         EXPECT_EQ(generator->get_applicable_action_bindings(borrowed), bindings);
-        const auto successor = generator->get_successor_node(borrowed, *raise, *repository, *axioms);
-        EXPECT_EQ(successor, raised);
-        EXPECT_EQ(derived_names(successor.get_state()), derived_names(raised.get_state()));
+        const auto expect_same_node = [](const auto& actual, const auto& expected)
+        {
+            EXPECT_EQ(actual.get_metric(), expected.get_metric());
+            EXPECT_TRUE(std::ranges::equal(actual.get_state().get_fluent_facts(), expected.get_state().get_fluent_facts()));
+            EXPECT_TRUE(std::ranges::equal(actual.get_state().get_derived_atoms(), expected.get_state().get_derived_atoms()));
+            EXPECT_TRUE(std::ranges::equal(actual.get_state().get_fluent_fterm_values(), expected.get_state().get_fluent_fterm_values()));
+        };
         auto generated = pool.get_or_allocate();
+        const auto successor = generator->get_successor_node(borrowed, *raise, *generated, *axioms);
+        static_assert(std::same_as<decltype(successor), const p::Node<p::BuilderStateView<Kind>>>);
+        EXPECT_EQ(&successor.get_state().get_state_builder(), generated.get());
+        expect_same_node(successor, raised);
+        EXPECT_TRUE(generated->get_index().is_max());
+        if constexpr (std::same_as<Kind, GroundTag>)
+            expect_same_node(generator->get_successor_node(borrowed, generator->ground_action(*raise), *generated, *axioms), raised);
+
+        auto reference_repository = factory.create(task);
+        const auto expected = generator->get_labeled_successor_nodes(cheap->node, *reference_repository, *axioms);
+        auto states = std::deque<ygg::Builder<p::State<Kind>>> {};
+        const auto labeled = generator->get_labeled_successor_nodes(borrowed, states, *axioms);
+        const auto nodes = generator->get_successor_nodes(borrowed, states, *axioms);
+        static_assert(std::same_as<decltype(labeled), const p::LabeledNodeList<p::BuilderStateView<Kind>>>);
+        static_assert(std::same_as<decltype(nodes), const p::NodeList<p::BuilderStateView<Kind>>>);
+        ASSERT_EQ(labeled.size(), 2);
+        ASSERT_EQ(labeled.size(), expected.size());
+        ASSERT_EQ(nodes.size(), expected.size());
+        EXPECT_NE(&labeled[0].node.get_state().get_state_builder(), &labeled[1].node.get_state().get_state_builder());
+        for (size_t i = 0; i < expected.size(); ++i)
+        {
+            EXPECT_EQ(labeled[i].label, expected[i].label);
+            expect_same_node(labeled[i].node, expected[i].node);
+            expect_same_node(nodes[i], expected[i].node);
+        }
+        const auto retained = std::ranges::find_if(labeled, [&](const auto& node) { return node.label == *raise; });
+        ASSERT_NE(retained, labeled.end());
+        const auto old_size = states.size();
+        const auto grandchildren = generator->get_labeled_successor_nodes(retained->node, states, *axioms);
+        const auto expected_grandchildren = generator->get_labeled_successor_nodes(raised, *reference_repository, *axioms);
+        ASSERT_EQ(grandchildren.size(), expected_grandchildren.size());
+        EXPECT_EQ(states.size(), old_size + grandchildren.size());
+        for (size_t i = 0; i < grandchildren.size(); ++i)
+        {
+            EXPECT_EQ(grandchildren[i].label, expected_grandchildren[i].label);
+            expect_same_node(grandchildren[i].node, expected_grandchildren[i].node);
+        }
+        for (size_t i = 0; i < expected.size(); ++i)
+        {
+            expect_same_node(labeled[i].node, expected[i].node);
+            expect_same_node(nodes[i], expected[i].node);
+        }
+
+        size_t visited = 0;
+        EXPECT_TRUE(generator->for_each_labeled_successor_node(borrowed,
+                                                               *generated,
+                                                               *axioms,
+                                                               [&](auto next)
+                                                               {
+                                                                   static_assert(std::same_as<decltype(next), p::LabeledNode<p::BuilderStateView<Kind>>>);
+                                                                   EXPECT_EQ(&next.node.get_state().get_state_builder(), generated.get());
+                                                                   EXPECT_EQ(next.label, expected.at(visited).label);
+                                                                   expect_same_node(next.node, expected.at(visited++).node);
+                                                                   return true;
+                                                               }));
+        EXPECT_EQ(visited, expected.size());
+        visited = 0;
+        EXPECT_FALSE(generator->for_each_successor_node(borrowed,
+                                                        *generated,
+                                                        *axioms,
+                                                        [&](auto next)
+                                                        {
+                                                            static_assert(std::same_as<decltype(next), p::Node<p::BuilderStateView<Kind>>>);
+                                                            expect_same_node(next, expected.at(visited++).node);
+                                                            return false;
+                                                        }));
+        EXPECT_EQ(visited, 1);
+        EXPECT_EQ(repository->num_states(), 3);
+
+        const auto stop = [](auto) { return false; };
+        EXPECT_THROW(generator->get_successor_node(borrowed, *raise, *owned, *axioms), std::invalid_argument);
+        EXPECT_THROW(generator->for_each_successor_node(borrowed, *owned, *axioms, stop), std::invalid_argument);
+        EXPECT_THROW(generator->for_each_labeled_successor_node(borrowed, *owned, *axioms, stop), std::invalid_argument);
+        EXPECT_THROW(generator->for_each_successor_node(borrowed, raise->get_relation(), *owned, *axioms, stop), std::invalid_argument);
+        EXPECT_THROW(generator->for_each_labeled_successor_node(borrowed, raise->get_relation(), *owned, *axioms, stop), std::invalid_argument);
+        expect_same_node(borrowed, cheap->node);
+
+        EXPECT_EQ(generator->get_packed_successor_node(borrowed, *raise, *repository, *axioms), raised.pack());
+        if constexpr (std::same_as<Kind, GroundTag>)
+            EXPECT_EQ(generator->get_packed_successor_node(borrowed, generator->ground_action(*raise), *repository, *axioms), raised.pack());
         // Ground axiom evaluation expects the capacity normally prepared by the state repository.
         if constexpr (std::same_as<Kind, GroundTag>)
             generated->resize_derived_atoms(task->get_task().template get_atoms<formalism::DerivedTag>().size());
