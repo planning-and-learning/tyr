@@ -65,7 +65,7 @@ auto create_axiom_rule(fp::AxiomView<LiftedTag> axiom, const TranslationContext<
 
     process_axiom_body(axiom.get_body(), translation_context, context, *conj_cond);
 
-    const auto new_conj_cond = fd::get_or_create(context.destination, *conj_cond).first.get_index();
+    const auto new_conj_cond = fd::insert(context.destination, *conj_cond).first.get_index();
 
     rule->body = new_conj_cond;
 
@@ -74,7 +74,7 @@ auto create_axiom_rule(fp::AxiomView<LiftedTag> axiom, const TranslationContext<
 
     rule->head = new_head;
 
-    return fd::get_or_create(context.destination, *rule);
+    return fd::insert(context.destination, *rule);
 }
 
 auto create_program(fp::TaskView<LiftedTag> task, TranslationContext<LiftedTag>& translation_context, fd::Repository& repository)
@@ -137,7 +137,7 @@ auto create_program(fp::TaskView<LiftedTag> task, TranslationContext<LiftedTag>&
     for (const auto axiom : task.get_axioms())
         program->predicate_rules.push_back(create_axiom_rule(axiom, translation_context, context).first.get_index());
 
-    return fd::get_or_create(repository, *program).first;
+    return fd::insert(repository, *program).first;
 }
 
 auto create_datalog_program(fp::TaskView<LiftedTag> task, TranslationContext<LiftedTag>& translation_context)

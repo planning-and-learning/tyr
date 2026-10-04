@@ -386,7 +386,7 @@ void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<S>& n
                                                m_impl->evaluator.workspace.schedulers,
                                                [&](auto& binding)
                                                {
-                                                   const auto action_binding = fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
+                                                   const auto action_binding = fp::insert(*m_impl->definition->task->get_repository(), binding).first;
                                                    auto& target = [&]() -> auto&
                                                    {
                                                        if constexpr (std::same_as<S, StateView<LiftedTag>>)
@@ -429,7 +429,7 @@ void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<S>& n
                                                schema.schedulers,
                                                [&](auto& binding)
                                                {
-                                                   const auto action_binding = fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
+                                                   const auto action_binding = fp::insert(*m_impl->definition->task->get_repository(), binding).first;
                                                    auto& target = [&]() -> auto&
                                                    {
                                                        if constexpr (std::same_as<S, StateView<LiftedTag>>)
@@ -689,8 +689,7 @@ bool SuccessorGenerator<LiftedTag>::for_each_labeled_successor_node(const Node<S
                                                       m_impl->evaluator.workspace.schedulers,
                                                       [&](auto& binding)
                                                       {
-                                                          const auto action_binding =
-                                                              fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
+                                                          const auto action_binding = fp::insert(*m_impl->definition->task->get_repository(), binding).first;
                                                           return callback({ action_binding, get_successor_node(node, binding, storage, axiom_evaluator) });
                                                       });
 }
@@ -721,7 +720,7 @@ void SuccessorGenerator<LiftedTag>::get_packed_labeled_successor_nodes(const Nod
                                                m_impl->evaluator.workspace.schedulers,
                                                [&](auto& binding)
                                                {
-                                                   const auto action_binding = fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
+                                                   const auto action_binding = fp::insert(*m_impl->definition->task->get_repository(), binding).first;
                                                    out_nodes.push_back(
                                                        { action_binding, get_packed_successor_node(node, binding, state_repository, axiom_evaluator) });
                                                    return true;
@@ -737,7 +736,7 @@ bool SuccessorGenerator<LiftedTag>::for_each_applicable_action_binding(const Nod
                                                       m_impl->definition->action_program.get_datalog_program().get_program(),
                                                       m_impl->evaluator.workspace.schedulers,
                                                       [&](auto& binding)
-                                                      { return callback(fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first); });
+                                                      { return callback(fp::insert(*m_impl->definition->task->get_repository(), binding).first); });
 }
 
 template<StateViewConcept<LiftedTag> S>
@@ -817,8 +816,7 @@ bool SuccessorGenerator<LiftedTag>::for_each_labeled_successor_node(const Node<S
                                                       schema.schedulers,
                                                       [&](auto& binding)
                                                       {
-                                                          const auto action_binding =
-                                                              fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
+                                                          const auto action_binding = fp::insert(*m_impl->definition->task->get_repository(), binding).first;
                                                           return callback({ action_binding, get_successor_node(node, binding, storage, axiom_evaluator) });
                                                       });
 }
@@ -852,7 +850,7 @@ void SuccessorGenerator<LiftedTag>::get_packed_labeled_successor_nodes(const Nod
                                                schema.schedulers,
                                                [&](auto& binding)
                                                {
-                                                   const auto action_binding = fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first;
+                                                   const auto action_binding = fp::insert(*m_impl->definition->task->get_repository(), binding).first;
                                                    out_nodes.push_back(
                                                        { action_binding, get_packed_successor_node(node, binding, state_repository, axiom_evaluator) });
                                                    return true;
@@ -871,7 +869,7 @@ bool SuccessorGenerator<LiftedTag>::for_each_applicable_action_binding(const Nod
                                                       schema.program,
                                                       schema.schedulers,
                                                       [&](auto& binding)
-                                                      { return callback(fp::get_or_create(*m_impl->definition->task->get_repository(), binding).first); });
+                                                      { return callback(fp::insert(*m_impl->definition->task->get_repository(), binding).first); });
 }
 
 PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_initial_node(StateRepository<LiftedTag>& state_repository,

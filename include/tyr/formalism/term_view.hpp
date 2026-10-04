@@ -18,9 +18,10 @@
 #ifndef TYR_FORMALISM_TERM_VIEW_HPP_
 #define TYR_FORMALISM_TERM_VIEW_HPP_
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/containers/variant.hpp>
 #include "tyr/formalism/term_data.hpp"
+
+#include <yggdrasil/containers/variant.hpp>
+#include <yggdrasil/core/types.hpp>
 
 namespace ygg
 {
@@ -44,20 +45,19 @@ public:
 };
 
 template<typename C>
-ygg::View<ygg::Data<::tyr::formalism::Term>, C> make_view(const ygg::Data<::tyr::formalism::Term>& element, const C& context) noexcept
+const C& get_canonical_context(const ygg::Data<::tyr::formalism::Term>& element, const C& context) noexcept
 {
-    return ygg::View<ygg::Data<::tyr::formalism::Term>, C>(element,
-                                          std::visit(
-                                              [&](const auto& arg) -> const C&
-                                              {
-                                                  using Alternative = std::decay_t<decltype(arg)>;
+    return std::visit(
+        [&](const auto& arg) -> const C&
+        {
+            using Alternative = std::decay_t<decltype(arg)>;
 
-                                                  if constexpr (std::is_same_v<Alternative, ::tyr::formalism::ParameterIndex>)
-                                                      return context.get_root();
-                                                  else
-                                                      return ygg::make_view(arg, context).get_context();
-                                              },
-                                              element.variant));
+            if constexpr (std::is_same_v<Alternative, ::tyr::formalism::ParameterIndex>)
+                return context.get_root();
+            else
+                return ygg::make_view(arg, context).get_context();
+        },
+        element.variant);
 }
 }
 

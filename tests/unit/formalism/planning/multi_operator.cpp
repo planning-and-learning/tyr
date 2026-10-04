@@ -64,7 +64,7 @@ TEST(TyrFormalismPlanningMultiOperator, PreservesRepeatedOperands)
         data.args.emplace_back(Expression::Variant(1.0));
 
         EXPECT_FALSE(fp::is_canonical(data));
-        const auto [view, inserted] = fp::get_or_create(repository, data);
+        const auto [view, inserted] = fp::insert(repository, data);
         EXPECT_TRUE(inserted);
         EXPECT_EQ(data.index, view.get_index());
         EXPECT_TRUE(fp::is_canonical(data));
@@ -74,7 +74,7 @@ TEST(TyrFormalismPlanningMultiOperator, PreservesRepeatedOperands)
 
         std::swap(data.args[0], data.args[2]);
         data.index = ygg::Index<Lifted>::max();
-        const auto [duplicate, duplicate_inserted] = fp::get_or_create(repository, data);
+        const auto [duplicate, duplicate_inserted] = fp::insert(repository, data);
         EXPECT_FALSE(duplicate_inserted);
         EXPECT_EQ(duplicate, view);
         EXPECT_EQ(data.index, view.get_index());

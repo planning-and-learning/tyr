@@ -250,7 +250,7 @@ def test_projected_binding_collects_only_selected_output_fields(fields: list[str
       (:objects item) (:init (ready item)) (:goal (done item)))""", None, ParserOptions())
     action, = parser.get_domain().get_domain().get_actions()
     item, = task.get_task().get_objects()
-    binding = task.get_repository().get_or_create(fp.ActionBindingData(action, [item]))
+    binding = task.get_repository().insert(fp.ActionBindingData(action, [item]))[0]
     calls: list[fp.ActionBinding] = []
     payload: dict[str, object] = {
         "scalars": [None, True, False, -(2**63), 2**63 - 1, 2**64 - 1, 1.25],
@@ -297,7 +297,7 @@ def test_invalid_projection_invalidates_registry(bad_value: object) -> None:
 @pytest.mark.parametrize("kind", ["list", "dict"])
 def test_cyclic_projection_invalidates_registry_and_unwinds(kind: Literal["list", "dict"]) -> None:
     repository = fp.RepositoryFactory().create_repository()
-    value = repository.get_or_create(fp.ObjectData("projected"))
+    value = repository.insert(fp.ObjectData("projected"))[0]
     cycle: list[object] | dict[str, object] = [] if kind == "list" else {}
     if isinstance(cycle, list):
         cycle.append(cycle)
@@ -338,7 +338,7 @@ def test_projection_uses_native_enum_text(value: object, expected: str) -> None:
 def test_projection_retains_native_values_from_exhausted_generator() -> None:
     def objects() -> Iterator[fp.Object | None]:
         repository = fp.RepositoryFactory().create_repository()
-        yield repository.get_or_create(fp.ObjectData("generated"))
+        yield repository.insert(fp.ObjectData("generated"))[0]
         yield None  # Move the iterator past the native object before checking its owner.
         gc.collect()
         assert sys.getrefcount(repository) > 2  # Generator local + getrefcount argument + retained object.

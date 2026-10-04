@@ -40,7 +40,7 @@ auto create_applicability_predicate(fp::ActionView<LiftedTag> action, fp::MergeD
     predicate->name = create_applicability_name(action);
     predicate->arity = action.get_arity();
 
-    return fd::get_or_create(context.destination, *predicate);
+    return fd::insert(context.destination, *predicate);
 }
 
 auto create_applicability_atom(fp::ActionView<LiftedTag> action, fp::MergeDatalogContext& context)
@@ -53,7 +53,7 @@ auto create_applicability_atom(fp::ActionView<LiftedTag> action, fp::MergeDatalo
     for (ygg::uint_t i = 0; i < applicability_predicate.get_arity(); ++i)
         atom->terms.push_back(ygg::Data<f::Term>(f::ParameterIndex(i)));
 
-    return fd::get_or_create(context.destination, *atom);
+    return fd::insert(context.destination, *atom);
 }
 
 auto create_program(fp::TaskView<LiftedTag> task,
@@ -147,7 +147,7 @@ auto create_program(fp::TaskView<LiftedTag> task,
         for (const auto numeric_constraint : action.get_condition().get_numeric_constraints())
             conj_cond->numeric_constraints.push_back(fp::merge_p2d(numeric_constraint, context));
 
-        const auto new_conj_cond = fd::get_or_create(repository, *conj_cond).first.get_index();
+        const auto new_conj_cond = fd::insert(repository, *conj_cond).first.get_index();
 
         rule->body = new_conj_cond;
 
@@ -155,17 +155,17 @@ auto create_program(fp::TaskView<LiftedTag> task,
 
         rule->head = applicability_atom;
 
-        const auto new_rule = fd::get_or_create(repository, *rule).first.get_index();
+        const auto new_rule = fd::insert(repository, *rule).first.get_index();
 
         program->predicate_rules.push_back(new_rule);
     }
 
-    const auto all_actions = fd::get_or_create(repository, *program).first;
+    const auto all_actions = fd::insert(repository, *program).first;
     for (const auto rule : all_actions.get_rules<f::PredicateTag>())
     {
         program->predicate_rules.clear();
         program->predicate_rules.push_back(rule.get_index());
-        schema_programs.try_emplace(predicate_to_actions.at(rule.get_head().get_predicate()), fd::get_or_create(repository, *program).first);
+        schema_programs.try_emplace(predicate_to_actions.at(rule.get_head().get_predicate()), fd::insert(repository, *program).first);
     }
     return all_actions;
 }

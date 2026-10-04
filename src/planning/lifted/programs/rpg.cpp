@@ -101,7 +101,7 @@ auto create_delete_free_goal(fp::ConjunctiveConditionView<GroundTag> goal,
     for (const auto numeric_constraint : goal.get_numeric_constraints())
         conj_cond->numeric_constraints.push_back(merge_p2d(numeric_constraint, context));
 
-    return fd::get_or_create(context.destination, *conj_cond);
+    return fd::insert(context.destination, *conj_cond);
 }
 
 bool is_real_conditional_effect(fp::ConditionalEffectView<LiftedTag> cond_eff)
@@ -111,50 +111,53 @@ bool is_real_conditional_effect(fp::ConditionalEffectView<LiftedTag> cond_eff)
            || !condition.get_literals<f::DerivedTag>().empty() || !condition.get_numeric_constraints().empty();
 }
 
-ygg::Data<fd::NumericEffectOperator<LiftedTag, f::FluentTag>> create_unit_metric_effect(fd::FunctionTermView<LiftedTag, f::FluentTag> term, fp::MergeDatalogContext& context)
+ygg::Data<fd::NumericEffectOperator<LiftedTag, f::FluentTag>> create_unit_metric_effect(fd::FunctionTermView<LiftedTag, f::FluentTag> term,
+                                                                                        fp::MergeDatalogContext& context)
 {
     auto effect = fd::checkout<fd::NumericEffect<LiftedTag, f::FluentTag>>(context.builder);
     effect->operator_kind = f::NumericEffectOperatorKind::Increase;
     effect->fterm = term.get_index();
     effect->fexpr = ygg::Data<fd::FunctionExpression<LiftedTag>>(ygg::float_t(1));
     return ygg::Data<fd::NumericEffectOperator<LiftedTag, f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
-                                                              fd::get_or_create(context.destination, *effect).first.get_index());
+                                                                         fd::insert(context.destination, *effect).first.get_index());
 }
 
-ygg::DataList<fd::NumericEffectOperator<LiftedTag, f::FluentTag>> create_unit_metric(ygg::Data<fd::Program<LiftedTag>>& program, fp::MergeDatalogContext& context)
+ygg::DataList<fd::NumericEffectOperator<LiftedTag, f::FluentTag>> create_unit_metric(ygg::Data<fd::Program<LiftedTag>>& program,
+                                                                                     fp::MergeDatalogContext& context)
 {
     auto function = fd::checkout<f::Function<f::FluentTag>>(context.builder);
     function->name = "__tyr_unit_cost";
     function->arity = 0;
-    const auto unit_function = fd::get_or_create(context.destination, *function).first;
+    const auto unit_function = fd::insert(context.destination, *function).first;
     program.fluent_functions.push_back(unit_function.get_index());
 
     auto lifted_term = fd::checkout<fd::FunctionTerm<LiftedTag, f::FluentTag>>(context.builder);
     lifted_term->function = unit_function.get_index();
-    const auto unit_term = fd::get_or_create(context.destination, *lifted_term).first;
+    const auto unit_term = fd::insert(context.destination, *lifted_term).first;
 
     auto binding = fd::checkout<f::RelationBinding<f::Function<f::FluentTag>>>(context.builder);
     binding->relation = unit_function.get_index();
-    const auto unit_binding = fd::get_or_create(context.destination, *binding).first;
+    const auto unit_binding = fd::insert(context.destination, *binding).first;
 
     auto ground_term = fd::checkout<fd::FunctionTerm<GroundTag, f::FluentTag>>(context.builder);
     ground_term->binding = unit_binding.get_index();
-    const auto unit_ground_term = fd::get_or_create(context.destination, *ground_term).first;
+    const auto unit_ground_term = fd::insert(context.destination, *ground_term).first;
 
     auto metric = fd::checkout<fd::Metric>(context.builder);
     metric->fexpr = ygg::Data<fd::FunctionExpression<GroundTag>>(unit_ground_term.get_index());
-    program.metric = fd::get_or_create(context.destination, *metric).first.get_index();
+    program.metric = fd::insert(context.destination, *metric).first.get_index();
 
     auto result = ygg::DataList<fd::NumericEffectOperator<LiftedTag, f::FluentTag>> {};
     result.push_back(create_unit_metric_effect(unit_term, context));
     return result;
 }
 
-ygg::DataList<fd::NumericEffectOperator<LiftedTag, f::FluentTag>> create_metric_effects(fp::ActionView<LiftedTag> action,
-                                                                             CostMode cost_mode,
-                                                                             const ygg::DataList<fd::NumericEffectOperator<LiftedTag, f::FluentTag>>& unit_metric_effects,
-                                                                             const MetricFunctionSet& metric_functions,
-                                                                             fp::MergeDatalogContext& context)
+ygg::DataList<fd::NumericEffectOperator<LiftedTag, f::FluentTag>>
+create_metric_effects(fp::ActionView<LiftedTag> action,
+                      CostMode cost_mode,
+                      const ygg::DataList<fd::NumericEffectOperator<LiftedTag, f::FluentTag>>& unit_metric_effects,
+                      const MetricFunctionSet& metric_functions,
+                      fp::MergeDatalogContext& context)
 {
     if (cost_mode == CostMode::UNIT)
         return unit_metric_effects;
@@ -198,14 +201,14 @@ auto create_cond_effect_rule(fp::ActionView<LiftedTag> action,
 
     fill_delete_free_condition(action, cond_eff, translation_context, context, *conj_cond);
 
-    const auto new_conj_cond = fd::get_or_create(context.destination, *conj_cond).first;
+    const auto new_conj_cond = fd::insert(context.destination, *conj_cond).first;
 
     ygg::extend(new_conj_cond.get_variables(), rule->variables);
     rule->body = new_conj_cond.get_index();
     rule->head = merge_p2d(effect, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index();
     rule->metric_effects.insert(rule->metric_effects.end(), metric_effects.begin(), metric_effects.end());
 
-    return fd::get_or_create(context.destination, *rule);
+    return fd::insert(context.destination, *rule);
 }
 
 auto create_cond_numeric_effect_rule(fp::ActionView<LiftedTag> action,
@@ -221,14 +224,14 @@ auto create_cond_numeric_effect_rule(fp::ActionView<LiftedTag> action,
 
     fill_delete_free_condition(action, cond_eff, translation_context, context, *conj_cond);
 
-    const auto new_conj_cond = fd::get_or_create(context.destination, *conj_cond).first;
+    const auto new_conj_cond = fd::insert(context.destination, *conj_cond).first;
 
     ygg::extend(new_conj_cond.get_variables(), rule->variables);
     rule->body = new_conj_cond.get_index();
     rule->head = merge_p2d(effect, context);
     rule->metric_effects.insert(rule->metric_effects.end(), metric_effects.begin(), metric_effects.end());
 
-    return fd::get_or_create(context.destination, *rule);
+    return fd::insert(context.destination, *rule);
 }
 
 void translate_action_to_delete_free_rules(fp::ActionView<LiftedTag> action,
@@ -335,7 +338,7 @@ auto create_program(fp::TaskView<LiftedTag> task,
     for (const auto action : task.get_domain().get_actions())
         translate_action_to_delete_free_rules(action, *program, cost_mode, unit_metric_effects, metric_functions, translation_context, context, rule_to_action);
 
-    return fd::get_or_create(destination, *program).first;
+    return fd::insert(destination, *program).first;
 }
 
 auto create_datalog_program(fp::TaskView<LiftedTag> task,

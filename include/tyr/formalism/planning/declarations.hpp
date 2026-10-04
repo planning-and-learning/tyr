@@ -422,27 +422,14 @@ using VariableViewList = std::vector<VariableView>;
  * Context
  */
 
-template<typename Repo, typename Tag>
-concept RepositoryAccess = requires(const Repo& r, ygg::Index<Tag> idx) {
-    requires ygg::CanonicalizableContext<ygg::Index<Tag>, Repo>;
-    { r[idx] } -> std::same_as<const ygg::Data<Tag>&>;
-};
-
 template<typename Repo, typename... Tags>
 constexpr bool repository_access_for_types(ygg::TypeList<Tags...>) noexcept
 {
-    return (RepositoryAccess<Repo, Tags> && ...);
+    return (ygg::formalism::SymbolRepositoryFor<Repo, Tags> && ...);
 }
 
 template<typename T>
 concept RepositoryConcept = repository_access_for_types<T>(SymbolRepositoryTypes {}) && repository_access_for_types<T>(RelationRepositoryTypes {});
-
-template<typename T>
-    requires RepositoryConcept<T>
-inline const T& get_repository(const T& context) noexcept
-{
-    return context;
-}
 
 template<typename T>
 concept Context = requires(const T& a) {

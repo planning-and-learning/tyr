@@ -55,7 +55,7 @@ add_library(
     formalism/formatter.cpp
     formalism/datalog/formatter.cpp
     formalism/datalog/grounder.cpp
-    formalism/datalog/merge.cpp
+    formalism/datalog/copy.cpp
     formalism/datalog/repository.cpp
     formalism/datalog/views.cpp
     formalism/datalog/variable_dependency_graph.cpp
@@ -73,7 +73,7 @@ add_library(
     formalism/planning/grounder.cpp
     formalism/planning/merge_datalog.cpp
     formalism/planning/merge_planning.cpp
-    formalism/planning/merge.cpp
+    formalism/planning/copy.cpp
     formalism/planning/repository.cpp
     formalism/planning/views.cpp
     formalism/planning/loki_to_tyr.cpp

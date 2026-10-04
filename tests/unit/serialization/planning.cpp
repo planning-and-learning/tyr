@@ -1,7 +1,8 @@
+#include "tyr/planning/planning.hpp"
+
 #include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/parser.hpp"
-#include "tyr/planning/planning.hpp"
 #include "tyr/serialization/serialization.hpp"
 
 #include <boost/json.hpp>
@@ -25,18 +26,18 @@ fp::AtomView<GroundTag, f::FluentTag> make_atom(fp::Repository& repository, std:
 {
     auto predicate_data = ygg::Data<f::Predicate<f::FluentTag>>(std::string("at"), 1);
     canonicalize(predicate_data);
-    const auto predicate = repository.get_or_create(predicate_data).first;
+    const auto predicate = repository.insert(predicate_data).first;
     auto object_data = ygg::Data<f::Object>(std::move(object_name));
     canonicalize(object_data);
-    const auto object = repository.get_or_create(object_data).first;
+    const auto object = repository.insert(object_data).first;
     auto binding_data = ygg::Data<f::RelationBinding<f::Predicate<f::FluentTag>>> {};
     binding_data.relation = predicate.get_index();
     binding_data.objects.push_back(object.get_index());
     canonicalize(binding_data);
-    const auto binding = repository.get_or_create(binding_data).first;
+    const auto binding = repository.insert(binding_data).first;
     auto atom_data = ygg::Data<fp::Atom<GroundTag, f::FluentTag>>(binding.get_index());
     canonicalize(atom_data);
-    return repository.get_or_create(atom_data).first;
+    return repository.insert(atom_data).first;
 }
 
 template<TaskKind Kind>
@@ -49,9 +50,11 @@ p::TaskPtr<Kind> make_task()
       (:derived (active) (start))
       (:action finish :parameters ()
         :precondition (and (ready) (active) (> (capacity) 0))
-        :effect (and (not (start)) (done) (decrease (fuel) 1)))))"), std::nullopt);
+        :effect (and (not (start)) (done) (decrease (fuel) 1)))))"),
+                             std::nullopt);
     auto lifted = p::Task<LiftedTag>::create(parser.parse_task(std::string(R"((define (problem serialization-1)
-      (:domain serialization) (:init (ready) (start) (= (capacity) 10) (= (fuel) 3)) (:goal (done))))"), std::nullopt));
+      (:domain serialization) (:init (ready) (start) (= (capacity) 10) (= (fuel) 3)) (:goal (done))))"),
+                                                               std::nullopt));
     if constexpr (std::same_as<Kind, LiftedTag>)
         return lifted;
     else
@@ -73,23 +76,24 @@ p::Plan<Kind> make_plan()
     const auto successors = generator->get_labeled_successor_nodes(initial, *repository, *evaluator);
     if (successors.size() != 1)
         throw std::runtime_error("Serialization fixture requires one successor");
-    return p::Plan<Kind>(initial, {successors.front(), successors.front()});
+    return p::Plan<Kind>(initial, { successors.front(), successors.front() });
 }
 
 TEST(TyrSerialization, DefaultFieldsAndSelectionDoNotEvaluateAccessors)
 {
-    EXPECT_EQ(s::fields<fp::PredicateBindingView<f::FluentTag>>(), (std::vector<std::string> {"relation", "objects"}));
-    EXPECT_EQ((s::fields<fp::AtomView<LiftedTag, f::FluentTag>>()), (std::vector<std::string> {"predicate", "terms"}));
-    EXPECT_EQ((s::fields<fp::AtomView<GroundTag, f::FluentTag>>()), (std::vector<std::string> {"binding"}));
-    EXPECT_EQ(s::fields<fp::FunctionExpressionView<LiftedTag>>(), (std::vector<std::string> {"variant"}));
+    EXPECT_EQ(s::fields<fp::PredicateBindingView<f::FluentTag>>(), (std::vector<std::string> { "relation", "objects" }));
+    EXPECT_EQ((s::fields<fp::AtomView<LiftedTag, f::FluentTag>>()), (std::vector<std::string> { "predicate", "terms" }));
+    EXPECT_EQ((s::fields<fp::AtomView<GroundTag, f::FluentTag>>()), (std::vector<std::string> { "binding" }));
+    EXPECT_EQ(s::fields<fp::FunctionExpressionView<LiftedTag>>(), (std::vector<std::string> { "variant" }));
 
     auto dictionaries = s::Dictionaries {};
     const auto selected_fields = std::optional<std::vector<std::string>>(std::in_place);
     auto archive = s::Dictionaries::Archive(dictionaries, selected_fields);
     const auto dummy = 0;
-    auto writer = s::FieldWriter {archive, dummy};
+    auto writer = s::FieldWriter { archive, dummy };
     EXPECT_NO_THROW(writer.field("unused", [](int) -> int { throw std::runtime_error("excluded getter ran"); }));
-    EXPECT_NO_THROW(writer.variant([](int) -> decltype(std::declval<fp::TermView>().get_variant()) { throw std::runtime_error("excluded variant getter ran"); }));
+    EXPECT_NO_THROW(
+        writer.variant([](int) -> decltype(std::declval<fp::TermView>().get_variant()) { throw std::runtime_error("excluded variant getter ran"); }));
     EXPECT_TRUE(archive.fields.empty());
 }
 
@@ -167,7 +171,7 @@ TEST(TyrSerialization, FieldSelectionSkipsDescendantsBeforeSerialization)
 {
     auto repository = fp::RepositoryFactory().create();
     const auto binding = make_atom(repository, "truck").get_row();
-    for (const auto& fields : {std::vector<std::string> {"objects"}, std::vector<std::string> {}})
+    for (const auto& fields : { std::vector<std::string> { "objects" }, std::vector<std::string> {} })
     {
         auto dictionaries = s::Dictionaries {};
         dictionaries.register_table<fp::PredicateBindingView<f::FluentTag>>("bindings", "b", fields);
@@ -194,15 +198,16 @@ TEST(TyrSerialization, ProjectionReplacesFieldsBeforeCollectingDescendants)
     const auto binding = make_atom(repository, "truck").get_row();
     auto dictionaries = s::Dictionaries {};
     size_t calls = 0;
-    dictionaries.register_table<fp::PredicateBindingView<f::FluentTag>>(
-        "bindings", "b", std::nullopt,
-        [&](auto& ar, const auto& value)
-        {
-            ++calls;
-            ar.field("predicate_name", value.get_relation().get_name());
-            ar.field("arguments", value.get_objects());
-            ar.field("text", ygg::to_string(value));
-        });
+    dictionaries.register_table<fp::PredicateBindingView<f::FluentTag>>("bindings",
+                                                                        "b",
+                                                                        std::nullopt,
+                                                                        [&](auto& ar, const auto& value)
+                                                                        {
+                                                                            ++calls;
+                                                                            ar.field("predicate_name", value.get_relation().get_name());
+                                                                            ar.field("arguments", value.get_objects());
+                                                                            ar.field("text", ygg::to_string(value));
+                                                                        });
     dictionaries.register_table<fp::PredicateView<f::FluentTag>>("predicates", "p");
     dictionaries.register_table<fp::ObjectView>("objects", "o");
 
@@ -210,7 +215,7 @@ TEST(TyrSerialization, ProjectionReplacesFieldsBeforeCollectingDescendants)
     EXPECT_EQ(dictionaries.serialize(binding).as_string(), "b0");
     EXPECT_EQ(calls, 1);
     EXPECT_EQ(dictionaries.table<fp::PredicateBindingView<f::FluentTag>>()[0].as_object(),
-              (boost::json::object {{"predicate_name", "at"}, {"arguments", boost::json::array {"o0"}}, {"text", ygg::to_string(binding)}}));
+              (boost::json::object { { "predicate_name", "at" }, { "arguments", boost::json::array { "o0" } }, { "text", ygg::to_string(binding) } }));
     EXPECT_TRUE(dictionaries.table<fp::PredicateView<f::FluentTag>>().empty());
     EXPECT_EQ(dictionaries.table<fp::ObjectView>()[0].as_object().at("name").as_string(), "truck");
 }
@@ -224,7 +229,7 @@ TEST(TyrSerialization, UnregisteredEntitiesFailAndNativeViewIdentityIsPreserved)
     const auto second = make_atom(second_repository, "truck");
     ASSERT_EQ(first.get_index(), second.get_index());
     ASSERT_NE(first.get_context().get_index(), second.get_context().get_index());
-    for (const bool nested : {false, true})
+    for (const bool nested : { false, true })
     {
         auto incomplete = s::Dictionaries {};
         if (nested)
@@ -258,7 +263,7 @@ TEST(TyrSerialization, FdrNoneRetainsItsVariableAndZeroValue)
     auto variable_data = ygg::Data<fp::FDRVariable<f::FluentTag>> {};
     variable_data.atoms.push_back(atom.get_index());
     canonicalize(variable_data);
-    const auto variable = repository.get_or_create(variable_data).first;
+    const auto variable = repository.insert(variable_data).first;
     const auto fact = ygg::make_view(ygg::Data<fp::FDRFact<f::FluentTag>>(variable.get_index(), fp::FDRValue::none()), repository);
     ASSERT_FALSE(fact.get_atom().has_value());
     auto dictionaries = s::Dictionaries {};
@@ -282,9 +287,9 @@ TEST(TyrSerialization, RecursiveExpressionsReferenceSharedDescendantsAndKeepCons
     const auto constant = Expression(Expression::Variant(ygg::float_t(3)));
     auto binary_data = ygg::Data<Binary>(f::ArithmeticOperatorKind::Sub, constant, constant);
     canonicalize(binary_data);
-    const auto binary = repository.get_or_create(binary_data).first;
-    const auto expression = ygg::make_view(
-        Expression(Expression::Variant(Arithmetic(f::ArithmeticOperatorKind::Sub, Arithmetic::Variant(binary.get_index())))), repository);
+    const auto binary = repository.insert(binary_data).first;
+    const auto expression =
+        ygg::make_view(Expression(Expression::Variant(Arithmetic(f::ArithmeticOperatorKind::Sub, Arithmetic::Variant(binary.get_index())))), repository);
     auto dictionaries = s::Dictionaries {};
     dictionaries.register_table<fp::FunctionExpressionView<LiftedTag>>("expressions", "e");
     dictionaries.register_table<fp::ArithmeticOperatorView<LiftedTag>>("arithmetic", "a");
@@ -294,13 +299,13 @@ TEST(TyrSerialization, RecursiveExpressionsReferenceSharedDescendantsAndKeepCons
     const auto expressions = dictionaries.table<fp::FunctionExpressionView<LiftedTag>>();
     ASSERT_EQ(expressions.size(), 2);
     const auto& root = expressions[0].as_object();
-    EXPECT_EQ(root, (boost::json::object {{"variant", "a0"}}));
+    EXPECT_EQ(root, (boost::json::object { { "variant", "a0" } }));
     EXPECT_EQ(dictionaries.table<fp::ArithmeticOperatorView<LiftedTag>>()[0].as_object().at("variant").as_string(), "b0");
     const auto operators = dictionaries.table<BinaryView>();
     ASSERT_EQ(operators.size(), 1);
     EXPECT_EQ(operators[0].as_object().at("lhs").as_string(), "e1");
     EXPECT_EQ(operators[0].as_object().at("rhs").as_string(), "e1");
-    EXPECT_EQ(expressions[1].as_object(), (boost::json::object {{"variant", 3.0}}));
+    EXPECT_EQ(expressions[1].as_object(), (boost::json::object { { "variant", 3.0 } }));
     EXPECT_EQ(operators[0].as_object().at("operator").as_string(), "-");
     const auto snapshot = dictionaries.tables();
     EXPECT_EQ(dictionaries.serialize(expression).as_string(), "e0");

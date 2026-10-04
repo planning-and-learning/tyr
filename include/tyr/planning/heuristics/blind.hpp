@@ -18,6 +18,7 @@
 #ifndef TYR_PLANNING_HEURISTICS_BLIND_HPP_
 #define TYR_PLANNING_HEURISTICS_BLIND_HPP_
 
+#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/heuristic.hpp"
 

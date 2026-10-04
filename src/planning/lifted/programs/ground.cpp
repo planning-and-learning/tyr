@@ -48,7 +48,7 @@ auto create_applicability_predicate(fp::ActionView<LiftedTag> action, fp::MergeD
     predicate->name = create_applicability_name(action);
     predicate->arity = action.get_arity();
 
-    return fd::get_or_create(context.destination, *predicate);
+    return fd::insert(context.destination, *predicate);
 }
 
 auto create_applicability_atom(fp::ActionView<LiftedTag> action, fp::MergeDatalogContext& context)
@@ -61,7 +61,7 @@ auto create_applicability_atom(fp::ActionView<LiftedTag> action, fp::MergeDatalo
     for (ygg::uint_t i = 0; i < applicability_predicate.get_arity(); ++i)
         atom->terms.push_back(ygg::Data<f::Term>(f::ParameterIndex(i)));
 
-    return fd::get_or_create(context.destination, *atom);
+    return fd::insert(context.destination, *atom);
 }
 
 auto create_applicability_predicate(fp::AxiomView<LiftedTag> axiom, fp::MergeDatalogContext& context)
@@ -71,7 +71,7 @@ auto create_applicability_predicate(fp::AxiomView<LiftedTag> axiom, fp::MergeDat
     predicate->name = create_applicability_name(axiom);
     predicate->arity = axiom.get_arity();
 
-    return fd::get_or_create(context.destination, *predicate);
+    return fd::insert(context.destination, *predicate);
 }
 
 auto create_applicability_atom(fp::AxiomView<LiftedTag> axiom, fp::MergeDatalogContext& context)
@@ -84,7 +84,7 @@ auto create_applicability_atom(fp::AxiomView<LiftedTag> axiom, fp::MergeDatalogC
     for (ygg::uint_t i = 0; i < applicability_predicate.get_arity(); ++i)
         atom->terms.push_back(ygg::Data<f::Term>(f::ParameterIndex(i)));
 
-    return fd::get_or_create(context.destination, *atom);
+    return fd::insert(context.destination, *atom);
 }
 
 void append_from_condition(fp::ConjunctiveConditionView<LiftedTag> cond,
@@ -112,7 +112,7 @@ auto create_applicability_literal(fp::ActionView<LiftedTag> action, fp::MergeDat
     literal->polarity = true;
     literal->atom = create_applicability_atom(action, context).first.get_index();
 
-    return fd::get_or_create(context.destination, *literal);
+    return fd::insert(context.destination, *literal);
 }
 
 auto create_applicability_rule(fp::ActionView<LiftedTag> action, const TranslationContext<LiftedTag>& translation_context, fp::MergeDatalogContext& context)
@@ -125,13 +125,13 @@ auto create_applicability_rule(fp::ActionView<LiftedTag> action, const Translati
         conj_cond->variables.push_back(merge_p2d(variable, context).first.get_index());
     append_from_condition(action.get_condition(), translation_context, context, *conj_cond);
 
-    const auto new_conj_cond = fd::get_or_create(context.destination, *conj_cond).first;
+    const auto new_conj_cond = fd::insert(context.destination, *conj_cond).first;
 
     ygg::extend(new_conj_cond.get_variables(), rule->variables);
     rule->body = new_conj_cond.get_index();
     rule->head = create_applicability_atom(action, context).first.get_index();
 
-    return fd::get_or_create(context.destination, *rule);
+    return fd::insert(context.destination, *rule);
 }
 
 auto create_applicability_literal(fp::AxiomView<LiftedTag> axiom, fp::MergeDatalogContext& context)
@@ -141,7 +141,7 @@ auto create_applicability_literal(fp::AxiomView<LiftedTag> axiom, fp::MergeDatal
     literal->polarity = true;
     literal->atom = create_applicability_atom(axiom, context).first.get_index();
 
-    return fd::get_or_create(context.destination, *literal);
+    return fd::insert(context.destination, *literal);
 }
 
 auto create_applicability_rule(fp::AxiomView<LiftedTag> axiom, const TranslationContext<LiftedTag>& translation_context, fp::MergeDatalogContext& context)
@@ -154,13 +154,13 @@ auto create_applicability_rule(fp::AxiomView<LiftedTag> axiom, const Translation
         conj_cond->variables.push_back(merge_p2d(variable, context).first.get_index());
     append_from_condition(axiom.get_body(), translation_context, context, *conj_cond);
 
-    const auto new_conj_cond = fd::get_or_create(context.destination, *conj_cond).first;
+    const auto new_conj_cond = fd::insert(context.destination, *conj_cond).first;
 
     ygg::extend(new_conj_cond.get_variables(), rule->variables);
     rule->body = new_conj_cond.get_index();
     rule->head = create_applicability_atom(axiom, context).first.get_index();
 
-    return fd::get_or_create(context.destination, *rule);
+    return fd::insert(context.destination, *rule);
 }
 
 auto create_cond_effect_rule(fp::ActionView<LiftedTag> action,
@@ -183,13 +183,13 @@ auto create_cond_effect_rule(fp::ActionView<LiftedTag> action,
         conj_cond->variables.push_back(merge_p2d(variable, context).first.get_index());
     append_from_condition(cond_eff.get_condition(), translation_context, context, *conj_cond);
 
-    const auto new_conj_cond = fd::get_or_create(context.destination, *conj_cond).first;
+    const auto new_conj_cond = fd::insert(context.destination, *conj_cond).first;
 
     ygg::extend(new_conj_cond.get_variables(), rule->variables);
     rule->body = new_conj_cond.get_index();
     rule->head = effect.get_index();
 
-    return fd::get_or_create(context.destination, *rule);
+    return fd::insert(context.destination, *rule);
 }
 
 auto create_effect_rule(fp::AxiomView<LiftedTag> axiom,
@@ -207,13 +207,13 @@ auto create_effect_rule(fp::AxiomView<LiftedTag> axiom,
         conj_cond->static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.get_index());
     conj_cond->fluent_literals.push_back(create_applicability_literal(axiom, context).first.get_index());
 
-    const auto new_conj_cond = fd::get_or_create(context.destination, *conj_cond).first;
+    const auto new_conj_cond = fd::insert(context.destination, *conj_cond).first;
 
     ygg::extend(new_conj_cond.get_variables(), rule->variables);
     rule->body = new_conj_cond.get_index();
     rule->head = effect.get_index();
 
-    return fd::get_or_create(context.destination, *rule);
+    return fd::insert(context.destination, *rule);
 }
 
 void translate_action_to_delete_free_rules(fp::ActionView<LiftedTag> action,
@@ -343,7 +343,7 @@ auto create_program(fp::TaskView<LiftedTag> task,
     for (const auto axiom : task.get_axioms())
         translate_axiom_to_delete_free_axiom_rules(axiom, *program, translation_context, context, predicate_to_axioms);
 
-    return fd::get_or_create(destination, *program).first;
+    return fd::insert(destination, *program).first;
 }
 
 static auto create_datalog_program(fp::TaskView<LiftedTag> task,

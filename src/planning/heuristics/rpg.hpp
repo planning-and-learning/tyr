@@ -73,10 +73,7 @@ struct RPGDefinition
 template<TaskKind Kind>
 struct RPGPolicy;
 
-inline formalism::planning::ActionBindingView to_action_binding(formalism::planning::ActionView<GroundTag> action) noexcept
-{
-    return action.get_row();
-}
+inline formalism::planning::ActionBindingView to_action_binding(formalism::planning::ActionView<GroundTag> action) noexcept { return action.get_row(); }
 
 inline formalism::planning::ActionBindingView to_action_binding(formalism::planning::ActionBindingView action) noexcept { return action; }
 
@@ -112,13 +109,13 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, for
         auto literal = fd::checkout<fd::Literal<GroundTag, formalism::FluentTag>>(merge_context.builder);
         literal->atom = translate_atom(*atom).get_index();
         literal->polarity = true;
-        condition->fluent_literals.push_back(fd::get_or_create(merge_context.destination, *literal).first.get_index());
+        condition->fluent_literals.push_back(fd::insert(merge_context.destination, *literal).first.get_index());
     }
 
     for (const auto numeric_constraint : source_goal.get_numeric_constraints())
         condition->numeric_constraints.push_back(formalism::planning::merge_p2d(numeric_constraint, merge_context));
 
-    workspace.tp.set_goals(fd::get_or_create(merge_context.destination, *condition).first);
+    workspace.tp.set_goals(fd::insert(merge_context.destination, *condition).first);
 }
 
 template<typename Derived,
@@ -224,10 +221,7 @@ protected:
         return detail::to_action_binding(*action);
     }
 
-    formalism::planning::ActionBindingView get_action_binding(typename Policy::Action action) const noexcept
-    {
-        return detail::to_action_binding(action);
-    }
+    formalism::planning::ActionBindingView get_action_binding(typename Policy::Action action) const noexcept { return detail::to_action_binding(action); }
 
     template<typename Executor>
     bool is_action_applicable(Executor& executor, typename Policy::Action action, const StateContext<Kind>& state_context)

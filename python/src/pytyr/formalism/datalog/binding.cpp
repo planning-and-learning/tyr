@@ -41,10 +41,15 @@ template<typename Relation>
 void bind_binding_view(nb::module_& m, const char* name)
 {
     using V = ygg::View<ygg::Index<RelationBinding<Relation>>, Repository>;
+    const auto retain_owner = ygg::python::make_owner_retainer();
     auto cls = nb::class_<V>(m, name)
                    .def("get_index", &V::get_index)
                    .def("get_relation", &V::get_relation, nb::keep_alive<0, 1>())
-                   .def("get_objects", &V::get_objects);
+                   .def("get_objects",
+                        [retain_owner](nb::typed<nb::handle, V> owner) -> nb::typed<nb::list, ObjectView> {
+                            return nb::borrow<nb::typed<nb::list, ObjectView>>(
+                                ygg::python::cast_with_owner(nb::cast<const V&>(owner).get_objects(), owner, retain_owner));
+                        });
     ygg::add_print(cls);
     ygg::add_comparison(cls);
     ygg::add_hash(cls);
@@ -80,13 +85,13 @@ void bind_binding(nb::module_& m, RepositoryBinding& repository)
     bind_binding_view<Function<FluentTag>>(m, "FluentFunctionBinding");
     bind_binding_view<Function<AuxiliaryTag>>(m, "AuxiliaryFunctionBinding");
 
-    repository.def("get_or_create", &get_or_create_relation_data<Rule<LiftedTag, PredicateTag>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_relation_data<Rule<LiftedTag, FunctionTag>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_relation_data<Predicate<StaticTag>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_relation_data<Predicate<FluentTag>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_relation_data<Function<StaticTag>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_relation_data<Function<FluentTag>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_relation_data<Function<AuxiliaryTag>>, "data"_a, nb::keep_alive<0, 1>());
+    bind_insert<RelationBinding<Rule<LiftedTag, PredicateTag>>>(repository);
+    bind_insert<RelationBinding<Rule<LiftedTag, FunctionTag>>>(repository);
+    bind_insert<RelationBinding<Predicate<StaticTag>>>(repository);
+    bind_insert<RelationBinding<Predicate<FluentTag>>>(repository);
+    bind_insert<RelationBinding<Function<StaticTag>>>(repository);
+    bind_insert<RelationBinding<Function<FluentTag>>>(repository);
+    bind_insert<RelationBinding<Function<AuxiliaryTag>>>(repository);
 }
 
 }  // namespace tyr::formalism::datalog

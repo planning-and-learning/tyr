@@ -33,6 +33,10 @@ Pytyr is available at [PyPI](https://pypi.org/project/pytyr/) and can be install
 [`pytyr.serialization`](docs/serialization/index.md) provides structured native
 representations with caller-selected dictionary tables and reference prefixes.
 
+Formalism repositories publish compatible payloads with `view, inserted = repository.insert(data)`.
+The boolean reports whether publication created a new entity. Returned views retain their
+repository, including views extracted from insertion tuples and iterators.
+
 Detailed examples are available in the `python/examples` directory:
 
 - [`structures.py`](python/examples/formalism/planning/structures.py) – Parse and traverse all planning formalism structures.
@@ -76,6 +80,12 @@ labeled_successor_nodes = successor_generator.get_labeled_successor_nodes(initia
 ```
 
 ## C++ Interface
+
+Formalism construction uses `insert(repository, data)` and returns `(view, inserted)`.
+Payload indices must already refer to the destination repository or its ancestors.
+For cross-repository transfer, create `CopyContext context{builder, destination}` and call `copy(source, context)`: indexed entities return the same pair, while inline values return
+a value view. Copy recursively remaps references and reuses the caller's pooled builder.
+`get_builder<T>()` returns raw pooled storage; `checkout<T>()` clears it for construction.
 
 The C++ interface for implementing search algorithms is:
 

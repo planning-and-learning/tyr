@@ -187,7 +187,7 @@ inline std::pair<datalog::VariableView, bool> merge_p2d(VariableView element, Me
 
     variable->name = element.get_name();
 
-    return datalog::get_or_create(context.destination, *variable);
+    return datalog::insert(context.destination, *variable);
 }
 
 inline std::pair<datalog::ObjectView, bool> merge_p2d(ObjectView element, MergeDatalogContext& context)
@@ -196,7 +196,7 @@ inline std::pair<datalog::ObjectView, bool> merge_p2d(ObjectView element, MergeD
 
     object->name = element.get_name();
 
-    return datalog::get_or_create(context.destination, *object);
+    return datalog::insert(context.destination, *object);
 }
 
 inline ygg::Data<Term> merge_p2d(TermView element, MergeDatalogContext& context)
@@ -226,7 +226,7 @@ std::pair<datalog::PredicateView<T_DST>, bool> merge_p2d(PredicateView<T_SRC> el
     predicate->name = element.get_name();
     predicate->arity = element.get_arity();
 
-    return datalog::get_or_create(context.destination, *predicate);
+    return datalog::insert(context.destination, *predicate);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -240,7 +240,7 @@ std::pair<datalog::AtomView<LiftedTag, T_DST>, bool> merge_p2d(AtomView<LiftedTa
     for (const auto term : element.get_terms())
         atom->terms.push_back(merge_p2d(term, context));
 
-    return datalog::get_or_create(context.destination, *atom);
+    return datalog::insert(context.destination, *atom);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -254,7 +254,7 @@ std::pair<datalog::PredicateBindingView<T_DST>, bool> merge_p2d(PredicateBinding
     for (const auto object : element.get_objects())
         binding->objects.push_back(object.get_index());
 
-    return datalog::get_or_create(context.destination, *binding);
+    return datalog::insert(context.destination, *binding);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -266,7 +266,7 @@ std::pair<datalog::AtomView<GroundTag, T_DST>, bool> merge_p2d(AtomView<GroundTa
 
     atom->binding = merge_p2d<T_SRC, T_DST>(element.get_row(), predicate_mapping, context).first.get_index();
 
-    return datalog::get_or_create(context.destination, *atom);
+    return datalog::insert(context.destination, *atom);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -294,7 +294,7 @@ merge_p2d(LiteralView<LiftedTag, T_SRC> element,  //
     literal->polarity = element.get_polarity();
     literal->atom = merge_p2d<T_SRC, T_DST>(element.get_atom(), predicate_mapping, context).first.get_index();
 
-    return datalog::get_or_create(context.destination, *literal);
+    return datalog::insert(context.destination, *literal);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -308,7 +308,7 @@ merge_p2d(LiteralView<GroundTag, T_SRC> element,  //
     literal->polarity = element.get_polarity();
     literal->atom = merge_p2d<T_SRC, T_DST>(element.get_atom(), predicate_mapping, context).first.get_index();
 
-    return datalog::get_or_create(context.destination, *literal);
+    return datalog::insert(context.destination, *literal);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -323,7 +323,7 @@ merge_p2d(LiteralView<GroundTag, T_SRC> element,  //
     literal->polarity = element.get_polarity();
     literal->atom = merge_p2d<T_SRC, T_DST>(element.get_atom(), atom_mapping, predicate_mapping, context).first.get_index();
 
-    return datalog::get_or_create(context.destination, *literal);
+    return datalog::insert(context.destination, *literal);
 }
 
 inline std::optional<datalog::LiteralView<GroundTag, FluentTag>>
@@ -339,7 +339,7 @@ merge_p2d(FDRFactView<FluentTag> element,
     literal->polarity = polarity;
     literal->atom = merge_p2d(element.get_atom().value(), predicate_mapping, context).first.get_index();
 
-    return datalog::get_or_create(context.destination, *literal).first;
+    return datalog::insert(context.destination, *literal).first;
 }
 
 inline std::optional<datalog::LiteralView<GroundTag, FluentTag>>
@@ -356,7 +356,7 @@ merge_p2d(FDRFactView<FluentTag> element,
     literal->polarity = polarity;
     literal->atom = merge_p2d(element.get_atom().value(), atom_mapping, predicate_mapping, context).first.get_index();
 
-    return datalog::get_or_create(context.destination, *literal).first;
+    return datalog::insert(context.destination, *literal).first;
 }
 
 inline std::pair<datalog::ConjunctiveConditionView<GroundTag>, bool>
@@ -381,7 +381,7 @@ merge_p2d(ConjunctiveConditionView<GroundTag> element,
     for (const auto numeric_constraint : element.get_numeric_constraints())
         condition->numeric_constraints.push_back(merge_p2d(numeric_constraint, context));
 
-    return datalog::get_or_create(context.destination, *condition);
+    return datalog::insert(context.destination, *condition);
 }
 
 inline std::pair<datalog::ConjunctiveConditionView<GroundTag>, bool>
@@ -408,7 +408,7 @@ merge_p2d(ConjunctiveConditionView<GroundTag> element,
     for (const auto numeric_constraint : element.get_numeric_constraints())
         condition->numeric_constraints.push_back(merge_p2d(numeric_constraint, context));
 
-    return datalog::get_or_create(context.destination, *condition);
+    return datalog::insert(context.destination, *condition);
 }
 
 inline std::pair<datalog::ConjunctiveConditionView<GroundTag>, bool>
@@ -430,7 +430,7 @@ merge_p2d(ConjunctiveConditionView<GroundTag> element,
     for (const auto numeric_constraint : element.get_numeric_constraints())
         condition->numeric_constraints.push_back(merge_p2d(numeric_constraint, context));
 
-    return datalog::get_or_create(context.destination, *condition);
+    return datalog::insert(context.destination, *condition);
 }
 
 // Numeric
@@ -443,7 +443,7 @@ std::pair<datalog::FunctionView<T_DST>, bool> merge_p2d(FunctionView<T_SRC> elem
     function->name = element.get_name();
     function->arity = element.get_arity();
 
-    return datalog::get_or_create(context.destination, *function);
+    return datalog::insert(context.destination, *function);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -455,7 +455,7 @@ std::pair<datalog::FunctionTermView<LiftedTag, T_DST>, bool> merge_p2d(FunctionT
     for (const auto term : element.get_terms())
         fterm->terms.push_back(merge_p2d(term, context));
 
-    return datalog::get_or_create(context.destination, *fterm);
+    return datalog::insert(context.destination, *fterm);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -467,7 +467,7 @@ std::pair<datalog::FunctionBindingView<T_DST>, bool> merge_p2d(FunctionBindingVi
     for (const auto object : element.get_objects())
         binding->objects.push_back(object.get_index());
 
-    return datalog::get_or_create(context.destination, *binding);
+    return datalog::insert(context.destination, *binding);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -477,7 +477,7 @@ std::pair<datalog::FunctionTermView<GroundTag, T_DST>, bool> merge_p2d(FunctionT
 
     fterm->binding = merge_p2d<T_SRC, T_DST>(element.get_row(), context).first.get_index();
 
-    return datalog::get_or_create(context.destination, *fterm);
+    return datalog::insert(context.destination, *fterm);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -488,7 +488,7 @@ std::pair<datalog::FunctionTermValueView<GroundTag, T_DST>, bool> merge_p2d(Func
     fterm_value->fterm = merge_p2d<T_SRC, T_DST>(element.get_fterm(), context).first.get_index();
     fterm_value->value = element.get_value();
 
-    return datalog::get_or_create(context.destination, *fterm_value);
+    return datalog::insert(context.destination, *fterm_value);
 }
 
 template<FactKind T_SRC, FactKind T_DST, typename>
@@ -500,7 +500,7 @@ std::pair<datalog::NumericEffectView<LiftedTag, T_DST>, bool> merge_p2d(NumericE
     numeric_effect->fterm = merge_p2d<T_SRC, T_DST>(element.get_fterm(), context).first.get_index();
     numeric_effect->fexpr = merge_p2d(element.get_fexpr(), context);
 
-    return datalog::get_or_create(context.destination, *numeric_effect);
+    return datalog::insert(context.destination, *numeric_effect);
 }
 
 template<FactKind T_SRC, FactKind T_DST, typename>
@@ -522,7 +522,7 @@ std::pair<datalog::NumericEffectView<GroundTag, T_DST>, bool> merge_p2d(NumericE
     numeric_effect->fterm = merge_p2d<T_SRC, T_DST>(element.get_fterm(), context).first.get_index();
     numeric_effect->fexpr = merge_p2d(element.get_fexpr(), context);
 
-    return datalog::get_or_create(context.destination, *numeric_effect);
+    return datalog::insert(context.destination, *numeric_effect);
 }
 
 template<FactKind T_SRC, FactKind T_DST, typename>
@@ -577,7 +577,7 @@ inline std::pair<datalog::MetricView, bool> merge_p2d(MetricView element, MergeD
 {
     auto metric = datalog::checkout<datalog::Metric>(context.builder);
     metric->fexpr = merge_p2d(element.get_fexpr(), context);
-    return datalog::get_or_create(context.destination, *metric);
+    return datalog::insert(context.destination, *metric);
 }
 
 template<TaskKind T>
@@ -588,7 +588,7 @@ std::pair<datalog::UnaryOperatorView<T>, bool> merge_p2d(UnaryOperatorView<T> el
     unary->operator_kind = element.get_operator();
     unary->arg = merge_p2d(element.get_arg(), context);
 
-    return datalog::get_or_create(context.destination, *unary);
+    return datalog::insert(context.destination, *unary);
 }
 
 template<TaskKind T, BinaryOperatorKind O>
@@ -600,7 +600,7 @@ std::pair<datalog::BinaryOperatorView<T, O>, bool> merge_p2d(BinaryOperatorView<
     binary->lhs = merge_p2d(element.get_lhs(), context);
     binary->rhs = merge_p2d(element.get_rhs(), context);
 
-    return datalog::get_or_create(context.destination, *binary);
+    return datalog::insert(context.destination, *binary);
 }
 
 template<TaskKind T>
@@ -612,7 +612,7 @@ std::pair<datalog::MultiOperatorView<T>, bool> merge_p2d(MultiOperatorView<T> el
     for (const auto arg : element.get_args())
         multi->args.push_back(merge_p2d(arg, context));
 
-    return datalog::get_or_create(context.destination, *multi);
+    return datalog::insert(context.destination, *multi);
 }
 
 template<TaskKind T>

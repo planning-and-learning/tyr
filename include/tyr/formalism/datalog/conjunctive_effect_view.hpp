@@ -23,28 +23,22 @@
 #include "tyr/formalism/datalog/numeric_effect_operator_view.hpp"
 
 #include <yggdrasil/core/types.hpp>
+#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 
-template<::tyr::TaskKind T, ::tyr::formalism::datalog::Context C>
-class View<ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<T>>, C>
+template<::tyr::TaskKind T, ygg::formalism::SymbolContextFor<::tyr::formalism::datalog::ConjunctiveEffect<T>> C>
+class View<ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<T>>, C> :
+    public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<T>>, C>
 {
-private:
-    const C* m_context;
-    ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<T>> m_handle;
-
 public:
-    View(ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<T>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+    View(ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<T>> handle, const C& context) noexcept :
+        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<T>>, C>(handle, context)
+    {
+    }
 
-    const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
-    const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_handle() const noexcept { return m_handle; }
-
-    auto get_index() const noexcept { return m_handle; }
-    auto get_numeric_effects() const noexcept { return ygg::make_view(get_data().numeric_effects, *m_context); }
-
-    auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }
+    auto get_numeric_effects() const noexcept { return ygg::make_view(this->get_data().numeric_effects, *this->m_context); }
 };
 
 }

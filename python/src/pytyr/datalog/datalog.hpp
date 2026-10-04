@@ -33,9 +33,10 @@
 #include <tyr/datalog/policies/annotation.hpp>
 #include <tyr/datalog/policies/cost.hpp>
 #include <tyr/datalog/policies/termination.hpp>
-#include <tyr/formalism/datalog/merge.hpp>
+#include <tyr/formalism/datalog/copy.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/python/bindings.hpp>
+#include <yggdrasil/python/owner.hpp>
 #include <yggdrasil/python/type_casters.hpp>
 
 namespace tyr::datalog
@@ -47,17 +48,19 @@ template<formalism::FactKind T>
 void bind_predicate_fact_set(nb::module_& m, const char* name)
 {
     using Set = PredicateFactSet<T>;
+    const auto retain_owner = ygg::python::make_owner_retainer();
 
     nb::class_<Set>(m, name)
         .def("get_predicate", &Set::get_predicate, nb::keep_alive<0, 1>())
-        .def(
-            "get_bindings",
-            [](const Set& self)
-            {
-                const auto bindings = self.get_bindings();
-                return nb::make_iterator(nb::type<Set>(), "BindingIterator", bindings.begin(), bindings.end(), nb::keep_alive<0, 1>());
-            },
-            nb::keep_alive<0, 1>())
+        .def("get_bindings",
+             [retain_owner](nb::typed<nb::handle, Set> owner)
+             {
+                 const auto& self = nb::cast<const Set&>(owner);
+                 const auto bindings = self.get_bindings();
+                 return ygg::python::make_iterator_with_owner(nb::make_iterator(nb::type<Set>(), "BindingIterator", bindings.begin(), bindings.end()),
+                                                              owner,
+                                                              retain_owner);
+             })
         .def("count",
              [](const Set& self)
              {
@@ -74,21 +77,23 @@ void bind_function_fact_set(nb::module_& m, const char* name)
 {
     using Set = FunctionFactSet<T>;
     using Binding = formalism::datalog::FunctionBindingView<T>;
+    const auto retain_owner = ygg::python::make_owner_retainer();
 
     nb::class_<Set>(m, name)
         .def("get_function", &Set::get_function, nb::keep_alive<0, 1>())
-        .def(
-            "get_binding_values",
-            [](const Set& self)
-            {
-                const auto bindings = self.get_bindings();
-                const auto project = [&self](const Binding binding) { return std::pair(binding, self[binding]); };
-                return nb::make_iterator(nb::type<Set>(),
-                                         "BindingValueIterator",
-                                         boost::make_transform_iterator(bindings.begin(), project),
-                                         boost::make_transform_iterator(bindings.end(), project));
-            },
-            nb::keep_alive<0, 1>())
+        .def("get_binding_values",
+             [retain_owner](nb::typed<nb::handle, Set> owner)
+             {
+                 const auto& self = nb::cast<const Set&>(owner);
+                 const auto bindings = self.get_bindings();
+                 const auto project = [&self](const Binding binding) { return std::pair(binding, self[binding]); };
+                 return ygg::python::make_iterator_with_owner(nb::make_iterator(nb::type<Set>(),
+                                                                                "BindingValueIterator",
+                                                                                boost::make_transform_iterator(bindings.begin(), project),
+                                                                                boost::make_transform_iterator(bindings.end(), project)),
+                                                              owner,
+                                                              retain_owner);
+             })
         .def("count", [](const Set& self) { return self.get_values().size(); })
         .def("get", [](const Set& self, Binding binding) { return self[binding]; }, "binding"_a);
 }
@@ -375,24 +380,24 @@ void bind_workspace(nb::module_& m, const std::string& name)
                 "insert_fluent_atom",
                 [](Workspace& self, Atom atom)
                 {
-                    auto context = formalism::datalog::MergeContext { self.datalog_builder, self.workspace_repository };
-                    return self.facts.fact_sets.predicate.insert(formalism::datalog::merge_d2d(atom, context).first);
+                    auto context = formalism::datalog::CopyContext { self.datalog_builder, self.workspace_repository };
+                    return self.facts.fact_sets.predicate.insert(formalism::datalog::copy(atom, context).first);
                 },
                 "atom"_a)
             .def(
                 "insert_fluent_binding",
                 [](Workspace& self, PredicateBinding binding)
                 {
-                    auto context = formalism::datalog::MergeContext { self.datalog_builder, self.workspace_repository };
-                    return self.facts.fact_sets.predicate.insert(formalism::datalog::merge_d2d(binding, context).first);
+                    auto context = formalism::datalog::CopyContext { self.datalog_builder, self.workspace_repository };
+                    return self.facts.fact_sets.predicate.insert(formalism::datalog::copy(binding, context).first);
                 },
                 "binding"_a)
             .def(
                 "set_fluent_function",
                 [](Workspace& self, FunctionBinding binding, const Interval& interval)
                 {
-                    auto context = formalism::datalog::MergeContext { self.datalog_builder, self.workspace_repository };
-                    return self.facts.fact_sets.function.insert(formalism::datalog::merge_d2d(binding, context).first, interval);
+                    auto context = formalism::datalog::CopyContext { self.datalog_builder, self.workspace_repository };
+                    return self.facts.fact_sets.function.insert(formalism::datalog::copy(binding, context).first, interval);
                 },
                 "binding"_a,
                 "interval"_a)

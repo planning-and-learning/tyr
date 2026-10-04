@@ -1133,7 +1133,7 @@ create_overapproximation_conjunctive_condition(size_t k, fd::ConjunctiveConditio
         if (numeric_constraint_belongs_to_k_overapproximation(numeric_constraint))
             conj_cond->numeric_constraints.push_back(numeric_constraint.get_data());
 
-    return fd::get_or_create(context, *conj_cond);
+    return fd::insert(context, *conj_cond);
 }
 
 std::pair<fd::ConjunctiveConditionView<LiftedTag>, bool>
@@ -1163,10 +1163,11 @@ create_overapproximation_conflicting_conjunctive_condition(size_t k, fd::Conjunc
         if (requires_exact_numeric_check(numeric_constraint))
             conj_cond->numeric_constraints.push_back(numeric_constraint.get_data());
 
-    return fd::get_or_create(context, *conj_cond);
+    return fd::insert(context, *conj_cond);
 }
 
-std::pair<fd::ConjunctiveConditionView<GroundTag>, bool> create_ground_nullary_conjunctive_condition(fd::ConjunctiveConditionView<LiftedTag> condition, fd::Repository& context)
+std::pair<fd::ConjunctiveConditionView<GroundTag>, bool> create_ground_nullary_conjunctive_condition(fd::ConjunctiveConditionView<LiftedTag> condition,
+                                                                                                     fd::Repository& context)
 {
     auto builder = fd::Builder {};
     auto conj_cond = fd::checkout<fd::ConjunctiveCondition<GroundTag>>(builder);
@@ -1188,6 +1189,6 @@ std::pair<fd::ConjunctiveConditionView<GroundTag>, bool> create_ground_nullary_c
         if (is_nullary(numeric_constraint))
             conj_cond->numeric_constraints.push_back(ground(numeric_constraint, grounder_context).get_data());
 
-    return fd::get_or_create(context, *conj_cond);
+    return fd::insert(context, *conj_cond);
 }
 }

@@ -39,3 +39,25 @@ TEST(TyrFormalismTerm, PreservesParameterAlternative)
         });
     EXPECT_TRUE(is_parameter);
 }
+
+TEST(TyrFormalismTerm, CanonicalContextFollowsReferencedObjectsAndRootValues)
+{
+    auto factory = fp::RepositoryFactory {};
+    auto parent = factory.create();
+    auto object_data = ygg::Data<f::Object>(std::string("parent"));
+    const auto object = fp::insert(parent, object_data).first;
+    auto child = factory.create(&parent);
+    object_data.name = "child";
+    const auto child_object = fp::insert(child, object_data).first;
+
+    const auto inherited = ygg::make_view(object.get_index(), child);
+    EXPECT_EQ(inherited, object);
+    EXPECT_EQ(&inherited.get_context(), &parent);
+    const auto parent_term = ygg::make_view(TermData(object.get_index()), child);
+    const auto child_term = ygg::make_view(TermData(child_object.get_index()), child);
+    const auto parameter = ygg::make_view(TermData(f::ParameterIndex(0)), child);
+    EXPECT_EQ(&parent_term.get_context(), &parent);
+    EXPECT_EQ(&child_term.get_context(), &child);
+    EXPECT_EQ(&parameter.get_context(), &parent);
+    EXPECT_EQ(child_term.get_data(), TermData(child_object.get_index()));
+}

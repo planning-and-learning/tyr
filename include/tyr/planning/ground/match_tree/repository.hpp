@@ -58,7 +58,7 @@ using GroundActionBuilder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, 
 using GroundAxiomBuilder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, RepositoryTypes<formalism::planning::Axiom<GroundTag>>>;
 
 using ygg::formalism::checkout;
-using ygg::formalism::get_or_create;
+using ygg::formalism::insert;
 
 template<typename Tag>
 class Repository
@@ -100,9 +100,9 @@ public:
 
     template<typename T>
         requires ygg::formalism::SupportsSymbol<Repository, T>
-    std::pair<ygg::View<ygg::Index<T>, Repository>, bool> get_or_create(ygg::Data<T>& builder)
+    std::pair<ygg::View<ygg::Index<T>, Repository>, bool> insert(ygg::Data<T>& builder)
     {
-        const auto [view, success] = m_repository.get_or_create(builder);
+        const auto [view, success] = m_repository.insert(builder);
         return std::make_pair(ygg::make_view(view.get_handle(), *this), success);
     }
 
@@ -140,7 +140,7 @@ static_assert(Context<Repository<formalism::planning::Action<GroundTag>>, formal
 
 template<typename Tag, typename T>
     requires ygg::formalism::SupportsSymbol<Repository<Tag>, T>
-void prepare_for_interning(Repository<Tag>&, ygg::Data<T>& data)
+void prepare_for_insert(Repository<Tag>&, ygg::Data<T>& data)
 {
     canonicalize(data);
 }

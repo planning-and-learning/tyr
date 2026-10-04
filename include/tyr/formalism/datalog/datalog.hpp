@@ -19,10 +19,10 @@
 #define TYR_FORMALISM_DATALOG_DATALOG_HPP_
 
 #include "tyr/formalism/datalog/canonicalization.hpp"
+#include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/datas.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/indices.hpp"
-#include "tyr/formalism/datalog/merge.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 

@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_DATALOG_MERGE_DECL_HPP_
-#define TYR_FORMALISM_DATALOG_MERGE_DECL_HPP_
+#ifndef TYR_FORMALISM_DATALOG_COPY_DECL_HPP_
+#define TYR_FORMALISM_DATALOG_COPY_DECL_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -24,7 +24,7 @@
 namespace tyr::formalism::datalog
 {
 
-struct MergeContext
+struct CopyContext
 {
     Builder& builder;
     Repository& destination;

@@ -125,7 +125,7 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
         ygg::add_hash(cls);
     }
 
-    repository.def("get_or_create", &get_or_create_data<Task<T>>, "data"_a, nb::keep_alive<0, 1>());
+    bind_insert<Task<T>>(repository);
 }
 
 void bind_task(nb::module_& m, RepositoryBinding& repository)

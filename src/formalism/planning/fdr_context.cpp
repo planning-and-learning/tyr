@@ -19,13 +19,13 @@
 
 #include "tyr/formalism/planning/atom_view.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
+#include "tyr/formalism/planning/copy.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/fdr_variable_data.hpp"
 #include "tyr/formalism/planning/fdr_variable_index.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/planning/merge.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <cassert>
@@ -37,19 +37,19 @@ namespace tyr::formalism::planning
 {
 namespace
 {
-std::pair<FDRVariableView<FluentTag>, bool> merge_p2p(FDRVariableView<FluentTag> element, MergeContext& context)
+std::pair<FDRVariableView<FluentTag>, bool> copy(FDRVariableView<FluentTag> element, CopyContext& context)
 {
     auto variable = planning::checkout<FDRVariable<FluentTag>>(context.builder);
 
     for (const auto atom : element.get_atoms())
-        variable->atoms.push_back(merge_p2p(atom, context).first.get_index());
+        variable->atoms.push_back(copy(atom, context).first.get_index());
 
-    return planning::get_or_create(context.destination, *variable);
+    return planning::insert(context.destination, *variable);
 }
 
-FDRFactView<FluentTag> merge_p2p(FDRFactView<FluentTag> element, MergeContext& context)
+FDRFactView<FluentTag> copy(FDRFactView<FluentTag> element, CopyContext& context)
 {
-    const auto variable = merge_p2p(element.get_variable(), context).first;
+    const auto variable = copy(element.get_variable(), context).first;
     return ygg::make_view(ygg::Data<FDRFact<FluentTag>>(variable.get_index(), element.get_value()), context.destination);
 }
 }
@@ -68,7 +68,7 @@ FDRContext::FDRContext(const std::vector<AtomViewList<GroundTag, FluentTag>>& mu
         auto variable = planning::checkout<FDRVariable<FluentTag>>(m_builder);
         for (const auto& atom : group)
             variable->atoms.push_back(atom.get_index());
-        const auto variable_view = planning::get_or_create(*m_context, *variable).first;
+        const auto variable_view = planning::insert(*m_context, *variable).first;
         m_variables.push_back(variable_view);
         for (ygg::uint_t i = 0; i < group.size(); ++i)
         {
@@ -89,7 +89,7 @@ FDRContext::FDRContext(const AtomViewList<GroundTag, FluentTag>& all_atoms, Repo
     {
         auto variable = planning::checkout<FDRVariable<FluentTag>>(m_builder);
         variable->atoms.push_back(atom.get_index());
-        const auto variable_view = planning::get_or_create(*m_context, *variable).first;
+        const auto variable_view = planning::insert(*m_context, *variable).first;
         m_variables.push_back(variable_view);
         [[maybe_unused]] const auto inserted = publish_fact(atom, ygg::Data<FDRFact<FluentTag>>(variable_view.get_index(), FDRValue { 1 }));
         assert(inserted);
@@ -103,10 +103,10 @@ FDRContext::FDRContext(const FDRContext& other, Builder& builder, RepositoryPtr 
     m_builder(),
     m_variables()
 {
-    auto merge_context = MergeContext { builder, *m_context };
+    auto merge_context = CopyContext { builder, *m_context };
 
     for (const auto variable : other.m_variables)
-        m_variables.push_back(merge_p2p(variable, merge_context).first);
+        m_variables.push_back(copy(variable, merge_context).first);
 
     for (size_t i = 0; i < other.m_facts.size(); ++i)
     {
@@ -115,7 +115,7 @@ FDRContext::FDRContext(const FDRContext& other, Builder& builder, RepositoryPtr 
         if (!fact)
             continue;
 
-        [[maybe_unused]] const auto inserted = publish_fact(merge_p2p(atom, merge_context).first, merge_p2p(*fact, merge_context).get_data());
+        [[maybe_unused]] const auto inserted = publish_fact(copy(atom, merge_context).first, copy(*fact, merge_context).get_data());
         assert(inserted);
     }
 }
@@ -132,7 +132,7 @@ FDRFactView<FluentTag> FDRContext::get_fact(AtomView<GroundTag, FluentTag> atom)
     // Construct a new binary FDR variable
     auto variable_data = planning::checkout<FDRVariable<FluentTag>>(m_builder);
     variable_data->atoms.push_back(atom.get_index());
-    const auto variable = planning::get_or_create(*m_context, *variable_data).first;
+    const auto variable = planning::insert(*m_context, *variable_data).first;
 
     // Grow before changing the variable list so allocation failure leaves this registration retryable.
     ensure_fact_slot(atom);

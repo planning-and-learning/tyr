@@ -2,13 +2,14 @@
 #include "tyr/formalism/planning/atom_index.hpp"
 #include "tyr/formalism/planning/atom_view.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
+#include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+
 #include <concepts>
 #include <gtest/gtest.h>
 #include <string>
 #include <type_traits>
 #include <utility>
-#include "tyr/formalism/planning/formatter.hpp"
 
 namespace lifted_tests
 {
@@ -58,12 +59,12 @@ TEST(TyrFormalismPlanningAtom, ExposesRepositoryView)
 
     auto predicate_data = ygg::Data<f::Predicate<f::FluentTag>>(std::string("at"), 2);
     canonicalize(predicate_data);
-    const auto [predicate, predicate_created] = repository.get_or_create(predicate_data);
+    const auto [predicate, predicate_created] = repository.insert(predicate_data);
     ASSERT_TRUE(predicate_created);
 
     auto object_data = ygg::Data<f::Object>(std::string("truck"));
     canonicalize(object_data);
-    const auto [object, object_created] = repository.get_or_create(object_data);
+    const auto [object, object_created] = repository.insert(object_data);
     ASSERT_TRUE(object_created);
 
     auto terms = ygg::DataList<f::Term> {};
@@ -71,7 +72,7 @@ TEST(TyrFormalismPlanningAtom, ExposesRepositoryView)
     terms.emplace_back(f::ParameterIndex(0));
     auto atom_data = ygg::Data<fp::Atom<::tyr::LiftedTag, f::FluentTag>>(predicate.get_index(), std::move(terms));
     canonicalize(atom_data);
-    const auto [atom, atom_created] = repository.get_or_create(atom_data);
+    const auto [atom, atom_created] = repository.insert(atom_data);
     ASSERT_TRUE(atom_created);
 
     EXPECT_EQ(atom.get_predicate().get_name(), "at");
@@ -139,12 +140,12 @@ TEST(TyrFormalismPlanningGroundAtom, ExposesRepositoryView)
 
     auto predicate_data = ygg::Data<f::Predicate<f::FluentTag>>(std::string("at"), 2);
     canonicalize(predicate_data);
-    const auto [predicate, predicate_created] = repository.get_or_create(predicate_data);
+    const auto [predicate, predicate_created] = repository.insert(predicate_data);
     ASSERT_TRUE(predicate_created);
 
     auto object_data = ygg::Data<f::Object>(std::string("truck"));
     canonicalize(object_data);
-    const auto [object, object_created] = repository.get_or_create(object_data);
+    const auto [object, object_created] = repository.insert(object_data);
     ASSERT_TRUE(object_created);
 
     auto binding_data = ygg::Data<f::RelationBinding<f::Predicate<f::FluentTag>>> {};
@@ -152,12 +153,12 @@ TEST(TyrFormalismPlanningGroundAtom, ExposesRepositoryView)
     binding_data.objects.push_back(object.get_index());
     binding_data.objects.push_back(object.get_index());
     canonicalize(binding_data);
-    const auto [binding, binding_created] = repository.get_or_create(binding_data);
+    const auto [binding, binding_created] = repository.insert(binding_data);
     ASSERT_TRUE(binding_created);
 
     auto ground_atom_data = ygg::Data<fp::Atom<::tyr::GroundTag, f::FluentTag>>(binding.get_index());
     canonicalize(ground_atom_data);
-    const auto [ground_atom, ground_atom_created] = repository.get_or_create(ground_atom_data);
+    const auto [ground_atom, ground_atom_created] = repository.insert(ground_atom_data);
     ASSERT_TRUE(ground_atom_created);
 
     EXPECT_EQ(ground_atom.get_predicate().get_index(), predicate.get_index());

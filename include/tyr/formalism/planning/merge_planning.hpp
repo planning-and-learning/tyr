@@ -22,8 +22,8 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
+#include "tyr/formalism/planning/copy_decl.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/merge_decl.hpp"
 #include "tyr/formalism/planning/merge_planning_decl.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
@@ -123,7 +123,7 @@ inline std::pair<VariableView, bool> merge_d2p(datalog::VariableView element, Me
 
     variable->name = element.get_name();
 
-    return planning::get_or_create(context.destination, *variable);
+    return planning::insert(context.destination, *variable);
 }
 
 inline std::pair<ObjectView, bool> merge_d2p(datalog::ObjectView element, MergePlanningContext& context)
@@ -132,7 +132,7 @@ inline std::pair<ObjectView, bool> merge_d2p(datalog::ObjectView element, MergeP
 
     object->name = element.get_name();
 
-    return planning::get_or_create(context.destination, *object);
+    return planning::insert(context.destination, *object);
 }
 
 inline ygg::Data<Term> merge_d2p(datalog::TermView element, MergePlanningContext& context)
@@ -162,7 +162,7 @@ std::pair<PredicateView<T_DST>, bool> merge_d2p(datalog::PredicateView<T_SRC> el
     predicate->name = element.get_name();
     predicate->arity = element.get_arity();
 
-    return planning::get_or_create(context.destination, *predicate);
+    return planning::insert(context.destination, *predicate);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -176,7 +176,7 @@ std::pair<AtomView<LiftedTag, T_DST>, bool> merge_d2p(datalog::AtomView<LiftedTa
     for (const auto term : element.get_terms())
         atom->terms.push_back(merge_d2p(term, context));
 
-    return planning::get_or_create(context.destination, *atom);
+    return planning::insert(context.destination, *atom);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -190,7 +190,7 @@ std::pair<PredicateBindingView<T_DST>, bool> merge_d2p(datalog::PredicateBinding
     for (const auto object : element.get_objects())
         binding->objects.push_back(object.get_index());
 
-    return planning::get_or_create(context.destination, *binding);
+    return planning::insert(context.destination, *binding);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -202,7 +202,7 @@ std::pair<AtomView<GroundTag, T_DST>, bool> merge_atom_d2p(datalog::PredicateBin
 
     atom->binding = merge_d2p<T_SRC, T_DST>(element, predicate_mapping, context).first.get_index();
 
-    return planning::get_or_create(context.destination, *atom);
+    return planning::insert(context.destination, *atom);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -214,7 +214,7 @@ std::pair<AtomView<GroundTag, T_DST>, bool> merge_d2p(datalog::AtomView<GroundTa
 
     atom->binding = merge_d2p<T_SRC, T_DST>(element.get_row(), predicate_mapping, context).first.get_index();
 
-    return planning::get_or_create(context.destination, *atom);
+    return planning::insert(context.destination, *atom);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -227,7 +227,7 @@ std::pair<LiteralView<LiftedTag, T_DST>, bool> merge_d2p(datalog::LiteralView<Li
     literal->polarity = element.get_polarity();
     literal->atom = merge_d2p<T_SRC, T_DST>(element.get_atom(), predicate_mapping, context).first.get_index();
 
-    return planning::get_or_create(context.destination, *literal);
+    return planning::insert(context.destination, *literal);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -240,7 +240,7 @@ std::pair<LiteralView<GroundTag, T_DST>, bool> merge_d2p(datalog::LiteralView<Gr
     literal->polarity = element.get_polarity();
     literal->atom = merge_d2p<T_SRC, T_DST>(element.get_atom(), predicate_mapping, context).first.get_index();
 
-    return planning::get_or_create(context.destination, *literal);
+    return planning::insert(context.destination, *literal);
 }
 
 // Numeric
@@ -253,7 +253,7 @@ std::pair<FunctionView<T>, bool> merge_d2p(datalog::FunctionView<T> element, Mer
     function->name = element.get_name();
     function->arity = element.get_arity();
 
-    return planning::get_or_create(context.destination, *function);
+    return planning::insert(context.destination, *function);
 }
 
 template<FactKind T>
@@ -265,7 +265,7 @@ std::pair<FunctionTermView<LiftedTag, T>, bool> merge_d2p(datalog::FunctionTermV
     for (const auto term : element.get_terms())
         fterm->terms.push_back(merge_d2p(term, context));
 
-    return planning::get_or_create(context.destination, *fterm);
+    return planning::insert(context.destination, *fterm);
 }
 
 template<FactKind T>
@@ -277,7 +277,7 @@ std::pair<FunctionBindingView<T>, bool> merge_d2p(datalog::FunctionBindingView<T
     for (const auto object : element.get_objects())
         binding->objects.push_back(object.get_index());
 
-    return planning::get_or_create(context.destination, *binding);
+    return planning::insert(context.destination, *binding);
 }
 
 template<FactKind T>
@@ -287,7 +287,7 @@ std::pair<FunctionTermView<GroundTag, T>, bool> merge_d2p(datalog::FunctionTermV
 
     fterm->binding = merge_d2p(element.get_row(), context).first.get_index();
 
-    return planning::get_or_create(context.destination, *fterm);
+    return planning::insert(context.destination, *fterm);
 }
 
 template<FactKind T>
@@ -298,7 +298,7 @@ std::pair<FunctionTermValueView<GroundTag, T>, bool> merge_d2p(datalog::Function
     fterm_value->fterm = merge_d2p(element.get_fterm(), context).first.get_index();
     fterm_value->value = element.get_value();
 
-    return planning::get_or_create(context.destination, *fterm_value);
+    return planning::insert(context.destination, *fterm_value);
 }
 
 inline ygg::Data<FunctionExpression<LiftedTag>> merge_d2p(datalog::FunctionExpressionView<LiftedTag> element, MergePlanningContext& context)
@@ -345,7 +345,7 @@ std::pair<UnaryOperatorView<T>, bool> merge_d2p(datalog::UnaryOperatorView<T> el
     unary->operator_kind = element.get_operator();
     unary->arg = merge_d2p(element.get_arg(), context);
 
-    return planning::get_or_create(context.destination, *unary);
+    return planning::insert(context.destination, *unary);
 }
 
 template<TaskKind T, BinaryOperatorKind O>
@@ -357,7 +357,7 @@ std::pair<BinaryOperatorView<T, O>, bool> merge_d2p(datalog::BinaryOperatorView<
     binary->lhs = merge_d2p(element.get_lhs(), context);
     binary->rhs = merge_d2p(element.get_rhs(), context);
 
-    return planning::get_or_create(context.destination, *binary);
+    return planning::insert(context.destination, *binary);
 }
 
 template<TaskKind T>
@@ -369,7 +369,7 @@ std::pair<MultiOperatorView<T>, bool> merge_d2p(datalog::MultiOperatorView<T> el
     for (const auto arg : element.get_args())
         multi->args.push_back(merge_d2p(arg, context));
 
-    return planning::get_or_create(context.destination, *multi);
+    return planning::insert(context.destination, *multi);
 }
 
 template<TaskKind T>

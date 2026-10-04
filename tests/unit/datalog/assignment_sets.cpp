@@ -58,14 +58,14 @@ auto make_binding(fd::Repository& repository, ygg::View<ygg::Index<Relation>, fd
     for (const auto object : objects)
         data.objects.push_back(object);
     canonicalize(data);
-    return repository.get_or_create(data).first;
+    return repository.insert(data).first;
 }
 
 template<typename T>
 auto intern(fd::Repository& repository, ygg::Data<T> data)
 {
     canonicalize(data);
-    return repository.get_or_create(data).first;
+    return repository.insert(data).first;
 }
 
 struct Fixture

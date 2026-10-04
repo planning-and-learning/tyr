@@ -25,9 +25,9 @@
 #include "tyr/datalog/lifted/program.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
+#include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/datas.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
-#include "tyr/formalism/datalog/merge.hpp"
 #include "tyr/planning/lifted/programs/ground.hpp"
 #include "tyr/planning/planning.hpp"
 
@@ -254,7 +254,7 @@ make_lifted_numeric_program(bool include_source_rule = true, std::initializer_li
             fd::canonicalize(data);
         else
             f::canonicalize(data);
-        return repository->get_or_create(data).first;
+        return repository->insert(data).first;
     };
     const auto bind_function = [&](auto function)
     {
@@ -277,32 +277,36 @@ make_lifted_numeric_program(bool include_source_rule = true, std::initializer_li
     const auto target_term = make_function_term(target_function);
     const auto empty_body = intern(ygg::Data<fd::ConjunctiveCondition<LiftedTag>>());
 
-    const auto source_assign_effect = intern(ygg::Data<fd::NumericEffect<LiftedTag, f::FluentTag>>(f::NumericEffectOperatorKind::Assign,
-                                                                                        source_term.get_index(),
-                                                                                        ygg::Data<fd::FunctionExpression<LiftedTag>>(ygg::float_t(3))));
-    const auto source_metric_effect = intern(ygg::Data<fd::NumericEffect<LiftedTag, f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
-                                                                                        source_term.get_index(),
-                                                                                        ygg::Data<fd::FunctionExpression<LiftedTag>>(ygg::float_t(2))));
-    const auto target_assign_effect = intern(ygg::Data<fd::NumericEffect<LiftedTag, f::FluentTag>>(f::NumericEffectOperatorKind::Assign,
-                                                                                        target_term.get_index(),
-                                                                                        ygg::Data<fd::FunctionExpression<LiftedTag>>(source_term.get_index())));
-    const auto target_metric_effect = intern(ygg::Data<fd::NumericEffect<LiftedTag, f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
-                                                                                        target_term.get_index(),
-                                                                                        ygg::Data<fd::FunctionExpression<LiftedTag>>(source_term.get_index())));
+    const auto source_assign_effect =
+        intern(ygg::Data<fd::NumericEffect<LiftedTag, f::FluentTag>>(f::NumericEffectOperatorKind::Assign,
+                                                                     source_term.get_index(),
+                                                                     ygg::Data<fd::FunctionExpression<LiftedTag>>(ygg::float_t(3))));
+    const auto source_metric_effect =
+        intern(ygg::Data<fd::NumericEffect<LiftedTag, f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
+                                                                     source_term.get_index(),
+                                                                     ygg::Data<fd::FunctionExpression<LiftedTag>>(ygg::float_t(2))));
+    const auto target_assign_effect =
+        intern(ygg::Data<fd::NumericEffect<LiftedTag, f::FluentTag>>(f::NumericEffectOperatorKind::Assign,
+                                                                     target_term.get_index(),
+                                                                     ygg::Data<fd::FunctionExpression<LiftedTag>>(source_term.get_index())));
+    const auto target_metric_effect =
+        intern(ygg::Data<fd::NumericEffect<LiftedTag, f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
+                                                                     target_term.get_index(),
+                                                                     ygg::Data<fd::FunctionExpression<LiftedTag>>(source_term.get_index())));
     auto target_rule_data = ygg::Data<fd::Rule<LiftedTag, f::FunctionTag>>();
     target_rule_data.body = empty_body.get_index();
-    target_rule_data.head =
-        ygg::Data<fd::NumericEffectOperator<LiftedTag, f::FluentTag>>(f::NumericEffectOperatorKind::Assign,
-                                                           ygg::Data<fd::NumericEffectOperator<LiftedTag, f::FluentTag>>::Variant(target_assign_effect.get_index()));
+    target_rule_data.head = ygg::Data<fd::NumericEffectOperator<LiftedTag, f::FluentTag>>(
+        f::NumericEffectOperatorKind::Assign,
+        ygg::Data<fd::NumericEffectOperator<LiftedTag, f::FluentTag>>::Variant(target_assign_effect.get_index()));
     target_rule_data.metric_effects.emplace_back(f::NumericEffectOperatorKind::Increase,
                                                  ygg::Data<fd::NumericEffectOperator<LiftedTag, f::FluentTag>>::Variant(target_metric_effect.get_index()));
     const auto target_rule = intern(std::move(target_rule_data));
 
     auto source_rule_data = ygg::Data<fd::Rule<LiftedTag, f::FunctionTag>>();
     source_rule_data.body = empty_body.get_index();
-    source_rule_data.head =
-        ygg::Data<fd::NumericEffectOperator<LiftedTag, f::FluentTag>>(f::NumericEffectOperatorKind::Assign,
-                                                           ygg::Data<fd::NumericEffectOperator<LiftedTag, f::FluentTag>>::Variant(source_assign_effect.get_index()));
+    source_rule_data.head = ygg::Data<fd::NumericEffectOperator<LiftedTag, f::FluentTag>>(
+        f::NumericEffectOperatorKind::Assign,
+        ygg::Data<fd::NumericEffectOperator<LiftedTag, f::FluentTag>>::Variant(source_assign_effect.get_index()));
     source_rule_data.metric_effects.emplace_back(f::NumericEffectOperatorKind::Increase,
                                                  ygg::Data<fd::NumericEffectOperator<LiftedTag, f::FluentTag>>::Variant(source_metric_effect.get_index()));
     const auto source_rule = intern(std::move(source_rule_data));
@@ -361,7 +365,8 @@ make_lifted_numeric_program(bool include_source_rule = true, std::initializer_li
     {
         const auto ground_source_term = intern(ygg::Data<fd::FunctionTerm<GroundTag, f::FluentTag>>(source));
         for (const auto value : initial_source_values)
-            program_data.fluent_fterm_values.push_back(intern(ygg::Data<fd::FunctionTermValue<GroundTag, f::FluentTag>>(ground_source_term, value)).get_index());
+            program_data.fluent_fterm_values.push_back(
+                intern(ygg::Data<fd::FunctionTermValue<GroundTag, f::FluentTag>>(ground_source_term, value)).get_index());
     }
     program_data.predicate_rules.push_back(predicate_rule.get_index());
     if (include_source_rule)
@@ -442,7 +447,7 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_lifted_metric_
             fd::canonicalize(data);
         else
             f::canonicalize(data);
-        return repository->get_or_create(data).first;
+        return repository->insert(data).first;
     };
     const auto source_predicate = intern(ygg::Data<f::Predicate<f::FluentTag>>(std::string("source"), 1));
     const auto goal_predicate = intern(ygg::Data<f::Predicate<f::FluentTag>>(std::string("goal"), 0));
@@ -468,14 +473,16 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_lifted_metric_
     lifted_metric_term_data.terms.emplace_back(f::ParameterIndex(0));
     const auto lifted_metric_term = intern(std::move(lifted_metric_term_data));
     const auto metric_effect = intern(ygg::Data<fd::NumericEffect<LiftedTag, f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
-                                                                                 metric_term.get_index(),
-                                                                                 ygg::Data<fd::FunctionExpression<LiftedTag>>(ygg::float_t(2))));
-    const auto lifted_metric_effect = intern(ygg::Data<fd::NumericEffect<LiftedTag, f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
-                                                                                        lifted_metric_term.get_index(),
-                                                                                        ygg::Data<fd::FunctionExpression<LiftedTag>>(ygg::float_t(3))));
-    const auto lifted_rhs_metric_effect = intern(ygg::Data<fd::NumericEffect<LiftedTag, f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
                                                                                             metric_term.get_index(),
-                                                                                            ygg::Data<fd::FunctionExpression<LiftedTag>>(lifted_metric_term.get_index())));
+                                                                                            ygg::Data<fd::FunctionExpression<LiftedTag>>(ygg::float_t(2))));
+    const auto lifted_metric_effect =
+        intern(ygg::Data<fd::NumericEffect<LiftedTag, f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
+                                                                     lifted_metric_term.get_index(),
+                                                                     ygg::Data<fd::FunctionExpression<LiftedTag>>(ygg::float_t(3))));
+    const auto lifted_rhs_metric_effect =
+        intern(ygg::Data<fd::NumericEffect<LiftedTag, f::FluentTag>>(f::NumericEffectOperatorKind::Increase,
+                                                                     metric_term.get_index(),
+                                                                     ygg::Data<fd::FunctionExpression<LiftedTag>>(lifted_metric_term.get_index())));
 
     auto body_data = ygg::Data<fd::ConjunctiveCondition<LiftedTag>>();
     body_data.variables.push_back(variable.get_index());
@@ -647,10 +654,10 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
                     auto axiom_workspace = d::ProgramWorkspace<LiftedTag>(axiom_program.get_datalog_program());
                     solve_workspace(axiom_workspace);
 
-                    auto merge_context = fd::MergeContext { action_workspace.datalog_builder, action_workspace.workspace_repository };
+                    auto merge_context = fd::CopyContext { action_workspace.datalog_builder, action_workspace.workspace_repository };
                     for (const auto& set : axiom_workspace.facts.fact_sets.predicate.get_sets())
                         for (const auto binding : set.get_bindings())
-                            action_workspace.facts.fact_sets.predicate.insert(fd::merge_d2d(binding, merge_context).first);
+                            action_workspace.facts.fact_sets.predicate.insert(fd::copy(binding, merge_context).first);
                 }
 
                 solve_workspace(action_workspace);
@@ -746,13 +753,13 @@ TEST(TyrDatalogLiftedBottomUpTest, MissingLiteralBindingUsesClosedWorldPolarityW
     auto fixture = make_lifted_predicate_program();
     auto object_data = ygg::Data<f::Object>(std::string("missing"));
     f::canonicalize(object_data);
-    const auto object = fixture.repository->get_or_create(object_data).first;
+    const auto object = fixture.repository->insert(object_data).first;
 
     const auto rule = fixture.program.get_program().get_rules<f::PredicateTag>().front();
     const auto positive = rule.get_body().get_literals<f::FluentTag>().front();
     auto negative_data = ygg::Data<fd::Literal<LiftedTag, f::FluentTag>>(positive.get_atom().get_index(), false);
     fd::canonicalize(negative_data);
-    const auto negative = fixture.repository->get_or_create(negative_data).first;
+    const auto negative = fixture.repository->insert(negative_data).first;
 
     auto workspace = d::ProgramWorkspace<LiftedTag>(fixture.program);
     workspace.binding.push_back(object.get_index());
@@ -886,7 +893,7 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     for (const auto rule : lifted_program.get_rules<f::FunctionTag>())
         ground_program_data.function_rules.push_back(fd::ground(rule, grounder).first.get_index());
     fd::canonicalize(ground_program_data);
-    const auto ground_program_view = fixture.repository->get_or_create(ground_program_data).first;
+    const auto ground_program_view = fixture.repository->insert(ground_program_data).first;
     auto ground_program = d::Program<GroundTag>(ground_program_view, fixture.repository, fixture.factory);
 
     using GroundAnnotationPolicy = d::MinCostAnnotationPolicy<d::SumAggregation>;
@@ -896,8 +903,8 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
 
     auto ground_source_data = ygg::Data<fd::FunctionTerm<GroundTag, f::FluentTag>>(fixture.source);
     auto ground_target_data = ygg::Data<fd::FunctionTerm<GroundTag, f::FluentTag>>(fixture.target);
-    const auto ground_source = fixture.repository->get_or_create(ground_source_data).first;
-    const auto ground_target = fixture.repository->get_or_create(ground_target_data).first;
+    const auto ground_source = fixture.repository->insert(ground_source_data).first;
+    const auto ground_target = fixture.repository->insert(ground_target_data).first;
     ground_workspace.numeric_annotations.clear();
     ground_workspace.numeric_annotations.insert(ground_source.get_row(), high_support_interval, d::BaseAnnotation(high_support_metric, d::Cost(2)));
     ground_workspace.numeric_annotations.insert(ground_source.get_row(), interior_support_interval, d::BaseAnnotation(interior_support_metric, d::Cost(1)));
@@ -952,7 +959,7 @@ TEST(TyrDatalogLiftedBottomUpTest, RepeatedArgumentsRetryPendingExistingHeadAchi
             fd::canonicalize(data);
         else
             f::canonicalize(data);
-        return repository->get_or_create(data).first;
+        return repository->insert(data).first;
     };
 
     const auto diagonal = intern(ygg::Data<f::Predicate<f::FluentTag>>(std::string("diagonal"), 2));
@@ -1065,7 +1072,7 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindi
             fd::canonicalize(data);
         else
             f::canonicalize(data);
-        return repository->get_or_create(data).first;
+        return repository->insert(data).first;
     };
 
     const auto source = intern(ygg::Data<f::Predicate<f::FluentTag>>(std::string("source"), 1));
@@ -1131,7 +1138,7 @@ TEST(TyrDatalogLiftedBottomUpTest, ProgramWorkspacesOwnIndependentRepositories)
     const auto intern = [&]<typename T>(ygg::Data<T> data)
     {
         f::canonicalize(data);
-        return repository->get_or_create(data).first;
+        return repository->insert(data).first;
     };
 
     const auto predicate = intern(ygg::Data<f::Predicate<f::FluentTag>>(std::string("workspace-predicate"), 1));
@@ -1140,7 +1147,7 @@ TEST(TyrDatalogLiftedBottomUpTest, ProgramWorkspacesOwnIndependentRepositories)
     program_data.fluent_predicates.push_back(predicate.get_index());
     program_data.objects.push_back(object.get_index());
     fd::canonicalize(program_data);
-    const auto program_view = repository->get_or_create(program_data).first;
+    const auto program_view = repository->insert(program_data).first;
     const auto program = d::Program<LiftedTag>(program_view, repository, factory);
 
     auto first = d::ProgramWorkspace<LiftedTag>(program);
@@ -1151,16 +1158,16 @@ TEST(TyrDatalogLiftedBottomUpTest, ProgramWorkspacesOwnIndependentRepositories)
     EXPECT_EQ(&second.workspace_repository.get_root(), &program.get_program_repository());
 
     auto variable = ygg::Data<f::Variable>(std::string("workspace-only"));
-    EXPECT_TRUE(first.workspace_repository.get_or_create(variable).second);
+    EXPECT_TRUE(first.workspace_repository.insert(variable).second);
     EXPECT_FALSE(second.workspace_repository.find(variable).has_value());
 
     auto second_variable = ygg::Data<f::Variable>(std::string("second-workspace-only"));
-    EXPECT_TRUE(second.workspace_repository.get_or_create(second_variable).second);
+    EXPECT_TRUE(second.workspace_repository.insert(second_variable).second);
 
     auto binding_data = ygg::Data<f::RelationBinding<f::Predicate<f::FluentTag>>>();
     binding_data.relation = predicate.get_index();
     binding_data.objects.push_back(object.get_index());
-    const auto binding = first.workspace_repository.get_or_create(binding_data).first;
+    const auto binding = first.workspace_repository.insert(binding_data).first;
     const auto binding_index = binding.get_index();
     first.annotations.insert_or_assign(binding, d::BaseAnnotation(3));
 
@@ -1173,7 +1180,7 @@ TEST(TyrDatalogLiftedBottomUpTest, ProgramWorkspacesOwnIndependentRepositories)
     auto reused_binding_data = ygg::Data<f::RelationBinding<f::Predicate<f::FluentTag>>>();
     reused_binding_data.relation = predicate.get_index();
     reused_binding_data.objects.push_back(object.get_index());
-    const auto reused_binding = first.workspace_repository.get_or_create(reused_binding_data).first;
+    const auto reused_binding = first.workspace_repository.insert(reused_binding_data).first;
     EXPECT_EQ(reused_binding.get_index(), binding_index);
     EXPECT_EQ(first.annotations.find(reused_binding), nullptr);
 }
@@ -1185,7 +1192,7 @@ TEST(TyrDatalogLiftedBottomUpTest, PredicateAnnotationsUseRelationAndRowIndices)
     const auto intern = [&]<typename T>(ygg::Data<T> data)
     {
         f::canonicalize(data);
-        return repository->get_or_create(data).first;
+        return repository->insert(data).first;
     };
 
     const auto first_predicate = intern(ygg::Data<f::Predicate<f::FluentTag>>(std::string("first"), 1));
@@ -1226,7 +1233,7 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
     const auto intern = [&]<typename T>(ygg::Data<T> data)
     {
         f::canonicalize(data);
-        return repository->get_or_create(data).first;
+        return repository->insert(data).first;
     };
 
     const auto first_predicate = intern(ygg::Data<f::Predicate<f::FluentTag>>(std::string("first"), 1));

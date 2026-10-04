@@ -49,10 +49,10 @@ namespace tyr::formalism::planning
 using Builder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, BuilderTypes>;
 
 using ygg::formalism::checkout;
-using ygg::formalism::get_or_create;
+using ygg::formalism::insert;
 
 template<typename T>
-void prepare_for_interning(Repository&, ygg::Data<T>& data)
+void prepare_for_insert(Repository&, ygg::Data<T>& data)
 {
     canonicalize(data);
 }

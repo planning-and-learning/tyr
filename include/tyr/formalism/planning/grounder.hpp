@@ -20,11 +20,11 @@
 
 #include "tyr/analysis/domains.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
+#include "tyr/formalism/planning/copy.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/grounder_decl.hpp"
-#include "tyr/formalism/planning/merge.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 
@@ -132,7 +132,7 @@ std::pair<FunctionBindingView<T>, bool> ground(TermListView terms, FunctionView<
     }
 
     // Canonicalize and Serialize
-    return planning::get_or_create(context.destination, *binding);
+    return planning::insert(context.destination, *binding);
 }
 
 template<FactKind T>
@@ -145,7 +145,7 @@ std::pair<FunctionTermView<GroundTag, T>, bool> ground(FunctionTermView<LiftedTa
     fterm->binding = ground(element.get_terms(), element.get_function(), context).first.get_index();
 
     // Canonicalize and Serialize
-    return planning::get_or_create(context.destination, *fterm);
+    return planning::insert(context.destination, *fterm);
 }
 
 inline FunctionExpressionView<GroundTag> ground(FunctionExpressionView<LiftedTag> element, GrounderContext& context)
@@ -176,7 +176,7 @@ inline std::pair<UnaryOperatorView<GroundTag>, bool> ground(UnaryOperatorView<Li
     unary->arg = ground(element.get_arg(), context).get_data();
 
     // Canonicalize and Serialize
-    return planning::get_or_create(context.destination, *unary);
+    return planning::insert(context.destination, *unary);
 }
 
 template<BinaryOperatorKind O>
@@ -191,7 +191,7 @@ std::pair<BinaryOperatorView<GroundTag, O>, bool> ground(BinaryOperatorView<Lift
     binary->rhs = ground(element.get_rhs(), context).get_data();
 
     // Canonicalize and Serialize
-    return planning::get_or_create(context.destination, *binary);
+    return planning::insert(context.destination, *binary);
 }
 
 inline std::pair<MultiOperatorView<GroundTag>, bool> ground(MultiOperatorView<LiftedTag> element, GrounderContext& context)
@@ -205,7 +205,7 @@ inline std::pair<MultiOperatorView<GroundTag>, bool> ground(MultiOperatorView<Li
         multi->args.push_back(ground(arg, context).get_data());
 
     // Canonicalize and Serialize
-    return planning::get_or_create(context.destination, *multi);
+    return planning::insert(context.destination, *multi);
 }
 
 inline BooleanOperatorView<GroundTag> ground(BooleanOperatorView<LiftedTag> element, GrounderContext& context)
@@ -246,7 +246,7 @@ std::pair<PredicateBindingView<T>, bool> ground(TermListView terms, PredicateVie
     }
 
     // Canonicalize and Serialize
-    return planning::get_or_create(context.destination, *binding);
+    return planning::insert(context.destination, *binding);
 }
 
 template<FactKind T>
@@ -259,7 +259,7 @@ std::pair<AtomView<GroundTag, T>, bool> ground(AtomView<LiftedTag, T> element, G
     atom->binding = ground(element.get_terms(), element.get_predicate(), context).first.get_index();
 
     // Canonicalize and Serialize
-    return planning::get_or_create(context.destination, *atom);
+    return planning::insert(context.destination, *atom);
 }
 
 inline ygg::Data<FDRFact<FluentTag>> ground(AtomView<LiftedTag, FluentTag> element, GrounderContext& context, FDRContext& fdr)
@@ -278,7 +278,7 @@ std::pair<LiteralView<GroundTag, T>, bool> ground(LiteralView<LiftedTag, T> elem
     ground_literal->atom = ground(element.get_atom(), context).first.get_index();
 
     // Canonicalize and Serialize
-    return planning::get_or_create(context.destination, *ground_literal);
+    return planning::insert(context.destination, *ground_literal);
 }
 
 inline ygg::Data<FDRFact<FluentTag>> ground(LiteralView<LiftedTag, FluentTag> element, GrounderContext& context, FDRContext& fdr)
@@ -311,7 +311,7 @@ inline std::pair<ConjunctiveConditionView<GroundTag>, bool> ground(ConjunctiveCo
         conj_cond->numeric_constraints.push_back(ground(numeric_constraint, context).get_data());
 
     // Canonicalize and Serialize
-    return planning::get_or_create(context.destination, *conj_cond);
+    return planning::insert(context.destination, *conj_cond);
 }
 
 template<FactKind T>
@@ -326,7 +326,7 @@ std::pair<NumericEffectView<GroundTag, T>, bool> ground(NumericEffectView<Lifted
     numeric_effect->fexpr = ground(element.get_fexpr(), context).get_data();
 
     // Canonicalize and Serialize
-    return planning::get_or_create(context.destination, *numeric_effect);
+    return planning::insert(context.destination, *numeric_effect);
 }
 
 template<FactKind T>
@@ -357,7 +357,7 @@ inline std::pair<ConjunctiveEffectView<GroundTag>, bool> ground(ConjunctiveEffec
         conj_eff->auxiliary_numeric_effect = ground(element.get_auxiliary_numeric_effect().value(), context).get_data();
 
     // Canonicalize and Serialize
-    return planning::get_or_create(context.destination, *conj_eff);
+    return planning::insert(context.destination, *conj_eff);
 }
 
 inline std::pair<ConditionalEffectView<GroundTag>, bool> ground(ConditionalEffectView<LiftedTag> element, GrounderContext& context, FDRContext& fdr)
@@ -370,7 +370,7 @@ inline std::pair<ConditionalEffectView<GroundTag>, bool> ground(ConditionalEffec
     cond_effect->effect = ground(element.get_effect(), context, fdr).first.get_index();
 
     // Canonicalize and Serialize
-    return planning::get_or_create(context.destination, *cond_effect);
+    return planning::insert(context.destination, *cond_effect);
 }
 
 inline std::pair<ActionBindingView, bool> ground(ActionView<LiftedTag> action, GrounderContext& context)
@@ -382,7 +382,7 @@ inline std::pair<ActionBindingView, bool> ground(ActionView<LiftedTag> action, G
         binding->objects.push_back(context.binding[i]);
 
     // Canonicalize and Serialize
-    return planning::get_or_create(context.destination, *binding);
+    return planning::insert(context.destination, *binding);
 }
 
 inline std::pair<ActionView<GroundTag>, bool> ground(ActionView<LiftedTag> element,
@@ -420,7 +420,7 @@ inline std::pair<ActionView<GroundTag>, bool> ground(ActionView<LiftedTag> eleme
 
     context.binding.resize(binding_size);
 
-    return planning::get_or_create(context.destination, *action);
+    return planning::insert(context.destination, *action);
 }
 
 inline std::pair<AxiomBindingView, bool> ground(AxiomView<LiftedTag> axiom, GrounderContext& context)
@@ -432,7 +432,7 @@ inline std::pair<AxiomBindingView, bool> ground(AxiomView<LiftedTag> axiom, Grou
         binding->objects.push_back(context.binding[i]);
 
     // Canonicalize and Serialize
-    return planning::get_or_create(context.destination, *binding);
+    return planning::insert(context.destination, *binding);
 }
 
 inline std::pair<AxiomView<GroundTag>, bool>
@@ -450,7 +450,7 @@ ground(AxiomView<LiftedTag> element, GrounderContext& context, GrounderCacheEntr
     axiom->body = ground(element.get_body(), context, fdr).first.get_index();
     axiom->head = ground(element.get_head(), context).first.get_index();
 
-    const auto result = planning::get_or_create(context.destination, *axiom);
+    const auto result = planning::insert(context.destination, *axiom);
 
     axiom_cache.emplace(binding, result.first.get_index());
 

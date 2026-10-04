@@ -19,7 +19,7 @@
 
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/formalism/datalog/merge.hpp"
+#include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"

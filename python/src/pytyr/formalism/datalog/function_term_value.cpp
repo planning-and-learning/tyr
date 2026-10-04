@@ -62,9 +62,9 @@ void bind_function_term_value(nb::module_& m, RepositoryBinding& repository)
     bind_function_term_value_view<FluentTag>(m, "FluentGroundFunctionTermValue");
     bind_function_term_value_view<AuxiliaryTag>(m, "AuxiliaryGroundFunctionTermValue");
 
-    repository.def("get_or_create", &get_or_create_data<FunctionTermValue<GroundTag, StaticTag>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_data<FunctionTermValue<GroundTag, FluentTag>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_data<FunctionTermValue<GroundTag, AuxiliaryTag>>, "data"_a, nb::keep_alive<0, 1>());
+    bind_insert<FunctionTermValue<GroundTag, StaticTag>>(repository);
+    bind_insert<FunctionTermValue<GroundTag, FluentTag>>(repository);
+    bind_insert<FunctionTermValue<GroundTag, AuxiliaryTag>>(repository);
 }
 
 }  // namespace tyr::formalism::datalog

@@ -16,14 +16,13 @@
  */
 
 #include "planning/parser.hpp"
-
-#include <filesystem>
-#include <yggdrasil/serialization/json.hpp>
-#include <yggdrasil/serialization/json_suite.hpp>
 #include "tyr/formalism/formalism.hpp"
 
 #include <boost/json.hpp>
+#include <filesystem>
 #include <gtest/gtest.h>
+#include <yggdrasil/serialization/json.hpp>
+#include <yggdrasil/serialization/json_suite.hpp>
 
 namespace json = boost::json;
 
@@ -47,7 +46,7 @@ std::vector<int> parse_parameters(const json::object& atom_object)
 auto atom(fp::Repository& repo, std::string_view predicate_name, const std::vector<int>& parameters)
 {
     auto predicate_builder = ygg::Data<f::Predicate<f::FluentTag>> { std::string(predicate_name), ygg::uint_t(parameters.size()) };
-    const auto predicate = repo.get_or_create(predicate_builder).first;
+    const auto predicate = repo.insert(predicate_builder).first;
 
     auto terms = std::vector<ygg::Data<f::Term>> {};
     for (const auto i : parameters)
@@ -96,8 +95,9 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesis)
 
         SCOPED_TRACE(name);
 
-        auto lifted_task = make_test_parser(ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(case_object, "domain_file", "case")))
-                               .parse_task(ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(case_object, "task_file", "case")));
+        auto lifted_task =
+            make_test_parser(ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(case_object, "domain_file", "case")))
+                .parse_task(ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(case_object, "task_file", "case")));
         auto& repository = *lifted_task.get_repository();
 
         auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());

@@ -18,11 +18,12 @@
 #ifndef TYR_FORMALISM_PLANNING_FDR_FACT_VIEW_HPP_
 #define TYR_FORMALISM_PLANNING_FDR_FACT_VIEW_HPP_
 
-#include <yggdrasil/core/types.hpp>
 #include "tyr/formalism/object_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
+
+#include <yggdrasil/core/types.hpp>
 
 namespace ygg
 {
@@ -50,9 +51,9 @@ public:
 
 /// Canonical context depends on variable.
 template<::tyr::formalism::FactKind T, typename C>
-auto make_view(const ygg::Data<::tyr::formalism::planning::FDRFact<T>>& element, const C& context) noexcept
+const C& get_canonical_context(const ygg::Data<::tyr::formalism::planning::FDRFact<T>>& element, const C& context) noexcept
 {
-    return ygg::View<ygg::Data<::tyr::formalism::planning::FDRFact<T>>, C>(element, ygg::make_view(element.variable, context).get_context());
+    return ygg::make_view(element.variable, context).get_context();
 }
 
 }

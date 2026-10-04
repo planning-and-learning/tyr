@@ -56,7 +56,7 @@ void bind_fdr_variable(nb::module_& m, RepositoryBinding& repository)
 
     bind_fdr_variable_view<FluentTag>(m, "FluentFDRVariable");
 
-    repository.def("get_or_create", &get_or_create_data<FDRVariable<FluentTag>>, "data"_a, nb::keep_alive<0, 1>());
+    bind_insert<FDRVariable<FluentTag>>(repository);
 }
 
 }  // namespace tyr::formalism::planning

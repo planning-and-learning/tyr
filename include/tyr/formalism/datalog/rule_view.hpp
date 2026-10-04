@@ -29,25 +29,20 @@
 #include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/core/types.hpp>
+#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 
-template<::tyr::TaskKind T, ::tyr::formalism::RelationKind R, ::tyr::formalism::datalog::Context C>
-class View<ygg::Index<::tyr::formalism::datalog::Rule<T, R>>, C>
+template<::tyr::TaskKind T, ::tyr::formalism::RelationKind R, ygg::formalism::SymbolContextFor<::tyr::formalism::datalog::Rule<T, R>> C>
+class View<ygg::Index<::tyr::formalism::datalog::Rule<T, R>>, C> : public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::datalog::Rule<T, R>>, C>
 {
-private:
-    const C* m_context;
-    ygg::Index<::tyr::formalism::datalog::Rule<T, R>> m_handle;
-
 public:
-    View(ygg::Index<::tyr::formalism::datalog::Rule<T, R>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+    View(ygg::Index<::tyr::formalism::datalog::Rule<T, R>> handle, const C& context) noexcept :
+        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::datalog::Rule<T, R>>, C>(handle, context)
+    {
+    }
 
-    const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
-    const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_handle() const noexcept { return m_handle; }
-
-    auto get_index() const noexcept { return m_handle; }
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     {
@@ -56,11 +51,11 @@ public:
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     {
-        return ygg::make_view(get_data().variables, *m_context);
+        return ygg::make_view(this->get_data().variables, *this->m_context);
     }
-    auto get_body() const noexcept { return ygg::make_view(get_data().body, *m_context); }
-    auto get_head() const noexcept { return ygg::make_view(get_data().head, *m_context); }
-    auto get_metric_effects() const noexcept { return ygg::make_view(get_data().metric_effects, *m_context); }
+    auto get_body() const noexcept { return ygg::make_view(this->get_data().body, *this->m_context); }
+    auto get_head() const noexcept { return ygg::make_view(this->get_data().head, *this->m_context); }
+    auto get_metric_effects() const noexcept { return ygg::make_view(this->get_data().metric_effects, *this->m_context); }
 
     auto get_rule() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
@@ -70,7 +65,7 @@ public:
     auto get_row() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     {
-        return ygg::make_view(get_data().binding, *m_context);
+        return ygg::make_view(this->get_data().binding, *this->m_context);
     }
     auto get_objects() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
@@ -82,8 +77,6 @@ public:
     {
         return get_row().get_key();
     }
-
-    auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }
 };
 
 }

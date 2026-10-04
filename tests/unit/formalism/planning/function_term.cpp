@@ -1,10 +1,12 @@
+#include "tyr/formalism/planning/canonicalization.hpp"
+#include "tyr/formalism/planning/copy.hpp"
+#include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/function_term_data.hpp"
 #include "tyr/formalism/planning/function_term_index.hpp"
 #include "tyr/formalism/planning/function_term_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+
 #include <concepts>
-#include "tyr/formalism/planning/canonicalization.hpp"
-#include "tyr/formalism/planning/formatter.hpp"
 #include <gtest/gtest.h>
 #include <string>
 
@@ -31,11 +33,14 @@ concept FunctionTermContract = std::constructible_from<ygg::Index<Entity>, ygg::
                                   };
 
 static_assert(FunctionTermContract<fp::FunctionTerm<::tyr::LiftedTag, f::StaticTag>>);
-static_assert(std::same_as<ygg::View<ygg::Index<fp::FunctionTerm<::tyr::LiftedTag, f::StaticTag>>, fp::Repository>, fp::FunctionTermView<::tyr::LiftedTag, f::StaticTag>>);
+static_assert(std::same_as<ygg::View<ygg::Index<fp::FunctionTerm<::tyr::LiftedTag, f::StaticTag>>, fp::Repository>,
+                           fp::FunctionTermView<::tyr::LiftedTag, f::StaticTag>>);
 static_assert(FunctionTermContract<fp::FunctionTerm<::tyr::LiftedTag, f::FluentTag>>);
-static_assert(std::same_as<ygg::View<ygg::Index<fp::FunctionTerm<::tyr::LiftedTag, f::FluentTag>>, fp::Repository>, fp::FunctionTermView<::tyr::LiftedTag, f::FluentTag>>);
+static_assert(std::same_as<ygg::View<ygg::Index<fp::FunctionTerm<::tyr::LiftedTag, f::FluentTag>>, fp::Repository>,
+                           fp::FunctionTermView<::tyr::LiftedTag, f::FluentTag>>);
 static_assert(FunctionTermContract<fp::FunctionTerm<::tyr::LiftedTag, f::AuxiliaryTag>>);
-static_assert(std::same_as<ygg::View<ygg::Index<fp::FunctionTerm<::tyr::LiftedTag, f::AuxiliaryTag>>, fp::Repository>, fp::FunctionTermView<::tyr::LiftedTag, f::AuxiliaryTag>>);
+static_assert(std::same_as<ygg::View<ygg::Index<fp::FunctionTerm<::tyr::LiftedTag, f::AuxiliaryTag>>, fp::Repository>,
+                           fp::FunctionTermView<::tyr::LiftedTag, f::AuxiliaryTag>>);
 
 }
 
@@ -63,11 +68,14 @@ concept GroundFunctionTermContract = std::constructible_from<ygg::Index<Entity>,
                                         };
 
 static_assert(GroundFunctionTermContract<fp::FunctionTerm<::tyr::GroundTag, f::StaticTag>>);
-static_assert(std::same_as<ygg::View<ygg::Index<fp::FunctionTerm<::tyr::GroundTag, f::StaticTag>>, fp::Repository>, fp::FunctionTermView<::tyr::GroundTag, f::StaticTag>>);
+static_assert(std::same_as<ygg::View<ygg::Index<fp::FunctionTerm<::tyr::GroundTag, f::StaticTag>>, fp::Repository>,
+                           fp::FunctionTermView<::tyr::GroundTag, f::StaticTag>>);
 static_assert(GroundFunctionTermContract<fp::FunctionTerm<::tyr::GroundTag, f::FluentTag>>);
-static_assert(std::same_as<ygg::View<ygg::Index<fp::FunctionTerm<::tyr::GroundTag, f::FluentTag>>, fp::Repository>, fp::FunctionTermView<::tyr::GroundTag, f::FluentTag>>);
+static_assert(std::same_as<ygg::View<ygg::Index<fp::FunctionTerm<::tyr::GroundTag, f::FluentTag>>, fp::Repository>,
+                           fp::FunctionTermView<::tyr::GroundTag, f::FluentTag>>);
 static_assert(GroundFunctionTermContract<fp::FunctionTerm<::tyr::GroundTag, f::AuxiliaryTag>>);
-static_assert(std::same_as<ygg::View<ygg::Index<fp::FunctionTerm<::tyr::GroundTag, f::AuxiliaryTag>>, fp::Repository>, fp::FunctionTermView<::tyr::GroundTag, f::AuxiliaryTag>>);
+static_assert(std::same_as<ygg::View<ygg::Index<fp::FunctionTerm<::tyr::GroundTag, f::AuxiliaryTag>>, fp::Repository>,
+                           fp::FunctionTermView<::tyr::GroundTag, f::AuxiliaryTag>>);
 
 TEST(TyrFormalismPlanningGroundFunctionTerm, ExposesRepositoryView)
 {
@@ -75,24 +83,24 @@ TEST(TyrFormalismPlanningGroundFunctionTerm, ExposesRepositoryView)
 
     auto function_data = ygg::Data<f::Function<f::FluentTag>>(std::string("fuel"), 1);
     canonicalize(function_data);
-    const auto [function, function_created] = repository.get_or_create(function_data);
+    const auto [function, function_created] = repository.insert(function_data);
     ASSERT_TRUE(function_created);
 
     auto object_data = ygg::Data<f::Object>(std::string("truck"));
     canonicalize(object_data);
-    const auto [object, object_created] = repository.get_or_create(object_data);
+    const auto [object, object_created] = repository.insert(object_data);
     ASSERT_TRUE(object_created);
 
     auto binding_data = ygg::Data<f::RelationBinding<f::Function<f::FluentTag>>> {};
     binding_data.relation = function.get_index();
     binding_data.objects.push_back(object.get_index());
     canonicalize(binding_data);
-    const auto [binding, binding_created] = repository.get_or_create(binding_data);
+    const auto [binding, binding_created] = repository.insert(binding_data);
     ASSERT_TRUE(binding_created);
 
     auto ground_function_term_data = ygg::Data<fp::FunctionTerm<::tyr::GroundTag, f::FluentTag>>(binding.get_index());
     canonicalize(ground_function_term_data);
-    const auto [ground_function_term, ground_function_term_created] = repository.get_or_create(ground_function_term_data);
+    const auto [ground_function_term, ground_function_term_created] = repository.insert(ground_function_term_data);
     ASSERT_TRUE(ground_function_term_created);
 
     EXPECT_EQ(ground_function_term.get_function().get_index(), function.get_index());
@@ -103,4 +111,32 @@ TEST(TyrFormalismPlanningGroundFunctionTerm, ExposesRepositoryView)
     EXPECT_EQ(fmt::format("{}", ground_function_term), "(fuel truck)");
 }
 
+}
+
+TEST(TyrFormalismPlanningCopy, RemapsLiftedFunctionTerms)
+{
+    namespace f = tyr::formalism;
+    namespace fp = tyr::formalism::planning;
+    auto factory = fp::RepositoryFactory {};
+    auto source = factory.create();
+    auto destination = factory.create();
+    using Function = f::Function<f::FluentTag>;
+    auto function_data = ygg::Data<Function>(std::string("fuel"), 1);
+    const auto function = fp::insert(source, function_data).first;
+    auto other_data = ygg::Data<Function>(std::string("distance"), 1);
+    (void) fp::insert(destination, other_data);
+    const auto target_function = fp::insert(destination, function_data).first;
+    ASSERT_NE(function.get_index(), target_function.get_index());
+
+    auto term_data = ygg::Data<fp::FunctionTerm<tyr::LiftedTag, f::FluentTag>> {};
+    term_data.function = function.get_index();
+    term_data.terms.push_back(ygg::Data<f::Term>(f::ParameterIndex(0)));
+    const auto term = fp::insert(source, term_data).first;
+    auto builder = fp::Builder {};
+    auto context = fp::CopyContext { builder, destination };
+    const auto [copied, inserted] = fp::copy(term, context);
+    EXPECT_TRUE(inserted);
+    EXPECT_EQ(copied.get_function(), target_function);
+    EXPECT_EQ(copied.get_terms()[0].get_data(), term.get_terms()[0].get_data());
+    EXPECT_FALSE(fp::copy(term, context).second);
 }

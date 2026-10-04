@@ -60,6 +60,12 @@ def test_function_fact_value_iterator_preserves_pairing() -> None:
     entries = list(values)
     assert len(entries) == fact_set.count() == 1
     assert entries[0][1] == 0.0
+    binding = entries[0][0]
+    function_name = binding.get_relation().get_name()
+
+    del values, entries, fact_set, workspace, program, task
+    gc.collect()
+    assert binding.get_relation().get_name() == function_name
 
 
 def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None:

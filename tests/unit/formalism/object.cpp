@@ -46,3 +46,29 @@ TEST(TyrFormalismObject, ExposesOwnedContract)
     auto other = ObjectData(std::string("van"));
     EXPECT_LT(data, other);
 }
+
+namespace
+{
+struct ObjectContext
+{
+    const fp::Repository& repository;
+    friend const fp::Repository& get_repository(const ObjectContext& context) noexcept { return context.repository; }
+};
+static_assert(ygg::formalism::SymbolRepositoryFor<fp::Repository, f::Object>);
+static_assert(ygg::formalism::SymbolContextFor<ObjectContext, f::Object>);
+static_assert(!ygg::formalism::SymbolContextFor<int, f::Object>);
+static_assert(ygg::ViewConcept<ObjectIndex, ObjectContext>);
+}
+
+TEST(TyrFormalismObject, ReadsThroughRepositoryContext)
+{
+    auto repository = fp::RepositoryFactory().create();
+    auto data = ObjectData(std::string("truck"));
+    const auto object = fp::insert(repository, data).first;
+    const auto context = ObjectContext { repository };
+    const auto view = ygg::make_view(object.get_index(), context);
+    EXPECT_EQ(&view.get_data(), &object.get_data());
+    EXPECT_EQ(&view.get_context(), &context);
+    EXPECT_EQ(view.get_name(), "truck");
+    EXPECT_EQ(view, view);
+}

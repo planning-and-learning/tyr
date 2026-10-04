@@ -24,31 +24,25 @@
 
 #include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/core/types.hpp>
+#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
-template<::tyr::TaskKind T, ::tyr::formalism::BinaryOperatorKind O, ::tyr::formalism::planning::Context C>
-class View<ygg::Index<::tyr::formalism::planning::BinaryOperator<T, O>>, C>
+template<::tyr::TaskKind T, ::tyr::formalism::BinaryOperatorKind O, ygg::formalism::SymbolContextFor<::tyr::formalism::planning::BinaryOperator<T, O>> C>
+class View<ygg::Index<::tyr::formalism::planning::BinaryOperator<T, O>>, C> :
+    public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::planning::BinaryOperator<T, O>>, C>
 {
-private:
-    const C* m_context;
-    ygg::Index<::tyr::formalism::planning::BinaryOperator<T, O>> m_handle;
-
 public:
     using OperatorType = O;
 
-    View(ygg::Index<::tyr::formalism::planning::BinaryOperator<T, O>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+    View(ygg::Index<::tyr::formalism::planning::BinaryOperator<T, O>> handle, const C& context) noexcept :
+        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::planning::BinaryOperator<T, O>>, C>(handle, context)
+    {
+    }
 
-    const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
-    const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_handle() const noexcept { return m_handle; }
-
-    auto get_index() const noexcept { return m_handle; }
-    auto get_operator() const noexcept { return get_data().operator_kind; }
-    auto get_lhs() const noexcept { return ygg::make_view(get_data().lhs, *m_context); }
-    auto get_rhs() const noexcept { return ygg::make_view(get_data().rhs, *m_context); }
-
-    auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }
+    auto get_operator() const noexcept { return this->get_data().operator_kind; }
+    auto get_lhs() const noexcept { return ygg::make_view(this->get_data().lhs, *this->m_context); }
+    auto get_rhs() const noexcept { return ygg::make_view(this->get_data().rhs, *this->m_context); }
 };
 
 }

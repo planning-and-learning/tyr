@@ -83,15 +83,10 @@ class Repository;
 template<typename Tag>
 using RepositoryPtr = std::unique_ptr<Repository<Tag>>;
 
-template<typename Repo, typename Tag>
-concept RepositoryAccess = requires(const Repo& r, ygg::Index<Tag> idx) {
-    { r[idx] } -> std::same_as<const ygg::Data<Tag>&>;
-};
-
 template<typename Repo, typename... Tags>
 constexpr bool match_tree_repository_access_for_types(ygg::TypeList<Tags...>) noexcept
 {
-    return (RepositoryAccess<Repo, Tags> && ...);
+    return (ygg::formalism::SymbolRepositoryFor<Repo, Tags> && ...);
 }
 
 template<typename T>

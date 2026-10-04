@@ -129,7 +129,7 @@ std::pair<FunctionBindingView<F>, bool> ground(TermListView terms, FunctionView<
     }
 
     // Canonicalize and Serialize
-    return datalog::get_or_create(context.destination, *binding);
+    return datalog::insert(context.destination, *binding);
 }
 
 template<FactKind F>
@@ -142,7 +142,7 @@ std::pair<FunctionTermView<GroundTag, F>, bool> ground(FunctionTermView<LiftedTa
     fterm->binding = ground(element.get_terms(), element.get_function(), context).first.get_index();
 
     // Canonicalize and Serialize
-    return datalog::get_or_create(context.destination, *fterm);
+    return datalog::insert(context.destination, *fterm);
 }
 
 inline FunctionExpressionView<GroundTag> ground(FunctionExpressionView<LiftedTag> element, GrounderContext& context)
@@ -173,7 +173,7 @@ inline std::pair<UnaryOperatorView<GroundTag>, bool> ground(UnaryOperatorView<Li
     unary->arg = ground(element.get_arg(), context).get_data();
 
     // Canonicalize and Serialize
-    return datalog::get_or_create(context.destination, *unary);
+    return datalog::insert(context.destination, *unary);
 }
 
 template<BinaryOperatorKind O>
@@ -188,7 +188,7 @@ std::pair<BinaryOperatorView<GroundTag, O>, bool> ground(BinaryOperatorView<Lift
     binary->rhs = ground(element.get_rhs(), context).get_data();
 
     // Canonicalize and Serialize
-    return datalog::get_or_create(context.destination, *binary);
+    return datalog::insert(context.destination, *binary);
 }
 
 inline std::pair<MultiOperatorView<GroundTag>, bool> ground(MultiOperatorView<LiftedTag> element, GrounderContext& context)
@@ -202,7 +202,7 @@ inline std::pair<MultiOperatorView<GroundTag>, bool> ground(MultiOperatorView<Li
         multi->args.push_back(ground(arg, context).get_data());
 
     // Canonicalize and Serialize
-    return datalog::get_or_create(context.destination, *multi);
+    return datalog::insert(context.destination, *multi);
 }
 
 inline BooleanOperatorView<GroundTag> ground(BooleanOperatorView<LiftedTag> element, GrounderContext& context)
@@ -243,7 +243,7 @@ std::pair<PredicateBindingView<F>, bool> ground(TermListView terms, PredicateVie
     }
 
     // Canonicalize and Serialize
-    return datalog::get_or_create(context.destination, *binding);
+    return datalog::insert(context.destination, *binding);
 }
 
 template<FactKind F>
@@ -256,7 +256,7 @@ std::pair<AtomView<GroundTag, F>, bool> ground(AtomView<LiftedTag, F> element, G
     atom->binding = ground(element.get_terms(), element.get_predicate(), context).first.get_index();
 
     // Canonicalize and Serialize
-    return datalog::get_or_create(context.destination, *atom);
+    return datalog::insert(context.destination, *atom);
 }
 
 template<FactKind F>
@@ -270,7 +270,7 @@ std::pair<LiteralView<GroundTag, F>, bool> ground(LiteralView<LiftedTag, F> elem
     ground_literal->atom = ground(element.get_atom(), context).first.get_index();
 
     // Canonicalize and Serialize
-    return datalog::get_or_create(context.destination, *ground_literal);
+    return datalog::insert(context.destination, *ground_literal);
 }
 
 template<FactKind F>
@@ -282,7 +282,7 @@ std::pair<NumericEffectView<GroundTag, F>, bool> ground(NumericEffectView<Lifted
     numeric_effect->fterm = ground(element.get_fterm(), context).first.get_index();
     numeric_effect->fexpr = ground(element.get_fexpr(), context).get_data();
 
-    return datalog::get_or_create(context.destination, *numeric_effect);
+    return datalog::insert(context.destination, *numeric_effect);
 }
 
 template<FactKind F>
@@ -308,7 +308,7 @@ inline std::pair<ConjunctiveConditionView<GroundTag>, bool> ground(ConjunctiveCo
         conj_cond->numeric_constraints.push_back(ground(numeric_constraint, context).get_data());
 
     // Canonicalize and Serialize
-    return datalog::get_or_create(context.destination, *conj_cond);
+    return datalog::insert(context.destination, *conj_cond);
 }
 
 template<RelationKind R>
@@ -328,7 +328,7 @@ std::pair<RuleView<GroundTag, R>, bool> ground(RuleView<LiftedTag, R> element, G
         rule->metric_effects.push_back(ground(metric_effect, context).get_data());
 
     // Canonicalize and Serialize
-    return datalog::get_or_create(context.destination, *rule);
+    return datalog::insert(context.destination, *rule);
 }
 
 /**
@@ -359,7 +359,7 @@ std::pair<PredicateBindingView<F>, bool> ground_binding(AtomView<LiftedTag, F> e
     }
 
     // Canonicalize and Serialize
-    return datalog::get_or_create(context.destination, *binding);
+    return datalog::insert(context.destination, *binding);
 }
 
 template<FactKind F>
@@ -377,7 +377,7 @@ std::pair<RuleBindingView<R>, bool> ground_binding(RuleView<LiftedTag, R> elemen
     for (const auto object : context.binding)
         binding->objects.push_back(object);
 
-    return datalog::get_or_create(context.destination, *binding);
+    return datalog::insert(context.destination, *binding);
 }
 
 /**

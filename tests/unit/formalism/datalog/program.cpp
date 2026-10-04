@@ -1,9 +1,10 @@
+#include "tyr/datalog/static_rule_filter.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/program_index.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+
 #include <concepts>
-#include "tyr/datalog/static_rule_filter.hpp"
 #include <gtest/gtest.h>
 #include <string>
 
@@ -165,7 +166,7 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
         const auto intern = [&](auto data)
         {
             canonicalize(data);
-            return source.get_or_create(data).first;
+            return source.insert(data).first;
         };
         const auto predicate = [&]<f::FactKind T>(const char* name) { return intern(ygg::Data<f::Predicate<T>> { std::string(name), 0 }); };
         const auto function = [&]<f::FactKind T>(const char* name) { return intern(ygg::Data<f::Function<T>> { std::string(name), 0 }); };
@@ -231,20 +232,23 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
         const auto function_rule = [&](fd::ConjunctiveConditionView<::tyr::GroundTag> body, fd::FunctionTermView<::tyr::GroundTag, f::FluentTag> head)
         {
             const auto source_fterm = lifted_fterm(head.get_function());
-            const auto lifted_effect = intern(ygg::Data<fd::NumericEffect<::tyr::LiftedTag, f::FluentTag>> { f::NumericEffectOperatorKind::Assign,
-                                                                                           source_fterm.get_index(),
-                                                                                           ygg::Data<fd::FunctionExpression<::tyr::LiftedTag>> { 1.0 } });
+            const auto lifted_effect =
+                intern(ygg::Data<fd::NumericEffect<::tyr::LiftedTag, f::FluentTag>> { f::NumericEffectOperatorKind::Assign,
+                                                                                      source_fterm.get_index(),
+                                                                                      ygg::Data<fd::FunctionExpression<::tyr::LiftedTag>> { 1.0 } });
             auto lifted_rule_data = ygg::Data<fd::Rule<::tyr::LiftedTag, f::FunctionTag>> {};
             lifted_rule_data.body = empty_lifted_body.get_index();
-            lifted_rule_data.head = ygg::Data<fd::NumericEffectOperator<::tyr::LiftedTag, f::FluentTag>> { f::NumericEffectOperatorKind::Assign, lifted_effect.get_index() };
+            lifted_rule_data.head =
+                ygg::Data<fd::NumericEffectOperator<::tyr::LiftedTag, f::FluentTag>> { f::NumericEffectOperatorKind::Assign, lifted_effect.get_index() };
             const auto lifted_rule = intern(std::move(lifted_rule_data));
 
             auto binding_data = ygg::Data<f::RelationBinding<fd::Rule<::tyr::LiftedTag, f::FunctionTag>>> {};
             binding_data.relation = lifted_rule.get_index();
             const auto binding = intern(std::move(binding_data));
-            const auto effect = intern(ygg::Data<fd::NumericEffect<::tyr::GroundTag, f::FluentTag>> { f::NumericEffectOperatorKind::Assign,
-                                                                                          head.get_index(),
-                                                                                          ygg::Data<fd::FunctionExpression<::tyr::GroundTag>> { 1.0 } });
+            const auto effect =
+                intern(ygg::Data<fd::NumericEffect<::tyr::GroundTag, f::FluentTag>> { f::NumericEffectOperatorKind::Assign,
+                                                                                      head.get_index(),
+                                                                                      ygg::Data<fd::FunctionExpression<::tyr::GroundTag>> { 1.0 } });
 
             auto rule_data = ygg::Data<fd::Rule<::tyr::GroundTag, f::FunctionTag>> {};
             rule_data.binding = binding.get_index();

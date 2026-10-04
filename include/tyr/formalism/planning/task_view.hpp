@@ -37,66 +37,59 @@
 #include <yggdrasil/containers/optional.hpp>
 #include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/core/types.hpp>
+#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 
-template<::tyr::TaskKind Kind, ::tyr::formalism::planning::Context C>
-class View<ygg::Index<::tyr::formalism::planning::Task<Kind>>, C>
+template<::tyr::TaskKind Kind, ygg::formalism::SymbolContextFor<::tyr::formalism::planning::Task<Kind>> C>
+class View<ygg::Index<::tyr::formalism::planning::Task<Kind>>, C> : public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::planning::Task<Kind>>, C>
 {
-private:
-    const C* m_context;
-    ygg::Index<::tyr::formalism::planning::Task<Kind>> m_handle;
-
 public:
-    View(ygg::Index<::tyr::formalism::planning::Task<Kind>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+    View(ygg::Index<::tyr::formalism::planning::Task<Kind>> handle, const C& context) noexcept :
+        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::planning::Task<Kind>>, C>(handle, context)
+    {
+    }
 
-    const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
-    const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_handle() const noexcept { return m_handle; }
-
-    auto get_index() const noexcept { return m_handle; }
-    const auto& get_name() const noexcept { return get_data().name; }
-    auto get_domain() const noexcept { return ygg::make_view(get_data().domain, *m_context); }
-    auto get_derived_predicates() const noexcept { return ygg::make_view(get_data().derived_predicates, *m_context); }
-    auto get_objects() const noexcept { return ygg::make_view(get_data().objects, *m_context); }
+    const auto& get_name() const noexcept { return this->get_data().name; }
+    auto get_domain() const noexcept { return ygg::make_view(this->get_data().domain, *this->m_context); }
+    auto get_derived_predicates() const noexcept { return ygg::make_view(this->get_data().derived_predicates, *this->m_context); }
+    auto get_objects() const noexcept { return ygg::make_view(this->get_data().objects, *this->m_context); }
     template<::tyr::formalism::FactKind T>
     auto get_atoms() const noexcept
     {
-        return ygg::make_view(get_data().template get_atoms<T>(), *m_context);
+        return ygg::make_view(this->get_data().template get_atoms<T>(), *this->m_context);
     }
     template<::tyr::formalism::FactKind T>
     auto get_fterm_values() const noexcept
     {
-        return ygg::make_view(get_data().template get_fterm_values<T>(), *m_context);
+        return ygg::make_view(this->get_data().template get_fterm_values<T>(), *this->m_context);
     }
-    auto get_auxiliary_fterm_value() const noexcept { return ygg::make_view(get_data().auxiliary_fterm_value, *m_context); }
-    auto get_goal() const noexcept { return ygg::make_view(get_data().goal, *m_context); }
-    auto get_metric() const noexcept { return ygg::make_view(get_data().metric, *m_context); }
-    auto get_axioms() const noexcept { return ygg::make_view(get_data().axioms, *m_context); }
+    auto get_auxiliary_fterm_value() const noexcept { return ygg::make_view(this->get_data().auxiliary_fterm_value, *this->m_context); }
+    auto get_goal() const noexcept { return ygg::make_view(this->get_data().goal, *this->m_context); }
+    auto get_metric() const noexcept { return ygg::make_view(this->get_data().metric, *this->m_context); }
+    auto get_axioms() const noexcept { return ygg::make_view(this->get_data().axioms, *this->m_context); }
 
     auto get_fluent_variables() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
     {
-        return ygg::make_view(get_data().fluent_variables, *m_context);
+        return ygg::make_view(this->get_data().fluent_variables, *this->m_context);
     }
     auto get_fluent_facts() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
     {
-        return ygg::make_view(get_data().fluent_facts, *m_context);
+        return ygg::make_view(this->get_data().fluent_facts, *this->m_context);
     }
     auto get_ground_actions() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
     {
-        return ygg::make_view(get_data().ground_actions, *m_context);
+        return ygg::make_view(this->get_data().ground_actions, *this->m_context);
     }
     auto get_ground_axioms() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
     {
-        return ygg::make_view(get_data().ground_axioms, *m_context);
+        return ygg::make_view(this->get_data().ground_axioms, *this->m_context);
     }
-
-    auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }
 };
 
 }

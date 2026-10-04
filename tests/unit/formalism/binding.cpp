@@ -1,8 +1,9 @@
 #include "tyr/formalism/binding_data.hpp"
 #include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/binding_view.hpp"
-#include "tyr/formalism/datalog/merge.hpp"
+#include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/planning/copy.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <concepts>
@@ -97,12 +98,13 @@ static_assert(std::same_as<typename ygg::formalism::RelationRepositoryTraits<f::
 static_assert(std::same_as<typename ygg::formalism::RelationRepositoryTraits<f::ObjectTag>::storage_type, ygg::formalism::BitPackedArraySetStorage>);
 #endif
 
-TEST(TyrFormalismDatalogMergeTest, ReinternsBindingRelationsAndObjects)
+template<typename Factory, typename Builder, typename Context>
+void check_binding_copy()
 {
-    auto source = fd::RepositoryFactory().create();
-    auto destination = fd::RepositoryFactory().create();
+    auto source = Factory().create();
+    auto destination = Factory().create();
 
-    const auto intern = []<typename T>(fd::Repository& repository, ygg::Data<T> data) { return fd::get_or_create(repository, data).first; };
+    const auto intern = []<typename T>(auto& repository, ygg::Data<T> data) { return ygg::formalism::insert(repository, data).first; };
 
     const auto source_a = intern(source, ygg::Data<f::Object>(std::string("a")));
     (void) intern(source, ygg::Data<f::Object>(std::string("b")));
@@ -135,10 +137,10 @@ TEST(TyrFormalismDatalogMergeTest, ReinternsBindingRelationsAndObjects)
     ASSERT_NE(source_predicate.get_index(), destination_predicate.get_index());
     ASSERT_NE(source_function.get_index(), destination_function.get_index());
 
-    auto builder = fd::Builder {};
-    auto context = fd::MergeContext { builder, destination };
-    const auto merged_predicate_binding = fd::merge_d2d(source_predicate_binding, context).first;
-    const auto merged_function_binding = fd::merge_d2d(source_function_binding, context).first;
+    auto builder = Builder {};
+    auto context = Context { builder, destination };
+    const auto merged_predicate_binding = copy(source_predicate_binding, context).first;
+    const auto merged_function_binding = copy(source_function_binding, context).first;
 
     EXPECT_EQ(merged_predicate_binding.get_relation(), destination_predicate);
     ASSERT_EQ(merged_predicate_binding.get_objects().size(), 1);
@@ -146,7 +148,13 @@ TEST(TyrFormalismDatalogMergeTest, ReinternsBindingRelationsAndObjects)
     EXPECT_EQ(merged_function_binding.get_relation(), destination_function);
     ASSERT_EQ(merged_function_binding.get_objects().size(), 1);
     EXPECT_EQ(merged_function_binding.get_objects()[0], destination_a);
+    EXPECT_FALSE(copy(source_predicate_binding, context).second);
+    EXPECT_FALSE(copy(source_function_binding, context).second);
 }
+
+TEST(TyrFormalismDatalogCopy, RemapsBindingRelationsAndObjects) { check_binding_copy<fd::RepositoryFactory, fd::Builder, fd::CopyContext>(); }
+
+TEST(TyrFormalismPlanningCopy, RemapsBindingRelationsAndObjects) { check_binding_copy<fp::RepositoryFactory, fp::Builder, fp::CopyContext>(); }
 
 TEST(TyrFormalismPlanningRepository, SharedInterningPreservesBindingObjectOrder)
 {
@@ -154,28 +162,28 @@ TEST(TyrFormalismPlanningRepository, SharedInterningPreservesBindingObjectOrder)
     auto builder = fp::Builder {};
     auto a_data = ygg::Data<f::Object>(std::string("a"));
     auto b_data = ygg::Data<f::Object>(std::string("b"));
-    const auto a = fp::get_or_create(repository, a_data).first;
-    const auto b = fp::get_or_create(repository, b_data).first;
+    const auto a = fp::insert(repository, a_data).first;
+    const auto b = fp::insert(repository, b_data).first;
     using Predicate = f::Predicate<f::StaticTag>;
     auto predicate_data = ygg::Data<Predicate>(std::string("p"), 2);
-    const auto predicate = fp::get_or_create(repository, predicate_data).first;
+    const auto predicate = fp::insert(repository, predicate_data).first;
 
     auto data = fp::checkout<f::RelationBinding<Predicate>>(builder);
     data->relation = predicate.get_index();
     data->objects.push_back(b.get_index());
     data->objects.push_back(a.get_index());
-    const auto [binding, inserted] = fp::get_or_create(repository, *data);
+    const auto [binding, inserted] = fp::insert(repository, *data);
     ASSERT_TRUE(inserted);
     EXPECT_EQ(binding.get_relation(), predicate);
     ASSERT_EQ(binding.get_objects().size(), 2);
     EXPECT_EQ(binding.get_objects()[0], b);
     EXPECT_EQ(binding.get_objects()[1], a);
 
-    const auto [duplicate, duplicate_inserted] = fp::get_or_create(repository, *data);
+    const auto [duplicate, duplicate_inserted] = fp::insert(repository, *data);
     EXPECT_FALSE(duplicate_inserted);
     EXPECT_EQ(duplicate, binding);
     std::swap(data->objects[0], data->objects[1]);
-    const auto [reversed, reversed_inserted] = fp::get_or_create(repository, *data);
+    const auto [reversed, reversed_inserted] = fp::insert(repository, *data);
     EXPECT_TRUE(reversed_inserted);
     EXPECT_NE(reversed, binding);
     EXPECT_EQ(reversed.get_objects()[0], a);

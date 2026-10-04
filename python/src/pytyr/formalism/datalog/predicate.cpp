@@ -43,8 +43,8 @@ void bind_predicate(nb::module_& m, RepositoryBinding& repository)
     bind_predicate_view<StaticTag>(m, "StaticPredicate");
     bind_predicate_view<FluentTag>(m, "FluentPredicate");
 
-    repository.def("get_or_create", &get_or_create_data<Predicate<StaticTag>>, "data"_a, nb::keep_alive<0, 1>());
-    repository.def("get_or_create", &get_or_create_data<Predicate<FluentTag>>, "data"_a, nb::keep_alive<0, 1>());
+    bind_insert<Predicate<StaticTag>>(repository);
+    bind_insert<Predicate<FluentTag>>(repository);
 }
 
 }  // namespace tyr::formalism::datalog

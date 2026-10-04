@@ -18,30 +18,24 @@
 #ifndef TYR_FORMALISM_VARIABLE_VIEW_HPP_
 #define TYR_FORMALISM_VARIABLE_VIEW_HPP_
 
-#include <yggdrasil/core/types.hpp>
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/variable_index.hpp"
 
+#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/formalism/detail/view.hpp>
+
 namespace ygg
 {
-template<typename C>
-class View<ygg::Index<::tyr::formalism::Variable>, C>
+template<ygg::formalism::SymbolContextFor<::tyr::formalism::Variable> C>
+class View<ygg::Index<::tyr::formalism::Variable>, C> : public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::Variable>, C>
 {
-private:
-    const C* m_context;
-    ygg::Index<::tyr::formalism::Variable> m_handle;
-
 public:
-    View(ygg::Index<::tyr::formalism::Variable> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+    View(ygg::Index<::tyr::formalism::Variable> handle, const C& context) noexcept :
+        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::Variable>, C>(handle, context)
+    {
+    }
 
-    const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
-    const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_handle() const noexcept { return m_handle; }
-
-    auto get_index() const noexcept { return m_handle; }
-    const auto& get_name() const noexcept { return get_data().name; }
-
-    auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }
+    const auto& get_name() const noexcept { return this->get_data().name; }
 };
 }
 

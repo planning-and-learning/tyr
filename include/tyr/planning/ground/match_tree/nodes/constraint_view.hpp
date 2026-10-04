@@ -26,29 +26,24 @@
 
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
+#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 using namespace ::tyr;
-template<typename Tag, planning::match_tree::Context<Tag> C>
-class View<ygg::Index<planning::match_tree::NumericConstraintSelectorNode<Tag>>, C>
+template<typename Tag, ygg::formalism::SymbolContextFor<planning::match_tree::NumericConstraintSelectorNode<Tag>> C>
+class View<ygg::Index<planning::match_tree::NumericConstraintSelectorNode<Tag>>, C> :
+    public ygg::formalism::detail::View<ygg::Index<planning::match_tree::NumericConstraintSelectorNode<Tag>>, C>
 {
-private:
-    const C* m_context;
-    ygg::Index<planning::match_tree::NumericConstraintSelectorNode<Tag>> m_handle;
-
 public:
-    View(ygg::Index<planning::match_tree::NumericConstraintSelectorNode<Tag>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+    View(ygg::Index<planning::match_tree::NumericConstraintSelectorNode<Tag>> handle, const C& context) noexcept :
+        ygg::formalism::detail::View<ygg::Index<planning::match_tree::NumericConstraintSelectorNode<Tag>>, C>(handle, context)
+    {
+    }
 
-    const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
-    const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_handle() const noexcept { return m_handle; }
-
-    auto get_constraint() const noexcept { return ygg::make_view(get_data().constraint, m_context->get_formalism_repository()); }
-    auto get_true_child() const noexcept { return ygg::make_view(get_data().true_child, *m_context); }
-    auto get_dontcare_child() const noexcept { return ygg::make_view(get_data().dontcare_child, *m_context); }
-
-    auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }
+    auto get_constraint() const noexcept { return ygg::make_view(this->get_data().constraint, this->m_context->get_formalism_repository()); }
+    auto get_true_child() const noexcept { return ygg::make_view(this->get_data().true_child, *this->m_context); }
+    auto get_dontcare_child() const noexcept { return ygg::make_view(this->get_data().dontcare_child, *this->m_context); }
 };
 }
 

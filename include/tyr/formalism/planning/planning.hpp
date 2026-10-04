@@ -19,13 +19,13 @@
 #define TYR_FORMALISM_PLANNING_PLANNING_HPP_
 
 #include "tyr/formalism/planning/canonicalization.hpp"
+#include "tyr/formalism/planning/copy.hpp"
 #include "tyr/formalism/planning/datas.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/indices.hpp"
 #include "tyr/formalism/planning/invariants/formatter.hpp"
 #include "tyr/formalism/planning/invariants/invariant.hpp"
 #include "tyr/formalism/planning/invariants/synthesis.hpp"
-#include "tyr/formalism/planning/merge.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/planning_domain.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"

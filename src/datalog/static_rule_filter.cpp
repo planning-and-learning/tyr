@@ -18,7 +18,7 @@
 #include "tyr/datalog/static_rule_filter.hpp"
 
 #include "tyr/datalog/applicability.hpp"
-#include "tyr/formalism/datalog/merge.hpp"
+#include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 namespace tyr::datalog
@@ -42,12 +42,12 @@ fd::ProgramView<GroundTag> remove_statically_inapplicable_rules(fd::ProgramView<
     const auto fact_sets = FactSets { static_fact_sets, fluent_fact_sets };
 
     auto builder = fd::Builder {};
-    auto context = fd::MergeContext { builder, repository };
+    auto context = fd::CopyContext { builder, repository };
     auto result = fd::checkout<fd::Program<GroundTag>>(builder);
     const auto merge_all = [&](const auto elements, auto& destination)
     {
         for (const auto element : elements)
-            destination.push_back(fd::merge_d2d(element, context).first.get_index());
+            destination.push_back(fd::copy(element, context).first.get_index());
     };
 
     merge_all(program.get_predicates<f::StaticTag>(), result->static_predicates);
@@ -61,20 +61,20 @@ fd::ProgramView<GroundTag> remove_statically_inapplicable_rules(fd::ProgramView<
     merge_all(program.get_fterm_values<f::FluentTag>(), result->fluent_fterm_values);
 
     if (const auto goal = program.get_goal())
-        result->goal = fd::merge_d2d(*goal, context).first.get_index();
+        result->goal = fd::copy(*goal, context).first.get_index();
     if (const auto metric = program.get_metric())
-        result->metric = fd::merge_d2d(*metric, context).first.get_index();
+        result->metric = fd::copy(*metric, context).first.get_index();
 
     const auto merge_applicable_rules = [&]<f::RelationKind R>()
     {
         for (const auto rule : program.get_rules<R>())
             if (is_statically_applicable(rule, fact_sets))
-                result->get_rules<R>().push_back(fd::merge_d2d(rule, context).first.get_index());
+                result->get_rules<R>().push_back(fd::copy(rule, context).first.get_index());
     };
     merge_applicable_rules.template operator()<f::PredicateTag>();
     merge_applicable_rules.template operator()<f::FunctionTag>();
 
-    return fd::get_or_create(repository, *result).first;
+    return fd::insert(repository, *result).first;
 }
 
 }

@@ -1,10 +1,11 @@
 #include "tyr/formalism/datalog/atom_data.hpp"
 #include "tyr/formalism/datalog/atom_index.hpp"
 #include "tyr/formalism/datalog/atom_view.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
-#include <concepts>
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+
+#include <concepts>
 #include <gtest/gtest.h>
 #include <string>
 
@@ -37,7 +38,8 @@ concept AtomContract = std::constructible_from<ygg::Index<Entity>, ygg::uint_t> 
                           };
 
 static_assert([]<typename... Entities>(ygg::TypeList<Entities...>) { return (AtomContract<Entities> && ...); }(fd::AtomTypes<::tyr::LiftedTag> {}));
-static_assert(std::constructible_from<ygg::Data<fd::Atom<::tyr::LiftedTag, tyr::formalism::StaticTag>>, fd::PredicateView<tyr::formalism::StaticTag>, fd::TermViewList>);
+static_assert(
+    std::constructible_from<ygg::Data<fd::Atom<::tyr::LiftedTag, tyr::formalism::StaticTag>>, fd::PredicateView<tyr::formalism::StaticTag>, fd::TermViewList>);
 
 }
 
@@ -80,12 +82,12 @@ TEST(TyrFormalismDatalogGroundAtom, PreservesFormatting)
 
     auto predicate_data = ygg::Data<f::Predicate<f::FluentTag>>(std::string("at"), 2);
     canonicalize(predicate_data);
-    const auto [predicate, predicate_created] = repository.get_or_create(predicate_data);
+    const auto [predicate, predicate_created] = repository.insert(predicate_data);
     ASSERT_TRUE(predicate_created);
 
     auto object_data = ygg::Data<f::Object>(std::string("truck"));
     canonicalize(object_data);
-    const auto [object, object_created] = repository.get_or_create(object_data);
+    const auto [object, object_created] = repository.insert(object_data);
     ASSERT_TRUE(object_created);
 
     auto binding_data = ygg::Data<f::RelationBinding<f::Predicate<f::FluentTag>>> {};
@@ -93,12 +95,12 @@ TEST(TyrFormalismDatalogGroundAtom, PreservesFormatting)
     binding_data.objects.push_back(object.get_index());
     binding_data.objects.push_back(object.get_index());
     canonicalize(binding_data);
-    const auto [binding, binding_created] = repository.get_or_create(binding_data);
+    const auto [binding, binding_created] = repository.insert(binding_data);
     ASSERT_TRUE(binding_created);
 
     auto ground_atom_data = ygg::Data<fd::Atom<::tyr::GroundTag, f::FluentTag>>(binding.get_index());
     canonicalize(ground_atom_data);
-    const auto [ground_atom, ground_atom_created] = repository.get_or_create(ground_atom_data);
+    const auto [ground_atom, ground_atom_created] = repository.insert(ground_atom_data);
     ASSERT_TRUE(ground_atom_created);
 
     EXPECT_EQ(fd::to_string(binding), "(at truck truck)");

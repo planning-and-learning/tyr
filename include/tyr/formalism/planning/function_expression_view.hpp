@@ -47,20 +47,19 @@ public:
 };
 
 template<::tyr::TaskKind T, typename C>
-auto make_view(const ygg::Data<::tyr::formalism::planning::FunctionExpression<T>>& element, const C& context) noexcept
+const C& get_canonical_context(const ygg::Data<::tyr::formalism::planning::FunctionExpression<T>>& element, const C& context) noexcept
 {
-    return ygg::View<ygg::Data<::tyr::formalism::planning::FunctionExpression<T>>, C>(element,
-                                                                                      std::visit(
-                                                                                          [&](const auto& arg) -> decltype(auto)
-                                                                                          {
-                                                                                              using Alternative = std::decay_t<decltype(arg)>;
+    return std::visit(
+        [&](const auto& arg) -> decltype(auto)
+        {
+            using Alternative = std::decay_t<decltype(arg)>;
 
-                                                                                              if constexpr (std::is_same_v<Alternative, ygg::float_t>)
-                                                                                                  return context.get_root();
-                                                                                              else
-                                                                                                  return ygg::make_view(arg, context).get_context();
-                                                                                          },
-                                                                                          element.variant));
+            if constexpr (std::is_same_v<Alternative, ygg::float_t>)
+                return context.get_root();
+            else
+                return ygg::make_view(arg, context).get_context();
+        },
+        element.variant);
 }
 
 }
