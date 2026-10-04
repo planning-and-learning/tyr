@@ -23,6 +23,7 @@ namespace p = tyr::planning;
 template<typename Kind, typename State>
 concept HasBindingQuery = requires(p::SuccessorGenerator<Kind>& generator, const p::Node<State>& node) { generator.get_applicable_action_bindings(node); };
 
+static_assert(ygg::InputRangeOf<fp::ObjectSpanView, fp::ObjectView>);
 static_assert(!HasBindingQuery<tyr::GroundTag, p::BuilderStateView<tyr::LiftedTag>>);
 static_assert(!HasBindingQuery<tyr::LiftedTag, p::StateView<tyr::GroundTag>>);
 static_assert(p::SuccessorGeneratorConcept<p::SuccessorGenerator<tyr::GroundTag>, tyr::GroundTag, p::BuilderStateView<tyr::GroundTag>>);
@@ -258,25 +259,35 @@ void expect_schema_queries_match_filtered_successors()
     const auto high = std::ranges::find_if(constants, [](auto object) { return object.get_name().str() == "high"; });
     ASSERT_NE(low, constants.end());
     ASSERT_NE(high, constants.end());
-    const auto distinct_objects = std::array { *low, *high };
-    const auto aliased_objects = std::array { *low, *low };
-    const auto invalid_objects = std::array { fp::ObjectView(ygg::Index<formalism::Object> {}, (*low).get_context()), *low };
+    const auto& object_repository = *task->get_repository();
+    const auto distinct_indices = std::array { (*low).get_index(), (*high).get_index() };
+    const auto aliased_indices = std::array { (*low).get_index(), (*low).get_index() };
+    const auto invalid_indices = std::array { ygg::Index<formalism::Object> {}, (*low).get_index() };
+    const auto distinct_objects = ygg::make_view(std::span<const ygg::Index<formalism::Object>>(distinct_indices), object_repository);
+    const auto aliased_objects = ygg::make_view(std::span<const ygg::Index<formalism::Object>>(aliased_indices), object_repository);
+    const auto invalid_objects = ygg::make_view(std::span<const ygg::Index<formalism::Object>>(invalid_indices), object_repository);
+    const auto unary_objects = ygg::make_view(distinct_objects.get_data().first(1), object_repository);
+    const auto empty_objects = ygg::make_view(std::span<const ygg::Index<formalism::Object>> {}, object_repository);
     const auto task_objects = task->get_task().get_objects();
     ASSERT_EQ(task_objects.size(), 1);
-    const auto local_objects = std::array { task_objects[0], *low };
+    const auto local_indices = std::array { task_objects[0].get_index(), (*low).get_index() };
+    const auto local_objects = ygg::make_view(std::span<const ygg::Index<formalism::Object>>(local_indices), object_repository);
     ASSERT_NE(&local_objects[0].get_context(), &local_objects[1].get_context());
+    // The same valid target indices are malformed in the smaller domain-only source repository.
+    const auto missing_source_objects = ygg::make_view(local_objects.get_data(), (*low).get_context());
     const auto rejected_domain = std::same_as<Kind, GroundTag> ? p::ActionBindingStatus::INAPPLICABLE : p::ActionBindingStatus::OUTSIDE_PARAMETER_DOMAIN;
     const auto bindings_before_checks = count_action_bindings(task);
     for (auto* generator : { source.get(), worker.get() })
     {
-        EXPECT_EQ(generator->check_action_binding(initial_node, *offered_valid, {}), p::ActionBindingStatus::APPLICABLE);
-        EXPECT_EQ(generator->check_action_binding(initial_node, *offered_resize, {}), p::ActionBindingStatus::INAPPLICABLE);
+        EXPECT_EQ(generator->check_action_binding(initial_node, *offered_valid, empty_objects), p::ActionBindingStatus::APPLICABLE);
+        EXPECT_EQ(generator->check_action_binding(initial_node, *offered_resize, empty_objects), p::ActionBindingStatus::INAPPLICABLE);
         EXPECT_EQ(generator->check_action_binding(initial_node, *offered_alias, distinct_objects), p::ActionBindingStatus::APPLICABLE);
         EXPECT_EQ(generator->check_action_binding(initial_node, *offered_alias, aliased_objects), p::ActionBindingStatus::INAPPLICABLE);
         EXPECT_EQ(generator->check_action_binding(initial_node, *offered_alias, invalid_objects), rejected_domain);
         EXPECT_EQ(generator->check_action_binding(initial_node, *offered_alias, local_objects), rejected_domain);
-        EXPECT_EQ(generator->check_action_binding(initial_node, *offered_dormant, std::span(distinct_objects).first(1)), rejected_domain);
-        EXPECT_THROW(generator->check_action_binding(initial_node, *offered_alias, std::span(distinct_objects).first(1)), std::invalid_argument);
+        EXPECT_EQ(generator->check_action_binding(initial_node, *offered_alias, missing_source_objects), rejected_domain);
+        EXPECT_EQ(generator->check_action_binding(initial_node, *offered_dormant, unary_objects), rejected_domain);
+        EXPECT_THROW(generator->check_action_binding(initial_node, *offered_alias, unary_objects), std::invalid_argument);
     }
     EXPECT_EQ(count_action_bindings(task), bindings_before_checks);
 
@@ -490,9 +501,10 @@ void expect_schema_queries_match_filtered_successors()
             initial_node,
             [&](auto binding)
             {
-                auto objects = std::vector<fp::ObjectView> {};
+                auto indices = std::vector<ygg::Index<formalism::Object>> {};
                 for (const auto object : binding.get_objects())
-                    objects.push_back(object);
+                    indices.push_back(object.get_index());
+                const auto objects = ygg::make_view(std::span<const ygg::Index<formalism::Object>>(indices), object_repository);
                 EXPECT_EQ(generator->check_action_binding(initial_node, binding.get_relation(), objects), p::ActionBindingStatus::APPLICABLE);
                 EXPECT_EQ(generator->check_action_binding(initial_node, *offered_alias, aliased_objects), p::ActionBindingStatus::INAPPLICABLE);
                 callback_successors.push_back({ binding, generator->get_successor_node(initial_node, binding, next_storage(), *axiom_evaluator) });
@@ -538,10 +550,10 @@ void expect_schema_queries_match_filtered_successors()
     ASSERT_NE(foreign_low, foreign_constants.end());
     ASSERT_EQ((*foreign_low).get_index(), (*low).get_index());
     ASSERT_NE(&(*foreign_low).get_context(), &(*low).get_context());
-    const auto foreign_objects = std::array { *foreign_low, *high };
+    const auto foreign_objects = ygg::make_view(distinct_objects.get_data(), *foreign_task->get_repository());
     EXPECT_THROW(source->check_action_binding(initial_node, *offered_alias, foreign_objects), std::invalid_argument);
     EXPECT_THROW(source->get_applicable_action_bindings(initial_node, foreign_action), std::invalid_argument);
-    EXPECT_THROW(source->check_action_binding(initial_node, foreign_action, {}), std::invalid_argument);
+    EXPECT_THROW(source->check_action_binding(initial_node, foreign_action, empty_objects), std::invalid_argument);
     EXPECT_THROW(source->get_successor_nodes(initial_node, foreign_action, list_storage, *axiom_evaluator), std::invalid_argument);
     EXPECT_THROW(source->get_labeled_successor_nodes(initial_node, foreign_action, list_storage, *axiom_evaluator), std::invalid_argument);
     const auto foreign_same_kind = [&]
@@ -553,7 +565,7 @@ void expect_schema_queries_match_filtered_successors()
     }();
     const auto foreign_node = p::Node(ygg::make_view(*owned, *foreign_same_kind), initial_node.get_metric());
     EXPECT_THROW(source->get_applicable_action_bindings(foreign_node), std::invalid_argument);
-    EXPECT_THROW(source->check_action_binding(foreign_node, *offered_valid, {}), std::invalid_argument);
+    EXPECT_THROW(source->check_action_binding(foreign_node, *offered_valid, empty_objects), std::invalid_argument);
     EXPECT_THROW(source->get_successor_nodes(foreign_node, borrowed_states, *axiom_evaluator), std::invalid_argument);
     ASSERT_FALSE(all_bindings.empty());
     auto out_state = pool.get_or_allocate();

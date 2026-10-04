@@ -57,12 +57,12 @@ public:
 
     Node<StateView<GroundTag>> get_initial_node(StateRepository<GroundTag>& state_repository, AxiomEvaluator<GroundTag>& axiom_evaluator);
 
-    /// Checks full applicability without interning the offered binding. Object views must have this task's canonical owners.
+    /// Checks full applicability without interning the offered binding. The borrowed object row must resolve to this task's canonical owners.
     /// Foreign states, schemas or objects and wrong arity throw invalid_argument. May be called from a binding callback.
     /// Ground tuples absent from the compiled action set are INAPPLICABLE; lifted domain failures are OUTSIDE_PARAMETER_DOMAIN.
     template<StateViewConcept<GroundTag> S>
     ActionBindingStatus
-    check_action_binding(const Node<S>& node, formalism::planning::ActionView<LiftedTag> action, std::span<const formalism::planning::ObjectView> objects);
+    check_action_binding(const Node<S>& node, formalism::planning::ActionView<LiftedTag> action, formalism::planning::ObjectSpanView objects);
 
     // Indexed inputs intern successors; builder inputs write caller-owned storage.
     // List storage appends builders and never clears them, preserving earlier returned views.

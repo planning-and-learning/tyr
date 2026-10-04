@@ -22,6 +22,7 @@
 #include "tyr/formalism/declarations.hpp"
 
 #include <memory>
+#include <span>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
@@ -390,6 +391,7 @@ using NumericEffectListView = ygg::View<ygg::IndexList<NumericEffect<T, F>>, Rep
 
 using ObjectView = ygg::View<ygg::Index<Object>, Repository>;
 using ObjectListView = ygg::View<ygg::IndexList<Object>, Repository>;
+using ObjectSpanView = ygg::View<std::span<const ygg::Index<Object>>, Repository>;
 using ObjectViewList = std::vector<ObjectView>;
 
 template<FactKind T>

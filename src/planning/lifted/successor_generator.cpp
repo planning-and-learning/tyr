@@ -43,6 +43,7 @@
 #include <utility>
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
+#include <yggdrasil/formalism/membership.hpp>
 
 namespace d = tyr::datalog;
 namespace f = tyr::formalism;
@@ -444,8 +445,7 @@ void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<S>& n
 }
 
 template<StateViewConcept<LiftedTag> S>
-ActionBindingStatus
-SuccessorGenerator<LiftedTag>::check_action_binding(const Node<S>& node, fp::ActionView<LiftedTag> action, std::span<const fp::ObjectView> objects)
+ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Node<S>& node, fp::ActionView<LiftedTag> action, fp::ObjectSpanView objects)
 {
     const auto& task = m_impl->definition->task;
     validate_task(task, node.get_state());
@@ -453,25 +453,24 @@ SuccessorGenerator<LiftedTag>::check_action_binding(const Node<S>& node, fp::Act
     if (objects.size() != action.get_arity())
         throw std::invalid_argument("SuccessorGenerator::check_action_binding(...): object count does not match action arity.");
 
-    for (const auto object : objects)
-    {
-        const auto index = object.get_index();
-        if (ygg::uint_t(index) >= task->get_repository()->template size<formalism::Object>())
-            return ActionBindingStatus::OUTSIDE_PARAMETER_DOMAIN;
-        if (&object.get_context() != &task->get_repository()->get_canonical_context(index))
-            throw std::invalid_argument("SuccessorGenerator::check_action_binding(...): object does not belong to the task repository.");
-    }
+    const auto indices = objects.get_data();
+    const auto& source_repository = objects.get_context();
+    const auto& target_repository = *task->get_repository();
+    if (!ygg::formalism::contains_all(source_repository, indices) || !ygg::formalism::contains_all(target_repository, indices))
+        return ActionBindingStatus::OUTSIDE_PARAMETER_DOMAIN;
+    if (!ygg::formalism::contains_all(target_repository, objects))
+        throw std::invalid_argument("SuccessorGenerator::check_action_binding(...): object does not belong to the task repository.");
 
     const auto& domains = task->get_formalism_task().get_variable_domains().action_domains.at(action.get_index()).payload.precondition_domain.payload;
     for (size_t i = 0; i < objects.size(); ++i)
-        if (i >= domains.size() || !std::binary_search(domains[i].objects.begin(), domains[i].objects.end(), objects[i].get_index()))
+        if (i >= domains.size() || !std::binary_search(domains[i].objects.begin(), domains[i].objects.end(), indices[i]))
             return ActionBindingStatus::OUTSIDE_PARAMETER_DOMAIN;
 
     // Single-binding work has separate scratch from the tuple held by an outer enumeration callback.
     auto& workspace = m_impl->evaluator.workspace;
     workspace.binding.clear();
-    for (const auto object : objects)
-        workspace.binding.push_back(object.get_index());
+    for (const auto index : indices)
+        workspace.binding.push_back(index);
     auto grounder = fp::GrounderContext { workspace.planning_builder, *task->get_repository(), workspace.binding };
     const auto state = StateContext<LiftedTag>(*task, node.get_state().get_state_builder(), node.get_metric());
     return m_impl->evaluator.executor.is_applicable(action, state, grounder, *task->get_fdr_context()) ? ActionBindingStatus::APPLICABLE :
@@ -986,13 +985,12 @@ void SuccessorGenerator<LiftedTag>::print_summary(size_t verbosity) const
     fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_worker_statistics(successor_generator_rule_worker_statistics));
 }
 
-template ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Node<StateView<LiftedTag>>& node,
-                                                                                 fp::ActionView<LiftedTag> action,
-                                                                                 std::span<const fp::ObjectView> objects);
+template ActionBindingStatus
+SuccessorGenerator<LiftedTag>::check_action_binding(const Node<StateView<LiftedTag>>& node, fp::ActionView<LiftedTag> action, fp::ObjectSpanView objects);
 
 template ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Node<BuilderStateView<LiftedTag>>& node,
                                                                                  fp::ActionView<LiftedTag> action,
-                                                                                 std::span<const fp::ObjectView> objects);
+                                                                                 fp::ObjectSpanView objects);
 
 template NodeList<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::get_successor_nodes<StateView<LiftedTag>>(const Node<StateView<LiftedTag>>& node,
                                                                                                                  StateRepository<LiftedTag>& state_repository,

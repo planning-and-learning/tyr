@@ -25,11 +25,11 @@
 #include <concepts>
 #include <deque>
 #include <functional>
-#include <span>
 #include <type_traits>
 #include <utility>
 #include <vector>
 #include <yggdrasil/containers/shared_object_pool.hpp>
+#include <yggdrasil/containers/span.hpp>
 #include <yggdrasil/core/concepts.hpp>
 #include <yggdrasil/core/config.hpp>
 
@@ -71,7 +71,7 @@ concept SuccessorGeneratorConcept = requires(T& r,
                                              std::vector<formalism::planning::ActionBindingView>& action_bindings,
                                              formalism::planning::ActionBindingView binding,
                                              formalism::planning::ActionView<LiftedTag> action,
-                                             std::span<const formalism::planning::ObjectView> objects,
+                                             formalism::planning::ObjectSpanView objects,
                                              StateRepository<Kind>& state_repository,
                                              SuccessorStorage<S>& successor_storage,
                                              SuccessorListStorage<S>& successor_list_storage,

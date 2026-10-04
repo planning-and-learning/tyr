@@ -42,4 +42,6 @@
 #include "tyr/formalism/planning/unary_operator_view.hpp"
 #include "tyr/formalism/views.hpp"
 
+#include <yggdrasil/containers/span.hpp>
+
 #endif
