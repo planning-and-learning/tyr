@@ -36,6 +36,7 @@
 #include <yggdrasil/buffer/segmented_buffer.hpp>
 #include <yggdrasil/containers/tuple.hpp>
 #include <yggdrasil/formalism/builder.hpp>
+#include <yggdrasil/formalism/interning.hpp>
 #include <yggdrasil/formalism/relation_repository.hpp>
 #include <yggdrasil/formalism/repository.hpp>
 #include <yggdrasil/formalism/repository_factory.hpp>
@@ -48,19 +49,13 @@ namespace tyr::formalism::datalog
 
 using Builder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, BuilderTypes>;
 
-template<typename T>
-[[nodiscard]] auto checkout(Builder& builder)
-{
-    auto data = builder.template get_builder<T>();
-    data->clear();
-    return data;
-}
+using ygg::formalism::checkout;
+using ygg::formalism::get_or_create;
 
 template<typename T>
-[[nodiscard]] auto get_or_create(Repository& repository, ygg::Data<T>& data)
+void prepare_for_interning(Repository&, ygg::Data<T>& data)
 {
     canonicalize(data);
-    return repository.get_or_create(data);
 }
 
 template<RelationKind R>

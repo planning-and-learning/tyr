@@ -29,6 +29,9 @@ concept MultiOperatorContract = std::constructible_from<ygg::Index<Entity>, ygg:
 using Lifted = fd::MultiOperator<::tyr::LiftedTag>;
 using Ground = fd::MultiOperator<::tyr::GroundTag>;
 
+static_assert(ygg::ViewConcept<ygg::Index<Lifted>, fd::Repository>);
+static_assert(ygg::formalism::SupportsSymbol<fd::Repository, Lifted>);
+static_assert(!ygg::formalism::SupportsSymbol<fd::Repository, int>);
 static_assert(MultiOperatorContract<Lifted>);
 static_assert(MultiOperatorContract<Ground>);
 static_assert(std::same_as<ygg::View<ygg::Index<Lifted>, fd::Repository>, fd::MultiOperatorView<::tyr::LiftedTag>>);
@@ -40,6 +43,8 @@ TEST(TyrFormalismDatalogMultiOperator, PreservesRepeatedOperands)
 {
     using Expression = ygg::Data<fd::FunctionExpression<::tyr::LiftedTag>>;
 
+    auto repository = fd::RepositoryFactory().create();
+
     for (const auto op : { f::ArithmeticOperatorKind::Add, f::ArithmeticOperatorKind::Mul })
     {
         auto data = ygg::Data<Lifted> {};
@@ -49,9 +54,19 @@ TEST(TyrFormalismDatalogMultiOperator, PreservesRepeatedOperands)
         data.args.emplace_back(Expression::Variant(1.0));
 
         EXPECT_FALSE(fd::is_canonical(data));
-        fd::canonicalize(data);
+        const auto [view, inserted] = fd::get_or_create(repository, data);
+        EXPECT_TRUE(inserted);
+        EXPECT_EQ(data.index, view.get_index());
         EXPECT_TRUE(fd::is_canonical(data));
         ASSERT_EQ(data.args.size(), 3);
         EXPECT_EQ(data.args[0], data.args[1]);
+        EXPECT_EQ(view.get_args().size(), 3);
+
+        std::swap(data.args[0], data.args[2]);
+        data.index = ygg::Index<Lifted>::max();
+        const auto [duplicate, duplicate_inserted] = fd::get_or_create(repository, data);
+        EXPECT_FALSE(duplicate_inserted);
+        EXPECT_EQ(duplicate, view);
+        EXPECT_EQ(data.index, view.get_index());
     }
 }

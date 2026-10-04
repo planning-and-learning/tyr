@@ -61,8 +61,9 @@ struct BindingPublicView<fp::Axiom<::tyr::LiftedTag>, fp::Repository>
 
 template<typename Relation, typename Repository>
 concept BindingContract =
-    f::RelationBindingConcept<f::RelationBinding<Relation>> && std::totally_ordered<ygg::Index<f::RelationBinding<Relation>>>
-    && std::totally_ordered<ygg::Data<f::RelationBinding<Relation>>> && std::totally_ordered<ygg::View<ygg::Index<f::RelationBinding<Relation>>, Repository>>
+    ygg::ViewConcept<ygg::Index<f::RelationBinding<Relation>>, Repository> && f::RelationBindingConcept<f::RelationBinding<Relation>>
+    && std::totally_ordered<ygg::Index<f::RelationBinding<Relation>>> && std::totally_ordered<ygg::Data<f::RelationBinding<Relation>>>
+    && std::totally_ordered<ygg::View<ygg::Index<f::RelationBinding<Relation>>, Repository>>
     && std::same_as<ygg::View<ygg::Index<f::RelationBinding<Relation>>, Repository>, typename BindingPublicView<Relation, Repository>::type>
     && requires(ygg::Index<f::RelationBinding<Relation>>& index,
                 ygg::Data<f::RelationBinding<Relation>>& data,
@@ -91,11 +92,9 @@ using Binding = f::RelationBinding<f::Predicate<f::StaticTag>>;
 static_assert(std::same_as<Binding, ygg::formalism::RelationBinding<f::Predicate<f::StaticTag>, f::ObjectTag>>);
 
 #if defined(TYR_RELATION_STORAGE_WORD)
-static_assert(std::same_as<typename ygg::formalism::RelationRepositoryTraits<f::ObjectTag>::storage_type,
-                           ygg::formalism::BlockArraySetStorage>);
+static_assert(std::same_as<typename ygg::formalism::RelationRepositoryTraits<f::ObjectTag>::storage_type, ygg::formalism::BlockArraySetStorage>);
 #else
-static_assert(std::same_as<typename ygg::formalism::RelationRepositoryTraits<f::ObjectTag>::storage_type,
-                           ygg::formalism::BitPackedArraySetStorage>);
+static_assert(std::same_as<typename ygg::formalism::RelationRepositoryTraits<f::ObjectTag>::storage_type, ygg::formalism::BitPackedArraySetStorage>);
 #endif
 
 TEST(TyrFormalismDatalogMergeTest, ReinternsBindingRelationsAndObjects)
@@ -103,11 +102,7 @@ TEST(TyrFormalismDatalogMergeTest, ReinternsBindingRelationsAndObjects)
     auto source = fd::RepositoryFactory().create();
     auto destination = fd::RepositoryFactory().create();
 
-    const auto intern = []<typename T>(fd::Repository& repository, ygg::Data<T> data)
-    {
-        canonicalize(data);
-        return repository.get_or_create(data).first;
-    };
+    const auto intern = []<typename T>(fd::Repository& repository, ygg::Data<T> data) { return fd::get_or_create(repository, data).first; };
 
     const auto source_a = intern(source, ygg::Data<f::Object>(std::string("a")));
     (void) intern(source, ygg::Data<f::Object>(std::string("b")));
@@ -151,4 +146,38 @@ TEST(TyrFormalismDatalogMergeTest, ReinternsBindingRelationsAndObjects)
     EXPECT_EQ(merged_function_binding.get_relation(), destination_function);
     ASSERT_EQ(merged_function_binding.get_objects().size(), 1);
     EXPECT_EQ(merged_function_binding.get_objects()[0], destination_a);
+}
+
+TEST(TyrFormalismPlanningRepository, SharedInterningPreservesBindingObjectOrder)
+{
+    auto repository = fp::RepositoryFactory().create();
+    auto builder = fp::Builder {};
+    auto a_data = ygg::Data<f::Object>(std::string("a"));
+    auto b_data = ygg::Data<f::Object>(std::string("b"));
+    const auto a = fp::get_or_create(repository, a_data).first;
+    const auto b = fp::get_or_create(repository, b_data).first;
+    using Predicate = f::Predicate<f::StaticTag>;
+    auto predicate_data = ygg::Data<Predicate>(std::string("p"), 2);
+    const auto predicate = fp::get_or_create(repository, predicate_data).first;
+
+    auto data = fp::checkout<f::RelationBinding<Predicate>>(builder);
+    data->relation = predicate.get_index();
+    data->objects.push_back(b.get_index());
+    data->objects.push_back(a.get_index());
+    const auto [binding, inserted] = fp::get_or_create(repository, *data);
+    ASSERT_TRUE(inserted);
+    EXPECT_EQ(binding.get_relation(), predicate);
+    ASSERT_EQ(binding.get_objects().size(), 2);
+    EXPECT_EQ(binding.get_objects()[0], b);
+    EXPECT_EQ(binding.get_objects()[1], a);
+
+    const auto [duplicate, duplicate_inserted] = fp::get_or_create(repository, *data);
+    EXPECT_FALSE(duplicate_inserted);
+    EXPECT_EQ(duplicate, binding);
+    std::swap(data->objects[0], data->objects[1]);
+    const auto [reversed, reversed_inserted] = fp::get_or_create(repository, *data);
+    EXPECT_TRUE(reversed_inserted);
+    EXPECT_NE(reversed, binding);
+    EXPECT_EQ(reversed.get_objects()[0], a);
+    EXPECT_EQ(reversed.get_objects()[1], b);
 }
