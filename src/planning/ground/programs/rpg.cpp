@@ -513,7 +513,7 @@ d::Program<GroundTag> create_rpg_datalog_program(fp::TaskView<GroundTag> task,
                                                  RPGProgram<GroundTag>::RuleToActionMappings& mapping)
 {
     auto factory = std::make_shared<fd::RepositoryFactory>();
-    const auto num_objects = task.get_domain().get_constants().size() + task.get_objects().size();
+    const auto num_objects = task.get_num_objects();
     auto source_repository = factory->create(num_objects);
     auto source_translation_context = TranslationContext<GroundTag> {};
     auto source_mapping = RPGProgram<GroundTag>::RuleToActionMappings {};

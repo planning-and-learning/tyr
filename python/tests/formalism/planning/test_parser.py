@@ -56,6 +56,8 @@ def test_in_memory_paths_are_optional_and_preserved_through_grounding(
     assert isinstance(grounded.task.get_task(), GroundTask)
     assert grounded.task.get_formalism_task().get_path() == task_path
     assert grounded.task.get_formalism_task().get_domain().get_path() == domain_path
+    assert task.get_task().get_num_objects() == 6
+    assert grounded.task.get_task().get_num_objects() == 6
 
 
 def test_programmatic_wrappers_default_to_no_path() -> None:
@@ -177,6 +179,8 @@ def test_parsed_task_exposes_domain_action_and_goal_views():
 
     assert domain.get_name() == "gripper-strips"
     assert task.get_name() == "gripper-2"
+    assert task.get_num_objects() == 6
+    assert len(list(domain.get_constants())) == 2
 
     assert [object_.get_name() for object_ in task.get_objects()] == [
         "ball1",

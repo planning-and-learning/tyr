@@ -531,6 +531,18 @@ concept StateViewConcept = IterableStateConcept<T> && IterableViewStateConcept<T
                                   { state.test(derived_atom_view) } -> std::same_as<bool>;
                               };
 
+/// Borrows the same state storage and task as the supplied view.
+template<formalism::FactKind F, StateViewConcept S>
+auto get_atoms_view(const S& state) noexcept
+{
+    if constexpr (std::same_as<F, formalism::StaticTag>)
+        return state.get_static_atoms_view();
+    else if constexpr (std::same_as<F, formalism::FluentTag>)
+        return state.get_fluent_atoms_view();
+    else
+        return state.get_derived_atoms_view();
+}
+
 /**
  * IndexableStateConcept
  */

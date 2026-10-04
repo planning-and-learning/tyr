@@ -25,6 +25,8 @@
 #include "tyr/formalism/planning/literal_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
+#include <ranges>
+#include <utility>
 #include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/formalism/detail/view.hpp>
@@ -66,6 +68,23 @@ public:
         requires std::same_as<T, ::tyr::GroundTag>
     {
         return ygg::make_view(this->get_data().template get_facts<F>(), *this->m_context);
+    }
+
+    /// Projects represented atoms of the requested polarity, borrowing the repository.
+    template<::tyr::formalism::FactKind F>
+    auto get_atoms_view(bool polarity) const
+    {
+        if constexpr (std::same_as<T, ::tyr::GroundTag> && std::same_as<F, ::tyr::formalism::FluentTag>)
+        {
+            auto facts = polarity ? get_facts<::tyr::formalism::PositiveTag>() : get_facts<::tyr::formalism::NegativeTag>();
+            return std::move(facts) | std::views::filter([](auto fact) { return fact.has_value(); })
+                   | std::views::transform([](auto fact) { return *fact.get_atom(); });
+        }
+        else
+        {
+            return get_literals<F>() | std::views::filter([polarity](auto literal) { return literal.get_polarity() == polarity; })
+                   | std::views::transform([](auto literal) { return literal.get_atom(); });
+        }
     }
 };
 

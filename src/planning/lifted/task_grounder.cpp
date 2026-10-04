@@ -428,8 +428,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     const auto& planning_domain = planning_task.get_domain();
 
     auto task = planning_task.get_task();
-    auto repository = planning_domain.get_repository_factory()->create_shared(task.get_domain().get_constants().size() + task.get_objects().size(),
-                                                                              planning_domain.get_repository().get());
+    auto repository = planning_domain.get_repository_factory()->create_shared(task.get_num_objects(), planning_domain.get_repository().get());
     auto builder = fp::Builder();
 
     auto ground_task = fp::checkout<fp::Task<GroundTag>>(builder);

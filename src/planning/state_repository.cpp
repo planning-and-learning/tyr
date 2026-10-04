@@ -158,9 +158,9 @@ struct StateRepository<Kind>::Impl
                 std::forward<ExtendState>(extend_state)();
                 const auto derived = derived_backend.insert(state.template get_atoms<formalism::DerivedTag>());
                 const auto [index, inserted] = packed_states.complete_miss_with_hash(hash,
-                                                                                   key,
-                                                                                   [&](ygg::Index<State<Kind>> index)
-                                                                                   { return ygg::Data<State<Kind>>(index, fluent, derived, numeric); });
+                                                                                     key,
+                                                                                     [&](ygg::Index<State<Kind>> index)
+                                                                                     { return ygg::Data<State<Kind>>(index, fluent, derived, numeric); });
                 state_index = index;
                 if (inserted)
                 {
@@ -169,8 +169,7 @@ struct StateRepository<Kind>::Impl
                 }
             }
 
-            derived_backend.unpack(packed_states[*state_index].template get_atoms<formalism::DerivedTag>(),
-                                   state.template get_atoms<formalism::DerivedTag>());
+            derived_backend.unpack(packed_states[*state_index].template get_atoms<formalism::DerivedTag>(), state.template get_atoms<formalism::DerivedTag>());
             state.set(*state_index);
         }
     };
@@ -279,8 +278,7 @@ StateView<Kind> StateRepository<Kind>::get_registered_state(ygg::Index<State<Kin
         [&](auto& evaluator)
         {
             const auto& packed_state = evaluator.storage->packed_states[state_index];
-            evaluator.fluent_backend.unpack(packed_state.template get_atoms<formalism::FluentTag>(),
-                                            state_builder->template get_atoms<formalism::FluentTag>());
+            evaluator.fluent_backend.unpack(packed_state.template get_atoms<formalism::FluentTag>(), state_builder->template get_atoms<formalism::FluentTag>());
             evaluator.derived_backend.unpack(packed_state.template get_atoms<formalism::DerivedTag>(),
                                              state_builder->template get_atoms<formalism::DerivedTag>());
             evaluator.numeric_backend.unpack(packed_state.get_numeric_variables(), state_builder->get_numeric_variables());
@@ -334,8 +332,7 @@ StateView<Kind> StateRepository<Kind>::register_state(AxiomEvaluator<Kind>& axio
 {
     if (axiom_evaluator.get_task() != m_impl->definition->task)
         throw std::invalid_argument("StateRepository::register_state(...): axiom evaluator belongs to a different task.");
-    m_impl->visit_evaluator([&](auto& evaluator)
-                           { evaluator.register_state(*state, [&] { axiom_evaluator.compute_extended_state(*state); }); });
+    m_impl->visit_evaluator([&](auto& evaluator) { evaluator.register_state(*state, [&] { axiom_evaluator.compute_extended_state(*state); }); });
     return StateView<Kind>(this->shared_from_this(), std::move(state));
 }
 
@@ -344,6 +341,16 @@ StateView<Kind> StateRepository<Kind>::register_extended_state(ygg::SharedObject
 {
     m_impl->visit_evaluator([&](auto& evaluator) { evaluator.register_state(*state, [] {}); });
     return StateView<Kind>(this->shared_from_this(), std::move(state));
+}
+
+template<TaskKind Kind>
+StateView<Kind> StateRepository<Kind>::register_extended_state(const BuilderStateView<Kind>& source)
+{
+    if (&source.get_task() != get_task().get())
+        throw std::invalid_argument("StateRepository::register_extended_state(...): source state belongs to a different task.");
+    auto state = get_state_builder();
+    *state = source.get_state_builder();
+    return register_extended_state(std::move(state));
 }
 
 template<TaskKind Kind>

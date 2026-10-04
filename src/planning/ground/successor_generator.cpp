@@ -33,6 +33,7 @@
 #include "tyr/planning/state_index.hpp"
 #include "tyr/planning/task_utils.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <stdexcept>
 #include <yggdrasil/containers/associative_containers.hpp>
@@ -86,6 +87,7 @@ struct SuccessorGenerator<GroundTag>::Impl
         ActionMatchTrees schema_match_trees;
         fp::ActionViewList<GroundTag> applicable_actions;
         ActionExecutor executor;
+        ygg::Data<formalism::RelationBinding<fp::Action<LiftedTag>>> checked_binding;
     };
 
     Impl(ygg::uint_t index, TaskPtr<GroundTag> task, std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
@@ -365,6 +367,47 @@ void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Node<S>& n
                                            }
                                            return true;
                                        });
+}
+
+template<StateViewConcept<GroundTag> S>
+ActionBindingStatus
+SuccessorGenerator<GroundTag>::check_action_binding(const Node<S>& node, fp::ActionView<LiftedTag> action, std::span<const fp::ObjectView> objects)
+{
+    const auto& task = m_impl->definition->task;
+    validate_task(task, node.get_state());
+    m_impl->get_schema_match_tree(action);
+    if (objects.size() != action.get_arity())
+        throw std::invalid_argument("SuccessorGenerator::check_action_binding(...): object count does not match action arity.");
+
+    for (const auto object : objects)
+    {
+        const auto index = object.get_index();
+        if (ygg::uint_t(index) >= task->get_repository()->template size<formalism::Object>())
+            return ActionBindingStatus::INAPPLICABLE;
+        if (&object.get_context() != &task->get_repository()->get_canonical_context(index))
+            throw std::invalid_argument("SuccessorGenerator::check_action_binding(...): object does not belong to the task repository.");
+    }
+
+    const auto& constants = task->get_task().get_domain().get_data().constants;
+    const auto& task_objects = task->get_task().get_data().objects;
+    for (const auto object : objects)
+        if (!std::binary_search(constants.begin(), constants.end(), object.get_index())
+            && !std::binary_search(task_objects.begin(), task_objects.end(), object.get_index()))
+            return ActionBindingStatus::INAPPLICABLE;
+
+    auto& scratch = m_impl->evaluator.checked_binding;
+    scratch.relation = action.get_index();
+    scratch.objects.clear();
+    for (const auto object : objects)
+        scratch.objects.push_back(object.get_index());
+    const auto binding = task->get_repository()->find(scratch);
+    if (!binding)
+        return ActionBindingStatus::INAPPLICABLE;
+    const auto found = m_impl->definition->action_binding_to_ground_action.find(*binding);
+    if (found == m_impl->definition->action_binding_to_ground_action.end())
+        return ActionBindingStatus::INAPPLICABLE;
+    const auto state = StateContext<GroundTag>(*task, node.get_state().get_state_builder(), node.get_metric());
+    return m_impl->evaluator.executor.is_applicable(found->second, state) ? ActionBindingStatus::APPLICABLE : ActionBindingStatus::INAPPLICABLE;
 }
 
 template<StateViewConcept<GroundTag> S>
@@ -750,6 +793,14 @@ Node<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_node(StateReposito
 const TaskPtr<GroundTag>& SuccessorGenerator<GroundTag>::get_task() const noexcept { return m_impl->definition->task; }
 
 ygg::uint_t SuccessorGenerator<GroundTag>::get_index() const noexcept { return m_impl->index; }
+
+template ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Node<StateView<GroundTag>>& node,
+                                                                                 fp::ActionView<LiftedTag> action,
+                                                                                 std::span<const fp::ObjectView> objects);
+
+template ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Node<BuilderStateView<GroundTag>>& node,
+                                                                                 fp::ActionView<LiftedTag> action,
+                                                                                 std::span<const fp::ObjectView> objects);
 
 template NodeList<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_successor_nodes(const Node<StateView<GroundTag>>& node,
                                                                                            StateRepository<GroundTag>& state_repository,

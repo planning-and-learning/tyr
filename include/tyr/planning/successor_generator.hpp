@@ -25,6 +25,7 @@
 #include <concepts>
 #include <deque>
 #include <functional>
+#include <span>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -34,6 +35,14 @@
 
 namespace tyr::planning
 {
+
+/// Result of checking an offered tuple without publishing its action binding.
+enum class ActionBindingStatus
+{
+    APPLICABLE,
+    OUTSIDE_PARAMETER_DOMAIN,
+    INAPPLICABLE
+};
 
 /// Indexed outputs live in a repository; borrowed single/callback outputs use caller-owned scratch.
 template<StateViewConcept S>
@@ -61,6 +70,8 @@ concept SuccessorGeneratorConcept = requires(T& r,
                                              const std::function<bool(formalism::planning::ActionBindingView)>& binding_callback,
                                              std::vector<formalism::planning::ActionBindingView>& action_bindings,
                                              formalism::planning::ActionBindingView binding,
+                                             formalism::planning::ActionView<LiftedTag> action,
+                                             std::span<const formalism::planning::ObjectView> objects,
                                              StateRepository<Kind>& state_repository,
                                              SuccessorStorage<S>& successor_storage,
                                              SuccessorListStorage<S>& successor_list_storage,
@@ -71,6 +82,7 @@ concept SuccessorGeneratorConcept = requires(T& r,
                                              ygg::ExecutionContextPtr execution_context) {
     requires TaskKind<Kind>;
     requires StateViewConcept<S, Kind>;
+    { r.check_action_binding(node, action, objects) } -> std::same_as<ActionBindingStatus>;
     { r.get_initial_node(state_repository, axiom_evaluator) } -> std::same_as<Node<StateView<Kind>>>;
     { r.get_successor_nodes(node, successor_list_storage, axiom_evaluator) } -> std::same_as<NodeList<S>>;
     { r.get_successor_nodes(node, successor_list_storage, axiom_evaluator, successor_nodes) } -> std::same_as<void>;

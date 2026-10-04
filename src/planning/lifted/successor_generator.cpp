@@ -36,6 +36,7 @@
 #include "tyr/planning/successor_generator.hpp"
 #include "tyr/planning/task_utils.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <fmt/ostream.h>
 #include <stdexcept>
@@ -440,6 +441,41 @@ void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<S>& n
                                                    out_nodes.push_back({ action_binding, get_successor_node(node, binding, target, axiom_evaluator) });
                                                    return true;
                                                });
+}
+
+template<StateViewConcept<LiftedTag> S>
+ActionBindingStatus
+SuccessorGenerator<LiftedTag>::check_action_binding(const Node<S>& node, fp::ActionView<LiftedTag> action, std::span<const fp::ObjectView> objects)
+{
+    const auto& task = m_impl->definition->task;
+    validate_task(task, node.get_state());
+    m_impl->get_schema_evaluator(action);
+    if (objects.size() != action.get_arity())
+        throw std::invalid_argument("SuccessorGenerator::check_action_binding(...): object count does not match action arity.");
+
+    for (const auto object : objects)
+    {
+        const auto index = object.get_index();
+        if (ygg::uint_t(index) >= task->get_repository()->template size<formalism::Object>())
+            return ActionBindingStatus::OUTSIDE_PARAMETER_DOMAIN;
+        if (&object.get_context() != &task->get_repository()->get_canonical_context(index))
+            throw std::invalid_argument("SuccessorGenerator::check_action_binding(...): object does not belong to the task repository.");
+    }
+
+    const auto& domains = task->get_formalism_task().get_variable_domains().action_domains.at(action.get_index()).payload.precondition_domain.payload;
+    for (size_t i = 0; i < objects.size(); ++i)
+        if (i >= domains.size() || !std::binary_search(domains[i].objects.begin(), domains[i].objects.end(), objects[i].get_index()))
+            return ActionBindingStatus::OUTSIDE_PARAMETER_DOMAIN;
+
+    // Single-binding work has separate scratch from the tuple held by an outer enumeration callback.
+    auto& workspace = m_impl->evaluator.workspace;
+    workspace.binding.clear();
+    for (const auto object : objects)
+        workspace.binding.push_back(object.get_index());
+    auto grounder = fp::GrounderContext { workspace.planning_builder, *task->get_repository(), workspace.binding };
+    const auto state = StateContext<LiftedTag>(*task, node.get_state().get_state_builder(), node.get_metric());
+    return m_impl->evaluator.executor.is_applicable(action, state, grounder, *task->get_fdr_context()) ? ActionBindingStatus::APPLICABLE :
+                                                                                                         ActionBindingStatus::INAPPLICABLE;
 }
 
 template<StateViewConcept<LiftedTag> S>
@@ -949,6 +985,14 @@ void SuccessorGenerator<LiftedTag>::print_summary(size_t verbosity) const
             successor_generator_rule_worker_statistics.push_back(worker.solve.statistics);
     fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_worker_statistics(successor_generator_rule_worker_statistics));
 }
+
+template ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Node<StateView<LiftedTag>>& node,
+                                                                                 fp::ActionView<LiftedTag> action,
+                                                                                 std::span<const fp::ObjectView> objects);
+
+template ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Node<BuilderStateView<LiftedTag>>& node,
+                                                                                 fp::ActionView<LiftedTag> action,
+                                                                                 std::span<const fp::ObjectView> objects);
 
 template NodeList<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::get_successor_nodes<StateView<LiftedTag>>(const Node<StateView<LiftedTag>>& node,
                                                                                                                  StateRepository<LiftedTag>& state_repository,

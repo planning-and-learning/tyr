@@ -45,6 +45,7 @@ static_assert(requires(const TaskView& view) {
     view.get_domain();
     view.get_derived_predicates();
     view.get_objects();
+    { view.get_num_objects() } -> std::same_as<size_t>;
     view.template get_atoms<f::StaticTag>();
     view.template get_atoms<f::FluentTag>();
     view.template get_fterm_values<f::StaticTag>();
@@ -103,6 +104,7 @@ static_assert(requires(const TaskView& view) {
     view.get_domain();
     view.get_derived_predicates();
     view.get_objects();
+    { view.get_num_objects() } -> std::same_as<size_t>;
     view.template get_atoms<f::StaticTag>();
     view.template get_atoms<f::FluentTag>();
     view.template get_atoms<f::DerivedTag>();

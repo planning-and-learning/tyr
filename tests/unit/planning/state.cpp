@@ -172,6 +172,9 @@ void expect_borrowed_builder_view(const p::TaskPtr<Kind>& task, const p::StateVi
     EXPECT_TRUE(std::ranges::equal(state.get_fluent_facts_view(), registered.get_fluent_facts_view()));
     EXPECT_TRUE(std::ranges::equal(state.get_fluent_atoms_view(), registered.get_fluent_atoms_view()));
     EXPECT_TRUE(std::ranges::equal(state.get_derived_atoms_view(), registered.get_derived_atoms_view()));
+    EXPECT_TRUE(std::ranges::equal(p::get_atoms_view<formalism::StaticTag>(state), p::get_atoms_view<formalism::StaticTag>(registered)));
+    EXPECT_TRUE(std::ranges::equal(p::get_atoms_view<formalism::FluentTag>(state), p::get_atoms_view<formalism::FluentTag>(registered)));
+    EXPECT_TRUE(std::ranges::equal(p::get_atoms_view<formalism::DerivedTag>(state), p::get_atoms_view<formalism::DerivedTag>(registered)));
     EXPECT_TRUE(std::ranges::equal(state.get_static_fterm_values_view(), registered.get_static_fterm_values_view()));
     EXPECT_TRUE(std::ranges::equal(state.get_fluent_fterm_values_view(), registered.get_fluent_fterm_values_view()));
     for (const auto atom : registered.get_static_atoms_view())
@@ -213,6 +216,13 @@ void expect_borrowed_builder_view(const p::TaskPtr<Kind>& task, const p::StateVi
     EXPECT_EQ(labeled_nodes.front().node.get_state().get(fterm), value + 1);
     EXPECT_EQ(registered.get(fterm), value);
     EXPECT_EQ(registered.get_state_repository()->num_states(), num_states);
+    if constexpr (std::same_as<Kind, GroundTag>)
+    {
+        auto& values = moved->template get_atoms<formalism::FluentTag>().values;
+        std::ranges::fill(values, ygg::uint_t(0));
+        const auto atoms = p::get_atoms_view<formalism::FluentTag>(ygg::make_view(*moved, *task));
+        EXPECT_TRUE(atoms.begin() == atoms.end());
+    }
 }
 
 template<TaskKind Kind>

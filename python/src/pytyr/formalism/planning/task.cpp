@@ -106,6 +106,7 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
                        .def("get_domain", &V::get_domain, nb::keep_alive<0, 1>())
                        .def("get_derived_predicates", &V::get_derived_predicates)
                        .def("get_objects", &V::get_objects)
+                       .def("get_num_objects", &V::get_num_objects)
                        .def("get_static_atoms", &V::template get_atoms<StaticTag>)
                        .def("get_fluent_atoms", &V::template get_atoms<FluentTag>)
                        .def("get_static_fterm_values", &V::template get_fterm_values<StaticTag>)
