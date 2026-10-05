@@ -65,6 +65,12 @@ public:
     ActionBindingStatus
     check_action_binding(const Node<S>& node, formalism::planning::ActionView<LiftedTag> action, formalism::planning::ObjectSpanView objects);
 
+    /// Checks the same contract as check_action_binding and publishes only an applicable binding.
+    /// The returned binding borrows the task repository. May be called from a binding callback.
+    template<StateViewConcept<LiftedTag> S>
+    ActionBindingResult
+    try_get_applicable_action_binding(const Node<S>& node, formalism::planning::ActionView<LiftedTag> action, formalism::planning::ObjectSpanView objects);
+
     // Indexed inputs intern successors; builder inputs write caller-owned storage.
     // List storage appends builders and never clears them, preserving earlier returned views.
     // Borrowed outputs remain valid while their storage and task live and the builders are unchanged.

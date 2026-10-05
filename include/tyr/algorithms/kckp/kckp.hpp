@@ -204,7 +204,7 @@ void complete_clique(const GraphLayout& layout,
     const auto row = workspace.compatible_vertices(depth);
     const auto candidates = ygg::BitsetSpan<const uint64_t>(row.data() + info.block_offset, info.num_bits);
 
-    for (auto bit = candidates.find_first(); bit != ygg::BitsetSpan<const uint64_t>::npos; bit = candidates.find_next(bit))
+    for (const auto bit : ygg::set_bit_indices(candidates))
     {
         const auto vertex = Vertex(info.bit_offset + bit);
         workspace.partial_solution[partition] = vertex;

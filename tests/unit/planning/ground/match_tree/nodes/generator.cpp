@@ -5,6 +5,7 @@
 
 #include <concepts>
 #include <gtest/gtest.h>
+#include <utility>
 
 namespace fp = tyr::formalism::planning;
 namespace mt = tyr::planning::match_tree;
@@ -40,6 +41,9 @@ concept MatchTreeCanIntern = requires(mt::Repository<Action>& repository, ygg::D
 static_assert(MatchTreeCanIntern<Generator>);
 static_assert(!MatchTreeCanIntern<mt::ElementGeneratorNode<Axiom>>);
 
+static_assert(noexcept(std::declval<const mt::Repository<Action>&>()[std::declval<ygg::Index<Generator>>()]));
+static_assert(noexcept(ygg::make_view(std::declval<ygg::Index<Generator>>(), std::declval<const mt::Repository<Action>&>())));
+
 TEST(TyrMatchTreeRepository, SharedInterningKeepsTheMatchTreeContext)
 {
     auto formalism_repository = fp::RepositoryFactory().create();
@@ -57,4 +61,10 @@ TEST(TyrMatchTreeRepository, SharedInterningKeepsTheMatchTreeContext)
     EXPECT_FALSE(duplicate_inserted);
     EXPECT_EQ(duplicate, view);
     EXPECT_EQ(data->index, view.get_handle());
+    EXPECT_EQ(&duplicate.get_context(), &repository);
+    const auto found = repository.find(*data);
+    ASSERT_TRUE(found);
+    EXPECT_EQ(&found->get_context(), &repository);
+    EXPECT_EQ(&repository.front<Generator>(), &view.get_data());
+    EXPECT_EQ(repository.size<Generator>(), 1);
 }

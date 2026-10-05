@@ -43,7 +43,6 @@
 #include "tyr/planning/ground/match_tree/nodes/variable_view.hpp"
 
 #include <cassert>
-#include <optional>
 #include <utility>
 #include <yggdrasil/core/type_list.hpp>
 #include <yggdrasil/core/types.hpp>
@@ -61,21 +60,17 @@ using ygg::formalism::checkout;
 using ygg::formalism::insert;
 
 template<typename Tag>
-class Repository
+class Repository : public ygg::formalism::SymbolRepositoryBase<Repository<Tag>, RepositoryTypes<Tag>>
 {
-private:
-    using SymbolRepository = ygg::ApplyTypeListT<::ygg::formalism::SymbolRepository, RepositoryTypes<Tag>>;
+    using Base = ygg::formalism::SymbolRepositoryBase<Repository<Tag>, RepositoryTypes<Tag>>;
 
+private:
     const formalism::planning::Repository& m_formalism_repository;
-    SymbolRepository m_repository;
     ygg::uint_t m_index;
 
 public:
-    using SymbolTypes = typename SymbolRepository::SymbolTypes;
-
     explicit Repository(ygg::uint_t index, const formalism::planning::Repository& formalism_repository) :
         m_formalism_repository(formalism_repository),
-        m_repository(),
         m_index(index)
     {
     }
@@ -88,50 +83,21 @@ public:
 
     const formalism::planning::Repository& get_formalism_repository() const noexcept { return m_formalism_repository; }
 
-    template<typename T>
-        requires ygg::formalism::SupportsSymbol<Repository, T>
-    std::optional<ygg::View<ygg::Index<T>, Repository>> find(const ygg::Data<T>& builder) const noexcept
-    {
-        if (const auto view_or_nullopt = m_repository.find(builder))
-            return ygg::make_view(view_or_nullopt->get_handle(), *this);
-
-        return std::nullopt;
-    }
-
-    template<typename T>
-        requires ygg::formalism::SupportsSymbol<Repository, T>
-    std::pair<ygg::View<ygg::Index<T>, Repository>, bool> insert(ygg::Data<T>& builder)
-    {
-        const auto [view, success] = m_repository.insert(builder);
-        return std::make_pair(ygg::make_view(view.get_handle(), *this), success);
-    }
-
     /// @brief Access the element with the given index.
     template<typename T>
         requires ygg::formalism::SupportsSymbol<Repository, T>
     const ygg::Data<T>& operator[](ygg::Index<T> index) const noexcept
     {
         assert(index != ygg::Index<T>::max() && "Unassigned index.");
-        return m_repository[index];
+        return this->template at_local<T>(index);
     }
 
     template<typename T>
         requires ygg::formalism::SupportsSymbol<Repository, T>
-    const ygg::Data<T>& front() const
+    const Repository& get_canonical_context(ygg::Index<T>) const noexcept
     {
-        return m_repository.template front<T>();
+        return *this;
     }
-
-    /// @brief Get the number of stored elements.
-    template<typename T>
-        requires ygg::formalism::SupportsSymbol<Repository, T>
-    size_t size() const noexcept
-    {
-        return m_repository.template size<T>();
-    }
-
-    /// @brief Clear the repository but keep memory allocated.
-    void clear() noexcept { m_repository.clear(); }
 };
 
 static_assert(RepositoryConcept<Repository<formalism::planning::Action<GroundTag>>, formalism::planning::Action<GroundTag>>);

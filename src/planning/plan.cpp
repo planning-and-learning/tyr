@@ -18,7 +18,9 @@
 #include "tyr/planning/plan.hpp"
 
 #include "tyr/planning/ground/state_view.hpp"
+#include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/lifted/state_view.hpp"
+#include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/node.hpp"
 
 #include <yggdrasil/core/config.hpp>
@@ -129,6 +131,35 @@ Plan<Kind> PackedPlan<Kind>::unpack() const
         nodes.push_back(node.unpack());
     return Plan<Kind>(m_start_node.unpack(), std::move(nodes));
 }
+
+template<TaskKind Kind>
+PackedPlan<Kind> replay_plan(const PackedNode<Kind>& initial,
+                             std::span<const formalism::planning::ActionBindingView> actions,
+                             SuccessorGenerator<Kind>& generator,
+                             StateRepository<Kind>& states,
+                             AxiomEvaluator<Kind>& axioms)
+{
+    auto steps = PackedLabeledNodeList<Kind> {};
+    steps.reserve(actions.size());
+    auto node = initial.unpack();
+    for (const auto action : actions)
+    {
+        node = generator.get_successor_node(node, action, states, axioms);
+        steps.push_back({ action, node.pack() });
+    }
+    return PackedPlan<Kind>(initial, std::move(steps));
+}
+
+template PackedPlan<GroundTag> replay_plan(const PackedNode<GroundTag>& initial,
+                                           std::span<const formalism::planning::ActionBindingView> actions,
+                                           SuccessorGenerator<GroundTag>& generator,
+                                           StateRepository<GroundTag>& states,
+                                           AxiomEvaluator<GroundTag>& axioms);
+template PackedPlan<LiftedTag> replay_plan(const PackedNode<LiftedTag>& initial,
+                                           std::span<const formalism::planning::ActionBindingView> actions,
+                                           SuccessorGenerator<LiftedTag>& generator,
+                                           StateRepository<LiftedTag>& states,
+                                           AxiomEvaluator<LiftedTag>& axioms);
 
 template class PackedPlan<LiftedTag>;
 template class PackedPlan<GroundTag>;

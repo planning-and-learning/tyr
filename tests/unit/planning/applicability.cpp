@@ -291,6 +291,45 @@ void expect_schema_queries_match_filtered_successors()
     }
     EXPECT_EQ(count_action_bindings(task), bindings_before_checks);
 
+    for (auto* generator : { source.get(), worker.get() })
+    {
+        const auto rejected = [&](auto action, auto objects, auto expected)
+        {
+            const auto before = count_action_bindings(task);
+            const auto result = generator->try_get_applicable_action_binding(initial_node, action, objects);
+            EXPECT_EQ(result.status, expected);
+            EXPECT_FALSE(result.binding);
+            EXPECT_EQ(count_action_bindings(task), before);
+        };
+        rejected(*offered_resize, empty_objects, p::ActionBindingStatus::INAPPLICABLE);
+        rejected(*offered_alias, aliased_objects, p::ActionBindingStatus::INAPPLICABLE);
+        rejected(*offered_alias, invalid_objects, rejected_domain);
+        rejected(*offered_alias, local_objects, rejected_domain);
+        rejected(*offered_alias, missing_source_objects, rejected_domain);
+        rejected(*offered_dormant, unary_objects, rejected_domain);
+        const auto before_wrong_arity = count_action_bindings(task);
+        EXPECT_THROW(generator->try_get_applicable_action_binding(initial_node, *offered_alias, unary_objects), std::invalid_argument);
+        EXPECT_EQ(count_action_bindings(task), before_wrong_arity);
+
+        for (const auto& [action, objects] : { std::pair(*offered_valid, empty_objects), std::pair(*offered_alias, distinct_objects) })
+        {
+            const auto before = count_action_bindings(task);
+            const auto result = generator->try_get_applicable_action_binding(initial_node, action, objects);
+            ASSERT_EQ(result.status, p::ActionBindingStatus::APPLICABLE);
+            ASSERT_TRUE(result.binding);
+            EXPECT_EQ(result.binding->get_relation(), action);
+            EXPECT_TRUE(std::ranges::equal(result.binding->get_data(), objects.get_data()));
+            const auto published = count_action_bindings(task);
+            EXPECT_EQ(published, before + (std::same_as<Kind, LiftedTag> && generator == source.get() ? 1 : 0));
+            const auto repeated = generator->try_get_applicable_action_binding(initial_node, action, objects);
+            EXPECT_EQ(repeated.status, p::ActionBindingStatus::APPLICABLE);
+            EXPECT_EQ(repeated.binding, result.binding);
+            EXPECT_EQ(count_action_bindings(task), published);
+            EXPECT_EQ(generator->check_action_binding(initial_node, action, objects), p::ActionBindingStatus::APPLICABLE);
+            EXPECT_EQ(count_action_bindings(task), published);
+        }
+    }
+
     using S = std::conditional_t<Borrowed, p::BuilderStateView<Kind>, p::StateView<Kind>>;
     auto borrowed_states = std::deque<ygg::Builder<p::State<Kind>>> {};
     auto callback_state = pool.get_or_allocate();
@@ -507,6 +546,12 @@ void expect_schema_queries_match_filtered_successors()
                 const auto objects = ygg::make_view(std::span<const ygg::Index<formalism::Object>>(indices), object_repository);
                 EXPECT_EQ(generator->check_action_binding(initial_node, binding.get_relation(), objects), p::ActionBindingStatus::APPLICABLE);
                 EXPECT_EQ(generator->check_action_binding(initial_node, *offered_alias, aliased_objects), p::ActionBindingStatus::INAPPLICABLE);
+                const auto offered = generator->try_get_applicable_action_binding(initial_node, binding.get_relation(), objects);
+                EXPECT_EQ(offered.status, p::ActionBindingStatus::APPLICABLE);
+                EXPECT_EQ(offered.binding, std::optional(binding));
+                const auto rejected = generator->try_get_applicable_action_binding(initial_node, *offered_alias, aliased_objects);
+                EXPECT_EQ(rejected.status, p::ActionBindingStatus::INAPPLICABLE);
+                EXPECT_FALSE(rejected.binding);
                 callback_successors.push_back({ binding, generator->get_successor_node(initial_node, binding, next_storage(), *axiom_evaluator) });
                 return true;
             }));
@@ -552,6 +597,10 @@ void expect_schema_queries_match_filtered_successors()
     ASSERT_NE(&(*foreign_low).get_context(), &(*low).get_context());
     const auto foreign_objects = ygg::make_view(distinct_objects.get_data(), *foreign_task->get_repository());
     EXPECT_THROW(source->check_action_binding(initial_node, *offered_alias, foreign_objects), std::invalid_argument);
+    const auto bindings_before_foreign = count_action_bindings(task);
+    EXPECT_THROW(source->try_get_applicable_action_binding(initial_node, *offered_alias, foreign_objects), std::invalid_argument);
+    EXPECT_THROW(source->try_get_applicable_action_binding(initial_node, foreign_action, empty_objects), std::invalid_argument);
+    EXPECT_EQ(count_action_bindings(task), bindings_before_foreign);
     EXPECT_THROW(source->get_applicable_action_bindings(initial_node, foreign_action), std::invalid_argument);
     EXPECT_THROW(source->check_action_binding(initial_node, foreign_action, empty_objects), std::invalid_argument);
     EXPECT_THROW(source->get_successor_nodes(initial_node, foreign_action, list_storage, *axiom_evaluator), std::invalid_argument);
@@ -566,6 +615,8 @@ void expect_schema_queries_match_filtered_successors()
     const auto foreign_node = p::Node(ygg::make_view(*owned, *foreign_same_kind), initial_node.get_metric());
     EXPECT_THROW(source->get_applicable_action_bindings(foreign_node), std::invalid_argument);
     EXPECT_THROW(source->check_action_binding(foreign_node, *offered_valid, empty_objects), std::invalid_argument);
+    EXPECT_THROW(source->try_get_applicable_action_binding(foreign_node, *offered_valid, empty_objects), std::invalid_argument);
+    EXPECT_EQ(count_action_bindings(task), bindings_before_foreign);
     EXPECT_THROW(source->get_successor_nodes(foreign_node, borrowed_states, *axiom_evaluator), std::invalid_argument);
     ASSERT_FALSE(all_bindings.empty());
     auto out_state = pool.get_or_allocate();

@@ -20,6 +20,7 @@
 
 #include "tyr/planning/node.hpp"
 
+#include <span>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
@@ -64,6 +65,15 @@ public:
 
     Plan<Kind> unpack() const;
 };
+
+/// Replays a known applicable action sequence with the supplied initial metric.
+/// Successors are registered and immediately packed; no unpacked builders are retained in the plan.
+template<TaskKind Kind>
+PackedPlan<Kind> replay_plan(const PackedNode<Kind>& initial,
+                             std::span<const formalism::planning::ActionBindingView> actions,
+                             SuccessorGenerator<Kind>& generator,
+                             StateRepository<Kind>& states,
+                             AxiomEvaluator<Kind>& axioms);
 }
 
 #endif

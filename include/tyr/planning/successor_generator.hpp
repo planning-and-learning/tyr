@@ -25,6 +25,7 @@
 #include <concepts>
 #include <deque>
 #include <functional>
+#include <optional>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -42,6 +43,13 @@ enum class ActionBindingStatus
     APPLICABLE,
     OUTSIDE_PARAMETER_DOMAIN,
     INAPPLICABLE
+};
+
+/// The binding is present exactly when status is APPLICABLE and borrows the task repository.
+struct ActionBindingResult
+{
+    ActionBindingStatus status;
+    std::optional<formalism::planning::ActionBindingView> binding;
 };
 
 /// Indexed outputs live in a repository; borrowed single/callback outputs use caller-owned scratch.
@@ -83,6 +91,7 @@ concept SuccessorGeneratorConcept = requires(T& r,
     requires TaskKind<Kind>;
     requires StateViewConcept<S, Kind>;
     { r.check_action_binding(node, action, objects) } -> std::same_as<ActionBindingStatus>;
+    { r.try_get_applicable_action_binding(node, action, objects) } -> std::same_as<ActionBindingResult>;
     { r.get_initial_node(state_repository, axiom_evaluator) } -> std::same_as<Node<StateView<Kind>>>;
     { r.get_successor_nodes(node, successor_list_storage, axiom_evaluator) } -> std::same_as<NodeList<S>>;
     { r.get_successor_nodes(node, successor_list_storage, axiom_evaluator, successor_nodes) } -> std::same_as<void>;

@@ -101,6 +101,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
         fp::Builder scratch_builder;
         ygg::UniqueObjectPoolPtr<ygg::Data<f::RelationBinding<fp::Action<LiftedTag>>>> scratch_action_binding;
         ActionBindingMap action_binding_to_ground_action;
+        ygg::Data<f::RelationBinding<fp::Action<LiftedTag>>> checked_binding;
         datalog::ProgramWorkspace<LiftedTag> workspace;
         ygg::UnorderedMap<fp::ActionView<LiftedTag>, SchemaEvaluator> schema_evaluators;
         analysis::CompatibilityWorkspace compatibility_workspace;
@@ -468,13 +469,25 @@ ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const No
 
     // Single-binding work has separate scratch from the tuple held by an outer enumeration callback.
     auto& workspace = m_impl->evaluator.workspace;
-    workspace.binding.clear();
+    auto& binding = m_impl->evaluator.checked_binding;
+    binding.relation = action.get_index();
+    binding.objects.clear();
     for (const auto index : indices)
-        workspace.binding.push_back(index);
-    auto grounder = fp::GrounderContext { workspace.planning_builder, *task->get_repository(), workspace.binding };
+        binding.objects.push_back(index);
+    auto grounder = fp::GrounderContext { workspace.planning_builder, *task->get_repository(), binding.objects };
     const auto state = StateContext<LiftedTag>(*task, node.get_state().get_state_builder(), node.get_metric());
     return m_impl->evaluator.executor.is_applicable(action, state, grounder, *task->get_fdr_context()) ? ActionBindingStatus::APPLICABLE :
                                                                                                          ActionBindingStatus::INAPPLICABLE;
+}
+
+template<StateViewConcept<LiftedTag> S>
+ActionBindingResult
+SuccessorGenerator<LiftedTag>::try_get_applicable_action_binding(const Node<S>& node, fp::ActionView<LiftedTag> action, fp::ObjectSpanView objects)
+{
+    const auto status = check_action_binding(node, action, objects);
+    if (status != ActionBindingStatus::APPLICABLE)
+        return { status, std::nullopt };
+    return { status, fp::insert(*m_impl->definition->task->get_repository(), m_impl->evaluator.checked_binding).first };
 }
 
 template<StateViewConcept<LiftedTag> S>
@@ -984,6 +997,13 @@ void SuccessorGenerator<LiftedTag>::print_summary(size_t verbosity) const
             successor_generator_rule_worker_statistics.push_back(worker.solve.statistics);
     fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_worker_statistics(successor_generator_rule_worker_statistics));
 }
+
+template ActionBindingResult SuccessorGenerator<LiftedTag>::try_get_applicable_action_binding(const Node<StateView<LiftedTag>>& node,
+                                                                                              fp::ActionView<LiftedTag> action,
+                                                                                              fp::ObjectSpanView objects);
+template ActionBindingResult SuccessorGenerator<LiftedTag>::try_get_applicable_action_binding(const Node<BuilderStateView<LiftedTag>>& node,
+                                                                                              fp::ActionView<LiftedTag> action,
+                                                                                              fp::ObjectSpanView objects);
 
 template ActionBindingStatus
 SuccessorGenerator<LiftedTag>::check_action_binding(const Node<StateView<LiftedTag>>& node, fp::ActionView<LiftedTag> action, fp::ObjectSpanView objects);

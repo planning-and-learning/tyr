@@ -515,6 +515,58 @@ auto find_successor(const p::LabeledNodeList<p::StateView<Kind>>& successors,
 }
 
 template<TaskKind Kind>
+void expect_action_sequence_replay(const p::TaskPtr<Kind>& task)
+{
+    auto plan = std::optional<p::PackedPlan<Kind>> {};
+    auto retained_repository = std::weak_ptr<p::StateRepository<Kind>> {};
+    {
+        auto execution = ygg::ExecutionContext::create(1);
+        auto axioms = p::AxiomEvaluatorFactory<Kind>().create(task, execution);
+        auto repository = p::StateRepositoryFactory<Kind>().create(task);
+        auto generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution);
+        retained_repository = repository;
+        const auto initial = generator->get_packed_initial_node(*repository, *axioms);
+        const auto start = p::PackedNode<Kind>(initial.get_state(), 11);
+        const auto empty = p::replay_plan<Kind>(start, {}, *generator, *repository, *axioms);
+        EXPECT_TRUE(empty.empty());
+        EXPECT_EQ(empty.get_start_node(), start);
+        EXPECT_EQ(empty.get_length(), 0);
+        EXPECT_EQ(empty.get_cost(), 0);
+
+        auto node = start.unpack();
+        auto actions = std::vector<formalism::planning::ActionBindingView> {};
+        for (const auto name : { "first", "second" })
+        {
+            const auto applicable = generator->get_applicable_action_bindings(node);
+            ASSERT_EQ(applicable.size(), 1);
+            EXPECT_EQ(applicable.front().get_relation().get_name().str(), name);
+            actions.push_back(applicable.front());
+            node = generator->get_successor_node(node, actions.back(), *repository, *axioms);
+        }
+        const auto states_before_replay = repository->num_states();
+        plan = p::replay_plan<Kind>(start, actions, *generator, *repository, *axioms);
+        EXPECT_EQ(repository->num_states(), states_before_replay);
+    }
+    // Only packed plan handles retain the repository; replay inputs and unpacked builders are gone.
+    ASSERT_FALSE(retained_repository.expired());
+    ASSERT_TRUE(plan);
+    ASSERT_EQ(plan->get_length(), 2);
+    EXPECT_EQ(plan->get_start_node().get_metric(), 11);
+    EXPECT_EQ(plan->get_labeled_succ_nodes()[0].label.get_relation().get_name().str(), "first");
+    EXPECT_EQ(plan->get_labeled_succ_nodes()[1].label.get_relation().get_name().str(), "second");
+    EXPECT_EQ(plan->get_labeled_succ_nodes()[0].node.get_metric(), 14);
+    EXPECT_EQ(plan->get_labeled_succ_nodes()[1].node.get_metric(), 21);
+    EXPECT_EQ(plan->get_cost(), 21);
+    {
+        const auto unpacked = plan->unpack();
+        auto goal = p::ConjunctiveGoalStrategy<Kind>(*task);
+        EXPECT_TRUE(goal.is_dynamic_goal_satisfied(unpacked.get_start_node().get_state(), unpacked.get_labeled_succ_nodes().back().node.get_state()));
+    }
+    plan.reset();
+    EXPECT_TRUE(retained_repository.expired());
+}
+
+template<TaskKind Kind>
 void expect_sequential_reconstruction(const p::TaskPtr<Kind>& task)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
@@ -1176,6 +1228,35 @@ void expect_parallel_brfs_exhaustion(const p::TaskPtr<Kind>& task, RepositoryMod
     EXPECT_EQ(worker_totals.get_num_transferred_candidates(), result.statistics.get_num_transferred_candidates());
 }
 
+}
+
+TEST(TyrPlanningPlanReconstructionTest, ReplaysKnownActionsWithMetricsAndOwnedPackedStates)
+{
+    auto lifted = p::Task<LiftedTag>::create(formalism::planning::Parser(R"(
+(define (domain action-replay)
+  (:requirements :adl :derived-predicates :action-costs)
+  (:predicates (start) (middle) (ready) (done))
+  (:functions (total-cost))
+  (:derived (ready) (middle))
+  (:action first :parameters () :precondition (start)
+    :effect (and (not (start)) (middle) (increase (total-cost) 3)))
+  (:action second :parameters () :precondition (ready)
+    :effect (and (not (middle)) (done) (increase (total-cost) 7))))
+)",
+                                                                         "action-replay-domain.pddl")
+                                                 .parse_task(R"(
+(define (problem action-replay-problem)
+  (:domain action-replay)
+  (:init (start) (= (total-cost) 0))
+  (:goal (done))
+  (:metric minimize (total-cost)))
+)",
+                                                             "action-replay-problem.pddl"));
+    auto execution = ygg::ExecutionContext::create(1);
+    const auto ground = lifted->instantiate_ground_task(*execution).task;
+    ASSERT_TRUE(ground);
+    expect_action_sequence_replay(ground);
+    expect_action_sequence_replay(lifted);
 }
 
 TEST(TyrPlanningPlanReconstructionTest, ReconstructsGroundAndLiftedWorkerTrajectories)

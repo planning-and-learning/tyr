@@ -137,7 +137,7 @@ public:
         {
             const auto& info = m_layout.info.infos[partition];
             const auto vertices = m_affected_partitions.get_bitset(info);
-            for (auto bit = vertices.find_first(); bit != ygg::BitsetSpan<const uint64_t>::npos; bit = vertices.find_next(bit))
+            for (const auto bit : ygg::set_bit_indices(vertices))
                 callback(Vertex(info.bit_offset + static_cast<ygg::uint_t>(bit)));
         }
     }
@@ -150,8 +150,7 @@ public:
             const auto& source_info = m_layout.info.infos[source_partition];
             const auto source_bits = m_affected_partitions.get_bitset(source_info);
 
-            for (auto source_bit = source_bits.find_first(); source_bit != ygg::BitsetSpan<const uint64_t>::npos;
-                 source_bit = source_bits.find_next(source_bit))
+            for (const auto source_bit : ygg::set_bit_indices(source_bits))
             {
                 const auto source_vertex = source_info.bit_offset + static_cast<ygg::uint_t>(source_bit);
                 for (ygg::uint_t target_partition = source_partition + 1; target_partition < m_layout.num_partitions; ++target_partition)
