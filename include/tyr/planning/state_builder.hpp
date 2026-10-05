@@ -24,14 +24,15 @@
 
 #include <boost/dynamic_bitset.hpp>
 #include <concepts>
+#include <type_traits>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
 
 template<typename T, typename Kind>
-concept StateBuilderConcept = requires(T& s,
-                                       const T& cs,
+concept StateBuilderConcept = requires(std::remove_reference_t<T>& s,
+                                       const std::remove_reference_t<T>& cs,
                                        ygg::Index<State<Kind>> index,
                                        ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>> variable,
                                        ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>> fact,
@@ -39,7 +40,6 @@ concept StateBuilderConcept = requires(T& s,
                                        ygg::float_t value,
                                        ygg::Index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> atom) {
     requires TaskKind<Kind>;
-    typename T::TaskType;
     { s.clear() };
     { s.clear_unextended_part() };
     { s.clear_extended_part() };

@@ -67,7 +67,8 @@ private:
     ygg::float_t m_metric;
 };
 
-template<StateViewConcept State>
+template<typename State>
+    requires StateViewConcept<State, typename State::KindType>
 Node(State, ygg::float_t) -> Node<typename State::KindType, State>;
 
 template<TaskKind Kind>

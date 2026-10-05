@@ -42,7 +42,6 @@ class LazyGBFSPolicy
 {
 public:
     using ParentPolicy = ParentStatePolicy<Kind, Search>;
-    using TaskTag = Kind;
     using SearchTag = Search;
     using Options = gbfs_lazy::Options<Kind>;
     using EventHandlerPtr = gbfs_lazy::EventHandlerPtr<Kind>;

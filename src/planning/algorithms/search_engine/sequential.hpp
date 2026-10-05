@@ -49,7 +49,6 @@ template<TaskKind Kind, SearchPolicyConcept<Kind> SearchPolicy>
 class SequentialExecutionPolicy
 {
 public:
-    using TaskTag = Kind;
     using SearchTag = SequentialSearch;
 
     explicit SequentialExecutionPolicy(uint64_t) noexcept {}

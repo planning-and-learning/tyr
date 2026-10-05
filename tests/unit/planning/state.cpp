@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 #include <yggdrasil/containers/unique_object_pool.hpp>
 #include <yggdrasil/semantics/hash.hpp>
@@ -23,17 +24,54 @@ namespace p = tyr::planning;
 template<typename Kind>
 concept StateIndexContract = std::constructible_from<ygg::Index<p::State<Kind>>, ygg::uint_t> && std::totally_ordered<ygg::Index<p::State<Kind>>>;
 
+template<typename State>
+class StateWithoutMetadata : public State
+{
+public:
+    explicit StateWithoutMetadata(State state) : State(std::move(state)) {}
+
+private:
+    using KindType = void;
+    using TaskType = void;
+};
+
+template<tyr::TaskKind Kind>
+class BuilderWithoutTaskType : public ygg::Builder<p::State<Kind>>
+{
+    using TaskType = void;
+};
+
+struct StateWithMutableTask : StateWithoutMetadata<p::StateView<tyr::GroundTag>>
+{
+    p::Task<tyr::GroundTag>& get_task() const;
+};
+
+struct StateWithTaskValue : StateWithoutMetadata<p::StateView<tyr::GroundTag>>
+{
+    p::Task<tyr::GroundTag> get_task() const;
+};
+
+struct StateWithMutableAtoms : StateWithoutMetadata<p::StateView<tyr::GroundTag>>
+{
+    auto get_static_atoms() { return p::StateView<tyr::GroundTag>::get_static_atoms(); }
+};
+
+struct StateWithMutableIndex : StateWithoutMetadata<p::StateView<tyr::GroundTag>>
+{
+    ygg::Index<p::State<tyr::GroundTag>> get_index();
+};
+
 using StateKinds = ygg::TypeList<tyr::GroundTag, tyr::LiftedTag>;
 static_assert([]<typename... Kinds>(ygg::TypeList<Kinds...>) { return (StateIndexContract<Kinds> && ...); }(StateKinds {}));
 static_assert([]<typename... Kinds>(ygg::TypeList<Kinds...>) { return (std::totally_ordered<p::PackedStateView<Kinds>> && ...); }(StateKinds {}));
 static_assert(
     []<typename... Kinds>(ygg::TypeList<Kinds...>)
     {
-        return ((p::StateViewConcept<p::StateView<Kinds>> && p::StateViewConcept<p::BuilderStateView<Kinds>> && p::StateViewConcept<p::StateView<Kinds>&, Kinds>
-                 && p::StateViewConcept<const p::StateView<Kinds>&, Kinds> && p::StateViewConcept<p::StateView<Kinds>&&, Kinds>
-                 && p::StateViewConcept<p::BuilderStateView<Kinds>&, Kinds> && p::StateViewConcept<const p::BuilderStateView<Kinds>&, Kinds>
-                 && p::StateViewConcept<p::BuilderStateView<Kinds>&&, Kinds> && !p::StateViewConcept<volatile p::StateView<Kinds>&, Kinds>
-                 && !p::StateViewConcept<volatile p::BuilderStateView<Kinds>&, Kinds>)
+        return ((p::StateViewConcept<p::StateView<Kinds>, Kinds> && p::StateViewConcept<p::BuilderStateView<Kinds>, Kinds>
+                 && p::StateViewConcept<p::StateView<Kinds>&, Kinds> && p::StateViewConcept<const p::StateView<Kinds>&, Kinds>
+                 && p::StateViewConcept<p::StateView<Kinds>&&, Kinds> && p::StateViewConcept<p::BuilderStateView<Kinds>&, Kinds>
+                 && p::StateViewConcept<const p::BuilderStateView<Kinds>&, Kinds> && p::StateViewConcept<p::BuilderStateView<Kinds>&&, Kinds>
+                 && !p::StateViewConcept<volatile p::StateView<Kinds>&, Kinds> && !p::StateViewConcept<volatile p::BuilderStateView<Kinds>&, Kinds>)
                 && ...);
     }(StateKinds {}));
 
@@ -41,16 +79,40 @@ template<typename T>
 concept HasStateIdentity =
     requires(const T& state) { state.get_index(); } || requires(const T& state) { state.pack(); } || requires(const T& state) { state.get_state_repository(); };
 
-static_assert([]<typename... Kinds>(ygg::TypeList<Kinds...>)
-              { return ((!HasStateIdentity<p::BuilderStateView<Kinds>> && !p::StateViewConcept<ygg::Builder<p::State<Kinds>>>) && ...); }(StateKinds {}));
-static_assert(!p::StateViewConcept<int>);
-static_assert(!p::StateViewConcept<const int&>);
+static_assert(
+    []<typename... Kinds>(ygg::TypeList<Kinds...>)
+    { return ((!HasStateIdentity<p::BuilderStateView<Kinds>> && !p::StateViewConcept<ygg::Builder<p::State<Kinds>>, Kinds>) && ...); }(StateKinds {}));
+static_assert(!p::StateViewConcept<int, tyr::GroundTag>);
+static_assert(!p::StateViewConcept<const int&, tyr::GroundTag>);
 static_assert(p::StateViewConcept<p::BuilderStateView<tyr::GroundTag>, tyr::GroundTag>);
 static_assert(p::StateViewConcept<p::StateView<tyr::LiftedTag>, tyr::LiftedTag>);
 static_assert(!p::StateViewConcept<p::BuilderStateView<tyr::GroundTag>, tyr::LiftedTag>);
 static_assert(!p::StateViewConcept<p::StateView<tyr::LiftedTag>, tyr::GroundTag>);
 static_assert(!p::StateViewConcept<const p::BuilderStateView<tyr::GroundTag>&, tyr::LiftedTag>);
 static_assert(!p::StateViewConcept<const p::StateView<tyr::LiftedTag>&, tyr::GroundTag>);
+
+static_assert(!p::StateViewConcept<p::StateView<tyr::GroundTag>, void>);
+static_assert(!p::StateViewConcept<p::StateView<tyr::GroundTag>, int>);
+static_assert(!p::StateViewConcept<StateWithMutableTask, tyr::GroundTag>);
+static_assert(!p::StateViewConcept<StateWithTaskValue, tyr::GroundTag>);
+static_assert(!p::IterableStateConcept<StateWithMutableAtoms&>);
+static_assert(!p::StateViewConcept<StateWithMutableAtoms&, tyr::GroundTag>);
+static_assert(!p::IndexableStateConcept<StateWithMutableIndex&, tyr::GroundTag>);
+static_assert(!p::IndexableViewStateConcept<StateWithMutableIndex&, tyr::GroundTag>);
+static_assert(
+    []<typename... Kinds>(ygg::TypeList<Kinds...>)
+    {
+        return ((p::StateViewConcept<StateWithoutMetadata<p::StateView<Kinds>>, Kinds>
+                 && p::StateViewConcept<const StateWithoutMetadata<p::StateView<Kinds>>&, Kinds>
+                 && p::StateViewConcept<StateWithoutMetadata<p::BuilderStateView<Kinds>>&, Kinds>
+                 && !p::StateViewConcept<volatile StateWithoutMetadata<p::StateView<Kinds>>&, Kinds>
+                 && p::IndexableStateConcept<StateWithoutMetadata<p::StateView<Kinds>>, Kinds>
+                 && p::IndexableViewStateConcept<const StateWithoutMetadata<p::StateView<Kinds>>&, Kinds>
+                 && p::StateBuilderConcept<BuilderWithoutTaskType<Kinds>, Kinds> && p::StateBuilderConcept<BuilderWithoutTaskType<Kinds>&, Kinds>
+                 && !p::StateBuilderConcept<const BuilderWithoutTaskType<Kinds>&, Kinds>
+                 && !p::StateBuilderConcept<volatile BuilderWithoutTaskType<Kinds>&, Kinds>)
+                && ...);
+    }(StateKinds {}));
 
 template<typename Kind, typename State>
 concept NodeState = requires { typename p::Node<Kind, State>; };
@@ -160,6 +222,10 @@ void expect_borrowed_builder_view(const p::TaskPtr<Kind>& task, const p::StateVi
     *owned = registered.get_state_builder();
     const auto state = ygg::make_view(*owned, *task);
     static_assert(std::same_as<decltype(state), const p::BuilderStateView<Kind>>);
+    const auto markerless_state = StateWithoutMetadata(state);
+    const auto markerless_node = p::Node<Kind, StateWithoutMetadata<p::BuilderStateView<Kind>>>(markerless_state, 3);
+    EXPECT_EQ(&markerless_node.get_state().get_task(), task.get());
+    EXPECT_TRUE(std::ranges::equal(p::get_atoms_view<Kind, formalism::FluentTag>(markerless_state), state.get_fluent_atoms_view()));
     const auto node = p::Node(state, 3);
     using BorrowedNode = std::remove_cvref_t<decltype(node)>;
     static_assert(std::same_as<typename BorrowedNode::StateType, p::BuilderStateView<Kind>>);
@@ -210,27 +276,27 @@ void expect_borrowed_builder_view(const p::TaskPtr<Kind>& task, const p::StateVi
     EXPECT_TRUE(std::ranges::equal(state.get_fluent_facts_view(), registered.get_fluent_facts_view()));
     EXPECT_TRUE(std::ranges::equal(state.get_fluent_atoms_view(), registered.get_fluent_atoms_view()));
     EXPECT_TRUE(std::ranges::equal(state.get_derived_atoms_view(), registered.get_derived_atoms_view()));
-    EXPECT_TRUE(std::ranges::equal(p::get_atoms_view<formalism::StaticTag>(state), p::get_atoms_view<formalism::StaticTag>(registered)));
-    EXPECT_TRUE(std::ranges::equal(p::get_atoms_view<formalism::FluentTag>(state), p::get_atoms_view<formalism::FluentTag>(registered)));
-    EXPECT_TRUE(std::ranges::equal(p::get_atoms_view<formalism::DerivedTag>(state), p::get_atoms_view<formalism::DerivedTag>(registered)));
+    EXPECT_TRUE(std::ranges::equal(p::get_atoms_view<Kind, formalism::StaticTag>(state), p::get_atoms_view<Kind, formalism::StaticTag>(registered)));
+    EXPECT_TRUE(std::ranges::equal(p::get_atoms_view<Kind, formalism::FluentTag>(state), p::get_atoms_view<Kind, formalism::FluentTag>(registered)));
+    EXPECT_TRUE(std::ranges::equal(p::get_atoms_view<Kind, formalism::DerivedTag>(state), p::get_atoms_view<Kind, formalism::DerivedTag>(registered)));
     const auto check_filtered = [&]<formalism::FactKind F>()
     {
-        for (const auto atom : p::get_atoms_view<F>(registered))
+        for (const auto atom : p::get_atoms_view<Kind, F>(registered))
         {
             auto expected = std::vector<fp::AtomView<GroundTag, F>> {};
-            for (const auto candidate : p::get_atoms_view<F>(registered))
+            for (const auto candidate : p::get_atoms_view<Kind, F>(registered))
                 if (candidate.get_predicate() == atom.get_predicate())
                     expected.push_back(candidate);
             // The temporary state and predicate wrappers expire before traversal.
-            auto borrowed = p::get_atoms_view<F>(ygg::make_view(*owned, *task), atom.get_predicate());
-            auto indexed = p::get_atoms_view<F>(p::StateView<Kind>(registered), atom.get_predicate());
+            auto borrowed = p::get_atoms_view<Kind, F>(ygg::make_view(*owned, *task), atom.get_predicate());
+            auto indexed = p::get_atoms_view<Kind, F>(p::StateView<Kind>(registered), atom.get_predicate());
             EXPECT_TRUE(std::ranges::equal(borrowed, expected));
             EXPECT_TRUE(std::ranges::equal(indexed, expected));
         }
         auto foreign_repository = task->get_domain().get_repository_factory()->create();
         auto foreign_data = ygg::Data<formalism::Predicate<F>>(std::string("foreign"), 0);
         const auto foreign = fp::insert(foreign_repository, foreign_data).first;
-        auto absent = p::get_atoms_view<F>(state, foreign);
+        auto absent = p::get_atoms_view<Kind, F>(state, foreign);
         EXPECT_TRUE(absent.begin() == absent.end());
     };
     check_filtered.template operator()<formalism::StaticTag>();
@@ -281,11 +347,11 @@ void expect_borrowed_builder_view(const p::TaskPtr<Kind>& task, const p::StateVi
     {
         auto& values = moved->template get_atoms<formalism::FluentTag>().values;
         std::ranges::fill(values, ygg::uint_t(0));
-        const auto atoms = p::get_atoms_view<formalism::FluentTag>(ygg::make_view(*moved, *task));
+        const auto atoms = p::get_atoms_view<Kind, formalism::FluentTag>(ygg::make_view(*moved, *task));
         EXPECT_TRUE(atoms.begin() == atoms.end());
         for (const auto atom : registered.get_fluent_atoms_view())
         {
-            auto filtered = p::get_atoms_view<formalism::FluentTag>(state, atom.get_predicate());
+            auto filtered = p::get_atoms_view<Kind, formalism::FluentTag>(state, atom.get_predicate());
             EXPECT_TRUE(filtered.begin() == filtered.end());
         }
     }

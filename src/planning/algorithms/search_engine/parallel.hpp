@@ -59,7 +59,6 @@ class HashDistributedStatePolicy
     using BuilderPtr = ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true>;
 
 public:
-    using TaskTag = Kind;
     static constexpr bool uses_owner_repositories = true;
 
     struct PreparedTarget
@@ -123,7 +122,6 @@ class SharedStatePolicy
     using BuilderPtr = ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true>;
 
 public:
-    using TaskTag = Kind;
     static constexpr bool uses_owner_repositories = false;
 
     struct PreparedTarget
@@ -370,7 +368,6 @@ class ParallelExecutionPolicy
     friend class ParallelLayerCoordinationPolicy;
 
 public:
-    using TaskTag = Kind;
     using SearchTag = ParallelSearch;
     static constexpr bool uses_owner_repositories = StatePolicy::uses_owner_repositories;
 

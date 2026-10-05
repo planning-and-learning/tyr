@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <cassert>
 #include <optional>
+#include <type_traits>
 #include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/semantics/comparison.hpp>
@@ -159,9 +160,7 @@ private:
 };
 
 template<typename S, typename V>
-concept SubstitutionFor = requires(S s, const S cs, ParameterIndex p, const V& v) {
-    typename S::value_type;
-    requires std::same_as<typename S::value_type, V>;
+concept SubstitutionFor = requires(std::remove_reference_t<S>& s, const std::remove_reference_t<S>& cs, ParameterIndex p, const V& v) {
     { cs.contains_parameter(p) } -> std::same_as<bool>;
     { cs.is_bound(p) } -> std::same_as<bool>;
     { cs.is_unbound(p) } -> std::same_as<bool>;

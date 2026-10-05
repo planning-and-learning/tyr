@@ -79,7 +79,6 @@ class BreadthFirstPolicy
 public:
     using ModePolicy = BreadthFirstModePolicy<Search>;
     using ParentPolicy = ParentStatePolicy<Kind, Search>;
-    using TaskTag = Kind;
     using SearchTag = Search;
     using Options = brfs::Options<Kind>;
     using EventHandlerPtr = brfs::EventHandlerPtr<Kind>;

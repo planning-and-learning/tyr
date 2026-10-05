@@ -20,6 +20,7 @@
 #include "tyr/formalism/unification/match_term.hpp"
 
 #include <gtest/gtest.h>
+#include <utility>
 
 namespace f = tyr::formalism;
 namespace fu = tyr::formalism::unification;
@@ -29,6 +30,21 @@ namespace tyr::tests
 namespace
 {
 using TermSubstitution = fu::SubstitutionFunction<ygg::Data<f::Term>>;
+
+class TermSubstitutionWithoutValueType : public TermSubstitution
+{
+public:
+    explicit TermSubstitutionWithoutValueType(TermSubstitution substitution) : TermSubstitution(std::move(substitution)) {}
+
+private:
+    using value_type = void;
+};
+
+static_assert(fu::TermSubstitution<TermSubstitutionWithoutValueType>);
+static_assert(fu::TermSubstitution<TermSubstitutionWithoutValueType&>);
+static_assert(!fu::TermSubstitution<const TermSubstitutionWithoutValueType&>);
+static_assert(!fu::TermSubstitution<volatile TermSubstitutionWithoutValueType&>);
+static_assert(!fu::ObjectSubstitution<TermSubstitutionWithoutValueType>);
 
 static_assert(fu::TermUnifiableStructure<ygg::Data<f::Term>>);
 
@@ -41,7 +57,7 @@ void expect_term_eq(const ygg::Data<f::Term>& lhs, const ygg::Data<f::Term>& rhs
 
 TEST(TyrTests, TyrFormalismUnificationApplySubstitutionFixpoint)
 {
-    auto sigma = TermSubstitution::from_range(f::ParameterIndex(0), 3);
+    auto sigma = TermSubstitutionWithoutValueType(TermSubstitution::from_range(f::ParameterIndex(0), 3));
 
     EXPECT_TRUE(sigma.assign(f::ParameterIndex(0), parameter(1)));
     EXPECT_TRUE(sigma.assign(f::ParameterIndex(1), object(7)));

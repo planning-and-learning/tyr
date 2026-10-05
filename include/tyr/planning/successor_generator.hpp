@@ -58,16 +58,13 @@ using BorrowedActionBindingView =
     std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionBindingView, formalism::planning::ActionBindingDataView>;
 
 /// Indexed outputs live in a repository; borrowed single/callback outputs use caller-owned scratch.
-template<StateViewConcept S>
-using SuccessorStorage =
-    std::conditional_t<std::same_as<S, StateView<typename S::KindType>>, StateRepository<typename S::KindType>, ygg::Builder<State<typename S::KindType>>>;
+template<TaskKind Kind, StateViewConcept<Kind> S>
+using SuccessorStorage = std::conditional_t<std::same_as<S, StateView<Kind>>, StateRepository<Kind>, ygg::Builder<State<Kind>>>;
 
 /// Borrowed lists append distinct builders without invalidating previous outputs or the source.
 /// Callers keep those builders alive and unchanged for as long as their views are used.
-template<StateViewConcept S>
-using SuccessorListStorage = std::conditional_t<std::same_as<S, StateView<typename S::KindType>>,
-                                                StateRepository<typename S::KindType>,
-                                                std::deque<ygg::Builder<State<typename S::KindType>>>>;
+template<TaskKind Kind, StateViewConcept<Kind> S>
+using SuccessorListStorage = std::conditional_t<std::same_as<S, StateView<Kind>>, StateRepository<Kind>, std::deque<ygg::Builder<State<Kind>>>>;
 
 template<typename T, typename Kind, typename S = StateView<Kind>>
 concept SuccessorGeneratorConcept = requires(T& r,
@@ -88,8 +85,8 @@ concept SuccessorGeneratorConcept = requires(T& r,
                                              formalism::planning::ActionView<LiftedTag> action,
                                              formalism::planning::ObjectSpanView objects,
                                              StateRepository<Kind>& state_repository,
-                                             SuccessorStorage<S>& successor_storage,
-                                             SuccessorListStorage<S>& successor_list_storage,
+                                             SuccessorStorage<Kind, S>& successor_storage,
+                                             SuccessorListStorage<Kind, S>& successor_list_storage,
                                              AxiomEvaluator<Kind>& axiom_evaluator,
                                              ygg::Builder<State<Kind>>& state_builder,
                                              ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state_builder_ptr,

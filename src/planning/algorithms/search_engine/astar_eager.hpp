@@ -87,7 +87,6 @@ class EagerAStarPolicy
 public:
     using ModePolicy = AStarModePolicy<Kind, Search>;
     using ParentPolicy = ParentStatePolicy<Kind, Search>;
-    using TaskTag = Kind;
     using SearchTag = Search;
     using Options = astar_eager::Options<Kind>;
     using EventHandlerPtr = astar_eager::EventHandlerPtr<Kind>;

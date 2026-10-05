@@ -50,7 +50,6 @@ enum class AcceptanceResult : uint8_t
 template<typename T, typename Kind>
 concept SearchPolicyConcept = TaskKind<Kind> && requires {
     typename T::SearchTag;
-    typename T::TaskTag;
     typename T::Options;
     typename T::EventHandlerPtr;
     typename T::WorkerEventHandlerPtr;
@@ -59,7 +58,6 @@ concept SearchPolicyConcept = TaskKind<Kind> && requires {
     typename T::PoppedEntry;
     typename std::bool_constant<T::supports_priority_layer_synchronization>;
     requires SearchKind<typename T::SearchTag>;
-    requires std::same_as<typename T::TaskTag, Kind>;
 } && std::constructible_from<T, Heuristic<Kind>&, const typename T::Options&>
     && requires(T& policy,
                 const T& const_policy,
@@ -92,10 +90,8 @@ concept SearchPolicyConcept = TaskKind<Kind> && requires {
 
 template<typename T, typename Kind>
 concept StateRoutingPolicyConcept = TaskKind<Kind> && std::constructible_from<T, uint64_t> && requires {
-    typename T::TaskTag;
     typename T::PreparedTarget;
     typename std::bool_constant<T::uses_owner_repositories>;
-    requires std::same_as<typename T::TaskTag, Kind>;
 } && requires(ygg::Index<State<Kind>> state, ygg::Index<Worker> worker, size_t num_workers, typename T::PreparedTarget prepared) {
     { T::search_node_divisor(num_workers) } -> std::same_as<size_t>;
     { T::search_node_index(state, worker, num_workers) } -> std::same_as<ygg::Index<State<Kind>>>;
@@ -106,10 +102,8 @@ concept StateRoutingPolicyConcept = TaskKind<Kind> && std::constructible_from<T,
 template<typename T, typename Kind, typename SearchPolicy>
 concept ExecutionPolicyConcept = TaskKind<Kind> && SearchPolicyConcept<SearchPolicy, Kind> && std::constructible_from<T, uint64_t> && requires {
     typename T::SearchTag;
-    typename T::TaskTag;
     typename T::WorkerState;
     requires std::same_as<typename T::SearchTag, typename SearchPolicy::SearchTag>;
-    requires std::same_as<typename T::TaskTag, Kind>;
 } && std::default_initializable<typename T::WorkerState> && requires(T& policy, const T& const_policy, const typename SearchPolicy::Options& options, ygg::Index<State<Kind>> state, ygg::Index<Worker> worker, size_t num_workers, ygg::float_t value, std::optional<std::chrono::steady_clock::time_point> deadline, ygg::uint_t max_num_states) {
     { T::validate(options) } -> std::same_as<void>;
     { T::num_workers(options) } -> std::same_as<size_t>;

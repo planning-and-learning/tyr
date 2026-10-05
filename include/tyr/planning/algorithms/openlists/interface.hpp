@@ -27,7 +27,7 @@ namespace tyr::planning
 {
 
 template<typename T>
-concept IsOpenList = requires(T a, typename T::EntryType entry, typename T::ItemType item) {
+concept IsOpenList = requires(T a, typename T::EntryType entry) {
     { a.insert(entry) } -> std::same_as<void>;
     { a.top() } -> std::convertible_to<typename T::ItemType>;
     { a.pop() } -> std::same_as<void>;
@@ -40,7 +40,7 @@ template<typename First, typename... Rest>
 concept HaveSameItemType = (... && std::same_as<typename First::ItemType, typename Rest::ItemType>);
 
 template<typename T>
-concept IsOpenListComposition = requires(T a, typename T::ItemType item) {
+concept IsOpenListComposition = requires(T a) {
     { a.top() } -> std::convertible_to<typename T::ItemType>;
     { a.pop() } -> std::same_as<void>;
     { a.clear() } -> std::same_as<void>;

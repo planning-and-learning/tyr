@@ -45,6 +45,23 @@ namespace tyr::tests
 namespace
 {
 
+using GroundSearchPolicy = p::detail::EagerAStarPolicy<GroundTag, p::ParallelSearch>;
+using GroundRoutingPolicy = p::detail::SharedStatePolicy<GroundTag>;
+using GroundExecutionPolicy = p::detail::ParallelExecutionPolicy<GroundTag, GroundSearchPolicy, GroundRoutingPolicy>;
+using LiftedSearchPolicy = p::detail::EagerAStarPolicy<LiftedTag, p::ParallelSearch>;
+using LiftedRoutingPolicy = p::detail::SharedStatePolicy<LiftedTag>;
+using LiftedExecutionPolicy = p::detail::ParallelExecutionPolicy<LiftedTag, LiftedSearchPolicy, LiftedRoutingPolicy>;
+
+static_assert(p::detail::SearchPolicyConcept<GroundSearchPolicy, GroundTag>);
+static_assert(p::detail::StateRoutingPolicyConcept<GroundRoutingPolicy, GroundTag>);
+static_assert(p::detail::ExecutionPolicyConcept<GroundExecutionPolicy, GroundTag, GroundSearchPolicy>);
+static_assert(p::detail::SearchPolicyConcept<LiftedSearchPolicy, LiftedTag>);
+static_assert(p::detail::StateRoutingPolicyConcept<LiftedRoutingPolicy, LiftedTag>);
+static_assert(p::detail::ExecutionPolicyConcept<LiftedExecutionPolicy, LiftedTag, LiftedSearchPolicy>);
+static_assert(!p::detail::SearchPolicyConcept<GroundSearchPolicy, LiftedTag>);
+static_assert(!p::detail::StateRoutingPolicyConcept<GroundRoutingPolicy, LiftedTag>);
+static_assert(!p::detail::ExecutionPolicyConcept<GroundExecutionPolicy, LiftedTag, LiftedSearchPolicy>);
+
 struct TaskPair
 {
     p::TaskPtr<LiftedTag> lifted;

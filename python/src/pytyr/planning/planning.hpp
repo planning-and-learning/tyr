@@ -140,10 +140,11 @@ void bind_state(nb::module_& m, const std::string& name)
             // IterableStateConcept
             .def(
                 "static_atoms",
-                [](const T& s) {
+                [](const T& s)
+                {
                     return make_owning_iterator<fp::AtomView<GroundTag, formalism::StaticTag>>(nb::type<T>(),
                                                                                                "static atom iterator",
-                                                                                               get_atoms_view<formalism::StaticTag>(s));
+                                                                                               get_atoms_view<Kind, formalism::StaticTag>(s));
                 },
                 nb::keep_alive<0, 1>())
             .def(
@@ -153,10 +154,11 @@ void bind_state(nb::module_& m, const std::string& name)
                 nb::keep_alive<0, 1>())
             .def(
                 "fluent_atoms",
-                [](const T& s) {
+                [](const T& s)
+                {
                     return make_owning_iterator<fp::AtomView<GroundTag, formalism::FluentTag>>(nb::type<T>(),
                                                                                                "fluent atom iterator",
-                                                                                               get_atoms_view<formalism::FluentTag>(s));
+                                                                                               get_atoms_view<Kind, formalism::FluentTag>(s));
                 },
                 nb::keep_alive<0, 1>())
             .def(
@@ -165,7 +167,7 @@ void bind_state(nb::module_& m, const std::string& name)
                 {
                     return make_owning_iterator<fp::AtomView<GroundTag, formalism::DerivedTag>>(nb::type<T>(),
                                                                                                 "derived atom iterator",
-                                                                                                get_atoms_view<formalism::DerivedTag>(s));
+                                                                                                get_atoms_view<Kind, formalism::DerivedTag>(s));
                 },
                 nb::keep_alive<0, 1>())
             .def(

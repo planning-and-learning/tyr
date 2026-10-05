@@ -466,12 +466,12 @@ concept FunctionTermValueRangeConcept = std::ranges::input_range<R>
                                                         std::pair<ygg::Index<formalism::planning::FunctionTerm<GroundTag, Tag>>, ygg::float_t>>;
 
 template<typename T>
-concept IterableStateConcept = requires(const T& cs) {
-    requires AtomRangeConcept<decltype(cs.get_static_atoms()), formalism::StaticTag>;
-    requires FactRangeConcept<decltype(cs.get_fluent_facts()), formalism::FluentTag>;
-    requires AtomRangeConcept<decltype(cs.get_derived_atoms()), formalism::DerivedTag>;
-    requires FunctionTermValueRangeConcept<decltype(cs.get_static_fterm_values()), formalism::StaticTag>;
-    requires FunctionTermValueRangeConcept<decltype(cs.get_fluent_fterm_values()), formalism::FluentTag>;
+concept IterableStateConcept = requires(const std::remove_reference_t<T>& cs) {
+    { cs.get_static_atoms() } -> AtomRangeConcept<formalism::StaticTag>;
+    { cs.get_fluent_facts() } -> FactRangeConcept<formalism::FluentTag>;
+    { cs.get_derived_atoms() } -> AtomRangeConcept<formalism::DerivedTag>;
+    { cs.get_static_fterm_values() } -> FunctionTermValueRangeConcept<formalism::StaticTag>;
+    { cs.get_fluent_fterm_values() } -> FunctionTermValueRangeConcept<formalism::FluentTag>;
 };
 
 /**
@@ -492,18 +492,18 @@ concept FunctionTermViewValueRangeConcept =
     && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, formalism::planning::FunctionTermViewValuePair<GroundTag, Tag>>;
 
 template<typename T>
-concept IterableViewStateConcept = requires(const T& cs) {
-    requires AtomViewRangeConcept<decltype(cs.get_static_atoms_view()), formalism::StaticTag>;
-    requires FactViewRangeConcept<decltype(cs.get_fluent_facts_view()), formalism::FluentTag>;
-    requires AtomViewRangeConcept<decltype(cs.get_fluent_atoms_view()), formalism::FluentTag>;
-    requires AtomViewRangeConcept<decltype(cs.get_derived_atoms_view()), formalism::DerivedTag>;
-    requires FunctionTermViewValueRangeConcept<decltype(cs.get_static_fterm_values_view()), formalism::StaticTag>;
-    requires FunctionTermViewValueRangeConcept<decltype(cs.get_fluent_fterm_values_view()), formalism::FluentTag>;
+concept IterableViewStateConcept = requires(const std::remove_reference_t<T>& cs) {
+    { cs.get_static_atoms_view() } -> AtomViewRangeConcept<formalism::StaticTag>;
+    { cs.get_fluent_facts_view() } -> FactViewRangeConcept<formalism::FluentTag>;
+    { cs.get_fluent_atoms_view() } -> AtomViewRangeConcept<formalism::FluentTag>;
+    { cs.get_derived_atoms_view() } -> AtomViewRangeConcept<formalism::DerivedTag>;
+    { cs.get_static_fterm_values_view() } -> FunctionTermViewValueRangeConcept<formalism::StaticTag>;
+    { cs.get_fluent_fterm_values_view() } -> FunctionTermViewValueRangeConcept<formalism::FluentTag>;
 };
 
 /// State contents and task context, accepting values and references without requiring repository identity.
-template<typename T, typename Kind = void>
-concept StateViewConcept = IterableStateConcept<std::remove_reference_t<T>> && IterableViewStateConcept<std::remove_reference_t<T>>
+template<typename T, typename Kind>
+concept StateViewConcept = TaskKind<Kind> && IterableStateConcept<T> && IterableViewStateConcept<T>
                            && requires(const std::remove_reference_t<T>& state,
                                        ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>> variable,
                                        ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>> static_fterm,
@@ -515,10 +515,7 @@ concept StateViewConcept = IterableStateConcept<std::remove_reference_t<T>> && I
                                        formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag> fluent_fterm_view,
                                        formalism::planning::AtomView<GroundTag, formalism::StaticTag> static_atom_view,
                                        formalism::planning::AtomView<GroundTag, formalism::DerivedTag> derived_atom_view) {
-                                  requires TaskKind<typename std::remove_reference_t<T>::KindType>;
-                                  requires(std::same_as<Kind, void> || std::same_as<typename std::remove_reference_t<T>::KindType, Kind>);
-                                  requires std::same_as<typename std::remove_reference_t<T>::TaskType, Task<typename std::remove_reference_t<T>::KindType>>;
-                                  { state.get_task() } -> std::same_as<const typename std::remove_reference_t<T>::TaskType&>;
+                                  { state.get_task() } -> std::same_as<const Task<Kind>&>;
                                   { state.get_repository() } -> std::same_as<const formalism::planning::RepositoryPtr&>;
                                   { state.get(variable) } -> std::same_as<formalism::planning::FDRValue>;
                                   { state.get(static_fterm) } -> std::same_as<ygg::float_t>;
@@ -533,7 +530,7 @@ concept StateViewConcept = IterableStateConcept<std::remove_reference_t<T>> && I
                               };
 
 /// Borrows the same state storage and task as the supplied view.
-template<formalism::FactKind F, StateViewConcept S>
+template<TaskKind Kind, formalism::FactKind F, StateViewConcept<Kind> S>
 auto get_atoms_view(const S& state) noexcept
 {
     if constexpr (std::same_as<F, formalism::StaticTag>)
@@ -545,10 +542,10 @@ auto get_atoms_view(const S& state) noexcept
 }
 
 /// The predicate and range wrappers are retained by value; underlying state storage remains borrowed.
-template<formalism::FactKind F, StateViewConcept S, typename C>
+template<TaskKind Kind, formalism::FactKind F, StateViewConcept<Kind> S, typename C>
 auto get_atoms_view(const S& state, ygg::View<ygg::Index<formalism::Predicate<F>>, C> predicate)
 {
-    return get_atoms_view<F>(state) | std::views::filter([predicate](auto atom) { return atom.get_predicate() == predicate; });
+    return get_atoms_view<Kind, F>(state) | std::views::filter([predicate](auto atom) { return atom.get_predicate() == predicate; });
 }
 
 /**
@@ -556,14 +553,13 @@ auto get_atoms_view(const S& state, ygg::View<ygg::Index<formalism::Predicate<F>
  */
 
 template<typename T, typename Kind>
-concept IndexableStateConcept = requires(const T& cs,
+concept IndexableStateConcept = requires(const std::remove_reference_t<T>& cs,
                                          ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>> variable,
                                          ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>> static_fterm,
                                          ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> fluent_fterm,
                                          ygg::Index<formalism::planning::Atom<GroundTag, formalism::StaticTag>> static_atom,
                                          ygg::Index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> derived_atom) {
     requires TaskKind<Kind>;
-    requires std::same_as<typename T::TaskType, Task<Kind>>;
     { cs.get_index() } -> std::same_as<ygg::Index<State<Kind>>>;
     { cs.get(variable) } -> std::same_as<formalism::planning::FDRValue>;
     { cs.get(static_fterm) } -> std::same_as<ygg::float_t>;
@@ -578,14 +574,13 @@ concept IndexableStateConcept = requires(const T& cs,
  */
 
 template<typename T, typename Kind>
-concept IndexableViewStateConcept = requires(const T& cs,
+concept IndexableViewStateConcept = requires(const std::remove_reference_t<T>& cs,
                                              formalism::planning::FDRVariableView<formalism::FluentTag> variable,
                                              formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> static_fterm,
                                              formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag> fluent_fterm,
                                              formalism::planning::AtomView<GroundTag, formalism::StaticTag> static_atom,
                                              formalism::planning::AtomView<GroundTag, formalism::DerivedTag> derived_atom) {
     requires TaskKind<Kind>;
-    requires std::same_as<typename T::TaskType, Task<Kind>>;
     { cs.get_index() } -> std::same_as<ygg::Index<State<Kind>>>;
     { cs.get(variable) } -> std::same_as<formalism::planning::FDRValue>;
     { cs.get(static_fterm) } -> std::same_as<ygg::float_t>;
