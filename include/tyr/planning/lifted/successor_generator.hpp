@@ -65,6 +65,12 @@ public:
     ActionBindingStatus
     check_action_binding(const Node<S>& node, formalism::planning::ActionView<LiftedTag> action, formalism::planning::ObjectSpanView objects);
 
+    template<StateViewConcept<LiftedTag> S>
+    ActionBindingStatus check_action_binding(const Node<S>& node, formalism::planning::ActionBindingView binding);
+
+    /// Retains a borrowed binding after validating schema, object ownership and arity, without checking applicability.
+    formalism::planning::ActionBindingView materialize_action_binding(BorrowedActionBindingView<LiftedTag> binding);
+
     /// Checks the same contract as check_action_binding and publishes only an applicable binding.
     /// The returned binding borrows the task repository. May be called from a binding callback.
     template<StateViewConcept<LiftedTag> S>
@@ -171,6 +177,16 @@ public:
                                          AxiomEvaluator<LiftedTag>& axiom_evaluator,
                                          const std::type_identity_t<std::function<bool(LabeledNode<S>)>>& callback);
 
+    /// Does not publish bindings. A lifted binding and its object row are valid only during the callback.
+    /// Checks, materialization and single-successor generation preserve that borrowed binding.
+    /// The same continuation and non-reentrancy rules as the indexed binding callbacks apply.
+    template<StateViewConcept<LiftedTag> S>
+    bool for_each_borrowed_applicable_action_binding(const Node<S>& node, const std::function<bool(BorrowedActionBindingView<LiftedTag>)>& callback);
+    template<StateViewConcept<LiftedTag> S>
+    bool for_each_borrowed_applicable_action_binding(const Node<S>& node,
+                                                     formalism::planning::ActionView<LiftedTag> action,
+                                                     const std::function<bool(BorrowedActionBindingView<LiftedTag>)>& callback);
+
     // Packed output retains registered state handles without retaining unpacked builders.
     PackedNode<LiftedTag> get_packed_initial_node(StateRepository<LiftedTag>& state_repository, AxiomEvaluator<LiftedTag>& axiom_evaluator);
     PackedNode<LiftedTag> get_packed_node(StateRepository<LiftedTag>& state_repository, ygg::Index<State<LiftedTag>> state_index);
@@ -238,6 +254,12 @@ public:
                                                         AxiomEvaluator<LiftedTag>& axiom_evaluator,
                                                         ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state,
                                                         ygg::float_t auxiliary_value);
+
+    template<StateViewConcept<LiftedTag> S>
+    Node<S> get_successor_node(const Node<S>& node,
+                               formalism::planning::ActionBindingDataView binding,
+                               SuccessorStorage<S>& storage,
+                               AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
     // Raw action-binding input; bindings are not interned and state storage follows S.
     template<StateViewConcept<LiftedTag> S>

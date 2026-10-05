@@ -52,6 +52,11 @@ struct ActionBindingResult
     std::optional<formalism::planning::ActionBindingView> binding;
 };
 
+/// Ground enumeration borrows compiled bindings; lifted enumeration borrows reusable binding data.
+template<TaskKind Kind>
+using BorrowedActionBindingView =
+    std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionBindingView, formalism::planning::ActionBindingDataView>;
+
 /// Indexed outputs live in a repository; borrowed single/callback outputs use caller-owned scratch.
 template<StateViewConcept S>
 using SuccessorStorage =
@@ -78,6 +83,8 @@ concept SuccessorGeneratorConcept = requires(T& r,
                                              const std::function<bool(formalism::planning::ActionBindingView)>& binding_callback,
                                              std::vector<formalism::planning::ActionBindingView>& action_bindings,
                                              formalism::planning::ActionBindingView binding,
+                                             BorrowedActionBindingView<Kind> borrowed_binding,
+                                             const std::function<bool(BorrowedActionBindingView<Kind>)>& borrowed_binding_callback,
                                              formalism::planning::ActionView<LiftedTag> action,
                                              formalism::planning::ObjectSpanView objects,
                                              StateRepository<Kind>& state_repository,
@@ -91,6 +98,9 @@ concept SuccessorGeneratorConcept = requires(T& r,
     requires TaskKind<Kind>;
     requires StateViewConcept<S, Kind>;
     { r.check_action_binding(node, action, objects) } -> std::same_as<ActionBindingStatus>;
+    { r.check_action_binding(node, binding) } -> std::same_as<ActionBindingStatus>;
+    { r.materialize_action_binding(borrowed_binding) } -> std::same_as<formalism::planning::ActionBindingView>;
+    { r.get_successor_node(node, borrowed_binding, successor_storage, axiom_evaluator) } -> std::same_as<Node<S>>;
     { r.try_get_applicable_action_binding(node, action, objects) } -> std::same_as<ActionBindingResult>;
     { r.get_initial_node(state_repository, axiom_evaluator) } -> std::same_as<Node<StateView<Kind>>>;
     { r.get_successor_nodes(node, successor_list_storage, axiom_evaluator) } -> std::same_as<NodeList<S>>;
@@ -113,6 +123,8 @@ concept SuccessorGeneratorConcept = requires(T& r,
     { r.for_each_successor_node(node, successor_storage, axiom_evaluator, node_callback) } -> std::same_as<bool>;
     { r.for_each_labeled_successor_node(node, successor_storage, axiom_evaluator, labeled_node_callback) } -> std::same_as<bool>;
     { r.for_each_applicable_action_binding(node, binding_callback) } -> std::same_as<bool>;
+    { r.for_each_borrowed_applicable_action_binding(node, borrowed_binding_callback) } -> std::same_as<bool>;
+    { r.for_each_borrowed_applicable_action_binding(node, action, borrowed_binding_callback) } -> std::same_as<bool>;
     { const_r.make_worker(execution_context) } -> std::same_as<SuccessorGeneratorPtr<Kind>>;
     { const_r.get_task() } -> std::same_as<const TaskPtr<Kind>&>;
     { r.get_index() } -> std::same_as<ygg::uint_t>;

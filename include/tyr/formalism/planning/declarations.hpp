@@ -285,6 +285,7 @@ using PredicateBindingView = ygg::View<ygg::Index<RelationBinding<Predicate<T>>>
 template<FactKind T>
 using FunctionBindingView = ygg::View<ygg::Index<RelationBinding<Function<T>>>, Repository>;
 using ActionBindingView = ygg::View<ygg::Index<RelationBinding<Action<LiftedTag>>>, Repository>;
+using ActionBindingDataView = ygg::View<ygg::Data<RelationBinding<Action<LiftedTag>>>, Repository>;
 using AxiomBindingView = ygg::View<ygg::Index<RelationBinding<Axiom<LiftedTag>>>, Repository>;
 
 template<TaskKind T>

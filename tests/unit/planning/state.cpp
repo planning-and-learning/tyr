@@ -175,6 +175,29 @@ void expect_borrowed_builder_view(const p::TaskPtr<Kind>& task, const p::StateVi
     EXPECT_TRUE(std::ranges::equal(p::get_atoms_view<formalism::StaticTag>(state), p::get_atoms_view<formalism::StaticTag>(registered)));
     EXPECT_TRUE(std::ranges::equal(p::get_atoms_view<formalism::FluentTag>(state), p::get_atoms_view<formalism::FluentTag>(registered)));
     EXPECT_TRUE(std::ranges::equal(p::get_atoms_view<formalism::DerivedTag>(state), p::get_atoms_view<formalism::DerivedTag>(registered)));
+    const auto check_filtered = [&]<formalism::FactKind F>()
+    {
+        for (const auto atom : p::get_atoms_view<F>(registered))
+        {
+            auto expected = std::vector<fp::AtomView<GroundTag, F>> {};
+            for (const auto candidate : p::get_atoms_view<F>(registered))
+                if (candidate.get_predicate() == atom.get_predicate())
+                    expected.push_back(candidate);
+            // The temporary state and predicate wrappers expire before traversal.
+            auto borrowed = p::get_atoms_view<F>(ygg::make_view(*owned, *task), atom.get_predicate());
+            auto indexed = p::get_atoms_view<F>(p::StateView<Kind>(registered), atom.get_predicate());
+            EXPECT_TRUE(std::ranges::equal(borrowed, expected));
+            EXPECT_TRUE(std::ranges::equal(indexed, expected));
+        }
+        auto foreign_repository = task->get_domain().get_repository_factory()->create();
+        auto foreign_data = ygg::Data<formalism::Predicate<F>>(std::string("foreign"), 0);
+        const auto foreign = fp::insert(foreign_repository, foreign_data).first;
+        auto absent = p::get_atoms_view<F>(state, foreign);
+        EXPECT_TRUE(absent.begin() == absent.end());
+    };
+    check_filtered.template operator()<formalism::StaticTag>();
+    check_filtered.template operator()<formalism::FluentTag>();
+    check_filtered.template operator()<formalism::DerivedTag>();
     EXPECT_TRUE(std::ranges::equal(state.get_static_fterm_values_view(), registered.get_static_fterm_values_view()));
     EXPECT_TRUE(std::ranges::equal(state.get_fluent_fterm_values_view(), registered.get_fluent_fterm_values_view()));
     for (const auto atom : registered.get_static_atoms_view())
@@ -222,6 +245,11 @@ void expect_borrowed_builder_view(const p::TaskPtr<Kind>& task, const p::StateVi
         std::ranges::fill(values, ygg::uint_t(0));
         const auto atoms = p::get_atoms_view<formalism::FluentTag>(ygg::make_view(*moved, *task));
         EXPECT_TRUE(atoms.begin() == atoms.end());
+        for (const auto atom : registered.get_fluent_atoms_view())
+        {
+            auto filtered = p::get_atoms_view<formalism::FluentTag>(state, atom.get_predicate());
+            EXPECT_TRUE(filtered.begin() == filtered.end());
+        }
     }
 }
 

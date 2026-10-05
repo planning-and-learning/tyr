@@ -543,6 +543,13 @@ auto get_atoms_view(const S& state) noexcept
         return state.get_derived_atoms_view();
 }
 
+/// The predicate and range wrappers are retained by value; underlying state storage remains borrowed.
+template<formalism::FactKind F, StateViewConcept S, typename C>
+auto get_atoms_view(const S& state, ygg::View<ygg::Index<formalism::Predicate<F>>, C> predicate)
+{
+    return get_atoms_view<F>(state) | std::views::filter([predicate](auto atom) { return atom.get_predicate() == predicate; });
+}
+
 /**
  * IndexableStateConcept
  */

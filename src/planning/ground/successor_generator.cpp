@@ -116,6 +116,9 @@ struct SuccessorGenerator<GroundTag>::Impl
         return *it->second;
     }
 
+    template<StateViewConcept<GroundTag> S, typename Objects>
+    ActionBindingResult try_get_applicable_action_binding(const Node<S>& node, fp::ActionView<LiftedTag> action, Objects objects);
+
     template<StateViewConcept<GroundTag> S, typename Callback>
     bool for_each_applicable_action(const Node<S>& node, match_tree::MatchTree<fp::Action<GroundTag>>& tree, Callback&& callback)
     {
@@ -377,13 +380,13 @@ ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const No
     return try_get_applicable_action_binding(node, action, objects).status;
 }
 
-template<StateViewConcept<GroundTag> S>
+template<StateViewConcept<GroundTag> S, typename Objects>
 ActionBindingResult
-SuccessorGenerator<GroundTag>::try_get_applicable_action_binding(const Node<S>& node, fp::ActionView<LiftedTag> action, fp::ObjectSpanView objects)
+SuccessorGenerator<GroundTag>::Impl::try_get_applicable_action_binding(const Node<S>& node, fp::ActionView<LiftedTag> action, Objects objects)
 {
-    const auto& task = m_impl->definition->task;
+    const auto& task = definition->task;
     validate_task(task, node.get_state());
-    m_impl->get_schema_match_tree(action);
+    get_schema_match_tree(action);
     if (objects.size() != action.get_arity())
         throw std::invalid_argument("SuccessorGenerator::check_action_binding(...): object count does not match action arity.");
 
@@ -401,7 +404,7 @@ SuccessorGenerator<GroundTag>::try_get_applicable_action_binding(const Node<S>& 
         if (!std::binary_search(constants.begin(), constants.end(), index) && !std::binary_search(task_objects.begin(), task_objects.end(), index))
             return { ActionBindingStatus::INAPPLICABLE, std::nullopt };
 
-    auto& scratch = m_impl->evaluator.checked_binding;
+    auto& scratch = evaluator.checked_binding;
     scratch.relation = action.get_index();
     scratch.objects.clear();
     for (const auto index : indices)
@@ -409,13 +412,46 @@ SuccessorGenerator<GroundTag>::try_get_applicable_action_binding(const Node<S>& 
     const auto binding = task->get_repository()->find(scratch);
     if (!binding)
         return { ActionBindingStatus::INAPPLICABLE, std::nullopt };
-    const auto found = m_impl->definition->action_binding_to_ground_action.find(*binding);
-    if (found == m_impl->definition->action_binding_to_ground_action.end())
+    const auto found = definition->action_binding_to_ground_action.find(*binding);
+    if (found == definition->action_binding_to_ground_action.end())
         return { ActionBindingStatus::INAPPLICABLE, std::nullopt };
     const auto state = StateContext<GroundTag>(*task, node.get_state().get_state_builder(), node.get_metric());
-    if (!m_impl->evaluator.executor.is_applicable(found->second, state))
+    if (!evaluator.executor.is_applicable(found->second, state))
         return { ActionBindingStatus::INAPPLICABLE, std::nullopt };
     return { ActionBindingStatus::APPLICABLE, *binding };
+}
+
+template<StateViewConcept<GroundTag> S>
+ActionBindingResult
+SuccessorGenerator<GroundTag>::try_get_applicable_action_binding(const Node<S>& node, fp::ActionView<LiftedTag> action, fp::ObjectSpanView objects)
+{
+    return m_impl->try_get_applicable_action_binding(node, action, objects);
+}
+
+template<StateViewConcept<GroundTag> S>
+ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Node<S>& node, fp::ActionBindingView binding)
+{
+    if (!binding.get_context().contains(binding.get_index()))
+        throw std::invalid_argument("SuccessorGenerator: action binding does not belong to its source repository.");
+    return m_impl->try_get_applicable_action_binding(node, binding.get_relation(), binding.get_objects()).status;
+}
+
+fp::ActionBindingView SuccessorGenerator<GroundTag>::materialize_action_binding(BorrowedActionBindingView<GroundTag> binding)
+{
+    const auto& repository = *m_impl->definition->task->get_repository();
+    if (!ygg::formalism::contains(repository, binding))
+        throw std::invalid_argument("SuccessorGenerator: action binding does not belong to the task repository.");
+    // Bindings in the grounded task already have validated schemas and objects.
+    if (m_impl->definition->action_binding_to_ground_action.contains(binding))
+        return binding;
+    const auto action = binding.get_relation();
+    m_impl->get_schema_match_tree(action);
+    const auto objects = binding.get_objects();
+    if (objects.size() != action.get_arity())
+        throw std::invalid_argument("SuccessorGenerator: object count does not match action arity.");
+    if (!ygg::formalism::contains_all(repository, objects))
+        throw std::invalid_argument("SuccessorGenerator: object does not belong to the task repository.");
+    return binding;
 }
 
 template<StateViewConcept<GroundTag> S>
@@ -510,6 +546,13 @@ bool SuccessorGenerator<GroundTag>::for_each_applicable_action_binding(const Nod
 }
 
 template<StateViewConcept<GroundTag> S>
+bool SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Node<S>& node,
+                                                                                const std::function<bool(BorrowedActionBindingView<GroundTag>)>& callback)
+{
+    return for_each_applicable_action_binding(node, callback);
+}
+
+template<StateViewConcept<GroundTag> S>
 bool SuccessorGenerator<GroundTag>::for_each_successor_node(const Node<S>& node,
                                                             SuccessorStorage<S>& storage,
                                                             AxiomEvaluator<GroundTag>& axiom_evaluator,
@@ -554,6 +597,14 @@ bool SuccessorGenerator<GroundTag>::for_each_applicable_action_binding(const Nod
     validate_task(m_impl->definition->task, node.get_state());
     auto& tree = m_impl->get_schema_match_tree(action);
     return m_impl->for_each_applicable_action(node, tree, [&](const auto action) { return callback(action.get_row()); });
+}
+
+template<StateViewConcept<GroundTag> S>
+bool SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Node<S>& node,
+                                                                                fp::ActionView<LiftedTag> action,
+                                                                                const std::function<bool(BorrowedActionBindingView<GroundTag>)>& callback)
+{
+    return for_each_applicable_action_binding(node, action, callback);
 }
 
 template<StateViewConcept<GroundTag> S>
@@ -801,6 +852,28 @@ Node<StateView<GroundTag>> SuccessorGenerator<GroundTag>::get_node(StateReposito
 const TaskPtr<GroundTag>& SuccessorGenerator<GroundTag>::get_task() const noexcept { return m_impl->definition->task; }
 
 ygg::uint_t SuccessorGenerator<GroundTag>::get_index() const noexcept { return m_impl->index; }
+
+template ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Node<StateView<GroundTag>>& node, fp::ActionBindingView binding);
+
+template bool
+SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Node<StateView<GroundTag>>& node,
+                                                                           const std::function<bool(BorrowedActionBindingView<GroundTag>)>& callback);
+
+template bool
+SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Node<StateView<GroundTag>>& node,
+                                                                           fp::ActionView<LiftedTag> action,
+                                                                           const std::function<bool(BorrowedActionBindingView<GroundTag>)>& callback);
+
+template ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Node<BuilderStateView<GroundTag>>& node, fp::ActionBindingView binding);
+
+template bool
+SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Node<BuilderStateView<GroundTag>>& node,
+                                                                           const std::function<bool(BorrowedActionBindingView<GroundTag>)>& callback);
+
+template bool
+SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Node<BuilderStateView<GroundTag>>& node,
+                                                                           fp::ActionView<LiftedTag> action,
+                                                                           const std::function<bool(BorrowedActionBindingView<GroundTag>)>& callback);
 
 template ActionBindingResult SuccessorGenerator<GroundTag>::try_get_applicable_action_binding(const Node<StateView<GroundTag>>& node,
                                                                                               fp::ActionView<LiftedTag> action,

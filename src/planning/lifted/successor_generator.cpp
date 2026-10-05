@@ -136,6 +136,32 @@ struct SuccessorGenerator<LiftedTag>::Impl
         return it->second;
     }
 
+    template<typename Objects>
+    bool validate_binding_objects(fp::ActionView<LiftedTag> action, Objects objects)
+    {
+        get_schema_evaluator(action);
+        if (objects.size() != action.get_arity())
+            throw std::invalid_argument("SuccessorGenerator: object count does not match action arity.");
+        const auto indices = objects.get_data();
+        const auto& target_repository = *definition->task->get_repository();
+        if (!ygg::formalism::contains_all(objects.get_context(), indices) || !ygg::formalism::contains_all(target_repository, indices))
+            return false;
+        if (!ygg::formalism::contains_all(target_repository, objects))
+            throw std::invalid_argument("SuccessorGenerator: object does not belong to the task repository.");
+        return true;
+    }
+
+    void validate_binding(fp::ActionBindingDataView binding)
+    {
+        if (!binding.get_context().contains(binding.get_data().relation))
+            throw std::invalid_argument("SuccessorGenerator: action schema does not belong to its source repository.");
+        if (!validate_binding_objects(binding.get_relation(), binding.get_objects()))
+            throw std::invalid_argument("SuccessorGenerator: object does not belong to the task repository.");
+    }
+
+    template<StateViewConcept<LiftedTag> S, typename Objects>
+    ActionBindingStatus check_action_binding(const Node<S>& node, fp::ActionView<LiftedTag> action, Objects objects);
+
     template<StateViewConcept<LiftedTag> S>
     void compute_action_facts(const Node<S>& node, std::vector<d::Scheduler<LiftedTag>>& schedulers);
 
@@ -445,22 +471,14 @@ void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<S>& n
                                                });
 }
 
-template<StateViewConcept<LiftedTag> S>
-ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Node<S>& node, fp::ActionView<LiftedTag> action, fp::ObjectSpanView objects)
+template<StateViewConcept<LiftedTag> S, typename Objects>
+ActionBindingStatus SuccessorGenerator<LiftedTag>::Impl::check_action_binding(const Node<S>& node, fp::ActionView<LiftedTag> action, Objects objects)
 {
-    const auto& task = m_impl->definition->task;
+    const auto& task = definition->task;
     validate_task(task, node.get_state());
-    m_impl->get_schema_evaluator(action);
-    if (objects.size() != action.get_arity())
-        throw std::invalid_argument("SuccessorGenerator::check_action_binding(...): object count does not match action arity.");
-
-    const auto indices = objects.get_data();
-    const auto& source_repository = objects.get_context();
-    const auto& target_repository = *task->get_repository();
-    if (!ygg::formalism::contains_all(source_repository, indices) || !ygg::formalism::contains_all(target_repository, indices))
+    if (!validate_binding_objects(action, objects))
         return ActionBindingStatus::OUTSIDE_PARAMETER_DOMAIN;
-    if (!ygg::formalism::contains_all(target_repository, objects))
-        throw std::invalid_argument("SuccessorGenerator::check_action_binding(...): object does not belong to the task repository.");
+    const auto indices = objects.get_data();
 
     const auto& domains = task->get_formalism_task().get_variable_domains().action_domains.at(action.get_index()).payload.precondition_domain.payload;
     for (size_t i = 0; i < objects.size(); ++i)
@@ -468,16 +486,37 @@ ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const No
             return ActionBindingStatus::OUTSIDE_PARAMETER_DOMAIN;
 
     // Single-binding work has separate scratch from the tuple held by an outer enumeration callback.
-    auto& workspace = m_impl->evaluator.workspace;
-    auto& binding = m_impl->evaluator.checked_binding;
+    auto& workspace = evaluator.workspace;
+    auto& binding = evaluator.checked_binding;
     binding.relation = action.get_index();
     binding.objects.clear();
     for (const auto index : indices)
         binding.objects.push_back(index);
     auto grounder = fp::GrounderContext { workspace.planning_builder, *task->get_repository(), binding.objects };
     const auto state = StateContext<LiftedTag>(*task, node.get_state().get_state_builder(), node.get_metric());
-    return m_impl->evaluator.executor.is_applicable(action, state, grounder, *task->get_fdr_context()) ? ActionBindingStatus::APPLICABLE :
-                                                                                                         ActionBindingStatus::INAPPLICABLE;
+    return evaluator.executor.is_applicable(action, state, grounder, *task->get_fdr_context()) ? ActionBindingStatus::APPLICABLE :
+                                                                                                 ActionBindingStatus::INAPPLICABLE;
+}
+
+template<StateViewConcept<LiftedTag> S>
+ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Node<S>& node, fp::ActionView<LiftedTag> action, fp::ObjectSpanView objects)
+{
+    return m_impl->check_action_binding(node, action, objects);
+}
+
+template<StateViewConcept<LiftedTag> S>
+ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Node<S>& node, fp::ActionBindingView binding)
+{
+    if (!binding.get_context().contains(binding.get_index()))
+        throw std::invalid_argument("SuccessorGenerator: action binding does not belong to its source repository.");
+    return m_impl->check_action_binding(node, binding.get_relation(), binding.get_objects());
+}
+
+fp::ActionBindingView SuccessorGenerator<LiftedTag>::materialize_action_binding(BorrowedActionBindingView<LiftedTag> binding)
+{
+    m_impl->validate_binding(binding);
+    // Relation bindings preserve object order and are already canonical.
+    return m_impl->definition->task->get_repository()->insert(binding.get_data()).first;
 }
 
 template<StateViewConcept<LiftedTag> S>
@@ -549,11 +588,12 @@ Node<S> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<S>& node,
                                                           SuccessorStorage<S>& storage,
                                                           AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
-    m_impl->evaluator.scratch_action_binding->relation = binding.get_relation().get_index();
-    m_impl->evaluator.scratch_action_binding->objects.clear();
-    ygg::extend(binding.get_objects(), m_impl->evaluator.scratch_action_binding->objects);
+    auto& data = m_impl->evaluator.checked_binding;
+    data.relation = binding.get_relation().get_index();
+    data.objects.clear();
+    ygg::extend(binding.get_objects(), data.objects);
 
-    return get_successor_node(node, *m_impl->evaluator.scratch_action_binding, storage, axiom_evaluator);
+    return get_successor_node(node, data, storage, axiom_evaluator);
 }
 
 template<StateViewConcept<LiftedTag> S>
@@ -607,11 +647,12 @@ ygg::float_t
 SuccessorGenerator<LiftedTag>::generate_successor_state(const Node<S>& node, fp::ActionBindingView binding, ygg::Builder<State<LiftedTag>>& out_state)
 {
     validate_task(m_impl->definition->task, node.get_state());
-    m_impl->evaluator.scratch_action_binding->relation = binding.get_relation().get_index();
-    m_impl->evaluator.scratch_action_binding->objects.clear();
-    ygg::extend(binding.get_objects(), m_impl->evaluator.scratch_action_binding->objects);
+    auto& data = m_impl->evaluator.checked_binding;
+    data.relation = binding.get_relation().get_index();
+    data.objects.clear();
+    ygg::extend(binding.get_objects(), data.objects);
 
-    return m_impl->generate_successor_state(node, *m_impl->evaluator.scratch_action_binding, out_state);
+    return m_impl->generate_successor_state(node, data, out_state);
 }
 
 Node<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::finalize_successor_state(StateRepository<LiftedTag>& state_repository,
@@ -623,6 +664,16 @@ Node<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::finalize_successor_sta
     validate_task(m_impl->definition->task, axiom_evaluator);
     const auto metric = evaluate_successor_metric(*m_impl->definition->task, *state, auxiliary_value);
     return Node<StateView<LiftedTag>>(state_repository.register_state(axiom_evaluator, std::move(state)), metric);
+}
+
+template<StateViewConcept<LiftedTag> S>
+Node<S> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<S>& node,
+                                                          fp::ActionBindingDataView binding,
+                                                          SuccessorStorage<S>& storage,
+                                                          AxiomEvaluator<LiftedTag>& axiom_evaluator)
+{
+    m_impl->validate_binding(binding);
+    return get_successor_node(node, binding.get_data(), storage, axiom_evaluator);
 }
 
 // Raw action-binding input; bindings are not interned and state storage follows S.
@@ -788,6 +839,19 @@ bool SuccessorGenerator<LiftedTag>::for_each_applicable_action_binding(const Nod
 }
 
 template<StateViewConcept<LiftedTag> S>
+bool SuccessorGenerator<LiftedTag>::for_each_borrowed_applicable_action_binding(const Node<S>& node,
+                                                                                const std::function<bool(BorrowedActionBindingView<LiftedTag>)>& callback)
+{
+    validate_task(m_impl->definition->task, node.get_state());
+    return m_impl->for_each_applicable_action_binding(node,
+                                                      *m_impl->evaluator.scratch_action_binding,
+                                                      m_impl->definition->action_program.get_datalog_program().get_program(),
+                                                      m_impl->evaluator.workspace.schedulers,
+                                                      [&](auto& binding)
+                                                      { return callback(ygg::make_view(binding, *m_impl->definition->task->get_repository())); });
+}
+
+template<StateViewConcept<LiftedTag> S>
 bool SuccessorGenerator<LiftedTag>::for_each_successor_node(const Node<S>& node,
                                                             fp::ActionView<LiftedTag> action,
                                                             SuccessorStorage<S>& storage,
@@ -920,6 +984,21 @@ bool SuccessorGenerator<LiftedTag>::for_each_applicable_action_binding(const Nod
                                                       { return callback(fp::insert(*m_impl->definition->task->get_repository(), binding).first); });
 }
 
+template<StateViewConcept<LiftedTag> S>
+bool SuccessorGenerator<LiftedTag>::for_each_borrowed_applicable_action_binding(const Node<S>& node,
+                                                                                fp::ActionView<LiftedTag> action,
+                                                                                const std::function<bool(BorrowedActionBindingView<LiftedTag>)>& callback)
+{
+    validate_task(m_impl->definition->task, node.get_state());
+    auto& schema = m_impl->get_schema_evaluator(action);
+    return m_impl->for_each_applicable_action_binding(node,
+                                                      *m_impl->evaluator.scratch_action_binding,
+                                                      schema.program,
+                                                      schema.schedulers,
+                                                      [&](auto& binding)
+                                                      { return callback(ygg::make_view(binding, *m_impl->definition->task->get_repository())); });
+}
+
 PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_initial_node(StateRepository<LiftedTag>& state_repository,
                                                                              AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
@@ -937,10 +1016,11 @@ PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_successor_node(c
                                                                                StateRepository<LiftedTag>& state_repository,
                                                                                AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
-    m_impl->evaluator.scratch_action_binding->relation = binding.get_relation().get_index();
-    m_impl->evaluator.scratch_action_binding->objects.clear();
-    ygg::extend(binding.get_objects(), m_impl->evaluator.scratch_action_binding->objects);
-    return get_packed_successor_node(node, *m_impl->evaluator.scratch_action_binding, state_repository, axiom_evaluator);
+    auto& data = m_impl->evaluator.checked_binding;
+    data.relation = binding.get_relation().get_index();
+    data.objects.clear();
+    ygg::extend(binding.get_objects(), data.objects);
+    return get_packed_successor_node(node, data, state_repository, axiom_evaluator);
 }
 
 template<StateViewConcept<LiftedTag> S>
@@ -997,6 +1077,38 @@ void SuccessorGenerator<LiftedTag>::print_summary(size_t verbosity) const
             successor_generator_rule_worker_statistics.push_back(worker.solve.statistics);
     fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_worker_statistics(successor_generator_rule_worker_statistics));
 }
+
+template ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Node<StateView<LiftedTag>>& node, fp::ActionBindingView binding);
+
+template bool
+SuccessorGenerator<LiftedTag>::for_each_borrowed_applicable_action_binding(const Node<StateView<LiftedTag>>& node,
+                                                                           const std::function<bool(BorrowedActionBindingView<LiftedTag>)>& callback);
+
+template bool
+SuccessorGenerator<LiftedTag>::for_each_borrowed_applicable_action_binding(const Node<StateView<LiftedTag>>& node,
+                                                                           fp::ActionView<LiftedTag> action,
+                                                                           const std::function<bool(BorrowedActionBindingView<LiftedTag>)>& callback);
+
+template Node<StateView<LiftedTag>> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<StateView<LiftedTag>>& node,
+                                                                                      fp::ActionBindingDataView binding,
+                                                                                      StateRepository<LiftedTag>& storage,
+                                                                                      AxiomEvaluator<LiftedTag>& axiom_evaluator);
+
+template ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Node<BuilderStateView<LiftedTag>>& node, fp::ActionBindingView binding);
+
+template bool
+SuccessorGenerator<LiftedTag>::for_each_borrowed_applicable_action_binding(const Node<BuilderStateView<LiftedTag>>& node,
+                                                                           const std::function<bool(BorrowedActionBindingView<LiftedTag>)>& callback);
+
+template bool
+SuccessorGenerator<LiftedTag>::for_each_borrowed_applicable_action_binding(const Node<BuilderStateView<LiftedTag>>& node,
+                                                                           fp::ActionView<LiftedTag> action,
+                                                                           const std::function<bool(BorrowedActionBindingView<LiftedTag>)>& callback);
+
+template Node<BuilderStateView<LiftedTag>> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<BuilderStateView<LiftedTag>>& node,
+                                                                                             fp::ActionBindingDataView binding,
+                                                                                             ygg::Builder<State<LiftedTag>>& storage,
+                                                                                             AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
 template ActionBindingResult SuccessorGenerator<LiftedTag>::try_get_applicable_action_binding(const Node<StateView<LiftedTag>>& node,
                                                                                               fp::ActionView<LiftedTag> action,

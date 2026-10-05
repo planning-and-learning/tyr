@@ -86,6 +86,12 @@ public:
                    | std::views::transform([](auto literal) { return literal.get_atom(); });
         }
     }
+
+    template<::tyr::formalism::FactKind F>
+    auto get_atoms_view(bool polarity, ygg::View<ygg::Index<::tyr::formalism::Predicate<F>>, C> predicate) const
+    {
+        return get_atoms_view<F>(polarity) | std::views::filter([predicate](auto atom) { return atom.get_predicate() == predicate; });
+    }
 };
 
 }

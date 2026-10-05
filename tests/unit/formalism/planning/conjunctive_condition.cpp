@@ -102,7 +102,8 @@ namespace fp = tyr::formalism::planning;
 template<tyr::TaskKind Kind>
 void expect_condition_atom_projection()
 {
-    auto repository = fp::RepositoryFactory().create();
+    auto factory = fp::RepositoryFactory();
+    auto repository = factory.create();
     const auto intern = [&](auto data) { return fp::insert(repository, data).first; };
     const auto atoms = [&]<f::FactKind F>()
     {
@@ -118,7 +119,8 @@ void expect_condition_atom_projection()
             else
                 return intern(ygg::Data<fp::Atom<Kind, F>>(predicate.get_index(), {}));
         };
-        return std::pair(atom("positive"), atom("negative"));
+        const auto positive = atom("positive");
+        return std::pair(positive, atom("negative"));
     };
     const auto static_atoms = atoms.template operator()<f::StaticTag>();
     const auto fluent_atoms = atoms.template operator()<f::FluentTag>();
@@ -155,6 +157,19 @@ void expect_condition_atom_projection()
         auto negative = ygg::make_view(condition.get_index(), repository).template get_atoms_view<F>(false);
         EXPECT_TRUE(std::ranges::equal(positive, std::array { pair.first }));
         EXPECT_TRUE(std::ranges::equal(negative, std::array { pair.second }));
+        auto filtered_positive = ygg::make_view(condition.get_index(), repository).template get_atoms_view<F>(true, pair.first.get_predicate());
+        auto filtered_negative = ygg::make_view(condition.get_index(), repository).template get_atoms_view<F>(false, pair.second.get_predicate());
+        EXPECT_TRUE(std::ranges::equal(filtered_positive, std::array { pair.first }));
+        EXPECT_TRUE(std::ranges::equal(filtered_negative, std::array { pair.second }));
+        auto opposite = condition.template get_atoms_view<F>(true, pair.second.get_predicate());
+        EXPECT_TRUE(opposite.begin() == opposite.end());
+        auto foreign_repository = factory.create();
+        auto foreign_data = ygg::Data<f::Predicate<F>>(std::string("positive"), 0);
+        const auto foreign = fp::insert(foreign_repository, foreign_data).first;
+        ASSERT_EQ(foreign.get_index(), pair.first.get_predicate().get_index());
+        ASSERT_NE(foreign, pair.first.get_predicate());
+        auto absent = condition.template get_atoms_view<F>(true, foreign);
+        EXPECT_TRUE(absent.begin() == absent.end());
     };
     check.template operator()<f::StaticTag>(static_atoms);
     check.template operator()<f::FluentTag>(fluent_atoms);
