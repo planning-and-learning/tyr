@@ -42,7 +42,7 @@ struct Options
 {
     /// Optional initial node for every width subsearch; when set, it overrides the underlying BrFS option, must belong to the same task, and restarts unit
     /// depth at zero.
-    std::optional<Node<StateView<Kind>>> start_node = std::nullopt;
+    std::optional<Node<Kind>> start_node = std::nullopt;
     EventHandlerPtr<Kind> event_handler = nullptr;
     GoalStrategyPtr<Kind> goal_strategy = nullptr;
     /// State limits apply to each width subsearch; the time limit spans all widths.
@@ -66,7 +66,7 @@ struct Solver
     ygg::uint_t max_arity = MaxArity;
     Options<Kind> options {};
 
-    Node<StateView<Kind>> normalize_start_node(std::optional<Node<StateView<Kind>>> start_node)
+    Node<Kind> normalize_start_node(std::optional<Node<Kind>> start_node)
     {
         if (!start_node)
             start_node = options.start_node;

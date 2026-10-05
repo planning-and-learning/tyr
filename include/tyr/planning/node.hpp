@@ -18,6 +18,7 @@
 #ifndef TYR_PLANNING_NODE_HPP_
 #define TYR_PLANNING_NODE_HPP_
 
+#include "tyr/formalism/binding_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/planning/ground/state_view.hpp"
@@ -36,13 +37,11 @@
 
 namespace tyr::planning
 {
-template<StateViewConcept State>
-class Node : public ygg::comparison::Mixin<Node<State>>
+template<TaskKind Kind, StateViewConcept<Kind> State = StateView<Kind>>
+class Node : public ygg::comparison::Mixin<Node<Kind, State>>
 {
 public:
     using StateType = State;
-    using KindType = typename State::KindType;
-    using TaskType = typename State::TaskType;
 
     Node(State state, ygg::float_t metric) noexcept : m_state(std::move(state)), m_metric(metric) {}
 
@@ -51,10 +50,10 @@ public:
 
     auto pack() const noexcept
         requires requires(const State& state) {
-            { state.pack() } -> std::same_as<PackedStateView<KindType>>;
+            { state.pack() } -> std::same_as<PackedStateView<Kind>>;
         }
     {
-        return PackedNode<KindType>(m_state.pack(), m_metric);
+        return PackedNode<Kind>(m_state.pack(), m_metric);
     }
 
     auto identifying_members() const noexcept
@@ -68,6 +67,9 @@ private:
     ygg::float_t m_metric;
 };
 
+template<StateViewConcept State>
+Node(State, ygg::float_t) -> Node<typename State::KindType, State>;
+
 template<TaskKind Kind>
 class PackedNode : public ygg::comparison::Mixin<PackedNode<Kind>>
 {
@@ -79,7 +81,7 @@ public:
     const PackedStateView<Kind>& get_state() const noexcept { return m_state; }
     ygg::float_t get_metric() const noexcept { return m_metric; }
 
-    Node<StateView<Kind>> unpack() const { return Node(m_state.unpack(), m_metric); }
+    Node<Kind> unpack() const { return Node(m_state.unpack(), m_metric); }
 
     auto identifying_members() const noexcept { return std::tie(m_state, m_metric); }
 
@@ -88,28 +90,34 @@ private:
     ygg::float_t m_metric;
 };
 
-template<StateViewConcept State>
-using NodeList = std::vector<Node<State>>;
+template<TaskKind Kind, StateViewConcept<Kind> State = StateView<Kind>>
+using NodeList = std::vector<Node<Kind, State>>;
 
 template<TaskKind Kind>
 using PackedNodeList = std::vector<PackedNode<Kind>>;
 
-template<StateViewConcept State>
+template<TaskKind Kind,
+         StateViewConcept<Kind> State = StateView<Kind>,
+         ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding =
+             formalism::planning::ActionBindingView>
 struct LabeledNode
 {
     using StateType = State;
-    using KindType = typename State::KindType;
-    using TaskType = typename State::TaskType;
 
-    formalism::planning::ActionBindingView label;
-    Node<State> node;
+    Binding label;
+    Node<Kind, State> node;
 
     auto pack() const noexcept
-        requires requires(const Node<State>& value) { value.pack(); }
+        requires std::same_as<Binding, formalism::planning::ActionBindingView> && requires(const Node<Kind, State>& value) { value.pack(); }
     {
-        return PackedLabeledNode<KindType> { label, node.pack() };
+        return PackedLabeledNode<Kind> { label, node.pack() };
     }
 };
+
+template<TaskKind Kind,
+         StateViewConcept<Kind> State,
+         ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding>
+LabeledNode(Binding, Node<Kind, State>) -> LabeledNode<Kind, State, Binding>;
 
 template<TaskKind Kind>
 struct PackedLabeledNode
@@ -117,18 +125,21 @@ struct PackedLabeledNode
     formalism::planning::ActionBindingView label;
     PackedNode<Kind> node;
 
-    LabeledNode<StateView<Kind>> unpack() const { return { label, node.unpack() }; }
+    LabeledNode<Kind> unpack() const { return { label, node.unpack() }; }
 };
 
-template<StateViewConcept State>
-using LabeledNodeList = std::vector<LabeledNode<State>>;
+template<TaskKind Kind,
+         StateViewConcept<Kind> State = StateView<Kind>,
+         ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding =
+             formalism::planning::ActionBindingView>
+using LabeledNodeList = std::vector<LabeledNode<Kind, State, Binding>>;
 
 template<TaskKind Kind>
 using PackedLabeledNodeList = std::vector<PackedLabeledNode<Kind>>;
 
-template<typename T>
-concept NodeConcept = requires(const T& cn) {
-    requires StateViewConcept<typename T::StateType>;
+template<typename T, typename Kind>
+concept NodeConcept = TaskKind<Kind> && requires(const T& cn) {
+    requires StateViewConcept<typename T::StateType, Kind>;
     { cn.get_state() } -> std::same_as<const typename T::StateType&>;
     { cn.get_metric() } -> std::same_as<ygg::float_t>;
 };

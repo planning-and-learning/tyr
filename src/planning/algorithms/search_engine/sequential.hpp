@@ -165,20 +165,20 @@ public:
     template<typename Engine, typename WorkerData>
     AcceptanceResult route(Engine& engine,
                            WorkerData& worker,
-                           const Node<StateView<Kind>>& source,
+                           const Node<Kind>& source,
                            ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> target,
                            ygg::float_t auxiliary_value,
                            formalism::planning::ActionBindingView action,
                            typename SearchPolicy::SuccessorMetadata metadata)
     {
         const auto metric = engine.evaluate_successor_metric(*target, auxiliary_value);
-        auto node = Node<StateView<Kind>>(worker.state_repository.register_state(worker.axiom_evaluator, std::move(target)), metric);
+        auto node = Node<Kind>(worker.state_repository.register_state(worker.axiom_evaluator, std::move(target)), metric);
         const auto g_value = compute_successor_g_value(metadata.source_g_value, node.get_metric(), engine.m_options.cost_mode);
         if (!std::isfinite(g_value))
             throw std::runtime_error("find_solution(...): successor path cost is not finite.");
 
         worker.statistics.increment_num_generated_candidates(false);
-        const auto routed = typename Engine::RoutedSuccessor { LabeledNode<StateView<Kind>> { action, std::move(node) }, std::move(metadata), g_value, false };
+        const auto routed = typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata), g_value, false };
         return engine.accept_successor(worker, source, routed, [&](const StateView<Kind>& state) { return worker.heuristic.evaluate(state); });
     }
 
@@ -266,12 +266,12 @@ public:
         callback(m_worker);
     }
 
-    std::pair<Plan<Kind>, Node<StateView<Kind>>> reconstruct_solution(WorkerStateIndex<Kind> goal, const typename SearchPolicy::Options& options)
+    std::pair<Plan<Kind>, Node<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal, const typename SearchPolicy::Options& options)
     {
         auto& worker = get(goal.worker);
         const auto state = worker.state_repository.get_registered_state(goal.state);
         const auto& search_node = worker.get_search_node(goal.state);
-        auto node = Node<StateView<Kind>>(state, search_node.g_value);
+        auto node = Node<Kind>(state, search_node.g_value);
         auto plan = PlanReconstructionPolicy<SequentialSearch>::extract_total_ordered_plan(search_node,
                                                                                            node,
                                                                                            worker.search.get_search_nodes(),

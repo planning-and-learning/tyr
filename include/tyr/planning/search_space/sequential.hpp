@@ -31,12 +31,12 @@ namespace tyr::planning
 {
 
 template<TaskKind Kind, SearchNodeConcept<ygg::Index<State<Kind>>> SearchNode>
-NodeList<StateView<Kind>> extract_node_trajectory(const ygg::SegmentedVector<SearchNode>& search_nodes,
-                                                  const SearchNode& final_search_node,
-                                                  const Node<StateView<Kind>>& final_node,
-                                                  StateRepository<Kind>& state_repository)
+NodeList<Kind> extract_node_trajectory(const ygg::SegmentedVector<SearchNode>& search_nodes,
+                                       const SearchNode& final_search_node,
+                                       const Node<Kind>& final_node,
+                                       StateRepository<Kind>& state_repository)
 {
-    auto trajectory = NodeList<StateView<Kind>> {};
+    auto trajectory = NodeList<Kind> {};
     trajectory.push_back(final_node);
 
     auto cur_search_node = &final_search_node;
@@ -46,7 +46,7 @@ NodeList<StateView<Kind>> extract_node_trajectory(const ygg::SegmentedVector<Sea
 
         cur_search_node = &search_nodes.at(ygg::uint_t(cur_search_node->parent_state));
 
-        trajectory.push_back(Node<StateView<Kind>>(state_repository.get_registered_state(parent_state_index), cur_search_node->g_value));
+        trajectory.push_back(Node<Kind>(state_repository.get_registered_state(parent_state_index), cur_search_node->g_value));
     }
 
     std::reverse(trajectory.begin(), trajectory.end());
@@ -55,15 +55,15 @@ NodeList<StateView<Kind>> extract_node_trajectory(const ygg::SegmentedVector<Sea
 }
 
 template<TaskKind Kind>
-LabeledNodeList<StateView<Kind>> extract_labeled_node_trajectory(const NodeList<StateView<Kind>>& node_trajectory,
-                                                                 StateRepository<Kind>& state_repository,
-                                                                 AxiomEvaluator<Kind>& axiom_evaluator,
-                                                                 SuccessorGenerator<Kind>& successor_generator,
-                                                                 CostMode action_cost_mode = CostMode::GENERAL)
+LabeledNodeList<Kind> extract_labeled_node_trajectory(const NodeList<Kind>& node_trajectory,
+                                                      StateRepository<Kind>& state_repository,
+                                                      AxiomEvaluator<Kind>& axiom_evaluator,
+                                                      SuccessorGenerator<Kind>& successor_generator,
+                                                      CostMode action_cost_mode = CostMode::GENERAL)
 {
     assert(!node_trajectory.empty());
 
-    auto labeled_node_trajectory = LabeledNodeList<StateView<Kind>> {};
+    auto labeled_node_trajectory = LabeledNodeList<Kind> {};
     auto cur_node = node_trajectory.front();
     auto applicable_actions = std::vector<formalism::planning::ActionBindingView> {};
 
@@ -76,11 +76,11 @@ LabeledNodeList<StateView<Kind>> extract_labeled_node_trajectory(const NodeList<
         {
             const auto successor = successor_generator.get_successor_node(cur_node, action, state_repository, axiom_evaluator);
             const auto successor_g_value = compute_successor_g_value(cur_node.get_metric(), successor.get_metric(), action_cost_mode);
-            const auto normalized_succ_node = Node<StateView<Kind>>(successor.get_state(), successor_g_value);
+            const auto normalized_succ_node = Node<Kind>(successor.get_state(), successor_g_value);
 
             if (normalized_succ_node == node_trajectory[i])
             {
-                labeled_node_trajectory.push_back(LabeledNode<StateView<Kind>> { action, normalized_succ_node });
+                labeled_node_trajectory.push_back(LabeledNode<Kind> { action, normalized_succ_node });
                 cur_node = normalized_succ_node;
                 found = true;
                 break;
@@ -94,7 +94,7 @@ LabeledNodeList<StateView<Kind>> extract_labeled_node_trajectory(const NodeList<
 
 template<TaskKind Kind, SearchNodeConcept<ygg::Index<State<Kind>>> SearchNode>
 inline Plan<Kind> extract_total_ordered_plan(const SearchNode& final_search_node,
-                                             const Node<StateView<Kind>>& final_node,
+                                             const Node<Kind>& final_node,
                                              const ygg::SegmentedVector<SearchNode>& search_nodes,
                                              StateRepository<Kind>& state_repository,
                                              AxiomEvaluator<Kind>& axiom_evaluator,
@@ -113,7 +113,7 @@ struct PlanReconstructionPolicy<SequentialSearch>
 {
     template<TaskKind Kind, SearchNodeConcept<ygg::Index<State<Kind>>> SearchNode>
     static Plan<Kind> extract_total_ordered_plan(const SearchNode& final_search_node,
-                                                 const Node<StateView<Kind>>& final_node,
+                                                 const Node<Kind>& final_node,
                                                  const ygg::SegmentedVector<SearchNode>& search_nodes,
                                                  StateRepository<Kind>& state_repository,
                                                  AxiomEvaluator<Kind>& axiom_evaluator,

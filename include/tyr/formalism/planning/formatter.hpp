@@ -150,6 +150,7 @@ std::string to_string(FunctionBindingView<StaticTag> value);
 std::string to_string(FunctionBindingView<FluentTag> value);
 std::string to_string(FunctionBindingView<AuxiliaryTag> value);
 std::string to_string(ActionBindingView value);
+std::string to_string(ActionBindingDataView value);
 std::string to_string(AxiomBindingView value);
 
 std::string to_string(UnaryOperatorView<LiftedTag> value);

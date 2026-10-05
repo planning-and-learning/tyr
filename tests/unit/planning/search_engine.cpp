@@ -257,7 +257,7 @@ class ReleasingAStarWorkerEventHandler final : public p::astar_eager::WorkerEven
 public:
     ReleasingAStarWorkerEventHandler(std::shared_ptr<AStarHeuristicGate> gate, p::TransitionOutcome expected) : m_gate(std::move(gate)), m_expected(expected) {}
 
-    void on_generate_transition(const p::Node<p::StateView<Kind>>&, const p::LabeledNode<p::StateView<Kind>>&, p::TransitionOutcome outcome) override
+    void on_generate_transition(const p::Node<Kind>&, const p::LabeledNode<Kind>&, p::TransitionOutcome outcome) override
     {
         if (outcome == m_expected && !m_gate->transition_seen.exchange(true, std::memory_order_relaxed))
             m_gate->target_continue.release();
@@ -274,7 +274,7 @@ class ReleasingAStarEventHandler final : public p::astar_eager::EventHandler<Kin
 public:
     ReleasingAStarEventHandler(std::shared_ptr<AStarHeuristicGate> gate, p::TransitionOutcome expected) : m_gate(std::move(gate)), m_expected(expected) {}
 
-    void on_start_search(const p::Node<p::StateView<Kind>>&, ygg::float_t) override {}
+    void on_start_search(const p::Node<Kind>&, ygg::float_t) override {}
     void on_end_search(p::SearchStatus, const p::Statistics&) override {}
     void on_solved(const p::Plan<Kind>&) override {}
 
@@ -294,7 +294,7 @@ class RecordingAStarLayerEventHandler final : public p::astar_eager::EventHandle
 public:
     std::vector<std::pair<ygg::float_t, p::Statistics>> snapshots;
 
-    void on_start_search(const p::Node<p::StateView<Kind>>&, ygg::float_t) override {}
+    void on_start_search(const p::Node<Kind>&, ygg::float_t) override {}
     void on_finish_f_layer(ygg::float_t f_value, const p::Statistics& statistics) override { snapshots.emplace_back(f_value, statistics); }
     void on_end_search(p::SearchStatus, const p::Statistics&) override {}
     void on_solved(const p::Plan<Kind>&) override {}
@@ -715,8 +715,7 @@ void expect_foreign_start_handling(const p::TaskPtr<Kind>& task, const p::TaskPt
             auto foreign = make_search_context(task);
             auto heuristic = p::BlindHeuristic<Kind>::create();
             auto options = p::astar_eager::Options<Kind> {};
-            options.start_node =
-                p::Node<p::StateView<Kind>>(foreign.successor_generator->get_initial_node(*foreign.repository, *foreign.axiom_evaluator).get_state(), 7);
+            options.start_node = p::Node<Kind>(foreign.successor_generator->get_initial_node(*foreign.repository, *foreign.axiom_evaluator).get_state(), 7);
             options.num_search_workers = num_workers;
 
             const auto result =
@@ -866,8 +865,7 @@ void expect_non_finite_start_metrics_are_rejected(const p::TaskPtr<Kind>& task)
                     auto heuristic = p::BlindHeuristic<Kind>::create();
                     auto options = p::astar_eager::Options<Kind> {};
                     options.start_node =
-                        p::Node<p::StateView<Kind>>(context.successor_generator->get_initial_node(*context.repository, *context.axiom_evaluator).get_state(),
-                                                    metric);
+                        p::Node<Kind>(context.successor_generator->get_initial_node(*context.repository, *context.axiom_evaluator).get_state(), metric);
                     options.num_search_workers = num_workers;
 
                     options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>();
@@ -880,8 +878,7 @@ void expect_non_finite_start_metrics_are_rejected(const p::TaskPtr<Kind>& task)
                     auto heuristic = p::BlindHeuristic<Kind>::create();
                     auto options = p::gbfs_lazy::Options<Kind> {};
                     options.start_node =
-                        p::Node<p::StateView<Kind>>(context.successor_generator->get_initial_node(*context.repository, *context.axiom_evaluator).get_state(),
-                                                    metric);
+                        p::Node<Kind>(context.successor_generator->get_initial_node(*context.repository, *context.axiom_evaluator).get_state(), metric);
                     options.num_search_workers = num_workers;
 
                     options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>();
@@ -893,8 +890,7 @@ void expect_non_finite_start_metrics_are_rejected(const p::TaskPtr<Kind>& task)
                     auto context = make_search_context(task, concurrent);
                     auto options = p::brfs::Options<Kind> {};
                     options.start_node =
-                        p::Node<p::StateView<Kind>>(context.successor_generator->get_initial_node(*context.repository, *context.axiom_evaluator).get_state(),
-                                                    metric);
+                        p::Node<Kind>(context.successor_generator->get_initial_node(*context.repository, *context.axiom_evaluator).get_state(), metric);
                     options.num_search_workers = num_workers;
 
                     options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>();
@@ -1006,8 +1002,8 @@ void expect_pending_astar_improvement_is_coalesced(const p::TaskPtr<Kind>& task)
 {
     auto probe = make_search_context(task);
     const auto start = probe.successor_generator->get_initial_node(*probe.repository, *probe.axiom_evaluator);
-    auto expensive = std::optional<p::Node<p::StateView<Kind>>> {};
-    auto cheap = std::optional<p::Node<p::StateView<Kind>>> {};
+    auto expensive = std::optional<p::Node<Kind>> {};
+    auto cheap = std::optional<p::Node<Kind>> {};
     for (const auto& successor : probe.successor_generator->get_labeled_successor_nodes(start, *probe.repository, *probe.axiom_evaluator))
     {
         if (is_at_location(successor.node.get_state().get_state_builder(), *task->get_repository(), "expensive"))

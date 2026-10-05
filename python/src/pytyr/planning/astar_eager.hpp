@@ -31,7 +31,7 @@ public:
 
     NB_TRAMPOLINE(Base);
 
-    void on_start_search(const Node<StateView<Kind>>& node, ygg::float_t f_value) override { NB_OVERRIDE_PURE(on_start_search, node, f_value); }
+    void on_start_search(const Node<Kind>& node, ygg::float_t f_value) override { NB_OVERRIDE_PURE(on_start_search, node, f_value); }
     void on_finish_f_layer(ygg::float_t f_value, const tyr::planning::Statistics& statistics) override { NB_OVERRIDE(on_finish_f_layer, f_value, statistics); }
 
     void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override

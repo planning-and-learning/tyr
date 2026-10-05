@@ -80,26 +80,24 @@ inline ygg::float_t compute_successor_g_value(ygg::float_t source_g_value, ygg::
 }
 
 template<TaskKind Kind>
-Node<StateView<Kind>> normalize_start_node(Task<Kind>& task,
-                                           StateRepository<Kind>& state_repository,
-                                           AxiomEvaluator<Kind>& axiom_evaluator,
-                                           std::optional<Node<StateView<Kind>>> start_node);
+Node<Kind>
+normalize_start_node(Task<Kind>& task, StateRepository<Kind>& state_repository, AxiomEvaluator<Kind>& axiom_evaluator, std::optional<Node<Kind>> start_node);
 
-extern template Node<StateView<GroundTag>> normalize_start_node(Task<GroundTag>& task,
-                                                                StateRepository<GroundTag>& state_repository,
-                                                                AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                                std::optional<Node<StateView<GroundTag>>> start_node);
-extern template Node<StateView<LiftedTag>> normalize_start_node(Task<LiftedTag>& task,
-                                                                StateRepository<LiftedTag>& state_repository,
-                                                                AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                                std::optional<Node<StateView<LiftedTag>>> start_node);
+extern template Node<GroundTag> normalize_start_node(Task<GroundTag>& task,
+                                                     StateRepository<GroundTag>& state_repository,
+                                                     AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                     std::optional<Node<GroundTag>> start_node);
+extern template Node<LiftedTag> normalize_start_node(Task<LiftedTag>& task,
+                                                     StateRepository<LiftedTag>& state_repository,
+                                                     AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                                     std::optional<Node<LiftedTag>> start_node);
 
 template<TaskKind Kind>
 struct SearchResult
 {
     SearchStatus status = SearchStatus::IN_PROGRESS;
     std::optional<Plan<Kind>> plan = std::nullopt;
-    std::optional<Node<StateView<Kind>>> goal_node = std::nullopt;
+    std::optional<Node<Kind>> goal_node = std::nullopt;
     std::optional<std::pair<size_t, size_t>> cycle_range = std::nullopt;
     /// Idle time is summed worker time and may exceed the aggregate wall time.
     Statistics statistics {};

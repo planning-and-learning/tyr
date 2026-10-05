@@ -60,7 +60,18 @@ concept SearchPolicyConcept = TaskKind<Kind> && requires {
     typename std::bool_constant<T::supports_priority_layer_synchronization>;
     requires SearchKind<typename T::SearchTag>;
     requires std::same_as<typename T::TaskTag, Kind>;
-} && std::constructible_from<T, Heuristic<Kind>&, const typename T::Options&> && requires(T& policy, const T& const_policy, ygg::Index<Worker> worker, ygg::Index<State<Kind>> state, ygg::float_t value, const typename T::SearchNode& const_search_node, const Node<StateView<Kind>>& node, const typename T::PoppedEntry& entry, formalism::planning::ActionBindingView action, const typename T::Options& options, const typename T::EventHandlerPtr& event_handler) {
+} && std::constructible_from<T, Heuristic<Kind>&, const typename T::Options&>
+    && requires(T& policy,
+                const T& const_policy,
+                ygg::Index<Worker> worker,
+                ygg::Index<State<Kind>> state,
+                ygg::float_t value,
+                const typename T::SearchNode& const_search_node,
+                const Node<Kind>& node,
+                const typename T::PoppedEntry& entry,
+                formalism::planning::ActionBindingView action,
+                const typename T::Options& options,
+                const typename T::EventHandlerPtr& event_handler) {
     { T::terminate_on_goal } -> std::convertible_to<bool>;
     { T::supports_priority_layer_synchronization } -> std::convertible_to<bool>;
     { policy.initialize_start(state, value, value) } -> std::same_as<typename T::SearchNode&>;
@@ -89,7 +100,7 @@ concept StateRoutingPolicyConcept = TaskKind<Kind> && std::constructible_from<T,
     { T::search_node_divisor(num_workers) } -> std::same_as<size_t>;
     { T::search_node_index(state, worker, num_workers) } -> std::same_as<ygg::Index<State<Kind>>>;
     { prepared.owner } -> std::same_as<ygg::Index<Worker>&>;
-    { prepared.node } -> std::same_as<Node<StateView<Kind>>&>;
+    { prepared.node } -> std::same_as<Node<Kind>&>;
 };
 
 template<typename T, typename Kind, typename SearchPolicy>
@@ -125,7 +136,7 @@ concept WorkerPolicyConcept = TaskKind<Kind> && SearchPolicyConcept<SearchPolicy
                                      {
                                          policy.for_each([](WorkerData&) {})
                                      } -> std::same_as<void>;
-                                     { policy.reconstruct_solution(goal, options) } -> std::same_as<std::pair<Plan<Kind>, Node<StateView<Kind>>>>;
+                                     { policy.reconstruct_solution(goal, options) } -> std::same_as<std::pair<Plan<Kind>, Node<Kind>>>;
                                  };
 
 template<SearchKind Search,

@@ -157,7 +157,7 @@ try
         throw std::runtime_error("Selected schema match tree disagrees with global filtering.");
 
     auto bindings = std::vector<fp::ActionBindingView> {};
-    auto successors = p::LabeledNodeList<p::StateView<GroundTag>> {};
+    auto successors = p::LabeledNodeList<GroundTag> {};
     auto executor = p::ActionExecutor {};
     const auto generate = [&]
     {

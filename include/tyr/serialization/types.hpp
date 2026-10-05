@@ -34,10 +34,10 @@ using FormalismOwners =
 using RuntimeStates = ygg::TypeList<planning::StateView<GroundTag>, planning::StateView<LiftedTag>>;
 using RuntimeOwners = ygg::TypeList<planning::Task<GroundTag>,
                                     planning::Task<LiftedTag>,
-                                    planning::Node<planning::StateView<GroundTag>>,
-                                    planning::Node<planning::StateView<LiftedTag>>,
-                                    planning::LabeledNode<planning::StateView<GroundTag>>,
-                                    planning::LabeledNode<planning::StateView<LiftedTag>>,
+                                    planning::Node<GroundTag>,
+                                    planning::Node<LiftedTag>,
+                                    planning::LabeledNode<GroundTag>,
+                                    planning::LabeledNode<LiftedTag>,
                                     planning::Plan<GroundTag>,
                                     planning::Plan<LiftedTag>>;
 using SerializedTypes = ygg::ConcatTypeListsT<FormalismViews, RuntimeStates, FormalismOwners, RuntimeOwners>;

@@ -308,12 +308,12 @@ struct formatter<State, char>
     }
 };
 
-template<::tyr::planning::StateViewConcept State>
-struct formatter<tyr::planning::Node<State>, char>
+template<::tyr::TaskKind Kind, ::tyr::planning::StateViewConcept<Kind> State>
+struct formatter<tyr::planning::Node<Kind, State>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::planning::Node<State>& value, FormatContext& ctx) const
+    auto format(const tyr::planning::Node<Kind, State>& value, FormatContext& ctx) const
     {
         auto os = std::stringstream {};
         os << "Node(\n";
@@ -329,12 +329,14 @@ struct formatter<tyr::planning::Node<State>, char>
     }
 };
 
-template<::tyr::planning::StateViewConcept State>
-struct formatter<tyr::planning::LabeledNode<State>, char>
+template<::tyr::TaskKind Kind,
+         ::tyr::planning::StateViewConcept<Kind> State,
+         ygg::formalism::RelationBindingViewConcept<tyr::formalism::planning::Action<tyr::LiftedTag>, tyr::formalism::ObjectTag> Binding>
+struct formatter<tyr::planning::LabeledNode<Kind, State, Binding>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::planning::LabeledNode<State>& value, FormatContext& ctx) const
+    auto format(const tyr::planning::LabeledNode<Kind, State, Binding>& value, FormatContext& ctx) const
     {
         auto os = std::stringstream {};
         os << "LabeledNode(\n";
@@ -351,22 +353,22 @@ struct formatter<tyr::planning::LabeledNode<State>, char>
 };
 
 template<::tyr::TaskKind Kind>
-struct formatter<tyr::planning::PackedNode<Kind>, char> : formatter<tyr::planning::Node<tyr::planning::StateView<Kind>>, char>
+struct formatter<tyr::planning::PackedNode<Kind>, char> : formatter<tyr::planning::Node<Kind>, char>
 {
     template<typename FormatContext>
     auto format(const tyr::planning::PackedNode<Kind>& value, FormatContext& ctx) const
     {
-        return formatter<tyr::planning::Node<tyr::planning::StateView<Kind>>, char>::format(value.unpack(), ctx);
+        return formatter<tyr::planning::Node<Kind>, char>::format(value.unpack(), ctx);
     }
 };
 
 template<::tyr::TaskKind Kind>
-struct formatter<tyr::planning::PackedLabeledNode<Kind>, char> : formatter<tyr::planning::LabeledNode<tyr::planning::StateView<Kind>>, char>
+struct formatter<tyr::planning::PackedLabeledNode<Kind>, char> : formatter<tyr::planning::LabeledNode<Kind>, char>
 {
     template<typename FormatContext>
     auto format(const tyr::planning::PackedLabeledNode<Kind>& value, FormatContext& ctx) const
     {
-        return formatter<tyr::planning::LabeledNode<tyr::planning::StateView<Kind>>, char>::format(value.unpack(), ctx);
+        return formatter<tyr::planning::LabeledNode<Kind>, char>::format(value.unpack(), ctx);
     }
 };
 

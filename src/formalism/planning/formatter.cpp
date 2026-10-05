@@ -546,7 +546,9 @@ std::string to_string(PredicateBindingView<DerivedTag> value) { return detail::r
 std::string to_string(FunctionBindingView<StaticTag> value) { return detail::relation_binding(value); }
 std::string to_string(FunctionBindingView<FluentTag> value) { return detail::relation_binding(value); }
 std::string to_string(FunctionBindingView<AuxiliaryTag> value) { return detail::relation_binding(value); }
+
 std::string to_string(ActionBindingView value) { return detail::relation_binding(value); }
+std::string to_string(ActionBindingDataView value) { return detail::relation_binding(value); }
 
 std::string to_string(AxiomBindingView value) { return fmt::format("{}", fmt::join(ygg::to_strings(value.get_objects()), " ")); }
 

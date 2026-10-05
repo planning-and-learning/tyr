@@ -38,7 +38,7 @@ struct Options
     static constexpr CostMode cost_mode = CostMode::UNIT;
 
     /// Optional initial node. It must belong to this task; search materializes its state in the caller repository and restarts unit depth at zero.
-    std::optional<Node<StateView<Kind>>> start_node = std::nullopt;
+    std::optional<Node<Kind>> start_node = std::nullopt;
     EventHandlerPtr<Kind> event_handler = nullptr;
     PruningStrategyPtr<Kind> pruning_strategy = nullptr;
     GoalStrategyPtr<Kind> goal_strategy = nullptr;
@@ -72,7 +72,7 @@ struct Solver
     SuccessorGeneratorPtr<Kind> successor_generator;
     Options<Kind> options {};
 
-    Node<StateView<Kind>> normalize_start_node(std::optional<Node<StateView<Kind>>> start_node)
+    Node<Kind> normalize_start_node(std::optional<Node<Kind>> start_node)
     {
         if (!task)
             throw std::invalid_argument("brfs::Solver::normalize_start_node(): task is required.");

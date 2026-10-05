@@ -30,6 +30,7 @@
 #include <concepts>
 #include <ranges>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <yggdrasil/containers/shared_object_pool.hpp>
 #include <yggdrasil/core/concepts.hpp>
@@ -500,10 +501,10 @@ concept IterableViewStateConcept = requires(const T& cs) {
     requires FunctionTermViewValueRangeConcept<decltype(cs.get_fluent_fterm_values_view()), formalism::FluentTag>;
 };
 
-/// State contents and task context, independent of ownership and repository identity.
+/// State contents and task context, accepting values and references without requiring repository identity.
 template<typename T, typename Kind = void>
-concept StateViewConcept = IterableStateConcept<T> && IterableViewStateConcept<T>
-                           && requires(const T& state,
+concept StateViewConcept = IterableStateConcept<std::remove_reference_t<T>> && IterableViewStateConcept<std::remove_reference_t<T>>
+                           && requires(const std::remove_reference_t<T>& state,
                                        ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>> variable,
                                        ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>> static_fterm,
                                        ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> fluent_fterm,
@@ -514,10 +515,10 @@ concept StateViewConcept = IterableStateConcept<T> && IterableViewStateConcept<T
                                        formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag> fluent_fterm_view,
                                        formalism::planning::AtomView<GroundTag, formalism::StaticTag> static_atom_view,
                                        formalism::planning::AtomView<GroundTag, formalism::DerivedTag> derived_atom_view) {
-                                  requires TaskKind<typename T::KindType>;
-                                  requires(std::same_as<Kind, void> || std::same_as<typename T::KindType, Kind>);
-                                  requires std::same_as<typename T::TaskType, Task<typename T::KindType>>;
-                                  { state.get_task() } -> std::same_as<const typename T::TaskType&>;
+                                  requires TaskKind<typename std::remove_reference_t<T>::KindType>;
+                                  requires(std::same_as<Kind, void> || std::same_as<typename std::remove_reference_t<T>::KindType, Kind>);
+                                  requires std::same_as<typename std::remove_reference_t<T>::TaskType, Task<typename std::remove_reference_t<T>::KindType>>;
+                                  { state.get_task() } -> std::same_as<const typename std::remove_reference_t<T>::TaskType&>;
                                   { state.get_repository() } -> std::same_as<const formalism::planning::RepositoryPtr&>;
                                   { state.get(variable) } -> std::same_as<formalism::planning::FDRValue>;
                                   { state.get(static_fterm) } -> std::same_as<ygg::float_t>;

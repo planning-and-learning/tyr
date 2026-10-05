@@ -208,7 +208,7 @@ void bind_state_builder(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_node(nb::module_& m, const std::string& name)
 {
-    using T = Node<StateView<Kind>>;
+    using T = Node<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())
                    .def(nb::init<StateView<Kind>, ygg::float_t>(), "state"_a, "metric_value"_a)
@@ -238,10 +238,10 @@ void bind_packed_node(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_labeled_node(nb::module_& m, const std::string& name)
 {
-    using T = LabeledNode<StateView<Kind>>;
+    using T = LabeledNode<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def(nb::init<fp::ActionBindingView, Node<StateView<Kind>>>(), "label"_a, "node"_a)
+                   .def(nb::init<fp::ActionBindingView, Node<Kind>>(), "label"_a, "node"_a)
                    .def_ro("label", &T::label, nb::rv_policy::reference_internal)
                    .def_ro("node", &T::node, nb::rv_policy::copy)
                    .def("pack", &T::pack);
@@ -267,8 +267,8 @@ void bind_plan(nb::module_& m, const std::string& name)
     using T = Plan<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def(nb::init<Node<StateView<Kind>>>(), "start_node"_a)
-                   .def(nb::init<Node<StateView<Kind>>, LabeledNodeList<StateView<Kind>>>(), "start_node"_a, "labeled_succ_nodes"_a)
+                   .def(nb::init<Node<Kind>>(), "start_node"_a)
+                   .def(nb::init<Node<Kind>, LabeledNodeList<Kind>>(), "start_node"_a, "labeled_succ_nodes"_a)
                    .def("get_start_node", &T::get_start_node, nb::rv_policy::copy)
                    .def("get_labeled_succ_nodes", &T::get_labeled_succ_nodes, nb::rv_policy::copy)
                    .def("get_cost", &T::get_cost)
@@ -348,12 +348,12 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
         .def("get_packed_node", &T::get_packed_node, nb::rv_policy::move, "state_repository"_a, "state_index"_a);
 
     cls.def("get_applicable_action_bindings",
-            nb::overload_cast<const Node<StateView<Kind>>&>(&T::template get_applicable_action_bindings<StateView<Kind>>),
+            nb::overload_cast<const Node<Kind>&>(&T::template get_applicable_action_bindings<StateView<Kind>>),
             nb::rv_policy::move,
             "node"_a,
             nb::call_guard<nb::gil_scoped_release>())
         .def("get_applicable_action_bindings",
-             nb::overload_cast<const Node<StateView<Kind>>&, fp::ActionView<LiftedTag>>(&T::template get_applicable_action_bindings<StateView<Kind>>),
+             nb::overload_cast<const Node<Kind>&, fp::ActionView<LiftedTag>>(&T::template get_applicable_action_bindings<StateView<Kind>>),
              nb::rv_policy::move,
              "node"_a,
              "action"_a,
@@ -362,14 +362,14 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
     cls.def("ground_action", &T::ground_action, "binding"_a);
 
     cls.def("get_successor_node",
-            nb::overload_cast<const Node<StateView<Kind>>&, fp::ActionBindingView, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
+            nb::overload_cast<const Node<Kind>&, fp::ActionBindingView, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
                 &T::template get_successor_node<StateView<Kind>>),
             "node"_a,
             "binding"_a,
             "state_repository"_a,
             "axiom_evaluator"_a)
         .def("get_successor_node",
-             nb::overload_cast<const Node<StateView<Kind>>&, fp::ActionView<GroundTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
+             nb::overload_cast<const Node<Kind>&, fp::ActionView<GroundTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
                  &T::template get_successor_node<StateView<Kind>>),
              "node"_a,
              "action"_a,
@@ -377,14 +377,14 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
              "axiom_evaluator"_a);
 
     cls.def("get_successor_nodes",
-            nb::overload_cast<const Node<StateView<Kind>>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::template get_successor_nodes<StateView<Kind>>),
+            nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::template get_successor_nodes<StateView<Kind>>),
             nb::rv_policy::move,
             "node"_a,
             "state_repository"_a,
             "axiom_evaluator"_a,
             nb::call_guard<nb::gil_scoped_release>())
         .def("get_successor_nodes",
-             nb::overload_cast<const Node<StateView<Kind>>&, fp::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
+             nb::overload_cast<const Node<Kind>&, fp::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
                  &T::template get_successor_nodes<StateView<Kind>>),
              nb::rv_policy::move,
              "node"_a,
@@ -394,15 +394,14 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
              nb::call_guard<nb::gil_scoped_release>());
 
     cls.def("get_labeled_successor_nodes",
-            nb::overload_cast<const Node<StateView<Kind>>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
-                &T::template get_labeled_successor_nodes<StateView<Kind>>),
+            nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::template get_labeled_successor_nodes<StateView<Kind>>),
             nb::rv_policy::move,
             "node"_a,
             "state_repository"_a,
             "axiom_evaluator"_a,
             nb::call_guard<nb::gil_scoped_release>())
         .def("get_labeled_successor_nodes",
-             nb::overload_cast<const Node<StateView<Kind>>&, fp::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
+             nb::overload_cast<const Node<Kind>&, fp::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
                  &T::template get_labeled_successor_nodes<StateView<Kind>>),
              nb::rv_policy::move,
              "node"_a,
@@ -412,14 +411,14 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
              nb::call_guard<nb::gil_scoped_release>());
 
     cls.def("get_packed_successor_node",
-            nb::overload_cast<const Node<StateView<Kind>>&, fp::ActionBindingView, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
+            nb::overload_cast<const Node<Kind>&, fp::ActionBindingView, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
                 &T::template get_packed_successor_node<StateView<Kind>>),
             "node"_a,
             "binding"_a,
             "state_repository"_a,
             "axiom_evaluator"_a)
         .def("get_packed_successor_node",
-             nb::overload_cast<const Node<StateView<Kind>>&, fp::ActionView<GroundTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
+             nb::overload_cast<const Node<Kind>&, fp::ActionView<GroundTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
                  &T::template get_packed_successor_node<StateView<Kind>>),
              "node"_a,
              "action"_a,
@@ -427,15 +426,14 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
              "axiom_evaluator"_a);
 
     cls.def("get_packed_successor_nodes",
-            nb::overload_cast<const Node<StateView<Kind>>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
-                &T::template get_packed_successor_nodes<StateView<Kind>>),
+            nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::template get_packed_successor_nodes<StateView<Kind>>),
             nb::rv_policy::move,
             "node"_a,
             "state_repository"_a,
             "axiom_evaluator"_a,
             nb::call_guard<nb::gil_scoped_release>())
         .def("get_packed_successor_nodes",
-             nb::overload_cast<const Node<StateView<Kind>>&, fp::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
+             nb::overload_cast<const Node<Kind>&, fp::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
                  &T::template get_packed_successor_nodes<StateView<Kind>>),
              nb::rv_policy::move,
              "node"_a,
@@ -445,7 +443,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
              nb::call_guard<nb::gil_scoped_release>());
 
     cls.def("get_packed_labeled_successor_nodes",
-            nb::overload_cast<const Node<StateView<Kind>>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
+            nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
                 &T::template get_packed_labeled_successor_nodes<StateView<Kind>>),
             nb::rv_policy::move,
             "node"_a,
@@ -453,7 +451,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             "axiom_evaluator"_a,
             nb::call_guard<nb::gil_scoped_release>())
         .def("get_packed_labeled_successor_nodes",
-             nb::overload_cast<const Node<StateView<Kind>>&, fp::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
+             nb::overload_cast<const Node<Kind>&, fp::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
                  &T::template get_packed_labeled_successor_nodes<StateView<Kind>>),
              nb::rv_policy::move,
              "node"_a,
@@ -463,7 +461,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
              nb::call_guard<nb::gil_scoped_release>());
 
     cls.def("for_each_successor_node",
-            nb::overload_cast<const Node<StateView<Kind>>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&, const std::function<bool(Node<StateView<Kind>>)>&>(
+            nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&, const std::function<bool(Node<Kind>)>&>(
                 &T::template for_each_successor_node<StateView<Kind>>),
             "node"_a,
             "state_repository"_a,
@@ -471,11 +469,11 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             "callback"_a,
             nb::call_guard<nb::gil_scoped_release>())
         .def("for_each_successor_node",
-             nb::overload_cast<const Node<StateView<Kind>>&,
+             nb::overload_cast<const Node<Kind>&,
                                fp::ActionView<LiftedTag>,
                                StateRepository<Kind>&,
                                AxiomEvaluator<Kind>&,
-                               const std::function<bool(Node<StateView<Kind>>)>&>(&T::template for_each_successor_node<StateView<Kind>>),
+                               const std::function<bool(Node<Kind>)>&>(&T::template for_each_successor_node<StateView<Kind>>),
              "node"_a,
              "action"_a,
              "state_repository"_a,
@@ -484,21 +482,19 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
              nb::call_guard<nb::gil_scoped_release>());
 
     cls.def("for_each_labeled_successor_node",
-            nb::overload_cast<const Node<StateView<Kind>>&,
-                              StateRepository<Kind>&,
-                              AxiomEvaluator<Kind>&,
-                              const std::function<bool(LabeledNode<StateView<Kind>>)>&>(&T::template for_each_labeled_successor_node<StateView<Kind>>),
+            nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&, const std::function<bool(LabeledNode<Kind>)>&>(
+                &T::template for_each_labeled_successor_node<StateView<Kind>>),
             "node"_a,
             "state_repository"_a,
             "axiom_evaluator"_a,
             "callback"_a,
             nb::call_guard<nb::gil_scoped_release>())
         .def("for_each_labeled_successor_node",
-             nb::overload_cast<const Node<StateView<Kind>>&,
+             nb::overload_cast<const Node<Kind>&,
                                fp::ActionView<LiftedTag>,
                                StateRepository<Kind>&,
                                AxiomEvaluator<Kind>&,
-                               const std::function<bool(LabeledNode<StateView<Kind>>)>&>(&T::template for_each_labeled_successor_node<StateView<Kind>>),
+                               const std::function<bool(LabeledNode<Kind>)>&>(&T::template for_each_labeled_successor_node<StateView<Kind>>),
              "node"_a,
              "action"_a,
              "state_repository"_a,

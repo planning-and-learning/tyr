@@ -191,7 +191,7 @@ void expect_state_routing(const p::TaskPtr<Kind>& task)
     using std::swap;
     swap(*owner_state, *remote_state);
     EXPECT_EQ(dist_hash.hash(*owner_state), remote_hash);
-    const auto owner_node = p::Node<p::StateView<Kind>>(worker_repository->register_extended_state(std::move(owner_state)), remote_metric);
+    const auto owner_node = p::Node<Kind>(worker_repository->register_extended_state(std::move(owner_state)), remote_metric);
     EXPECT_EQ(owner_node.get_metric(), compatibility_node.get_metric());
     EXPECT_EQ(repository->num_states(), source_states_after_local_registration);
     EXPECT_EQ(worker_repository->num_states(), 2);

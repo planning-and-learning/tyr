@@ -120,7 +120,7 @@ try
     state.counters["num_selected_bindings"] = static_cast<double>(expected_bindings.size());
 
     auto bindings = std::vector<fp::ActionBindingView> {};
-    auto successors = p::LabeledNodeList<p::StateView<LiftedTag>> {};
+    auto successors = p::LabeledNodeList<LiftedTag> {};
     const auto generate = [&]
     {
         if constexpr (operation == Operation::CONSTRUCTION)

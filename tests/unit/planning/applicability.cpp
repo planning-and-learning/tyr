@@ -21,7 +21,8 @@ namespace fp = tyr::formalism::planning;
 namespace p = tyr::planning;
 
 template<typename Kind, typename State>
-concept HasBindingQuery = requires(p::SuccessorGenerator<Kind>& generator, const p::Node<State>& node) { generator.get_applicable_action_bindings(node); };
+concept HasBindingQuery =
+    requires(p::SuccessorGenerator<Kind>& generator, const p::Node<Kind, State>& node) { generator.get_applicable_action_bindings(node); };
 
 static_assert(ygg::InputRangeOf<fp::ObjectSpanView, fp::ObjectView>);
 static_assert(std::same_as<p::BorrowedActionBindingView<tyr::GroundTag>, fp::ActionBindingView>);
@@ -376,7 +377,7 @@ void expect_schema_queries_match_filtered_successors()
                                                 *axiom_evaluator,
                                                 [&](auto successor)
                                                 {
-                                                    static_assert(std::same_as<decltype(successor), p::Node<S>>);
+                                                    static_assert(std::same_as<decltype(successor), p::Node<Kind, S>>);
                                                     if (successor_builder)
                                                     {
                                                         EXPECT_EQ(&successor.get_state().get_state_builder(), successor_builder);
@@ -435,8 +436,8 @@ void expect_schema_queries_match_filtered_successors()
         for (const auto action : schemas)
         {
             SCOPED_TRACE(action.get_name().str());
-            auto expected_successors = p::LabeledNodeList<p::StateView<Kind>> {};
-            auto expected_nodes = p::NodeList<p::StateView<Kind>> {};
+            auto expected_successors = p::LabeledNodeList<Kind> {};
+            auto expected_nodes = p::NodeList<Kind> {};
             auto expected_bindings = std::vector<fp::ActionBindingView> {};
             for (const auto& successor : all_successors)
                 if (successor.label.get_relation().get_index() == action.get_index())
@@ -472,7 +473,7 @@ void expect_schema_queries_match_filtered_successors()
                                                                    *axiom_evaluator,
                                                                    [&](auto successor)
                                                                    {
-                                                                       static_assert(std::same_as<decltype(successor), p::LabeledNode<S>>);
+                                                                       static_assert(std::same_as<decltype(successor), p::LabeledNode<Kind, S>>);
                                                                        EXPECT_TRUE(same_successor(successor, successors.at(streamed++)));
                                                                        return true;
                                                                    }));
@@ -491,7 +492,7 @@ void expect_schema_queries_match_filtered_successors()
             EXPECT_EQ(streamed, nodes.empty() ? 0 : 1);
 
             auto callback_bindings = std::vector<fp::ActionBindingView> {};
-            auto callback_successors = p::LabeledNodeList<S> {};
+            auto callback_successors = p::LabeledNodeList<Kind, S> {};
             EXPECT_TRUE(generator->for_each_applicable_action_binding(
                 initial_node,
                 action,
@@ -563,7 +564,7 @@ void expect_schema_queries_match_filtered_successors()
                 }
             }
         }
-        auto callback_successors = p::LabeledNodeList<S> {};
+        auto callback_successors = p::LabeledNodeList<Kind, S> {};
         EXPECT_TRUE(generator->for_each_applicable_action_binding(
             initial_node,
             [&](auto binding)

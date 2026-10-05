@@ -25,44 +25,63 @@ concept StateIndexContract = std::constructible_from<ygg::Index<p::State<Kind>>,
 
 using StateKinds = ygg::TypeList<tyr::GroundTag, tyr::LiftedTag>;
 static_assert([]<typename... Kinds>(ygg::TypeList<Kinds...>) { return (StateIndexContract<Kinds> && ...); }(StateKinds {}));
-static_assert([]<typename... Kinds>(ygg::TypeList<Kinds...>)
-              { return (std::totally_ordered<p::PackedStateView<Kinds>> && ...); }(StateKinds {}));
-static_assert([]<typename... Kinds>(ygg::TypeList<Kinds...>)
-              { return ((p::StateViewConcept<p::StateView<Kinds>> && p::StateViewConcept<p::BuilderStateView<Kinds>>) && ...); }(StateKinds {}));
+static_assert([]<typename... Kinds>(ygg::TypeList<Kinds...>) { return (std::totally_ordered<p::PackedStateView<Kinds>> && ...); }(StateKinds {}));
+static_assert(
+    []<typename... Kinds>(ygg::TypeList<Kinds...>)
+    {
+        return ((p::StateViewConcept<p::StateView<Kinds>> && p::StateViewConcept<p::BuilderStateView<Kinds>> && p::StateViewConcept<p::StateView<Kinds>&, Kinds>
+                 && p::StateViewConcept<const p::StateView<Kinds>&, Kinds> && p::StateViewConcept<p::StateView<Kinds>&&, Kinds>
+                 && p::StateViewConcept<p::BuilderStateView<Kinds>&, Kinds> && p::StateViewConcept<const p::BuilderStateView<Kinds>&, Kinds>
+                 && p::StateViewConcept<p::BuilderStateView<Kinds>&&, Kinds> && !p::StateViewConcept<volatile p::StateView<Kinds>&, Kinds>
+                 && !p::StateViewConcept<volatile p::BuilderStateView<Kinds>&, Kinds>)
+                && ...);
+    }(StateKinds {}));
 
 template<typename T>
-concept HasStateIdentity = requires(const T& state) { state.get_index(); }
-                          || requires(const T& state) { state.pack(); }
-                          || requires(const T& state) { state.get_state_repository(); };
+concept HasStateIdentity =
+    requires(const T& state) { state.get_index(); } || requires(const T& state) { state.pack(); } || requires(const T& state) { state.get_state_repository(); };
 
 static_assert([]<typename... Kinds>(ygg::TypeList<Kinds...>)
               { return ((!HasStateIdentity<p::BuilderStateView<Kinds>> && !p::StateViewConcept<ygg::Builder<p::State<Kinds>>>) && ...); }(StateKinds {}));
 static_assert(!p::StateViewConcept<int>);
+static_assert(!p::StateViewConcept<const int&>);
 static_assert(p::StateViewConcept<p::BuilderStateView<tyr::GroundTag>, tyr::GroundTag>);
 static_assert(p::StateViewConcept<p::StateView<tyr::LiftedTag>, tyr::LiftedTag>);
 static_assert(!p::StateViewConcept<p::BuilderStateView<tyr::GroundTag>, tyr::LiftedTag>);
 static_assert(!p::StateViewConcept<p::StateView<tyr::LiftedTag>, tyr::GroundTag>);
+static_assert(!p::StateViewConcept<const p::BuilderStateView<tyr::GroundTag>&, tyr::LiftedTag>);
+static_assert(!p::StateViewConcept<const p::StateView<tyr::LiftedTag>&, tyr::GroundTag>);
 
-template<typename T>
-concept NodeState = requires { typename p::Node<T>; };
+template<typename Kind, typename State>
+concept NodeState = requires { typename p::Node<Kind, State>; };
+
+template<typename Kind, typename State>
+concept LabeledNodeState = requires { typename p::LabeledNode<Kind, State>; };
 
 template<typename T>
 concept Packable = requires(const T& value) { value.pack(); };
 
-static_assert([]<typename... Kinds>(ygg::TypeList<Kinds...>)
-              {
-                  return ((p::NodeConcept<p::Node<p::StateView<Kinds>>> && std::totally_ordered<p::Node<p::StateView<Kinds>>>
-                           && Packable<p::Node<p::StateView<Kinds>>> && Packable<p::LabeledNode<p::StateView<Kinds>>>)
-                          && ...);
-              }(StateKinds {}));
-static_assert([]<typename... Kinds>(ygg::TypeList<Kinds...>)
-              {
-                  return ((p::NodeConcept<p::Node<p::BuilderStateView<Kinds>>> && !ygg::Identifiable<p::Node<p::BuilderStateView<Kinds>>>
-                           && !std::equality_comparable<p::Node<p::BuilderStateView<Kinds>>> && !Packable<p::Node<p::BuilderStateView<Kinds>>>
-                           && !Packable<p::LabeledNode<p::BuilderStateView<Kinds>>> && !NodeState<Kinds>)
-                          && ...);
-              }(StateKinds {}));
-static_assert(!NodeState<int>);
+static_assert(
+    []<typename... Kinds>(ygg::TypeList<Kinds...>)
+    {
+        return ((p::NodeConcept<p::Node<Kinds>, Kinds> && std::totally_ordered<p::Node<Kinds>> && Packable<p::Node<Kinds>> && Packable<p::LabeledNode<Kinds>>)
+                && ...);
+    }(StateKinds {}));
+static_assert(
+    []<typename... Kinds>(ygg::TypeList<Kinds...>)
+    {
+        return ((p::NodeConcept<p::Node<Kinds, p::BuilderStateView<Kinds>>, Kinds> && !ygg::Identifiable<p::Node<Kinds, p::BuilderStateView<Kinds>>>
+                 && !std::equality_comparable<p::Node<Kinds, p::BuilderStateView<Kinds>>> && !Packable<p::Node<Kinds, p::BuilderStateView<Kinds>>>
+                 && !Packable<p::LabeledNode<Kinds, p::BuilderStateView<Kinds>>> && !NodeState<Kinds, Kinds>)
+                && ...);
+    }(StateKinds {}));
+static_assert(!NodeState<int, int>);
+static_assert(!NodeState<tyr::GroundTag, p::StateView<tyr::LiftedTag>>);
+static_assert(!NodeState<tyr::LiftedTag, p::BuilderStateView<tyr::GroundTag>>);
+static_assert(!LabeledNodeState<tyr::GroundTag, p::StateView<tyr::LiftedTag>>);
+static_assert(!LabeledNodeState<tyr::LiftedTag, p::BuilderStateView<tyr::GroundTag>>);
+static_assert(!p::NodeConcept<p::Node<tyr::GroundTag>, tyr::LiftedTag>);
+static_assert(!p::NodeConcept<int, tyr::GroundTag>);
 
 namespace tyr::tests
 {
@@ -144,11 +163,30 @@ void expect_borrowed_builder_view(const p::TaskPtr<Kind>& task, const p::StateVi
     const auto node = p::Node(state, 3);
     using BorrowedNode = std::remove_cvref_t<decltype(node)>;
     static_assert(std::same_as<typename BorrowedNode::StateType, p::BuilderStateView<Kind>>);
-    static_assert(std::same_as<typename BorrowedNode::KindType, Kind>);
-    static_assert(std::same_as<typename BorrowedNode::TaskType, p::Task<Kind>>);
+    static_assert(std::same_as<BorrowedNode, p::Node<Kind, p::BuilderStateView<Kind>>>);
     const auto labeled = p::LabeledNode { label, node };
-    const auto nodes = p::NodeList<p::BuilderStateView<Kind>> { node };
-    const auto labeled_nodes = p::LabeledNodeList<p::BuilderStateView<Kind>> { labeled };
+    const auto nodes = p::NodeList<Kind, p::BuilderStateView<Kind>> { node };
+    const auto labeled_nodes = p::LabeledNodeList<Kind, p::BuilderStateView<Kind>> { labeled };
+
+    auto binding_data = ygg::Data<formalism::RelationBinding<fp::Action<LiftedTag>>> {};
+    binding_data.relation = label.get_relation().get_index();
+    for (const auto object : label.get_objects())
+        binding_data.objects.push_back(object.get_index());
+    const auto borrowed_label = ygg::make_view(binding_data, label.get_context());
+    const auto borrowed_labeled = p::LabeledNode { borrowed_label, node };
+    const auto indexed_labeled = p::LabeledNode { label, p::Node(registered, 3) };
+    const auto borrowed_indexed_labeled = p::LabeledNode { borrowed_label, indexed_labeled.node };
+    static_assert(std::same_as<decltype(borrowed_labeled), const p::LabeledNode<Kind, p::BuilderStateView<Kind>, fp::ActionBindingDataView>>);
+    static_assert(std::same_as<decltype(borrowed_indexed_labeled), const p::LabeledNode<Kind, p::StateView<Kind>, fp::ActionBindingDataView>>);
+    static_assert(Packable<decltype(indexed_labeled)>);
+    static_assert(!Packable<decltype(borrowed_labeled)> && !Packable<decltype(borrowed_indexed_labeled)>);
+    const auto borrowed_labeled_nodes = p::LabeledNodeList<Kind, p::BuilderStateView<Kind>, fp::ActionBindingDataView> { borrowed_labeled };
+    EXPECT_EQ(&borrowed_labeled_nodes.front().label.get_data(), &binding_data);
+    EXPECT_EQ(&borrowed_indexed_labeled.label.get_data(), &binding_data);
+    EXPECT_EQ(indexed_labeled.pack().unpack().label, label);
+    EXPECT_EQ(fmt::format("{}", borrowed_labeled), fmt::format("{}", labeled));
+    EXPECT_EQ(fmt::format("{}", borrowed_indexed_labeled), fmt::format("{}", indexed_labeled));
+
     EXPECT_EQ(&nodes.front().get_state().get_state_builder(), owned.get());
     EXPECT_EQ(&labeled_nodes.front().node.get_state().get_state_builder(), owned.get());
     EXPECT_EQ(nodes.front().get_metric(), 3);
@@ -381,7 +419,7 @@ void expect_registered_closures_and_transition_costs(const p::TaskPtr<Kind>& tas
         };
         auto generated = pool.get_or_allocate();
         const auto successor = generator->get_successor_node(borrowed, *raise, *generated, *axioms);
-        static_assert(std::same_as<decltype(successor), const p::Node<p::BuilderStateView<Kind>>>);
+        static_assert(std::same_as<decltype(successor), const p::Node<Kind, p::BuilderStateView<Kind>>>);
         EXPECT_EQ(&successor.get_state().get_state_builder(), generated.get());
         expect_same_node(successor, raised);
         EXPECT_TRUE(generated->get_index().is_max());
@@ -393,8 +431,8 @@ void expect_registered_closures_and_transition_costs(const p::TaskPtr<Kind>& tas
         auto states = std::deque<ygg::Builder<p::State<Kind>>> {};
         const auto labeled = generator->get_labeled_successor_nodes(borrowed, states, *axioms);
         const auto nodes = generator->get_successor_nodes(borrowed, states, *axioms);
-        static_assert(std::same_as<decltype(labeled), const p::LabeledNodeList<p::BuilderStateView<Kind>>>);
-        static_assert(std::same_as<decltype(nodes), const p::NodeList<p::BuilderStateView<Kind>>>);
+        static_assert(std::same_as<decltype(labeled), const p::LabeledNodeList<Kind, p::BuilderStateView<Kind>>>);
+        static_assert(std::same_as<decltype(nodes), const p::NodeList<Kind, p::BuilderStateView<Kind>>>);
         ASSERT_EQ(labeled.size(), 2);
         ASSERT_EQ(labeled.size(), expected.size());
         ASSERT_EQ(nodes.size(), expected.size());
@@ -429,7 +467,7 @@ void expect_registered_closures_and_transition_costs(const p::TaskPtr<Kind>& tas
                                                                *axioms,
                                                                [&](auto next)
                                                                {
-                                                                   static_assert(std::same_as<decltype(next), p::LabeledNode<p::BuilderStateView<Kind>>>);
+                                                                   static_assert(std::same_as<decltype(next), p::LabeledNode<Kind, p::BuilderStateView<Kind>>>);
                                                                    EXPECT_EQ(&next.node.get_state().get_state_builder(), generated.get());
                                                                    EXPECT_EQ(next.label, expected.at(visited).label);
                                                                    expect_same_node(next.node, expected.at(visited++).node);
@@ -442,7 +480,7 @@ void expect_registered_closures_and_transition_costs(const p::TaskPtr<Kind>& tas
                                                         *axioms,
                                                         [&](auto next)
                                                         {
-                                                            static_assert(std::same_as<decltype(next), p::Node<p::BuilderStateView<Kind>>>);
+                                                            static_assert(std::same_as<decltype(next), p::Node<Kind, p::BuilderStateView<Kind>>>);
                                                             expect_same_node(next, expected.at(visited++).node);
                                                             return false;
                                                         }));
@@ -537,15 +575,15 @@ TEST(TyrPlanningStateTest, DuplicateStatesRetainClosuresAndIndependentTransition
   (:action disable :parameters () :precondition (on)
     :effect (and (not (on)) (increase (total-cost) 1))))
 )",
-                                                                 "state-closure-domain.pddl")
-                                                          .parse_task(R"(
+                                                                   "state-closure-domain.pddl")
+                                                            .parse_task(R"(
 (define (problem state-closure-problem)
   (:domain state-closure)
   (:init (enabled) (= (step) 1) (= (value) 0) (= (total-cost) 0))
   (:goal (ready))
   (:metric minimize (total-cost)))
 )",
-                                                                      "state-closure-problem.pddl"));
+                                                                        "state-closure-problem.pddl"));
     const auto ground_task = lifted_task->instantiate_ground_task(*ygg::ExecutionContext::create(1)).task;
     ASSERT_TRUE(ground_task);
     for (const auto concurrent : { false, true })

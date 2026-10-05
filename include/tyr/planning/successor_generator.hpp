@@ -73,13 +73,13 @@ template<typename T, typename Kind, typename S = StateView<Kind>>
 concept SuccessorGeneratorConcept = requires(T& r,
                                              const T& const_r,
                                              ygg::Index<State<Kind>> state_index,
-                                             const Node<S>& node,
-                                             NodeList<S>& successor_nodes,
-                                             LabeledNodeList<S>& labeled_successor_nodes,
+                                             const Node<Kind, S>& node,
+                                             NodeList<Kind, S>& successor_nodes,
+                                             LabeledNodeList<Kind, S>& labeled_successor_nodes,
                                              PackedNodeList<Kind>& packed_successor_nodes,
                                              PackedLabeledNodeList<Kind>& packed_labeled_successor_nodes,
-                                             const std::function<bool(Node<S>)>& node_callback,
-                                             const std::function<bool(LabeledNode<S>)>& labeled_node_callback,
+                                             const std::function<bool(Node<Kind, S>)>& node_callback,
+                                             const std::function<bool(LabeledNode<Kind, S>)>& labeled_node_callback,
                                              const std::function<bool(formalism::planning::ActionBindingView)>& binding_callback,
                                              std::vector<formalism::planning::ActionBindingView>& action_bindings,
                                              formalism::planning::ActionBindingView binding,
@@ -100,19 +100,19 @@ concept SuccessorGeneratorConcept = requires(T& r,
     { r.check_action_binding(node, action, objects) } -> std::same_as<ActionBindingStatus>;
     { r.check_action_binding(node, binding) } -> std::same_as<ActionBindingStatus>;
     { r.materialize_action_binding(borrowed_binding) } -> std::same_as<formalism::planning::ActionBindingView>;
-    { r.get_successor_node(node, borrowed_binding, successor_storage, axiom_evaluator) } -> std::same_as<Node<S>>;
+    { r.get_successor_node(node, borrowed_binding, successor_storage, axiom_evaluator) } -> std::same_as<Node<Kind, S>>;
     { r.try_get_applicable_action_binding(node, action, objects) } -> std::same_as<ActionBindingResult>;
-    { r.get_initial_node(state_repository, axiom_evaluator) } -> std::same_as<Node<StateView<Kind>>>;
-    { r.get_successor_nodes(node, successor_list_storage, axiom_evaluator) } -> std::same_as<NodeList<S>>;
+    { r.get_initial_node(state_repository, axiom_evaluator) } -> std::same_as<Node<Kind>>;
+    { r.get_successor_nodes(node, successor_list_storage, axiom_evaluator) } -> std::same_as<NodeList<Kind, S>>;
     { r.get_successor_nodes(node, successor_list_storage, axiom_evaluator, successor_nodes) } -> std::same_as<void>;
-    { r.get_labeled_successor_nodes(node, successor_list_storage, axiom_evaluator) } -> std::same_as<LabeledNodeList<S>>;
+    { r.get_labeled_successor_nodes(node, successor_list_storage, axiom_evaluator) } -> std::same_as<LabeledNodeList<Kind, S>>;
     { r.get_labeled_successor_nodes(node, successor_list_storage, axiom_evaluator, labeled_successor_nodes) } -> std::same_as<void>;
     { r.get_applicable_action_bindings(node) } -> std::same_as<std::vector<formalism::planning::ActionBindingView>>;
     { r.get_applicable_action_bindings(node, action_bindings) } -> std::same_as<void>;
-    { r.get_successor_node(node, binding, successor_storage, axiom_evaluator) } -> std::same_as<Node<S>>;
+    { r.get_successor_node(node, binding, successor_storage, axiom_evaluator) } -> std::same_as<Node<Kind, S>>;
     { r.generate_successor_state(node, binding, state_builder) } -> std::same_as<ygg::float_t>;
-    { r.finalize_successor_state(state_repository, axiom_evaluator, std::move(state_builder_ptr), auxiliary_value) } -> std::same_as<Node<StateView<Kind>>>;
-    { r.get_node(state_repository, state_index) } -> std::same_as<Node<StateView<Kind>>>;
+    { r.finalize_successor_state(state_repository, axiom_evaluator, std::move(state_builder_ptr), auxiliary_value) } -> std::same_as<Node<Kind>>;
+    { r.get_node(state_repository, state_index) } -> std::same_as<Node<Kind>>;
     { r.get_packed_initial_node(state_repository, axiom_evaluator) } -> std::same_as<PackedNode<Kind>>;
     { r.get_packed_node(state_repository, state_index) } -> std::same_as<PackedNode<Kind>>;
     { r.get_packed_successor_node(node, binding, state_repository, axiom_evaluator) } -> std::same_as<PackedNode<Kind>>;

@@ -81,7 +81,7 @@ struct PlanReconstructionPolicy<ParallelSearch>
 
         auto labels = std::vector<formalism::planning::ActionBindingView> {};
         labels.reserve(trajectory.size() - 1);
-        auto successors = LabeledNodeList<StateView<Kind>> {};
+        auto successors = LabeledNodeList<Kind> {};
 
         for (size_t i = 1; i < trajectory.size(); ++i)
         {
@@ -91,7 +91,7 @@ struct PlanReconstructionPolicy<ParallelSearch>
             const auto source_state = source_worker.state_repository.get_registered_state(trajectory[i - 1].state);
             const auto target_state = get_worker(trajectory[i], workers).state_repository.get_registered_state(trajectory[i].state);
 
-            source_worker.successor_generator.get_labeled_successor_nodes(Node<StateView<Kind>>(source_state, source_search_node.g_value),
+            source_worker.successor_generator.get_labeled_successor_nodes(Node<Kind>(source_state, source_search_node.g_value),
                                                                           source_worker.state_repository,
                                                                           source_worker.axiom_evaluator,
                                                                           successors);
@@ -111,11 +111,11 @@ struct PlanReconstructionPolicy<ParallelSearch>
         }
 
         auto start_node = materialize(trajectory.front(), workers, caller_state_repository, caller_axiom_evaluator);
-        auto labeled_trajectory = LabeledNodeList<StateView<Kind>> {};
+        auto labeled_trajectory = LabeledNodeList<Kind> {};
         labeled_trajectory.reserve(labels.size());
         for (size_t i = 0; i < labels.size(); ++i)
             labeled_trajectory.push_back(
-                LabeledNode<StateView<Kind>> { labels[i], materialize(trajectory[i + 1], workers, caller_state_repository, caller_axiom_evaluator) });
+                LabeledNode<Kind> { labels[i], materialize(trajectory[i + 1], workers, caller_state_repository, caller_axiom_evaluator) });
 
         return Plan<Kind>(std::move(start_node), std::move(labeled_trajectory));
     }
@@ -146,15 +146,15 @@ private:
     }
 
     template<TaskKind Kind, SearchNodeConcept<WorkerStateIndex<Kind>> SearchNode>
-    static Node<StateView<Kind>> materialize(WorkerStateIndex<Kind> state,
-                                             std::span<const WorkerSearchSpaceView<Kind, SearchNode>> workers,
-                                             StateRepository<Kind>& caller_repository,
-                                             AxiomEvaluator<Kind>& caller_axiom_evaluator)
+    static Node<Kind> materialize(WorkerStateIndex<Kind> state,
+                                  std::span<const WorkerSearchSpaceView<Kind, SearchNode>> workers,
+                                  StateRepository<Kind>& caller_repository,
+                                  AxiomEvaluator<Kind>& caller_axiom_evaluator)
     {
         const auto& worker = get_worker(state, workers);
         auto source_state = worker.state_repository.get_registered_state(state.state);
         const auto g_value = get_search_node(state, workers).g_value;
-        return Node<StateView<Kind>>(materialize_state(source_state, caller_repository, caller_axiom_evaluator), g_value);
+        return Node<Kind>(materialize_state(source_state, caller_repository, caller_axiom_evaluator), g_value);
     }
 };
 

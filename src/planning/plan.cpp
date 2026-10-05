@@ -29,25 +29,25 @@ namespace tyr::planning
 {
 
 template<TaskKind Kind>
-Plan<Kind>::Plan(Node<StateView<Kind>> start_node) : Plan(start_node, LabeledNodeList<StateView<Kind>> {})
+Plan<Kind>::Plan(Node<Kind> start_node) : Plan(start_node, LabeledNodeList<Kind> {})
 {
 }
 
 template<TaskKind Kind>
-Plan<Kind>::Plan(Node<StateView<Kind>> start_node, LabeledNodeList<StateView<Kind>> labeled_succ_nodes) :
+Plan<Kind>::Plan(Node<Kind> start_node, LabeledNodeList<Kind> labeled_succ_nodes) :
     m_start_node(std::move(start_node)),
     m_labeled_succ_nodes(std::move(labeled_succ_nodes))
 {
 }
 
 template<TaskKind Kind>
-const Node<StateView<Kind>>& Plan<Kind>::get_start_node() const noexcept
+const Node<Kind>& Plan<Kind>::get_start_node() const noexcept
 {
     return m_start_node;
 }
 
 template<TaskKind Kind>
-const LabeledNodeList<StateView<Kind>>& Plan<Kind>::get_labeled_succ_nodes() const noexcept
+const LabeledNodeList<Kind>& Plan<Kind>::get_labeled_succ_nodes() const noexcept
 {
     return m_labeled_succ_nodes;
 }
@@ -125,7 +125,7 @@ bool PackedPlan<Kind>::empty() const noexcept
 template<TaskKind Kind>
 Plan<Kind> PackedPlan<Kind>::unpack() const
 {
-    auto nodes = LabeledNodeList<StateView<Kind>> {};
+    auto nodes = LabeledNodeList<Kind> {};
     nodes.reserve(m_labeled_succ_nodes.size());
     for (const auto& node : m_labeled_succ_nodes)
         nodes.push_back(node.unpack());

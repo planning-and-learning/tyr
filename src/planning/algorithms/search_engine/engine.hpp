@@ -88,7 +88,7 @@ public:
 
     struct RoutedSuccessor
     {
-        LabeledNode<StateView<Kind>> labeled_node;
+        LabeledNode<Kind> labeled_node;
         typename SearchPolicy::SuccessorMetadata metadata;
         ygg::float_t g_value;
         bool is_goal;
@@ -311,7 +311,7 @@ private:
 
         if (root_worker.goal_strategy->is_dynamic_goal_satisfied(m_start_node.get_state(), m_start_node.get_state()))
         {
-            m_result.plan = Plan(m_start_node, LabeledNodeList<StateView<Kind>> {});
+            m_result.plan = Plan(m_start_node, LabeledNodeList<Kind> {});
             m_result.goal_node = m_start_node;
             finalize(SearchStatus::SOLVED);
             call_root_event([&](auto& handler) { handler.on_solved(*m_result.plan); });
@@ -398,7 +398,7 @@ private:
 
     bool expand_one(WorkerData& worker)
     {
-        auto prepared = std::optional<Node<StateView<Kind>>> {};
+        auto prepared = std::optional<Node<Kind>> {};
         auto claimed = false;
         m_execution.with_worker_lock(
             worker,
@@ -422,7 +422,7 @@ private:
                 auto& search_node = worker.get_search_node(entry.state);
                 if (!m_execution.running() || is_stale(search_node.status))
                     return;
-                auto node = Node<StateView<Kind>>(std::move(state), search_node.g_value);
+                auto node = Node<Kind>(std::move(state), search_node.g_value);
 
                 const auto expansion_result = worker.search.prepare_expansion(
                     entry,
@@ -456,10 +456,8 @@ private:
     }
 
     template<typename EvaluateHeuristic>
-    AcceptanceResult accept_successor(WorkerData& worker,
-                                      const Node<StateView<Kind>>& source_node,
-                                      const RoutedSuccessor& routed_successor,
-                                      EvaluateHeuristic&& evaluate_heuristic)
+    AcceptanceResult
+    accept_successor(WorkerData& worker, const Node<Kind>& source_node, const RoutedSuccessor& routed_successor, EvaluateHeuristic&& evaluate_heuristic)
     {
         const auto& labeled_successor = routed_successor.labeled_node;
         const auto& successor_node = labeled_successor.node;
@@ -473,13 +471,12 @@ private:
             return AcceptanceResult::TERMINAL;
         }
 
-        const auto normalized_node = Node<StateView<Kind>>(successor_state, routed_successor.g_value);
+        const auto normalized_node = Node<Kind>(successor_state, routed_successor.g_value);
         const auto emit_transition = [&](TransitionOutcome outcome)
         {
-            call_worker_event(
-                worker,
-                [&](auto& handler)
-                { handler.on_generate_transition(source_node, LabeledNode<StateView<Kind>> { labeled_successor.label, normalized_node }, outcome); });
+            call_worker_event(worker,
+                              [&](auto& handler)
+                              { handler.on_generate_transition(source_node, LabeledNode<Kind> { labeled_successor.label, normalized_node }, outcome); });
         };
         return worker.search.accept_successor(*this,
                                               worker,
@@ -492,7 +489,7 @@ private:
                                               emit_transition);
     }
 
-    void expand_successors(WorkerData& worker, const Node<StateView<Kind>>& node)
+    void expand_successors(WorkerData& worker, const Node<Kind>& node)
     {
         if (m_options.shuffle_labeled_succ_nodes)
             ygg::portable_shuffle(worker.applicable_actions.begin(), worker.applicable_actions.end(), worker.rng);
@@ -516,7 +513,7 @@ private:
         return planning::evaluate_successor_metric(m_task, state, auxiliary_value);
     }
 
-    void solve(WorkerData& worker, const Node<StateView<Kind>>& node)
+    void solve(WorkerData& worker, const Node<Kind>& node)
     {
         const auto goal = WorkerStateIndex<Kind> { worker.index, node.get_state().get_index() };
         if (m_execution.consider_goal(goal, node.get_metric(), SearchPolicy::terminate_on_goal))
@@ -610,7 +607,7 @@ private:
     const Options& m_options;
     typename SearchPolicy::EventHandlerPtr m_event_handler;
     std::chrono::steady_clock::time_point m_search_start_time_point;
-    Node<StateView<Kind>> m_start_node;
+    Node<Kind> m_start_node;
     ExecutionPolicy m_execution;
     Workers m_workers;
     SearchResult<Kind> m_result;
