@@ -64,8 +64,10 @@ public:
     ActionBindingStatus
     check_action_binding(const Node<GroundTag, S>& node, formalism::planning::ActionView<LiftedTag> action, formalism::planning::ObjectSpanView objects);
 
-    template<StateViewConcept<GroundTag> S>
-    ActionBindingStatus check_action_binding(const Node<GroundTag, S>& node, formalism::planning::ActionBindingView binding);
+    /// Accepts repository-backed and data-backed action bindings without publishing them.
+    template<StateViewConcept<GroundTag> S,
+             ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding>
+    ActionBindingStatus check_action_binding(const Node<GroundTag, S>& node, Binding binding);
 
     /// Retains a borrowed binding after validating schema, object ownership and arity, without checking applicability.
     formalism::planning::ActionBindingView materialize_action_binding(BorrowedActionBindingView<GroundTag> binding);

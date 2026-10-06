@@ -40,8 +40,6 @@ struct NumericLeaf
 template<typename Operator>
 struct BinaryExpression
 {
-    using OperatorType = Operator;
-
     Operator op;
     NumericLeaf lhs;
     NumericLeaf rhs;
@@ -49,6 +47,11 @@ struct BinaryExpression
     auto get_operator() const noexcept { return op; }
     auto get_lhs() const noexcept { return lhs; }
     auto get_rhs() const noexcept { return rhs; }
+};
+
+struct ReferenceBooleanExpression : BinaryExpression<formalism::BooleanOperatorKind>
+{
+    const auto& get_operator() const noexcept { return op; }
 };
 
 struct MultiExpression
@@ -90,6 +93,11 @@ TEST(TyrDatalogNumericUtilsTest, TraversesExpressionsInDeterministicSupportOrder
     order.clear();
     const auto boolean = BinaryExpression<formalism::BooleanOperatorKind> { formalism::BooleanOperatorKind::Gt, { 1, Interval(8, 8) }, { 2, Interval(3, 3) } };
     EXPECT_TRUE(datalog::evaluate_numeric_expression(boolean, resolve));
+    EXPECT_EQ(order, (std::vector<int> { 2, 1 }));
+
+    order.clear();
+    const auto reference_boolean = ReferenceBooleanExpression { { formalism::BooleanOperatorKind::Eq, { 1, Interval(1, 3) }, { 2, Interval(2, 4) } } };
+    EXPECT_TRUE(datalog::evaluate_numeric_expression(reference_boolean, resolve));
     EXPECT_EQ(order, (std::vector<int> { 2, 1 }));
 
     order.clear();

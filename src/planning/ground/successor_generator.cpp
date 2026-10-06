@@ -430,11 +430,13 @@ SuccessorGenerator<GroundTag>::try_get_applicable_action_binding(const Node<Grou
     return m_impl->try_get_applicable_action_binding(node, action, objects);
 }
 
-template<StateViewConcept<GroundTag> S>
-ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Node<GroundTag, S>& node, fp::ActionBindingView binding)
+template<StateViewConcept<GroundTag> S,
+         ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding>
+ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Node<GroundTag, S>& node, Binding binding)
 {
-    if (!binding.get_context().contains(binding.get_index()))
-        throw std::invalid_argument("SuccessorGenerator: action binding does not belong to its source repository.");
+    if constexpr (requires { binding.get_index(); })
+        if (!binding.get_context().contains(binding.get_index()))
+            throw std::invalid_argument("SuccessorGenerator: action binding does not belong to its source repository.");
     return m_impl->try_get_applicable_action_binding(node, binding.get_relation(), binding.get_objects()).status;
 }
 
@@ -859,6 +861,11 @@ const TaskPtr<GroundTag>& SuccessorGenerator<GroundTag>::get_task() const noexce
 ygg::uint_t SuccessorGenerator<GroundTag>::get_index() const noexcept { return m_impl->index; }
 
 template ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Node<GroundTag>& node, fp::ActionBindingView binding);
+
+template ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Node<GroundTag>& node, fp::ActionBindingDataView binding);
+
+template ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Node<GroundTag, BuilderStateView<GroundTag>>& node,
+                                                                                 fp::ActionBindingDataView binding);
 
 template bool
 SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Node<GroundTag>& node,

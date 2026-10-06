@@ -244,7 +244,7 @@ void expect_schema_queries_match_filtered_successors()
     const auto initial_node = [&]
     {
         if constexpr (Borrowed)
-            return p::Node(ygg::make_view(*owned, *task), registered_initial.get_metric());
+            return p::Node<Kind, p::BuilderStateView<Kind>>(ygg::make_view(*owned, *task), registered_initial.get_metric());
         else
             return registered_initial;
     }();
@@ -399,7 +399,8 @@ void expect_schema_queries_match_filtered_successors()
     {
         ASSERT_EQ(streamed_states.size(), expected_packed.size());
         for (size_t i = 0; i < streamed_states.size(); ++i)
-            EXPECT_TRUE(same_node(p::Node(ygg::make_view(streamed_states[i].first, *task), streamed_states[i].second), expected_packed[i].unpack()));
+            EXPECT_TRUE(same_node(p::Node<Kind, p::BuilderStateView<Kind>>(ygg::make_view(streamed_states[i].first, *task), streamed_states[i].second),
+                                  expected_packed[i].unpack()));
     }
     else
         EXPECT_EQ(packed_nodes, expected_packed);
@@ -596,6 +597,9 @@ void expect_schema_queries_match_filtered_successors()
                 const auto action = binding.get_relation();
                 const auto indices = binding.get_objects().get_data();
                 const auto saved = std::vector<ygg::Index<formalism::Object>>(indices.begin(), indices.end());
+                const auto count_before_check = count_action_bindings(task);
+                EXPECT_EQ(generator->check_action_binding(initial_node, binding), p::ActionBindingStatus::APPLICABLE);
+                EXPECT_EQ(count_action_bindings(task), count_before_check);
                 saw_nullary = saw_nullary || saved.empty();
                 const auto retained = generator->materialize_action_binding(binding);
                 const auto other = all_bindings.front() == retained ? all_bindings.back() : all_bindings.front();
@@ -647,9 +651,12 @@ void expect_schema_queries_match_filtered_successors()
             EXPECT_EQ(calls, 1);
             EXPECT_EQ(count_action_bindings(fresh_task), 0);
             auto scratch = ygg::Builder<p::State<Kind>> {};
-            const auto borrowed_node = p::Node(ygg::make_view(node.get_state().get_state_builder(), *fresh_task), node.get_metric());
+            const auto borrowed_node =
+                p::Node<Kind, p::BuilderStateView<Kind>>(ygg::make_view(node.get_state().get_state_builder(), *fresh_task), node.get_metric());
             const auto discard = [&](p::BorrowedActionBindingView<Kind> binding)
             {
+                EXPECT_EQ(fresh_generator->check_action_binding(borrowed_node, binding), p::ActionBindingStatus::APPLICABLE);
+                EXPECT_EQ(count_action_bindings(fresh_task), 0);
                 static_cast<void>(fresh_generator->get_successor_node(borrowed_node, binding, scratch, *fresh_axioms));
                 EXPECT_EQ(count_action_bindings(fresh_task), 0);
                 return true;
@@ -682,6 +689,9 @@ void expect_schema_queries_match_filtered_successors()
     rejected_data.relation = (*offered_alias).get_index();
     for (const auto index : aliased_indices)
         rejected_data.objects.push_back(index);
+    const auto count_before_check = count_action_bindings(task);
+    EXPECT_EQ(source->check_action_binding(initial_node, ygg::make_view(rejected_data, *task->get_repository())), p::ActionBindingStatus::INAPPLICABLE);
+    EXPECT_EQ(count_action_bindings(task), count_before_check);
     const auto rejected_binding = fp::insert(*task->get_repository(), rejected_data).first;
     const auto rejected_count = count_action_bindings(task);
     EXPECT_EQ(source->check_action_binding(initial_node, rejected_binding), p::ActionBindingStatus::INAPPLICABLE);
@@ -711,6 +721,7 @@ void expect_schema_queries_match_filtered_successors()
     foreign_data.relation = (*foreign_alias).get_index();
     for (const auto index : distinct_indices)
         foreign_data.objects.push_back(index);
+    EXPECT_THROW(source->check_action_binding(initial_node, ygg::make_view(foreign_data, *foreign_task->get_repository())), std::invalid_argument);
     const auto foreign_binding = fp::insert(*foreign_task->get_repository(), foreign_data).first;
     EXPECT_THROW(source->check_action_binding(initial_node, foreign_binding), std::invalid_argument);
     if constexpr (std::same_as<Kind, GroundTag>)
@@ -747,7 +758,7 @@ void expect_schema_queries_match_filtered_successors()
         else
             return foreign_task;
     }();
-    const auto foreign_node = p::Node(ygg::make_view(*owned, *foreign_same_kind), initial_node.get_metric());
+    const auto foreign_node = p::Node<Kind, p::BuilderStateView<Kind>>(ygg::make_view(*owned, *foreign_same_kind), initial_node.get_metric());
     EXPECT_THROW(source->get_applicable_action_bindings(foreign_node), std::invalid_argument);
     EXPECT_THROW(source->for_each_borrowed_applicable_action_binding(foreign_node, [](auto) { return true; }), std::invalid_argument);
     EXPECT_THROW(source->check_action_binding(foreign_node, all_bindings.front()), std::invalid_argument);

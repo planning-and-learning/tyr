@@ -30,6 +30,7 @@
 #include <type_traits>
 #include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
+#include <yggdrasil/core/concepts.hpp>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/core/types.hpp>
 
@@ -53,14 +54,16 @@ auto evaluate(Expression expression, ResolveTerm& resolve_term)
         return ygg::visit([&](const auto child) { return evaluate(child, resolve_term); }, expression.get_variant());
     }
     else if constexpr (requires {
-                           typename Type::OperatorType;
+                           expression.get_operator();
                            expression.get_lhs();
                            expression.get_rhs();
                        })
     {
         const auto rhs = evaluate(expression.get_rhs(), resolve_term);
         const auto lhs = evaluate(expression.get_lhs(), resolve_term);
-        if constexpr (std::same_as<typename Type::OperatorType, formalism::BooleanOperatorKind>)
+        if constexpr (requires {
+                          { expression.get_operator() } -> ygg::SameAsIgnoringCvref<formalism::BooleanOperatorKind>;
+                      })
             return formalism::apply_existential(expression.get_operator(), lhs, rhs);
         else
             return formalism::apply(expression.get_operator(), lhs, rhs);

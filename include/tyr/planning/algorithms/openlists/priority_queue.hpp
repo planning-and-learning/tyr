@@ -28,7 +28,6 @@ namespace tyr::planning
 
 template<typename T>
 concept IsPriorityQueueEntry = requires(const T a) {
-    typename T::KeyType;
     typename T::ItemType;
     { a.get_key() } -> std::totally_ordered;
     { a.get_item() };
@@ -45,7 +44,6 @@ private:
 
 public:
     using EntryType = E;
-    using KeyType = typename E::KeyType;
     using ItemType = typename E::ItemType;
 
     void insert(E entry) { m_priority_queue.push(std::move(entry)); }

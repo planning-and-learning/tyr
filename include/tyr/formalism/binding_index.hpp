@@ -23,12 +23,10 @@
 
 namespace tyr::formalism
 {
-template<typename Tag, std::ranges::forward_range BindingRange>
-    requires std::same_as<std::remove_cvref_t<std::ranges::range_reference_t<BindingRange>>, ygg::Index<Row>>
+template<typename Tag, typename BindingRange>
 using RelationBindingsForwardRange = ::ygg::formalism::RelationBindingsForwardRange<Tag, ObjectTag, BindingRange>;
 
-template<typename Tag, std::ranges::random_access_range BindingRange>
-    requires std::same_as<std::remove_cvref_t<std::ranges::range_reference_t<BindingRange>>, ygg::Index<Row>>
+template<typename Tag, typename BindingRange>
 using RelationBindingsRandomAccessRange = ::ygg::formalism::RelationBindingsRandomAccessRange<Tag, ObjectTag, BindingRange>;
 }
 

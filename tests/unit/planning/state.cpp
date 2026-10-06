@@ -35,6 +35,19 @@ private:
     using TaskType = void;
 };
 
+template<p::IterableViewStateConcept State>
+struct StateFormattingView
+{
+    const State& state;
+
+    auto get_static_atoms_view() const { return state.get_static_atoms_view(); }
+    auto get_fluent_facts_view() const { return state.get_fluent_facts_view(); }
+    auto get_fluent_atoms_view() const { return state.get_fluent_atoms_view(); }
+    auto get_derived_atoms_view() const { return state.get_derived_atoms_view(); }
+    auto get_static_fterm_values_view() const { return state.get_static_fterm_values_view(); }
+    auto get_fluent_fterm_values_view() const { return state.get_fluent_fterm_values_view(); }
+};
+
 template<tyr::TaskKind Kind>
 class BuilderWithoutTaskType : public ygg::Builder<p::State<Kind>>
 {
@@ -113,6 +126,42 @@ static_assert(
                  && !p::StateBuilderConcept<volatile BuilderWithoutTaskType<Kinds>&, Kinds>)
                 && ...);
     }(StateKinds {}));
+
+template<tyr::TaskKind Kind>
+struct NodeWithoutMetadata
+{
+    StateWithoutMetadata<p::StateView<Kind>> get_state() const;
+    ygg::float_t get_metric() const;
+};
+
+struct NodeWithMutableState : NodeWithoutMetadata<tyr::GroundTag>
+{
+    p::StateView<tyr::GroundTag> get_state();
+};
+
+static_assert(
+    []<typename... Kinds>(ygg::TypeList<Kinds...>)
+    {
+        return ((p::NodeConcept<NodeWithoutMetadata<Kinds>, Kinds> && p::NodeConcept<NodeWithoutMetadata<Kinds>&, Kinds>
+                 && p::NodeConcept<const NodeWithoutMetadata<Kinds>&, Kinds> && p::NodeConcept<NodeWithoutMetadata<Kinds>&&, Kinds>
+                 && !p::NodeConcept<volatile NodeWithoutMetadata<Kinds>&, Kinds>)
+                && ...);
+    }(StateKinds {}));
+template<tyr::TaskKind Kind>
+consteval bool concrete_node_borrows_state()
+{
+    return requires(const p::Node<Kind>& node, const p::Node<Kind, p::BuilderStateView<Kind>>& builder_node) {
+        { node.get_state() } -> std::same_as<const p::StateView<Kind>&>;
+        { builder_node.get_state() } -> std::same_as<const p::BuilderStateView<Kind>&>;
+    };
+}
+
+static_assert(concrete_node_borrows_state<tyr::GroundTag>());
+static_assert(concrete_node_borrows_state<tyr::LiftedTag>());
+static_assert(!p::NodeConcept<NodeWithoutMetadata<tyr::GroundTag>, tyr::LiftedTag>);
+static_assert(!p::NodeConcept<NodeWithoutMetadata<tyr::GroundTag>, void>);
+static_assert(!p::NodeConcept<NodeWithMutableState, tyr::GroundTag>);
+static_assert(!p::NodeConcept<NodeWithMutableState&, tyr::GroundTag>);
 
 template<typename Kind, typename State>
 concept NodeState = requires { typename p::Node<Kind, State>; };
@@ -222,15 +271,18 @@ void expect_borrowed_builder_view(const p::TaskPtr<Kind>& task, const p::StateVi
     *owned = registered.get_state_builder();
     const auto state = ygg::make_view(*owned, *task);
     static_assert(std::same_as<decltype(state), const p::BuilderStateView<Kind>>);
+    const auto formatting_view = StateFormattingView<p::BuilderStateView<Kind>> { state };
+    static_assert(p::IterableViewStateConcept<decltype(formatting_view)>);
+    static_assert(!p::StateViewConcept<decltype(formatting_view), Kind>);
+    EXPECT_EQ(fmt::format("{}", formatting_view), fmt::format("{}", state));
     const auto markerless_state = StateWithoutMetadata(state);
     const auto markerless_node = p::Node<Kind, StateWithoutMetadata<p::BuilderStateView<Kind>>>(markerless_state, 3);
     EXPECT_EQ(&markerless_node.get_state().get_task(), task.get());
     EXPECT_TRUE(std::ranges::equal(p::get_atoms_view<Kind, formalism::FluentTag>(markerless_state), state.get_fluent_atoms_view()));
-    const auto node = p::Node(state, 3);
+    const auto node = p::Node<Kind, p::BuilderStateView<Kind>>(state, 3);
     using BorrowedNode = std::remove_cvref_t<decltype(node)>;
     static_assert(std::same_as<typename BorrowedNode::StateType, p::BuilderStateView<Kind>>);
-    static_assert(std::same_as<BorrowedNode, p::Node<Kind, p::BuilderStateView<Kind>>>);
-    const auto labeled = p::LabeledNode { label, node };
+    const auto labeled = p::LabeledNode<Kind, p::BuilderStateView<Kind>> { label, node };
     const auto nodes = p::NodeList<Kind, p::BuilderStateView<Kind>> { node };
     const auto labeled_nodes = p::LabeledNodeList<Kind, p::BuilderStateView<Kind>> { labeled };
 
@@ -239,11 +291,9 @@ void expect_borrowed_builder_view(const p::TaskPtr<Kind>& task, const p::StateVi
     for (const auto object : label.get_objects())
         binding_data.objects.push_back(object.get_index());
     const auto borrowed_label = ygg::make_view(binding_data, label.get_context());
-    const auto borrowed_labeled = p::LabeledNode { borrowed_label, node };
-    const auto indexed_labeled = p::LabeledNode { label, p::Node(registered, 3) };
-    const auto borrowed_indexed_labeled = p::LabeledNode { borrowed_label, indexed_labeled.node };
-    static_assert(std::same_as<decltype(borrowed_labeled), const p::LabeledNode<Kind, p::BuilderStateView<Kind>, fp::ActionBindingDataView>>);
-    static_assert(std::same_as<decltype(borrowed_indexed_labeled), const p::LabeledNode<Kind, p::StateView<Kind>, fp::ActionBindingDataView>>);
+    const auto borrowed_labeled = p::LabeledNode<Kind, p::BuilderStateView<Kind>, fp::ActionBindingDataView> { borrowed_label, node };
+    const auto indexed_labeled = p::LabeledNode<Kind> { label, p::Node<Kind>(registered, 3) };
+    const auto borrowed_indexed_labeled = p::LabeledNode<Kind, p::StateView<Kind>, fp::ActionBindingDataView> { borrowed_label, indexed_labeled.node };
     static_assert(Packable<decltype(indexed_labeled)>);
     static_assert(!Packable<decltype(borrowed_labeled)> && !Packable<decltype(borrowed_indexed_labeled)>);
     const auto borrowed_labeled_nodes = p::LabeledNodeList<Kind, p::BuilderStateView<Kind>, fp::ActionBindingDataView> { borrowed_labeled };
@@ -474,7 +524,7 @@ void expect_registered_closures_and_transition_costs(const p::TaskPtr<Kind>& tas
         auto owned = pool.get_or_allocate();
         *owned = cheap->node.get_state().get_state_builder();
         owned->set(ygg::Index<p::State<Kind>> {});
-        const auto borrowed = p::Node(ygg::make_view(*owned, *task), cheap->node.get_metric());
+        const auto borrowed = p::Node<Kind, p::BuilderStateView<Kind>>(ygg::make_view(*owned, *task), cheap->node.get_metric());
         EXPECT_EQ(generator->get_applicable_action_bindings(borrowed), bindings);
         const auto expect_same_node = [](const auto& actual, const auto& expected)
         {

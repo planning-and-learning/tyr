@@ -33,6 +33,7 @@
 #include <yggdrasil/containers/span.hpp>
 #include <yggdrasil/core/concepts.hpp>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/binding_view.hpp>
 
 namespace tyr::planning
 {
@@ -80,6 +81,7 @@ concept SuccessorGeneratorConcept = requires(T& r,
                                              const std::function<bool(formalism::planning::ActionBindingView)>& binding_callback,
                                              std::vector<formalism::planning::ActionBindingView>& action_bindings,
                                              formalism::planning::ActionBindingView binding,
+                                             formalism::planning::ActionBindingDataView binding_data,
                                              BorrowedActionBindingView<Kind> borrowed_binding,
                                              const std::function<bool(BorrowedActionBindingView<Kind>)>& borrowed_binding_callback,
                                              formalism::planning::ActionView<LiftedTag> action,
@@ -96,6 +98,7 @@ concept SuccessorGeneratorConcept = requires(T& r,
     requires StateViewConcept<S, Kind>;
     { r.check_action_binding(node, action, objects) } -> std::same_as<ActionBindingStatus>;
     { r.check_action_binding(node, binding) } -> std::same_as<ActionBindingStatus>;
+    { r.check_action_binding(node, binding_data) } -> std::same_as<ActionBindingStatus>;
     { r.materialize_action_binding(borrowed_binding) } -> std::same_as<formalism::planning::ActionBindingView>;
     { r.get_successor_node(node, borrowed_binding, successor_storage, axiom_evaluator) } -> std::same_as<Node<Kind, S>>;
     { r.try_get_applicable_action_binding(node, action, objects) } -> std::same_as<ActionBindingResult>;

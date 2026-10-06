@@ -115,7 +115,7 @@ public:
 
     void clear()
     {
-        std::apply([](auto&&... queues) { return (queues.get().clear() && ...); }, m_queues);
+        std::apply([](auto&&... queues) { (queues.get().clear(), ...); }, m_queues);
     }
 
     bool empty() const

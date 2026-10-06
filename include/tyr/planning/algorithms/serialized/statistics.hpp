@@ -18,21 +18,21 @@
 #ifndef TYR_PLANNING_ALGORITHMS_SERIALIZED_STATISTICS_HPP_
 #define TYR_PLANNING_ALGORITHMS_SERIALIZED_STATISTICS_HPP_
 
-#include "tyr/planning/algorithms/concepts.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 
+#include <concepts>
 #include <vector>
 #include <yggdrasil/core/types.hpp>
 
 namespace tyr::planning::serialized
 {
 
-template<TaskKind Kind, SolverConcept<Kind> Subsolver>
+template<std::copy_constructible Stats = tyr::planning::Statistics>
 class Statistics
 {
 public:
     using SearchStatistics = tyr::planning::Statistics;
-    using SolverStatistics = typename Subsolver::EventHandlerType::StatisticsType;
+    using SolverStatistics = Stats;
 
 private:
     std::vector<SearchStatistics> m_search_statistics;

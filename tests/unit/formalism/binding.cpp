@@ -7,9 +7,11 @@
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <concepts>
+#include <forward_list>
 #include <gtest/gtest.h>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace f = tyr::formalism;
 namespace fd = tyr::formalism::datalog;
@@ -88,6 +90,21 @@ consteval bool binding_contracts(ygg::TypeList<Relations...>)
 
 static_assert(binding_contracts<fd::Repository>(fd::RelationRepositoryTypes {}));
 static_assert(binding_contracts<fp::Repository>(fp::RelationRepositoryTypes {}));
+
+template<typename Range>
+concept ForwardBindingRange = requires { typename f::RelationBindingsForwardRange<f::Predicate<f::StaticTag>, Range>; };
+
+template<typename Range>
+concept RandomAccessBindingRange = requires { typename f::RelationBindingsRandomAccessRange<f::Predicate<f::StaticTag>, Range>; };
+
+static_assert(ForwardBindingRange<std::vector<ygg::Index<f::Row>>>);
+static_assert(RandomAccessBindingRange<std::vector<ygg::Index<f::Row>>>);
+static_assert(ForwardBindingRange<std::forward_list<ygg::Index<f::Row>>>);
+static_assert(!RandomAccessBindingRange<std::forward_list<ygg::Index<f::Row>>>);
+static_assert(!ForwardBindingRange<std::vector<int>>);
+static_assert(!RandomAccessBindingRange<std::vector<int>>);
+static_assert(!ForwardBindingRange<int>);
+static_assert(!RandomAccessBindingRange<int>);
 
 using Binding = f::RelationBinding<f::Predicate<f::StaticTag>>;
 static_assert(std::same_as<Binding, ygg::formalism::RelationBinding<f::Predicate<f::StaticTag>, f::ObjectTag>>);

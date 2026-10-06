@@ -29,23 +29,24 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <concepts>
 #include <cstddef>
+#include <functional>
 #include <limits>
 #include <optional>
 #include <stdexcept>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
 namespace tyr::planning::serialized
 {
 
-template<TaskKind Kind, SolverConcept<Kind> Subsolver>
+template<TaskKind Kind, std::copy_constructible Stats = tyr::planning::Statistics>
 struct Options
 {
     /// Optional initial node for the first subsearch; when a subsearch runs, it must belong to the subsolver's task.
     std::optional<Node<Kind>> start_node = std::nullopt;
-    EventHandlerPtr<Kind, Subsolver> event_handler = nullptr;
+    EventHandlerPtr<Kind, Stats> event_handler = nullptr;
     GoalStrategyPtr<Kind> subgoal_strategy = nullptr;
     GoalStrategyPtr<Kind> goal_strategy = nullptr;
     ygg::uint_t max_num_subsearches = std::numeric_limits<ygg::uint_t>::max();
@@ -56,19 +57,9 @@ struct Options
 };
 
 template<typename T, typename Kind>
-concept SerializedSolverConcept =
-    TaskKind<Kind> && SolverConcept<T, Kind>
-    && requires(T solver, std::optional<Node<Kind>> start_node, GoalStrategyPtr<Kind> goal_strategy, std::optional<std::chrono::steady_clock::duration> max_time) {
-           typename T::EventHandlerType;
-           typename T::EventHandlerType::StatisticsType;
-           { solver.normalize_start_node(start_node) } -> std::same_as<Node<Kind>>;
-           solver.options.start_node = start_node;
-           solver.options.goal_strategy = goal_strategy;
-           solver.options.search_budget.max_time = max_time;
-       } && (std::same_as<typename T::EventHandlerType::StatisticsType, tyr::planning::Statistics> || requires(T solver) {
-           solver.options.event_handler;
-           solver.options.event_handler->get_statistics();
-       });
+concept SerializedSolverConcept = SolverConcept<T, Kind> && std::copy_constructible<T> && requires(T& solver) {
+    { solver.options } -> SolverOptionsConcept<Kind>;
+};
 
 namespace detail
 {
@@ -83,7 +74,7 @@ SearchResult<Kind> make_empty_result(const Node<Kind>& start_node, SearchStatus 
     return result;
 }
 
-template<TaskKind Kind, SerializedSolverConcept<Kind> Solver>
+template<TaskKind Kind, SolverConcept<Kind> Solver>
 void append_plan(Solver& solver, const Plan<Kind>& subplan, Node<Kind>& current_node, LabeledNodeList<Kind>& labeled_succ_nodes)
 {
     auto previous_metric = solver.normalize_start_node(subplan.get_start_node()).get_metric();
@@ -123,10 +114,13 @@ std::optional<size_t> find_reached_subgoal(const std::vector<ReachedSubgoal<Kind
 
 }
 
-template<TaskKind Kind, SerializedSolverConcept<Kind> Solver>
-SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Solver>& options = Options<Kind, Solver>())
+template<TaskKind Kind, SerializedSolverConcept<Kind> Solver, std::copy_constructible Stats, typename Reader>
+    requires requires(Reader& reader, const Solver& solver, const SearchResult<Kind>& result) {
+        { std::invoke(reader, solver, result) } -> std::same_as<const Stats*>;
+    }
+SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Stats>& options, Reader&& read_statistics)
 {
-    const auto event_handler = options.event_handler ? options.event_handler : DefaultEventHandler<Kind, Solver>::create();
+    const auto event_handler = options.event_handler ? options.event_handler : DefaultEventHandler<Kind, Stats>::create();
 
     if (!options.subgoal_strategy)
         throw std::invalid_argument("serialized::find_solution(...): subgoal strategy is required.");
@@ -136,7 +130,8 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Solver>& op
     auto statistics = tyr::planning::Statistics {};
     auto worker_statistics = std::vector<tyr::planning::Statistics> {};
     const auto search_start = std::chrono::steady_clock::now();
-    const auto max_time = options.max_time ? options.max_time : solver.options.search_budget.max_time;
+    const auto max_time =
+        options.max_time ? options.max_time : std::optional<std::chrono::steady_clock::duration>(std::as_const(solver).options.search_budget.max_time);
     const auto deadline = max_time ? std::make_optional(search_start + *max_time) : std::optional<std::chrono::steady_clock::time_point> {};
     statistics.set_search_start_time_point(search_start);
 
@@ -208,10 +203,8 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Solver>& op
         for (size_t i = 0; i < sub_result.worker_statistics.size(); ++i)
             worker_statistics[i].add(sub_result.worker_statistics[i]);
 
-        if constexpr (std::is_same_v<typename Solver::EventHandlerType::StatisticsType, tyr::planning::Statistics>)
-            event_handler->add_subsearch_statistics(sub_result.statistics, sub_result.statistics);
-        else if (local_solver.options.event_handler)
-            event_handler->add_subsearch_statistics(sub_result.statistics, local_solver.options.event_handler->get_statistics());
+        if (const auto* reported_statistics = std::invoke(read_statistics, std::as_const(local_solver), std::as_const(sub_result)))
+            event_handler->add_subsearch_statistics(sub_result.statistics, *reported_statistics);
 
         event_handler->on_end_subsearch(subsearch_index, sub_result.status);
 
@@ -271,13 +264,19 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Solver>& op
     return finalize(std::move(result));
 }
 
+template<TaskKind Kind, SerializedSolverConcept<Kind> Solver>
+SearchResult<Kind> find_solution(Solver& solver, const Options<Kind>& options = {})
+{
+    return find_solution<Kind>(solver, options, [](const Solver&, const SearchResult<Kind>& result) { return &result.statistics; });
+}
+
 template<TaskKind Kind, SerializedSolverConcept<Kind> Subsolver>
 struct Solver
 {
-    using EventHandlerType = EventHandler<Kind, Subsolver>;
+    using EventHandlerType = EventHandler<Kind>;
 
     Subsolver subsolver;
-    Options<Kind, Subsolver> options;
+    Options<Kind> options;
 
     Node<Kind> normalize_start_node(std::optional<Node<Kind>> start_node)
     {

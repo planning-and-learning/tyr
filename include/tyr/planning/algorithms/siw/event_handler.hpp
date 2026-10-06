@@ -30,7 +30,7 @@ namespace tyr::planning::siw
 {
 
 template<TaskKind Kind>
-class EventHandler : public serialized::EventHandler<Kind, iw::Solver<Kind>>
+class EventHandler : public serialized::EventHandler<Kind, iw::Statistics<Kind>>
 {
 public:
     virtual const Statistics<Kind>& get_statistics() const = 0;

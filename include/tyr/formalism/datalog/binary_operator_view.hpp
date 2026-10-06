@@ -33,8 +33,6 @@ class View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<T, O>>, C> :
     public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<T, O>>, C>
 {
 public:
-    using OperatorType = O;
-
     View(ygg::Index<::tyr::formalism::datalog::BinaryOperator<T, O>> handle, const C& context) noexcept :
         ygg::formalism::detail::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<T, O>>, C>(handle, context)
     {

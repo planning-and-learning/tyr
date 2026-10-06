@@ -242,8 +242,7 @@ struct formatter<tyr::planning::siw::Statistics<Kind>, char>
     }
 };
 
-template<typename State>
-    requires ::tyr::planning::StateViewConcept<State, typename State::KindType>
+template<::tyr::planning::IterableViewStateConcept State>
 struct formatter<State, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }

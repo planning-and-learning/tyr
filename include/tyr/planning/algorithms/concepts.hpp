@@ -21,15 +21,35 @@
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
 
+#include <chrono>
 #include <concepts>
+#include <optional>
+#include <utility>
 
 namespace tyr::planning
 {
 template<typename T, typename Kind>
-concept SolverConcept = requires(T solver) {
+concept SolverConcept = TaskKind<Kind> && requires(T& solver, std::optional<Node<Kind>> start_node) {
     { solver.solve() } -> std::same_as<SearchResult<Kind>>;
+    { solver.normalize_start_node(start_node) } -> std::same_as<Node<Kind>>;
 };
 
+template<typename Options, typename Kind>
+concept SolverOptionsConcept = TaskKind<Kind>
+                               && requires(Options& options,
+                                           std::optional<Node<Kind>> start_node,
+                                           GoalStrategyPtr<Kind> goal_strategy,
+                                           std::optional<ygg::uint_t> max_num_states,
+                                           std::optional<std::chrono::steady_clock::duration> max_time) {
+                                      options.start_node = start_node;
+                                      options.goal_strategy = goal_strategy;
+                                      { std::as_const(options).search_budget.max_num_states } -> std::convertible_to<std::optional<ygg::uint_t>>;
+                                      options.search_budget.max_num_states = max_num_states;
+                                      {
+                                          std::as_const(options).search_budget.max_time
+                                      } -> std::convertible_to<std::optional<std::chrono::steady_clock::duration>>;
+                                      options.search_budget.max_time = max_time;
+                                  };
 }
 
 #endif

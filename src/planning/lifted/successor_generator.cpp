@@ -506,11 +506,13 @@ SuccessorGenerator<LiftedTag>::check_action_binding(const Node<LiftedTag, S>& no
     return m_impl->check_action_binding(node, action, objects);
 }
 
-template<StateViewConcept<LiftedTag> S>
-ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Node<LiftedTag, S>& node, fp::ActionBindingView binding)
+template<StateViewConcept<LiftedTag> S,
+         ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding>
+ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Node<LiftedTag, S>& node, Binding binding)
 {
-    if (!binding.get_context().contains(binding.get_index()))
-        throw std::invalid_argument("SuccessorGenerator: action binding does not belong to its source repository.");
+    if constexpr (requires { binding.get_index(); })
+        if (!binding.get_context().contains(binding.get_index()))
+            throw std::invalid_argument("SuccessorGenerator: action binding does not belong to its source repository.");
     return m_impl->check_action_binding(node, binding.get_relation(), binding.get_objects());
 }
 
@@ -1086,6 +1088,11 @@ void SuccessorGenerator<LiftedTag>::print_summary(size_t verbosity) const
 }
 
 template ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Node<LiftedTag>& node, fp::ActionBindingView binding);
+
+template ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Node<LiftedTag>& node, fp::ActionBindingDataView binding);
+
+template ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Node<LiftedTag, BuilderStateView<LiftedTag>>& node,
+                                                                                 fp::ActionBindingDataView binding);
 
 template bool
 SuccessorGenerator<LiftedTag>::for_each_borrowed_applicable_action_binding(const Node<LiftedTag>& node,

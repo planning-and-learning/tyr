@@ -19,6 +19,8 @@
 #include "planning/algorithms/search_engine/gbfs_lazy.hpp"
 #include "planning/algorithms/search_engine/parallel.hpp"
 #include "planning/parser.hpp"
+#include "tyr/planning/algorithms/openlists/alternating.hpp"
+#include "tyr/planning/algorithms/openlists/priority_queue.hpp"
 #include "tyr/planning/planning.hpp"
 
 #include <array>
@@ -61,6 +63,23 @@ static_assert(p::detail::ExecutionPolicyConcept<LiftedExecutionPolicy, LiftedTag
 static_assert(!p::detail::SearchPolicyConcept<GroundSearchPolicy, LiftedTag>);
 static_assert(!p::detail::StateRoutingPolicyConcept<GroundRoutingPolicy, LiftedTag>);
 static_assert(!p::detail::ExecutionPolicyConcept<GroundExecutionPolicy, LiftedTag, LiftedSearchPolicy>);
+static_assert(!p::detail::SearchPolicyConcept<int, GroundTag>);
+static_assert(!p::detail::StateRoutingPolicyConcept<int, GroundTag>);
+static_assert(!p::detail::ExecutionPolicyConcept<int, GroundTag, GroundSearchPolicy>);
+
+struct QueueEntryWithoutKeyType
+{
+    using ItemType = int;
+
+    int key;
+    int item;
+
+    int get_key() const { return key; }
+    int get_item() const { return item; }
+};
+
+static_assert(p::IsPriorityQueueEntry<QueueEntryWithoutKeyType>);
+static_assert(p::IsOpenList<p::PriorityQueue<QueueEntryWithoutKeyType>>);
 
 struct TaskPair
 {
@@ -1082,6 +1101,48 @@ void expect_parallel_astar_heuristic_exceptions_propagate(const p::TaskPtr<Kind>
         EXPECT_THROW(p::astar_eager::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options),
                      std::runtime_error);
     }
+}
+
+TEST(TyrPlanningSearchEngineTest, PriorityQueueUsesKeyGetterWithoutMetadata)
+{
+    auto queue = p::PriorityQueue<QueueEntryWithoutKeyType> {};
+    queue.insert({ 3, 30 });
+    queue.insert({ 1, 10 });
+    queue.insert({ 2, 20 });
+
+    for (const auto item : { 10, 20, 30 })
+    {
+        EXPECT_EQ(queue.top(), item);
+        queue.pop();
+    }
+    EXPECT_TRUE(queue.empty());
+}
+
+TEST(TyrPlanningSearchEngineTest, AlternatingOpenListClearsEveryQueue)
+{
+    using Queue = p::PriorityQueue<QueueEntryWithoutKeyType>;
+    auto first = Queue {};
+    auto second = Queue {};
+    auto alternating = p::AlternatingOpenList<Queue, Queue>(first, second, std::array<std::size_t, 2> { 1, 1 });
+    first.insert({ 1, 10 });
+    first.insert({ 2, 20 });
+    second.insert({ 3, 30 });
+    EXPECT_EQ(alternating.size(), 3);
+
+    alternating.clear();
+    EXPECT_TRUE(first.empty());
+    EXPECT_TRUE(second.empty());
+    EXPECT_TRUE(alternating.empty());
+    EXPECT_EQ(alternating.size(), 0);
+
+    first.insert({ 4, 40 });
+    second.insert({ 5, 50 });
+    EXPECT_EQ(alternating.top(), 40);
+    alternating.pop();
+    EXPECT_EQ(alternating.top(), 50);
+    alternating.clear();
+    EXPECT_TRUE(second.empty());
+    EXPECT_EQ(alternating.size(), 0);
 }
 
 TEST(TyrPlanningSearchEngineTest, ChecksGoalsBeforeHeuristics)

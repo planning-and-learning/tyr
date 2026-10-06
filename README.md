@@ -81,11 +81,29 @@ labeled_successor_nodes = successor_generator.get_labeled_successor_nodes(initia
 
 ## C++ Interface
 
+Serialized search reporting takes the payload type explicitly: use `serialized::Options<Kind>` and
+`serialized::EventHandler<Kind>` for ordinary `planning::Statistics`, or pass a custom `Stats` as the second
+parameter. `serialized::Statistics<Stats>` no longer takes a task kind or solver type.
+`serialized::find_solution(solver, options, reader)` borrows a reader callable accepting
+`(const Solver&, const SearchResult<Kind>&)` and returning `const Stats*`; the payload must remain valid
+through the immediate reporting callback. Returning `nullptr` skips that callback without changing aggregate
+search statistics or search events. The two-argument overload and `serialized::Solver<Kind, Subsolver>`
+report ordinary result statistics. SIW supplies its IW statistics reader explicitly; generic subsolvers
+need no event-handler metadata. `SolverConcept<Solver, Kind>` requires `solve()` and
+`normalize_start_node(optional<Node<Kind>>)`. `SolverOptionsConcept<Options, Kind>` separately checks
+configuration of the start node, goal strategy, and readable/writable state and time limits. Serialized search combines
+these contracts with solver copyability; the generic solver contract does not require options or copying.
+
 Formalism construction uses `insert(repository, data)` and returns `(view, inserted)`.
 Payload indices must already refer to the destination repository or its ancestors.
 For cross-repository transfer, create `CopyContext context{builder, destination}` and call `copy(source, context)`: indexed entities return the same pair, while inline values return
 a value view. Copy recursively remaps references and reuses the caller's pooled builder.
 `get_builder<T>()` returns raw pooled storage; `checkout<T>()` clears it for construction.
+
+Construct `Node<Kind, State>` and `LabeledNode<Kind, State, Binding>` with an explicit task kind; the state and binding parameters default to indexed views.
+`NodeConcept<T, Kind>` checks const access to a compatible state view and metric without requiring nested type aliases or a particular state return reference.
+Concrete `Node::get_state()` still returns a const reference. Numeric binary expression adapters provide `get_operator()`, `get_lhs()`, and `get_rhs()`;
+the operator getter determines Boolean or arithmetic evaluation, without an `OperatorType` alias.
 
 The C++ interface for implementing search algorithms is:
 
