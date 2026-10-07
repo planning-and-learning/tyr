@@ -123,30 +123,29 @@ void insert_derived_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& stat
     detail::insert_derived_atoms_to_fact_set(state, repository, translation_context.derived_to_fluent_predicate, merge_context, workspace.facts.fact_sets);
 }
 
+/// Inserts into caller-prepared fact storage; reset facts first when replacing a state.
+/// ProgramExecutionContext populates assignment indices after insertion.
 template<datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
 void insert_extended_state(const ygg::Builder<State<LiftedTag>>& state,
                            const formalism::planning::Repository& repository,
                            const P2DTranslationContext<LiftedTag>& translation_context,
                            datalog::ProgramWorkspace<LiftedTag, AP, TP, CP>& workspace)
 {
-    workspace.facts.reset();
     insert_fluent_atoms_to_fact_set(state, repository, translation_context, workspace);
     insert_derived_atoms_to_fact_set(state, repository, translation_context, workspace);
     insert_numeric_variables_to_fact_set(state, repository, translation_context, workspace);
-    workspace.facts.assignment_sets.insert(workspace.facts.fact_sets);
 }
 
+/// Inserts into caller-prepared fact storage; reset facts first when replacing a state.
+/// ProgramExecutionContext populates lifted assignment indices after insertion.
 template<TaskKind Kind, datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
 void insert_unextended_state(const ygg::Builder<State<Kind>>& state,
                              const formalism::planning::Repository& repository,
                              const P2DTranslationContext<Kind>& translation_context,
                              datalog::ProgramWorkspace<Kind, AP, TP, CP>& workspace)
 {
-    workspace.facts.reset();
     insert_fluent_atoms_to_fact_set(state, repository, translation_context, workspace);
     insert_numeric_variables_to_fact_set(state, repository, translation_context, workspace);
-    if constexpr (std::same_as<Kind, LiftedTag>)
-        workspace.facts.assignment_sets.insert(workspace.facts.fact_sets);
 }
 
 template<datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>

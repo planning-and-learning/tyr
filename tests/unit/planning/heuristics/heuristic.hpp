@@ -312,6 +312,25 @@ class HeuristicFixtureTest : public ::testing::TestWithParam<HeuristicCase>
 
 TEST(TyrPlanningHeuristicWorkerTest, SnapshotsConfiguredGoal) { expect_worker_snapshots_configured_goal<HeuristicTaskKind>(); }
 
+TEST(TyrPlanningHeuristicEvaluationTest, AlternatingStatesReplacePreviousModel)
+{
+    auto context = create_preferred_action_reset_context<HeuristicTaskKind>();
+    auto heuristic = TestedHeuristic<HeuristicTaskKind>::create(context.task, context.execution_context);
+    const auto initial_node = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator);
+    const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node, *context.state_repository, *context.axiom_evaluator);
+    const auto dead_end = std::ranges::find_if(successors, [](const auto& successor) { return successor.label.get_relation().get_name().str() == "consume"; });
+    const auto goal = std::ranges::find_if(successors, [](const auto& successor) { return successor.label.get_relation().get_name().str() == "achieve"; });
+    ASSERT_NE(dead_end, successors.end());
+    ASSERT_NE(goal, successors.end());
+
+    EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 1);
+    EXPECT_EQ(heuristic->evaluate(dead_end->node.get_state()), std::numeric_limits<ygg::float_t>::infinity());
+    EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 1);
+    EXPECT_EQ(heuristic->evaluate(goal->node.get_state()), 0);
+    EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 1);
+    EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 1);
+}
+
 TEST_P(HeuristicFixtureTest, InitialStateMatchesFixture)
 {
     const auto& test_case = GetParam();

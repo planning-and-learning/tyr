@@ -174,6 +174,8 @@ protected:
     {
         const auto& repository = *m_definition->task->get_repository();
         const auto& translation_context = m_definition->rpg_program.get_translation_context().p2d;
+        // LM-cut repeats this evaluation while retaining the current goal and cost overrides.
+        m_workspace.facts.reset();
         insert_unextended_state(state, repository, translation_context, m_workspace);
         auto ctx = datalog::ProgramExecutionContext(m_workspace);
         datalog::execute_model(ctx, *m_execution_context);

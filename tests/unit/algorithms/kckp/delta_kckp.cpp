@@ -475,6 +475,7 @@ TEST(TyrKCKPDelta, InnerParallelismMatchesSequentialRPG)
     const auto solve = [&](Workspace& workspace, const ygg::ExecutionContextPtr& execution_context)
     {
         workspace.tp.set_goals(program.get_goal());
+        workspace.facts.reset();
         p::insert_unextended_state(initial_state.get_state_builder(), *task->get_repository(), program.get_translation_context().p2d, workspace);
 
         auto context = d::ProgramExecutionContext(workspace);
