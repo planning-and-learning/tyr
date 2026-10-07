@@ -65,7 +65,7 @@ void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& state
                                      datalog::TaggedFactSets<f::FluentTag>& fact_sets)
 {
     for (const auto fact : state.get_fluent_facts_view(repository))
-        fact_sets.predicate.insert(fp::merge_p2d<f::FluentTag, f::FluentTag>(fact.get_atom().value(), fluent_to_fluent_predicate, merge_context).first);
+        fact_sets.predicate.insert(fp::merge_p2d<f::FluentTag, f::FluentTag>(fact.get_atom().value().get_row(), fluent_to_fluent_predicate, merge_context).first);
 }
 
 void insert_derived_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
@@ -75,7 +75,7 @@ void insert_derived_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& stat
                                       datalog::TaggedFactSets<f::FluentTag>& fact_sets)
 {
     for (const auto atom : state.get_derived_atoms_view(repository))
-        fact_sets.predicate.insert(fp::merge_p2d<f::DerivedTag, f::FluentTag>(atom, derived_to_fluent_predicate, merge_context).first);
+        fact_sets.predicate.insert(fp::merge_p2d<f::DerivedTag, f::FluentTag>(atom.get_row(), derived_to_fluent_predicate, merge_context).first);
 }
 
 void insert_numeric_variables_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
@@ -84,7 +84,7 @@ void insert_numeric_variables_to_fact_set(const ygg::Builder<State<LiftedTag>>& 
                                           datalog::TaggedFactSets<f::FluentTag>& fact_sets)
 {
     for (const auto& [fterm, value] : state.get_fluent_fterm_values_view(repository))
-        fact_sets.function.insert(fp::merge_p2d(fterm, merge_context).first, value);
+        fact_sets.function.insert(fp::merge_p2d(fterm.get_row(), merge_context).first, value);
 }
 
 void read_derived_atoms_from_fact_set(ygg::Builder<State<LiftedTag>>& state,
