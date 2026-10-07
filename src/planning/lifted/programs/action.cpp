@@ -18,11 +18,14 @@
 #include "tyr/planning/lifted/programs/action.hpp"
 
 #include "../../programs/common.hpp"
+#include "tyr/formalism/datalog/expression_properties.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
+
+#include <algorithm>
 
 namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;
@@ -98,7 +101,11 @@ auto create_program(fp::TaskView<LiftedTag> task,
     for (const auto function : task.get_domain().get_functions<f::StaticTag>())
         program->static_functions.push_back(fp::merge_p2d(function, context).first.get_index());
     for (const auto function : task.get_domain().get_functions<f::FluentTag>())
-        program->fluent_functions.push_back(fp::merge_p2d(function, context).first.get_index());
+    {
+        const auto new_function = fp::merge_p2d(function, context).first;
+        translation_context.p2d.fluent_to_fluent_function.emplace(function, new_function);
+        program->fluent_functions.push_back(new_function.get_index());
+    }
 
     for (const auto object : task.get_domain().get_constants())
         program->objects.push_back(fp::merge_p2d(object, context).first.get_index());
@@ -165,7 +172,7 @@ auto create_program(fp::TaskView<LiftedTag> task,
     {
         program->predicate_rules.clear();
         program->predicate_rules.push_back(rule.get_index());
-        schema_programs.try_emplace(predicate_to_actions.at(rule.get_head().get_predicate()), fd::insert(repository, *program).first);
+        schema_programs.try_emplace(predicate_to_actions.at(rule.get_head().get_predicate()), fd::insert(repository, *program).first, translation_context.p2d);
     }
     return all_actions;
 }
@@ -182,11 +189,31 @@ auto create_datalog_program(fp::TaskView<LiftedTag> task,
 }
 }
 
-ApplicableActionProgram<LiftedTag>::SchemaProgram::SchemaProgram(fd::ProgramView<LiftedTag> program_) :
+ApplicableActionProgram<LiftedTag>::SchemaProgram::SchemaProgram(fd::ProgramView<LiftedTag> program_,
+                                                                 const P2DTranslationContext<LiftedTag>& translation_context) :
     program(program_),
+    input_translation(),
     strata(analysis::compute_rule_stratification(program)),
     listeners(analysis::compute_listeners(strata, program.get_context()))
 {
+    const auto rule = program.get_rules<f::PredicateTag>().front();
+    const auto literals = rule.get_body().get_literals<f::FluentTag>();
+    const auto reads_predicate = [&](auto predicate)
+    {
+        // Negative literals also need the complete relation to check absence.
+        return std::ranges::any_of(literals, [&](auto literal) { return literal.get_atom().get_predicate() == predicate; });
+    };
+    for (const auto& [source, target] : translation_context.fluent_to_fluent_predicate)
+        if (reads_predicate(target))
+            input_translation.fluent_to_fluent_predicate.emplace(source, target);
+    for (const auto& [source, target] : translation_context.derived_to_fluent_predicate)
+        if (reads_predicate(target))
+            input_translation.derived_to_fluent_predicate.emplace(source, target);
+
+    const auto function_reads = fd::collect_fluent_reads(rule);
+    for (const auto& [source, target] : translation_context.fluent_to_fluent_function)
+        if (std::ranges::any_of(function_reads, [&](auto term) { return term.get_function() == target; }))
+            input_translation.fluent_to_fluent_function.emplace(source, target);
 }
 
 ApplicableActionProgram<LiftedTag>::ApplicableActionProgram(fp::TaskView<LiftedTag> task) :

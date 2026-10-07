@@ -21,6 +21,18 @@
 
 namespace tyr::formalism::planning
 {
+template std::pair<datalog::PredicateBindingView<StaticTag>, bool>
+merge_p2d(PredicateBindingView<StaticTag> element, datalog::PredicateView<StaticTag> relation, MergeDatalogContext& context);
+template std::pair<datalog::PredicateBindingView<FluentTag>, bool>
+merge_p2d(PredicateBindingView<FluentTag> element, datalog::PredicateView<FluentTag> relation, MergeDatalogContext& context);
+template std::pair<datalog::PredicateBindingView<FluentTag>, bool>
+merge_p2d(PredicateBindingView<DerivedTag> element, datalog::PredicateView<FluentTag> relation, MergeDatalogContext& context);
+template std::pair<datalog::FunctionBindingView<StaticTag>, bool>
+merge_p2d(FunctionBindingView<StaticTag> element, datalog::FunctionView<StaticTag> relation, MergeDatalogContext& context);
+template std::pair<datalog::FunctionBindingView<FluentTag>, bool>
+merge_p2d(FunctionBindingView<FluentTag> element, datalog::FunctionView<FluentTag> relation, MergeDatalogContext& context);
+template std::pair<datalog::FunctionBindingView<FluentTag>, bool>
+merge_p2d(FunctionBindingView<AuxiliaryTag> element, datalog::FunctionView<FluentTag> relation, MergeDatalogContext& context);
 
 template std::pair<datalog::PredicateView<StaticTag>, bool> merge_p2d(PredicateView<StaticTag> element, MergeDatalogContext& context);
 template std::pair<datalog::PredicateView<FluentTag>, bool> merge_p2d(PredicateView<FluentTag> element, MergeDatalogContext& context);

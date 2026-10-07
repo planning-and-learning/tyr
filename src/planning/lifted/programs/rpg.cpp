@@ -296,7 +296,11 @@ auto create_program(fp::TaskView<LiftedTag> task,
     for (const auto function : task.get_domain().get_functions<f::StaticTag>())
         program->static_functions.push_back(fp::merge_p2d(function, context).first.get_index());
     for (const auto function : task.get_domain().get_functions<f::FluentTag>())
-        program->fluent_functions.push_back(fp::merge_p2d(function, context).first.get_index());
+    {
+        const auto new_function = fp::merge_p2d(function, context).first;
+        translation_context.p2d.fluent_to_fluent_function.emplace(function, new_function);
+        program->fluent_functions.push_back(new_function.get_index());
+    }
     if (const auto function = task.get_domain().get_auxiliary_function())
         program->fluent_functions.push_back(fp::merge_p2d<f::AuxiliaryTag, f::FluentTag>(function.value(), context).first.get_index());
 

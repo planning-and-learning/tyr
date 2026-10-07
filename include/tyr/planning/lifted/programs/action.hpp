@@ -40,9 +40,10 @@ public:
 
     struct SchemaProgram
     {
-        explicit SchemaProgram(formalism::datalog::ProgramView<LiftedTag> program);
+        SchemaProgram(formalism::datalog::ProgramView<LiftedTag> program, const P2DTranslationContext<LiftedTag>& translation_context);
 
         formalism::datalog::ProgramView<LiftedTag> program;
+        P2DTranslationContext<LiftedTag> input_translation;
         analysis::RuleStrata strata;
         analysis::ListenerStrata listeners;
     };

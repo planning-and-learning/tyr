@@ -67,6 +67,7 @@ void insert_derived_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& stat
 
 void insert_numeric_variables_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
                                           const formalism::planning::Repository& repository,
+                                          const P2DTranslationContext<LiftedTag>::FluentToFluentFunctionMapping& fluent_to_fluent_function,
                                           formalism::planning::MergeDatalogContext& merge_context,
                                           datalog::TaggedFactSets<formalism::FluentTag>& fact_sets);
 
@@ -109,7 +110,11 @@ void insert_numeric_variables_to_fact_set(const ygg::Builder<State<Kind>>& state
     else
     {
         auto merge_context = formalism::planning::MergeDatalogContext { workspace.datalog_builder, workspace.workspace_repository };
-        detail::insert_numeric_variables_to_fact_set(state, repository, merge_context, workspace.facts.fact_sets);
+        detail::insert_numeric_variables_to_fact_set(state,
+                                                     repository,
+                                                     translation_context.fluent_to_fluent_function,
+                                                     merge_context,
+                                                     workspace.facts.fact_sets);
     }
 }
 

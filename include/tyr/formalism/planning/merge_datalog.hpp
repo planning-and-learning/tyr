@@ -54,6 +54,10 @@ std::pair<datalog::AtomView<LiftedTag, T_DST>, bool> merge_p2d(AtomView<LiftedTa
                                                                MergeDatalogContext& context);
 
 template<FactKind T_SRC, FactKind T_DST = T_SRC>
+std::pair<datalog::PredicateBindingView<T_DST>, bool>
+merge_p2d(PredicateBindingView<T_SRC> element, datalog::PredicateView<T_DST> predicate, MergeDatalogContext& context);
+
+template<FactKind T_SRC, FactKind T_DST = T_SRC>
 std::pair<datalog::PredicateBindingView<T_DST>, bool> merge_p2d(PredicateBindingView<T_SRC> element,  //
                                                                 const ygg::UnorderedMap<PredicateView<T_SRC>, datalog::PredicateView<T_DST>>& predicate_mapping,
                                                                 MergeDatalogContext& context);
@@ -128,6 +132,10 @@ std::pair<datalog::FunctionView<T_DST>, bool> merge_p2d(FunctionView<T_SRC> elem
 
 template<FactKind T_SRC, FactKind T_DST = T_SRC>
 std::pair<datalog::FunctionTermView<LiftedTag, T_DST>, bool> merge_p2d(FunctionTermView<LiftedTag, T_SRC> element, MergeDatalogContext& context);
+
+template<FactKind T_SRC, FactKind T_DST = T_SRC>
+std::pair<datalog::FunctionBindingView<T_DST>, bool>
+merge_p2d(FunctionBindingView<T_SRC> element, datalog::FunctionView<T_DST> function, MergeDatalogContext& context);
 
 template<FactKind T_SRC, FactKind T_DST = T_SRC>
 std::pair<datalog::FunctionBindingView<T_DST>, bool> merge_p2d(FunctionBindingView<T_SRC> element, MergeDatalogContext& context);
@@ -248,9 +256,16 @@ std::pair<datalog::PredicateBindingView<T_DST>, bool> merge_p2d(PredicateBinding
                                                                 const ygg::UnorderedMap<PredicateView<T_SRC>, datalog::PredicateView<T_DST>>& predicate_mapping,
                                                                 MergeDatalogContext& context)
 {
+    return merge_p2d(element, predicate_mapping.at(element.get_relation()), context);
+}
+
+template<FactKind T_SRC, FactKind T_DST>
+std::pair<datalog::PredicateBindingView<T_DST>, bool>
+merge_p2d(PredicateBindingView<T_SRC> element, datalog::PredicateView<T_DST> predicate, MergeDatalogContext& context)
+{
     auto binding = datalog::checkout<RelationBinding<Predicate<T_DST>>>(context.builder);
 
-    binding->relation = predicate_mapping.at(element.get_relation()).get_index();
+    binding->relation = predicate.get_index();
     for (const auto object : element.get_objects())
         binding->objects.push_back(object.get_index());
 
@@ -461,9 +476,16 @@ std::pair<datalog::FunctionTermView<LiftedTag, T_DST>, bool> merge_p2d(FunctionT
 template<FactKind T_SRC, FactKind T_DST>
 std::pair<datalog::FunctionBindingView<T_DST>, bool> merge_p2d(FunctionBindingView<T_SRC> element, MergeDatalogContext& context)
 {
+    return merge_p2d(element, merge_p2d<T_SRC, T_DST>(element.get_relation(), context).first, context);
+}
+
+template<FactKind T_SRC, FactKind T_DST>
+std::pair<datalog::FunctionBindingView<T_DST>, bool>
+merge_p2d(FunctionBindingView<T_SRC> element, datalog::FunctionView<T_DST> function, MergeDatalogContext& context)
+{
     auto binding = datalog::checkout<RelationBinding<Function<T_DST>>>(context.builder);
 
-    binding->relation = merge_p2d<T_SRC, T_DST>(element.get_relation(), context).first.get_index();
+    binding->relation = function.get_index();
     for (const auto object : element.get_objects())
         binding->objects.push_back(object.get_index());
 
@@ -635,6 +657,19 @@ ygg::Data<datalog::BooleanOperator<T>> merge_p2d(BooleanOperatorView<T> element,
 
 namespace tyr::formalism::planning
 {
+extern template std::pair<datalog::PredicateBindingView<StaticTag>, bool>
+merge_p2d(PredicateBindingView<StaticTag> element, datalog::PredicateView<StaticTag> relation, MergeDatalogContext& context);
+extern template std::pair<datalog::PredicateBindingView<FluentTag>, bool>
+merge_p2d(PredicateBindingView<FluentTag> element, datalog::PredicateView<FluentTag> relation, MergeDatalogContext& context);
+extern template std::pair<datalog::PredicateBindingView<FluentTag>, bool>
+merge_p2d(PredicateBindingView<DerivedTag> element, datalog::PredicateView<FluentTag> relation, MergeDatalogContext& context);
+extern template std::pair<datalog::FunctionBindingView<StaticTag>, bool>
+merge_p2d(FunctionBindingView<StaticTag> element, datalog::FunctionView<StaticTag> relation, MergeDatalogContext& context);
+extern template std::pair<datalog::FunctionBindingView<FluentTag>, bool>
+merge_p2d(FunctionBindingView<FluentTag> element, datalog::FunctionView<FluentTag> relation, MergeDatalogContext& context);
+extern template std::pair<datalog::FunctionBindingView<FluentTag>, bool>
+merge_p2d(FunctionBindingView<AuxiliaryTag> element, datalog::FunctionView<FluentTag> relation, MergeDatalogContext& context);
+
 extern template std::pair<datalog::PredicateView<StaticTag>, bool> merge_p2d(PredicateView<StaticTag> element, MergeDatalogContext& context);
 extern template std::pair<datalog::PredicateView<FluentTag>, bool> merge_p2d(PredicateView<FluentTag> element, MergeDatalogContext& context);
 extern template std::pair<datalog::PredicateView<FluentTag>, bool> merge_p2d(PredicateView<DerivedTag> element, MergeDatalogContext& context);

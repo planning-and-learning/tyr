@@ -823,17 +823,21 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaQueriesRefreshDerivedPredicatesAc
 {
     auto task = p::Task<LiftedTag>::create(fp::Parser(R"(
 (define (domain toggle)
-  (:requirements :adl :derived-predicates)
-  (:predicates (on) (ready))
+  (:requirements :adl :derived-predicates :numeric-fluents)
+  (:predicates (on) (ready) (unused))
+  (:functions (input) (limit) (effect-only) (unused-value))
   (:derived (ready) (on))
-  (:action enable :parameters () :precondition (not (on)) :effect (on))
-  (:action disable :parameters () :precondition (ready) :effect (not (on))))
+  (:action enable :parameters () :precondition (and (not (on)) (not (ready)))
+    :effect (and (on) (not (unused)) (increase (input) 1) (increase (limit) 1) (increase (unused-value) 1)))
+  (:action disable :parameters ()
+    :precondition (and (ready) (>= (+ (input) 1) (limit)))
+    :effect (and (not (on)) (increase (effect-only) (+ (input) (limit))))))
 )",
                                                       "toggle-domain.pddl")
                                                .parse_task(R"(
 (define (problem toggle-problem)
   (:domain toggle)
-  (:init)
+  (:init (unused) (= (input) 0) (= (limit) 1) (= (effect-only) 5) (= (unused-value) 99))
   (:goal (on)))
 )",
                                                            "toggle-problem.pddl"));
@@ -843,6 +847,15 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaQueriesRefreshDerivedPredicatesAc
     auto state_repository = p::StateRepositoryFactory<LiftedTag>().create(task);
     auto source = p::SuccessorGeneratorFactory<LiftedTag>().create(task, execution_context);
     auto worker = source->make_worker(ygg::ExecutionContext::create(1));
+    const auto& action_program = source->get_action_program();
+    EXPECT_EQ(action_program.get_translation_context().p2d.fluent_to_fluent_function.size(), 4);
+    for (const auto& [action, schema] : action_program.get_schema_programs())
+    {
+        const auto enabling = action.get_name().str() == "enable";
+        EXPECT_EQ(schema.input_translation.fluent_to_fluent_predicate.size(), enabling ? 1 : 0);
+        EXPECT_EQ(schema.input_translation.derived_to_fluent_predicate.size(), 1);
+        EXPECT_EQ(schema.input_translation.fluent_to_fluent_function.size(), enabling ? 0 : 2);
+    }
     const auto initial_node = source->get_initial_node(*state_repository, *axiom_evaluator);
     const auto bindings = source->get_applicable_action_bindings(initial_node);
     ASSERT_EQ(bindings.size(), 1);
@@ -866,7 +879,17 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaQueriesRefreshDerivedPredicatesAc
                 for (const auto binding : selected_bindings)
                     EXPECT_EQ(binding.get_relation(), action);
                 for (const auto& successor : selected_successors)
+                {
                     EXPECT_EQ(successor.label.get_relation(), action);
+                    auto saw_effect_only = false;
+                    for (const auto& [term, value] : successor.node.get_state().get_fluent_fterm_values_view())
+                        if (term.get_function().get_name().str() == "effect-only")
+                        {
+                            saw_effect_only = true;
+                            EXPECT_EQ(value, action.get_name().str() == "disable" ? 8 : 5);
+                        }
+                    EXPECT_TRUE(saw_effect_only);
+                }
             }
             const auto all_bindings = generator->get_applicable_action_bindings(node);
             ASSERT_EQ(all_bindings.size(), 1);
