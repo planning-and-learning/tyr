@@ -297,6 +297,34 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
     ASSERT_EQ(kckp.get_iteration(), 2);
     EXPECT_EQ(collect_edges(kckp.get_full_graph()), expected);
     EXPECT_TRUE(collect_edges(kckp.get_delta_graph()).empty());
+
+    // Add a source after target vertices already exist; only its static row is new.
+    auto additional = d::ProgramWorkspace<LiftedTag>(program);
+    for (const auto atom : program_view.get_atoms<f::FluentTag>())
+    {
+        if (atom.get_predicate().get_name() != "at-robot")
+            continue;
+        auto binding = ygg::Data<f::RelationBinding<f::Predicate<f::FluentTag>>> {};
+        binding.relation = atom.get_predicate().get_index();
+        for (const auto object : program_view.get_objects())
+            if (object.get_name() == "loc-x0-y0")
+                binding.objects.push_back(object.get_index());
+        ASSERT_EQ(binding.objects.size(), 1);
+        assignments.predicate.insert(fd::insert(additional.workspace_repository, binding).first);
+        break;
+    }
+    update();
+    const auto added = std::vector<Binding> {
+        { "loc-x0-y0", "loc-x0-y1" },
+        { "loc-x0-y0", "loc-x1-y0" },
+    };
+    auto expanded = expected;
+    expanded.insert(expanded.end(), added.begin(), added.end());
+    std::ranges::sort(expanded);
+    EXPECT_EQ(collect_edges(kckp.get_full_graph()), expanded);
+    EXPECT_EQ(collect_edges(kckp.get_delta_graph()), added);
+    update();
+    EXPECT_TRUE(collect_edges(kckp.get_delta_graph()).empty());
 }
 
 TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)

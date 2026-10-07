@@ -217,4 +217,56 @@ TEST(TyrDatalogLiftedAssignmentSets, FunctionInsertionTracksHullsAndEmptyAssignm
     EXPECT_TRUE(nullary_set.insert(nullary_binding, ygg::float_t(7)));
     EXPECT_EQ(nullary_set[nullary_binding], ygg::ClosedInterval<ygg::float_t>(7, 7));
 }
+TEST(TyrDatalogLiftedAssignmentSets, TouchedBlocksAndPreparedRanksMatchScalarRanks)
+{
+    auto fixture = Fixture {};
+    constexpr ygg::uint_t arity = 6;
+    const auto predicate = intern(fixture.repository, ygg::Data<f::Predicate<f::FluentTag>>(std::string("wide"), arity));
+    const auto function = intern(fixture.repository, ygg::Data<f::Function<f::FluentTag>>(std::string("wide-value"), arity));
+    const auto domains = a::VariableDomainList(arity, domain({ 0, 2, 4 }));
+    auto predicates = d::PredicateAssignmentSet<f::FluentTag>(predicate, domains, fixture.objects.size());
+    auto functions = d::FunctionAssignmentSet<f::FluentTag>(function, domains, fixture.objects.size());
+    ASSERT_GT(predicates.get_set().blocks().size(), 1);
+
+    for (const auto objects : { std::initializer_list<ObjectIndex> { ObjectIndex(0), ObjectIndex(2), ObjectIndex(4), ObjectIndex(0), ObjectIndex(2), ObjectIndex(4) },
+                                std::initializer_list<ObjectIndex> { ObjectIndex(1), ObjectIndex(2), ObjectIndex(1), ObjectIndex(4), ObjectIndex(1), ObjectIndex(0) } })
+    {
+        const auto predicate_binding = make_binding<f::Predicate<f::FluentTag>>(fixture.repository, predicate, objects);
+        const auto function_binding = make_binding<f::Function<f::FluentTag>>(fixture.repository, function, objects);
+        const auto interval = ygg::ClosedInterval<ygg::float_t> { 2, 5 };
+        predicates.insert(predicate_binding);
+        predicates.insert(predicate_binding);
+        EXPECT_TRUE(functions.insert(function_binding, interval));
+        EXPECT_FALSE(functions.insert(function_binding, interval));
+        auto expected = std::vector<bool>(predicates.size(), false);
+        const auto indices = std::vector<ObjectIndex>(objects);
+        for (ygg::uint_t i = 0; i < arity; ++i)
+        {
+            const auto vertex = d::VertexAssignment(f::ParameterIndex(i), indices[i]);
+            if (const auto rank = predicates.get_hash().find_rank(vertex))
+            {
+                expected[*rank] = true;
+                EXPECT_EQ(functions.at(vertex), interval);
+            }
+            for (ygg::uint_t j = i + 1; j < arity; ++j)
+            {
+                const auto edge = d::EdgeAssignment(f::ParameterIndex(i), indices[i], f::ParameterIndex(j), indices[j]);
+                if (const auto rank = predicates.get_hash().find_rank(edge))
+                {
+                    expected[*rank] = true;
+                    EXPECT_EQ(functions.at(edge), interval);
+                }
+            }
+        }
+        for (size_t i = 0; i < expected.size(); ++i)
+            EXPECT_EQ(predicates.get_set().test(i), expected[i]);
+        EXPECT_TRUE(predicates.get_set().trailing_bits_zero());
+        predicates.reset();
+        predicates.reset();
+        functions.reset();
+        EXPECT_TRUE(predicates.get_set().none());
+        EXPECT_TRUE(empty(functions[d::EmptyAssignment {}]));
+    }
+}
+
 }

@@ -8,6 +8,7 @@
 #include <deque>
 #include <filesystem>
 #include <gtest/gtest.h>
+#include <iterator>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -507,9 +508,15 @@ void expect_schema_queries_match_filtered_successors()
             EXPECT_TRUE(std::ranges::equal(callback_successors, successors, same_successor));
             callback_bindings.clear();
             callback_successors.clear();
+            size_t inspected = 0;
             EXPECT_TRUE(generator->for_each_borrowed_applicable_action_binding(
                 initial_node,
                 action,
+                [&](auto)
+                {
+                    ++inspected;
+                    return true;
+                },
                 [&](p::BorrowedActionBindingView<Kind> binding)
                 {
                     const auto successor = generator->get_successor_node(initial_node, binding, next_storage(), *axiom_evaluator);
@@ -517,17 +524,70 @@ void expect_schema_queries_match_filtered_successors()
                     callback_bindings.push_back(retained);
                     callback_successors.push_back({ retained, successor });
                     return true;
-                }));
+                },
+                [] { return false; }));
             EXPECT_EQ(callback_bindings, bindings);
             EXPECT_TRUE(std::ranges::equal(callback_successors, successors, same_successor));
+            if (action.get_name() == "alias")
+                EXPECT_GT(inspected, bindings.size());  // Aliased numeric effects are rejected after the predicate.
+
+            const auto accepts_low = [&](auto binding)
+            {
+                const auto objects = binding.get_objects();
+                return objects.empty() || objects[0] == *low;
+            };
+            callback_bindings.clear();
+            EXPECT_TRUE(generator->for_each_borrowed_applicable_action_binding(
+                initial_node,
+                action,
+                accepts_low,
+                [&](auto binding)
+                {
+                    callback_bindings.push_back(generator->materialize_action_binding(binding));
+                    return true;
+                },
+                [] { return false; }));
+            auto filtered_bindings = std::vector<fp::ActionBindingView> {};
+            std::ranges::copy_if(bindings, std::back_inserter(filtered_bindings), accepts_low);
+            EXPECT_EQ(callback_bindings, filtered_bindings);
+
+            const auto before_reject = count_action_bindings(task);
+            size_t rejected = 0;
+            const auto reject = [&](auto)
+            {
+                ++rejected;
+                return false;
+            };
+            const auto unexpected_callback = [](auto)
+            {
+                ADD_FAILURE() << "Rejected or cancelled binding reached the callback";
+                return true;
+            };
+            EXPECT_TRUE(generator->for_each_borrowed_applicable_action_binding(initial_node, action, reject, unexpected_callback, [] { return false; }));
+            EXPECT_EQ(rejected, inspected);
+            rejected = 0;
+            EXPECT_FALSE(generator->for_each_borrowed_applicable_action_binding(initial_node, action, reject, unexpected_callback, [] { return true; }));
+            EXPECT_EQ(rejected, 0);
+            if (inspected > 1)
+            {
+                EXPECT_FALSE(generator->for_each_borrowed_applicable_action_binding(initial_node,
+                                                                                    action,
+                                                                                    reject,
+                                                                                    unexpected_callback,
+                                                                                    [&] { return rejected != 0; }));
+                EXPECT_EQ(rejected, 1);
+            }
+            EXPECT_EQ(count_action_bindings(task), before_reject);
             auto borrowed_calls = size_t { 0 };
             EXPECT_EQ(generator->for_each_borrowed_applicable_action_binding(initial_node,
                                                                              action,
+                                                                             [](auto) { return true; },
                                                                              [&](auto)
                                                                              {
                                                                                  ++borrowed_calls;
                                                                                  return false;
-                                                                             }),
+                                                                             },
+                                                                             [] { return false; }),
                       bindings.empty());
             EXPECT_EQ(borrowed_calls, bindings.empty() ? 0 : 1);
             callback_bindings.clear();

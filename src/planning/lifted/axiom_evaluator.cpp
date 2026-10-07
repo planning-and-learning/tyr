@@ -141,7 +141,7 @@ void AxiomEvaluator<LiftedTag>::compute_extended_state(ygg::Builder<State<Lifted
 
     insert_unextended_state(state_builder, *m_impl->definition->task->get_repository(), program.get_translation_context().p2d, workspace);
 
-    auto ctx = d::ProgramExecutionContext(workspace);
+    auto ctx = d::ProgramExecutionContext<LiftedTag>::from_reset_workspace(workspace);
     d::execute_model(ctx, *evaluator.execution_context);
 
     read_derived_atoms_from_fact_set(state_builder,

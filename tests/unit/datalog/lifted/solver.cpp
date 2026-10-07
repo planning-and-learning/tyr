@@ -601,6 +601,75 @@ TEST(TyrDatalogLiftedBottomUpTest, MixedMetricEffectsRespectExactTargetsAndRetai
     EXPECT_EQ(witness->get_numeric_supports().front().get_cost(), d::Cost(0));
 }
 
+TEST(TyrDatalogLiftedBottomUpTest, PreparedContextMatchesOrdinaryContextAfterWorkspaceReuse)
+{
+    auto fixture = make_lifted_predicate_program(true);
+    using AnnotationPolicy = d::MinCostAnnotationPolicy<d::SumAggregation>;
+    using Context = d::ProgramExecutionContext<LiftedTag, AnnotationPolicy>;
+    auto workspace = d::ProgramWorkspace<LiftedTag, AnnotationPolicy>(fixture.program);
+    auto initial = Context(workspace);
+    d::compute_model(initial);
+    const auto expected_atoms = collect_atoms_by_predicate(workspace);
+    const auto* expected_annotation = workspace.annotations.find(fixture.goal);
+    ASSERT_NE(expected_annotation, nullptr);
+    const auto expected_cost = d::get_cost(*expected_annotation);
+    const auto expected_metric = d::get_metric(*expected_annotation);
+
+    const auto insert_inputs = [&]
+    {
+        for (const auto atom : fixture.program.get_program().get_atoms<f::FluentTag>())
+            workspace.facts.fact_sets.predicate.insert(atom);
+        workspace.facts.fact_sets.function.insert(fixture.program.get_program().get_fterm_values<f::FluentTag>());
+    };
+    for (size_t iteration = 0; iteration < 2; ++iteration)
+    {
+        workspace.cost_buckets.insert(99, fixture.goal);
+        workspace.reset_evaluation();
+        EXPECT_TRUE(workspace.cost_buckets.is_empty());
+        insert_inputs();
+        auto prepared = Context::from_reset_workspace(workspace, workspace.schedulers);
+        d::compute_model(prepared);
+        EXPECT_EQ(collect_atoms_by_predicate(workspace), expected_atoms);
+        const auto* annotation = workspace.annotations.find(fixture.goal);
+        ASSERT_NE(annotation, nullptr);
+        EXPECT_EQ(d::get_cost(*annotation), expected_cost);
+        EXPECT_EQ(d::get_metric(*annotation), expected_metric);
+
+        // LM-cut also rebuilds a context with new facts without resetting its repository.
+        workspace.facts.reset();
+        insert_inputs();
+        auto ordinary = Context(workspace);
+        d::compute_model(ordinary);
+        EXPECT_EQ(collect_atoms_by_predicate(workspace), expected_atoms);
+        annotation = workspace.annotations.find(fixture.goal);
+        ASSERT_NE(annotation, nullptr);
+        EXPECT_EQ(d::get_cost(*annotation), expected_cost);
+    }
+}
+
+TEST(TyrDatalogLiftedBottomUpTest, PreparedBindingSurvivesNestedGrounding)
+{
+    auto fixture = make_lifted_predicate_program();
+    auto builder = fd::Builder {};
+    const auto program = fixture.program.get_program();
+    const auto atom = program.get_rules<f::PredicateTag>()[0].get_body().get_literals<f::FluentTag>()[0].get_atom();
+    const auto objects = program.get_objects();
+    ASSERT_EQ(objects.size(), 2);
+    auto indices = ygg::IndexList<f::Object> { objects[0].get_index() };
+    auto context = fd::GrounderContext { builder, *fixture.repository, indices };
+    auto prepared = fd::checkout<f::RelationBinding<f::Predicate<f::FluentTag>>>(builder);
+    prepared->relation = atom.get_predicate().get_index();
+    fd::ground(atom.get_terms(), context, prepared->objects);
+
+    indices[0] = objects[1].get_index();
+    const auto nested = fd::ground_binding(atom, context).first;
+    EXPECT_EQ(nested.get_objects()[0], objects[1]);
+    ASSERT_EQ(prepared->objects.size(), 1);
+    EXPECT_EQ(prepared->objects[0], objects[0].get_index());
+    const auto retained = fd::insert(*fixture.repository, *prepared).first;
+    EXPECT_EQ(retained.get_objects()[0], objects[0]);
+}
+
 class BottomUpFixtureTest : public ::testing::TestWithParam<BottomUpCase>
 {
 };

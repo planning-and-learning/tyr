@@ -80,6 +80,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         const auto& tp() const noexcept { return m_ws.tp; }
         auto& cost_policy() noexcept { return m_ws.cost_policy; }
         const auto& cost_policy() const noexcept { return m_ws.cost_policy; }
+        auto& cost_buckets() noexcept { return m_ws.cost_buckets; }
         template<formalism::RelationKind R>
         auto& get_rules() noexcept
         {
@@ -111,12 +112,24 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
 
     /// Schedulers must use the workspace's repository and a subset of its rules.
     ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, std::vector<Scheduler<LiftedTag>>& schedulers, size_t num_threads = 1) :
-        m_in(ws.const_workspace),
-        m_out(ws, schedulers),
-        m_num_threads(num_threads)
+        ProgramExecutionContext(In(ws.const_workspace), Out(ws, schedulers), num_threads)
     {
-        assert(num_threads > 0);
         clear();
+    }
+
+    /// The caller has reset the workspace and inserted this evaluation's input facts.
+    static ProgramExecutionContext from_reset_workspace(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, size_t num_threads = 1)
+    {
+        return from_reset_workspace(ws, ws.schedulers, num_threads);
+    }
+
+    static ProgramExecutionContext from_reset_workspace(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws,
+                                                        std::vector<Scheduler<LiftedTag>>& schedulers,
+                                                        size_t num_threads = 1)
+    {
+        auto context = ProgramExecutionContext(In(ws.const_workspace), Out(ws, schedulers), num_threads);
+        context.initialize();
+        return context;
     }
 
     void clear() noexcept
@@ -132,7 +145,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         clear_rules(out.template get_rules<formalism::PredicateTag>());
         clear_rules(out.template get_rules<formalism::FunctionTag>());
 
-        out.tp().reset();
+        out.cost_buckets().clear();
         out.reset_numeric_support_selector();
         out.annotations().clear();
         out.numeric_annotations().clear();
@@ -140,6 +153,29 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         out.delta_numeric_annotations().clear();
         out.annotation_policy().clear_achievers();
 
+        initialize();
+    }
+
+    const auto& in() const noexcept { return m_in; }
+    auto& out() noexcept { return m_out; }
+    const auto& out() const noexcept { return m_out; }
+    bool is_single_threaded() const noexcept { return m_num_threads == 1; }
+    void set_num_threads(size_t num_threads) noexcept
+    {
+        assert(num_threads > 0);
+        m_num_threads = num_threads;
+    }
+
+private:
+    ProgramExecutionContext(In in, Out out, size_t num_threads) : m_in(in), m_out(out), m_num_threads(num_threads)
+    {
+        assert(num_threads > 0);
+    }
+
+    void initialize()
+    {
+        auto& out = this->out();
+        out.tp().reset();
         for (const auto& set : out.facts().fact_sets.predicate.get_sets())
         {
             for (const auto binding : set.get_bindings())
@@ -164,17 +200,6 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         out.rebuild_numeric_support_selector(in().facts().fact_sets);
     }
 
-    const auto& in() const noexcept { return m_in; }
-    auto& out() noexcept { return m_out; }
-    const auto& out() const noexcept { return m_out; }
-    bool is_single_threaded() const noexcept { return m_num_threads == 1; }
-    void set_num_threads(size_t num_threads) noexcept
-    {
-        assert(num_threads > 0);
-        m_num_threads = num_threads;
-    }
-
-private:
     In m_in;
     Out m_out;
     size_t m_num_threads;

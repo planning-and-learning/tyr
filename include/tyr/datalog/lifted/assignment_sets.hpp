@@ -26,7 +26,8 @@
 #include "tyr/formalism/datalog/views.hpp"
 
 #include <algorithm>
-#include <boost/dynamic_bitset.hpp>
+#include <cstdint>
+#include <yggdrasil/containers/dynamic_bitset.hpp>
 #include <cassert>
 #include <limits>
 #include <optional>
@@ -60,11 +61,12 @@ template<formalism::FactKind T>
 class PredicateAssignmentSet
 {
 private:
-    formalism::datalog::PredicateView<T> m_predicate;
     ygg::Index<formalism::Predicate<T>> m_predicate_index;
 
     PerfectAssignmentHash m_hash;
-    boost::dynamic_bitset<> m_set;
+    std::vector<uint64_t> m_blocks;
+    std::vector<size_t> m_touched_blocks;
+    std::vector<ygg::uint_t> m_remapped_objects;
 
 public:
     PredicateAssignmentSet(formalism::datalog::PredicateView<T> predicate, const analysis::VariableDomainList& parameter_domains, size_t num_objects);
@@ -80,7 +82,7 @@ public:
 
     size_t size() const noexcept;
     const PerfectAssignmentHash& get_hash() const noexcept;
-    const boost::dynamic_bitset<>& get_set() const noexcept;
+    ygg::BitsetSpan<const uint64_t> get_set() const noexcept;
 };
 
 template<formalism::FactKind T>
@@ -112,11 +114,11 @@ template<formalism::FactKind T>
 class FunctionAssignmentSet
 {
 private:
-    formalism::datalog::FunctionView<T> m_function;
     ygg::Index<formalism::Function<T>> m_function_index;
 
     PerfectAssignmentHash m_hash;
     std::vector<ygg::ClosedInterval<ygg::float_t>> m_set;
+    std::vector<ygg::uint_t> m_remapped_objects;
 
 public:
     FunctionAssignmentSet(formalism::datalog::FunctionView<T> function, const analysis::VariableDomainList& parameter_domains, size_t num_objects);

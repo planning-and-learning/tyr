@@ -18,6 +18,7 @@
 #ifndef TYR_DATALOG_LIFTED_WORKSPACES_PROGRAM_HPP_
 #define TYR_DATALOG_LIFTED_WORKSPACES_PROGRAM_HPP_
 
+#include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/lifted/scheduler.hpp"
 #include "tyr/datalog/lifted/workspaces/facts.hpp"
@@ -67,6 +68,7 @@ public:
 
     TP tp;
     CP cost_policy;
+    CostBuckets cost_buckets;
 
     std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, formalism::PredicateTag>>> predicate_rules;
     std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, formalism::FunctionTag>>> function_rules;

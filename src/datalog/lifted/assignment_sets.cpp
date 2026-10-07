@@ -26,8 +26,8 @@
 #include "tyr/formalism/datalog/views.hpp"
 
 #include <algorithm>
-#include <boost/dynamic_bitset.hpp>
 #include <cassert>
+#include <concepts>
 #include <limits>
 #include <tuple>
 #include <vector>
@@ -41,6 +41,34 @@ namespace tyr::datalog
 {
 namespace
 {
+template<ygg::SizedForwardRangeOf<ygg::Index<formalism::Object>> Objects, std::invocable<size_t> Emit>
+void for_each_assignment_rank(const PerfectAssignmentHash& hash, const Objects& objects, std::vector<ygg::uint_t>& remapped, Emit emit)
+{
+    const auto arity = objects.size();
+    assert(remapped.size() == arity);
+    auto position = size_t { 0 };
+    for (const auto object : objects)
+    {
+        assert(ygg::uint_t(object) < hash.m_num_objects);
+        remapped[position] = hash.m_remapping[position * hash.m_num_objects + ygg::uint_t(object)];
+        ++position;
+    }
+
+    for (size_t i = 0; i < arity; ++i)
+    {
+        if (remapped[i] == 0)
+            continue;
+        emit(hash.m_vertex_offsets[i] + remapped[i] - 1);
+        for (size_t j = i + 1; j < arity; ++j)
+        {
+            if (remapped[j] == 0)
+                continue;
+            const auto width = hash.m_vertex_offsets[j + 1] - hash.m_vertex_offsets[j];
+            emit(hash.m_pair_offsets[i * arity + j] + (remapped[i] - 1) * width + remapped[j] - 1);
+        }
+    }
+}
+
 template<typename T>
 bool update_interval(ygg::ClosedInterval<T>& target, ygg::ClosedInterval<T> source)
 {
@@ -172,77 +200,64 @@ template<formalism::FactKind T>
 PredicateAssignmentSet<T>::PredicateAssignmentSet(formalism::datalog::PredicateView<T> predicate,
                                                   const analysis::VariableDomainList& parameter_domains,
                                                   size_t num_objects) :
-    m_predicate(predicate),
     m_predicate_index(predicate.get_index()),
     m_hash(PerfectAssignmentHash(parameter_domains, num_objects)),
-    m_set(m_hash.size(), false)
+    m_blocks(ygg::BitsetSpan<uint64_t>::num_blocks(m_hash.size()), 0),
+    m_remapped_objects(predicate.get_arity())
 {
 }
 
 template<formalism::FactKind T>
 void PredicateAssignmentSet<T>::reset() noexcept
 {
-    m_set.reset();
+    for (const auto block : m_touched_blocks)
+        m_blocks[block] = 0;
+    m_touched_blocks.clear();
 }
 
 template<formalism::FactKind T>
 void PredicateAssignmentSet<T>::insert(formalism::datalog::PredicateBindingView<T> binding)
 {
-    const auto arity = m_predicate.get_arity();
-    const auto objects = binding.get_objects();
-
     assert(binding.get_index().relation == m_predicate_index);
-
-    for (ygg::uint_t first_index = 0; first_index < arity; ++first_index)
-    {
-        const auto first_object = objects[first_index];
-
-        if (const auto rank = m_hash.find_rank(VertexAssignment(formalism::ParameterIndex(first_index), first_object.get_index())))
-            m_set.set(*rank);
-
-        for (ygg::uint_t second_index = first_index + 1; second_index < arity; ++second_index)
-        {
-            const auto second_object = objects[second_index];
-
-            if (const auto rank = m_hash.find_rank(EdgeAssignment(formalism::ParameterIndex(first_index),
-                                                                  first_object.get_index(),
-                                                                  formalism::ParameterIndex(second_index),
-                                                                  second_object.get_index())))
-                m_set.set(*rank);
-        }
-    }
+    for_each_assignment_rank(m_hash, binding.get_objects().get_data(), m_remapped_objects, [&](size_t rank)
+                             {
+                                 const auto block = ygg::BitsetSpan<uint64_t>::block_index(rank);
+                                 if (m_blocks[block] == 0)
+                                     m_touched_blocks.push_back(block);
+                                 ygg::BitsetSpan<uint64_t>(m_blocks.data(), m_hash.size()).set(rank);
+                             });
 }
 
 template<formalism::FactKind T>
 bool PredicateAssignmentSet<T>::operator[](const VertexAssignment& assignment) const noexcept
 {
     const auto rank = m_hash.find_rank(assignment);
-    return rank && m_set.test(*rank);
+    return rank && get_set().test(*rank);
 }
 
 template<formalism::FactKind T>
 bool PredicateAssignmentSet<T>::operator[](const EdgeAssignment& assignment) const noexcept
 {
     const auto rank = m_hash.find_rank(assignment);
-    return rank && m_set.test(*rank);
+    return rank && get_set().test(*rank);
 }
 
 template<formalism::FactKind T>
 bool PredicateAssignmentSet<T>::at(const VertexAssignment& assignment) const noexcept
 {
-    return m_set.test(m_hash.get_rank(assignment));
+    return get_set().test(m_hash.get_rank(assignment));
 }
 
 template<formalism::FactKind T>
 bool PredicateAssignmentSet<T>::at(const EdgeAssignment& assignment) const noexcept
 {
-    return m_set.test(m_hash.get_rank(assignment));
+    return get_set().test(m_hash.get_rank(assignment));
 }
 
 template<formalism::FactKind T>
 size_t PredicateAssignmentSet<T>::size() const noexcept
 {
-    return m_set.size();
+    return m_hash.size();
 }
 
 template<formalism::FactKind T>
@@ -252,9 +267,9 @@ const PerfectAssignmentHash& PredicateAssignmentSet<T>::get_hash() const noexcep
 }
 
 template<formalism::FactKind T>
-const boost::dynamic_bitset<>& PredicateAssignmentSet<T>::get_set() const noexcept
+ygg::BitsetSpan<const uint64_t> PredicateAssignmentSet<T>::get_set() const noexcept
 {
-    return m_set;
+    return { m_blocks.data(), m_hash.size() };
 }
 
 template class PredicateAssignmentSet<f::StaticTag>;
@@ -342,10 +357,10 @@ template<formalism::FactKind T>
 FunctionAssignmentSet<T>::FunctionAssignmentSet(formalism::datalog::FunctionView<T> function,
                                                 const analysis::VariableDomainList& parameter_domains,
                                                 size_t num_objects) :
-    m_function(function),
     m_function_index(function.get_index()),
     m_hash(PerfectAssignmentHash(parameter_domains, num_objects)),
-    m_set(m_hash.size(), ygg::ClosedInterval<ygg::float_t>())
+    m_set(m_hash.size(), ygg::ClosedInterval<ygg::float_t>()),
+    m_remapped_objects(function.get_arity())
 {
 }
 
@@ -358,41 +373,10 @@ void FunctionAssignmentSet<T>::reset() noexcept
 template<formalism::FactKind T>
 bool FunctionAssignmentSet<T>::insert(formalism::datalog::FunctionBindingView<T> binding, ygg::ClosedInterval<ygg::float_t> interval)
 {
-    const auto objects = binding.get_objects();
-    const auto arity = objects.size();
-    auto changed = false;
-
-    {
-        const auto rank = EmptyAssignment::rank;
-
-        auto& empty_assignment_bound = m_set[rank];
-        changed |= update_interval(empty_assignment_bound, interval);
-    }
-
-    for (ygg::uint_t first_index = 0; first_index < arity; ++first_index)
-    {
-        const auto first_object = objects[first_index];
-
-        if (const auto rank = m_hash.find_rank(VertexAssignment(formalism::ParameterIndex(first_index), first_object.get_index())))
-        {
-            auto& single_assignment_bound = m_set[*rank];
-            changed |= update_interval(single_assignment_bound, interval);
-        }
-
-        for (ygg::uint_t second_index = first_index + 1; second_index < arity; ++second_index)
-        {
-            const auto second_object = objects[second_index];
-
-            if (const auto rank = m_hash.find_rank(EdgeAssignment(formalism::ParameterIndex(first_index),
-                                                                  first_object.get_index(),
-                                                                  formalism::ParameterIndex(second_index),
-                                                                  second_object.get_index())))
-            {
-                auto& double_assignment_bound = m_set[*rank];
-                changed |= update_interval(double_assignment_bound, interval);
-            }
-        }
-    }
+    assert(binding.get_index().relation == m_function_index);
+    auto changed = update_interval(m_set[EmptyAssignment::rank], interval);
+    for_each_assignment_rank(m_hash, binding.get_objects().get_data(), m_remapped_objects,
+                             [&](size_t rank) { changed |= update_interval(m_set[rank], interval); });
 
     return changed;
 }

@@ -105,28 +105,32 @@ std::optional<PredicateBindingView<F>> try_ground_binding(AtomView<LiftedTag, F>
  * ground
  */
 
+/// Substitute terms into retained object storage without interning a binding.
+inline void ground(TermListView terms, const GrounderContext& context, ygg::IndexList<Object>& objects)
+{
+    objects.clear();
+    for (const auto term : terms)
+        visit(
+            [&](auto arg)
+            {
+                using Alternative = std::decay_t<decltype(arg)>;
+                if constexpr (std::same_as<Alternative, ParameterIndex>)
+                    objects.push_back(context.binding[ygg::uint_t(arg)]);
+                else if constexpr (std::same_as<Alternative, ObjectView>)
+                    objects.push_back(arg.get_index());
+                else
+                    static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
+            },
+            term.get_variant());
+}
+
 template<FactKind F>
 std::pair<FunctionBindingView<F>, bool> ground(TermListView terms, FunctionView<F> function, GrounderContext& context)
 {
     auto binding = datalog::checkout<RelationBinding<Function<F>>>(context.builder);
 
     binding->relation = function.get_index();
-    for (const auto term : terms)
-    {
-        visit(
-            [&](auto&& arg)
-            {
-                using Alternative = std::decay_t<decltype(arg)>;
-
-                if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    binding->objects.push_back(context.binding[ygg::uint_t(arg)]);
-                else if constexpr (std::is_same_v<Alternative, ObjectView>)
-                    binding->objects.push_back(arg.get_index());
-                else
-                    static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
-            },
-            term.get_variant());
-    }
+    ground(terms, context, binding->objects);
 
     // Canonicalize and Serialize
     return datalog::insert(context.destination, *binding);
@@ -225,22 +229,7 @@ std::pair<PredicateBindingView<F>, bool> ground(TermListView terms, PredicateVie
     auto binding = datalog::checkout<RelationBinding<Predicate<F>>>(context.builder);
 
     binding->relation = predicate.get_index();
-    for (const auto term : terms)
-    {
-        visit(
-            [&](auto&& arg)
-            {
-                using Alternative = std::decay_t<decltype(arg)>;
-
-                if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    binding->objects.push_back(context.binding[ygg::uint_t(arg)]);
-                else if constexpr (std::is_same_v<Alternative, ObjectView>)
-                    binding->objects.push_back(arg.get_index());
-                else
-                    static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
-            },
-            term.get_variant());
-    }
+    ground(terms, context, binding->objects);
 
     // Canonicalize and Serialize
     return datalog::insert(context.destination, *binding);
@@ -341,22 +330,7 @@ std::pair<PredicateBindingView<F>, bool> ground_binding(AtomView<LiftedTag, F> e
     auto binding = datalog::checkout<RelationBinding<Predicate<F>>>(context.builder);
 
     binding->relation = element.get_predicate().get_index();
-    for (const auto term : element.get_terms())
-    {
-        visit(
-            [&](auto&& arg)
-            {
-                using Alternative = std::decay_t<decltype(arg)>;
-
-                if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    binding->objects.push_back(context.binding[ygg::uint_t(arg)]);
-                else if constexpr (std::is_same_v<Alternative, ObjectView>)
-                    binding->objects.push_back(arg.get_index());
-                else
-                    static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
-            },
-            term.get_variant());
-    }
+    ground(element.get_terms(), context, binding->objects);
 
     // Canonicalize and Serialize
     return datalog::insert(context.destination, *binding);
@@ -390,22 +364,7 @@ std::optional<FunctionBindingView<F>> try_ground_binding(FunctionTermView<Lifted
     auto binding = datalog::checkout<RelationBinding<Function<F>>>(context.builder);
 
     binding->relation = element.get_function().get_index();
-    for (const auto term : element.get_terms())
-    {
-        visit(
-            [&](auto&& arg)
-            {
-                using Alternative = std::decay_t<decltype(arg)>;
-
-                if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    binding->objects.push_back(context.binding[ygg::uint_t(arg)]);
-                else if constexpr (std::is_same_v<Alternative, ObjectView>)
-                    binding->objects.push_back(arg.get_index());
-                else
-                    static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
-            },
-            term.get_variant());
-    }
+    ground(element.get_terms(), context, binding->objects);
 
     canonicalize(*binding);
     return context.destination.find(*binding);
@@ -417,22 +376,7 @@ std::optional<PredicateBindingView<F>> try_ground_binding(AtomView<LiftedTag, F>
     auto binding = datalog::checkout<RelationBinding<Predicate<F>>>(context.builder);
 
     binding->relation = element.get_predicate().get_index();
-    for (const auto term : element.get_terms())
-    {
-        visit(
-            [&](auto&& arg)
-            {
-                using Alternative = std::decay_t<decltype(arg)>;
-
-                if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    binding->objects.push_back(context.binding[ygg::uint_t(arg)]);
-                else if constexpr (std::is_same_v<Alternative, ObjectView>)
-                    binding->objects.push_back(arg.get_index());
-                else
-                    static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
-            },
-            term.get_variant());
-    }
+    ground(element.get_terms(), context, binding->objects);
 
     canonicalize(*binding);
     return context.destination.find(*binding);

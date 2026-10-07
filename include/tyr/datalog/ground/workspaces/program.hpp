@@ -18,6 +18,7 @@
 #ifndef TYR_DATALOG_GROUND_WORKSPACES_PROGRAM_HPP_
 #define TYR_DATALOG_GROUND_WORKSPACES_PROGRAM_HPP_
 
+#include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/ground/scheduler.hpp"
 #include "tyr/datalog/ground/workspaces/facts.hpp"
@@ -77,6 +78,7 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
     FunctionAnnotations<> numeric_annotations;
     TP tp;
     CP cost_policy;
+    CostBuckets cost_buckets;
     Scheduler<GroundTag> scheduler;
     formalism::datalog::Builder datalog_builder;
 

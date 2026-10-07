@@ -1010,8 +1010,11 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
                 if (m_partitioned_adjacency_layout.is_static_only(pi, pj))
                 {
-                    for (auto bi = full_affected_partition_i.find_first(); bi != ygg::BitsetSpan<const uint64_t>::npos;
-                         bi = full_affected_partition_i.find_next(bi))
+                    const auto target_changed = delta_delta_partition_j.any();
+                    if (!target_changed && !delta_delta_partition_i.any())
+                        continue;
+                    const auto sources = target_changed ? full_affected_partition_i : delta_delta_partition_i;
+                    for (auto bi = sources.find_first(); bi != ygg::BitsetSpan<const uint64_t>::npos; bi = sources.find_next(bi))
                     {
                         const auto vi = offset_i + bi;
                         const auto static_blocks = m_compatibility_graph.get_adjacency_matrix().get_bitset(vi, pj).blocks();

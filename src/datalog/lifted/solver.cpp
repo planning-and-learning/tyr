@@ -264,7 +264,12 @@ private:
     {
         auto& in = wrctx.in();
         auto& out = wrctx.out();
-        auto head = fd::try_ground_binding(head_atom, out.ground_context());
+        auto& ground_context = out.ground_context();
+        auto binding = fd::checkout<f::RelationBinding<f::Predicate<f::FluentTag>>>(ground_context.builder);
+        binding->relation = head_atom.get_predicate().get_index();
+        fd::ground(head_atom.get_terms(), ground_context, binding->objects);
+        f::canonicalize(*binding);
+        auto head = ground_context.destination.find(*binding);
         if (head && in.fact_sets().template get<f::FluentTag>().predicate.contains(*head))
         {
             if constexpr (AP::records_propositional_achievers)
@@ -281,7 +286,7 @@ private:
             return false;
 
         if (!head)
-            head = fd::ground_binding(head_atom, out.ground_context()).first;
+            head = fd::insert(ground_context.destination, *binding).first;
         assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
         return insert_propositional_update(*head, input, out.head_updates(), out.delta_annotations()).is_handled();
     }

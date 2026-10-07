@@ -36,6 +36,7 @@
 #include <algorithm>
 #include <cassert>
 #include <stdexcept>
+#include <utility>
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/formalism/membership.hpp>
 
@@ -122,10 +123,26 @@ struct SuccessorGenerator<GroundTag>::Impl
     template<StateViewConcept<GroundTag> S, typename Callback>
     bool for_each_applicable_action(const Node<GroundTag, S>& node, match_tree::MatchTree<fp::Action<GroundTag>>& tree, Callback&& callback)
     {
+        return for_each_applicable_action(node, tree, [](auto) { return true; }, std::forward<Callback>(callback), [] { return false; });
+    }
+
+    template<StateViewConcept<GroundTag> S, typename Accept, typename Callback, typename Stop>
+    bool for_each_applicable_action(const Node<GroundTag, S>& node,
+                                    match_tree::MatchTree<fp::Action<GroundTag>>& tree,
+                                    Accept&& accept,
+                                    Callback&& callback,
+                                    Stop&& stop)
+    {
+        if (stop())
+            return false;
         const auto state_context = StateContext<GroundTag>(*definition->task, node.get_state().get_state_builder(), node.get_metric());
         tree.generate(state_context, evaluator.applicable_actions);
         for (const auto action : evaluator.applicable_actions)
         {
+            if (stop())
+                return false;
+            if (!accept(action))
+                continue;
             assert(is_applicable(action.get_condition(), state_context));
             if (!evaluator.executor.is_applicable_if_fires(action, state_context))
                 continue;
@@ -614,6 +631,22 @@ bool SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(
 }
 
 template<StateViewConcept<GroundTag> S>
+bool SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Node<GroundTag, S>& node,
+                                                                                fp::ActionView<LiftedTag> action,
+                                                                                const std::function<bool(BorrowedActionBindingView<GroundTag>)>& accept,
+                                                                                const std::function<bool(BorrowedActionBindingView<GroundTag>)>& callback,
+                                                                                const std::function<bool()>& stop)
+{
+    validate_task(m_impl->definition->task, node.get_state());
+    auto& tree = m_impl->get_schema_match_tree(action);
+    return m_impl->for_each_applicable_action(node,
+                                             tree,
+                                             [&](const auto candidate) { return accept(candidate.get_row()); },
+                                             [&](const auto candidate) { return callback(candidate.get_row()); },
+                                             stop);
+}
+
+template<StateViewConcept<GroundTag> S>
 bool SuccessorGenerator<GroundTag>::for_each_successor_node(const Node<GroundTag, S>& node,
                                                             fp::ActionView<LiftedTag> action,
                                                             SuccessorStorage<GroundTag, S>& storage,
@@ -876,6 +909,13 @@ SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const
                                                                            fp::ActionView<LiftedTag> action,
                                                                            const std::function<bool(BorrowedActionBindingView<GroundTag>)>& callback);
 
+template bool
+SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Node<GroundTag>& node,
+                                                                           fp::ActionView<LiftedTag> action,
+                                                                           const std::function<bool(BorrowedActionBindingView<GroundTag>)>& accept,
+                                                                           const std::function<bool(BorrowedActionBindingView<GroundTag>)>& callback,
+                                                                           const std::function<bool()>& stop);
+
 template ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Node<GroundTag, BuilderStateView<GroundTag>>& node,
                                                                                  fp::ActionBindingView binding);
 
@@ -887,6 +927,13 @@ template bool
 SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Node<GroundTag, BuilderStateView<GroundTag>>& node,
                                                                            fp::ActionView<LiftedTag> action,
                                                                            const std::function<bool(BorrowedActionBindingView<GroundTag>)>& callback);
+
+template bool
+SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Node<GroundTag, BuilderStateView<GroundTag>>& node,
+                                                                           fp::ActionView<LiftedTag> action,
+                                                                           const std::function<bool(BorrowedActionBindingView<GroundTag>)>& accept,
+                                                                           const std::function<bool(BorrowedActionBindingView<GroundTag>)>& callback,
+                                                                           const std::function<bool()>& stop);
 
 template ActionBindingResult
 SuccessorGenerator<GroundTag>::try_get_applicable_action_binding(const Node<GroundTag>& node, fp::ActionView<LiftedTag> action, fp::ObjectSpanView objects);

@@ -100,6 +100,7 @@ void ProgramWorkspace<LiftedTag, AP, TP, CP>::reset_evaluation()
     clear_rules(predicate_rules);
     clear_rules(function_rules);
 
+    cost_buckets.clear();
     tp.clear();
     cost_policy.clear();
     numeric_support_selector.reset();

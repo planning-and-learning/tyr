@@ -176,6 +176,16 @@ struct SuccessorGenerator<LiftedTag>::Impl
                                             std::vector<d::Scheduler<LiftedTag>>& schedulers,
                                             Callback&& callback);
 
+    template<StateViewConcept<LiftedTag> S, typename Accept, typename Callback, typename Stop>
+    bool for_each_applicable_action_binding(const Node<LiftedTag, S>& node,
+                                            ygg::Data<f::RelationBinding<fp::Action<LiftedTag>>>& scratch_binding,
+                                            df::ProgramView<LiftedTag> program,
+                                            const P2DTranslationContext<LiftedTag>& input_translation,
+                                            std::vector<d::Scheduler<LiftedTag>>& schedulers,
+                                            Accept&& accept,
+                                            Callback&& callback,
+                                            Stop&& stop);
+
     template<StateViewConcept<LiftedTag> S>
     ygg::float_t generate_successor_state(const Node<LiftedTag, S>& node,
                                           const ygg::Data<f::RelationBinding<fp::Action<LiftedTag>>>& binding,
@@ -220,7 +230,7 @@ void SuccessorGenerator<LiftedTag>::Impl::compute_action_facts(const Node<Lifted
     const auto state = node.get_state();
     insert_extended_state(state.get_state_builder(), *definition->task->get_repository(), input_translation, evaluator.workspace);
 
-    auto ctx = d::ProgramExecutionContext(evaluator.workspace, schedulers);
+    auto ctx = d::ProgramExecutionContext<LiftedTag>::from_reset_workspace(evaluator.workspace, schedulers);
     d::execute_model(ctx, *evaluator.execution_context);
 }
 
@@ -232,6 +242,28 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
                                                                              std::vector<d::Scheduler<LiftedTag>>& schedulers,
                                                                              Callback&& callback)
 {
+    return for_each_applicable_action_binding(node,
+                                              scratch_binding,
+                                              program,
+                                              input_translation,
+                                              schedulers,
+                                              [](const auto&) { return true; },
+                                              std::forward<Callback>(callback),
+                                              [] { return false; });
+}
+
+template<StateViewConcept<LiftedTag> S, typename Accept, typename Callback, typename Stop>
+bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(const Node<LiftedTag, S>& node,
+                                                                             ygg::Data<f::RelationBinding<fp::Action<LiftedTag>>>& scratch_binding,
+                                                                             df::ProgramView<LiftedTag> program,
+                                                                             const P2DTranslationContext<LiftedTag>& input_translation,
+                                                                             std::vector<d::Scheduler<LiftedTag>>& schedulers,
+                                                                             Accept&& accept,
+                                                                             Callback&& callback,
+                                                                             Stop&& stop)
+{
+    if (stop())
+        return false;
     compute_action_facts(node, input_translation, schedulers);
 
     const auto state_context = StateContext<LiftedTag>(*definition->task, node.get_state().get_state_builder(), node.get_metric());
@@ -245,9 +277,13 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
         const auto& set = evaluator.workspace.facts.fact_sets.predicate.get_sets()[ygg::uint_t(predicate.get_index())];
         for (const auto& binding : set.get_bindings())
         {
+            if (stop())
+                return false;
             scratch_binding.relation = action.get_index();
             scratch_binding.objects.clear();
             ygg::extend(binding.get_objects(), scratch_binding.objects);
+            if (!accept(scratch_binding))
+                continue;
 
             assert(is_applicable(action.get_condition(), ApplicabilityContext { state_context, grounder_context, *definition->task->get_fdr_context() })
                    && "ApplicableActionProgram emitted an action binding whose condition is not satisfied.");
@@ -1030,6 +1066,26 @@ bool SuccessorGenerator<LiftedTag>::for_each_borrowed_applicable_action_binding(
                                                       { return callback(ygg::make_view(binding, *m_impl->definition->task->get_repository())); });
 }
 
+template<StateViewConcept<LiftedTag> S>
+bool SuccessorGenerator<LiftedTag>::for_each_borrowed_applicable_action_binding(const Node<LiftedTag, S>& node,
+                                                                                fp::ActionView<LiftedTag> action,
+                                                                                const std::function<bool(BorrowedActionBindingView<LiftedTag>)>& accept,
+                                                                                const std::function<bool(BorrowedActionBindingView<LiftedTag>)>& callback,
+                                                                                const std::function<bool()>& stop)
+{
+    validate_task(m_impl->definition->task, node.get_state());
+    auto& schema = m_impl->get_schema_evaluator(action);
+    const auto& repository = *m_impl->definition->task->get_repository();
+    return m_impl->for_each_applicable_action_binding(node,
+                                                      *m_impl->evaluator.scratch_action_binding,
+                                                      schema.program,
+                                                      schema.input_translation,
+                                                      schema.schedulers,
+                                                      [&](auto& binding) { return accept(ygg::make_view(binding, repository)); },
+                                                      [&](auto& binding) { return callback(ygg::make_view(binding, repository)); },
+                                                      stop);
+}
+
 PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_initial_node(StateRepository<LiftedTag>& state_repository,
                                                                              AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
@@ -1125,6 +1181,13 @@ SuccessorGenerator<LiftedTag>::for_each_borrowed_applicable_action_binding(const
                                                                            fp::ActionView<LiftedTag> action,
                                                                            const std::function<bool(BorrowedActionBindingView<LiftedTag>)>& callback);
 
+template bool
+SuccessorGenerator<LiftedTag>::for_each_borrowed_applicable_action_binding(const Node<LiftedTag>& node,
+                                                                           fp::ActionView<LiftedTag> action,
+                                                                           const std::function<bool(BorrowedActionBindingView<LiftedTag>)>& accept,
+                                                                           const std::function<bool(BorrowedActionBindingView<LiftedTag>)>& callback,
+                                                                           const std::function<bool()>& stop);
+
 template Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag>& node,
                                                                            fp::ActionBindingDataView binding,
                                                                            StateRepository<LiftedTag>& storage,
@@ -1141,6 +1204,13 @@ template bool
 SuccessorGenerator<LiftedTag>::for_each_borrowed_applicable_action_binding(const Node<LiftedTag, BuilderStateView<LiftedTag>>& node,
                                                                            fp::ActionView<LiftedTag> action,
                                                                            const std::function<bool(BorrowedActionBindingView<LiftedTag>)>& callback);
+
+template bool
+SuccessorGenerator<LiftedTag>::for_each_borrowed_applicable_action_binding(const Node<LiftedTag, BuilderStateView<LiftedTag>>& node,
+                                                                           fp::ActionView<LiftedTag> action,
+                                                                           const std::function<bool(BorrowedActionBindingView<LiftedTag>)>& accept,
+                                                                           const std::function<bool(BorrowedActionBindingView<LiftedTag>)>& callback,
+                                                                           const std::function<bool()>& stop);
 
 template Node<LiftedTag, BuilderStateView<LiftedTag>>
 SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag, BuilderStateView<LiftedTag>>& node,

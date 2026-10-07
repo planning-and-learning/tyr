@@ -59,14 +59,16 @@ concept SolverPolicyConcept =
 template<TaskKind Kind, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 bool commit_head_bucket(ProgramExecutionContext<Kind, AP, TP, CP>& ctx, Scheduler<Kind>& scheduler, CostBuckets& cost_buckets, Cost cost)
 {
-    auto bucket = cost_buckets.take(cost);
+    auto& bucket = cost_buckets.at(cost);
     gtl::erase_if(bucket.predicate, [&](const auto fact) { return !ctx.out().facts().insert(fact); });
     gtl::erase_if(bucket.function, [&](const auto& entry) { return !ctx.out().facts().insert(entry.first, entry.second); });
 
     // Install the entire bucket before notifying rules. The scheduler controls the representation-specific
     // notification order.
     scheduler.notify_generated(bucket, ctx);
-    return !bucket.empty();
+    const auto changed = !bucket.empty();
+    cost_buckets.erase(cost);
+    return changed;
 }
 
 template<TaskKind Kind, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
@@ -77,14 +79,18 @@ void compute_model_impl(ProgramExecutionContext<Kind, AP, TP, CP>& ctx)
     while (policy.next_stratum())
     {
         Scheduler<Kind>& scheduler = policy.scheduler();
-        auto cost_buckets = CostBuckets {};
+        auto& cost_buckets = ctx.out().cost_buckets();
+        cost_buckets.clear();
         auto pending_achievers = PendingPredicateAchievers {};
         scheduler.begin_stratum(ctx);
 
         while (true)
         {
             if (ctx.out().tp().should_terminate(FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }))
+            {
+                cost_buckets.clear();
                 return;
+            }
 
             scheduler.begin_iteration(ctx);
             if (policy.generate_updates(cost_buckets, pending_achievers))

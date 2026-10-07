@@ -21,9 +21,12 @@
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
+#include <algorithm>
+#include <cassert>
 #include <limits>
 #include <map>
 #include <utility>
+#include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
@@ -50,20 +53,24 @@ public:
         [[nodiscard]] bool empty() const noexcept { return predicate.empty() && function.empty(); }
     };
 
-    void clear() noexcept { m_buckets.clear(); }
+    void clear() noexcept
+    {
+        while (!m_buckets.empty())
+            recycle(m_buckets.extract(m_buckets.begin()));
+    }
 
     [[nodiscard]] bool is_empty() const noexcept { return m_buckets.empty(); }
 
     [[nodiscard]] Cost min_cost() const noexcept { return m_buckets.empty() ? std::numeric_limits<Cost>::max() : m_buckets.begin()->first; }
 
-    bool insert(Cost cost, PredicateKey key) { return m_buckets[cost].predicate.insert(key).second; }
+    bool insert(Cost cost, PredicateKey key) { return get_bucket(cost).predicate.insert(key).second; }
 
     bool insert(Cost cost, FunctionKey key, Interval interval)
     {
         if (empty(interval))
             return false;
 
-        auto& bucket = m_buckets[cost].function;
+        auto& bucket = get_bucket(cost).function;
         const auto [it, inserted] = bucket.emplace(key, interval);
         if (inserted)
             return true;
@@ -82,7 +89,7 @@ public:
 
         const auto erased = it->second.predicate.erase(key) > 0;
         if (it->second.empty())
-            m_buckets.erase(it);
+            recycle(m_buckets.extract(it));
         return erased;
     }
 
@@ -94,19 +101,46 @@ public:
         insert(update.new_cost, key);
     }
 
-    Bucket take(Cost cost)
-    {
-        const auto it = m_buckets.find(cost);
-        if (it == m_buckets.end())
-            return {};
+    Bucket& at(Cost cost) { return m_buckets.at(cost); }
 
-        auto bucket = std::move(it->second);
-        m_buckets.erase(it);
-        return bucket;
+    bool erase(Cost cost)
+    {
+        auto node = m_buckets.extract(cost);
+        const auto erased = !node.empty();
+        recycle(std::move(node));
+        return erased;
     }
 
 private:
+    void recycle(std::map<Cost, Bucket>::node_type node) noexcept
+    {
+        if (node.empty())
+            return;
+        node.mapped().predicate.clear();
+        node.mapped().function.clear();
+        assert(m_free.size() < m_free.capacity());
+        m_free.push_back(std::move(node));
+    }
+
+    Bucket& get_bucket(Cost cost)
+    {
+        if (const auto it = m_buckets.find(cost); it != m_buckets.end())
+            return it->second;
+        if (!m_free.empty())
+        {
+            auto node = std::move(m_free.back());
+            m_free.pop_back();
+            node.key() = cost;
+            return m_buckets.insert(std::move(node)).position->second;
+        }
+        // Reserve before creating a node so reset and recycling never allocate.
+        if (m_free.capacity() <= m_buckets.size())
+            m_free.reserve(std::max(m_buckets.size() + 1, m_free.capacity() * 2));
+        return m_buckets.try_emplace(cost).first->second;
+    }
+
     std::map<Cost, Bucket> m_buckets;
+    std::vector<std::map<Cost, Bucket>::node_type> m_free;
 };
 
 }

@@ -196,6 +196,16 @@ public:
                                                      formalism::planning::ActionView<LiftedTag> action,
                                                      const std::function<bool(BorrowedActionBindingView<LiftedTag>)>& callback);
 
+    /// The predicate inspects condition-matching candidates before effect compatibility is checked.
+    /// Rejected candidates do not reach callback. stop is polled before enumeration and each candidate.
+    /// Predicate bindings are borrowed for that call only; successor generation belongs in callback.
+    template<StateViewConcept<LiftedTag> S>
+    bool for_each_borrowed_applicable_action_binding(const Node<LiftedTag, S>& node,
+                                                     formalism::planning::ActionView<LiftedTag> action,
+                                                     const std::function<bool(BorrowedActionBindingView<LiftedTag>)>& accept,
+                                                     const std::function<bool(BorrowedActionBindingView<LiftedTag>)>& callback,
+                                                     const std::function<bool()>& stop);
+
     // Packed output retains registered state handles without retaining unpacked builders.
     PackedNode<LiftedTag> get_packed_initial_node(StateRepository<LiftedTag>& state_repository, AxiomEvaluator<LiftedTag>& axiom_evaluator);
     PackedNode<LiftedTag> get_packed_node(StateRepository<LiftedTag>& state_repository, ygg::Index<State<LiftedTag>> state_index);
