@@ -62,7 +62,7 @@ public:
     ygg::hash_t hash(const ygg::Builder<State<Kind>>& state) const noexcept
     {
         auto result = static_cast<ygg::hash_t>(m_seed);
-        ygg::hash_combine(result, state.template get_atoms<formalism::FluentTag>());
+        ygg::hash_combine(result, state.template get_atom_storage<formalism::FluentTag>());
         ygg::hash_combine(result, state.get_numeric_variables());
         // Final avalanche over the accumulated hash, using XXH64's 64-bit seed and result.
         return boost::hash2::xxhash_64(result).result();

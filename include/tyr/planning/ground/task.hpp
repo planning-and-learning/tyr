@@ -23,15 +23,8 @@
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/static_state.hpp"
 #include "tyr/planning/task.hpp"
-
-#include <boost/dynamic_bitset.hpp>
-#include <limits>
-#include <stddef.h>
-#include <vector>
-#include <yggdrasil/containers/dynamic_bitset.hpp>
-#include <yggdrasil/containers/vector.hpp>
-#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
@@ -42,34 +35,18 @@ class Task<GroundTag>
 public:
     explicit Task(formalism::planning::PlanningTask<GroundTag> task);
 
-    template<formalism::FactKind T>
-    size_t get_num_atoms() const noexcept;
-    size_t get_num_actions() const noexcept;
-    size_t get_num_axioms() const noexcept;
-
-    const auto& get_static_atoms_bitset() const noexcept { return m_static_atoms_bitset; }
-    const auto& get_static_numeric_variables() const noexcept { return m_static_numeric_variables; }
-    bool test(ygg::Index<formalism::planning::Atom<GroundTag, formalism::StaticTag>> index) const
-    {
-        return ygg::test(ygg::uint_t(index), m_static_atoms_bitset);
-    }
-    ygg::float_t get(ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>> index) const noexcept
-    {
-        return ygg::get(ygg::uint_t(index), m_static_numeric_variables, std::numeric_limits<ygg::float_t>::quiet_NaN());
-    }
-
     const auto& get_formalism_task() const noexcept { return m_task; }
     const auto& get_domain() const noexcept { return m_task.get_domain(); }
     auto get_task() const noexcept { return m_task.get_task(); }
     const auto& get_fdr_context() const noexcept { return m_task.get_fdr_context(); }
     const auto& get_repository() const noexcept { return m_task.get_repository(); }
+    const StaticState& get_static_state() const noexcept { return m_static_state; }
     bool has_axioms() const noexcept { return !get_task().get_ground_axioms().empty(); }
 
 private:
     formalism::planning::PlanningTask<GroundTag> m_task;
 
-    boost::dynamic_bitset<> m_static_atoms_bitset;
-    std::vector<ygg::float_t> m_static_numeric_variables;
+    StaticState m_static_state;
 };
 
 }

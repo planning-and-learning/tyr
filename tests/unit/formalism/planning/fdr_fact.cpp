@@ -17,7 +17,8 @@ concept FdrFactContract = std::totally_ordered<ygg::Data<Entity>> && std::totall
                                  view.get_variable();
                                  view.get_value();
                                  view.has_value();
-                                 view.get_atom();
+                                 { view.get_atom_index() } -> std::same_as<std::optional<ygg::Index<fp::Atom<tyr::GroundTag, f::FluentTag>>>>;
+                                 { view.get_atom() } -> std::same_as<std::optional<fp::AtomView<tyr::GroundTag, f::FluentTag>>>;
                                  { view == view } -> std::same_as<bool>;
                                  { view < view } -> std::same_as<bool>;
                              };

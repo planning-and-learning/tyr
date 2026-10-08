@@ -55,7 +55,7 @@ public:
     ygg::Index<planning::State<Kind>> get_index() const noexcept { return m_index; }
 
     template<::tyr::formalism::FactKind T>
-    auto get_atoms() const noexcept
+    auto get_atom_storage() const noexcept
     {
         if constexpr (std::same_as<T, ::tyr::formalism::FluentTag>)
             return m_fact_storage;

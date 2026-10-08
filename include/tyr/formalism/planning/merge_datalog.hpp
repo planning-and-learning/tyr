@@ -146,31 +146,19 @@ std::pair<datalog::FunctionTermView<GroundTag, T_DST>, bool> merge_p2d(FunctionT
 template<FactKind T_SRC, FactKind T_DST = T_SRC>
 std::pair<datalog::FunctionTermValueView<GroundTag, T_DST>, bool> merge_p2d(FunctionTermValueView<GroundTag, T_SRC> element, MergeDatalogContext& context);
 
-template<FactKind T_SRC,
-         FactKind T_DST = T_SRC,
-         typename = std::enable_if_t<(std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>>>
-std::pair<datalog::NumericEffectView<LiftedTag, T_DST>, bool> merge_p2d(NumericEffectView<LiftedTag, T_SRC> element, MergeDatalogContext& context);
+template<FactKind T_SRC, FactKind T_DST = T_SRC, TaskKind Kind>
+    requires (std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>
+std::pair<datalog::NumericEffectView<Kind, T_DST>, bool> merge_p2d(NumericEffectView<Kind, T_SRC> element, MergeDatalogContext& context);
 
-template<FactKind T_SRC,
-         FactKind T_DST = T_SRC,
-         typename = std::enable_if_t<(std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>>>
-ygg::Data<datalog::NumericEffectOperator<LiftedTag, T_DST>> merge_p2d(NumericEffectOperatorView<LiftedTag, T_SRC> element, MergeDatalogContext& context);
+template<FactKind T_SRC, FactKind T_DST = T_SRC, TaskKind Kind>
+    requires (std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>
+ygg::Data<datalog::NumericEffectOperator<Kind, T_DST>> merge_p2d(NumericEffectOperatorView<Kind, T_SRC> element, MergeDatalogContext& context);
 
 ygg::Data<datalog::FunctionExpression<LiftedTag>> merge_p2d(FunctionExpressionView<LiftedTag> element, MergeDatalogContext& context);
 
 ygg::Data<datalog::FunctionExpression<GroundTag>> merge_p2d(FunctionExpressionView<GroundTag> element, MergeDatalogContext& context);
 
 std::pair<datalog::MetricView, bool> merge_p2d(MetricView element, MergeDatalogContext& context);
-
-template<FactKind T_SRC,
-         FactKind T_DST = T_SRC,
-         typename = std::enable_if_t<(std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>>>
-std::pair<datalog::NumericEffectView<GroundTag, T_DST>, bool> merge_p2d(NumericEffectView<GroundTag, T_SRC> element, MergeDatalogContext& context);
-
-template<FactKind T_SRC,
-         FactKind T_DST = T_SRC,
-         typename = std::enable_if_t<(std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>>>
-ygg::Data<datalog::NumericEffectOperator<GroundTag, T_DST>> merge_p2d(NumericEffectOperatorView<GroundTag, T_SRC> element, MergeDatalogContext& context);
 
 template<TaskKind T>
 std::pair<datalog::UnaryOperatorView<T>, bool> merge_p2d(UnaryOperatorView<T> element, MergeDatalogContext& context);
@@ -513,10 +501,11 @@ std::pair<datalog::FunctionTermValueView<GroundTag, T_DST>, bool> merge_p2d(Func
     return datalog::insert(context.destination, *fterm_value);
 }
 
-template<FactKind T_SRC, FactKind T_DST, typename>
-std::pair<datalog::NumericEffectView<LiftedTag, T_DST>, bool> merge_p2d(NumericEffectView<LiftedTag, T_SRC> element, MergeDatalogContext& context)
+template<FactKind T_SRC, FactKind T_DST, TaskKind Kind>
+    requires (std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>
+std::pair<datalog::NumericEffectView<Kind, T_DST>, bool> merge_p2d(NumericEffectView<Kind, T_SRC> element, MergeDatalogContext& context)
 {
-    auto numeric_effect = datalog::checkout<datalog::NumericEffect<LiftedTag, T_DST>>(context.builder);
+    auto numeric_effect = datalog::checkout<datalog::NumericEffect<Kind, T_DST>>(context.builder);
 
     numeric_effect->operator_kind = element.get_operator();
     numeric_effect->fterm = merge_p2d<T_SRC, T_DST>(element.get_fterm(), context).first.get_index();
@@ -525,32 +514,11 @@ std::pair<datalog::NumericEffectView<LiftedTag, T_DST>, bool> merge_p2d(NumericE
     return datalog::insert(context.destination, *numeric_effect);
 }
 
-template<FactKind T_SRC, FactKind T_DST, typename>
-ygg::Data<datalog::NumericEffectOperator<LiftedTag, T_DST>> merge_p2d(NumericEffectOperatorView<LiftedTag, T_SRC> element, MergeDatalogContext& context)
+template<FactKind T_SRC, FactKind T_DST, TaskKind Kind>
+    requires (std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>
+ygg::Data<datalog::NumericEffectOperator<Kind, T_DST>> merge_p2d(NumericEffectOperatorView<Kind, T_SRC> element, MergeDatalogContext& context)
 {
-    using OperatorData = ygg::Data<datalog::NumericEffectOperator<LiftedTag, T_DST>>;
-
-    return visit([&](auto&& arg)
-                 { return OperatorData(arg.get_operator(), typename OperatorData::Variant(merge_p2d<T_SRC, T_DST>(arg, context).first.get_index())); },
-                 element.get_variant());
-}
-
-template<FactKind T_SRC, FactKind T_DST, typename>
-std::pair<datalog::NumericEffectView<GroundTag, T_DST>, bool> merge_p2d(NumericEffectView<GroundTag, T_SRC> element, MergeDatalogContext& context)
-{
-    auto numeric_effect = datalog::checkout<datalog::NumericEffect<GroundTag, T_DST>>(context.builder);
-
-    numeric_effect->operator_kind = element.get_operator();
-    numeric_effect->fterm = merge_p2d<T_SRC, T_DST>(element.get_fterm(), context).first.get_index();
-    numeric_effect->fexpr = merge_p2d(element.get_fexpr(), context);
-
-    return datalog::insert(context.destination, *numeric_effect);
-}
-
-template<FactKind T_SRC, FactKind T_DST, typename>
-ygg::Data<datalog::NumericEffectOperator<GroundTag, T_DST>> merge_p2d(NumericEffectOperatorView<GroundTag, T_SRC> element, MergeDatalogContext& context)
-{
-    using OperatorData = ygg::Data<datalog::NumericEffectOperator<GroundTag, T_DST>>;
+    using OperatorData = ygg::Data<datalog::NumericEffectOperator<Kind, T_DST>>;
 
     return visit([&](auto&& arg)
                  { return OperatorData(arg.get_operator(), typename OperatorData::Variant(merge_p2d<T_SRC, T_DST>(arg, context).first.get_index())); },

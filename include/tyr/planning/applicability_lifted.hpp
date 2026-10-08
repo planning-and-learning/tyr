@@ -201,7 +201,7 @@ inline ygg::float_t evaluate(formalism::planning::FunctionTermView<LiftedTag, fo
     if (!fterm_or_nullopt.has_value())
         return std::numeric_limits<ygg::float_t>::quiet_NaN();
 
-    return context.state.task.get(fterm_or_nullopt->get_index());
+    return context.state.task.get_static_state().get(*fterm_or_nullopt);
 }
 
 inline ygg::float_t evaluate(formalism::planning::FunctionTermView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context)
@@ -325,7 +325,7 @@ inline bool is_applicable(formalism::planning::LiteralView<LiftedTag, formalism:
     if (!atom_or_nullopt.has_value())
         return !element.get_polarity();
 
-    return context.state.task.test(atom_or_nullopt->get_index()) == element.get_polarity();
+    return context.state.task.get_static_state().test(*atom_or_nullopt) == element.get_polarity();
 }
 
 inline bool is_applicable(formalism::planning::LiteralView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context)

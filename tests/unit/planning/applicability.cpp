@@ -1,5 +1,6 @@
 #include "planning/parser.hpp"
 #include "tyr/analysis/domains.hpp"
+#include "tyr/formalism/planning/copy.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/planning.hpp"
 
@@ -364,8 +365,8 @@ void expect_schema_queries_match_filtered_successors()
         const auto left = lhs.get_state();
         const auto right = rhs.get_state();
         return lhs.get_metric() == rhs.get_metric() && std::ranges::equal(left.get_fluent_facts(), right.get_fluent_facts())
-               && std::ranges::equal(left.get_derived_atoms(), right.get_derived_atoms())
-               && std::ranges::equal(left.get_fluent_fterm_values(), right.get_fluent_fterm_values());
+               && std::ranges::equal(left.template get_atoms<::tyr::formalism::DerivedTag>(), right.template get_atoms<::tyr::formalism::DerivedTag>())
+               && std::ranges::equal(left.template get_fterm_values<formalism::FluentTag>(), right.template get_fterm_values<formalism::FluentTag>());
     };
     const auto num_action_bindings = count_action_bindings(task);
     const auto states_before_streaming = state_repository->num_states();
@@ -394,7 +395,9 @@ void expect_schema_queries_match_filtered_successors()
     ASSERT_EQ(streamed, 4);
     EXPECT_EQ(count_action_bindings(task), num_action_bindings);
     if constexpr (Borrowed)
+    {
         EXPECT_EQ(state_repository->num_states(), states_before_streaming);
+    }
     const auto expected_packed = source->get_packed_successor_nodes(initial_node, *state_repository, *axiom_evaluator);
     if constexpr (Borrowed)
     {
@@ -423,7 +426,7 @@ void expect_schema_queries_match_filtered_successors()
         auto actual = pool.get_or_allocate();
         EXPECT_EQ(source->generate_successor_state(initial_node, binding, *actual), source->generate_successor_state(registered_initial, binding, *expected));
         EXPECT_TRUE(std::ranges::equal(actual->get_fluent_facts(), expected->get_fluent_facts()));
-        EXPECT_TRUE(std::ranges::equal(actual->get_fluent_fterm_values(), expected->get_fluent_fterm_values()));
+        EXPECT_TRUE(std::ranges::equal(actual->template get_fterm_values<formalism::FluentTag>(), expected->template get_fterm_values<formalism::FluentTag>()));
         EXPECT_EQ(state_repository->num_states(), num_states);
         EXPECT_TRUE(owned->get_index().is_max());
     }
@@ -529,7 +532,9 @@ void expect_schema_queries_match_filtered_successors()
             EXPECT_EQ(callback_bindings, bindings);
             EXPECT_TRUE(std::ranges::equal(callback_successors, successors, same_successor));
             if (action.get_name() == "alias")
+            {
                 EXPECT_GT(inspected, bindings.size());  // Aliased numeric effects are rejected after the predicate.
+            }
 
             const auto accepts_low = [&](auto binding)
             {
@@ -942,7 +947,7 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaQueriesRefreshDerivedPredicatesAc
                 {
                     EXPECT_EQ(successor.label.get_relation(), action);
                     auto saw_effect_only = false;
-                    for (const auto& [term, value] : successor.node.get_state().get_fluent_fterm_values_view())
+                    for (const auto& [term, value] : successor.node.get_state().template get_fterm_values_view<formalism::FluentTag>())
                         if (term.get_function().get_name().str() == "effect-only")
                         {
                             saw_effect_only = true;
@@ -975,6 +980,45 @@ TEST(TyrPlanningApplicabilityTest, TppUndefinedDriveCostIsFilteredAsAnEffect)
         ASSERT_EQ(binding.get_data().size(), 3);
         EXPECT_NE(binding.get_data()[1], binding.get_data()[2]);
     }
+}
+
+TEST(TyrPlanningApplicabilityTest, StaticApplicabilityUsesCopiedAtomIndices)
+{
+    const auto source = p::Task<LiftedTag>::create(fp::Parser(R"(
+(define (domain static-copy)
+  (:requirements :adl)
+  (:predicates (present) (absent) (done))
+  (:action mark :parameters () :precondition (and) :effect (done)))
+)",
+                                                           "static-copy-domain.pddl")
+                                                    .parse_task(R"(
+(define (problem static-copy-problem)
+  (:domain static-copy)
+  (:init (present))
+  (:goal (not (absent))))
+)",
+                                                                "static-copy-problem.pddl"));
+    auto destination = source->get_domain().get_repository_factory()->create_shared(source->get_domain().get_repository().get());
+    auto builder = fp::Builder {};
+    auto context = fp::CopyContext { builder, *destination };
+    ASSERT_EQ(source->get_task().get_atoms<formalism::StaticTag>().size(), 1);
+    ASSERT_EQ(source->get_task().get_goal().get_literals<formalism::StaticTag>().size(), 1);
+    const auto source_present = source->get_task().get_atoms<formalism::StaticTag>()[0];
+    const auto source_absent = source->get_task().get_goal().get_literals<formalism::StaticTag>()[0];
+
+    // Reverse insertion order so source and destination atom indices differ.
+    const auto absent = fp::copy(source_absent, context).first;
+    const auto present = fp::copy(source_present, context).first;
+    ASSERT_NE(present.get_index(), source_present.get_index());
+    auto atoms = ygg::IndexList<fp::Atom<GroundTag, formalism::StaticTag>> { present.get_index() };
+    auto fterm_values = ygg::IndexList<fp::FunctionTermValue<GroundTag, formalism::StaticTag>> {};
+    const auto static_state = p::StaticState(ygg::make_view(atoms, *destination), ygg::make_view(fterm_values, *destination));
+    auto literal = ygg::Data<fp::Literal<GroundTag, formalism::StaticTag>>(present, true);
+
+    EXPECT_TRUE(p::is_statically_applicable(fp::insert(*destination, literal).first, static_state));
+    EXPECT_TRUE(p::is_statically_applicable(absent, static_state));
+    EXPECT_TRUE(static_state.test(present));
+    EXPECT_FALSE(static_state.test(absent.get_atom()));
 }
 
 TEST(TyrPlanningApplicabilityTest, PairwiseStaticCompatibilityRestrictsQuantifiedConditionalEffects)

@@ -43,9 +43,8 @@ void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<GroundTag>>& state
                                      const P2DTranslationContext<GroundTag>::FluentToFluentAtomMapping& fluent_to_fluent_atom,
                                      datalog::TaggedFactSets<f::FluentTag>& fact_sets)
 {
-    for (const auto fact : state.get_fluent_facts_view(repository))
-        if (const auto atom = fact.get_atom())
-            fact_sets.predicate.insert(fluent_to_fluent_atom.at(*atom));
+    for (const auto atom : state.get_atoms_view<f::FluentTag>(repository))
+        fact_sets.predicate.insert(fluent_to_fluent_atom.at(atom));
 }
 
 void insert_numeric_variables_to_fact_set(const ygg::Builder<State<GroundTag>>& state,
@@ -53,7 +52,7 @@ void insert_numeric_variables_to_fact_set(const ygg::Builder<State<GroundTag>>& 
                                           const P2DTranslationContext<GroundTag>::FluentToFluentFunctionTermMapping& fluent_to_fluent_fterm,
                                           datalog::TaggedFactSets<f::FluentTag>& fact_sets)
 {
-    for (const auto& [fterm, value] : state.get_fluent_fterm_values_view(repository))
+    for (const auto& [fterm, value] : state.get_fterm_values_view<f::FluentTag>(repository))
         if (const auto it = fluent_to_fluent_fterm.find(fterm); it != fluent_to_fluent_fterm.end())
             fact_sets.function.insert(it->second, value);
 }
@@ -64,9 +63,8 @@ void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& state
                                      fp::MergeDatalogContext& merge_context,
                                      datalog::TaggedFactSets<f::FluentTag>& fact_sets)
 {
-    for (const auto fact : state.get_fluent_facts_view(repository))
+    for (const auto atom : state.get_atoms_view<f::FluentTag>(repository))
     {
-        const auto atom = fact.get_atom().value();
         if (const auto it = fluent_to_fluent_predicate.find(atom.get_predicate()); it != fluent_to_fluent_predicate.end())
             fact_sets.predicate.insert(fp::merge_p2d(atom.get_row(), it->second, merge_context).first);
     }
@@ -78,7 +76,7 @@ void insert_derived_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& stat
                                       fp::MergeDatalogContext& merge_context,
                                       datalog::TaggedFactSets<f::FluentTag>& fact_sets)
 {
-    for (const auto atom : state.get_derived_atoms_view(repository))
+    for (const auto atom : state.get_atoms_view<f::DerivedTag>(repository))
         if (const auto it = derived_to_fluent_predicate.find(atom.get_predicate()); it != derived_to_fluent_predicate.end())
             fact_sets.predicate.insert(fp::merge_p2d(atom.get_row(), it->second, merge_context).first);
 }
@@ -89,7 +87,7 @@ void insert_numeric_variables_to_fact_set(const ygg::Builder<State<LiftedTag>>& 
                                           fp::MergeDatalogContext& merge_context,
                                           datalog::TaggedFactSets<f::FluentTag>& fact_sets)
 {
-    for (const auto& [fterm, value] : state.get_fluent_fterm_values_view(repository))
+    for (const auto& [fterm, value] : state.get_fterm_values_view<f::FluentTag>(repository))
         if (const auto it = fluent_to_fluent_function.find(fterm.get_function()); it != fluent_to_fluent_function.end())
             fact_sets.function.insert(fp::merge_p2d(fterm.get_row(), it->second, merge_context).first, value);
 }

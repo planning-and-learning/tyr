@@ -147,7 +147,7 @@ struct StateRepository<Kind>::Impl
         {
             auto& packed_states = storage->packed_states;
             using PackedStates = typename Storage<ThreadSafe>::PackedStates;
-            const auto fluent = fluent_backend.insert(state.template get_atoms<formalism::FluentTag>());
+            const auto fluent = fluent_backend.insert(state.template get_atom_storage<formalism::FluentTag>());
             const auto numeric = numeric_backend.insert(state.get_numeric_variables());
             const auto key = ygg::Data<State<Kind>>(ygg::Index<State<Kind>>::max(), fluent, {}, numeric);
             const auto hash = PackedStates::hash(key);
@@ -156,7 +156,7 @@ struct StateRepository<Kind>::Impl
             if (!state_index)
             {
                 std::forward<ExtendState>(extend_state)();
-                const auto derived = derived_backend.insert(state.template get_atoms<formalism::DerivedTag>());
+                const auto derived = derived_backend.insert(state.template get_atom_storage<formalism::DerivedTag>());
                 const auto [index, inserted] = packed_states.complete_miss_with_hash(hash,
                                                                                      key,
                                                                                      [&](ygg::Index<State<Kind>> index)
@@ -169,7 +169,7 @@ struct StateRepository<Kind>::Impl
                 }
             }
 
-            derived_backend.unpack(packed_states[*state_index].template get_atoms<formalism::DerivedTag>(), state.template get_atoms<formalism::DerivedTag>());
+            derived_backend.unpack(packed_states[*state_index].template get_atom_storage<formalism::DerivedTag>(), state.template get_atom_storage<formalism::DerivedTag>());
             state.set(*state_index);
         }
     };
@@ -278,9 +278,9 @@ StateView<Kind> StateRepository<Kind>::get_registered_state(ygg::Index<State<Kin
         [&](auto& evaluator)
         {
             const auto& packed_state = evaluator.storage->packed_states[state_index];
-            evaluator.fluent_backend.unpack(packed_state.template get_atoms<formalism::FluentTag>(), state_builder->template get_atoms<formalism::FluentTag>());
-            evaluator.derived_backend.unpack(packed_state.template get_atoms<formalism::DerivedTag>(),
-                                             state_builder->template get_atoms<formalism::DerivedTag>());
+            evaluator.fluent_backend.unpack(packed_state.template get_atom_storage<formalism::FluentTag>(), state_builder->template get_atom_storage<formalism::FluentTag>());
+            evaluator.derived_backend.unpack(packed_state.template get_atom_storage<formalism::DerivedTag>(),
+                                             state_builder->template get_atom_storage<formalism::DerivedTag>());
             evaluator.numeric_backend.unpack(packed_state.get_numeric_variables(), state_builder->get_numeric_variables());
         });
 

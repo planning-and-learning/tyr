@@ -926,6 +926,9 @@ def test_state_iterable_methods_return_stable_iterators():
         assert len(list(static_atoms)) == 11
         assert list(static_atoms) == []
         assert len(list(state.fluent_facts())) == 5
+        fluent_atoms = list(state.fluent_atoms())
+        assert len(fluent_atoms) == 5
+        assert all(state.test(atom) for atom in fluent_atoms)
         assert len(list(state.derived_atoms())) == 0
         assert len(list(state.static_fterm_values())) == 0
         assert len(list(state.fluent_fterm_values())) == 0

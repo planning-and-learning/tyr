@@ -96,12 +96,16 @@ public:
     void set(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view);
 
     ::tyr::planning::FDRFactRange<::tyr::GroundTag, ::tyr::formalism::FluentTag> get_fluent_facts() const noexcept;
-    ::tyr::planning::AtomRange<::tyr::formalism::DerivedTag> get_derived_atoms() const noexcept;
-    ::tyr::planning::FunctionTermValueRange<::tyr::formalism::FluentTag> get_fluent_fterm_values() const noexcept;
+    template<::tyr::formalism::FactKind F>
+    auto get_atoms(const ::tyr::formalism::planning::Repository& repository) const noexcept;
+    template<::tyr::formalism::FactKind F>
+    ::tyr::planning::FunctionTermValueRange<F> get_fterm_values() const noexcept;
 
     auto get_fluent_facts_view(const ::tyr::formalism::planning::Repository& repository) const noexcept;
-    auto get_derived_atoms_view(const ::tyr::formalism::planning::Repository& repository) const noexcept;
-    auto get_fluent_fterm_values_view(const ::tyr::formalism::planning::Repository& repository) const noexcept;
+    template<::tyr::formalism::FactKind F>
+    auto get_atoms_view(const ::tyr::formalism::planning::Repository& repository) const noexcept;
+    template<::tyr::formalism::FactKind F>
+    auto get_fterm_values_view(const ::tyr::formalism::planning::Repository& repository) const noexcept;
 
     void clear();
     void clear_unextended_part();
@@ -119,9 +123,9 @@ public:
     void resize_derived_atoms(size_t num_derived_atoms);
 
     template<::tyr::formalism::FactKind T>
-    ::tyr::planning::GroundUnpackedAtomStorage<T>& get_atoms() noexcept;
+    ::tyr::planning::GroundUnpackedAtomStorage<T>& get_atom_storage() noexcept;
     template<::tyr::formalism::FactKind T>
-    const ::tyr::planning::GroundUnpackedAtomStorage<T>& get_atoms() const noexcept;
+    const ::tyr::planning::GroundUnpackedAtomStorage<T>& get_atom_storage() const noexcept;
 
     ::tyr::planning::NumericUnpackedStorage<::tyr::GroundTag>& get_numeric_variables() noexcept;
     const ::tyr::planning::NumericUnpackedStorage<::tyr::GroundTag>& get_numeric_variables() const noexcept;
@@ -138,20 +142,42 @@ private:
 
 static_assert(::tyr::planning::StateBuilderConcept<Builder<::tyr::planning::State<::tyr::GroundTag>>, ::tyr::GroundTag>);
 
+template<::tyr::formalism::FactKind F>
+auto Builder<::tyr::planning::State<::tyr::GroundTag>>::get_atoms(const ::tyr::formalism::planning::Repository& repository_) const noexcept
+{
+    if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
+        return get_fluent_facts()
+               | std::views::transform([repository = &repository_](auto fact) { return *ygg::make_view(fact, *repository).get_atom_index(); });
+    else if constexpr (std::same_as<F, ::tyr::formalism::DerivedTag>)
+        return ::tyr::planning::AtomRange<F>(m_atom_storage);
+    else
+        static_assert(ygg::dependent_false<F>::value);
+}
+
+template<::tyr::formalism::FactKind F>
+::tyr::planning::FunctionTermValueRange<F> Builder<::tyr::planning::State<::tyr::GroundTag>>::get_fterm_values() const noexcept
+{
+    if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
+        return ::tyr::planning::FunctionTermValueRange<F>(m_numeric_storage);
+    else
+        static_assert(ygg::dependent_false<F>::value);
+}
+
 inline auto Builder<::tyr::planning::State<::tyr::GroundTag>>::get_fluent_facts_view(const ::tyr::formalism::planning::Repository& repository_) const noexcept
 {
     return get_fluent_facts() | std::views::transform([repository = &repository_](auto id) { return ygg::make_view(id, *repository); });
 }
 
-inline auto Builder<::tyr::planning::State<::tyr::GroundTag>>::get_derived_atoms_view(const ::tyr::formalism::planning::Repository& repository_) const noexcept
+template<::tyr::formalism::FactKind F>
+auto Builder<::tyr::planning::State<::tyr::GroundTag>>::get_atoms_view(const ::tyr::formalism::planning::Repository& repository_) const noexcept
 {
-    return get_derived_atoms() | std::views::transform([repository = &repository_](auto id) { return ygg::make_view(id, *repository); });
+    return get_atoms<F>(repository_) | std::views::transform([repository = &repository_](auto id) { return ygg::make_view(id, *repository); });
 }
 
-inline auto
-Builder<::tyr::planning::State<::tyr::GroundTag>>::get_fluent_fterm_values_view(const ::tyr::formalism::planning::Repository& repository_) const noexcept
+template<::tyr::formalism::FactKind F>
+auto Builder<::tyr::planning::State<::tyr::GroundTag>>::get_fterm_values_view(const ::tyr::formalism::planning::Repository& repository_) const noexcept
 {
-    return get_fluent_fterm_values()
+    return get_fterm_values<F>()
            | std::views::transform([repository = &repository_](auto&& pair) { return std::make_pair(ygg::make_view(pair.first, *repository), pair.second); });
 }
 

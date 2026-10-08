@@ -69,7 +69,7 @@ public:
 
     [[nodiscard]] GoalStrategyPtr<Kind> make_worker(ygg::Index<Worker>) const override { return create(m_goal); }
 
-    bool is_static_goal_satisfied(const Task<Kind>& task) override { return is_statically_applicable(m_goal, task.get_static_atoms_bitset()); }
+    bool is_static_goal_satisfied(const Task<Kind>& task) override { return is_statically_applicable(m_goal, task.get_static_state()); }
     bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const ygg::Builder<State<Kind>>& state) override
     {
         const auto state_context = StateContext { *seed_state.get_state_repository()->get_task(), state, ygg::float_t { 0 } };
@@ -97,7 +97,7 @@ public:
 
     [[nodiscard]] GoalStrategyPtr<Kind> make_worker(ygg::Index<Worker>) const override { return create(m_goal); }
 
-    bool is_static_goal_satisfied(const Task<Kind>& task) override { return is_statically_applicable(m_goal, task.get_static_atoms_bitset()); }
+    bool is_static_goal_satisfied(const Task<Kind>& task) override { return is_statically_applicable(m_goal, task.get_static_state()); }
 
     bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const ygg::Builder<State<Kind>>& state) override
     {

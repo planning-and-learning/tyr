@@ -124,19 +124,12 @@ planning::FDRFactRange<::tyr::GroundTag, f::FluentTag> GroundStateBuilder::get_f
     return planning::FDRFactRange<::tyr::GroundTag, f::FluentTag>(m_fact_storage);
 }
 
-planning::AtomRange<f::DerivedTag> GroundStateBuilder::get_derived_atoms() const noexcept { return planning::AtomRange<f::DerivedTag>(m_atom_storage); }
-
-planning::FunctionTermValueRange<f::FluentTag> GroundStateBuilder::get_fluent_fterm_values() const noexcept
-{
-    return planning::FunctionTermValueRange<f::FluentTag>(m_numeric_storage);
-}
-
 planning::NumericUnpackedStorage<::tyr::GroundTag>& GroundStateBuilder::get_numeric_variables() noexcept { return m_numeric_storage; }
 
 const planning::NumericUnpackedStorage<::tyr::GroundTag>& GroundStateBuilder::get_numeric_variables() const noexcept { return m_numeric_storage; }
 
 template<f::FactKind T>
-planning::GroundUnpackedAtomStorage<T>& GroundStateBuilder::get_atoms() noexcept
+planning::GroundUnpackedAtomStorage<T>& GroundStateBuilder::get_atom_storage() noexcept
 {
     if constexpr (std::same_as<T, f::FluentTag>)
         return m_fact_storage;
@@ -145,7 +138,7 @@ planning::GroundUnpackedAtomStorage<T>& GroundStateBuilder::get_atoms() noexcept
 }
 
 template<f::FactKind T>
-const planning::GroundUnpackedAtomStorage<T>& GroundStateBuilder::get_atoms() const noexcept
+const planning::GroundUnpackedAtomStorage<T>& GroundStateBuilder::get_atom_storage() const noexcept
 {
     if constexpr (std::same_as<T, f::FluentTag>)
         return m_fact_storage;
@@ -153,10 +146,10 @@ const planning::GroundUnpackedAtomStorage<T>& GroundStateBuilder::get_atoms() co
         return m_atom_storage;
 }
 
-template planning::FactUnpackedStorage<::tyr::GroundTag>& GroundStateBuilder::get_atoms<f::FluentTag>() noexcept;
-template planning::AtomUnpackedStorage<::tyr::GroundTag>& GroundStateBuilder::get_atoms<f::DerivedTag>() noexcept;
-template const planning::FactUnpackedStorage<::tyr::GroundTag>& GroundStateBuilder::get_atoms<f::FluentTag>() const noexcept;
-template const planning::AtomUnpackedStorage<::tyr::GroundTag>& GroundStateBuilder::get_atoms<f::DerivedTag>() const noexcept;
+template planning::FactUnpackedStorage<::tyr::GroundTag>& GroundStateBuilder::get_atom_storage<f::FluentTag>() noexcept;
+template planning::AtomUnpackedStorage<::tyr::GroundTag>& GroundStateBuilder::get_atom_storage<f::DerivedTag>() noexcept;
+template const planning::FactUnpackedStorage<::tyr::GroundTag>& GroundStateBuilder::get_atom_storage<f::FluentTag>() const noexcept;
+template const planning::AtomUnpackedStorage<::tyr::GroundTag>& GroundStateBuilder::get_atom_storage<f::DerivedTag>() const noexcept;
 
 }
 
@@ -170,6 +163,4 @@ template class View<Index<planning::PackedState<::tyr::GroundTag>>, std::shared_
 
 static_assert(planning::IterableStateConcept<GroundStateView>);
 static_assert(planning::IterableViewStateConcept<GroundStateView>);
-static_assert(planning::IndexableStateConcept<GroundStateView, ::tyr::GroundTag>);
-static_assert(planning::IndexableViewStateConcept<GroundStateView, ::tyr::GroundTag>);
 }

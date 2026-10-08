@@ -44,12 +44,12 @@ class Node : public ygg::comparison::Mixin<Node<Kind, State>>
 public:
     using StateType = State;
 
-    Node(State state, ygg::float_t metric) noexcept : m_state(std::move(state)), m_metric(metric) {}
+    Node(State state, ygg::float_t metric) noexcept(std::is_nothrow_move_constructible_v<State>) : m_state(std::move(state)), m_metric(metric) {}
 
     const State& get_state() const noexcept { return m_state; }
     ygg::float_t get_metric() const noexcept { return m_metric; }
 
-    auto pack() const noexcept
+    auto pack() const noexcept(noexcept(m_state.pack()))
         requires requires(const State& state) {
             { state.pack() } -> std::same_as<PackedStateView<Kind>>;
         }
@@ -105,7 +105,7 @@ struct LabeledNode
     Binding label;
     Node<Kind, State> node;
 
-    auto pack() const noexcept
+    auto pack() const noexcept(noexcept(node.pack()))
         requires std::same_as<Binding, formalism::planning::ActionBindingView> && requires(const Node<Kind, State>& value) { value.pack(); }
     {
         return PackedLabeledNode<Kind> { label, node.pack() };

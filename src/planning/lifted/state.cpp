@@ -133,22 +133,12 @@ planning::FDRFactRange<::tyr::LiftedTag, ::tyr::formalism::FluentTag> LiftedStat
     return planning::FDRFactRange<::tyr::LiftedTag, ::tyr::formalism::FluentTag>(m_fact_storage);
 }
 
-planning::AtomRange<::tyr::formalism::DerivedTag> LiftedStateBuilder::get_derived_atoms() const noexcept
-{
-    return planning::AtomRange<::tyr::formalism::DerivedTag>(m_atom_storage);
-}
-
-planning::FunctionTermValueRange<::tyr::formalism::FluentTag> LiftedStateBuilder::get_fluent_fterm_values() const noexcept
-{
-    return planning::FunctionTermValueRange<::tyr::formalism::FluentTag>(m_numeric_storage);
-}
-
 planning::NumericUnpackedStorage<::tyr::LiftedTag>& LiftedStateBuilder::get_numeric_variables() noexcept { return m_numeric_storage; }
 
 const planning::NumericUnpackedStorage<::tyr::LiftedTag>& LiftedStateBuilder::get_numeric_variables() const noexcept { return m_numeric_storage; }
 
 template<::tyr::formalism::FactKind T>
-planning::LiftedUnpackedAtomStorage<T>& LiftedStateBuilder::get_atoms() noexcept
+planning::LiftedUnpackedAtomStorage<T>& LiftedStateBuilder::get_atom_storage() noexcept
 {
     if constexpr (std::same_as<T, ::tyr::formalism::FluentTag>)
         return m_fact_storage;
@@ -157,7 +147,7 @@ planning::LiftedUnpackedAtomStorage<T>& LiftedStateBuilder::get_atoms() noexcept
 }
 
 template<::tyr::formalism::FactKind T>
-const planning::LiftedUnpackedAtomStorage<T>& LiftedStateBuilder::get_atoms() const noexcept
+const planning::LiftedUnpackedAtomStorage<T>& LiftedStateBuilder::get_atom_storage() const noexcept
 {
     if constexpr (std::same_as<T, ::tyr::formalism::FluentTag>)
         return m_fact_storage;
@@ -165,10 +155,10 @@ const planning::LiftedUnpackedAtomStorage<T>& LiftedStateBuilder::get_atoms() co
         return m_atom_storage;
 }
 
-template planning::FactUnpackedStorage<::tyr::LiftedTag>& LiftedStateBuilder::get_atoms<::tyr::formalism::FluentTag>() noexcept;
-template planning::AtomUnpackedStorage<::tyr::LiftedTag>& LiftedStateBuilder::get_atoms<::tyr::formalism::DerivedTag>() noexcept;
-template const planning::FactUnpackedStorage<::tyr::LiftedTag>& LiftedStateBuilder::get_atoms<::tyr::formalism::FluentTag>() const noexcept;
-template const planning::AtomUnpackedStorage<::tyr::LiftedTag>& LiftedStateBuilder::get_atoms<::tyr::formalism::DerivedTag>() const noexcept;
+template planning::FactUnpackedStorage<::tyr::LiftedTag>& LiftedStateBuilder::get_atom_storage<::tyr::formalism::FluentTag>() noexcept;
+template planning::AtomUnpackedStorage<::tyr::LiftedTag>& LiftedStateBuilder::get_atom_storage<::tyr::formalism::DerivedTag>() noexcept;
+template const planning::FactUnpackedStorage<::tyr::LiftedTag>& LiftedStateBuilder::get_atom_storage<::tyr::formalism::FluentTag>() const noexcept;
+template const planning::AtomUnpackedStorage<::tyr::LiftedTag>& LiftedStateBuilder::get_atom_storage<::tyr::formalism::DerivedTag>() const noexcept;
 
 }
 
@@ -182,7 +172,5 @@ template class View<Index<planning::PackedState<::tyr::LiftedTag>>, std::shared_
 
 static_assert(planning::IterableStateConcept<LiftedStateView>);
 static_assert(planning::IterableViewStateConcept<LiftedStateView>);
-static_assert(planning::IndexableStateConcept<LiftedStateView, ::tyr::LiftedTag>);
-static_assert(planning::IndexableViewStateConcept<LiftedStateView, ::tyr::LiftedTag>);
 
 }

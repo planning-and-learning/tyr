@@ -25,15 +25,10 @@
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/lifted/task_grounder_decl.hpp"
+#include "tyr/planning/static_state.hpp"
 #include "tyr/planning/task.hpp"
 
-#include <boost/dynamic_bitset.hpp>
-#include <limits>
 #include <memory>
-#include <vector>
-#include <yggdrasil/containers/dynamic_bitset.hpp>
-#include <yggdrasil/containers/vector.hpp>
-#include <yggdrasil/core/config.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 
 namespace tyr::planning
@@ -60,24 +55,13 @@ public:
     auto& get_fdr_context() noexcept { return m_task.get_fdr_context(); }
     const auto& get_fdr_context() const noexcept { return m_task.get_fdr_context(); }
     const auto& get_repository() const noexcept { return m_task.get_repository(); }
+    const StaticState& get_static_state() const noexcept { return m_static_state; }
     bool has_axioms() const noexcept { return !get_task().get_axioms().empty() || !get_domain().get_domain().get_axioms().empty(); }
-
-    const auto& get_static_atoms_bitset() const noexcept { return m_static_atoms_bitset; }
-    const auto& get_static_numeric_variables() const noexcept { return m_static_numeric_variables; }
-    bool test(ygg::Index<formalism::planning::Atom<GroundTag, formalism::StaticTag>> index) const
-    {
-        return ygg::test(ygg::uint_t(index), m_static_atoms_bitset);
-    }
-    ygg::float_t get(ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>> index) const
-    {
-        return ygg::get(ygg::uint_t(index), m_static_numeric_variables, std::numeric_limits<ygg::float_t>::quiet_NaN());
-    }
 
 private:
     formalism::planning::PlanningTask<LiftedTag> m_task;
 
-    boost::dynamic_bitset<> m_static_atoms_bitset;
-    std::vector<ygg::float_t> m_static_numeric_variables;
+    StaticState m_static_state;
 };
 
 }

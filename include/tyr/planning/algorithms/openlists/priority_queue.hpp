@@ -30,7 +30,7 @@ template<typename T>
 concept IsPriorityQueueEntry = requires(const T a) {
     typename T::ItemType;
     { a.get_key() } -> std::totally_ordered;
-    { a.get_item() };
+    { a.get_item() } -> std::convertible_to<typename T::ItemType>;
 };
 
 template<IsPriorityQueueEntry E>

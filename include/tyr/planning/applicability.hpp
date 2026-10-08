@@ -30,16 +30,15 @@
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/state_builder.hpp"
 #include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/static_state.hpp"
 
 #include <algorithm>
-#include <boost/dynamic_bitset.hpp>
 #include <concepts>
 #include <iterator>
 #include <limits>
 #include <numeric>
 #include <stdexcept>
 #include <vector>
-#include <yggdrasil/containers/dynamic_bitset.hpp>
 #include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/semantics/equal_to.hpp>
 #include <yggdrasil/semantics/hash.hpp>
@@ -179,22 +178,21 @@ bool is_applicable(formalism::planning::AxiomView<GroundTag> element, const Stat
  * is_statically_applicable
  */
 
-bool is_statically_applicable(formalism::planning::LiteralView<GroundTag, formalism::StaticTag> element, const boost::dynamic_bitset<>& static_atoms);
+bool is_statically_applicable(formalism::planning::LiteralView<GroundTag, formalism::StaticTag> element, const StaticState& static_state);
 
-bool is_statically_applicable(formalism::planning::LiteralListView<GroundTag, formalism::StaticTag> elements,
-                              const boost::dynamic_bitset<>& static_atoms);
+bool is_statically_applicable(formalism::planning::LiteralListView<GroundTag, formalism::StaticTag> elements, const StaticState& static_state);
 
 // GroundConjunctiveCondition
 
-bool is_statically_applicable(formalism::planning::ConjunctiveConditionView<GroundTag> element, const boost::dynamic_bitset<>& static_atoms);
+bool is_statically_applicable(formalism::planning::ConjunctiveConditionView<GroundTag> element, const StaticState& static_state);
 
 // GroundAction
 
-bool is_statically_applicable(formalism::planning::ActionView<GroundTag> element, const boost::dynamic_bitset<>& static_atoms);
+bool is_statically_applicable(formalism::planning::ActionView<GroundTag> element, const StaticState& static_state);
 
 // GroundAxiom
 
-bool is_statically_applicable(formalism::planning::AxiomView<GroundTag> element, const boost::dynamic_bitset<>& static_atoms);
+bool is_statically_applicable(formalism::planning::AxiomView<GroundTag> element, const StaticState& static_state);
 
 /**
  * is_dynamically_applicable
@@ -273,7 +271,7 @@ ygg::float_t evaluate(formalism::planning::MultiOperatorView<GroundTag> element,
 template<TaskKind Kind>
 ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> element, const StateContext<Kind>& context)
 {
-    return context.task.get(element.get_index());
+    return context.task.get_static_state().get(element);
 }
 
 template<TaskKind Kind>
@@ -357,7 +355,7 @@ bool is_applicable_if_fires(formalism::planning::ConditionalEffectListView<Groun
 template<TaskKind Kind>
 bool is_applicable(formalism::planning::LiteralView<GroundTag, formalism::StaticTag> element, const StateContext<Kind>& context)
 {
-    return context.task.test(element.get_atom().get_index()) == element.get_polarity();
+    return context.task.get_static_state().test(element.get_atom()) == element.get_polarity();
 }
 
 template<TaskKind Kind>
@@ -506,37 +504,35 @@ bool is_applicable(formalism::planning::AxiomView<GroundTag> element, const Stat
  * is_statically_applicable
  */
 
-inline bool is_statically_applicable(formalism::planning::LiteralView<GroundTag, formalism::StaticTag> element,
-                                     const boost::dynamic_bitset<>& static_atoms)
+inline bool is_statically_applicable(formalism::planning::LiteralView<GroundTag, formalism::StaticTag> element, const StaticState& static_state)
 {
-    return ygg::test(ygg::uint_t(element.get_atom().get_index()), static_atoms) == element.get_polarity();
+    return static_state.test(element.get_atom()) == element.get_polarity();
 }
 
-inline bool is_statically_applicable(formalism::planning::LiteralListView<GroundTag, formalism::StaticTag> elements,
-                                     const boost::dynamic_bitset<>& static_atoms)
+inline bool is_statically_applicable(formalism::planning::LiteralListView<GroundTag, formalism::StaticTag> elements, const StaticState& static_state)
 {
-    return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_statically_applicable(arg, static_atoms); });
+    return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_statically_applicable(arg, static_state); });
 }
 
 // GroundConjunctiveCondition
 
-inline bool is_statically_applicable(formalism::planning::ConjunctiveConditionView<GroundTag> element, const boost::dynamic_bitset<>& static_atoms)
+inline bool is_statically_applicable(formalism::planning::ConjunctiveConditionView<GroundTag> element, const StaticState& static_state)
 {
-    return is_statically_applicable(element.template get_literals<formalism::StaticTag>(), static_atoms);
+    return is_statically_applicable(element.template get_literals<formalism::StaticTag>(), static_state);
 }
 
 // GroundAction
 
-inline bool is_statically_applicable(formalism::planning::ActionView<GroundTag> element, const boost::dynamic_bitset<>& static_atoms)
+inline bool is_statically_applicable(formalism::planning::ActionView<GroundTag> element, const StaticState& static_state)
 {
-    return is_statically_applicable(element.get_condition(), static_atoms);
+    return is_statically_applicable(element.get_condition(), static_state);
 }
 
 // GroundAxiom
 
-inline bool is_statically_applicable(formalism::planning::AxiomView<GroundTag> element, const boost::dynamic_bitset<>& static_atoms)
+inline bool is_statically_applicable(formalism::planning::AxiomView<GroundTag> element, const StaticState& static_state)
 {
-    return is_statically_applicable(element.get_body(), static_atoms);
+    return is_statically_applicable(element.get_body(), static_state);
 }
 
 /**

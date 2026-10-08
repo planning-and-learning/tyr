@@ -22,6 +22,9 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
+#include "tyr/formalism/planning/fdr_variable_data.hpp"
+
+#include <optional>
 
 #include <yggdrasil/core/types.hpp>
 
@@ -44,7 +47,15 @@ public:
     auto get_variable() const noexcept { return ygg::make_view(get_data().variable, *m_context); }
     auto get_value() const noexcept { return get_data().value; }
     auto has_value() const noexcept { return get_value() != ::tyr::formalism::planning::FDRValue::none(); }
-    auto get_atom() const noexcept { return has_value() ? std::make_optional(get_variable().get_atoms()[ygg::uint_t(get_value() - 1)]) : std::nullopt; }
+    auto get_atom_index() const noexcept
+    {
+        return has_value() ? std::make_optional(get_repository(*m_context)[get_data().variable].atoms[ygg::uint_t(get_value() - 1)]) : std::nullopt;
+    }
+    auto get_atom() const noexcept
+    {
+        const auto atom = get_atom_index();
+        return atom ? std::make_optional(ygg::make_view(*atom, *m_context)) : std::nullopt;
+    }
 
     auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }
 };

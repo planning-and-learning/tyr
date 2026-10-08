@@ -56,6 +56,8 @@ class PackedNode;
 template<TaskKind Kind>
 struct PackedLabeledNode;
 
+class StaticState;
+
 template<TaskKind Kind>
 class State;
 template<TaskKind Kind>

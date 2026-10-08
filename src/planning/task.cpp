@@ -18,34 +18,38 @@
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
 
-#include "tyr/formalism/planning/fdr_context.hpp"
-#include "tyr/formalism/planning/formatter.hpp"
-#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/lifted/task_grounder.hpp"
-#include "tyr/planning/task_utils.hpp"
 
-#include <tuple>
 #include <utility>
 #include <yggdrasil/containers/dynamic_bitset.hpp>
 #include <yggdrasil/containers/vector.hpp>
-#include <yggdrasil/semantics/comparators.hpp>
-
-namespace f = tyr::formalism;
 
 namespace tyr::planning
 {
-Task<LiftedTag>::Task(formalism::planning::PlanningTask<LiftedTag> task) : m_task(std::move(task)), m_static_atoms_bitset(), m_static_numeric_variables()
+StaticState::StaticState(formalism::planning::AtomListView<GroundTag, formalism::StaticTag> atoms,
+                         formalism::planning::FunctionTermValueListView<GroundTag, formalism::StaticTag> fterm_values)
 {
-    for (const auto atom : get_task().template get_atoms<f::StaticTag>())
-        ygg::set(ygg::uint_t(atom.get_index()), true, m_static_atoms_bitset);
+    for (const auto atom : atoms)
+        ygg::set(ygg::uint_t(atom.get_index()), true, m_atoms);
 
-    for (const auto fterm_value : get_task().template get_fterm_values<f::StaticTag>())
+    for (const auto fterm_value : fterm_values)
         ygg::set(ygg::uint_t(fterm_value.get_fterm().get_index()),
                  fterm_value.get_value(),
-                 m_static_numeric_variables,
+                 m_numeric_variables,
                  std::numeric_limits<ygg::float_t>::quiet_NaN());
 }
+
+template<TaskKind Kind>
+StaticState::StaticState(formalism::planning::TaskView<Kind> task) :
+    StaticState(task.template get_atoms<formalism::StaticTag>(), task.template get_fterm_values<formalism::StaticTag>())
+{
+}
+
+template StaticState::StaticState(formalism::planning::TaskView<GroundTag> task);
+template StaticState::StaticState(formalism::planning::TaskView<LiftedTag> task);
+
+Task<LiftedTag>::Task(formalism::planning::PlanningTask<LiftedTag> task) : m_task(std::move(task)), m_static_state(m_task.get_task()) {}
 
 TaskPtr<LiftedTag> Task<LiftedTag>::create(formalism::planning::PlanningTask<LiftedTag> task) { return std::make_shared<Task<LiftedTag>>(std::move(task)); }
 
@@ -54,29 +58,6 @@ GroundTaskInstantiationResult Task<LiftedTag>::instantiate_ground_task(ygg::Exec
     return tyr::planning::instantiate_ground_task(*this, execution_context, options);
 }
 
-Task<GroundTag>::Task(formalism::planning::PlanningTask<GroundTag> task) : m_task(std::move(task)), m_static_atoms_bitset(), m_static_numeric_variables()
-{
-    for (const auto atom : get_task().template get_atoms<f::StaticTag>())
-        ygg::set(ygg::uint_t(atom.get_index()), true, m_static_atoms_bitset);
-
-    for (const auto fterm_value : get_task().template get_fterm_values<f::StaticTag>())
-        ygg::set(ygg::uint_t(fterm_value.get_fterm().get_index()),
-                 fterm_value.get_value(),
-                 m_static_numeric_variables,
-                 std::numeric_limits<ygg::float_t>::quiet_NaN());
-}
-
-template<f::FactKind F>
-size_t Task<GroundTag>::get_num_atoms() const noexcept
-{
-    return get_task().template get_atoms<F>().size();
-}
-
-template size_t Task<GroundTag>::get_num_atoms<f::FluentTag>() const noexcept;
-template size_t Task<GroundTag>::get_num_atoms<f::DerivedTag>() const noexcept;
-
-size_t Task<GroundTag>::get_num_actions() const noexcept { return get_task().get_ground_actions().size(); }
-
-size_t Task<GroundTag>::get_num_axioms() const noexcept { return get_task().get_ground_axioms().size(); }
+Task<GroundTag>::Task(formalism::planning::PlanningTask<GroundTag> task) : m_task(std::move(task)), m_static_state(m_task.get_task()) {}
 
 }

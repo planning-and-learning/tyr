@@ -141,7 +141,7 @@ private:
     {
         const auto& lhs_builder = lhs.get_state_builder();
         const auto& rhs_builder = rhs.get_state_builder();
-        return ygg::EqualTo<> {}(lhs_builder.template get_atoms<formalism::FluentTag>(), rhs_builder.template get_atoms<formalism::FluentTag>())
+        return ygg::EqualTo<> {}(lhs_builder.template get_atom_storage<formalism::FluentTag>(), rhs_builder.template get_atom_storage<formalism::FluentTag>())
                && ygg::EqualTo<> {}(lhs_builder.get_numeric_variables(), rhs_builder.get_numeric_variables());
     }
 

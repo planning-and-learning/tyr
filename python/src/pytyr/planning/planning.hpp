@@ -122,6 +122,10 @@ void bind_state(nb::module_& m, const std::string& name)
                  nb::rv_policy::copy,
                  "static_atom"_a)
             .def("test",
+                 nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>(&T::test, nb::const_),
+                 nb::rv_policy::copy,
+                 "fluent_atom"_a)
+            .def("test",
                  nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>(&T::test, nb::const_),
                  nb::rv_policy::copy,
                  "derived_atom"_a)
@@ -144,7 +148,7 @@ void bind_state(nb::module_& m, const std::string& name)
                 {
                     return make_owning_iterator<fp::AtomView<GroundTag, formalism::StaticTag>>(nb::type<T>(),
                                                                                                "static atom iterator",
-                                                                                               get_atoms_view<Kind, formalism::StaticTag>(s));
+                                                                                               s.template get_atoms_view<formalism::StaticTag>());
                 },
                 nb::keep_alive<0, 1>())
             .def(
@@ -158,7 +162,7 @@ void bind_state(nb::module_& m, const std::string& name)
                 {
                     return make_owning_iterator<fp::AtomView<GroundTag, formalism::FluentTag>>(nb::type<T>(),
                                                                                                "fluent atom iterator",
-                                                                                               get_atoms_view<Kind, formalism::FluentTag>(s));
+                                                                                               s.template get_atoms_view<formalism::FluentTag>());
                 },
                 nb::keep_alive<0, 1>())
             .def(
@@ -167,25 +171,27 @@ void bind_state(nb::module_& m, const std::string& name)
                 {
                     return make_owning_iterator<fp::AtomView<GroundTag, formalism::DerivedTag>>(nb::type<T>(),
                                                                                                 "derived atom iterator",
-                                                                                                get_atoms_view<Kind, formalism::DerivedTag>(s));
+                                                                                                s.template get_atoms_view<formalism::DerivedTag>());
                 },
                 nb::keep_alive<0, 1>())
             .def(
                 "static_fterm_values",
                 [](const T& s)
                 {
-                    return make_owning_iterator<fp::FunctionTermViewValuePair<GroundTag, formalism::StaticTag>>(nb::type<T>(),
-                                                                                                                "static function term value iterator",
-                                                                                                                s.get_static_fterm_values_view());
+                    return make_owning_iterator<fp::FunctionTermViewValuePair<GroundTag, formalism::StaticTag>>(
+                        nb::type<T>(),
+                        "static function term value iterator",
+                        s.template get_fterm_values_view<::tyr::formalism::StaticTag>());
                 },
                 nb::keep_alive<0, 1>())
             .def(
                 "fluent_fterm_values",
                 [](const T& s)
                 {
-                    return make_owning_iterator<fp::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>(nb::type<T>(),
-                                                                                                                "fluent function term value iterator",
-                                                                                                                s.get_fluent_fterm_values_view());
+                    return make_owning_iterator<fp::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>(
+                        nb::type<T>(),
+                        "fluent function term value iterator",
+                        s.template get_fterm_values_view<::tyr::formalism::FluentTag>());
                 },
                 nb::keep_alive<0, 1>());
     ygg::add_print(cls);

@@ -81,6 +81,46 @@ struct QueueEntryWithoutKeyType
 static_assert(p::IsPriorityQueueEntry<QueueEntryWithoutKeyType>);
 static_assert(p::IsOpenList<p::PriorityQueue<QueueEntryWithoutKeyType>>);
 
+struct QueueEntryWithWrongItem : QueueEntryWithoutKeyType
+{
+    std::string_view get_item() const { return {}; }
+};
+
+struct QueueEntryWithDifferentItem : QueueEntryWithWrongItem
+{
+    using ItemType = std::string_view;
+};
+
+struct NonDefaultItem
+{
+    int value;
+
+    explicit NonDefaultItem(int value) : value(value) {}
+    NonDefaultItem(const NonDefaultItem&) = default;
+    NonDefaultItem(NonDefaultItem&&) = default;
+    NonDefaultItem& operator=(const NonDefaultItem&) = delete;
+    NonDefaultItem& operator=(NonDefaultItem&&) = delete;
+};
+
+struct QueueEntryWithNonDefaultItem
+{
+    using ItemType = NonDefaultItem;
+
+    int key;
+    int item;
+
+    int get_key() const { return key; }
+    ItemType get_item() const { return ItemType(item); }
+};
+
+template<typename... Queues>
+concept CanAlternate = requires { typename p::AlternatingOpenList<Queues...>; };
+
+static_assert(!p::IsPriorityQueueEntry<QueueEntryWithWrongItem>);
+static_assert(!CanAlternate<>);
+static_assert(!CanAlternate<p::PriorityQueue<QueueEntryWithoutKeyType>, p::PriorityQueue<QueueEntryWithDifferentItem>>);
+static_assert(CanAlternate<p::PriorityQueue<QueueEntryWithNonDefaultItem>, p::PriorityQueue<QueueEntryWithNonDefaultItem>>);
+
 struct TaskPair
 {
     p::TaskPtr<LiftedTag> lifted;
@@ -471,7 +511,10 @@ public:
         return p::GoalStrategyPtr<Kind>(new SeedRecordingGoalStrategy(m_goal, m_observations));
     }
 
-    bool is_static_goal_satisfied(const p::Task<Kind>& task) override { return p::is_statically_applicable(m_goal, task.get_static_atoms_bitset()); }
+    bool is_static_goal_satisfied(const p::Task<Kind>& task) override
+    {
+        return p::is_statically_applicable(m_goal, task.get_static_state());
+    }
 
     bool is_dynamic_goal_satisfied(const p::StateView<Kind>& seed_state, const ygg::Builder<p::State<Kind>>& state) override
     {
@@ -1116,6 +1159,22 @@ TEST(TyrPlanningSearchEngineTest, PriorityQueueUsesKeyGetterWithoutMetadata)
         queue.pop();
     }
     EXPECT_TRUE(queue.empty());
+}
+
+TEST(TyrPlanningSearchEngineTest, AlternatingOpenListConstructsSelectedItemWithoutDefaultConstructionOrAssignment)
+{
+    using Queue = p::PriorityQueue<QueueEntryWithNonDefaultItem>;
+    auto first = Queue {};
+    auto second = Queue {};
+    auto alternating = p::AlternatingOpenList<Queue, Queue>(first, second, std::array<std::size_t, 2> { 1, 1 });
+    first.insert({ 1, 10 });
+    second.insert({ 2, 20 });
+
+    EXPECT_EQ(alternating.top().value, 10);
+    alternating.pop();
+    EXPECT_EQ(alternating.top().value, 20);
+    alternating.pop();
+    EXPECT_TRUE(alternating.empty());
 }
 
 TEST(TyrPlanningSearchEngineTest, AlternatingOpenListClearsEveryQueue)

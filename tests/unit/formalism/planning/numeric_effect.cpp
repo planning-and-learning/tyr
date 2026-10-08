@@ -1,3 +1,4 @@
+#include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/numeric_effect_data.hpp"
 #include "tyr/formalism/planning/numeric_effect_index.hpp"
 #include "tyr/formalism/planning/numeric_effect_view.hpp"
@@ -7,6 +8,28 @@
 #include <stdexcept>
 #include <tuple>
 #include <utility>
+
+namespace
+{
+template<tyr::TaskKind Kind, tyr::formalism::FactKind Source>
+consteval bool numeric_effect_merges()
+{
+    namespace fp = tyr::formalism::planning;
+    namespace fd = tyr::formalism::datalog;
+    using tyr::formalism::FluentTag;
+    return requires(fp::NumericEffectView<Kind, Source> effect,
+                    fp::NumericEffectOperatorView<Kind, Source> effect_operator,
+                    fp::MergeDatalogContext& context) {
+        { fp::merge_p2d<Source, FluentTag>(effect, context) } -> std::same_as<std::pair<fd::NumericEffectView<Kind, FluentTag>, bool>>;
+        { fp::merge_p2d<Source, FluentTag>(effect_operator, context) } -> std::same_as<ygg::Data<fd::NumericEffectOperator<Kind, FluentTag>>>;
+    };
+}
+
+static_assert(numeric_effect_merges<tyr::GroundTag, tyr::formalism::FluentTag>());
+static_assert(numeric_effect_merges<tyr::GroundTag, tyr::formalism::AuxiliaryTag>());
+static_assert(numeric_effect_merges<tyr::LiftedTag, tyr::formalism::FluentTag>());
+static_assert(numeric_effect_merges<tyr::LiftedTag, tyr::formalism::AuxiliaryTag>());
+}
 
 namespace lifted_tests
 {
