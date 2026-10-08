@@ -22,8 +22,7 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground/state_builder.hpp"
-#include "tyr/planning/lifted/state_builder.hpp"
+#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/task.hpp"
 
 #include <cmath>

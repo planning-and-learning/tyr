@@ -18,11 +18,14 @@
 #ifndef TYR_PLANNING_STATE_STORAGE_HPP_
 #define TYR_PLANNING_STATE_STORAGE_HPP_
 
+#include "tyr/formalism/planning/function_term_index.hpp"
 #include "tyr/planning/task.hpp"
 
 #include <concepts>
+#include <limits>
 #include <tuple>
 #include <vector>
+#include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
@@ -75,6 +78,17 @@ template<TaskKind Kind>
 struct NumericUnpackedStorage
 {
     std::vector<ygg::float_t> values;
+
+    ygg::float_t get(ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> index) const
+    {
+        return ygg::get(ygg::uint_t(index), values, std::numeric_limits<ygg::float_t>::quiet_NaN());
+    }
+    void set(ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> index, ygg::float_t value)
+    {
+        ygg::set(ygg::uint_t(index), ygg::FloatTolerance<ygg::float_t>::canonicalize(value), values, std::numeric_limits<ygg::float_t>::quiet_NaN());
+    }
+    void clear() { values.clear(); }
+    void swap(NumericUnpackedStorage& other) noexcept { values.swap(other.values); }
 
     auto identifying_members() const noexcept { return std::tie(values); }
 };

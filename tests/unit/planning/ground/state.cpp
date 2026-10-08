@@ -1,7 +1,7 @@
 #include "tyr/formalism/planning/parser.hpp"
-#include "tyr/planning/ground/state_builder.hpp"
+#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/ground/state_data.hpp"
-#include "tyr/planning/ground/state_view.hpp"
+#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/planning.hpp"
 
 #include <algorithm>
@@ -22,9 +22,7 @@ using View = ygg::View<Index, std::shared_ptr<p::StateRepository<tyr::GroundTag>
 
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
-static_assert(std::same_as<View, ygg::GroundStateView>);
 static_assert(std::same_as<View, p::StateView<tyr::GroundTag>>);
-static_assert(std::same_as<View, tyr::GroundStateView>);
 static_assert(p::IterableStateConcept<View>);
 static_assert(p::IterableViewStateConcept<View>);
 static_assert(requires(const Data& data, const Builder& builder, const View& view, const fp::Repository& repository) {

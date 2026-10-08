@@ -21,8 +21,7 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/formalism/planning/atom_index.hpp"
-#include "tyr/planning/ground/state_builder.hpp"
-#include "tyr/planning/lifted/state_builder.hpp"
+#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/worker_index.hpp"
 
 #include <boost/hash2/xxhash.hpp>

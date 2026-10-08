@@ -18,8 +18,8 @@
 #ifndef TYR_PLANNING_LIFTED_STATE_REPOSITORY_HPP_
 #define TYR_PLANNING_LIFTED_STATE_REPOSITORY_HPP_
 
-#include "tyr/planning/lifted/state_builder.hpp"
-#include "tyr/planning/lifted/state_view.hpp"
+#include "tyr/planning/state_builder.hpp"
+#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/state_repository.hpp"
 
 #endif

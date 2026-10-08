@@ -26,7 +26,7 @@
 #include "tyr/formalism/planning/merge_planning.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
-#include "tyr/planning/lifted/state_builder.hpp"
+#include "tyr/planning/state_builder.hpp"
 
 #include <yggdrasil/core/config.hpp>
 

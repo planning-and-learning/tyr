@@ -18,8 +18,7 @@
 #include "tyr/planning/heuristic.hpp"
 
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/planning/ground/state_view.hpp"
-#include "tyr/planning/lifted/state_view.hpp"
+#include "tyr/planning/state_view.hpp"
 
 namespace tyr::planning
 {

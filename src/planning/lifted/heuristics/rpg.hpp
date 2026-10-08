@@ -27,9 +27,9 @@
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/merge_planning.hpp"
-#include "tyr/planning/lifted/state_builder.hpp"
+#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/lifted/state_data.hpp"
-#include "tyr/planning/lifted/state_view.hpp"
+#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/programs/rpg.hpp"
 

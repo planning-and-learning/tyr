@@ -21,10 +21,8 @@
 #include "tyr/formalism/binding_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/planning/ground/state_view.hpp"
-#include "tyr/planning/lifted/state_view.hpp"
-#include "tyr/planning/state_index.hpp"
 #include "tyr/planning/state_view.hpp"
+#include "tyr/planning/state_index.hpp"
 #include "tyr/planning/task.hpp"
 
 #include <concepts>

@@ -28,9 +28,8 @@
 #include "tyr/formalism/planning/merge_planning_decl.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/planning/ground/programs/translation_context.hpp"
-#include "tyr/planning/ground/state_builder.hpp"
+#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/lifted/programs/translation_context.hpp"
-#include "tyr/planning/lifted/state_builder.hpp"
 #include "tyr/planning/task.hpp"
 
 #include <concepts>

@@ -27,9 +27,8 @@
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/applicability_lifted.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground/state_builder.hpp"
+#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/ground/task.hpp"
-#include "tyr/planning/lifted/state_builder.hpp"
 #include "tyr/planning/lifted/task.hpp"
 
 #include <yggdrasil/core/types.hpp>

@@ -1,8 +1,7 @@
 #ifndef TYR_SERIALIZATION_PLANNING_STATE_VIEW_HPP_
 #define TYR_SERIALIZATION_PLANNING_STATE_VIEW_HPP_
 
-#include "tyr/planning/ground/state_view.hpp"
-#include "tyr/planning/lifted/state_view.hpp"
+#include "tyr/planning/state_view.hpp"
 #include "tyr/serialization/formalism/planning/atom_view.hpp"
 #include "tyr/serialization/formalism/planning/function_term_view.hpp"
 #include "yggdrasil/serialization/dictionaries.hpp"

@@ -17,9 +17,8 @@
 
 #include "tyr/planning/plan.hpp"
 
-#include "tyr/planning/ground/state_view.hpp"
+#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
-#include "tyr/planning/lifted/state_view.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/node.hpp"
 

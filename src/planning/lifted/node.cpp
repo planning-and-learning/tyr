@@ -17,8 +17,8 @@
 
 #include "tyr/planning/node.hpp"
 
-#include "tyr/planning/lifted/state_builder.hpp"
-#include "tyr/planning/lifted/state_view.hpp"
+#include "tyr/planning/state_builder.hpp"
+#include "tyr/planning/state_view.hpp"
 //
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/state_index.hpp"

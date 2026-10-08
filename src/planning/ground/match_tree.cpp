@@ -32,7 +32,7 @@
 #include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
 #include "tyr/planning/ground/match_tree/nodes/variable_view.hpp"
 #include "tyr/planning/ground/match_tree/repository.hpp"
-#include "tyr/planning/ground/state_builder.hpp"
+#include "tyr/planning/state_builder.hpp"
 
 #include <algorithm>
 #include <cassert>

@@ -26,9 +26,8 @@
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/applicability_decl.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground/state_builder.hpp"
+#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/ground/task.hpp"
-#include "tyr/planning/lifted/state_builder.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/static_state.hpp"
 

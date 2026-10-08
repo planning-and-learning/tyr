@@ -28,7 +28,7 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/lifted/programs/axiom.hpp"
-#include "tyr/planning/lifted/state_builder.hpp"
+#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/task_utils.hpp"
 

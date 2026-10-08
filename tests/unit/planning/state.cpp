@@ -1,15 +1,18 @@
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/planning.hpp"
+#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_data.hpp"
 #include "tyr/planning/state_index.hpp"
 #include "tyr/planning/state_view.hpp"
 
 #include <algorithm>
 #include <barrier>
+#include <cmath>
 #include <concepts>
 #include <deque>
 #include <future>
 #include <gtest/gtest.h>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -273,6 +276,75 @@ void expect_state_builder_identity()
     other = base;
     other.get_numeric_variables().values.front() = 4.0;
     EXPECT_FALSE(ygg::EqualTo<Builder> {}(base, other));
+}
+
+template<TaskKind Kind>
+void expect_state_builder_lifecycle()
+{
+    using Builder = ygg::Builder<p::State<Kind>>;
+    using Fact = ygg::Data<fp::FDRFact<formalism::FluentTag>>;
+    using Atom = ygg::Index<fp::Atom<GroundTag, formalism::DerivedTag>>;
+    using Numeric = ygg::Index<fp::FunctionTerm<GroundTag, formalism::FluentTag>>;
+    const auto variable = ygg::Index<fp::FDRVariable<formalism::FluentTag>>(0);
+    auto source = Builder {};
+    auto target = Builder {};
+    if constexpr (std::same_as<Kind, GroundTag>)
+    {
+        source.resize_fluent_facts(1);
+        target.resize_fluent_facts(1);
+        source.resize_derived_atoms(2);
+        target.resize_derived_atoms(2);
+    }
+    source.set(ygg::Index<p::State<Kind>>(7));
+    target.set(ygg::Index<p::State<Kind>>(8));
+    source.set(Fact(variable, fp::FDRValue(1)));
+    source.set(Numeric(2), 3);
+    source.set(Atom(0));
+    target.set(Atom(1));
+    EXPECT_TRUE(std::isnan(source.get(Numeric(0))));
+    EXPECT_TRUE(std::isnan(source.get(Numeric(99))));
+    source.set(Numeric(1), std::numeric_limits<ygg::float_t>::quiet_NaN());
+    EXPECT_TRUE(std::isnan(source.get(Numeric(1))));
+
+    target.assign_unextended_part(source);
+    EXPECT_EQ(target.get_index(), ygg::Index<p::State<Kind>>(8));
+    EXPECT_EQ(target.get(variable), fp::FDRValue(1));
+    EXPECT_EQ(target.get(Numeric(2)), 3);
+    EXPECT_TRUE(std::isnan(target.get(Numeric(0))));
+    EXPECT_FALSE(target.test(Atom(0)));
+    EXPECT_TRUE(target.test(Atom(1)));
+
+    source.set(Fact(variable, fp::FDRValue::none()));
+    source.set(Numeric(2), 4);
+    using std::swap;
+    swap(source, target);
+    EXPECT_EQ(source.get_index(), ygg::Index<p::State<Kind>>(8));
+    EXPECT_EQ(source.get(variable), fp::FDRValue(1));
+    EXPECT_EQ(source.get(Numeric(2)), 3);
+    EXPECT_FALSE(source.test(Atom(0)));
+    EXPECT_TRUE(source.test(Atom(1)));
+    EXPECT_EQ(target.get_index(), ygg::Index<p::State<Kind>>(7));
+    EXPECT_EQ(target.get(variable), fp::FDRValue::none());
+    EXPECT_EQ(target.get(Numeric(2)), 4);
+    EXPECT_TRUE(target.test(Atom(0)));
+    EXPECT_FALSE(target.test(Atom(1)));
+
+    source.clear_extended_part();
+    EXPECT_TRUE(source.template get_atom_storage<formalism::DerivedTag>().indices.empty());
+    EXPECT_EQ(source.get_index(), ygg::Index<p::State<Kind>>(8));
+    EXPECT_EQ(source.get(variable), fp::FDRValue(1));
+    EXPECT_EQ(source.get(Numeric(2)), 3);
+    target.clear_unextended_part();
+    EXPECT_TRUE(target.get_fluent_facts().begin() == target.get_fluent_facts().end());
+    EXPECT_TRUE(target.get_numeric_variables().values.empty());
+    EXPECT_EQ(target.get_index(), ygg::Index<p::State<Kind>>(7));
+    EXPECT_TRUE(target.test(Atom(0)));
+
+    target.clear();
+    EXPECT_TRUE(target.get_index().is_max());
+    EXPECT_TRUE(target.get_fluent_facts().begin() == target.get_fluent_facts().end());
+    EXPECT_TRUE(target.template get_atom_storage<formalism::DerivedTag>().indices.empty());
+    EXPECT_TRUE(target.get_numeric_variables().values.empty());
 }
 
 template<TaskKind Kind>
@@ -740,6 +812,55 @@ TEST(TyrPlanningStateTest, BuilderIdentityUsesOnlyFluentFactsAndNumericValues)
 {
     expect_state_builder_identity<GroundTag>();
     expect_state_builder_identity<LiftedTag>();
+}
+
+TEST(TyrPlanningStateTest, BuilderPartsRetainIndependentDataAndRegistration)
+{
+    expect_state_builder_lifecycle<GroundTag>();
+    expect_state_builder_lifecycle<LiftedTag>();
+}
+
+TEST(TyrPlanningStateTest, GroundBuilderRetainsNonbinaryFactsAndPresizedDerivedAtoms)
+{
+    auto builder = ygg::Builder<p::State<GroundTag>> {};
+    const auto variable = ygg::Index<fp::FDRVariable<formalism::FluentTag>>(1);
+    const auto derived = ygg::Index<fp::Atom<GroundTag, formalism::DerivedTag>>(64);
+    builder.resize_fluent_facts(2);
+    builder.resize_derived_atoms(130);
+    EXPECT_EQ(builder.get(variable), fp::FDRValue::none());
+    EXPECT_FALSE(builder.test(derived));
+    builder.set(ygg::Data<fp::FDRFact<formalism::FluentTag>>(variable, fp::FDRValue(37)));
+    builder.set(derived);
+    EXPECT_EQ(builder.get(variable), fp::FDRValue(37));
+    EXPECT_TRUE(builder.test(derived));
+    EXPECT_FALSE(builder.test(ygg::Index<fp::Atom<GroundTag, formalism::DerivedTag>>(129)));
+    EXPECT_EQ(builder.get_atom_storage<formalism::DerivedTag>().indices.size(), 130);
+}
+
+TEST(TyrPlanningStateTest, LiftedBuilderGrowsBinaryStorageAndTrimsClearedFacts)
+{
+    using Fact = ygg::Data<fp::FDRFact<formalism::FluentTag>>;
+    auto builder = ygg::Builder<p::State<LiftedTag>> {};
+    const auto low = ygg::Index<fp::FDRVariable<formalism::FluentTag>>(1);
+    const auto high = ygg::Index<fp::FDRVariable<formalism::FluentTag>>(130);
+    const auto derived = ygg::Index<fp::Atom<GroundTag, formalism::DerivedTag>>(130);
+    EXPECT_EQ(builder.get(high), fp::FDRValue::none());
+    EXPECT_FALSE(builder.test(derived));
+    builder.set(Fact(high, fp::FDRValue::none()));
+    EXPECT_TRUE(builder.get_atom_storage<formalism::FluentTag>().indices.empty());
+    builder.set(Fact(low, fp::FDRValue(1)));
+    builder.set(Fact(high, fp::FDRValue(1)));
+    builder.set(derived);
+    EXPECT_EQ(builder.get(high), fp::FDRValue(1));
+    EXPECT_TRUE(builder.test(derived));
+    EXPECT_FALSE(builder.test(ygg::Index<fp::Atom<GroundTag, formalism::DerivedTag>>(131)));
+    builder.set(Fact(high, fp::FDRValue::none()));
+    EXPECT_EQ(builder.get(high), fp::FDRValue::none());
+    EXPECT_EQ(builder.get(low), fp::FDRValue(1));
+    EXPECT_EQ(builder.get_atom_storage<formalism::FluentTag>().indices.size(), 2);
+    builder.set(Fact(low, fp::FDRValue::none()));
+    EXPECT_TRUE(builder.get_atom_storage<formalism::FluentTag>().indices.empty());
+    EXPECT_TRUE(builder.test(derived));
 }
 
 TEST(TyrPlanningStateTest, DuplicateStatesRetainClosuresAndIndependentTransitionCosts)

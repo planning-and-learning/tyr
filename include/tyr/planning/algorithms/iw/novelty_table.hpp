@@ -20,8 +20,6 @@
 
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/planning/algorithms/iw/utils.hpp"
-#include "tyr/planning/ground/state_view.hpp"
-#include "tyr/planning/lifted/state_view.hpp"
 #include "tyr/planning/state_view.hpp"
 
 #include <algorithm>

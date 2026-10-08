@@ -23,7 +23,7 @@
 #include "tyr/datalog/ground/rule_instance.hpp"
 #include "tyr/datalog/ground/workspaces/program.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/planning/ground/state_builder.hpp"
+#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/programs/rpg.hpp"
 
