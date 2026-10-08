@@ -6,6 +6,12 @@ on:
       - test-pypi
   pull_request:
 
+env:
+  CMAKE_BUILD_PARALLEL_LEVEL: '2'
+  TYR_JOBS: '2'
+  LOKI_JOBS: '2'
+  YGGDRASIL_JOBS: '2'
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -30,8 +36,6 @@ jobs:
           uv pip install --system --no-cache -r pyproject.toml --extra test
         env:
           PIP_NO_CACHE_DIR: 1
-          YGGDRASIL_JOBS: 2
-          LOKI_JOBS: 2
 
       - name: Rebuild oneTBB with ThreadSanitizer
         run: |
@@ -47,7 +51,7 @@ jobs:
             -DTBB_EXAMPLES=OFF \
             -DTBB_STRICT=OFF \
             -DTBBMALLOC_BUILD=OFF
-          cmake --build /tmp/oneTBB-build --target install -j16
+          cmake --build /tmp/oneTBB-build --target install -j2
 
       - name: Configure Tyr with ThreadSanitizer
         run: |
@@ -75,7 +79,7 @@ jobs:
               planning_state_routing \
               planning_workers \
               planning_algorithms_iw_novelty_table \
-            -j16
+            -j2
 
       - name: Run focused concurrent tests
         working-directory: build_tsan/tests/unit

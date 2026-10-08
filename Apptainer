@@ -36,10 +36,12 @@ Stage: build
     # Set working directory
     cd /opt/tyr
 
+    export CMAKE_BUILD_PARALLEL_LEVEL=2 TYR_JOBS=2 LOKI_JOBS=2 YGGDRASIL_JOBS=2
+
     python3 -m pip install --no-cache-dir --upgrade pip uv
     uv venv --python 3.11 /opt/tyr/.venv
     export PATH="/opt/tyr/.venv/bin:$PATH"
-    LOKI_JOBS=2 uv pip install --python /opt/tyr/.venv/bin/python --no-cache -r pyproject.toml
+    uv pip install --python /opt/tyr/.venv/bin/python --no-cache -r pyproject.toml
 
     # Build Tyr
     cmake -S . -B build \
