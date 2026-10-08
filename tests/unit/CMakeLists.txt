@@ -7,6 +7,7 @@ function(add_gtest test_name)
     target_link_libraries(${test_name} PRIVATE tyr::core TBB::tbb GTest::gtest)
     target_include_directories(${test_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     add_test(NAME ${test_name} COMMAND ${test_name})
+    set_tests_properties(${test_name} PROPERTIES FAIL_REGULAR_EXPRESSION "does NOT link in any test case;Running 0 tests")
 endfunction()
 
 # Compile related repository families together while keeping one source per public family.
