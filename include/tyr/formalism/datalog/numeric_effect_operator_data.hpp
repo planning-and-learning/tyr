@@ -24,6 +24,8 @@
 #include <stdexcept>
 #include <variant>
 #include <yggdrasil/containers/variant.hpp>
+#include <tuple>
+#include <utility>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -55,14 +57,13 @@ struct Data<::tyr::formalism::datalog::NumericEffectOperator<T, ::tyr::formalism
     {
     }
 
-    void clear() noexcept
-    {
-        operator_kind = OperatorType::Assign;
-        ygg::clear(variant);
-    }
-
+    auto cista_members() noexcept { return std::tie(operator_kind, variant); }
     auto cista_members() const noexcept { return std::tie(operator_kind, variant); }
     auto identifying_members() const noexcept { return std::tie(operator_kind, variant); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::NumericEffectOperator<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>);

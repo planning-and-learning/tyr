@@ -23,6 +23,8 @@
 #include "tyr/formalism/datalog/function_term_index.hpp"
 #include "tyr/formalism/datalog/numeric_effect_index.hpp"
 
+#include <tuple>
+#include <utility>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -62,16 +64,13 @@ struct Data<::tyr::formalism::datalog::NumericEffect<T, F>>
         set(fexpr_, fexpr);
     }
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        operator_kind = ::tyr::formalism::NumericEffectOperatorKind::Assign;
-        ygg::clear(fterm);
-        ygg::clear(fexpr);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, operator_kind, fterm, fexpr); }
     auto cista_members() const noexcept { return std::tie(index, operator_kind, fterm, fexpr); }
     auto identifying_members() const noexcept { return std::tie(operator_kind, fterm, fexpr); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>);

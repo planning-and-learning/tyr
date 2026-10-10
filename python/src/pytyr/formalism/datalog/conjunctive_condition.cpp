@@ -42,6 +42,7 @@ void bind_conjunctive_condition_kind(nb::module_& m, RepositoryBinding& reposito
                     "static_literals"_a,
                     "fluent_literals"_a,
                     "numeric_constraints"_a);
+            cls.def(nb::init<ygg::IndexList<Variable>, ygg::IndexList<Literal<LiftedTag, StaticTag>>, ygg::IndexList<Literal<LiftedTag, FluentTag>>, ygg::DataList<BooleanOperator<LiftedTag>>>(), "variables"_a, "static_literals"_a, "fluent_literals"_a, "numeric_constraints"_a);
         }
         else
         {
@@ -49,6 +50,7 @@ void bind_conjunctive_condition_kind(nb::module_& m, RepositoryBinding& reposito
                     "static_literals"_a,
                     "fluent_literals"_a,
                     "numeric_constraints"_a);
+            cls.def(nb::init<ygg::IndexList<Literal<GroundTag, StaticTag>>, ygg::IndexList<Literal<GroundTag, FluentTag>>, ygg::DataList<BooleanOperator<GroundTag>>>(), "static_literals"_a, "fluent_literals"_a, "numeric_constraints"_a);
         }
         ygg::add_print(cls);
         ygg::add_comparison(cls);

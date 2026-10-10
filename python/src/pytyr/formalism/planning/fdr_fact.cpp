@@ -31,6 +31,7 @@ void bind_fdr_fact_data(nb::module_& m, const char* name)
 {
     using V = ygg::Data<FDRFact<T>>;
     auto cls = nb::class_<V>(m, name).def(nb::init<FDRVariableView<T>, FDRValue>(), "variable"_a, "value"_a);
+    cls.def(nb::init<ygg::Index<FDRVariable<T>>, FDRValue>(), "variable"_a, "value"_a);
     ygg::add_print(cls);
     ygg::add_comparison(cls);
     ygg::add_hash(cls);

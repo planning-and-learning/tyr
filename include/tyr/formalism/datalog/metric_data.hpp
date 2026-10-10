@@ -48,14 +48,13 @@ struct Data<::tyr::formalism::datalog::Metric>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(fexpr);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, fexpr); }
     auto cista_members() const noexcept { return std::tie(index, fexpr); }
     auto identifying_members() const noexcept { return std::tie(fexpr); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::Metric>);

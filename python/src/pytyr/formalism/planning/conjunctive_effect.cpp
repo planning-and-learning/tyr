@@ -40,6 +40,7 @@ void bind_conjunctive_effect_kind(nb::module_& m, RepositoryBinding& repository,
                     "fluent_literals"_a,
                     "fluent_numeric_effects"_a,
                     "auxiliary_numeric_effect"_a);
+            cls.def(nb::init<ygg::IndexList<Literal<LiftedTag, FluentTag>>, ygg::DataList<NumericEffectOperator<LiftedTag, FluentTag>>, ::cista::optional<ygg::Data<NumericEffectOperator<LiftedTag, AuxiliaryTag>>>>(), "fluent_literals"_a, "fluent_numeric_effects"_a, "auxiliary_numeric_effect"_a);
         }
         else
         {
@@ -51,6 +52,7 @@ void bind_conjunctive_effect_kind(nb::module_& m, RepositoryBinding& repository,
                     "del_facts"_a,
                     "fluent_numeric_effects"_a,
                     "auxiliary_numeric_effect"_a);
+            cls.def(nb::init<ygg::DataList<FDRFact<FluentTag>>, ygg::DataList<FDRFact<FluentTag>>, ygg::DataList<NumericEffectOperator<GroundTag, FluentTag>>, ::cista::optional<ygg::Data<NumericEffectOperator<GroundTag, AuxiliaryTag>>>>(), "add_facts"_a, "del_facts"_a, "fluent_numeric_effects"_a, "auxiliary_numeric_effect"_a);
         }
         ygg::add_print(cls);
         ygg::add_comparison(cls);

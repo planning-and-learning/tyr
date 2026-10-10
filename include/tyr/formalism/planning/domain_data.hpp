@@ -27,6 +27,11 @@
 #include "tyr/formalism/planning/task_index.hpp"
 #include "tyr/formalism/predicate_index.hpp"
 
+#include <tuple>
+#include <utility>
+#include <vector>
+#include <optional>
+#include <string>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -111,21 +116,6 @@ struct Data<::tyr::formalism::planning::Domain>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(name);
-        ygg::clear(static_predicates);
-        ygg::clear(fluent_predicates);
-        ygg::clear(derived_predicates);
-        ygg::clear(static_functions);
-        ygg::clear(fluent_functions);
-        ygg::clear(auxiliary_function);
-        ygg::clear(constants);
-        ygg::clear(actions);
-        ygg::clear(axioms);
-    }
-
     template<::tyr::formalism::FactKind T>
     const auto& get_predicates() const
     {
@@ -150,6 +140,20 @@ struct Data<::tyr::formalism::planning::Domain>
             static_assert(ygg::dependent_false<T>::value, "Missing case");
     }
 
+    auto cista_members() noexcept
+    {
+        return std::tie(index,
+                        name,
+                        static_predicates,
+                        fluent_predicates,
+                        derived_predicates,
+                        static_functions,
+                        fluent_functions,
+                        auxiliary_function,
+                        constants,
+                        actions,
+                        axioms);
+    }
     auto cista_members() const noexcept
     {
         return std::tie(index,
@@ -176,6 +180,10 @@ struct Data<::tyr::formalism::planning::Domain>
                         constants,
                         actions,
                         axioms);
+    }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
     }
 };
 

@@ -37,6 +37,7 @@ void bind_literal_kind(nb::module_& m, RepositoryBinding& repository, const std:
         using V = ygg::Data<Tag>;
         auto cls = nb::class_<V>(m, (name + "Data").c_str());
         cls.def(nb::init<AtomView<T, F>, bool>(), "atom"_a, "polarity"_a);
+        cls.def(nb::init<ygg::Index<Atom<T, F>>, bool>(), "atom"_a, "polarity"_a);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);

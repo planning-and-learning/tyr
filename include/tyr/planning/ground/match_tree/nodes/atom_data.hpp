@@ -23,6 +23,11 @@
 #include "tyr/planning/ground/match_tree/nodes/atom_index.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
 
+#include <optional>
+#include <tuple>
+#include <utility>
+#include <variant>
+#include <vector>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -40,34 +45,45 @@ struct Data<planning::match_tree::AtomSelectorNode<Tag>>
     ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> dontcare_child;
 
     Data() = default;
-    Data(ygg::Index<planning::match_tree::AtomSelectorNode<Tag>> index,
-         ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom,
-         ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> true_child,
-         ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> false_child,
-         ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> dontcare_child) :
-        index(index),
-        atom(atom),
-        true_child(true_child),
-        false_child(false_child),
-        dontcare_child(dontcare_child)
+    Data(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom_,
+         ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> true_child_,
+         ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> false_child_,
+         ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> dontcare_child_) :
+        index(),
+        atom(atom_),
+        true_child(std::move(true_child_)),
+        false_child(std::move(false_child_)),
+        dontcare_child(std::move(dontcare_child_))
     {
+    }
+    template<typename C>
+    Data(::ygg::View<ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>, C> atom_,
+         const std::optional<::ygg::View<ygg::Data<planning::match_tree::Node<Tag>>, C>>& true_child_,
+         const std::optional<::ygg::View<ygg::Data<planning::match_tree::Node<Tag>>, C>>& false_child_,
+         const std::optional<::ygg::View<ygg::Data<planning::match_tree::Node<Tag>>, C>>& dontcare_child_) :
+        index(),
+        atom(),
+        true_child(),
+        false_child(),
+        dontcare_child()
+    {
+        set(atom_, atom);
+        set(true_child_, true_child);
+        set(false_child_, false_child);
+        set(dontcare_child_, dontcare_child);
     }
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(atom);
-        ygg::clear(true_child);
-        ygg::clear(false_child);
-        ygg::clear(dontcare_child);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, atom, true_child, false_child, dontcare_child); }
     auto cista_members() const noexcept { return std::tie(index, atom, true_child, false_child, dontcare_child); }
     auto identifying_members() const noexcept { return std::tie(atom, true_child, false_child, dontcare_child); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 }
 

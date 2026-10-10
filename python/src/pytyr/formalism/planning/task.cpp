@@ -33,6 +33,7 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
 
         auto cls = nb::class_<V>(m, data_name);
         if constexpr (std::same_as<T, LiftedTag>)
+        {
             cls.def(nb::init<const std::string&,
                              DomainView,
                              const PredicateViewList<DerivedTag>&,
@@ -57,7 +58,10 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
                     "goal"_a,
                     "metric"_a,
                     "axioms"_a);
+            cls.def(nb::init<::cista::offset::string, ygg::Index<Domain>, ygg::IndexList<Predicate<DerivedTag>>, ygg::IndexList<Object>, ygg::IndexList<Atom<GroundTag, StaticTag>>, ygg::IndexList<Atom<GroundTag, FluentTag>>, ygg::IndexList<FunctionTermValue<GroundTag, StaticTag>>, ygg::IndexList<FunctionTermValue<GroundTag, FluentTag>>, ::cista::optional<ygg::Index<FunctionTermValue<GroundTag, AuxiliaryTag>>>, ygg::Index<ConjunctiveCondition<GroundTag>>, ::cista::optional<ygg::Index<Metric>>, ygg::IndexList<Axiom<LiftedTag>>>(), "name"_a, "domain"_a, "derived_predicates"_a, "objects"_a, "static_atoms"_a, "fluent_atoms"_a, "static_fterm_values"_a, "fluent_fterm_values"_a, "auxiliary_fterm_value"_a, "goal"_a, "metric"_a, "axioms"_a);
+        }
         else
+        {
             cls.def(nb::init<const std::string&,
                              DomainView,
                              const PredicateViewList<DerivedTag>&,
@@ -92,6 +96,8 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
                     "goal"_a,
                     "ground_actions"_a,
                     "ground_axioms"_a);
+            cls.def(nb::init<::cista::offset::string, ygg::Index<Domain>, ygg::IndexList<Predicate<DerivedTag>>, ygg::IndexList<Object>, ygg::IndexList<Atom<GroundTag, StaticTag>>, ygg::IndexList<Atom<GroundTag, FluentTag>>, ygg::IndexList<Atom<GroundTag, DerivedTag>>, ygg::IndexList<FunctionTermValue<GroundTag, StaticTag>>, ygg::IndexList<FunctionTermValue<GroundTag, FluentTag>>, ::cista::optional<ygg::Index<FunctionTermValue<GroundTag, AuxiliaryTag>>>, ::cista::optional<ygg::Index<Metric>>, ygg::IndexList<Axiom<LiftedTag>>, ygg::IndexList<FDRVariable<FluentTag>>, ygg::DataList<FDRFact<FluentTag>>, ygg::Index<ConjunctiveCondition<GroundTag>>, ygg::IndexList<Action<GroundTag>>, ygg::IndexList<Axiom<GroundTag>>>(), "name"_a, "domain"_a, "derived_predicates"_a, "objects"_a, "static_atoms"_a, "fluent_atoms"_a, "derived_atoms"_a, "static_fterm_values"_a, "fluent_fterm_values"_a, "auxiliary_fterm_value"_a, "metric"_a, "axioms"_a, "fluent_variables"_a, "fluent_facts"_a, "goal"_a, "ground_actions"_a, "ground_axioms"_a);
+        }
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);

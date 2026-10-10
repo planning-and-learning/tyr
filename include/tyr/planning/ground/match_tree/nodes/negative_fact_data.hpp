@@ -23,6 +23,11 @@
 #include "tyr/planning/ground/match_tree/nodes/negative_fact_index.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
 
+#include <optional>
+#include <tuple>
+#include <utility>
+#include <variant>
+#include <vector>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -39,31 +44,36 @@ struct Data<planning::match_tree::NegativeFactSelectorNode<Tag>>
     ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> dontcare_child;
 
     Data() = default;
-    Data(ygg::Index<planning::match_tree::NegativeFactSelectorNode<Tag>> index,
-         ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact,
-         ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> true_child,
-         ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> dontcare_child) :
-        index(index),
-        fact(fact),
-        true_child(std::move(true_child)),
-        dontcare_child(std::move(dontcare_child))
+    Data(ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact_, ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> true_child_, ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> dontcare_child_) :
+        index(),
+        fact(std::move(fact_)),
+        true_child(std::move(true_child_)),
+        dontcare_child(std::move(dontcare_child_))
     {
+    }
+    template<typename C>
+    Data(::ygg::View<ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>, C> fact_, const std::optional<::ygg::View<ygg::Data<planning::match_tree::Node<Tag>>, C>>& true_child_, const std::optional<::ygg::View<ygg::Data<planning::match_tree::Node<Tag>>, C>>& dontcare_child_) :
+        index(),
+        fact(),
+        true_child(),
+        dontcare_child()
+    {
+        set(fact_, fact);
+        set(true_child_, true_child);
+        set(dontcare_child_, dontcare_child);
     }
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(fact);
-        ygg::clear(true_child);
-        ygg::clear(dontcare_child);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, fact, true_child, dontcare_child); }
     auto cista_members() const noexcept { return std::tie(index, fact, true_child, dontcare_child); }
     auto identifying_members() const noexcept { return std::tie(fact, true_child, dontcare_child); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 }
 

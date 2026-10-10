@@ -40,6 +40,7 @@ void bind_action_kind(nb::module_& m, RepositoryBinding& repository, const std::
                     "variables"_a,
                     "condition"_a,
                     "effects"_a);
+            cls.def(nb::init<::cista::offset::string, ygg::uint_t, ygg::IndexList<Variable>, ygg::Index<ConjunctiveCondition<LiftedTag>>, ygg::IndexList<ConditionalEffect<LiftedTag>>>(), "name"_a, "original_arity"_a, "variables"_a, "condition"_a, "effects"_a);
             cls.def(nb::init<const std::string&,
                              const std::string&,
                              ygg::uint_t,
@@ -52,10 +53,12 @@ void bind_action_kind(nb::module_& m, RepositoryBinding& repository, const std::
                     "variables"_a,
                     "condition"_a,
                     "effects"_a);
+            cls.def(nb::init<::cista::offset::string, ::cista::offset::string, ygg::uint_t, ygg::IndexList<Variable>, ygg::Index<ConjunctiveCondition<LiftedTag>>, ygg::IndexList<ConditionalEffect<LiftedTag>>>(), "name"_a, "original_name"_a, "original_arity"_a, "variables"_a, "condition"_a, "effects"_a);
         }
         else
         {
             cls.def(nb::init<ActionBindingView, ConjunctiveConditionView<T>, const ConditionalEffectViewList<T>&>(), "binding"_a, "condition"_a, "effects"_a);
+            cls.def(nb::init<ygg::Index<RelationBinding<Action<LiftedTag>>>, ygg::Index<ConjunctiveCondition<GroundTag>>, ygg::IndexList<ConditionalEffect<GroundTag>>>(), "binding"_a, "condition"_a, "effects"_a);
         }
         ygg::add_print(cls);
         ygg::add_comparison(cls);

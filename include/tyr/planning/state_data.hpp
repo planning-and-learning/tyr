@@ -26,8 +26,10 @@
 
 #include <concepts>
 #include <tuple>
+#include <utility>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/types_utils.hpp>
 #include <yggdrasil/semantics/canonicalization.hpp>
 
 namespace ygg
@@ -37,43 +39,46 @@ namespace planning = ::tyr::planning;
 template<::tyr::TaskKind Kind>
 struct Data<planning::State<Kind>>
 {
-public:
     using TaskType = planning::Task<Kind>;
 
-    Data() noexcept = default;
-    Data(ygg::Index<planning::State<Kind>> index,
-         planning::FactPackedStorage<Kind, planning::StateStoragePolicyTag> fact_storage,
-         planning::AtomPackedStorage<Kind, planning::StateStoragePolicyTag> atom_storage,
-         planning::NumericPackedStorage<Kind, planning::StateStoragePolicyTag> numeric_storage) noexcept :
-        m_index(index),
-        m_fact_storage(fact_storage),
-        m_atom_storage(atom_storage),
-        m_numeric_storage(numeric_storage)
+    ygg::Index<planning::State<Kind>> index;
+    planning::FactPackedStorage<Kind, planning::StateStoragePolicyTag> fact_storage;
+    planning::AtomPackedStorage<Kind, planning::StateStoragePolicyTag> atom_storage;
+    planning::NumericPackedStorage<Kind, planning::StateStoragePolicyTag> numeric_storage;
+
+    Data() = default;
+    Data(planning::FactPackedStorage<Kind, planning::StateStoragePolicyTag> fact_storage_,
+         planning::AtomPackedStorage<Kind, planning::StateStoragePolicyTag> atom_storage_,
+         planning::NumericPackedStorage<Kind, planning::StateStoragePolicyTag> numeric_storage_) :
+        index(),
+        fact_storage(fact_storage_),
+        atom_storage(atom_storage_),
+        numeric_storage(numeric_storage_)
     {
     }
 
-    ygg::Index<planning::State<Kind>> get_index() const noexcept { return m_index; }
+    ygg::Index<planning::State<Kind>> get_index() const noexcept { return index; }
 
     template<::tyr::formalism::FactKind T>
     auto get_atom_storage() const noexcept
     {
         if constexpr (std::same_as<T, ::tyr::formalism::FluentTag>)
-            return m_fact_storage;
+            return fact_storage;
         else if constexpr (std::same_as<T, ::tyr::formalism::DerivedTag>)
-            return m_atom_storage;
+            return atom_storage;
         else
             static_assert(ygg::dependent_false<T>::value, "Missing case");
     }
 
-    auto get_numeric_variables() const noexcept { return m_numeric_storage; }
+    auto get_numeric_variables() const noexcept { return numeric_storage; }
 
-    auto identifying_members() const noexcept { return std::tie(m_fact_storage, m_numeric_storage); }
-
-private:
-    ygg::Index<planning::State<Kind>> m_index;
-    planning::FactPackedStorage<Kind, planning::StateStoragePolicyTag> m_fact_storage;
-    planning::AtomPackedStorage<Kind, planning::StateStoragePolicyTag> m_atom_storage;
-    planning::NumericPackedStorage<Kind, planning::StateStoragePolicyTag> m_numeric_storage;
+    auto cista_members() noexcept { return std::tie(index, fact_storage, atom_storage, numeric_storage); }
+    auto cista_members() const noexcept { return std::tie(index, fact_storage, atom_storage, numeric_storage); }
+    auto identifying_members() const noexcept { return std::tie(fact_storage, numeric_storage); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 template<::tyr::TaskKind Kind>

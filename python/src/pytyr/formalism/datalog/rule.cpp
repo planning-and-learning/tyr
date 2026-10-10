@@ -46,6 +46,7 @@ void bind_rule_kind(nb::module_& m, RepositoryBinding& repository, const std::st
                     "body"_a,
                     "head"_a,
                     "metric_effects"_a = NumericEffectOperatorViewList<T, FluentTag> {});
+            cls.def(nb::init<ygg::IndexList<Variable>, ygg::Index<ConjunctiveCondition<LiftedTag>>, RuleHeadT<LiftedTag, R>, ygg::DataList<NumericEffectOperator<LiftedTag, FluentTag>>>(), "variables"_a, "body"_a, "head"_a, "metric_effects"_a = ygg::DataList<NumericEffectOperator<T, FluentTag>> {});
         }
         else
         {
@@ -57,6 +58,7 @@ void bind_rule_kind(nb::module_& m, RepositoryBinding& repository, const std::st
                     "body"_a,
                     "head"_a,
                     "metric_effects"_a = NumericEffectOperatorViewList<T, FluentTag> {});
+            cls.def(nb::init<ygg::Index<RelationBinding<Rule<LiftedTag, R>>>, ygg::Index<ConjunctiveCondition<GroundTag>>, RuleHeadT<GroundTag, R>, ygg::DataList<NumericEffectOperator<GroundTag, FluentTag>>>(), "binding"_a, "body"_a, "head"_a, "metric_effects"_a = ygg::DataList<NumericEffectOperator<T, FluentTag>> {});
         }
         ygg::add_print(cls);
         ygg::add_comparison(cls);

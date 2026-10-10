@@ -35,10 +35,12 @@ void bind_axiom_kind(nb::module_& m, RepositoryBinding& repository, const std::s
         if constexpr (std::same_as<T, LiftedTag>)
         {
             cls.def(nb::init<const VariableViewList&, ConjunctiveConditionView<T>, AtomView<T, DerivedTag>>(), "variables"_a, "body"_a, "head"_a);
+            cls.def(nb::init<ygg::IndexList<Variable>, ygg::Index<ConjunctiveCondition<LiftedTag>>, ygg::Index<Atom<LiftedTag, DerivedTag>>>(), "variables"_a, "body"_a, "head"_a);
         }
         else
         {
             cls.def(nb::init<AxiomBindingView, ConjunctiveConditionView<T>, AtomView<T, DerivedTag>>(), "binding"_a, "body"_a, "head"_a);
+            cls.def(nb::init<ygg::Index<RelationBinding<Axiom<LiftedTag>>>, ygg::Index<ConjunctiveCondition<GroundTag>>, ygg::Index<Atom<GroundTag, DerivedTag>>>(), "binding"_a, "body"_a, "head"_a);
         }
         ygg::add_print(cls);
         ygg::add_comparison(cls);

@@ -22,6 +22,9 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_variable_index.hpp"
 
+#include <tuple>
+#include <utility>
+#include <vector>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -47,14 +50,13 @@ struct Data<::tyr::formalism::planning::FDRVariable<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(atoms);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, atoms); }
     auto cista_members() const noexcept { return std::tie(index, atoms); }
     auto identifying_members() const noexcept { return std::tie(atoms); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::FDRVariable<::tyr::formalism::StaticTag>>);

@@ -228,23 +228,22 @@ template<TaskKind Kind>
 void expect_packed_state_identity()
 {
     using Data = ygg::Data<p::State<Kind>>;
-    using Index = ygg::Index<p::State<Kind>>;
     auto facts = p::FactPackedStorage<Kind, p::StateStoragePolicyTag> {};
     auto derived = p::AtomPackedStorage<Kind, p::StateStoragePolicyTag> {};
     auto numeric = p::NumericPackedStorage<Kind, p::StateStoragePolicyTag> {};
-    const auto base = Data(Index(0), facts, derived, numeric);
+    const auto base = Data(facts, derived, numeric);
     const auto hash = ygg::Hash<Data> {};
     derived.index = { 1 };
-    const auto extended = Data(Index(1), facts, derived, numeric);
+    const auto extended = Data(facts, derived, numeric);
     EXPECT_NE(base.template get_atom_storage<formalism::DerivedTag>(), extended.template get_atom_storage<formalism::DerivedTag>());
     EXPECT_EQ(base, extended);
     EXPECT_EQ(hash(base), hash(extended));
 
     facts.index = { 1 };
-    const auto changed_facts = Data(Index(2), facts, derived, numeric);
+    const auto changed_facts = Data(facts, derived, numeric);
     EXPECT_NE(base, changed_facts);
     numeric.index = { 1 };
-    const auto changed_numeric = Data(Index(3), base.template get_atom_storage<formalism::FluentTag>(), derived, numeric);
+    const auto changed_numeric = Data(base.template get_atom_storage<formalism::FluentTag>(), derived, numeric);
     EXPECT_NE(base, changed_numeric);
 }
 

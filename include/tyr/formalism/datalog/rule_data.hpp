@@ -29,6 +29,9 @@
 #include "tyr/formalism/variable_index.hpp"
 
 #include <yggdrasil/containers/vector.hpp>
+#include <tuple>
+#include <utility>
+#include <vector>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -83,17 +86,13 @@ struct Data<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(variables);
-        ygg::clear(body);
-        ygg::clear(head);
-        ygg::clear(metric_effects);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, variables, body, head, metric_effects); }
     auto cista_members() const noexcept { return std::tie(index, variables, body, head, metric_effects); }
     auto identifying_members() const noexcept { return std::tie(variables, body, head, metric_effects); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, ::tyr::formalism::PredicateTag>>);
@@ -147,17 +146,13 @@ struct Data<::tyr::formalism::datalog::Rule<::tyr::GroundTag, R>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(binding);
-        ygg::clear(body);
-        ygg::clear(head);
-        ygg::clear(metric_effects);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, binding, body, head, metric_effects); }
     auto cista_members() const noexcept { return std::tie(index, binding, body, head, metric_effects); }
     auto identifying_members() const noexcept { return std::tie(binding); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 }

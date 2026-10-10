@@ -25,6 +25,9 @@
 #include "tyr/formalism/datalog/literal_index.hpp"
 #include "tyr/formalism/variable_index.hpp"
 
+#include <tuple>
+#include <utility>
+#include <vector>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -73,14 +76,6 @@ struct Data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(variables);
-        ygg::clear(static_literals);
-        ygg::clear(fluent_literals);
-        ygg::clear(numeric_constraints);
-    }
 
     template<::tyr::formalism::FactKind F>
     const auto& get_literals() const
@@ -93,8 +88,13 @@ struct Data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>
             static_assert(ygg::dependent_false<F>::value, "Missing case");
     }
 
+    auto cista_members() noexcept { return std::tie(index, variables, static_literals, fluent_literals, numeric_constraints); }
     auto cista_members() const noexcept { return std::tie(index, variables, static_literals, fluent_literals, numeric_constraints); }
     auto identifying_members() const noexcept { return std::tie(variables, static_literals, fluent_literals, numeric_constraints); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>);
@@ -135,13 +135,6 @@ struct Data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(static_literals);
-        ygg::clear(fluent_literals);
-        ygg::clear(numeric_constraints);
-    }
 
     template<::tyr::formalism::FactKind F>
     const auto& get_literals() const
@@ -154,8 +147,13 @@ struct Data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>
             static_assert(ygg::dependent_false<F>::value, "Missing case");
     }
 
+    auto cista_members() noexcept { return std::tie(index, static_literals, fluent_literals, numeric_constraints); }
     auto cista_members() const noexcept { return std::tie(index, static_literals, fluent_literals, numeric_constraints); }
     auto identifying_members() const noexcept { return std::tie(static_literals, fluent_literals, numeric_constraints); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>);

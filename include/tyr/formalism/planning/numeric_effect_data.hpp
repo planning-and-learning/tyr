@@ -24,6 +24,8 @@
 #include "tyr/formalism/planning/numeric_effect_index.hpp"
 
 #include <stdexcept>
+#include <tuple>
+#include <utility>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -77,16 +79,13 @@ struct Data<::tyr::formalism::planning::NumericEffect<T, F>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        operator_kind = default_operator;
-        ygg::clear(fterm);
-        ygg::clear(fexpr);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, operator_kind, fterm, fexpr); }
     auto cista_members() const noexcept { return std::tie(index, operator_kind, fterm, fexpr); }
     auto identifying_members() const noexcept { return std::tie(operator_kind, fterm, fexpr); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>);

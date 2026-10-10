@@ -27,6 +27,10 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/variable_index.hpp"
 
+#include <tuple>
+#include <utility>
+#include <vector>
+#include <string>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -108,18 +112,13 @@ struct Data<::tyr::formalism::planning::Action<::tyr::LiftedTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(name);
-        ygg::clear(original_name);
-        ygg::clear(variables);
-        ygg::clear(condition);
-        ygg::clear(effects);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, name, original_name, variables, original_arity, condition, effects); }
     auto cista_members() const noexcept { return std::tie(index, name, original_name, variables, original_arity, condition, effects); }
     auto identifying_members() const noexcept { return std::tie(original_name, variables, original_arity, condition, effects); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::Action<::tyr::LiftedTag>>);
@@ -161,17 +160,14 @@ struct Data<::tyr::formalism::planning::Action<::tyr::GroundTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(binding);
-        ygg::clear(condition);
-        ygg::clear(effects);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, binding, condition, effects); }
     auto cista_members() const noexcept { return std::tie(index, binding, condition, effects); }
     // Have to include effects because row only binds objects to non-effect quantified variables.
     auto identifying_members() const noexcept { return std::tie(binding, condition, effects); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::Action<::tyr::GroundTag>>);

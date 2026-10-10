@@ -149,7 +149,7 @@ struct StateRepository<Kind>::Impl
             using PackedStates = typename Storage<ThreadSafe>::PackedStates;
             const auto fluent = fluent_backend.insert(state.template get_atom_storage<formalism::FluentTag>());
             const auto numeric = numeric_backend.insert(state.get_numeric_variables());
-            const auto key = ygg::Data<State<Kind>>(ygg::Index<State<Kind>>::max(), fluent, {}, numeric);
+            const auto key = ygg::Data<State<Kind>>(fluent, {}, numeric);
             const auto hash = PackedStates::hash(key);
             auto state_index = packed_states.find_with_hash(key, hash);
 
@@ -160,7 +160,11 @@ struct StateRepository<Kind>::Impl
                 const auto [index, inserted] = packed_states.complete_miss_with_hash(hash,
                                                                                      key,
                                                                                      [&](ygg::Index<State<Kind>> index)
-                                                                                     { return ygg::Data<State<Kind>>(index, fluent, derived, numeric); });
+                                                                                     {
+                                                                                         auto data = ygg::Data<State<Kind>>(fluent, derived, numeric);
+                                                                                         data.index = index;
+                                                                                         return data;
+                                                                                     });
                 state_index = index;
                 if (inserted)
                 {

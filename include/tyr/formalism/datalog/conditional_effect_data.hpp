@@ -24,6 +24,9 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/variable_index.hpp"
 
+#include <tuple>
+#include <utility>
+#include <vector>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -66,16 +69,13 @@ struct Data<::tyr::formalism::datalog::ConditionalEffect<::tyr::LiftedTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(variables);
-        ygg::clear(condition);
-        ygg::clear(effect);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, variables, condition, effect); }
     auto cista_members() const noexcept { return std::tie(index, variables, condition, effect); }
     auto identifying_members() const noexcept { return std::tie(variables, condition, effect); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::ConditionalEffect<::tyr::LiftedTag>>);
@@ -110,15 +110,13 @@ struct Data<::tyr::formalism::datalog::ConditionalEffect<::tyr::GroundTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(condition);
-        ygg::clear(effect);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, condition, effect); }
     auto cista_members() const noexcept { return std::tie(index, condition, effect); }
     auto identifying_members() const noexcept { return std::tie(condition, effect); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::datalog::ConditionalEffect<::tyr::GroundTag>>);

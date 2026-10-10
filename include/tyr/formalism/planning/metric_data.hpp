@@ -22,6 +22,8 @@
 #include "tyr/formalism/planning/function_expression_data.hpp"
 #include "tyr/formalism/planning/metric_index.hpp"
 
+#include <tuple>
+#include <utility>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -57,15 +59,13 @@ struct Data<::tyr::formalism::planning::Metric>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        optimization_direction = ::tyr::formalism::OptimizationDirection::Minimize;
-        ygg::clear(fexpr);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, optimization_direction, fexpr); }
     auto cista_members() const noexcept { return std::tie(index, optimization_direction, fexpr); }
     auto identifying_members() const noexcept { return std::tie(optimization_direction, fexpr); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::Metric>);

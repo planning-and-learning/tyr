@@ -39,10 +39,12 @@ void bind_function_term_kind(nb::module_& m, RepositoryBinding& repository, cons
         if constexpr (std::same_as<T, LiftedTag>)
         {
             cls.def(nb::init<FunctionView<F>, const TermViewList&>(), "function"_a, "terms"_a);
+            cls.def(nb::init<ygg::Index<Function<F>>, ygg::DataList<Term>>(), "function"_a, "terms"_a);
         }
         else
         {
             cls.def(nb::init<FunctionBindingView<F>>(), "binding"_a);
+            cls.def(nb::init<ygg::Index<RelationBinding<Function<F>>>>(), "binding"_a);
         }
         ygg::add_print(cls);
         ygg::add_comparison(cls);

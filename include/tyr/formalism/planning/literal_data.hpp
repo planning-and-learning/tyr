@@ -22,6 +22,8 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/literal_index.hpp"
 
+#include <tuple>
+#include <utility>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -48,15 +50,13 @@ struct Data<::tyr::formalism::planning::Literal<T, F>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(atom);
-        ygg::clear(polarity);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, atom, polarity); }
     auto cista_members() const noexcept { return std::tie(index, atom, polarity); }
     auto identifying_members() const noexcept { return std::tie(atom, polarity); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>);

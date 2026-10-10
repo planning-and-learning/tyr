@@ -32,6 +32,7 @@ void bind_fdr_variable_data(nb::module_& m, const char* name)
 {
     using V = ygg::Data<FDRVariable<T>>;
     auto cls = nb::class_<V>(m, name).def(nb::init<const AtomViewList<GroundTag, T>>(), "atoms"_a);
+    cls.def(nb::init<ygg::IndexList<Atom<GroundTag, T>>>(), "atoms"_a);
     ygg::add_print(cls);
     ygg::add_comparison(cls);
     ygg::add_hash(cls);

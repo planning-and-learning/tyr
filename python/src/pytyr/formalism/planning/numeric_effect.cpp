@@ -37,6 +37,7 @@ void bind_numeric_effect_kind(nb::module_& m, RepositoryBinding& repository, con
         using V = ygg::Data<Tag>;
         auto cls = nb::class_<V>(m, (name + "Data").c_str());
         cls.def(nb::init<NumericEffectOperatorKind, FunctionTermView<T, F>, FunctionExpressionView<T>>(), "operator"_a, "fterm"_a, "fexpr"_a);
+        cls.def(nb::init<NumericEffectOperatorKind, ygg::Index<FunctionTerm<T, F>>, ygg::Data<FunctionExpression<T>>>(), "operator"_a, "fterm"_a, "fexpr"_a);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);

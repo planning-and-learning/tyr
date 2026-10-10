@@ -22,6 +22,9 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/function_term_index.hpp"
 
+#include <tuple>
+#include <utility>
+#include <variant>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -73,10 +76,13 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>
     {
     }
 
-    void clear() noexcept { ygg::clear(variant); }
-
+    auto cista_members() noexcept { return std::tie(variant); }
     auto cista_members() const noexcept { return std::tie(variant); }
     auto identifying_members() const noexcept { return std::tie(variant); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>);
@@ -132,10 +138,13 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>
     {
     }
 
-    void clear() noexcept { ygg::clear(variant); }
-
+    auto cista_members() noexcept { return std::tie(variant); }
     auto cista_members() const noexcept { return std::tie(variant); }
     auto identifying_members() const noexcept { return std::tie(variant); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>);

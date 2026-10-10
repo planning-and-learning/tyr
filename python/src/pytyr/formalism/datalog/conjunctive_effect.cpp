@@ -33,6 +33,7 @@ void bind_conjunctive_effect_kind(nb::module_& m, RepositoryBinding& repository,
         using V = ygg::Data<Tag>;
         auto cls = nb::class_<V>(m, (name + "Data").c_str());
         cls.def(nb::init<const NumericEffectOperatorViewList<T, FluentTag>&>(), "numeric_effects"_a);
+        cls.def(nb::init<ygg::DataList<NumericEffectOperator<T, FluentTag>>>(), "numeric_effects"_a);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);

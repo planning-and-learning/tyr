@@ -18,6 +18,9 @@
 #ifndef TYR_FORMALISM_TERM_DATA_HPP_
 #define TYR_FORMALISM_TERM_DATA_HPP_
 
+#include <tuple>
+#include <utility>
+#include <variant>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 #include <yggdrasil/containers/variant.hpp>
@@ -59,10 +62,13 @@ struct Data<::tyr::formalism::Term>
     {
     }
 
-    void clear() noexcept { ygg::clear(variant); }
-
+    auto cista_members() noexcept { return std::tie(variant); }
     auto cista_members() const noexcept { return std::tie(variant); }
     auto identifying_members() const noexcept { return std::tie(variant); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::Term>);

@@ -25,6 +25,8 @@
 
 #include <stdexcept>
 #include <variant>
+#include <tuple>
+#include <utility>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -62,14 +64,13 @@ struct Data<::tyr::formalism::planning::ArithmeticOperator<T>>
     {
     }
 
-    void clear() noexcept
-    {
-        operator_kind = OperatorType::Sub;
-        ygg::clear(variant);
-    }
-
+    auto cista_members() noexcept { return std::tie(operator_kind, variant); }
     auto cista_members() const noexcept { return std::tie(operator_kind, variant); }
     auto identifying_members() const noexcept { return std::tuple<std::size_t, const OperatorType&, const Variant&>(variant.index(), operator_kind, variant); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::ArithmeticOperator<::tyr::LiftedTag>>);

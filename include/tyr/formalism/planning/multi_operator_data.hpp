@@ -23,6 +23,9 @@
 #include "tyr/formalism/planning/multi_operator_index.hpp"
 
 #include <stdexcept>
+#include <tuple>
+#include <utility>
+#include <vector>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -58,15 +61,13 @@ struct Data<::tyr::formalism::planning::MultiOperator<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        operator_kind = OperatorType::Add;
-        ygg::clear(args);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, operator_kind, args); }
     auto cista_members() const noexcept { return std::tie(index, operator_kind, args); }
     auto identifying_members() const noexcept { return std::tie(operator_kind, args); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::MultiOperator<::tyr::LiftedTag>>);

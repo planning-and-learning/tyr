@@ -26,6 +26,11 @@
 #include "tyr/planning/ground/match_tree/nodes/variable_index.hpp"
 
 #include <yggdrasil/containers/variant.hpp>
+#include <optional>
+#include <tuple>
+#include <utility>
+#include <variant>
+#include <vector>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -44,13 +49,27 @@ struct Data<planning::match_tree::Node<Tag>>
 
     Variant variant;
 
+    template<typename C>
+    using ViewVariant = std::variant<::ygg::View<ygg::Index<planning::match_tree::AtomSelectorNode<Tag>>, C>,
+                                     ::ygg::View<ygg::Index<planning::match_tree::NumericConstraintSelectorNode<Tag>>, C>,
+                                     ::ygg::View<ygg::Index<planning::match_tree::VariableSelectorNode<Tag>>, C>,
+                                     ::ygg::View<ygg::Index<planning::match_tree::NegativeFactSelectorNode<Tag>>, C>,
+                                     ::ygg::View<ygg::Index<planning::match_tree::ElementGeneratorNode<Tag>>, C>>;
+
     Data() = default;
-    Data(Variant variant) : variant(variant) {}
+    Data(Variant variant_) : variant(variant_) {}
+    template<typename C>
+    Data(ViewVariant<C> variant_) : variant(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, variant_))
+    {
+    }
 
-    void clear() noexcept { ygg::clear(variant); }
-
+    auto cista_members() noexcept { return std::tie(variant); }
     auto cista_members() const noexcept { return std::tie(variant); }
     auto identifying_members() const noexcept { return std::tie(variant); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 }

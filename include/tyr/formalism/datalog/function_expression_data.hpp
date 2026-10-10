@@ -23,6 +23,9 @@
 #include "tyr/formalism/datalog/function_term_index.hpp"
 #include "tyr/formalism/planning/function_expression_data.hpp"
 
+#include <tuple>
+#include <utility>
+#include <variant>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -77,10 +80,13 @@ struct Data<::tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept { ygg::clear(variant); }
-
+    auto cista_members() noexcept { return std::tie(variant); }
     auto cista_members() const noexcept { return std::tie(variant); }
     auto identifying_members() const noexcept { return std::tie(variant); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>);
@@ -139,10 +145,13 @@ struct Data<::tyr::formalism::datalog::FunctionExpression<::tyr::GroundTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept { ygg::clear(variant); }
-
+    auto cista_members() noexcept { return std::tie(variant); }
     auto cista_members() const noexcept { return std::tie(variant); }
     auto identifying_members() const noexcept { return std::tie(variant); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::FunctionExpression<::tyr::GroundTag>>);

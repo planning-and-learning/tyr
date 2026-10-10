@@ -34,6 +34,11 @@
 #include "tyr/formalism/planning/task_index.hpp"
 #include "tyr/formalism/predicate_index.hpp"
 
+#include <tuple>
+#include <utility>
+#include <vector>
+#include <optional>
+#include <string>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -133,23 +138,6 @@ struct Data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(name);
-        ygg::clear(domain);
-        ygg::clear(derived_predicates);
-        ygg::clear(objects);
-        ygg::clear(static_atoms);
-        ygg::clear(fluent_atoms);
-        ygg::clear(static_fterm_values);
-        ygg::clear(fluent_fterm_values);
-        ygg::clear(auxiliary_fterm_value);
-        ygg::clear(goal);
-        ygg::clear(metric);
-        ygg::clear(axioms);
-    }
-
     template<::tyr::formalism::FactKind T>
     const auto& get_atoms() const
     {
@@ -172,6 +160,22 @@ struct Data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
             static_assert(ygg::dependent_false<T>::value, "Missing case");
     }
 
+    auto cista_members() noexcept
+    {
+        return std::tie(index,
+                        name,
+                        domain,
+                        derived_predicates,
+                        objects,
+                        static_atoms,
+                        fluent_atoms,
+                        static_fterm_values,
+                        fluent_fterm_values,
+                        auxiliary_fterm_value,
+                        goal,
+                        metric,
+                        axioms);
+    }
     auto cista_members() const noexcept
     {
         return std::tie(index,
@@ -202,6 +206,10 @@ struct Data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
                         goal,
                         metric,
                         axioms);
+    }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
     }
 };
 
@@ -332,28 +340,6 @@ struct Data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(name);
-        ygg::clear(domain);
-        ygg::clear(derived_predicates);
-        ygg::clear(objects);
-        ygg::clear(static_atoms);
-        ygg::clear(fluent_atoms);
-        ygg::clear(derived_atoms);
-        ygg::clear(static_fterm_values);
-        ygg::clear(fluent_fterm_values);
-        ygg::clear(auxiliary_fterm_value);
-        ygg::clear(metric);
-        ygg::clear(axioms);
-        ygg::clear(fluent_variables);
-        ygg::clear(fluent_facts);
-        ygg::clear(goal);
-        ygg::clear(ground_actions);
-        ygg::clear(ground_axioms);
-    }
-
     template<::tyr::formalism::FactKind T>
     const auto& get_atoms() const
     {
@@ -380,6 +366,27 @@ struct Data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
 
     const auto& get_fluent_variables() const { return fluent_variables; }
 
+    auto cista_members() noexcept
+    {
+        return std::tie(index,
+                        name,
+                        domain,
+                        derived_predicates,
+                        objects,
+                        static_atoms,
+                        fluent_atoms,
+                        derived_atoms,
+                        static_fterm_values,
+                        fluent_fterm_values,
+                        auxiliary_fterm_value,
+                        metric,
+                        axioms,
+                        fluent_variables,
+                        fluent_facts,
+                        goal,
+                        ground_actions,
+                        ground_axioms);
+    }
     auto cista_members() const noexcept
     {
         return std::tie(index,
@@ -420,6 +427,10 @@ struct Data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
                         goal,
                         ground_actions,
                         ground_axioms);
+    }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
     }
 };
 

@@ -35,10 +35,12 @@ void bind_conditional_effect_kind(nb::module_& m, RepositoryBinding& repository,
         if constexpr (std::same_as<T, LiftedTag>)
         {
             cls.def(nb::init<const VariableViewList&, ConjunctiveConditionView<T>, ConjunctiveEffectView<T>>(), "variables"_a, "condition"_a, "effect"_a);
+            cls.def(nb::init<ygg::IndexList<Variable>, ygg::Index<ConjunctiveCondition<LiftedTag>>, ygg::Index<ConjunctiveEffect<LiftedTag>>>(), "variables"_a, "condition"_a, "effect"_a);
         }
         else
         {
             cls.def(nb::init<ConjunctiveConditionView<T>, ConjunctiveEffectView<T>>(), "condition"_a, "effect"_a);
+            cls.def(nb::init<ygg::Index<ConjunctiveCondition<GroundTag>>, ygg::Index<ConjunctiveEffect<GroundTag>>>(), "condition"_a, "effect"_a);
         }
         ygg::add_print(cls);
         ygg::add_comparison(cls);

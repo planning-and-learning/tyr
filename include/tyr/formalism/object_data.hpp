@@ -18,6 +18,9 @@
 #ifndef TYR_FORMALISM_OBJECT_DATA_HPP_
 #define TYR_FORMALISM_OBJECT_DATA_HPP_
 
+#include <tuple>
+#include <utility>
+#include <string>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/declarations.hpp"
@@ -41,14 +44,13 @@ struct Data<::tyr::formalism::Object>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(name);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, name); }
     auto cista_members() const noexcept { return std::tie(index, name); }
     auto identifying_members() const noexcept { return std::tie(name); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::Object>);

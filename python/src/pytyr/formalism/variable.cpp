@@ -31,6 +31,7 @@ void bind_variable(nb::module_& m)
         auto cls = nb::class_<V>(m, "VariableData")  //
                        .def(nb::init<const std::string&>(), "name"_a)
                        .def_rw("name", &V::name);
+        cls.def(nb::init<::cista::offset::string>(), "name"_a);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);

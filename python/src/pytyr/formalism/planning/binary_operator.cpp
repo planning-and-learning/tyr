@@ -37,6 +37,7 @@ void bind_binary_operator_kind(nb::module_& m, RepositoryBinding& repository, co
         using V = ygg::Data<Tag>;
         auto cls =
             nb::class_<V>(m, (name + "Data").c_str()).def(nb::init<O, FunctionExpressionView<T>, FunctionExpressionView<T>>(), "operator"_a, "lhs"_a, "rhs"_a);
+        cls.def(nb::init<O, ygg::Data<FunctionExpression<T>>, ygg::Data<FunctionExpression<T>>>(), "operator"_a, "lhs"_a, "rhs"_a);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);

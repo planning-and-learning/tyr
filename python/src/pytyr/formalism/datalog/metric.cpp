@@ -28,6 +28,7 @@ void bind_metric(nb::module_& m, RepositoryBinding& repository)
     {
         using V = ygg::Data<Metric>;
         auto cls = nb::class_<V>(m, "MetricData").def(nb::init<FunctionExpressionView<GroundTag>>(), "fexpr"_a);
+        cls.def(nb::init<ygg::Data<FunctionExpression<GroundTag>>>(), "fexpr"_a);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);

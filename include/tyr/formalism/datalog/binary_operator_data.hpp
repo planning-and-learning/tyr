@@ -22,6 +22,8 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/function_expression_data.hpp"
 
+#include <tuple>
+#include <utility>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -52,16 +54,13 @@ struct Data<::tyr::formalism::datalog::BinaryOperator<T, O>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        operator_kind = {};
-        ygg::clear(lhs);
-        ygg::clear(rhs);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, operator_kind, lhs, rhs); }
     auto cista_members() const noexcept { return std::tie(index, operator_kind, lhs, rhs); }
     auto identifying_members() const noexcept { return std::tie(operator_kind, lhs, rhs); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::BinaryOperator<::tyr::LiftedTag, ::tyr::formalism::ArithmeticOperatorKind>>);

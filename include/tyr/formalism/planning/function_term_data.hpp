@@ -25,6 +25,9 @@
 #include "tyr/formalism/planning/function_term_index.hpp"
 #include "tyr/formalism/term_data.hpp"
 
+#include <tuple>
+#include <utility>
+#include <vector>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -60,15 +63,13 @@ struct Data<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, F>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(function);
-        ygg::clear(terms);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, function, terms); }
     auto cista_members() const noexcept { return std::tie(index, function, terms); }
     auto identifying_members() const noexcept { return std::tie(function, terms); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>);
@@ -92,14 +93,13 @@ struct Data<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, F>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(binding);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, binding); }
     auto cista_members() const noexcept { return std::tie(index, binding); }
     auto identifying_members() const noexcept { return std::tie(binding); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>>);

@@ -31,6 +31,8 @@
 
 #include <optional>
 #include <vector>
+#include <tuple>
+#include <utility>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -158,24 +160,6 @@ struct Data<::tyr::formalism::datalog::Program<T>>
             static_assert(ygg::dependent_false<R>::value, "Missing case");
     }
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(static_predicates);
-        ygg::clear(fluent_predicates);
-        ygg::clear(static_functions);
-        ygg::clear(fluent_functions);
-        ygg::clear(objects);
-        ygg::clear(static_atoms);
-        ygg::clear(fluent_atoms);
-        ygg::clear(static_fterm_values);
-        ygg::clear(fluent_fterm_values);
-        ygg::clear(goal);
-        ygg::clear(metric);
-        ygg::clear(predicate_rules);
-        ygg::clear(function_rules);
-    }
-
     template<::tyr::formalism::FactKind F>
     const auto& get_predicates() const
     {
@@ -220,6 +204,23 @@ struct Data<::tyr::formalism::datalog::Program<T>>
             static_assert(ygg::dependent_false<F>::value, "Missing case");
     }
 
+    auto cista_members() noexcept
+    {
+        return std::tie(index,
+                        static_predicates,
+                        fluent_predicates,
+                        static_functions,
+                        fluent_functions,
+                        objects,
+                        static_atoms,
+                        fluent_atoms,
+                        static_fterm_values,
+                        fluent_fterm_values,
+                        goal,
+                        metric,
+                        predicate_rules,
+                        function_rules);
+    }
     auto cista_members() const noexcept
     {
         return std::tie(index,
@@ -252,6 +253,10 @@ struct Data<::tyr::formalism::datalog::Program<T>>
                         metric,
                         predicate_rules,
                         function_rules);
+    }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
     }
 };
 

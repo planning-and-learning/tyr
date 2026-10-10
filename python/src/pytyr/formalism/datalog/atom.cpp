@@ -39,10 +39,12 @@ void bind_atom_kind(nb::module_& m, RepositoryBinding& repository, const std::st
         if constexpr (std::same_as<T, LiftedTag>)
         {
             cls.def(nb::init<PredicateView<F>, const TermViewList&>(), "predicate"_a, "terms"_a);
+            cls.def(nb::init<ygg::Index<Predicate<F>>, ygg::DataList<Term>>(), "predicate"_a, "terms"_a);
         }
         else
         {
             cls.def(nb::init<PredicateBindingView<F>>(), "binding"_a);
+            cls.def(nb::init<ygg::Index<RelationBinding<Predicate<F>>>>(), "binding"_a);
         }
         ygg::add_print(cls);
         ygg::add_comparison(cls);

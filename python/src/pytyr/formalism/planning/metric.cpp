@@ -30,6 +30,7 @@ void bind_metric(nb::module_& m, RepositoryBinding& repository)
 
         auto cls = nb::class_<V>(m, "MetricData")  //
                        .def(nb::init<OptimizationDirection, FunctionExpressionView<GroundTag>>(), "optimization_direction"_a, "fexpr"_a);
+        cls.def(nb::init<OptimizationDirection, ygg::Data<FunctionExpression<GroundTag>>>(), "optimization_direction"_a, "fexpr"_a);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);

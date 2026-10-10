@@ -25,6 +25,9 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/variable_index.hpp"
 
+#include <tuple>
+#include <utility>
+#include <vector>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -68,16 +71,13 @@ struct Data<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(variables);
-        ygg::clear(body);
-        ygg::clear(head);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, variables, body, head); }
     auto cista_members() const noexcept { return std::tie(index, variables, body, head); }
     auto identifying_members() const noexcept { return std::tie(variables, body, head); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>);
@@ -119,16 +119,13 @@ struct Data<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(binding);
-        ygg::clear(body);
-        ygg::clear(head);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, binding, body, head); }
     auto cista_members() const noexcept { return std::tie(index, binding, body, head); }
     auto identifying_members() const noexcept { return std::tie(binding); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>);

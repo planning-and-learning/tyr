@@ -58,6 +58,7 @@ void bind_program_kind(nb::module_& m, RepositoryBinding& repository, const std:
                 "metric"_a,
                 nb::arg(std::same_as<T, GroundTag> ? "ground_rules" : "rules"),
                 nb::arg(std::same_as<T, GroundTag> ? "ground_function_rules" : "function_rules"));
+        cls.def(nb::init<ygg::IndexList<Predicate<StaticTag>>, ygg::IndexList<Predicate<FluentTag>>, ygg::IndexList<Function<StaticTag>>, ygg::IndexList<Function<FluentTag>>, ygg::IndexList<Object>, ygg::IndexList<Atom<GroundTag, StaticTag>>, ygg::IndexList<Atom<GroundTag, FluentTag>>, ygg::IndexList<FunctionTermValue<GroundTag, StaticTag>>, ygg::IndexList<FunctionTermValue<GroundTag, FluentTag>>, ::cista::optional<ygg::Index<ConjunctiveCondition<GroundTag>>>, ::cista::optional<ygg::Index<Metric>>, ygg::IndexList<Rule<T, PredicateTag>>, ygg::IndexList<Rule<T, FunctionTag>>>(), "static_predicates"_a, "fluent_predicates"_a, "static_functions"_a, "fluent_functions"_a, "objects"_a, "static_atoms"_a, "fluent_atoms"_a, "static_fterm_values"_a, "fluent_fterm_values"_a, "goal"_a, "metric"_a, nb::arg(std::same_as<T, GroundTag> ? "ground_rules" : "rules"), nb::arg(std::same_as<T, GroundTag> ? "ground_function_rules" : "function_rules"));
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);

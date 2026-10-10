@@ -18,6 +18,9 @@
 #ifndef TYR_FORMALISM_FUNCTION_DATA_HPP_
 #define TYR_FORMALISM_FUNCTION_DATA_HPP_
 
+#include <tuple>
+#include <utility>
+#include <string>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/declarations.hpp"
@@ -43,15 +46,13 @@ struct Data<::tyr::formalism::Function<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(name);
-        ygg::clear(arity);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, name, arity); }
     auto cista_members() const noexcept { return std::tie(index, name, arity); }
     auto identifying_members() const noexcept { return std::tie(name, arity); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::Function<::tyr::formalism::StaticTag>>);

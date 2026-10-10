@@ -22,6 +22,9 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/numeric_effect_operator_data.hpp"
 
+#include <tuple>
+#include <utility>
+#include <vector>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -53,14 +56,13 @@ struct Data<::tyr::formalism::datalog::ConjunctiveEffect<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(numeric_effects);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, numeric_effects); }
     auto cista_members() const noexcept { return std::tie(index, numeric_effects); }
     auto identifying_members() const noexcept { return std::tie(numeric_effects); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::ConjunctiveEffect<::tyr::LiftedTag>>);

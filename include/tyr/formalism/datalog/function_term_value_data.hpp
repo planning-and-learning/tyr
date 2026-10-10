@@ -23,6 +23,8 @@
 #include "tyr/formalism/datalog/function_term_value_index.hpp"
 #include "tyr/formalism/term_data.hpp"
 
+#include <tuple>
+#include <utility>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -48,15 +50,13 @@ struct Data<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, F>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        ygg::clear(fterm);
-        ygg::clear(value);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, fterm, value); }
     auto cista_members() const noexcept { return std::tie(index, fterm, value); }
     auto identifying_members() const noexcept { return std::tie(fterm, value); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>);

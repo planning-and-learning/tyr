@@ -23,6 +23,8 @@
 #include "tyr/formalism/datalog/unary_operator_index.hpp"
 
 #include <stdexcept>
+#include <tuple>
+#include <utility>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -57,15 +59,13 @@ struct Data<::tyr::formalism::datalog::UnaryOperator<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept
-    {
-        ygg::clear(index);
-        operator_kind = OperatorType::Sub;
-        ygg::clear(arg);
-    }
-
+    auto cista_members() noexcept { return std::tie(index, operator_kind, arg); }
     auto cista_members() const noexcept { return std::tie(index, operator_kind, arg); }
     auto identifying_members() const noexcept { return std::tie(operator_kind, arg); }
+    void clear() noexcept
+    {
+        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+    }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::UnaryOperator<::tyr::LiftedTag>>);
