@@ -19,11 +19,8 @@
 #define TYR_FORMALISM_PLANNING_AXIOM_DATA_HPP_
 
 #include "tyr/formalism/binding_index.hpp"
-#include "tyr/formalism/planning/atom_index.hpp"
-#include "tyr/formalism/planning/axiom_index.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/variable_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #include <tuple>
 #include <utility>

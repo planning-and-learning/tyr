@@ -20,7 +20,6 @@
 
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_view.hpp"
-#include "tyr/planning/worker_index.hpp"
 
 #include <memory>
 

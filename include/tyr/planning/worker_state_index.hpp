@@ -19,8 +19,6 @@
 #define TYR_PLANNING_WORKER_STATE_INDEX_HPP_
 
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/state_index.hpp"
-#include "tyr/planning/worker_index.hpp"
 
 #include <tuple>
 

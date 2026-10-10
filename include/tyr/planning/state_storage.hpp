@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_STATE_STORAGE_HPP_
 #define TYR_PLANNING_STATE_STORAGE_HPP_
 
-#include "tyr/formalism/planning/function_term_index.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/task.hpp"
 
 #include <concepts>

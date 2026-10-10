@@ -18,7 +18,7 @@
 #ifndef TYR_ANALYSIS_VARIABLE_DOMAIN_HPP_
 #define TYR_ANALYSIS_VARIABLE_DOMAIN_HPP_
 
-#include "tyr/formalism/object_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #include <vector>
 

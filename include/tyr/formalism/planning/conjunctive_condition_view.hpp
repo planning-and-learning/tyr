@@ -19,7 +19,6 @@
 #define TYR_FORMALISM_PLANNING_CONJUNCTIVE_CONDITION_VIEW_HPP_
 
 #include "tyr/formalism/planning/boolean_operator_view.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/literal_view.hpp"
@@ -29,33 +28,32 @@
 #include <utility>
 #include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/core/types.hpp>
-#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 template<::tyr::TaskKind T, ygg::formalism::SymbolContextFor<::tyr::formalism::planning::ConjunctiveCondition<T>> C>
 class View<ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<T>>, C> :
-    public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<T>>, C>
+    public ygg::IndexViewBase<::tyr::formalism::planning::ConjunctiveCondition<T>, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<T>> handle, const C& context) noexcept :
-        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<T>>, C>(handle, context)
+        ygg::IndexViewBase<::tyr::formalism::planning::ConjunctiveCondition<T>, C>(handle, context)
     {
     }
 
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     {
-        return ygg::make_view(this->get_data().variables, *this->m_context);
+        return ygg::make_view(this->get_data().variables, this->get_context());
     }
     template<::tyr::formalism::FactKind F>
     auto get_literals() const noexcept
     {
-        return ygg::make_view(this->get_data().template get_literals<F>(), *this->m_context);
+        return ygg::make_view(this->get_data().template get_literals<F>(), this->get_context());
     }
     auto get_numeric_constraints() const noexcept(std::same_as<T, ::tyr::GroundTag>)
     {
-        return ygg::make_view(this->get_data().numeric_constraints, *this->m_context);
+        return ygg::make_view(this->get_data().numeric_constraints, this->get_context());
     }
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
@@ -67,7 +65,7 @@ public:
     auto get_facts() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     {
-        return ygg::make_view(this->get_data().template get_facts<F>(), *this->m_context);
+        return ygg::make_view(this->get_data().template get_facts<F>(), this->get_context());
     }
 
     /// Projects represented atoms of the requested polarity, borrowing the repository.

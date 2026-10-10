@@ -19,7 +19,7 @@
 #include "bindings.hpp"
 
 #include <tyr/formalism/predicate_data.hpp>
-#include <tyr/formalism/predicate_index.hpp>
+#include "tyr/formalism/declarations.hpp"
 #include <tyr/formalism/predicate_view.hpp>
 
 namespace tyr::formalism::planning

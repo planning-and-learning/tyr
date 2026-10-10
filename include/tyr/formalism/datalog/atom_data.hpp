@@ -19,10 +19,8 @@
 #define TYR_FORMALISM_DATALOG_ATOM_DATA_HPP_
 
 #include "tyr/formalism/binding_index.hpp"
-#include "tyr/formalism/datalog/atom_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/object_index.hpp"
-#include "tyr/formalism/predicate_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/term_data.hpp"
 
 #include <tuple>

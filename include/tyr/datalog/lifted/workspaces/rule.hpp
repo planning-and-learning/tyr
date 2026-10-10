@@ -24,10 +24,10 @@
 #include "tyr/datalog/rule_evaluation.hpp"
 #include "tyr/datalog/statistics/rule.hpp"
 #include "tyr/formalism/binding_index.hpp"
-#include "tyr/formalism/datalog/atom_index.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
-#include "tyr/formalism/object_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #include <cassert>
 #include <deque>

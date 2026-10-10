@@ -19,19 +19,17 @@
 #define TYR_FORMALISM_PREDICATE_VIEW_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/predicate_index.hpp"
 
 #include <yggdrasil/core/types.hpp>
-#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 template<::tyr::formalism::FactKind T, ygg::formalism::SymbolContextFor<::tyr::formalism::Predicate<T>> C>
-class View<ygg::Index<::tyr::formalism::Predicate<T>>, C> : public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::Predicate<T>>, C>
+class View<ygg::Index<::tyr::formalism::Predicate<T>>, C> : public ygg::IndexViewBase<::tyr::formalism::Predicate<T>, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::Predicate<T>> handle, const C& context) noexcept :
-        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::Predicate<T>>, C>(handle, context)
+        ygg::IndexViewBase<::tyr::formalism::Predicate<T>, C>(handle, context)
     {
     }
 

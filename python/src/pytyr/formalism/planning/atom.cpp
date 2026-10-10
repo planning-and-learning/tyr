@@ -19,7 +19,7 @@
 #include "bindings.hpp"
 
 #include <tyr/formalism/planning/atom_data.hpp>
-#include <tyr/formalism/planning/atom_index.hpp>
+#include "tyr/formalism/planning/declarations.hpp"
 #include <tyr/formalism/planning/atom_view.hpp>
 
 namespace tyr::formalism::planning

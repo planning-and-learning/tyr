@@ -21,8 +21,7 @@
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/analysis/stratification.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/function_index.hpp"
-#include "tyr/formalism/predicate_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>

@@ -21,7 +21,7 @@
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/analysis/program_analysis.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/object_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
 #include <cassert>

@@ -20,7 +20,6 @@
 
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/function_expression_data.hpp"
-#include "tyr/formalism/datalog/metric_index.hpp"
 
 #include <tuple>
 #include <utility>

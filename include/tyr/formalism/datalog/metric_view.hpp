@@ -20,24 +20,22 @@
 
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/metric_data.hpp"
-#include "tyr/formalism/datalog/metric_index.hpp"
 
 #include <yggdrasil/core/types.hpp>
-#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 
 template<ygg::formalism::SymbolContextFor<::tyr::formalism::datalog::Metric> C>
-class View<ygg::Index<::tyr::formalism::datalog::Metric>, C> : public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::datalog::Metric>, C>
+class View<ygg::Index<::tyr::formalism::datalog::Metric>, C> : public ygg::IndexViewBase<::tyr::formalism::datalog::Metric, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::datalog::Metric> handle, const C& context) noexcept :
-        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::datalog::Metric>, C>(handle, context)
+        ygg::IndexViewBase<::tyr::formalism::datalog::Metric, C>(handle, context)
     {
     }
 
-    auto get_fexpr() const noexcept { return ygg::make_view(this->get_data().fexpr, *this->m_context); }
+    auto get_fexpr() const noexcept { return ygg::make_view(this->get_data().fexpr, this->get_context()); }
 };
 
 }

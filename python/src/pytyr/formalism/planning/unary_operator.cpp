@@ -19,7 +19,7 @@
 #include "bindings.hpp"
 
 #include <tyr/formalism/planning/unary_operator_data.hpp>
-#include <tyr/formalism/planning/unary_operator_index.hpp>
+#include "tyr/formalism/planning/declarations.hpp"
 #include <tyr/formalism/planning/unary_operator_view.hpp>
 
 namespace tyr::formalism::planning

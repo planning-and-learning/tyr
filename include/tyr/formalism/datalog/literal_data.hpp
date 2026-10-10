@@ -18,9 +18,7 @@
 #ifndef TYR_FORMALISM_DATALOG_LITERAL_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_LITERAL_DATA_HPP_
 
-#include "tyr/formalism/datalog/atom_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/literal_index.hpp"
 
 #include <tuple>
 #include <utility>

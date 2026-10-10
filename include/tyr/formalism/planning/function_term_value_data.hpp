@@ -19,8 +19,6 @@
 #define TYR_FORMALISM_PLANNING_FUNCTION_TERM_VALUE_DATA_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/function_term_index.hpp"
-#include "tyr/formalism/planning/function_term_value_index.hpp"
 #include "tyr/formalism/term_data.hpp"
 
 #include <tuple>

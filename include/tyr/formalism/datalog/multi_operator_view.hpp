@@ -20,28 +20,26 @@
 
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/function_expression_view.hpp"
-#include "tyr/formalism/datalog/multi_operator_index.hpp"
 
 #include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/core/types.hpp>
-#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 template<::tyr::TaskKind T, ygg::formalism::SymbolContextFor<::tyr::formalism::datalog::MultiOperator<T>> C>
 class View<ygg::Index<::tyr::formalism::datalog::MultiOperator<T>>, C> :
-    public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::datalog::MultiOperator<T>>, C>
+    public ygg::IndexViewBase<::tyr::formalism::datalog::MultiOperator<T>, C>
 {
 public:
     using OperatorType = ::tyr::formalism::ArithmeticOperatorKind;
 
     View(ygg::Index<::tyr::formalism::datalog::MultiOperator<T>> handle, const C& context) noexcept :
-        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::datalog::MultiOperator<T>>, C>(handle, context)
+        ygg::IndexViewBase<::tyr::formalism::datalog::MultiOperator<T>, C>(handle, context)
     {
     }
 
     auto get_operator() const noexcept { return this->get_data().operator_kind; }
-    auto get_args() const noexcept { return ygg::make_view(this->get_data().args, *this->m_context); }
+    auto get_args() const noexcept { return ygg::make_view(this->get_data().args, this->get_context()); }
 };
 
 }

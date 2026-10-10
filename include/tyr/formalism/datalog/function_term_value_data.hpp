@@ -19,8 +19,6 @@
 #define TYR_FORMALISM_DATALOG_FUNCTION_TERM_VALUE_DATA_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/function_term_index.hpp"
-#include "tyr/formalism/datalog/function_term_value_index.hpp"
 #include "tyr/formalism/term_data.hpp"
 
 #include <tuple>

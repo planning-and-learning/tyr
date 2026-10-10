@@ -24,7 +24,6 @@
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/variable_index.hpp"
 
 namespace ygg
 {

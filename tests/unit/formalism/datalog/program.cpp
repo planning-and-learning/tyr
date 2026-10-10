@@ -1,6 +1,6 @@
 #include "tyr/datalog/static_rule_filter.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
-#include "tyr/formalism/datalog/program_index.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 

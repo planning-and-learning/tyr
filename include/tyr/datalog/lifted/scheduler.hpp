@@ -26,7 +26,6 @@
 #include "tyr/datalog/policies/cost_concept.hpp"
 #include "tyr/datalog/policies/termination_concept.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/rule_index.hpp"
 
 #include <boost/dynamic_bitset/dynamic_bitset.hpp>
 #include <cassert>

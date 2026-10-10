@@ -19,7 +19,7 @@
 #include "bindings.hpp"
 
 #include <tyr/formalism/datalog/function_term_data.hpp>
-#include <tyr/formalism/datalog/function_term_index.hpp>
+#include "tyr/formalism/datalog/declarations.hpp"
 #include <tyr/formalism/datalog/function_term_view.hpp>
 
 namespace tyr::formalism::datalog

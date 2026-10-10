@@ -18,9 +18,9 @@
 #ifndef TYR_FORMALISM_PLANNING_FUNCTION_EXPRESSION_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_FUNCTION_EXPRESSION_DATA_HPP_
 
+#include <yggdrasil/containers/variant.hpp>
 #include "tyr/formalism/planning/arithmetic_operator_data.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/function_term_index.hpp"
 
 #include <tuple>
 #include <utility>
@@ -42,16 +42,13 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>
     Variant variant;
 
     template<typename C>
-    using ViewVariant = std::variant<ygg::float_t,
-                                     ::ygg::View<ygg::Data<::tyr::formalism::planning::ArithmeticOperator<::tyr::LiftedTag>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>, C>>;
+    using ViewVariant = ::ygg::ViewVariant<Variant, C>;
 
     Data() = default;
     Data(Variant variant_) : variant(variant_) {}
     // Python constructor
     template<typename C>
-    Data(ViewVariant<C> variant_) :
+    Data(const ViewVariant<C>& variant_) :
         variant(std::visit(
             [](const auto& arg) -> Variant
             {
@@ -59,15 +56,11 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>
 
                 if constexpr (std::is_same_v<Alternative, ygg::float_t>)
                     return Variant(arg);
-                else if constexpr (std::is_same_v<Alternative, ::ygg::View<ygg::Data<::tyr::formalism::planning::ArithmeticOperator<::tyr::LiftedTag>>, C>>)
+                else if constexpr (ygg::is_view_of_v<Alternative, ygg::Data<::tyr::formalism::planning::ArithmeticOperator<::tyr::LiftedTag>>>)
                     return Variant(arg.get_data());
-                else if constexpr (std::is_same_v<
-                                       Alternative,
-                                       ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>, C>>)
+                else if constexpr (ygg::is_view_of_v<Alternative, ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>>)
                     return Variant(arg.get_index());
-                else if constexpr (std::is_same_v<
-                                       Alternative,
-                                       ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>, C>>)
+                else if constexpr (ygg::is_view_of_v<Alternative, ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>)
                     return Variant(arg.get_index());
                 else
                     static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
@@ -99,17 +92,13 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>
     Variant variant;
 
     template<typename C>
-    using ViewVariant = std::variant<ygg::float_t,
-                                     ::ygg::View<ygg::Data<::tyr::formalism::planning::ArithmeticOperator<::tyr::GroundTag>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>, C>>;
+    using ViewVariant = ::ygg::ViewVariant<Variant, C>;
 
     Data() = default;
     Data(Variant variant_) : variant(variant_) {}
     // Python constructor
     template<typename C>
-    Data(ViewVariant<C> variant_) :
+    Data(const ViewVariant<C>& variant_) :
         variant(std::visit(
             [](const auto& arg) -> Variant
             {
@@ -117,19 +106,13 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>
 
                 if constexpr (std::is_same_v<Alternative, ygg::float_t>)
                     return Variant(arg);
-                else if constexpr (std::is_same_v<Alternative, ::ygg::View<ygg::Data<::tyr::formalism::planning::ArithmeticOperator<::tyr::GroundTag>>, C>>)
+                else if constexpr (ygg::is_view_of_v<Alternative, ygg::Data<::tyr::formalism::planning::ArithmeticOperator<::tyr::GroundTag>>>)
                     return Variant(arg.get_data());
-                else if constexpr (std::is_same_v<
-                                       Alternative,
-                                       ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>>, C>>)
+                else if constexpr (ygg::is_view_of_v<Alternative, ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>)
                     return Variant(arg.get_index());
-                else if constexpr (std::is_same_v<
-                                       Alternative,
-                                       ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>>, C>>)
+                else if constexpr (ygg::is_view_of_v<Alternative, ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>)
                     return Variant(arg.get_index());
-                else if constexpr (std::is_same_v<
-                                       Alternative,
-                                       ::ygg::View<ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>, C>>)
+                else if constexpr (ygg::is_view_of_v<Alternative, ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>)
                     return Variant(arg.get_index());
                 else
                     static_assert(ygg::dependent_false<Alternative>::value, "Missing case");

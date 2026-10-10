@@ -43,7 +43,7 @@ private:
         explicit Definition(const formalism::planning::Repository& context) : repository(ygg::uint_t(0), context) {}
 
         Repository<Tag> repository;  // Constant index 0 is sufficient because match-tree node views are never compared.
-        std::optional<NodeView> root;
+        std::optional<ygg::Data<Node<Tag>>> root;  // Owned: node views borrow non-trivial node records.
     };
 
     struct Evaluator

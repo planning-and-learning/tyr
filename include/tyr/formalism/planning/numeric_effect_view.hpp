@@ -21,31 +21,29 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/function_expression_view.hpp"
 #include "tyr/formalism/planning/function_term_view.hpp"
-#include "tyr/formalism/planning/numeric_effect_index.hpp"
 
 #include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/core/types.hpp>
-#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 
 template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, ygg::formalism::SymbolContextFor<::tyr::formalism::planning::NumericEffect<T, F>> C>
 class View<ygg::Index<::tyr::formalism::planning::NumericEffect<T, F>>, C> :
-    public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::planning::NumericEffect<T, F>>, C>
+    public ygg::IndexViewBase<::tyr::formalism::planning::NumericEffect<T, F>, C>
 {
     static_assert(std::same_as<F, ::tyr::formalism::FluentTag> || std::same_as<F, ::tyr::formalism::AuxiliaryTag>,
                   "Unsupported NumericEffect<F> specialization.");
 
 public:
     View(ygg::Index<::tyr::formalism::planning::NumericEffect<T, F>> handle, const C& context) noexcept :
-        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::planning::NumericEffect<T, F>>, C>(handle, context)
+        ygg::IndexViewBase<::tyr::formalism::planning::NumericEffect<T, F>, C>(handle, context)
     {
     }
 
     auto get_operator() const noexcept { return this->get_data().operator_kind; }
-    auto get_fterm() const noexcept { return ygg::make_view(this->get_data().fterm, *this->m_context); }
-    auto get_fexpr() const noexcept { return ygg::make_view(this->get_data().fexpr, *this->m_context); }
+    auto get_fterm() const noexcept { return ygg::make_view(this->get_data().fterm, this->get_context()); }
+    auto get_fexpr() const noexcept { return ygg::make_view(this->get_data().fexpr, this->get_context()); }
 };
 
 }

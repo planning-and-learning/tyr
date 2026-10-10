@@ -18,7 +18,6 @@
 #ifndef TYR_FORMALISM_PLANNING_BINARY_OPERATOR_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_BINARY_OPERATOR_DATA_HPP_
 
-#include "tyr/formalism/planning/binary_operator_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/function_expression_data.hpp"
 

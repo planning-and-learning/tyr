@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_STATE_STORAGE_CONCEPTS_HPP_
 #define TYR_PLANNING_STATE_STORAGE_CONCEPTS_HPP_
 
-#include "tyr/planning/state_index.hpp"
+#include "tyr/planning/declarations.hpp"
 
 #include <concepts>
 

@@ -115,10 +115,10 @@ private:
     void prepare(loki::formalism::TermView element);
     void prepare(loki::formalism::AtomView element);
     void prepare(loki::formalism::LiteralView element);
-    void prepare(loki::formalism::FunctionExpressionNumberView element);
-    void prepare(loki::formalism::BinaryFunctionExpressionView element);
-    void prepare(loki::formalism::MultiFunctionExpressionView element);
-    void prepare(loki::formalism::UnaryFunctionExpressionView element);
+    void prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element);
+    void prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element);
+    void prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> element);
+    void prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> element);
     void prepare(loki::formalism::FunctionTermView element);
     void prepare(loki::formalism::FunctionExpressionView element);
     void prepare(loki::formalism::ConditionView element);
@@ -188,28 +188,28 @@ private:
     LiteralViewVariant translate_lifted(loki::formalism::LiteralView element, Builder& builder, Repository& context);
 
     ygg::Data<FunctionExpression<LiftedTag>>
-    translate_lifted(loki::formalism::FunctionExpressionNumberView element, Builder& builder, Repository& context);
+    translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element, Builder& builder, Repository& context);
 
     ygg::Data<FunctionExpression<LiftedTag>>
-    translate_lifted(loki::formalism::BinaryFunctionExpressionView element, Builder& builder, Repository& context);
+    translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element, Builder& builder, Repository& context);
 
     ygg::Data<FunctionExpression<LiftedTag>>
-    translate_lifted(loki::formalism::MultiFunctionExpressionView element, Builder& builder, Repository& context);
+    translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> element, Builder& builder, Repository& context);
 
     ygg::Data<FunctionExpression<LiftedTag>>
-    translate_lifted(loki::formalism::UnaryFunctionExpressionView element, Builder& builder, Repository& context);
+    translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> element, Builder& builder, Repository& context);
 
     ygg::Data<FunctionExpression<LiftedTag>> translate_lifted(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context);
 
     FunctionTermViewVariant translate_lifted(loki::formalism::FunctionTermView element, Builder& builder, Repository& context);
 
     ygg::Data<BooleanOperator<LiftedTag>>
-    translate_lifted(loki::formalism::ConditionNumericConstraintView element, Builder& builder, Repository& context);
+    translate_lifted(loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>> element, Builder& builder, Repository& context);
 
     ygg::Index<ConjunctiveCondition<LiftedTag>>
     translate_lifted(loki::formalism::ConditionView element, const ygg::IndexList<Variable>& parameters, Builder& builder, Repository& context);
 
-    NumericEffectViewVariant translate_lifted(loki::formalism::EffectNumericView element, Builder& builder, Repository& context);
+    NumericEffectViewVariant translate_lifted(loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::NumericTag>> element, Builder& builder, Repository& context);
 
     void translate_lifted(loki::formalism::EffectView element,
                           const ygg::IndexList<Variable>& parameters,
@@ -245,16 +245,16 @@ private:
     GroundLiteralOrFactViewVariant translate_grounded(loki::formalism::LiteralView element, Builder& builder, Repository& context, FDRContext& fdr_context);
 
     ygg::Data<FunctionExpression<GroundTag>>
-    translate_grounded(loki::formalism::FunctionExpressionNumberView element, Builder& builder, Repository& context);
+    translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element, Builder& builder, Repository& context);
 
     ygg::Data<FunctionExpression<GroundTag>>
-    translate_grounded(loki::formalism::BinaryFunctionExpressionView element, Builder& builder, Repository& context);
+    translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element, Builder& builder, Repository& context);
 
     ygg::Data<FunctionExpression<GroundTag>>
-    translate_grounded(loki::formalism::MultiFunctionExpressionView element, Builder& builder, Repository& context);
+    translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> element, Builder& builder, Repository& context);
 
     ygg::Data<FunctionExpression<GroundTag>>
-    translate_grounded(loki::formalism::UnaryFunctionExpressionView element, Builder& builder, Repository& context);
+    translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> element, Builder& builder, Repository& context);
 
     ygg::Data<FunctionExpression<GroundTag>> translate_grounded(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context);
 
@@ -263,7 +263,7 @@ private:
     GroundFunctionTermValueViewVariant translate_grounded(loki::formalism::InitialFunctionValueView element, Builder& builder, Repository& context);
 
     ygg::Data<BooleanOperator<GroundTag>>
-    translate_grounded(loki::formalism::ConditionNumericConstraintView element, Builder& builder, Repository& context);
+    translate_grounded(loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>> element, Builder& builder, Repository& context);
 
     ygg::Index<ConjunctiveCondition<GroundTag>>
     translate_grounded(loki::formalism::ConditionView element, Builder& builder, Repository& context, FDRContext& fdr_context);

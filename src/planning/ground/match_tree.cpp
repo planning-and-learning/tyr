@@ -64,9 +64,6 @@ template<typename Tag>
 using ElementSpan = std::span<ElementView<Tag>>;
 
 template<typename Tag>
-using MatchNodeView = ygg::View<ygg::Data<Node<Tag>>, Repository<Tag>>;
-
-template<typename Tag>
 using Builder = std::conditional_t<std::same_as<Tag, formalism::planning::Action<GroundTag>>, GroundActionBuilder, GroundAxiomBuilder>;
 
 template<typename Tag>
@@ -252,7 +249,7 @@ template<typename Entry, typename Tag>
 auto store_result(Entry& entry, Repository<Tag>& repository)
 {
     const auto stored = planning::match_tree::insert(repository, *entry.result).first;
-    return make_view(ygg::Data<Node<Tag>>(stored.get_handle()), repository);
+    return ygg::Data<Node<Tag>>(stored.get_handle());
 }
 
 template<typename Tag>
@@ -708,7 +705,7 @@ MatchTree<Tag>::MatchTree(std::vector<ygg::View<ygg::Index<Tag>, formalism::plan
     {
         auto& entry = stack.back();
 
-        std::optional<MatchNodeView<Tag>> produced;
+        std::optional<ygg::Data<Node<Tag>>> produced;
         std::optional<StackEntry<Tag>> next;
 
         std::visit(
@@ -739,13 +736,13 @@ MatchTree<Tag>::MatchTree(std::vector<ygg::View<ygg::Index<Tag>, formalism::plan
 
         if (stack.empty())
         {
-            definition->root = *produced;
+            definition->root = std::move(*produced);
             break;
         }
         else
         {
             // std::cout << "push result" << std::endl;
-            std::visit([&](auto& parent) { push_result(parent, produced->get_data()); }, stack.back());
+            std::visit([&](auto& parent) { push_result(parent, *produced); }, stack.back());
         }
     }
 
@@ -782,7 +779,7 @@ void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
     stack.clear();
 
     if (m_definition->root)
-        stack.push_back(*m_definition->root);
+        stack.push_back(ygg::make_view(*m_definition->root, m_definition->repository));
 
     while (!stack.empty())
     {

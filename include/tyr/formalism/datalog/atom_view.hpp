@@ -19,7 +19,6 @@
 #define TYR_FORMALISM_DATALOG_ATOM_VIEW_HPP_
 
 #include "tyr/formalism/binding_view.hpp"
-#include "tyr/formalism/datalog/atom_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/predicate_view.hpp"
@@ -28,17 +27,16 @@
 #include <yggdrasil/containers/array.hpp>
 #include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/core/types.hpp>
-#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 
 template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, ygg::formalism::SymbolContextFor<::tyr::formalism::datalog::Atom<T, F>> C>
-class View<ygg::Index<::tyr::formalism::datalog::Atom<T, F>>, C> : public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::datalog::Atom<T, F>>, C>
+class View<ygg::Index<::tyr::formalism::datalog::Atom<T, F>>, C> : public ygg::IndexViewBase<::tyr::formalism::datalog::Atom<T, F>, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::datalog::Atom<T, F>> handle, const C& context) noexcept :
-        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::datalog::Atom<T, F>>, C>(handle, context)
+        ygg::IndexViewBase<::tyr::formalism::datalog::Atom<T, F>, C>(handle, context)
     {
     }
 
@@ -47,18 +45,18 @@ public:
         if constexpr (std::same_as<T, ::tyr::GroundTag>)
             return get_row().get_relation();
         else
-            return ygg::make_view(this->get_data().predicate, *this->m_context);
+            return ygg::make_view(this->get_data().predicate, this->get_context());
     }
     auto get_terms() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     {
-        return ygg::make_view(this->get_data().terms, *this->m_context);
+        return ygg::make_view(this->get_data().terms, this->get_context());
     }
 
     auto get_row() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     {
-        return ygg::make_view(this->get_data().binding, *this->m_context);
+        return ygg::make_view(this->get_data().binding, this->get_context());
     }
     auto get_objects() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>

@@ -21,7 +21,6 @@
 #include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/worker_index.hpp"
 
 #include <cstddef>
 #include <memory>

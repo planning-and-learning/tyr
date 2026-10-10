@@ -1,7 +1,7 @@
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/object_data.hpp"
-#include "tyr/formalism/object_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 

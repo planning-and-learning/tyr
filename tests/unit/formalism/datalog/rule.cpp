@@ -1,6 +1,6 @@
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_data.hpp"
-#include "tyr/formalism/datalog/rule_index.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include <concepts>
 

@@ -1352,8 +1352,8 @@ def test_state_views_from_independent_repository_factories_use_distinct_storage_
         first_state = first_repository.get_initial_state(first_axiom_evaluator)
         second_state = second_repository.get_initial_state(second_axiom_evaluator)
 
-        assert first_repository.get_index() == 0
-        assert second_repository.get_index() == 0
+        assert first_repository.get_worker_index() == 0
+        assert second_repository.get_worker_index() == 0
         assert first_state.get_index() == second_state.get_index()
         assert first_state != second_state
         assert len({first_state, second_state}) == 2

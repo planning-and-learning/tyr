@@ -19,27 +19,25 @@
 #define TYR_FORMALISM_PLANNING_FUNCTION_TERM_VALUE_VIEW_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/function_term_value_index.hpp"
 #include "tyr/formalism/planning/function_term_view.hpp"
 
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/types.hpp>
-#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 template<::tyr::formalism::FactKind F, ygg::formalism::SymbolContextFor<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, F>> C>
 class View<ygg::Index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, F>>, C> :
-    public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, F>>, C>
+    public ygg::IndexViewBase<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, F>, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, F>> handle, const C& context) noexcept :
-        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, F>>, C>(handle, context)
+        ygg::IndexViewBase<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, F>, C>(handle, context)
     {
     }
 
-    auto get_fterm() const noexcept { return ygg::make_view(this->get_data().fterm, *this->m_context); }
+    auto get_fterm() const noexcept { return ygg::make_view(this->get_data().fterm, this->get_context()); }
     auto get_value() const noexcept { return this->get_data().value; }
 };
 }

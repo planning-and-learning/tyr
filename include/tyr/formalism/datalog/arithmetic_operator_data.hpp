@@ -18,10 +18,8 @@
 #ifndef TYR_FORMALISM_DATALOG_ARITHMETIC_OPERATOR_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_ARITHMETIC_OPERATOR_DATA_HPP_
 
-#include "tyr/formalism/datalog/binary_operator_index.hpp"
+#include <yggdrasil/containers/variant.hpp>
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/multi_operator_index.hpp"
-#include "tyr/formalism/datalog/unary_operator_index.hpp"
 
 #include <stdexcept>
 #include <variant>
@@ -37,17 +35,13 @@ template<::tyr::TaskKind T>
 struct Data<::tyr::formalism::datalog::ArithmeticOperator<T>>
 {
     using OperatorType = ::tyr::formalism::ArithmeticOperatorKind;
-    using Variant = ::cista::offset::variant<ygg::Index<::tyr::formalism::datalog::UnaryOperator<T>>,
-                                             ygg::Index<::tyr::formalism::datalog::BinaryOperator<T, ::tyr::formalism::ArithmeticOperatorKind>>,
-                                             ygg::Index<::tyr::formalism::datalog::MultiOperator<T>>>;
+    using Variant = ::ygg::IndexVariant<::tyr::formalism::datalog::ArithmeticExpressionTypes<T>>;
 
     OperatorType operator_kind = OperatorType::Sub;
     Variant variant;
 
     template<typename C>
-    using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::UnaryOperator<T>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<T, ::tyr::formalism::ArithmeticOperatorKind>>, C>,
-                                     ::ygg::View<ygg::Index<::tyr::formalism::datalog::MultiOperator<T>>, C>>;
+    using ViewVariant = ::ygg::ViewVariant<Variant, C>;
 
     Data() = default;
     Data(OperatorType operator_kind_, Variant variant_) : operator_kind(operator_kind_), variant(variant_)
@@ -57,7 +51,7 @@ struct Data<::tyr::formalism::datalog::ArithmeticOperator<T>>
             throw std::invalid_argument("ArithmeticOperator kind does not match operator form");
     }
     template<typename C>
-    Data(ViewVariant<C> variant_) :
+    Data(const ViewVariant<C>& variant_) :
         operator_kind(std::visit([](const auto& view) { return view.get_operator(); }, variant_)),
         variant(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, variant_))
     {
@@ -65,7 +59,7 @@ struct Data<::tyr::formalism::datalog::ArithmeticOperator<T>>
 
     auto cista_members() noexcept { return std::tie(operator_kind, variant); }
     auto cista_members() const noexcept { return std::tie(operator_kind, variant); }
-    auto identifying_members() const noexcept { return std::tuple<std::size_t, const OperatorType&, const Variant&>(variant.index(), operator_kind, variant); }
+    auto identifying_members() const noexcept { return std::tie(operator_kind, variant); }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

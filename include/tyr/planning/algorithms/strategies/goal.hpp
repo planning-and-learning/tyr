@@ -23,7 +23,6 @@
 #include "tyr/planning/ground/state_repository.hpp"
 #include "tyr/planning/lifted/state_repository.hpp"
 #include "tyr/planning/state_view.hpp"
-#include "tyr/planning/worker_index.hpp"
 
 #include <memory>
 

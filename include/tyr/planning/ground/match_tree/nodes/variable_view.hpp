@@ -22,28 +22,26 @@
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_view.hpp"
 #include "tyr/planning/ground/match_tree/nodes/variable_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/variable_index.hpp"
 
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
-#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 using namespace ::tyr;
 template<typename Tag, ygg::formalism::SymbolContextFor<planning::match_tree::VariableSelectorNode<Tag>> C>
 class View<ygg::Index<planning::match_tree::VariableSelectorNode<Tag>>, C> :
-    public ygg::formalism::detail::View<ygg::Index<planning::match_tree::VariableSelectorNode<Tag>>, C>
+    public ygg::IndexViewBase<planning::match_tree::VariableSelectorNode<Tag>, C>
 {
 public:
     View(ygg::Index<planning::match_tree::VariableSelectorNode<Tag>> handle, const C& context) noexcept :
-        ygg::formalism::detail::View<ygg::Index<planning::match_tree::VariableSelectorNode<Tag>>, C>(handle, context)
+        ygg::IndexViewBase<planning::match_tree::VariableSelectorNode<Tag>, C>(handle, context)
     {
     }
 
-    auto get_variable() const noexcept { return ygg::make_view(this->get_data().variable, this->m_context->get_formalism_repository()); }
-    auto get_domain_children() const noexcept { return ygg::make_view(this->get_data().domain_children, *this->m_context); }
-    auto get_dontcare_child() const noexcept { return ygg::make_view(this->get_data().dontcare_child, *this->m_context); }
+    auto get_variable() const noexcept { return ygg::make_view(this->get_data().variable, this->get_context().get_formalism_repository()); }
+    auto get_domain_children() const noexcept { return ygg::make_view(this->get_data().domain_children, this->get_context()); }
+    auto get_dontcare_child() const noexcept { return ygg::make_view(this->get_data().dontcare_child, this->get_context()); }
 };
 }
 

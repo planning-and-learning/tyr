@@ -1,7 +1,7 @@
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/predicate_data.hpp"
-#include "tyr/formalism/predicate_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/predicate_view.hpp"
 
 #include <concepts>

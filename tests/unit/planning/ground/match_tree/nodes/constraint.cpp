@@ -1,5 +1,5 @@
 #include "tyr/planning/ground/match_tree/nodes/constraint_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/constraint_index.hpp"
+#include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/constraint_view.hpp"
 #include "tyr/planning/ground/match_tree/repository.hpp"
 

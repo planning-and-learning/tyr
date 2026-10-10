@@ -19,25 +19,23 @@
 #define TYR_FORMALISM_PLANNING_FDR_VARIABLE_VIEW_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/fdr_variable_index.hpp"
 
 #include <yggdrasil/core/types.hpp>
-#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 template<::tyr::formalism::FactKind T, ygg::formalism::SymbolContextFor<::tyr::formalism::planning::FDRVariable<T>> C>
 class View<ygg::Index<::tyr::formalism::planning::FDRVariable<T>>, C> :
-    public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::planning::FDRVariable<T>>, C>
+    public ygg::IndexViewBase<::tyr::formalism::planning::FDRVariable<T>, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::planning::FDRVariable<T>> handle, const C& context) noexcept :
-        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::planning::FDRVariable<T>>, C>(handle, context)
+        ygg::IndexViewBase<::tyr::formalism::planning::FDRVariable<T>, C>(handle, context)
     {
     }
 
     auto get_domain_size() const noexcept { return get_atoms().size() + 1; }
-    auto get_atoms() const noexcept { return ygg::make_view(this->get_data().atoms, *this->m_context); }
+    auto get_atoms() const noexcept { return ygg::make_view(this->get_data().atoms, this->get_context()); }
 };
 
 }

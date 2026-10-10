@@ -67,7 +67,6 @@
 #include "tyr/planning/programs/rpg.hpp"
 #include "tyr/planning/search_space/search_node.hpp"
 #include "tyr/planning/state_data.hpp"
-#include "tyr/planning/state_index.hpp"
 #include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/state_routing/dist_hash.hpp"
 #include "tyr/planning/state_storage/iterators.hpp"

@@ -18,16 +18,8 @@
 #ifndef TYR_FORMALISM_DATALOG_PROGRAM_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_PROGRAM_DATA_HPP_
 
-#include "tyr/formalism/datalog/atom_index.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/function_term_value_index.hpp"
-#include "tyr/formalism/datalog/metric_index.hpp"
-#include "tyr/formalism/datalog/program_index.hpp"
-#include "tyr/formalism/datalog/rule_index.hpp"
-#include "tyr/formalism/function_index.hpp"
-#include "tyr/formalism/object_index.hpp"
-#include "tyr/formalism/predicate_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #include <optional>
 #include <vector>

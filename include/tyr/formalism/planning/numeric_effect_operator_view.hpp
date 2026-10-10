@@ -27,23 +27,16 @@
 
 namespace ygg
 {
+template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
+inline constexpr bool stores_view_by_value_v<::tyr::formalism::planning::NumericEffectOperator<T, F>> = true;
+
 template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, ::tyr::formalism::planning::Context C>
-class View<ygg::Data<::tyr::formalism::planning::NumericEffectOperator<T, F>>, C>
+class View<ygg::Data<::tyr::formalism::planning::NumericEffectOperator<T, F>>, C> : public ygg::DataViewBase<::tyr::formalism::planning::NumericEffectOperator<T, F>, C>
 {
-private:
-    const C* m_context;
-    ygg::Data<::tyr::formalism::planning::NumericEffectOperator<T, F>> m_handle;
-
 public:
-    View(ygg::Data<::tyr::formalism::planning::NumericEffectOperator<T, F>> data, const C& context) noexcept : m_context(&context), m_handle(data) {}
+    View(const ygg::Data<::tyr::formalism::planning::NumericEffectOperator<T, F>>& handle, const C& context) noexcept : ygg::DataViewBase<::tyr::formalism::planning::NumericEffectOperator<T, F>, C>(handle, context) {}
 
-    const auto& get_data() const noexcept { return m_handle; }
-    const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_handle() const noexcept { return m_handle; }
-
-    auto get_variant() const noexcept { return ygg::make_view(m_handle.variant, *m_context); }
-
-    auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }
+    auto get_variant() const noexcept { return ygg::make_view(this->get_data().variant, this->get_context()); }
 };
 
 template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, typename C>

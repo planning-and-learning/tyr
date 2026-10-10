@@ -20,11 +20,9 @@
 
 #include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/planning/boolean_operator_data.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
-#include "tyr/formalism/planning/literal_index.hpp"
-#include "tyr/formalism/variable_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #include <tuple>
 #include <utility>

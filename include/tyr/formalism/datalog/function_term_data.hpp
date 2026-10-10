@@ -20,9 +20,7 @@
 
 #include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/function_term_index.hpp"
-#include "tyr/formalism/function_index.hpp"
-#include "tyr/formalism/object_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/term_data.hpp"
 
 #include <tuple>

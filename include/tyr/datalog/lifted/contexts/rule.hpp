@@ -27,7 +27,7 @@
 #include "tyr/datalog/policies/termination_concept.hpp"
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
-#include "tyr/formalism/datalog/rule_index.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 
 #include <cstddef>
 

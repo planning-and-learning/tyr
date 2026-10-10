@@ -19,9 +19,8 @@
 #define TYR_PLANNING_GROUND_MATCH_TREE_NODES_GENERATOR_DATA_HPP_
 
 #include "tyr/formalism/planning/action_index.hpp"
-#include "tyr/formalism/planning/axiom_index.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
-#include "tyr/planning/ground/match_tree/nodes/generator_index.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
 
 #include <optional>

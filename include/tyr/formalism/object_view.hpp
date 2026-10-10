@@ -19,19 +19,17 @@
 #define TYR_FORMALISM_OBJECT_VIEW_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/object_index.hpp"
 
 #include <yggdrasil/core/types.hpp>
-#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 template<ygg::formalism::SymbolContextFor<::tyr::formalism::Object> C>
-class View<ygg::Index<::tyr::formalism::Object>, C> : public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::Object>, C>
+class View<ygg::Index<::tyr::formalism::Object>, C> : public ygg::IndexViewBase<::tyr::formalism::Object, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::Object> handle, const C& context) noexcept :
-        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::Object>, C>(handle, context)
+        ygg::IndexViewBase<::tyr::formalism::Object, C>(handle, context)
     {
     }
 

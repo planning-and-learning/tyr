@@ -19,7 +19,7 @@
 #include "bindings.hpp"
 
 #include <tyr/formalism/planning/function_term_value_data.hpp>
-#include <tyr/formalism/planning/function_term_value_index.hpp>
+#include "tyr/formalism/planning/declarations.hpp"
 #include <tyr/formalism/planning/function_term_value_view.hpp>
 
 namespace tyr::formalism::planning

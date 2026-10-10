@@ -20,7 +20,6 @@
 
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
-#include "tyr/planning/ground/match_tree/nodes/negative_fact_index.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
 
 #include <optional>

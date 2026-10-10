@@ -23,23 +23,21 @@
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/numeric_effect_operator_view.hpp"
-#include "tyr/formalism/datalog/rule_index.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
 #include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/core/types.hpp>
-#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 
 template<::tyr::TaskKind T, ::tyr::formalism::RelationKind R, ygg::formalism::SymbolContextFor<::tyr::formalism::datalog::Rule<T, R>> C>
-class View<ygg::Index<::tyr::formalism::datalog::Rule<T, R>>, C> : public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::datalog::Rule<T, R>>, C>
+class View<ygg::Index<::tyr::formalism::datalog::Rule<T, R>>, C> : public ygg::IndexViewBase<::tyr::formalism::datalog::Rule<T, R>, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::datalog::Rule<T, R>> handle, const C& context) noexcept :
-        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::datalog::Rule<T, R>>, C>(handle, context)
+        ygg::IndexViewBase<::tyr::formalism::datalog::Rule<T, R>, C>(handle, context)
     {
     }
 
@@ -51,11 +49,11 @@ public:
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     {
-        return ygg::make_view(this->get_data().variables, *this->m_context);
+        return ygg::make_view(this->get_data().variables, this->get_context());
     }
-    auto get_body() const noexcept { return ygg::make_view(this->get_data().body, *this->m_context); }
-    auto get_head() const noexcept { return ygg::make_view(this->get_data().head, *this->m_context); }
-    auto get_metric_effects() const noexcept { return ygg::make_view(this->get_data().metric_effects, *this->m_context); }
+    auto get_body() const noexcept { return ygg::make_view(this->get_data().body, this->get_context()); }
+    auto get_head() const noexcept { return ygg::make_view(this->get_data().head, this->get_context()); }
+    auto get_metric_effects() const noexcept { return ygg::make_view(this->get_data().metric_effects, this->get_context()); }
 
     auto get_rule() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
@@ -65,7 +63,7 @@ public:
     auto get_row() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     {
-        return ygg::make_view(this->get_data().binding, *this->m_context);
+        return ygg::make_view(this->get_data().binding, this->get_context());
     }
     auto get_objects() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>

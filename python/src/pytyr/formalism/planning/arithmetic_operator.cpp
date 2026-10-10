@@ -20,6 +20,7 @@
 
 #include <tyr/formalism/planning/arithmetic_operator_data.hpp>
 #include <tyr/formalism/planning/arithmetic_operator_view.hpp>
+#include <yggdrasil/python/type_casters/variant.hpp>
 
 namespace tyr::formalism::planning
 {

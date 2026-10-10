@@ -17,6 +17,7 @@
 
 #include "binding_utils.hpp"
 #include "bindings.hpp"
+#include <yggdrasil/python/type_casters/variant.hpp>
 
 namespace tyr::formalism::planning
 {

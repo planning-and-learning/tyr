@@ -19,11 +19,6 @@
 #define TYR_PLANNING_GROUND_MATCH_TREE_NODES_NODE_DATA_HPP_
 
 #include "tyr/planning/ground/match_tree/declarations.hpp"
-#include "tyr/planning/ground/match_tree/nodes/atom_index.hpp"
-#include "tyr/planning/ground/match_tree/nodes/constraint_index.hpp"
-#include "tyr/planning/ground/match_tree/nodes/generator_index.hpp"
-#include "tyr/planning/ground/match_tree/nodes/negative_fact_index.hpp"
-#include "tyr/planning/ground/match_tree/nodes/variable_index.hpp"
 
 #include <yggdrasil/containers/variant.hpp>
 #include <optional>
@@ -41,25 +36,17 @@ using namespace ::tyr;
 template<typename Tag>
 struct Data<planning::match_tree::Node<Tag>>
 {
-    using Variant = ::cista::offset::variant<ygg::Index<planning::match_tree::AtomSelectorNode<Tag>>,
-                                             ygg::Index<planning::match_tree::NumericConstraintSelectorNode<Tag>>,
-                                             ygg::Index<planning::match_tree::VariableSelectorNode<Tag>>,
-                                             ygg::Index<planning::match_tree::NegativeFactSelectorNode<Tag>>,
-                                             ygg::Index<planning::match_tree::ElementGeneratorNode<Tag>>>;
+    using Variant = ::ygg::IndexVariant<planning::match_tree::NodeTypes<Tag>>;
 
     Variant variant;
 
     template<typename C>
-    using ViewVariant = std::variant<::ygg::View<ygg::Index<planning::match_tree::AtomSelectorNode<Tag>>, C>,
-                                     ::ygg::View<ygg::Index<planning::match_tree::NumericConstraintSelectorNode<Tag>>, C>,
-                                     ::ygg::View<ygg::Index<planning::match_tree::VariableSelectorNode<Tag>>, C>,
-                                     ::ygg::View<ygg::Index<planning::match_tree::NegativeFactSelectorNode<Tag>>, C>,
-                                     ::ygg::View<ygg::Index<planning::match_tree::ElementGeneratorNode<Tag>>, C>>;
+    using ViewVariant = ::ygg::ViewVariant<Variant, C>;
 
     Data() = default;
     Data(Variant variant_) : variant(variant_) {}
     template<typename C>
-    Data(ViewVariant<C> variant_) : variant(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, variant_))
+    Data(const ViewVariant<C>& variant_) : variant(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, variant_))
     {
     }
 

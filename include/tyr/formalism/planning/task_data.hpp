@@ -19,20 +19,9 @@
 #define TYR_FORMALISM_PLANNING_TASK_DATA_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/object_index.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
-#include "tyr/formalism/planning/atom_index.hpp"
-#include "tyr/formalism/planning/axiom_index.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/domain_index.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
-#include "tyr/formalism/planning/fdr_variable_index.hpp"
-#include "tyr/formalism/planning/function_term_index.hpp"
-#include "tyr/formalism/planning/function_term_value_index.hpp"
-#include "tyr/formalism/planning/metric_index.hpp"
-#include "tyr/formalism/planning/task_index.hpp"
-#include "tyr/formalism/predicate_index.hpp"
 
 #include <tuple>
 #include <utility>

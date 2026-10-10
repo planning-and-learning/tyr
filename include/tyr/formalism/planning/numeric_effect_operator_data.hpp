@@ -19,7 +19,6 @@
 #define TYR_FORMALISM_PLANNING_NUMERIC_EFFECT_OPERATOR_DATA_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/numeric_effect_index.hpp"
 
 #include <stdexcept>
 #include <yggdrasil/containers/variant.hpp>
@@ -45,7 +44,7 @@ struct Data<::tyr::formalism::planning::NumericEffectOperator<T, ::tyr::formalis
     Variant variant;
 
     template<typename C>
-    using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::planning::NumericEffect<T, ::tyr::formalism::FluentTag>>, C>>;
+    using ViewVariant = ::ygg::ViewVariant<Variant, C>;
 
     Data() = default;
     Data(OperatorType operator_kind_, Variant variant_) : operator_kind(operator_kind_), variant(variant_)
@@ -55,7 +54,7 @@ struct Data<::tyr::formalism::planning::NumericEffectOperator<T, ::tyr::formalis
     }
     // Python constructor
     template<typename C>
-    Data(ViewVariant<C> variant_) :
+    Data(const ViewVariant<C>& variant_) :
         operator_kind(std::visit([](const auto& view) { return view.get_operator(); }, variant_)),
         variant(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, variant_))
     {
@@ -80,7 +79,7 @@ struct Data<::tyr::formalism::planning::NumericEffectOperator<T, ::tyr::formalis
     Variant variant;
 
     template<typename C>
-    using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::planning::NumericEffect<T, ::tyr::formalism::AuxiliaryTag>>, C>>;
+    using ViewVariant = ::ygg::ViewVariant<Variant, C>;
 
     Data() = default;
     Data(OperatorType operator_kind_, Variant variant_) : operator_kind(operator_kind_), variant(variant_)
@@ -90,7 +89,7 @@ struct Data<::tyr::formalism::planning::NumericEffectOperator<T, ::tyr::formalis
     }
     // Python constructor
     template<typename C>
-    Data(ViewVariant<C> variant_) :
+    Data(const ViewVariant<C>& variant_) :
         operator_kind(std::visit([](const auto& view) { return view.get_operator(); }, variant_)),
         variant(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, variant_))
     {

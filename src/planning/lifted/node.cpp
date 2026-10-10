@@ -21,7 +21,7 @@
 #include "tyr/planning/state_view.hpp"
 //
 #include "tyr/planning/lifted/task.hpp"
-#include "tyr/planning/state_index.hpp"
+#include "tyr/planning/declarations.hpp"
 
 #include <yggdrasil/core/config.hpp>
 

@@ -13,7 +13,6 @@
 #include "tyr/algorithms/kckp/kckp.hpp"
 #include "tyr/analysis/variable_domain.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/object_index.hpp"
 
 #include <algorithm>
 #include <boost/dynamic_bitset.hpp>

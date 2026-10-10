@@ -20,7 +20,6 @@
 
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_builder.hpp"
-#include "tyr/planning/state_index.hpp"
 #include "tyr/planning/state_view.hpp"
 #include "tyr/planning/task.hpp"
 
@@ -39,15 +38,12 @@ template<TaskKind Kind>
 class StateRepository : public std::enable_shared_from_this<StateRepository<Kind>>
 {
     friend class StateRepositoryFactory<Kind>;
-    friend struct ::ygg::View<ygg::Index<State<Kind>>, StateRepositoryPtr<Kind>>;
-    friend struct ::ygg::View<ygg::Index<PackedState<Kind>>, StateRepositoryPtr<Kind>>;
 
 private:
     struct Impl;
 
     StateRepository(ygg::uint_t index, TaskPtr<Kind> task, bool concurrent, std::shared_ptr<std::atomic<ygg::uint_t>> next_index);
     explicit StateRepository(std::unique_ptr<Impl> impl);
-    ygg::uint_t get_storage_identity() const noexcept;
 
 public:
     ~StateRepository();
@@ -79,8 +75,14 @@ public:
     const TaskPtr<Kind>& get_task() const noexcept;
     bool shares_storage_with(const StateRepository& other) const noexcept;
     bool is_concurrent() const noexcept;
+    /// The index of this worker among the repositories sharing its storage.
+    ygg::uint_t get_worker_index() const noexcept;
+    /// The identity of the storage that owns the states; shared by all workers of a cohort.
     ygg::uint_t get_index() const noexcept;
     size_t num_states() const noexcept;
+
+    /// A repository owns the states it registers.
+    friend const StateRepository& get_repository(const StateRepository& repository) noexcept { return repository; }
 
 private:
     std::unique_ptr<Impl> m_impl;
@@ -114,7 +116,8 @@ concept StateRepositoryConcept =
         { const_r.get_task() } -> std::same_as<const TaskPtr<Kind>&>;
         { const_r.shares_storage_with(const_r) } -> std::same_as<bool>;
         { const_r.is_concurrent() } -> std::same_as<bool>;
-        { r.get_index() } -> std::same_as<ygg::uint_t>;
+        { const_r.get_worker_index() } -> std::same_as<ygg::uint_t>;
+        { const_r.get_index() } -> std::same_as<ygg::uint_t>;
     };
 
 template<TaskKind Kind>

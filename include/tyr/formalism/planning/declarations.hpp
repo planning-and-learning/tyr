@@ -21,6 +21,7 @@
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
+#include <concepts>
 #include <memory>
 #include <span>
 #include <utility>
@@ -80,6 +81,7 @@ struct FunctionExpression
 };
 
 template<TaskKind T, FactKind F>
+    requires std::same_as<T, GroundTag>
 struct FunctionTermValue
 {
 };
@@ -98,6 +100,7 @@ inline bool is_compatible_effect_family(EffectFamily lhs, EffectFamily rhs)
 }
 
 template<TaskKind T, FactKind F>
+    requires std::same_as<F, FluentTag> || std::same_as<F, AuxiliaryTag>
 struct NumericEffect
 {
 };

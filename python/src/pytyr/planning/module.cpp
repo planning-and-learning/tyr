@@ -23,7 +23,7 @@
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/formatter.hpp"
 #include "tyr/planning/search_budget.hpp"
-#include "tyr/planning/worker_index.hpp"
+#include "tyr/planning/declarations.hpp"
 
 #include <cstdint>
 #include <nanobind/stl/chrono.h>

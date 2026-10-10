@@ -20,7 +20,6 @@
 
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/node.hpp"
-#include "tyr/planning/state_index.hpp"
 
 #include <concepts>
 #include <deque>

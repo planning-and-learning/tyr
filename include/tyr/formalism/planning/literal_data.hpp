@@ -18,9 +18,7 @@
 #ifndef TYR_FORMALISM_PLANNING_LITERAL_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_LITERAL_DATA_HPP_
 
-#include "tyr/formalism/planning/atom_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/literal_index.hpp"
 
 #include <tuple>
 #include <utility>

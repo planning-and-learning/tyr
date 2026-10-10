@@ -1,5 +1,5 @@
 #include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_index.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include <concepts>

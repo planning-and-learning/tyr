@@ -49,7 +49,7 @@ static_assert(requires(const Data& data, const Builder& builder, const View& vie
     view.template get_atoms_view<::tyr::formalism::DerivedTag>();
     view.template get_fterm_values_view<f::StaticTag>();
     view.template get_fterm_values_view<f::FluentTag>();
-    view.get_repository();
+    view.get_formalism_repository();
     view.get_state_repository();
     view.get_state_builder();
 });

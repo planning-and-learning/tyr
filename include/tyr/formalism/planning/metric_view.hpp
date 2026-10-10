@@ -21,25 +21,23 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/function_expression_data.hpp"
 #include "tyr/formalism/planning/metric_data.hpp"
-#include "tyr/formalism/planning/metric_index.hpp"
 
 #include <yggdrasil/core/types.hpp>
-#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 
 template<ygg::formalism::SymbolContextFor<::tyr::formalism::planning::Metric> C>
-class View<ygg::Index<::tyr::formalism::planning::Metric>, C> : public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::planning::Metric>, C>
+class View<ygg::Index<::tyr::formalism::planning::Metric>, C> : public ygg::IndexViewBase<::tyr::formalism::planning::Metric, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::planning::Metric> handle, const C& context) noexcept :
-        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::planning::Metric>, C>(handle, context)
+        ygg::IndexViewBase<::tyr::formalism::planning::Metric, C>(handle, context)
     {
     }
 
     auto get_optimization_direction() const noexcept { return this->get_data().optimization_direction; }
-    auto get_fexpr() const noexcept { return ygg::make_view(this->get_data().fexpr, *this->m_context); }
+    auto get_fexpr() const noexcept { return ygg::make_view(this->get_data().fexpr, this->get_context()); }
 };
 
 }

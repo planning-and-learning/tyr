@@ -25,7 +25,6 @@
 #include <yggdrasil/containers/variant.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
-#include "tyr/formalism/planning/fdr_variable_index.hpp"
 
 namespace ygg
 {

@@ -27,23 +27,16 @@
 
 namespace ygg
 {
+template<::tyr::TaskKind T>
+inline constexpr bool stores_view_by_value_v<::tyr::formalism::datalog::ArithmeticOperator<T>> = true;
+
 template<::tyr::TaskKind T, ::tyr::formalism::datalog::Context C>
-class View<ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<T>>, C>
+class View<ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<T>>, C> : public ygg::DataViewBase<::tyr::formalism::datalog::ArithmeticOperator<T>, C>
 {
-private:
-    const C* m_context;
-    ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<T>> m_handle;
-
 public:
-    View(ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<T>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+    View(const ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<T>>& handle, const C& context) noexcept : ygg::DataViewBase<::tyr::formalism::datalog::ArithmeticOperator<T>, C>(handle, context) {}
 
-    const auto& get_data() const noexcept { return m_handle; }
-    const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_handle() const noexcept { return m_handle; }
-
-    auto get_variant() const noexcept { return ygg::make_view(m_handle.variant, *m_context); }
-
-    auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }
+    auto get_variant() const noexcept { return ygg::make_view(this->get_data().variant, this->get_context()); }
 };
 
 /// Canonical context depends on variable.

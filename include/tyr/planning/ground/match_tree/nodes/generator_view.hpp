@@ -22,27 +22,25 @@
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/generator_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/generator_index.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_view.hpp"
 
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
-#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 using namespace ::tyr;
 template<typename Tag, ygg::formalism::SymbolContextFor<planning::match_tree::ElementGeneratorNode<Tag>> C>
 class View<ygg::Index<planning::match_tree::ElementGeneratorNode<Tag>>, C> :
-    public ygg::formalism::detail::View<ygg::Index<planning::match_tree::ElementGeneratorNode<Tag>>, C>
+    public ygg::IndexViewBase<planning::match_tree::ElementGeneratorNode<Tag>, C>
 {
 public:
     View(ygg::Index<planning::match_tree::ElementGeneratorNode<Tag>> handle, const C& context) noexcept :
-        ygg::formalism::detail::View<ygg::Index<planning::match_tree::ElementGeneratorNode<Tag>>, C>(handle, context)
+        ygg::IndexViewBase<planning::match_tree::ElementGeneratorNode<Tag>, C>(handle, context)
     {
     }
 
-    auto get_elements() const noexcept { return ygg::make_view(this->get_data().elements, this->m_context->get_formalism_repository()); }
+    auto get_elements() const noexcept { return ygg::make_view(this->get_data().elements, this->get_context().get_formalism_repository()); }
 };
 }
 

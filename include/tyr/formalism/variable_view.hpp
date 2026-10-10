@@ -19,19 +19,17 @@
 #define TYR_FORMALISM_VARIABLE_VIEW_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/variable_index.hpp"
 
 #include <yggdrasil/core/types.hpp>
-#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 template<ygg::formalism::SymbolContextFor<::tyr::formalism::Variable> C>
-class View<ygg::Index<::tyr::formalism::Variable>, C> : public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::Variable>, C>
+class View<ygg::Index<::tyr::formalism::Variable>, C> : public ygg::IndexViewBase<::tyr::formalism::Variable, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::Variable> handle, const C& context) noexcept :
-        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::Variable>, C>(handle, context)
+        ygg::IndexViewBase<::tyr::formalism::Variable, C>(handle, context)
     {
     }
 

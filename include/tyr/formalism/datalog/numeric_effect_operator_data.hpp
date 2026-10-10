@@ -19,7 +19,6 @@
 #define TYR_FORMALISM_DATALOG_NUMERIC_EFFECT_OPERATOR_DATA_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/numeric_effect_index.hpp"
 
 #include <stdexcept>
 #include <variant>
@@ -42,7 +41,7 @@ struct Data<::tyr::formalism::datalog::NumericEffectOperator<T, ::tyr::formalism
     Variant variant;
 
     template<typename C>
-    using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::datalog::NumericEffect<T, ::tyr::formalism::FluentTag>>, C>>;
+    using ViewVariant = ::ygg::ViewVariant<Variant, C>;
 
     Data() = default;
     Data(OperatorType operator_kind_, Variant variant_) : operator_kind(operator_kind_), variant(variant_)
@@ -51,7 +50,7 @@ struct Data<::tyr::formalism::datalog::NumericEffectOperator<T, ::tyr::formalism
             throw std::invalid_argument("NumericEffectOperator requires a valid variant");
     }
     template<typename C>
-    Data(ViewVariant<C> variant_) :
+    Data(const ViewVariant<C>& variant_) :
         operator_kind(std::visit([](const auto& view) { return view.get_operator(); }, variant_)),
         variant(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, variant_))
     {

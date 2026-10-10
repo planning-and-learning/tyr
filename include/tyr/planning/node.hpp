@@ -22,7 +22,7 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/planning/state_view.hpp"
-#include "tyr/planning/state_index.hpp"
+#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/task.hpp"
 
 #include <concepts>

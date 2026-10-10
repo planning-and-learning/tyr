@@ -18,7 +18,6 @@
 #ifndef TYR_FORMALISM_DATALOG_BINARY_OPERATOR_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_BINARY_OPERATOR_DATA_HPP_
 
-#include "tyr/formalism/datalog/binary_operator_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/function_expression_data.hpp"
 

@@ -20,10 +20,8 @@
 
 #include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/datalog/boolean_operator_data.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/literal_index.hpp"
-#include "tyr/formalism/variable_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #include <tuple>
 #include <utility>

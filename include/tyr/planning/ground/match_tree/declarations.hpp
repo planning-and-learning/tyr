@@ -61,9 +61,13 @@ struct Node
 {
 };
 
+/// The node kinds of a match tree, in the order of the Node variant.
 template<typename Tag>
-using RepositoryTypes = ygg::
-    TypeList<AtomSelectorNode<Tag>, VariableSelectorNode<Tag>, NegativeFactSelectorNode<Tag>, NumericConstraintSelectorNode<Tag>, ElementGeneratorNode<Tag>>;
+using NodeTypes = ygg::
+    TypeList<AtomSelectorNode<Tag>, NumericConstraintSelectorNode<Tag>, VariableSelectorNode<Tag>, NegativeFactSelectorNode<Tag>, ElementGeneratorNode<Tag>>;
+
+template<typename Tag>
+using RepositoryTypes = NodeTypes<Tag>;
 
 /**
  * MatchTree

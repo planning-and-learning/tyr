@@ -18,11 +18,8 @@
 #ifndef TYR_FORMALISM_DATALOG_CONDITIONAL_EFFECT_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_CONDITIONAL_EFFECT_DATA_HPP_
 
-#include "tyr/formalism/datalog/conditional_effect_index.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_index.hpp"
-#include "tyr/formalism/datalog/conjunctive_effect_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/variable_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #include <tuple>
 #include <utility>

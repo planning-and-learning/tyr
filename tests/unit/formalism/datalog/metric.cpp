@@ -1,5 +1,5 @@
 #include "tyr/formalism/datalog/metric_data.hpp"
-#include "tyr/formalism/datalog/metric_index.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/metric_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 

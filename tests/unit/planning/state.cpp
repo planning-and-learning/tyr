@@ -2,7 +2,7 @@
 #include "tyr/planning/planning.hpp"
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_data.hpp"
-#include "tyr/planning/state_index.hpp"
+#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_view.hpp"
 
 #include <algorithm>
@@ -422,7 +422,7 @@ void expect_borrowed_builder_view(const p::TaskPtr<Kind>& task, const p::StateVi
     EXPECT_EQ(&state.get_state_builder(), owned.get());
     EXPECT_EQ(&state.get_context(), task.get());
     EXPECT_EQ(&state.get_task(), &registered.get_task());
-    EXPECT_EQ(state.get_repository(), registered.get_repository());
+    EXPECT_EQ(state.get_formalism_repository(), registered.get_formalism_repository());
     EXPECT_TRUE(std::ranges::equal(state.template get_atoms<::tyr::formalism::StaticTag>(), registered.template get_atoms<::tyr::formalism::StaticTag>()));
     EXPECT_TRUE(std::ranges::equal(state.get_fluent_facts(), registered.get_fluent_facts()));
     EXPECT_TRUE(std::ranges::equal(state.template get_atoms<::tyr::formalism::DerivedTag>(), registered.template get_atoms<::tyr::formalism::DerivedTag>()));

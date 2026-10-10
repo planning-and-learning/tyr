@@ -18,9 +18,8 @@
 #ifndef TYR_PLANNING_GROUND_MATCH_TREE_NODES_ATOM_DATA_HPP_
 #define TYR_PLANNING_GROUND_MATCH_TREE_NODES_ATOM_DATA_HPP_
 
-#include "tyr/formalism/planning/atom_index.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
-#include "tyr/planning/ground/match_tree/nodes/atom_index.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
 
 #include <optional>

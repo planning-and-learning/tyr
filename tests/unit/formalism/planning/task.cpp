@@ -1,7 +1,7 @@
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_data.hpp"
-#include "tyr/formalism/planning/task_index.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
 
 #include <concepts>

@@ -18,20 +18,7 @@
 #ifndef TYR_FORMALISM_DATALOG_INDICES_HPP_
 #define TYR_FORMALISM_DATALOG_INDICES_HPP_
 
-#include "tyr/formalism/datalog/atom_index.hpp"
-#include "tyr/formalism/datalog/binary_operator_index.hpp"
-#include "tyr/formalism/datalog/conditional_effect_index.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_index.hpp"
-#include "tyr/formalism/datalog/conjunctive_effect_index.hpp"
-#include "tyr/formalism/datalog/function_term_index.hpp"
-#include "tyr/formalism/datalog/function_term_value_index.hpp"
-#include "tyr/formalism/datalog/literal_index.hpp"
-#include "tyr/formalism/datalog/metric_index.hpp"
-#include "tyr/formalism/datalog/multi_operator_index.hpp"
-#include "tyr/formalism/datalog/numeric_effect_index.hpp"
-#include "tyr/formalism/datalog/program_index.hpp"
-#include "tyr/formalism/datalog/rule_index.hpp"
-#include "tyr/formalism/datalog/unary_operator_index.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/indices.hpp"
 
 #endif

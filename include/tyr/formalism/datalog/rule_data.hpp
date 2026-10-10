@@ -19,14 +19,10 @@
 #define TYR_FORMALISM_DATALOG_RULE_DATA_HPP_
 
 #include "tyr/formalism/binding_index.hpp"
-#include "tyr/formalism/datalog/atom_index.hpp"
 #include "tyr/formalism/datalog/boolean_operator_data.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/literal_index.hpp"
 #include "tyr/formalism/datalog/numeric_effect_operator_data.hpp"
-#include "tyr/formalism/datalog/rule_index.hpp"
-#include "tyr/formalism/variable_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #include <yggdrasil/containers/vector.hpp>
 #include <tuple>

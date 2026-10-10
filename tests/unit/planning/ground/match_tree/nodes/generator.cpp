@@ -1,5 +1,5 @@
 #include "tyr/planning/ground/match_tree/nodes/generator_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/generator_index.hpp"
+#include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/generator_view.hpp"
 #include "tyr/planning/ground/match_tree/repository.hpp"
 

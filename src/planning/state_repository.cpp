@@ -383,13 +383,13 @@ bool StateRepository<Kind>::is_concurrent() const noexcept
 }
 
 template<TaskKind Kind>
-ygg::uint_t StateRepository<Kind>::get_index() const noexcept
+ygg::uint_t StateRepository<Kind>::get_worker_index() const noexcept
 {
     return m_impl->index;
 }
 
 template<TaskKind Kind>
-ygg::uint_t StateRepository<Kind>::get_storage_identity() const noexcept
+ygg::uint_t StateRepository<Kind>::get_index() const noexcept
 {
     return m_impl->storage_identity;
 }

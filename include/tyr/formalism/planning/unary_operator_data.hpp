@@ -20,7 +20,6 @@
 
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/function_expression_data.hpp"
-#include "tyr/formalism/planning/unary_operator_index.hpp"
 
 #include <stdexcept>
 #include <tuple>

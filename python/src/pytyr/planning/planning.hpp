@@ -113,7 +113,7 @@ void bind_state(nb::module_& m, const std::string& name)
     auto cls =
         nb::class_<T>(m, name.c_str())  //
             .def("get_index", &T::get_index, nb::rv_policy::copy)
-            .def("get_repository", &T::get_repository, nb::rv_policy::copy)
+            .def("get_formalism_repository", &T::get_formalism_repository, nb::rv_policy::copy)
             .def("get_state_repository", &T::get_state_repository, nb::rv_policy::copy)
             .def("pack", &T::pack)
             // AccessibleStateConcept
@@ -317,6 +317,7 @@ void bind_state_repository(nb::module_& m, const std::string& name)
     using T = StateRepository<Kind>;
 
     nb::class_<T>(m, name.c_str())  //
+        .def("get_worker_index", &T::get_worker_index)
         .def("get_index", &T::get_index)
         .def("get_initial_state", &T::get_initial_state, nb::rv_policy::move, "axiom_evaluator"_a)
         .def("get_registered_state", &T::get_registered_state, nb::rv_policy::move, "state_index"_a)

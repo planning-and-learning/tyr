@@ -18,14 +18,9 @@
 #ifndef TYR_FORMALISM_PLANNING_DOMAIN_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_DOMAIN_DATA_HPP_
 
-#include "tyr/formalism/function_index.hpp"
-#include "tyr/formalism/object_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
-#include "tyr/formalism/planning/axiom_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/domain_index.hpp"
-#include "tyr/formalism/planning/task_index.hpp"
-#include "tyr/formalism/predicate_index.hpp"
 
 #include <tuple>
 #include <utility>

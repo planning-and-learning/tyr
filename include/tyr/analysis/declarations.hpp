@@ -23,7 +23,6 @@
 #include "tyr/formalism/datalog/indices.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/object_index.hpp"
 #include "tyr/formalism/planning/indices.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 

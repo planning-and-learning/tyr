@@ -20,7 +20,6 @@
 
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/function_expression_data.hpp"
-#include "tyr/formalism/planning/metric_index.hpp"
 
 #include <tuple>
 #include <utility>

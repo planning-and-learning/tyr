@@ -19,19 +19,17 @@
 #define TYR_FORMALISM_FUNCTION_VIEW_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/function_index.hpp"
 
 #include <yggdrasil/core/types.hpp>
-#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 template<::tyr::formalism::FactKind T, ygg::formalism::SymbolContextFor<::tyr::formalism::Function<T>> C>
-class View<ygg::Index<::tyr::formalism::Function<T>>, C> : public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::Function<T>>, C>
+class View<ygg::Index<::tyr::formalism::Function<T>>, C> : public ygg::IndexViewBase<::tyr::formalism::Function<T>, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::Function<T>> handle, const C& context) noexcept :
-        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::Function<T>>, C>(handle, context)
+        ygg::IndexViewBase<::tyr::formalism::Function<T>, C>(handle, context)
     {
     }
 

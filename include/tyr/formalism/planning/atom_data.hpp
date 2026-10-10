@@ -19,10 +19,8 @@
 #define TYR_FORMALISM_PLANNING_ATOM_DATA_HPP_
 
 #include "tyr/formalism/binding_index.hpp"
-#include "tyr/formalism/object_index.hpp"
-#include "tyr/formalism/planning/atom_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/predicate_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/term_data.hpp"
 
 #include <tuple>

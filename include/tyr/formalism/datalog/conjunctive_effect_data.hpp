@@ -18,7 +18,6 @@
 #ifndef TYR_FORMALISM_DATALOG_CONJUNCTIVE_EFFECT_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_CONJUNCTIVE_EFFECT_DATA_HPP_
 
-#include "tyr/formalism/datalog/conjunctive_effect_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/numeric_effect_operator_data.hpp"
 

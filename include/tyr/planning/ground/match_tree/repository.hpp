@@ -19,27 +19,21 @@
 #define TYR_PLANNING_GROUND_MATCH_TREE_REPOSITORY_HPP_
 
 #include "tyr/formalism/planning/action_index.hpp"
-#include "tyr/formalism/planning/axiom_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/planning/ground/match_tree/canonicalization.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/atom_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/atom_index.hpp"
 #include "tyr/planning/ground/match_tree/nodes/atom_view.hpp"
 #include "tyr/planning/ground/match_tree/nodes/constraint_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/constraint_index.hpp"
 #include "tyr/planning/ground/match_tree/nodes/constraint_view.hpp"
 #include "tyr/planning/ground/match_tree/nodes/generator_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/generator_index.hpp"
 #include "tyr/planning/ground/match_tree/nodes/generator_view.hpp"
 #include "tyr/planning/ground/match_tree/nodes/negative_fact_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/negative_fact_index.hpp"
 #include "tyr/planning/ground/match_tree/nodes/negative_fact_view.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_view.hpp"
 #include "tyr/planning/ground/match_tree/nodes/variable_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/variable_index.hpp"
 #include "tyr/planning/ground/match_tree/nodes/variable_view.hpp"
 
 #include <cassert>

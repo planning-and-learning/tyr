@@ -21,7 +21,7 @@
 #include "tyr/formalism/datalog/atom_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
-#include "tyr/formalism/datalog/literal_index.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/literal_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
@@ -33,7 +33,6 @@
 #include <utility>
 #include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/core/types.hpp>
-#include <yggdrasil/ids/index_mixins.hpp>
 
 namespace f = tyr::formalism;
 namespace fd = tyr::formalism::datalog;

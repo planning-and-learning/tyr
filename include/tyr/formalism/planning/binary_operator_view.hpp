@@ -18,29 +18,27 @@
 #ifndef TYR_FORMALISM_PLANNING_BINARY_OPERATOR_VIEW_HPP_
 #define TYR_FORMALISM_PLANNING_BINARY_OPERATOR_VIEW_HPP_
 
-#include "tyr/formalism/planning/binary_operator_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/function_expression_view.hpp"
 
 #include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/core/types.hpp>
-#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 template<::tyr::TaskKind T, ::tyr::formalism::BinaryOperatorKind O, ygg::formalism::SymbolContextFor<::tyr::formalism::planning::BinaryOperator<T, O>> C>
 class View<ygg::Index<::tyr::formalism::planning::BinaryOperator<T, O>>, C> :
-    public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::planning::BinaryOperator<T, O>>, C>
+    public ygg::IndexViewBase<::tyr::formalism::planning::BinaryOperator<T, O>, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::planning::BinaryOperator<T, O>> handle, const C& context) noexcept :
-        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::planning::BinaryOperator<T, O>>, C>(handle, context)
+        ygg::IndexViewBase<::tyr::formalism::planning::BinaryOperator<T, O>, C>(handle, context)
     {
     }
 
     auto get_operator() const noexcept { return this->get_data().operator_kind; }
-    auto get_lhs() const noexcept { return ygg::make_view(this->get_data().lhs, *this->m_context); }
-    auto get_rhs() const noexcept { return ygg::make_view(this->get_data().rhs, *this->m_context); }
+    auto get_lhs() const noexcept { return ygg::make_view(this->get_data().lhs, this->get_context()); }
+    auto get_rhs() const noexcept { return ygg::make_view(this->get_data().rhs, this->get_context()); }
 };
 
 }

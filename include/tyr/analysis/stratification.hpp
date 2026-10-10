@@ -19,8 +19,7 @@
 #define TYR_ANALYSIS_STRATIFICATION_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/function_index.hpp"
-#include "tyr/formalism/predicate_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 // for Program (ptr only), Rule
 
 #include <vector>

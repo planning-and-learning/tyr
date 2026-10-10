@@ -20,26 +20,24 @@
 
 #include "tyr/formalism/datalog/atom_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/literal_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
 
 #include <yggdrasil/core/types.hpp>
-#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 
 template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, ygg::formalism::SymbolContextFor<::tyr::formalism::datalog::Literal<T, F>> C>
 class View<ygg::Index<::tyr::formalism::datalog::Literal<T, F>>, C> :
-    public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::datalog::Literal<T, F>>, C>
+    public ygg::IndexViewBase<::tyr::formalism::datalog::Literal<T, F>, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::datalog::Literal<T, F>> handle, const C& context) noexcept :
-        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::datalog::Literal<T, F>>, C>(handle, context)
+        ygg::IndexViewBase<::tyr::formalism::datalog::Literal<T, F>, C>(handle, context)
     {
     }
 
-    auto get_atom() const noexcept { return ygg::make_view(this->get_data().atom, *this->m_context); }
+    auto get_atom() const noexcept { return ygg::make_view(this->get_data().atom, this->get_context()); }
     auto get_polarity() const noexcept { return this->get_data().polarity; }
 };
 

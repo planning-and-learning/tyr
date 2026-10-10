@@ -1,5 +1,5 @@
 #include "tyr/formalism/planning/conjunctive_effect_data.hpp"
-#include "tyr/formalism/planning/conjunctive_effect_index.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include <concepts>

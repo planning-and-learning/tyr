@@ -23,23 +23,21 @@
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/domain_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
 
 #include <yggdrasil/containers/optional.hpp>
 #include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/core/types.hpp>
-#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 
 template<ygg::formalism::SymbolContextFor<::tyr::formalism::planning::Domain> C>
-class View<ygg::Index<::tyr::formalism::planning::Domain>, C> : public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::planning::Domain>, C>
+class View<ygg::Index<::tyr::formalism::planning::Domain>, C> : public ygg::IndexViewBase<::tyr::formalism::planning::Domain, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::planning::Domain> handle, const C& context) noexcept :
-        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::planning::Domain>, C>(handle, context)
+        ygg::IndexViewBase<::tyr::formalism::planning::Domain, C>(handle, context)
     {
     }
 
@@ -47,17 +45,17 @@ public:
     template<::tyr::formalism::FactKind T>
     auto get_predicates() const noexcept
     {
-        return ygg::make_view(this->get_data().template get_predicates<T>(), *this->m_context);
+        return ygg::make_view(this->get_data().template get_predicates<T>(), this->get_context());
     }
     template<::tyr::formalism::FactKind T>
     auto get_functions() const noexcept
     {
-        return ygg::make_view(this->get_data().template get_functions<T>(), *this->m_context);
+        return ygg::make_view(this->get_data().template get_functions<T>(), this->get_context());
     }
-    auto get_auxiliary_function() const noexcept { return ygg::make_view(this->get_data().auxiliary_function, *this->m_context); }
-    auto get_constants() const noexcept { return ygg::make_view(this->get_data().constants, *this->m_context); }
-    auto get_actions() const noexcept { return ygg::make_view(this->get_data().actions, *this->m_context); }
-    auto get_axioms() const noexcept { return ygg::make_view(this->get_data().axioms, *this->m_context); }
+    auto get_auxiliary_function() const noexcept { return ygg::make_view(this->get_data().auxiliary_function, this->get_context()); }
+    auto get_constants() const noexcept { return ygg::make_view(this->get_data().constants, this->get_context()); }
+    auto get_actions() const noexcept { return ygg::make_view(this->get_data().actions, this->get_context()); }
+    auto get_axioms() const noexcept { return ygg::make_view(this->get_data().axioms, this->get_context()); }
 };
 
 }

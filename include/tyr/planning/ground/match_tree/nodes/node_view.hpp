@@ -33,22 +33,12 @@ namespace ygg
 {
 using namespace ::tyr;
 template<typename Tag, planning::match_tree::Context<Tag> C>
-class View<ygg::Data<planning::match_tree::Node<Tag>>, C>
+class View<ygg::Data<planning::match_tree::Node<Tag>>, C> : public ygg::DataViewBase<planning::match_tree::Node<Tag>, C>
 {
-private:
-    const C* m_context;
-    ygg::Data<planning::match_tree::Node<Tag>> m_handle;
-
 public:
-    View(ygg::Data<planning::match_tree::Node<Tag>> data, const C& context) noexcept : m_context(&context), m_handle(std::move(data)) {}
+    View(const ygg::Data<planning::match_tree::Node<Tag>>& handle, const C& context) noexcept : ygg::DataViewBase<planning::match_tree::Node<Tag>, C>(handle, context) {}
 
-    const auto& get_data() const noexcept { return m_handle; }
-    const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_handle() const noexcept { return m_handle; }
-
-    auto get_variant() const noexcept { return ygg::make_view(m_handle.variant, *m_context); }
-
-    auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }
+    auto get_variant() const noexcept { return ygg::make_view(this->get_data().variant, this->get_context()); }
 };
 }
 

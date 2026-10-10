@@ -21,18 +21,6 @@
 #include "tyr/formalism/planning/declarations.hpp"
 
 #include <yggdrasil/core/types.hpp>
-#include <yggdrasil/ids/index_mixins.hpp>
-
-namespace ygg
-{
-template<::tyr::TaskKind T>
-struct Index<tyr::formalism::planning::Action<T>> : IndexMixin<ygg::Index<tyr::formalism::planning::Action<T>>>
-{
-    // Inherit constructors
-    using Base = IndexMixin<ygg::Index<tyr::formalism::planning::Action<T>>>;
-    using Base::Base;
-};
-}
 
 namespace tyr::formalism::planning
 {

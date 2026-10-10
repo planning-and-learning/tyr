@@ -22,6 +22,7 @@
 #include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/declarations.hpp"
 
+#include <concepts>
 #include <memory>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
@@ -74,6 +75,7 @@ struct FunctionTerm
 };
 
 template<TaskKind T, FactKind F>
+    requires std::same_as<F, FluentTag>
 struct NumericEffect
 {
 };
@@ -84,10 +86,8 @@ struct NumericEffectOperator
 };
 
 template<TaskKind T, FactKind F>
-struct FunctionTermValue;
-
-template<FactKind F>
-struct FunctionTermValue<GroundTag, F>
+    requires std::same_as<T, GroundTag>
+struct FunctionTermValue
 {
 };
 

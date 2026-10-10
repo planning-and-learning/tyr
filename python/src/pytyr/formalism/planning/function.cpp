@@ -19,7 +19,7 @@
 #include "bindings.hpp"
 
 #include <tyr/formalism/function_data.hpp>
-#include <tyr/formalism/function_index.hpp>
+#include "tyr/formalism/declarations.hpp"
 #include <tyr/formalism/function_view.hpp>
 
 namespace tyr::formalism::planning

@@ -212,8 +212,8 @@ void expect_independent_repository_identity(const p::TaskPtr<Kind>& task)
     const auto first_state = first_repository->get_initial_state(*first_axiom_evaluator);
     const auto second_state = second_repository->get_initial_state(*second_axiom_evaluator);
 
-    EXPECT_EQ(first_repository->get_index(), 0);
-    EXPECT_EQ(second_repository->get_index(), 0);
+    EXPECT_EQ(first_repository->get_worker_index(), 0);
+    EXPECT_EQ(second_repository->get_worker_index(), 0);
     EXPECT_EQ(first_state.get_index(), second_state.get_index());
     EXPECT_NE(first_state, second_state);
     EXPECT_NE(first_state.pack(), second_state.pack());
@@ -250,7 +250,8 @@ void expect_shared_worker_cohort(const p::TaskPtr<Kind>& task)
     EXPECT_NE(source.get(), worker.get());
     EXPECT_NE(first_repository.get(), second_repository.get());
     EXPECT_NE(source->get_index(), worker->get_index());
-    EXPECT_NE(first_repository->get_index(), second_repository->get_index());
+    EXPECT_NE(first_repository->get_worker_index(), second_repository->get_worker_index());
+    EXPECT_EQ(first_repository->get_index(), second_repository->get_index());
     EXPECT_TRUE(first_repository->shares_storage_with(*second_repository));
     EXPECT_TRUE(first_repository->is_concurrent());
     EXPECT_TRUE(second_repository->is_concurrent());

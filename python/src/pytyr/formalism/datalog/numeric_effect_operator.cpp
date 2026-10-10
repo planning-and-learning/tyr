@@ -20,6 +20,7 @@
 
 #include <tyr/formalism/datalog/numeric_effect_operator_data.hpp>
 #include <tyr/formalism/datalog/numeric_effect_operator_view.hpp>
+#include <yggdrasil/python/type_casters/variant.hpp>
 
 namespace tyr::formalism::datalog
 {

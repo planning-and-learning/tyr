@@ -19,7 +19,7 @@
 #include "bindings.hpp"
 
 #include <tyr/formalism/planning/numeric_effect_data.hpp>
-#include <tyr/formalism/planning/numeric_effect_index.hpp>
+#include "tyr/formalism/planning/declarations.hpp"
 #include <tyr/formalism/planning/numeric_effect_view.hpp>
 
 namespace tyr::formalism::planning

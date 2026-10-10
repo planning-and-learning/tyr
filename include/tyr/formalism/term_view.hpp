@@ -25,23 +25,16 @@
 
 namespace ygg
 {
+template<>
+inline constexpr bool stores_view_by_value_v<::tyr::formalism::Term> = true;
+
 template<typename C>
-class View<ygg::Data<::tyr::formalism::Term>, C>
+class View<ygg::Data<::tyr::formalism::Term>, C> : public ygg::DataViewBase<::tyr::formalism::Term, C>
 {
-private:
-    const C* m_context;
-    ygg::Data<::tyr::formalism::Term> m_handle;
-
 public:
-    View(ygg::Data<::tyr::formalism::Term> data, const C& context) noexcept : m_context(&context), m_handle(data) {}
+    View(const ygg::Data<::tyr::formalism::Term>& handle, const C& context) noexcept : ygg::DataViewBase<::tyr::formalism::Term, C>(handle, context) {}
 
-    const auto& get_data() const noexcept { return m_handle; }
-    const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_handle() const noexcept { return m_handle; }
-
-    ygg::View<ygg::Data<::tyr::formalism::Term>::Variant, C> get_variant() const noexcept { return ygg::make_view(m_handle.variant, *m_context); }
-
-    auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }
+    ygg::View<ygg::Data<::tyr::formalism::Term>::Variant, C> get_variant() const noexcept { return ygg::make_view(this->get_data().variant, this->get_context()); }
 };
 
 template<typename C>

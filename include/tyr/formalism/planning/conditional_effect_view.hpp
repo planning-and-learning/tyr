@@ -18,26 +18,23 @@
 #ifndef TYR_FORMALISM_PLANNING_CONDITIONAL_EFFECT_VIEW_HPP_
 #define TYR_FORMALISM_PLANNING_CONDITIONAL_EFFECT_VIEW_HPP_
 
-#include "tyr/formalism/planning/conditional_effect_index.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
-#include "tyr/formalism/planning/conjunctive_effect_index.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
 #include <yggdrasil/core/types.hpp>
-#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 
 template<::tyr::TaskKind T, ygg::formalism::SymbolContextFor<::tyr::formalism::planning::ConditionalEffect<T>> C>
 class View<ygg::Index<::tyr::formalism::planning::ConditionalEffect<T>>, C> :
-    public ygg::formalism::detail::View<ygg::Index<::tyr::formalism::planning::ConditionalEffect<T>>, C>
+    public ygg::IndexViewBase<::tyr::formalism::planning::ConditionalEffect<T>, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::planning::ConditionalEffect<T>> handle, const C& context) noexcept :
-        ygg::formalism::detail::View<ygg::Index<::tyr::formalism::planning::ConditionalEffect<T>>, C>(handle, context)
+        ygg::IndexViewBase<::tyr::formalism::planning::ConditionalEffect<T>, C>(handle, context)
     {
     }
 
@@ -49,10 +46,10 @@ public:
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     {
-        return ygg::make_view(this->get_data().variables, *this->m_context);
+        return ygg::make_view(this->get_data().variables, this->get_context());
     }
-    auto get_condition() const noexcept { return ygg::make_view(this->get_data().condition, *this->m_context); }
-    auto get_effect() const noexcept { return ygg::make_view(this->get_data().effect, *this->m_context); }
+    auto get_condition() const noexcept { return ygg::make_view(this->get_data().condition, this->get_context()); }
+    auto get_effect() const noexcept { return ygg::make_view(this->get_data().effect, this->get_context()); }
 };
 
 }

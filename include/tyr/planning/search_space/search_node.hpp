@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_SEARCH_SPACE_SEARCH_NODE_HPP_
 #define TYR_PLANNING_SEARCH_SPACE_SEARCH_NODE_HPP_
 
-#include "tyr/planning/state_index.hpp"
+#include "tyr/planning/declarations.hpp"
 
 #include <concepts>
 #include <cstdint>

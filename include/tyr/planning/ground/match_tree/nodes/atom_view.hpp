@@ -21,30 +21,28 @@
 #include "tyr/formalism/planning/atom_view.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/atom_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/atom_index.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_view.hpp"
 
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
-#include <yggdrasil/formalism/detail/view.hpp>
 
 namespace ygg
 {
 using namespace ::tyr;
 template<typename Tag, ygg::formalism::SymbolContextFor<planning::match_tree::AtomSelectorNode<Tag>> C>
 class View<ygg::Index<planning::match_tree::AtomSelectorNode<Tag>>, C> :
-    public ygg::formalism::detail::View<ygg::Index<planning::match_tree::AtomSelectorNode<Tag>>, C>
+    public ygg::IndexViewBase<planning::match_tree::AtomSelectorNode<Tag>, C>
 {
 public:
     View(ygg::Index<planning::match_tree::AtomSelectorNode<Tag>> handle, const C& context) noexcept :
-        ygg::formalism::detail::View<ygg::Index<planning::match_tree::AtomSelectorNode<Tag>>, C>(handle, context)
+        ygg::IndexViewBase<planning::match_tree::AtomSelectorNode<Tag>, C>(handle, context)
     {
     }
 
-    auto get_atom() const noexcept { return ygg::make_view(this->get_data().atom, this->m_context->get_formalism_repository()); }
-    auto get_true_child() const noexcept { return ygg::make_view(this->get_data().true_child, *this->m_context); }
-    auto get_false_child() const noexcept { return ygg::make_view(this->get_data().false_child, *this->m_context); }
-    auto get_dontcare_child() const noexcept { return ygg::make_view(this->get_data().dontcare_child, *this->m_context); }
+    auto get_atom() const noexcept { return ygg::make_view(this->get_data().atom, this->get_context().get_formalism_repository()); }
+    auto get_true_child() const noexcept { return ygg::make_view(this->get_data().true_child, this->get_context()); }
+    auto get_false_child() const noexcept { return ygg::make_view(this->get_data().false_child, this->get_context()); }
+    auto get_dontcare_child() const noexcept { return ygg::make_view(this->get_data().dontcare_child, this->get_context()); }
 };
 }
 

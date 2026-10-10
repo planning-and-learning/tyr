@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_LIFTED_STATE_STORAGE_HPP_
 #define TYR_PLANNING_LIFTED_STATE_STORAGE_HPP_
 
-#include "tyr/formalism/planning/atom_index.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_storage.hpp"

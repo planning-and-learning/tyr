@@ -1,5 +1,5 @@
 #include "tyr/formalism/planning/literal_data.hpp"
-#include "tyr/formalism/planning/literal_index.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/literal_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include <concepts>

@@ -25,7 +25,6 @@
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
-#include "tyr/planning/state_index.hpp"
 #include "tyr/planning/state_storage/iterators.hpp"
 
 #include <concepts>
@@ -42,34 +41,32 @@ namespace planning = ::tyr::planning;
 
 /// Borrows the builder and task; both must outlive this view and its ranges.
 template<::tyr::TaskKind Kind>
-struct View<Builder<planning::State<Kind>>, planning::Task<Kind>>
+struct View<Builder<planning::State<Kind>>, planning::Task<Kind>> : BuilderViewBase<planning::State<Kind>, planning::Task<Kind>>
 {
 public:
     using KindType = Kind;
     using TaskType = planning::Task<Kind>;
 
-    View(const Builder<planning::State<Kind>>& builder, const TaskType& task) noexcept : m_builder(&builder), m_task(&task) {}
+    View(const Builder<planning::State<Kind>>& builder, const TaskType& task) noexcept : BuilderViewBase<planning::State<Kind>, TaskType>(builder, task) {}
 
-    const auto& get_handle() const noexcept { return *m_builder; }
-    const auto& get_context() const noexcept { return *m_task; }
-    const auto& get_state_builder() const noexcept { return *m_builder; }
-    const auto& get_task() const noexcept { return *m_task; }
-    const auto& get_repository() const noexcept { return m_task->get_repository(); }
+    const auto& get_state_builder() const noexcept { return this->get_handle(); }
+    const auto& get_task() const noexcept { return this->get_context(); }
+    const auto& get_formalism_repository() const noexcept { return get_task().get_repository(); }
 
     bool test(Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
     {
-        return m_task->get_static_state().test(index);
+        return this->get_context().get_static_state().test(index);
     }
     float_t get(Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
     {
-        return m_task->get_static_state().get(index);
+        return this->get_context().get_static_state().get(index);
     }
     ::tyr::formalism::planning::FDRValue get(Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const
     {
-        return m_builder->get(index);
+        return this->get_handle().get(index);
     }
-    float_t get(Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const { return m_builder->get(index); }
-    bool test(Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const { return m_builder->test(index); }
+    float_t get(Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const { return this->get_handle().get(index); }
+    bool test(Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const { return this->get_handle().test(index); }
 
     bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const { return test(view.get_index()); }
     bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const;
@@ -81,7 +78,7 @@ public:
     float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const { return get(view.get_index()); }
     bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const { return test(view.get_index()); }
 
-    auto get_fluent_facts() const noexcept { return m_builder->get_fluent_facts(); }
+    auto get_fluent_facts() const noexcept { return this->get_handle().get_fluent_facts(); }
     template<::tyr::formalism::FactKind F>
     auto get_atoms() const noexcept;
     template<::tyr::formalism::FactKind F>
@@ -93,13 +90,10 @@ public:
     template<::tyr::formalism::FactKind F, typename C>
     auto get_atoms_view(ygg::View<ygg::Index<::tyr::formalism::Predicate<F>>, C> predicate) const;
 
-    auto get_fluent_facts_view() const noexcept { return m_builder->get_fluent_facts_view(*get_repository()); }
+    auto get_fluent_facts_view() const noexcept { return this->get_handle().get_fluent_facts_view(*get_formalism_repository()); }
     template<::tyr::formalism::FactKind F>
     auto get_fterm_values_view() const noexcept;
 
-private:
-    const Builder<planning::State<Kind>>* m_builder;
-    const TaskType* m_task;
 };
 
 template<::tyr::TaskKind Kind, typename Context>
@@ -108,27 +102,19 @@ struct View<ygg::Index<planning::PackedState<Kind>>, Context>
     static_assert(ygg::dependent_false<Context>::value, "Packed state views require a StateRepositoryPtr context.");
 };
 
+/// Packed states are addressed by the index of the registered state they pack.
 template<::tyr::TaskKind Kind>
-struct View<ygg::Index<planning::PackedState<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>
+struct View<ygg::Index<planning::PackedState<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>> :
+    IndexViewBase<planning::State<Kind>, std::shared_ptr<planning::StateRepository<Kind>>>
 {
 public:
     using TaskType = planning::Task<Kind>;
 
-    View(ygg::Index<planning::State<Kind>> index, std::shared_ptr<planning::StateRepository<Kind>> owner) noexcept :
-        m_index(index), m_state_repository(std::move(owner))
-    {
-    }
+    using IndexViewBase<planning::State<Kind>, std::shared_ptr<planning::StateRepository<Kind>>>::IndexViewBase;
 
-    ygg::Index<planning::State<Kind>> get_index() const noexcept { return m_index; }
-    const std::shared_ptr<planning::StateRepository<Kind>>& get_state_repository() const noexcept { return m_state_repository; }
+    const std::shared_ptr<planning::StateRepository<Kind>>& get_state_repository() const noexcept { return this->get_context(); }
 
     planning::StateView<Kind> unpack() const;
-
-    std::tuple<ygg::Index<planning::State<Kind>>, ygg::uint_t> identifying_members() const noexcept;
-
-private:
-    ygg::Index<planning::State<Kind>> m_index;
-    std::shared_ptr<planning::StateRepository<Kind>> m_state_repository;
 };
 
 template<::tyr::TaskKind Kind, typename Context>
@@ -138,7 +124,8 @@ struct View<ygg::Index<planning::State<Kind>>, Context>
 };
 
 template<::tyr::TaskKind Kind>
-struct View<ygg::Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>
+struct View<ygg::Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>> :
+    IndexViewBase<planning::State<Kind>, std::shared_ptr<planning::StateRepository<Kind>>>
 {
 public:
     using KindType = Kind;
@@ -151,7 +138,6 @@ public:
     View& operator=(View&&) noexcept;
     ~View();
 
-    ygg::Index<planning::State<Kind>> get_index() const;
     planning::PackedStateView<Kind> pack() const noexcept;
 
     bool test(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const;
@@ -182,16 +168,15 @@ public:
     template<::tyr::formalism::FactKind F>
     auto get_fterm_values_view() const noexcept;
 
-    const std::shared_ptr<::tyr::formalism::planning::Repository>& get_repository() const noexcept;
+    const std::shared_ptr<::tyr::formalism::planning::Repository>& get_formalism_repository() const noexcept;
     const TaskType& get_task() const noexcept;
     const std::shared_ptr<planning::StateRepository<Kind>>& get_state_repository() const noexcept;
     const Builder<planning::State<Kind>>& get_state_builder() const noexcept;
 
-    std::tuple<ygg::Index<planning::State<Kind>>, ygg::uint_t> identifying_members() const noexcept;
-
 private:
-    // The pooled builder must be released before its owning repository.
-    std::shared_ptr<planning::StateRepository<Kind>> m_state_repository;
+    using Base = IndexViewBase<planning::State<Kind>, std::shared_ptr<planning::StateRepository<Kind>>>;
+
+    // The pooled builder must be released before its owning repository, which the base holds.
     ygg::SharedObjectPoolPtr<Builder<planning::State<Kind>>, true> m_state_builder;
 };
 
@@ -207,9 +192,9 @@ template<::tyr::formalism::FactKind F>
 auto View<Builder<planning::State<Kind>>, planning::Task<Kind>>::get_atoms() const noexcept
 {
     if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
-        return m_task->get_static_state().get_atoms();
+        return this->get_context().get_static_state().get_atoms();
     else
-        return m_builder->template get_atoms<F>(*get_repository());
+        return this->get_handle().template get_atoms<F>(*get_formalism_repository());
 }
 
 template<::tyr::TaskKind Kind>
@@ -217,9 +202,9 @@ template<::tyr::formalism::FactKind F>
 auto View<Builder<planning::State<Kind>>, planning::Task<Kind>>::get_fterm_values() const noexcept
 {
     if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
-        return m_task->get_static_state().get_fterm_values();
+        return this->get_context().get_static_state().get_fterm_values();
     else if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
-        return m_builder->template get_fterm_values<F>();
+        return this->get_handle().template get_fterm_values<F>();
     else
         static_assert(ygg::dependent_false<F>::value);
 }
@@ -228,7 +213,7 @@ template<::tyr::TaskKind Kind>
 template<::tyr::formalism::FactKind F>
 auto View<Builder<planning::State<Kind>>, planning::Task<Kind>>::get_atoms_view() const noexcept
 {
-    return get_atoms<F>() | std::views::transform([repository = get_repository().get()](auto id) { return make_view(id, *repository); });
+    return get_atoms<F>() | std::views::transform([repository = get_formalism_repository().get()](auto id) { return make_view(id, *repository); });
 }
 
 template<::tyr::TaskKind Kind>
@@ -244,30 +229,23 @@ auto View<Builder<planning::State<Kind>>, planning::Task<Kind>>::get_fterm_value
 {
     if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
         return get_fterm_values<F>()
-               | std::views::transform([repository = get_repository().get()](auto&& pair)
+               | std::views::transform([repository = get_formalism_repository().get()](auto&& pair)
                                        { return std::make_pair(make_view(pair.first, *repository), pair.second); });
     else
-        return m_builder->template get_fterm_values_view<F>(*get_repository());
+        return this->get_handle().template get_fterm_values_view<F>(*get_formalism_repository());
 }
 
 template<::tyr::TaskKind Kind>
 planning::StateView<Kind> View<Index<planning::PackedState<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::unpack() const
 {
-    return m_state_repository->get_registered_state(m_index);
-}
-
-template<::tyr::TaskKind Kind>
-std::tuple<Index<planning::State<Kind>>, uint_t>
-View<Index<planning::PackedState<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::identifying_members() const noexcept
-{
-    return std::make_tuple(m_index, m_state_repository->get_storage_identity());
+    return this->get_context()->get_registered_state(this->get_handle());
 }
 
 template<::tyr::TaskKind Kind>
 View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::View(
     std::shared_ptr<planning::StateRepository<Kind>> owner,
     SharedObjectPoolPtr<Builder<planning::State<Kind>>, true> state_builder) noexcept :
-    m_state_repository(std::move(owner)),
+    Base(state_builder->get_index(), std::move(owner)),
     m_state_builder(std::move(state_builder))
 {
 }
@@ -288,7 +266,7 @@ View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kin
     if (this != &other)
     {
         m_state_builder = other.m_state_builder;
-        m_state_repository = other.m_state_repository;
+        Base::operator=(other);
     }
     return *this;
 }
@@ -300,28 +278,15 @@ View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kin
     if (this != &other)
     {
         m_state_builder = std::move(other.m_state_builder);
-        m_state_repository = std::move(other.m_state_repository);
+        Base::operator=(std::move(other));
     }
     return *this;
 }
 
 template<::tyr::TaskKind Kind>
-Index<planning::State<Kind>> View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::get_index() const
-{
-    return m_state_builder->get_index();
-}
-
-template<::tyr::TaskKind Kind>
 planning::PackedStateView<Kind> View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::pack() const noexcept
 {
-    return planning::PackedStateView<Kind>(get_index(), m_state_repository);
-}
-
-template<::tyr::TaskKind Kind>
-std::tuple<Index<planning::State<Kind>>, uint_t>
-View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::identifying_members() const noexcept
-{
-    return std::make_tuple(get_index(), m_state_repository->get_storage_identity());
+    return planning::PackedStateView<Kind>(this->get_handle(), this->get_context());
 }
 
 template<::tyr::TaskKind Kind>
@@ -349,13 +314,13 @@ template<::tyr::TaskKind Kind>
 const std::shared_ptr<planning::StateRepository<Kind>>&
 View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::get_state_repository() const noexcept
 {
-    return m_state_repository;
+    return this->get_context();
 }
 
 template<::tyr::TaskKind Kind>
 const planning::Task<Kind>& View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::get_task() const noexcept
 {
-    return *m_state_repository->get_task();
+    return *get_state_repository()->get_task();
 }
 
 template<::tyr::TaskKind Kind>
@@ -411,14 +376,14 @@ template<::tyr::TaskKind Kind>
 bool View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::test(
     Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
 {
-    return m_state_repository->get_task()->get_static_state().test(index);
+    return get_state_repository()->get_task()->get_static_state().test(index);
 }
 
 template<::tyr::TaskKind Kind>
 float_t View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::get(
     Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
 {
-    return m_state_repository->get_task()->get_static_state().get(index);
+    return get_state_repository()->get_task()->get_static_state().get(index);
 }
 
 template<::tyr::TaskKind Kind>
@@ -437,7 +402,7 @@ auto View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepositor
     else if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
         return get_fluent_facts_view() | std::views::transform([](auto fact) { return *fact.get_atom_index(); });
     else
-        return get_state_builder().template get_atoms<F>(*get_repository());
+        return get_state_builder().template get_atoms<F>(*get_formalism_repository());
 }
 
 template<::tyr::TaskKind Kind>
@@ -454,16 +419,16 @@ planning::FunctionTermValueRange<F> View<Index<planning::State<Kind>>, std::shar
 
 template<::tyr::TaskKind Kind>
 const std::shared_ptr<::tyr::formalism::planning::Repository>&
-View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::get_repository() const noexcept
+View<Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::get_formalism_repository() const noexcept
 {
-    return m_state_repository->get_task()->get_repository();
+    return get_state_repository()->get_task()->get_repository();
 }
 
 template<::tyr::TaskKind Kind>
 template<::tyr::formalism::FactKind F>
 auto View<ygg::Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::get_atoms_view() const noexcept
 {
-    return get_atoms<F>() | std::views::transform([context = this->get_repository()](auto id) { return ygg::make_view(id, *context); });
+    return get_atoms<F>() | std::views::transform([context = this->get_formalism_repository()](auto id) { return ygg::make_view(id, *context); });
 }
 
 template<::tyr::TaskKind Kind>
@@ -477,7 +442,7 @@ auto View<ygg::Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepo
 template<::tyr::TaskKind Kind>
 auto View<ygg::Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::get_fluent_facts_view() const noexcept
 {
-    return get_fluent_facts() | std::views::transform([context = this->get_repository()](auto id) { return ygg::make_view(id, *context); });
+    return get_fluent_facts() | std::views::transform([context = this->get_formalism_repository()](auto id) { return ygg::make_view(id, *context); });
 }
 
 template<::tyr::TaskKind Kind>
@@ -485,7 +450,7 @@ template<::tyr::formalism::FactKind F>
 auto View<ygg::Index<planning::State<Kind>>, std::shared_ptr<planning::StateRepository<Kind>>>::get_fterm_values_view() const noexcept
 {
     return get_fterm_values<F>()
-           | std::views::transform([context = this->get_repository()](auto&& pair)
+           | std::views::transform([context = this->get_formalism_repository()](auto&& pair)
                                    { return std::make_pair(ygg::make_view(pair.first, *context), pair.second); });
 }
 
@@ -570,7 +535,7 @@ concept StateViewConcept = TaskKind<Kind> && IterableStateConcept<T> && Iterable
                                        formalism::planning::PredicateView<formalism::FluentTag> fluent_predicate,
                                        formalism::planning::PredicateView<formalism::DerivedTag> derived_predicate) {
                                   { state.get_task() } -> std::same_as<const Task<Kind>&>;
-                                  { state.get_repository() } -> std::same_as<const formalism::planning::RepositoryPtr&>;
+                                  { state.get_formalism_repository() } -> std::same_as<const formalism::planning::RepositoryPtr&>;
                                   { state.get(variable) } -> std::same_as<formalism::planning::FDRValue>;
                                   { state.get(static_fterm) } -> std::same_as<ygg::float_t>;
                                   { state.get(fluent_fterm) } -> std::same_as<ygg::float_t>;
@@ -588,5 +553,8 @@ concept StateViewConcept = TaskKind<Kind> && IterableStateConcept<T> && Iterable
                               };
 
 }
+
+// State identity resolves through the owning StateRepository, which itself includes this header.
+#include "tyr/planning/state_repository.hpp"
 
 #endif

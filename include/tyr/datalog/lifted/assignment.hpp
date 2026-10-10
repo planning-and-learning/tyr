@@ -18,7 +18,7 @@
 #ifndef TYR_DATALOG_ASSIGNMENT_HPP_
 #define TYR_DATALOG_ASSIGNMENT_HPP_
 
-#include "tyr/formalism/object_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 
 #include <limits>

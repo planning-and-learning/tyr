@@ -22,7 +22,7 @@
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/ground/state_storage/iterators.hpp"
 #include "tyr/planning/lifted/state_storage/iterators.hpp"
-#include "tyr/planning/state_index.hpp"
+#include "tyr/planning/declarations.hpp"
 
 #include <concepts>
 #include <ranges>

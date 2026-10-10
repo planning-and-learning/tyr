@@ -33,7 +33,6 @@
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/formatting/formatter.hpp>
-#include <yggdrasil/ids/index_mixins.hpp>
 
 namespace f = tyr::formalism;
 namespace fd = tyr::formalism::datalog;

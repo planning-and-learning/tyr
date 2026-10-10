@@ -19,9 +19,6 @@
 #define TYR_FORMALISM_INDICES_HPP_
 
 #include "tyr/formalism/binding_index.hpp"
-#include "tyr/formalism/function_index.hpp"
-#include "tyr/formalism/object_index.hpp"
-#include "tyr/formalism/predicate_index.hpp"
-#include "tyr/formalism/variable_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #endif

@@ -25,7 +25,6 @@
 #include <yggdrasil/core/types_utils.hpp>
 #include <yggdrasil/containers/variant.hpp>
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/object_index.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 
 namespace ygg
@@ -39,13 +38,13 @@ struct Data<::tyr::formalism::Term>
     Variant variant;
 
     template<typename C>
-    using ViewVariant = std::variant<::ygg::View<ygg::Index<::tyr::formalism::Object>, C>, ::tyr::formalism::ParameterIndex>;
+    using ViewVariant = ::ygg::ViewVariant<Variant, C>;
 
     Data() = default;
     Data(Variant variant) : variant(variant) {}
     // Python constructor
     template<typename C>
-    Data(ViewVariant<C> variant_) :
+    Data(const ViewVariant<C>& variant_) :
         variant(std::visit(
             [](const auto& arg) -> Variant
             {
@@ -53,7 +52,7 @@ struct Data<::tyr::formalism::Term>
 
                 if constexpr (std::is_same_v<Alternative, ::tyr::formalism::ParameterIndex>)
                     return Variant(arg);
-                else if constexpr (std::is_same_v<Alternative, ::ygg::View<ygg::Index<::tyr::formalism::Object>, C>>)
+                else if constexpr (ygg::is_view_of_v<Alternative, ygg::Index<::tyr::formalism::Object>>)
                     return Variant(arg.get_index());
                 else
                     static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
