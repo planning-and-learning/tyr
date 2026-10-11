@@ -198,10 +198,8 @@ inline std::pair<datalog::ObjectView, bool> merge_p2d(ObjectView element, MergeD
 inline ygg::Data<Term> merge_p2d(TermView element, MergeDatalogContext& context)
 {
     return visit(
-        [&](auto&& arg)
+        [&]<typename Alternative>(const Alternative& arg)
         {
-            using Alternative = std::decay_t<decltype(arg)>;
-
             if constexpr (std::is_same_v<Alternative, ParameterIndex>)
                 return ygg::Data<Term>(arg);
             else if constexpr (std::is_same_v<Alternative, ObjectView>)
@@ -528,10 +526,8 @@ ygg::Data<datalog::NumericEffectOperator<Kind, T_DST>> merge_p2d(NumericEffectOp
 inline ygg::Data<datalog::FunctionExpression<LiftedTag>> merge_p2d(FunctionExpressionView<LiftedTag> element, MergeDatalogContext& context)
 {
     return visit(
-        [&](auto&& arg) -> ygg::Data<datalog::FunctionExpression<LiftedTag>>
+        [&]<typename Alternative>(const Alternative& arg) -> ygg::Data<datalog::FunctionExpression<LiftedTag>>
         {
-            using Alternative = std::decay_t<decltype(arg)>;
-
             if constexpr (std::is_same_v<Alternative, ygg::float_t>)
                 return ygg::Data<datalog::FunctionExpression<LiftedTag>>(arg);
             else if constexpr (std::is_same_v<Alternative, ArithmeticOperatorView<LiftedTag>>)
@@ -547,10 +543,8 @@ inline ygg::Data<datalog::FunctionExpression<LiftedTag>> merge_p2d(FunctionExpre
 inline ygg::Data<datalog::FunctionExpression<GroundTag>> merge_p2d(FunctionExpressionView<GroundTag> element, MergeDatalogContext& context)
 {
     return visit(
-        [&](auto&& arg) -> ygg::Data<datalog::FunctionExpression<GroundTag>>
+        [&]<typename Alternative>(const Alternative& arg) -> ygg::Data<datalog::FunctionExpression<GroundTag>>
         {
-            using Alternative = std::decay_t<decltype(arg)>;
-
             if constexpr (std::is_same_v<Alternative, ygg::float_t>)
                 return ygg::Data<datalog::FunctionExpression<GroundTag>>(arg);
             else if constexpr (std::is_same_v<Alternative, ArithmeticOperatorView<GroundTag>>)

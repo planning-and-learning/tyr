@@ -47,37 +47,50 @@ enum class AcceptanceResult : uint8_t
     TERMINAL,
 };
 
+template<typename Policy>
+using OptionsT = typename Policy::Options;
+
+template<typename Policy>
+using SearchTagT = typename Policy::SearchTag;
+
+template<typename Policy>
+using SearchNodeT = typename Policy::SearchNode;
+
+template<typename Policy>
+using SuccessorMetadataT = typename Policy::SuccessorMetadata;
+
+template<typename Policy>
+using EventHandlerPtrT = typename Policy::EventHandlerPtr;
+
+template<typename Policy>
+using WorkerEventHandlerPtrT = typename Policy::WorkerEventHandlerPtr;
+
+template<typename Engine>
+using RoutedSuccessorT = typename Engine::RoutedSuccessor;
+
 template<typename T, typename Kind>
-concept SearchPolicyConcept = TaskKind<Kind> && requires {
-    typename std::bool_constant<T::supports_priority_layer_synchronization>;
-    requires SearchKind<typename T::SearchTag>;
-} && std::constructible_from<T, Heuristic<Kind>&, const typename T::Options&>
-    && requires(T& policy,
-                const T& const_policy,
-                ygg::Index<Worker> worker,
-                ygg::Index<State<Kind>> state,
-                ygg::float_t value,
-                const typename T::SearchNode& const_search_node,
-                const Node<Kind>& node,
-                const typename T::PoppedEntry& entry,
-                formalism::planning::ActionBindingView action,
-                const typename T::EventHandlerPtr& event_handler) {
-    { T::terminate_on_goal } -> std::convertible_to<bool>;
-    { policy.initialize_start(state, value, value) } -> std::same_as<typename T::SearchNode&>;
-    { const_policy.get_start_priority() } -> std::same_as<ygg::float_t>;
-    { policy.open_start(state, const_search_node) } -> std::same_as<void>;
-    { const_policy.empty() } -> std::convertible_to<bool>;
-    { policy.pop() } -> std::same_as<typename T::PoppedEntry>;
-    { const_policy.should_discard(entry, value) } -> std::convertible_to<bool>;
-    { policy.get_search_node(state) } -> std::same_as<typename T::SearchNode&>;
-    { const_policy.make_successor_metadata(worker, node, action) } -> std::same_as<typename T::SuccessorMetadata>;
-    { T::make_worker_event_handler(event_handler, worker) } -> std::same_as<typename T::WorkerEventHandlerPtr>;
-    { const_policy.get_search_nodes() } -> std::same_as<const ygg::SegmentedVector<typename T::SearchNode>&>;
-} && (!T::supports_priority_layer_synchronization || requires(const T& policy, const typename T::Options& options) {
-                                  { T::synchronize_priority_layers(options) } -> std::convertible_to<bool>;
-                                  { policy.get_min_priority() } -> std::same_as<ygg::float_t>;
-                                  { policy.get_num_open_entries() } -> std::same_as<size_t>;
-                              });
+concept SearchPolicyConcept =
+    TaskKind<Kind>
+    && requires {
+           typename std::bool_constant<T::supports_priority_layer_synchronization>;
+           requires SearchKind<SearchTagT<T>>;
+       } && std::constructible_from<T, Heuristic<Kind>&, const OptionsT<T>&> && requires(T& policy, const T& const_policy, ygg::Index<Worker> worker, ygg::Index<State<Kind>> state, ygg::float_t value, const SearchNodeT<T>& const_search_node, const Node<Kind>& node, const typename T::PoppedEntry& entry, formalism::planning::ActionBindingView action, const EventHandlerPtrT<T>& event_handler) {
+           { T::terminate_on_goal } -> std::convertible_to<bool>;
+           { policy.initialize_start(state, value, value) } -> std::same_as<SearchNodeT<T>&>;
+           { const_policy.get_start_priority() } -> std::same_as<ygg::float_t>;
+           { policy.open_start(state, const_search_node) } -> std::same_as<void>;
+           { const_policy.empty() } -> std::convertible_to<bool>;
+           { policy.pop() } -> std::same_as<typename T::PoppedEntry>;
+           { const_policy.should_discard(entry, value) } -> std::convertible_to<bool>;
+           { policy.get_search_node(state) } -> std::same_as<SearchNodeT<T>&>;
+           { const_policy.make_successor_metadata(worker, node, action) } -> std::same_as<SuccessorMetadataT<T>>;
+           { T::make_worker_event_handler(event_handler, worker) } -> std::same_as<WorkerEventHandlerPtrT<T>>;
+           { const_policy.get_search_nodes() } -> std::same_as<const ygg::SegmentedVector<SearchNodeT<T>>&>;
+       } && (!T::supports_priority_layer_synchronization || requires(const T& policy, const OptionsT<T>& options) {
+           { T::synchronize_priority_layers(options) } -> std::convertible_to<bool>;
+           { policy.get_min_priority() } -> std::same_as<ygg::float_t>;
+           { policy.get_num_open_entries() } -> std::same_as<size_t>;
+       });
 
 template<typename T, typename Kind>
 concept StateRoutingPolicyConcept = TaskKind<Kind> && std::constructible_from<T, uint64_t> && requires {
@@ -90,29 +103,38 @@ concept StateRoutingPolicyConcept = TaskKind<Kind> && std::constructible_from<T,
 };
 
 template<typename T, typename Kind, typename SearchPolicy>
-concept ExecutionPolicyConcept = TaskKind<Kind> && SearchPolicyConcept<SearchPolicy, Kind> && std::constructible_from<T, uint64_t> && requires {
-    requires std::same_as<typename T::SearchTag, typename SearchPolicy::SearchTag>;
-} && std::default_initializable<typename T::WorkerState> && requires(T& policy, const T& const_policy, const typename SearchPolicy::Options& options, ygg::Index<State<Kind>> state, ygg::Index<Worker> worker, size_t num_workers, ygg::float_t value, std::optional<std::chrono::steady_clock::time_point> deadline, ygg::uint_t max_num_states) {
-    { T::validate(options) } -> std::same_as<void>;
-    { T::num_workers(options) } -> std::same_as<size_t>;
-    { T::search_node_index(state, worker, num_workers) } -> std::same_as<ygg::Index<State<Kind>>>;
-    { policy.initialize_best_h(value) } -> std::same_as<void>;
-    {
-        policy.improve_best_h(value, [] {})
-    } -> std::convertible_to<bool>;
-    { policy.start(deadline, value, options) } -> std::same_as<void>;
-    { const_policy.running() } -> std::convertible_to<bool>;
-    { const_policy.timed_out() } -> std::convertible_to<bool>;
-    { const_policy.incumbent_cost() } -> std::same_as<ygg::float_t>;
-    { const_policy.status() } -> std::same_as<SearchStatus>;
-    { const_policy.goal() } -> std::same_as<std::optional<WorkerStateIndex<Kind>>>;
-    { const_policy.exception() } -> std::same_as<std::exception_ptr>;
-    { policy.reserve_state(max_num_states) } -> std::convertible_to<bool>;
-};
+concept ExecutionPolicyConcept =
+    TaskKind<Kind> && SearchPolicyConcept<SearchPolicy, Kind> && std::constructible_from<T, uint64_t>
+    && requires { requires std::same_as<SearchTagT<T>, SearchTagT<SearchPolicy>>; } && std::default_initializable<typename T::WorkerState>
+    && requires(T& policy,
+                const T& const_policy,
+                const OptionsT<SearchPolicy>& options,
+                ygg::Index<State<Kind>> state,
+                ygg::Index<Worker> worker,
+                size_t num_workers,
+                ygg::float_t value,
+                std::optional<std::chrono::steady_clock::time_point> deadline,
+                ygg::uint_t max_num_states) {
+           { T::validate(options) } -> std::same_as<void>;
+           { T::num_workers(options) } -> std::same_as<size_t>;
+           { T::search_node_index(state, worker, num_workers) } -> std::same_as<ygg::Index<State<Kind>>>;
+           { policy.initialize_best_h(value) } -> std::same_as<void>;
+           {
+               policy.improve_best_h(value, [] {})
+           } -> std::convertible_to<bool>;
+           { policy.start(deadline, value, options) } -> std::same_as<void>;
+           { const_policy.running() } -> std::convertible_to<bool>;
+           { const_policy.timed_out() } -> std::convertible_to<bool>;
+           { const_policy.incumbent_cost() } -> std::same_as<ygg::float_t>;
+           { const_policy.status() } -> std::same_as<SearchStatus>;
+           { const_policy.goal() } -> std::same_as<std::optional<WorkerStateIndex<Kind>>>;
+           { const_policy.exception() } -> std::same_as<std::exception_ptr>;
+           { policy.reserve_state(max_num_states) } -> std::convertible_to<bool>;
+       };
 
 template<typename T, typename WorkerData, typename Kind, typename SearchPolicy>
 concept WorkerPolicyConcept = TaskKind<Kind> && SearchPolicyConcept<SearchPolicy, Kind>
-                              && requires(T& policy, ygg::Index<Worker> worker, WorkerStateIndex<Kind> goal, const typename SearchPolicy::Options& options) {
+                              && requires(T& policy, ygg::Index<Worker> worker, WorkerStateIndex<Kind> goal, const OptionsT<SearchPolicy>& options) {
                                      { policy.size() } -> std::same_as<size_t>;
                                      { policy.get(worker) } -> std::same_as<WorkerData&>;
                                      {

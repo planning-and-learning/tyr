@@ -138,10 +138,8 @@ inline std::pair<ObjectView, bool> copy(ObjectView element, CopyContext& context
 inline TermView copy(TermView element, CopyContext& context)
 {
     const auto data = visit(
-        [&](auto&& arg)
+        [&]<typename Alternative>(const Alternative& arg)
         {
-            using Alternative = std::decay_t<decltype(arg)>;
-
             if constexpr (std::is_same_v<Alternative, ParameterIndex>)
                 return ygg::Data<Term>(arg);
             else if constexpr (std::is_same_v<Alternative, ObjectView>)
@@ -273,10 +271,8 @@ template<TaskKind T>
 FunctionExpressionView<T> copy(FunctionExpressionView<T> element, CopyContext& context)
 {
     const auto data = visit(
-        [&](auto&& arg)
+        [&]<typename Alternative>(const Alternative& arg)
         {
-            using Alternative = std::decay_t<decltype(arg)>;
-
             if constexpr (std::is_same_v<Alternative, ygg::float_t>)
                 return ygg::Data<FunctionExpression<T>>(arg);
             else if constexpr (std::is_same_v<Alternative, ArithmeticOperatorView<T>>)

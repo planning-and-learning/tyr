@@ -70,8 +70,6 @@ template<TaskKind Kind>
 class PackedNode : public ygg::comparison::Mixin<PackedNode<Kind>>
 {
 public:
-    using TaskType = Task<Kind>;
-
     PackedNode(PackedStateView<Kind> state, ygg::float_t metric) noexcept : m_state(std::move(state)), m_metric(metric) {}
 
     const PackedStateView<Kind>& get_state() const noexcept { return m_state; }

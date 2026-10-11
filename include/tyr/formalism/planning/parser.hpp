@@ -27,24 +27,23 @@
 #include <loki/loki.hpp>
 #include <optional>
 
-namespace fs = std::filesystem;
-
 namespace tyr::formalism::planning
 {
 class Parser
 {
 public:
-    Parser(const fs::path& domain_filepath,
+    Parser(const std::filesystem::path& domain_filepath,
            const loki::ParserOptions& options = loki::ParserOptions(),
            const loki::TranslatorOptions& translator_options = loki::TranslatorOptions());
     Parser(const std::string& domain_description,
-           std::optional<fs::path> domain_filepath,
+           std::optional<std::filesystem::path> domain_filepath,
            const loki::ParserOptions& options = loki::ParserOptions(),
            const loki::TranslatorOptions& translator_options = loki::TranslatorOptions());
 
-    PlanningTask<LiftedTag> parse_task(const fs::path& task_filepath, const loki::ParserOptions& options = loki::ParserOptions());
-    PlanningTask<LiftedTag>
-    parse_task(const std::string& task_description, std::optional<fs::path> task_filepath, const loki::ParserOptions& options = loki::ParserOptions());
+    PlanningTask<LiftedTag> parse_task(const std::filesystem::path& task_filepath, const loki::ParserOptions& options = loki::ParserOptions());
+    PlanningTask<LiftedTag> parse_task(const std::string& task_description,
+                                       std::optional<std::filesystem::path> task_filepath,
+                                       const loki::ParserOptions& options = loki::ParserOptions());
 
     PlanningDomain get_domain() const;
 

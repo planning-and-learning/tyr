@@ -73,7 +73,7 @@ public:
     class Out
     {
     public:
-        Out(RuleExecutionContext<R, AP, TP, CP>& rctx, typename RuleWorkspace<LiftedTag, R>::Worker& ws_worker) :
+        Out(RuleExecutionContext<R, AP, TP, CP>& rctx, LiftedRuleWorkerT<R>& ws_worker) :
             m_rctx(rctx),
             m_ws_worker(ws_worker),
             m_ground_context(ws_worker.builder, rctx.stratum_out().program().workspace_repository(), ws_worker.binding)
@@ -100,16 +100,12 @@ public:
 
     private:
         RuleExecutionContext<R, AP, TP, CP>& m_rctx;
-        typename RuleWorkspace<LiftedTag, R>::Worker& m_ws_worker;
+        LiftedRuleWorkerT<R>& m_ws_worker;
 
         formalism::datalog::GrounderContext m_ground_context;
     };
 
-    RuleWorkerExecutionContext(RuleExecutionContext<R, AP, TP, CP>& rctx, typename RuleWorkspace<LiftedTag, R>::Worker& ws_worker) :
-        m_in(rctx),
-        m_out(rctx, ws_worker)
-    {
-    }
+    RuleWorkerExecutionContext(RuleExecutionContext<R, AP, TP, CP>& rctx, LiftedRuleWorkerT<R>& ws_worker) : m_in(rctx), m_out(rctx, ws_worker) {}
 
     auto& in() noexcept { return m_in; }
     const auto& in() const noexcept { return m_in; }

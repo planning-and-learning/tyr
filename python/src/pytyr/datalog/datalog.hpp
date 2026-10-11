@@ -47,6 +47,7 @@ using Interval = ygg::ClosedInterval<ygg::float_t>;
 template<formalism::FactKind T>
 void bind_predicate_fact_set(nb::module_& m, const char* name)
 {
+    using namespace nb::literals;
     using Set = PredicateFactSet<T>;
     const auto retain_owner = ygg::python::make_owner_retainer();
 
@@ -75,6 +76,7 @@ void bind_predicate_fact_set(nb::module_& m, const char* name)
 template<formalism::FactKind T>
 void bind_function_fact_set(nb::module_& m, const char* name)
 {
+    using namespace nb::literals;
     using Set = FunctionFactSet<T>;
     using Binding = formalism::datalog::FunctionBindingView<T>;
     const auto retain_owner = ygg::python::make_owner_retainer();
@@ -138,6 +140,7 @@ inline void bind_fact_sets(nb::module_& m)
 
 inline void bind_numeric_support(nb::module_& m)
 {
+    using namespace nb::literals;
     using NumericKey = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
 
     auto cls = nb::class_<NumericSupport>(m, "NumericSupport")
@@ -150,6 +153,7 @@ inline void bind_numeric_support(nb::module_& m)
 
 inline void bind_annotations(nb::module_& m)
 {
+    using namespace nb::literals;
     using WitnessAnnotationT = WitnessAnnotation<formalism::PredicateTag>;
     using FunctionWitnessAnnotationT = WitnessAnnotation<formalism::FunctionTag>;
     using PredicateAnnotationStore = PredicateAnnotations<>;
@@ -227,6 +231,7 @@ inline void bind_annotations(nb::module_& m)
 template<typename CostPolicy>
 void bind_cost_policy(nb::module_& m, const char* name)
 {
+    using namespace nb::literals;
     using NumericKey = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
 
     auto cls = nb::class_<CostPolicy>(m, name).def(nb::init<>()).def("clear", &CostPolicy::clear);
@@ -264,6 +269,7 @@ void bind_cost_policy(nb::module_& m, const char* name)
 template<typename Aggregation>
 void bind_termination_policy(nb::module_& m, const char* name)
 {
+    using namespace nb::literals;
     using Policy = TerminationPolicy<Aggregation>;
 
     nb::class_<Policy>(m, name)
@@ -276,6 +282,7 @@ void bind_termination_policy(nb::module_& m, const char* name)
 
 inline void bind_policies(nb::module_& m)
 {
+    using namespace nb::literals;
     using SumMinCostAnnotation = MinCostAnnotationPolicy<SumAggregation>;
     using MaxMinCostAnnotation = MinCostAnnotationPolicy<MaxAggregation>;
     using MaxMinCostAnnotationWithAchievers = MinCostAnnotationWithAchieversPolicy<MaxAggregation>;
@@ -316,6 +323,7 @@ void bind_task_policies(nb::module_& m)
 template<TaskKind Kind, typename Workspace>
 void bind_workspace(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     auto cls = nb::class_<Workspace>(m, name.c_str())
                    .def(nb::init<Program<Kind>&>(), "program"_a, nb::keep_alive<1, 2>())
                    .def(
@@ -408,6 +416,7 @@ void bind_workspace(nb::module_& m, const std::string& name)
 template<TaskKind Kind, typename Workspace, typename Context>
 void bind_configuration(nb::module_& m, const char* prefix)
 {
+    using namespace nb::literals;
     const auto workspace_name = std::string(prefix) + "ProgramWorkspace";
     const auto context_name = std::string(prefix) + "ProgramExecutionContext";
     bind_workspace<Kind, Workspace>(m, workspace_name);

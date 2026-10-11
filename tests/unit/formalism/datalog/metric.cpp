@@ -5,19 +5,17 @@
 
 #include <concepts>
 
-namespace fd = tyr::formalism::datalog;
-
-using Entity = fd::Metric;
+using Entity = tyr::formalism::datalog::Metric;
 using Index = ygg::Index<Entity>;
 using Data = ygg::Data<Entity>;
-using View = ygg::View<Index, fd::Repository>;
+using View = ygg::View<Index, tyr::formalism::datalog::Repository>;
 
 static_assert(std::constructible_from<Index, ygg::uint_t>);
 static_assert(std::totally_ordered<Index>);
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
-static_assert(std::same_as<View, fd::MetricView>);
-static_assert(std::constructible_from<Data, fd::FunctionExpressionView<::tyr::GroundTag>>);
+static_assert(std::same_as<View, tyr::formalism::datalog::MetricView>);
+static_assert(std::constructible_from<Data, tyr::formalism::datalog::FunctionExpressionView<::tyr::GroundTag>>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.fexpr;

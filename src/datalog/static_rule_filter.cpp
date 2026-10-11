@@ -24,57 +24,55 @@
 namespace tyr::datalog
 {
 
-namespace fd = formalism::datalog;
-namespace f = formalism;
-
-fd::ProgramView<GroundTag> remove_statically_inapplicable_rules(fd::ProgramView<GroundTag> program, fd::Repository& repository)
+formalism::datalog::ProgramView<GroundTag> remove_statically_inapplicable_rules(formalism::datalog::ProgramView<GroundTag> program,
+                                                                                formalism::datalog::Repository& repository)
 {
-    const auto static_fact_sets = TaggedFactSets<f::StaticTag>(program.get_predicates<f::StaticTag>(),
-                                                               program.get_functions<f::StaticTag>(),
-                                                               program.get_atoms<f::StaticTag>(),
-                                                               program.get_fterm_values<f::StaticTag>(),
-                                                               program.get_context());
-    const auto fluent_fact_sets = TaggedFactSets<f::FluentTag>(program.get_predicates<f::FluentTag>(),
-                                                               program.get_functions<f::FluentTag>(),
-                                                               program.get_atoms<f::FluentTag>(),
-                                                               program.get_fterm_values<f::FluentTag>(),
-                                                               program.get_context());
+    const auto static_fact_sets = TaggedFactSets<formalism::StaticTag>(program.get_predicates<formalism::StaticTag>(),
+                                                                       program.get_functions<formalism::StaticTag>(),
+                                                                       program.get_atoms<formalism::StaticTag>(),
+                                                                       program.get_fterm_values<formalism::StaticTag>(),
+                                                                       program.get_context());
+    const auto fluent_fact_sets = TaggedFactSets<formalism::FluentTag>(program.get_predicates<formalism::FluentTag>(),
+                                                                       program.get_functions<formalism::FluentTag>(),
+                                                                       program.get_atoms<formalism::FluentTag>(),
+                                                                       program.get_fterm_values<formalism::FluentTag>(),
+                                                                       program.get_context());
     const auto fact_sets = FactSets { static_fact_sets, fluent_fact_sets };
 
-    auto builder = fd::Builder {};
-    auto context = fd::CopyContext { builder, repository };
-    auto result = fd::checkout<fd::Program<GroundTag>>(builder);
+    auto builder = formalism::datalog::Builder {};
+    auto context = formalism::datalog::CopyContext { builder, repository };
+    auto result = formalism::datalog::checkout<formalism::datalog::Program<GroundTag>>(builder);
     const auto merge_all = [&](const auto elements, auto& destination)
     {
         for (const auto element : elements)
-            destination.push_back(fd::copy(element, context).first.get_index());
+            destination.push_back(formalism::datalog::copy(element, context).first.get_index());
     };
 
-    merge_all(program.get_predicates<f::StaticTag>(), result->static_predicates);
-    merge_all(program.get_predicates<f::FluentTag>(), result->fluent_predicates);
-    merge_all(program.get_functions<f::StaticTag>(), result->static_functions);
-    merge_all(program.get_functions<f::FluentTag>(), result->fluent_functions);
+    merge_all(program.get_predicates<formalism::StaticTag>(), result->static_predicates);
+    merge_all(program.get_predicates<formalism::FluentTag>(), result->fluent_predicates);
+    merge_all(program.get_functions<formalism::StaticTag>(), result->static_functions);
+    merge_all(program.get_functions<formalism::FluentTag>(), result->fluent_functions);
     merge_all(program.get_objects(), result->objects);
-    merge_all(program.get_atoms<f::StaticTag>(), result->static_atoms);
-    merge_all(program.get_atoms<f::FluentTag>(), result->fluent_atoms);
-    merge_all(program.get_fterm_values<f::StaticTag>(), result->static_fterm_values);
-    merge_all(program.get_fterm_values<f::FluentTag>(), result->fluent_fterm_values);
+    merge_all(program.get_atoms<formalism::StaticTag>(), result->static_atoms);
+    merge_all(program.get_atoms<formalism::FluentTag>(), result->fluent_atoms);
+    merge_all(program.get_fterm_values<formalism::StaticTag>(), result->static_fterm_values);
+    merge_all(program.get_fterm_values<formalism::FluentTag>(), result->fluent_fterm_values);
 
     if (const auto goal = program.get_goal())
-        result->goal = fd::copy(*goal, context).first.get_index();
+        result->goal = formalism::datalog::copy(*goal, context).first.get_index();
     if (const auto metric = program.get_metric())
-        result->metric = fd::copy(*metric, context).first.get_index();
+        result->metric = formalism::datalog::copy(*metric, context).first.get_index();
 
-    const auto merge_applicable_rules = [&]<f::RelationKind R>()
+    const auto merge_applicable_rules = [&]<formalism::RelationKind R>()
     {
         for (const auto rule : program.get_rules<R>())
             if (is_statically_applicable(rule, fact_sets))
-                result->get_rules<R>().push_back(fd::copy(rule, context).first.get_index());
+                result->get_rules<R>().push_back(formalism::datalog::copy(rule, context).first.get_index());
     };
-    merge_applicable_rules.template operator()<f::PredicateTag>();
-    merge_applicable_rules.template operator()<f::FunctionTag>();
+    merge_applicable_rules.template operator()<formalism::PredicateTag>();
+    merge_applicable_rules.template operator()<formalism::FunctionTag>();
 
-    return fd::insert(repository, *result).first;
+    return formalism::datalog::insert(repository, *result).first;
 }
 
 }

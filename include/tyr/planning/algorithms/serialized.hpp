@@ -273,8 +273,6 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind>& options = 
 template<TaskKind Kind, SerializedSolverConcept<Kind> Subsolver>
 struct Solver
 {
-    using EventHandlerType = EventHandler<Kind>;
-
     Subsolver subsolver;
     Options<Kind> options;
 

@@ -83,9 +83,11 @@ struct FunctionCandidate
 
 struct PredicateHeadUpdates
 {
+private:
     using Binding = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
     using Witness = WitnessAnnotation<formalism::PredicateTag>;
 
+public:
     ygg::UnorderedSet<Binding> seen_bindings;
     std::vector<Binding> bindings;
     std::vector<PredicateAchiever> achievers;

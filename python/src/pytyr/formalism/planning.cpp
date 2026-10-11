@@ -40,6 +40,7 @@ using ygg::bind_fixed_uint;
 
 void bind_module_definitions(nb::module_& m)
 {
+    using namespace nb::literals;
     bind_parser(m);
 
     nb::enum_<OptimizationDirection>(m, "OptimizationDirection")

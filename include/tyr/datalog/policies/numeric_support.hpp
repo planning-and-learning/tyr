@@ -58,11 +58,11 @@ public:
 /// cost-sorted per-fluent interval annotations.
 class NumericSupportSelector
 {
-public:
     using Key = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
     using SelectionEntry = NumericSupportSelectorWorkspace::SelectionEntry;
     using Selection = std::vector<SelectionEntry>;
 
+public:
     NumericSupportSelector(const FactSets& fact_sets, const NumericIntervalAnnotations<>& annotations, bool initial_intervals_cost_zero = false);
 
     Key fluent_key(formalism::datalog::FunctionTermView<GroundTag, formalism::FluentTag> term) const noexcept;
@@ -123,8 +123,8 @@ public:
         if (!entries)
             return false;
 
-        auto lower_support = decltype(entry.annotation) {};
-        auto upper_support = decltype(entry.annotation) {};
+        const NumericIntervalAnnotation* lower_support = nullptr;
+        const NumericIntervalAnnotation* upper_support = nullptr;
         for (const auto& candidate : *entries)
         {
             const auto cost = get_cost(candidate.annotation);
@@ -297,7 +297,6 @@ private:
     const NumericIntervalAnnotations<>& m_annotations;
     bool m_initial_intervals_cost_zero;
 };
-
 }
 
 #endif

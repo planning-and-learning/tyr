@@ -38,6 +38,12 @@ namespace tyr::planning
 template<TaskKind Kind, typename Tag, bool ThreadSafe = false>
 struct StateStorageContext;
 
+template<typename Context>
+using ArraySetT = typename Context::ArraySet;
+
+template<typename Context>
+using UintVectorSetT = typename Context::UintVectorSet;
+
 /**
  * Backend
  */

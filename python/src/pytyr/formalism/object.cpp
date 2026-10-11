@@ -23,6 +23,7 @@ namespace tyr::formalism
 
 void bind_object(nb::module_& m)
 {
+    using namespace nb::literals;
     ygg::bind_index<ygg::Index<Object>>(m, "ObjectIndex");
 
     {

@@ -111,9 +111,8 @@ inline void ground(TermListView terms, const GrounderContext& context, ygg::Inde
     objects.clear();
     for (const auto term : terms)
         visit(
-            [&](auto arg)
+            [&]<typename Alternative>(Alternative arg)
             {
-                using Alternative = std::decay_t<decltype(arg)>;
                 if constexpr (std::same_as<Alternative, ParameterIndex>)
                     objects.push_back(context.binding[ygg::uint_t(arg)]);
                 else if constexpr (std::same_as<Alternative, ObjectView>)
@@ -152,10 +151,8 @@ std::pair<FunctionTermView<GroundTag, F>, bool> ground(FunctionTermView<LiftedTa
 inline FunctionExpressionView<GroundTag> ground(FunctionExpressionView<LiftedTag> element, GrounderContext& context)
 {
     const auto data = visit(
-        [&](auto&& arg)
+        [&]<typename Alternative>(const Alternative& arg)
         {
-            using Alternative = std::decay_t<decltype(arg)>;
-
             if constexpr (std::is_same_v<Alternative, ygg::float_t>)
                 return ygg::Data<FunctionExpression<GroundTag>>(arg);
             else if constexpr (std::is_same_v<Alternative, ArithmeticOperatorView<LiftedTag>>)

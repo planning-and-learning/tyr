@@ -34,31 +34,28 @@
 #include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/core/types.hpp>
 
-namespace f = tyr::formalism;
-namespace fd = tyr::formalism::datalog;
-
 namespace tyr::analysis
 {
 namespace
 {
-template<f::RelationKind R>
-void add_stratum_listeners(const TypedRuleStratum<R>& stratum, const fd::Repository& context, TypedListenerStratum<R>& listeners)
+template<formalism::RelationKind R>
+void add_stratum_listeners(const TypedRuleStratum<R>& stratum, const formalism::datalog::Repository& context, TypedListenerStratum<R>& listeners)
 {
     for (const auto rule : stratum)
     {
         const auto rule_view = ygg::make_view(rule, context);
 
-        for (const auto literal : rule_view.get_body().template get_literals<f::FluentTag>())
+        for (const auto literal : rule_view.get_body().template get_literals<formalism::FluentTag>())
             if (literal.get_polarity())
                 listeners.predicates[literal.get_atom().get_predicate().get_index()].insert(rule);
 
-        for (const auto term : fd::collect_fluent_reads(rule_view))
+        for (const auto term : formalism::datalog::collect_fluent_reads(rule_view))
             listeners.functions[term.get_function().get_index()].insert(rule);
     }
 }
 }
 
-ListenerStrata compute_listeners(const RuleStrata& strata, const fd::Repository& context)
+ListenerStrata compute_listeners(const RuleStrata& strata, const formalism::datalog::Repository& context)
 {
     auto listeners = ListenerStrata();
 
@@ -66,8 +63,8 @@ ListenerStrata compute_listeners(const RuleStrata& strata, const fd::Repository&
     {
         auto listeners_in_stratum = ListenerStratum {};
 
-        add_stratum_listeners(stratum.template get<f::PredicateTag>(), context, listeners_in_stratum.template get<f::PredicateTag>());
-        add_stratum_listeners(stratum.template get<f::FunctionTag>(), context, listeners_in_stratum.template get<f::FunctionTag>());
+        add_stratum_listeners(stratum.template get<formalism::PredicateTag>(), context, listeners_in_stratum.template get<formalism::PredicateTag>());
+        add_stratum_listeners(stratum.template get<formalism::FunctionTag>(), context, listeners_in_stratum.template get<formalism::FunctionTag>());
 
         listeners.data.push_back(std::move(listeners_in_stratum));
     }

@@ -59,7 +59,7 @@ public:
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    typename Context::ArraySet& m_array_set;
+    ArraySetT<Context>& m_array_set;
     const std::vector<VariableInfo>& m_infos;
 
     std::vector<ygg::uint_t> m_buffer;

@@ -24,6 +24,7 @@ namespace tyr::datalog
 
 void bind_lifted_module_definitions(nb::module_& m)
 {
+    using namespace nb::literals;
     using ProgramT = Program<LiftedTag>;
     using ConstWorkspace = ConstProgramWorkspace<LiftedTag>;
 

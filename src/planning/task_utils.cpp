@@ -30,29 +30,26 @@
 
 #include <yggdrasil/core/config.hpp>
 
-namespace f = tyr::formalism;
-namespace fp = tyr::formalism::planning;
-
 namespace tyr::planning
 {
 namespace detail
 {
 
 void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<GroundTag>>& state,
-                                     const fp::Repository& repository,
+                                     const formalism::planning::Repository& repository,
                                      const P2DTranslationContext<GroundTag>::FluentToFluentAtomMapping& fluent_to_fluent_atom,
-                                     datalog::TaggedFactSets<f::FluentTag>& fact_sets)
+                                     datalog::TaggedFactSets<formalism::FluentTag>& fact_sets)
 {
-    for (const auto atom : state.get_atoms_view<f::FluentTag>(repository))
+    for (const auto atom : state.get_atoms_view<formalism::FluentTag>(repository))
         fact_sets.predicate.insert(fluent_to_fluent_atom.at(atom));
 }
 
 void insert_numeric_variables_to_fact_set(const ygg::Builder<State<GroundTag>>& state,
-                                          const fp::Repository& repository,
+                                          const formalism::planning::Repository& repository,
                                           const P2DTranslationContext<GroundTag>::FluentToFluentFunctionTermMapping& fluent_to_fluent_fterm,
-                                          datalog::TaggedFactSets<f::FluentTag>& fact_sets)
+                                          datalog::TaggedFactSets<formalism::FluentTag>& fact_sets)
 {
-    for (const auto& [fterm, value] : state.get_fterm_values_view<f::FluentTag>(repository))
+    for (const auto& [fterm, value] : state.get_fterm_values_view<formalism::FluentTag>(repository))
         if (const auto it = fluent_to_fluent_fterm.find(fterm); it != fluent_to_fluent_fterm.end())
             fact_sets.function.insert(it->second, value);
 }
@@ -60,44 +57,44 @@ void insert_numeric_variables_to_fact_set(const ygg::Builder<State<GroundTag>>& 
 void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
                                      const formalism::planning::Repository& repository,
                                      const P2DTranslationContext<LiftedTag>::FluentToFluentPredicateMapping& fluent_to_fluent_predicate,
-                                     fp::MergeDatalogContext& merge_context,
-                                     datalog::TaggedFactSets<f::FluentTag>& fact_sets)
+                                     formalism::planning::MergeDatalogContext& merge_context,
+                                     datalog::TaggedFactSets<formalism::FluentTag>& fact_sets)
 {
-    for (const auto atom : state.get_atoms_view<f::FluentTag>(repository))
+    for (const auto atom : state.get_atoms_view<formalism::FluentTag>(repository))
     {
         if (const auto it = fluent_to_fluent_predicate.find(atom.get_predicate()); it != fluent_to_fluent_predicate.end())
-            fact_sets.predicate.insert(fp::merge_p2d(atom.get_row(), it->second, merge_context).first);
+            fact_sets.predicate.insert(formalism::planning::merge_p2d(atom.get_row(), it->second, merge_context).first);
     }
 }
 
 void insert_derived_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
                                       const formalism::planning::Repository& repository,
                                       const P2DTranslationContext<LiftedTag>::DerivedToFluentPredicateMapping& derived_to_fluent_predicate,
-                                      fp::MergeDatalogContext& merge_context,
-                                      datalog::TaggedFactSets<f::FluentTag>& fact_sets)
+                                      formalism::planning::MergeDatalogContext& merge_context,
+                                      datalog::TaggedFactSets<formalism::FluentTag>& fact_sets)
 {
-    for (const auto atom : state.get_atoms_view<f::DerivedTag>(repository))
+    for (const auto atom : state.get_atoms_view<formalism::DerivedTag>(repository))
         if (const auto it = derived_to_fluent_predicate.find(atom.get_predicate()); it != derived_to_fluent_predicate.end())
-            fact_sets.predicate.insert(fp::merge_p2d(atom.get_row(), it->second, merge_context).first);
+            fact_sets.predicate.insert(formalism::planning::merge_p2d(atom.get_row(), it->second, merge_context).first);
 }
 
 void insert_numeric_variables_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
                                           const formalism::planning::Repository& repository,
                                           const P2DTranslationContext<LiftedTag>::FluentToFluentFunctionMapping& fluent_to_fluent_function,
-                                          fp::MergeDatalogContext& merge_context,
-                                          datalog::TaggedFactSets<f::FluentTag>& fact_sets)
+                                          formalism::planning::MergeDatalogContext& merge_context,
+                                          datalog::TaggedFactSets<formalism::FluentTag>& fact_sets)
 {
-    for (const auto& [fterm, value] : state.get_fterm_values_view<f::FluentTag>(repository))
+    for (const auto& [fterm, value] : state.get_fterm_values_view<formalism::FluentTag>(repository))
         if (const auto it = fluent_to_fluent_function.find(fterm.get_function()); it != fluent_to_fluent_function.end())
-            fact_sets.function.insert(fp::merge_p2d(fterm.get_row(), it->second, merge_context).first, value);
+            fact_sets.function.insert(formalism::planning::merge_p2d(fterm.get_row(), it->second, merge_context).first, value);
 }
 
 void read_derived_atoms_from_fact_set(ygg::Builder<State<LiftedTag>>& state,
-                                      fp::Repository& repository,
+                                      formalism::planning::Repository& repository,
                                       const D2PTranslationContext<LiftedTag>::FluentToDerivedPredicateMapping& fluent_to_derived_predicate,
-                                      fp::Builder& planning_builder,
-                                      const datalog::TaggedFactSets<f::FluentTag>& fact_sets,
-                                      std::vector<formalism::datalog::PredicateBindingView<f::FluentTag>>& derived_bindings)
+                                      formalism::planning::Builder& planning_builder,
+                                      const datalog::TaggedFactSets<formalism::FluentTag>& fact_sets,
+                                      std::vector<formalism::datalog::PredicateBindingView<formalism::FluentTag>>& derived_bindings)
 {
     derived_bindings.clear();
     for (const auto& set : fact_sets.predicate.get_sets())
@@ -105,9 +102,9 @@ void read_derived_atoms_from_fact_set(ygg::Builder<State<LiftedTag>>& state,
             if (fluent_to_derived_predicate.contains(binding.get_relation()))
                 derived_bindings.push_back(binding);
 
-    auto merge_context = fp::MergePlanningContext { planning_builder, repository };
+    auto merge_context = formalism::planning::MergePlanningContext { planning_builder, repository };
     for (const auto binding : derived_bindings)
-        state.set(fp::merge_atom_d2p<f::FluentTag, f::DerivedTag>(binding, fluent_to_derived_predicate, merge_context).first);
+        state.set(formalism::planning::merge_atom_d2p<formalism::FluentTag, formalism::DerivedTag>(binding, fluent_to_derived_predicate, merge_context).first);
 }
 }
 }

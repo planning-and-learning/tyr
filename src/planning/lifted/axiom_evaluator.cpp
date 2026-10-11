@@ -48,9 +48,6 @@
 #include <yggdrasil/semantics/equal_to.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 
-namespace d = tyr::datalog;
-namespace f = tyr::formalism;
-
 namespace tyr::planning
 {
 struct AxiomEvaluator<LiftedTag>::Impl
@@ -141,8 +138,8 @@ void AxiomEvaluator<LiftedTag>::compute_extended_state(ygg::Builder<State<Lifted
 
     insert_unextended_state(state_builder, *m_impl->definition->task->get_repository(), program.get_translation_context().p2d, workspace);
 
-    auto ctx = d::ProgramExecutionContext<LiftedTag>::from_reset_workspace(workspace);
-    d::execute_model(ctx, *evaluator.execution_context);
+    auto ctx = datalog::ProgramExecutionContext<LiftedTag>::from_reset_workspace(workspace);
+    datalog::execute_model(ctx, *evaluator.execution_context);
 
     read_derived_atoms_from_fact_set(state_builder,
                                      *m_impl->definition->task->get_repository(),
@@ -160,11 +157,11 @@ void AxiomEvaluator<LiftedTag>::print_summary(size_t verbosity) const
     std::cout << "[Axiom evaluator] Summary" << std::endl;
     fmt::print(std::cout, "{}\n", workspace.statistics);
     auto axiom_evaluator_rule_statistics = std::vector<datalog::RuleStatistics> {};
-    for (const auto& ws_rule : workspace.template get_rules<f::PredicateTag>())
+    for (const auto& ws_rule : workspace.template get_rules<formalism::PredicateTag>())
         axiom_evaluator_rule_statistics.push_back(ws_rule->common.statistics);
     fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_statistics(axiom_evaluator_rule_statistics));
     auto axiom_evaluator_rule_worker_statistics = std::vector<datalog::RuleWorkerStatistics> {};
-    for (const auto& ws_rule : workspace.template get_rules<f::PredicateTag>())
+    for (const auto& ws_rule : workspace.template get_rules<formalism::PredicateTag>())
         for (const auto& worker : ws_rule->worker)
             axiom_evaluator_rule_worker_statistics.push_back(worker.solve.statistics);
     fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_worker_statistics(axiom_evaluator_rule_worker_statistics));

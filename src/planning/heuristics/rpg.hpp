@@ -80,8 +80,7 @@ inline formalism::planning::ActionBindingView to_action_binding(formalism::plann
 template<TaskKind Kind, typename Workspace>
 void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, formalism::planning::ConjunctiveConditionView<GroundTag> source_goal)
 {
-    namespace fd = formalism::datalog;
-    auto& destination = [&]() -> fd::Repository&
+    auto& destination = [&]() -> formalism::datalog::Repository&
     {
         if constexpr (std::same_as<Kind, GroundTag>)
             return definition.rpg_program.get_datalog_program().get_program_repository();
@@ -89,7 +88,7 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, for
             return workspace.workspace_repository;
     }();
     auto merge_context = formalism::planning::MergeDatalogContext { workspace.datalog_builder, destination };
-    auto condition = fd::checkout<fd::ConjunctiveCondition<GroundTag>>(merge_context.builder);
+    auto condition = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<GroundTag>>(merge_context.builder);
 
     const auto translate_atom = [&](const auto atom)
     {
@@ -106,16 +105,16 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, for
         if (!atom)
             continue;
 
-        auto literal = fd::checkout<fd::Literal<GroundTag, formalism::FluentTag>>(merge_context.builder);
+        auto literal = formalism::datalog::checkout<formalism::datalog::Literal<GroundTag, formalism::FluentTag>>(merge_context.builder);
         literal->atom = translate_atom(*atom).get_index();
         literal->polarity = true;
-        condition->fluent_literals.push_back(fd::insert(merge_context.destination, *literal).first.get_index());
+        condition->fluent_literals.push_back(formalism::datalog::insert(merge_context.destination, *literal).first.get_index());
     }
 
     for (const auto numeric_constraint : source_goal.get_numeric_constraints())
         condition->numeric_constraints.push_back(formalism::planning::merge_p2d(numeric_constraint, merge_context));
 
-    workspace.tp.set_goals(fd::insert(merge_context.destination, *condition).first);
+    workspace.tp.set_goals(formalism::datalog::insert(merge_context.destination, *condition).first);
 }
 
 template<typename Derived,

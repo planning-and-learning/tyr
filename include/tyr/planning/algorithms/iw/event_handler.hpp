@@ -32,8 +32,6 @@ template<TaskKind Kind>
 class EventHandler
 {
 public:
-    using StatisticsType = Statistics<Kind>;
-
     virtual ~EventHandler() = default;
     virtual void on_start_search(ygg::uint_t max_arity) = 0;
     virtual void on_start_arity(ygg::uint_t arity) = 0;

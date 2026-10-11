@@ -35,22 +35,21 @@
 #include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>
 
-namespace fp = tyr::formalism::planning;
-namespace p = tyr::planning;
 using tyr::GroundTag;
 using tyr::LiftedTag;
 
 namespace
 {
-using Tree = p::match_tree::MatchTree<fp::Action<GroundTag>>;
-using Forest = ygg::UnorderedMap<fp::ActionView<LiftedTag>, p::match_tree::MatchTreePtr<fp::Action<GroundTag>>>;
+using Tree = tyr::planning::match_tree::MatchTree<tyr::formalism::planning::Action<GroundTag>>;
+using Forest =
+    ygg::UnorderedMap<tyr::formalism::planning::ActionView<LiftedTag>, tyr::planning::match_tree::MatchTreePtr<tyr::formalism::planning::Action<GroundTag>>>;
 
 struct PreparedCase
 {
-    p::TaskPtr<GroundTag> task;
-    p::match_tree::MatchTreePtr<fp::Action<GroundTag>> tree;
+    tyr::planning::TaskPtr<GroundTag> task;
+    tyr::planning::match_tree::MatchTreePtr<tyr::formalism::planning::Action<GroundTag>> tree;
     Forest forest;
-    p::SuccessorGeneratorPtr<GroundTag> generator;
+    tyr::planning::SuccessorGeneratorPtr<GroundTag> generator;
 };
 
 struct BenchmarkCase
@@ -59,9 +58,9 @@ struct BenchmarkCase
     std::shared_ptr<PreparedCase> prepared = std::make_shared<PreparedCase>();
 };
 
-Forest make_forest(const p::Task<GroundTag>& task)
+Forest make_forest(const tyr::planning::Task<GroundTag>& task)
 {
-    auto groups = ygg::UnorderedMap<fp::ActionView<LiftedTag>, fp::ActionViewList<GroundTag>> {};
+    auto groups = ygg::UnorderedMap<tyr::formalism::planning::ActionView<LiftedTag>, tyr::formalism::planning::ActionViewList<GroundTag>> {};
     for (const auto schema : task.get_task().get_domain().get_actions())
         groups.try_emplace(schema);
     for (const auto action : task.get_task().get_ground_actions())
@@ -72,7 +71,10 @@ Forest make_forest(const p::Task<GroundTag>& task)
     return forest;
 }
 
-void generate_forest(Forest& forest, const p::StateContext<GroundTag>& context, fp::ActionViewList<GroundTag>& scratch, fp::ActionViewList<GroundTag>& out)
+void generate_forest(Forest& forest,
+                     const tyr::planning::StateContext<GroundTag>& context,
+                     tyr::formalism::planning::ActionViewList<GroundTag>& scratch,
+                     tyr::formalism::planning::ActionViewList<GroundTag>& out)
 {
     out.clear();
     for (auto& [schema, tree] : forest)
@@ -99,14 +101,16 @@ try
     auto& prepared = *benchmark_case.prepared;
     if (!prepared.task)
     {
-        auto lifted_task = p::Task<LiftedTag>::create(fp::Parser(benchmark_case.paths.domain).parse_task(benchmark_case.paths.task));
+        auto lifted_task =
+            tyr::planning::Task<LiftedTag>::create(tyr::formalism::planning::Parser(benchmark_case.paths.domain).parse_task(benchmark_case.paths.task));
         prepared.task = lifted_task->instantiate_ground_task(*execution_context).task;
         if (prepared.task)
         {
             const auto actions = prepared.task->get_task().get_ground_actions();
-            prepared.tree = Tree::create(fp::ActionViewList<GroundTag>(actions.begin(), actions.end()), prepared.task->get_task().get_context());
+            prepared.tree =
+                Tree::create(tyr::formalism::planning::ActionViewList<GroundTag>(actions.begin(), actions.end()), prepared.task->get_task().get_context());
             prepared.forest = make_forest(*prepared.task);
-            prepared.generator = p::SuccessorGeneratorFactory<GroundTag>().create(prepared.task, execution_context);
+            prepared.generator = tyr::planning::SuccessorGeneratorFactory<GroundTag>().create(prepared.task, execution_context);
         }
     }
     auto task = prepared.task;
@@ -116,19 +120,19 @@ try
         return;
     }
     const auto actions = task->get_task().get_ground_actions();
-    const auto all_actions = fp::ActionViewList<GroundTag>(actions.begin(), actions.end());
+    const auto all_actions = tyr::formalism::planning::ActionViewList<GroundTag>(actions.begin(), actions.end());
     auto tree = prepared.tree->make_worker();
     auto forest = Forest {};
     for (const auto& [schema, prototype] : prepared.forest)
         forest.emplace(schema, prototype->make_worker());
-    auto evaluator = p::AxiomEvaluatorFactory<GroundTag>().create(task, execution_context);
-    auto repository = p::StateRepositoryFactory<GroundTag>().create(task);
+    auto evaluator = tyr::planning::AxiomEvaluatorFactory<GroundTag>().create(task, execution_context);
+    auto repository = tyr::planning::StateRepositoryFactory<GroundTag>().create(task);
     auto generator = prepared.generator->make_worker(execution_context);
     const auto node = generator->get_initial_node(*repository, *evaluator);
-    const auto context = p::StateContext<GroundTag>(*task, node.get_state().get_state_builder(), node.get_metric());
-    auto applicable = fp::ActionViewList<GroundTag> {};
-    auto scratch = fp::ActionViewList<GroundTag> {};
-    auto expected = fp::ActionViewList<GroundTag> {};
+    const auto context = tyr::planning::StateContext<GroundTag>(*task, node.get_state().get_state_builder(), node.get_metric());
+    auto applicable = tyr::formalism::planning::ActionViewList<GroundTag> {};
+    auto scratch = tyr::formalism::planning::ActionViewList<GroundTag> {};
+    auto expected = tyr::formalism::planning::ActionViewList<GroundTag> {};
     tree->generate(context, expected);
     generate_forest(forest, context, scratch, applicable);
     const auto by_index = [](auto lhs, auto rhs) { return lhs.get_index() < rhs.get_index(); };
@@ -156,9 +160,9 @@ try
     if (expected != applicable)
         throw std::runtime_error("Selected schema match tree disagrees with global filtering.");
 
-    auto bindings = std::vector<fp::ActionBindingView> {};
-    auto successors = p::LabeledNodeList<GroundTag> {};
-    auto executor = p::ActionExecutor {};
+    auto bindings = std::vector<tyr::formalism::planning::ActionBindingView> {};
+    auto successors = tyr::planning::LabeledNodeList<GroundTag> {};
+    auto executor = tyr::planning::ActionExecutor {};
     const auto generate = [&]
     {
         if constexpr (operation == Operation::BUILD)

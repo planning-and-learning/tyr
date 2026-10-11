@@ -43,10 +43,8 @@ template<::tyr::TaskKind T, typename C>
 const C& get_canonical_context(const ygg::Data<::tyr::formalism::planning::FunctionExpression<T>>& element, const C& context) noexcept
 {
     return std::visit(
-        [&](const auto& arg) -> decltype(auto)
+        [&]<typename Alternative>(const Alternative& arg) -> decltype(auto)
         {
-            using Alternative = std::decay_t<decltype(arg)>;
-
             if constexpr (std::is_same_v<Alternative, ygg::float_t>)
                 return context.get_root();
             else

@@ -30,6 +30,7 @@ namespace
 template<typename Relation>
 void bind_binding_data(nb::module_& m, const char* name)
 {
+    using namespace nb::literals;
     using V = ygg::Data<RelationBinding<Relation>>;
     auto cls = nb::class_<V>(m, name).def(nb::init<ygg::View<ygg::Index<Relation>, Repository>, const ObjectViewList&>(), "relation"_a, "objects"_a);
     ygg::add_print(cls);

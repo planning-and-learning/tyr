@@ -19,16 +19,14 @@
 
 #include <filesystem>
 
-namespace p = tyr::planning;
-
 namespace tyr::tests
 {
 struct SiwExpectation
 {
-    std::optional<p::SearchStatus> status;
+    std::optional<tyr::planning::SearchStatus> status;
     std::optional<PlanStatistics> plan;
     std::optional<ygg::uint_t> maximum_effective_width;
-    std::optional<p::ProgressStatistics::Snapshot> counters;
+    std::optional<tyr::planning::ProgressStatistics::Snapshot> counters;
 };
 
 struct SiwCase
@@ -80,20 +78,21 @@ std::vector<SiwCase> load_cases()
 void check_expectation(const SiwExpectation& expectation, const SiwCase& test_case)
 {
     auto context = create_search_context<StatisticsTaskKind>(test_case.domain_file, test_case.task_file);
-    auto brfs_solver = p::brfs::Solver<StatisticsTaskKind> { context.task,
-                                                             context.state_repository,
-                                                             context.axiom_evaluator,
-                                                             context.successor_generator,
-                                                             p::brfs::Options<StatisticsTaskKind> {} };
-    brfs_solver.options.event_handler = p::brfs::DefaultEventHandler<StatisticsTaskKind>::create();
+    auto brfs_solver = tyr::planning::brfs::Solver<StatisticsTaskKind> { context.task,
+                                                                         context.state_repository,
+                                                                         context.axiom_evaluator,
+                                                                         context.successor_generator,
+                                                                         tyr::planning::brfs::Options<StatisticsTaskKind> {} };
+    brfs_solver.options.event_handler = tyr::planning::brfs::DefaultEventHandler<StatisticsTaskKind>::create();
 
-    auto iw_solver = p::iw::Solver<StatisticsTaskKind> { std::move(brfs_solver), test_case.max_arity, p::iw::Options<StatisticsTaskKind> {} };
-    const auto event_handler = p::siw::DefaultEventHandler<StatisticsTaskKind>::create();
+    auto iw_solver =
+        tyr::planning::iw::Solver<StatisticsTaskKind> { std::move(brfs_solver), test_case.max_arity, tyr::planning::iw::Options<StatisticsTaskKind> {} };
+    const auto event_handler = tyr::planning::siw::DefaultEventHandler<StatisticsTaskKind>::create();
 
-    auto options = p::siw::Options<StatisticsTaskKind> {};
+    auto options = tyr::planning::siw::Options<StatisticsTaskKind> {};
     options.event_handler = event_handler;
 
-    const auto result = p::siw::find_solution(iw_solver, options);
+    const auto result = tyr::planning::siw::find_solution(iw_solver, options);
 
     const auto maximum_effective_width = event_handler->get_statistics().get_maximum_effective_width();
     const auto average_effective_width = event_handler->get_statistics().get_average_effective_width();

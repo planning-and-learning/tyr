@@ -60,8 +60,6 @@ SearchResult<Kind> find_solution(brfs::Solver<Kind>& brfs_solver, ygg::uint_t ma
 template<TaskKind Kind>
 struct Solver
 {
-    using EventHandlerType = EventHandler<Kind>;
-
     brfs::Solver<Kind> brfs_solver;
     ygg::uint_t max_arity = MaxArity;
     Options<Kind> options {};
@@ -75,7 +73,6 @@ struct Solver
 
     SearchResult<Kind> solve() { return find_solution(brfs_solver, max_arity, options); }
 };
-
 }
 
 #endif

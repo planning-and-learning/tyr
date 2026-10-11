@@ -26,7 +26,6 @@
 #include <mutex>
 #include <optional>
 #include <stdexcept>
-#include <tuple>
 
 namespace tyr::planning::iw
 {
@@ -84,7 +83,7 @@ private:
         {
             const auto lock = lock_if_shared();
             if (!identity)
-                identity = state.identifying_members();
+                identity = state.pack();
             return matches_unlocked(state);
         }
 
@@ -106,14 +105,13 @@ private:
             return lock;
         }
 
-        bool matches_unlocked(const StateView<Kind>& state) const { return *identity == state.identifying_members(); }
+        bool matches_unlocked(const StateView<Kind>& state) const { return *identity == state.pack(); }
 
         // Justification: protects the one-time state-identity publication and subsequent reads shared by arity-zero workers; without it, workers could
         // initialize different roots or race while observing the root identity.
         mutable std::mutex mutex;
         mutable bool thread_safe { false };
-        using Identity = std::tuple<ygg::Index<State<Kind>>, ygg::uint_t>;
-        std::optional<Identity> identity;
+        std::optional<PackedStateView<Kind>> identity;
     };
 
     NoveltyPruningStrategy(ygg::uint_t max_arity, std::shared_ptr<SharedRootState> root_state, DynamicNoveltyTable<MaxArity> novelty_table) :

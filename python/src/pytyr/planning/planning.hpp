@@ -37,8 +37,6 @@ namespace tyr::planning
 {
 using ygg::bind_index;
 
-namespace fp = tyr::formalism::planning;
-
 template<typename Range, typename Value>
 class OwningIterator
 {
@@ -108,92 +106,98 @@ void bind_packed_state(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_state(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = StateView<Kind>;
 
-    auto cls =
-        nb::class_<T>(m, name.c_str())  //
-            .def("get_index", &T::get_index, nb::rv_policy::copy)
-            .def("get_formalism_repository", &T::get_formalism_repository, nb::rv_policy::copy)
-            .def("get_state_repository", &T::get_state_repository, nb::rv_policy::copy)
-            .def("pack", &T::pack)
-            // AccessibleStateConcept
-            .def("test",
-                 nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::StaticTag>>(&T::test, nb::const_),
-                 nb::rv_policy::copy,
-                 "static_atom"_a)
-            .def("test",
-                 nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>(&T::test, nb::const_),
-                 nb::rv_policy::copy,
-                 "fluent_atom"_a)
-            .def("test",
-                 nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>(&T::test, nb::const_),
-                 nb::rv_policy::copy,
-                 "derived_atom"_a)
-            .def("get",
-                 nb::overload_cast<formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag>>(&T::get, nb::const_),
-                 nb::rv_policy::copy,
-                 "static_fterm"_a)
-            .def("get",
-                 nb::overload_cast<formalism::planning::FDRVariableView<formalism::FluentTag>>(&T::get, nb::const_),
-                 nb::rv_policy::copy,
-                 "fluent_variable"_a)
-            .def("get",
-                 nb::overload_cast<formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag>>(&T::get, nb::const_),
-                 nb::rv_policy::copy,
-                 "fluent_fterm"_a)
-            // IterableStateConcept
-            .def(
-                "static_atoms",
-                [](const T& s)
-                {
-                    return make_owning_iterator<fp::AtomView<GroundTag, formalism::StaticTag>>(nb::type<T>(),
-                                                                                               "static atom iterator",
-                                                                                               s.template get_atoms_view<formalism::StaticTag>());
-                },
-                nb::keep_alive<0, 1>())
-            .def(
-                "fluent_facts",
-                [](const T& s)
-                { return make_owning_iterator<fp::FDRFactView<formalism::FluentTag>>(nb::type<T>(), "fluent facts iterator", s.get_fluent_facts_view()); },
-                nb::keep_alive<0, 1>())
-            .def(
-                "fluent_atoms",
-                [](const T& s)
-                {
-                    return make_owning_iterator<fp::AtomView<GroundTag, formalism::FluentTag>>(nb::type<T>(),
-                                                                                               "fluent atom iterator",
-                                                                                               s.template get_atoms_view<formalism::FluentTag>());
-                },
-                nb::keep_alive<0, 1>())
-            .def(
-                "derived_atoms",
-                [](const T& s)
-                {
-                    return make_owning_iterator<fp::AtomView<GroundTag, formalism::DerivedTag>>(nb::type<T>(),
-                                                                                                "derived atom iterator",
-                                                                                                s.template get_atoms_view<formalism::DerivedTag>());
-                },
-                nb::keep_alive<0, 1>())
-            .def(
-                "static_fterm_values",
-                [](const T& s)
-                {
-                    return make_owning_iterator<fp::FunctionTermViewValuePair<GroundTag, formalism::StaticTag>>(
-                        nb::type<T>(),
-                        "static function term value iterator",
-                        s.template get_fterm_values_view<::tyr::formalism::StaticTag>());
-                },
-                nb::keep_alive<0, 1>())
-            .def(
-                "fluent_fterm_values",
-                [](const T& s)
-                {
-                    return make_owning_iterator<fp::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>(
-                        nb::type<T>(),
-                        "fluent function term value iterator",
-                        s.template get_fterm_values_view<::tyr::formalism::FluentTag>());
-                },
-                nb::keep_alive<0, 1>());
+    auto cls = nb::class_<T>(m, name.c_str())  //
+                   .def("get_index", &T::get_index, nb::rv_policy::copy)
+                   .def("get_formalism_repository", &T::get_formalism_repository, nb::rv_policy::copy)
+                   .def("get_state_repository", &T::get_state_repository, nb::rv_policy::copy)
+                   .def("pack", &T::pack)
+                   // AccessibleStateConcept
+                   .def("test",
+                        nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::StaticTag>>(&T::test, nb::const_),
+                        nb::rv_policy::copy,
+                        "static_atom"_a)
+                   .def("test",
+                        nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>(&T::test, nb::const_),
+                        nb::rv_policy::copy,
+                        "fluent_atom"_a)
+                   .def("test",
+                        nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>(&T::test, nb::const_),
+                        nb::rv_policy::copy,
+                        "derived_atom"_a)
+                   .def("get",
+                        nb::overload_cast<formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag>>(&T::get, nb::const_),
+                        nb::rv_policy::copy,
+                        "static_fterm"_a)
+                   .def("get",
+                        nb::overload_cast<formalism::planning::FDRVariableView<formalism::FluentTag>>(&T::get, nb::const_),
+                        nb::rv_policy::copy,
+                        "fluent_variable"_a)
+                   .def("get",
+                        nb::overload_cast<formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag>>(&T::get, nb::const_),
+                        nb::rv_policy::copy,
+                        "fluent_fterm"_a)
+                   // IterableStateConcept
+                   .def(
+                       "static_atoms",
+                       [](const T& s)
+                       {
+                           return make_owning_iterator<formalism::planning::AtomView<GroundTag, formalism::StaticTag>>(
+                               nb::type<T>(),
+                               "static atom iterator",
+                               s.template get_atoms_view<formalism::StaticTag>());
+                       },
+                       nb::keep_alive<0, 1>())
+                   .def(
+                       "fluent_facts",
+                       [](const T& s) {
+                           return make_owning_iterator<formalism::planning::FDRFactView<formalism::FluentTag>>(nb::type<T>(),
+                                                                                                               "fluent facts iterator",
+                                                                                                               s.get_fluent_facts_view());
+                       },
+                       nb::keep_alive<0, 1>())
+                   .def(
+                       "fluent_atoms",
+                       [](const T& s)
+                       {
+                           return make_owning_iterator<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>(
+                               nb::type<T>(),
+                               "fluent atom iterator",
+                               s.template get_atoms_view<formalism::FluentTag>());
+                       },
+                       nb::keep_alive<0, 1>())
+                   .def(
+                       "derived_atoms",
+                       [](const T& s)
+                       {
+                           return make_owning_iterator<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>(
+                               nb::type<T>(),
+                               "derived atom iterator",
+                               s.template get_atoms_view<formalism::DerivedTag>());
+                       },
+                       nb::keep_alive<0, 1>())
+                   .def(
+                       "static_fterm_values",
+                       [](const T& s)
+                       {
+                           return make_owning_iterator<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::StaticTag>>(
+                               nb::type<T>(),
+                               "static function term value iterator",
+                               s.template get_fterm_values_view<::tyr::formalism::StaticTag>());
+                       },
+                       nb::keep_alive<0, 1>())
+                   .def(
+                       "fluent_fterm_values",
+                       [](const T& s)
+                       {
+                           return make_owning_iterator<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>(
+                               nb::type<T>(),
+                               "fluent function term value iterator",
+                               s.template get_fterm_values_view<::tyr::formalism::FluentTag>());
+                       },
+                       nb::keep_alive<0, 1>());
     ygg::add_print(cls);
     ygg::add_comparison(cls);
     ygg::add_hash(cls);
@@ -202,20 +206,22 @@ void bind_state(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_state_builder(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = ygg::Builder<State<Kind>>;
 
     nb::class_<T>(m, name.c_str(), "Owning read-only state snapshot that remains valid after the callback returns.")
-        .def("get", nb::overload_cast<fp::FDRVariableView<formalism::FluentTag>>(&T::get, nb::const_), "fluent_variable"_a)
+        .def("get", nb::overload_cast<formalism::planning::FDRVariableView<formalism::FluentTag>>(&T::get, nb::const_), "fluent_variable"_a)
         .def(
             "get",
-            [](const T& state, fp::FunctionTermView<GroundTag, formalism::FluentTag> fterm) { return state.get(fterm.get_index()); },
+            [](const T& state, formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag> fterm) { return state.get(fterm.get_index()); },
             "fluent_fterm"_a)
-        .def("test", nb::overload_cast<fp::AtomView<GroundTag, formalism::DerivedTag>>(&T::test, nb::const_), "derived_atom"_a);
+        .def("test", nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>(&T::test, nb::const_), "derived_atom"_a);
 }
 
 template<TaskKind Kind>
 void bind_node(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = Node<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())
@@ -231,6 +237,7 @@ void bind_node(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_packed_node(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = PackedNode<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())
@@ -246,10 +253,11 @@ void bind_packed_node(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_labeled_node(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = LabeledNode<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def(nb::init<fp::ActionBindingView, Node<Kind>>(), "label"_a, "node"_a)
+                   .def(nb::init<formalism::planning::ActionBindingView, Node<Kind>>(), "label"_a, "node"_a)
                    .def_ro("label", &T::label, nb::rv_policy::reference_internal)
                    .def_ro("node", &T::node, nb::rv_policy::copy)
                    .def("pack", &T::pack);
@@ -259,10 +267,11 @@ void bind_labeled_node(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_packed_labeled_node(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = PackedLabeledNode<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def(nb::init<fp::ActionBindingView, PackedNode<Kind>>(), "label"_a, "node"_a)
+                   .def(nb::init<formalism::planning::ActionBindingView, PackedNode<Kind>>(), "label"_a, "node"_a)
                    .def_ro("label", &T::label, nb::rv_policy::reference_internal)
                    .def_ro("node", &T::node, nb::rv_policy::copy)
                    .def("unpack", &T::unpack);
@@ -272,6 +281,7 @@ void bind_packed_labeled_node(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_plan(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = Plan<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())  //
@@ -289,6 +299,7 @@ void bind_plan(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_packed_plan(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = PackedPlan<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())  //
@@ -314,6 +325,7 @@ void bind_axiom_evaluator(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_state_repository(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = StateRepository<Kind>;
 
     nb::class_<T>(m, name.c_str())  //
@@ -346,6 +358,7 @@ void bind_state_repository(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_successor_generator(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = SuccessorGenerator<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str());
@@ -362,7 +375,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             "node"_a,
             nb::call_guard<nb::gil_scoped_release>())
         .def("get_applicable_action_bindings",
-             nb::overload_cast<const Node<Kind>&, fp::ActionView<LiftedTag>>(&T::template get_applicable_action_bindings<StateView<Kind>>),
+             nb::overload_cast<const Node<Kind>&, formalism::planning::ActionView<LiftedTag>>(&T::template get_applicable_action_bindings<StateView<Kind>>),
              nb::rv_policy::move,
              "node"_a,
              "action"_a,
@@ -371,14 +384,14 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
     cls.def("ground_action", &T::ground_action, "binding"_a);
 
     cls.def("get_successor_node",
-            nb::overload_cast<const Node<Kind>&, fp::ActionBindingView, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
+            nb::overload_cast<const Node<Kind>&, formalism::planning::ActionBindingView, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
                 &T::template get_successor_node<StateView<Kind>>),
             "node"_a,
             "binding"_a,
             "state_repository"_a,
             "axiom_evaluator"_a)
         .def("get_successor_node",
-             nb::overload_cast<const Node<Kind>&, fp::ActionView<GroundTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
+             nb::overload_cast<const Node<Kind>&, formalism::planning::ActionView<GroundTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
                  &T::template get_successor_node<StateView<Kind>>),
              "node"_a,
              "action"_a,
@@ -393,7 +406,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             "axiom_evaluator"_a,
             nb::call_guard<nb::gil_scoped_release>())
         .def("get_successor_nodes",
-             nb::overload_cast<const Node<Kind>&, fp::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
+             nb::overload_cast<const Node<Kind>&, formalism::planning::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
                  &T::template get_successor_nodes<StateView<Kind>>),
              nb::rv_policy::move,
              "node"_a,
@@ -410,7 +423,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             "axiom_evaluator"_a,
             nb::call_guard<nb::gil_scoped_release>())
         .def("get_labeled_successor_nodes",
-             nb::overload_cast<const Node<Kind>&, fp::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
+             nb::overload_cast<const Node<Kind>&, formalism::planning::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
                  &T::template get_labeled_successor_nodes<StateView<Kind>>),
              nb::rv_policy::move,
              "node"_a,
@@ -420,14 +433,14 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
              nb::call_guard<nb::gil_scoped_release>());
 
     cls.def("get_packed_successor_node",
-            nb::overload_cast<const Node<Kind>&, fp::ActionBindingView, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
+            nb::overload_cast<const Node<Kind>&, formalism::planning::ActionBindingView, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
                 &T::template get_packed_successor_node<StateView<Kind>>),
             "node"_a,
             "binding"_a,
             "state_repository"_a,
             "axiom_evaluator"_a)
         .def("get_packed_successor_node",
-             nb::overload_cast<const Node<Kind>&, fp::ActionView<GroundTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
+             nb::overload_cast<const Node<Kind>&, formalism::planning::ActionView<GroundTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
                  &T::template get_packed_successor_node<StateView<Kind>>),
              "node"_a,
              "action"_a,
@@ -442,7 +455,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             "axiom_evaluator"_a,
             nb::call_guard<nb::gil_scoped_release>())
         .def("get_packed_successor_nodes",
-             nb::overload_cast<const Node<Kind>&, fp::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
+             nb::overload_cast<const Node<Kind>&, formalism::planning::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
                  &T::template get_packed_successor_nodes<StateView<Kind>>),
              nb::rv_policy::move,
              "node"_a,
@@ -460,7 +473,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             "axiom_evaluator"_a,
             nb::call_guard<nb::gil_scoped_release>())
         .def("get_packed_labeled_successor_nodes",
-             nb::overload_cast<const Node<Kind>&, fp::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
+             nb::overload_cast<const Node<Kind>&, formalism::planning::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
                  &T::template get_packed_labeled_successor_nodes<StateView<Kind>>),
              nb::rv_policy::move,
              "node"_a,
@@ -479,7 +492,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             nb::call_guard<nb::gil_scoped_release>())
         .def("for_each_successor_node",
              nb::overload_cast<const Node<Kind>&,
-                               fp::ActionView<LiftedTag>,
+                               formalism::planning::ActionView<LiftedTag>,
                                StateRepository<Kind>&,
                                AxiomEvaluator<Kind>&,
                                const std::function<bool(Node<Kind>)>&>(&T::template for_each_successor_node<StateView<Kind>>),
@@ -500,7 +513,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             nb::call_guard<nb::gil_scoped_release>())
         .def("for_each_labeled_successor_node",
              nb::overload_cast<const Node<Kind>&,
-                               fp::ActionView<LiftedTag>,
+                               formalism::planning::ActionView<LiftedTag>,
                                StateRepository<Kind>&,
                                AxiomEvaluator<Kind>&,
                                const std::function<bool(LabeledNode<Kind>)>&>(&T::template for_each_labeled_successor_node<StateView<Kind>>),
@@ -518,6 +531,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_axiom_evaluator_factory(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = AxiomEvaluatorFactory<Kind>;
 
     nb::class_<T>(m, name.c_str())  //
@@ -528,6 +542,7 @@ void bind_axiom_evaluator_factory(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_state_repository_factory(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = StateRepositoryFactory<Kind>;
 
     nb::class_<T>(m, name.c_str())  //
@@ -539,6 +554,7 @@ void bind_state_repository_factory(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_successor_generator_factory(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = SuccessorGeneratorFactory<Kind>;
 
     nb::class_<T>(m, name.c_str())  //
@@ -584,6 +600,7 @@ public:
 template<TaskKind Kind>
 void bind_goal_strategy(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = GoalStrategy<Kind>;
 
     nb::class_<T, PyGoalStrategy<Kind>>(m, name.c_str())  //
@@ -599,11 +616,12 @@ void bind_goal_strategy(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_conjunctive_goal_strategy(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = ConjunctiveGoalStrategy<Kind>;
 
     nb::class_<T, GoalStrategy<Kind>>(m, name.c_str())  //
         .def(nb::init<const Task<Kind>&>(), "task"_a)
-        .def(nb::init<fp::ConjunctiveConditionView<GroundTag>>(), "goal"_a)
+        .def(nb::init<formalism::planning::ConjunctiveConditionView<GroundTag>>(), "goal"_a)
         .def("set_goal", &T::set_goal, "goal"_a);
 }
 
@@ -637,6 +655,7 @@ public:
 template<TaskKind Kind>
 void bind_pruning_strategy(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = PruningStrategy<Kind>;
 
     nb::class_<T, PyPruningStrategy<Kind>>(m, name.c_str())  //
@@ -665,12 +684,13 @@ public:
 
     HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override { NB_OVERRIDE_PURE(make_worker, execution_context); }
 
-    const ygg::UnorderedSet<fp::ActionBindingView>& get_preferred_actions() override { return Base::get_preferred_actions(); }
+    const ygg::UnorderedSet<formalism::planning::ActionBindingView>& get_preferred_actions() override { return Base::get_preferred_actions(); }
 };
 
 template<TaskKind Kind>
 void bind_heuristic(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = Heuristic<Kind>;
 
     nb::class_<T, PyHeuristic<Kind>>(m, name.c_str())  //
@@ -697,6 +717,7 @@ void bind_blind_heuristic(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_goal_count_heuristic(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = GoalCountHeuristic<Kind>;
 
     nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
@@ -707,6 +728,7 @@ void bind_goal_count_heuristic(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_rpg_max_heuristic(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = MaxRPGHeuristic<Kind>;
 
     nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
@@ -721,6 +743,7 @@ void bind_rpg_max_heuristic(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_rpg_add_heuristic(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = AddRPGHeuristic<Kind>;
 
     nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
@@ -735,6 +758,7 @@ void bind_rpg_add_heuristic(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_rpg_ff_heuristic(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = FFRPGHeuristic<Kind>;
 
     nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
@@ -749,6 +773,7 @@ void bind_rpg_ff_heuristic(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_lmcut_heuristic(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = LMCutHeuristic<Kind>;
 
     nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //

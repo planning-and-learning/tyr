@@ -41,10 +41,13 @@ class CostBuckets
 public:
     using PredicateKey = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
     using FunctionKey = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
+
+private:
     using Interval = ygg::ClosedInterval<ygg::float_t>;
     using PredicateBucket = ygg::UnorderedSet<PredicateKey>;
     using FunctionBucket = ygg::UnorderedMap<FunctionKey, Interval>;
 
+public:
     struct Bucket
     {
         PredicateBucket predicate;

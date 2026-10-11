@@ -29,8 +29,6 @@
 #include <string>
 #include <vector>
 
-namespace fp = tyr::formalism::planning;
-namespace p = tyr::planning;
 #if defined(TYR_PROFILE_GROUND)
 using Kind = tyr::GroundTag;
 #else
@@ -41,9 +39,9 @@ namespace
 {
 using tyr::profiling::BenchmarkCase;
 
-p::TaskPtr<Kind> create_task(const BenchmarkCase& benchmark_case, ygg::ExecutionContext& execution_context)
+tyr::planning::TaskPtr<Kind> create_task(const BenchmarkCase& benchmark_case, ygg::ExecutionContext& execution_context)
 {
-    auto lifted = p::Task<tyr::LiftedTag>::create(fp::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
+    auto lifted = tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::planning::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
 #if defined(TYR_PROFILE_GROUND)
     auto ground = lifted->instantiate_ground_task(execution_context).task;
     if (!ground)
@@ -60,11 +58,11 @@ try
 {
     auto execution_context = ygg::ExecutionContext::create(1);
     auto task = create_task(benchmark_case, *execution_context);
-    auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto state_repository = p::StateRepositoryFactory<Kind>().create(task);
-    auto successor_generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto state_repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
+    auto successor_generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
     const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
-    auto successors = std::vector<p::LabeledNode<Kind>>();
+    auto successors = std::vector<tyr::planning::LabeledNode<Kind>>();
 
     for (auto _ : state)
     {
@@ -85,11 +83,11 @@ try
 {
     auto execution_context = ygg::ExecutionContext::create(1);
     auto task = create_task(benchmark_case, *execution_context);
-    auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto state_repository = p::StateRepositoryFactory<Kind>().create(task);
-    auto successor_generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto state_repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
+    auto successor_generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
     const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
-    auto bindings = std::vector<fp::ActionBindingView>();
+    auto bindings = std::vector<tyr::formalism::planning::ActionBindingView>();
 
     for (auto _ : state)
     {

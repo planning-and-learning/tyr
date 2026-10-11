@@ -31,12 +31,14 @@
 
 namespace ygg
 {
-using namespace ::tyr;
-template<typename Tag, planning::match_tree::Context<Tag> C>
-class View<ygg::Data<planning::match_tree::Node<Tag>>, C> : public ygg::DataViewBase<planning::match_tree::Node<Tag>, C>
+template<typename Tag, ::tyr::planning::match_tree::Context<Tag> C>
+class View<ygg::Data<::tyr::planning::match_tree::Node<Tag>>, C> : public ygg::DataViewBase<::tyr::planning::match_tree::Node<Tag>, C>
 {
 public:
-    View(const ygg::Data<planning::match_tree::Node<Tag>>& handle, const C& context) noexcept : ygg::DataViewBase<planning::match_tree::Node<Tag>, C>(handle, context) {}
+    View(const ygg::Data<::tyr::planning::match_tree::Node<Tag>>& handle, const C& context) noexcept :
+        ygg::DataViewBase<::tyr::planning::match_tree::Node<Tag>, C>(handle, context)
+    {
+    }
 
     auto get_variant() const noexcept { return ygg::make_view(this->get_data().variant, this->get_context()); }
 };

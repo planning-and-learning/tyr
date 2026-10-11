@@ -17,9 +17,6 @@
 
 #include "tyr/datalog/policies/numeric_support.hpp"
 
-namespace fd = tyr::formalism::datalog;
-namespace f = tyr::formalism;
-
 namespace tyr::datalog
 {
 
@@ -30,9 +27,12 @@ NumericSupportSelector::NumericSupportSelector(const FactSets& fact_sets, const 
 {
 }
 
-NumericSupportSelector::Key NumericSupportSelector::fluent_key(fd::FunctionTermView<GroundTag, f::FluentTag> term) const noexcept { return term.get_row(); }
+NumericSupportSelector::Key NumericSupportSelector::fluent_key(formalism::datalog::FunctionTermView<GroundTag, formalism::FluentTag> term) const noexcept
+{
+    return term.get_row();
+}
 
-ygg::ClosedInterval<ygg::float_t> NumericSupportSelector::lookup_static(fd::FunctionTermView<GroundTag, f::StaticTag> term) const
+ygg::ClosedInterval<ygg::float_t> NumericSupportSelector::lookup_static(formalism::datalog::FunctionTermView<GroundTag, formalism::StaticTag> term) const
 {
     return m_fact_sets.static_sets.function[term];
 }

@@ -68,10 +68,11 @@ struct NumericSupport : ygg::comparison::Mixin<NumericSupport>
 template<formalism::RelationKind R = formalism::PredicateTag>
 struct WitnessAnnotation : ygg::comparison::Mixin<WitnessAnnotation<R>>
 {
-    using Relation = R;
+private:
     using Metric = ygg::ClosedInterval<ygg::float_t>;
     using NumericSupports = std::vector<NumericSupport>;
 
+public:
     WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key, Cost cost);
     WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key, Metric metric, Cost cost);
     WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key, Metric metric, Cost cost, NumericSupports numeric_supports);
@@ -151,9 +152,10 @@ void publish_pending_achievers(PendingPredicateAchievers& pending, PendingPredic
 
 struct BaseAnnotation : ygg::comparison::Mixin<BaseAnnotation>
 {
-public:
+private:
     using Metric = ygg::ClosedInterval<ygg::float_t>;
 
+public:
     BaseAnnotation() : m_metric(), m_cost(Cost(0)) {}
     explicit BaseAnnotation(Cost cost) : m_metric(), m_cost(cost) {}
     BaseAnnotation(Metric metric, Cost cost) : m_metric(metric), m_cost(cost) {}
@@ -474,10 +476,17 @@ class NumericIntervalAnnotations
 public:
     static constexpr bool thread_safe = ThreadSafe;
 
+private:
     using Binding = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
     using Entry = NumericIntervalAnnotation;
+
+public:
     using Entries = std::vector<Entry>;
+
+private:
     using Storage = DenseRelationMap<formalism::FunctionTag, Entries, ThreadSafe>;
+
+public:
     using Relation = typename Storage::Relation;
     using Key = typename Storage::Row;
 

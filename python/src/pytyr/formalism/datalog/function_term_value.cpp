@@ -30,6 +30,7 @@ namespace
 template<FactKind F>
 void bind_function_term_value_data(nb::module_& m, const char* name)
 {
+    using namespace nb::literals;
     using V = ygg::Data<FunctionTermValue<GroundTag, F>>;
     auto cls = nb::class_<V>(m, name).def(nb::init<FunctionTermView<GroundTag, F>, ygg::float_t>(), "fterm"_a, "value"_a);
     cls.def(nb::init<ygg::Index<FunctionTerm<GroundTag, F>>, ygg::float_t>(), "fterm"_a, "value"_a);

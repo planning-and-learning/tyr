@@ -59,8 +59,6 @@
 
 namespace tyr::datalog
 {
-namespace f = tyr::formalism;
-namespace fd = tyr::formalism::datalog;
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 class SolverPolicy<LiftedTag, AP, TP, CP>
@@ -83,19 +81,19 @@ public:
     bool generate_updates(CostBuckets& cost_buckets, PendingPredicateAchievers& pending_achievers)
     {
         auto& ctx = stratum();
-        run_active_rules<f::PredicateTag>(ctx);
-        run_active_rules<f::FunctionTag>(ctx);
-        reduce_worker_results<f::PredicateTag>(ctx, cost_buckets, pending_achievers);
-        return reduce_worker_results<f::FunctionTag>(ctx, cost_buckets, pending_achievers);
+        run_active_rules<formalism::PredicateTag>(ctx);
+        run_active_rules<formalism::FunctionTag>(ctx);
+        reduce_worker_results<formalism::PredicateTag>(ctx, cost_buckets, pending_achievers);
+        return reduce_worker_results<formalism::FunctionTag>(ctx, cost_buckets, pending_achievers);
     }
 
     Scheduler<LiftedTag>& scheduler() { return stratum().out().scheduler(); }
 
 private:
-    static void create_nullary_binding(ygg::IndexList<f::Object>& binding) { binding.clear(); }
+    static void create_nullary_binding(ygg::IndexList<formalism::Object>& binding) { binding.clear(); }
 
     static void
-    create_general_binding(std::span<const kckp::Vertex> clique, const StaticConsistencyGraph& consistency_graph, ygg::IndexList<f::Object>& binding)
+    create_general_binding(std::span<const kckp::Vertex> clique, const StaticConsistencyGraph& consistency_graph, ygg::IndexList<formalism::Object>& binding)
     {
         const auto k = clique.size();
         const auto& layout = consistency_graph.get_graph_layout();
@@ -106,22 +104,22 @@ private:
         {
             const auto vertex = clique[p].index;
             assert(layout.vertex_to_partition[vertex] == p);
-            binding[p] = ygg::Index<f::Object>(layout.vertex_labels[vertex]);
+            binding[p] = ygg::Index<formalism::Object>(layout.vertex_labels[vertex]);
         }
     }
 
-    void insert_nullary_update(fd::AtomView<LiftedTag, f::FluentTag> head_atom,
-                               RuleUpdateInput<LiftedTag, f::PredicateTag, AP, CP>& input,
-                               RuleWorkerExecutionContext<f::PredicateTag, AP, TP, CP>& ctx)
+    void insert_nullary_update(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> head_atom,
+                               RuleUpdateInput<LiftedTag, formalism::PredicateTag, AP, CP>& input,
+                               RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& ctx)
     {
         auto& out = ctx.out();
-        const auto head = fd::ground_binding(head_atom, out.ground_context()).first;
+        const auto head = formalism::datalog::ground_binding(head_atom, out.ground_context()).first;
         insert_propositional_update(head, input, out.head_updates(), out.delta_annotations());
     }
 
-    void insert_nullary_update(fd::NumericEffectOperatorView<LiftedTag, f::FluentTag>,
-                               RuleUpdateInput<LiftedTag, f::FunctionTag, AP, CP>& input,
-                               RuleWorkerExecutionContext<f::FunctionTag, AP, TP, CP>& ctx)
+    void insert_nullary_update(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag>,
+                               RuleUpdateInput<LiftedTag, formalism::FunctionTag, AP, CP>& input,
+                               RuleWorkerExecutionContext<formalism::FunctionTag, AP, TP, CP>& ctx)
     {
         [[maybe_unused]] const auto& in = ctx.in();
         auto& out = ctx.out();
@@ -129,7 +127,7 @@ private:
         insert_numeric_update(input, out.head_updates(), out.delta_numeric_annotations());
     }
 
-    template<f::RelationKind R>
+    template<formalism::RelationKind R>
     void generate_nullary_case(RuleExecutionContext<R, AP, TP, CP>& rctx)
     {
         auto wrctx = rctx.get_rule_worker_execution_context();
@@ -153,8 +151,10 @@ private:
         const auto applicability_context = ApplicabilityContext { in.fact_sets(), out.ground_context() };
         auto& applicability_cache = out.applicability_cache();
 
-        const auto statically_applicable = [&]()
-        { return applicability_cache.static_nullary && is_applicable(conflicting_condition.template get_literals<f::StaticTag>(), applicability_context); };
+        const auto statically_applicable = [&]() {
+            return applicability_cache.static_nullary
+                   && is_applicable(conflicting_condition.template get_literals<formalism::StaticTag>(), applicability_context);
+        };
         const auto dynamically_applicable = [&]()
         {
             if (!applicability_cache.dynamic_nullary)
@@ -167,13 +167,14 @@ private:
             insert_nullary_update(in.cws_rule().get_rule().get_head(), input, wrctx);
     }
 
-    [[maybe_unused]] static bool ensure_novel_binding(const ygg::IndexList<f::Object>& binding, ygg::UnorderedSet<ygg::IndexList<f::Object>>& set)
+    [[maybe_unused]] static bool ensure_novel_binding(const ygg::IndexList<formalism::Object>& binding,
+                                                      ygg::UnorderedSet<ygg::IndexList<formalism::Object>>& set)
     {
         return set.insert(binding).second;
     }
 
     template<typename Callback>
-    void for_each_relevant_clique(fd::AtomView<LiftedTag, f::FluentTag>,
+    void for_each_relevant_clique(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag>,
                                   kckp::DeltaKCKP& algorithm,
                                   Callback&& callback,
                                   kckp::Workspace& workspace,
@@ -190,13 +191,16 @@ private:
     }
 
     template<typename Callback>
-    void
-    for_each_relevant_clique(fd::NumericEffectOperatorView<LiftedTag, f::FluentTag>, kckp::DeltaKCKP& algorithm, Callback&& callback, kckp::Workspace& workspace, bool)
+    void for_each_relevant_clique(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag>,
+                                  kckp::DeltaKCKP& algorithm,
+                                  Callback&& callback,
+                                  kckp::Workspace& workspace,
+                                  bool)
     {
         algorithm.for_each_clique(std::forward<Callback>(callback), workspace);
     }
 
-    inline bool require_novel_binding(fd::AtomView<LiftedTag, f::FluentTag>) noexcept
+    inline bool require_novel_binding(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag>) noexcept
     {
 #ifdef TYR_ENABLE_SEMI_NAIVE
         return true;
@@ -205,9 +209,10 @@ private:
 #endif
     }
 
-    inline bool require_novel_binding(fd::NumericEffectOperatorView<LiftedTag, f::FluentTag>) noexcept { return false; }
+    inline bool require_novel_binding(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag>) noexcept { return false; }
 
-    bool try_generate_parallel(fd::AtomView<LiftedTag, f::FluentTag>, [[maybe_unused]] RuleExecutionContext<f::PredicateTag, AP, TP, CP>& rctx)
+    bool try_generate_parallel(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag>,
+                               [[maybe_unused]] RuleExecutionContext<formalism::PredicateTag, AP, TP, CP>& rctx)
     {
 #if defined(TYR_ENABLE_INNER_PARALLELISM) && defined(TYR_ENABLE_SEMI_NAIVE)
         constexpr size_t kNumStripes = 2;
@@ -245,9 +250,13 @@ private:
         return false;
     }
 
-    bool try_generate_parallel(fd::NumericEffectOperatorView<LiftedTag, f::FluentTag>, RuleExecutionContext<f::FunctionTag, AP, TP, CP>&) { return false; }
+    bool try_generate_parallel(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag>,
+                               RuleExecutionContext<formalism::FunctionTag, AP, TP, CP>&)
+    {
+        return false;
+    }
 
-    template<f::RelationKind R>
+    template<formalism::RelationKind R>
     bool is_current_binding_dynamically_applicable(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, const ApplicabilityContext& applicability_context)
     {
         auto& in = wrctx.in();
@@ -257,20 +266,20 @@ private:
         return applicability_cache.dynamic_nullary && is_applicable(in.cws_rule().get_conflicting_overapproximation_condition(), applicability_context);
     }
 
-    bool try_process_predicate_binding(fd::AtomView<LiftedTag, f::FluentTag> head_atom,
-                                       RuleWorkerExecutionContext<f::PredicateTag, AP, TP, CP>& wrctx,
-                                       RuleUpdateInput<LiftedTag, f::PredicateTag, AP, CP>& input,
+    bool try_process_predicate_binding(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> head_atom,
+                                       RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx,
+                                       RuleUpdateInput<LiftedTag, formalism::PredicateTag, AP, CP>& input,
                                        const ApplicabilityContext& applicability_context)
     {
         auto& in = wrctx.in();
         auto& out = wrctx.out();
         auto& ground_context = out.ground_context();
-        auto binding = fd::checkout<f::RelationBinding<f::Predicate<f::FluentTag>>>(ground_context.builder);
+        auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>(ground_context.builder);
         binding->relation = head_atom.get_predicate().get_index();
-        fd::ground(head_atom.get_terms(), ground_context, binding->objects);
-        f::canonicalize(*binding);
+        formalism::datalog::ground(head_atom.get_terms(), ground_context, binding->objects);
+        formalism::canonicalize(*binding);
         auto head = ground_context.destination.find(*binding);
-        if (head && in.fact_sets().template get<f::FluentTag>().predicate.contains(*head))
+        if (head && in.fact_sets().template get<formalism::FluentTag>().predicate.contains(*head))
         {
             if constexpr (AP::records_propositional_achievers)
             {
@@ -286,14 +295,14 @@ private:
             return false;
 
         if (!head)
-            head = fd::insert(ground_context.destination, *binding).first;
+            head = formalism::datalog::insert(ground_context.destination, *binding).first;
         assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
         return insert_propositional_update(*head, input, out.head_updates(), out.delta_annotations()).is_handled();
     }
 
-    void process_clique_head(fd::AtomView<LiftedTag, f::FluentTag> head_atom,
-                             RuleWorkerExecutionContext<f::PredicateTag, AP, TP, CP>& wrctx,
-                             RuleUpdateInput<LiftedTag, f::PredicateTag, AP, CP>& input,
+    void process_clique_head(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> head_atom,
+                             RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx,
+                             RuleUpdateInput<LiftedTag, formalism::PredicateTag, AP, CP>& input,
                              const ApplicabilityContext& applicability_context)
     {
         auto& out = wrctx.out();
@@ -310,9 +319,9 @@ private:
 #endif
     }
 
-    void process_clique_head(fd::NumericEffectOperatorView<LiftedTag, f::FluentTag>,
-                             RuleWorkerExecutionContext<f::FunctionTag, AP, TP, CP>& wrctx,
-                             RuleUpdateInput<LiftedTag, f::FunctionTag, AP, CP>& input,
+    void process_clique_head(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag>,
+                             RuleWorkerExecutionContext<formalism::FunctionTag, AP, TP, CP>& wrctx,
+                             RuleUpdateInput<LiftedTag, formalism::FunctionTag, AP, CP>& input,
                              const ApplicabilityContext& applicability_context)
     {
         [[maybe_unused]] const auto& in = wrctx.in();
@@ -324,7 +333,7 @@ private:
         insert_numeric_update(input, out.head_updates(), out.delta_numeric_annotations());
     }
 
-    template<f::RelationKind R>
+    template<formalism::RelationKind R>
     void process_clique(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, std::span<const kckp::Vertex> clique, [[maybe_unused]] bool require_novel_binding)
     {
         auto& in = wrctx.in();
@@ -350,8 +359,10 @@ private:
         const auto applicability_context = ApplicabilityContext { in.fact_sets(), out.ground_context() };
         auto& applicability_cache = out.applicability_cache();
 
-        const auto statically_applicable = [&]()
-        { return applicability_cache.static_nullary && is_applicable(conflicting_condition.template get_literals<f::StaticTag>(), applicability_context); };
+        const auto statically_applicable = [&]() {
+            return applicability_cache.static_nullary
+                   && is_applicable(conflicting_condition.template get_literals<formalism::StaticTag>(), applicability_context);
+        };
 
         if (!statically_applicable())
             return;
@@ -359,7 +370,7 @@ private:
         process_clique_head(in.cws_rule().get_rule().get_head(), wrctx, input, applicability_context);
     }
 
-    template<f::RelationKind R>
+    template<formalism::RelationKind R>
     void generate_general_case(RuleExecutionContext<R, AP, TP, CP>& rctx, bool enumerate_all)
     {
         auto& rule_out = rctx.out();
@@ -381,7 +392,7 @@ private:
             enumerate_all);
     }
 
-    template<f::RelationKind R>
+    template<formalism::RelationKind R>
     void generate(RuleExecutionContext<R, AP, TP, CP>& rctx, bool enumerate_all)
     {
         const auto arity = rctx.in().cws_rule().get_rule().get_arity();
@@ -392,7 +403,7 @@ private:
             generate_general_case(rctx, enumerate_all);
     }
 
-    void process_pending_rule_bindings(RuleExecutionContext<f::PredicateTag, AP, TP, CP>& rctx)
+    void process_pending_rule_bindings(RuleExecutionContext<formalism::PredicateTag, AP, TP, CP>& rctx)
     {
         for (auto& worker : rctx.out().workers())
         {
@@ -409,7 +420,7 @@ private:
                           {
                               out.ground_context().binding.clear();
                               ygg::extend(pending_binding.get_objects(), out.ground_context().binding);
-                              auto input = make_rule_update_input(RuleInstance<LiftedTag, f::PredicateTag> { in.cws_rule(), out.ground_context() },
+                              auto input = make_rule_update_input(RuleInstance<LiftedTag, formalism::PredicateTag> { in.cws_rule(), out.ground_context() },
                                                                   in.numeric_support_selector(),
                                                                   in.annotations(),
                                                                   out.rule_evaluation_workspace(),
@@ -417,16 +428,16 @@ private:
                                                                   in.annotation_policy(),
                                                                   in.cost_policy());
 
-                              assert(is_applicable(in.cws_rule().get_conflicting_overapproximation_condition().template get_literals<f::StaticTag>(),
+                              assert(is_applicable(in.cws_rule().get_conflicting_overapproximation_condition().template get_literals<formalism::StaticTag>(),
                                                    applicability_context));
                               return try_process_predicate_binding(in.cws_rule().get_rule().get_head(), wrctx, input, applicability_context);
                           });
         }
     }
 
-    void process_pending_rule_bindings(RuleExecutionContext<f::FunctionTag, AP, TP, CP>&) {}
+    void process_pending_rule_bindings(RuleExecutionContext<formalism::FunctionTag, AP, TP, CP>&) {}
 
-    template<f::RelationKind R>
+    template<formalism::RelationKind R>
     /// Parallel phase: recheck pending rule bindings and generate new ground witnesses for all active rules.
     void run_active_rules(StratumExecutionContext<AP, TP, CP>& ctx)
     {
@@ -439,7 +450,7 @@ private:
         const auto process_rule = [&](auto&& rule_index)
         {
             // Numeric effects and state-dependent costs are non-idempotent as the numeric envelope evolves.
-            const auto enumerate_all = std::same_as<R, f::FunctionTag> || rule_scheduler.requires_full_enumeration(rule_index);
+            const auto enumerate_all = std::same_as<R, formalism::FunctionTag> || rule_scheduler.requires_full_enumeration(rule_index);
             auto rctx = ctx.get_rule_execution_context(rule_index);
             auto& rule_out = rctx.out();
 
@@ -455,7 +466,7 @@ private:
 
                 const auto nullary_condition = rctx.in().cws_rule().get_nullary_condition();
                 const auto static_nullary =
-                    is_applicable(nullary_condition.template get_literals<f::StaticTag>(), rctx.get_rule_worker_execution_context().in().fact_sets());
+                    is_applicable(nullary_condition.template get_literals<formalism::StaticTag>(), rctx.get_rule_worker_execution_context().in().fact_sets());
                 for (auto& worker : rule_out.workers())
                     worker.solve.applicability_cache.static_nullary = static_nullary;
             }
@@ -499,7 +510,7 @@ private:
         }
     }
 
-    template<f::RelationKind R>
+    template<formalism::RelationKind R>
     /// Sequential phase: reduce worker annotations and bucket their already-canonical heads by cost.
     bool reduce_worker_results(StratumExecutionContext<AP, TP, CP>& ctx, CostBuckets& cost_buckets, PendingPredicateAchievers& pending_achievers)
     {
@@ -515,7 +526,7 @@ private:
 
             for (auto& worker : ws_rule->worker)
             {
-                if constexpr (std::same_as<R, f::PredicateTag>)
+                if constexpr (std::same_as<R, formalism::PredicateTag>)
                     reduce_predicate_head_updates(worker.iteration.head_updates,
                                                   annotation_policy,
                                                   program_out.facts().fact_sets.predicate,

@@ -29,14 +29,13 @@
 
 namespace ygg
 {
-using namespace ::tyr;
-template<typename Tag, ygg::formalism::SymbolContextFor<planning::match_tree::ElementGeneratorNode<Tag>> C>
-class View<ygg::Index<planning::match_tree::ElementGeneratorNode<Tag>>, C> :
-    public ygg::IndexViewBase<planning::match_tree::ElementGeneratorNode<Tag>, C>
+template<typename Tag, ygg::formalism::SymbolContextFor<::tyr::planning::match_tree::ElementGeneratorNode<Tag>> C>
+class View<ygg::Index<::tyr::planning::match_tree::ElementGeneratorNode<Tag>>, C> :
+    public ygg::IndexViewBase<::tyr::planning::match_tree::ElementGeneratorNode<Tag>, C>
 {
 public:
-    View(ygg::Index<planning::match_tree::ElementGeneratorNode<Tag>> handle, const C& context) noexcept :
-        ygg::IndexViewBase<planning::match_tree::ElementGeneratorNode<Tag>, C>(handle, context)
+    View(ygg::Index<::tyr::planning::match_tree::ElementGeneratorNode<Tag>> handle, const C& context) noexcept :
+        ygg::IndexViewBase<::tyr::planning::match_tree::ElementGeneratorNode<Tag>, C>(handle, context)
     {
     }
 

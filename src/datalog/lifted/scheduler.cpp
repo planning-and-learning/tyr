@@ -27,9 +27,6 @@
 #include <utility>
 #include <yggdrasil/core/config.hpp>
 
-namespace f = tyr::formalism;
-namespace fd = tyr::formalism::datalog;
-
 namespace tyr::datalog
 {
 namespace
@@ -41,10 +38,10 @@ void activate_relation(boost::dynamic_bitset<>& bitset, ygg::Index<Relation> rel
     bitset.set(ygg::uint_t(relation));
 }
 
-template<typename Relation, f::RelationKind R>
+template<typename Relation, formalism::RelationKind R>
 void collect_active_rules(const boost::dynamic_bitset<>& bitset,
                           const ygg::UnorderedMap<ygg::Index<Relation>, analysis::RuleIndexSet<R>>& listeners,
-                          ygg::UnorderedSet<ygg::Index<fd::Rule<LiftedTag, R>>>& active_rules)
+                          ygg::UnorderedSet<ygg::Index<formalism::datalog::Rule<LiftedTag, R>>>& active_rules)
 {
     for (auto i = bitset.find_first(); i != boost::dynamic_bitset<>::npos; i = bitset.find_next(i))
         if (const auto it = listeners.find(ygg::Index<Relation>(i)); it != listeners.end())
@@ -52,10 +49,10 @@ void collect_active_rules(const boost::dynamic_bitset<>& bitset,
 }
 }
 
-template<f::RelationKind R>
+template<formalism::RelationKind R>
 TypedRuleSchedulerStratum<R>::TypedRuleSchedulerStratum(const analysis::TypedRuleStratum<R>& rules,
                                                         const analysis::TypedListenerStratum<R>& listeners,
-                                                        const fd::Repository& context,
+                                                        const formalism::datalog::Repository& context,
                                                         size_t num_fluent_predicates,
                                                         size_t num_fluent_functions) :
     m_rules(rules),
@@ -68,7 +65,7 @@ TypedRuleSchedulerStratum<R>::TypedRuleSchedulerStratum(const analysis::TypedRul
 {
 }
 
-template<f::RelationKind R>
+template<formalism::RelationKind R>
 void TypedRuleSchedulerStratum<R>::activate_all()
 {
     m_active_rules.clear();
@@ -78,33 +75,33 @@ void TypedRuleSchedulerStratum<R>::activate_all()
     rebuild_sorted_active_rules();
 }
 
-template<f::RelationKind R>
+template<formalism::RelationKind R>
 void TypedRuleSchedulerStratum<R>::rebuild_sorted_active_rules()
 {
     m_sorted_active_rules.set(m_active_rules.begin(), m_active_rules.end());
     std::sort(m_sorted_active_rules.begin(), m_sorted_active_rules.end());
 }
 
-template<f::RelationKind R>
+template<formalism::RelationKind R>
 void TypedRuleSchedulerStratum<R>::on_start_iteration() noexcept
 {
     m_active_predicates.reset();
     m_active_functions.reset();
 }
 
-template<f::RelationKind R>
-void TypedRuleSchedulerStratum<R>::on_generate(ygg::Index<f::Predicate<f::FluentTag>> predicate)
+template<formalism::RelationKind R>
+void TypedRuleSchedulerStratum<R>::on_generate(ygg::Index<formalism::Predicate<formalism::FluentTag>> predicate)
 {
     activate_relation(m_active_predicates, predicate);
 }
 
-template<f::RelationKind R>
-void TypedRuleSchedulerStratum<R>::on_generate(ygg::Index<f::Function<f::FluentTag>> function)
+template<formalism::RelationKind R>
+void TypedRuleSchedulerStratum<R>::on_generate(ygg::Index<formalism::Function<formalism::FluentTag>> function)
 {
     activate_relation(m_active_functions, function);
 }
 
-template<f::RelationKind R>
+template<formalism::RelationKind R>
 void TypedRuleSchedulerStratum<R>::on_finish_iteration()
 {
     m_active_rules.clear();
@@ -117,11 +114,11 @@ void TypedRuleSchedulerStratum<R>::on_finish_iteration()
 
 Scheduler<LiftedTag>::Scheduler(const analysis::RuleStratum& rules,
                                 const analysis::ListenerStratum& listeners,
-                                const fd::Repository& context,
+                                const formalism::datalog::Repository& context,
                                 size_t num_fluent_predicates,
                                 size_t num_fluent_functions) :
-    predicate_rules(rules.get<f::PredicateTag>(), listeners.get<f::PredicateTag>(), context, num_fluent_predicates, num_fluent_functions),
-    function_rules(rules.get<f::FunctionTag>(), listeners.get<f::FunctionTag>(), context, num_fluent_predicates, num_fluent_functions)
+    predicate_rules(rules.get<formalism::PredicateTag>(), listeners.get<formalism::PredicateTag>(), context, num_fluent_predicates, num_fluent_functions),
+    function_rules(rules.get<formalism::FunctionTag>(), listeners.get<formalism::FunctionTag>(), context, num_fluent_predicates, num_fluent_functions)
 {
 }
 
@@ -137,13 +134,13 @@ void Scheduler<LiftedTag>::on_start_iteration() noexcept
     function_rules.on_start_iteration();
 }
 
-void Scheduler<LiftedTag>::activate(ygg::Index<f::Predicate<f::FluentTag>> predicate)
+void Scheduler<LiftedTag>::activate(ygg::Index<formalism::Predicate<formalism::FluentTag>> predicate)
 {
     predicate_rules.on_generate(predicate);
     function_rules.on_generate(predicate);
 }
 
-void Scheduler<LiftedTag>::activate(ygg::Index<f::Function<f::FluentTag>> function)
+void Scheduler<LiftedTag>::activate(ygg::Index<formalism::Function<formalism::FluentTag>> function)
 {
     predicate_rules.on_generate(function);
     function_rules.on_generate(function);
@@ -157,7 +154,7 @@ void Scheduler<LiftedTag>::on_finish_iteration()
 
 std::vector<Scheduler<LiftedTag>> create_schedulers(const analysis::RuleStrata& rules,
                                                     const analysis::ListenerStrata& listeners,
-                                                    const fd::Repository& context,
+                                                    const formalism::datalog::Repository& context,
                                                     size_t num_fluent_predicates,
                                                     size_t num_fluent_functions)
 {
@@ -170,6 +167,6 @@ std::vector<Scheduler<LiftedTag>> create_schedulers(const analysis::RuleStrata& 
     return result;
 }
 
-template class TypedRuleSchedulerStratum<f::PredicateTag>;
-template class TypedRuleSchedulerStratum<f::FunctionTag>;
+template class TypedRuleSchedulerStratum<formalism::PredicateTag>;
+template class TypedRuleSchedulerStratum<formalism::FunctionTag>;
 }

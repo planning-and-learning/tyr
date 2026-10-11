@@ -33,4 +33,13 @@
 #include <yggdrasil/python/type_casters.hpp>
 #include <yggdrasil/serialization/cista_hash.hpp>
 
+namespace tyr::formalism
+{
+template<typename V>
+using VariantT = typename V::Variant;
+
+template<typename V, typename C>
+using ViewVariantT = typename V::template ViewVariant<C>;
+}
+
 #endif

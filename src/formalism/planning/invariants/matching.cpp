@@ -168,10 +168,8 @@ match_effect_cover_against_atom(const Invariant& inv, const MutableAtom<FluentTa
     for (const auto& term : element.terms)
     {
         std::visit(
-            [&](auto&& arg)
+            [&]<typename T>(const T& arg)
             {
-                using T = std::decay_t<decltype(arg)>;
-
                 if constexpr (std::is_same_v<T, ParameterIndex>)
                 {
                     if (is_effect_local_parameter(arg, num_action_variables))

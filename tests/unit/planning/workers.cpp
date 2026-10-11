@@ -31,10 +31,7 @@
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 
-namespace p = tyr::planning;
-namespace fp = tyr::formalism::planning;
-
-static_assert(fp::Repository::thread_safe);
+static_assert(tyr::formalism::planning::Repository::thread_safe);
 
 namespace tyr::tests
 {
@@ -52,14 +49,14 @@ void expect_distinct(const std::shared_ptr<T>& source, const std::shared_ptr<T>&
 }
 
 template<TaskKind Kind>
-void expect_worker_chain(const p::TaskPtr<Kind>& task)
+void expect_worker_chain(const tyr::planning::TaskPtr<Kind>& task)
 {
     ASSERT_TRUE(task->has_axioms());
 
     auto source_context = ygg::ExecutionContext::create(1);
-    auto axiom_factory = p::AxiomEvaluatorFactory<Kind> {};
-    auto state_repository_factory = p::StateRepositoryFactory<Kind> {};
-    auto successor_generator_factory = p::SuccessorGeneratorFactory<Kind> {};
+    auto axiom_factory = tyr::planning::AxiomEvaluatorFactory<Kind> {};
+    auto state_repository_factory = tyr::planning::StateRepositoryFactory<Kind> {};
+    auto successor_generator_factory = tyr::planning::SuccessorGeneratorFactory<Kind> {};
 
     auto source_axiom_evaluator = axiom_factory.create(task, source_context);
     auto source_state_repository = state_repository_factory.create(task);
@@ -161,39 +158,39 @@ void expect_worker_chain(const p::TaskPtr<Kind>& task)
     EXPECT_EQ(source_state_repository->num_states(), worker_state_repository->num_states());
     EXPECT_EQ(source_state_repository->num_states(), nested_state_repository->num_states());
 
-    auto blind = p::BlindHeuristic<Kind>::create();
+    auto blind = tyr::planning::BlindHeuristic<Kind>::create();
     auto blind_worker = blind->make_worker(worker_context);
     EXPECT_NE(blind.get(), blind_worker.get());
     EXPECT_EQ(blind->evaluate(source_initial.get_state()), blind_worker->evaluate(worker_initial.get_state()));
 
-    auto goal_count = p::GoalCountHeuristic<Kind>::create(task);
+    auto goal_count = tyr::planning::GoalCountHeuristic<Kind>::create(task);
     auto goal_count_worker = goal_count->make_worker(worker_context);
     EXPECT_NE(goal_count.get(), goal_count_worker.get());
     EXPECT_EQ(goal_count->evaluate(source_initial.get_state()), goal_count_worker->evaluate(worker_initial.get_state()));
 
-    const auto worker_index = ygg::Index<p::Worker>(0);
+    const auto worker_index = ygg::Index<tyr::planning::Worker>(0);
 
-    auto pruning = p::PruningStrategy<Kind>::create();
+    auto pruning = tyr::planning::PruningStrategy<Kind>::create();
     auto pruning_worker = pruning->make_worker(worker_index);
     ASSERT_NE(pruning_worker, nullptr);
     EXPECT_NE(pruning.get(), pruning_worker.get());
     EXPECT_FALSE(pruning_worker->should_prune_state(worker_initial.get_state()));
 
-    auto conjunctive_goal = p::ConjunctiveGoalStrategy<Kind>::create(*task);
+    auto conjunctive_goal = tyr::planning::ConjunctiveGoalStrategy<Kind>::create(*task);
     auto conjunctive_goal_worker = conjunctive_goal->make_worker(worker_index);
     ASSERT_NE(conjunctive_goal_worker, nullptr);
     EXPECT_NE(conjunctive_goal.get(), conjunctive_goal_worker.get());
     EXPECT_EQ(conjunctive_goal->is_dynamic_goal_satisfied(source_initial.get_state(), source_initial.get_state()),
               conjunctive_goal_worker->is_dynamic_goal_satisfied(worker_initial.get_state(), worker_initial.get_state()));
 
-    auto serialized_goal = p::SerializedGoalStrategy<Kind>::create(*task);
+    auto serialized_goal = tyr::planning::SerializedGoalStrategy<Kind>::create(*task);
     auto serialized_goal_worker = serialized_goal->make_worker(worker_index);
     ASSERT_NE(serialized_goal_worker, nullptr);
     EXPECT_NE(serialized_goal.get(), serialized_goal_worker.get());
     EXPECT_EQ(serialized_goal->is_dynamic_goal_satisfied(source_initial.get_state(), source_initial.get_state()),
               serialized_goal_worker->is_dynamic_goal_satisfied(worker_initial.get_state(), worker_initial.get_state()));
 
-    auto exhaustive_goal = p::ExhaustiveGoalStrategy<Kind>::create();
+    auto exhaustive_goal = tyr::planning::ExhaustiveGoalStrategy<Kind>::create();
     auto exhaustive_goal_worker = exhaustive_goal->make_worker(worker_index);
     ASSERT_NE(exhaustive_goal_worker, nullptr);
     EXPECT_NE(exhaustive_goal.get(), exhaustive_goal_worker.get());
@@ -201,13 +198,13 @@ void expect_worker_chain(const p::TaskPtr<Kind>& task)
 }
 
 template<TaskKind Kind>
-void expect_independent_repository_identity(const p::TaskPtr<Kind>& task)
+void expect_independent_repository_identity(const tyr::planning::TaskPtr<Kind>& task)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto first_axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto first_axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
     auto second_axiom_evaluator = first_axiom_evaluator->make_worker(execution_context);
-    auto first_repository = p::StateRepositoryFactory<Kind>().create(task);
-    auto second_repository = p::StateRepositoryFactory<Kind>().create(task);
+    auto first_repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
+    auto second_repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
 
     const auto first_state = first_repository->get_initial_state(*first_axiom_evaluator);
     const auto second_state = second_repository->get_initial_state(*second_axiom_evaluator);
@@ -218,24 +215,24 @@ void expect_independent_repository_identity(const p::TaskPtr<Kind>& task)
     EXPECT_NE(first_state, second_state);
     EXPECT_NE(first_state.pack(), second_state.pack());
 
-    auto states = ygg::UnorderedSet<p::StateView<Kind>> {};
+    auto states = ygg::UnorderedSet<tyr::planning::StateView<Kind>> {};
     states.insert(first_state);
     states.insert(second_state);
     EXPECT_EQ(states.size(), 2);
 
-    EXPECT_EQ(p::materialize_state(second_state, *first_repository, *first_axiom_evaluator), first_state);
+    EXPECT_EQ(tyr::planning::materialize_state(second_state, *first_repository, *first_axiom_evaluator), first_state);
 }
 
 template<TaskKind Kind>
-void expect_shared_worker_cohort(const p::TaskPtr<Kind>& task)
+void expect_shared_worker_cohort(const tyr::planning::TaskPtr<Kind>& task)
 {
     auto source_context = ygg::ExecutionContext::create(1);
-    auto source_axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, source_context);
-    auto repository_factory = p::StateRepositoryFactory<Kind> {};
+    auto source_axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, source_context);
+    auto repository_factory = tyr::planning::StateRepositoryFactory<Kind> {};
     auto source_repository = repository_factory.create_concurrent(task);
     auto other_owner_repository = repository_factory.create_concurrent(task);
     auto other_owner_worker_repository = other_owner_repository->make_worker();
-    auto source = p::SuccessorGeneratorFactory<Kind>().create(task, source_context);
+    auto source = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, source_context);
     auto worker_context = ygg::ExecutionContext::create(1);
     auto worker_axiom_evaluator = source_axiom_evaluator->make_worker(worker_context);
     auto worker_repository = source_repository->make_worker();
@@ -280,14 +277,15 @@ void expect_shared_worker_cohort(const p::TaskPtr<Kind>& task)
     ASSERT_EQ(second_repository->num_states(), 1);
     EXPECT_EQ(first_initial.get_state(), second_initial.get_state());
     EXPECT_EQ(first_initial.get_state().pack(), second_initial.get_state().pack());
-    EXPECT_EQ(ygg::Hash<p::PackedStateView<Kind>> {}(first_initial.get_state().pack()),
-              ygg::Hash<p::PackedStateView<Kind>> {}(second_initial.get_state().pack()));
+    EXPECT_EQ(ygg::Hash<tyr::planning::PackedStateView<Kind>> {}(first_initial.get_state().pack()),
+              ygg::Hash<tyr::planning::PackedStateView<Kind>> {}(second_initial.get_state().pack()));
     EXPECT_EQ(first_initial.get_metric(), second_initial.get_metric());
-    EXPECT_EQ(p::materialize_state(second_initial.get_state(), *source_repository, *source_axiom_evaluator).get_state_repository(), source_repository);
+    EXPECT_EQ(tyr::planning::materialize_state(second_initial.get_state(), *source_repository, *source_axiom_evaluator).get_state_repository(),
+              source_repository);
 
-    auto novelty = p::iw::NoveltyPruningStrategy<Kind>::create(0);
-    auto first_novelty_worker = novelty->make_worker(ygg::Index<p::Worker>(0));
-    auto second_novelty_worker = novelty->make_worker(ygg::Index<p::Worker>(1));
+    auto novelty = tyr::planning::iw::NoveltyPruningStrategy<Kind>::create(0);
+    auto first_novelty_worker = novelty->make_worker(ygg::Index<tyr::planning::Worker>(0));
+    auto second_novelty_worker = novelty->make_worker(ygg::Index<tyr::planning::Worker>(1));
     ASSERT_NE(first_novelty_worker, nullptr);
     ASSERT_NE(second_novelty_worker, nullptr);
     EXPECT_FALSE(first_novelty_worker->should_prune_state(first_initial.get_state()));
@@ -312,7 +310,7 @@ void expect_shared_worker_cohort(const p::TaskPtr<Kind>& task)
     const auto first_successor = first_future.get();
     const auto second_successor = second_future.get();
 
-    EXPECT_EQ(first_successor.get_state().get_index(), ygg::Index<p::State<Kind>>(1));
+    EXPECT_EQ(first_successor.get_state().get_index(), ygg::Index<tyr::planning::State<Kind>>(1));
     EXPECT_EQ(first_successor.get_state(), second_successor.get_state());
     EXPECT_EQ(first_successor.get_metric(), second_successor.get_metric());
     EXPECT_EQ(first_repository->num_states(), 2);
@@ -325,7 +323,7 @@ void expect_shared_worker_cohort(const p::TaskPtr<Kind>& task)
 TEST(TyrPlanningWorkerTest, GroundAndLiftedWorkersOwnMutableStateAndShareDefinitions)
 {
     const auto root = std::filesystem::path(BENCHMARKS_DIR);
-    auto lifted_task = p::Task<LiftedTag>::create(
+    auto lifted_task = tyr::planning::Task<LiftedTag>::create(
         make_test_parser(root / "classical/tests/philosophers/domain.pddl").parse_task(root / "classical/tests/philosophers/test-1.pddl"));
     auto grounding_context = ygg::ExecutionContext::create(1);
     auto ground_task = lifted_task->instantiate_ground_task(*grounding_context).task;
@@ -341,7 +339,7 @@ TEST(TyrPlanningWorkerTest, GroundAndLiftedWorkersOwnMutableStateAndShareDefinit
 
 TEST(TyrPlanningWorkerTest, UtilizationUsesAggregateWorkerCapacity)
 {
-    auto result = p::SearchResult<GroundTag> {};
+    auto result = tyr::planning::SearchResult<GroundTag> {};
     const auto start = std::chrono::steady_clock::time_point {};
     result.statistics.set_search_start_time_point(start);
     result.statistics.set_search_end_time_point(start + std::chrono::nanoseconds(100));

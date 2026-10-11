@@ -189,7 +189,7 @@ template<typename SearchPolicy>
 class ParallelLayerCoordinationPolicy<SearchPolicy, false>
 {
 public:
-    void start(ygg::float_t, const typename SearchPolicy::Options&, size_t) noexcept {}
+    void start(ygg::float_t, const OptionsT<SearchPolicy>&, size_t) noexcept {}
 
     template<typename ExecutionPolicy, typename WorkerData>
     static bool can_expand(const ExecutionPolicy&, const WorkerData& worker) noexcept
@@ -208,7 +208,7 @@ template<typename SearchPolicy>
 class ParallelLayerCoordinationPolicy<SearchPolicy, true>
 {
 public:
-    void start(ygg::float_t start_priority, const typename SearchPolicy::Options& options, size_t num_workers)
+    void start(ygg::float_t start_priority, const OptionsT<SearchPolicy>& options, size_t num_workers)
     {
         m_synchronize_priority_layers = SearchPolicy::synchronize_priority_layers(options);
         m_active_priority.store(start_priority, std::memory_order_relaxed);
@@ -357,12 +357,12 @@ private:
 };
 
 template<TaskKind Kind, SearchPolicyConcept<Kind> SearchPolicy, StateRoutingPolicyConcept<Kind> StatePolicy>
-    requires std::same_as<typename SearchPolicy::SearchTag, ParallelSearch>
+    requires std::same_as<SearchTagT<SearchPolicy>, ParallelSearch>
 class ParallelExecutionPolicy
 {
     using BuilderPtr = ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true>;
     using CoordinationPolicy = ParallelLayerCoordinationPolicy<SearchPolicy>;
-    using Metadata = typename SearchPolicy::SuccessorMetadata;
+    using Metadata = SuccessorMetadataT<SearchPolicy>;
 
     template<typename, bool>
     friend class ParallelLayerCoordinationPolicy;
@@ -429,7 +429,7 @@ public:
         return true;
     }
 
-    void start(std::optional<std::chrono::steady_clock::time_point> deadline, ygg::float_t start_priority, const typename SearchPolicy::Options& options)
+    void start(std::optional<std::chrono::steady_clock::time_point> deadline, ygg::float_t start_priority, const OptionsT<SearchPolicy>& options)
     {
         m_status.store(SearchStatus::IN_PROGRESS, std::memory_order_relaxed);
         m_work.store(1, std::memory_order_relaxed);
@@ -526,11 +526,11 @@ public:
     static decltype(auto) with_worker_lock(WorkerData& worker, Callback&& callback)
     {
         auto lock = std::unique_lock(worker.execution.mutex);
-        const auto evaluate_unlocked = [&](auto&& evaluate)
+        const auto evaluate_unlocked = [&]<typename Evaluate>(Evaluate&& evaluate)
         {
             // Worker-local evaluation and immutable state decoding need not block receiver publication.
             lock.unlock();
-            auto result = std::forward<decltype(evaluate)>(evaluate)();
+            auto result = std::forward<Evaluate>(evaluate)();
             lock.lock();
             return result;
         };
@@ -555,7 +555,7 @@ public:
         const auto is_goal = sender.goal_strategy->is_dynamic_goal_satisfied(engine.m_start_node.get_state(), prepared.node.get_state());
         sender.statistics.increment_num_generated_candidates(prepared.owner != sender.index);
         auto& receiver = engine.get_worker(prepared.owner);
-        auto routed = typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(prepared.node) }, std::move(metadata), g_value, is_goal };
+        auto routed = RoutedSuccessorT<Engine> { LabeledNode<Kind> { action, std::move(prepared.node) }, std::move(metadata), g_value, is_goal };
 
         auto result = AcceptanceResult::TERMINAL;
         {
@@ -598,8 +598,8 @@ public:
     template<typename Engine, typename WorkerData, typename EmitTransition>
     std::optional<AcceptanceResult> accept_generated_goal([[maybe_unused]] Engine& engine,
                                                           WorkerData& worker,
-                                                          typename SearchPolicy::SearchNode& search_node,
-                                                          const typename Engine::RoutedSuccessor& routed_successor,
+                                                          SearchNodeT<SearchPolicy>& search_node,
+                                                          const RoutedSuccessorT<Engine>& routed_successor,
                                                           const StateView<Kind>& state,
                                                           ygg::float_t g_value,
                                                           EmitTransition&& emit_transition)
@@ -614,7 +614,7 @@ public:
     }
 
     template<typename Engine, typename WorkerData>
-    static constexpr bool is_generated_goal(Engine&, WorkerData&, const typename Engine::RoutedSuccessor& routed_successor, const StateView<Kind>&) noexcept
+    static constexpr bool is_generated_goal(Engine&, WorkerData&, const RoutedSuccessorT<Engine>& routed_successor, const StateView<Kind>&) noexcept
     {
         return routed_successor.is_goal;
     }
@@ -742,8 +742,8 @@ public:
                  AxiomEvaluator<Kind>& axiom_evaluator,
                  SuccessorGenerator<Kind>& successor_generator,
                  Heuristic<Kind>& heuristic,
-                 const typename SearchPolicy::Options& options,
-                 const typename SearchPolicy::EventHandlerPtr& event_handler) :
+                 const OptionsT<SearchPolicy>& options,
+                 const EventHandlerPtrT<SearchPolicy>& event_handler) :
         m_caller_state_repository(state_repository),
         m_caller_axiom_evaluator(axiom_evaluator)
     {
@@ -843,15 +843,15 @@ public:
             callback(*worker);
     }
 
-    std::pair<Plan<Kind>, Node<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal, const typename SearchPolicy::Options& options)
+    std::pair<Plan<Kind>, Node<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal, const OptionsT<SearchPolicy>& options)
     {
-        auto views = std::vector<WorkerSearchSpaceView<Kind, typename SearchPolicy::SearchNode>> {};
+        auto views = std::vector<WorkerSearchSpaceView<Kind, SearchNodeT<SearchPolicy>>> {};
         views.reserve(size());
         const auto state_index_divisor = ExecutionPolicy::search_node_divisor(options);
         for_each(
             [&](const auto& worker)
             {
-                views.push_back(WorkerSearchSpaceView<Kind, typename SearchPolicy::SearchNode> {
+                views.push_back(WorkerSearchSpaceView<Kind, SearchNodeT<SearchPolicy>> {
                     worker.state_repository,
                     worker.axiom_evaluator,
                     worker.successor_generator,
@@ -860,12 +860,12 @@ public:
                 });
             });
 
-        auto plan = PlanReconstructionPolicy<ParallelSearch>::extract_total_ordered_plan(
-            goal,
-            std::span<const WorkerSearchSpaceView<Kind, typename SearchPolicy::SearchNode>>(views),
-            m_caller_state_repository,
-            m_caller_axiom_evaluator,
-            options.cost_mode);
+        auto plan =
+            PlanReconstructionPolicy<ParallelSearch>::extract_total_ordered_plan(goal,
+                                                                                 std::span<const WorkerSearchSpaceView<Kind, SearchNodeT<SearchPolicy>>>(views),
+                                                                                 m_caller_state_repository,
+                                                                                 m_caller_axiom_evaluator,
+                                                                                 options.cost_mode);
         auto goal_node = plan.empty() ? plan.get_start_node() : plan.get_labeled_succ_nodes().back().node;
         return { std::move(plan), std::move(goal_node) };
     }
@@ -878,13 +878,13 @@ private:
 };
 
 template<TaskKind Kind, SearchPolicyConcept<Kind> SearchPolicy>
-    requires std::same_as<typename SearchPolicy::SearchTag, ParallelSearch>
+    requires std::same_as<SearchTagT<SearchPolicy>, ParallelSearch>
 SearchResult<Kind> find_parallel_solution(Task<Kind>& task,
                                           StateRepository<Kind>& state_repository,
                                           AxiomEvaluator<Kind>& axiom_evaluator,
                                           SuccessorGenerator<Kind>& successor_generator,
                                           Heuristic<Kind>& heuristic,
-                                          const typename SearchPolicy::Options& options,
+                                          const OptionsT<SearchPolicy>& options,
                                           const char* invalid_hash_message)
 {
     if (state_repository.is_concurrent())

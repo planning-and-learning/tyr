@@ -23,6 +23,7 @@ namespace tyr::formalism::datalog
 
 void bind_metric(nb::module_& m, RepositoryBinding& repository)
 {
+    using namespace nb::literals;
     ygg::bind_index<ygg::Index<Metric>>(m, "MetricIndex");
 
     {

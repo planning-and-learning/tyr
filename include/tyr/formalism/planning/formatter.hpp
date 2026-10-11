@@ -288,8 +288,10 @@ namespace fmt
 template<typename View>
 struct formatter<std::pair<View, tyr::formalism::planning::PlanFormatting>, char>
 {
+private:
     using Value = std::pair<View, tyr::formalism::planning::PlanFormatting>;
 
+public:
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
 
     template<typename FormatContext>

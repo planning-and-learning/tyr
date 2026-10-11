@@ -5,29 +5,32 @@
 
 #include <concepts>
 
-namespace f = tyr::formalism;
-namespace fp = tyr::formalism::planning;
-
 template<typename Entity>
-concept GroundFunctionTermValueContract = std::constructible_from<ygg::Index<Entity>, ygg::uint_t> && std::totally_ordered<ygg::Index<Entity>>
-                                          && std::totally_ordered<ygg::Data<Entity>> && std::totally_ordered<ygg::View<ygg::Index<Entity>, fp::Repository>>
-                                          && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Index<Entity>, fp::Repository>& view) {
-                                                 data.index;
-                                                 data.fterm;
-                                                 data.value;
-                                                 data.clear();
-                                                 { data == data } -> std::same_as<bool>;
-                                                 view.get_index();
-                                                 view.get_fterm();
-                                                 view.get_value();
-                                                 { view == view } -> std::same_as<bool>;
-                                                 { view < view } -> std::same_as<bool>;
-                                             };
+concept GroundFunctionTermValueContract =
+    std::constructible_from<ygg::Index<Entity>, ygg::uint_t> && std::totally_ordered<ygg::Index<Entity>> && std::totally_ordered<ygg::Data<Entity>>
+    && std::totally_ordered<ygg::View<ygg::Index<Entity>, tyr::formalism::planning::Repository>>
+    && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Index<Entity>, tyr::formalism::planning::Repository>& view) {
+           data.index;
+           data.fterm;
+           data.value;
+           data.clear();
+           { data == data } -> std::same_as<bool>;
+           view.get_index();
+           view.get_fterm();
+           view.get_value();
+           { view == view } -> std::same_as<bool>;
+           { view < view } -> std::same_as<bool>;
+       };
 
-static_assert(GroundFunctionTermValueContract<fp::FunctionTermValue<::tyr::GroundTag, f::StaticTag>>);
-static_assert(std::same_as<ygg::View<ygg::Index<fp::FunctionTermValue<::tyr::GroundTag, f::StaticTag>>, fp::Repository>, fp::FunctionTermValueView<::tyr::GroundTag, f::StaticTag>>);
-static_assert(GroundFunctionTermValueContract<fp::FunctionTermValue<::tyr::GroundTag, f::FluentTag>>);
-static_assert(std::same_as<ygg::View<ygg::Index<fp::FunctionTermValue<::tyr::GroundTag, f::FluentTag>>, fp::Repository>, fp::FunctionTermValueView<::tyr::GroundTag, f::FluentTag>>);
-static_assert(GroundFunctionTermValueContract<fp::FunctionTermValue<::tyr::GroundTag, f::AuxiliaryTag>>);
-static_assert(
-    std::same_as<ygg::View<ygg::Index<fp::FunctionTermValue<::tyr::GroundTag, f::AuxiliaryTag>>, fp::Repository>, fp::FunctionTermValueView<::tyr::GroundTag, f::AuxiliaryTag>>);
+static_assert(GroundFunctionTermValueContract<tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, tyr::formalism::StaticTag>>);
+static_assert(std::same_as<ygg::View<ygg::Index<tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, tyr::formalism::StaticTag>>,
+                                     tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::FunctionTermValueView<::tyr::GroundTag, tyr::formalism::StaticTag>>);
+static_assert(GroundFunctionTermValueContract<tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, tyr::formalism::FluentTag>>);
+static_assert(std::same_as<ygg::View<ygg::Index<tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, tyr::formalism::FluentTag>>,
+                                     tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::FunctionTermValueView<::tyr::GroundTag, tyr::formalism::FluentTag>>);
+static_assert(GroundFunctionTermValueContract<tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, tyr::formalism::AuxiliaryTag>>);
+static_assert(std::same_as<ygg::View<ygg::Index<tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, tyr::formalism::AuxiliaryTag>>,
+                                     tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::FunctionTermValueView<::tyr::GroundTag, tyr::formalism::AuxiliaryTag>>);

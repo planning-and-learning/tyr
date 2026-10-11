@@ -281,10 +281,8 @@ ConstraintTerm make_constraint_term(ygg::Index<Object> object) { return ObjectTe
 ConstraintTerm make_constraint_term(const ygg::Data<Term>& term)
 {
     return std::visit(
-        [](auto&& arg) -> ConstraintTerm
+        []<typename T>(const T& arg) -> ConstraintTerm
         {
-            using T = std::decay_t<decltype(arg)>;
-
             if constexpr (std::is_same_v<T, ParameterIndex>)
                 return VariableTerm { arg };
             else if constexpr (std::is_same_v<T, ygg::Index<Object>>)
@@ -308,10 +306,8 @@ EqualityConjunction make_cover_equality_conjunction(const MutableAtom<FluentTag>
     for (size_t pos = 0; pos < pattern.terms.size(); ++pos)
     {
         std::visit(
-            [&](auto&& x)
+            [&]<typename T>(const T& x)
             {
-                using T = std::decay_t<decltype(x)>;
-
                 if constexpr (std::is_same_v<T, ParameterIndex>)
                 {
                     if (ygg::uint_t(x) < inv.num_rigid_variables)

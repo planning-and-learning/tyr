@@ -30,6 +30,7 @@ namespace
 template<TaskKind T, BinaryOperatorKind O>
 void bind_binary_operator_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
 {
+    using namespace nb::literals;
     using Tag = BinaryOperator<T, O>;
     ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
 

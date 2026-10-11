@@ -41,10 +41,8 @@ template<typename C>
 const C& get_canonical_context(const ygg::Data<::tyr::formalism::Term>& element, const C& context) noexcept
 {
     return std::visit(
-        [&](const auto& arg) -> const C&
+        [&]<typename Alternative>(const Alternative& arg) -> const C&
         {
-            using Alternative = std::decay_t<decltype(arg)>;
-
             if constexpr (std::is_same_v<Alternative, ::tyr::formalism::ParameterIndex>)
                 return context.get_root();
             else

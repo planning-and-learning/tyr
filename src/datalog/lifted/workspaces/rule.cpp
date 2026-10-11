@@ -23,45 +23,44 @@
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 
-namespace f = tyr::formalism;
-namespace fd = tyr::formalism::datalog;
-
 namespace tyr::datalog
 {
 namespace
 {
-bool contains_parameters(fd::NumericEffectOperatorView<LiftedTag, f::FluentTag> effect_operator)
+bool contains_parameters(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag> effect_operator)
 {
-    auto parameters = ygg::UnorderedSet<f::ParameterIndex> {};
+    auto parameters = ygg::UnorderedSet<formalism::ParameterIndex> {};
     visit(
         [&](const auto effect)
         {
-            fd::collect_parameters(effect.get_fterm(), parameters);
-            fd::collect_parameters(effect.get_fexpr(), parameters);
+            formalism::datalog::collect_parameters(effect.get_fterm(), parameters);
+            formalism::datalog::collect_parameters(effect.get_fexpr(), parameters);
         },
         effect_operator.get_variant());
     return !parameters.empty();
 }
 
-fd::NumericEffectOperatorViewList<LiftedTag, f::FluentTag> create_lifted_effects(fd::NumericEffectOperatorListView<LiftedTag, f::FluentTag> effects)
+formalism::datalog::NumericEffectOperatorViewList<LiftedTag, formalism::FluentTag>
+create_lifted_effects(formalism::datalog::NumericEffectOperatorListView<LiftedTag, formalism::FluentTag> effects)
 {
-    auto result = fd::NumericEffectOperatorViewList<LiftedTag, f::FluentTag> {};
+    auto result = formalism::datalog::NumericEffectOperatorViewList<LiftedTag, formalism::FluentTag> {};
     for (const auto effect : effects)
         if (contains_parameters(effect))
             result.push_back(effect);
     return result;
 }
 
-fd::NumericEffectOperatorViewList<GroundTag, f::FluentTag> create_ground_nullary_effects(fd::NumericEffectOperatorListView<LiftedTag, f::FluentTag> effects,
-                                                                                    fd::Repository& repository)
+formalism::datalog::NumericEffectOperatorViewList<GroundTag, formalism::FluentTag>
+create_ground_nullary_effects(formalism::datalog::NumericEffectOperatorListView<LiftedTag, formalism::FluentTag> effects,
+                              formalism::datalog::Repository& repository)
 {
-    auto builder = fd::Builder {};
-    auto result = fd::NumericEffectOperatorViewList<GroundTag, f::FluentTag> {};
-    auto binding = ygg::IndexList<f::Object> {};
-    auto grounder_context = fd::GrounderContext { builder, repository, binding };
+    auto builder = formalism::datalog::Builder {};
+    auto result = formalism::datalog::NumericEffectOperatorViewList<GroundTag, formalism::FluentTag> {};
+    auto binding = ygg::IndexList<formalism::Object> {};
+    auto grounder_context = formalism::datalog::GrounderContext { builder, repository, binding };
     for (const auto effect : effects)
         if (!contains_parameters(effect))
-            result.push_back(fd::ground(effect, grounder_context));
+            result.push_back(formalism::datalog::ground(effect, grounder_context));
     return result;
 }
 }
@@ -70,8 +69,10 @@ fd::NumericEffectOperatorViewList<GroundTag, f::FluentTag> create_ground_nullary
  * ConstRuleWorkspace<LiftedTag>
  */
 
-template<f::RelationKind R>
-ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(fd::RuleView<LiftedTag, R> rule, fd::Repository& repository, kckp::Graph compatibility_graph) :
+template<formalism::RelationKind R>
+ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag, R> rule,
+                                                     formalism::datalog::Repository& repository,
+                                                     kckp::Graph compatibility_graph) :
     rule(rule),
     nullary_condition(create_ground_nullary_conjunctive_condition(get_rule().get_body(), repository).first),
     lifted_effects(create_lifted_effects(get_rule().get_metric_effects())),
@@ -84,7 +85,6 @@ ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(fd::RuleView<LiftedTag, R> 
 {
 }
 
-template struct ConstRuleWorkspace<LiftedTag, f::PredicateTag>;
-template struct ConstRuleWorkspace<LiftedTag, f::FunctionTag>;
-
+template struct ConstRuleWorkspace<LiftedTag, formalism::PredicateTag>;
+template struct ConstRuleWorkspace<LiftedTag, formalism::FunctionTag>;
 }

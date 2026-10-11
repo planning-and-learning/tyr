@@ -25,8 +25,6 @@
 #include <yggdrasil/python/type_casters.hpp>
 
 namespace nb = nanobind;
-using namespace nb::literals;
-
 namespace tyr::formalism::planning
 {
 

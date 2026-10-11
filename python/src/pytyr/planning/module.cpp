@@ -42,6 +42,7 @@ namespace tyr::planning
 
 void bind_module_definitions(nb::module_& m)
 {
+    using namespace nb::literals;
     ygg::bind_index<ygg::Index<Worker>>(m, "WorkerIndex");
 
     nb::class_<SearchBudget>(m, "SearchBudget")

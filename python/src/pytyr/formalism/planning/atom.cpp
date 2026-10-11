@@ -30,6 +30,7 @@ namespace
 template<TaskKind T, FactKind F>
 void bind_atom_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
 {
+    using namespace nb::literals;
     using Tag = Atom<T, F>;
     ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
 

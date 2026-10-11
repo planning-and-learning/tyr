@@ -80,15 +80,15 @@ class SearchEngine
     friend ExecutionPolicy;
 
 public:
-    using SearchTag = typename SearchPolicy::SearchTag;
-    using Options = typename SearchPolicy::Options;
-    using SearchNode = typename SearchPolicy::SearchNode;
+    using SearchTag = SearchTagT<SearchPolicy>;
+    using Options = OptionsT<SearchPolicy>;
+    using SearchNode = SearchNodeT<SearchPolicy>;
     using WorkerExecutionState = typename ExecutionPolicy::WorkerState;
 
     struct RoutedSuccessor
     {
         LabeledNode<Kind> labeled_node;
-        typename SearchPolicy::SuccessorMetadata metadata;
+        SuccessorMetadataT<SearchPolicy> metadata;
         ygg::float_t g_value;
         bool is_goal;
     };
@@ -104,7 +104,7 @@ public:
                    const Options& options,
                    PruningStrategyPtr<Kind> pruning_strategy_,
                    GoalStrategyPtr<Kind> goal_strategy_,
-                   typename SearchPolicy::WorkerEventHandlerPtr event_handler_) :
+                   WorkerEventHandlerPtrT<SearchPolicy> event_handler_) :
             index(index_),
             num_state_owners(num_state_owners_),
             state_repository(state_repository_),
@@ -129,7 +129,7 @@ public:
                    const Options& options,
                    PruningStrategyPtr<Kind> pruning_strategy_,
                    GoalStrategyPtr<Kind> goal_strategy_,
-                   typename SearchPolicy::WorkerEventHandlerPtr event_handler_) :
+                   WorkerEventHandlerPtrT<SearchPolicy> event_handler_) :
             index(index_),
             num_state_owners(num_state_owners_),
             owned_state_repository(std::move(state_repository_)),
@@ -179,7 +179,7 @@ public:
         PruningStrategyPtr<Kind> pruning_strategy;
         GoalStrategyPtr<Kind> goal_strategy;
         Statistics statistics;
-        typename SearchPolicy::WorkerEventHandlerPtr event_handler;
+        WorkerEventHandlerPtrT<SearchPolicy> event_handler;
     };
 
     using Workers = WorkerPolicy<SearchTag, Kind, SearchPolicy, ExecutionPolicy, WorkerData>;
@@ -401,7 +401,7 @@ private:
         auto claimed = false;
         m_execution.with_worker_lock(
             worker,
-            [&](auto&& evaluate_unlocked)
+            [&]<typename EvaluateUnlocked>(EvaluateUnlocked&& evaluate_unlocked)
             {
                 if (!m_execution.can_expand_locked(*this, worker))
                     return;
@@ -428,9 +428,9 @@ private:
                     node,
                     search_node,
                     worker.statistics,
-                    std::forward<decltype(evaluate_unlocked)>(evaluate_unlocked),
-                    [&](ygg::float_t h_value, auto&& callback) { return improve_best_h(h_value, std::forward<decltype(callback)>(callback)); },
-                    [&](auto&& callback) { call_worker_event(worker, std::forward<decltype(callback)>(callback)); },
+                    std::forward<EvaluateUnlocked>(evaluate_unlocked),
+                    [&]<typename Callback>(ygg::float_t h_value, Callback&& callback) { return improve_best_h(h_value, std::forward<Callback>(callback)); },
+                    [&]<typename Callback>(Callback&& callback) { call_worker_event(worker, std::forward<Callback>(callback)); },
                     [&](ygg::float_t priority) { on_finish_priority_layer(priority); });
                 if (expansion_result == ExpansionResult::GOAL)
                 {
@@ -604,7 +604,7 @@ private:
 
     Task<Kind>& m_task;
     const Options& m_options;
-    typename SearchPolicy::EventHandlerPtr m_event_handler;
+    EventHandlerPtrT<SearchPolicy> m_event_handler;
     std::chrono::steady_clock::time_point m_search_start_time_point;
     Node<Kind> m_start_node;
     ExecutionPolicy m_execution;

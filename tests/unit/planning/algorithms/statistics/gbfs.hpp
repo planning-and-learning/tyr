@@ -17,8 +17,6 @@
 
 #include "statistics.hpp"
 
-namespace p = tyr::planning;
-
 namespace tyr::tests
 {
 namespace
@@ -29,10 +27,14 @@ void check_statistics(const SearchStatistics& expected, const SearchCase& test_c
     const auto num_ground_actions_before = context.task->get_repository()->template size<formalism::planning::Action<GroundTag>>();
     auto heuristic = create_search_heuristic<StatisticsTaskKind>(heuristic_name, context, cost_mode);
 
-    auto options = p::gbfs_lazy::Options<StatisticsTaskKind>();
+    auto options = tyr::planning::gbfs_lazy::Options<StatisticsTaskKind>();
     options.cost_mode = cost_mode;
-    const auto result =
-        p::gbfs_lazy::find_solution(*context.task, *context.state_repository, *context.axiom_evaluator, *context.successor_generator, *heuristic, options);
+    const auto result = tyr::planning::gbfs_lazy::find_solution(*context.task,
+                                                                *context.state_repository,
+                                                                *context.axiom_evaluator,
+                                                                *context.successor_generator,
+                                                                *heuristic,
+                                                                options);
 
     expect_statistics(expected, result.statistics, result);
     expect_repository_statistics(context, result.statistics);

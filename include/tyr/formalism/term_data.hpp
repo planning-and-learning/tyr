@@ -46,10 +46,8 @@ struct Data<::tyr::formalism::Term>
     template<typename C>
     Data(const ViewVariant<C>& variant_) :
         variant(std::visit(
-            [](const auto& arg) -> Variant
+            []<typename Alternative>(const Alternative& arg) -> Variant
             {
-                using Alternative = std::decay_t<decltype(arg)>;
-
                 if constexpr (std::is_same_v<Alternative, ::tyr::formalism::ParameterIndex>)
                     return Variant(arg);
                 else if constexpr (ygg::is_view_of_v<Alternative, ygg::Index<::tyr::formalism::Object>>)

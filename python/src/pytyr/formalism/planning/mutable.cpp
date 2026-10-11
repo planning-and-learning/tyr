@@ -31,6 +31,7 @@ namespace
 template<FactKind T>
 void bind_atom(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using V = MutableAtom<T>;
 
     auto cls = nb::class_<V>(m, name.c_str())  //
@@ -46,6 +47,7 @@ void bind_atom(nb::module_& m, const std::string& name)
 template<FactKind T>
 void bind_literal(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using V = MutableLiteral<T>;
 
     auto cls = nb::class_<V>(m, name.c_str())  //
@@ -58,6 +60,7 @@ void bind_literal(nb::module_& m, const std::string& name)
 
 void bind_conjunctive_condition(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using V = MutableConjunctiveCondition;
 
     auto cls = nb::class_<V>(m, name.c_str())  //
@@ -69,6 +72,7 @@ void bind_conjunctive_condition(nb::module_& m, const std::string& name)
 
 void bind_conjunctive_effect(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using V = MutableConjunctiveEffect;
 
     auto cls = nb::class_<V>(m, name.c_str())  //
@@ -80,6 +84,7 @@ void bind_conjunctive_effect(nb::module_& m, const std::string& name)
 
 void bind_conditional_effect(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using V = MutableConditionalEffect;
 
     auto cls = nb::class_<V>(m, name.c_str())  //
@@ -91,6 +96,7 @@ void bind_conditional_effect(nb::module_& m, const std::string& name)
 
 void bind_action(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using V = MutableAction;
 
     auto cls = nb::class_<V>(m, name.c_str())  //

@@ -33,22 +33,18 @@
 
 namespace ygg
 {
-namespace planning = ::tyr::planning;
-
 template<::tyr::TaskKind Kind>
-struct Data<planning::State<Kind>>
+struct Data<::tyr::planning::State<Kind>>
 {
-    using TaskType = planning::Task<Kind>;
-
-    ygg::Index<planning::State<Kind>> index;
-    planning::FactPackedStorage<Kind, planning::StateStoragePolicyTag> fact_storage;
-    planning::AtomPackedStorage<Kind, planning::StateStoragePolicyTag> atom_storage;
-    planning::NumericPackedStorage<Kind, planning::StateStoragePolicyTag> numeric_storage;
+    ygg::Index<::tyr::planning::State<Kind>> index;
+    ::tyr::planning::FactPackedStorage<Kind, ::tyr::planning::StateStoragePolicyTag> fact_storage;
+    ::tyr::planning::AtomPackedStorage<Kind, ::tyr::planning::StateStoragePolicyTag> atom_storage;
+    ::tyr::planning::NumericPackedStorage<Kind, ::tyr::planning::StateStoragePolicyTag> numeric_storage;
 
     Data() = default;
-    Data(planning::FactPackedStorage<Kind, planning::StateStoragePolicyTag> fact_storage_,
-         planning::AtomPackedStorage<Kind, planning::StateStoragePolicyTag> atom_storage_,
-         planning::NumericPackedStorage<Kind, planning::StateStoragePolicyTag> numeric_storage_) :
+    Data(::tyr::planning::FactPackedStorage<Kind, ::tyr::planning::StateStoragePolicyTag> fact_storage_,
+         ::tyr::planning::AtomPackedStorage<Kind, ::tyr::planning::StateStoragePolicyTag> atom_storage_,
+         ::tyr::planning::NumericPackedStorage<Kind, ::tyr::planning::StateStoragePolicyTag> numeric_storage_) :
         index(),
         fact_storage(fact_storage_),
         atom_storage(atom_storage_),
@@ -56,7 +52,7 @@ struct Data<planning::State<Kind>>
     {
     }
 
-    ygg::Index<planning::State<Kind>> get_index() const noexcept { return index; }
+    ygg::Index<::tyr::planning::State<Kind>> get_index() const noexcept { return index; }
 
     template<::tyr::formalism::FactKind T>
     auto get_atom_storage() const noexcept
@@ -81,13 +77,13 @@ struct Data<planning::State<Kind>>
 };
 
 template<::tyr::TaskKind Kind>
-bool is_canonical(const ygg::Data<planning::State<Kind>>&) noexcept
+bool is_canonical(const ygg::Data<::tyr::planning::State<Kind>>&) noexcept
 {
     return true;
 }
 
 template<::tyr::TaskKind Kind>
-void canonicalize(ygg::Data<planning::State<Kind>>&) noexcept
+void canonicalize(ygg::Data<::tyr::planning::State<Kind>>&) noexcept
 {
 }
 }

@@ -179,7 +179,7 @@ public:
                                       WorkerData& worker,
                                       const Node<Kind>& source_node,
                                       const Node<Kind>& successor_node,
-                                      const typename Engine::RoutedSuccessor& routed_successor,
+                                      const RoutedSuccessorT<Engine>& routed_successor,
                                       SearchNode& successor_search_node,
                                       bool is_new,
                                       EvaluateHeuristic&&,

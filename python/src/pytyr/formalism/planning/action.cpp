@@ -26,6 +26,7 @@ namespace
 template<TaskKind T>
 void bind_action_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
 {
+    using namespace nb::literals;
     using Tag = Action<T>;
     ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
 

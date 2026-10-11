@@ -24,14 +24,15 @@ namespace tyr::formalism
 
 void bind_term(nb::module_& m)
 {
+    using namespace nb::literals;
     {
         using V = ygg::Data<Term>;
 
         auto cls = nb::class_<V>(m, "TermData")  //
-                       .def(nb::init<typename V::template ViewVariant<planning::Repository>>(), "variant"_a)
-                       .def(nb::init<typename V::template ViewVariant<datalog::Repository>>(), "variant"_a)
+                       .def(nb::init<ViewVariantT<V, planning::Repository>>(), "variant"_a)
+                       .def(nb::init<ViewVariantT<V, datalog::Repository>>(), "variant"_a)
                        .def_rw("variant", &V::variant);
-        cls.def(nb::init<typename V::Variant>(), "variant"_a);
+        cls.def(nb::init<VariantT<V>>(), "variant"_a);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);

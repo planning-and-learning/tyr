@@ -5,14 +5,14 @@
 
 #include <concepts>
 
-namespace fp = tyr::formalism::planning;
-namespace mt = tyr::planning::match_tree;
-
 template<typename Tag>
 concept AtomSelectorContract =
-    std::constructible_from<ygg::Index<mt::AtomSelectorNode<Tag>>, ygg::uint_t> && std::totally_ordered<ygg::Index<mt::AtomSelectorNode<Tag>>>
-    && std::totally_ordered<ygg::Data<mt::AtomSelectorNode<Tag>>> && std::totally_ordered<ygg::View<ygg::Index<mt::AtomSelectorNode<Tag>>, mt::Repository<Tag>>>
-    && requires(ygg::Data<mt::AtomSelectorNode<Tag>>& data, const ygg::View<ygg::Index<mt::AtomSelectorNode<Tag>>, mt::Repository<Tag>>& view) {
+    std::constructible_from<ygg::Index<tyr::planning::match_tree::AtomSelectorNode<Tag>>, ygg::uint_t>
+    && std::totally_ordered<ygg::Index<tyr::planning::match_tree::AtomSelectorNode<Tag>>>
+    && std::totally_ordered<ygg::Data<tyr::planning::match_tree::AtomSelectorNode<Tag>>>
+    && std::totally_ordered<ygg::View<ygg::Index<tyr::planning::match_tree::AtomSelectorNode<Tag>>, tyr::planning::match_tree::Repository<Tag>>>
+    && requires(ygg::Data<tyr::planning::match_tree::AtomSelectorNode<Tag>>& data,
+                const ygg::View<ygg::Index<tyr::planning::match_tree::AtomSelectorNode<Tag>>, tyr::planning::match_tree::Repository<Tag>>& view) {
            data.index;
            data.atom;
            data.true_child;
@@ -25,5 +25,5 @@ concept AtomSelectorContract =
            view.get_dontcare_child();
        };
 
-using MatchTreeTags = ygg::TypeList<fp::Action<::tyr::GroundTag>, fp::Axiom<::tyr::GroundTag>>;
+using MatchTreeTags = ygg::TypeList<tyr::formalism::planning::Action<::tyr::GroundTag>, tyr::formalism::planning::Axiom<::tyr::GroundTag>>;
 static_assert([]<typename... Tags>(ygg::TypeList<Tags...>) { return (AtomSelectorContract<Tags> && ...); }(MatchTreeTags {}));

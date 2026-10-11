@@ -81,8 +81,6 @@ SearchResult<Kind> find_solution(iw::Solver<Kind>& iw_solver, const Options<Kind
 template<TaskKind Kind>
 struct Solver
 {
-    using EventHandlerType = EventHandler<Kind>;
-
     iw::Solver<Kind> iw_solver;
     Options<Kind> options;
 

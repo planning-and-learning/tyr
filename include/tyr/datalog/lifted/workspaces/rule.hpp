@@ -139,6 +139,9 @@ struct RuleWorkspace<LiftedTag, R>
 };
 
 template<formalism::RelationKind R>
+using LiftedRuleWorkerT = typename RuleWorkspace<LiftedTag, R>::Worker;
+
+template<formalism::RelationKind R>
 struct ConstRuleWorkspace<LiftedTag, R>
 {
 public:

@@ -34,15 +34,13 @@ namespace tyr::planning
 template<>
 struct D2PTranslationContext<LiftedTag>
 {
-    using StaticToStaticPredicateMapping = ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::StaticTag>,
-                                                             formalism::planning::PredicateView<formalism::StaticTag>>;
-    using FluentToFluentPredicateMapping = ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>,
-                                                             formalism::planning::PredicateView<formalism::FluentTag>>;
     using FluentToDerivedPredicateMapping = ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>,
                                                               formalism::planning::PredicateView<formalism::DerivedTag>>;
 
-    StaticToStaticPredicateMapping static_to_static_predicate;
-    FluentToFluentPredicateMapping fluent_to_fluent_predicate;
+    ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::StaticTag>, formalism::planning::PredicateView<formalism::StaticTag>>
+        static_to_static_predicate;
+    ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::PredicateView<formalism::FluentTag>>
+        fluent_to_fluent_predicate;
     FluentToDerivedPredicateMapping fluent_to_derived_predicate;
 };
 
@@ -50,8 +48,6 @@ struct D2PTranslationContext<LiftedTag>
 template<>
 struct P2DTranslationContext<LiftedTag>
 {
-    using StaticToStaticPredicateMapping = ygg::UnorderedMap<formalism::planning::PredicateView<formalism::StaticTag>,
-                                                             formalism::datalog::PredicateView<formalism::StaticTag>>;
     using FluentToFluentPredicateMapping = ygg::UnorderedMap<formalism::planning::PredicateView<formalism::FluentTag>,
                                                              formalism::datalog::PredicateView<formalism::FluentTag>>;
     using DerivedToFluentPredicateMapping = ygg::UnorderedMap<formalism::planning::PredicateView<formalism::DerivedTag>,
@@ -60,12 +56,12 @@ struct P2DTranslationContext<LiftedTag>
     using FluentToFluentFunctionMapping =
         ygg::UnorderedMap<formalism::planning::FunctionView<formalism::FluentTag>, formalism::datalog::FunctionView<formalism::FluentTag>>;
 
-    StaticToStaticPredicateMapping static_to_static_predicate;
+    ygg::UnorderedMap<formalism::planning::PredicateView<formalism::StaticTag>, formalism::datalog::PredicateView<formalism::StaticTag>>
+        static_to_static_predicate;
     FluentToFluentPredicateMapping fluent_to_fluent_predicate;
     DerivedToFluentPredicateMapping derived_to_fluent_predicate;
     FluentToFluentFunctionMapping fluent_to_fluent_function;
 };
-
 }
 
 #endif

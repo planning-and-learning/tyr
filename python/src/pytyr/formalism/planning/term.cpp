@@ -23,6 +23,7 @@ namespace tyr::formalism::planning
 
 void bind_term(nb::module_& m, RepositoryBinding& repository)
 {
+    using namespace nb::literals;
     {
         using V = TermView;
 

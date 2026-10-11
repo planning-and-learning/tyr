@@ -30,6 +30,7 @@ namespace
 template<TaskKind T, FactKind F>
 void bind_function_term_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
 {
+    using namespace nb::literals;
     using Tag = FunctionTerm<T, F>;
     ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
 

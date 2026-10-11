@@ -32,17 +32,13 @@ template<formalism::RelationKind R>
 class RuleInstance<LiftedTag, R>
 {
 public:
-    using Task = LiftedTag;
-    using Relation = R;
-    using SourceRule = formalism::datalog::RuleView<LiftedTag, R>;
-
     RuleInstance(const ConstRuleWorkspace<LiftedTag, R>& workspace, formalism::datalog::GrounderContext& grounder) :
         m_workspace(workspace),
         m_grounder(grounder)
     {
     }
 
-    SourceRule get_rule() const noexcept { return m_workspace.get_rule(); }
+    formalism::datalog::RuleView<LiftedTag, R> get_rule() const noexcept { return m_workspace.get_rule(); }
     auto get_body() const noexcept { return get_rule().get_body(); }
     auto get_head() const noexcept { return get_rule().get_head(); }
 

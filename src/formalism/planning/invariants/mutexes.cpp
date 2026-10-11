@@ -50,9 +50,8 @@ extract_rigid_values(const Invariant& inv, const MutableAtom<FluentTag>& pattern
             return std::nullopt;
 
         const auto maybe_object = std::visit(
-            [](auto&& arg) -> std::optional<ygg::Index<Object>>
+            []<typename T>(const T& arg) -> std::optional<ygg::Index<Object>>
             {
-                using T = std::decay_t<decltype(arg)>;
                 if constexpr (std::is_same_v<T, ygg::Index<Object>>)
                 {
                     return arg;
@@ -92,9 +91,8 @@ bool instantiate_matches_ground_atom(const MutableAtom<FluentTag>& pattern,
         const auto object = ground_atom.get_objects()[pos].get_index();
 
         const bool ok = std::visit(
-            [&](auto&& arg) -> bool
+            [&]<typename T>(const T& arg) -> bool
             {
-                using T = std::decay_t<decltype(arg)>;
                 if constexpr (std::is_same_v<T, ParameterIndex>)
                 {
                     const auto idx = static_cast<ygg::uint_t>(arg);
@@ -141,9 +139,8 @@ instantiate_group(const Invariant& inv, const std::vector<ygg::Index<Object>>& r
         for (size_t pos = 0; pos < pattern.terms.size(); ++pos)
         {
             std::visit(
-                [&](auto&& arg)
+                [&]<typename T>(const T& arg)
                 {
-                    using T = std::decay_t<decltype(arg)>;
                     if constexpr (std::is_same_v<T, ParameterIndex>)
                     {
                         if (static_cast<ygg::uint_t>(arg) >= inv.num_rigid_variables && !counted_position.has_value())

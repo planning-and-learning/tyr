@@ -30,6 +30,7 @@ namespace
 template<TaskKind T, RelationKind R>
 void bind_rule_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
 {
+    using namespace nb::literals;
     using Tag = Rule<T, R>;
     ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
 

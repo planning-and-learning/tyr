@@ -30,6 +30,7 @@ namespace
 template<TaskKind T>
 void bind_unary_operator_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
 {
+    using namespace nb::literals;
     using Tag = UnaryOperator<T>;
     ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
 

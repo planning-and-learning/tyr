@@ -25,8 +25,6 @@
 #include <tyr/tyr.hpp>
 #include <yggdrasil/core/memory.hpp>
 
-using namespace tyr;
-
 int main(int argc, char** argv)
 {
     auto program = argparse::ArgumentParser("Lazy GBFS search.");
@@ -88,7 +86,7 @@ int main(int argc, char** argv)
         auto num_search_workers = program.get<std::size_t>("--num-search-workers");
         auto state_repository_mode_name = program.get<std::string>("--state-repository-mode");
         auto dist_hash_mode_name = program.get<std::string>("--dist-hash-mode");
-        auto dist_hash_mode = dist_hash_mode_name == "random" ? planning::DistHashMode::RANDOM : planning::DistHashMode::LMCUT;
+        auto dist_hash_mode = dist_hash_mode_name == "random" ? tyr::planning::DistHashMode::RANDOM : tyr::planning::DistHashMode::LMCUT;
         auto collect_destination_lock_statistics = program.get<bool>("--collect-destination-lock-statistics");
         auto random_seed = program.get<uint64_t>("--random-seed");
         auto shuffle_labeled_succ_nodes = program.get<bool>("--shuffle-labeled-succ-nodes");
@@ -96,8 +94,8 @@ int main(int argc, char** argv)
         auto instantiate_ground_task = program.get<bool>("--instantiate-ground-task");
         auto disable_invariant_synthesis = program.get<bool>("--disable-invariant-synthesis");
         auto heuristic_type = program.get<std::string>("--heuristic-type");
-        auto heuristic_cost_mode = program.get<std::string>("--heuristic-cost-type") == "unit" ? CostMode::UNIT : CostMode::GENERAL;
-        auto search_cost_mode = program.get<std::string>("--search-cost-type") == "unit" ? CostMode::UNIT : CostMode::GENERAL;
+        auto heuristic_cost_mode = program.get<std::string>("--heuristic-cost-type") == "unit" ? tyr::CostMode::UNIT : tyr::CostMode::GENERAL;
+        auto search_cost_mode = program.get<std::string>("--search-cost-type") == "unit" ? tyr::CostMode::UNIT : tyr::CostMode::GENERAL;
         auto verbosity = program.get<size_t>("--verbosity");
 
         if (num_search_workers == 0)
@@ -117,10 +115,10 @@ int main(int argc, char** argv)
 
         auto parser_options = loki::ParserOptions();
         // parser_options.strict = true;
-        auto parser = formalism::planning::Parser(domain_filepath, parser_options);
+        auto parser = tyr::formalism::planning::Parser(domain_filepath, parser_options);
         auto domain = parser.get_domain();
 
-        auto lifted_task = planning::Task<LiftedTag>::create(parser.parse_task(problem_filepath));
+        auto lifted_task = tyr::planning::Task<tyr::LiftedTag>::create(parser.parse_task(problem_filepath));
 
         if (verbosity > 1)
             fmt::print(std::cout, "{}\n", domain);
@@ -132,15 +130,15 @@ int main(int argc, char** argv)
 
         if (!instantiate_ground_task)
         {
-            auto axiom_evaluator = planning::AxiomEvaluatorFactory<LiftedTag>().create(lifted_task, execution_context);
-            auto state_repository_factory = planning::StateRepositoryFactory<LiftedTag>();
+            auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<tyr::LiftedTag>().create(lifted_task, execution_context);
+            auto state_repository_factory = tyr::planning::StateRepositoryFactory<tyr::LiftedTag>();
             auto state_repository =
                 state_repository_mode_name == "shared" ? state_repository_factory.create_concurrent(lifted_task) : state_repository_factory.create(lifted_task);
-            auto successor_generator = planning::SuccessorGeneratorFactory<LiftedTag>().create(lifted_task, execution_context);
+            auto successor_generator = tyr::planning::SuccessorGeneratorFactory<tyr::LiftedTag>().create(lifted_task, execution_context);
 
-            auto options = planning::gbfs_lazy::Options<LiftedTag>();
+            auto options = tyr::planning::gbfs_lazy::Options<tyr::LiftedTag>();
             options.start_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
-            options.event_handler = planning::gbfs_lazy::DefaultEventHandler<LiftedTag>::create(verbosity);
+            options.event_handler = tyr::planning::gbfs_lazy::DefaultEventHandler<tyr::LiftedTag>::create(verbosity);
             options.cost_mode = search_cost_mode;
             options.random_seed = random_seed;
             options.num_search_workers = num_search_workers;
@@ -149,26 +147,26 @@ int main(int argc, char** argv)
             options.use_preferred_actions = !disable_preferred_actions;
             options.shuffle_labeled_succ_nodes = shuffle_labeled_succ_nodes;
 
-            auto heuristic = std::shared_ptr<planning::Heuristic<LiftedTag>> { nullptr };
+            auto heuristic = std::shared_ptr<tyr::planning::Heuristic<tyr::LiftedTag>> { nullptr };
             if (heuristic_type == "blind")
-                heuristic = planning::BlindHeuristic<LiftedTag>::create();
+                heuristic = tyr::planning::BlindHeuristic<tyr::LiftedTag>::create();
             else if (heuristic_type == "goal_count")
-                heuristic = planning::GoalCountHeuristic<LiftedTag>::create(lifted_task);
+                heuristic = tyr::planning::GoalCountHeuristic<tyr::LiftedTag>::create(lifted_task);
             else if (heuristic_type == "rpg_add")
-                heuristic = planning::AddRPGHeuristic<LiftedTag>::create(lifted_task, execution_context, heuristic_cost_mode);
+                heuristic = tyr::planning::AddRPGHeuristic<tyr::LiftedTag>::create(lifted_task, execution_context, heuristic_cost_mode);
             else if (heuristic_type == "rpg_max")
-                heuristic = planning::MaxRPGHeuristic<LiftedTag>::create(lifted_task, execution_context, heuristic_cost_mode);
+                heuristic = tyr::planning::MaxRPGHeuristic<tyr::LiftedTag>::create(lifted_task, execution_context, heuristic_cost_mode);
             else if (heuristic_type == "rpg_ff")
-                heuristic = planning::FFRPGHeuristic<LiftedTag>::create(lifted_task, execution_context, heuristic_cost_mode);
+                heuristic = tyr::planning::FFRPGHeuristic<tyr::LiftedTag>::create(lifted_task, execution_context, heuristic_cost_mode);
             else if (heuristic_type == "lmcut")
-                heuristic = planning::LMCutHeuristic<LiftedTag>::create(lifted_task, execution_context, heuristic_cost_mode);
+                heuristic = tyr::planning::LMCutHeuristic<tyr::LiftedTag>::create(lifted_task, execution_context, heuristic_cost_mode);
             else
                 throw std::invalid_argument("The heuristic is not implemented.");
 
-            auto result = planning::gbfs_lazy::find_solution(*lifted_task, *state_repository, *axiom_evaluator, *successor_generator, *heuristic, options);
-            cli::print_search_statistics(result);
+            auto result = tyr::planning::gbfs_lazy::find_solution(*lifted_task, *state_repository, *axiom_evaluator, *successor_generator, *heuristic, options);
+            tyr::cli::print_search_statistics(result);
 
-            if (result.status == planning::SearchStatus::SOLVED)
+            if (result.status == tyr::planning::SearchStatus::SOLVED)
             {
                 std::ofstream plan_file;
                 plan_file.open(plan_filepath);
@@ -188,33 +186,33 @@ int main(int argc, char** argv)
                 heuristic->print_summary(1);
             }
 
-            cli::print_summary(*lifted_task->get_repository());
+            tyr::cli::print_summary(*lifted_task->get_repository());
             std::cout << (num_search_workers == 1 ? "[Total] States memory usage: " : "[Total] Retained plan states memory usage: ")
                       << state_repository->memory_usage() << " bytes" << std::endl;
         }
         else
         {
-            auto ground_task_instantiation_options = planning::GroundTaskInstantiationOptions();
+            auto ground_task_instantiation_options = tyr::planning::GroundTaskInstantiationOptions();
             ground_task_instantiation_options.disable_invariant_synthesis = disable_invariant_synthesis;
             auto ground_task_instantiation_result = lifted_task->instantiate_ground_task(*execution_context, ground_task_instantiation_options);
 
-            if (ground_task_instantiation_result.status == planning::GroundTaskInstantiationStatus::PROVEN_UNSOLVABLE)
+            if (ground_task_instantiation_result.status == tyr::planning::GroundTaskInstantiationStatus::PROVEN_UNSOLVABLE)
             {
                 std::cout << "[TaskGrounder] Task is unsolvable!" << std::endl;
             }
-            else if (ground_task_instantiation_result.status == planning::GroundTaskInstantiationStatus::SUCCESS)
+            else if (ground_task_instantiation_result.status == tyr::planning::GroundTaskInstantiationStatus::SUCCESS)
             {
                 auto ground_task = ground_task_instantiation_result.task;
 
-                auto axiom_evaluator = planning::AxiomEvaluatorFactory<GroundTag>().create(ground_task, execution_context);
-                auto state_repository_factory = planning::StateRepositoryFactory<GroundTag>();
+                auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<tyr::GroundTag>().create(ground_task, execution_context);
+                auto state_repository_factory = tyr::planning::StateRepositoryFactory<tyr::GroundTag>();
                 auto state_repository = state_repository_mode_name == "shared" ? state_repository_factory.create_concurrent(ground_task) :
                                                                                  state_repository_factory.create(ground_task);
-                auto successor_generator = planning::SuccessorGeneratorFactory<GroundTag>().create(ground_task, execution_context);
+                auto successor_generator = tyr::planning::SuccessorGeneratorFactory<tyr::GroundTag>().create(ground_task, execution_context);
 
-                auto options = planning::gbfs_lazy::Options<GroundTag>();
+                auto options = tyr::planning::gbfs_lazy::Options<tyr::GroundTag>();
                 options.start_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
-                options.event_handler = planning::gbfs_lazy::DefaultEventHandler<GroundTag>::create(verbosity);
+                options.event_handler = tyr::planning::gbfs_lazy::DefaultEventHandler<tyr::GroundTag>::create(verbosity);
                 options.cost_mode = search_cost_mode;
                 options.random_seed = random_seed;
                 options.num_search_workers = num_search_workers;
@@ -223,26 +221,27 @@ int main(int argc, char** argv)
                 options.use_preferred_actions = !disable_preferred_actions;
                 options.shuffle_labeled_succ_nodes = shuffle_labeled_succ_nodes;
 
-                auto heuristic = std::shared_ptr<planning::Heuristic<GroundTag>> { nullptr };
+                auto heuristic = std::shared_ptr<tyr::planning::Heuristic<tyr::GroundTag>> { nullptr };
                 if (heuristic_type == "blind")
-                    heuristic = planning::BlindHeuristic<GroundTag>::create();
+                    heuristic = tyr::planning::BlindHeuristic<tyr::GroundTag>::create();
                 else if (heuristic_type == "goal_count")
-                    heuristic = planning::GoalCountHeuristic<GroundTag>::create(ground_task);
+                    heuristic = tyr::planning::GoalCountHeuristic<tyr::GroundTag>::create(ground_task);
                 else if (heuristic_type == "rpg_add")
-                    heuristic = planning::AddRPGHeuristic<GroundTag>::create(ground_task, execution_context, heuristic_cost_mode);
+                    heuristic = tyr::planning::AddRPGHeuristic<tyr::GroundTag>::create(ground_task, execution_context, heuristic_cost_mode);
                 else if (heuristic_type == "rpg_max")
-                    heuristic = planning::MaxRPGHeuristic<GroundTag>::create(ground_task, execution_context, heuristic_cost_mode);
+                    heuristic = tyr::planning::MaxRPGHeuristic<tyr::GroundTag>::create(ground_task, execution_context, heuristic_cost_mode);
                 else if (heuristic_type == "rpg_ff")
-                    heuristic = planning::FFRPGHeuristic<GroundTag>::create(ground_task, execution_context, heuristic_cost_mode);
+                    heuristic = tyr::planning::FFRPGHeuristic<tyr::GroundTag>::create(ground_task, execution_context, heuristic_cost_mode);
                 else if (heuristic_type == "lmcut")
-                    heuristic = planning::LMCutHeuristic<GroundTag>::create(ground_task, execution_context, heuristic_cost_mode);
+                    heuristic = tyr::planning::LMCutHeuristic<tyr::GroundTag>::create(ground_task, execution_context, heuristic_cost_mode);
                 else
                     throw std::invalid_argument("The heuristic is not implemented.");
 
-                auto result = planning::gbfs_lazy::find_solution(*ground_task, *state_repository, *axiom_evaluator, *successor_generator, *heuristic, options);
-                cli::print_search_statistics(result);
+                auto result =
+                    tyr::planning::gbfs_lazy::find_solution(*ground_task, *state_repository, *axiom_evaluator, *successor_generator, *heuristic, options);
+                tyr::cli::print_search_statistics(result);
 
-                if (result.status == planning::SearchStatus::SOLVED)
+                if (result.status == tyr::planning::SearchStatus::SOLVED)
                 {
                     std::ofstream plan_file;
                     plan_file.open(plan_filepath);
@@ -255,7 +254,7 @@ int main(int argc, char** argv)
                     plan_file.close();
                 }
 
-                cli::print_summary(*ground_task->get_repository());
+                tyr::cli::print_summary(*ground_task->get_repository());
                 std::cout << (num_search_workers == 1 ? "[Total] States memory usage: " : "[Total] Retained plan states memory usage: ")
                           << state_repository->memory_usage() << " bytes" << std::endl;
             }

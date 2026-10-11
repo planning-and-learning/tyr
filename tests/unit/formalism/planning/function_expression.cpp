@@ -6,43 +6,39 @@
 namespace lifted_tests
 {
 
-namespace f = tyr::formalism;
-namespace fp = tyr::formalism::planning;
-
 template<typename Entity>
-concept FunctionExpressionContract = std::totally_ordered<ygg::Data<Entity>> && std::totally_ordered<ygg::View<ygg::Data<Entity>, fp::Repository>>
-                                     && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Data<Entity>, fp::Repository>& view) {
-                                            data.variant;
-                                            data.clear();
-                                            { data == data } -> std::same_as<bool>;
-                                            view.get_variant();
-                                            { view == view } -> std::same_as<bool>;
-                                            { view < view } -> std::same_as<bool>;
-                                        };
+concept FunctionExpressionContract =
+    std::totally_ordered<ygg::Data<Entity>> && std::totally_ordered<ygg::View<ygg::Data<Entity>, tyr::formalism::planning::Repository>>
+    && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Data<Entity>, tyr::formalism::planning::Repository>& view) {
+           data.variant;
+           data.clear();
+           { data == data } -> std::same_as<bool>;
+           view.get_variant();
+           { view == view } -> std::same_as<bool>;
+           { view < view } -> std::same_as<bool>;
+       };
 
-static_assert(FunctionExpressionContract<fp::FunctionExpression<::tyr::LiftedTag>>);
-static_assert(std::same_as<ygg::View<ygg::Data<fp::FunctionExpression<::tyr::LiftedTag>>, fp::Repository>, fp::FunctionExpressionView<::tyr::LiftedTag>>);
-
+static_assert(FunctionExpressionContract<tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>);
+static_assert(std::same_as<ygg::View<ygg::Data<tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>, tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::FunctionExpressionView<::tyr::LiftedTag>>);
 }
 
 namespace ground_tests
 {
 
-namespace f = tyr::formalism;
-namespace fp = tyr::formalism::planning;
-
 template<typename Entity>
-concept GroundFunctionExpressionContract = std::totally_ordered<ygg::Data<Entity>> && std::totally_ordered<ygg::View<ygg::Data<Entity>, fp::Repository>>
-                                           && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Data<Entity>, fp::Repository>& view) {
-                                                  data.variant;
-                                                  data.clear();
-                                                  { data == data } -> std::same_as<bool>;
-                                                  view.get_variant();
-                                                  { view == view } -> std::same_as<bool>;
-                                                  { view < view } -> std::same_as<bool>;
-                                              };
+concept GroundFunctionExpressionContract =
+    std::totally_ordered<ygg::Data<Entity>> && std::totally_ordered<ygg::View<ygg::Data<Entity>, tyr::formalism::planning::Repository>>
+    && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Data<Entity>, tyr::formalism::planning::Repository>& view) {
+           data.variant;
+           data.clear();
+           { data == data } -> std::same_as<bool>;
+           view.get_variant();
+           { view == view } -> std::same_as<bool>;
+           { view < view } -> std::same_as<bool>;
+       };
 
-static_assert(GroundFunctionExpressionContract<fp::FunctionExpression<::tyr::GroundTag>>);
-static_assert(std::same_as<ygg::View<ygg::Data<fp::FunctionExpression<::tyr::GroundTag>>, fp::Repository>, fp::FunctionExpressionView<::tyr::GroundTag>>);
-
+static_assert(GroundFunctionExpressionContract<tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>);
+static_assert(std::same_as<ygg::View<ygg::Data<tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>, tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::FunctionExpressionView<::tyr::GroundTag>>);
 }

@@ -4,30 +4,30 @@
 
 #include <concepts>
 
-namespace f = tyr::formalism;
-namespace fp = tyr::formalism::planning;
-
 template<typename Entity>
-concept ArithmeticOperatorContract = std::totally_ordered<ygg::Data<Entity>> && std::totally_ordered<ygg::View<ygg::Data<Entity>, fp::Repository>>
-                                     && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Data<Entity>, fp::Repository>& view) {
-                                            data.variant;
-                                            data.clear();
-                                            { data == data } -> std::same_as<bool>;
-                                            view.get_variant();
-                                            { view == view } -> std::same_as<bool>;
-                                            { view < view } -> std::same_as<bool>;
-                                        };
+concept ArithmeticOperatorContract =
+    std::totally_ordered<ygg::Data<Entity>> && std::totally_ordered<ygg::View<ygg::Data<Entity>, tyr::formalism::planning::Repository>>
+    && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Data<Entity>, tyr::formalism::planning::Repository>& view) {
+           data.variant;
+           data.clear();
+           { data == data } -> std::same_as<bool>;
+           view.get_variant();
+           { view == view } -> std::same_as<bool>;
+           { view < view } -> std::same_as<bool>;
+       };
 
-using LiftedArithmeticOperator = fp::ArithmeticOperator<::tyr::LiftedTag>;
-using GroundArithmeticOperator = fp::ArithmeticOperator<::tyr::GroundTag>;
+using LiftedArithmeticOperator = tyr::formalism::planning::ArithmeticOperator<::tyr::LiftedTag>;
+using GroundArithmeticOperator = tyr::formalism::planning::ArithmeticOperator<::tyr::GroundTag>;
 
 static_assert(ArithmeticOperatorContract<LiftedArithmeticOperator>);
-static_assert(std::same_as<ygg::View<ygg::Data<LiftedArithmeticOperator>, fp::Repository>, fp::ArithmeticOperatorView<::tyr::LiftedTag>>);
+static_assert(std::same_as<ygg::View<ygg::Data<LiftedArithmeticOperator>, tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::ArithmeticOperatorView<::tyr::LiftedTag>>);
 static_assert(ArithmeticOperatorContract<GroundArithmeticOperator>);
-static_assert(std::same_as<ygg::View<ygg::Data<GroundArithmeticOperator>, fp::Repository>, fp::ArithmeticOperatorView<::tyr::GroundTag>>);
+static_assert(std::same_as<ygg::View<ygg::Data<GroundArithmeticOperator>, tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::ArithmeticOperatorView<::tyr::GroundTag>>);
 
-static_assert(f::ArithmeticOperatorKind::Add == f::ArithmeticOperatorKind::Add);
-static_assert(f::ArithmeticOperatorKind::Add < f::ArithmeticOperatorKind::Sub);
-static_assert(f::to_string(f::ArithmeticOperatorKind::Mul) == "*");
-static_assert(f::is_unary(f::ArithmeticOperatorKind::Sub));
-static_assert(f::is_multi(f::ArithmeticOperatorKind::Add));
+static_assert(tyr::formalism::ArithmeticOperatorKind::Add == tyr::formalism::ArithmeticOperatorKind::Add);
+static_assert(tyr::formalism::ArithmeticOperatorKind::Add < tyr::formalism::ArithmeticOperatorKind::Sub);
+static_assert(tyr::formalism::to_string(tyr::formalism::ArithmeticOperatorKind::Mul) == "*");
+static_assert(tyr::formalism::is_unary(tyr::formalism::ArithmeticOperatorKind::Sub));
+static_assert(tyr::formalism::is_multi(tyr::formalism::ArithmeticOperatorKind::Add));

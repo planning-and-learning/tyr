@@ -29,6 +29,7 @@ namespace
 template<FactKind T>
 void bind_fdr_fact_data(nb::module_& m, const char* name)
 {
+    using namespace nb::literals;
     using V = ygg::Data<FDRFact<T>>;
     auto cls = nb::class_<V>(m, name).def(nb::init<FDRVariableView<T>, FDRValue>(), "variable"_a, "value"_a);
     cls.def(nb::init<ygg::Index<FDRVariable<T>>, FDRValue>(), "variable"_a, "value"_a);

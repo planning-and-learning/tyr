@@ -44,27 +44,29 @@ namespace tyr::planning
 {
 namespace
 {
-namespace f = formalism;
-namespace fd = formalism::datalog;
 
 struct LMCutNumericNode : ygg::comparison::Mixin<LMCutNumericNode>
 {
-    fd::FunctionBindingView<f::FluentTag> key;
+    formalism::datalog::FunctionBindingView<formalism::FluentTag> key;
     ygg::ClosedInterval<ygg::float_t> interval;
 
     LMCutNumericNode() = delete;
-    LMCutNumericNode(fd::FunctionBindingView<f::FluentTag> key, ygg::ClosedInterval<ygg::float_t> interval) : key(key), interval(interval) {}
+    LMCutNumericNode(formalism::datalog::FunctionBindingView<formalism::FluentTag> key, ygg::ClosedInterval<ygg::float_t> interval) :
+        key(key),
+        interval(interval)
+    {
+    }
 
     auto identifying_members() const noexcept { return std::make_tuple(key, lower(interval), upper(interval)); }
 };
 
 template<TaskKind Kind>
-bool requires_numeric_edge_cuts(fd::ProgramView<Kind> program)
+bool requires_numeric_edge_cuts(formalism::datalog::ProgramView<Kind> program)
 {
-    for (const auto rule : program.template get_rules<f::PredicateTag>())
+    for (const auto rule : program.template get_rules<formalism::PredicateTag>())
         if (!rule.get_body().get_numeric_constraints().empty())
             return true;
-    return !program.template get_rules<f::FunctionTag>().empty();
+    return !program.template get_rules<formalism::FunctionTag>().empty();
 }
 
 template<TaskKind Kind>
@@ -81,12 +83,12 @@ struct LMCutImplementation :
                                       datalog::TerminationPolicy<datalog::MaxAggregation>,
                                       datalog::RuleCostOverridePolicy<Kind>>;
     using ActionBinding = formalism::planning::ActionBindingView;
-    using PredicateHead = fd::PredicateBindingView<f::FluentTag>;
+    using PredicateHead = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
     using NumericNode = LMCutNumericNode;
-    using RuleEdge = fd::RuleBindingView<f::PredicateTag>;
-    using NumericEdge = datalog::NumericTransitionCostKey<f::FunctionTag>;
+    using RuleEdge = formalism::datalog::RuleBindingView<formalism::PredicateTag>;
+    using NumericEdge = datalog::NumericTransitionCostKey<formalism::FunctionTag>;
     using Precondition = std::variant<PredicateHead, NumericNode>;
-    using CutFrontierAtoms = f::planning::AtomViewList<GroundTag, f::FluentTag>;
+    using CutFrontierAtoms = formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>;
 
     LMCutImplementation(std::shared_ptr<detail::RPGDefinition<Kind>> definition,
                         ygg::ExecutionContextPtr execution_context,
@@ -96,9 +98,9 @@ struct LMCutImplementation :
     ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state, CutFrontierAtoms* cut_frontier_atoms = nullptr);
 
 private:
-    template<f::RelationKind R>
+    template<formalism::RelationKind R>
     datalog::Cost get_witness_body_cost(const datalog::WitnessAnnotation<R>& witness, const NumericNode* excluded = nullptr);
-    template<f::RelationKind R>
+    template<formalism::RelationKind R>
     datalog::Cost get_witness_edge_residual_cost(const datalog::WitnessAnnotation<R>& witness, const NumericNode* excluded = nullptr);
     bool is_target_support(const datalog::NumericSupport& support, NumericNode node) const noexcept;
     datalog::Cost get_numeric_support_cost(const datalog::NumericSupport& support);
@@ -108,8 +110,8 @@ private:
     void use_numeric_edge_cost(NumericEdge edge, datalog::Cost cost);
     void apply_residual_costs();
     datalog::Cost get_numeric_cost(NumericNode node) const noexcept;
-    const datalog::WitnessAnnotation<f::FunctionTag>* get_numeric_witness(NumericNode node) const noexcept;
-    template<f::RelationKind R>
+    const datalog::WitnessAnnotation<formalism::FunctionTag>* get_numeric_witness(NumericNode node) const noexcept;
+    template<formalism::RelationKind R>
     const std::vector<Precondition>&
     get_witness_max_preconditions(const datalog::WitnessAnnotation<R>& witness, datalog::Cost edge_cost, size_t depth, const NumericNode* excluded = nullptr);
     void mark_goal_zone(PredicateHead head, size_t depth);
@@ -231,7 +233,7 @@ void LMCutImplementation<Kind>::use_action_cost(ActionBinding action_binding, da
 }
 
 template<TaskKind Kind>
-template<f::RelationKind R>
+template<formalism::RelationKind R>
 datalog::Cost LMCutImplementation<Kind>::get_witness_body_cost(const datalog::WitnessAnnotation<R>& witness, const NumericNode* excluded)
 {
     auto body_cost = datalog::Cost(0);
@@ -245,7 +247,7 @@ datalog::Cost LMCutImplementation<Kind>::get_witness_body_cost(const datalog::Wi
 }
 
 template<TaskKind Kind>
-template<f::RelationKind R>
+template<formalism::RelationKind R>
 datalog::Cost LMCutImplementation<Kind>::get_witness_edge_residual_cost(const datalog::WitnessAnnotation<R>& witness, const NumericNode* excluded)
 {
     const auto body_cost = get_witness_body_cost(witness, excluded);
@@ -308,14 +310,14 @@ datalog::Cost LMCutImplementation<Kind>::get_numeric_cost(NumericNode node) cons
 }
 
 template<TaskKind Kind>
-const datalog::WitnessAnnotation<f::FunctionTag>* LMCutImplementation<Kind>::get_numeric_witness(NumericNode node) const noexcept
+const datalog::WitnessAnnotation<formalism::FunctionTag>* LMCutImplementation<Kind>::get_numeric_witness(NumericNode node) const noexcept
 {
     const auto* annotation = this->m_workspace.numeric_annotations.find(node.key, node.interval);
-    return annotation ? std::get_if<datalog::WitnessAnnotation<f::FunctionTag>>(annotation) : nullptr;
+    return annotation ? std::get_if<datalog::WitnessAnnotation<formalism::FunctionTag>>(annotation) : nullptr;
 }
 
 template<TaskKind Kind>
-template<f::RelationKind R>
+template<formalism::RelationKind R>
 const std::vector<typename LMCutImplementation<Kind>::Precondition>&
 LMCutImplementation<Kind>::get_witness_max_preconditions(const datalog::WitnessAnnotation<R>& witness,
                                                          datalog::Cost edge_cost,
@@ -503,7 +505,7 @@ void LMCutImplementation<Kind>::seed_goal_zone()
     const auto goal_cost = this->get_goal_cost();
     if (const auto& goal = this->m_workspace.tp.get_goal())
     {
-        for (const auto literal : goal->template get_literals<f::FluentTag>())
+        for (const auto literal : goal->template get_literals<formalism::FluentTag>())
         {
             const auto head = literal.get_atom().get_row();
             if (literal.get_polarity() && this->get_predicate_cost(head) == goal_cost)
@@ -666,7 +668,7 @@ template<TaskKind Kind>
 struct LMCutHeuristic<Kind>::Impl
 {
     using Implementation = LMCutImplementation<Kind>;
-    using CutFrontierAtoms = f::planning::AtomViewList<GroundTag, f::FluentTag>;
+    using CutFrontierAtoms = formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>;
 
     Impl(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
         m_implementation(make_implementation(std::move(task), std::move(execution_context), cost_mode))
@@ -675,7 +677,7 @@ struct LMCutHeuristic<Kind>::Impl
 
     Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) : m_implementation(source.m_implementation, std::move(execution_context)) {}
 
-    void set_goal(f::planning::ConjunctiveConditionView<GroundTag> goal) { m_implementation.set_goal(goal); }
+    void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) { m_implementation.set_goal(goal); }
 
     ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state, CutFrontierAtoms* cut_frontier_atoms = nullptr)
     {
@@ -722,7 +724,7 @@ LMCutHeuristicPtr<Kind> LMCutHeuristic<Kind>::create(TaskPtr<Kind> task, ygg::Ex
 }
 
 template<TaskKind Kind>
-void LMCutHeuristic<Kind>::set_goal(f::planning::ConjunctiveConditionView<GroundTag> goal)
+void LMCutHeuristic<Kind>::set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
 {
     m_impl->set_goal(goal);
 }
@@ -734,9 +736,9 @@ ygg::float_t LMCutHeuristic<Kind>::evaluate(const ygg::Builder<State<Kind>>& sta
 }
 
 template<TaskKind Kind>
-f::planning::AtomViewList<GroundTag, f::FluentTag> LMCutHeuristic<Kind>::compute_cut_frontier_atoms(const ygg::Builder<State<Kind>>& state)
+formalism::planning::AtomViewList<GroundTag, formalism::FluentTag> LMCutHeuristic<Kind>::compute_cut_frontier_atoms(const ygg::Builder<State<Kind>>& state)
 {
-    auto atoms = f::planning::AtomViewList<GroundTag, f::FluentTag> {};
+    auto atoms = formalism::planning::AtomViewList<GroundTag, formalism::FluentTag> {};
     static_cast<void>(m_impl->evaluate(state, &atoms));
     std::sort(atoms.begin(), atoms.end());
     atoms.erase(std::unique(atoms.begin(), atoms.end()), atoms.end());

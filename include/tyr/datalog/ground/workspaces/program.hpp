@@ -42,8 +42,10 @@ namespace tyr::datalog
 template<formalism::RelationKind R>
 struct GroundRuleDependencies
 {
+private:
     using Rules = std::vector<formalism::datalog::RuleView<GroundTag, R>>;
 
+public:
     DenseRelationMap<formalism::PredicateTag, Rules> fluent_precondition_to_rules;
     DenseRelationMap<formalism::FunctionTag, Rules> fluent_function_term_to_rules;
 

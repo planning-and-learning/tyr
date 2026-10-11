@@ -17,17 +17,14 @@
 
 #include "tyr/datalog/ground/workspaces/facts.hpp"
 
-namespace f = tyr::formalism;
-namespace fd = tyr::formalism::datalog;
-
 namespace tyr::datalog
 {
 
-FactsWorkspace<GroundTag>::FactsWorkspace(fd::PredicateListView<f::FluentTag> predicates,
-                                          fd::FunctionListView<f::FluentTag> functions,
-                                          fd::AtomListView<GroundTag, f::FluentTag> atoms,
-                                          fd::FunctionTermValueListView<GroundTag, f::FluentTag> fterm_values,
-                                          const fd::Repository& workspace_repository) :
+FactsWorkspace<GroundTag>::FactsWorkspace(formalism::datalog::PredicateListView<formalism::FluentTag> predicates,
+                                          formalism::datalog::FunctionListView<formalism::FluentTag> functions,
+                                          formalism::datalog::AtomListView<GroundTag, formalism::FluentTag> atoms,
+                                          formalism::datalog::FunctionTermValueListView<GroundTag, formalism::FluentTag> fterm_values,
+                                          const formalism::datalog::Repository& workspace_repository) :
     fact_sets(predicates, functions, atoms, fterm_values, workspace_repository)
 {
 }
@@ -37,11 +34,11 @@ void FactsWorkspace<GroundTag>::reset()
     fact_sets.reset();
 }
 
-ConstFactsWorkspace<GroundTag>::ConstFactsWorkspace(fd::PredicateListView<f::StaticTag> predicates,
-                                                    fd::FunctionListView<f::StaticTag> functions,
-                                                    fd::AtomListView<GroundTag, f::StaticTag> atoms,
-                                                    fd::FunctionTermValueListView<GroundTag, f::StaticTag> fterm_values,
-                                                    const fd::Repository& program_repository) :
+ConstFactsWorkspace<GroundTag>::ConstFactsWorkspace(formalism::datalog::PredicateListView<formalism::StaticTag> predicates,
+                                                    formalism::datalog::FunctionListView<formalism::StaticTag> functions,
+                                                    formalism::datalog::AtomListView<GroundTag, formalism::StaticTag> atoms,
+                                                    formalism::datalog::FunctionTermValueListView<GroundTag, formalism::StaticTag> fterm_values,
+                                                    const formalism::datalog::Repository& program_repository) :
     fact_sets(predicates, functions, atoms, fterm_values, program_repository)
 {
 }

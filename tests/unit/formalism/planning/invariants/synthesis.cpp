@@ -24,18 +24,12 @@
 #include <yggdrasil/serialization/json.hpp>
 #include <yggdrasil/serialization/json_suite.hpp>
 
-namespace json = boost::json;
-
-namespace f = tyr::formalism;
-namespace fp = tyr::formalism::planning;
-namespace fpi = tyr::formalism::planning::invariant;
-
 namespace tyr::tests
 {
 
 namespace
 {
-std::vector<int> parse_parameters(const json::object& atom_object)
+std::vector<int> parse_parameters(const boost::json::object& atom_object)
 {
     auto result = std::vector<int> {};
     for (const auto& parameter : ygg::common::as_array(atom_object, "parameters", "atom"))
@@ -43,41 +37,43 @@ std::vector<int> parse_parameters(const json::object& atom_object)
     return result;
 }
 
-auto atom(fp::Repository& repo, std::string_view predicate_name, const std::vector<int>& parameters)
+auto atom(tyr::formalism::planning::Repository& repo, std::string_view predicate_name, const std::vector<int>& parameters)
 {
-    auto predicate_builder = ygg::Data<f::Predicate<f::FluentTag>> { std::string(predicate_name), ygg::uint_t(parameters.size()) };
+    auto predicate_builder = ygg::Data<tyr::formalism::Predicate<tyr::formalism::FluentTag>> { std::string(predicate_name), ygg::uint_t(parameters.size()) };
     const auto predicate = repo.insert(predicate_builder).first;
 
-    auto terms = std::vector<ygg::Data<f::Term>> {};
+    auto terms = std::vector<ygg::Data<tyr::formalism::Term>> {};
     for (const auto i : parameters)
-        terms.push_back(ygg::Data<f::Term>(f::ParameterIndex(i)));
+        terms.push_back(ygg::Data<tyr::formalism::Term>(tyr::formalism::ParameterIndex(i)));
 
-    return fp::MutableAtom<f::FluentTag>(predicate, terms);
+    return tyr::formalism::planning::MutableAtom<tyr::formalism::FluentTag>(predicate, terms);
 }
 
-fpi::Invariant parse_invariant(fp::Repository& repository, const json::object& invariant_object)
+tyr::formalism::planning::invariant::Invariant parse_invariant(tyr::formalism::planning::Repository& repository, const boost::json::object& invariant_object)
 {
-    auto atoms = std::vector<fp::MutableAtom<f::FluentTag>> {};
+    auto atoms = std::vector<tyr::formalism::planning::MutableAtom<tyr::formalism::FluentTag>> {};
     for (const auto& atom_value : ygg::common::as_array(invariant_object, "atoms", "invariant"))
     {
         const auto& atom_object = ygg::common::as_object(atom_value, "atom");
         atoms.push_back(atom(repository, ygg::common::as_string(atom_object, "predicate", "atom"), parse_parameters(atom_object)));
     }
 
-    return fpi::Invariant(ygg::common::as_size(invariant_object, "num_rigid_variables", "invariant"),
-                          ygg::common::as_size(invariant_object, "num_counted_variables", "invariant"),
-                          std::move(atoms));
+    return tyr::formalism::planning::invariant::Invariant(ygg::common::as_size(invariant_object, "num_rigid_variables", "invariant"),
+                                                          ygg::common::as_size(invariant_object, "num_counted_variables", "invariant"),
+                                                          std::move(atoms));
 }
 
-std::vector<fpi::Invariant> parse_invariants(fp::Repository& repository, const json::object& case_object)
+std::vector<tyr::formalism::planning::invariant::Invariant> parse_invariants(tyr::formalism::planning::Repository& repository,
+                                                                             const boost::json::object& case_object)
 {
-    auto result = std::vector<fpi::Invariant> {};
+    auto result = std::vector<tyr::formalism::planning::invariant::Invariant> {};
     for (const auto& invariant_value : ygg::common::as_array(case_object, "invariants", "case"))
         result.push_back(parse_invariant(repository, ygg::common::as_object(invariant_value, "invariant")));
     return result;
 }
 
-void expect_invariant_sets_equal(std::vector<fpi::Invariant> actual, std::vector<fpi::Invariant> expected)
+void expect_invariant_sets_equal(std::vector<tyr::formalism::planning::invariant::Invariant> actual,
+                                 std::vector<tyr::formalism::planning::invariant::Invariant> expected)
 {
     EXPECT_EQ(actual.size(), expected.size());
     EXPECT_TRUE(std::is_permutation(actual.begin(), actual.end(), expected.begin(), expected.end()));
@@ -100,7 +96,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesis)
                 .parse_task(ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(case_object, "task_file", "case")));
         auto& repository = *lifted_task.get_repository();
 
-        auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
+        auto actual = tyr::formalism::planning::invariant::synthesize_invariants(lifted_task.get_task().get_domain());
         auto expected = parse_invariants(repository, case_object);
 
         expect_invariant_sets_equal(actual, expected);

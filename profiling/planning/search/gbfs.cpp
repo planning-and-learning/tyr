@@ -33,14 +33,12 @@
 #include <string>
 #include <type_traits>
 
-namespace fp = tyr::formalism::planning;
-namespace p = tyr::planning;
 #if defined(TYR_PROFILE_GROUND)
 using Kind = tyr::GroundTag;
 #else
 using Kind = tyr::LiftedTag;
 #endif
-using Heuristic = p::TYR_PROFILE_HEURISTIC<Kind>;
+using Heuristic = tyr::planning::TYR_PROFILE_HEURISTIC<Kind>;
 
 namespace
 {
@@ -60,9 +58,9 @@ private:
 
 using tyr::profiling::BenchmarkCase;
 
-p::TaskPtr<Kind> create_task(const BenchmarkCase& benchmark_case, ygg::ExecutionContext& execution_context)
+tyr::planning::TaskPtr<Kind> create_task(const BenchmarkCase& benchmark_case, ygg::ExecutionContext& execution_context)
 {
-    auto lifted = p::Task<tyr::LiftedTag>::create(fp::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
+    auto lifted = tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::planning::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
 #if defined(TYR_PROFILE_GROUND)
     auto ground = lifted->instantiate_ground_task(execution_context).task;
     if (!ground)
@@ -74,7 +72,7 @@ p::TaskPtr<Kind> create_task(const BenchmarkCase& benchmark_case, ygg::Execution
 #endif
 }
 
-void benchmark_gbfs_lazy(benchmark::State& state, const BenchmarkCase& benchmark_case, ygg::ExecutionContext::uint_t evaluation_threads)
+void benchmark_gbfs_lazy(benchmark::State& state, const BenchmarkCase& benchmark_case, std::size_t evaluation_threads)
 try
 {
     auto execution_context = ygg::ExecutionContext::create(evaluation_threads);
@@ -88,23 +86,23 @@ try
 
     for (auto _ : state)
     {
-        auto axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-        auto state_repository = p::StateRepositoryFactory<Kind>().create(task);
-        auto successor_generator = p::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+        auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+        auto state_repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
+        auto successor_generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
         auto heuristic = Heuristic::create(task, execution_context);
-        auto options = p::gbfs_lazy::Options<Kind>();
+        auto options = tyr::planning::gbfs_lazy::Options<Kind>();
         options.start_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
         initial_h_value = heuristic->evaluate(options.start_node->get_state());
 
-        auto result = p::SearchResult<Kind>();
+        auto result = tyr::planning::SearchResult<Kind>();
         {
             const auto silence_cout = ScopedCoutSilencer();
-            result = p::gbfs_lazy::find_solution(*task, *state_repository, *axiom_evaluator, *successor_generator, *heuristic, options);
+            result = tyr::planning::gbfs_lazy::find_solution(*task, *state_repository, *axiom_evaluator, *successor_generator, *heuristic, options);
         }
 
         num_expanded = result.statistics.get_num_expanded();
         num_generated_successors = result.statistics.get_num_generated_successors();
-        solved = result.status == p::SearchStatus::SOLVED;
+        solved = result.status == tyr::planning::SearchStatus::SOLVED;
         cost = result.plan ? result.plan->get_cost() : ygg::float_t(0);
         length = result.plan ? result.plan->get_length() : std::size_t(0);
 
@@ -142,9 +140,9 @@ try
 
     for (const auto& benchmark_case : tyr::profiling::load_suite(suite_path))
     {
-        for (const auto evaluation_threads : { ygg::ExecutionContext::uint_t(1), ygg::ExecutionContext::uint_t(8) })
+        for (const auto evaluation_threads : { std::size_t(1), std::size_t(8) })
         {
-            if (evaluation_threads != 1 && !std::is_same_v<Heuristic, p::FFRPGHeuristic<Kind>>)
+            if (evaluation_threads != 1 && !std::is_same_v<Heuristic, tyr::planning::FFRPGHeuristic<Kind>>)
                 continue;
             const auto name = benchmark_case.name + "/gbfs_lazy/evaluation_threads:" + std::to_string(evaluation_threads);
             benchmark::RegisterBenchmark(name.c_str(),

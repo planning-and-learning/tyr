@@ -8,14 +8,10 @@
 #include <concepts>
 #include <gtest/gtest.h>
 
-namespace f = tyr::formalism;
-namespace fd = tyr::formalism::datalog;
-namespace fp = tyr::formalism::planning;
-
-using ObjectData = ygg::Data<f::Object>;
-using ObjectIndex = ygg::Index<f::Object>;
-using ObjectView = ygg::View<ygg::Index<f::Object>, fp::Repository>;
-using DatalogObjectView = ygg::View<ygg::Index<f::Object>, fd::Repository>;
+using ObjectData = ygg::Data<tyr::formalism::Object>;
+using ObjectIndex = ygg::Index<tyr::formalism::Object>;
+using ObjectView = ygg::View<ygg::Index<tyr::formalism::Object>, tyr::formalism::planning::Repository>;
+using DatalogObjectView = ygg::View<ygg::Index<tyr::formalism::Object>, tyr::formalism::datalog::Repository>;
 
 static_assert(std::constructible_from<ObjectIndex, ygg::uint_t>);
 static_assert(requires(ObjectData& data) {
@@ -31,8 +27,8 @@ concept ObjectViewContract = std::totally_ordered<View> && requires(const View& 
 
 static_assert(ObjectViewContract<ObjectView>);
 static_assert(ObjectViewContract<DatalogObjectView>);
-static_assert(std::same_as<ObjectView, fp::ObjectView>);
-static_assert(std::same_as<DatalogObjectView, fd::ObjectView>);
+static_assert(std::same_as<ObjectView, tyr::formalism::planning::ObjectView>);
+static_assert(std::same_as<DatalogObjectView, tyr::formalism::datalog::ObjectView>);
 static_assert(std::totally_ordered<ObjectIndex>);
 static_assert(std::totally_ordered<ObjectData>);
 
@@ -40,7 +36,7 @@ TEST(TyrFormalismObject, ExposesOwnedContract)
 {
     auto data = ObjectData(std::string("truck"));
     EXPECT_EQ(data.name, "truck");
-    EXPECT_EQ(f::to_string(data), "truck");
+    EXPECT_EQ(tyr::formalism::to_string(data), "truck");
     EXPECT_EQ(fmt::format("{}", data), "truck");
 
     auto other = ObjectData(std::string("van"));
@@ -51,20 +47,20 @@ namespace
 {
 struct ObjectContext
 {
-    const fp::Repository& repository;
-    friend const fp::Repository& get_repository(const ObjectContext& context) noexcept { return context.repository; }
+    const tyr::formalism::planning::Repository& repository;
+    friend const tyr::formalism::planning::Repository& get_repository(const ObjectContext& context) noexcept { return context.repository; }
 };
-static_assert(ygg::formalism::SymbolRepositoryFor<fp::Repository, f::Object>);
-static_assert(ygg::formalism::SymbolContextFor<ObjectContext, f::Object>);
-static_assert(!ygg::formalism::SymbolContextFor<int, f::Object>);
+static_assert(ygg::formalism::SymbolRepositoryFor<tyr::formalism::planning::Repository, tyr::formalism::Object>);
+static_assert(ygg::formalism::SymbolContextFor<ObjectContext, tyr::formalism::Object>);
+static_assert(!ygg::formalism::SymbolContextFor<int, tyr::formalism::Object>);
 static_assert(ygg::ViewConcept<ObjectIndex, ObjectContext>);
 }
 
 TEST(TyrFormalismObject, ReadsThroughRepositoryContext)
 {
-    auto repository = fp::RepositoryFactory().create();
+    auto repository = tyr::formalism::planning::RepositoryFactory().create();
     auto data = ObjectData(std::string("truck"));
-    const auto object = fp::insert(repository, data).first;
+    const auto object = tyr::formalism::planning::insert(repository, data).first;
     const auto context = ObjectContext { repository };
     const auto view = ygg::make_view(object.get_index(), context);
     EXPECT_EQ(&view.get_data(), &object.get_data());

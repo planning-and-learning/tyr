@@ -22,13 +22,13 @@
 namespace tyr::formalism::planning
 {
 
-Parser::Parser(const fs::path& domain_filepath, const loki::ParserOptions& options, const loki::TranslatorOptions& translator_options) :
+Parser::Parser(const std::filesystem::path& domain_filepath, const loki::ParserOptions& options, const loki::TranslatorOptions& translator_options) :
     Parser(loki::semantic::read_file(domain_filepath), domain_filepath, options, translator_options)
 {
 }
 
 Parser::Parser(const std::string& domain_description,
-               std::optional<fs::path> domain_filepath,
+               std::optional<std::filesystem::path> domain_filepath,
                const loki::ParserOptions& options,
                const loki::TranslatorOptions& translator_options) :
     m_loki_parser(domain_description, options),
@@ -38,12 +38,12 @@ Parser::Parser(const std::string& domain_description,
 {
 }
 
-PlanningTask<LiftedTag> Parser::parse_task(const fs::path& task_filepath, const loki::ParserOptions& options)
+PlanningTask<LiftedTag> Parser::parse_task(const std::filesystem::path& task_filepath, const loki::ParserOptions& options)
 {
     return parse_task(loki::semantic::read_file(task_filepath), task_filepath, options);
 }
 
-PlanningTask<LiftedTag> Parser::parse_task(const std::string& task_description, std::optional<fs::path> task_filepath, const loki::ParserOptions&)
+PlanningTask<LiftedTag> Parser::parse_task(const std::string& task_description, std::optional<std::filesystem::path> task_filepath, const loki::ParserOptions&)
 {
     return LokiToTyrTranslator().translate(
         loki::translate(m_loki_parser.parse_task(task_description), m_loki_domain_translation_result, m_loki_translator_options).get_translated_task(),

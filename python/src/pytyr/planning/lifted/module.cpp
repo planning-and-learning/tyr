@@ -33,6 +33,7 @@ namespace tyr::planning
 
 void bind_lifted_module_definitions(nb::module_& m)
 {
+    using namespace nb::literals;
     auto astar_eager_module = m.def_submodule("astar_eager");
     astar_eager::bind_lifted_module_definitions(astar_eager_module);
 

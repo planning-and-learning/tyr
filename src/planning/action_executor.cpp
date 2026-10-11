@@ -33,18 +33,15 @@
 
 #include <yggdrasil/core/types.hpp>
 
-namespace f = tyr::formalism;
-namespace fp = tyr::formalism::planning;
-
 namespace tyr::planning
 {
 
 template<TaskKind Kind>
-void process_effects(fp::ActionView<GroundTag> action,
+void process_effects(formalism::planning::ActionView<GroundTag> action,
                      ygg::Builder<State<Kind>>& successor_state_builder,
                      StateContext<Kind>& state_context,
-                     ygg::DataList<fp::FDRFact<f::FluentTag>>& tmp_del_effects,
-                     ygg::DataList<fp::FDRFact<f::FluentTag>>& tmp_add_effects)
+                     ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& tmp_del_effects,
+                     ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& tmp_add_effects)
 {
     for (const auto cond_effect : action.get_effects())
     {
@@ -52,10 +49,10 @@ void process_effects(fp::ActionView<GroundTag> action,
         {
             const auto effect = cond_effect.get_effect();
 
-            for (const auto fact : effect.template get_facts<f::NegativeTag>())
+            for (const auto fact : effect.template get_facts<formalism::NegativeTag>())
                 tmp_del_effects.push_back(fact.get_data());
 
-            for (const auto fact : effect.template get_facts<f::PositiveTag>())
+            for (const auto fact : effect.template get_facts<formalism::PositiveTag>())
                 tmp_add_effects.push_back(fact.get_data());
 
             for (const auto numeric_effect : effect.get_numeric_effects())
@@ -69,15 +66,15 @@ void process_effects(fp::ActionView<GroundTag> action,
     }
 }
 
-inline void process_effects(fp::ActionView<LiftedTag> action,
+inline void process_effects(formalism::planning::ActionView<LiftedTag> action,
                             const analysis::ActionDomain& action_domain,
                             ygg::Builder<State<LiftedTag>>& successor_state_builder,
                             StateContext<LiftedTag>& state_context,
-                            fp::GrounderContext& grounder_context,
-                            fp::FDRContext& fdr_context,
+                            formalism::planning::GrounderContext& grounder_context,
+                            formalism::planning::FDRContext& fdr_context,
                             analysis::CompatibilityWorkspace& compatibility_workspace,
-                            ygg::DataList<fp::FDRFact<f::FluentTag>>& tmp_del_effects,
-                            ygg::DataList<fp::FDRFact<f::FluentTag>>& tmp_add_effects)
+                            ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& tmp_del_effects,
+                            ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& tmp_add_effects)
 {
     auto applicability_context = ApplicabilityContext { state_context, grounder_context, fdr_context };
 
@@ -86,7 +83,7 @@ inline void process_effects(fp::ActionView<LiftedTag> action,
         const auto& effect_domain = action_domain.payload.effect_domains.at(cond_effect.get_index()).payload;
         const auto binding_size = grounder_context.binding.size();
 
-        const auto prefix = std::span<const ygg::Index<f::Object>>(grounder_context.binding.data(), action.get_arity());
+        const auto prefix = std::span<const ygg::Index<formalism::Object>>(grounder_context.binding.data(), action.get_arity());
         analysis::for_each_compatible_extension(
             effect_domain,
             prefix,
@@ -131,8 +128,8 @@ inline void process_effects(fp::ActionView<LiftedTag> action,
 template<TaskKind Kind, typename ProcessEffects>
 ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_context,
                                             ygg::Builder<State<Kind>>& successor_state_builder,
-                                            ygg::DataList<fp::FDRFact<f::FluentTag>>& del_effects,
-                                            ygg::DataList<fp::FDRFact<f::FluentTag>>& add_effects,
+                                            ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& del_effects,
+                                            ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& add_effects,
                                             ProcessEffects&& process_effects)
 {
     del_effects.clear();
@@ -146,7 +143,7 @@ ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_cont
 
     for (const auto fact : del_effects)
         if (successor_state_builder.get(fact.variable) == fact.value)
-            successor_state_builder.set(ygg::Data<fp::FDRFact<f::FluentTag>> { fact.variable, fp::FDRValue::none() });
+            successor_state_builder.set(ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>> { fact.variable, formalism::planning::FDRValue::none() });
 
     for (const auto fact : add_effects)
         successor_state_builder.set(fact);
@@ -157,26 +154,26 @@ ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_cont
 // Ground action API
 
 template<TaskKind Kind>
-bool ActionExecutor::is_applicable(fp::ActionView<GroundTag> action, const StateContext<Kind>& state)
+bool ActionExecutor::is_applicable(formalism::planning::ActionView<GroundTag> action, const StateContext<Kind>& state)
 {
     return tyr::planning::is_applicable(action.get_condition(), state) && is_applicable_if_fires(action, state);
 }
 
-template bool ActionExecutor::is_applicable(fp::ActionView<GroundTag> action, const StateContext<LiftedTag>& state);
-template bool ActionExecutor::is_applicable(fp::ActionView<GroundTag> action, const StateContext<GroundTag>& state);
+template bool ActionExecutor::is_applicable(formalism::planning::ActionView<GroundTag> action, const StateContext<LiftedTag>& state);
+template bool ActionExecutor::is_applicable(formalism::planning::ActionView<GroundTag> action, const StateContext<GroundTag>& state);
 
 template<TaskKind Kind>
-bool ActionExecutor::is_applicable_if_fires(fp::ActionView<GroundTag> action, const StateContext<Kind>& state)
+bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<GroundTag> action, const StateContext<Kind>& state)
 {
     return tyr::planning::is_applicable_if_fires(action.get_effects(), state, m_effect_families);
 }
 
-template bool ActionExecutor::is_applicable_if_fires(fp::ActionView<GroundTag> action, const StateContext<LiftedTag>& state);
-template bool ActionExecutor::is_applicable_if_fires(fp::ActionView<GroundTag> action, const StateContext<GroundTag>& state);
+template bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<GroundTag> action, const StateContext<LiftedTag>& state);
+template bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<GroundTag> action, const StateContext<GroundTag>& state);
 
 template<TaskKind Kind>
 ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Kind>& state_context,
-                                                       fp::ActionView<GroundTag> action,
+                                                       formalism::planning::ActionView<GroundTag> action,
                                                        ygg::Builder<State<Kind>>& successor_state_builder)
 {
     return apply_action_unregistered_impl(state_context,
@@ -188,28 +185,28 @@ ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Kind>&
 }
 
 template ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<LiftedTag>& state_context,
-                                                                fp::ActionView<GroundTag> action,
+                                                                formalism::planning::ActionView<GroundTag> action,
                                                                 ygg::Builder<State<LiftedTag>>& successor_state_builder);
 template ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<GroundTag>& state_context,
-                                                                fp::ActionView<GroundTag> action,
+                                                                formalism::planning::ActionView<GroundTag> action,
                                                                 ygg::Builder<State<GroundTag>>& successor_state_builder);
 
 // Action binding API
 
-bool ActionExecutor::is_applicable(fp::ActionView<LiftedTag> action,
+bool ActionExecutor::is_applicable(formalism::planning::ActionView<LiftedTag> action,
                                    const StateContext<LiftedTag>& state_context,
-                                   fp::GrounderContext& grounder,
-                                   const fp::FDRContext& fdr)
+                                   formalism::planning::GrounderContext& grounder,
+                                   const formalism::planning::FDRContext& fdr)
 {
     auto applicability_context = ApplicabilityContext { state_context, grounder, fdr };
 
     return tyr::planning::is_applicable(action.get_condition(), applicability_context) && is_applicable_if_fires(action, state_context, grounder, fdr);
 }
 
-bool ActionExecutor::is_applicable_if_fires(fp::ActionView<LiftedTag> action,
+bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<LiftedTag> action,
                                             const StateContext<LiftedTag>& state_context,
-                                            fp::GrounderContext& grounder,
-                                            const fp::FDRContext& fdr)
+                                            formalism::planning::GrounderContext& grounder,
+                                            const formalism::planning::FDRContext& fdr)
 {
     auto applicability_context = ApplicabilityContext { state_context, grounder, fdr };
 
@@ -221,9 +218,9 @@ bool ActionExecutor::is_applicable_if_fires(fp::ActionView<LiftedTag> action,
 }
 
 ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<LiftedTag>& state_context,
-                                                       fp::ActionView<LiftedTag> action,
-                                                       fp::GrounderContext& grounder,
-                                                       fp::FDRContext& fdr,
+                                                       formalism::planning::ActionView<LiftedTag> action,
+                                                       formalism::planning::GrounderContext& grounder,
+                                                       formalism::planning::FDRContext& fdr,
                                                        ygg::Builder<State<LiftedTag>>& successor_state_builder)
 {
     return apply_action_unregistered_impl(state_context,

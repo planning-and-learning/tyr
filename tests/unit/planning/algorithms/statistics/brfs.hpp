@@ -17,8 +17,6 @@
 
 #include "statistics.hpp"
 
-namespace p = tyr::planning;
-
 namespace tyr::tests
 {
 namespace
@@ -26,11 +24,12 @@ namespace
 void check_statistics(const SearchStatistics& expected, const SearchCase& test_case)
 {
     auto context = create_search_context<StatisticsTaskKind>(test_case.domain_file, test_case.task_file);
-    auto event_handler = p::brfs::DefaultEventHandler<StatisticsTaskKind>::create();
+    auto event_handler = tyr::planning::brfs::DefaultEventHandler<StatisticsTaskKind>::create();
 
-    auto options = p::brfs::Options<StatisticsTaskKind>();
+    auto options = tyr::planning::brfs::Options<StatisticsTaskKind>();
     options.event_handler = event_handler;
-    const auto result = p::brfs::find_solution(*context.task, *context.state_repository, *context.axiom_evaluator, *context.successor_generator, options);
+    const auto result =
+        tyr::planning::brfs::find_solution(*context.task, *context.state_repository, *context.axiom_evaluator, *context.successor_generator, options);
 
     expect_statistics(expected, result.statistics, result);
     expect_repository_statistics(context, result.statistics);

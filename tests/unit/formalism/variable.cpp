@@ -7,14 +7,10 @@
 #include <concepts>
 #include <gtest/gtest.h>
 
-namespace f = tyr::formalism;
-namespace fd = tyr::formalism::datalog;
-namespace fp = tyr::formalism::planning;
-
-using VariableData = ygg::Data<f::Variable>;
-using VariableIndex = ygg::Index<f::Variable>;
-using VariableView = ygg::View<ygg::Index<f::Variable>, fp::Repository>;
-using DatalogVariableView = ygg::View<ygg::Index<f::Variable>, fd::Repository>;
+using VariableData = ygg::Data<tyr::formalism::Variable>;
+using VariableIndex = ygg::Index<tyr::formalism::Variable>;
+using VariableView = ygg::View<ygg::Index<tyr::formalism::Variable>, tyr::formalism::planning::Repository>;
+using DatalogVariableView = ygg::View<ygg::Index<tyr::formalism::Variable>, tyr::formalism::datalog::Repository>;
 
 static_assert(std::constructible_from<VariableIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<VariableIndex>);
@@ -33,8 +29,8 @@ concept VariableViewContract = std::totally_ordered<View> && requires(const View
 
 static_assert(VariableViewContract<VariableView>);
 static_assert(VariableViewContract<DatalogVariableView>);
-static_assert(std::same_as<VariableView, fp::VariableView>);
-static_assert(std::same_as<DatalogVariableView, fd::VariableView>);
+static_assert(std::same_as<VariableView, tyr::formalism::planning::VariableView>);
+static_assert(std::same_as<DatalogVariableView, tyr::formalism::datalog::VariableView>);
 
 TEST(TyrFormalismVariable, ExposesOwnedContract)
 {

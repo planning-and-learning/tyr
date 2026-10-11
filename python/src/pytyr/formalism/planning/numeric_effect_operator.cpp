@@ -30,13 +30,14 @@ namespace
 template<TaskKind T, FactKind F>
 void bind_numeric_effect_operator_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
 {
+    using namespace nb::literals;
     using Tag = NumericEffectOperator<T, F>;
 
     {
         using V = ygg::Data<Tag>;
         auto cls = nb::class_<V>(m, (name + "Data").c_str());
-        cls.def(nb::init<typename V::template ViewVariant<Repository>>(), "variant"_a);
-        cls.def(nb::init<NumericEffectOperatorKind, typename V::Variant>(), "operator"_a, "variant"_a);
+        cls.def(nb::init<ViewVariantT<V, Repository>>(), "variant"_a);
+        cls.def(nb::init<NumericEffectOperatorKind, VariantT<V>>(), "operator"_a, "variant"_a);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);

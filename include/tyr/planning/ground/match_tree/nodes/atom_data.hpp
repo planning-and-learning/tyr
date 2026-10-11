@@ -32,22 +32,20 @@
 
 namespace ygg
 {
-using namespace ::tyr;
-
 template<typename Tag>
-struct Data<planning::match_tree::AtomSelectorNode<Tag>>
+struct Data<::tyr::planning::match_tree::AtomSelectorNode<Tag>>
 {
-    ygg::Index<planning::match_tree::AtomSelectorNode<Tag>> index;
+    ygg::Index<::tyr::planning::match_tree::AtomSelectorNode<Tag>> index;
     ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom;
-    ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> true_child;
-    ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> false_child;
-    ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> dontcare_child;
+    ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> true_child;
+    ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> false_child;
+    ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> dontcare_child;
 
     Data() = default;
     Data(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom_,
-         ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> true_child_,
-         ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> false_child_,
-         ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> dontcare_child_) :
+         ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> true_child_,
+         ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> false_child_,
+         ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> dontcare_child_) :
         index(),
         atom(atom_),
         true_child(std::move(true_child_)),
@@ -57,9 +55,9 @@ struct Data<planning::match_tree::AtomSelectorNode<Tag>>
     }
     template<typename C>
     Data(::ygg::View<ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>, C> atom_,
-         const std::optional<::ygg::View<ygg::Data<planning::match_tree::Node<Tag>>, C>>& true_child_,
-         const std::optional<::ygg::View<ygg::Data<planning::match_tree::Node<Tag>>, C>>& false_child_,
-         const std::optional<::ygg::View<ygg::Data<planning::match_tree::Node<Tag>>, C>>& dontcare_child_) :
+         const std::optional<::ygg::View<ygg::Data<::tyr::planning::match_tree::Node<Tag>>, C>>& true_child_,
+         const std::optional<::ygg::View<ygg::Data<::tyr::planning::match_tree::Node<Tag>>, C>>& false_child_,
+         const std::optional<::ygg::View<ygg::Data<::tyr::planning::match_tree::Node<Tag>>, C>>& dontcare_child_) :
         index(),
         atom(),
         true_child(),

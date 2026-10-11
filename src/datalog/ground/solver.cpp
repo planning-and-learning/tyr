@@ -32,7 +32,6 @@
 
 namespace tyr::datalog
 {
-namespace f = formalism;
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 class SolverPolicy<GroundTag, AP, TP, CP>
@@ -53,7 +52,7 @@ public:
     Scheduler<GroundTag>& scheduler() noexcept { return m_ctx.out().scheduler(); }
 
 private:
-    template<f::RelationKind R>
+    template<formalism::RelationKind R>
     void process_next_rule(CostBuckets& pending_heads, PendingPredicateAchievers& pending_achievers)
     {
         auto& out = m_ctx.out();
@@ -75,7 +74,7 @@ private:
                                             out.cost_policy());
         const auto result = [&]
         {
-            if constexpr (std::same_as<R, f::PredicateTag>)
+            if constexpr (std::same_as<R, formalism::PredicateTag>)
             {
                 const auto head = input.rule_instance.resolve(input.rule_instance.get_head());
                 return insert_propositional_update(head, input, scratch.predicate_updates, scratch.delta_annotations, entry->cost);
@@ -96,7 +95,7 @@ private:
         if (result.status == RuleUpdateStatus::Completed)
             ++scheduler().statistics().num_rules_fired;
 
-        if constexpr (std::same_as<R, f::PredicateTag>)
+        if constexpr (std::same_as<R, formalism::PredicateTag>)
             reduce_predicate_head_updates(scratch.predicate_updates,
                                           out.annotation_policy(),
                                           out.facts().fact_sets.predicate,
@@ -118,10 +117,10 @@ private:
     {
         while (scheduler().next_cost() == cost)
         {
-            if (scheduler().template next_cost<f::PredicateTag>() <= scheduler().template next_cost<f::FunctionTag>())
-                process_next_rule<f::PredicateTag>(pending_heads, pending_achievers);
+            if (scheduler().template next_cost<formalism::PredicateTag>() <= scheduler().template next_cost<formalism::FunctionTag>())
+                process_next_rule<formalism::PredicateTag>(pending_heads, pending_achievers);
             else
-                process_next_rule<f::FunctionTag>(pending_heads, pending_achievers);
+                process_next_rule<formalism::FunctionTag>(pending_heads, pending_achievers);
         }
     }
 

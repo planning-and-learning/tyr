@@ -6,15 +6,13 @@
 namespace lifted_tests
 {
 
-namespace fd = tyr::formalism::datalog;
-
-using Data = ygg::Data<fd::FunctionExpression<::tyr::LiftedTag>>;
-using View = ygg::View<Data, fd::Repository>;
+using Data = ygg::Data<tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>;
+using View = ygg::View<Data, tyr::formalism::datalog::Repository>;
 
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
-static_assert(std::same_as<View, fd::FunctionExpressionView<::tyr::LiftedTag>>);
-static_assert(std::constructible_from<Data, Data::ViewVariant<fd::Repository>>);
+static_assert(std::same_as<View, tyr::formalism::datalog::FunctionExpressionView<::tyr::LiftedTag>>);
+static_assert(std::constructible_from<Data, Data::ViewVariant<tyr::formalism::datalog::Repository>>);
 static_assert(requires(Data& data, const View& view) {
     data.variant;
     data.clear();
@@ -26,15 +24,13 @@ static_assert(requires(Data& data, const View& view) {
 namespace ground_tests
 {
 
-namespace fd = tyr::formalism::datalog;
-
-using Data = ygg::Data<fd::FunctionExpression<::tyr::GroundTag>>;
-using View = ygg::View<Data, fd::Repository>;
+using Data = ygg::Data<tyr::formalism::datalog::FunctionExpression<::tyr::GroundTag>>;
+using View = ygg::View<Data, tyr::formalism::datalog::Repository>;
 
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
-static_assert(std::same_as<View, fd::FunctionExpressionView<::tyr::GroundTag>>);
-static_assert(std::constructible_from<Data, Data::ViewVariant<fd::Repository>>);
+static_assert(std::same_as<View, tyr::formalism::datalog::FunctionExpressionView<::tyr::GroundTag>>);
+static_assert(std::constructible_from<Data, Data::ViewVariant<tyr::formalism::datalog::Repository>>);
 static_assert(requires(Data& data, const View& view) {
     data.variant;
     data.clear();

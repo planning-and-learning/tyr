@@ -9,19 +9,17 @@
 namespace lifted_tests
 {
 
-namespace f = tyr::formalism;
-namespace fp = tyr::formalism::planning;
-
-using TaskIndex = ygg::Index<fp::Task<::tyr::LiftedTag>>;
-using TaskData = ygg::Data<fp::Task<::tyr::LiftedTag>>;
-using TaskView = ygg::View<TaskIndex, fp::Repository>;
+using TaskIndex = ygg::Index<tyr::formalism::planning::Task<::tyr::LiftedTag>>;
+using TaskData = ygg::Data<tyr::formalism::planning::Task<::tyr::LiftedTag>>;
+using TaskView = ygg::View<TaskIndex, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<TaskIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<TaskIndex>);
 static_assert(std::totally_ordered<TaskData>);
 static_assert(std::totally_ordered<TaskView>);
-static_assert(std::same_as<TaskView, fp::TaskView<::tyr::LiftedTag>>);
-static_assert(std::same_as<fp::TaskListView<::tyr::LiftedTag>, ygg::View<ygg::IndexList<fp::Task<::tyr::LiftedTag>>, fp::Repository>>);
+static_assert(std::same_as<TaskView, tyr::formalism::planning::TaskView<::tyr::LiftedTag>>);
+static_assert(std::same_as<tyr::formalism::planning::TaskListView<::tyr::LiftedTag>,
+                           ygg::View<ygg::IndexList<tyr::formalism::planning::Task<::tyr::LiftedTag>>, tyr::formalism::planning::Repository>>);
 static_assert(requires(TaskData& data) {
     data.index;
     data.name;
@@ -46,10 +44,10 @@ static_assert(requires(const TaskView& view) {
     view.get_derived_predicates();
     view.get_objects();
     { view.get_num_objects() } -> std::same_as<size_t>;
-    view.template get_atoms<f::StaticTag>();
-    view.template get_atoms<f::FluentTag>();
-    view.template get_fterm_values<f::StaticTag>();
-    view.template get_fterm_values<f::FluentTag>();
+    view.template get_atoms<tyr::formalism::StaticTag>();
+    view.template get_atoms<tyr::formalism::FluentTag>();
+    view.template get_fterm_values<tyr::formalism::StaticTag>();
+    view.template get_fterm_values<tyr::formalism::FluentTag>();
     view.get_auxiliary_fterm_value();
     view.get_goal();
     view.get_metric();
@@ -63,19 +61,17 @@ static_assert(requires(const TaskView& view) {
 namespace ground_tests
 {
 
-namespace f = tyr::formalism;
-namespace fp = tyr::formalism::planning;
-
-using TaskIndex = ygg::Index<fp::Task<::tyr::GroundTag>>;
-using TaskData = ygg::Data<fp::Task<::tyr::GroundTag>>;
-using TaskView = ygg::View<TaskIndex, fp::Repository>;
+using TaskIndex = ygg::Index<tyr::formalism::planning::Task<::tyr::GroundTag>>;
+using TaskData = ygg::Data<tyr::formalism::planning::Task<::tyr::GroundTag>>;
+using TaskView = ygg::View<TaskIndex, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<TaskIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<TaskIndex>);
 static_assert(std::totally_ordered<TaskData>);
 static_assert(std::totally_ordered<TaskView>);
-static_assert(std::same_as<TaskView, fp::TaskView<::tyr::GroundTag>>);
-static_assert(std::same_as<fp::TaskListView<::tyr::GroundTag>, ygg::View<ygg::IndexList<fp::Task<::tyr::GroundTag>>, fp::Repository>>);
+static_assert(std::same_as<TaskView, tyr::formalism::planning::TaskView<::tyr::GroundTag>>);
+static_assert(std::same_as<tyr::formalism::planning::TaskListView<::tyr::GroundTag>,
+                           ygg::View<ygg::IndexList<tyr::formalism::planning::Task<::tyr::GroundTag>>, tyr::formalism::planning::Repository>>);
 static_assert(requires(TaskData& data) {
     data.index;
     data.name;
@@ -105,11 +101,11 @@ static_assert(requires(const TaskView& view) {
     view.get_derived_predicates();
     view.get_objects();
     { view.get_num_objects() } -> std::same_as<size_t>;
-    view.template get_atoms<f::StaticTag>();
-    view.template get_atoms<f::FluentTag>();
-    view.template get_atoms<f::DerivedTag>();
-    view.template get_fterm_values<f::StaticTag>();
-    view.template get_fterm_values<f::FluentTag>();
+    view.template get_atoms<tyr::formalism::StaticTag>();
+    view.template get_atoms<tyr::formalism::FluentTag>();
+    view.template get_atoms<tyr::formalism::DerivedTag>();
+    view.template get_fterm_values<tyr::formalism::StaticTag>();
+    view.template get_fterm_values<tyr::formalism::FluentTag>();
     view.get_auxiliary_fterm_value();
     view.get_goal();
     view.get_metric();

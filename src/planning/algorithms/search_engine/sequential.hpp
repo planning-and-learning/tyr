@@ -44,7 +44,7 @@ namespace tyr::planning::detail
 {
 
 template<TaskKind Kind, SearchPolicyConcept<Kind> SearchPolicy>
-    requires std::same_as<typename SearchPolicy::SearchTag, SequentialSearch>
+    requires std::same_as<SearchTagT<SearchPolicy>, SequentialSearch>
 class SequentialExecutionPolicy
 {
 public:
@@ -104,7 +104,7 @@ public:
         return false;
     }
 
-    void start(std::optional<std::chrono::steady_clock::time_point> deadline, ygg::float_t, const typename SearchPolicy::Options&)
+    void start(std::optional<std::chrono::steady_clock::time_point> deadline, ygg::float_t, const OptionsT<SearchPolicy>&)
     {
         m_deadline = deadline;
         m_num_states = 1;
@@ -146,7 +146,7 @@ public:
     template<typename Worker, typename Callback>
     static decltype(auto) with_worker_lock(Worker&, Callback&& callback)
     {
-        return std::forward<Callback>(callback)([](auto&& evaluate) { return std::forward<decltype(evaluate)>(evaluate)(); });
+        return std::forward<Callback>(callback)([]<typename Evaluate>(Evaluate&& evaluate) { return std::forward<Evaluate>(evaluate)(); });
     }
 
     template<typename Engine>
@@ -167,7 +167,7 @@ public:
                            ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> target,
                            ygg::float_t auxiliary_value,
                            formalism::planning::ActionBindingView action,
-                           typename SearchPolicy::SuccessorMetadata metadata)
+                           SuccessorMetadataT<SearchPolicy> metadata)
     {
         const auto metric = engine.evaluate_successor_metric(*target, auxiliary_value);
         auto node = Node<Kind>(worker.state_repository.register_state(worker.axiom_evaluator, std::move(target)), metric);
@@ -176,15 +176,15 @@ public:
             throw std::runtime_error("find_solution(...): successor path cost is not finite.");
 
         worker.statistics.increment_num_generated_candidates(false);
-        const auto routed = typename Engine::RoutedSuccessor { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata), g_value, false };
+        const auto routed = RoutedSuccessorT<Engine> { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata), g_value, false };
         return engine.accept_successor(worker, source, routed, [&](const StateView<Kind>& state) { return worker.heuristic.evaluate(state); });
     }
 
     template<typename Engine, typename WorkerData, typename EmitTransition>
     static std::optional<AcceptanceResult> accept_generated_goal(Engine&,
                                                                  WorkerData&,
-                                                                 typename SearchPolicy::SearchNode&,
-                                                                 const typename Engine::RoutedSuccessor&,
+                                                                 SearchNodeT<SearchPolicy>&,
+                                                                 const RoutedSuccessorT<Engine>&,
                                                                  const StateView<Kind>&,
                                                                  ygg::float_t,
                                                                  EmitTransition&&)
@@ -193,7 +193,7 @@ public:
     }
 
     template<typename Engine, typename WorkerData>
-    static bool is_generated_goal(Engine& engine, WorkerData& worker, const typename Engine::RoutedSuccessor&, const StateView<Kind>& state)
+    static bool is_generated_goal(Engine& engine, WorkerData& worker, const RoutedSuccessorT<Engine>&, const StateView<Kind>& state)
     {
         return worker.goal_strategy->is_dynamic_goal_satisfied(engine.m_start_node.get_state(), state);
     }
@@ -235,8 +235,8 @@ public:
                  AxiomEvaluator<Kind>& axiom_evaluator,
                  SuccessorGenerator<Kind>& successor_generator,
                  Heuristic<Kind>& heuristic,
-                 const typename SearchPolicy::Options& options,
-                 const typename SearchPolicy::EventHandlerPtr& event_handler) :
+                 const OptionsT<SearchPolicy>& options,
+                 const EventHandlerPtrT<SearchPolicy>& event_handler) :
         m_worker(ygg::Index<Worker>(0),
                  state_repository,
                  axiom_evaluator,
@@ -264,7 +264,7 @@ public:
         callback(m_worker);
     }
 
-    std::pair<Plan<Kind>, Node<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal, const typename SearchPolicy::Options& options)
+    std::pair<Plan<Kind>, Node<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal, const OptionsT<SearchPolicy>& options)
     {
         auto& worker = get(goal.worker);
         const auto state = worker.state_repository.get_registered_state(goal.state);

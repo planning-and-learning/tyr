@@ -7,19 +7,17 @@
 namespace lifted_tests
 {
 
-namespace fd = tyr::formalism::datalog;
-
-using Entity = fd::ConjunctiveEffect<::tyr::LiftedTag>;
+using Entity = tyr::formalism::datalog::ConjunctiveEffect<::tyr::LiftedTag>;
 using Index = ygg::Index<Entity>;
 using Data = ygg::Data<Entity>;
-using View = ygg::View<Index, fd::Repository>;
+using View = ygg::View<Index, tyr::formalism::datalog::Repository>;
 
 static_assert(std::constructible_from<Index, ygg::uint_t>);
 static_assert(std::totally_ordered<Index>);
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
-static_assert(std::same_as<View, fd::ConjunctiveEffectView<::tyr::LiftedTag>>);
-static_assert(std::constructible_from<Data, fd::NumericEffectOperatorViewList<::tyr::LiftedTag, tyr::formalism::FluentTag>>);
+static_assert(std::same_as<View, tyr::formalism::datalog::ConjunctiveEffectView<::tyr::LiftedTag>>);
+static_assert(std::constructible_from<Data, tyr::formalism::datalog::NumericEffectOperatorViewList<::tyr::LiftedTag, tyr::formalism::FluentTag>>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.numeric_effects;
@@ -33,19 +31,17 @@ static_assert(requires(Data& data, const View& view) {
 namespace ground_tests
 {
 
-namespace fd = tyr::formalism::datalog;
-
-using Entity = fd::ConjunctiveEffect<::tyr::GroundTag>;
+using Entity = tyr::formalism::datalog::ConjunctiveEffect<::tyr::GroundTag>;
 using Index = ygg::Index<Entity>;
 using Data = ygg::Data<Entity>;
-using View = ygg::View<Index, fd::Repository>;
+using View = ygg::View<Index, tyr::formalism::datalog::Repository>;
 
 static_assert(std::constructible_from<Index, ygg::uint_t>);
 static_assert(std::totally_ordered<Index>);
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
-static_assert(std::same_as<View, fd::ConjunctiveEffectView<::tyr::GroundTag>>);
-static_assert(std::constructible_from<Data, fd::NumericEffectOperatorViewList<::tyr::GroundTag, tyr::formalism::FluentTag>>);
+static_assert(std::same_as<View, tyr::formalism::datalog::ConjunctiveEffectView<::tyr::GroundTag>>);
+static_assert(std::constructible_from<Data, tyr::formalism::datalog::NumericEffectOperatorViewList<::tyr::GroundTag, tyr::formalism::FluentTag>>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.numeric_effects;

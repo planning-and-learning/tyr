@@ -9,15 +9,11 @@
 #include <variant>
 #include <vector>
 
-namespace a = tyr::analysis;
-namespace f = tyr::formalism;
-namespace k = tyr::kckp;
-
 namespace tyr::tests
 {
 namespace
 {
-using Object = ygg::Index<f::Object>;
+using Object = ygg::Index<tyr::formalism::Object>;
 using Extension = std::vector<ygg::uint_t>;
 using Extensions = std::vector<Extension>;
 
@@ -85,9 +81,9 @@ FakeGroundAtomView atom(ygg::uint_t predicate, std::initializer_list<ygg::uint_t
     return result;
 }
 
-a::VariableDomain domain(std::initializer_list<ygg::uint_t> values)
+tyr::analysis::VariableDomain domain(std::initializer_list<ygg::uint_t> values)
 {
-    auto result = a::VariableDomain {};
+    auto result = tyr::analysis::VariableDomain {};
     for (const auto value : values)
         result.objects.emplace_back(value);
     return result;
@@ -96,7 +92,7 @@ a::VariableDomain domain(std::initializer_list<ygg::uint_t> values)
 class LabeledGraph
 {
 public:
-    explicit LabeledGraph(k::Graph graph) : m_graph(std::move(graph)), m_domains(m_graph.get_layout().num_partitions)
+    explicit LabeledGraph(tyr::kckp::Graph graph) : m_graph(std::move(graph)), m_domains(m_graph.get_layout().num_partitions)
     {
         const auto& layout = m_graph.get_layout();
         for (ygg::uint_t partition = 0; partition < layout.num_partitions; ++partition)
@@ -105,17 +101,17 @@ public:
             auto& objects = m_domains[partition].objects;
             objects.reserve(info.num_bits);
             for (ygg::uint_t bit = 0; bit < info.num_bits; ++bit)
-                objects.push_back(get_object(k::Vertex(info.bit_offset + bit)));
+                objects.push_back(get_object(tyr::kckp::Vertex(info.bit_offset + bit)));
         }
     }
 
-    const k::Graph& get_graph() const noexcept { return m_graph; }
+    const tyr::kckp::Graph& get_graph() const noexcept { return m_graph; }
     bool is_satisfiable() const noexcept { return m_graph.is_satisfiable(); }
-    const a::VariableDomainList& get_domains() const noexcept { return m_domains; }
+    const tyr::analysis::VariableDomainList& get_domains() const noexcept { return m_domains; }
 
-    Object get_object(k::Vertex vertex) const noexcept { return Object(m_graph.get_layout().vertex_labels[vertex.index]); }
+    Object get_object(tyr::kckp::Vertex vertex) const noexcept { return Object(m_graph.get_layout().vertex_labels[vertex.index]); }
 
-    k::Vertex find_vertex(ygg::uint_t partition, Object object) const noexcept
+    tyr::kckp::Vertex find_vertex(ygg::uint_t partition, Object object) const noexcept
     {
         const auto& layout = m_graph.get_layout();
         if (partition >= layout.num_partitions)
@@ -124,7 +120,7 @@ public:
         const auto& info = layout.info.infos[partition];
         for (ygg::uint_t bit = 0; bit < info.num_bits; ++bit)
         {
-            const auto vertex = k::Vertex(info.bit_offset + bit);
+            const auto vertex = tyr::kckp::Vertex(info.bit_offset + bit);
             if (get_object(vertex) == object)
                 return vertex;
         }
@@ -132,12 +128,12 @@ public:
     }
 
 private:
-    k::Graph m_graph;
-    a::VariableDomainList m_domains;
+    tyr::kckp::Graph m_graph;
+    tyr::analysis::VariableDomainList m_domains;
 };
 
 template<typename BinaryCompatible>
-LabeledGraph make_graph(a::VariableDomainList domains, bool satisfiable, BinaryCompatible&& binary_compatible)
+LabeledGraph make_graph(tyr::analysis::VariableDomainList domains, bool satisfiable, BinaryCompatible&& binary_compatible)
 {
     auto partition_sizes = std::vector<size_t> {};
     auto vertex_labels = std::vector<ygg::uint_t> {};
@@ -149,8 +145,8 @@ LabeledGraph make_graph(a::VariableDomainList domains, bool satisfiable, BinaryC
             vertex_labels.push_back(ygg::uint_t(object));
     }
 
-    const auto layout = k::create_graph_layout(partition_sizes, vertex_labels);
-    auto adjacency = k::AdjacencyMatrix(layout);
+    const auto layout = tyr::kckp::create_graph_layout(partition_sizes, vertex_labels);
+    auto adjacency = tyr::kckp::AdjacencyMatrix(layout);
     auto universal_partition_pairs = boost::dynamic_bitset<>(layout.num_partitions * layout.num_partitions);
 
     for (ygg::uint_t first_partition = 0; first_partition < layout.num_partitions; ++first_partition)
@@ -184,21 +180,21 @@ LabeledGraph make_graph(a::VariableDomainList domains, bool satisfiable, BinaryC
             }
         }
 
-    return LabeledGraph(k::Graph::create(satisfiable, std::move(adjacency), std::move(universal_partition_pairs)));
+    return LabeledGraph(tyr::kckp::Graph::create(satisfiable, std::move(adjacency), std::move(universal_partition_pairs)));
 }
 
-Extensions enumerate(const LabeledGraph& graph, std::initializer_list<ygg::uint_t> prefix_values, k::Workspace& workspace)
+Extensions enumerate(const LabeledGraph& graph, std::initializer_list<ygg::uint_t> prefix_values, tyr::kckp::Workspace& workspace)
 {
-    auto prefix = std::vector<k::Vertex> {};
+    auto prefix = std::vector<tyr::kckp::Vertex> {};
     auto partition = ygg::uint_t { 0 };
     for (const auto value : prefix_values)
         prefix.push_back(graph.find_vertex(partition++, Object(value)));
 
     auto result = Extensions {};
-    k::KCKP(graph.get_graph())
-        .for_each_compatible_extension(std::span<const k::Vertex>(prefix),
+    tyr::kckp::KCKP(graph.get_graph())
+        .for_each_compatible_extension(std::span<const tyr::kckp::Vertex>(prefix),
                                        workspace,
-                                       [&](std::span<const k::Vertex> extension)
+                                       [&](std::span<const tyr::kckp::Vertex> extension)
                                        {
                                            auto values = Extension {};
                                            for (const auto vertex : extension)
@@ -208,10 +204,10 @@ Extensions enumerate(const LabeledGraph& graph, std::initializer_list<ygg::uint_
     return result;
 }
 
-Extensions enumerate_cliques(const LabeledGraph& graph, k::Workspace& workspace)
+Extensions enumerate_cliques(const LabeledGraph& graph, tyr::kckp::Workspace& workspace)
 {
     auto result = Extensions {};
-    k::KCKP(graph.get_graph())
+    tyr::kckp::KCKP(graph.get_graph())
         .for_each_clique(
             [&](const auto& clique)
             {
@@ -227,20 +223,20 @@ Extensions enumerate_cliques(const LabeledGraph& graph, k::Workspace& workspace)
 
 TEST(TyrKCKPGraphLayout, UsesVertexIndicesAsDefaultLabels)
 {
-    const auto layout = k::create_graph_layout(std::vector<size_t> { 2, 1 });
+    const auto layout = tyr::kckp::create_graph_layout(std::vector<size_t> { 2, 1 });
 
     EXPECT_EQ(layout.vertex_labels, (std::vector<ygg::uint_t> { 0, 1, 2 }));
 }
 
 TEST(TyrAnalysisStaticLiteralCompatibility, ProjectsSupportedStaticTuplesExactlyWhenArityAllows)
 {
-    using Compatibility = a::detail::StaticLiteralCompatibility;
+    using Compatibility = tyr::analysis::detail::StaticLiteralCompatibility;
 
     {
         const auto compatibility =
             Compatibility(std::vector { literal(true, 0, { parameter(0), constant(9), parameter(0), parameter(1) }) },
                           std::vector { atom(0, { 1, 9, 1, 2 }), atom(0, { 3, 8, 3, 4 }), atom(0, { 5, 9, 6, 7 }), atom(1, { 8, 9, 8, 9 }) },
-                          a::VariableDomainList { domain({ 1, 3, 5 }), domain({ 2, 4, 7 }) },
+                          tyr::analysis::VariableDomainList { domain({ 1, 3, 5 }), domain({ 2, 4, 7 }) },
                           10);
 
         ASSERT_TRUE(compatibility.is_satisfiable());
@@ -255,13 +251,13 @@ TEST(TyrAnalysisStaticLiteralCompatibility, ProjectsSupportedStaticTuplesExactly
 
     {
         const auto negative_present =
-            Compatibility(std::vector { literal(false, 0, { constant(9) }) }, std::vector { atom(0, { 9 }) }, a::VariableDomainList {}, 10);
+            Compatibility(std::vector { literal(false, 0, { constant(9) }) }, std::vector { atom(0, { 9 }) }, tyr::analysis::VariableDomainList {}, 10);
         const auto negative_absent =
-            Compatibility(std::vector { literal(false, 0, { constant(9) }) }, std::vector { atom(0, { 8 }) }, a::VariableDomainList {}, 10);
+            Compatibility(std::vector { literal(false, 0, { constant(9) }) }, std::vector { atom(0, { 8 }) }, tyr::analysis::VariableDomainList {}, 10);
         const auto positive_present =
-            Compatibility(std::vector { literal(true, 0, { constant(9) }) }, std::vector { atom(0, { 9 }) }, a::VariableDomainList {}, 10);
+            Compatibility(std::vector { literal(true, 0, { constant(9) }) }, std::vector { atom(0, { 9 }) }, tyr::analysis::VariableDomainList {}, 10);
         const auto positive_absent =
-            Compatibility(std::vector { literal(true, 0, { constant(9) }) }, std::vector { atom(0, { 8 }) }, a::VariableDomainList {}, 10);
+            Compatibility(std::vector { literal(true, 0, { constant(9) }) }, std::vector { atom(0, { 8 }) }, tyr::analysis::VariableDomainList {}, 10);
         EXPECT_FALSE(negative_present.is_satisfiable());
         EXPECT_TRUE(negative_absent.is_satisfiable());
         EXPECT_TRUE(positive_present.is_satisfiable());
@@ -271,7 +267,7 @@ TEST(TyrAnalysisStaticLiteralCompatibility, ProjectsSupportedStaticTuplesExactly
     {
         const auto compatibility = Compatibility(std::vector { literal(false, 0, { parameter(0), constant(9) }) },
                                                  std::vector { atom(0, { 1, 9 }), atom(0, { 2, 9 }), atom(0, { 3, 8 }), atom(1, { 4, 9 }) },
-                                                 a::VariableDomainList { domain({ 1, 2, 3, 4 }) },
+                                                 tyr::analysis::VariableDomainList { domain({ 1, 2, 3, 4 }) },
                                                  10);
         EXPECT_FALSE(compatibility.unary_compatible(0, Object(1)));
         EXPECT_FALSE(compatibility.unary_compatible(0, Object(2)));
@@ -282,7 +278,7 @@ TEST(TyrAnalysisStaticLiteralCompatibility, ProjectsSupportedStaticTuplesExactly
     {
         const auto compatibility = Compatibility(std::vector { literal(false, 0, { parameter(0), parameter(1), constant(9) }) },
                                                  std::vector { atom(0, { 1, 2, 9 }), atom(0, { 2, 1, 9 }), atom(0, { 1, 1, 8 }) },
-                                                 a::VariableDomainList { domain({ 1, 2 }), domain({ 1, 2 }) },
+                                                 tyr::analysis::VariableDomainList { domain({ 1, 2 }), domain({ 1, 2 }) },
                                                  10);
         EXPECT_TRUE(compatibility.unary_compatible(0, Object(1)));
         EXPECT_FALSE(compatibility.binary_compatible(0, Object(1), 1, Object(2)));
@@ -293,7 +289,7 @@ TEST(TyrAnalysisStaticLiteralCompatibility, ProjectsSupportedStaticTuplesExactly
     {
         const auto compatibility = Compatibility(std::vector { literal(false, 0, { parameter(0), parameter(1), parameter(2) }) },
                                                  std::vector { atom(0, { 1, 2, 3 }) },
-                                                 a::VariableDomainList { domain({ 1 }), domain({ 2 }), domain({ 3 }) },
+                                                 tyr::analysis::VariableDomainList { domain({ 1 }), domain({ 2 }), domain({ 3 }) },
                                                  4);
         EXPECT_TRUE(compatibility.unary_compatible(0, Object(1)));
         EXPECT_TRUE(compatibility.binary_compatible(0, Object(1), 1, Object(2)));
@@ -305,7 +301,7 @@ TEST(TyrAnalysisStaticLiteralCompatibility, ProjectsSupportedStaticTuplesExactly
         const auto compatibility =
             Compatibility(std::vector { literal(true, 0, { parameter(0), parameter(1) }), literal(true, 1, { parameter(0), parameter(1) }) },
                           std::vector { atom(0, { 2, 17 }), atom(0, { 31, 2 }), atom(1, { 2, 17 }), atom(1, { 31, 17 }) },
-                          a::VariableDomainList { domain({ 2, 31 }), domain({ 2, 17 }) },
+                          tyr::analysis::VariableDomainList { domain({ 2, 31 }), domain({ 2, 17 }) },
                           32);
 
         EXPECT_TRUE(compatibility.unary_compatible(0, Object(2)));
@@ -319,8 +315,10 @@ TEST(TyrAnalysisStaticLiteralCompatibility, ProjectsSupportedStaticTuplesExactly
     }
 
     {
-        const auto compatibility =
-            Compatibility(std::vector { literal(true, 0, { parameter(0) }) }, std::vector { atom(0, { 17 }) }, a::VariableDomainList { domain({ 17 }) }, 18);
+        const auto compatibility = Compatibility(std::vector { literal(true, 0, { parameter(0) }) },
+                                                 std::vector { atom(0, { 17 }) },
+                                                 tyr::analysis::VariableDomainList { domain({ 17 }) },
+                                                 18);
 
         EXPECT_TRUE(compatibility.unary_compatible(1, Object(31)));
         EXPECT_TRUE(compatibility.binary_compatible(0, Object(17), 1, Object(31)));
@@ -328,7 +326,8 @@ TEST(TyrAnalysisStaticLiteralCompatibility, ProjectsSupportedStaticTuplesExactly
     }
 
     {
-        const auto compatibility = Compatibility(std::vector<FakeLiteralView> {}, std::vector<FakeGroundAtomView> {}, a::VariableDomainList { domain({}) }, 0);
+        const auto compatibility =
+            Compatibility(std::vector<FakeLiteralView> {}, std::vector<FakeGroundAtomView> {}, tyr::analysis::VariableDomainList { domain({}) }, 0);
         EXPECT_TRUE(compatibility.is_satisfiable());
         EXPECT_FALSE(compatibility.unary_compatible(0, Object(0)));
     }
@@ -336,39 +335,39 @@ TEST(TyrAnalysisStaticLiteralCompatibility, ProjectsSupportedStaticTuplesExactly
 
 TEST(TyrKCKP, PlainCliqueEnumerationReturnsFullAssignments)
 {
-    const auto graph = make_graph(a::VariableDomainList { domain({ 0, 1 }), domain({ 2, 3 }) },
+    const auto graph = make_graph(tyr::analysis::VariableDomainList { domain({ 0, 1 }), domain({ 2, 3 }) },
                                   true,
                                   [](auto, Object first, auto, Object second) { return ygg::uint_t(second) == ygg::uint_t(first) + 2; });
 
-    auto workspace = k::Workspace {};
+    auto workspace = tyr::kckp::Workspace {};
     EXPECT_EQ(enumerate_cliques(graph, workspace), (Extensions { { 0, 2 }, { 1, 3 } }));
 }
 
 TEST(TyrKCKP, ValidatesVertexPrefixes)
 {
-    const auto graph = make_graph(a::VariableDomainList { domain({ 0, 1 }), domain({ 2, 3 }) },
+    const auto graph = make_graph(tyr::analysis::VariableDomainList { domain({ 0, 1 }), domain({ 2, 3 }) },
                                   true,
                                   [](auto, Object first, auto, Object second) { return ygg::uint_t(second) == ygg::uint_t(first) + 2; });
     const auto& raw_graph = graph.get_graph();
-    auto workspace = k::Workspace {};
-    const auto count_extensions = [&](std::initializer_list<k::Vertex> prefix)
+    auto workspace = tyr::kckp::Workspace {};
+    const auto count_extensions = [&](std::initializer_list<tyr::kckp::Vertex> prefix)
     {
         auto count = size_t { 0 };
-        k::KCKP(raw_graph).for_each_compatible_extension(std::span<const k::Vertex>(prefix.begin(), prefix.size()),
-                                                         workspace,
-                                                         [&](std::span<const k::Vertex>) { ++count; });
+        tyr::kckp::KCKP(raw_graph).for_each_compatible_extension(std::span<const tyr::kckp::Vertex>(prefix.begin(), prefix.size()),
+                                                                 workspace,
+                                                                 [&](std::span<const tyr::kckp::Vertex>) { ++count; });
         return count;
     };
 
     EXPECT_EQ(count_extensions({ graph.find_vertex(0, Object(0)) }), 1);
     EXPECT_EQ(count_extensions({ graph.find_vertex(1, Object(2)) }), 0);
-    EXPECT_EQ(count_extensions({ k::Vertex(raw_graph.get_layout().num_vertices) }), 0);
+    EXPECT_EQ(count_extensions({ tyr::kckp::Vertex(raw_graph.get_layout().num_vertices) }), 0);
     EXPECT_EQ(count_extensions({ graph.find_vertex(0, Object(0)), graph.find_vertex(1, Object(3)) }), 0);
 }
 
 TEST(TyrKCKPGraph, ArcConsistencyAndSeededEnumerationCoverDegenerateCases)
 {
-    const auto graph = make_graph(a::VariableDomainList { domain({ 0, 1, 2 }), domain({ 3, 4, 5 }), domain({ 6, 7 }) },
+    const auto graph = make_graph(tyr::analysis::VariableDomainList { domain({ 0, 1, 2 }), domain({ 3, 4, 5 }), domain({ 6, 7 }) },
                                   true,
                                   [](ygg::uint_t first_partition, Object first, ygg::uint_t second_partition, Object second)
                                   {
@@ -386,7 +385,7 @@ TEST(TyrKCKPGraph, ArcConsistencyAndSeededEnumerationCoverDegenerateCases)
     EXPECT_EQ(graph.get_domains()[1].objects, (std::vector<Object> { Object(3), Object(4) }));
     EXPECT_EQ(graph.get_domains()[2].objects, (std::vector<Object> { Object(6), Object(7) }));
 
-    auto workspace = k::Workspace {};
+    auto workspace = tyr::kckp::Workspace {};
     const auto all = Extensions { { 0, 3, 6 }, { 0, 4, 6 }, { 0, 4, 7 }, { 1, 4, 6 }, { 1, 4, 7 } };
     EXPECT_EQ(enumerate(graph, {}, workspace), all);
     EXPECT_EQ(enumerate(graph, { 0 }, workspace), (Extensions { { 3, 6 }, { 4, 6 }, { 4, 7 } }));
@@ -396,22 +395,22 @@ TEST(TyrKCKPGraph, ArcConsistencyAndSeededEnumerationCoverDegenerateCases)
     EXPECT_EQ(enumerate(graph, { 0, 3, 6 }, workspace), (Extensions { {} }));
     EXPECT_TRUE(enumerate(graph, { 1, 3, 6 }, workspace).empty());
 
-    const auto unary = make_graph(a::VariableDomainList { domain({ 9 }) }, true, [](auto, auto, auto, auto) { return true; });
+    const auto unary = make_graph(tyr::analysis::VariableDomainList { domain({ 9 }) }, true, [](auto, auto, auto, auto) { return true; });
     EXPECT_EQ(enumerate(unary, {}, workspace), (Extensions { { 9 } }));
     EXPECT_EQ(enumerate(graph, {}, workspace), all);
 
-    const auto satisfiable_nullary = make_graph(a::VariableDomainList {}, true, [](auto, auto, auto, auto) { return true; });
-    const auto dead_nullary = make_graph(a::VariableDomainList {}, false, [](auto, auto, auto, auto) { return true; });
+    const auto satisfiable_nullary = make_graph(tyr::analysis::VariableDomainList {}, true, [](auto, auto, auto, auto) { return true; });
+    const auto dead_nullary = make_graph(tyr::analysis::VariableDomainList {}, false, [](auto, auto, auto, auto) { return true; });
     EXPECT_EQ(enumerate(satisfiable_nullary, {}, workspace), (Extensions { {} }));
     EXPECT_TRUE(enumerate(dead_nullary, {}, workspace).empty());
 
-    const auto dead_unary = make_graph(a::VariableDomainList { domain({ 8, 9 }) }, false, [](auto, auto, auto, auto) { return true; });
+    const auto dead_unary = make_graph(tyr::analysis::VariableDomainList { domain({ 8, 9 }) }, false, [](auto, auto, auto, auto) { return true; });
     EXPECT_TRUE(dead_unary.get_domains()[0].objects.empty());
 }
 
 TEST(TyrKCKPGraph, IncrementalSupportsPropagateAsymmetricCascadeAndPreserveCompactionOrder)
 {
-    const auto graph = make_graph(a::VariableDomainList { domain({ 3, 1, 2, 0 }), domain({ 11, 10 }), domain({ 22, 20, 21 }), domain({ 30 }) },
+    const auto graph = make_graph(tyr::analysis::VariableDomainList { domain({ 3, 1, 2, 0 }), domain({ 11, 10 }), domain({ 22, 20, 21 }), domain({ 30 }) },
                                   true,
                                   [](ygg::uint_t first_partition, Object first, ygg::uint_t second_partition, Object second)
                                   {
@@ -432,25 +431,26 @@ TEST(TyrKCKPGraph, IncrementalSupportsPropagateAsymmetricCascadeAndPreserveCompa
     EXPECT_EQ(graph.get_domains()[2].objects, (std::vector<Object> { Object(20) }));
     EXPECT_EQ(graph.get_domains()[3].objects, (std::vector<Object> { Object(30) }));
 
-    auto workspace = k::Workspace {};
+    auto workspace = tyr::kckp::Workspace {};
     EXPECT_EQ(enumerate(graph, {}, workspace), (Extensions { { 1, 10, 20, 30 }, { 0, 10, 20, 30 } }));
 }
 
 TEST(TyrKCKPGraph, EmptyPartitionMakesGraphUnsatisfiable)
 {
-    const auto graph = make_graph(a::VariableDomainList { domain({ 0, 1 }), domain({}), domain({ 2 }) }, true, [](auto, auto, auto, auto) { return true; });
+    const auto graph =
+        make_graph(tyr::analysis::VariableDomainList { domain({ 0, 1 }), domain({}), domain({ 2 }) }, true, [](auto, auto, auto, auto) { return true; });
 
     EXPECT_FALSE(graph.is_satisfiable());
     for (const auto& variable_domain : graph.get_domains())
         EXPECT_TRUE(variable_domain.objects.empty());
 
-    auto workspace = k::Workspace {};
+    auto workspace = tyr::kckp::Workspace {};
     EXPECT_TRUE(enumerate(graph, {}, workspace).empty());
 }
 
 TEST(TyrKCKPGraph, ArcConsistencyDoesNotImplyClique)
 {
-    const auto graph = make_graph(a::VariableDomainList { domain({ 0, 1 }), domain({ 2, 3 }), domain({ 4, 5 }) },
+    const auto graph = make_graph(tyr::analysis::VariableDomainList { domain({ 0, 1 }), domain({ 2, 3 }), domain({ 4, 5 }) },
                                   true,
                                   [](ygg::uint_t first_partition, Object first, ygg::uint_t second_partition, Object second)
                                   {
@@ -468,17 +468,17 @@ TEST(TyrKCKPGraph, ArcConsistencyDoesNotImplyClique)
     EXPECT_EQ(graph.get_domains()[1].objects, (std::vector<Object> { Object(2), Object(3) }));
     EXPECT_EQ(graph.get_domains()[2].objects, (std::vector<Object> { Object(4), Object(5) }));
 
-    auto workspace = k::Workspace {};
+    auto workspace = tyr::kckp::Workspace {};
     EXPECT_TRUE(enumerate(graph, {}, workspace).empty());
 }
 
 TEST(TyrKCKPGraph, SupportAcrossBitsetBlockBoundaryIsPreserved)
 {
-    auto target_domain = a::VariableDomain {};
+    auto target_domain = tyr::analysis::VariableDomain {};
     for (ygg::uint_t object = 1; object <= 65; ++object)
         target_domain.objects.emplace_back(object);
 
-    auto domains = a::VariableDomainList {};
+    auto domains = tyr::analysis::VariableDomainList {};
     domains.push_back(domain({ 0 }));
     domains.push_back(std::move(target_domain));
     const auto graph = make_graph(std::move(domains), true, [](auto, auto, auto, Object target) { return ygg::uint_t(target) == 65; });
@@ -487,7 +487,7 @@ TEST(TyrKCKPGraph, SupportAcrossBitsetBlockBoundaryIsPreserved)
     EXPECT_EQ(graph.get_domains()[0].objects, (std::vector<Object> { Object(0) }));
     EXPECT_EQ(graph.get_domains()[1].objects, (std::vector<Object> { Object(65) }));
 
-    auto workspace = k::Workspace {};
+    auto workspace = tyr::kckp::Workspace {};
     EXPECT_EQ(enumerate(graph, {}, workspace), (Extensions { { 0, 65 } }));
 }
 

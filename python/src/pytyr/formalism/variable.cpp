@@ -23,6 +23,7 @@ namespace tyr::formalism
 
 void bind_variable(nb::module_& m)
 {
+    using namespace nb::literals;
     ygg::bind_index<ygg::Index<Variable>>(m, "VariableIndex");
 
     {

@@ -24,6 +24,7 @@ namespace tyr::datalog
 
 void bind_ground_module_definitions(nb::module_& m)
 {
+    using namespace nb::literals;
     using ProgramT = Program<GroundTag>;
     using ConstWorkspace = ConstProgramWorkspace<GroundTag>;
 

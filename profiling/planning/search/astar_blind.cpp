@@ -37,9 +37,6 @@
 #include <string_view>
 #include <vector>
 
-namespace fp = tyr::formalism::planning;
-namespace p = tyr::planning;
-
 namespace
 {
 using Kind = tyr::TYR_PROFILE_TASK_KIND;
@@ -51,7 +48,7 @@ struct Options
     std::vector<ygg::uint_t> cores { 1, 2, 4, 8, 16 };
     double search_timeout = 60;
     ygg::uint_t max_states = 1'000'000;
-    p::astar_eager::ParallelSearchMode search_mode = p::astar_eager::ParallelSearchMode::SYNCHRONOUS;
+    tyr::planning::astar_eager::ParallelSearchMode search_mode = tyr::planning::astar_eager::ParallelSearchMode::SYNCHRONOUS;
 };
 
 ygg::uint_t parse_count(std::string_view value)
@@ -106,9 +103,9 @@ Options parse_options(int& argc, char** argv)
         else if (name == "--max-states")
             options.max_states = parse_count(value);
         else if (value == "sync")
-            options.search_mode = p::astar_eager::ParallelSearchMode::SYNCHRONOUS;
+            options.search_mode = tyr::planning::astar_eager::ParallelSearchMode::SYNCHRONOUS;
         else if (value == "async")
-            options.search_mode = p::astar_eager::ParallelSearchMode::ASYNCHRONOUS;
+            options.search_mode = tyr::planning::astar_eager::ParallelSearchMode::ASYNCHRONOUS;
         else
             throw std::invalid_argument("--search-mode must be sync or async.");
     }
@@ -119,9 +116,9 @@ Options parse_options(int& argc, char** argv)
 
 struct PreparedCase
 {
-    p::TaskPtr<Kind> task;
-    p::AxiomEvaluatorPtr<Kind> axiom_evaluator;
-    p::SuccessorGeneratorPtr<Kind> successor_generator;
+    tyr::planning::TaskPtr<Kind> task;
+    tyr::planning::AxiomEvaluatorPtr<Kind> axiom_evaluator;
+    tyr::planning::SuccessorGeneratorPtr<Kind> successor_generator;
     double parse_seconds = 0;
     double ground_seconds = 0;
     double component_setup_seconds = 0;
@@ -129,10 +126,10 @@ struct PreparedCase
 };
 
 template<tyr::TaskKind T>
-p::TaskPtr<T> create_task(const BenchmarkCase& benchmark_case, PreparedCase& prepared, [[maybe_unused]] ygg::ExecutionContext& execution_context)
+tyr::planning::TaskPtr<T> create_task(const BenchmarkCase& benchmark_case, PreparedCase& prepared, [[maybe_unused]] ygg::ExecutionContext& execution_context)
 {
     const auto parse_start = Clock::now();
-    auto lifted_task = p::Task<tyr::LiftedTag>::create(fp::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
+    auto lifted_task = tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::planning::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
     prepared.parse_seconds = std::chrono::duration<double>(Clock::now() - parse_start).count();
     if constexpr (std::same_as<T, tyr::GroundTag>)
     {
@@ -147,7 +144,7 @@ p::TaskPtr<T> create_task(const BenchmarkCase& benchmark_case, PreparedCase& pre
         return lifted_task;
 }
 
-template p::TaskPtr<Kind> create_task<Kind>(const BenchmarkCase&, PreparedCase&, ygg::ExecutionContext&);
+template tyr::planning::TaskPtr<Kind> create_task<Kind>(const BenchmarkCase&, PreparedCase&, ygg::ExecutionContext&);
 
 void run(benchmark::State& state, const BenchmarkCase& benchmark_case, PreparedCase& prepared, ygg::uint_t cores, const Options& options)
 {
@@ -158,19 +155,19 @@ void run(benchmark::State& state, const BenchmarkCase& benchmark_case, PreparedC
         {
             prepared.task = create_task<Kind>(benchmark_case, prepared, *execution_context);
             const auto component_start = Clock::now();
-            prepared.axiom_evaluator = p::AxiomEvaluatorFactory<Kind>().create(prepared.task, execution_context);
-            prepared.successor_generator = p::SuccessorGeneratorFactory<Kind>().create(prepared.task, execution_context);
+            prepared.axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(prepared.task, execution_context);
+            prepared.successor_generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(prepared.task, execution_context);
             prepared.component_setup_seconds = std::chrono::duration<double>(Clock::now() - component_start).count();
         }
 
         for (auto _ : state)
         {
             const auto worker_setup_start = Clock::now();
-            auto repository = p::StateRepositoryFactory<Kind>().create(prepared.task);
+            auto repository = tyr::planning::StateRepositoryFactory<Kind>().create(prepared.task);
             auto axiom_evaluator = prepared.axiom_evaluator->make_worker(execution_context);
             auto successor_generator = prepared.successor_generator->make_worker(execution_context);
-            auto heuristic = p::BlindHeuristic<Kind> {};
-            auto search_options = p::astar_eager::Options<Kind> {};
+            auto heuristic = tyr::planning::BlindHeuristic<Kind> {};
+            auto search_options = tyr::planning::astar_eager::Options<Kind> {};
             search_options.num_search_workers = cores;
             search_options.parallel_search_mode = options.search_mode;
             search_options.search_budget.max_num_states = options.max_states;
@@ -179,12 +176,13 @@ void run(benchmark::State& state, const BenchmarkCase& benchmark_case, PreparedC
             const auto worker_setup_seconds = std::chrono::duration<double>(Clock::now() - worker_setup_start).count();
 
             const auto search_start = Clock::now();
-            const auto result = p::astar_eager::find_solution(*prepared.task, *repository, *axiom_evaluator, *successor_generator, heuristic, search_options);
+            const auto result =
+                tyr::planning::astar_eager::find_solution(*prepared.task, *repository, *axiom_evaluator, *successor_generator, heuristic, search_options);
             state.SetIterationTime(std::chrono::duration<double>(Clock::now() - search_start).count());
 
             if (result.worker_statistics.size() != cores)
                 throw std::runtime_error("Search did not use the requested number of workers.");
-            const auto solved = result.status == p::SearchStatus::SOLVED;
+            const auto solved = result.status == tyr::planning::SearchStatus::SOLVED;
             if (solved)
             {
                 if (!result.plan || !std::isfinite(result.plan->get_cost()))
@@ -233,7 +231,7 @@ int main(int argc, char** argv)
         benchmark::Initialize(&argc, argv);
         if (benchmark::ReportUnrecognizedArguments(argc, argv))
             return 1;
-        const auto mode = options.search_mode == p::astar_eager::ParallelSearchMode::SYNCHRONOUS ? "sync" : "async";
+        const auto mode = options.search_mode == tyr::planning::astar_eager::ParallelSearchMode::SYNCHRONOUS ? "sync" : "async";
         for (const auto& benchmark_case : tyr::profiling::load_suite(suite))
         {
             const auto prepared = std::make_shared<PreparedCase>();

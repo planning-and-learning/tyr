@@ -34,6 +34,7 @@ namespace
 template<typename T>
 void bind_substitution_function(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using V = unification::SubstitutionFunction<T>;
 
     auto cls = nb::class_<V>(m, name.c_str())
@@ -127,6 +128,7 @@ void bind_invariant(nb::module_& m, const std::string& name)
 
 void bind_invariant_match_data(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using V = InvariantMatchData;
     using ObjectSubstitution = unification::SubstitutionFunction<ygg::Index<Object>>;
 
@@ -164,6 +166,7 @@ void bind_query_result(nb::module_& m, const std::string& name)
 
 void bind_matcher(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using V = Matcher;
     using MatchDataList = InvariantMatchDataList;
 
@@ -190,6 +193,7 @@ void bind_matcher(nb::module_& m, const std::string& name)
 
 void bind_invariants(nb::module_& m)
 {
+    using namespace nb::literals;
     bind_invariant(m, "Invariant");
     bind_substitution_function<ygg::Index<Object>>(m, "ObjectSubstitution");
     bind_substitution_function<ygg::Data<Term>>(m, "TermSubstitution");

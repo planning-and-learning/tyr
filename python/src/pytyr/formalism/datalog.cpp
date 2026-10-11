@@ -29,6 +29,7 @@ namespace tyr::formalism::datalog
 
 void bind_module_definitions(nb::module_& m)
 {
+    using namespace nb::literals;
     bind_formalism(m);
 
     nb::class_<RepositoryFactory>(m, "RepositoryFactory")  //

@@ -56,8 +56,6 @@ using ygg::formalism::insert;
 template<typename Tag>
 class Repository : public ygg::formalism::SymbolRepositoryBase<Repository<Tag>, RepositoryTypes<Tag>>
 {
-    using Base = ygg::formalism::SymbolRepositoryBase<Repository<Tag>, RepositoryTypes<Tag>>;
-
 private:
     const formalism::planning::Repository& m_formalism_repository;
     ygg::uint_t m_index;

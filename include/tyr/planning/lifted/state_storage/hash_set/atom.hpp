@@ -56,7 +56,7 @@ public:
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    typename Context::UintVectorSet& m_uint_vec_set;
+    UintVectorSetT<Context>& m_uint_vec_set;
 
     std::vector<ygg::uint_t> m_buffer;
 };

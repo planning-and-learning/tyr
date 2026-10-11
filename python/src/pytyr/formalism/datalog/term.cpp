@@ -23,6 +23,7 @@ namespace tyr::formalism::datalog
 
 void bind_term(nb::module_& m, RepositoryBinding& repository)
 {
+    using namespace nb::literals;
     {
         using V = TermView;
         auto cls = nb::class_<V>(m, "Term").def("get_variant", &V::get_variant);

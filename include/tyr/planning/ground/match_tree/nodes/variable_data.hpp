@@ -32,20 +32,18 @@
 
 namespace ygg
 {
-using namespace ::tyr;
-
 template<typename Tag>
-struct Data<planning::match_tree::VariableSelectorNode<Tag>>
+struct Data<::tyr::planning::match_tree::VariableSelectorNode<Tag>>
 {
-    ygg::Index<planning::match_tree::VariableSelectorNode<Tag>> index;
+    ygg::Index<::tyr::planning::match_tree::VariableSelectorNode<Tag>> index;
     ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> variable;
-    ::cista::offset::vector<::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>>> domain_children;
-    ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> dontcare_child;
+    ::cista::offset::vector<::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>>> domain_children;
+    ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> dontcare_child;
 
     Data() = default;
     Data(ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> variable_,
-         ::cista::offset::vector<::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>>> domain_children_,
-         ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> dontcare_child_) :
+         ::cista::offset::vector<::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>>> domain_children_,
+         ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> dontcare_child_) :
         index(),
         variable(variable_),
         domain_children(std::move(domain_children_)),
@@ -54,8 +52,8 @@ struct Data<planning::match_tree::VariableSelectorNode<Tag>>
     }
     template<typename C>
     Data(::ygg::View<ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>>, C> variable_,
-         const std::vector<std::optional<::ygg::View<ygg::Data<planning::match_tree::Node<Tag>>, C>>>& domain_children_,
-         const std::optional<::ygg::View<ygg::Data<planning::match_tree::Node<Tag>>, C>>& dontcare_child_) :
+         const std::vector<std::optional<::ygg::View<ygg::Data<::tyr::planning::match_tree::Node<Tag>>, C>>>& domain_children_,
+         const std::optional<::ygg::View<ygg::Data<::tyr::planning::match_tree::Node<Tag>>, C>>& dontcare_child_) :
         index(),
         variable(),
         domain_children(),

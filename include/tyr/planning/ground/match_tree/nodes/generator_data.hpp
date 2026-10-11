@@ -33,12 +33,10 @@
 
 namespace ygg
 {
-using namespace ::tyr;
-
 template<typename Tag>
-struct Data<planning::match_tree::ElementGeneratorNode<Tag>>
+struct Data<::tyr::planning::match_tree::ElementGeneratorNode<Tag>>
 {
-    ygg::Index<planning::match_tree::ElementGeneratorNode<Tag>> index;
+    ygg::Index<::tyr::planning::match_tree::ElementGeneratorNode<Tag>> index;
     ygg::IndexList<Tag> elements;
 
     Data() = default;

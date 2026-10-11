@@ -41,9 +41,8 @@ inline size_t part_arity(const MutableAtom<FluentTag>& part, size_t num_rigid_va
     for (const auto& term : part.terms)
     {
         std::visit(
-            [&](auto&& arg)
+            [&]<typename T>(const T& arg)
             {
-                using T = std::decay_t<decltype(arg)>;
                 if constexpr (std::is_same_v<T, ParameterIndex>)
                 {
                     if (static_cast<ygg::uint_t>(arg) >= num_rigid_variables)
@@ -62,9 +61,8 @@ inline bool atom_uses_counted(const MutableAtom<FluentTag>& atom, size_t num_rig
                                [&](const auto& term)
                                {
                                    return std::visit(
-                                       [&](auto&& arg) -> bool
+                                       [&]<typename T>(const T& arg) -> bool
                                        {
-                                           using T = std::decay_t<decltype(arg)>;
                                            if constexpr (std::is_same_v<T, ParameterIndex>)
                                                return static_cast<ygg::uint_t>(arg) >= num_rigid_variables;
                                            return false;

@@ -32,18 +32,18 @@
 
 namespace ygg
 {
-using namespace ::tyr;
-
 template<typename Tag>
-struct Data<planning::match_tree::NumericConstraintSelectorNode<Tag>>
+struct Data<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>
 {
-    ygg::Index<planning::match_tree::NumericConstraintSelectorNode<Tag>> index;
+    ygg::Index<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>> index;
     ygg::Data<::tyr::formalism::planning::BooleanOperator<::tyr::GroundTag>> constraint;
-    ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> true_child;
-    ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> dontcare_child;
+    ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> true_child;
+    ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> dontcare_child;
 
     Data() = default;
-    Data(ygg::Data<::tyr::formalism::planning::BooleanOperator<::tyr::GroundTag>> constraint_, ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> true_child_, ::cista::optional<ygg::Data<planning::match_tree::Node<Tag>>> dontcare_child_) :
+    Data(ygg::Data<::tyr::formalism::planning::BooleanOperator<::tyr::GroundTag>> constraint_,
+         ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> true_child_,
+         ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> dontcare_child_) :
         index(),
         constraint(std::move(constraint_)),
         true_child(std::move(true_child_)),
@@ -51,7 +51,9 @@ struct Data<planning::match_tree::NumericConstraintSelectorNode<Tag>>
     {
     }
     template<typename C>
-    Data(::ygg::View<ygg::Data<::tyr::formalism::planning::BooleanOperator<::tyr::GroundTag>>, C> constraint_, const std::optional<::ygg::View<ygg::Data<planning::match_tree::Node<Tag>>, C>>& true_child_, const std::optional<::ygg::View<ygg::Data<planning::match_tree::Node<Tag>>, C>>& dontcare_child_) :
+    Data(::ygg::View<ygg::Data<::tyr::formalism::planning::BooleanOperator<::tyr::GroundTag>>, C> constraint_,
+         const std::optional<::ygg::View<ygg::Data<::tyr::planning::match_tree::Node<Tag>>, C>>& true_child_,
+         const std::optional<::ygg::View<ygg::Data<::tyr::planning::match_tree::Node<Tag>>, C>>& dontcare_child_) :
         index(),
         constraint(),
         true_child(),

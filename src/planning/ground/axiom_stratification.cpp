@@ -21,28 +21,24 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 
-namespace f = tyr::formalism;
-namespace fp = tyr::formalism::planning;
-namespace as = tyr::analysis::stratification;
-
 namespace tyr::planning
 {
 
 // Build dependency graph: nodes = derived ground atoms
-static as::DepGraph build_dependency_graph(fp::TaskView<GroundTag> task, size_t num_atoms)
+static analysis::stratification::DepGraph build_dependency_graph(formalism::planning::TaskView<GroundTag> task, size_t num_atoms)
 {
-    as::DepGraph graph(num_atoms);
+    analysis::stratification::DepGraph graph(num_atoms);
 
     for (const auto axiom : task.get_ground_axioms())
     {
         const auto h_atom = axiom.get_head().get_index();
 
-        for (const auto literal : axiom.get_body().get_literals<f::DerivedTag>())
+        for (const auto literal : axiom.get_body().get_literals<formalism::DerivedTag>())
         {
             const auto b_atom = literal.get_atom().get_index();
 
-            as::EdgeProps ep;
-            ep.kind = literal.get_polarity() ? as::EdgeKind::NonStrict : as::EdgeKind::Strict;
+            analysis::stratification::EdgeProps ep;
+            ep.kind = literal.get_polarity() ? analysis::stratification::EdgeKind::NonStrict : analysis::stratification::EdgeKind::Strict;
             boost::add_edge(b_atom.value, h_atom.value, ep, graph);
         }
     }
@@ -50,21 +46,21 @@ static as::DepGraph build_dependency_graph(fp::TaskView<GroundTag> task, size_t 
     return graph;
 }
 
-GroundAxiomStrata compute_ground_axiom_stratification(fp::TaskView<GroundTag> task)
+GroundAxiomStrata compute_ground_axiom_stratification(formalism::planning::TaskView<GroundTag> task)
 {
-    const auto num_atoms = task.get_atoms<f::DerivedTag>().size();
+    const auto num_atoms = task.get_atoms<formalism::DerivedTag>().size();
 
     // 1) dependency graph
     const auto dep = build_dependency_graph(task, num_atoms);
 
     // 2) SCC + check
-    const auto [comp, num_comps] = as::compute_scc_and_check(dep);
+    const auto [comp, num_comps] = analysis::stratification::compute_scc_and_check(dep);
 
     // 3) Condensed DAG
-    const auto dag = as::build_condensation_dag(dep, comp, num_comps);
+    const auto dag = analysis::stratification::build_condensation_dag(dep, comp, num_comps);
 
     // 4) Component strata
-    const auto comp_stratum = as::compute_component_strata(dag);
+    const auto comp_stratum = analysis::stratification::compute_component_strata(dag);
 
     // 5) Assign each derived atom a stratum
     auto atom_stratum = std::vector<ygg::uint_t>(num_atoms, 0);

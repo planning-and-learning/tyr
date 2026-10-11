@@ -30,7 +30,6 @@ namespace tyr::planning::serialized
 template<std::copy_constructible Stats = tyr::planning::Statistics>
 class Statistics
 {
-public:
     using SearchStatistics = tyr::planning::Statistics;
     using SolverStatistics = Stats;
 

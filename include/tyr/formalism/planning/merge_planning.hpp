@@ -138,10 +138,8 @@ inline std::pair<ObjectView, bool> merge_d2p(datalog::ObjectView element, MergeP
 inline ygg::Data<Term> merge_d2p(datalog::TermView element, MergePlanningContext& context)
 {
     return visit(
-        [&](auto&& arg)
+        [&]<typename Alternative>(const Alternative& arg)
         {
-            using Alternative = std::decay_t<decltype(arg)>;
-
             if constexpr (std::is_same_v<Alternative, ParameterIndex>)
                 return ygg::Data<Term>(arg);
             else if constexpr (std::is_same_v<Alternative, datalog::ObjectView>)
@@ -304,10 +302,8 @@ std::pair<FunctionTermValueView<GroundTag, T>, bool> merge_d2p(datalog::Function
 inline ygg::Data<FunctionExpression<LiftedTag>> merge_d2p(datalog::FunctionExpressionView<LiftedTag> element, MergePlanningContext& context)
 {
     return visit(
-        [&](auto&& arg)
+        [&]<typename Alternative>(const Alternative& arg)
         {
-            using Alternative = std::decay_t<decltype(arg)>;
-
             if constexpr (std::is_same_v<Alternative, ygg::float_t>)
                 return ygg::Data<FunctionExpression<LiftedTag>>(arg);
             else if constexpr (std::is_same_v<Alternative, datalog::ArithmeticOperatorView<LiftedTag>>)
@@ -323,10 +319,8 @@ inline ygg::Data<FunctionExpression<LiftedTag>> merge_d2p(datalog::FunctionExpre
 inline ygg::Data<FunctionExpression<GroundTag>> merge_d2p(datalog::FunctionExpressionView<GroundTag> element, MergePlanningContext& context)
 {
     return visit(
-        [&](auto&& arg)
+        [&]<typename Alternative>(const Alternative& arg)
         {
-            using Alternative = std::decay_t<decltype(arg)>;
-
             if constexpr (std::is_same_v<Alternative, ygg::float_t>)
                 return ygg::Data<FunctionExpression<GroundTag>>(arg);
             else if constexpr (std::is_same_v<Alternative, datalog::ArithmeticOperatorView<GroundTag>>)

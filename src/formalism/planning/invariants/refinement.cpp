@@ -43,9 +43,8 @@ get_parameters_from_part(const MutableAtom<FluentTag>& part, const MutableAtom<F
     for (size_t pos = 0; pos < part.terms.size(); ++pos)
     {
         std::visit(
-            [&](auto&& arg)
+            [&]<typename T>(const T& arg)
             {
-                using T = std::decay_t<decltype(arg)>;
                 if constexpr (std::is_same_v<T, ParameterIndex>)
                 {
                     if (static_cast<ygg::uint_t>(arg) < num_rigid_variables)

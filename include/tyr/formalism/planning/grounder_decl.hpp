@@ -40,9 +40,7 @@ struct GrounderCacheEntry;
 template<>
 struct GrounderCacheEntry<Axiom<LiftedTag>>
 {
-    using container_type = ygg::UnorderedMap<ygg::Index<RelationBinding<Axiom<LiftedTag>>>, ygg::Index<Axiom<GroundTag>>>;
-
-    container_type container;
+    ygg::UnorderedMap<ygg::Index<RelationBinding<Axiom<LiftedTag>>>, ygg::Index<Axiom<GroundTag>>> container;
 };
 
 }

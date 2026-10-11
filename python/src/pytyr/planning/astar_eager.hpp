@@ -82,6 +82,7 @@ void bind_solver(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_find_solution(nb::module_& m, const std::string& py_name)
 {
+    using namespace nb::literals;
     m.def(
         py_name.c_str(),
         [](Task<Kind>& task,
@@ -102,6 +103,7 @@ void bind_find_solution(nb::module_& m, const std::string& py_name)
 template<TaskKind Kind>
 void bind_event_handler(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = EventHandler<Kind>;
 
     nb::class_<T, PyEventHandler<Kind>>(m, name.c_str())
@@ -115,6 +117,7 @@ void bind_event_handler(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_default_event_handler(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = DefaultEventHandler<Kind>;
 
     nb::class_<T, EventHandler<Kind>>(m, name.c_str()).def(nb::init<size_t>(), "verbosity"_a = 0);

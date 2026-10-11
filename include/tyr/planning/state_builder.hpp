@@ -68,13 +68,10 @@ template<::tyr::TaskKind Kind>
 struct Builder<::tyr::planning::State<Kind>>
 {
 public:
-    using StateType = ::tyr::planning::State<Kind>;
-    using TaskType = ::tyr::planning::Task<Kind>;
-
     Builder() = default;
 
-    ygg::Index<StateType> get_index() const;
-    void set(ygg::Index<StateType> index);
+    ygg::Index<::tyr::planning::State<Kind>> get_index() const;
+    void set(ygg::Index<::tyr::planning::State<Kind>> index);
 
     ::tyr::formalism::planning::FDRValue get(ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const;
     void set(ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact);
@@ -126,7 +123,7 @@ public:
     auto identifying_members() const noexcept { return std::tie(m_fact_storage, m_numeric_storage); }
 
 private:
-    ygg::Index<StateType> m_index;
+    ygg::Index<::tyr::planning::State<Kind>> m_index;
 
     ::tyr::planning::FactUnpackedStorage<Kind> m_fact_storage;
     ::tyr::planning::AtomUnpackedStorage<Kind> m_atom_storage;

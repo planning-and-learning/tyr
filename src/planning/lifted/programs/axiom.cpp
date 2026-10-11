@@ -27,133 +27,138 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 
-namespace f = tyr::formalism;
-namespace fp = tyr::formalism::planning;
-namespace fd = tyr::formalism::datalog;
-
 namespace tyr::planning
 {
 namespace
 {
-void process_axiom_body(fp::ConjunctiveConditionView<LiftedTag> axiom_body,
+void process_axiom_body(formalism::planning::ConjunctiveConditionView<LiftedTag> axiom_body,
                         const TranslationContext<LiftedTag>& translation_context,
-                        fp::MergeDatalogContext& context,
-                        ygg::Data<fd::ConjunctiveCondition<LiftedTag>>& conj_cond)
+                        formalism::planning::MergeDatalogContext& context,
+                        ygg::Data<formalism::datalog::ConjunctiveCondition<LiftedTag>>& conj_cond)
 {
-    for (const auto literal : axiom_body.get_literals<f::StaticTag>())
-        conj_cond.static_literals.push_back(fp::merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.get_index());
+    for (const auto literal : axiom_body.get_literals<formalism::StaticTag>())
+        conj_cond.static_literals.push_back(
+            formalism::planning::merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.get_index());
 
-    for (const auto literal : axiom_body.get_literals<f::FluentTag>())
-        conj_cond.fluent_literals.push_back(fp::merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
-
-    for (const auto literal : axiom_body.get_literals<f::DerivedTag>())
+    for (const auto literal : axiom_body.get_literals<formalism::FluentTag>())
         conj_cond.fluent_literals.push_back(
-            fp::merge_p2d<f::DerivedTag, f::FluentTag>(literal, translation_context.p2d.derived_to_fluent_predicate, context).first.get_index());
+            formalism::planning::merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
+
+    for (const auto literal : axiom_body.get_literals<formalism::DerivedTag>())
+        conj_cond.fluent_literals.push_back(
+            formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(literal, translation_context.p2d.derived_to_fluent_predicate, context)
+                .first.get_index());
 
     for (const auto numeric_constraint : axiom_body.get_numeric_constraints())
-        conj_cond.numeric_constraints.push_back(fp::merge_p2d(numeric_constraint, context));
+        conj_cond.numeric_constraints.push_back(formalism::planning::merge_p2d(numeric_constraint, context));
 }
 
-auto create_axiom_rule(fp::AxiomView<LiftedTag> axiom, const TranslationContext<LiftedTag>& translation_context, fp::MergeDatalogContext& context)
+auto create_axiom_rule(formalism::planning::AxiomView<LiftedTag> axiom,
+                       const TranslationContext<LiftedTag>& translation_context,
+                       formalism::planning::MergeDatalogContext& context)
 {
-    auto rule = fd::checkout<fd::Rule<LiftedTag, f::PredicateTag>>(context.builder);
+    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>(context.builder);
 
-    auto conj_cond = fd::checkout<fd::ConjunctiveCondition<LiftedTag>>(context.builder);
+    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder);
 
     for (const auto variable : axiom.get_variables())
-        conj_cond->variables.push_back(fp::merge_p2d(variable, context).first.get_index());
+        conj_cond->variables.push_back(formalism::planning::merge_p2d(variable, context).first.get_index());
 
     process_axiom_body(axiom.get_body(), translation_context, context, *conj_cond);
 
-    const auto new_conj_cond = fd::insert(context.destination, *conj_cond).first.get_index();
+    const auto new_conj_cond = formalism::datalog::insert(context.destination, *conj_cond).first.get_index();
 
     rule->body = new_conj_cond;
 
-    const auto new_head =
-        fp::merge_p2d<f::DerivedTag, f::FluentTag>(axiom.get_head(), translation_context.p2d.derived_to_fluent_predicate, context).first.get_index();
+    const auto new_head = formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(axiom.get_head(),
+                                                                                                      translation_context.p2d.derived_to_fluent_predicate,
+                                                                                                      context)
+                              .first.get_index();
 
     rule->head = new_head;
 
-    return fd::insert(context.destination, *rule);
+    return formalism::datalog::insert(context.destination, *rule);
 }
 
-auto create_program(fp::TaskView<LiftedTag> task, TranslationContext<LiftedTag>& translation_context, fd::Repository& repository)
+auto create_program(formalism::planning::TaskView<LiftedTag> task,
+                    TranslationContext<LiftedTag>& translation_context,
+                    formalism::datalog::Repository& repository)
 {
-    auto builder = fd::Builder();
-    auto context = fp::MergeDatalogContext(builder, repository);
-    auto program = fd::checkout<fd::Program<LiftedTag>>(builder);
+    auto builder = formalism::datalog::Builder();
+    auto context = formalism::planning::MergeDatalogContext(builder, repository);
+    auto program = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
 
-    for (const auto predicate : task.get_domain().get_predicates<f::StaticTag>())
+    for (const auto predicate : task.get_domain().get_predicates<formalism::StaticTag>())
     {
-        const auto new_predicate = fp::merge_p2d(predicate, context).first;
+        const auto new_predicate = formalism::planning::merge_p2d(predicate, context).first;
         translation_context.d2p.static_to_static_predicate.emplace(new_predicate, predicate);
         translation_context.p2d.static_to_static_predicate.emplace(predicate, new_predicate);
         program->static_predicates.push_back(new_predicate.get_index());
     }
-    for (const auto predicate : task.get_domain().get_predicates<f::FluentTag>())
+    for (const auto predicate : task.get_domain().get_predicates<formalism::FluentTag>())
     {
-        const auto new_predicate = fp::merge_p2d(predicate, context).first;
+        const auto new_predicate = formalism::planning::merge_p2d(predicate, context).first;
         translation_context.d2p.fluent_to_fluent_predicate.emplace(new_predicate, predicate);
         translation_context.p2d.fluent_to_fluent_predicate.emplace(predicate, new_predicate);
         program->fluent_predicates.push_back(new_predicate.get_index());
     }
-    for (const auto predicate : task.get_domain().get_predicates<f::DerivedTag>())
+    for (const auto predicate : task.get_domain().get_predicates<formalism::DerivedTag>())
     {
-        const auto new_predicate = fp::merge_p2d<f::DerivedTag, f::FluentTag>(predicate, context).first;
+        const auto new_predicate = formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(predicate, context).first;
         translation_context.d2p.fluent_to_derived_predicate.emplace(new_predicate, predicate);
         translation_context.p2d.derived_to_fluent_predicate.emplace(predicate, new_predicate);
         program->fluent_predicates.push_back(new_predicate.get_index());
     }
     for (const auto predicate : task.get_derived_predicates())
     {
-        const auto new_predicate = fp::merge_p2d<f::DerivedTag, f::FluentTag>(predicate, context).first;
+        const auto new_predicate = formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(predicate, context).first;
         translation_context.d2p.fluent_to_derived_predicate.emplace(new_predicate, predicate);
         translation_context.p2d.derived_to_fluent_predicate.emplace(predicate, new_predicate);
         program->fluent_predicates.push_back(new_predicate.get_index());
     }
 
-    for (const auto function : task.get_domain().get_functions<f::StaticTag>())
-        program->static_functions.push_back(fp::merge_p2d(function, context).first.get_index());
-    for (const auto function : task.get_domain().get_functions<f::FluentTag>())
+    for (const auto function : task.get_domain().get_functions<formalism::StaticTag>())
+        program->static_functions.push_back(formalism::planning::merge_p2d(function, context).first.get_index());
+    for (const auto function : task.get_domain().get_functions<formalism::FluentTag>())
     {
-        const auto new_function = fp::merge_p2d(function, context).first;
+        const auto new_function = formalism::planning::merge_p2d(function, context).first;
         translation_context.p2d.fluent_to_fluent_function.emplace(function, new_function);
         program->fluent_functions.push_back(new_function.get_index());
     }
 
     for (const auto object : task.get_domain().get_constants())
-        program->objects.push_back(fp::merge_p2d(object, context).first.get_index());
+        program->objects.push_back(formalism::planning::merge_p2d(object, context).first.get_index());
     for (const auto object : task.get_objects())
-        program->objects.push_back(fp::merge_p2d(object, context).first.get_index());
+        program->objects.push_back(formalism::planning::merge_p2d(object, context).first.get_index());
 
-    for (const auto atom : task.get_atoms<f::StaticTag>())
-        program->static_atoms.push_back(fp::merge_p2d(atom, translation_context.p2d.static_to_static_predicate, context).first.get_index());
-    for (const auto atom : task.get_atoms<f::FluentTag>())
-        program->fluent_atoms.push_back(fp::merge_p2d(atom, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
+    for (const auto atom : task.get_atoms<formalism::StaticTag>())
+        program->static_atoms.push_back(formalism::planning::merge_p2d(atom, translation_context.p2d.static_to_static_predicate, context).first.get_index());
+    for (const auto atom : task.get_atoms<formalism::FluentTag>())
+        program->fluent_atoms.push_back(formalism::planning::merge_p2d(atom, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
 
-    for (const auto fterm_value : task.get_fterm_values<f::StaticTag>())
-        program->static_fterm_values.push_back(fp::merge_p2d(fterm_value, context).first.get_index());
-    for (const auto fterm_value : task.get_fterm_values<f::FluentTag>())
-        program->fluent_fterm_values.push_back(fp::merge_p2d(fterm_value, context).first.get_index());
+    for (const auto fterm_value : task.get_fterm_values<formalism::StaticTag>())
+        program->static_fterm_values.push_back(formalism::planning::merge_p2d(fterm_value, context).first.get_index());
+    for (const auto fterm_value : task.get_fterm_values<formalism::FluentTag>())
+        program->fluent_fterm_values.push_back(formalism::planning::merge_p2d(fterm_value, context).first.get_index());
 
     for (const auto axiom : task.get_domain().get_axioms())
         program->predicate_rules.push_back(create_axiom_rule(axiom, translation_context, context).first.get_index());
     for (const auto axiom : task.get_axioms())
         program->predicate_rules.push_back(create_axiom_rule(axiom, translation_context, context).first.get_index());
 
-    return fd::insert(repository, *program).first;
+    return formalism::datalog::insert(repository, *program).first;
 }
 
-auto create_datalog_program(fp::TaskView<LiftedTag> task, TranslationContext<LiftedTag>& translation_context)
+auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task, TranslationContext<LiftedTag>& translation_context)
 {
-    auto factory = std::make_shared<fd::RepositoryFactory>();
+    auto factory = std::make_shared<formalism::datalog::RepositoryFactory>();
     auto repository = factory->create_shared(task.get_num_objects());
     auto program = create_program(task, translation_context, *repository);
     return datalog::Program<LiftedTag>(program, std::move(repository), std::move(factory));
 }
 }
 
-AxiomEvaluatorProgram<LiftedTag>::AxiomEvaluatorProgram(fp::TaskView<LiftedTag> task) :
+AxiomEvaluatorProgram<LiftedTag>::AxiomEvaluatorProgram(formalism::planning::TaskView<LiftedTag> task) :
     m_translation_context(),
     m_datalog_program(create_datalog_program(task, m_translation_context))
 {

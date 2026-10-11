@@ -23,6 +23,7 @@ namespace tyr::formalism::planning
 
 void bind_domain(nb::module_& m, RepositoryBinding& repository)
 {
+    using namespace nb::literals;
     ygg::bind_index<ygg::Index<Domain>>(m, "DomainIndex");
 
     {

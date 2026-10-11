@@ -28,15 +28,19 @@ namespace tyr::formalism::planning
 
 void bind_parser(nb::module_& m)
 {
+    using namespace nb::literals;
     nb::class_<Parser>(m, "Parser")
-        .def(nb::init<const fs::path&, const loki::ParserOptions&>(), "domain_filepath"_a, "parser_options"_a)
-        .def(nb::init<const std::string&, std::optional<fs::path>, const loki::ParserOptions&>(),
+        .def(nb::init<const std::filesystem::path&, const loki::ParserOptions&>(), "domain_filepath"_a, "parser_options"_a)
+        .def(nb::init<const std::string&, std::optional<std::filesystem::path>, const loki::ParserOptions&>(),
              "domain_description"_a,
              "domain_filepath"_a,
              "parser_options"_a)
-        .def("parse_task", nb::overload_cast<const fs::path&, const loki::ParserOptions&>(&Parser::parse_task), "task_filepath"_a, "parser_options"_a)
         .def("parse_task",
-             nb::overload_cast<const std::string&, std::optional<fs::path>, const loki::ParserOptions&>(&Parser::parse_task),
+             nb::overload_cast<const std::filesystem::path&, const loki::ParserOptions&>(&Parser::parse_task),
+             "task_filepath"_a,
+             "parser_options"_a)
+        .def("parse_task",
+             nb::overload_cast<const std::string&, std::optional<std::filesystem::path>, const loki::ParserOptions&>(&Parser::parse_task),
              "task_description"_a,
              "task_filepath"_a,
              "parser_options"_a)

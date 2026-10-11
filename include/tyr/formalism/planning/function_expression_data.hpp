@@ -50,10 +50,8 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>
     template<typename C>
     Data(const ViewVariant<C>& variant_) :
         variant(std::visit(
-            [](const auto& arg) -> Variant
+            []<typename Alternative>(const Alternative& arg) -> Variant
             {
-                using Alternative = std::decay_t<decltype(arg)>;
-
                 if constexpr (std::is_same_v<Alternative, ygg::float_t>)
                     return Variant(arg);
                 else if constexpr (ygg::is_view_of_v<Alternative, ygg::Data<::tyr::formalism::planning::ArithmeticOperator<::tyr::LiftedTag>>>)
@@ -100,10 +98,8 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>
     template<typename C>
     Data(const ViewVariant<C>& variant_) :
         variant(std::visit(
-            [](const auto& arg) -> Variant
+            []<typename Alternative>(const Alternative& arg) -> Variant
             {
-                using Alternative = std::decay_t<decltype(arg)>;
-
                 if constexpr (std::is_same_v<Alternative, ygg::float_t>)
                     return Variant(arg);
                 else if constexpr (ygg::is_view_of_v<Alternative, ygg::Data<::tyr::formalism::planning::ArithmeticOperator<::tyr::GroundTag>>>)

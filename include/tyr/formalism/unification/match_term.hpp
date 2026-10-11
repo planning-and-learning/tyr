@@ -30,15 +30,11 @@ template<typename Policy = DefaultMatchPolicy>
 bool match_term(const ygg::Data<Term>& pattern, const ygg::Data<Term>& element, TermMatchState& state, const Policy& policy = {})
 {
     return std::visit(
-        [&](auto&& lhs) -> bool
+        [&]<typename Lhs>(const Lhs& lhs) -> bool
         {
-            using Lhs = std::decay_t<decltype(lhs)>;
-
             return std::visit(
-                [&](auto&& rhs) -> bool
+                [&]<typename Rhs>(const Rhs& rhs) -> bool
                 {
-                    using Rhs = std::decay_t<decltype(rhs)>;
-
                     if constexpr (std::is_same_v<Lhs, ParameterIndex>)
                     {
                         if constexpr (std::is_same_v<Rhs, ParameterIndex>)

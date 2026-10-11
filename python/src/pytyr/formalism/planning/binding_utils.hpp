@@ -18,6 +18,7 @@
 #ifndef PYTHON_SRC_PYTYR_FORMALISM_PLANNING_BINDING_UTILS_HPP_
 #define PYTHON_SRC_PYTYR_FORMALISM_PLANNING_BINDING_UTILS_HPP_
 
+#include "../binding_utils.hpp"
 #include "bindings.hpp"
 
 #include <nanobind/stl/optional.h>

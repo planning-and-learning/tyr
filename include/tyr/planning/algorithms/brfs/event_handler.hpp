@@ -49,8 +49,6 @@ template<TaskKind Kind>
 class EventHandler
 {
 public:
-    using StatisticsType = tyr::planning::Statistics;
-
     virtual ~EventHandler() = default;
 
     virtual void on_start_search(const Node<Kind>& node) = 0;

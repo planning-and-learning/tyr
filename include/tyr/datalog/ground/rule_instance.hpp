@@ -30,13 +30,9 @@ template<formalism::RelationKind R>
 class RuleInstance<GroundTag, R>
 {
 public:
-    using Task = GroundTag;
-    using Relation = R;
-    using SourceRule = formalism::datalog::RuleView<GroundTag, R>;
+    explicit RuleInstance(formalism::datalog::RuleView<GroundTag, R> rule) : m_rule(rule) {}
 
-    explicit RuleInstance(SourceRule rule) : m_rule(rule) {}
-
-    SourceRule get_rule() const noexcept { return m_rule; }
+    formalism::datalog::RuleView<GroundTag, R> get_rule() const noexcept { return m_rule; }
     auto get_body() const noexcept { return m_rule.get_body(); }
     auto get_head() const noexcept { return m_rule.get_head(); }
 
@@ -61,7 +57,7 @@ public:
     auto witness_key() const noexcept { return m_rule.get_row(); }
 
 private:
-    SourceRule m_rule;
+    formalism::datalog::RuleView<GroundTag, R> m_rule;
 };
 
 }

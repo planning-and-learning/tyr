@@ -31,12 +31,10 @@
 
 namespace ygg
 {
-using namespace ::tyr;
-
 template<typename Tag>
-struct Data<planning::match_tree::Node<Tag>>
+struct Data<::tyr::planning::match_tree::Node<Tag>>
 {
-    using Variant = ::ygg::IndexVariant<planning::match_tree::NodeTypes<Tag>>;
+    using Variant = ::ygg::IndexVariant<::tyr::planning::match_tree::NodeTypes<Tag>>;
 
     Variant variant;
 

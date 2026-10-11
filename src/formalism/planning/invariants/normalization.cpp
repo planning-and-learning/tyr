@@ -26,10 +26,8 @@ namespace
 bool uses_parameter(const ygg::Data<Term>& term, ParameterIndex parameter)
 {
     return std::visit(
-        [&](auto&& arg) -> bool
+        [&]<typename T>(const T& arg) -> bool
         {
-            using T = std::decay_t<decltype(arg)>;
-
             if constexpr (std::is_same_v<T, ParameterIndex>)
                 return arg == parameter;
             else if constexpr (std::is_same_v<T, ygg::Index<Object>>)
@@ -108,10 +106,8 @@ void remove_unused_parameters(Invariant& inv)
         for (auto& term : atom.terms)
         {
             term = std::visit(
-                [&](auto&& arg) -> ygg::Data<Term>
+                [&]<typename T>(const T& arg) -> ygg::Data<Term>
                 {
-                    using T = std::decay_t<decltype(arg)>;
-
                     if constexpr (std::is_same_v<T, ParameterIndex>)
                         return ygg::Data<Term>(*remap[static_cast<ygg::uint_t>(arg)]);
                     else if constexpr (std::is_same_v<T, ygg::Index<Object>>)

@@ -45,10 +45,8 @@ void collect_parameters(AtomView<LiftedTag, T> element, ParameterList& result);
 inline void collect_parameters(TermView element, ParameterList& result)
 {
     visit(
-        [&](auto&& arg)
+        [&]<typename Alternative>(const Alternative& arg)
         {
-            using Alternative = std::decay_t<decltype(arg)>;
-
             if constexpr (std::is_same_v<Alternative, ParameterIndex>)
                 result.push_back(arg);
             else if constexpr (std::is_same_v<Alternative, ObjectView>) {}

@@ -585,10 +585,8 @@ static std::optional<StackEntry<Tag>> try_create_selector_stack_entry(BaseEntry<
                                                                       Builder<Tag>& builder)
 {
     return std::visit(
-        [&](auto&& arg)
+        [&]<typename Alternative>(const Alternative& arg)
         {
-            using Alternative = std::decay_t<decltype(arg)>;
-
             if constexpr (std::same_as<Alternative, formalism::planning::FDRVariableView<formalism::FluentTag>>)
                 return try_create_variable_stack_entry(arg, base, details, builder);
             else if constexpr (std::same_as<Alternative, ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>>>)
@@ -678,7 +676,7 @@ MatchTree<Tag>::MatchTree(std::vector<ygg::View<ygg::Index<Tag>, formalism::plan
     {
         if (lhs.index() != rhs.index())
             return lhs.index() < rhs.index();
-        return std::visit([&](const auto& lhs_alt) { return lhs_alt < std::get<std::decay_t<decltype(lhs_alt)>>(rhs); }, lhs);
+        return std::visit([&]<typename Alternative>(const Alternative& lhs_alt) { return lhs_alt < std::get<Alternative>(rhs); }, lhs);
     };
     std::sort(sorted_preconditions.begin(),
               sorted_preconditions.end(),

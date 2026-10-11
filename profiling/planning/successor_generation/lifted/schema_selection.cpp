@@ -34,8 +34,6 @@
 #include <malloc.h>
 #endif
 
-namespace fp = tyr::formalism::planning;
-namespace p = tyr::planning;
 using tyr::LiftedTag;
 
 namespace
@@ -50,8 +48,8 @@ std::int64_t allocated_bytes()
 
 struct PreparedCase
 {
-    p::TaskPtr<LiftedTag> task;
-    p::SuccessorGeneratorPtr<LiftedTag> generator;
+    tyr::planning::TaskPtr<LiftedTag> task;
+    tyr::planning::SuccessorGeneratorPtr<LiftedTag> generator;
     std::int64_t generator_bytes = 0;
 };
 
@@ -81,11 +79,12 @@ try
     auto& prepared = *benchmark_case.prepared;
     if (!prepared.task)
     {
-        prepared.task = p::Task<LiftedTag>::create(fp::Parser(benchmark_case.paths.domain).parse_task(benchmark_case.paths.task));
+        prepared.task =
+            tyr::planning::Task<LiftedTag>::create(tyr::formalism::planning::Parser(benchmark_case.paths.domain).parse_task(benchmark_case.paths.task));
 #if defined(__GLIBC__)
         const auto before = allocated_bytes();
 #endif
-        prepared.generator = p::SuccessorGeneratorFactory<LiftedTag>().create(prepared.task, execution_context);
+        prepared.generator = tyr::planning::SuccessorGeneratorFactory<LiftedTag>().create(prepared.task, execution_context);
 #if defined(__GLIBC__)
         prepared.generator_bytes = allocated_bytes() - before;
 #endif
@@ -98,8 +97,8 @@ try
     state.counters["generator_glibc_bytes"] = static_cast<double>(prepared.generator_bytes);
     state.counters["worker_glibc_bytes"] = static_cast<double>(allocated_bytes() - before_worker);
 #endif
-    auto evaluator = p::AxiomEvaluatorFactory<LiftedTag>().create(prepared.task, execution_context);
-    auto repository = p::StateRepositoryFactory<LiftedTag>().create(prepared.task);
+    auto evaluator = tyr::planning::AxiomEvaluatorFactory<LiftedTag>().create(prepared.task, execution_context);
+    auto repository = tyr::planning::StateRepositoryFactory<LiftedTag>().create(prepared.task);
     const auto node = generator->get_initial_node(*repository, *evaluator);
     auto expected_bindings = generator->get_applicable_action_bindings(node);
     const auto schemas = prepared.task->get_task().get_domain().get_actions();
@@ -119,13 +118,13 @@ try
     std::erase_if(expected_bindings, reject_binding);
     state.counters["num_selected_bindings"] = static_cast<double>(expected_bindings.size());
 
-    auto bindings = std::vector<fp::ActionBindingView> {};
-    auto successors = p::LabeledNodeList<LiftedTag> {};
+    auto bindings = std::vector<tyr::formalism::planning::ActionBindingView> {};
+    auto successors = tyr::planning::LabeledNodeList<LiftedTag> {};
     const auto generate = [&]
     {
         if constexpr (operation == Operation::CONSTRUCTION)
         {
-            auto result = p::SuccessorGeneratorFactory<LiftedTag>().create(prepared.task, execution_context);
+            auto result = tyr::planning::SuccessorGeneratorFactory<LiftedTag>().create(prepared.task, execution_context);
             benchmark::DoNotOptimize(result);
         }
         else if constexpr (operation == Operation::WORKER)

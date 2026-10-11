@@ -33,10 +33,10 @@ namespace tyr::datalog
 /// Zero-cost conservative reachability: solvers ignore annotation-only metric effects and cost credits.
 class NoAnnotationPolicy
 {
-public:
     using PredicateHead = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
     using FunctionBinding = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
 
+public:
     static constexpr bool stores_annotations = false;
     static constexpr bool records_propositional_achievers = false;
 
@@ -53,11 +53,14 @@ class MinCostAnnotationPolicy
 {
 public:
     using Aggregation = AggregationFunction;
+
+private:
     using PredicateHead = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
     using FunctionBinding = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
     using PredicateWitness = WitnessAnnotation<formalism::PredicateTag>;
     using FunctionWitness = WitnessAnnotation<formalism::FunctionTag>;
 
+public:
     static constexpr bool stores_annotations = true;
     static constexpr bool records_propositional_achievers = false;
 
@@ -117,9 +120,10 @@ public:
 template<typename AggregationFunction>
 class MinCostAnnotationWithAchieversPolicy : public MinCostAnnotationPolicy<AggregationFunction>
 {
-public:
     using PredicateHead = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
     using PredicateWitness = WitnessAnnotation<formalism::PredicateTag>;
+
+public:
     using Achievers = std::vector<PredicateWitness>;
 
     static constexpr bool records_propositional_achievers = true;
@@ -143,7 +147,6 @@ private:
 
     DenseRelationMap<formalism::PredicateTag, IndexedAchievers> m_achievers;
 };
-
 }
 
 #endif

@@ -30,6 +30,7 @@ namespace
 template<TaskKind T>
 void bind_multi_operator_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
 {
+    using namespace nb::literals;
     using Tag = MultiOperator<T>;
     ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
 

@@ -58,7 +58,7 @@ public:
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    typename Context::ArraySet& m_array_set;
+    ArraySetT<Context>& m_array_set;
     ygg::uint_t m_num_bits;
 
     std::vector<ygg::uint_t> m_buffer;

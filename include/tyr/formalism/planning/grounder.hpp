@@ -117,10 +117,8 @@ std::pair<FunctionBindingView<T>, bool> ground(TermListView terms, FunctionView<
     for (const auto term : terms)
     {
         visit(
-            [&](auto&& arg)
+            [&]<typename Alternative>(const Alternative& arg)
             {
-                using Alternative = std::decay_t<decltype(arg)>;
-
                 if constexpr (std::is_same_v<Alternative, ParameterIndex>)
                     binding->objects.push_back(context.binding[ygg::uint_t(arg)]);
                 else if constexpr (std::is_same_v<Alternative, ObjectView>)
@@ -151,10 +149,8 @@ std::pair<FunctionTermView<GroundTag, T>, bool> ground(FunctionTermView<LiftedTa
 inline FunctionExpressionView<GroundTag> ground(FunctionExpressionView<LiftedTag> element, GrounderContext& context)
 {
     const auto data = visit(
-        [&](auto&& arg)
+        [&]<typename Alternative>(const Alternative& arg)
         {
-            using Alternative = std::decay_t<decltype(arg)>;
-
             if constexpr (std::is_same_v<Alternative, ygg::float_t>)
                 return ygg::Data<FunctionExpression<GroundTag>>(arg);
             else if constexpr (std::is_same_v<Alternative, ArithmeticOperatorView<LiftedTag>>)
@@ -231,10 +227,8 @@ std::pair<PredicateBindingView<T>, bool> ground(TermListView terms, PredicateVie
     for (const auto term : terms)
     {
         visit(
-            [&](auto&& arg)
+            [&]<typename Alternative>(const Alternative& arg)
             {
-                using Alternative = std::decay_t<decltype(arg)>;
-
                 if constexpr (std::is_same_v<Alternative, ParameterIndex>)
                     binding->objects.push_back(context.binding[ygg::uint_t(arg)]);
                 else if constexpr (std::is_same_v<Alternative, ObjectView>)
@@ -470,10 +464,8 @@ std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<Lifted
     for (const auto term : element.get_terms())
     {
         visit(
-            [&](auto&& arg)
+            [&]<typename Alternative>(const Alternative& arg)
             {
-                using Alternative = std::decay_t<decltype(arg)>;
-
                 if constexpr (std::is_same_v<Alternative, ParameterIndex>)
                     binding->objects.push_back(context.binding[ygg::uint_t(arg)]);
                 else if constexpr (std::is_same_v<Alternative, ObjectView>)
@@ -505,10 +497,8 @@ std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element,
     for (const auto term : element.get_terms())
     {
         visit(
-            [&](auto&& arg)
+            [&]<typename Alternative>(const Alternative& arg)
             {
-                using Alternative = std::decay_t<decltype(arg)>;
-
                 if constexpr (std::is_same_v<Alternative, ParameterIndex>)
                     binding->objects.push_back(context.binding[ygg::uint_t(arg)]);
                 else if constexpr (std::is_same_v<Alternative, ObjectView>)

@@ -26,6 +26,7 @@ namespace tyr::formalism::planning
 template<TaskKind T>
 void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* index_name, const char* data_name, const char* view_name)
 {
+    using namespace nb::literals;
     ygg::bind_index<ygg::Index<Task<T>>>(m, index_name);
 
     {

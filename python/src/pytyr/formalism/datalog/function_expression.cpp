@@ -27,13 +27,14 @@ namespace
 template<TaskKind T>
 void bind_function_expression_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
 {
+    using namespace nb::literals;
     using Tag = FunctionExpression<T>;
 
     {
         using V = ygg::Data<Tag>;
         auto cls = nb::class_<V>(m, (name + "Data").c_str());
-        cls.def(nb::init<typename V::template ViewVariant<Repository>>(), "variant"_a);
-        cls.def(nb::init<typename V::Variant>(), "variant"_a);
+        cls.def(nb::init<ViewVariantT<V, Repository>>(), "variant"_a);
+        cls.def(nb::init<VariantT<V>>(), "variant"_a);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);

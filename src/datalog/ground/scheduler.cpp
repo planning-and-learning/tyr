@@ -29,14 +29,8 @@
 
 namespace tyr::datalog
 {
-namespace scheduler_impl
-{
-namespace f = formalism;
-namespace fd = formalism::datalog;
-}
-
 template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::schedule(scheduler_impl::fd::RuleView<GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
+void Scheduler<GroundTag>::schedule(formalism::datalog::RuleView<GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     if (get_states<R>()[ygg::uint_t(rule.get_index())].unsatisfied_count != 0)
         return;
@@ -51,7 +45,7 @@ void Scheduler<GroundTag>::schedule(scheduler_impl::fd::RuleView<GroundTag, R> r
 }
 
 template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(scheduler_impl::fd::RuleView<GroundTag, R> rule,
+void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(formalism::datalog::RuleView<GroundTag, R> rule,
                                                                   ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     const auto rule_index = rule.get_index();
@@ -75,7 +69,7 @@ void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(scheduler_impl
 }
 
 template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::notify_predicate_generated_for(scheduler_impl::fd::PredicateBindingView<scheduler_impl::f::FluentTag> fact,
+void Scheduler<GroundTag>::notify_predicate_generated_for(formalism::datalog::PredicateBindingView<formalism::FluentTag> fact,
                                                           ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     const auto* dependent_rules = ctx.in().template dependencies<R>().fluent_precondition_to_rules.find(fact);
@@ -94,7 +88,7 @@ void Scheduler<GroundTag>::notify_predicate_generated_for(scheduler_impl::fd::Pr
 }
 
 template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::notify_numeric_changed_for(scheduler_impl::fd::FunctionBindingView<scheduler_impl::f::FluentTag> term,
+void Scheduler<GroundTag>::notify_numeric_changed_for(formalism::datalog::FunctionBindingView<formalism::FluentTag> term,
                                                       ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     const auto* dependent_rules = ctx.in().template dependencies<R>().fluent_function_term_to_rules.find(term);
@@ -112,32 +106,32 @@ void Scheduler<GroundTag>::notify_numeric_changed_for(scheduler_impl::fd::Functi
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void Scheduler<GroundTag>::begin_stratum(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
-    for (const auto rule : m_program.get_rules<scheduler_impl::f::PredicateTag>())
+    for (const auto rule : m_program.get_rules<formalism::PredicateTag>())
         update_numeric_constraint_satisfaction(rule, ctx);
-    for (const auto rule : m_program.get_rules<scheduler_impl::f::FunctionTag>())
+    for (const auto rule : m_program.get_rules<formalism::FunctionTag>())
         update_numeric_constraint_satisfaction(rule, ctx);
 
-    for (const auto rule : m_program.get_rules<scheduler_impl::f::PredicateTag>())
+    for (const auto rule : m_program.get_rules<formalism::PredicateTag>())
         schedule(rule, ctx);
-    for (const auto rule : m_program.get_rules<scheduler_impl::f::FunctionTag>())
+    for (const auto rule : m_program.get_rules<formalism::FunctionTag>())
         schedule(rule, ctx);
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::notify_predicate_generated(scheduler_impl::fd::PredicateBindingView<scheduler_impl::f::FluentTag> fact,
+void Scheduler<GroundTag>::notify_predicate_generated(formalism::datalog::PredicateBindingView<formalism::FluentTag> fact,
                                                       ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     ++m_statistics.num_facts_derived;
-    notify_predicate_generated_for<scheduler_impl::f::PredicateTag>(fact, ctx);
-    notify_predicate_generated_for<scheduler_impl::f::FunctionTag>(fact, ctx);
+    notify_predicate_generated_for<formalism::PredicateTag>(fact, ctx);
+    notify_predicate_generated_for<formalism::FunctionTag>(fact, ctx);
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::notify_numeric_changed(scheduler_impl::fd::FunctionBindingView<scheduler_impl::f::FluentTag> term,
+void Scheduler<GroundTag>::notify_numeric_changed(formalism::datalog::FunctionBindingView<formalism::FluentTag> term,
                                                   ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
-    notify_numeric_changed_for<scheduler_impl::f::PredicateTag>(term, ctx);
-    notify_numeric_changed_for<scheduler_impl::f::FunctionTag>(term, ctx);
+    notify_numeric_changed_for<formalism::PredicateTag>(term, ctx);
+    notify_numeric_changed_for<formalism::FunctionTag>(term, ctx);
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>

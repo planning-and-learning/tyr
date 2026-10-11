@@ -95,8 +95,9 @@ struct NumericTransitionCostKey : ygg::comparison::Mixin<NumericTransitionCostKe
 
 class RuleCostPolicy
 {
-public:
     using MetricTarget = ygg::Index<formalism::RelationBinding<formalism::Function<formalism::FluentTag>>>;
+
+public:
     using MetricTargets = ygg::UnorderedSet<MetricTarget>;
 
     RuleCostPolicy() = default;
@@ -135,12 +136,12 @@ private:
 template<formalism::RelationKind R>
 class RuleCostOverrideStorage
 {
-public:
     using RuleKey = formalism::datalog::RuleBindingView<R>;
     using NumericKey = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
     using CostMap = ygg::UnorderedMap<RuleKey, Cost>;
     using NumericTransitionCostMap = ygg::UnorderedMap<NumericTransitionCostKey<R>, Cost>;
 
+public:
     RuleCostOverrideStorage() = default;
     explicit RuleCostOverrideStorage(CostMap costs) : m_costs(std::move(costs)), m_numeric_transition_costs() {}
 
@@ -185,15 +186,15 @@ template<TaskKind Kind>
 class RuleCostOverridePolicy : public RuleCostPolicy
 {
 public:
-    using PredicateRuleKey = formalism::datalog::RuleBindingView<formalism::PredicateTag>;
-    using FunctionRuleKey = formalism::datalog::RuleBindingView<formalism::FunctionTag>;
-
     template<formalism::RelationKind R>
     using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::datalog::RuleBindingView<R>, formalism::datalog::RuleView<LiftedTag, R>>;
     using Action = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionView<GroundTag>, formalism::planning::ActionView<LiftedTag>>;
+
+private:
     template<formalism::RelationKind R>
     using RuleToActionMapping = ygg::UnorderedMap<Rule<R>, Action>;
 
+public:
     RuleCostOverridePolicy() = default;
     using RuleCostPolicy::RuleCostPolicy;
     RuleCostOverridePolicy(const RuleToActionMapping<formalism::PredicateTag>& predicate_rule_to_action,

@@ -21,21 +21,18 @@
 
 namespace ygg
 {
-namespace planning = ::tyr::planning;
+template struct Builder<::tyr::planning::State<::tyr::GroundTag>>;
+template struct Builder<::tyr::planning::State<::tyr::LiftedTag>>;
 
-template struct Builder<planning::State<::tyr::GroundTag>>;
-template struct Builder<planning::State<::tyr::LiftedTag>>;
+template class View<Index<::tyr::planning::State<::tyr::GroundTag>>, std::shared_ptr<::tyr::planning::StateRepository<::tyr::GroundTag>>>;
+template class View<Builder<::tyr::planning::State<::tyr::GroundTag>>, ::tyr::planning::Task<::tyr::GroundTag>>;
+template class View<Index<::tyr::planning::PackedState<::tyr::GroundTag>>, std::shared_ptr<::tyr::planning::StateRepository<::tyr::GroundTag>>>;
+template class View<Index<::tyr::planning::State<::tyr::LiftedTag>>, std::shared_ptr<::tyr::planning::StateRepository<::tyr::LiftedTag>>>;
+template class View<Builder<::tyr::planning::State<::tyr::LiftedTag>>, ::tyr::planning::Task<::tyr::LiftedTag>>;
+template class View<Index<::tyr::planning::PackedState<::tyr::LiftedTag>>, std::shared_ptr<::tyr::planning::StateRepository<::tyr::LiftedTag>>>;
 
-template class View<Index<planning::State<::tyr::GroundTag>>, std::shared_ptr<planning::StateRepository<::tyr::GroundTag>>>;
-template class View<Builder<planning::State<::tyr::GroundTag>>, planning::Task<::tyr::GroundTag>>;
-template class View<Index<planning::PackedState<::tyr::GroundTag>>, std::shared_ptr<planning::StateRepository<::tyr::GroundTag>>>;
-template class View<Index<planning::State<::tyr::LiftedTag>>, std::shared_ptr<planning::StateRepository<::tyr::LiftedTag>>>;
-template class View<Builder<planning::State<::tyr::LiftedTag>>, planning::Task<::tyr::LiftedTag>>;
-template class View<Index<planning::PackedState<::tyr::LiftedTag>>, std::shared_ptr<planning::StateRepository<::tyr::LiftedTag>>>;
-
-static_assert(planning::IterableStateConcept<planning::StateView<::tyr::GroundTag>>);
-static_assert(planning::IterableViewStateConcept<planning::StateView<::tyr::GroundTag>>);
-static_assert(planning::IterableStateConcept<planning::StateView<::tyr::LiftedTag>>);
-static_assert(planning::IterableViewStateConcept<planning::StateView<::tyr::LiftedTag>>);
-
+static_assert(::tyr::planning::IterableStateConcept<::tyr::planning::StateView<::tyr::GroundTag>>);
+static_assert(::tyr::planning::IterableViewStateConcept<::tyr::planning::StateView<::tyr::GroundTag>>);
+static_assert(::tyr::planning::IterableStateConcept<::tyr::planning::StateView<::tyr::LiftedTag>>);
+static_assert(::tyr::planning::IterableViewStateConcept<::tyr::planning::StateView<::tyr::LiftedTag>>);
 }

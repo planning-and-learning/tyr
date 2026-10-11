@@ -66,8 +66,6 @@ SearchResult<Kind> find_solution(Task<Kind>& task,
 template<TaskKind Kind>
 struct Solver
 {
-    using EventHandlerType = EventHandler<Kind>;
-
     TaskPtr<Kind> task;
     StateRepositoryPtr<Kind> state_repository;
     AxiomEvaluatorPtr<Kind> axiom_evaluator;

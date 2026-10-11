@@ -19,16 +19,14 @@
 
 #include <filesystem>
 
-namespace p = tyr::planning;
-
 namespace tyr::tests
 {
 struct IwExpectation
 {
-    std::optional<p::SearchStatus> status;
+    std::optional<tyr::planning::SearchStatus> status;
     std::optional<PlanStatistics> plan;
     std::optional<ygg::uint_t> solution_arity;
-    std::optional<p::ProgressStatistics::Snapshot> counters;
+    std::optional<tyr::planning::ProgressStatistics::Snapshot> counters;
 };
 
 struct IwCase
@@ -80,21 +78,21 @@ std::vector<IwCase> load_cases()
 void check_expectation(const IwExpectation& expectation, const IwCase& test_case)
 {
     auto context = create_search_context<StatisticsTaskKind>(test_case.domain_file, test_case.task_file);
-    auto brfs_solver = p::brfs::Solver<StatisticsTaskKind> { context.task,
-                                                             context.state_repository,
-                                                             context.axiom_evaluator,
-                                                             context.successor_generator,
-                                                             p::brfs::Options<StatisticsTaskKind> {} };
-    brfs_solver.options.event_handler = p::brfs::DefaultEventHandler<StatisticsTaskKind>::create();
+    auto brfs_solver = tyr::planning::brfs::Solver<StatisticsTaskKind> { context.task,
+                                                                         context.state_repository,
+                                                                         context.axiom_evaluator,
+                                                                         context.successor_generator,
+                                                                         tyr::planning::brfs::Options<StatisticsTaskKind> {} };
+    brfs_solver.options.event_handler = tyr::planning::brfs::DefaultEventHandler<StatisticsTaskKind>::create();
 
-    auto options = p::iw::Options<StatisticsTaskKind> {};
-    const auto event_handler = p::iw::DefaultEventHandler<StatisticsTaskKind>::create();
+    auto options = tyr::planning::iw::Options<StatisticsTaskKind> {};
+    const auto event_handler = tyr::planning::iw::DefaultEventHandler<StatisticsTaskKind>::create();
     options.event_handler = event_handler;
 
-    const auto result = p::iw::find_solution(brfs_solver, test_case.max_arity, options);
+    const auto result = tyr::planning::iw::find_solution(brfs_solver, test_case.max_arity, options);
 
     const auto solution_arity = event_handler->get_statistics().get_solution_arity();
-    if (result.status == p::SearchStatus::SOLVED)
+    if (result.status == tyr::planning::SearchStatus::SOLVED)
     {
         EXPECT_TRUE(solution_arity);
         if (solution_arity)

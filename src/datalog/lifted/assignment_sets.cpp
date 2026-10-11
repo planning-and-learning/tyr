@@ -34,9 +34,6 @@
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
 
-namespace f = tyr::formalism;
-namespace fd = tyr::formalism::datalog;
-
 namespace tyr::datalog
 {
 namespace
@@ -272,8 +269,8 @@ ygg::BitsetSpan<const uint64_t> PredicateAssignmentSet<T>::get_set() const noexc
     return { m_blocks.data(), m_hash.size() };
 }
 
-template class PredicateAssignmentSet<f::StaticTag>;
-template class PredicateAssignmentSet<f::FluentTag>;
+template class PredicateAssignmentSet<formalism::StaticTag>;
+template class PredicateAssignmentSet<formalism::FluentTag>;
 
 /**
  * PredicateAssignmentSets
@@ -346,8 +343,8 @@ const std::vector<PredicateAssignmentSet<T>>& PredicateAssignmentSets<T>::get_se
     return m_sets;
 }
 
-template class PredicateAssignmentSets<f::StaticTag>;
-template class PredicateAssignmentSets<f::FluentTag>;
+template class PredicateAssignmentSets<formalism::StaticTag>;
+template class PredicateAssignmentSets<formalism::FluentTag>;
 
 /**
  * FunctionAssignmentSet
@@ -502,8 +499,8 @@ const PerfectAssignmentHash& FunctionAssignmentSet<T>::get_hash() const noexcept
     return m_hash;
 }
 
-template class FunctionAssignmentSet<f::StaticTag>;
-template class FunctionAssignmentSet<f::FluentTag>;
+template class FunctionAssignmentSet<formalism::StaticTag>;
+template class FunctionAssignmentSet<formalism::FluentTag>;
 
 /**
  * FunctionAssignmentSets
@@ -607,8 +604,8 @@ size_t FunctionAssignmentSets<T>::size() const noexcept
     return std::accumulate(m_sets.begin(), m_sets.end(), size_t { 0 }, [](auto&& lhs, auto&& rhs) { return lhs + rhs.size(); });
 }
 
-template class FunctionAssignmentSets<f::StaticTag>;
-template class FunctionAssignmentSets<f::FluentTag>;
+template class FunctionAssignmentSets<formalism::StaticTag>;
+template class FunctionAssignmentSets<formalism::FluentTag>;
 
 /**
  * TaggedAssignmentSets
@@ -669,8 +666,8 @@ void TaggedAssignmentSets<T>::reset() noexcept
     function.reset();
 }
 
-template struct TaggedAssignmentSets<f::StaticTag>;
-template struct TaggedAssignmentSets<f::FluentTag>;
+template struct TaggedAssignmentSets<formalism::StaticTag>;
+template struct TaggedAssignmentSets<formalism::FluentTag>;
 
 /**
  * AssignmentSets
@@ -694,7 +691,6 @@ const TaggedAssignmentSets<T>& AssignmentSets::get() const noexcept
         static_assert(ygg::dependent_false<T>::value, "Missing case");
 }
 
-template const TaggedAssignmentSets<f::StaticTag>& AssignmentSets::get<f::StaticTag>() const noexcept;
-template const TaggedAssignmentSets<f::FluentTag>& AssignmentSets::get<f::FluentTag>() const noexcept;
-
+template const TaggedAssignmentSets<formalism::StaticTag>& AssignmentSets::get<formalism::StaticTag>() const noexcept;
+template const TaggedAssignmentSets<formalism::FluentTag>& AssignmentSets::get<formalism::FluentTag>() const noexcept;
 }
