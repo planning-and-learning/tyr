@@ -15,22 +15,22 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/lifted/state_storage/tree_compression/atom.hpp"
+#include "tyr/planning/lifted/state_storage/tree_vector/atom.hpp"
 
-#include "tyr/planning/lifted/state_storage/tree_compression/context.hpp"
+#include "tyr/planning/lifted/state_storage/tree_vector/context.hpp"
 #include "tyr/planning/lifted/task.hpp"
 
 namespace tyr::planning
 {
 
 template<bool ThreadSafe>
-AtomStorageBackend<LiftedTag, TreeCompression, ThreadSafe>::AtomStorageBackend(Context& ctx) : m_uint_vectors(ctx.uint_vectors)
+AtomStorageBackend<LiftedTag, TreeVector, ThreadSafe>::AtomStorageBackend(Context& ctx) : m_uint_vectors(ctx.uint_vectors)
 {
 }
 
 template<bool ThreadSafe>
-typename AtomStorageBackend<LiftedTag, TreeCompression, ThreadSafe>::Packed
-AtomStorageBackend<LiftedTag, TreeCompression, ThreadSafe>::insert(const Unpacked& unpacked)
+typename AtomStorageBackend<LiftedTag, TreeVector, ThreadSafe>::Packed
+AtomStorageBackend<LiftedTag, TreeVector, ThreadSafe>::insert(const Unpacked& unpacked)
 {
     m_buffer.clear();
     const auto& bits = unpacked.indices;
@@ -41,7 +41,7 @@ AtomStorageBackend<LiftedTag, TreeCompression, ThreadSafe>::insert(const Unpacke
 }
 
 template<bool ThreadSafe>
-void AtomStorageBackend<LiftedTag, TreeCompression, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
+void AtomStorageBackend<LiftedTag, TreeVector, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     auto& indices = unpacked.indices;
 
@@ -54,7 +54,7 @@ void AtomStorageBackend<LiftedTag, TreeCompression, ThreadSafe>::unpack(const Pa
         ygg::set(i, true, indices);
 }
 
-template class AtomStorageBackend<LiftedTag, TreeCompression, false>;
-template class AtomStorageBackend<LiftedTag, TreeCompression, true>;
+template class AtomStorageBackend<LiftedTag, TreeVector, false>;
+template class AtomStorageBackend<LiftedTag, TreeVector, true>;
 
 }

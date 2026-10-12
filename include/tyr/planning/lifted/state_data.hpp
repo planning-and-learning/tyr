@@ -24,10 +24,14 @@
 #include "tyr/planning/lifted/state_storage/hash_set/atom.hpp"
 #include "tyr/planning/lifted/state_storage/hash_set/fact.hpp"
 #include "tyr/planning/state_storage/hash_set/numeric.hpp"
-#elif defined(TYR_STATE_STORAGE_TREE)
-#include "tyr/planning/lifted/state_storage/tree_compression/atom.hpp"
-#include "tyr/planning/lifted/state_storage/tree_compression/fact.hpp"
-#include "tyr/planning/state_storage/tree_compression/numeric.hpp"
+#elif defined(TYR_STATE_STORAGE_TREE_VECTOR)
+#include "tyr/planning/lifted/state_storage/tree_vector/atom.hpp"
+#include "tyr/planning/lifted/state_storage/tree_vector/fact.hpp"
+#include "tyr/planning/state_storage/tree_vector/numeric.hpp"
+#elif defined(TYR_STATE_STORAGE_TREE_BITSET)
+#include "tyr/planning/lifted/state_storage/tree_bitset/atom.hpp"
+#include "tyr/planning/lifted/state_storage/tree_bitset/fact.hpp"
+#include "tyr/planning/state_storage/tree_vector/numeric.hpp"
 #endif
 
 #include "tyr/planning/state_data.hpp"

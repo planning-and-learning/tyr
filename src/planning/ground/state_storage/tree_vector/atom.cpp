@@ -15,9 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/ground/state_storage/tree_compression/atom.hpp"
+#include "tyr/planning/ground/state_storage/tree_vector/atom.hpp"
 
-#include "tyr/planning/ground/state_storage/tree_compression/context.hpp"
+#include "tyr/planning/ground/state_storage/tree_vector/context.hpp"
 #include "tyr/planning/ground/task.hpp"
 
 #include <yggdrasil/core/bit.hpp>
@@ -26,7 +26,7 @@ namespace tyr::planning
 {
 
 template<bool ThreadSafe>
-AtomStorageBackend<GroundTag, TreeCompression, ThreadSafe>::AtomStorageBackend(Context& ctx) :
+AtomStorageBackend<GroundTag, TreeVector, ThreadSafe>::AtomStorageBackend(Context& ctx) :
     m_array_set(ctx.derived_array_set),
     m_num_bits(ctx.derived_num_bits),
     m_buffer(m_array_set.array_size())
@@ -34,8 +34,8 @@ AtomStorageBackend<GroundTag, TreeCompression, ThreadSafe>::AtomStorageBackend(C
 }
 
 template<bool ThreadSafe>
-typename AtomStorageBackend<GroundTag, TreeCompression, ThreadSafe>::Packed
-AtomStorageBackend<GroundTag, TreeCompression, ThreadSafe>::insert(const Unpacked& unpacked)
+typename AtomStorageBackend<GroundTag, TreeVector, ThreadSafe>::Packed
+AtomStorageBackend<GroundTag, TreeVector, ThreadSafe>::insert(const Unpacked& unpacked)
 {
     auto data = m_buffer.data();
 
@@ -46,7 +46,7 @@ AtomStorageBackend<GroundTag, TreeCompression, ThreadSafe>::insert(const Unpacke
 }
 
 template<bool ThreadSafe>
-void AtomStorageBackend<GroundTag, TreeCompression, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
+void AtomStorageBackend<GroundTag, TreeVector, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     const auto data = m_array_set[packed.index];
     auto& indices = unpacked.indices;
@@ -58,7 +58,7 @@ void AtomStorageBackend<GroundTag, TreeCompression, ThreadSafe>::unpack(const Pa
         indices[i] = bool(ygg::bit::bit_reference(data.data(), i));
 }
 
-template class AtomStorageBackend<GroundTag, TreeCompression, false>;
-template class AtomStorageBackend<GroundTag, TreeCompression, true>;
+template class AtomStorageBackend<GroundTag, TreeVector, false>;
+template class AtomStorageBackend<GroundTag, TreeVector, true>;
 
 }

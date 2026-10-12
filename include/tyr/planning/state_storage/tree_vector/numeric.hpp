@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_STATE_STORAGE_NUMERIC_TREE_COMPRESSION_HPP_
-#define TYR_PLANNING_STATE_STORAGE_NUMERIC_TREE_COMPRESSION_HPP_
+#ifndef TYR_PLANNING_STATE_STORAGE_NUMERIC_TREE_VECTOR_HPP_
+#define TYR_PLANNING_STATE_STORAGE_NUMERIC_TREE_VECTOR_HPP_
 
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
@@ -29,8 +29,8 @@
 namespace tyr::planning
 {
 
-template<TaskKind Kind>
-struct NumericPackedStorage<Kind, TreeCompression> : ygg::comparison::Mixin<NumericPackedStorage<Kind, TreeCompression>>
+template<TaskKind Kind, TreeCompressionTag Tag>
+struct NumericPackedStorage<Kind, Tag> : ygg::comparison::Mixin<NumericPackedStorage<Kind, Tag>>
 {
     ygg::TreeVectorIndex<ygg::float_t> index;
 
@@ -40,13 +40,13 @@ struct NumericPackedStorage<Kind, TreeCompression> : ygg::comparison::Mixin<Nume
     auto identifying_members() const noexcept { return std::tie(index); }
 };
 
-template<TaskKind Kind, bool ThreadSafe>
-class NumericStorageBackend<Kind, TreeCompression, ThreadSafe>
+template<TaskKind Kind, TreeCompressionTag Tag, bool ThreadSafe>
+class NumericStorageBackend<Kind, Tag, ThreadSafe>
 {
 public:
-    using Context = StateStorageContext<Kind, TreeCompression, ThreadSafe>;
+    using Context = StateStorageContext<Kind, Tag, ThreadSafe>;
     using Unpacked = NumericUnpackedStorage<Kind>;
-    using Packed = NumericPackedStorage<Kind, TreeCompression>;
+    using Packed = NumericPackedStorage<Kind, Tag>;
 
     explicit NumericStorageBackend(Context& ctx);
 

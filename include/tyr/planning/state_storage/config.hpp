@@ -22,8 +22,10 @@
 
 namespace tyr::planning
 {
-#if defined(TYR_STATE_STORAGE_TREE)
-using StateStoragePolicyTag = TreeCompression;
+#if defined(TYR_STATE_STORAGE_TREE_VECTOR)
+using StateStoragePolicyTag = TreeVector;
+#elif defined(TYR_STATE_STORAGE_TREE_BITSET)
+using StateStoragePolicyTag = TreeBitset;
 #elif defined(TYR_STATE_STORAGE_HASHSET)
 using StateStoragePolicyTag = HashSet;
 #else

@@ -15,16 +15,17 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_LIFTED_STATE_STORAGE_TREE_COMPRESSION_ATOM_HPP_
-#define TYR_PLANNING_LIFTED_STATE_STORAGE_TREE_COMPRESSION_ATOM_HPP_
+#ifndef TYR_PLANNING_GROUND_STATE_STORAGE_TREE_VECTOR_FACT_HPP_
+#define TYR_PLANNING_GROUND_STATE_STORAGE_TREE_VECTOR_FACT_HPP_
 
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/lifted/state_storage.hpp"
-#include "tyr/planning/lifted/state_storage/tree_compression/context.hpp"
+#include "tyr/planning/ground/state_storage.hpp"
+#include "tyr/planning/ground/state_storage/tree_vector/context.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
 
-#include <yggdrasil/containers/tree_vector_set.hpp>
+#include <boost/dynamic_bitset.hpp>
+#include <limits>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/semantics/comparison.hpp>
 
@@ -32,32 +33,34 @@ namespace tyr::planning
 {
 
 template<>
-struct AtomPackedStorage<LiftedTag, TreeCompression> : ygg::comparison::Mixin<AtomPackedStorage<LiftedTag, TreeCompression>>
+struct FactPackedStorage<GroundTag, TreeVector> : ygg::comparison::Mixin<FactPackedStorage<GroundTag, TreeVector>>
 {
-    ygg::TreeVectorIndex<ygg::uint_t> index;
+    ygg::uint_t index;
 
-    AtomPackedStorage() = default;
-    explicit AtomPackedStorage(ygg::TreeVectorIndex<ygg::uint_t> index) : index(index) {}
+    FactPackedStorage() = default;
+    explicit FactPackedStorage(ygg::uint_t index) : index(index) {}
 
     auto identifying_members() const noexcept { return std::tie(index); }
 };
 
 template<bool ThreadSafe>
-class AtomStorageBackend<LiftedTag, TreeCompression, ThreadSafe>
+class FactStorageBackend<GroundTag, TreeVector, ThreadSafe>
 {
 public:
-    using Context = StateStorageContext<LiftedTag, TreeCompression, ThreadSafe>;
-    using Unpacked = AtomUnpackedStorage<LiftedTag>;
-    using Packed = AtomPackedStorage<LiftedTag, TreeCompression>;
+    using Context = StateStorageContext<GroundTag, TreeVector, ThreadSafe>;
+    using Unpacked = FactUnpackedStorage<GroundTag>;
+    using Packed = FactPackedStorage<GroundTag, TreeVector>;
+    using VariableInfo = typename Context::VariableInfo;
 
-    explicit AtomStorageBackend(Context& ctx);
+    explicit FactStorageBackend(Context& ctx);
 
     Packed insert(const Unpacked& unpacked);
 
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    UintVectorSetT<Context>& m_uint_vectors;
+    ArraySetT<Context>& m_array_set;
+    const std::vector<VariableInfo>& m_infos;
 
     std::vector<ygg::uint_t> m_buffer;
 };

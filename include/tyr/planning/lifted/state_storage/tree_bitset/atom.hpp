@@ -15,15 +15,16 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_LIFTED_STATE_STORAGE_TREE_COMPRESSION_FACT_HPP_
-#define TYR_PLANNING_LIFTED_STATE_STORAGE_TREE_COMPRESSION_FACT_HPP_
+#ifndef TYR_PLANNING_LIFTED_STATE_STORAGE_TREE_BITSET_ATOM_HPP_
+#define TYR_PLANNING_LIFTED_STATE_STORAGE_TREE_BITSET_ATOM_HPP_
 
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/lifted/state_storage.hpp"
-#include "tyr/planning/lifted/state_storage/tree_compression/context.hpp"
+#include "tyr/planning/lifted/state_storage/tree_bitset/context.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
 
+#include <boost/dynamic_bitset.hpp>
 #include <vector>
 #include <yggdrasil/containers/tree_bitset_set.hpp>
 #include <yggdrasil/core/config.hpp>
@@ -33,37 +34,41 @@ namespace tyr::planning
 {
 
 template<>
-struct FactPackedStorage<LiftedTag, TreeCompression> : ygg::comparison::Mixin<FactPackedStorage<LiftedTag, TreeCompression>>
+struct AtomPackedStorage<LiftedTag, TreeBitset> : ygg::comparison::Mixin<AtomPackedStorage<LiftedTag, TreeBitset>>
 {
-    ygg::TreeBitsetIndex<FactUnpackedStorage<LiftedTag>::Block> index;
+    using Index = ygg::TreeBitsetIndex<tree_bitset::Block>;
 
-    FactPackedStorage() = default;
-    explicit FactPackedStorage(ygg::TreeBitsetIndex<FactUnpackedStorage<LiftedTag>::Block> index) : index(index) {}
+    Index index;
+
+    AtomPackedStorage() = default;
+    explicit AtomPackedStorage(Index index) : index(index) {}
 
     auto identifying_members() const noexcept { return std::tie(index); }
 };
 
 template<bool ThreadSafe>
-class FactStorageBackend<LiftedTag, TreeCompression, ThreadSafe>
+class AtomStorageBackend<LiftedTag, TreeBitset, ThreadSafe>
 {
 public:
-    using Context = StateStorageContext<LiftedTag, TreeCompression, ThreadSafe>;
-    using Unpacked = FactUnpackedStorage<LiftedTag>;
-    using Packed = FactPackedStorage<LiftedTag, TreeCompression>;
+    using Context = StateStorageContext<LiftedTag, TreeBitset, ThreadSafe>;
+    using Unpacked = AtomUnpackedStorage<LiftedTag>;
+    using Packed = AtomPackedStorage<LiftedTag, TreeBitset>;
 
-    explicit FactStorageBackend(Context& ctx);
+    explicit AtomStorageBackend(Context& ctx);
 
-    /// Rebases `unpacked` onto the returned index.
-    Packed insert(Unpacked& unpacked);
+    Packed insert(const Unpacked& unpacked);
+
+    /// Inserts `unpacked` relative to the stored `parent`, whose unpacked form is `parent_unpacked`.
+    /// Derived atoms are recomputed per state, so the changed blocks are found by comparing both bitsets.
+    Packed insert(const Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked);
 
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
     typename Context::BitsetSet& m_bitsets;
-    ygg::uint_t m_identity;
 
-    std::vector<Unpacked::Block> m_blocks;
-    std::vector<ygg::TreeBitsetFlip<Unpacked::Block>> m_flips;
+    std::vector<tree_bitset::Block> m_blocks;
+    std::vector<tree_bitset::Flip> m_flips;
 };
 
 }

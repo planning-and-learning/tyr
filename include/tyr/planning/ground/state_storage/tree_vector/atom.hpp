@@ -15,12 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_GROUND_STATE_STORAGE_TREE_COMPRESSION_FACT_HPP_
-#define TYR_PLANNING_GROUND_STATE_STORAGE_TREE_COMPRESSION_FACT_HPP_
+#ifndef TYR_PLANNING_GROUND_STATE_STORAGE_TREE_VECTOR_ATOM_HPP_
+#define TYR_PLANNING_GROUND_STATE_STORAGE_TREE_VECTOR_ATOM_HPP_
 
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/state_storage.hpp"
-#include "tyr/planning/ground/state_storage/tree_compression/context.hpp"
+#include "tyr/planning/ground/state_storage/tree_vector/context.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
 
@@ -33,26 +33,25 @@ namespace tyr::planning
 {
 
 template<>
-struct FactPackedStorage<GroundTag, TreeCompression> : ygg::comparison::Mixin<FactPackedStorage<GroundTag, TreeCompression>>
+struct AtomPackedStorage<GroundTag, TreeVector> : ygg::comparison::Mixin<AtomPackedStorage<GroundTag, TreeVector>>
 {
     ygg::uint_t index;
 
-    FactPackedStorage() = default;
-    explicit FactPackedStorage(ygg::uint_t index) : index(index) {}
+    AtomPackedStorage() = default;
+    explicit AtomPackedStorage(ygg::uint_t index) : index(index) {}
 
     auto identifying_members() const noexcept { return std::tie(index); }
 };
 
 template<bool ThreadSafe>
-class FactStorageBackend<GroundTag, TreeCompression, ThreadSafe>
+class AtomStorageBackend<GroundTag, TreeVector, ThreadSafe>
 {
 public:
-    using Context = StateStorageContext<GroundTag, TreeCompression, ThreadSafe>;
-    using Unpacked = FactUnpackedStorage<GroundTag>;
-    using Packed = FactPackedStorage<GroundTag, TreeCompression>;
-    using VariableInfo = typename Context::VariableInfo;
+    using Context = StateStorageContext<GroundTag, TreeVector, ThreadSafe>;
+    using Unpacked = AtomUnpackedStorage<GroundTag>;
+    using Packed = AtomPackedStorage<GroundTag, TreeVector>;
 
-    explicit FactStorageBackend(Context& ctx);
+    explicit AtomStorageBackend(Context& ctx);
 
     Packed insert(const Unpacked& unpacked);
 
@@ -60,7 +59,7 @@ public:
 
 private:
     ArraySetT<Context>& m_array_set;
-    const std::vector<VariableInfo>& m_infos;
+    ygg::uint_t m_num_bits;
 
     std::vector<ygg::uint_t> m_buffer;
 };

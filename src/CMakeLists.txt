@@ -28,15 +28,20 @@ if("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Hashset")
         planning/lifted/state_storage/hash_set/atom.cpp
         planning/lifted/state_storage/hash_set/fact.cpp
     )
-elseif("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Tree")
+elseif("${TYR_STATE_STORAGE_POLICY}" MATCHES "^Tree(Vector|Bitset)$")
     set(
         TYR_STATE_STORAGE_SRC_FILES
-        planning/state_storage/tree_compression/numeric.cpp
-        planning/ground/state_storage/tree_compression/atom.cpp
-        planning/ground/state_storage/tree_compression/fact.cpp
-        planning/ground/state_storage/tree_compression/context.cpp
-        planning/lifted/state_storage/tree_compression/atom.cpp
-        planning/lifted/state_storage/tree_compression/fact.cpp
+        planning/state_storage/tree_vector/numeric.cpp
+        planning/ground/state_storage/tree_vector/atom.cpp
+        planning/ground/state_storage/tree_vector/fact.cpp
+        planning/ground/state_storage/tree_vector/context.cpp
+        planning/ground/state_storage/tree_bitset/atom.cpp
+        planning/ground/state_storage/tree_bitset/fact.cpp
+        planning/ground/state_storage/tree_bitset/context.cpp
+        planning/lifted/state_storage/tree_vector/atom.cpp
+        planning/lifted/state_storage/tree_vector/fact.cpp
+        planning/lifted/state_storage/tree_bitset/atom.cpp
+        planning/lifted/state_storage/tree_bitset/fact.cpp
     )
 endif()
 
@@ -171,8 +176,10 @@ endif()
 
 if("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Hashset")
     target_compile_definitions(core PUBLIC TYR_STATE_STORAGE_HASHSET)
-elseif("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Tree")
-    target_compile_definitions(core PUBLIC TYR_STATE_STORAGE_TREE)
+elseif("${TYR_STATE_STORAGE_POLICY}" STREQUAL "TreeVector")
+    target_compile_definitions(core PUBLIC TYR_STATE_STORAGE_TREE_VECTOR)
+elseif("${TYR_STATE_STORAGE_POLICY}" STREQUAL "TreeBitset")
+    target_compile_definitions(core PUBLIC TYR_STATE_STORAGE_TREE_BITSET)
 endif()
 
 if("${TYR_RELATION_STORAGE_POLICY}" STREQUAL "Word")

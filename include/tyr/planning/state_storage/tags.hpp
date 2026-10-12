@@ -18,11 +18,23 @@
 #ifndef TYR_PLANNING_STATE_STORAGE_TAGS_HPP_
 #define TYR_PLANNING_STATE_STORAGE_TAGS_HPP_
 
+#include <concepts>
+
 namespace tyr::planning
 {
-struct TreeCompression
+/// Stores state components as tree-compressed vectors.
+struct TreeVector
 {
 };
+
+/// Like TreeVector, but stores fluent facts and derived atoms as position-stable bitset trees, inserting successors as deltas to their parent.
+struct TreeBitset
+{
+};
+
+/// Numeric storage, which both tree-compressed policies share, is specialized on this concept.
+template<typename Tag>
+concept TreeCompressionTag = std::same_as<Tag, TreeVector> || std::same_as<Tag, TreeBitset>;
 
 struct HashSet
 {

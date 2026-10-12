@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/ground/state_storage/tree_compression/context.hpp"
+#include "tyr/planning/ground/state_storage/tree_vector/context.hpp"
 
 #include "tyr/planning/ground/task.hpp"
 
@@ -24,9 +24,9 @@ namespace tyr::planning
 namespace
 {
 template<bool ThreadSafe, std::unsigned_integral Block>
-auto compute_layout_data(const Task<GroundTag>& task) -> typename StateStorageContext<GroundTag, TreeCompression, ThreadSafe>::LayoutData
+auto compute_layout_data(const Task<GroundTag>& task) -> typename StateStorageContext<GroundTag, TreeVector, ThreadSafe>::LayoutData
 {
-    using Context = StateStorageContext<GroundTag, TreeCompression, ThreadSafe>;
+    using Context = StateStorageContext<GroundTag, TreeVector, ThreadSafe>;
     using VariableInfo = Context::VariableInfo;
     using LayoutData = Context::LayoutData;
 
@@ -60,13 +60,13 @@ auto compute_layout_data(const Task<GroundTag>& task) -> typename StateStorageCo
 }
 
 template<bool ThreadSafe>
-StateStorageContext<GroundTag, TreeCompression, ThreadSafe>::StateStorageContext(const Task<GroundTag>& task) :
+StateStorageContext<GroundTag, TreeVector, ThreadSafe>::StateStorageContext(const Task<GroundTag>& task) :
     StateStorageContext(compute_layout_data<ThreadSafe, ygg::uint_t>(task))
 {
 }
 
 template<bool ThreadSafe>
-StateStorageContext<GroundTag, TreeCompression, ThreadSafe>::StateStorageContext(LayoutData&& layout_data) :
+StateStorageContext<GroundTag, TreeVector, ThreadSafe>::StateStorageContext(LayoutData&& layout_data) :
     fluent_infos(layout_data.fluent_infos),
     fluent_array_set(layout_data.fluent_array_size),
     derived_num_bits(layout_data.derived_num_bits),
@@ -74,7 +74,7 @@ StateStorageContext<GroundTag, TreeCompression, ThreadSafe>::StateStorageContext
 {
 }
 
-template struct StateStorageContext<GroundTag, TreeCompression, false>;
-template struct StateStorageContext<GroundTag, TreeCompression, true>;
+template struct StateStorageContext<GroundTag, TreeVector, false>;
+template struct StateStorageContext<GroundTag, TreeVector, true>;
 
 }

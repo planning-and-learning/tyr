@@ -27,12 +27,8 @@
 #include <boost/dynamic_bitset.hpp>
 #include <cassert>
 #include <cstddef>
-#include <limits>
 #include <tuple>
-#include <utility>
-#include <vector>
 #include <yggdrasil/containers/dynamic_bitset.hpp>
-#include <yggdrasil/containers/tree_bitset_set.hpp>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/semantics/containers/dynamic_bitset_hash.hpp>
 
@@ -58,16 +54,7 @@ struct AtomUnpackedStorage<LiftedTag>
 template<>
 struct FactUnpackedStorage<LiftedTag>
 {
-    using Block = boost::dynamic_bitset<>::block_type;
-
-    static constexpr ygg::uint_t NO_BASE_OWNER = std::numeric_limits<ygg::uint_t>::max();
-
     boost::dynamic_bitset<> indices;
-    /// Packed `indices` of the state this storage was unpacked or registered as, owned by the storage
-    /// context identified by `base_owner`, and the block flips applied since. Enables delta insertion.
-    ygg::TreeBitsetIndex<Block> base;
-    ygg::uint_t base_owner = NO_BASE_OWNER;
-    std::vector<ygg::TreeBitsetFlip<Block>> flips;
 
     formalism::planning::FDRValue get(ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>> index) const
     {
@@ -77,42 +64,17 @@ struct FactUnpackedStorage<LiftedTag>
     {
         assert(ygg::uint_t(fact.value) < 2);  // Lifted fluent variables are binary.
         const auto index = ygg::uint_t(fact.variable);
-        const auto value = !fact.value.is_none();
-        if (ygg::test(index, indices) == value)
-            return;
-
-        if (base_owner != NO_BASE_OWNER)
-            flips.push_back(ygg::TreeBitsetFlip<Block> { ygg::uint_t(index / boost::dynamic_bitset<>::bits_per_block),
-                                                         Block { 1 } << (index % boost::dynamic_bitset<>::bits_per_block) });
-
-        if (value)
+        if (!fact.value.is_none())
             ygg::set(index, true, indices);
-        else
+        else if (index < indices.size())
         {
             indices.reset(index);
             if (index + 1 == indices.size())
                 ygg::trim_trailing_zeros(indices);
         }
     }
-    void rebase(ygg::TreeBitsetIndex<Block> packed, ygg::uint_t owner)
-    {
-        base = packed;
-        base_owner = owner;
-        flips.clear();
-    }
-    void clear()
-    {
-        indices.clear();
-        rebase({}, NO_BASE_OWNER);
-    }
-    void swap(FactUnpackedStorage& other) noexcept
-    {
-        using std::swap;
-        indices.swap(other.indices);
-        swap(base, other.base);
-        swap(base_owner, other.base_owner);
-        flips.swap(other.flips);
-    }
+    void clear() { indices.clear(); }
+    void swap(FactUnpackedStorage& other) noexcept { indices.swap(other.indices); }
 
     auto identifying_members() const noexcept { return std::tie(indices); }
 };

@@ -646,6 +646,50 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
     };
     expect_duplicate(cheap->node.get_state());
 
+    // Registering a successor relative to its parent may use delta insertion, which must not change the result.
+    const auto expect_delta_registration = [&](const auto& parent)
+    {
+        const auto fluent_facts = parent.get_fluent_facts();
+        const auto facts = std::vector(fluent_facts.begin(), fluent_facts.end());
+        ASSERT_FALSE(facts.empty());
+        const auto deleted = [](auto fact)
+        {
+            fact.value = formalism::planning::FDRValue::none();
+            return fact;
+        };
+        const auto expect_same_with_and_without_parent = [&](auto&& change)
+        {
+            const auto register_successor = [&](bool with_parent)
+            {
+                auto builder = repository->get_state_builder();
+                builder->assign_unextended_part(parent.get_state_builder());
+                change(*builder);
+                return with_parent ? repository->register_state(*axioms, std::move(builder), parent) : repository->register_state(*axioms, std::move(builder));
+            };
+            const auto with_parent = register_successor(true);
+            const auto without_parent = register_successor(false);
+            EXPECT_EQ(with_parent, without_parent);
+            EXPECT_TRUE(std::ranges::equal(with_parent.get_fluent_facts(), without_parent.get_fluent_facts()));
+            EXPECT_EQ(derived_names(with_parent), derived_names(without_parent));
+        };
+
+        expect_same_with_and_without_parent([](auto&) {});
+        expect_same_with_and_without_parent([&](auto& builder) { builder.set(deleted(facts.back())); });  // Shrinks lifted bitsets.
+        expect_same_with_and_without_parent(
+            [&](auto& builder)
+            {
+                builder.set(deleted(facts.front()));
+                builder.set(facts.front());  // Cancels the deletion.
+            });
+        expect_same_with_and_without_parent(
+            [&](auto& builder)
+            {
+                for (const auto& fact : facts)
+                    builder.set(deleted(fact));
+            });
+    };
+    expect_delta_registration(cheap->node.get_state());
+
     const auto bindings = generator->get_applicable_action_bindings(cheap->node);
     const auto raise = std::ranges::find_if(bindings, [](const auto binding) { return binding.get_relation().get_name().str() == "raise"; });
     const auto disable = std::ranges::find_if(bindings, [](const auto binding) { return binding.get_relation().get_name().str() == "disable"; });
