@@ -32,7 +32,7 @@ template<bool ThreadSafe>
 typename FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::Packed
 FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked)
 {
-    return Packed { tree_bitset::insert_bitset(m_bitsets, unpacked.indices, m_blocks) };
+    return Packed { ygg::insert_bitset(m_bitsets, unpacked.indices, m_blocks) };
 }
 
 template<bool ThreadSafe>
@@ -54,7 +54,7 @@ FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::insert(const Unpacked&, c
 template<bool ThreadSafe>
 void FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
-    tree_bitset::read_bitset(m_bitsets, packed.index, unpacked.indices, m_blocks);  // Ends at the last true atom, as FactUnpackedStorage::set does.
+    ygg::read_bitset(m_bitsets, packed.index, unpacked.indices, m_blocks);  // Ends at the last true atom, as FactUnpackedStorage::set does.
 }
 
 template class FactStorageBackend<LiftedTag, TreeBitset, false>;
