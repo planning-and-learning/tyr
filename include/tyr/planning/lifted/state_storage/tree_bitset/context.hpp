@@ -21,6 +21,7 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
+#include "tyr/planning/state_storage/tree_vector/arity.hpp"
 #include "tyr/planning/state_storage/tree_bitset/block.hpp"
 
 #include <boost/dynamic_bitset.hpp>
@@ -40,8 +41,8 @@ namespace tyr::planning
 template<bool ThreadSafe>
 struct StateStorageContext<LiftedTag, TreeBitset, ThreadSafe>
 {
-    using FloatVectorSet = ygg::TreeVectorSet<ygg::float_t, 32, ThreadSafe>;
-    using BitsetSet = ygg::TreeBitsetSet<tree_bitset::Block, 32, ThreadSafe>;
+    using FloatVectorSet = ygg::TreeVectorSet<ygg::float_t, 32, ThreadSafe, tree_vector::arity>;
+    using BitsetSet = ygg::TreeBitsetSet<tree_bitset::Block, 32, ThreadSafe, tree_bitset::arity>;
 
     FloatVectorSet float_vectors;
     BitsetSet bitsets;

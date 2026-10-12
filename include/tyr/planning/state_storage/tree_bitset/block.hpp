@@ -35,6 +35,9 @@ using Flip = ygg::TreeBitsetFlip<Block>;
 
 inline constexpr size_t bits_per_block = std::numeric_limits<Block>::digits;
 
+/// Children per internal node of the TreeBitsetSets that store fluent facts and derived atoms.
+inline constexpr size_t arity = 4;
+
 /// Inserts `bits` into `set`. `blocks` is scratch space.
 template<typename Set>
 auto insert_bitset(Set& set, const boost::dynamic_bitset<>& bits, std::vector<Block>& blocks)

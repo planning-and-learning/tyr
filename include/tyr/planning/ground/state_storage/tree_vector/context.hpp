@@ -21,6 +21,7 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
+#include "tyr/planning/state_storage/tree_vector/arity.hpp"
 
 #include <concepts>
 #include <vector>
@@ -39,7 +40,7 @@ template<bool ThreadSafe>
 struct StateStorageContext<GroundTag, TreeVector, ThreadSafe>
 {
     using ArraySet = ygg::RawArraySet<ygg::uint_t, 1024, ThreadSafe>;
-    using FloatVectorSet = ygg::TreeVectorSet<ygg::float_t, 32, ThreadSafe>;
+    using FloatVectorSet = ygg::TreeVectorSet<ygg::float_t, 32, ThreadSafe, tree_vector::arity>;
 
     explicit StateStorageContext(const Task<GroundTag>& task);
 

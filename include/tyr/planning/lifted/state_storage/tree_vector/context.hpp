@@ -21,6 +21,7 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
+#include "tyr/planning/state_storage/tree_vector/arity.hpp"
 
 #include <concepts>
 #include <vector>
@@ -37,8 +38,8 @@ namespace tyr::planning
 template<bool ThreadSafe>
 struct StateStorageContext<LiftedTag, TreeVector, ThreadSafe>
 {
-    using UintVectorSet = ygg::TreeVectorSet<ygg::uint_t, 32, ThreadSafe>;
-    using FloatVectorSet = ygg::TreeVectorSet<ygg::float_t, 32, ThreadSafe>;
+    using UintVectorSet = ygg::TreeVectorSet<ygg::uint_t, 32, ThreadSafe, tree_vector::arity>;
+    using FloatVectorSet = ygg::TreeVectorSet<ygg::float_t, 32, ThreadSafe, tree_vector::arity>;
 
     UintVectorSet uint_vectors;
     FloatVectorSet float_vectors;
