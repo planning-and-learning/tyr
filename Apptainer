@@ -52,7 +52,7 @@ Stage: build
         -DTYR_BUILD_PYTYR=OFF \
         -DTYR_BUILD_EXECUTABLES=ON \
         -DTYR_HEADER_INSTANTIATION=OFF \
-        -DTYR_STATE_STORAGE_POLICY=TreeVector
+        -DTYR_STATE_STORAGE_POLICY=TreeBitset
     cmake --build build -j2
 
     # Install Tyr to a staging directory

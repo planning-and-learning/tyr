@@ -24,7 +24,7 @@ option(
 )
 option(TYR_ENABLE_INNER_PARALLELISM "Enable inner parallelism for expensive lifted rule evaluation." OFF)
 option(TYR_ENABLE_SEMI_NAIVE "Enable semi-naive lifted Datalog evaluation." ON)
-set(TYR_STATE_STORAGE_POLICY "TreeVector" CACHE STRING "Policy used for storing states.")
+set(TYR_STATE_STORAGE_POLICY "TreeBitset" CACHE STRING "Policy used for storing states.")
 set_property(CACHE TYR_STATE_STORAGE_POLICY PROPERTY STRINGS TreeVector TreeBitset Hashset)
 set(TYR_RELATION_STORAGE_POLICY "Word" CACHE STRING "Policy used for storing relation bindings.")
 set_property(CACHE TYR_RELATION_STORAGE_POLICY PROPERTY STRINGS Word Bit)

@@ -191,7 +191,7 @@ CMake options:
 | `TYR_ENABLE_SEMI_NAIVE` | `ON` | Enable semi-naive lifted Datalog evaluation. |
 | `TYR_USE_LLD` | `ON` | Use LLVM `lld` with Clang when available. |
 | `TYR_ENABLE_LTO` | `ON` | Enable link-time optimization for Release builds. |
-| `TYR_STATE_STORAGE_POLICY` | `TreeVector` | State storage backend; accepted values are `TreeVector`, `TreeBitset`, and `Hashset`. `TreeBitset` stores fluent facts and derived atoms as position-stable bitset trees and inserts successors as deltas to their parent. |
+| `TYR_STATE_STORAGE_POLICY` | `TreeBitset` | State storage backend; accepted values are `TreeVector`, `TreeBitset`, and `Hashset`. `TreeBitset` stores fluent facts and derived atoms as position-stable bitset trees and inserts successors as deltas to their parent. |
 | `TYR_RELATION_STORAGE_POLICY` | `Word` | Relation storage backend; accepted values are `Word` and `Bit`. Bit packing uses `num_objects` supplied when creating repositories. |
 
 `RepositoryFactory.create_repository(parent_repository=None, num_objects=None)` accepts the total object count for the repository. `None` keeps the full object-index width; child counts include the parent object universe.
