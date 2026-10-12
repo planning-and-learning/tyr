@@ -83,6 +83,7 @@ public:
                                   WorkerData& sender,
                                   const StateView<Kind>& parent,
                                   BuilderPtr target,
+                                  const StateDelta& delta,
                                   ygg::float_t metric,
                                   size_t num_workers)
     {
@@ -98,7 +99,7 @@ public:
             target = std::move(receiver_target);
         }
 
-        auto node = Node<Kind>(repository.register_state(sender.axiom_evaluator, std::move(target), parent), metric);
+        auto node = Node<Kind>(repository.register_state(sender.axiom_evaluator, std::move(target), parent, delta), metric);
         assert(repository.shares_storage_with(engine.get_worker(owner).state_repository));
         return PreparedTarget { owner, std::move(node) };
     }
@@ -152,9 +153,9 @@ public:
 
     template<typename Engine, typename WorkerData>
     static PreparedTarget
-    prepare_target(Engine&, WorkerData& worker, const StateView<Kind>& parent, BuilderPtr target, ygg::float_t metric, size_t num_workers)
+    prepare_target(Engine&, WorkerData& worker, const StateView<Kind>& parent, BuilderPtr target, const StateDelta& delta, ygg::float_t metric, size_t num_workers)
     {
-        auto node = Node<Kind>(worker.state_repository.register_state(worker.axiom_evaluator, std::move(target), parent), metric);
+        auto node = Node<Kind>(worker.state_repository.register_state(worker.axiom_evaluator, std::move(target), parent, delta), metric);
         return PreparedTarget { owner(node.get_state().get_index(), num_workers), std::move(node) };
     }
 
@@ -548,6 +549,7 @@ public:
                            WorkerData& sender,
                            const Node<Kind>& source,
                            BuilderPtr target,
+                           const StateDelta& delta,
                            ygg::float_t auxiliary_value,
                            formalism::planning::ActionBindingView action,
                            Metadata metadata)
@@ -557,7 +559,7 @@ public:
         if (!std::isfinite(g_value))
             throw std::runtime_error("find_solution(...): successor path cost is not finite.");
 
-        auto prepared = m_state_policy.prepare_target(engine, sender, source.get_state(), std::move(target), metric, engine.num_workers());
+        auto prepared = m_state_policy.prepare_target(engine, sender, source.get_state(), std::move(target), delta, metric, engine.num_workers());
         const auto is_goal = sender.goal_strategy->is_dynamic_goal_satisfied(engine.m_start_node.get_state(), prepared.node.get_state());
         sender.statistics.increment_num_generated_candidates(prepared.owner != sender.index);
         auto& receiver = engine.get_worker(prepared.owner);

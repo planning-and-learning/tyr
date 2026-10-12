@@ -165,12 +165,13 @@ public:
                            WorkerData& worker,
                            const Node<Kind>& source,
                            ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> target,
+                           const StateDelta& delta,
                            ygg::float_t auxiliary_value,
                            formalism::planning::ActionBindingView action,
                            SuccessorMetadataT<SearchPolicy> metadata)
     {
         const auto metric = engine.evaluate_successor_metric(*target, auxiliary_value);
-        auto node = Node<Kind>(worker.state_repository.register_state(worker.axiom_evaluator, std::move(target), source.get_state()), metric);
+        auto node = Node<Kind>(worker.state_repository.register_state(worker.axiom_evaluator, std::move(target), source.get_state(), delta), metric);
         const auto g_value = compute_successor_g_value(metadata.source_g_value, node.get_metric(), engine.m_options.cost_mode);
         if (!std::isfinite(g_value))
             throw std::runtime_error("find_solution(...): successor path cost is not finite.");

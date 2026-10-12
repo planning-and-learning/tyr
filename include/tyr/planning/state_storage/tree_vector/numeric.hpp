@@ -18,10 +18,12 @@
 #ifndef TYR_PLANNING_STATE_STORAGE_NUMERIC_TREE_VECTOR_HPP_
 #define TYR_PLANNING_STATE_STORAGE_NUMERIC_TREE_VECTOR_HPP_
 
+#include "tyr/planning/state_delta.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
 
 #include <limits>
+#include <span>
 #include <vector>
 #include <yggdrasil/containers/tree_vector_set.hpp>
 #include <yggdrasil/core/config.hpp>
@@ -53,9 +55,8 @@ public:
 
     Packed insert(Unpacked& unpacked);
 
-    /// Inserts `unpacked` as a delta to the stored `parent`, whose unpacked form is `parent_unpacked`.
-    /// Only the tree paths to values that differ are rebuilt.
-    Packed insert(Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked);
+    /// Inserts `unpacked` as the exact `changes` to the stored `parent`. Only the tree paths to changed values are rebuilt.
+    Packed insert(Unpacked& unpacked, const Packed& parent, std::span<const StateDelta::NumericChange> changes);
 
     void unpack(const Packed& packed, Unpacked& unpacked);
 

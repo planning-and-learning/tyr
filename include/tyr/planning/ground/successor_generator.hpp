@@ -255,16 +255,26 @@ public:
                                             AxiomEvaluator<GroundTag>& axiom_evaluator,
                                             PackedLabeledNodeList<GroundTag>& out_nodes);
 
-    /// Writes an unregistered successor without axiom closure. Use get_successor_node() for a completed borrowed successor.
+    /// Writes an unregistered successor without axiom closure, and its exact changes relative to `node` into `out_delta`.
+    /// Use get_successor_node() for a completed borrowed successor.
     /// Pass the same pooled builder and auxiliary value to finalize_successor_state() to intern it.
     template<StateViewConcept<GroundTag> S>
-    ygg::float_t
-    generate_successor_state(const Node<GroundTag, S>& node, formalism::planning::ActionBindingView binding, ygg::Builder<State<GroundTag>>& out_state);
+    ygg::float_t generate_successor_state(const Node<GroundTag, S>& node,
+                                          formalism::planning::ActionBindingView binding,
+                                          ygg::Builder<State<GroundTag>>& out_state,
+                                          StateDelta& out_delta);
     /// Computes axiom closure and the final metric, then interns the completed state.
     Node<GroundTag> finalize_successor_state(StateRepository<GroundTag>& state_repository,
                                              AxiomEvaluator<GroundTag>& axiom_evaluator,
                                              ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state,
                                              ygg::float_t auxiliary_value);
+    /// Like finalize_successor_state(), but `state` was generated from `parent` with exact changes `delta`.
+    Node<GroundTag> finalize_successor_state(StateRepository<GroundTag>& state_repository,
+                                             AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                             ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state,
+                                             ygg::float_t auxiliary_value,
+                                             const StateView<GroundTag>& parent,
+                                             const StateDelta& delta);
 
     Node<GroundTag> get_node(StateRepository<GroundTag>& state_repository, ygg::Index<State<GroundTag>> state_index);
     [[nodiscard]] SuccessorGeneratorPtr<GroundTag> make_worker(ygg::ExecutionContextPtr execution_context) const;

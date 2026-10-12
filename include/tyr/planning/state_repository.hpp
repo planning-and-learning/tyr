@@ -63,10 +63,12 @@ public:
 
     /// The builder must come from this repository and have no retained mutable aliases.
     StateView<Kind> register_state(AxiomEvaluator<Kind>& axiom_evaluator, ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state);
-    /// Like register_state, but storage backends may insert `state` as a delta to `parent` if both share storage.
-    /// Any parent gives the same result; one that `state` was derived from keeps the delta small.
-    StateView<Kind>
-    register_state(AxiomEvaluator<Kind>& axiom_evaluator, ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state, const StateView<Kind>& parent);
+    /// Like register_state, but `delta` must be the exact changes from `parent` to `state`, as produced when generating a successor.
+    /// If both share storage, storage backends may insert `state` as `delta` to `parent`.
+    StateView<Kind> register_state(AxiomEvaluator<Kind>& axiom_evaluator,
+                                   ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state,
+                                   const StateView<Kind>& parent,
+                                   const StateDelta& delta);
     /// The builder must come from this repository, already contain its axiom closure, and have no retained mutable aliases.
     StateView<Kind> register_extended_state(ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state);
     /// Copies an already extended state of this task into repository-owned storage; source storage remains borrowed and unchanged.
@@ -103,6 +105,7 @@ concept StateRepositoryConcept =
              ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state_builder,
              const BuilderStateView<Kind>& borrowed_state,
              const StateView<Kind>& parent_state,
+             const StateDelta& state_delta,
              const std::vector<ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>>>& fluent_facts,
              const std::vector<std::pair<ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>& fterm_values,
              const std::vector<formalism::planning::FDRFactView<formalism::FluentTag>>& fluent_fact_views,
@@ -115,7 +118,7 @@ concept StateRepositoryConcept =
         { r.create_state(axiom_evaluator, fluent_fact_views, fterm_value_views) } -> std::same_as<StateView<Kind>>;
         { r.get_state_builder() } -> std::same_as<ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true>>;
         { r.register_state(axiom_evaluator, state_builder) } -> std::same_as<StateView<Kind>>;
-        { r.register_state(axiom_evaluator, state_builder, parent_state) } -> std::same_as<StateView<Kind>>;
+        { r.register_state(axiom_evaluator, state_builder, parent_state, state_delta) } -> std::same_as<StateView<Kind>>;
         { r.register_extended_state(state_builder) } -> std::same_as<StateView<Kind>>;
         { r.register_extended_state(borrowed_state) } -> std::same_as<StateView<Kind>>;
         { const_r.make_worker() } -> std::same_as<StateRepositoryPtr<Kind>>;

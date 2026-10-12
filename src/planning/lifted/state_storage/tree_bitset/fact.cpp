@@ -37,9 +37,18 @@ FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::insert(const Unpacked& un
 
 template<bool ThreadSafe>
 typename FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::Packed
-FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked)
+FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::insert(const Unpacked&, const Packed& parent, std::span<const StateDelta::FluentChange> changes)
 {
-    return Packed { tree_bitset::insert_bitset(m_bitsets, parent.index, parent_unpacked.indices, unpacked.indices, m_blocks, m_flips) };
+    // Lifted fluent variables are binary and stored as one bit each, so every change flips the variable's bit.
+    m_flips.clear();
+    for (const auto& change : changes)
+    {
+        const auto bit = ygg::uint_t(change.variable);
+        m_flips.push_back(tree_bitset::Flip { ygg::uint_t(bit / tree_bitset::bits_per_block), tree_bitset::Block { 1 } << (bit % tree_bitset::bits_per_block) });
+    }
+    ygg::normalize_flips(m_flips);
+
+    return Packed { m_bitsets.insert(parent.index, m_flips) };
 }
 
 template<bool ThreadSafe>

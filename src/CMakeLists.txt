@@ -115,6 +115,7 @@ add_library(
     planning/heuristics/rpg_ff.cpp
     planning/heuristics/rpg_max.cpp
     planning/state.cpp
+    planning/state_delta.cpp
     planning/state_repository.cpp
 
     planning/ground/axiom_evaluator.cpp

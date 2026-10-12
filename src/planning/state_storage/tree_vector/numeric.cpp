@@ -53,21 +53,22 @@ typename NumericStorageBackend<Kind, Tag, ThreadSafe>::Packed NumericStorageBack
 
 template<TaskKind Kind, TreeCompressionTag Tag, bool ThreadSafe>
 typename NumericStorageBackend<Kind, Tag, ThreadSafe>::Packed
-NumericStorageBackend<Kind, Tag, ThreadSafe>::insert(Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked)
+NumericStorageBackend<Kind, Tag, ThreadSafe>::insert(Unpacked& unpacked, const Packed& parent, std::span<const StateDelta::NumericChange> changes)
 {
     canonicalize(unpacked);
 
-    // Value vectors grow with the highest function term set, so a successor may be longer than its parent.
+    // Value vectors grow with the highest function term set, so a successor may be longer than its parent,
+    // and a write delta cannot grow a stored vector.
     const auto& values = unpacked.values;
-    const auto& parent_values = parent_unpacked.values;
-    if (values.size() != parent_values.size())
+    if (values.size() != parent.index.size)
         return Packed { m_float_vectors.insert(values) };
 
-    // Compare like the leaf table does, which treats NaN, the value of undefined function terms, as equal to itself.
     m_writes.clear();
-    for (ygg::uint_t i = 0; i < values.size(); ++i)
-        if (!ygg::EqualTo<ygg::float_t> {}(values[i], parent_values[i]))
-            m_writes.push_back(ygg::TreeVectorWrite<ygg::float_t> { i, values[i] });
+    for (const auto& change : changes)
+    {
+        const auto position = ygg::uint_t(change.fterm);
+        m_writes.push_back(ygg::TreeVectorWrite<ygg::float_t> { position, values[position] });
+    }
 
     return Packed { m_float_vectors.insert(parent.index, m_writes) };
 }

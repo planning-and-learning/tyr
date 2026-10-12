@@ -21,10 +21,12 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/state_storage.hpp"
 #include "tyr/planning/ground/state_storage/tree_bitset/context.hpp"
+#include "tyr/planning/state_delta.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
 #include "tyr/planning/state_storage/tree_bitset/block.hpp"
 
+#include <span>
 #include <vector>
 #include <yggdrasil/containers/tree_bitset_set.hpp>
 #include <yggdrasil/core/config.hpp>
@@ -60,9 +62,8 @@ public:
 
     Packed insert(const Unpacked& unpacked);
 
-    /// Inserts `unpacked` as a delta to the stored `parent`, whose unpacked form is `parent_unpacked`.
-    /// Only the tree paths to blocks that differ are rebuilt.
-    Packed insert(const Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked);
+    /// Inserts `unpacked` as the exact `changes` to the stored `parent`. Only the tree paths to changed blocks are rebuilt.
+    Packed insert(const Unpacked& unpacked, const Packed& parent, std::span<const StateDelta::FluentChange> changes);
 
     void unpack(const Packed& packed, Unpacked& unpacked);
 

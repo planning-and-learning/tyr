@@ -2,6 +2,7 @@
 #include "tyr/planning/planning.hpp"
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_data.hpp"
+#include "tyr/planning/state_delta.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_view.hpp"
 
@@ -569,6 +570,37 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     }
 }
 
+/// Every applicable action's successor must come with its exact changes, and registering it with them must not change the result.
+template<TaskKind Kind>
+void expect_generated_successor_deltas(tyr::planning::SuccessorGenerator<Kind>& generator,
+                                       tyr::planning::StateRepository<Kind>& repository,
+                                       tyr::planning::AxiomEvaluator<Kind>& axioms,
+                                       const tyr::planning::Node<Kind>& parent)
+{
+    const auto bindings = generator.get_applicable_action_bindings(parent);
+    ASSERT_FALSE(bindings.empty());
+    for (const auto binding : bindings)
+    {
+        const auto register_generated = [&](bool with_parent)
+        {
+            auto builder = repository.get_state_builder();
+            auto delta = tyr::planning::StateDelta {};
+            generator.generate_successor_state(parent, binding, *builder, delta);
+            auto expected = tyr::planning::StateDelta {};
+            tyr::planning::compute_state_delta(parent.get_state().get_state_builder(), *builder, expected);
+            EXPECT_EQ(delta, expected);
+            return with_parent ? repository.register_state(axioms, std::move(builder), parent.get_state(), delta)
+                               : repository.register_state(axioms, std::move(builder));
+        };
+        const auto with_parent = register_generated(true);
+        const auto without_parent = register_generated(false);
+        EXPECT_EQ(with_parent, without_parent);
+        EXPECT_TRUE(std::ranges::equal(with_parent.get_fluent_facts(), without_parent.get_fluent_facts()));
+        EXPECT_TRUE(std::ranges::equal(with_parent.template get_fterm_values<tyr::formalism::FluentTag>(),
+                                       without_parent.template get_fterm_values<tyr::formalism::FluentTag>()));
+    }
+}
+
 template<TaskKind Kind>
 void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPtr<Kind>& task, bool concurrent)
 {
@@ -664,7 +696,9 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
                 auto builder = repository->get_state_builder();
                 builder->assign_unextended_part(parent.get_state_builder());
                 change(*builder);
-                return with_parent ? repository->register_state(*axioms, std::move(builder), parent) : repository->register_state(*axioms, std::move(builder));
+                auto delta = tyr::planning::StateDelta {};
+                tyr::planning::compute_state_delta(parent.get_state_builder(), *builder, delta);
+                return with_parent ? repository->register_state(*axioms, std::move(builder), parent, delta) : repository->register_state(*axioms, std::move(builder));
             };
             const auto with_parent = register_successor(true);
             const auto without_parent = register_successor(false);
@@ -696,6 +730,8 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         }
     };
     expect_delta_registration(cheap->node.get_state());
+    expect_generated_successor_deltas(*generator, *repository, *axioms, initial);
+    expect_generated_successor_deltas(*generator, *repository, *axioms, cheap->node);
 
     const auto bindings = generator->get_applicable_action_bindings(cheap->node);
     const auto raise = std::ranges::find_if(bindings, [](const auto binding) { return binding.get_relation().get_name().str() == "raise"; });
@@ -836,7 +872,11 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         // Ground axiom evaluation expects the capacity normally prepared by the state repository.
         if constexpr (std::same_as<Kind, GroundTag>)
             generated->resize_derived_atoms(task->get_task().template get_atoms<formalism::DerivedTag>().size());
-        generator->generate_successor_state(borrowed, *raise, *generated);
+        auto generated_delta = tyr::planning::StateDelta {};
+        generator->generate_successor_state(borrowed, *raise, *generated, generated_delta);
+        auto expected_delta = tyr::planning::StateDelta {};
+        tyr::planning::compute_state_delta(borrowed.get_state().get_state_builder(), *generated, expected_delta);
+        EXPECT_EQ(generated_delta, expected_delta);
         axioms->compute_extended_state(*generated);
         const auto generated_view = ygg::make_view(*generated, *task);
         EXPECT_TRUE(std::ranges::equal(generated_view.get_fluent_facts(), raised.get_state().get_fluent_facts()));
@@ -883,6 +923,31 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
     expect_duplicate(cheap->node.get_state());
     EXPECT_EQ(repository->num_states(), 4);
 }
+/// Checks the deltas of all successors within the first layers of a breadth-first search from the initial state.
+template<TaskKind Kind>
+void expect_exact_successor_deltas(const tyr::planning::TaskPtr<Kind>& task, bool concurrent)
+{
+    SCOPED_TRACE(concurrent ? "concurrent storage" : "sequential storage");
+    const auto context = ygg::ExecutionContext::create(1);
+    auto axioms = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, context);
+    auto generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, context);
+    auto factory = tyr::planning::StateRepositoryFactory<Kind> {};
+    auto repository = concurrent ? factory.create_concurrent(task) : factory.create(task);
+
+    auto layer = std::vector { generator->get_initial_node(*repository, *axioms) };
+    for (int depth = 0; depth < 3; ++depth)
+    {
+        auto next = std::vector<tyr::planning::Node<Kind>> {};
+        for (const auto& node : layer)
+        {
+            expect_generated_successor_deltas(*generator, *repository, *axioms, node);
+            for (auto successor : generator->get_successor_nodes(node, *repository, *axioms))
+                next.push_back(std::move(successor));
+        }
+        layer = std::move(next);
+    }
+}
+
 }
 
 TEST(TyrPlanningStateTest, BuilderIdentityUsesOnlyFluentFactsAndNumericValues)
@@ -975,6 +1040,42 @@ TEST(TyrPlanningStateTest, DuplicateStatesRetainClosuresAndIndependentTransition
     {
         expect_registered_closures_and_transition_costs(lifted_task, concurrent);
         expect_registered_closures_and_transition_costs(ground_task, concurrent);
+    }
+}
+
+/// Effects that leave a variable unchanged must not appear in a successor's delta: adding a true atom, deleting and re-adding
+/// the same atom (move ?from ?to with ?from = ?to), and writing a numeric value without changing it.
+TEST(TyrPlanningStateTest, GeneratedSuccessorDeltasAreExact)
+{
+    const auto lifted_task = tyr::planning::Task<LiftedTag>::create(tyr::formalism::planning::Parser(R"(
+(define (domain state-delta)
+  (:requirements :typing :numeric-fluents :action-costs)
+  (:types place)
+  (:predicates (at ?p - place) (marked ?p - place))
+  (:functions (value) (total-cost))
+  (:action move :parameters (?from ?to - place) :precondition (at ?from)
+    :effect (and (not (at ?from)) (at ?to) (increase (total-cost) 1)))
+  (:action stay :parameters (?p - place) :precondition (at ?p)
+    :effect (and (at ?p) (assign (value) (value)) (increase (total-cost) 1)))
+  (:action mark :parameters (?p - place) :precondition (at ?p)
+    :effect (and (marked ?p) (increase (value) 1) (increase (total-cost) 1))))
+)",
+                                                                                                     "state-delta-domain.pddl")
+                                                                        .parse_task(R"(
+(define (problem state-delta-problem)
+  (:domain state-delta)
+  (:objects a b c - place)
+  (:init (at a) (= (value) 0) (= (total-cost) 0))
+  (:goal (and (marked a) (marked b) (marked c)))
+  (:metric minimize (total-cost)))
+)",
+                                                                                    "state-delta-problem.pddl"));
+    const auto ground_task = lifted_task->instantiate_ground_task(*ygg::ExecutionContext::create(1)).task;
+    ASSERT_TRUE(ground_task);
+    for (const auto concurrent : { false, true })
+    {
+        expect_exact_successor_deltas(lifted_task, concurrent);
+        expect_exact_successor_deltas(ground_task, concurrent);
     }
 }
 }

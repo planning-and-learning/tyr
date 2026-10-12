@@ -50,14 +50,14 @@ FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::insert(const Unpacked& un
 
 template<bool ThreadSafe>
 typename FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::Packed
-FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked)
+FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::insert(const Unpacked&, const Packed& parent, std::span<const StateDelta::FluentChange> changes)
 {
     // XOR-ing old and new value into a variable's bits turns its old encoding into the new one.
     m_flips.clear();
-    for (ygg::uint_t i = 0; i < m_infos.size(); ++i)
+    for (const auto& change : changes)
     {
-        if (const auto change = unpacked.values[i] ^ parent_unpacked.values[i])
-            ygg::append_int_flips(m_infos[i].begin, m_infos[i].offset, m_infos[i].length, tree_bitset::Block(change), m_flips);
+        const auto& info = m_infos[ygg::uint_t(change.variable)];
+        ygg::append_int_flips(info.begin, info.offset, info.length, tree_bitset::Block(ygg::uint_t(change.from) ^ ygg::uint_t(change.to)), m_flips);
     }
     ygg::normalize_flips(m_flips);
 

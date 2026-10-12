@@ -265,16 +265,26 @@ public:
                                                     StateRepository<LiftedTag>& state_repository,
                                                     AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
-    /// Writes an unregistered successor without axiom closure. Use get_successor_node() for a completed borrowed successor.
+    /// Writes an unregistered successor without axiom closure, and its exact changes relative to `node` into `out_delta`.
+    /// Use get_successor_node() for a completed borrowed successor.
     /// Pass the same pooled builder and auxiliary value to finalize_successor_state() to intern it.
     template<StateViewConcept<LiftedTag> S>
-    ygg::float_t
-    generate_successor_state(const Node<LiftedTag, S>& node, formalism::planning::ActionBindingView binding, ygg::Builder<State<LiftedTag>>& out_state);
+    ygg::float_t generate_successor_state(const Node<LiftedTag, S>& node,
+                                          formalism::planning::ActionBindingView binding,
+                                          ygg::Builder<State<LiftedTag>>& out_state,
+                                          StateDelta& out_delta);
     /// Computes axiom closure and the final metric, then interns the completed state.
     Node<LiftedTag> finalize_successor_state(StateRepository<LiftedTag>& state_repository,
                                              AxiomEvaluator<LiftedTag>& axiom_evaluator,
                                              ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state,
                                              ygg::float_t auxiliary_value);
+    /// Like finalize_successor_state(), but `state` was generated from `parent` with exact changes `delta`.
+    Node<LiftedTag> finalize_successor_state(StateRepository<LiftedTag>& state_repository,
+                                             AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                             ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state,
+                                             ygg::float_t auxiliary_value,
+                                             const StateView<LiftedTag>& parent,
+                                             const StateDelta& delta);
 
     template<StateViewConcept<LiftedTag> S>
     Node<LiftedTag, S> get_successor_node(const Node<LiftedTag, S>& node,

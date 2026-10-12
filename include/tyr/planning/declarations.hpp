@@ -66,6 +66,8 @@ class PackedState;
 template<TaskKind Kind>
 struct StateContext;
 
+struct StateDelta;
+
 template<TaskKind Kind>
 class SuccessorGenerator;
 template<TaskKind Kind>

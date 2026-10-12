@@ -26,6 +26,7 @@
 #include "tyr/planning/ground/axiom_evaluator.hpp"
 #include "tyr/planning/ground/match_tree/match_tree.hpp"
 #include "tyr/planning/state_builder.hpp"
+#include "tyr/planning/state_delta.hpp"
 #include "tyr/planning/ground/state_repository.hpp"
 #include "tyr/planning/state_view.hpp"
 #include "tyr/planning/ground/task.hpp"
@@ -86,6 +87,7 @@ struct SuccessorGenerator<GroundTag>::Impl
         ActionMatchTrees schema_match_trees;
         formalism::planning::ActionViewList<GroundTag> applicable_actions;
         ActionExecutor executor;
+        StateDelta successor_delta;
         ygg::Data<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>> checked_binding;
     };
 
@@ -499,8 +501,9 @@ Node<GroundTag, S> SuccessorGenerator<GroundTag>::get_successor_node(const Node<
     {
         validate_task(m_impl->definition->task, storage);
         auto successor_state = storage.get_state_builder();
-        const auto auxiliary_value = m_impl->evaluator.executor.apply_action_unregistered(state_context, action, *successor_state);
-        return finalize_successor_state(storage, axiom_evaluator, std::move(successor_state), auxiliary_value);
+        auto& delta = m_impl->evaluator.successor_delta;
+        const auto auxiliary_value = m_impl->evaluator.executor.apply_action_unregistered(state_context, action, *successor_state, delta);
+        return finalize_successor_state(storage, axiom_evaluator, std::move(successor_state), auxiliary_value, node.get_state(), delta);
     }
     else
     {
@@ -508,7 +511,7 @@ Node<GroundTag, S> SuccessorGenerator<GroundTag>::get_successor_node(const Node<
             throw std::invalid_argument("SuccessorGenerator: source and successor builder must be distinct.");
         storage.clear();
         storage.resize_derived_atoms(m_impl->definition->task->get_task().template get_atoms<formalism::DerivedTag>().size());
-        const auto auxiliary_value = m_impl->evaluator.executor.apply_action_unregistered(state_context, action, storage);
+        const auto auxiliary_value = m_impl->evaluator.executor.apply_action_unregistered(state_context, action, storage, m_impl->evaluator.successor_delta);
         const auto metric = evaluate_successor_metric(*m_impl->definition->task, storage, auxiliary_value);
         axiom_evaluator.compute_extended_state(storage);
         return Node<GroundTag, S>(S(storage, *m_impl->definition->task), metric);
@@ -721,8 +724,12 @@ PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_node(c
     validate_task(m_impl->definition->task, axiom_evaluator);
     const auto state_context = StateContext<GroundTag>(*m_impl->definition->task, node.get_state().get_state_builder(), node.get_metric());
     auto successor_state = state_repository.get_state_builder();
-    const auto auxiliary_value = m_impl->evaluator.executor.apply_action_unregistered(state_context, action, *successor_state);
-    return finalize_successor_state(state_repository, axiom_evaluator, std::move(successor_state), auxiliary_value).pack();
+    auto& delta = m_impl->evaluator.successor_delta;
+    const auto auxiliary_value = m_impl->evaluator.executor.apply_action_unregistered(state_context, action, *successor_state, delta);
+    if constexpr (std::same_as<S, StateView<GroundTag>>)
+        return finalize_successor_state(state_repository, axiom_evaluator, std::move(successor_state), auxiliary_value, node.get_state(), delta).pack();
+    else
+        return finalize_successor_state(state_repository, axiom_evaluator, std::move(successor_state), auxiliary_value).pack();
 }
 
 template<StateViewConcept<GroundTag> S>
@@ -856,11 +863,12 @@ void SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(const Nod
 template<StateViewConcept<GroundTag> S>
 ygg::float_t SuccessorGenerator<GroundTag>::generate_successor_state(const Node<GroundTag, S>& node,
                                                                      formalism::planning::ActionBindingView binding,
-                                                                     ygg::Builder<State<GroundTag>>& out_state)
+                                                                     ygg::Builder<State<GroundTag>>& out_state,
+                                                                     StateDelta& out_delta)
 {
     validate_task(m_impl->definition->task, node.get_state());
     const auto state_context = StateContext<GroundTag>(*m_impl->definition->task, node.get_state().get_state_builder(), node.get_metric());
-    return m_impl->evaluator.executor.apply_action_unregistered(state_context, ground_action(binding), out_state);
+    return m_impl->evaluator.executor.apply_action_unregistered(state_context, ground_action(binding), out_state, out_delta);
 }
 
 Node<GroundTag> SuccessorGenerator<GroundTag>::finalize_successor_state(StateRepository<GroundTag>& state_repository,
@@ -872,6 +880,19 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::finalize_successor_state(StateRep
     validate_task(m_impl->definition->task, axiom_evaluator);
     const auto metric = evaluate_successor_metric(*m_impl->definition->task, *state, auxiliary_value);
     return Node<GroundTag>(state_repository.register_state(axiom_evaluator, std::move(state)), metric);
+}
+
+Node<GroundTag> SuccessorGenerator<GroundTag>::finalize_successor_state(StateRepository<GroundTag>& state_repository,
+                                                                        AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                                        ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state,
+                                                                        ygg::float_t auxiliary_value,
+                                                                        const StateView<GroundTag>& parent,
+                                                                        const StateDelta& delta)
+{
+    validate_task(m_impl->definition->task, state_repository);
+    validate_task(m_impl->definition->task, axiom_evaluator);
+    const auto metric = evaluate_successor_metric(*m_impl->definition->task, *state, auxiliary_value);
+    return Node<GroundTag>(state_repository.register_state(axiom_evaluator, std::move(state), parent, delta), metric);
 }
 
 formalism::planning::ActionView<GroundTag> SuccessorGenerator<GroundTag>::ground_action(formalism::planning::ActionBindingView binding) const
@@ -1250,11 +1271,13 @@ template void SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(
 
 template ygg::float_t SuccessorGenerator<GroundTag>::generate_successor_state(const Node<GroundTag>& node,
                                                                               formalism::planning::ActionBindingView binding,
-                                                                              ygg::Builder<State<GroundTag>>& out_state);
+                                                                              ygg::Builder<State<GroundTag>>& out_state,
+                                                                              StateDelta& out_delta);
 
 template ygg::float_t SuccessorGenerator<GroundTag>::generate_successor_state(const Node<GroundTag, BuilderStateView<GroundTag>>& node,
                                                                               formalism::planning::ActionBindingView binding,
-                                                                              ygg::Builder<State<GroundTag>>& out_state);
+                                                                              ygg::Builder<State<GroundTag>>& out_state,
+                                                                              StateDelta& out_delta);
 
 static_assert(SuccessorGeneratorConcept<SuccessorGenerator<GroundTag>, GroundTag>);
 

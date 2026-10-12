@@ -23,6 +23,7 @@
 #include "tyr/planning/applicability_lifted_decl.hpp"
 #include "tyr/planning/declarations.hpp"
 
+#include <vector>
 #include <yggdrasil/core/types.hpp>
 
 namespace tyr::planning
@@ -41,11 +42,13 @@ public:
     template<TaskKind Kind>
     bool is_applicable_if_fires(formalism::planning::ActionView<GroundTag> action, const StateContext<Kind>& state);
 
-    /// Applies the action into caller-owned storage without interning the successor; returns the updated auxiliary metric value.
+    /// Applies the action into caller-owned storage without interning the successor and writes the exact changes relative to
+    /// the parent into `delta`; returns the updated auxiliary metric value.
     template<TaskKind Kind>
     ygg::float_t apply_action_unregistered(const StateContext<Kind>& state_context,
                                            formalism::planning::ActionView<GroundTag> action,
-                                           ygg::Builder<State<Kind>>& successor_state_builder);
+                                           ygg::Builder<State<Kind>>& successor_state_builder,
+                                           StateDelta& delta);
 
     // Lifted action API
 
@@ -59,16 +62,19 @@ public:
                                 formalism::planning::GrounderContext& grounder,
                                 const formalism::planning::FDRContext& fdr);
 
-    /// Applies the action into caller-owned storage without interning the successor; returns the updated auxiliary metric value.
+    /// Applies the action into caller-owned storage without interning the successor and writes the exact changes relative to
+    /// the parent into `delta`; returns the updated auxiliary metric value.
     ygg::float_t apply_action_unregistered(const StateContext<LiftedTag>& state_context,
                                            formalism::planning::ActionView<LiftedTag> action,
                                            formalism::planning::GrounderContext& grounder,
                                            formalism::planning::FDRContext& fdr,
-                                           ygg::Builder<State<LiftedTag>>& successor_state_builder);
+                                           ygg::Builder<State<LiftedTag>>& successor_state_builder,
+                                           StateDelta& delta);
 
 private:
     ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>> m_del_effects;
     ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>> m_add_effects;
+    std::vector<ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>> m_numeric_writes;
     formalism::planning::EffectFamilyList m_effect_families;
     analysis::CompatibilityWorkspace m_compatibility_workspace;
 };

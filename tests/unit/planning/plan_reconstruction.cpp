@@ -20,6 +20,7 @@
 #include "tyr/planning/planning.hpp"
 #include "tyr/planning/search_space/parallel.hpp"
 #include "tyr/planning/search_space/sequential.hpp"
+#include "tyr/planning/state_delta.hpp"
 
 #include <array>
 #include <atomic>
@@ -1050,7 +1051,8 @@ std::optional<uint64_t> find_weighted_astar_seed(tyr::planning::SuccessorGenerat
     for (const auto action : generator.get_applicable_action_bindings(start))
     {
         auto state = state_repository.get_state_builder();
-        const auto auxiliary_value = generator.generate_successor_state(start, action, *state);
+        auto delta = tyr::planning::StateDelta {};
+        const auto auxiliary_value = generator.generate_successor_state(start, action, *state, delta);
         if (auxiliary_value == 100)
             direct.emplace(std::move(state));
         else if (auxiliary_value == 1)

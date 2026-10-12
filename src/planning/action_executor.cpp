@@ -28,10 +28,14 @@
 #include "tyr/planning/applicability_lifted.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_builder.hpp"
+#include "tyr/planning/state_delta.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
 
+#include <algorithm>
+#include <vector>
 #include <yggdrasil/core/types.hpp>
+#include <yggdrasil/semantics/equal_to.hpp>
 
 namespace tyr::planning
 {
@@ -41,7 +45,8 @@ void process_effects(formalism::planning::ActionView<GroundTag> action,
                      ygg::Builder<State<Kind>>& successor_state_builder,
                      StateContext<Kind>& state_context,
                      ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& tmp_del_effects,
-                     ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& tmp_add_effects)
+                     ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& tmp_add_effects,
+                     std::vector<ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>>& tmp_numeric_writes)
 {
     for (const auto cond_effect : action.get_effects())
     {
@@ -56,8 +61,14 @@ void process_effects(formalism::planning::ActionView<GroundTag> action,
                 tmp_add_effects.push_back(fact.get_data());
 
             for (const auto numeric_effect : effect.get_numeric_effects())
-                visit([&](auto&& arg) { successor_state_builder.set(arg.get_fterm().get_index(), evaluate(arg, state_context)); },
-                      numeric_effect.get_variant());
+                visit(
+                    [&](auto&& arg)
+                    {
+                        const auto fterm = arg.get_fterm().get_index();
+                        successor_state_builder.set(fterm, evaluate(arg, state_context));
+                        tmp_numeric_writes.push_back(fterm);
+                    },
+                    numeric_effect.get_variant());
 
             /// Collect the increment (total-cost) in the state_context
             if (effect.get_auxiliary_numeric_effect().has_value())
@@ -74,7 +85,8 @@ inline void process_effects(formalism::planning::ActionView<LiftedTag> action,
                             formalism::planning::FDRContext& fdr_context,
                             analysis::CompatibilityWorkspace& compatibility_workspace,
                             ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& tmp_del_effects,
-                            ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& tmp_add_effects)
+                            ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& tmp_add_effects,
+                            std::vector<ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>>& tmp_numeric_writes)
 {
     auto applicability_context = ApplicabilityContext { state_context, grounder_context, fdr_context };
 
@@ -111,7 +123,9 @@ inline void process_effects(formalism::planning::ActionView<LiftedTag> action,
                                 // evaluation order is unspecified (gcc and clang disagree). Evaluating first preserves
                                 // the historical gcc (right-to-left) index assignment order.
                                 const auto value = evaluate(numeric_effect, applicability_context);
-                                successor_state_builder.set(ground(arg.get_fterm(), grounder_context).first.get_index(), value);
+                                const auto fterm = ground(arg.get_fterm(), grounder_context).first.get_index();
+                                successor_state_builder.set(fterm, value);
+                                tmp_numeric_writes.push_back(fterm);
                             },
                             numeric_effect.get_variant());
 
@@ -125,21 +139,52 @@ inline void process_effects(formalism::planning::ActionView<LiftedTag> action,
     }
 }
 
+/// Writes the exact changes of `successor` relative to `parent` at the touched variables and function terms into `delta`.
+/// Touched entries may repeat and need not change (e.g., adding a true fact, or deleting and re-adding it).
+template<TaskKind Kind>
+void compute_touched_delta(const ygg::Builder<State<Kind>>& parent,
+                           const ygg::Builder<State<Kind>>& successor,
+                           const ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& del_effects,
+                           const ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& add_effects,
+                           const std::vector<ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>>& numeric_writes,
+                           StateDelta& delta)
+{
+    delta.clear();
+
+    for (const auto& effects : { &del_effects, &add_effects })
+        for (const auto fact : *effects)
+            delta.fluents.push_back(StateDelta::FluentChange { fact.variable, parent.get(fact.variable), successor.get(fact.variable) });
+    std::ranges::sort(delta.fluents, {}, [](const auto& change) { return ygg::uint_t(change.variable); });
+    delta.fluents.erase(std::ranges::unique(delta.fluents, {}, [](const auto& change) { return ygg::uint_t(change.variable); }).begin(),
+                        delta.fluents.end());
+    std::erase_if(delta.fluents, [](const auto& change) { return change.from == change.to; });
+
+    for (const auto fterm : numeric_writes)
+        delta.numerics.push_back(StateDelta::NumericChange { fterm, parent.get(fterm), successor.get(fterm) });
+    std::ranges::sort(delta.numerics, {}, [](const auto& change) { return ygg::uint_t(change.fterm); });
+    delta.numerics.erase(std::ranges::unique(delta.numerics, {}, [](const auto& change) { return ygg::uint_t(change.fterm); }).begin(),
+                         delta.numerics.end());
+    std::erase_if(delta.numerics, [](const auto& change) { return ygg::EqualTo<ygg::float_t> {}(change.from, change.to); });
+}
+
 template<TaskKind Kind, typename ProcessEffects>
 ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_context,
                                             ygg::Builder<State<Kind>>& successor_state_builder,
                                             ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& del_effects,
                                             ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& add_effects,
+                                            std::vector<ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>>& numeric_writes,
+                                            StateDelta& delta,
                                             ProcessEffects&& process_effects)
 {
     del_effects.clear();
     add_effects.clear();
+    numeric_writes.clear();
 
     auto tmp_state_context = state_context;
 
     successor_state_builder.assign_unextended_part(tmp_state_context.state_builder);
 
-    process_effects(successor_state_builder, tmp_state_context, del_effects, add_effects);
+    process_effects(successor_state_builder, tmp_state_context, del_effects, add_effects, numeric_writes);
 
     for (const auto fact : del_effects)
         if (successor_state_builder.get(fact.variable) == fact.value)
@@ -147,6 +192,8 @@ ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_cont
 
     for (const auto fact : add_effects)
         successor_state_builder.set(fact);
+
+    compute_touched_delta(state_context.state_builder, successor_state_builder, del_effects, add_effects, numeric_writes, delta);
 
     return tmp_state_context.auxiliary_value;
 }
@@ -174,22 +221,27 @@ template bool ActionExecutor::is_applicable_if_fires(formalism::planning::Action
 template<TaskKind Kind>
 ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Kind>& state_context,
                                                        formalism::planning::ActionView<GroundTag> action,
-                                                       ygg::Builder<State<Kind>>& successor_state_builder)
+                                                       ygg::Builder<State<Kind>>& successor_state_builder,
+                                                       StateDelta& delta)
 {
     return apply_action_unregistered_impl(state_context,
                                           successor_state_builder,
                                           m_del_effects,
                                           m_add_effects,
-                                          [&](auto& out_state, auto& tmp_state_context, auto& del_effects, auto& add_effects)
-                                          { process_effects(action, out_state, tmp_state_context, del_effects, add_effects); });
+                                          m_numeric_writes,
+                                          delta,
+                                          [&](auto& out_state, auto& tmp_state_context, auto& del_effects, auto& add_effects, auto& numeric_writes)
+                                          { process_effects(action, out_state, tmp_state_context, del_effects, add_effects, numeric_writes); });
 }
 
 template ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<LiftedTag>& state_context,
                                                                 formalism::planning::ActionView<GroundTag> action,
-                                                                ygg::Builder<State<LiftedTag>>& successor_state_builder);
+                                                                ygg::Builder<State<LiftedTag>>& successor_state_builder,
+                                                                StateDelta& delta);
 template ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<GroundTag>& state_context,
                                                                 formalism::planning::ActionView<GroundTag> action,
-                                                                ygg::Builder<State<GroundTag>>& successor_state_builder);
+                                                                ygg::Builder<State<GroundTag>>& successor_state_builder,
+                                                                StateDelta& delta);
 
 // Action binding API
 
@@ -221,13 +273,16 @@ ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Lifted
                                                        formalism::planning::ActionView<LiftedTag> action,
                                                        formalism::planning::GrounderContext& grounder,
                                                        formalism::planning::FDRContext& fdr,
-                                                       ygg::Builder<State<LiftedTag>>& successor_state_builder)
+                                                       ygg::Builder<State<LiftedTag>>& successor_state_builder,
+                                                       StateDelta& delta)
 {
     return apply_action_unregistered_impl(state_context,
                                           successor_state_builder,
                                           m_del_effects,
                                           m_add_effects,
-                                          [&](auto& out_state, auto& tmp_state_context, auto& del_effects, auto& add_effects)
+                                          m_numeric_writes,
+                                          delta,
+                                          [&](auto& out_state, auto& tmp_state_context, auto& del_effects, auto& add_effects, auto& numeric_writes)
                                           {
                                               process_effects(
                                                   action,
@@ -238,7 +293,8 @@ ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Lifted
                                                   fdr,
                                                   m_compatibility_workspace,
                                                   del_effects,
-                                                  add_effects);
+                                                  add_effects,
+                                                  numeric_writes);
                                           });
 }
 

@@ -3,6 +3,7 @@
 #include "tyr/formalism/planning/copy.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/planning.hpp"
+#include "tyr/planning/state_delta.hpp"
 
 #include <algorithm>
 #include <array>
@@ -429,7 +430,11 @@ void expect_schema_queries_match_filtered_successors()
     {
         auto expected = pool.get_or_allocate();
         auto actual = pool.get_or_allocate();
-        EXPECT_EQ(source->generate_successor_state(initial_node, binding, *actual), source->generate_successor_state(registered_initial, binding, *expected));
+        auto actual_delta = tyr::planning::StateDelta {};
+        auto expected_delta = tyr::planning::StateDelta {};
+        EXPECT_EQ(source->generate_successor_state(initial_node, binding, *actual, actual_delta),
+                  source->generate_successor_state(registered_initial, binding, *expected, expected_delta));
+        EXPECT_EQ(actual_delta, expected_delta);
         EXPECT_TRUE(std::ranges::equal(actual->get_fluent_facts(), expected->get_fluent_facts()));
         EXPECT_TRUE(std::ranges::equal(actual->template get_fterm_values<formalism::FluentTag>(), expected->template get_fterm_values<formalism::FluentTag>()));
         EXPECT_EQ(state_repository->num_states(), num_states);
@@ -680,7 +685,8 @@ void expect_schema_queries_match_filtered_successors()
                 EXPECT_EQ(offered.status, tyr::planning::ActionBindingStatus::APPLICABLE);
                 // All single-binding paths must leave the outer enumeration's borrowed tuple intact.
                 static_cast<void>(generator->get_successor_node(initial_node, other, next_storage(), *axiom_evaluator));
-                static_cast<void>(generator->generate_successor_state(initial_node, other, *unregistered));
+                auto delta = tyr::planning::StateDelta {};
+                static_cast<void>(generator->generate_successor_state(initial_node, other, *unregistered, delta));
                 static_cast<void>(generator->get_packed_successor_node(initial_node, other, *state_repository, *axiom_evaluator));
                 EXPECT_EQ(binding.get_relation(), action);
                 EXPECT_TRUE(std::ranges::equal(binding.get_objects().get_data(), saved));
@@ -841,7 +847,8 @@ void expect_schema_queries_match_filtered_successors()
     EXPECT_THROW(source->get_successor_nodes(foreign_node, borrowed_states, *axiom_evaluator), std::invalid_argument);
     ASSERT_FALSE(all_bindings.empty());
     auto out_state = pool.get_or_allocate();
-    EXPECT_THROW(source->generate_successor_state(foreign_node, all_bindings.front(), *out_state), std::invalid_argument);
+    auto delta = tyr::planning::StateDelta {};
+    EXPECT_THROW(source->generate_successor_state(foreign_node, all_bindings.front(), *out_state, delta), std::invalid_argument);
 }
 
 TEST(TyrPlanningApplicabilityTest, GroundSchemaQueriesMatchFilteredSuccessors)

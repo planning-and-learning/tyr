@@ -27,11 +27,14 @@
 #include "tyr/planning/lifted/state_data.hpp"
 #include "tyr/planning/lifted/state_repository.hpp"
 #include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/state_delta.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/config.hpp"
 
 #include <atomic>
+#include <cassert>
 #include <memory>
+#include <span>
 #include <type_traits>
 #include <utility>
 #include <yggdrasil/containers/indexed_hash_set.hpp>
@@ -142,40 +145,70 @@ struct StateRepository<Kind>::Impl
         NumericStorageBackend<Kind, StateStoragePolicyTag, ThreadSafe> numeric_backend;
         ygg::SharedObjectPool<ygg::Builder<State<Kind>>, true> state_builder_pool;
 
-        /// Inserts the atoms of kind `F` of `state`, as a delta to `parent` if given and supported by `backend`.
-        /// `parent` is the packed form of `parent_state`, a registered state of this storage.
-        template<formalism::FactKind F, typename Backend>
-        static auto insert_atoms(Backend& backend, const ygg::Builder<State<Kind>>& state, const ygg::Data<State<Kind>>* parent, const ygg::Builder<State<Kind>>* parent_state)
+        /// Inserts the fluent facts of `state`, as `delta` to `parent` if given and supported by the backend.
+        auto insert_fluents(const ygg::Builder<State<Kind>>& state, const ygg::Data<State<Kind>>* parent, const StateDelta* delta)
         {
-            const auto& unpacked = state.template get_atom_storage<F>();
-            if constexpr (requires { backend.insert(unpacked, parent->template get_atom_storage<F>(), parent_state->template get_atom_storage<F>()); })
+            const auto& unpacked = state.template get_atom_storage<formalism::FluentTag>();
+            if constexpr (requires { fluent_backend.insert(unpacked, parent->template get_atom_storage<formalism::FluentTag>(), std::span(delta->fluents)); })
             {
                 if (parent)
-                    return backend.insert(unpacked, parent->template get_atom_storage<F>(), parent_state->template get_atom_storage<F>());
+                    return fluent_backend.insert(unpacked, parent->template get_atom_storage<formalism::FluentTag>(), std::span(delta->fluents));
             }
-            return backend.insert(unpacked);
+            return fluent_backend.insert(unpacked);
         }
 
-        /// Inserts the numeric values of `state`, as a delta to `parent` if given and supported by the backend.
-        auto insert_numeric(ygg::Builder<State<Kind>>& state, const ygg::Data<State<Kind>>* parent, const ygg::Builder<State<Kind>>* parent_state)
+        /// Inserts the derived atoms of `state`, as a difference to `parent_state` if given and supported by the backend.
+        /// Axioms recompute derived atoms, so their changes are not part of a StateDelta.
+        auto insert_derived(const ygg::Builder<State<Kind>>& state, const ygg::Data<State<Kind>>* parent, const ygg::Builder<State<Kind>>* parent_state)
         {
-            auto& unpacked = state.get_numeric_variables();
-            if constexpr (requires { numeric_backend.insert(unpacked, parent->get_numeric_variables(), parent_state->get_numeric_variables()); })
+            const auto& unpacked = state.template get_atom_storage<formalism::DerivedTag>();
+            if constexpr (requires {
+                              derived_backend.insert(unpacked,
+                                                     parent->template get_atom_storage<formalism::DerivedTag>(),
+                                                     parent_state->template get_atom_storage<formalism::DerivedTag>());
+                          })
             {
                 if (parent)
-                    return numeric_backend.insert(unpacked, parent->get_numeric_variables(), parent_state->get_numeric_variables());
+                    return derived_backend.insert(unpacked,
+                                                  parent->template get_atom_storage<formalism::DerivedTag>(),
+                                                  parent_state->template get_atom_storage<formalism::DerivedTag>());
+            }
+            return derived_backend.insert(unpacked);
+        }
+
+        /// Inserts the numeric values of `state`, as `delta` to `parent` if given and supported by the backend.
+        auto insert_numeric(ygg::Builder<State<Kind>>& state, const ygg::Data<State<Kind>>* parent, const StateDelta* delta)
+        {
+            auto& unpacked = state.get_numeric_variables();
+            if constexpr (requires { numeric_backend.insert(unpacked, parent->get_numeric_variables(), std::span(delta->numerics)); })
+            {
+                if (parent)
+                    return numeric_backend.insert(unpacked, parent->get_numeric_variables(), std::span(delta->numerics));
             }
             return numeric_backend.insert(unpacked);
         }
 
+        /// `parent_state` and `delta` are either both null, or a registered state of this storage and the exact changes from it to `state`.
         template<typename ExtendState>
-        void register_state(ygg::Builder<State<Kind>>& state, ExtendState&& extend_state, const ygg::Builder<State<Kind>>* parent_state = nullptr)
+        void register_state(ygg::Builder<State<Kind>>& state,
+                            ExtendState&& extend_state,
+                            const ygg::Builder<State<Kind>>* parent_state = nullptr,
+                            const StateDelta* delta = nullptr)
         {
+            assert((parent_state == nullptr) == (delta == nullptr));
+#ifndef NDEBUG
+            if (delta)
+            {
+                auto expected = StateDelta {};
+                compute_state_delta(*parent_state, state, expected);
+                assert(expected == *delta && "register_state: delta does not match the changes from the parent.");
+            }
+#endif
             auto& packed_states = storage->packed_states;
             using PackedStates = typename Storage<ThreadSafe>::PackedStates;
             const auto* parent = parent_state ? &packed_states[parent_state->get_index()] : nullptr;
-            const auto fluent = insert_atoms<formalism::FluentTag>(fluent_backend, state, parent, parent_state);
-            const auto numeric = insert_numeric(state, parent, parent_state);
+            const auto fluent = insert_fluents(state, parent, delta);
+            const auto numeric = insert_numeric(state, parent, delta);
             const auto key = ygg::Data<State<Kind>>(fluent, {}, numeric);
             const auto hash = PackedStates::hash(key);
             auto state_index = packed_states.find_with_hash(key, hash);
@@ -183,7 +216,7 @@ struct StateRepository<Kind>::Impl
             if (!state_index)
             {
                 std::forward<ExtendState>(extend_state)();
-                const auto derived = insert_atoms<formalism::DerivedTag>(derived_backend, state, parent, parent_state);
+                const auto derived = insert_derived(state, parent, parent_state);
                 const auto [index, inserted] = packed_states.complete_miss_with_hash(hash,
                                                                                      key,
                                                                                      [&](ygg::Index<State<Kind>> index)
@@ -370,15 +403,18 @@ StateView<Kind> StateRepository<Kind>::register_state(AxiomEvaluator<Kind>& axio
 template<TaskKind Kind>
 StateView<Kind> StateRepository<Kind>::register_state(AxiomEvaluator<Kind>& axiom_evaluator,
                                                       ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state,
-                                                      const StateView<Kind>& parent)
+                                                      const StateView<Kind>& parent,
+                                                      const StateDelta& delta)
 {
     if (axiom_evaluator.get_task() != m_impl->definition->task)
         throw std::invalid_argument("StateRepository::register_state(...): axiom evaluator belongs to a different task.");
     // A delta insert reuses the parent's unchanged subtrees by their node indices, so the parent's trees must live in
     // this storage. A parent from separate storage would need its subtrees inserted here first, which is a full insert.
-    const auto* parent_state = parent.get_state_repository()->shares_storage_with(*this) ? &parent.get_state_builder() : nullptr;
+    const auto shares_storage = parent.get_state_repository()->shares_storage_with(*this);
+    const auto* parent_state = shares_storage ? &parent.get_state_builder() : nullptr;
+    const auto* parent_delta = shares_storage ? &delta : nullptr;
     m_impl->visit_evaluator([&](auto& evaluator)
-                            { evaluator.register_state(*state, [&] { axiom_evaluator.compute_extended_state(*state); }, parent_state); });
+                            { evaluator.register_state(*state, [&] { axiom_evaluator.compute_extended_state(*state); }, parent_state, parent_delta); });
     return StateView<Kind>(this->shared_from_this(), std::move(state));
 }
 

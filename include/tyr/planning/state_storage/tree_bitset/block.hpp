@@ -46,6 +46,7 @@ auto insert_bitset(Set& set, const boost::dynamic_bitset<>& bits, std::vector<Bl
 }
 
 /// Inserts `bits` into `set` as a delta to the stored `parent`, whose bits are `parent_bits`. `blocks` and `flips` are scratch space.
+/// Linear in the bitset size; used for derived atoms, whose changes are not known from action effects.
 template<typename Set>
 auto insert_bitset(Set& set,
                    typename Set::index_type parent,

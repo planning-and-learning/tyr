@@ -36,6 +36,7 @@
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
+#include "tyr/planning/state_delta.hpp"
 #include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/worker_state_index.hpp"
 
@@ -176,6 +177,7 @@ public:
         WorkerExecutionState execution;
         std::mt19937_64 rng;
         std::vector<formalism::planning::ActionBindingView> applicable_actions;
+        StateDelta successor_delta;
         PruningStrategyPtr<Kind> pruning_strategy;
         GoalStrategyPtr<Kind> goal_strategy;
         Statistics statistics;
@@ -499,9 +501,10 @@ private:
                 break;
 
             auto successor_state = worker.state_repository.get_state_builder();
-            const auto auxiliary_value = worker.successor_generator.generate_successor_state(node, action, *successor_state);
+            const auto auxiliary_value = worker.successor_generator.generate_successor_state(node, action, *successor_state, worker.successor_delta);
             auto metadata = worker.search.make_successor_metadata(worker.index, node, action);
-            if (m_execution.route(*this, worker, node, std::move(successor_state), auxiliary_value, action, std::move(metadata)) == AcceptanceResult::TERMINAL
+            if (m_execution.route(*this, worker, node, std::move(successor_state), worker.successor_delta, auxiliary_value, action, std::move(metadata))
+                    == AcceptanceResult::TERMINAL
                 || !m_execution.running())
                 break;
         }
