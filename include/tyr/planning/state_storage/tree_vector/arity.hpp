@@ -23,7 +23,7 @@
 namespace tyr::planning::tree_vector
 {
 /// Children per internal node of the TreeVectorSets that store vectors of state values.
-inline constexpr size_t arity = 2;
+inline constexpr size_t arity = 4;
 }
 
 #endif
