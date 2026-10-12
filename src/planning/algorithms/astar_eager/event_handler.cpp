@@ -25,7 +25,10 @@
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/plan.hpp"
 
+#include <cstdio>
+#include <cstdlib>
 #include <fmt/ostream.h>
+#include <string>
 
 namespace tyr::planning::astar_eager
 {
@@ -60,6 +63,27 @@ public:
 
 private:
     ygg::Index<Worker> m_index;
+};
+
+
+template<TaskKind Kind>
+class MemoryProbeWorkerEventHandler final : public WorkerEventHandler<Kind>
+{
+public:
+    explicit MemoryProbeWorkerEventHandler(size_t interval) : m_interval(interval) {}
+
+    void on_expand_node(const Node<Kind>& node) override
+    {
+        if (++m_expanded % m_interval != 0)
+            return;
+        const auto& repository = node.get_state().get_state_repository();
+        fmt::print("[PROBE] expanded={} registered={} storage_bytes={}\n", m_expanded, repository->num_states(), repository->memory_usage());
+        std::fflush(stdout);
+    }
+
+private:
+    size_t m_interval;
+    size_t m_expanded = 0;
 };
 
 }
@@ -106,6 +130,8 @@ void DefaultEventHandler<Kind>::on_solved(const Plan<Kind>& plan)
 template<TaskKind Kind>
 WorkerEventHandlerPtr<Kind> DefaultEventHandler<Kind>::make_worker(ygg::Index<Worker> index)
 {
+    if (const char* probe = std::getenv("TYR_MEMORY_PROBE"))
+        return std::make_unique<MemoryProbeWorkerEventHandler<Kind>>(std::stoul(probe));
     if (m_verbosity < 2)
         return nullptr;
     return std::make_unique<DefaultWorkerEventHandler<Kind>>(index);

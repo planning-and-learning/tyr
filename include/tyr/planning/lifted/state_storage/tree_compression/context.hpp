@@ -22,13 +22,26 @@
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
 
+#include <atomic>
+#include <boost/dynamic_bitset.hpp>
 #include <concepts>
 #include <vector>
+#include <yggdrasil/containers/tree_bitset_set.hpp>
 #include <yggdrasil/containers/tree_vector_set.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
+
+namespace detail
+{
+/// Shared by all ThreadSafe instantiations, since unpacked storage can move between them.
+inline ygg::uint_t next_lifted_tree_context_identity() noexcept
+{
+    static std::atomic<ygg::uint_t> next { 0 };
+    return next.fetch_add(1, std::memory_order_relaxed);
+}
+}
 
 /**
  * Context
@@ -39,15 +52,21 @@ struct StateStorageContext<LiftedTag, TreeCompression, ThreadSafe>
 {
     using UintVectorSet = ygg::TreeVectorSet<ygg::uint_t, 32, ThreadSafe>;
     using FloatVectorSet = ygg::TreeVectorSet<ygg::float_t, 32, ThreadSafe>;
+    using BitsetSet = ygg::TreeBitsetSet<boost::dynamic_bitset<>::block_type, 32, ThreadSafe>;
+
+    /// Distinguishes contexts, so that unpacked storage only reuses packed indices of its own context.
+    ygg::uint_t identity = detail::next_lifted_tree_context_identity();
 
     UintVectorSet uint_vectors;
     FloatVectorSet float_vectors;
+    BitsetSet bitsets;
 
     size_t memory_usage() const noexcept
     {
         size_t bytes = 0;
         bytes += uint_vectors.memory_usage();
         bytes += float_vectors.memory_usage();
+        bytes += bitsets.memory_usage();
         return bytes;
     }
 };

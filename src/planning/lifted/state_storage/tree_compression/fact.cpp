@@ -20,38 +20,72 @@
 #include "tyr/planning/lifted/state_storage/tree_compression/context.hpp"
 #include "tyr/planning/lifted/task.hpp"
 
+#include <algorithm>
+#include <bit>
+#include <cassert>
+#include <iterator>
+#include <vector>
+
 namespace tyr::planning
 {
 
 template<bool ThreadSafe>
-FactStorageBackend<LiftedTag, TreeCompression, ThreadSafe>::FactStorageBackend(Context& ctx) : m_uint_vectors(ctx.uint_vectors)
+FactStorageBackend<LiftedTag, TreeCompression, ThreadSafe>::FactStorageBackend(Context& ctx) : m_bitsets(ctx.bitsets), m_identity(ctx.identity)
 {
 }
 
 template<bool ThreadSafe>
 typename FactStorageBackend<LiftedTag, TreeCompression, ThreadSafe>::Packed
-FactStorageBackend<LiftedTag, TreeCompression, ThreadSafe>::insert(const Unpacked& unpacked)
+FactStorageBackend<LiftedTag, TreeCompression, ThreadSafe>::insert(Unpacked& unpacked)
 {
-    m_buffer.clear();
-    const auto& bits = unpacked.indices;
-    for (auto i = bits.find_first(); i != boost::dynamic_bitset<>::npos; i = bits.find_next(i))
-        m_buffer.push_back(i);
+    using Flip = ygg::TreeBitsetFlip<Unpacked::Block>;
 
-    return Packed { m_uint_vectors.insert(m_buffer) };
+    const auto& bits = unpacked.indices;
+    assert(bits.empty() || bits.test(bits.size() - 1));
+    const auto num_blocks = ygg::uint_t(bits.num_blocks());
+
+    auto index = ygg::TreeBitsetIndex<Unpacked::Block> {};
+    if (unpacked.base_owner == m_identity)
+    {
+        // Flips toggle, so flips of the same block cancel out pairwise.
+        auto& flips = unpacked.flips;
+        std::ranges::sort(flips, {}, &Flip::position);
+        m_flips.clear();
+        for (const auto& flip : flips)
+        {
+            if (!m_flips.empty() && m_flips.back().position == flip.position)
+                m_flips.back().mask ^= flip.mask;
+            else
+                m_flips.push_back(flip);
+        }
+        std::erase_if(m_flips, [](const Flip& flip) { return flip.mask == 0; });
+
+        index = m_bitsets.insert(unpacked.base, m_flips, num_blocks);
+    }
+    else
+    {
+        m_blocks.clear();
+        boost::to_block_range(bits, std::back_inserter(m_blocks));
+        index = m_bitsets.insert(m_blocks);
+    }
+
+    unpacked.rebase(index, m_identity);
+    return Packed { index };
 }
 
 template<bool ThreadSafe>
 void FactStorageBackend<LiftedTag, TreeCompression, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
+    m_blocks.resize(packed.index.size);
+    m_bitsets.read(packed.index, m_blocks);
+
     auto& indices = unpacked.indices;
-
-    m_buffer.resize(packed.index.size);
     indices.clear();
+    indices.append(m_blocks.begin(), m_blocks.end());
+    if (!m_blocks.empty())  // Trim to the last set bit, as FactUnpackedStorage::set does.
+        indices.resize((m_blocks.size() - 1) * boost::dynamic_bitset<>::bits_per_block + std::bit_width(m_blocks.back()));
 
-    m_uint_vectors.read(packed.index, m_buffer);
-
-    for (const auto i : m_buffer)
-        ygg::set(i, true, indices);
+    unpacked.rebase(packed.index, m_identity);
 }
 
 template class FactStorageBackend<LiftedTag, TreeCompression, false>;

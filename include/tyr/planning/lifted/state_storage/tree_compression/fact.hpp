@@ -24,7 +24,8 @@
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
 
-#include <yggdrasil/containers/tree_vector_set.hpp>
+#include <vector>
+#include <yggdrasil/containers/tree_bitset_set.hpp>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/semantics/comparison.hpp>
 
@@ -34,10 +35,10 @@ namespace tyr::planning
 template<>
 struct FactPackedStorage<LiftedTag, TreeCompression> : ygg::comparison::Mixin<FactPackedStorage<LiftedTag, TreeCompression>>
 {
-    ygg::TreeVectorIndex<ygg::uint_t> index;
+    ygg::TreeBitsetIndex<FactUnpackedStorage<LiftedTag>::Block> index;
 
     FactPackedStorage() = default;
-    explicit FactPackedStorage(ygg::TreeVectorIndex<ygg::uint_t> index) : index(index) {}
+    explicit FactPackedStorage(ygg::TreeBitsetIndex<FactUnpackedStorage<LiftedTag>::Block> index) : index(index) {}
 
     auto identifying_members() const noexcept { return std::tie(index); }
 };
@@ -52,14 +53,17 @@ public:
 
     explicit FactStorageBackend(Context& ctx);
 
-    Packed insert(const Unpacked& unpacked);
+    /// Rebases `unpacked` onto the returned index.
+    Packed insert(Unpacked& unpacked);
 
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    UintVectorSetT<Context>& m_uint_vectors;
+    typename Context::BitsetSet& m_bitsets;
+    ygg::uint_t m_identity;
 
-    std::vector<ygg::uint_t> m_buffer;
+    std::vector<Unpacked::Block> m_blocks;
+    std::vector<ygg::TreeBitsetFlip<Unpacked::Block>> m_flips;
 };
 
 }
