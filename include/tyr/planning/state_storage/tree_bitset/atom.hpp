@@ -15,26 +15,23 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_LIFTED_STATE_STORAGE_TREE_BITSET_ATOM_HPP_
-#define TYR_PLANNING_LIFTED_STATE_STORAGE_TREE_BITSET_ATOM_HPP_
+#ifndef TYR_PLANNING_STATE_STORAGE_TREE_BITSET_ATOM_HPP_
+#define TYR_PLANNING_STATE_STORAGE_TREE_BITSET_ATOM_HPP_
 
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/lifted/state_storage.hpp"
-#include "tyr/planning/lifted/state_storage/tree_bitset/context.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
+#include "tyr/planning/state_storage/tree_bitset/block.hpp"
 
-#include <boost/dynamic_bitset.hpp>
 #include <vector>
 #include <yggdrasil/containers/tree_bitset_set.hpp>
-#include <yggdrasil/core/config.hpp>
 #include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning
 {
 
-template<>
-struct AtomPackedStorage<LiftedTag, TreeBitset> : ygg::comparison::Mixin<AtomPackedStorage<LiftedTag, TreeBitset>>
+template<TaskKind Kind>
+struct AtomPackedStorage<Kind, TreeBitset> : ygg::comparison::Mixin<AtomPackedStorage<Kind, TreeBitset>>
 {
     using Index = ygg::TreeBitsetIndex<tree_bitset::Block>;
 
@@ -46,26 +43,27 @@ struct AtomPackedStorage<LiftedTag, TreeBitset> : ygg::comparison::Mixin<AtomPac
     auto identifying_members() const noexcept { return std::tie(index); }
 };
 
-template<bool ThreadSafe>
-class AtomStorageBackend<LiftedTag, TreeBitset, ThreadSafe>
+/// Stores derived atoms, given as a bitset in ground and lifted tasks alike, as a bitset tree.
+template<TaskKind Kind, bool ThreadSafe>
+class AtomStorageBackend<Kind, TreeBitset, ThreadSafe>
 {
 public:
-    using Context = StateStorageContext<LiftedTag, TreeBitset, ThreadSafe>;
-    using Unpacked = AtomUnpackedStorage<LiftedTag>;
-    using Packed = AtomPackedStorage<LiftedTag, TreeBitset>;
+    using Context = StateStorageContext<Kind, TreeBitset, ThreadSafe>;
+    using Unpacked = AtomUnpackedStorage<Kind>;
+    using Packed = AtomPackedStorage<Kind, TreeBitset>;
 
     explicit AtomStorageBackend(Context& ctx);
 
     Packed insert(const Unpacked& unpacked);
 
-    /// Inserts `unpacked` relative to the stored `parent`, whose unpacked form is `parent_unpacked`.
+    /// Inserts `unpacked` as a delta to the stored `parent`, whose unpacked form is `parent_unpacked`.
     /// Derived atoms are recomputed per state, so the changed blocks are found by comparing both bitsets.
     Packed insert(const Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked);
 
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    typename Context::BitsetSet& m_bitsets;
+    Context& m_context;
 
     std::vector<tree_bitset::Block> m_blocks;
     std::vector<tree_bitset::Flip> m_flips;

@@ -32,15 +32,14 @@ elseif("${TYR_STATE_STORAGE_POLICY}" MATCHES "^Tree(Vector|Bitset)$")
     set(
         TYR_STATE_STORAGE_SRC_FILES
         planning/state_storage/tree_vector/numeric.cpp
+        planning/state_storage/tree_bitset/atom.cpp
         planning/ground/state_storage/tree_vector/atom.cpp
         planning/ground/state_storage/tree_vector/fact.cpp
         planning/ground/state_storage/tree_vector/context.cpp
-        planning/ground/state_storage/tree_bitset/atom.cpp
         planning/ground/state_storage/tree_bitset/fact.cpp
         planning/ground/state_storage/tree_bitset/context.cpp
         planning/lifted/state_storage/tree_vector/atom.cpp
         planning/lifted/state_storage/tree_vector/fact.cpp
-        planning/lifted/state_storage/tree_bitset/atom.cpp
         planning/lifted/state_storage/tree_bitset/fact.cpp
     )
 endif()

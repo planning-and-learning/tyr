@@ -20,8 +20,6 @@
 #include "tyr/planning/ground/state_storage/tree_bitset/context.hpp"
 #include "tyr/planning/ground/task.hpp"
 
-#include <array>
-#include <initializer_list>
 #include <yggdrasil/core/bit.hpp>
 
 namespace tyr::planning
@@ -52,24 +50,14 @@ FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::insert(const Unpacked& un
 
 template<bool ThreadSafe>
 typename FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::Packed
-FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::insert(const Packed& parent,
-                                                               std::span<const ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>>> added,
-                                                               std::span<const ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>>> deleted)
+FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked)
 {
-    // The none value is encoded as 0, so XOR-ing the deleted and the added value of a variable into its bit range
-    // turns its old encoding into its new one.
+    // XOR-ing old and new value into a variable's bits turns its old encoding into the new one.
     m_flips.clear();
-    for (const auto changes : { added, deleted })
+    for (ygg::uint_t i = 0; i < m_infos.size(); ++i)
     {
-        for (const auto& fact : changes)
-        {
-            const auto& info = m_infos[ygg::uint_t(fact.variable)];
-            auto mask = std::array<tree_bitset::Block, 2> {};  // A value may span two blocks.
-            ygg::bit::write_int(mask.data(), tree_bitset::Block(ygg::uint_t(fact.value)), info.offset, info.length);
-            for (ygg::uint_t i = 0; i < mask.size(); ++i)
-                if (mask[i] != tree_bitset::Block { 0 })
-                    m_flips.push_back(tree_bitset::Flip { info.begin + i, mask[i] });
-        }
+        if (const auto change = unpacked.values[i] ^ parent_unpacked.values[i])
+            ygg::append_int_flips(m_infos[i].begin, m_infos[i].offset, m_infos[i].length, tree_bitset::Block(change), m_flips);
     }
     ygg::normalize_flips(m_flips);
 

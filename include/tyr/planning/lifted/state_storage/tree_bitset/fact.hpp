@@ -24,7 +24,6 @@
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
 
-#include <span>
 #include <vector>
 #include <yggdrasil/containers/tree_bitset_set.hpp>
 #include <yggdrasil/core/config.hpp>
@@ -58,11 +57,9 @@ public:
 
     Packed insert(const Unpacked& unpacked);
 
-    /// Inserts the facts of `parent` after applying the change logs `added` and `deleted` of Builder<State>.
-    /// Only the tree paths to blocks containing changed facts are rebuilt.
-    Packed insert(const Packed& parent,
-                  std::span<const ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>>> added,
-                  std::span<const ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>>> deleted);
+    /// Inserts `unpacked` as a delta to the stored `parent`, whose unpacked form is `parent_unpacked`.
+    /// Only the tree paths to blocks that differ are rebuilt.
+    Packed insert(const Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked);
 
     void unpack(const Packed& packed, Unpacked& unpacked);
 

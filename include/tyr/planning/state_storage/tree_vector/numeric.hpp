@@ -22,6 +22,7 @@
 #include "tyr/planning/state_storage/tags.hpp"
 
 #include <limits>
+#include <vector>
 #include <yggdrasil/containers/tree_vector_set.hpp>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/semantics/comparison.hpp>
@@ -52,10 +53,16 @@ public:
 
     Packed insert(Unpacked& unpacked);
 
+    /// Inserts `unpacked` as a delta to the stored `parent`, whose unpacked form is `parent_unpacked`.
+    /// Only the tree paths to values that differ are rebuilt.
+    Packed insert(Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked);
+
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
     typename Context::FloatVectorSet& m_float_vectors;
+
+    std::vector<ygg::TreeVectorWrite<ygg::float_t>> m_writes;
 };
 
 }

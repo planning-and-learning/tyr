@@ -26,11 +26,9 @@
 
 #include <concepts>
 #include <ranges>
-#include <span>
 #include <tuple>
 #include <type_traits>
 #include <utility>
-#include <vector>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
@@ -122,31 +120,14 @@ public:
     ::tyr::planning::NumericUnpackedStorage<Kind>& get_numeric_variables() noexcept;
     const ::tyr::planning::NumericUnpackedStorage<Kind>& get_numeric_variables() const noexcept;
 
-    /// Log of fluent facts that became true or false since the last assign_unextended_part, clear, or registration.
-    /// A fact changed back appears in both logs; consumers apply the changes as XOR, which cancels such pairs.
-    std::span<const ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> get_added_fluent_facts() const noexcept
-    {
-        return m_added_fluent_facts;
-    }
-    std::span<const ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> get_deleted_fluent_facts() const noexcept
-    {
-        return m_deleted_fluent_facts;
-    }
-    void clear_fluent_changes() noexcept;
-
     auto identifying_members() const noexcept { return std::tie(m_fact_storage, m_numeric_storage); }
 
 private:
-    using FluentFact = ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>;
-
     ygg::Index<::tyr::planning::State<Kind>> m_index;
 
     ::tyr::planning::FactUnpackedStorage<Kind> m_fact_storage;
     ::tyr::planning::AtomUnpackedStorage<Kind> m_atom_storage;
     ::tyr::planning::NumericUnpackedStorage<Kind> m_numeric_storage;
-
-    std::vector<FluentFact> m_added_fluent_facts;
-    std::vector<FluentFact> m_deleted_fluent_facts;
 };
 
 static_assert(::tyr::planning::StateBuilderConcept<Builder<::tyr::planning::State<::tyr::GroundTag>>, ::tyr::GroundTag>);
@@ -174,22 +155,7 @@ Builder<::tyr::planning::State<Kind>>::get(ygg::Index<::tyr::formalism::planning
 template<::tyr::TaskKind Kind>
 void Builder<::tyr::planning::State<Kind>>::set(ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact)
 {
-    const auto old_value = m_fact_storage.get(fact.variable);
-    if (old_value != fact.value)
-    {
-        if (!old_value.is_none())
-            m_deleted_fluent_facts.push_back(FluentFact { fact.variable, old_value });
-        if (!fact.value.is_none())
-            m_added_fluent_facts.push_back(fact);
-    }
     m_fact_storage.set(fact);
-}
-
-template<::tyr::TaskKind Kind>
-void Builder<::tyr::planning::State<Kind>>::clear_fluent_changes() noexcept
-{
-    m_added_fluent_facts.clear();
-    m_deleted_fluent_facts.clear();
 }
 
 template<::tyr::TaskKind Kind>
@@ -319,7 +285,6 @@ void Builder<::tyr::planning::State<Kind>>::clear_unextended_part()
 {
     m_fact_storage.clear();
     m_numeric_storage.clear();
-    clear_fluent_changes();
 }
 
 template<::tyr::TaskKind Kind>
@@ -333,7 +298,6 @@ void Builder<::tyr::planning::State<Kind>>::assign_unextended_part(const Builder
 {
     m_fact_storage = other.m_fact_storage;
     m_numeric_storage = other.m_numeric_storage;
-    clear_fluent_changes();
 }
 
 template<::tyr::TaskKind Kind>
@@ -344,8 +308,6 @@ void Builder<::tyr::planning::State<Kind>>::swap(Builder& other) noexcept
     m_fact_storage.swap(other.m_fact_storage);
     m_atom_storage.swap(other.m_atom_storage);
     m_numeric_storage.swap(other.m_numeric_storage);
-    m_added_fluent_facts.swap(other.m_added_fluent_facts);
-    m_deleted_fluent_facts.swap(other.m_deleted_fluent_facts);
 }
 
 template<::tyr::TaskKind Kind>

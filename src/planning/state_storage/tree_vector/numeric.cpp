@@ -24,6 +24,8 @@
 #include "tyr/planning/lifted/state_storage/tree_vector/context.hpp"
 #include "tyr/planning/lifted/task.hpp"
 
+#include <yggdrasil/semantics/equal_to.hpp>
+
 namespace tyr::planning
 {
 
@@ -32,13 +34,42 @@ NumericStorageBackend<Kind, Tag, ThreadSafe>::NumericStorageBackend(Context& ctx
 {
 }
 
-template<TaskKind Kind, TreeCompressionTag Tag, bool ThreadSafe>
-typename NumericStorageBackend<Kind, Tag, ThreadSafe>::Packed NumericStorageBackend<Kind, Tag, ThreadSafe>::insert(Unpacked& unpacked)
+namespace
+{
+template<TaskKind Kind>
+void canonicalize(NumericUnpackedStorage<Kind>& unpacked)
 {
     for (auto& value : unpacked.values)
         value = ygg::FloatTolerance<ygg::float_t>::canonicalize(value);
+}
+}
 
+template<TaskKind Kind, TreeCompressionTag Tag, bool ThreadSafe>
+typename NumericStorageBackend<Kind, Tag, ThreadSafe>::Packed NumericStorageBackend<Kind, Tag, ThreadSafe>::insert(Unpacked& unpacked)
+{
+    canonicalize(unpacked);
     return Packed { m_float_vectors.insert(unpacked.values) };
+}
+
+template<TaskKind Kind, TreeCompressionTag Tag, bool ThreadSafe>
+typename NumericStorageBackend<Kind, Tag, ThreadSafe>::Packed
+NumericStorageBackend<Kind, Tag, ThreadSafe>::insert(Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked)
+{
+    canonicalize(unpacked);
+
+    // Value vectors grow with the highest function term set, so a successor may be longer than its parent.
+    const auto& values = unpacked.values;
+    const auto& parent_values = parent_unpacked.values;
+    if (values.size() != parent_values.size())
+        return Packed { m_float_vectors.insert(values) };
+
+    // Compare like the leaf table does, which treats NaN, the value of undefined function terms, as equal to itself.
+    m_writes.clear();
+    for (ygg::uint_t i = 0; i < values.size(); ++i)
+        if (!ygg::EqualTo<ygg::float_t> {}(values[i], parent_values[i]))
+            m_writes.push_back(ygg::TreeVectorWrite<ygg::float_t> { i, values[i] });
+
+    return Packed { m_float_vectors.insert(parent.index, m_writes) };
 }
 
 template<TaskKind Kind, TreeCompressionTag Tag, bool ThreadSafe>

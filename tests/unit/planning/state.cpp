@@ -687,6 +687,13 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
                 for (const auto& fact : facts)
                     builder.set(deleted(fact));
             });
+
+        const auto fterm_values = parent.template get_fterm_values<formalism::FluentTag>();
+        if (fterm_values.begin() != fterm_values.end())
+        {
+            const auto [fterm, value] = *fterm_values.begin();
+            expect_same_with_and_without_parent([&](auto& builder) { builder.set(fterm, value + 1); });
+        }
     };
     expect_delta_registration(cheap->node.get_state());
 

@@ -20,9 +20,6 @@
 #include "tyr/planning/lifted/state_storage/tree_bitset/context.hpp"
 #include "tyr/planning/lifted/task.hpp"
 
-#include <bit>
-#include <initializer_list>
-
 namespace tyr::planning
 {
 
@@ -35,40 +32,20 @@ template<bool ThreadSafe>
 typename FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::Packed
 FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked)
 {
-    m_blocks.clear();
-    ygg::append_blocks(unpacked.indices, m_blocks);
-    ygg::trim_trailing_zero_blocks(m_blocks);
-    return Packed { m_bitsets.insert(m_blocks) };
+    return Packed { tree_bitset::insert_bitset(m_bitsets, unpacked.indices, m_blocks) };
 }
 
 template<bool ThreadSafe>
 typename FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::Packed
-FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::insert(const Packed& parent,
-                                                               std::span<const ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>>> added,
-                                                               std::span<const ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>>> deleted)
+FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked)
 {
-    constexpr auto bits = ygg::uint_t(tree_bitset::bits_per_block);
-
-    // Lifted fluent variables are binary atoms, so each changed fact toggles exactly its atom's bit.
-    m_flips.clear();
-    for (const auto changes : { added, deleted })
-        for (const auto& fact : changes)
-            m_flips.push_back(tree_bitset::Flip { ygg::uint_t(fact.variable) / bits, tree_bitset::Block { 1 } << (ygg::uint_t(fact.variable) % bits) });
-    ygg::normalize_flips(m_flips);
-
-    return Packed { m_bitsets.insert(parent.index, m_flips) };
+    return Packed { tree_bitset::insert_bitset(m_bitsets, parent.index, parent_unpacked.indices, unpacked.indices, m_blocks, m_flips) };
 }
 
 template<bool ThreadSafe>
 void FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
-    m_blocks.resize(packed.index.size);
-    m_bitsets.read(packed.index, m_blocks);
-
-    auto& indices = unpacked.indices;
-    ygg::assign_blocks<tree_bitset::Block>(m_blocks, indices);
-    if (!m_blocks.empty())  // Trim to the last set bit, as FactUnpackedStorage::set does.
-        indices.resize((m_blocks.size() - 1) * tree_bitset::bits_per_block + std::bit_width(m_blocks.back()));
+    tree_bitset::read_bitset(m_bitsets, packed.index, unpacked.indices, m_blocks);  // Ends at the last true atom, as FactUnpackedStorage::set does.
 }
 
 template class FactStorageBackend<LiftedTag, TreeBitset, false>;

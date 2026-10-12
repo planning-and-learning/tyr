@@ -63,8 +63,8 @@ public:
 
     /// The builder must come from this repository and have no retained mutable aliases.
     StateView<Kind> register_state(AxiomEvaluator<Kind>& axiom_evaluator, ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state);
-    /// Like register_state, but `state` was derived from `parent` via assign_unextended_part. If both share storage,
-    /// storage backends may insert `state` as a delta relative to `parent`.
+    /// Like register_state, but storage backends may insert `state` as a delta to `parent` if both share storage.
+    /// Any parent gives the same result; one that `state` was derived from keeps the delta small.
     StateView<Kind>
     register_state(AxiomEvaluator<Kind>& axiom_evaluator, ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state, const StateView<Kind>& parent);
     /// The builder must come from this repository, already contain its axiom closure, and have no retained mutable aliases.
