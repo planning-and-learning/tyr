@@ -31,6 +31,8 @@
 
 #include <cassert>
 #include <deque>
+#include <limits>
+#include <optional>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -87,6 +89,10 @@ struct RuleWorkspace<LiftedTag, R>
 
         /// KCKP
         kckp::Workspace kckp_workspace;
+
+        /// Hyperedge anchors
+        std::vector<std::optional<ygg::Index<formalism::Object>>> anchor_objects;
+        std::vector<kckp::Vertex> anchor_vertices;
     };
 
     struct Solve
@@ -99,11 +105,6 @@ struct RuleWorkspace<LiftedTag, R>
         /// In debug mode, we accumulate all bindings to verify the correctness of delta-kckp
         ygg::UnorderedSet<ygg::IndexList<formalism::Object>> seen_bindings;
 #endif
-
-#ifndef TYR_ENABLE_SEMI_NAIVE
-        ygg::UnorderedSet<formalism::datalog::RuleBindingIndex<R>> seen_pending_rule_bindings;
-#endif
-        std::vector<formalism::datalog::RuleBindingIndex<R>> pending_rule_bindings;
 
         RuleEvaluationWorkspace rule_evaluation_workspace;
         ApplicabilityCache applicability_cache;
@@ -141,6 +142,16 @@ struct RuleWorkspace<LiftedTag, R>
 template<formalism::RelationKind R>
 using LiftedRuleWorkerT = typename RuleWorkspace<LiftedTag, R>::Worker;
 
+/// A positive fluent body literal that the consistency graph does not encode exactly.
+/// A new atom of it anchors the cliques that become valid through that atom.
+struct HyperedgeLiteral
+{
+    using Term = std::variant<formalism::ParameterIndex, ygg::Index<formalism::Object>>;
+
+    formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> atom;
+    std::vector<Term> terms;
+};
+
 template<formalism::RelationKind R>
 struct ConstRuleWorkspace<LiftedTag, R>
 {
@@ -151,6 +162,20 @@ public:
     const auto& get_nullary_effects() const noexcept { return nullary_effects; }
     auto get_conflicting_overapproximation_condition() const noexcept { return conflicting_overapproximation_condition; }
     const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
+    const auto& get_hyperedge_literals() const noexcept { return hyperedge_literals; }
+
+    static constexpr ygg::uint_t NO_VERTEX = std::numeric_limits<ygg::uint_t>::max();
+
+    /// The vertex of object in partition, or nullopt if the graph has none. Requires hyperedge literals.
+    std::optional<kckp::Vertex> find_vertex(ygg::uint_t partition, ygg::Index<formalism::Object> object) const noexcept
+    {
+        assert(partition < object_to_vertex.size());
+        const auto& vertices = object_to_vertex[partition];
+        const auto label = ygg::uint_t(object);
+        if (label >= vertices.size() || vertices[label] == NO_VERTEX)
+            return std::nullopt;
+        return kckp::Vertex(vertices[label]);
+    }
 
     ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag, R> rule, formalism::datalog::Repository& repository, kckp::Graph compatibility_graph);
 
@@ -164,6 +189,9 @@ private:
     formalism::datalog::ConjunctiveConditionView<LiftedTag> conflicting_overapproximation_condition;
 
     StaticConsistencyGraph static_consistency_graph;
+
+    std::vector<HyperedgeLiteral> hyperedge_literals;
+    std::vector<std::vector<ygg::uint_t>> object_to_vertex;  ///< Per partition; built only if there are hyperedge literals.
 };
 
 /**
@@ -216,10 +244,6 @@ RuleWorkspace<LiftedTag, R>::Solve::Solve() :
 #ifndef NDEBUG
     seen_bindings(),
 #endif
-#ifndef TYR_ENABLE_SEMI_NAIVE
-    seen_pending_rule_bindings(),
-#endif
-    pending_rule_bindings(),
     rule_evaluation_workspace(),
     applicability_cache(),
     statistics()
@@ -232,10 +256,6 @@ void RuleWorkspace<LiftedTag, R>::Solve::clear() noexcept
 #ifndef NDEBUG
     seen_bindings.clear();
 #endif
-#ifndef TYR_ENABLE_SEMI_NAIVE
-    seen_pending_rule_bindings.clear();
-#endif
-    pending_rule_bindings.clear();
     rule_evaluation_workspace.selector.clear();
     rule_evaluation_workspace.exact_supports.clear();
     applicability_cache.clear();

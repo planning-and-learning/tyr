@@ -36,10 +36,42 @@ FactsWorkspace<LiftedTag>::FactsWorkspace(formalism::datalog::PredicateListView<
 {
 }
 
+void NewPredicateFacts::publish()
+{
+    for (auto& list : m_lists)
+    {
+        if (!list.tracked)
+            continue;
+        for (const auto binding : list.visible)
+            list.is_new.reset(ygg::uint_t(binding.row));
+        std::swap(list.visible, list.committed);
+        list.committed.clear();
+        for (const auto binding : list.visible)
+        {
+            const auto row = ygg::uint_t(binding.row);
+            if (row >= list.is_new.size())
+                list.is_new.resize(row + 1);
+            list.is_new.set(row);
+        }
+    }
+}
+
+void NewPredicateFacts::clear() noexcept
+{
+    for (auto& list : m_lists)
+    {
+        for (const auto binding : list.visible)
+            list.is_new.reset(ygg::uint_t(binding.row));
+        list.committed.clear();
+        list.visible.clear();
+    }
+}
+
 void FactsWorkspace<LiftedTag>::reset()
 {
     fact_sets.reset();
     assignment_sets.reset();
+    new_facts.clear();
 }
 
 ConstFactsWorkspace<LiftedTag>::ConstFactsWorkspace(formalism::datalog::PredicateListView<formalism::StaticTag> predicates,

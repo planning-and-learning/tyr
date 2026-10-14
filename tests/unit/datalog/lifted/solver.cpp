@@ -1027,7 +1027,7 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     EXPECT_EQ(lifted_witness->get_numeric_supports()[1].get_cost(), 2);
 }
 
-TEST(TyrDatalogLiftedBottomUpTest, RepeatedArgumentsRetryPendingExistingHeadAchiever)
+TEST(TyrDatalogLiftedBottomUpTest, RepeatedArgumentsNewAtomRecordsExistingHeadAchiever)
 {
     auto factory = std::make_shared<tyr::formalism::datalog::RepositoryFactory>();
     auto repository = factory->create_shared();
@@ -1140,6 +1140,113 @@ TEST(TyrDatalogLiftedBottomUpTest, RepeatedArgumentsRetryPendingExistingHeadAchi
     std::ranges::sort(bindings);
     const auto expected = std::vector<std::vector<ygg::Index<tyr::formalism::Object>>> { { a.get_index(), b.get_index() }, { b.get_index(), b.get_index() } };
     EXPECT_EQ(bindings, expected);
+}
+
+TEST(TyrDatalogLiftedBottomUpTest, NewHigherArityAtomsGenerateBindingsWithoutDeltaEdges)
+{
+    // h(x,y,z) :- t(x,y,z), u(x,y,z). The pairwise projections of t and u hold initially through other atoms, so the
+    // consistency graph of the h rule has the clique (a,b,c) before t(a,b,c) and u(a,b,c) are derived in the same
+    // iteration. Only the new atoms can generate h(a,b,c), and only the one of the first literal may (Debug checks duplicates).
+    auto factory = std::make_shared<tyr::formalism::datalog::RepositoryFactory>();
+    auto repository = factory->create_shared();
+    const auto intern = [&]<typename T>(ygg::Data<T> data)
+    {
+        if constexpr (requires { tyr::formalism::datalog::canonicalize(data); })
+            tyr::formalism::datalog::canonicalize(data);
+        else
+            tyr::formalism::canonicalize(data);
+        return repository->insert(data).first;
+    };
+
+    using FluentPredicate = tyr::formalism::Predicate<tyr::formalism::FluentTag>;
+    const auto t = intern(ygg::Data<FluentPredicate>(std::string("t"), 3));
+    const auto u = intern(ygg::Data<FluentPredicate>(std::string("u"), 3));
+    const auto h = intern(ygg::Data<FluentPredicate>(std::string("h"), 3));
+    const auto s = intern(ygg::Data<FluentPredicate>(std::string("s"), 1));
+    const auto m = intern(ygg::Data<FluentPredicate>(std::string("m"), 2));
+    const auto a = intern(ygg::Data<tyr::formalism::Object>(std::string("a")));
+    const auto b = intern(ygg::Data<tyr::formalism::Object>(std::string("b")));
+    const auto c = intern(ygg::Data<tyr::formalism::Object>(std::string("c")));
+    const auto d = intern(ygg::Data<tyr::formalism::Object>(std::string("d")));
+    const auto x = intern(ygg::Data<tyr::formalism::Variable>(std::string("x")));
+    const auto y = intern(ygg::Data<tyr::formalism::Variable>(std::string("y")));
+    const auto z = intern(ygg::Data<tyr::formalism::Variable>(std::string("z")));
+    const auto p0 = tyr::formalism::ParameterIndex(0);
+    const auto p1 = tyr::formalism::ParameterIndex(1);
+    const auto p2 = tyr::formalism::ParameterIndex(2);
+
+    const auto make_atom = [&](auto predicate, std::initializer_list<tyr::formalism::ParameterIndex> terms)
+    {
+        auto data = ygg::Data<tyr::formalism::datalog::Atom<LiftedTag, tyr::formalism::FluentTag>>();
+        data.predicate = predicate.get_index();
+        for (const auto term : terms)
+            data.terms.emplace_back(term);
+        return intern(std::move(data));
+    };
+    const auto make_literal = [&](auto atom)
+    { return intern(ygg::Data<tyr::formalism::datalog::Literal<LiftedTag, tyr::formalism::FluentTag>>(atom.get_index(), true)); };
+    const auto make_binding = [&](auto predicate, std::initializer_list<ygg::Index<tyr::formalism::Object>> objects)
+    {
+        auto data = ygg::Data<tyr::formalism::RelationBinding<FluentPredicate>>();
+        data.relation = predicate.get_index();
+        data.objects.insert(data.objects.end(), objects.begin(), objects.end());
+        return intern(std::move(data));
+    };
+    const auto make_initial_atom = [&](auto predicate, std::initializer_list<ygg::Index<tyr::formalism::Object>> objects)
+    { return intern(ygg::Data<tyr::formalism::datalog::Atom<GroundTag, tyr::formalism::FluentTag>>(make_binding(predicate, objects).get_index())); };
+    const auto make_predicate_rule = [&](auto head, std::vector<ygg::Index<tyr::formalism::datalog::Literal<LiftedTag, tyr::formalism::FluentTag>>> literals)
+    {
+        auto body = ygg::Data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>();
+        body.variables = { x.get_index(), y.get_index(), z.get_index() };
+        body.fluent_literals.insert(body.fluent_literals.end(), literals.begin(), literals.end());
+        auto rule = ygg::Data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>();
+        rule.variables = { x.get_index(), y.get_index(), z.get_index() };
+        rule.body = intern(std::move(body)).get_index();
+        rule.head = head.get_index();
+        return intern(std::move(rule));
+    };
+
+    const auto seeded = std::vector { make_literal(make_atom(s, { p0 })).get_index(), make_literal(make_atom(m, { p1, p2 })).get_index() };
+    const auto derive_t = make_predicate_rule(make_atom(t, { p0, p1, p2 }), seeded);
+    const auto derive_u = make_predicate_rule(make_atom(u, { p0, p1, p2 }), seeded);
+    const auto derive_h = make_predicate_rule(make_atom(h, { p0, p1, p2 }),
+                                              { make_literal(make_atom(t, { p0, p1, p2 })).get_index(), make_literal(make_atom(u, { p0, p1, p2 })).get_index() });
+
+    auto program_data = ygg::Data<tyr::formalism::datalog::Program<LiftedTag>>();
+    program_data.objects = { a.get_index(), b.get_index(), c.get_index(), d.get_index() };
+    program_data.fluent_predicates = { t.get_index(), u.get_index(), h.get_index(), s.get_index(), m.get_index() };
+    for (const auto predicate : { t, u })
+    {
+        // Projections (a,b), (b,c) and (a,c) of the triple (a,b,c), each through another atom.
+        program_data.fluent_atoms.push_back(make_initial_atom(predicate, { a.get_index(), b.get_index(), d.get_index() }).get_index());
+        program_data.fluent_atoms.push_back(make_initial_atom(predicate, { d.get_index(), b.get_index(), c.get_index() }).get_index());
+        program_data.fluent_atoms.push_back(make_initial_atom(predicate, { a.get_index(), d.get_index(), c.get_index() }).get_index());
+    }
+    program_data.fluent_atoms.push_back(make_initial_atom(s, { a.get_index() }).get_index());
+    program_data.fluent_atoms.push_back(make_initial_atom(m, { b.get_index(), c.get_index() }).get_index());
+    program_data.predicate_rules = { derive_t.get_index(), derive_u.get_index(), derive_h.get_index() };
+    auto program = tyr::datalog::Program<LiftedTag>(intern(std::move(program_data)), repository, factory);
+
+    using AnnotationPolicy = tyr::datalog::MinCostAnnotationWithAchieversPolicy<tyr::datalog::MaxAggregation>;
+    using TerminationPolicy = tyr::datalog::TerminationPolicy<tyr::datalog::MaxAggregation>;
+    auto workspace = tyr::datalog::ProgramWorkspace<LiftedTag, AnnotationPolicy, TerminationPolicy>(program);
+    auto context = tyr::datalog::ProgramExecutionContext(workspace);
+    tyr::datalog::compute_model(context);
+
+    const auto target = make_binding(h, { a.get_index(), b.get_index(), c.get_index() });
+    ASSERT_TRUE(workspace.facts.fact_sets.predicate.contains(target.get_index()));
+    const auto* achievers = workspace.annotation_policy.find_achievers(target.get_index());
+    ASSERT_NE(achievers, nullptr);
+    EXPECT_EQ(achievers->size(), 1);
+    for (const auto other : { make_binding(h, { a.get_index(), b.get_index(), d.get_index() }),
+                              make_binding(h, { d.get_index(), b.get_index(), c.get_index() }),
+                              make_binding(h, { a.get_index(), d.get_index(), c.get_index() }) })
+        EXPECT_TRUE(workspace.facts.fact_sets.predicate.contains(other.get_index()));
+
+    // The h rule rejected (a,b,c) before t(a,b,c) existed, so the new atom, not a delta edge, generated it.
+    const auto& h_rule = workspace.predicate_rules[ygg::uint_t(derive_h.get_index())];
+    ASSERT_NE(h_rule, nullptr);
+    EXPECT_GT(h_rule->worker.front().solve.statistics.num_rejected_rules, 0);
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindings)

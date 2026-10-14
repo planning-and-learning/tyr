@@ -32,7 +32,6 @@ struct RuleStatistics
     uint64_t num_executions { 0 };
     std::chrono::nanoseconds initialize_time { 0 };
     std::chrono::nanoseconds process_generate_time { 0 };
-    std::chrono::nanoseconds process_pending_time { 0 };
     std::chrono::nanoseconds total_time { 0 };
 };
 
@@ -40,7 +39,7 @@ struct RuleWorkerStatistics
 {
     uint64_t num_executions { 0 };
     uint64_t num_generated_rules { 0 };
-    uint64_t num_pending_rules { 0 };
+    uint64_t num_rejected_rules { 0 };
 };
 
 struct AggregatedRuleStatistics
@@ -48,7 +47,6 @@ struct AggregatedRuleStatistics
     uint64_t num_executions { 0 };
     std::chrono::nanoseconds initialize_time { 0 };
     std::chrono::nanoseconds process_generate_time { 0 };
-    std::chrono::nanoseconds process_pending_time { 0 };
     std::chrono::nanoseconds total_time { 0 };
 
     size_t sample_count { 0 };
@@ -64,7 +62,7 @@ struct AggregatedRuleWorkerStatistics
 {
     uint64_t num_executions { 0 };
     uint64_t num_generated_rules { 0 };
-    uint64_t num_pending_rules { 0 };
+    uint64_t num_rejected_rules { 0 };
 };
 
 inline AggregatedRuleStatistics compute_aggregated_rule_statistics(const std::vector<datalog::RuleStatistics>& statistics)
@@ -87,7 +85,6 @@ inline AggregatedRuleStatistics compute_aggregated_rule_statistics(const std::ve
         result.total_time += rs.total_time;
         result.initialize_time += rs.initialize_time;
         result.process_generate_time += rs.process_generate_time;
-        result.process_pending_time += rs.process_pending_time;
     }
 
     result.sample_count = samples.size();
@@ -134,7 +131,7 @@ inline AggregatedRuleWorkerStatistics compute_aggregated_rule_worker_statistics(
     {
         result.num_executions += rs.num_executions;
         result.num_generated_rules += rs.num_generated_rules;
-        result.num_pending_rules += rs.num_pending_rules;
+        result.num_rejected_rules += rs.num_rejected_rules;
     }
 
     return result;

@@ -148,6 +148,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
 
         out.cost_buckets().clear();
         out.pending_achievers().clear();
+        out.facts().new_facts.clear();
         out.reset_numeric_support_selector();
         out.annotations().clear();
         out.numeric_annotations().clear();

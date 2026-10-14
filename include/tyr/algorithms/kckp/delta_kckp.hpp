@@ -45,6 +45,12 @@ struct Edge
     friend constexpr bool operator==(Edge, Edge) noexcept = default;
 };
 
+/// Anchor of a clique whose first new element is a new atom of a literal the graph does not encode:
+/// the clique fixes the atom's vertices and contains no delta vertex or edge, which belong to edge anchors.
+struct Hyperedge
+{
+};
+
 enum class AdjacencyKind
 {
     IMPLICIT,
@@ -128,6 +134,24 @@ public:
     {
         assert(destination.size() == m_layout.info.infos[partition].num_bits);
         for_each_adjacency_block(vertex, partition, [&](size_t block, uint64_t adjacency) { destination.blocks()[block] &= ~adjacency; });
+    }
+
+    bool is_adjacent(ygg::uint_t vertex, ygg::uint_t target) const noexcept
+    {
+        const auto source_partition = m_layout.vertex_to_partition[vertex];
+        const auto target_partition = m_layout.vertex_to_partition[target];
+        const auto target_bit = m_layout.vertex_to_bit[target];
+        const auto block = target_bit / ygg::BitsetSpan<const uint64_t>::Digits;
+        const auto mask = uint64_t(1) << (target_bit % ygg::BitsetSpan<const uint64_t>::Digits);
+        const auto offset = m_adjacency_layout.get_offset(vertex, source_partition, target_partition);
+
+        if (offset < PartitionedAdjacencyLayout::STATIC_ONLY)
+            return m_bitset_data[offset + block] & mask;
+
+        const auto contextual = get_contextual_partition(vertex, target_partition).blocks()[block] & mask;
+        if (offset == PartitionedAdjacencyLayout::IMPLICIT)
+            return contextual;
+        return contextual && (m_static_matrix.get_bitset(vertex, target_partition).blocks()[block] & mask);
     }
 
     template<typename Callback>
@@ -402,9 +426,22 @@ public:
             });
     }
 
+    /// Cliques that contain all anchor vertices (at most one per partition) and no delta vertex or edge.
+    template<typename Callback>
+    void for_each_hyperedge_clique(std::span<const Vertex> anchor, Callback&& callback, Workspace& workspace) const
+    {
+        if (!seed_from_vertices(anchor, workspace))
+            return;
+        if (workspace.partial_solution_size == m_layout.num_partitions)
+            callback(workspace.partial_solution);
+        else
+            complete_from_seed<Hyperedge>(callback, 0, workspace);
+    }
+
     const std::vector<Edge>& materialize_delta_edges();
     void seed_without_anchor(Workspace& workspace) const;
     bool seed_from_anchor(const Edge& edge, Workspace& workspace) const;
+    bool seed_from_vertices(std::span<const Vertex> vertices, Workspace& workspace) const;
 
     template<typename Anchor, typename Callback>
     void complete_from_seed(Callback&& callback, size_t depth, Workspace& workspace) const
@@ -454,6 +491,12 @@ private:
                     if (!next.any())
                         return false;
                 }
+            }
+            else if constexpr (std::is_same_v<Anchor, Hyperedge>)
+            {
+                m_delta_graph.matrix.subtract_adjacency_from(source.index, partition, next);
+                if (!next.any())
+                    return false;
             }
         }
         return true;
