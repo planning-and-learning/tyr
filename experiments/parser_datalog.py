@@ -34,8 +34,8 @@ RE_RULE_SKEW_AVG =  re.compile(r'^\[AggregatedRuleStatistics\]\s+T_avg_skew\s*=\
 # AggregatedRuleWorkerStatistics
 RE_RULE_WORKER_N_EXEC     = re.compile(r'^\[AggregatedRuleWorkerStatistics\]\s+N_exec\s*=\s*(?P<v>\d+)\s*.*$')
 RE_RULE_WORKER_N_GEN     = re.compile(r'^\[AggregatedRuleWorkerStatistics\]\s+N_gen\s*=\s*(?P<v>\d+)\s*.*$')
-RE_RULE_WORKER_N_PEN     = re.compile(r'^\[AggregatedRuleWorkerStatistics\]\s+N_pen\s*=\s*(?P<v>\d+)\s*.*$')
-RE_RULE_WORKER_OA     = re.compile(r'^\[AggregatedRuleWorkerStatistics\]\s+OA\s*=\s*(?P<v>\d+)\s*.*$')
+RE_RULE_WORKER_N_REJ     = re.compile(r'^\[AggregatedRuleWorkerStatistics\]\s+N_rej\s*=\s*(?P<v>\d+)\s*.*$')
+RE_RULE_WORKER_OA     = re.compile(r'^\[AggregatedRuleWorkerStatistics\]\s+OA\s*=\s*(?P<v>[0-9]*\.?[0-9]+)\s*.*$')
 
 # Map your section titles to prefixes in props
 SECTION_MAP = {
@@ -129,8 +129,8 @@ def parse_datalog_summaries(content: str, props: dict):
         m = RE_RULE_WORKER_N_GEN.match(line)
         if m: put("rule_worker_n_gen", int(m.group("v"))); continue
 
-        m = RE_RULE_WORKER_N_PEN.match(line)
-        if m: put("rule_worker_n_pen", int(m.group("v"))); continue
+        m = RE_RULE_WORKER_N_REJ.match(line)
+        if m: put("rule_worker_n_rej", int(m.group("v"))); continue
 
         m = RE_RULE_WORKER_OA.match(line)
         if m: put("rule_worker_oa", float(m.group("v"))); continue
@@ -162,8 +162,8 @@ class DatalogParser(Parser):
     [AggregatedRuleStatistics] T_avg_skew =       2.87    | skew average time (T_avg_max / T_avg_med)
     [AggregatedRuleWorkerStatistics] N_exec =          40 | executions
     [AggregatedRuleWorkerStatistics] N_gen  =        7488 | generated rules
-    [AggregatedRuleWorkerStatistics] N_pen  =        2493 | pending rules
-    [AggregatedRuleWorkerStatistics] OA     =        1.33 | overapproximation ratio (1 + N_pen / N_gen)
+    [AggregatedRuleWorkerStatistics] N_rej  =        2493 | rejected rules
+    [AggregatedRuleWorkerStatistics] OA     =        1.33 | overapproximation ratio (1 + N_rej / N_gen)
     [Axiom evaluator] Summary
     [ProgramStatistics] N_exec =       4996    | executions
     [ProgramStatistics] T_seq  =         20 ms | sequential time
@@ -188,8 +188,8 @@ class DatalogParser(Parser):
     [AggregatedRuleStatistics] T_avg_skew =       1.00    | skew average time (T_avg_max / T_avg_med)
     [AggregatedRuleWorkerStatistics] N_exec =           0 | executions
     [AggregatedRuleWorkerStatistics] N_gen  =           0 | generated rules
-    [AggregatedRuleWorkerStatistics] N_pen  =           0 | pending rules
-    [AggregatedRuleWorkerStatistics] OA     =        1.00 | overapproximation ratio (1 + N_pen / N_gen)
+    [AggregatedRuleWorkerStatistics] N_rej  =           0 | rejected rules
+    [AggregatedRuleWorkerStatistics] OA     =        1.00 | overapproximation ratio (1 + N_rej / N_gen)
     [FFRPGHeuristic] Summary
     [ProgramStatistics] N_exec =          7    | executions
     [ProgramStatistics] T_seq  =       1478 ms | sequential time
@@ -214,8 +214,8 @@ class DatalogParser(Parser):
     [AggregatedRuleStatistics] T_avg_skew =      70.19    | skew average time (T_avg_max / T_avg_med)
     [AggregatedRuleWorkerStatistics] N_exec =         207 | executions
     [AggregatedRuleWorkerStatistics] N_gen  =     7013498 | generated rules
-    [AggregatedRuleWorkerStatistics] N_pen  =        1496 | pending rules
-    [AggregatedRuleWorkerStatistics] OA     =        1.00 | overapproximation ratio (1 + N_pen / N_gen)
+    [AggregatedRuleWorkerStatistics] N_rej  =        1496 | rejected rules
+    [AggregatedRuleWorkerStatistics] OA     =        1.00 | overapproximation ratio (1 + N_rej / N_gen)
     """
     def __init__(self):
         super().__init__()
@@ -246,7 +246,7 @@ class DatalogParser(Parser):
 
             "succgen_rule_worker_n_exec",
             "succgen_rule_worker_n_gen",
-            "succgen_rule_worker_n_pen",
+            "succgen_rule_worker_n_rej",
             Attribute("succgen_rule_worker_oa", function=geometric_mean, min_wins=False),
 
             "axiom_prog_n_exec",
@@ -271,7 +271,7 @@ class DatalogParser(Parser):
 
             "axiom_rule_worker_n_exec",
             "axiom_rule_worker_n_gen",
-            "axiom_rule_worker_n_pen",
+            "axiom_rule_worker_n_rej",
             Attribute("axiom_rule_worker_oa", function=geometric_mean, min_wins=False),
 
             "ff_prog_n_exec",
@@ -296,7 +296,7 @@ class DatalogParser(Parser):
             
             "ff_rule_worker_n_exec",
             "ff_rule_worker_n_gen",
-            "ff_rule_worker_n_pen",
+            "ff_rule_worker_n_rej",
             Attribute("ff_rule_worker_oa", function=geometric_mean, min_wins=False),
         ]
         
