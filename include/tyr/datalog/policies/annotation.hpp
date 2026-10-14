@@ -79,42 +79,63 @@ public:
 
     void record_achiever(PredicateHead, PredicateWitness) const noexcept {}
 
-    template<bool ThreadSafe>
-    std::optional<CostUpdate> publish_annotation(PredicateHead head, PredicateWitness witness, PredicateAnnotations<ThreadSafe>& annotations) const
+    template<PredicateAnnotationStore Annotations>
+    std::optional<CostUpdate> publish_annotation(PredicateHead head, PredicateWitness witness, Annotations& annotations) const
     {
         return annotations.insert_if_better(head, Annotation<>(std::move(witness)));
     }
 
-    template<bool ThreadSafe>
-    bool try_update_candidate(PredicateHead head, PredicateWitness&& witness, PredicateAnnotations<ThreadSafe>& annotations) const
+    template<PredicateAnnotationStore Annotations>
+    bool try_update_candidate(PredicateHead head, PredicateWitness&& witness, Annotations& annotations) const
     {
         return publish_annotation(head, std::move(witness), annotations).has_value();
     }
 
-    template<bool ThreadSafe>
-    bool try_update_candidate(FunctionBinding head,
-                              ygg::ClosedInterval<ygg::float_t> interval,
-                              FunctionWitness&& witness,
-                              FunctionAnnotations<ThreadSafe>& numeric_annotations) const
+    template<FunctionAnnotationStore Annotations>
+    bool
+    try_update_candidate(FunctionBinding head, ygg::ClosedInterval<ygg::float_t> interval, FunctionWitness&& witness, Annotations& numeric_annotations) const
     {
         return numeric_annotations.insert(head, interval, Annotation<formalism::FunctionTag>(std::move(witness)));
     }
 
-    bool
-    can_update(PredicateHead head, Cost cost, const PredicateAnnotations<>& annotations, const PredicateAnnotations<true>& delta_annotations) const noexcept;
+    template<PredicateAnnotationStore DeltaAnnotations>
+    bool can_update(PredicateHead head, Cost cost, const PredicateAnnotations<>& annotations, const DeltaAnnotations& delta_annotations) const noexcept
+    {
+        return cost < std::min(annotations.fetch_cost(head), delta_annotations.fetch_cost(head));
+    }
 
+    template<FunctionAnnotationStore DeltaAnnotations>
     bool can_update(FunctionBinding head,
                     ygg::ClosedInterval<ygg::float_t> interval,
                     Cost cost,
                     const FunctionAnnotations<>& numeric_annotations,
-                    const FunctionAnnotations<true>& delta_numeric_annotations) const noexcept;
+                    const DeltaAnnotations& delta_numeric_annotations) const noexcept
+    {
+        return cost < std::min(numeric_annotations.fetch_cost(head, interval), delta_numeric_annotations.fetch_cost(head, interval));
+    }
 
-    CostUpdate commit_annotation(PredicateHead head, const PredicateAnnotations<true>& delta_annotations, PredicateAnnotations<>& annotations) const;
+    template<PredicateAnnotationStore DeltaAnnotations>
+    CostUpdate commit_annotation(PredicateHead head, const DeltaAnnotations& delta_annotations, PredicateAnnotations<>& annotations) const
+    {
+        const auto old_cost = annotations.fetch_cost(head);
+        if (const auto* delta_annotation = delta_annotations.find(head))
+            if (auto update = annotations.insert_if_better(head, *delta_annotation))
+                return *update;
+        return CostUpdate(old_cost, old_cost);
+    }
 
+    template<FunctionAnnotationStore DeltaAnnotations>
     CostUpdate commit_annotation(FunctionBinding head,
                                  ygg::ClosedInterval<ygg::float_t> interval,
-                                 const FunctionAnnotations<true>& delta_numeric_annotations,
-                                 FunctionAnnotations<>& numeric_annotations) const;
+                                 const DeltaAnnotations& delta_numeric_annotations,
+                                 FunctionAnnotations<>& numeric_annotations) const
+    {
+        const auto old_cost = numeric_annotations.fetch_cost(head, interval);
+        const auto* delta_annotation = delta_numeric_annotations.find(head, interval);
+        if (delta_annotation && numeric_annotations.insert(head, interval, *delta_annotation))
+            return CostUpdate(old_cost, get_cost(*delta_annotation));
+        return CostUpdate(old_cost, old_cost);
+    }
 };
 
 template<typename AggregationFunction>

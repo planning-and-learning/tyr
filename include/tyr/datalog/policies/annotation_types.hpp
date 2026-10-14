@@ -554,7 +554,107 @@ private:
 template<bool ThreadSafe = false>
 using FunctionAnnotations = NumericIntervalAnnotations<ThreadSafe>;
 
+/// Stores of staged predicate annotations: PredicateAnnotations<true> for the parallel lifted engine,
+/// StagedPredicateAnnotation for the ground engine.
+template<typename T>
+concept PredicateAnnotationStore = requires(T& store, const T& const_store, typename T::Key key, Annotation<> annotation) {
+    { const_store.fetch_cost(key) } -> std::same_as<Cost>;
+    { const_store.find(key) } -> std::same_as<const Annotation<>*>;
+    { store.insert_if_better(key, std::move(annotation)) } -> std::same_as<std::optional<CostUpdate>>;
+    store.clear();
+};
 
+/// Stores of staged function annotations: FunctionAnnotations<true> for the parallel lifted engine,
+/// StagedFunctionAnnotation for the ground engine.
+template<typename T>
+concept FunctionAnnotationStore = requires(T& store,
+                                           const T& const_store,
+                                           formalism::datalog::FunctionBindingView<formalism::FluentTag> binding,
+                                           ygg::ClosedInterval<ygg::float_t> interval,
+                                           Annotation<formalism::FunctionTag> annotation) {
+    { const_store.fetch_cost(binding, interval) } -> std::same_as<Cost>;
+    { const_store.find(binding, interval) } -> std::same_as<const Annotation<formalism::FunctionTag>*>;
+    { store.insert(binding, interval, std::move(annotation)) } -> std::same_as<bool>;
+    store.clear();
+};
+
+/// The predicate annotation staged by one ground rule firing; the ground engine fires one rule, i.e. one head, at a time.
+class StagedPredicateAnnotation
+{
+public:
+    using Key = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
+
+    void clear() noexcept { m_entry.reset(); }
+
+    Cost fetch_cost(Key key) const noexcept
+    {
+        const auto* annotation = find(key);
+        return annotation ? get_cost(*annotation) : std::numeric_limits<Cost>::max();
+    }
+
+    const Annotation<>* find(Key key) const noexcept { return m_entry && m_entry->first == key ? &m_entry->second : nullptr; }
+
+    std::optional<CostUpdate> insert_if_better(Key key, Annotation<> annotation)
+    {
+        assert((!m_entry || m_entry->first == key) && "A ground rule firing stages a single head.");
+        const auto new_cost = get_cost(annotation);
+        const auto old_cost = m_entry ? std::optional<Cost>(get_cost(m_entry->second)) : std::nullopt;
+        if (old_cost && *old_cost <= new_cost)
+            return std::nullopt;
+
+        m_entry.emplace(key, std::move(annotation));
+        return std::optional<CostUpdate>(std::in_place, old_cost, new_cost);
+    }
+
+private:
+    std::optional<std::pair<Key, Annotation<>>> m_entry;
+};
+
+/// The function annotation staged by one ground rule firing (one head interval).
+class StagedFunctionAnnotation
+{
+public:
+    using Binding = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
+
+    void clear() noexcept { m_entry.reset(); }
+
+    Cost fetch_cost(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
+    {
+        const auto* annotation = find(binding, interval);
+        return annotation ? get_cost(*annotation) : std::numeric_limits<Cost>::max();
+    }
+
+    const Annotation<formalism::FunctionTag>* find(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
+    {
+        return m_entry && m_entry->binding == binding && m_entry->interval == interval ? &m_entry->annotation : nullptr;
+    }
+
+    /// Same replacement rule as NumericIntervalAnnotations: an equal interval is replaced only by a strictly cheaper annotation.
+    bool insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<formalism::FunctionTag> annotation)
+    {
+        assert((!m_entry || (m_entry->binding == binding && m_entry->interval == interval)) && "A ground rule firing stages a single head interval.");
+        if (m_entry && get_cost(m_entry->annotation) <= get_cost(annotation))
+            return false;
+
+        m_entry.emplace(Entry { binding, interval, std::move(annotation) });
+        return true;
+    }
+
+private:
+    struct Entry
+    {
+        Binding binding;
+        ygg::ClosedInterval<ygg::float_t> interval;
+        Annotation<formalism::FunctionTag> annotation;
+    };
+
+    std::optional<Entry> m_entry;
+};
+
+static_assert(PredicateAnnotationStore<PredicateAnnotations<true>>);
+static_assert(PredicateAnnotationStore<StagedPredicateAnnotation>);
+static_assert(FunctionAnnotationStore<FunctionAnnotations<true>>);
+static_assert(FunctionAnnotationStore<StagedFunctionAnnotation>);
 }
 
 #endif

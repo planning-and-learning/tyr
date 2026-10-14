@@ -39,51 +39,6 @@ void MinCostAnnotationPolicy<AggregationFunction>::initialize_annotation(Functio
 }
 
 template<typename AggregationFunction>
-CostUpdate MinCostAnnotationPolicy<AggregationFunction>::commit_annotation(PredicateHead head,
-                                                                           const PredicateAnnotations<true>& delta_annotations,
-                                                                           PredicateAnnotations<>& annotations) const
-{
-    const auto old_cost = annotations.fetch_cost(head);
-    const auto* delta_annotation = delta_annotations.find(head);
-    if (delta_annotation)
-        if (auto update = annotations.insert_if_better(head, *delta_annotation))
-            return *update;
-    return CostUpdate(old_cost, old_cost);
-}
-
-template<typename AggregationFunction>
-CostUpdate MinCostAnnotationPolicy<AggregationFunction>::commit_annotation(FunctionBinding head,
-                                                                           ygg::ClosedInterval<ygg::float_t> interval,
-                                                                           const FunctionAnnotations<true>& delta_numeric_annotations,
-                                                                           FunctionAnnotations<>& numeric_annotations) const
-{
-    const auto old_cost = numeric_annotations.fetch_cost(head, interval);
-    const auto* delta_annotation = delta_numeric_annotations.find(head, interval);
-    if (delta_annotation && numeric_annotations.insert(head, interval, *delta_annotation))
-        return CostUpdate(old_cost, get_cost(*delta_annotation));
-    return CostUpdate(old_cost, old_cost);
-}
-
-template<typename AggregationFunction>
-bool MinCostAnnotationPolicy<AggregationFunction>::can_update(PredicateHead head,
-                                                              Cost cost,
-                                                              const PredicateAnnotations<>& annotations,
-                                                              const PredicateAnnotations<true>& delta_annotations) const noexcept
-{
-    return cost < std::min(annotations.fetch_cost(head), delta_annotations.fetch_cost(head));
-}
-
-template<typename AggregationFunction>
-bool MinCostAnnotationPolicy<AggregationFunction>::can_update(FunctionBinding head,
-                                                              ygg::ClosedInterval<ygg::float_t> interval,
-                                                              Cost cost,
-                                                              const FunctionAnnotations<>& numeric_annotations,
-                                                              const FunctionAnnotations<true>& delta_numeric_annotations) const noexcept
-{
-    return cost < std::min(numeric_annotations.fetch_cost(head, interval), delta_numeric_annotations.fetch_cost(head, interval));
-}
-
-template<typename AggregationFunction>
 void MinCostAnnotationWithAchieversPolicy<AggregationFunction>::clear_achievers() noexcept
 {
     m_achievers.clear();

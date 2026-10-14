@@ -143,11 +143,11 @@ struct FunctionHeadUpdates
     }
 };
 
-template<AnnotationPolicyConcept AP>
+template<AnnotationPolicyConcept AP, PredicateAnnotationStore DeltaAnnotations>
 void reduce_predicate_head_updates(PredicateHeadUpdates& head_updates,
                                    [[maybe_unused]] AP& annotation_policy,
                                    [[maybe_unused]] const PredicateFactSets<formalism::FluentTag>& facts,
-                                   [[maybe_unused]] PredicateAnnotations<true>& delta_annotations,
+                                   [[maybe_unused]] DeltaAnnotations& delta_annotations,
                                    [[maybe_unused]] PredicateAnnotations<>& annotations,
                                    CostBuckets& cost_buckets,
                                    [[maybe_unused]] PendingPredicateAchievers& pending_achievers)
@@ -178,10 +178,10 @@ void reduce_predicate_head_updates(PredicateHeadUpdates& head_updates,
     }
 }
 
-template<AnnotationPolicyConcept AP>
+template<AnnotationPolicyConcept AP, FunctionAnnotationStore DeltaAnnotations>
 bool reduce_function_head_update(const FunctionHeadUpdate& update,
                                  [[maybe_unused]] AP& annotation_policy,
-                                 [[maybe_unused]] FunctionAnnotations<true>& delta_numeric_annotations,
+                                 [[maybe_unused]] DeltaAnnotations& delta_numeric_annotations,
                                  [[maybe_unused]] FunctionAnnotations<>& numeric_annotations,
                                  CostBuckets& cost_buckets)
 {
@@ -215,10 +215,10 @@ bool reduce_function_head_update(const FunctionHeadUpdate& update,
     }
 }
 
-template<TaskKind Kind, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+template<TaskKind Kind, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP, FunctionAnnotationStore DeltaAnnotations>
 bool reduce_function_head_updates(FunctionHeadUpdates& head_updates,
                                   AP& annotation_policy,
-                                  FunctionAnnotations<true>& delta_numeric_annotations,
+                                  DeltaAnnotations& delta_numeric_annotations,
                                   FunctionAnnotations<>& numeric_annotations,
                                   CostBuckets& cost_buckets,
                                   Scheduler<Kind>& scheduler,
@@ -596,14 +596,14 @@ auto evaluate_propositional_candidate(formalism::datalog::PredicateBindingView<f
     }
 }
 
-template<TaskKind Kind, typename AP, typename CP>
+template<TaskKind Kind, typename AP, typename CP, PredicateAnnotationStore DeltaAnnotations>
 auto evaluate_propositional_candidate(formalism::datalog::PredicateBindingView<formalism::FluentTag> head,
                                       RuleInstance<Kind, formalism::PredicateTag>& rule_instance,
                                       const AP& annotation_policy,
                                       const CP& cost_policy,
                                       const RuleEvaluationInput& input,
                                       RuleEvaluationWorkspace& workspace,
-                                      const PredicateAnnotations<true>& delta_annotations)
+                                      const DeltaAnnotations& delta_annotations)
 {
     const auto best_cost = std::min(input.predicate_annotations.fetch_cost(head), delta_annotations.fetch_cost(head));
     return evaluate_propositional_candidate(head, rule_instance, annotation_policy, cost_policy, input, workspace, best_cost);
@@ -662,11 +662,11 @@ WitnessAnnotation<R> materialize_witness(RuleInstance<Kind, R>& instance, const 
     return WitnessAnnotation<R>(instance.witness_key(), candidate.cost, candidate.evidence->numeric_supports);
 }
 
-template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
+template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP, PredicateAnnotationStore DeltaAnnotations>
 RuleUpdateResult insert_propositional_update(formalism::datalog::PredicateBindingView<formalism::FluentTag> head,
                                              RuleUpdateInput<Kind, formalism::PredicateTag, AP, CP>& input,
                                              PredicateHeadUpdates& head_updates,
-                                             PredicateAnnotations<true>& delta_annotations,
+                                             DeltaAnnotations& delta_annotations,
                                              std::optional<Cost> required_queue_label = std::nullopt)
 {
     auto [candidate, pruned] = evaluate_propositional_candidate(head,
@@ -717,10 +717,10 @@ RuleUpdateResult insert_propositional_update(formalism::datalog::PredicateBindin
     return { RuleUpdateStatus::Completed, candidate->queue_label };
 }
 
-template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
+template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP, FunctionAnnotationStore DeltaAnnotations>
 RuleUpdateResult insert_numeric_update(RuleUpdateInput<Kind, formalism::FunctionTag, AP, CP>& input,
                                        FunctionHeadUpdates& head_updates,
-                                       [[maybe_unused]] FunctionAnnotations<true>& delta_numeric_annotations,
+                                       [[maybe_unused]] DeltaAnnotations& delta_numeric_annotations,
                                        std::optional<Cost> required_queue_label = std::nullopt)
 {
     auto candidate = evaluate_function_candidate(input.rule_instance, input.annotation_policy, input.cost_policy, input.evaluation, input.workspace);

@@ -68,16 +68,10 @@ struct GroundSchedulerScratch
     RuleEvaluationWorkspace rule_evaluation;
     PredicateHeadUpdates predicate_updates;
     FunctionHeadUpdates function_updates;
-    PredicateAnnotations<true> delta_annotations;
-    FunctionAnnotations<true> delta_numeric_annotations;
+    StagedPredicateAnnotation delta_annotations;
+    StagedFunctionAnnotation delta_numeric_annotations;
     std::vector<CostBuckets::PredicateKey> changed_facts;
     std::vector<CostBuckets::FunctionKey> changed_terms;
-
-    explicit GroundSchedulerScratch(formalism::datalog::ProgramView<GroundTag> program) :
-        delta_annotations(program.template get_predicates<formalism::FluentTag>().size()),
-        delta_numeric_annotations(program.template get_functions<formalism::FluentTag>().size())
-    {
-    }
 
     void clear_updates() noexcept
     {
@@ -105,7 +99,7 @@ public:
         m_program(program),
         m_predicate_rules(program),
         m_function_rules(program),
-        m_scratch(program)
+        m_scratch()
     {
         m_predicate_queue.reserve(program.template get_rules<formalism::PredicateTag>().size());
         m_function_queue.reserve(program.template get_rules<formalism::FunctionTag>().size());
