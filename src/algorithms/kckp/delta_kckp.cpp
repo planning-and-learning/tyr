@@ -155,6 +155,56 @@ bool DeltaKCKP::seed_from_anchor(const Edge& edge, Workspace& workspace) const
     return true;
 }
 
+bool DeltaKCKP::seed_from_vertices(std::span<const Vertex> vertices, Workspace& workspace) const
+{
+    assert(!vertices.empty());
+    workspace.prepare(m_layout);
+    workspace.partial_solution_size = 0;
+    workspace.partition_bits.reset();
+    workspace.anchor_pi = std::numeric_limits<ygg::uint_t>::max();
+    workspace.anchor_pj = std::numeric_limits<ygg::uint_t>::max();
+
+    for (size_t i = 0; i < vertices.size(); ++i)
+    {
+        const auto vertex = vertices[i].index;
+        const auto partition = m_layout.vertex_to_partition[vertex];
+        const auto& info = m_layout.info.infos[partition];
+        const auto bit = m_layout.vertex_to_bit[vertex];
+        assert(!workspace.partition_bits.test(partition));
+
+        if (!m_full_graph.affected_partitions.get_bitset(info).test(bit) || m_delta_graph.delta_partitions.get_bitset(info).test(bit))
+            return false;
+
+        for (size_t j = 0; j < i; ++j)
+        {
+            if (!m_full_graph.matrix.is_adjacent(vertices[j].index, vertex) || m_delta_graph.matrix.is_adjacent(vertices[j].index, vertex))
+                return false;
+        }
+
+        workspace.partial_solution[partition] = vertices[i];
+        workspace.partition_bits.set(partition);
+        ++workspace.partial_solution_size;
+    }
+
+    auto compatible_row = workspace.compatible_vertices(0);
+    for (ygg::uint_t partition = 0; partition < m_layout.num_partitions; ++partition)
+    {
+        if (workspace.partition_bits.test(partition))
+            continue;
+
+        const auto& info = m_layout.info.infos[partition];
+        auto compatible = ygg::BitsetSpan<uint64_t>(compatible_row.data() + info.block_offset, info.num_bits);
+        m_full_graph.matrix.copy_adjacency_to(vertices.front().index, partition, compatible);
+        for (const auto vertex : vertices.subspan(1))
+            m_full_graph.matrix.intersect_adjacency_with(vertex.index, partition, compatible);
+        for (const auto vertex : vertices)
+            m_delta_graph.matrix.subtract_adjacency_from(vertex.index, partition, compatible);
+        if (!compatible.any())
+            return false;
+    }
+    return true;
+}
+
 ygg::uint_t DeltaKCKP::choose_best_partition(size_t depth, const Workspace& workspace) const
 {
     auto best_partition = std::numeric_limits<ygg::uint_t>::max();

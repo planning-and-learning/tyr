@@ -87,6 +87,9 @@ struct RuleWorkspace<LiftedTag, R>
 
         /// KCKP
         kckp::Workspace kckp_workspace;
+
+        /// Hyperedge anchors
+        std::vector<kckp::Vertex> anchor_vertices;
     };
 
     struct Solve
@@ -99,11 +102,6 @@ struct RuleWorkspace<LiftedTag, R>
         /// In debug mode, we accumulate all bindings to verify the correctness of delta-kckp
         ygg::UnorderedSet<ygg::IndexList<formalism::Object>> seen_bindings;
 #endif
-
-#ifndef TYR_ENABLE_SEMI_NAIVE
-        ygg::UnorderedSet<formalism::datalog::RuleBindingIndex<R>> seen_pending_rule_bindings;
-#endif
-        std::vector<formalism::datalog::RuleBindingIndex<R>> pending_rule_bindings;
 
         RuleEvaluationWorkspace rule_evaluation_workspace;
         ApplicabilityCache applicability_cache;
@@ -150,6 +148,7 @@ public:
     const auto& get_lifted_effects() const noexcept { return lifted_effects; }
     const auto& get_nullary_effects() const noexcept { return nullary_effects; }
     auto get_conflicting_overapproximation_condition() const noexcept { return conflicting_overapproximation_condition; }
+    auto get_hyperedge_condition() const noexcept { return hyperedge_condition; }
     const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
 
     ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag, R> rule, formalism::datalog::Repository& repository, kckp::Graph compatibility_graph);
@@ -162,6 +161,7 @@ private:
     formalism::datalog::ConjunctiveConditionView<LiftedTag> unary_overapproximation_condition;
     formalism::datalog::ConjunctiveConditionView<LiftedTag> binary_overapproximation_condition;
     formalism::datalog::ConjunctiveConditionView<LiftedTag> conflicting_overapproximation_condition;
+    formalism::datalog::ConjunctiveConditionView<LiftedTag> hyperedge_condition;
 
     StaticConsistencyGraph static_consistency_graph;
 };
@@ -216,10 +216,6 @@ RuleWorkspace<LiftedTag, R>::Solve::Solve() :
 #ifndef NDEBUG
     seen_bindings(),
 #endif
-#ifndef TYR_ENABLE_SEMI_NAIVE
-    seen_pending_rule_bindings(),
-#endif
-    pending_rule_bindings(),
     rule_evaluation_workspace(),
     applicability_cache(),
     statistics()
@@ -232,10 +228,6 @@ void RuleWorkspace<LiftedTag, R>::Solve::clear() noexcept
 #ifndef NDEBUG
     seen_bindings.clear();
 #endif
-#ifndef TYR_ENABLE_SEMI_NAIVE
-    seen_pending_rule_bindings.clear();
-#endif
-    pending_rule_bindings.clear();
     rule_evaluation_workspace.selector.clear();
     rule_evaluation_workspace.exact_supports.clear();
     applicability_cache.clear();

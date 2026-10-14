@@ -33,6 +33,7 @@ struct FactsWorkspace<LiftedTag>
 {
     TaggedFactSets<formalism::FluentTag> fact_sets;
     TaggedAssignmentSets<formalism::FluentTag> assignment_sets;
+    TaggedFactSets<formalism::FluentTag> delta_fact_sets;  ///< Facts committed since the rules last ran.
 
     explicit FactsWorkspace(formalism::datalog::PredicateListView<formalism::FluentTag> predicates,
                             formalism::datalog::FunctionListView<formalism::FluentTag> functions,
@@ -48,6 +49,7 @@ struct FactsWorkspace<LiftedTag>
         if (!fact_sets.predicate.insert(binding))
             return false;
         assignment_sets.predicate.insert(ygg::make_view(binding, *m_repository));
+        delta_fact_sets.predicate.insert(binding);
         return true;
     }
 

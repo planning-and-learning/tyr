@@ -231,7 +231,7 @@ struct formatter<tyr::datalog::RuleStatistics, char>
                               "[RuleStatistics] T_tot  = {:>10} ms | total time\n"
                               "[RuleStatistics] T_avg  = {:>10} us | average time",
                               value.num_executions,
-                              ygg::to_ms(value.initialize_time) + ygg::to_ms(value.process_pending_time),
+                              ygg::to_ms(value.initialize_time),
                               ygg::to_ms(value.process_generate_time),
                               ygg::to_ms(value.total_time),
                               avg_total_us);
@@ -274,7 +274,7 @@ struct formatter<tyr::datalog::AggregatedRuleStatistics, char>
                               "[AggregatedRuleStatistics] T_avg_skew = {:>10.2f}    | skew average time (T_avg_max / T_avg_med)",
                               value.num_executions,
                               value.sample_count,
-                              ygg::to_ms(value.initialize_time) + ygg::to_ms(value.process_pending_time),
+                              ygg::to_ms(value.initialize_time),
                               ygg::to_ms(value.process_generate_time),
                               ygg::to_ms(value.total_time),
                               avg_total_us,
@@ -297,17 +297,17 @@ struct formatter<tyr::datalog::RuleWorkerStatistics, char>
     template<typename FormatContext>
     auto format(const tyr::datalog::RuleWorkerStatistics& value, FormatContext& ctx) const
     {
-        const auto pen = static_cast<ygg::float_t>(value.num_pending_rules);
+        const auto rej = static_cast<ygg::float_t>(value.num_rejected_rules);
         const auto gen = static_cast<ygg::float_t>(value.num_generated_rules);
-        auto overapproximation_ratio = (gen > 0) ? (pen + gen) / gen : ygg::float_t { 1.0 };
+        auto overapproximation_ratio = (gen > 0) ? (rej + gen) / gen : ygg::float_t { 1.0 };
         return fmt::format_to(ctx.out(),
                               "[RuleWorkerStatistics] N_exec = {:>10} | executions\n"
                               "[RuleWorkerStatistics] N_gen  = {:>10} | generated rules\n"
-                              "[RuleWorkerStatistics] N_pen  = {:>10} | pending rules\n"
-                              "[RuleWorkerStatistics] OA     = {:>10.2f} | overapproximation ratio (1 + N_pen / N_gen)",
+                              "[RuleWorkerStatistics] N_rej  = {:>10} | rejected rules\n"
+                              "[RuleWorkerStatistics] OA     = {:>10.2f} | overapproximation ratio (1 + N_rej / N_gen)",
                               value.num_executions,
                               value.num_generated_rules,
-                              value.num_pending_rules,
+                              value.num_rejected_rules,
                               overapproximation_ratio);
     }
 };
@@ -319,17 +319,17 @@ struct formatter<tyr::datalog::AggregatedRuleWorkerStatistics, char>
     template<typename FormatContext>
     auto format(const tyr::datalog::AggregatedRuleWorkerStatistics& value, FormatContext& ctx) const
     {
-        const auto pen = static_cast<ygg::float_t>(value.num_pending_rules);
+        const auto rej = static_cast<ygg::float_t>(value.num_rejected_rules);
         const auto gen = static_cast<ygg::float_t>(value.num_generated_rules);
-        auto overapproximation_ratio = (gen > 0) ? (pen + gen) / gen : ygg::float_t { 1.0 };
+        auto overapproximation_ratio = (gen > 0) ? (rej + gen) / gen : ygg::float_t { 1.0 };
         return fmt::format_to(ctx.out(),
                               "[AggregatedRuleWorkerStatistics] N_exec =  {:>10} | executions\n"
                               "[AggregatedRuleWorkerStatistics] N_gen  =  {:>10} | generated rules\n"
-                              "[AggregatedRuleWorkerStatistics] N_pen  =  {:>10} | pending rules\n"
-                              "[AggregatedRuleWorkerStatistics] OA     =  {:>10.2f} | overapproximation ratio (1 + N_pen / N_gen)",
+                              "[AggregatedRuleWorkerStatistics] N_rej  =  {:>10} | rejected rules\n"
+                              "[AggregatedRuleWorkerStatistics] OA     =  {:>10.2f} | overapproximation ratio (1 + N_rej / N_gen)",
                               value.num_executions,
                               value.num_generated_rules,
-                              value.num_pending_rules,
+                              value.num_rejected_rules,
                               overapproximation_ratio);
     }
 };

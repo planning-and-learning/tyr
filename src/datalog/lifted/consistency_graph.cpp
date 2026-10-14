@@ -890,6 +890,7 @@ static auto classify_adjacency(const kckp::GraphLayout& layout, const formalism:
 
 StaticConsistencyGraph::StaticConsistencyGraph(formalism::datalog::ConjunctiveConditionView<LiftedTag> unary_overapproximation_condition,
                                                formalism::datalog::ConjunctiveConditionView<LiftedTag> binary_overapproximation_condition,
+                                               formalism::datalog::ConjunctiveConditionView<LiftedTag> hyperedge_condition,
                                                kckp::Graph compatibility_graph) :
     m_unary_overapproximation_condition(unary_overapproximation_condition),
     m_binary_overapproximation_condition(binary_overapproximation_condition),
@@ -899,6 +900,7 @@ StaticConsistencyGraph::StaticConsistencyGraph(formalism::datalog::ConjunctiveCo
     m_partitioned_adjacency_layout(m_compatibility_graph.get_layout(), classify_adjacency(m_compatibility_graph.get_layout(), m_binary_overapproximation_vdg)),
     m_unary_overapproximation_indexed_literals(compute_indexed_literals(m_unary_overapproximation_condition)),
     m_binary_overapproximation_indexed_literals(compute_indexed_literals(m_binary_overapproximation_condition)),
+    m_hyperedge_indexed_literals(compute_indexed_literals(hyperedge_condition)),
     m_unary_overapproximation_indexed_constraints(compute_indexed_constraints(m_unary_overapproximation_condition)),
     m_binary_overapproximation_indexed_constraints(compute_indexed_constraints(m_binary_overapproximation_condition))
 {
@@ -1105,6 +1107,11 @@ const kckp::PartitionedAdjacencyLayout& StaticConsistencyGraph::get_partitioned_
 
 const kckp::DeduplicatedAdjacencyMatrix& StaticConsistencyGraph::get_adjacency_matrix() const noexcept { return m_compatibility_graph.get_adjacency_matrix(); }
 
+const details::TaggedRuleToLiteralInfos<formalism::FluentTag>& StaticConsistencyGraph::get_hyperedge_indexed_literals() const noexcept
+{
+    return m_hyperedge_indexed_literals;
+}
+
 std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
 create_overapproximation_conjunctive_condition(size_t k,
                                                formalism::datalog::ConjunctiveConditionView<LiftedTag> condition,
@@ -1163,6 +1170,23 @@ create_overapproximation_conflicting_conjunctive_condition(size_t k,
     for (const auto numeric_constraint : condition.get_numeric_constraints())
         if (requires_exact_numeric_check(numeric_constraint))
             conj_cond->numeric_constraints.push_back(numeric_constraint.get_data());
+
+    return formalism::datalog::insert(context, *conj_cond);
+}
+
+std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
+create_hyperedge_conjunctive_condition(formalism::datalog::ConjunctiveConditionView<LiftedTag> conflicting_condition,
+                                       formalism::datalog::Repository& context)
+{
+    auto builder = formalism::datalog::Builder {};
+    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
+
+    for (const auto variable : conflicting_condition.get_variables())
+        conj_cond->variables.push_back(variable.get_index());
+
+    for (const auto literal : conflicting_condition.get_literals<formalism::FluentTag>())
+        if (literal.get_polarity())
+            conj_cond->fluent_literals.push_back(literal.get_index());
 
     return formalism::datalog::insert(context, *conj_cond);
 }

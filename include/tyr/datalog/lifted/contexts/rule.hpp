@@ -88,10 +88,7 @@ public:
 #ifndef NDEBUG
         auto& seen_bindings() noexcept { return m_ws_worker.solve.seen_bindings; }
 #endif
-#ifndef TYR_ENABLE_SEMI_NAIVE
-        auto& seen_pending_rule_bindings() noexcept { return m_ws_worker.solve.seen_pending_rule_bindings; }
-#endif
-        auto& pending_rule_bindings() noexcept { return m_ws_worker.solve.pending_rule_bindings; }
+        auto& anchor_vertices() noexcept { return m_ws_worker.iteration.anchor_vertices; }
         auto& rule_evaluation_workspace() noexcept { return m_ws_worker.solve.rule_evaluation_workspace; }
         auto& applicability_cache() noexcept { return m_ws_worker.solve.applicability_cache; }
         auto& statistics() noexcept { return m_ws_worker.solve.statistics; }
