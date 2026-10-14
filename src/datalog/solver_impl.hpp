@@ -81,7 +81,8 @@ void compute_model_impl(ProgramExecutionContext<Kind, AP, TP, CP>& ctx)
         Scheduler<Kind>& scheduler = policy.scheduler();
         auto& cost_buckets = ctx.out().cost_buckets();
         cost_buckets.clear();
-        auto pending_achievers = PendingPredicateAchievers {};
+        auto& pending_achievers = ctx.out().pending_achievers();
+        pending_achievers.clear();
         scheduler.begin_stratum(ctx);
 
         while (true)

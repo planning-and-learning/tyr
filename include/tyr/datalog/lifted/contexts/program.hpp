@@ -81,6 +81,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         auto& cost_policy() noexcept { return m_ws.cost_policy; }
         const auto& cost_policy() const noexcept { return m_ws.cost_policy; }
         auto& cost_buckets() noexcept { return m_ws.cost_buckets; }
+        auto& pending_achievers() noexcept { return m_ws.pending_achievers; }
         template<formalism::RelationKind R>
         auto& get_rules() noexcept
         {
@@ -146,6 +147,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         clear_rules(out.template get_rules<formalism::FunctionTag>());
 
         out.cost_buckets().clear();
+        out.pending_achievers().clear();
         out.reset_numeric_support_selector();
         out.annotations().clear();
         out.numeric_annotations().clear();

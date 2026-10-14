@@ -27,6 +27,7 @@
 #include <concepts>
 #include <cstdint>
 #include <limits>
+#include <map>
 #include <oneapi/tbb/spin_mutex.h>
 #include <optional>
 #include <span>
@@ -96,12 +97,42 @@ struct PredicateAchiever
     WitnessAnnotation<formalism::PredicateTag> witness;
 };
 
-using PendingPredicateAchieverBuckets = ygg::Map<Cost, std::vector<PredicateRuleBinding>>;
+using PendingPredicateAchieverBuckets = std::map<Cost, std::vector<PredicateRuleBinding>>;
 
+/// Owned by the program workspace and reused across solves: clear() keeps the capacity of by_rule and of the bucket vectors.
 struct PendingPredicateAchievers
 {
     PendingPredicateAchieverBuckets buckets;
     ygg::UnorderedMap<PredicateRuleBinding, PredicateAchiever> by_rule;  ///< Cheapest unpublished achiever per rule; erased once published.
+    std::vector<PendingPredicateAchieverBuckets::node_type> free_buckets;
+
+    std::vector<PredicateRuleBinding>& bucket(Cost cost)
+    {
+        if (const auto it = buckets.find(cost); it != buckets.end())
+            return it->second;
+        if (free_buckets.empty())
+            return buckets.try_emplace(cost).first->second;
+        auto node = std::move(free_buckets.back());
+        free_buckets.pop_back();
+        node.key() = cost;
+        return buckets.insert(std::move(node)).position->second;
+    }
+
+    void erase_buckets(PendingPredicateAchieverBuckets::iterator end)
+    {
+        while (buckets.begin() != end)
+        {
+            auto node = buckets.extract(buckets.begin());
+            node.mapped().clear();
+            free_buckets.push_back(std::move(node));
+        }
+    }
+
+    void clear()
+    {
+        by_rule.clear();
+        erase_buckets(buckets.end());
+    }
 };
 
 inline void insert_pending_achiever(PendingPredicateAchievers& pending, PredicateAchiever achiever)
@@ -119,7 +150,7 @@ inline void insert_pending_achiever(PendingPredicateAchievers& pending, Predicat
             return;
         it->second = std::move(achiever);
     }
-    pending.buckets[cost].push_back(rule_key);
+    pending.bucket(cost).push_back(rule_key);
 }
 
 template<typename AnnotationPolicy>
@@ -137,7 +168,7 @@ void publish_pending_achievers(PendingPredicateAchievers& pending, PendingPredic
                 annotation_policy.record_achiever(it->second.head, std::move(it->second.witness));
                 pending.by_rule.erase(it);
             }
-    pending.buckets.erase(pending.buckets.begin(), end);
+    pending.erase_buckets(end);
 }
 
 struct BaseAnnotation : ygg::comparison::Mixin<BaseAnnotation>

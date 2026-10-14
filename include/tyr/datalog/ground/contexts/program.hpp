@@ -79,6 +79,7 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
         auto& cost_policy() noexcept { return m_ws.cost_policy; }
         const auto& cost_policy() const noexcept { return m_ws.cost_policy; }
         auto& cost_buckets() noexcept { return m_ws.cost_buckets; }
+        auto& pending_achievers() noexcept { return m_ws.pending_achievers; }
         auto& scheduler() noexcept { return m_ws.scheduler; }
         const auto& scheduler() const noexcept { return m_ws.scheduler; }
 
@@ -131,6 +132,7 @@ private:
     void reset_from_current_facts()
     {
         m_out.cost_buckets().clear();
+        m_out.pending_achievers().clear();
         initialize_annotations();
         const auto fact_sets = FactSets { m_in.facts().fact_sets, m_out.facts().fact_sets };
         m_out.scheduler().reset(fact_sets);
