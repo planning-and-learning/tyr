@@ -79,6 +79,7 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
         auto& cost_policy() noexcept { return m_ws.cost_policy; }
         const auto& cost_policy() const noexcept { return m_ws.cost_policy; }
         auto& cost_buckets() noexcept { return m_ws.cost_buckets; }
+        auto& pending_achievers() noexcept { return m_ws.pending_achievers; }
         auto& scheduler() noexcept { return m_ws.scheduler; }
         const auto& scheduler() const noexcept { return m_ws.scheduler; }
 
@@ -116,7 +117,7 @@ private:
 
         for (const auto& set : m_out.facts().fact_sets.predicate.get_sets())
             for (const auto binding : set.get_bindings())
-                m_out.annotation_policy().initialize_annotation(binding, m_out.annotations());
+                m_out.annotation_policy().initialize_annotation(binding.get_index(), m_out.annotations());
 
         for (const auto& set : m_out.facts().fact_sets.function.get_sets())
         {
@@ -124,13 +125,14 @@ private:
             const auto& values = set.get_values();
             assert(bindings.size() == values.size());
             for (size_t i = 0; i < bindings.size(); ++i)
-                m_out.annotation_policy().initialize_annotation(bindings[i], values[i], m_out.numeric_annotations());
+                m_out.annotation_policy().initialize_annotation(bindings[i].get_index(), values[i], m_out.numeric_annotations());
         }
     }
 
     void reset_from_current_facts()
     {
         m_out.cost_buckets().clear();
+        m_out.pending_achievers().clear();
         initialize_annotations();
         const auto fact_sets = FactSets { m_in.facts().fact_sets, m_out.facts().fact_sets };
         m_out.scheduler().reset(fact_sets);

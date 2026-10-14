@@ -29,7 +29,7 @@ NumericSupportSelector::NumericSupportSelector(const FactSets& fact_sets, const 
 
 NumericSupportSelector::Key NumericSupportSelector::fluent_key(formalism::datalog::FunctionTermView<GroundTag, formalism::FluentTag> term) const noexcept
 {
-    return term.get_row();
+    return term.get_row().get_index();
 }
 
 ygg::ClosedInterval<ygg::float_t> NumericSupportSelector::lookup_static(formalism::datalog::FunctionTermView<GroundTag, formalism::StaticTag> term) const

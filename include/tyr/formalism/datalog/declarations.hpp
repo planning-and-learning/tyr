@@ -231,6 +231,13 @@ template<RelationKind R>
 using RuleBindingView = ygg::View<ygg::Index<RelationBinding<Rule<LiftedTag, R>>>, Repository>;
 
 template<FactKind F>
+using PredicateBindingIndex = ygg::Index<RelationBinding<Predicate<F>>>;
+template<FactKind F>
+using FunctionBindingIndex = ygg::Index<RelationBinding<Function<F>>>;
+template<RelationKind R>
+using RuleBindingIndex = ygg::Index<RelationBinding<Rule<LiftedTag, R>>>;
+
+template<FactKind F>
 using PredicateBindingForwardRangeView = ygg::View<RelationBindingsForwardRange<Predicate<F>, std::vector<ygg::Index<Row>>>, Repository>;
 template<FactKind F>
 using FunctionBindingRandomAccessRangeView = ygg::View<RelationBindingsRandomAccessRange<Function<F>, std::vector<ygg::Index<Row>>>, Repository>;

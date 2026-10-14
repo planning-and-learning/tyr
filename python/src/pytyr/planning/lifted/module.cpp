@@ -27,6 +27,7 @@
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/vector.h>
+#include <yggdrasil/python/owner.hpp>
 
 namespace tyr::planning
 {
@@ -121,18 +122,17 @@ should not be used further.
         .def(nb::init<formalism::planning::TaskView<LiftedTag>, CostMode>(), "task"_a, "cost_mode"_a = CostMode::GENERAL, nb::keep_alive<1, 2>())
         .def("get_datalog_program", nb::overload_cast<>(&RelaxedProgram::get_datalog_program), nb::rv_policy::reference_internal)
         .def("get_goal", &RelaxedProgram::get_goal, nb::keep_alive<0, 1>())
-        .def(
-            "get_rule_to_action_mapping",
-            [](const RelaxedProgram& self)
-            {
-                using Entry =
-                    std::pair<const formalism::datalog::RuleView<LiftedTag, formalism::PredicateTag>*, const formalism::planning::ActionView<LiftedTag>*>;
-                auto result = std::vector<Entry> {};
-                for (const auto& [rule, action] : self.get_rule_to_action_mapping<formalism::PredicateTag>())
-                    result.emplace_back(&rule, &action);
-                return result;
-            },
-            nb::rv_policy::reference_internal);
+        .def("get_rule_to_action_mapping",
+             [retain_owner = ygg::python::make_owner_retainer()](nb::typed<nb::handle, RelaxedProgram> owner)
+             {
+                 const auto& self = nb::cast<const RelaxedProgram&>(owner);
+                 const auto& repository = self.get_datalog_program().get_program_repository();
+                 using Entry = std::pair<formalism::datalog::RuleView<LiftedTag, formalism::PredicateTag>, formalism::planning::ActionView<LiftedTag>>;
+                 auto result = std::vector<Entry> {};
+                 for (const auto& [rule, action] : self.get_rule_to_action_mapping<formalism::PredicateTag>())
+                     result.emplace_back(ygg::make_view(rule, repository), action);
+                 return ygg::python::cast_with_owner(std::move(result), owner, retain_owner);
+             });
 
     nb::class_<GroundTaskProgram>(m, "GroundTaskProgram")
         .def(nb::init<formalism::planning::TaskView<LiftedTag>>(), "task"_a, nb::keep_alive<1, 2>())

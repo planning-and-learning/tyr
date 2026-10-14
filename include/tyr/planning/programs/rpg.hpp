@@ -42,7 +42,7 @@ public:
     using Task = formalism::planning::TaskView<Kind>;
     using Action = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionView<GroundTag>, formalism::planning::ActionView<LiftedTag>>;
     template<formalism::RelationKind R>
-    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::datalog::RuleBindingView<R>, formalism::datalog::RuleView<LiftedTag, R>>;
+    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::datalog::RuleBindingIndex<R>, ygg::Index<formalism::datalog::Rule<LiftedTag, R>>>;
     template<formalism::RelationKind R>
     using RuleToActionMapping = ygg::UnorderedMap<Rule<R>, Action>;
 

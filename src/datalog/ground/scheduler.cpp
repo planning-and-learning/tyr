@@ -69,7 +69,7 @@ void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(formalism::dat
 }
 
 template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::notify_predicate_generated_for(formalism::datalog::PredicateBindingView<formalism::FluentTag> fact,
+void Scheduler<GroundTag>::notify_predicate_generated_for(formalism::datalog::PredicateBindingIndex<formalism::FluentTag> fact,
                                                           ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     const auto* dependent_rules = ctx.in().template dependencies<R>().fluent_precondition_to_rules.find(fact);
@@ -88,7 +88,7 @@ void Scheduler<GroundTag>::notify_predicate_generated_for(formalism::datalog::Pr
 }
 
 template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::notify_numeric_changed_for(formalism::datalog::FunctionBindingView<formalism::FluentTag> term,
+void Scheduler<GroundTag>::notify_numeric_changed_for(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> term,
                                                       ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     const auto* dependent_rules = ctx.in().template dependencies<R>().fluent_function_term_to_rules.find(term);
@@ -118,7 +118,7 @@ void Scheduler<GroundTag>::begin_stratum(ProgramExecutionContext<GroundTag, AP, 
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::notify_predicate_generated(formalism::datalog::PredicateBindingView<formalism::FluentTag> fact,
+void Scheduler<GroundTag>::notify_predicate_generated(formalism::datalog::PredicateBindingIndex<formalism::FluentTag> fact,
                                                       ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     ++m_statistics.num_facts_derived;
@@ -127,7 +127,7 @@ void Scheduler<GroundTag>::notify_predicate_generated(formalism::datalog::Predic
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::notify_numeric_changed(formalism::datalog::FunctionBindingView<formalism::FluentTag> term,
+void Scheduler<GroundTag>::notify_numeric_changed(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> term,
                                                   ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     notify_numeric_changed_for<formalism::PredicateTag>(term, ctx);

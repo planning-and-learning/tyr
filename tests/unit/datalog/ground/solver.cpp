@@ -434,7 +434,7 @@ TEST(TyrDatalogGroundQueueTest, NoAnnotationPolicyDerivesFactsWithoutStoringAnno
 
     EXPECT_TRUE(ctx.out().facts().fact_sets.predicate.contains(atom.get_row()));
     EXPECT_EQ(ctx.out().facts().fact_sets.function[term], ygg::ClosedInterval<ygg::float_t>(3, 3));
-    EXPECT_EQ(ctx.out().annotations().find(atom.get_row()), nullptr);
+    EXPECT_EQ(ctx.out().annotations().find(atom.get_row().get_index()), nullptr);
     EXPECT_EQ(ctx.out().numeric_annotations().size(), 0);
 }
 
@@ -510,8 +510,8 @@ TEST(TyrDatalogGroundQueueTest, PositiveFluentPreconditionIndexMapsFactToWaiting
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
     const auto& dependencies = const_workspace.get_dependencies<tyr::formalism::PredicateTag>();
-    const auto* a_rules = dependencies.fluent_precondition_to_rules.find(a.get_row());
-    const auto* d_rules = dependencies.fluent_precondition_to_rules.find(d.get_row());
+    const auto* a_rules = dependencies.fluent_precondition_to_rules.find(a.get_row().get_index());
+    const auto* d_rules = dependencies.fluent_precondition_to_rules.find(d.get_row().get_index());
 
     ASSERT_NE(a_rules, nullptr);
     ASSERT_NE(d_rules, nullptr);
@@ -535,7 +535,7 @@ TEST(TyrDatalogGroundQueueTest, InitialFluentFactsSatisfyDynamicUnsatisfiedCount
     auto workspace = datalog::ProgramWorkspace<GroundTag>(const_workspace);
     auto ctx = datalog::ProgramExecutionContext(workspace);
     const auto& dependencies = const_workspace.get_dependencies<tyr::formalism::PredicateTag>();
-    const auto* a_rules = dependencies.fluent_precondition_to_rules.find(a.get_row());
+    const auto* a_rules = dependencies.fluent_precondition_to_rules.find(a.get_row().get_index());
 
     ASSERT_NE(a_rules, nullptr);
     EXPECT_EQ(rule_indices(*a_rules),
@@ -612,7 +612,7 @@ TEST(TyrDatalogGroundQueueTest, GroundUsedCostOverrideDoesNotCreateMetricEffectC
     const auto program = fixture.program();
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(program);
     auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
-    cost_policy.set_cost(derive_a.get_row(), datalog::Cost(7));
+    cost_policy.set_cost(derive_a.get_row().get_index(), datalog::Cost(7));
     using Workspace = datalog::ProgramWorkspace<GroundTag,
                                                 datalog::MinCostAnnotationPolicy<datalog::SumAggregation>,
                                                 datalog::NoTerminationPolicy,
@@ -624,7 +624,7 @@ TEST(TyrDatalogGroundQueueTest, GroundUsedCostOverrideDoesNotCreateMetricEffectC
     tyr::datalog::compute_model(ctx);
 
     EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
-    const auto* annotation = ctx.out().annotations().find(a.get_row());
+    const auto* annotation = ctx.out().annotations().find(a.get_row().get_index());
     ASSERT_NE(annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*annotation), 0);
 }
@@ -712,13 +712,13 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationCommitsMixedLowestCostBucket)
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
-    ctx.out().annotations().insert_or_assign(expensive_source.get_row(), datalog::BaseAnnotation(datalog::Cost(2)));
+    ctx.out().annotations().insert_or_assign(expensive_source.get_row().get_index(), datalog::BaseAnnotation(datalog::Cost(2)));
     tyr::datalog::compute_model(ctx);
 
     EXPECT_TRUE(ctx.out().facts().fact_sets.predicate.contains(goal_atom.get_row()));
     EXPECT_TRUE(ctx.out().facts().fact_sets.predicate.contains(peer_atom.get_row()));
     EXPECT_EQ(ctx.out().facts().fact_sets.function[term], ygg::ClosedInterval<ygg::float_t>(3, 3));
-    const auto* goal_annotation = ctx.out().annotations().find(goal_atom.get_row());
+    const auto* goal_annotation = ctx.out().annotations().find(goal_atom.get_row().get_index());
     ASSERT_NE(goal_annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*goal_annotation), 0);
     EXPECT_EQ(ctx.out().scheduler().statistics().num_rules_fired, 3);
@@ -735,7 +735,7 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationExposesOnlyOptimalGoalFrontierA
     auto termination_policy = datalog::TerminationPolicy<datalog::MaxAggregation>();
     termination_policy.set_goals(fixture.condition({ fixture.fluent_literal(goal) }));
     auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
-    cost_policy.set_cost(cheap.get_row(), datalog::Cost(1));
+    cost_policy.set_cost(cheap.get_row().get_index(), datalog::Cost(1));
     using Workspace = datalog::ProgramWorkspace<GroundTag,
                                                 datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>,
                                                 datalog::TerminationPolicy<datalog::MaxAggregation>,
@@ -747,10 +747,10 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationExposesOnlyOptimalGoalFrontierA
     ctx.initialize(fixture.initial_fluent_atoms);
     tyr::datalog::compute_model(ctx);
 
-    const auto* achievers = ctx.out().annotation_policy().find_achievers(goal.get_row());
+    const auto* achievers = ctx.out().annotation_policy().find_achievers(goal.get_row().get_index());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
-    EXPECT_EQ(achievers->front().get_rule_key(), cheap.get_row());
+    EXPECT_EQ(achievers->front().get_rule_key(), cheap.get_row().get_index());
 }
 
 TEST(TyrDatalogGroundQueueTest, GroundRetainsFirstEqualCostWitness)
@@ -770,11 +770,11 @@ TEST(TyrDatalogGroundQueueTest, GroundRetainsFirstEqualCostWitness)
     ctx.initialize(fixture.initial_fluent_atoms);
     tyr::datalog::compute_model(ctx);
 
-    const auto* annotation = ctx.out().annotations().find(goal.get_row());
+    const auto* annotation = ctx.out().annotations().find(goal.get_row().get_index());
     ASSERT_NE(annotation, nullptr);
     const auto* witness = std::get_if<datalog::WitnessAnnotation<tyr::formalism::PredicateTag>>(annotation);
     ASSERT_NE(witness, nullptr);
-    EXPECT_EQ(witness->get_rule_key(), scheduled_first);
+    EXPECT_EQ(witness->get_rule_key(), scheduled_first.get_index());
 }
 
 TEST(TyrDatalogGroundQueueTest, AchieverPolicyGroundRecordsDistinctRuleBindings)
@@ -800,14 +800,14 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyGroundRecordsDistinctRuleBindings)
     tyr::datalog::compute_model(ctx);
 
     EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
-    const auto* achievers = ctx.out().annotation_policy().find_achievers(b.get_row());
+    const auto* achievers = ctx.out().annotation_policy().find_achievers(b.get_row().get_index());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 2);
     const auto first_key = (*achievers)[0].get_rule_key();
     const auto second_key = (*achievers)[1].get_rule_key();
     EXPECT_NE(first_key, second_key);
-    EXPECT_TRUE((first_key == first_derive_b.get_row() && second_key == second_derive_b.get_row())
-                || (first_key == second_derive_b.get_row() && second_key == first_derive_b.get_row()));
+    EXPECT_TRUE((first_key == first_derive_b.get_row().get_index() && second_key == second_derive_b.get_row().get_index())
+                || (first_key == second_derive_b.get_row().get_index() && second_key == first_derive_b.get_row().get_index()));
 }
 
 TEST(TyrDatalogGroundQueueTest, AchieverPolicyKeepsFirstEqualAndReplacesStrictlyCheaperWitness)
@@ -818,16 +818,16 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyKeepsFirstEqualAndReplacesStrictly
     auto policy = datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>();
     policy.initialize(ygg::uint_t(head.get_index().relation) + 1);
 
-    policy.record_achiever(head, datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule, datalog::Cost(2)));
-    policy.record_achiever(head, datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule, datalog::Cost(2)));
+    policy.record_achiever(head.get_index(), datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule.get_index(), datalog::Cost(2)));
+    policy.record_achiever(head.get_index(), datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule.get_index(), datalog::Cost(2)));
 
-    const auto* achievers = policy.find_achievers(head);
+    const auto* achievers = policy.find_achievers(head.get_index());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
     EXPECT_EQ(achievers->front().get_cost(), datalog::Cost(2));
 
-    policy.record_achiever(head, datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule, datalog::Cost(1)));
-    achievers = policy.find_achievers(head);
+    policy.record_achiever(head.get_index(), datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule.get_index(), datalog::Cost(1)));
+    achievers = policy.find_achievers(head.get_index());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
     EXPECT_EQ(achievers->front().get_cost(), datalog::Cost(1));
@@ -857,12 +857,12 @@ TEST(TyrDatalogGroundQueueTest, DerivedNumericIntervalUnblocksRuleAndRecordsSupp
 
     EXPECT_TRUE(ctx.out().facts().fact_sets.predicate.contains(head.get_row()));
     EXPECT_EQ(ctx.out().facts().fact_sets.function[term], ygg::ClosedInterval<ygg::float_t>(3, 3));
-    const auto* achievers = ctx.out().annotation_policy().find_achievers(head.get_row());
+    const auto* achievers = ctx.out().annotation_policy().find_achievers(head.get_row().get_index());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
     const auto& supports = achievers->front().get_numeric_supports();
     ASSERT_EQ(supports.size(), 1);
-    EXPECT_EQ(supports.front().get_key(), term.get_row());
+    EXPECT_EQ(supports.front().get_key(), term.get_row().get_index());
     EXPECT_EQ(supports.front().get_interval(), ygg::ClosedInterval<ygg::float_t>(3, 3));
 }
 
@@ -889,8 +889,8 @@ TEST(TyrDatalogGroundQueueTest, SameCostBroadAndContainedNumericIntervalsRetainE
     const auto broad = ygg::ClosedInterval<ygg::float_t>(0, 4);
     const auto contained = ygg::ClosedInterval<ygg::float_t>(3, 3);
     EXPECT_EQ(ctx.out().facts().fact_sets.function[term], broad);
-    EXPECT_NE(ctx.out().numeric_annotations().find(term.get_row(), broad), nullptr);
-    EXPECT_NE(ctx.out().numeric_annotations().find(term.get_row(), contained), nullptr);
+    EXPECT_NE(ctx.out().numeric_annotations().find(term.get_row().get_index(), broad), nullptr);
+    EXPECT_NE(ctx.out().numeric_annotations().find(term.get_row().get_index(), contained), nullptr);
 }
 
 TEST(TyrDatalogGroundQueueTest, RevalidatesQueuedRuleAfterContainedNumericCertificateImproves)
@@ -910,11 +910,11 @@ TEST(TyrDatalogGroundQueueTest, RevalidatesQueuedRuleAfterContainedNumericCertif
 
     const auto interval = ygg::ClosedInterval<ygg::float_t>(1, 1);
     ctx.out().numeric_annotations().clear();
-    ctx.out().numeric_annotations().insert(term.get_row(), interval, datalog::BaseAnnotation(datalog::Cost(5)));
+    ctx.out().numeric_annotations().insert(term.get_row().get_index(), interval, datalog::BaseAnnotation(datalog::Cost(5)));
 
     tyr::datalog::compute_model(ctx);
 
-    const auto* annotation = ctx.out().annotations().find(head.get_row());
+    const auto* annotation = ctx.out().annotations().find(head.get_row().get_index());
     ASSERT_NE(annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*annotation), 0);
     EXPECT_EQ(ctx.out().scheduler().statistics().num_stale_queue_pops, 1);
@@ -943,7 +943,7 @@ TEST(TyrDatalogGroundQueueTest, EvaluatesReactivatedNumericRuleBeforeTargetHullC
     tyr::datalog::compute_model(ctx);
 
     const auto interval = ygg::ClosedInterval<ygg::float_t>(20, 27);
-    const auto* annotation = ctx.out().numeric_annotations().find(term.get_row(), interval);
+    const auto* annotation = ctx.out().numeric_annotations().find(term.get_row().get_index(), interval);
     ASSERT_NE(annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*annotation), 11);
     EXPECT_TRUE(ctx.out().tp().check(datalog::FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }));
@@ -974,10 +974,10 @@ TEST(TyrDatalogGroundQueueTest, PreservesPredicateCandidateWhenNumericHullRaises
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
-    ctx.out().annotations().insert_or_assign(ready.get_row(), datalog::BaseAnnotation(datalog::Cost(6)));
+    ctx.out().annotations().insert_or_assign(ready.get_row().get_index(), datalog::BaseAnnotation(datalog::Cost(6)));
     tyr::datalog::compute_model(ctx);
 
-    const auto* annotation = ctx.out().annotations().find(goal.get_row());
+    const auto* annotation = ctx.out().annotations().find(goal.get_row().get_index());
     ASSERT_NE(annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*annotation), 6);
 }
@@ -1001,10 +1001,10 @@ TEST(TyrDatalogGroundQueueTest, ReevaluatesPendingPredicateWhenNumericSupportBec
 
     ctx.initialize(fixture.initial_fluent_atoms);
     ctx.out().numeric_annotations().clear();
-    ctx.out().numeric_annotations().insert(term.get_row(), ygg::ClosedInterval<ygg::float_t>(5, 5), datalog::BaseAnnotation(datalog::Cost(10)));
+    ctx.out().numeric_annotations().insert(term.get_row().get_index(), ygg::ClosedInterval<ygg::float_t>(5, 5), datalog::BaseAnnotation(datalog::Cost(10)));
     tyr::datalog::compute_model(ctx);
 
-    const auto* annotation = ctx.out().annotations().find(goal.get_row());
+    const auto* annotation = ctx.out().annotations().find(goal.get_row().get_index());
     ASSERT_NE(annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*annotation), 6);
 }
@@ -1020,7 +1020,7 @@ TEST(TyrDatalogGroundQueueTest, NumericTransitionCreditOnlyReducesTheLocalEdge)
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
     auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
-    cost_policy.set_cost(rule.get_row(), term.get_row(), interval, datalog::Cost(3));
+    cost_policy.set_cost(rule.get_row().get_index(), term.get_row().get_index(), interval, datalog::Cost(3));
     using Workspace = datalog::ProgramWorkspace<GroundTag,
                                                 datalog::MinCostAnnotationPolicy<datalog::SumAggregation>,
                                                 datalog::NoTerminationPolicy,
@@ -1028,12 +1028,12 @@ TEST(TyrDatalogGroundQueueTest, NumericTransitionCreditOnlyReducesTheLocalEdge)
     auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>(), datalog::NoTerminationPolicy(), cost_policy);
     auto ctx = datalog::ProgramExecutionContext(workspace);
     ctx.initialize(fixture.initial_fluent_atoms);
-    ctx.out().annotations().insert_or_assign(prerequisite.get_row(), datalog::BaseAnnotation(datalog::Cost(5)));
+    ctx.out().annotations().insert_or_assign(prerequisite.get_row().get_index(), datalog::BaseAnnotation(datalog::Cost(5)));
 
     tyr::datalog::compute_model(ctx);
 
     EXPECT_EQ(ctx.out().facts().fact_sets.function[term], interval);
-    const auto* annotation = ctx.out().numeric_annotations().find(term.get_row(), interval);
+    const auto* annotation = ctx.out().numeric_annotations().find(term.get_row().get_index(), interval);
     ASSERT_NE(annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*annotation), 5);
 }
@@ -1049,7 +1049,7 @@ TEST(TyrDatalogGroundQueueTest, TransitionCreditDoesNotTurnRawPositiveEdgeIntoFr
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
     auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
-    cost_policy.set_cost(rule.get_row(), term.get_row(), raw_interval, datalog::Cost(1));
+    cost_policy.set_cost(rule.get_row().get_index(), term.get_row().get_index(), raw_interval, datalog::Cost(1));
     auto termination_policy = datalog::TerminationPolicy<datalog::SumAggregation>();
     termination_policy.set_goals(goal);
     using Workspace = datalog::ProgramWorkspace<GroundTag,

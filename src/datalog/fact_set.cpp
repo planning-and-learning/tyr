@@ -62,9 +62,9 @@ bool PredicateFactSet<T>::insert(formalism::datalog::AtomView<GroundTag, T> grou
 }
 
 template<formalism::FactKind T>
-bool PredicateFactSet<T>::insert(formalism::datalog::PredicateBindingView<T> binding)
+bool PredicateFactSet<T>::insert(formalism::datalog::PredicateBindingIndex<T> binding)
 {
-    const auto i = ygg::uint_t(binding.get_index().row);
+    const auto i = ygg::uint_t(binding.row);
 
     if (!ygg::test(i, m_bitset))
     {
@@ -94,9 +94,9 @@ bool PredicateFactSet<T>::insert(const std::vector<formalism::datalog::Predicate
 }
 
 template<formalism::FactKind T>
-bool PredicateFactSet<T>::contains(formalism::datalog::PredicateBindingView<T> binding) const noexcept
+bool PredicateFactSet<T>::contains(formalism::datalog::PredicateBindingIndex<T> binding) const noexcept
 {
-    return ygg::test(ygg::uint_t(binding.get_index().row), m_bitset);
+    return ygg::test(ygg::uint_t(binding.row), m_bitset);
 }
 
 template<formalism::FactKind T>
@@ -151,9 +151,9 @@ bool PredicateFactSets<T>::insert(formalism::datalog::AtomView<GroundTag, T> gro
 }
 
 template<formalism::FactKind T>
-bool PredicateFactSets<T>::insert(formalism::datalog::PredicateBindingView<T> binding)
+bool PredicateFactSets<T>::insert(formalism::datalog::PredicateBindingIndex<T> binding)
 {
-    return m_sets[ygg::uint_t(binding.get_index().relation)].insert(binding);
+    return m_sets[ygg::uint_t(binding.relation)].insert(binding);
 }
 
 template<formalism::FactKind T>
@@ -166,9 +166,9 @@ bool PredicateFactSets<T>::insert(formalism::datalog::PredicateBindingForwardRan
 }
 
 template<formalism::FactKind T>
-bool PredicateFactSets<T>::contains(formalism::datalog::PredicateBindingView<T> binding) const noexcept
+bool PredicateFactSets<T>::contains(formalism::datalog::PredicateBindingIndex<T> binding) const noexcept
 {
-    return m_sets[ygg::uint_t(binding.get_index().relation)].contains(binding);
+    return m_sets[ygg::uint_t(binding.relation)].contains(binding);
 }
 
 template<formalism::FactKind T>
@@ -209,9 +209,9 @@ bool FunctionFactSet<T>::insert(const FunctionFactSet& other)
 }
 
 template<formalism::FactKind T>
-bool FunctionFactSet<T>::insert(formalism::datalog::FunctionBindingView<T> binding, ygg::ClosedInterval<ygg::float_t> interval)
+bool FunctionFactSet<T>::insert(formalism::datalog::FunctionBindingIndex<T> binding, ygg::ClosedInterval<ygg::float_t> interval)
 {
-    const auto i = ygg::uint_t(binding.get_index().row);
+    const auto i = ygg::uint_t(binding.row);
 
     if (i < m_remap.size())
     {
@@ -228,7 +228,7 @@ bool FunctionFactSet<T>::insert(formalism::datalog::FunctionBindingView<T> bindi
     const auto pos = ygg::uint_t(m_bindings.size());
     ygg::set(i, pos, m_remap, std::numeric_limits<ygg::uint_t>::max());
 
-    m_bindings.push_back(binding.get_index().row);
+    m_bindings.push_back(binding.row);
     m_values.push_back(interval);
     return true;
 }
@@ -313,9 +313,9 @@ bool FunctionFactSet<T>::insert(formalism::datalog::FunctionTermValueListView<Gr
 }
 
 template<formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t> FunctionFactSet<T>::operator[](formalism::datalog::FunctionBindingView<T> binding) const noexcept
+ygg::ClosedInterval<ygg::float_t> FunctionFactSet<T>::operator[](formalism::datalog::FunctionBindingIndex<T> binding) const noexcept
 {
-    const auto row = binding.get_index().row;
+    const auto row = binding.row;
     const auto i = ygg::uint_t(row);
 
     if (i >= m_remap.size())
@@ -389,9 +389,9 @@ bool FunctionFactSets<T>::insert(formalism::datalog::FunctionTermView<GroundTag,
 }
 
 template<formalism::FactKind T>
-bool FunctionFactSets<T>::insert(formalism::datalog::FunctionBindingView<T> binding, ygg::ClosedInterval<ygg::float_t> interval)
+bool FunctionFactSets<T>::insert(formalism::datalog::FunctionBindingIndex<T> binding, ygg::ClosedInterval<ygg::float_t> interval)
 {
-    return m_sets[ygg::uint_t(binding.get_relation().get_index())].insert(binding, interval);
+    return m_sets[ygg::uint_t(binding.relation)].insert(binding, interval);
 }
 
 template<formalism::FactKind T>
@@ -433,9 +433,9 @@ bool FunctionFactSets<T>::insert(formalism::datalog::FunctionTermValueListView<G
 }
 
 template<formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t> FunctionFactSets<T>::operator[](formalism::datalog::FunctionBindingView<T> binding) const noexcept
+ygg::ClosedInterval<ygg::float_t> FunctionFactSets<T>::operator[](formalism::datalog::FunctionBindingIndex<T> binding) const noexcept
 {
-    return m_sets[ygg::uint_t(binding.get_relation().get_index())][binding];
+    return m_sets[ygg::uint_t(binding.relation)][binding];
 }
 
 template<formalism::FactKind T>

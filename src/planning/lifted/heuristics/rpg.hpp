@@ -80,12 +80,12 @@ struct RPGPolicy<LiftedTag>
     template<formalism::RelationKind R, typename Workspace>
     static std::optional<Action> get_action(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, const datalog::WitnessAnnotation<R>& witness)
     {
-        const auto rule_binding = witness.get_rule_key();
         const auto& mapping = definition.rpg_program.template get_rule_to_action_mapping<R>();
-        const auto it = mapping.find(rule_binding.get_relation());
+        const auto it = mapping.find(witness.get_rule_key().relation);
         if (it == mapping.end())
             return std::nullopt;
 
+        const auto rule_binding = ygg::make_view(witness.get_rule_key(), workspace.workspace_repository);
         auto grounder_context =
             formalism::planning::GrounderContext { workspace.planning_builder, *definition.task->get_repository(), workspace.binding };
         workspace.binding.clear();
@@ -111,8 +111,8 @@ struct RPGPolicy<LiftedTag>
     template<formalism::RelationKind R, typename Workspace, typename Callback>
     static void visit_witness_rule_instance(Workspace& workspace, const datalog::WitnessAnnotation<R>& witness, Callback&& callback)
     {
-        const auto rule_binding = witness.get_rule_key();
-        const auto& const_rule_workspace = *workspace.const_workspace.template get_rules<R>()[ygg::uint_t(rule_binding.get_relation().get_index())];
+        const auto rule_binding = ygg::make_view(witness.get_rule_key(), workspace.workspace_repository);
+        const auto& const_rule_workspace = *workspace.const_workspace.template get_rules<R>()[ygg::uint_t(witness.get_rule_key().relation)];
         auto binding = ygg::IndexList<formalism::Object> {};
         ygg::extend(rule_binding.get_objects(), binding);
         auto grounder_context = formalism::datalog::GrounderContext { workspace.datalog_builder, workspace.workspace_repository, binding };

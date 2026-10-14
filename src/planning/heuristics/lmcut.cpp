@@ -47,11 +47,11 @@ namespace
 
 struct LMCutNumericNode : ygg::comparison::Mixin<LMCutNumericNode>
 {
-    formalism::datalog::FunctionBindingView<formalism::FluentTag> key;
+    formalism::datalog::FunctionBindingIndex<formalism::FluentTag> key;
     ygg::ClosedInterval<ygg::float_t> interval;
 
     LMCutNumericNode() = delete;
-    LMCutNumericNode(formalism::datalog::FunctionBindingView<formalism::FluentTag> key, ygg::ClosedInterval<ygg::float_t> interval) :
+    LMCutNumericNode(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> key, ygg::ClosedInterval<ygg::float_t> interval) :
         key(key),
         interval(interval)
     {
@@ -85,7 +85,7 @@ struct LMCutImplementation :
     using ActionBinding = formalism::planning::ActionBindingView;
     using PredicateHead = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
     using NumericNode = LMCutNumericNode;
-    using RuleEdge = formalism::datalog::RuleBindingView<formalism::PredicateTag>;
+    using RuleEdge = formalism::datalog::RuleBindingIndex<formalism::PredicateTag>;
     using NumericEdge = datalog::NumericTransitionCostKey<formalism::FunctionTag>;
     using Precondition = std::variant<PredicateHead, NumericNode>;
     using CutFrontierAtoms = formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>;

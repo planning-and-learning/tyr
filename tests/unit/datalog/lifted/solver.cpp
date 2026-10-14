@@ -595,14 +595,14 @@ TEST(TyrDatalogLiftedBottomUpTest, MixedMetricEffectsRespectExactTargetsAndRetai
 
     tyr::datalog::compute_model(context);
 
-    const auto* annotation = workspace.annotations.find(fixture.goal);
+    const auto* annotation = workspace.annotations.find(fixture.goal.get_index());
     ASSERT_NE(annotation, nullptr);
     const auto* witness = std::get_if<tyr::datalog::WitnessAnnotation<tyr::formalism::PredicateTag>>(annotation);
     ASSERT_NE(witness, nullptr);
-    EXPECT_EQ(witness->get_rule_key(), fixture.second_binding);
+    EXPECT_EQ(witness->get_rule_key(), fixture.second_binding.get_index());
     EXPECT_EQ(witness->get_cost(), 11);  // b: 2 + 2 + 0 (filtered target) + 7; a: 2 + 2 + 3 + 5 = 12.
     ASSERT_EQ(witness->get_numeric_supports().size(), 1);
-    EXPECT_EQ(witness->get_numeric_supports().front().get_key(), fixture.second_lifted_metric);
+    EXPECT_EQ(witness->get_numeric_supports().front().get_key(), fixture.second_lifted_metric.get_index());
     EXPECT_EQ(witness->get_numeric_supports().front().get_interval(), ygg::ClosedInterval<ygg::float_t>(7, 7));
     EXPECT_EQ(witness->get_numeric_supports().front().get_cost(), tyr::datalog::Cost(0));
 }
@@ -616,7 +616,7 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedContextMatchesOrdinaryContextAfterWor
     auto initial = Context(workspace);
     tyr::datalog::compute_model(initial);
     const auto expected_atoms = collect_atoms_by_predicate(workspace);
-    const auto* expected_annotation = workspace.annotations.find(fixture.goal);
+    const auto* expected_annotation = workspace.annotations.find(fixture.goal.get_index());
     ASSERT_NE(expected_annotation, nullptr);
     const auto expected_cost = tyr::datalog::get_cost(*expected_annotation);
 
@@ -628,14 +628,14 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedContextMatchesOrdinaryContextAfterWor
     };
     for (size_t iteration = 0; iteration < 2; ++iteration)
     {
-        workspace.cost_buckets.insert(99, fixture.goal);
+        workspace.cost_buckets.insert(99, fixture.goal.get_index());
         workspace.reset_evaluation();
         EXPECT_TRUE(workspace.cost_buckets.is_empty());
         insert_inputs();
         auto prepared = Context::from_reset_workspace(workspace, workspace.schedulers);
         tyr::datalog::compute_model(prepared);
         EXPECT_EQ(collect_atoms_by_predicate(workspace), expected_atoms);
-        const auto* annotation = workspace.annotations.find(fixture.goal);
+        const auto* annotation = workspace.annotations.find(fixture.goal.get_index());
         ASSERT_NE(annotation, nullptr);
         EXPECT_EQ(tyr::datalog::get_cost(*annotation), expected_cost);
 
@@ -645,7 +645,7 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedContextMatchesOrdinaryContextAfterWor
         auto ordinary = Context(workspace);
         tyr::datalog::compute_model(ordinary);
         EXPECT_EQ(collect_atoms_by_predicate(workspace), expected_atoms);
-        annotation = workspace.annotations.find(fixture.goal);
+        annotation = workspace.annotations.find(fixture.goal.get_index());
         ASSERT_NE(annotation, nullptr);
         EXPECT_EQ(tyr::datalog::get_cost(*annotation), expected_cost);
     }
@@ -764,7 +764,7 @@ TEST(TyrDatalogLiftedBottomUpTest, NoAnnotationPolicyComputesZeroCostNumericReac
     const auto expected = ygg::ClosedInterval<ygg::float_t>(3, 3);
     EXPECT_TRUE(workspace.facts.fact_sets.predicate.contains(fixture.goal));
     EXPECT_EQ(workspace.facts.fact_sets.function[fixture.target], expected);
-    EXPECT_EQ(workspace.annotations.find(fixture.goal), nullptr);
+    EXPECT_EQ(workspace.annotations.find(fixture.goal.get_index()), nullptr);
     EXPECT_EQ(workspace.numeric_annotations.size(), 0);
 }
 
@@ -786,7 +786,7 @@ TEST(TyrDatalogLiftedBottomUpTest, SingleCoreTerminationExposesOnlyOptimalGoalFr
     auto termination_policy = tyr::datalog::TerminationPolicy<tyr::datalog::MaxAggregation>();
     termination_policy.set_goals(fixture.goals);
     auto cost_policy = tyr::datalog::RuleCostOverridePolicy<LiftedTag>();
-    cost_policy.set_cost(fixture.first_binding, tyr::datalog::Cost(1));
+    cost_policy.set_cost(fixture.first_binding.get_index(), tyr::datalog::Cost(1));
     using Workspace = tyr::datalog::ProgramWorkspace<LiftedTag,
                                                      tyr::datalog::MinCostAnnotationWithAchieversPolicy<tyr::datalog::MaxAggregation>,
                                                      tyr::datalog::TerminationPolicy<tyr::datalog::MaxAggregation>,
@@ -799,10 +799,10 @@ TEST(TyrDatalogLiftedBottomUpTest, SingleCoreTerminationExposesOnlyOptimalGoalFr
     tyr::datalog::execute_model(context, *execution_context);
 
     ASSERT_TRUE(workspace.facts.fact_sets.predicate.contains(fixture.goal));
-    const auto* achievers = workspace.annotation_policy.find_achievers(fixture.goal);
+    const auto* achievers = workspace.annotation_policy.find_achievers(fixture.goal.get_index());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
-    EXPECT_EQ(achievers->front().get_rule_key().get_index(), fixture.first_binding.get_index());
+    EXPECT_EQ(achievers->front().get_rule_key(), fixture.first_binding.get_index());
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, SingleCoreRetainsFirstEqualCostWitness)
@@ -816,11 +816,11 @@ TEST(TyrDatalogLiftedBottomUpTest, SingleCoreRetainsFirstEqualCostWitness)
 
     tyr::datalog::execute_model(context, *execution_context);
 
-    const auto* annotation = workspace.annotations.find(fixture.goal);
+    const auto* annotation = workspace.annotations.find(fixture.goal.get_index());
     ASSERT_NE(annotation, nullptr);
     const auto* witness = std::get_if<tyr::datalog::WitnessAnnotation<tyr::formalism::PredicateTag>>(annotation);
     ASSERT_NE(witness, nullptr);
-    EXPECT_EQ(witness->get_rule_key().get_index(), fixture.first_binding.get_index());
+    EXPECT_EQ(witness->get_rule_key(), fixture.first_binding.get_index());
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, MissingLiteralBindingUsesClosedWorldPolarityWithoutInterning)
@@ -860,13 +860,13 @@ TEST(TyrDatalogLiftedBottomUpTest, SumAnnotationPricesEachNumericSupportOccurren
     tyr::datalog::compute_model(context);
 
     const auto interval = ygg::ClosedInterval<ygg::float_t>(3, 3);
-    const auto* annotation = workspace.numeric_annotations.find(fixture.target, interval);
+    const auto* annotation = workspace.numeric_annotations.find(fixture.target.get_index(), interval);
     ASSERT_NE(annotation, nullptr);
     const auto* witness = std::get_if<tyr::datalog::WitnessAnnotation<tyr::formalism::FunctionTag>>(annotation);
     ASSERT_NE(witness, nullptr);
     EXPECT_EQ(witness->get_cost(), 7);
     ASSERT_EQ(witness->get_numeric_supports().size(), 1);
-    EXPECT_EQ(witness->get_numeric_supports().front().get_key(), fixture.source);
+    EXPECT_EQ(witness->get_numeric_supports().front().get_key(), fixture.source.get_index());
     EXPECT_EQ(witness->get_numeric_supports().front().get_interval(), interval);
     EXPECT_EQ(witness->get_numeric_supports().front().get_cost(), 2);
 }
@@ -879,7 +879,7 @@ TEST(TyrDatalogLiftedBottomUpTest, StoredNumericCertificateCanStillBecomeAvailab
     auto workspace = Workspace(fixture.program);
     auto context = tyr::datalog::ProgramExecutionContext(workspace);
     const auto source_interval = ygg::ClosedInterval<ygg::float_t>(3, 3);
-    workspace.numeric_annotations.insert(fixture.source, source_interval, tyr::datalog::BaseAnnotation(2));
+    workspace.numeric_annotations.insert(fixture.source.get_index(), source_interval, tyr::datalog::BaseAnnotation(2));
 
     tyr::datalog::compute_model(context);
 
@@ -900,12 +900,12 @@ TEST(TyrDatalogLiftedBottomUpTest, RepricesTentativePredicateAfterAvailableNumer
     auto context = tyr::datalog::ProgramExecutionContext(workspace);
     const auto source_interval = ygg::ClosedInterval<ygg::float_t>(3, 3);
     workspace.numeric_annotations.clear();
-    workspace.numeric_annotations.insert(fixture.source, source_interval, tyr::datalog::BaseAnnotation(5));
+    workspace.numeric_annotations.insert(fixture.source.get_index(), source_interval, tyr::datalog::BaseAnnotation(5));
 
     tyr::datalog::compute_model(context);
 
-    const auto* source = workspace.numeric_annotations.find(fixture.source, source_interval);
-    const auto* goal = workspace.annotations.find(fixture.goal);
+    const auto* source = workspace.numeric_annotations.find(fixture.source.get_index(), source_interval);
+    const auto* goal = workspace.annotations.find(fixture.goal.get_index());
     ASSERT_NE(source, nullptr);
     ASSERT_NE(goal, nullptr);
     EXPECT_TRUE(workspace.facts.fact_sets.predicate.contains(fixture.goal));
@@ -937,13 +937,13 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     auto lifted_workspace = LiftedWorkspace(fixture.program);
     auto lifted_context = tyr::datalog::ProgramExecutionContext(lifted_workspace);
     lifted_workspace.numeric_annotations.clear();
-    lifted_workspace.numeric_annotations.insert(fixture.source,
+    lifted_workspace.numeric_annotations.insert(fixture.source.get_index(),
                                                 high_support_interval,
                                                 tyr::datalog::BaseAnnotation(tyr::datalog::Cost(2)));
-    lifted_workspace.numeric_annotations.insert(fixture.source,
+    lifted_workspace.numeric_annotations.insert(fixture.source.get_index(),
                                                 interior_support_interval,
                                                 tyr::datalog::BaseAnnotation(tyr::datalog::Cost(1)));
-    lifted_workspace.numeric_annotations.insert(fixture.source, low_support_interval, tyr::datalog::BaseAnnotation(tyr::datalog::Cost(2)));
+    lifted_workspace.numeric_annotations.insert(fixture.source.get_index(), low_support_interval, tyr::datalog::BaseAnnotation(tyr::datalog::Cost(2)));
     expect_source_annotation_order(lifted_workspace.numeric_annotations.find_entries(fixture.source.get_index().relation, fixture.source.get_index().row));
 
     tyr::datalog::compute_model(lifted_context);
@@ -980,16 +980,16 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     const auto ground_source = fixture.repository->insert(ground_source_data).first;
     const auto ground_target = fixture.repository->insert(ground_target_data).first;
     ground_workspace.numeric_annotations.clear();
-    ground_workspace.numeric_annotations.insert(ground_source.get_row(),
+    ground_workspace.numeric_annotations.insert(ground_source.get_row().get_index(),
                                                 high_support_interval,
                                                 tyr::datalog::BaseAnnotation(tyr::datalog::Cost(2)));
-    ground_workspace.numeric_annotations.insert(ground_source.get_row(),
+    ground_workspace.numeric_annotations.insert(ground_source.get_row().get_index(),
                                                 interior_support_interval,
                                                 tyr::datalog::BaseAnnotation(tyr::datalog::Cost(1)));
-    ground_workspace.numeric_annotations.insert(ground_source.get_row(),
+    ground_workspace.numeric_annotations.insert(ground_source.get_row().get_index(),
                                                 low_support_interval,
                                                 tyr::datalog::BaseAnnotation(tyr::datalog::Cost(2)));
-    expect_source_annotation_order(ground_workspace.numeric_annotations.find_entries(ground_source.get_row()));
+    expect_source_annotation_order(ground_workspace.numeric_annotations.find_entries(ground_source.get_row().get_index()));
 
     tyr::datalog::compute_model(ground_context);
 
@@ -1000,8 +1000,8 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     EXPECT_EQ(lifted_workspace.facts.fact_sets.function[fixture.target], source_interval);
     EXPECT_EQ(ground_workspace.facts.fact_sets.function[ground_target], source_interval);
 
-    const auto* lifted_annotation = lifted_workspace.numeric_annotations.find(fixture.target, source_interval);
-    const auto* ground_annotation = ground_workspace.numeric_annotations.find(ground_target.get_row(), source_interval);
+    const auto* lifted_annotation = lifted_workspace.numeric_annotations.find(fixture.target.get_index(), source_interval);
+    const auto* ground_annotation = ground_workspace.numeric_annotations.find(ground_target.get_row().get_index(), source_interval);
     ASSERT_NE(lifted_annotation, nullptr);
     ASSERT_NE(ground_annotation, nullptr);
     const auto* lifted_witness = std::get_if<tyr::datalog::WitnessAnnotation<tyr::formalism::FunctionTag>>(lifted_annotation);
@@ -1017,7 +1017,7 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
         const auto& ground_support = ground_witness->get_numeric_supports()[i];
         const auto& lifted_support = lifted_witness->get_numeric_supports()[i];
         EXPECT_EQ(ground_support.get_key(), lifted_support.get_key());
-        EXPECT_EQ(ground_support.get_key(), ground_source.get_row());
+        EXPECT_EQ(ground_support.get_key(), ground_source.get_row().get_index());
         EXPECT_EQ(ground_support.get_interval(), lifted_support.get_interval());
         EXPECT_EQ(ground_support.get_cost(), lifted_support.get_cost());
     }
@@ -1125,16 +1125,16 @@ TEST(TyrDatalogLiftedBottomUpTest, RepeatedArgumentsRetryPendingExistingHeadAchi
     tyr::datalog::compute_model(context);
 
     ASSERT_TRUE(workspace.facts.fact_sets.predicate.contains(goal));
-    const auto* achievers = workspace.annotation_policy.find_achievers(goal);
+    const auto* achievers = workspace.annotation_policy.find_achievers(goal.get_index());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 2);
 
     auto bindings = std::vector<std::vector<ygg::Index<tyr::formalism::Object>>>();
     for (const auto& achiever : *achievers)
     {
-        EXPECT_EQ(achiever.get_rule_key().get_relation(), goal_rule);
+        EXPECT_EQ(achiever.get_rule_key().relation, goal_rule.get_index());
         auto& binding = bindings.emplace_back();
-        for (const auto object : achiever.get_rule_key().get_objects())
+        for (const auto object : ygg::make_view(achiever.get_rule_key(), workspace.workspace_repository).get_objects())
             binding.push_back(object.get_index());
     }
     std::ranges::sort(bindings);
@@ -1250,7 +1250,7 @@ TEST(TyrDatalogLiftedBottomUpTest, ProgramWorkspacesOwnIndependentRepositories)
     binding_data.objects.push_back(object.get_index());
     const auto binding = first.workspace_repository.insert(binding_data).first;
     const auto binding_index = binding.get_index();
-    first.annotations.insert_or_assign(binding, tyr::datalog::BaseAnnotation(3));
+    first.annotations.insert_or_assign(binding.get_index(), tyr::datalog::BaseAnnotation(3));
 
     first.reset_evaluation();
 
@@ -1263,7 +1263,7 @@ TEST(TyrDatalogLiftedBottomUpTest, ProgramWorkspacesOwnIndependentRepositories)
     reused_binding_data.objects.push_back(object.get_index());
     const auto reused_binding = first.workspace_repository.insert(reused_binding_data).first;
     EXPECT_EQ(reused_binding.get_index(), binding_index);
-    EXPECT_EQ(first.annotations.find(reused_binding), nullptr);
+    EXPECT_EQ(first.annotations.find(reused_binding.get_index()), nullptr);
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, PredicateAnnotationsUseRelationAndRowIndices)
@@ -1293,18 +1293,18 @@ TEST(TyrDatalogLiftedBottomUpTest, PredicateAnnotationsUseRelationAndRowIndices)
     const auto second = make_binding(second_predicate, first_object);
     auto annotations = tyr::datalog::PredicateAnnotations<>();
 
-    annotations.insert_or_assign(first, tyr::datalog::BaseAnnotation(3));
-    annotations.insert_or_assign(second, tyr::datalog::BaseAnnotation(5));
-    EXPECT_EQ(tyr::datalog::get_cost(*annotations.find(first)), 3);
-    EXPECT_EQ(tyr::datalog::get_cost(*std::as_const(annotations).find(second)), 5);
-    EXPECT_EQ(annotations.find(hole), nullptr);
+    annotations.insert_or_assign(first.get_index(), tyr::datalog::BaseAnnotation(3));
+    annotations.insert_or_assign(second.get_index(), tyr::datalog::BaseAnnotation(5));
+    EXPECT_EQ(tyr::datalog::get_cost(*annotations.find(first.get_index())), 3);
+    EXPECT_EQ(tyr::datalog::get_cost(*std::as_const(annotations).find(second.get_index())), 5);
+    EXPECT_EQ(annotations.find(hole.get_index()), nullptr);
 
-    annotations.insert_or_assign(first, tyr::datalog::BaseAnnotation(2));
-    EXPECT_EQ(tyr::datalog::get_cost(*annotations.find(first)), 2);
+    annotations.insert_or_assign(first.get_index(), tyr::datalog::BaseAnnotation(2));
+    EXPECT_EQ(tyr::datalog::get_cost(*annotations.find(first.get_index())), 2);
 
     annotations.clear();
-    EXPECT_EQ(annotations.find(first), nullptr);
-    EXPECT_EQ(annotations.find(second), nullptr);
+    EXPECT_EQ(annotations.find(first.get_index()), nullptr);
+    EXPECT_EQ(annotations.find(second.get_index()), nullptr);
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
@@ -1364,7 +1364,7 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
     static_assert(std::is_nothrow_move_assignable_v<ConcurrentMap>);
     const auto retain_min = [](auto& map, auto binding, tyr::datalog::Cost candidate)
     {
-        map.update(binding,
+        map.update(binding.get_index(),
                    [&](auto& incumbent, bool initialized)
                    {
                        if (!initialized || candidate < incumbent)
@@ -1392,45 +1392,45 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
                                           retain_min(concurrent_map, first_bindings.front(), predicate_cost);
                                           for (size_t i = first_bindings.size(); i-- > 0;)
                                           {
-                                              delta_annotations.insert_if_better(first_bindings[i], tyr::datalog::BaseAnnotation(predicate_cost));
-                                              delta_annotations.insert_if_better(second_bindings[i], tyr::datalog::BaseAnnotation(predicate_cost));
-                                              delta_numeric_annotations.insert(function_bindings[i], interval, tyr::datalog::BaseAnnotation(function_cost));
+                                              delta_annotations.insert_if_better(first_bindings[i].get_index(), tyr::datalog::BaseAnnotation(predicate_cost));
+                                              delta_annotations.insert_if_better(second_bindings[i].get_index(), tyr::datalog::BaseAnnotation(predicate_cost));
+                                              delta_numeric_annotations.insert(function_bindings[i].get_index(), interval, tyr::datalog::BaseAnnotation(function_cost));
                                           }
                                       });
         });
 
-    ASSERT_NE(sequential_map.find(first_bindings.front()), nullptr);
-    ASSERT_NE(concurrent_map.find(first_bindings.front()), nullptr);
-    EXPECT_EQ(*sequential_map.find(first_bindings.front()), *concurrent_map.find(first_bindings.front()));
+    ASSERT_NE(sequential_map.find(first_bindings.front().get_index()), nullptr);
+    ASSERT_NE(concurrent_map.find(first_bindings.front().get_index()), nullptr);
+    EXPECT_EQ(*sequential_map.find(first_bindings.front().get_index()), *concurrent_map.find(first_bindings.front().get_index()));
 
     for (size_t i = 0; i < first_bindings.size(); ++i)
     {
-        ASSERT_NE(delta_annotations.find(first_bindings[i]), nullptr);
-        ASSERT_NE(delta_annotations.find(second_bindings[i]), nullptr);
-        EXPECT_EQ(tyr::datalog::get_cost(*delta_annotations.find(first_bindings[i])), 1);
-        EXPECT_EQ(tyr::datalog::get_cost(*delta_annotations.find(second_bindings[i])), 1);
+        ASSERT_NE(delta_annotations.find(first_bindings[i].get_index()), nullptr);
+        ASSERT_NE(delta_annotations.find(second_bindings[i].get_index()), nullptr);
+        EXPECT_EQ(tyr::datalog::get_cost(*delta_annotations.find(first_bindings[i].get_index())), 1);
+        EXPECT_EQ(tyr::datalog::get_cost(*delta_annotations.find(second_bindings[i].get_index())), 1);
 
-        const auto* entries = delta_numeric_annotations.find_entries(function_bindings[i]);
+        const auto* entries = delta_numeric_annotations.find_entries(function_bindings[i].get_index());
         ASSERT_NE(entries, nullptr);
         ASSERT_EQ(entries->size(), 1);
         EXPECT_EQ(tyr::datalog::get_cost(entries->at(0).annotation), 3);
     }
 
     const auto second_interval = ygg::ClosedInterval<ygg::float_t>(1, 2);
-    EXPECT_TRUE(delta_numeric_annotations.insert(function_bindings.back(), second_interval, tyr::datalog::BaseAnnotation(4)));
-    EXPECT_FALSE(delta_numeric_annotations.insert(function_bindings.back(), second_interval, tyr::datalog::BaseAnnotation(5)));
-    EXPECT_TRUE(delta_numeric_annotations.insert(function_bindings.back(), second_interval, tyr::datalog::BaseAnnotation(2)));
-    ASSERT_EQ(delta_numeric_annotations.find_entries(function_bindings.back())->size(), 2);
-    ASSERT_NE(delta_numeric_annotations.find(function_bindings.back(), second_interval), nullptr);
-    EXPECT_EQ(tyr::datalog::get_cost(*delta_numeric_annotations.find(function_bindings.back(), second_interval)), 2);
+    EXPECT_TRUE(delta_numeric_annotations.insert(function_bindings.back().get_index(), second_interval, tyr::datalog::BaseAnnotation(4)));
+    EXPECT_FALSE(delta_numeric_annotations.insert(function_bindings.back().get_index(), second_interval, tyr::datalog::BaseAnnotation(5)));
+    EXPECT_TRUE(delta_numeric_annotations.insert(function_bindings.back().get_index(), second_interval, tyr::datalog::BaseAnnotation(2)));
+    ASSERT_EQ(delta_numeric_annotations.find_entries(function_bindings.back().get_index())->size(), 2);
+    ASSERT_NE(delta_numeric_annotations.find(function_bindings.back().get_index(), second_interval), nullptr);
+    EXPECT_EQ(tyr::datalog::get_cost(*delta_numeric_annotations.find(function_bindings.back().get_index(), second_interval)), 2);
 
     auto numeric_annotations = tyr::datalog::FunctionAnnotations<>();
-    numeric_annotations.insert(function_bindings.back(), interval, tyr::datalog::BaseAnnotation(5));
-    numeric_annotations.insert(function_bindings.back(), interval, tyr::datalog::BaseAnnotation(3));
-    numeric_annotations.insert(function_bindings.back(), interval, tyr::datalog::BaseAnnotation(4));
-    numeric_annotations.insert(function_bindings.back(), interval, tyr::datalog::BaseAnnotation(3));
-    numeric_annotations.insert(function_bindings.back(), second_interval, tyr::datalog::BaseAnnotation(2));
-    numeric_annotations.insert(function_bindings.back(), interval, tyr::datalog::BaseAnnotation(1));
+    numeric_annotations.insert(function_bindings.back().get_index(), interval, tyr::datalog::BaseAnnotation(5));
+    numeric_annotations.insert(function_bindings.back().get_index(), interval, tyr::datalog::BaseAnnotation(3));
+    numeric_annotations.insert(function_bindings.back().get_index(), interval, tyr::datalog::BaseAnnotation(4));
+    numeric_annotations.insert(function_bindings.back().get_index(), interval, tyr::datalog::BaseAnnotation(3));
+    numeric_annotations.insert(function_bindings.back().get_index(), second_interval, tyr::datalog::BaseAnnotation(2));
+    numeric_annotations.insert(function_bindings.back().get_index(), interval, tyr::datalog::BaseAnnotation(1));
     const auto* numeric_entries = numeric_annotations.find_entries(function.get_index(), function_bindings.back().get_index().row);
     ASSERT_NE(numeric_entries, nullptr);
     ASSERT_EQ(numeric_entries->size(), 2);
@@ -1438,25 +1438,25 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
     EXPECT_EQ(tyr::datalog::get_cost(numeric_entries->at(0).annotation), 1);
     EXPECT_EQ(numeric_entries->at(1).interval, second_interval);
     EXPECT_EQ(tyr::datalog::get_cost(numeric_entries->at(1).annotation), 2);
-    EXPECT_EQ(tyr::datalog::get_cost(*numeric_annotations.find(function_bindings.back(), interval)), 1);
+    EXPECT_EQ(tyr::datalog::get_cost(*numeric_annotations.find(function_bindings.back().get_index(), interval)), 1);
 
     delta_annotations.clear();
     delta_numeric_annotations.clear();
     sequential_map.clear();
     concurrent_map.clear();
-    EXPECT_EQ(delta_annotations.find(first_bindings.back()), nullptr);
-    EXPECT_EQ(delta_numeric_annotations.find_entries(function_bindings.back()), nullptr);
-    EXPECT_EQ(sequential_map.find(first_bindings.front()), nullptr);
-    EXPECT_EQ(concurrent_map.find(first_bindings.front()), nullptr);
+    EXPECT_EQ(delta_annotations.find(first_bindings.back().get_index()), nullptr);
+    EXPECT_EQ(delta_numeric_annotations.find_entries(function_bindings.back().get_index()), nullptr);
+    EXPECT_EQ(sequential_map.find(first_bindings.front().get_index()), nullptr);
+    EXPECT_EQ(concurrent_map.find(first_bindings.front().get_index()), nullptr);
 
-    delta_annotations.insert_if_better(first_bindings.back(), tyr::datalog::BaseAnnotation(7));
-    delta_numeric_annotations.insert(function_bindings.back(), interval, tyr::datalog::BaseAnnotation(7));
+    delta_annotations.insert_if_better(first_bindings.back().get_index(), tyr::datalog::BaseAnnotation(7));
+    delta_numeric_annotations.insert(function_bindings.back().get_index(), interval, tyr::datalog::BaseAnnotation(7));
     retain_min(sequential_map, first_bindings.front(), tyr::datalog::Cost(7));
     retain_min(concurrent_map, first_bindings.front(), tyr::datalog::Cost(7));
-    EXPECT_EQ(tyr::datalog::get_cost(*delta_annotations.find(first_bindings.back())), 7);
-    ASSERT_NE(delta_numeric_annotations.find_entries(function_bindings.back()), nullptr);
-    EXPECT_EQ(delta_numeric_annotations.find_entries(function_bindings.back())->size(), 1);
-    EXPECT_EQ(*sequential_map.find(first_bindings.front()), *concurrent_map.find(first_bindings.front()));
+    EXPECT_EQ(tyr::datalog::get_cost(*delta_annotations.find(first_bindings.back().get_index())), 7);
+    ASSERT_NE(delta_numeric_annotations.find_entries(function_bindings.back().get_index()), nullptr);
+    EXPECT_EQ(delta_numeric_annotations.find_entries(function_bindings.back().get_index())->size(), 1);
+    EXPECT_EQ(*sequential_map.find(first_bindings.front().get_index()), *concurrent_map.find(first_bindings.front().get_index()));
 }
 
 INSTANTIATE_TEST_SUITE_P(TyrDatalogLiftedBottomUpFixture,

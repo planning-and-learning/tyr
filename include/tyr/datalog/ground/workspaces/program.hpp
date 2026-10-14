@@ -81,6 +81,7 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
     TP tp;
     CP cost_policy;
     CostBuckets cost_buckets;
+    PendingPredicateAchievers pending_achievers;
     Scheduler<GroundTag> scheduler;
     formalism::datalog::Builder datalog_builder;
 

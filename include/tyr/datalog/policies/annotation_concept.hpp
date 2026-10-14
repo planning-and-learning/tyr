@@ -31,8 +31,8 @@ namespace tyr::datalog
 template<typename T>
 concept AnnotationStoragePolicy = requires(T& policy,
                                            const T& const_policy,
-                                           formalism::datalog::PredicateBindingView<formalism::FluentTag> head,
-                                           formalism::datalog::FunctionBindingView<formalism::FluentTag> function_head,
+                                           formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head,
+                                           formalism::datalog::FunctionBindingIndex<formalism::FluentTag> function_head,
                                            ygg::ClosedInterval<ygg::float_t> interval,
                                            WitnessAnnotation<formalism::PredicateTag> predicate_witness,
                                            WitnessAnnotation<formalism::FunctionTag> function_witness,
@@ -63,8 +63,8 @@ concept AnnotationStoragePolicy = requires(T& policy,
 template<typename T>
 concept AnnotationPolicyConcept = requires(T& policy,
                                            const T& const_policy,
-                                           formalism::datalog::PredicateBindingView<formalism::FluentTag> head,
-                                           formalism::datalog::FunctionBindingView<formalism::FluentTag> function_binding,
+                                           formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head,
+                                           formalism::datalog::FunctionBindingIndex<formalism::FluentTag> function_binding,
                                            ygg::ClosedInterval<ygg::float_t> interval,
                                            PredicateAnnotations<>& annotations,
                                            FunctionAnnotations<>& numeric_annotations) {

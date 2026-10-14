@@ -28,13 +28,15 @@ namespace tyr::datalog
 template<typename T>
 concept RuleCostPolicyConcept = requires(T& policy,
                                          const T& const_policy,
-                                         formalism::datalog::RuleBindingView<formalism::PredicateTag> predicate_rule_key,
-                                         formalism::datalog::RuleBindingView<formalism::FunctionTag> function_rule_key,
-                                         formalism::datalog::FunctionBindingView<formalism::FluentTag> numeric_key,
+                                         formalism::datalog::RuleBindingView<formalism::PredicateTag> predicate_rule,
+                                         formalism::datalog::RuleBindingView<formalism::FunctionTag> function_rule,
+                                         formalism::datalog::RuleBindingIndex<formalism::PredicateTag> predicate_rule_key,
+                                         formalism::datalog::RuleBindingIndex<formalism::FunctionTag> function_rule_key,
+                                         formalism::datalog::FunctionBindingIndex<formalism::FluentTag> numeric_key,
                                          ygg::ClosedInterval<ygg::float_t> interval,
                                          Cost cost) {
-    { const_policy.get_cost(predicate_rule_key) } -> std::same_as<Cost>;
-    { const_policy.get_cost(function_rule_key) } -> std::same_as<Cost>;
+    { const_policy.get_cost(predicate_rule) } -> std::same_as<Cost>;
+    { const_policy.get_cost(function_rule) } -> std::same_as<Cost>;
     { const_policy.get_cost(function_rule_key, numeric_key, interval) } -> std::same_as<Cost>;
     { const_policy.is_metric_target(numeric_key) } -> std::same_as<bool>;
     { policy.clear() } -> std::same_as<void>;

@@ -26,7 +26,7 @@ namespace tyr::datalog
 struct ResolvedNumericEffect
 {
     formalism::NumericEffectOperatorKind operator_kind;
-    formalism::datalog::FunctionBindingView<formalism::FluentTag> head;
+    formalism::datalog::FunctionBindingIndex<formalism::FluentTag> head;
     formalism::datalog::FunctionExpressionView<GroundTag> rhs;
 };
 

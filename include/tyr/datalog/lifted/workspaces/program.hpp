@@ -69,6 +69,7 @@ public:
     TP tp;
     CP cost_policy;
     CostBuckets cost_buckets;
+    PendingPredicateAchievers pending_achievers;
 
     std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, formalism::PredicateTag>>> predicate_rules;
     std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, formalism::FunctionTag>>> function_rules;

@@ -59,10 +59,10 @@ void initialize_dependencies(formalism::datalog::ProgramView<GroundTag> program,
         const auto body = rule.get_body();
         for (const auto literal : body.template get_literals<formalism::FluentTag>())
             if (literal.get_polarity())
-                dependencies.fluent_precondition_to_rules.update(literal.get_atom().get_row(), [&](auto& rules, bool) { rules.push_back(rule); });
+                dependencies.fluent_precondition_to_rules.update(literal.get_atom().get_row().get_index(), [&](auto& rules, bool) { rules.push_back(rule); });
 
         for (const auto term : formalism::datalog::collect_fluent_reads(rule))
-            dependencies.fluent_function_term_to_rules.update(term.get_row(), [&](auto& rules, bool) { rules.push_back(rule); });
+            dependencies.fluent_function_term_to_rules.update(term.get_row().get_index(), [&](auto& rules, bool) { rules.push_back(rule); });
     }
 }
 }

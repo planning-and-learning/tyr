@@ -98,14 +98,14 @@ TEST(TyrDatalogCostPolicyTest, CostBucketsRecycleNodesAndRetainTables)
     const auto function = make_nullary_function_binding(repository, "value");
     auto buckets = tyr::datalog::CostBuckets {};
 
-    EXPECT_TRUE(buckets.insert(3, predicate));
-    EXPECT_FALSE(buckets.insert(3, predicate));
-    EXPECT_TRUE(buckets.insert(3, function, { 2, 4 }));
-    EXPECT_TRUE(buckets.insert(3, function, { 1, 3 }));
-    EXPECT_FALSE(buckets.insert(3, function, { 2, 3 }));
+    EXPECT_TRUE(buckets.insert(3, predicate.get_index()));
+    EXPECT_FALSE(buckets.insert(3, predicate.get_index()));
+    EXPECT_TRUE(buckets.insert(3, function.get_index(), { 2, 4 }));
+    EXPECT_TRUE(buckets.insert(3, function.get_index(), { 1, 3 }));
+    EXPECT_FALSE(buckets.insert(3, function.get_index(), { 2, 3 }));
     EXPECT_EQ(buckets.min_cost(), 3);
 
-    EXPECT_EQ(buckets.at(3).function.at(function), (ygg::ClosedInterval<ygg::float_t> { 1, 4 }));
+    EXPECT_EQ(buckets.at(3).function.at(function.get_index()), (ygg::ClosedInterval<ygg::float_t> { 1, 4 }));
     const auto* address = &buckets.at(3);
     const auto predicate_capacity = buckets.at(3).predicate.capacity();
     const auto function_capacity = buckets.at(3).function.capacity();
@@ -113,7 +113,7 @@ TEST(TyrDatalogCostPolicyTest, CostBucketsRecycleNodesAndRetainTables)
     EXPECT_TRUE(buckets.is_empty());
     EXPECT_FALSE(buckets.erase(3));
 
-    EXPECT_TRUE(buckets.insert(5, predicate));
+    EXPECT_TRUE(buckets.insert(5, predicate.get_index()));
     auto& bucket = buckets.at(5);
     EXPECT_EQ(&bucket, address);
     EXPECT_EQ(bucket.predicate.capacity(), predicate_capacity);
@@ -122,22 +122,22 @@ TEST(TyrDatalogCostPolicyTest, CostBucketsRecycleNodesAndRetainTables)
     bucket.predicate.clear();
     EXPECT_TRUE(buckets.erase(5));
 
-    buckets.insert(7, predicate);
-    buckets.insert(2, function, { 8, 9 });
+    buckets.insert(7, predicate.get_index());
+    buckets.insert(2, function.get_index(), { 8, 9 });
     EXPECT_EQ(buckets.min_cost(), 2);
     buckets.clear();
     EXPECT_TRUE(buckets.is_empty());
-    EXPECT_TRUE(buckets.insert(2, function, { 1, 1 }));
+    EXPECT_TRUE(buckets.insert(2, function.get_index(), { 1, 1 }));
     EXPECT_TRUE(buckets.at(2).predicate.empty());
-    EXPECT_EQ(buckets.at(2).function.at(function), (ygg::ClosedInterval<ygg::float_t> { 1, 1 }));
+    EXPECT_EQ(buckets.at(2).function.at(function.get_index()), (ygg::ClosedInterval<ygg::float_t> { 1, 1 }));
     EXPECT_TRUE(buckets.erase(2));
     buckets.clear();
 
-    buckets.insert(1, predicate);
-    EXPECT_TRUE(buckets.erase(1, predicate));
+    buckets.insert(1, predicate.get_index());
+    EXPECT_TRUE(buckets.erase(1, predicate.get_index()));
     EXPECT_TRUE(buckets.is_empty());
-    EXPECT_FALSE(buckets.erase(1, predicate));
-    EXPECT_TRUE(buckets.insert(1, predicate));
+    EXPECT_FALSE(buckets.erase(1, predicate.get_index()));
+    EXPECT_TRUE(buckets.insert(1, predicate.get_index()));
 }
 
 TEST(TyrDatalogCostPolicyTest, AnnotationStoresCost)
@@ -176,7 +176,7 @@ TEST(TyrDatalogCostPolicyTest, RuleCostOverridePolicyLiftedUsesExactOverride)
     const auto fixture = make_nullary_rule_binding(repository);
 
     auto policy = tyr::datalog::RuleCostOverridePolicy<LiftedTag>();
-    policy.set_cost(fixture.binding, 3);
+    policy.set_cost(fixture.binding.get_index(), 3);
 
     EXPECT_EQ(policy.get_cost(fixture.binding), 3);
 }
@@ -187,8 +187,8 @@ TEST(TyrDatalogCostPolicyTest, DefaultPoliciesAcceptEveryMetricBinding)
     auto repository = factory.create();
     const auto binding = make_nullary_function_binding(repository, "metric");
 
-    EXPECT_TRUE(tyr::datalog::RuleCostPolicy().is_metric_target(binding));
-    EXPECT_TRUE(tyr::datalog::RuleCostOverridePolicy<LiftedTag>().is_metric_target(binding));
+    EXPECT_TRUE(tyr::datalog::RuleCostPolicy().is_metric_target(binding.get_index()));
+    EXPECT_TRUE(tyr::datalog::RuleCostOverridePolicy<LiftedTag>().is_metric_target(binding.get_index()));
 }
 
 TEST(TyrDatalogCostPolicyTest, FilteredPoliciesAcceptOnlyConfiguredMetricBindings)
@@ -203,10 +203,10 @@ TEST(TyrDatalogCostPolicyTest, FilteredPoliciesAcceptOnlyConfiguredMetricBinding
     const auto base = tyr::datalog::RuleCostPolicy(&targets);
     const auto override = tyr::datalog::RuleCostOverridePolicy<LiftedTag>(&targets);
 
-    EXPECT_TRUE(base.is_metric_target(target));
-    EXPECT_FALSE(base.is_metric_target(other));
-    EXPECT_TRUE(override.is_metric_target(target));
-    EXPECT_FALSE(override.is_metric_target(other));
+    EXPECT_TRUE(base.is_metric_target(target.get_index()));
+    EXPECT_FALSE(base.is_metric_target(other.get_index()));
+    EXPECT_TRUE(override.is_metric_target(target.get_index()));
+    EXPECT_FALSE(override.is_metric_target(other.get_index()));
 }
 
 }

@@ -59,11 +59,17 @@ void prepare_for_insert(Repository&, ygg::Data<T>& data)
 }
 
 template<RelationKind R>
-std::optional<RuleView<GroundTag, R>> find_ground_rule(RuleBindingView<R> binding)
+std::optional<RuleView<GroundTag, R>> find_ground_rule(RuleBindingIndex<R> binding, const Repository& repository)
 {
     auto rule = ygg::Data<Rule<GroundTag, R>> {};
-    rule.binding = binding.get_index();
-    return binding.get_context().find(rule);
+    rule.binding = binding;
+    return repository.find(rule);
+}
+
+template<RelationKind R>
+std::optional<RuleView<GroundTag, R>> find_ground_rule(RuleBindingView<R> binding)
+{
+    return find_ground_rule(binding.get_index(), binding.get_context());
 }
 
 }

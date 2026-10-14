@@ -42,7 +42,7 @@ public:
 
     ResolvedNumericEffect resolve(formalism::datalog::NumericEffectView<GroundTag, formalism::FluentTag> effect) const noexcept
     {
-        return { effect.get_operator(), effect.get_fterm().get_row(), effect.get_fexpr() };
+        return { effect.get_operator(), effect.get_fterm().get_row().get_index(), effect.get_fexpr() };
     }
 
     template<typename Callback>

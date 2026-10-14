@@ -52,13 +52,13 @@ public:
     ResolvedNumericEffect resolve(formalism::datalog::NumericEffectView<LiftedTag, formalism::FluentTag> effect) const
     {
         return { effect.get_operator(),
-                 formalism::datalog::ground_binding(effect.get_fterm(), m_grounder).first,
+                 formalism::datalog::ground_binding(effect.get_fterm(), m_grounder).first.get_index(),
                  formalism::datalog::ground(effect.get_fexpr(), m_grounder) };
     }
 
     ResolvedNumericEffect resolve(formalism::datalog::NumericEffectView<GroundTag, formalism::FluentTag> effect) const noexcept
     {
-        return { effect.get_operator(), effect.get_fterm().get_row(), effect.get_fexpr() };
+        return { effect.get_operator(), effect.get_fterm().get_row().get_index(), effect.get_fexpr() };
     }
 
     template<typename Callback>

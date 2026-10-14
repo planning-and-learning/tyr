@@ -39,7 +39,7 @@ concept SchedulerConcept = TaskKind<Kind> && AnnotationPolicyConcept<AP> && Term
                            && requires(Scheduler<Kind>& scheduler,
                                        ProgramExecutionContext<Kind, AP, TP, CP>& ctx,
                                        const CostBuckets::Bucket& bucket,
-                                       formalism::datalog::FunctionBindingView<formalism::FluentTag> function) {
+                                       formalism::datalog::FunctionBindingIndex<formalism::FluentTag> function) {
                                   { scheduler.begin_stratum(ctx) } -> std::same_as<void>;
                                   { scheduler.begin_iteration(ctx) } -> std::same_as<void>;
                                   { scheduler.finish_iteration(SchedulerIterationTrigger::FactChanged) } -> std::same_as<void>;
@@ -81,7 +81,8 @@ void compute_model_impl(ProgramExecutionContext<Kind, AP, TP, CP>& ctx)
         Scheduler<Kind>& scheduler = policy.scheduler();
         auto& cost_buckets = ctx.out().cost_buckets();
         cost_buckets.clear();
-        auto pending_achievers = PendingPredicateAchievers {};
+        auto& pending_achievers = ctx.out().pending_achievers();
+        pending_achievers.clear();
         scheduler.begin_stratum(ctx);
 
         while (true)
