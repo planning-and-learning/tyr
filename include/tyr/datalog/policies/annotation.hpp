@@ -42,12 +42,8 @@ public:
 
     bool is_widening_label_preserving(Cost, Cost) const noexcept { return true; }
 
-    void initialize_annotation(PredicateHead, PredicateAnnotations<>&) const noexcept
-    {
-    }
-    void initialize_annotation(FunctionBinding, ygg::ClosedInterval<ygg::float_t>, FunctionAnnotations<>&) const noexcept
-    {
-    }
+    void initialize_annotation(PredicateHead, PredicateAnnotations<>&) const noexcept {}
+    void initialize_annotation(FunctionBinding, ygg::ClosedInterval<ygg::float_t>, FunctionAnnotations<>&) const noexcept {}
 
     void clear_achievers() noexcept {}
 };
@@ -81,9 +77,7 @@ public:
 
     void clear_achievers() noexcept {}
 
-    void record_achiever(PredicateHead, PredicateWitness) const noexcept
-    {
-    }
+    void record_achiever(PredicateHead, PredicateWitness) const noexcept {}
 
     template<PredicateAnnotationStore Annotations>
     std::optional<CostUpdate> publish_annotation(PredicateHead head, PredicateWitness witness, Annotations& annotations) const

@@ -104,10 +104,7 @@ public:
             bindings.push_back(binding);
     }
 
-    void insert_achiever(Binding head, Witness witness)
-    {
-        achievers.push_back(PredicateAchiever { head, std::move(witness) });
-    }
+    void insert_achiever(Binding head, Witness witness) { achievers.push_back(PredicateAchiever { head, std::move(witness) }); }
 };
 
 struct FunctionHeadUpdate : ygg::comparison::Mixin<FunctionHeadUpdate>

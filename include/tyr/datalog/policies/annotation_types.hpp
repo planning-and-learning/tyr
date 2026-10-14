@@ -249,8 +249,7 @@ public:
     template<std::invocable<const Value&> Read>
     std::invoke_result_t<Read, const Value&> read(Key key, Read&& read, std::invoke_result_t<Read, const Value&> missing) const
     {
-        const auto index = key;
-        const auto* slot = find_slot(index.relation, index.row);
+        const auto* slot = find_slot(key.relation, key.row);
         if (!slot)
             return missing;
 
@@ -260,8 +259,7 @@ public:
     template<std::invocable<Value&, bool> Update>
     decltype(auto) update(Key key, Update&& update)
     {
-        const auto index = key;
-        return this->update(index.relation, index.row, std::forward<Update>(update));
+        return this->update(key.relation, key.row, std::forward<Update>(update));
     }
 
     template<std::invocable<Value&, bool> Update>
@@ -277,11 +275,7 @@ public:
                               });
     }
 
-    const Value* find(Key key) const noexcept
-    {
-        const auto index = key;
-        return find(index.relation, index.row);
-    }
+    const Value* find(Key key) const noexcept { return find(key.relation, key.row); }
 
     Value* find(Key key) noexcept
         requires(!ThreadSafe)
@@ -411,10 +405,7 @@ public:
                                     });
     }
 
-    const Annotation<>* find(Key key) const noexcept
-    {
-        return m_annotations.find(key);
-    }
+    const Annotation<>* find(Key key) const noexcept { return m_annotations.find(key); }
 
     Annotation<>* find(Key key) noexcept
         requires(!ThreadSafe)
@@ -526,10 +517,7 @@ public:
             std::numeric_limits<Cost>::max());
     }
 
-    const Entries* find_entries(Binding binding) const noexcept
-    {
-        return m_slots.find(binding);
-    }
+    const Entries* find_entries(Binding binding) const noexcept { return m_slots.find(binding); }
 
     const Entries* find_entries(Relation relation, Key key) const noexcept { return m_slots.find(relation, key); }
 
@@ -554,8 +542,7 @@ public:
 
     bool insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<formalism::FunctionTag> annotation)
     {
-        const auto index = binding;
-        return insert(index.relation, index.row, interval, std::move(annotation));
+        return insert(binding.relation, binding.row, interval, std::move(annotation));
     }
 
     bool insert(Relation relation, Key key, ygg::ClosedInterval<ygg::float_t> interval, Annotation<formalism::FunctionTag> annotation)
@@ -624,10 +611,7 @@ public:
         return annotation ? get_cost(*annotation) : std::numeric_limits<Cost>::max();
     }
 
-    const Annotation<>* find(Key key) const noexcept
-    {
-        return m_entry && m_entry->first == key ? &m_entry->second : nullptr;
-    }
+    const Annotation<>* find(Key key) const noexcept { return m_entry && m_entry->first == key ? &m_entry->second : nullptr; }
 
     std::optional<CostUpdate> insert_if_better(Key key, Annotation<> annotation)
     {

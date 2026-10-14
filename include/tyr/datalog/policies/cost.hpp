@@ -166,10 +166,7 @@ public:
         m_numeric_transition_costs.clear();
     }
 
-    void set_cost(RuleKey rule_key, Cost cost)
-    {
-        m_costs.insert_or_assign(rule_key, cost);
-    }
+    void set_cost(RuleKey rule_key, Cost cost) { m_costs.insert_or_assign(rule_key, cost); }
 
     void set_cost(RuleKey rule_key, NumericKey numeric_key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost)
     {
