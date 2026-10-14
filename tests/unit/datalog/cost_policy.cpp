@@ -140,12 +140,10 @@ TEST(TyrDatalogCostPolicyTest, CostBucketsRecycleNodesAndRetainTables)
     EXPECT_TRUE(buckets.insert(1, predicate));
 }
 
-TEST(TyrDatalogCostPolicyTest, AnnotationStoresMetricAndCost)
+TEST(TyrDatalogCostPolicyTest, AnnotationStoresCost)
 {
-    const auto metric = ygg::ClosedInterval<ygg::float_t>(2.5, 4.5);
-    const auto annotation = tyr::datalog::Annotation<>(tyr::datalog::BaseAnnotation(metric, tyr::datalog::Cost(7.5)));
+    const auto annotation = tyr::datalog::Annotation<>(tyr::datalog::BaseAnnotation(tyr::datalog::Cost(7.5)));
 
-    EXPECT_EQ(tyr::datalog::get_metric(annotation), metric);
     EXPECT_DOUBLE_EQ(tyr::datalog::get_cost(annotation), 7.5);
 }
 

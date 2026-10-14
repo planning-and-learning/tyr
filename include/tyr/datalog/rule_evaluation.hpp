@@ -59,7 +59,6 @@ struct RuleEvaluationWorkspace
 
 struct CandidateEvidence
 {
-    ygg::ClosedInterval<ygg::float_t> metric;
     std::span<const NumericSupport> numeric_supports;
 };
 
@@ -295,7 +294,6 @@ struct AlwaysContinue
 struct EvaluationState
 {
     Cost support_cost;
-    ygg::ClosedInterval<ygg::float_t> support_metric;
     Cost raw_edge;
     std::optional<ResolvedNumericEffect> numeric_effect;
     ygg::ClosedInterval<ygg::float_t> raw_interval;
@@ -311,7 +309,7 @@ void aggregate_selection_cost(Cost& cost, const NumericSupportSelectorWorkspace&
 }
 
 template<bool CollectEvidence>
-bool append_selection_evidence(const RuleEvaluationInput& input, RuleEvaluationWorkspace& workspace, ygg::ClosedInterval<ygg::float_t>& metric)
+bool append_selection_evidence(const RuleEvaluationInput& input, RuleEvaluationWorkspace& workspace)
 {
     if constexpr (!CollectEvidence)
     {
@@ -324,7 +322,6 @@ bool append_selection_evidence(const RuleEvaluationInput& input, RuleEvaluationW
             const auto reported = input.selector.for_each_entry_support(entry,
                                                                         [&](const auto key, const auto interval, const auto& annotation)
                                                                         {
-                                                                            metric = aggregate_metric_support(metric, get_metric(annotation));
                                                                             workspace.exact_supports.emplace_back(key, interval, get_cost(annotation));
                                                                         });
             if (!reported)
@@ -368,7 +365,7 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
 {
     using Aggregation = typename AP::Aggregation;
     const auto aggregate = Aggregation {};
-    auto state = EvaluationState { Aggregation::identity(), {}, Cost(0), std::nullopt, {}, {} };
+    auto state = EvaluationState { Aggregation::identity(), Cost(0), std::nullopt, {}, {} };
 
     workspace.exact_supports.clear();
 
@@ -394,7 +391,7 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
                 state.raw_edge += *delta;
                 if (!can_continue(state.support_cost, state.raw_edge))
                     return false;
-                return append_selection_evidence<CollectEvidence>(input, workspace, state.support_metric);
+                return append_selection_evidence<CollectEvidence>(input, workspace);
             });
     };
 
@@ -416,8 +413,6 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
         state.support_cost = aggregate(state.support_cost, get_cost(*annotation));
         if (!can_continue(state.support_cost, state.raw_edge))
             return std::nullopt;
-        if constexpr (CollectEvidence)
-            state.support_metric = aggregate_metric_support(state.support_metric, get_metric(*annotation));
     }
 
     for (const auto constraint : instance.get_body().get_numeric_constraints())
@@ -430,7 +425,7 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
         state.support_cost = aggregate(state.support_cost, constraint_cost);
         if (!can_continue(state.support_cost, state.raw_edge))
             return std::nullopt;
-        if (!append_selection_evidence<CollectEvidence>(input, workspace, state.support_metric))
+        if (!append_selection_evidence<CollectEvidence>(input, workspace))
             return std::nullopt;
     }
 
@@ -460,7 +455,7 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
         aggregate_selection_cost<Aggregation>(state.support_cost, workspace.selector);
         if (!can_continue(state.support_cost, state.raw_edge))
             return std::nullopt;
-        if (!append_selection_evidence<CollectEvidence>(input, workspace, state.support_metric))
+        if (!append_selection_evidence<CollectEvidence>(input, workspace))
             return std::nullopt;
     }
 
@@ -566,7 +561,7 @@ std::optional<PredicateCandidate> evaluate_predicate_candidate(formalism::datalo
 
         const auto edge = reduce_cost(state->raw_edge, rule_evaluation_detail::get_rule_credit(cost_policy, instance));
         const auto cost = state->support_cost + edge;
-        return PredicateCandidate { head, cost, cost, CandidateEvidence { add_metric_delta(state->support_metric, edge), workspace.exact_supports } };
+        return PredicateCandidate { head, cost, cost, CandidateEvidence { workspace.exact_supports } };
     }
 }
 
@@ -656,7 +651,7 @@ std::optional<FunctionCandidate> evaluate_function_candidate(RuleInstance<Kind, 
                                    cost,
                                    state->support_cost,
                                    empty(state->current_interval) || !subset(interval, state->current_interval),
-                                   CandidateEvidence { add_metric_delta(state->support_metric, edge), workspace.exact_supports } };
+                                   CandidateEvidence { workspace.exact_supports } };
     }
 }
 
@@ -664,7 +659,7 @@ template<TaskKind Kind, formalism::RelationKind R, typename Candidate>
 WitnessAnnotation<R> materialize_witness(RuleInstance<Kind, R>& instance, const Candidate& candidate)
 {
     assert(candidate.evidence);
-    return WitnessAnnotation<R>(instance.witness_key(), candidate.evidence->metric, candidate.cost, candidate.evidence->numeric_supports);
+    return WitnessAnnotation<R>(instance.witness_key(), candidate.cost, candidate.evidence->numeric_supports);
 }
 
 template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>

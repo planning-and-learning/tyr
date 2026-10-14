@@ -69,25 +69,21 @@ template<formalism::RelationKind R = formalism::PredicateTag>
 struct WitnessAnnotation : ygg::comparison::Mixin<WitnessAnnotation<R>>
 {
 private:
-    using Metric = ygg::ClosedInterval<ygg::float_t>;
     using NumericSupports = std::vector<NumericSupport>;
 
 public:
     WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key, Cost cost);
-    WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key, Metric metric, Cost cost);
-    WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key, Metric metric, Cost cost, NumericSupports numeric_supports);
-    WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key, Metric metric, Cost cost, std::span<const NumericSupport> numeric_supports);
+    WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key, Cost cost, NumericSupports numeric_supports);
+    WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key, Cost cost, std::span<const NumericSupport> numeric_supports);
 
     auto get_rule_key() const noexcept { return rule_key; }
-    auto get_metric() const noexcept { return metric; }
     auto get_cost() const noexcept { return cost; }
     const auto& get_numeric_supports() const noexcept { return numeric_supports; }
 
-    auto identifying_members() const noexcept { return std::tie(rule_key, metric, cost, numeric_supports); }
+    auto identifying_members() const noexcept { return std::tie(rule_key, cost, numeric_supports); }
 
 private:
     formalism::datalog::RuleBindingView<R> rule_key;
-    Metric metric;
     Cost cost;
     NumericSupports numeric_supports;
 };
@@ -152,32 +148,20 @@ void publish_pending_achievers(PendingPredicateAchievers& pending, PendingPredic
 
 struct BaseAnnotation : ygg::comparison::Mixin<BaseAnnotation>
 {
-private:
-    using Metric = ygg::ClosedInterval<ygg::float_t>;
-
 public:
-    BaseAnnotation() : m_metric(), m_cost(Cost(0)) {}
-    explicit BaseAnnotation(Cost cost) : m_metric(), m_cost(cost) {}
-    BaseAnnotation(Metric metric, Cost cost) : m_metric(metric), m_cost(cost) {}
+    BaseAnnotation() : m_cost(Cost(0)) {}
+    explicit BaseAnnotation(Cost cost) : m_cost(cost) {}
 
-    auto get_metric() const noexcept { return m_metric; }
     auto get_cost() const noexcept { return m_cost; }
 
-    auto identifying_members() const noexcept { return std::tie(m_metric, m_cost); }
+    auto identifying_members() const noexcept { return std::tie(m_cost); }
 
 private:
-    Metric m_metric;
     Cost m_cost;
 };
 
 template<formalism::RelationKind R = formalism::PredicateTag>
 using Annotation = std::variant<BaseAnnotation, WitnessAnnotation<R>>;
-
-template<formalism::RelationKind R>
-inline auto get_metric(const Annotation<R>& annotation) noexcept
-{
-    return std::visit([](const auto& value) { return value.get_metric(); }, annotation);
-}
 
 template<formalism::RelationKind R>
 inline Cost get_cost(const Annotation<R>& annotation) noexcept
@@ -576,23 +560,6 @@ private:
 template<bool ThreadSafe = false>
 using FunctionAnnotations = NumericIntervalAnnotations<ThreadSafe>;
 
-inline ygg::ClosedInterval<ygg::float_t> aggregate_metric_support(ygg::ClosedInterval<ygg::float_t> lhs, ygg::ClosedInterval<ygg::float_t> rhs) noexcept
-{
-    if (empty(lhs))
-        return rhs;
-    if (empty(rhs))
-        return lhs;
-    return ygg::ClosedInterval<ygg::float_t>(std::max(lower(lhs), lower(rhs)), std::max(upper(lhs), upper(rhs)));
-}
-
-inline ygg::ClosedInterval<ygg::float_t> add_metric_delta(ygg::ClosedInterval<ygg::float_t> metric, Cost delta) noexcept
-{
-    if (delta == Cost(0))
-        return metric;
-    if (empty(metric))
-        return ygg::ClosedInterval<ygg::float_t>(delta, delta);
-    return ygg::ClosedInterval<ygg::float_t>(lower(metric) + delta, upper(metric) + delta);
-}
 
 }
 
