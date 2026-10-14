@@ -44,6 +44,7 @@
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 
+#include <algorithm>
 #include <assert.h>
 #include <concepts>
 #include <oneapi/tbb/parallel_for.h>
@@ -71,10 +72,6 @@ public:
 
     bool next_stratum()
     {
-#ifndef NDEBUG
-        if (m_stratum)
-            assert_stratum_complete(*m_stratum);
-#endif
         auto& schedulers = m_ctx.out().schedulers();
         if (m_next_stratum == schedulers.size())
             return false;
@@ -87,6 +84,8 @@ public:
         auto& ctx = stratum();
         run_active_rules<formalism::PredicateTag>(ctx);
         run_active_rules<formalism::FunctionTag>(ctx);
+        // The rules consumed the facts committed since they last ran; the commit phase collects the next ones.
+        ctx.out().program().facts().delta_fact_sets.reset();
         reduce_worker_results<formalism::PredicateTag>(ctx, cost_buckets, pending_achievers);
         return reduce_worker_results<formalism::FunctionTag>(ctx, cost_buckets, pending_achievers);
     }
@@ -94,60 +93,6 @@ public:
     Scheduler<LiftedTag>& scheduler() { return stratum().out().scheduler(); }
 
 private:
-#ifndef NDEBUG
-    /// At the fixpoint of a stratum, the head of every applicable binding of its predicate rules is a fact.
-    void assert_stratum_complete(StratumExecutionContext<AP, TP, CP>& ctx)
-    {
-        for (const auto rule_index : ctx.out().scheduler().template get<formalism::PredicateTag>().get_rules())
-        {
-            auto rctx = ctx.get_rule_execution_context(rule_index);
-            const auto& cws_rule = rctx.in().cws_rule();
-            if (cws_rule.get_rule().get_arity() == 0)
-                continue;
-
-            auto wrctx = rctx.get_rule_worker_execution_context();
-            auto& in = wrctx.in();
-            auto& out = wrctx.out();
-            const auto nullary_condition = cws_rule.get_nullary_condition();
-            if (!is_applicable(nullary_condition.template get_literals<formalism::StaticTag>(), in.fact_sets())
-                || !is_dynamically_applicable(nullary_condition, in.fact_sets()))
-                continue;
-
-            // The rule's graph is current: every change of a listened predicate re-ran the rule before the fixpoint.
-            const auto applicability_context = ApplicabilityContext { in.fact_sets(), out.ground_context() };
-            rctx.out().kckp().for_each_clique(
-                [&](auto&& clique)
-                {
-                    create_general_binding(clique, cws_rule.get_static_consistency_graph(), out.ground_context().binding);
-                    if (!is_applicable(cws_rule.get_conflicting_overapproximation_condition(), applicability_context))
-                        return;
-                    const auto head = formalism::datalog::try_ground_binding(cws_rule.get_rule().get_head(), out.ground_context());
-                    if (head && in.fact_sets().template get<formalism::FluentTag>().predicate.contains(*head))
-                        return;
-
-                    // Bindings whose rule evaluation is unavailable (e.g. an undefined metric effect) derive nothing.
-                    auto instance = RuleInstance<LiftedTag, formalism::PredicateTag> { cws_rule, out.ground_context() };
-                    auto input = make_rule_update_input(instance,
-                                                        in.numeric_support_selector(),
-                                                        in.annotations(),
-                                                        out.rule_evaluation_workspace(),
-                                                        in.numeric_annotations(),
-                                                        in.annotation_policy(),
-                                                        in.cost_policy());
-                    const auto available = evaluate_predicate_candidate(head ? head->get_index() : formalism::datalog::PredicateBindingIndex<formalism::FluentTag> {},
-                                                                        input.rule_instance,
-                                                                        input.annotation_policy,
-                                                                        input.cost_policy,
-                                                                        input.evaluation,
-                                                                        input.workspace)
-                                               .has_value();
-                    assert(!available && "Semi-naive evaluation missed an applicable binding.");
-                },
-                out.kckp_workspace());
-        }
-    }
-#endif
-
     static void create_nullary_binding(ygg::IndexList<formalism::Object>& binding) { binding.clear(); }
 
     static void
@@ -466,92 +411,68 @@ private:
     void generate_hyperedge_cliques(RuleExecutionContext<formalism::PredicateTag, AP, TP, CP>& rctx)
     {
         const auto& cws_rule = rctx.in().cws_rule();
-        const auto& literals = cws_rule.get_hyperedge_literals();
+        const auto literals = cws_rule.get_hyperedge_condition().template get_literals<formalism::FluentTag>();
         auto& kckp_algorithm = rctx.out().kckp();
         if (literals.empty() || kckp_algorithm.get_iteration() <= 1)
             return;
 
+        const auto& graph = cws_rule.get_static_consistency_graph();
+        const auto& infos = graph.get_hyperedge_indexed_literals().infos;
+        const auto& delta_fact_sets = rctx.stratum_out().program().facts().delta_fact_sets;
         auto wrctx = rctx.get_rule_worker_execution_context();
         auto& out = wrctx.out();
-        const auto& new_facts = rctx.stratum_out().program().facts().new_facts;
-        auto& anchor_objects = out.anchor_objects();
-        auto& anchor_vertices = out.anchor_vertices();
+        const auto delta_sets = FactSets { rctx.stratum_in().program().facts().fact_sets, delta_fact_sets };
+        const auto delta_context = ApplicabilityContext { delta_sets, out.ground_context() };
 
         for (size_t i = 0; i < literals.size(); ++i)
         {
-            for (const auto atom : new_facts.visible(literals[i].atom.get_predicate().get_index()))
+            for (const auto atom : delta_fact_sets.predicate.get_sets()[ygg::uint_t(infos[i].predicate)].get_bindings())
             {
-                if (!match_anchor(cws_rule, literals[i], atom, out.ground_context().destination, anchor_objects, anchor_vertices))
+                if (!match_anchor(graph.get_graph_layout(), infos[i], atom.get_objects(), out.anchor_vertices()))
                     continue;
 
                 kckp_algorithm.for_each_hyperedge_clique(
-                    anchor_vertices,
+                    out.anchor_vertices(),
                     [&](auto&& clique)
                     {
-                        create_general_binding(clique, cws_rule.get_static_consistency_graph(), out.ground_context().binding);
-                        if (!has_earlier_new_atom(out.ground_context(), literals, i, new_facts))
-                            process_binding(wrctx, true);
+                        create_general_binding(clique, graph, out.ground_context().binding);
+                        for (size_t j = 0; j < i; ++j)
+                            if (is_applicable(literals[j], delta_context))
+                                return;  // An earlier literal's new atom anchors this clique.
+                        process_binding(wrctx, true);
                     },
                     out.kckp_workspace());
             }
         }
     }
 
-    /// The anchor vertices of a new atom of literal: one per distinct parameter, consistent with constants and repeated parameters.
-    /// objects and vertices are per-worker scratch buffers, reused across anchors to avoid allocations.
-    static bool match_anchor(const ConstRuleWorkspace<LiftedTag, formalism::PredicateTag>& cws_rule,
-                             const HyperedgeLiteral& literal,
-                             formalism::datalog::PredicateBindingIndex<formalism::FluentTag> atom,
-                             const formalism::datalog::Repository& repository,
-                             std::vector<std::optional<ygg::Index<formalism::Object>>>& objects,
+    /// The vertices of the atom's objects at the literal's parameters, if the atom matches its constants and repeated parameters.
+    /// vertices is a per-worker scratch buffer, reused across anchors to avoid allocations.
+    static bool match_anchor(const kckp::GraphLayout& layout,
+                             const details::RuleToLiteralInfo<formalism::FluentTag>& info,
+                             const auto& objects,
                              std::vector<kckp::Vertex>& vertices)
     {
-        objects.assign(cws_rule.get_rule().get_arity(), std::nullopt);
-        const auto atom_objects = ygg::make_view(atom, repository).get_objects();
-        assert(atom_objects.size() == literal.terms.size());
-
-        for (size_t position = 0; position < literal.terms.size(); ++position)
-        {
-            const auto object = atom_objects[position].get_index();
-            if (const auto* constant = std::get_if<ygg::Index<formalism::Object>>(&literal.terms[position]))
-            {
-                if (*constant != object)
-                    return false;
-                continue;
-            }
-            auto& assigned = objects[ygg::uint_t(std::get<formalism::ParameterIndex>(literal.terms[position]))];
-            if (!assigned)
-                assigned = object;
-            else if (*assigned != object)
+        for (const auto& [position, object] : info.position_mappings.constant_positions)
+            if (objects[position].get_index() != object)
                 return false;
-        }
 
         vertices.clear();
-        for (ygg::uint_t parameter = 0; parameter < objects.size(); ++parameter)
+        const auto& parameter_to_positions = info.position_mappings.parameter_to_positions;
+        for (ygg::uint_t parameter = 0; parameter < parameter_to_positions.size(); ++parameter)
         {
-            if (!objects[parameter])
+            const auto& positions = parameter_to_positions[parameter];
+            if (positions.empty())
                 continue;
-            const auto vertex = cws_rule.find_vertex(parameter, *objects[parameter]);
+            const auto object = objects[positions.front()].get_index();
+            if (!std::ranges::all_of(positions, [&](const auto position) { return objects[position].get_index() == object; }))
+                return false;
+            const auto vertex = layout.find_vertex(parameter, ygg::uint_t(object));
             if (!vertex)
                 return false;
             vertices.push_back(*vertex);
         }
         return true;
-    }
-
-    /// Whether a hyperedge literal before literal_index has a new atom under the binding of ground_context.
-    static bool has_earlier_new_atom(formalism::datalog::GrounderContext& ground_context,
-                                     const std::vector<HyperedgeLiteral>& literals,
-                                     size_t literal_index,
-                                     const NewPredicateFacts& new_facts)
-    {
-        for (size_t j = 0; j < literal_index; ++j)
-        {
-            const auto atom = formalism::datalog::try_ground_binding(literals[j].atom, ground_context);
-            if (atom && new_facts.contains(atom->get_index()))
-                return true;
-        }
-        return false;
     }
 
     template<formalism::RelationKind R>

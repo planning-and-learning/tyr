@@ -120,7 +120,6 @@ public:
     void begin_iteration(ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
     {
         on_start_iteration();
-        ctx.out().facts().new_facts.publish();
         ctx.out().delta_annotations().clear();
         ctx.out().delta_numeric_annotations().clear();
     }

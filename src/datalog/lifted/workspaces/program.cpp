@@ -86,11 +86,6 @@ ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTa
 
     initialize_rule_workspaces<formalism::PredicateTag>(const_workspace, predicate_rules);
     initialize_rule_workspaces<formalism::FunctionTag>(const_workspace, function_rules);
-
-    for (const auto& rule : const_workspace.template get_rules<formalism::PredicateTag>())
-        if (rule)
-            for (const auto& literal : rule->get_hyperedge_literals())
-                facts.new_facts.track(literal.atom.get_predicate().get_index());
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>

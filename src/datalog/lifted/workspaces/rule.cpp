@@ -63,46 +63,6 @@ create_ground_nullary_effects(formalism::datalog::NumericEffectOperatorListView<
             result.push_back(formalism::datalog::ground(effect, grounder_context));
     return result;
 }
-
-std::vector<HyperedgeLiteral> create_hyperedge_literals(formalism::datalog::ConjunctiveConditionView<LiftedTag> conflicting_condition)
-{
-    auto result = std::vector<HyperedgeLiteral> {};
-    for (const auto literal : conflicting_condition.get_literals<formalism::FluentTag>())
-    {
-        if (!literal.get_polarity())
-            continue;
-
-        auto hyperedge = HyperedgeLiteral { literal.get_atom(), {} };
-        for (const auto term : literal.get_atom().get_terms())
-            visit(
-                [&]<typename Alternative>(Alternative arg)
-                {
-                    if constexpr (std::same_as<Alternative, formalism::ParameterIndex>)
-                        hyperedge.terms.emplace_back(arg);
-                    else if constexpr (std::same_as<Alternative, formalism::datalog::ObjectView>)
-                        hyperedge.terms.emplace_back(arg.get_index());
-                    else
-                        static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
-                },
-                term.get_variant());
-        result.push_back(std::move(hyperedge));
-    }
-    return result;
-}
-
-std::vector<std::vector<ygg::uint_t>> create_object_to_vertex(const kckp::GraphLayout& layout, ygg::uint_t no_vertex)
-{
-    auto result = std::vector<std::vector<ygg::uint_t>>(layout.num_partitions);
-    for (ygg::uint_t vertex = 0; vertex < layout.num_vertices; ++vertex)
-    {
-        auto& vertices = result[layout.vertex_to_partition[vertex]];
-        const auto object = layout.vertex_labels[vertex];
-        if (object >= vertices.size())
-            vertices.resize(object + 1, no_vertex);
-        vertices[object] = vertex;
-    }
-    return result;
-}
 }
 
 /**
@@ -121,9 +81,8 @@ ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(formalism::datalog::RuleVie
     binary_overapproximation_condition(create_overapproximation_conjunctive_condition(2, get_rule().get_body(), repository).first),
     conflicting_overapproximation_condition(
         create_overapproximation_conflicting_conjunctive_condition(get_rule().get_arity() == 1 ? 1 : 2, get_rule().get_body(), repository).first),
-    static_consistency_graph(unary_overapproximation_condition, binary_overapproximation_condition, std::move(compatibility_graph)),
-    hyperedge_literals(create_hyperedge_literals(conflicting_overapproximation_condition)),
-    object_to_vertex(hyperedge_literals.empty() ? std::vector<std::vector<ygg::uint_t>> {} : create_object_to_vertex(static_consistency_graph.get_graph_layout(), NO_VERTEX))
+    hyperedge_condition(create_hyperedge_conjunctive_condition(conflicting_overapproximation_condition, repository).first),
+    static_consistency_graph(unary_overapproximation_condition, binary_overapproximation_condition, hyperedge_condition, std::move(compatibility_graph))
 {
 }
 

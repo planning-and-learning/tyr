@@ -24,73 +24,16 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
-#include <boost/dynamic_bitset.hpp>
-#include <span>
-#include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
 
 namespace tyr::datalog
 {
-/// Fluent facts committed in the previous commit phase, for predicates that anchor hyperedge cliques.
-class NewPredicateFacts
-{
-public:
-    using Binding = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
-    using Predicate = ygg::Index<formalism::Predicate<formalism::FluentTag>>;
-
-    void track(Predicate predicate)
-    {
-        if (ygg::uint_t(predicate) >= m_lists.size())
-            m_lists.resize(ygg::uint_t(predicate) + 1);
-        m_lists[ygg::uint_t(predicate)].tracked = true;
-    }
-
-    void on_insert(Binding binding)
-    {
-        const auto relation = ygg::uint_t(binding.relation);
-        if (relation < m_lists.size() && m_lists[relation].tracked)
-            m_lists[relation].committed.push_back(binding);
-    }
-
-    /// Makes the facts committed since the last call visible, and only those.
-    void publish();
-
-    std::span<const Binding> visible(Predicate predicate) const noexcept
-    {
-        const auto relation = ygg::uint_t(predicate);
-        return relation < m_lists.size() ? std::span<const Binding>(m_lists[relation].visible) : std::span<const Binding> {};
-    }
-
-    bool contains(Binding binding) const noexcept
-    {
-        const auto relation = ygg::uint_t(binding.relation);
-        if (relation >= m_lists.size())
-            return false;
-        const auto& is_new = m_lists[relation].is_new;
-        const auto row = ygg::uint_t(binding.row);
-        return row < is_new.size() && is_new.test(row);
-    }
-
-    void clear() noexcept;
-
-private:
-    struct List
-    {
-        bool tracked { false };
-        std::vector<Binding> committed;
-        std::vector<Binding> visible;
-        boost::dynamic_bitset<> is_new;
-    };
-
-    std::vector<List> m_lists;
-};
-
 template<>
 struct FactsWorkspace<LiftedTag>
 {
     TaggedFactSets<formalism::FluentTag> fact_sets;
     TaggedAssignmentSets<formalism::FluentTag> assignment_sets;
-    NewPredicateFacts new_facts;
+    TaggedFactSets<formalism::FluentTag> delta_fact_sets;  ///< Facts committed since the rules last ran.
 
     explicit FactsWorkspace(formalism::datalog::PredicateListView<formalism::FluentTag> predicates,
                             formalism::datalog::FunctionListView<formalism::FluentTag> functions,
@@ -106,7 +49,7 @@ struct FactsWorkspace<LiftedTag>
         if (!fact_sets.predicate.insert(binding))
             return false;
         assignment_sets.predicate.insert(ygg::make_view(binding, *m_repository));
-        new_facts.on_insert(binding);
+        delta_fact_sets.predicate.insert(binding);
         return true;
     }
 

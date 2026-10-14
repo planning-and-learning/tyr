@@ -96,6 +96,17 @@ GraphLayout::GraphLayout(size_t num_vertices_, const std::vector<std::vector<ygg
     info.num_blocks = block_offset;
 }
 
+std::optional<Vertex> GraphLayout::find_vertex(ygg::uint_t partition, ygg::uint_t label) const noexcept
+{
+    const auto& vertices = vertex_partitions[partition];
+    const auto label_of = [&](ygg::uint_t vertex) { return vertex_labels[vertex]; };
+    assert(std::ranges::is_sorted(vertices, {}, label_of));
+    const auto it = std::ranges::lower_bound(vertices, label, {}, label_of);
+    if (it == vertices.end() || vertex_labels[*it] != label)
+        return std::nullopt;
+    return Vertex(*it);
+}
+
 DeduplicatedAdjacencyMatrix::DeduplicatedAdjacencyMatrix(const AdjacencyMatrix& matrix) : m_layout(matrix.layout())
 {
     auto row_to_offset = ygg::UnorderedMap<std::span<const uint64_t>, ygg::uint_t> {};

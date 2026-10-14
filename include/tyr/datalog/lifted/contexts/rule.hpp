@@ -88,7 +88,6 @@ public:
 #ifndef NDEBUG
         auto& seen_bindings() noexcept { return m_ws_worker.solve.seen_bindings; }
 #endif
-        auto& anchor_objects() noexcept { return m_ws_worker.iteration.anchor_objects; }
         auto& anchor_vertices() noexcept { return m_ws_worker.iteration.anchor_vertices; }
         auto& rule_evaluation_workspace() noexcept { return m_ws_worker.solve.rule_evaluation_workspace; }
         auto& applicability_cache() noexcept { return m_ws_worker.solve.applicability_cache; }

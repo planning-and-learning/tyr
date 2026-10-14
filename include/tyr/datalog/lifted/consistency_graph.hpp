@@ -171,6 +171,7 @@ class StaticConsistencyGraph
 public:
     StaticConsistencyGraph(formalism::datalog::ConjunctiveConditionView<LiftedTag> unary_overapproximation_condition,
                            formalism::datalog::ConjunctiveConditionView<LiftedTag> binary_overapproximation_condition,
+                           formalism::datalog::ConjunctiveConditionView<LiftedTag> hyperedge_condition,
                            kckp::Graph compatibility_graph);
 
     void initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
@@ -183,6 +184,8 @@ public:
     const kckp::GraphLayout& get_graph_layout() const noexcept;
     const kckp::PartitionedAdjacencyLayout& get_partitioned_adjacency_layout() const noexcept;
     const kckp::DeduplicatedAdjacencyMatrix& get_adjacency_matrix() const noexcept;
+    /// Term positions of the hyperedge condition's literals, in its literal order.
+    const details::TaggedRuleToLiteralInfos<formalism::FluentTag>& get_hyperedge_indexed_literals() const noexcept;
 
 private:
     formalism::datalog::ConjunctiveConditionView<LiftedTag> m_unary_overapproximation_condition;
@@ -196,6 +199,7 @@ private:
 
     details::TaggedRuleToLiteralInfos<formalism::FluentTag> m_unary_overapproximation_indexed_literals;
     details::TaggedRuleToLiteralInfos<formalism::FluentTag> m_binary_overapproximation_indexed_literals;
+    details::TaggedRuleToLiteralInfos<formalism::FluentTag> m_hyperedge_indexed_literals;
 
     details::RuleToRuleToConstraintInfos m_unary_overapproximation_indexed_constraints;
     details::RuleToRuleToConstraintInfos m_binary_overapproximation_indexed_constraints;
@@ -213,6 +217,11 @@ extern std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
 create_overapproximation_conflicting_conjunctive_condition(size_t k,
                                                            formalism::datalog::ConjunctiveConditionView<LiftedTag> condition,
                                                            formalism::datalog::Repository& context);
+
+/// The positive fluent literals of the conflicting condition: a new atom of one anchors the cliques it makes applicable.
+extern std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
+create_hyperedge_conjunctive_condition(formalism::datalog::ConjunctiveConditionView<LiftedTag> conflicting_condition,
+                                       formalism::datalog::Repository& context);
 
 }
 

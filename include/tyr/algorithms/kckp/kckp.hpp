@@ -24,6 +24,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <span>
 #include <vector>
 #include <yggdrasil/containers/dynamic_bitset.hpp>
@@ -68,6 +69,10 @@ struct GraphLayout
 
     GraphLayout() = default;
     GraphLayout(size_t num_vertices, const std::vector<std::vector<ygg::uint_t>>& vertex_partitions, std::span<const ygg::uint_t> vertex_labels = {});
+
+    /// The vertex with label in partition, if any. Requires the partition's labels to be sorted, as for rule
+    /// consistency graphs, whose labels are objects of sorted parameter domains.
+    std::optional<Vertex> find_vertex(ygg::uint_t partition, ygg::uint_t label) const noexcept;
 };
 
 class VertexPartitions
