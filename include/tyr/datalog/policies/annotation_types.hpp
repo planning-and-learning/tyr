@@ -46,12 +46,12 @@ namespace tyr::datalog
 
 struct NumericSupport : ygg::comparison::Mixin<NumericSupport>
 {
-    formalism::datalog::FunctionBindingView<formalism::FluentTag> key;
+    formalism::datalog::FunctionBindingIndex<formalism::FluentTag> key;
     ygg::ClosedInterval<ygg::float_t> interval;
     Cost cost;
 
     NumericSupport() = delete;
-    NumericSupport(formalism::datalog::FunctionBindingView<formalism::FluentTag> key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost) :
+    NumericSupport(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost) :
         key(key),
         interval(interval),
         cost(cost)
@@ -72,9 +72,9 @@ private:
     using NumericSupports = std::vector<NumericSupport>;
 
 public:
-    WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key, Cost cost);
-    WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key, Cost cost, NumericSupports numeric_supports);
-    WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key, Cost cost, std::span<const NumericSupport> numeric_supports);
+    WitnessAnnotation(formalism::datalog::RuleBindingIndex<R> rule_key, Cost cost);
+    WitnessAnnotation(formalism::datalog::RuleBindingIndex<R> rule_key, Cost cost, NumericSupports numeric_supports);
+    WitnessAnnotation(formalism::datalog::RuleBindingIndex<R> rule_key, Cost cost, std::span<const NumericSupport> numeric_supports);
 
     auto get_rule_key() const noexcept { return rule_key; }
     auto get_cost() const noexcept { return cost; }
@@ -83,16 +83,16 @@ public:
     auto identifying_members() const noexcept { return std::tie(rule_key, cost, numeric_supports); }
 
 private:
-    formalism::datalog::RuleBindingView<R> rule_key;
+    formalism::datalog::RuleBindingIndex<R> rule_key;
     Cost cost;
     NumericSupports numeric_supports;
 };
 
-using PredicateRuleBinding = formalism::datalog::RuleBindingView<formalism::PredicateTag>;
+using PredicateRuleBinding = formalism::datalog::RuleBindingIndex<formalism::PredicateTag>;
 
 struct PredicateAchiever
 {
-    formalism::datalog::PredicateBindingView<formalism::FluentTag> head;
+    formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head;
     WitnessAnnotation<formalism::PredicateTag> witness;
 };
 
@@ -190,10 +190,10 @@ public:
     static constexpr bool thread_safe = ThreadSafe;
 
     using Key = std::conditional_t<std::same_as<R, formalism::PredicateTag>,
-                                   formalism::datalog::PredicateBindingView<formalism::FluentTag>,
-                                   formalism::datalog::FunctionBindingView<formalism::FluentTag>>;
-    using Relation = decltype(std::declval<Key>().get_index().relation);
-    using Row = decltype(std::declval<Key>().get_index().row);
+                                   formalism::datalog::PredicateBindingIndex<formalism::FluentTag>,
+                                   formalism::datalog::FunctionBindingIndex<formalism::FluentTag>>;
+    using Relation = decltype(std::declval<Key>().relation);
+    using Row = decltype(std::declval<Key>().row);
 
     explicit DenseRelationMap(size_t num_relations = 0) : m_lanes(num_relations) {}
     DenseRelationMap(const DenseRelationMap&)
@@ -218,7 +218,8 @@ public:
     template<std::invocable<const Value&> Read>
     std::invoke_result_t<Read, const Value&> read(Key key, Read&& read, std::invoke_result_t<Read, const Value&> missing) const
     {
-        const auto* slot = find_slot(key);
+        const auto index = key;
+        const auto* slot = find_slot(index.relation, index.row);
         if (!slot)
             return missing;
 
@@ -228,7 +229,7 @@ public:
     template<std::invocable<Value&, bool> Update>
     decltype(auto) update(Key key, Update&& update)
     {
-        const auto index = key.get_index();
+        const auto index = key;
         return this->update(index.relation, index.row, std::forward<Update>(update));
     }
 
@@ -247,7 +248,7 @@ public:
 
     const Value* find(Key key) const noexcept
     {
-        const auto index = key.get_index();
+        const auto index = key;
         return find(index.relation, index.row);
     }
 
@@ -319,12 +320,6 @@ private:
         return lane[row_index];
     }
 
-    const Slot* find_slot(Key key) const noexcept
-    {
-        const auto index = key.get_index();
-        return find_slot(index.relation, index.row);
-    }
-
     const Slot* find_slot(Relation relation, Row row) const noexcept
     {
         const auto relation_index = ygg::uint_t(relation);
@@ -349,7 +344,7 @@ public:
     static constexpr bool thread_safe = ThreadSafe;
 
     /// Both engines key predicate annotations by the fluent predicate binding.
-    using Key = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
+    using Key = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
 
     PredicateAnnotationMap()
         requires(!ThreadSafe)
@@ -385,7 +380,10 @@ public:
                                     });
     }
 
-    const Annotation<>* find(Key key) const noexcept { return m_annotations.find(key); }
+    const Annotation<>* find(Key key) const noexcept
+    {
+        return m_annotations.find(key);
+    }
 
     Annotation<>* find(Key key) noexcept
         requires(!ThreadSafe)
@@ -455,7 +453,7 @@ public:
     static constexpr bool thread_safe = ThreadSafe;
 
 private:
-    using Binding = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
+    using Binding = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
     using Entry = NumericIntervalAnnotation;
 
 public:
@@ -497,7 +495,10 @@ public:
             std::numeric_limits<Cost>::max());
     }
 
-    const Entries* find_entries(Binding binding) const noexcept { return m_slots.find(binding); }
+    const Entries* find_entries(Binding binding) const noexcept
+    {
+        return m_slots.find(binding);
+    }
 
     const Entries* find_entries(Relation relation, Key key) const noexcept { return m_slots.find(relation, key); }
 
@@ -522,7 +523,7 @@ public:
 
     bool insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<formalism::FunctionTag> annotation)
     {
-        const auto index = binding.get_index();
+        const auto index = binding;
         return insert(index.relation, index.row, interval, std::move(annotation));
     }
 
@@ -569,7 +570,7 @@ concept PredicateAnnotationStore = requires(T& store, const T& const_store, type
 template<typename T>
 concept FunctionAnnotationStore = requires(T& store,
                                            const T& const_store,
-                                           formalism::datalog::FunctionBindingView<formalism::FluentTag> binding,
+                                           formalism::datalog::FunctionBindingIndex<formalism::FluentTag> binding,
                                            ygg::ClosedInterval<ygg::float_t> interval,
                                            Annotation<formalism::FunctionTag> annotation) {
     { const_store.fetch_cost(binding, interval) } -> std::same_as<Cost>;
@@ -582,7 +583,7 @@ concept FunctionAnnotationStore = requires(T& store,
 class StagedPredicateAnnotation
 {
 public:
-    using Key = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
+    using Key = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
 
     void clear() noexcept { m_entry.reset(); }
 
@@ -592,7 +593,10 @@ public:
         return annotation ? get_cost(*annotation) : std::numeric_limits<Cost>::max();
     }
 
-    const Annotation<>* find(Key key) const noexcept { return m_entry && m_entry->first == key ? &m_entry->second : nullptr; }
+    const Annotation<>* find(Key key) const noexcept
+    {
+        return m_entry && m_entry->first == key ? &m_entry->second : nullptr;
+    }
 
     std::optional<CostUpdate> insert_if_better(Key key, Annotation<> annotation)
     {
@@ -614,7 +618,7 @@ private:
 class StagedFunctionAnnotation
 {
 public:
-    using Binding = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
+    using Binding = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
 
     void clear() noexcept { m_entry.reset(); }
 

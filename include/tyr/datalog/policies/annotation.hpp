@@ -33,8 +33,8 @@ namespace tyr::datalog
 /// Zero-cost conservative reachability: solvers ignore annotation-only metric effects and cost credits.
 class NoAnnotationPolicy
 {
-    using PredicateHead = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
-    using FunctionBinding = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
+    using PredicateHead = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
+    using FunctionBinding = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
 
 public:
     static constexpr bool stores_annotations = false;
@@ -42,8 +42,12 @@ public:
 
     bool is_widening_label_preserving(Cost, Cost) const noexcept { return true; }
 
-    void initialize_annotation(PredicateHead, PredicateAnnotations<>&) const noexcept {}
-    void initialize_annotation(FunctionBinding, ygg::ClosedInterval<ygg::float_t>, FunctionAnnotations<>&) const noexcept {}
+    void initialize_annotation(PredicateHead, PredicateAnnotations<>&) const noexcept
+    {
+    }
+    void initialize_annotation(FunctionBinding, ygg::ClosedInterval<ygg::float_t>, FunctionAnnotations<>&) const noexcept
+    {
+    }
 
     void clear_achievers() noexcept {}
 };
@@ -55,8 +59,8 @@ public:
     using Aggregation = AggregationFunction;
 
 private:
-    using PredicateHead = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
-    using FunctionBinding = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
+    using PredicateHead = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
+    using FunctionBinding = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
     using PredicateWitness = WitnessAnnotation<formalism::PredicateTag>;
     using FunctionWitness = WitnessAnnotation<formalism::FunctionTag>;
 
@@ -77,7 +81,9 @@ public:
 
     void clear_achievers() noexcept {}
 
-    void record_achiever(PredicateHead, PredicateWitness) const noexcept {}
+    void record_achiever(PredicateHead, PredicateWitness) const noexcept
+    {
+    }
 
     template<PredicateAnnotationStore Annotations>
     std::optional<CostUpdate> publish_annotation(PredicateHead head, PredicateWitness witness, Annotations& annotations) const
@@ -141,7 +147,7 @@ public:
 template<typename AggregationFunction>
 class MinCostAnnotationWithAchieversPolicy : public MinCostAnnotationPolicy<AggregationFunction>
 {
-    using PredicateHead = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
+    using PredicateHead = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
     using PredicateWitness = WitnessAnnotation<formalism::PredicateTag>;
 
 public:
@@ -158,7 +164,7 @@ public:
     void record_achiever(PredicateHead head, PredicateWitness witness);
 
 private:
-    using RuleBinding = formalism::datalog::RuleBindingView<formalism::PredicateTag>;
+    using RuleBinding = formalism::datalog::RuleBindingIndex<formalism::PredicateTag>;
 
     struct IndexedAchievers
     {

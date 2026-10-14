@@ -180,7 +180,7 @@ private:
         {
             for (const auto binding : set.get_bindings())
             {
-                out.annotation_policy().initialize_annotation(binding, out.annotations());
+                out.annotation_policy().initialize_annotation(binding.get_index(), out.annotations());
                 out.facts().assignment_sets.predicate.insert(binding);
             }
         }
@@ -192,7 +192,7 @@ private:
             assert(bindings.size() == values.size());
             for (size_t i = 0; i < bindings.size(); ++i)
             {
-                out.annotation_policy().initialize_annotation(bindings[i], values[i], out.numeric_annotations());
+                out.annotation_policy().initialize_annotation(bindings[i].get_index(), values[i], out.numeric_annotations());
                 out.facts().assignment_sets.function.insert(bindings[i], values[i]);
             }
         }

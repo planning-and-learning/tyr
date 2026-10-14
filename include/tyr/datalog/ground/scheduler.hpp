@@ -181,7 +181,7 @@ public:
     void finish_iteration(SchedulerIterationTrigger) noexcept {}
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_numeric_changed(formalism::datalog::FunctionBindingView<formalism::FluentTag> term,
+    void notify_numeric_changed(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> term,
                                 ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
@@ -209,7 +209,7 @@ private:
     void schedule(formalism::datalog::RuleView<GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_predicate_generated(formalism::datalog::PredicateBindingView<formalism::FluentTag> fact,
+    void notify_predicate_generated(formalism::datalog::PredicateBindingIndex<formalism::FluentTag> fact,
                                     ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<formalism::RelationKind R>
@@ -240,11 +240,11 @@ private:
     void update_numeric_constraint_satisfaction(formalism::datalog::RuleView<GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_predicate_generated_for(formalism::datalog::PredicateBindingView<formalism::FluentTag> fact,
+    void notify_predicate_generated_for(formalism::datalog::PredicateBindingIndex<formalism::FluentTag> fact,
                                         ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_numeric_changed_for(formalism::datalog::FunctionBindingView<formalism::FluentTag> term,
+    void notify_numeric_changed_for(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> term,
                                     ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     auto& get_queue(formalism::PredicateTag) noexcept { return m_predicate_queue; }

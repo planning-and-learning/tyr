@@ -64,7 +64,7 @@ struct CandidateEvidence
 
 struct PredicateCandidate
 {
-    formalism::datalog::PredicateBindingView<formalism::FluentTag> head;
+    formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head;
     Cost cost;
     Cost queue_label;
     std::optional<CandidateEvidence> evidence;
@@ -72,7 +72,7 @@ struct PredicateCandidate
 
 struct FunctionCandidate
 {
-    formalism::datalog::FunctionBindingView<formalism::FluentTag> head;
+    formalism::datalog::FunctionBindingIndex<formalism::FluentTag> head;
     ygg::ClosedInterval<ygg::float_t> interval;
     Cost cost;
     Cost queue_label;
@@ -83,7 +83,7 @@ struct FunctionCandidate
 struct PredicateHeadUpdates
 {
 private:
-    using Binding = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
+    using Binding = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
     using Witness = WitnessAnnotation<formalism::PredicateTag>;
 
 public:
@@ -104,16 +104,19 @@ public:
             bindings.push_back(binding);
     }
 
-    void insert_achiever(Binding head, Witness witness) { achievers.push_back(PredicateAchiever { head, std::move(witness) }); }
+    void insert_achiever(Binding head, Witness witness)
+    {
+        achievers.push_back(PredicateAchiever { head, std::move(witness) });
+    }
 };
 
 struct FunctionHeadUpdate : ygg::comparison::Mixin<FunctionHeadUpdate>
 {
-    formalism::datalog::FunctionBindingView<formalism::FluentTag> binding;
+    formalism::datalog::FunctionBindingIndex<formalism::FluentTag> binding;
     ygg::ClosedInterval<ygg::float_t> interval;
     bool grows_fact;
 
-    FunctionHeadUpdate(formalism::datalog::FunctionBindingView<formalism::FluentTag> binding,
+    FunctionHeadUpdate(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> binding,
                        ygg::ClosedInterval<ygg::float_t> interval,
                        bool grows_fact) :
         binding(binding),
@@ -346,13 +349,13 @@ Cost get_rule_credit(const CP& policy, RuleInstance<Kind, R>& instance)
 template<TaskKind Kind, formalism::RelationKind R, typename CP>
 Cost get_transition_credit(const CP& policy,
                            RuleInstance<Kind, R>& instance,
-                           formalism::datalog::FunctionBindingView<formalism::FluentTag> head,
+                           formalism::datalog::FunctionBindingIndex<formalism::FluentTag> head,
                            ygg::ClosedInterval<ygg::float_t> interval)
 {
     if constexpr (std::same_as<std::remove_cvref_t<CP>, RuleCostPolicy>)
         return Cost(0);
     else
-        return policy.get_cost(instance.witness_key(), head, interval);
+        return policy.get_cost(instance.witness_key().get_index(), head, interval);
 }
 
 template<bool CollectEvidence, TaskKind Kind, formalism::RelationKind R, typename AP, typename CP, typename CanContinue>
@@ -406,7 +409,7 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
             continue;
 
         const auto binding = instance.resolve(literal.get_atom());
-        const auto* annotation = input.predicate_annotations.find(binding);
+        const auto* annotation = input.predicate_annotations.find(binding.get_index());
         if (!annotation || get_cost(*annotation) == std::numeric_limits<Cost>::max())
             return std::nullopt;
 
@@ -541,7 +544,7 @@ std::optional<Cost> evaluate_rule_priority(RuleInstance<Kind, R>& instance,
 }
 
 template<TaskKind Kind, typename AP, typename CP, typename CanContinue = rule_evaluation_detail::AlwaysContinue>
-std::optional<PredicateCandidate> evaluate_predicate_candidate(formalism::datalog::PredicateBindingView<formalism::FluentTag> head,
+std::optional<PredicateCandidate> evaluate_predicate_candidate(formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head,
                                                                RuleInstance<Kind, formalism::PredicateTag>& instance,
                                                                const AP& annotation_policy,
                                                                const CP& cost_policy,
@@ -566,7 +569,7 @@ std::optional<PredicateCandidate> evaluate_predicate_candidate(formalism::datalo
 }
 
 template<TaskKind Kind, typename AP, typename CP>
-auto evaluate_propositional_candidate(formalism::datalog::PredicateBindingView<formalism::FluentTag> head,
+auto evaluate_propositional_candidate(formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head,
                                       RuleInstance<Kind, formalism::PredicateTag>& rule_instance,
                                       const AP& annotation_policy,
                                       const CP& cost_policy,
@@ -597,7 +600,7 @@ auto evaluate_propositional_candidate(formalism::datalog::PredicateBindingView<f
 }
 
 template<TaskKind Kind, typename AP, typename CP, PredicateAnnotationStore DeltaAnnotations>
-auto evaluate_propositional_candidate(formalism::datalog::PredicateBindingView<formalism::FluentTag> head,
+auto evaluate_propositional_candidate(formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head,
                                       RuleInstance<Kind, formalism::PredicateTag>& rule_instance,
                                       const AP& annotation_policy,
                                       const CP& cost_policy,
@@ -659,11 +662,11 @@ template<TaskKind Kind, formalism::RelationKind R, typename Candidate>
 WitnessAnnotation<R> materialize_witness(RuleInstance<Kind, R>& instance, const Candidate& candidate)
 {
     assert(candidate.evidence);
-    return WitnessAnnotation<R>(instance.witness_key(), candidate.cost, candidate.evidence->numeric_supports);
+    return WitnessAnnotation<R>(instance.witness_key().get_index(), candidate.cost, candidate.evidence->numeric_supports);
 }
 
 template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP, PredicateAnnotationStore DeltaAnnotations>
-RuleUpdateResult insert_propositional_update(formalism::datalog::PredicateBindingView<formalism::FluentTag> head,
+RuleUpdateResult insert_propositional_update(formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head,
                                              RuleUpdateInput<Kind, formalism::PredicateTag, AP, CP>& input,
                                              PredicateHeadUpdates& head_updates,
                                              DeltaAnnotations& delta_annotations,

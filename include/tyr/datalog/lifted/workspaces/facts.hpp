@@ -43,23 +43,26 @@ struct FactsWorkspace<LiftedTag>
                             formalism::datalog::FunctionTermValueListView<GroundTag, formalism::FluentTag> fterm_values,
                             const formalism::datalog::Repository& workspace_repository);
 
-    bool insert(formalism::datalog::PredicateBindingView<formalism::FluentTag> binding)
+    bool insert(formalism::datalog::PredicateBindingIndex<formalism::FluentTag> binding)
     {
         if (!fact_sets.predicate.insert(binding))
             return false;
-        assignment_sets.predicate.insert(binding);
+        assignment_sets.predicate.insert(ygg::make_view(binding, *m_repository));
         return true;
     }
 
-    bool insert(formalism::datalog::FunctionBindingView<formalism::FluentTag> binding, ygg::ClosedInterval<ygg::float_t> interval)
+    bool insert(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> binding, ygg::ClosedInterval<ygg::float_t> interval)
     {
         if (!fact_sets.function.insert(binding, interval))
             return false;
-        assignment_sets.function.insert(binding, interval);
+        assignment_sets.function.insert(ygg::make_view(binding, *m_repository), interval);
         return true;
     }
 
     void reset();
+
+private:
+    const formalism::datalog::Repository* m_repository;  ///< The workspace repository the bindings live in (or below).
 };
 
 template<>

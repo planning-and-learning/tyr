@@ -45,7 +45,7 @@ struct FFRPGHeuristic<Kind>::Impl :
     using Base =
         detail::RPGEvaluator<Impl, Kind, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>, datalog::TerminationPolicy<datalog::SumAggregation>>;
     using PredicateHead = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
-    using FunctionHead = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
+    using FunctionHead = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
     using NumericSupportWorkspace = datalog::NumericSupportSelectorWorkspace;
 
     struct NumericCertificate : ygg::comparison::Mixin<NumericCertificate>
@@ -115,7 +115,7 @@ private:
         if (mark(m_predicate_markings, head.get_index().relation, head.get_index().row))
             return;
 
-        const auto* annotation = this->m_workspace.annotations.find(head);
+        const auto* annotation = this->m_workspace.annotations.find(head.get_index());
         if (!annotation)
             return;
 

@@ -31,7 +31,8 @@ FactsWorkspace<LiftedTag>::FactsWorkspace(formalism::datalog::PredicateListView<
                                           formalism::datalog::FunctionTermValueListView<GroundTag, formalism::FluentTag> fterm_values,
                                           const formalism::datalog::Repository& workspace_repository) :
     fact_sets(predicates, functions, atoms, fterm_values, workspace_repository),
-    assignment_sets(predicates, functions, predicate_domains, function_domains, num_objects, fact_sets)
+    assignment_sets(predicates, functions, predicate_domains, function_domains, num_objects, fact_sets),
+    m_repository(&workspace_repository)
 {
 }
 

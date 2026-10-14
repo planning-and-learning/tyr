@@ -24,12 +24,12 @@ namespace tyr::datalog
 {
 
 template<formalism::RelationKind R>
-WitnessAnnotation<R>::WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key_, Cost cost_) : rule_key(rule_key_), cost(cost_)
+WitnessAnnotation<R>::WitnessAnnotation(formalism::datalog::RuleBindingIndex<R> rule_key_, Cost cost_) : rule_key(rule_key_), cost(cost_)
 {
 }
 
 template<formalism::RelationKind R>
-WitnessAnnotation<R>::WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key_, Cost cost_, NumericSupports numeric_supports_) :
+WitnessAnnotation<R>::WitnessAnnotation(formalism::datalog::RuleBindingIndex<R> rule_key_, Cost cost_, NumericSupports numeric_supports_) :
     rule_key(rule_key_),
     cost(cost_),
     numeric_supports(std::move(numeric_supports_))
@@ -39,7 +39,7 @@ WitnessAnnotation<R>::WitnessAnnotation(formalism::datalog::RuleBindingView<R> r
 }
 
 template<formalism::RelationKind R>
-WitnessAnnotation<R>::WitnessAnnotation(formalism::datalog::RuleBindingView<R> rule_key_, Cost cost_, std::span<const NumericSupport> numeric_supports_) :
+WitnessAnnotation<R>::WitnessAnnotation(formalism::datalog::RuleBindingIndex<R> rule_key_, Cost cost_, std::span<const NumericSupport> numeric_supports_) :
     WitnessAnnotation(rule_key_, cost_, NumericSupports(numeric_supports_.begin(), numeric_supports_.end()))
 {
 }

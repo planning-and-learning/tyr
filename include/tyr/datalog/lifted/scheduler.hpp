@@ -125,19 +125,19 @@ public:
     }
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_numeric_changed(formalism::datalog::FunctionBindingView<formalism::FluentTag> binding,
+    void notify_numeric_changed(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> binding,
                                 [[maybe_unused]] ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
     {
-        activate(binding.get_index().relation);
+        activate(binding.relation);
     }
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void notify_generated(const CostBuckets::Bucket& bucket, [[maybe_unused]] ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
     {
         for (const auto fact : bucket.predicate)
-            activate(fact.get_index().relation);
+            activate(fact.relation);
         for (const auto& entry : bucket.function)
-            activate(entry.first.get_index().relation);
+            activate(entry.first.relation);
     }
 
     void finish_iteration([[maybe_unused]] SchedulerIterationTrigger trigger)

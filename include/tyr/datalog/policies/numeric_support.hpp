@@ -41,7 +41,7 @@ class NumericSupportSelectorWorkspace
 public:
     struct SelectionEntry
     {
-        formalism::datalog::FunctionBindingView<formalism::FluentTag> key;
+        formalism::datalog::FunctionBindingIndex<formalism::FluentTag> key;
         ygg::ClosedInterval<ygg::float_t> interval;
         const NumericIntervalAnnotation* annotation;
         Cost cost;
@@ -58,7 +58,7 @@ public:
 /// cost-sorted per-fluent interval annotations.
 class NumericSupportSelector
 {
-    using Key = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
+    using Key = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
     using SelectionEntry = NumericSupportSelectorWorkspace::SelectionEntry;
     using Selection = std::vector<SelectionEntry>;
 

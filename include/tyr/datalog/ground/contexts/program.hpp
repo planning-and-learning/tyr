@@ -116,7 +116,7 @@ private:
 
         for (const auto& set : m_out.facts().fact_sets.predicate.get_sets())
             for (const auto binding : set.get_bindings())
-                m_out.annotation_policy().initialize_annotation(binding, m_out.annotations());
+                m_out.annotation_policy().initialize_annotation(binding.get_index(), m_out.annotations());
 
         for (const auto& set : m_out.facts().fact_sets.function.get_sets())
         {
@@ -124,7 +124,7 @@ private:
             const auto& values = set.get_values();
             assert(bindings.size() == values.size());
             for (size_t i = 0; i < bindings.size(); ++i)
-                m_out.annotation_policy().initialize_annotation(bindings[i], values[i], m_out.numeric_annotations());
+                m_out.annotation_policy().initialize_annotation(bindings[i].get_index(), values[i], m_out.numeric_annotations());
         }
     }
 

@@ -39,8 +39,8 @@ namespace tyr::datalog
 class CostBuckets
 {
 public:
-    using PredicateKey = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
-    using FunctionKey = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
+    using PredicateKey = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
+    using FunctionKey = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
 
 private:
     using Interval = ygg::ClosedInterval<ygg::float_t>;
@@ -66,7 +66,10 @@ public:
 
     [[nodiscard]] Cost min_cost() const noexcept { return m_buckets.empty() ? std::numeric_limits<Cost>::max() : m_buckets.begin()->first; }
 
-    bool insert(Cost cost, PredicateKey key) { return get_bucket(cost).predicate.insert(key).second; }
+    bool insert(Cost cost, PredicateKey key)
+    {
+        return get_bucket(cost).predicate.insert(key).second;
+    }
 
     bool insert(Cost cost, FunctionKey key, Interval interval)
     {

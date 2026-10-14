@@ -114,7 +114,7 @@ private:
     {
         auto& out = ctx.out();
         const auto head = formalism::datalog::ground_binding(head_atom, out.ground_context()).first;
-        insert_propositional_update(head, input, out.head_updates(), out.delta_annotations());
+        insert_propositional_update(head.get_index(), input, out.head_updates(), out.delta_annotations());
     }
 
     void insert_nullary_update(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag>,
@@ -286,7 +286,7 @@ private:
                 if (!is_current_binding_dynamically_applicable(wrctx, applicability_context))
                     return false;
                 assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
-                return insert_propositional_update(*head, input, out.head_updates(), out.delta_annotations()).is_handled();
+                return insert_propositional_update(head->get_index(), input, out.head_updates(), out.delta_annotations()).is_handled();
             }
             return true;
         }
@@ -297,7 +297,7 @@ private:
         if (!head)
             head = formalism::datalog::insert(ground_context.destination, *binding).first;
         assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
-        return insert_propositional_update(*head, input, out.head_updates(), out.delta_annotations()).is_handled();
+        return insert_propositional_update(head->get_index(), input, out.head_updates(), out.delta_annotations()).is_handled();
     }
 
     void process_clique_head(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> head_atom,
@@ -310,7 +310,7 @@ private:
             return;
 
         ++out.statistics().num_pending_rules;
-        const auto rule_binding = input.rule_instance.witness_key();
+        const auto rule_binding = input.rule_instance.witness_key().get_index();
 #ifdef TYR_ENABLE_SEMI_NAIVE
         out.pending_rule_bindings().push_back(rule_binding);
 #else
@@ -419,7 +419,7 @@ private:
                           [&](const auto pending_binding)
                           {
                               out.ground_context().binding.clear();
-                              ygg::extend(pending_binding.get_objects(), out.ground_context().binding);
+                              ygg::extend(ygg::make_view(pending_binding, out.ground_context().destination).get_objects(), out.ground_context().binding);
                               auto input = make_rule_update_input(RuleInstance<LiftedTag, formalism::PredicateTag> { in.cws_rule(), out.ground_context() },
                                                                   in.numeric_support_selector(),
                                                                   in.annotations(),

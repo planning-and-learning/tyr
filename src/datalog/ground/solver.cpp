@@ -77,7 +77,7 @@ private:
             if constexpr (std::same_as<R, formalism::PredicateTag>)
             {
                 const auto head = input.rule_instance.resolve(input.rule_instance.get_head());
-                return insert_propositional_update(head, input, scratch.predicate_updates, scratch.delta_annotations, entry->cost);
+                return insert_propositional_update(head.get_index(), input, scratch.predicate_updates, scratch.delta_annotations, entry->cost);
             }
             else
             {

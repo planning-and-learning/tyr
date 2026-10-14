@@ -361,7 +361,7 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Groun
             {
                 const auto rule = create_ground_atom_rule(body, literal->get_atom(), context, metric_effects);
                 program.predicate_rules.push_back(rule.get_index());
-                rule_to_action.predicate.emplace(rule.get_row(), action);
+                rule_to_action.predicate.emplace(rule.get_row().get_index(), action);
             }
         }
 
@@ -370,7 +370,7 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Groun
         {
             const auto rule = create_ground_numeric_effect_rule(numeric_body, numeric_effect, context, metric_effects);
             program.function_rules.push_back(rule.get_index());
-            rule_to_action.function.emplace(rule.get_row(), action);
+            rule_to_action.function.emplace(rule.get_row().get_index(), action);
         }
     }
 }
@@ -506,12 +506,13 @@ TranslationContext<GroundTag> remap_translation_context(const TranslationContext
 template<formalism::RelationKind R>
 void remap_rule_to_action(const RPGProgram<GroundTag>::RuleToActionMapping<R>& source_mapping,
                           RPGProgram<GroundTag>::RuleToActionMapping<R>& result_mapping,
+                          const formalism::datalog::Repository& source_repository,
                           formalism::datalog::CopyContext& context,
                           const datalog::FactSets& fact_sets)
 {
     for (const auto& [source_binding, action] : source_mapping)
     {
-        const auto source_rule = formalism::datalog::find_ground_rule(source_binding);
+        const auto source_rule = formalism::datalog::find_ground_rule(source_binding, source_repository);
         if (!source_rule)
             throw std::logic_error("Ground rule binding has no rule");
         if (!datalog::is_statically_applicable(*source_rule, fact_sets))
@@ -520,7 +521,7 @@ void remap_rule_to_action(const RPGProgram<GroundTag>::RuleToActionMapping<R>& s
         const auto [result_rule, inserted] = formalism::datalog::copy(*source_rule, context);
         if (inserted)
             throw std::logic_error("Static rule filtering omitted a retained rule");
-        result_mapping.emplace(result_rule.get_row(), action);
+        result_mapping.emplace(result_rule.get_row().get_index(), action);
     }
 }
 
@@ -552,8 +553,8 @@ datalog::Program<GroundTag> create_rpg_datalog_program(formalism::planning::Task
     auto builder = formalism::datalog::Builder {};
     auto merge_context = formalism::datalog::CopyContext { builder, *repository };
     translation_context = remap_translation_context(source_translation_context, merge_context);
-    remap_rule_to_action<formalism::PredicateTag>(source_mapping.predicate, mapping.predicate, merge_context, source_fact_sets);
-    remap_rule_to_action<formalism::FunctionTag>(source_mapping.function, mapping.function, merge_context, source_fact_sets);
+    remap_rule_to_action<formalism::PredicateTag>(source_mapping.predicate, mapping.predicate, source_program.get_context(), merge_context, source_fact_sets);
+    remap_rule_to_action<formalism::FunctionTag>(source_mapping.function, mapping.function, source_program.get_context(), merge_context, source_fact_sets);
     return datalog::Program<GroundTag>(program, std::move(repository), std::move(factory));
 }
 

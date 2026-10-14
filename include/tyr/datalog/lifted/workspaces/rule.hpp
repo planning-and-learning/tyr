@@ -101,9 +101,9 @@ struct RuleWorkspace<LiftedTag, R>
 #endif
 
 #ifndef TYR_ENABLE_SEMI_NAIVE
-        ygg::UnorderedSet<formalism::datalog::RuleBindingView<R>> seen_pending_rule_bindings;
+        ygg::UnorderedSet<formalism::datalog::RuleBindingIndex<R>> seen_pending_rule_bindings;
 #endif
-        std::vector<formalism::datalog::RuleBindingView<R>> pending_rule_bindings;
+        std::vector<formalism::datalog::RuleBindingIndex<R>> pending_rule_bindings;
 
         RuleEvaluationWorkspace rule_evaluation_workspace;
         ApplicabilityCache applicability_cache;

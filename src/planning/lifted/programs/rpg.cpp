@@ -256,7 +256,7 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Lifte
             const auto rule = create_cond_effect_rule(action, cond_eff, literal.get_atom(), metric_effects, translation_context, context).first;
 
             program.predicate_rules.push_back(rule.get_index());
-            rule_to_action.predicate.emplace(rule, action);
+            rule_to_action.predicate.emplace(rule.get_index(), action);
         }
 
         for (const auto numeric_effect : cond_eff.get_effect().get_numeric_effects())
@@ -264,7 +264,7 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Lifte
             const auto rule = create_cond_numeric_effect_rule(action, cond_eff, numeric_effect, metric_effects, translation_context, context).first;
 
             program.function_rules.push_back(rule.get_index());
-            rule_to_action.function.emplace(rule, action);
+            rule_to_action.function.emplace(rule.get_index(), action);
         }
     }
 }
