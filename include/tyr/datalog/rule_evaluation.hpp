@@ -696,9 +696,15 @@ RuleUpdateResult insert_propositional_update(formalism::datalog::PredicateBindin
         if constexpr (AP::records_propositional_achievers)
         {
             auto witness = materialize_witness(input.rule_instance, *candidate);
-            head_updates.insert_achiever(head, witness);
             if (can_update)
+            {
+                head_updates.insert_achiever(head, witness);
                 input.annotation_policy.try_update_candidate(head, std::move(witness), delta_annotations);
+            }
+            else
+            {
+                head_updates.insert_achiever(head, std::move(witness));
+            }
         }
         else if (can_update)
         {

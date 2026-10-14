@@ -98,17 +98,10 @@ struct PredicateAchiever
 
 using PendingPredicateAchieverBuckets = ygg::Map<Cost, std::vector<PredicateRuleBinding>>;
 
-struct PendingPredicateAchiever
-{
-    Cost cost;
-    PredicateAchiever achiever;
-    bool pending;
-};
-
 struct PendingPredicateAchievers
 {
     PendingPredicateAchieverBuckets buckets;
-    ygg::UnorderedMap<PredicateRuleBinding, PendingPredicateAchiever> by_rule;
+    ygg::UnorderedMap<PredicateRuleBinding, PredicateAchiever> by_rule;  ///< Cheapest unpublished achiever per rule; erased once published.
 };
 
 inline void insert_pending_achiever(PendingPredicateAchievers& pending, PredicateAchiever achiever)
@@ -118,14 +111,13 @@ inline void insert_pending_achiever(PendingPredicateAchievers& pending, Predicat
     const auto it = pending.by_rule.find(rule_key);
     if (it == pending.by_rule.end())
     {
-        pending.by_rule.emplace(rule_key, PendingPredicateAchiever { cost, std::move(achiever), true });
+        pending.by_rule.emplace(rule_key, std::move(achiever));
     }
     else
     {
-        auto& incumbent = it->second;
-        if (incumbent.cost <= cost)
+        if (it->second.witness.get_cost() <= cost)
             return;
-        incumbent = PendingPredicateAchiever { cost, std::move(achiever), true };
+        it->second = std::move(achiever);
     }
     pending.buckets[cost].push_back(rule_key);
 }
@@ -137,11 +129,13 @@ void publish_pending_achievers(PendingPredicateAchievers& pending, PendingPredic
         for (auto bucket = pending.buckets.begin(); bucket != end; ++bucket)
             for (const auto rule_key : bucket->second)
             {
-                auto& entry = pending.by_rule.at(rule_key);
-                if (!entry.pending || entry.cost != bucket->first)
+                // A rule improved into a cheaper bucket appears again in its older buckets; only its current one publishes it.
+                // Published entries are erased: record_achiever keeps the cheapest witness per (head, rule) itself.
+                const auto it = pending.by_rule.find(rule_key);
+                if (it == pending.by_rule.end() || it->second.witness.get_cost() != bucket->first)
                     continue;
-                annotation_policy.record_achiever(entry.achiever.head, std::move(entry.achiever.witness));
-                entry.pending = false;
+                annotation_policy.record_achiever(it->second.head, std::move(it->second.witness));
+                pending.by_rule.erase(it);
             }
     pending.buckets.erase(pending.buckets.begin(), end);
 }
