@@ -166,18 +166,14 @@ inline void bind_annotations(nb::module_& m)
     auto base_annotation_cls = nb::class_<BaseAnnotation>(m, "BaseAnnotation")
                                    .def(nb::init<>())
                                    .def(nb::init<Cost>(), "cost"_a)
-                                   .def(nb::init<Interval, Cost>(), "metric"_a, "cost"_a)
-                                   .def("get_metric", &BaseAnnotation::get_metric)
                                    .def("get_cost", &BaseAnnotation::get_cost);
     ygg::add_comparison(base_annotation_cls);
 
     auto witness_annotation_cls =
         nb::class_<WitnessAnnotationT>(m, "WitnessAnnotation")
             .def(nb::init<RuleKey, Cost>(), "rule_key"_a, "cost"_a)
-            .def(nb::init<RuleKey, Interval, Cost>(), "rule_key"_a, "metric"_a, "cost"_a)
-            .def(nb::init<RuleKey, Interval, Cost, std::vector<NumericSupport>>(), "rule_key"_a, "metric"_a, "cost"_a, "numeric_supports"_a)
+            .def(nb::init<RuleKey, Cost, std::vector<NumericSupport>>(), "rule_key"_a, "cost"_a, "numeric_supports"_a)
             .def("get_rule_key", &WitnessAnnotationT::get_rule_key, nb::keep_alive<0, 1>())
-            .def("get_metric", &WitnessAnnotationT::get_metric)
             .def("get_cost", &WitnessAnnotationT::get_cost)
             .def("get_numeric_supports", &WitnessAnnotationT::get_numeric_supports, nb::rv_policy::copy);
     ygg::add_comparison(witness_annotation_cls);
@@ -185,10 +181,8 @@ inline void bind_annotations(nb::module_& m)
     auto function_witness_annotation_cls =
         nb::class_<FunctionWitnessAnnotationT>(m, "FunctionWitnessAnnotation")
             .def(nb::init<FunctionRuleKey, Cost>(), "rule_key"_a, "cost"_a)
-            .def(nb::init<FunctionRuleKey, Interval, Cost>(), "rule_key"_a, "metric"_a, "cost"_a)
-            .def(nb::init<FunctionRuleKey, Interval, Cost, std::vector<NumericSupport>>(), "rule_key"_a, "metric"_a, "cost"_a, "numeric_supports"_a)
+            .def(nb::init<FunctionRuleKey, Cost, std::vector<NumericSupport>>(), "rule_key"_a, "cost"_a, "numeric_supports"_a)
             .def("get_rule_key", &FunctionWitnessAnnotationT::get_rule_key, nb::keep_alive<0, 1>())
-            .def("get_metric", &FunctionWitnessAnnotationT::get_metric)
             .def("get_cost", &FunctionWitnessAnnotationT::get_cost)
             .def("get_numeric_supports", &FunctionWitnessAnnotationT::get_numeric_supports, nb::rv_policy::copy);
     ygg::add_comparison(function_witness_annotation_cls);

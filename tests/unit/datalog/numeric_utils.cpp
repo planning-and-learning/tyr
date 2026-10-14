@@ -168,15 +168,4 @@ TEST(TyrDatalogNumericUtilsTest, EmptyMetricEffectRangeKeepsInitialCost)
     EXPECT_EQ(*result, 7);
 }
 
-TEST(TyrDatalogNumericUtilsTest, AddsMetricDeltaToIntervals)
-{
-    const auto empty_metric = ygg::ClosedInterval<ygg::float_t> {};
-    const auto metric = ygg::ClosedInterval<ygg::float_t>(2, 4);
-
-    EXPECT_EQ(datalog::add_metric_delta(empty_metric, datalog::Cost(0)), empty_metric);
-    EXPECT_EQ(datalog::add_metric_delta(empty_metric, datalog::Cost(3)), ygg::ClosedInterval<ygg::float_t>(3, 3));
-    EXPECT_EQ(datalog::add_metric_delta(metric, datalog::Cost(0)), metric);
-    EXPECT_EQ(datalog::add_metric_delta(metric, datalog::Cost(3)), ygg::ClosedInterval<ygg::float_t>(5, 7));
-}
-
 }

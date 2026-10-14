@@ -601,7 +601,6 @@ TEST(TyrDatalogLiftedBottomUpTest, MixedMetricEffectsRespectExactTargetsAndRetai
     ASSERT_NE(witness, nullptr);
     EXPECT_EQ(witness->get_rule_key(), fixture.second_binding);
     EXPECT_EQ(witness->get_cost(), 11);  // b: 2 + 2 + 0 (filtered target) + 7; a: 2 + 2 + 3 + 5 = 12.
-    EXPECT_EQ(witness->get_metric(), ygg::ClosedInterval<ygg::float_t>(11, 11));
     ASSERT_EQ(witness->get_numeric_supports().size(), 1);
     EXPECT_EQ(witness->get_numeric_supports().front().get_key(), fixture.second_lifted_metric);
     EXPECT_EQ(witness->get_numeric_supports().front().get_interval(), ygg::ClosedInterval<ygg::float_t>(7, 7));
@@ -620,7 +619,6 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedContextMatchesOrdinaryContextAfterWor
     const auto* expected_annotation = workspace.annotations.find(fixture.goal);
     ASSERT_NE(expected_annotation, nullptr);
     const auto expected_cost = tyr::datalog::get_cost(*expected_annotation);
-    const auto expected_metric = tyr::datalog::get_metric(*expected_annotation);
 
     const auto insert_inputs = [&]
     {
@@ -640,7 +638,6 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedContextMatchesOrdinaryContextAfterWor
         const auto* annotation = workspace.annotations.find(fixture.goal);
         ASSERT_NE(annotation, nullptr);
         EXPECT_EQ(tyr::datalog::get_cost(*annotation), expected_cost);
-        EXPECT_EQ(tyr::datalog::get_metric(*annotation), expected_metric);
 
         // LM-cut also rebuilds a context with new facts without resetting its repository.
         workspace.facts.reset();
@@ -868,7 +865,6 @@ TEST(TyrDatalogLiftedBottomUpTest, SumAnnotationPricesEachNumericSupportOccurren
     const auto* witness = std::get_if<tyr::datalog::WitnessAnnotation<tyr::formalism::FunctionTag>>(annotation);
     ASSERT_NE(witness, nullptr);
     EXPECT_EQ(witness->get_cost(), 7);
-    EXPECT_EQ(witness->get_metric(), ygg::ClosedInterval<ygg::float_t>(5, 5));
     ASSERT_EQ(witness->get_numeric_supports().size(), 1);
     EXPECT_EQ(witness->get_numeric_supports().front().get_key(), fixture.source);
     EXPECT_EQ(witness->get_numeric_supports().front().get_interval(), interval);
@@ -924,10 +920,6 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     const auto low_support_interval = ygg::ClosedInterval<ygg::float_t>(1, 2);
     const auto interior_support_interval = ygg::ClosedInterval<ygg::float_t>(4, 6);
     const auto high_support_interval = ygg::ClosedInterval<ygg::float_t>(8, 10);
-    const auto low_support_metric = ygg::ClosedInterval<ygg::float_t>(3, 3);
-    const auto interior_support_metric = ygg::ClosedInterval<ygg::float_t>(100, 100);
-    const auto high_support_metric = ygg::ClosedInterval<ygg::float_t>(5, 5);
-    const auto expected_target_metric = ygg::ClosedInterval<ygg::float_t>(6, 6);
     const auto expect_source_annotation_order = [&](const auto* entries)
     {
         ASSERT_NE(entries, nullptr);
@@ -947,11 +939,11 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     lifted_workspace.numeric_annotations.clear();
     lifted_workspace.numeric_annotations.insert(fixture.source,
                                                 high_support_interval,
-                                                tyr::datalog::BaseAnnotation(high_support_metric, tyr::datalog::Cost(2)));
+                                                tyr::datalog::BaseAnnotation(tyr::datalog::Cost(2)));
     lifted_workspace.numeric_annotations.insert(fixture.source,
                                                 interior_support_interval,
-                                                tyr::datalog::BaseAnnotation(interior_support_metric, tyr::datalog::Cost(1)));
-    lifted_workspace.numeric_annotations.insert(fixture.source, low_support_interval, tyr::datalog::BaseAnnotation(low_support_metric, tyr::datalog::Cost(2)));
+                                                tyr::datalog::BaseAnnotation(tyr::datalog::Cost(1)));
+    lifted_workspace.numeric_annotations.insert(fixture.source, low_support_interval, tyr::datalog::BaseAnnotation(tyr::datalog::Cost(2)));
     expect_source_annotation_order(lifted_workspace.numeric_annotations.find_entries(fixture.source.get_index().relation, fixture.source.get_index().row));
 
     tyr::datalog::compute_model(lifted_context);
@@ -990,13 +982,13 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     ground_workspace.numeric_annotations.clear();
     ground_workspace.numeric_annotations.insert(ground_source.get_row(),
                                                 high_support_interval,
-                                                tyr::datalog::BaseAnnotation(high_support_metric, tyr::datalog::Cost(2)));
+                                                tyr::datalog::BaseAnnotation(tyr::datalog::Cost(2)));
     ground_workspace.numeric_annotations.insert(ground_source.get_row(),
                                                 interior_support_interval,
-                                                tyr::datalog::BaseAnnotation(interior_support_metric, tyr::datalog::Cost(1)));
+                                                tyr::datalog::BaseAnnotation(tyr::datalog::Cost(1)));
     ground_workspace.numeric_annotations.insert(ground_source.get_row(),
                                                 low_support_interval,
-                                                tyr::datalog::BaseAnnotation(low_support_metric, tyr::datalog::Cost(2)));
+                                                tyr::datalog::BaseAnnotation(tyr::datalog::Cost(2)));
     expect_source_annotation_order(ground_workspace.numeric_annotations.find_entries(ground_source.get_row()));
 
     tyr::datalog::compute_model(ground_context);
@@ -1018,8 +1010,6 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     ASSERT_NE(ground_witness, nullptr);
     EXPECT_EQ(lifted_witness->get_cost(), 5);
     EXPECT_EQ(ground_witness->get_cost(), 5);
-    EXPECT_EQ(lifted_witness->get_metric(), expected_target_metric);
-    EXPECT_EQ(ground_witness->get_metric(), expected_target_metric);
     ASSERT_EQ(lifted_witness->get_numeric_supports().size(), 2);
     ASSERT_EQ(ground_witness->get_numeric_supports().size(), 2);
     for (size_t i = 0; i < ground_witness->get_numeric_supports().size(); ++i)
@@ -1438,7 +1428,7 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
     numeric_annotations.insert(function_bindings.back(), interval, tyr::datalog::BaseAnnotation(5));
     numeric_annotations.insert(function_bindings.back(), interval, tyr::datalog::BaseAnnotation(3));
     numeric_annotations.insert(function_bindings.back(), interval, tyr::datalog::BaseAnnotation(4));
-    numeric_annotations.insert(function_bindings.back(), interval, tyr::datalog::BaseAnnotation(ygg::ClosedInterval<ygg::float_t>(1, 1), 3));
+    numeric_annotations.insert(function_bindings.back(), interval, tyr::datalog::BaseAnnotation(3));
     numeric_annotations.insert(function_bindings.back(), second_interval, tyr::datalog::BaseAnnotation(2));
     numeric_annotations.insert(function_bindings.back(), interval, tyr::datalog::BaseAnnotation(1));
     const auto* numeric_entries = numeric_annotations.find_entries(function.get_index(), function_bindings.back().get_index().row);
@@ -1449,7 +1439,6 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
     EXPECT_EQ(numeric_entries->at(1).interval, second_interval);
     EXPECT_EQ(tyr::datalog::get_cost(numeric_entries->at(1).annotation), 2);
     EXPECT_EQ(tyr::datalog::get_cost(*numeric_annotations.find(function_bindings.back(), interval)), 1);
-    EXPECT_EQ(tyr::datalog::get_metric(*numeric_annotations.find(function_bindings.back(), interval)), ygg::ClosedInterval<ygg::float_t>());
 
     delta_annotations.clear();
     delta_numeric_annotations.clear();

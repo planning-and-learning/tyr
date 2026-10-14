@@ -818,22 +818,19 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyKeepsFirstEqualAndReplacesStrictly
     auto policy = datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>();
     policy.initialize(ygg::uint_t(head.get_index().relation) + 1);
 
-    const auto first_metric = ygg::ClosedInterval<ygg::float_t>(1, 1);
-    const auto equal_metric = ygg::ClosedInterval<ygg::float_t>(2, 2);
-    const auto cheaper_metric = ygg::ClosedInterval<ygg::float_t>(3, 3);
-    policy.record_achiever(head, datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule, first_metric, datalog::Cost(2)));
-    policy.record_achiever(head, datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule, equal_metric, datalog::Cost(2)));
+    policy.record_achiever(head, datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule, datalog::Cost(2)));
+    policy.record_achiever(head, datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule, datalog::Cost(2)));
 
     const auto* achievers = policy.find_achievers(head);
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
-    EXPECT_EQ(achievers->front().get_metric(), first_metric);
+    EXPECT_EQ(achievers->front().get_cost(), datalog::Cost(2));
 
-    policy.record_achiever(head, datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule, cheaper_metric, datalog::Cost(1)));
+    policy.record_achiever(head, datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule, datalog::Cost(1)));
     achievers = policy.find_achievers(head);
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
-    EXPECT_EQ(achievers->front().get_metric(), cheaper_metric);
+    EXPECT_EQ(achievers->front().get_cost(), datalog::Cost(1));
 }
 
 TEST(TyrDatalogGroundQueueTest, DerivedNumericIntervalUnblocksRuleAndRecordsSupport)
@@ -1031,7 +1028,7 @@ TEST(TyrDatalogGroundQueueTest, NumericTransitionCreditOnlyReducesTheLocalEdge)
     auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>(), datalog::NoTerminationPolicy(), cost_policy);
     auto ctx = datalog::ProgramExecutionContext(workspace);
     ctx.initialize(fixture.initial_fluent_atoms);
-    ctx.out().annotations().insert_or_assign(prerequisite.get_row(), datalog::BaseAnnotation(ygg::ClosedInterval<ygg::float_t>(5, 5), datalog::Cost(5)));
+    ctx.out().annotations().insert_or_assign(prerequisite.get_row(), datalog::BaseAnnotation(datalog::Cost(5)));
 
     tyr::datalog::compute_model(ctx);
 
@@ -1039,7 +1036,6 @@ TEST(TyrDatalogGroundQueueTest, NumericTransitionCreditOnlyReducesTheLocalEdge)
     const auto* annotation = ctx.out().numeric_annotations().find(term.get_row(), interval);
     ASSERT_NE(annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*annotation), 5);
-    EXPECT_EQ(datalog::get_metric(*annotation), ygg::ClosedInterval<ygg::float_t>(5, 5));
 }
 
 TEST(TyrDatalogGroundQueueTest, TransitionCreditDoesNotTurnRawPositiveEdgeIntoFreeWidening)
