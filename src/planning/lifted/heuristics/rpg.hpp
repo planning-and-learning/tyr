@@ -61,22 +61,6 @@ struct RPGPolicy<LiftedTag>
         return formalism::planning::merge_atom_d2p<formalism::FluentTag, formalism::FluentTag>(head, mapping, merge_context).first;
     }
 
-    template<typename Workspace>
-    static void set_goal(RPGDefinition<LiftedTag>&, Workspace&, formalism::planning::ConjunctiveConditionView<GroundTag>) noexcept
-    {
-        // Lifted ground bindings live in the evaluation repository, which reset_evaluation()
-        // clears. The goal is therefore materialized in begin_state_evaluation() after the reset.
-    }
-
-    template<typename Workspace>
-    static void
-    begin_state_evaluation(RPGDefinition<LiftedTag>& definition, Workspace& workspace, formalism::planning::ConjunctiveConditionView<GroundTag> source_goal)
-    {
-        workspace.reset_evaluation();
-        // Lifted ground bindings live in the evaluation repository and must be restored after it is cleared.
-        materialize_goal(definition, workspace, source_goal);
-    }
-
     template<formalism::RelationKind R, typename Workspace>
     static std::optional<Action> get_action(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, const datalog::WitnessAnnotation<R>& witness)
     {

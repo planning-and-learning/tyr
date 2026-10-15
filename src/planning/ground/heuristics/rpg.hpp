@@ -51,18 +51,6 @@ struct RPGPolicy<GroundTag>
         return std::nullopt;
     }
 
-    template<typename Workspace>
-    static void set_goal(RPGDefinition<GroundTag>& definition, Workspace& workspace, formalism::planning::ConjunctiveConditionView<GroundTag> source_goal)
-    {
-        materialize_goal(definition, workspace, source_goal);
-    }
-
-    template<typename Workspace>
-    static void begin_state_evaluation(const RPGDefinition<GroundTag>&, Workspace& workspace, formalism::planning::ConjunctiveConditionView<GroundTag>)
-    {
-        workspace.clear_costs();
-    }
-
     template<formalism::RelationKind R, typename Workspace>
     static std::optional<Action> get_action(const RPGDefinition<GroundTag>& definition, Workspace&, const datalog::WitnessAnnotation<R>& witness)
     {
