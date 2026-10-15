@@ -69,6 +69,7 @@ struct GroundSchedulerScratch
     PredicateHeadUpdates predicate_updates;
     FunctionHeadUpdates function_updates;
     StagedPredicateAnnotation delta_annotations;
+    std::vector<formalism::datalog::PredicateBindingIndex<formalism::FluentTag>> head_bindings;
     StagedFunctionAnnotation delta_numeric_annotations;
     std::vector<CostBuckets::PredicateKey> changed_facts;
     std::vector<CostBuckets::FunctionKey> changed_terms;

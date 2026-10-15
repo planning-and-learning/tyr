@@ -343,7 +343,7 @@ make_lifted_numeric_program(bool include_source_rule = true, std::initializer_li
     if (general_goal_rule)
         predicate_rule_data.variables.push_back(variable.get_index());
     predicate_rule_data.body = (general_goal_rule ? seed_body : empty_body).get_index();
-    predicate_rule_data.head = goal_atom.get_index();
+    predicate_rule_data.heads.push_back(goal_atom.get_index());
     predicate_rule_data.metric_effects.emplace_back(
         tyr::formalism::NumericEffectOperatorKind::Increase,
         ygg::Data<tyr::formalism::datalog::NumericEffectOperator<LiftedTag, tyr::formalism::FluentTag>>::Variant(target_metric_effect.get_index()));
@@ -490,7 +490,7 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_lifted_metric_
     auto rule_data = ygg::Data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>();
     rule_data.variables.push_back(variable.get_index());
     rule_data.body = body.get_index();
-    rule_data.head = goal_atom.get_index();
+    rule_data.heads.push_back(goal_atom.get_index());
     rule_data.metric_effects.emplace_back(
         tyr::formalism::NumericEffectOperatorKind::Increase,
         ygg::Data<tyr::formalism::datalog::NumericEffectOperator<LiftedTag, tyr::formalism::FluentTag>>::Variant(metric_effect.get_index()));
@@ -1075,7 +1075,7 @@ TEST(TyrDatalogLiftedBottomUpTest, RepeatedArgumentsNewAtomRecordsExistingHeadAc
     auto derive_rule_data = ygg::Data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>();
     derive_rule_data.variables.push_back(y.get_index());
     derive_rule_data.body = derive_body.get_index();
-    derive_rule_data.head = derive_diagonal_atom.get_index();
+    derive_rule_data.heads.push_back(derive_diagonal_atom.get_index());
     const auto derive_rule = intern(std::move(derive_rule_data));
 
     const auto goal_diagonal_atom = make_atom(diagonal, { tyr::formalism::ParameterIndex(0), tyr::formalism::ParameterIndex(0) });
@@ -1093,7 +1093,7 @@ TEST(TyrDatalogLiftedBottomUpTest, RepeatedArgumentsNewAtomRecordsExistingHeadAc
     goal_rule_data.variables.push_back(x.get_index());
     goal_rule_data.variables.push_back(y.get_index());
     goal_rule_data.body = goal_body.get_index();
-    goal_rule_data.head = goal_atom.get_index();
+    goal_rule_data.heads.push_back(goal_atom.get_index());
     const auto goal_rule = intern(std::move(goal_rule_data));
     const auto conflicting_goal_condition =
         tyr::datalog::create_overapproximation_conflicting_conjunctive_condition(2, goal_rule.get_body(), *repository).first;
@@ -1202,7 +1202,7 @@ TEST(TyrDatalogLiftedBottomUpTest, NewHigherArityAtomsGenerateBindingsWithoutDel
         auto rule = ygg::Data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>();
         rule.variables = { x.get_index(), y.get_index(), z.get_index() };
         rule.body = intern(std::move(body)).get_index();
-        rule.head = head.get_index();
+        rule.heads.push_back(head.get_index());
         return intern(std::move(rule));
     };
 
@@ -1284,7 +1284,7 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindi
     auto rule_data = ygg::Data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>();
     rule_data.variables.push_back(variable.get_index());
     rule_data.body = body.get_index();
-    rule_data.head = goal_atom.get_index();
+    rule_data.heads.push_back(goal_atom.get_index());
     const auto rule = intern(std::move(rule_data));
 
     auto program_data = ygg::Data<tyr::formalism::datalog::Program<LiftedTag>>();

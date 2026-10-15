@@ -195,7 +195,7 @@ struct GroundQueueFixture
 
         auto rule_builder = ygg::Data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>();
         rule_builder.body = lifted_condition.get_index();
-        rule_builder.head = atom.get_index();
+        rule_builder.heads.push_back(atom.get_index());
         canonicalize(rule_builder);
         const auto rule = repository.insert(rule_builder).first;
 
@@ -213,7 +213,7 @@ struct GroundQueueFixture
         auto rule_builder = ygg::Data<tyr::formalism::datalog::Rule<GroundTag, tyr::formalism::PredicateTag>>();
         rule_builder.binding = binding.get_index();
         rule_builder.body = body.get_index();
-        rule_builder.head = head.get_index();
+        rule_builder.heads.push_back(head.get_index());
         canonicalize(rule_builder);
         const auto ground_rule = repository.insert(rule_builder).first;
         ground_rules.push_back(ground_rule.get_index());
@@ -244,7 +244,7 @@ struct GroundQueueFixture
         auto rule_builder = ygg::Data<tyr::formalism::datalog::Rule<GroundTag, tyr::formalism::PredicateTag>>();
         rule_builder.binding = binding.get_index();
         rule_builder.body = body.get_index();
-        rule_builder.head = head.get_index();
+        rule_builder.heads.push_back(head.get_index());
         rule_builder.metric_effects.emplace_back(
             metric_operator,
             ygg::Data<tyr::formalism::datalog::NumericEffectOperator<GroundTag, tyr::formalism::FluentTag>>::Variant(metric_effect.get_index()));
@@ -1106,7 +1106,7 @@ TEST(TyrDatalogGroundQueueTest, StaticLiteralsUseTheirPolarityAndInitialTruth)
 
     auto expected = PredicateBindingViews {};
     for (const auto rule : program.get_rules<tyr::formalism::PredicateTag>())
-        expected.push_back(rule.get_head().get_row());
+        expected.push_back(rule.get_heads().front().get_row());
     EXPECT_EQ(binding_views(ctx), expected);
     EXPECT_EQ(ctx.out().scheduler().statistics().num_rules_fired, 2);
 }

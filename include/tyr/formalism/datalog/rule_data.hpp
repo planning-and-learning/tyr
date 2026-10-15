@@ -31,21 +31,53 @@
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
+namespace tyr::formalism::datalog
+{
+
+template<TaskKind T, RelationKind R>
+struct RuleHeadMember;
+
+/// A predicate rule derives all its heads from one body instantiation.
+template<TaskKind T>
+struct RuleHeadMember<T, PredicateTag>
+{
+    template<typename C>
+    using HeadView = std::vector<::ygg::View<ygg::Index<Atom<T, FluentTag>>, C>>;
+
+    ygg::IndexList<Atom<T, FluentTag>> heads;
+
+    auto& head_member() noexcept { return heads; }
+    const auto& head_member() const noexcept { return heads; }
+};
+
+template<TaskKind T>
+struct RuleHeadMember<T, FunctionTag>
+{
+    template<typename C>
+    using HeadView = ::ygg::View<ygg::Data<NumericEffectOperator<T, FluentTag>>, C>;
+
+    ygg::Data<NumericEffectOperator<T, FluentTag>> head;
+
+    auto& head_member() noexcept { return head; }
+    const auto& head_member() const noexcept { return head; }
+};
+
+}
+
 namespace ygg
 {
 
 template<::tyr::formalism::RelationKind R>
-struct Data<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>>
+struct Data<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>> : ::tyr::formalism::datalog::RuleHeadMember<::tyr::LiftedTag, R>
 {
     using Head = ::tyr::formalism::datalog::RuleHeadT<::tyr::LiftedTag, R>;
 
     template<typename C>
-    using HeadView = ::ygg::View<Head, C>;
+    using HeadView = typename ::tyr::formalism::datalog::RuleHeadMember<::tyr::LiftedTag, R>::template HeadView<C>;
 
     ygg::Index<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>> index;
     ygg::IndexList<::tyr::formalism::Variable> variables;
     ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>> body;
-    Head head;
     ygg::DataList<::tyr::formalism::datalog::NumericEffectOperator<::tyr::LiftedTag, ::tyr::formalism::FluentTag>> metric_effects;
 
     Data() = default;
@@ -56,25 +88,22 @@ struct Data<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>>
         index(),
         variables(std::move(variables_)),
         body(body_),
-        head(head_),
         metric_effects(std::move(metric_effects_))
-    {
-    }
+    { this->head_member() = std::move(head_); }
     template<typename C>
     Data(const std::vector<::ygg::View<ygg::Index<::tyr::formalism::Variable>, C>>& variables_,
          ::ygg::View<ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>, C> body_,
-         HeadView<C> head_,
+         const HeadView<C>& head_,
          const std::vector<::ygg::View<ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>, C>>&
              metric_effects_ = {}) :
         index(),
         variables(),
         body(),
-        head(),
         metric_effects()
     {
         set(variables_, variables);
         set(body_, body);
-        set(head_, head);
+        set(head_, this->head_member());
         set(metric_effects_, metric_effects);
     }
     Data(const Data& other) = delete;
@@ -82,9 +111,9 @@ struct Data<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() noexcept { return std::tie(index, variables, body, head, metric_effects); }
-    auto cista_members() const noexcept { return std::tie(index, variables, body, head, metric_effects); }
-    auto identifying_members() const noexcept { return std::tie(variables, body, head, metric_effects); }
+    auto cista_members() noexcept { return std::tie(index, variables, body, this->head_member(), metric_effects); }
+    auto cista_members() const noexcept { return std::tie(index, variables, body, this->head_member(), metric_effects); }
+    auto identifying_members() const noexcept { return std::tie(variables, body, this->head_member(), metric_effects); }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
@@ -95,17 +124,16 @@ static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::Rule<::tyr
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, ::tyr::formalism::FunctionTag>>);
 
 template<::tyr::formalism::RelationKind R>
-struct Data<::tyr::formalism::datalog::Rule<::tyr::GroundTag, R>>
+struct Data<::tyr::formalism::datalog::Rule<::tyr::GroundTag, R>> : ::tyr::formalism::datalog::RuleHeadMember<::tyr::GroundTag, R>
 {
     using Head = ::tyr::formalism::datalog::RuleHeadT<::tyr::GroundTag, R>;
 
     template<typename C>
-    using HeadView = ::ygg::View<Head, C>;
+    using HeadView = typename ::tyr::formalism::datalog::RuleHeadMember<::tyr::GroundTag, R>::template HeadView<C>;
 
     ygg::Index<::tyr::formalism::datalog::Rule<::tyr::GroundTag, R>> index;
     ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>>> binding;
     ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>> body;
-    Head head;
     ygg::DataList<::tyr::formalism::datalog::NumericEffectOperator<::tyr::GroundTag, ::tyr::formalism::FluentTag>> metric_effects;
 
     Data() = default;
@@ -116,25 +144,22 @@ struct Data<::tyr::formalism::datalog::Rule<::tyr::GroundTag, R>>
         index(),
         binding(binding_),
         body(body_),
-        head(head_),
         metric_effects(std::move(metric_effects_))
-    {
-    }
+    { this->head_member() = std::move(head_); }
     template<typename C>
     Data(::ygg::View<ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>>>, C> binding_,
          ::ygg::View<ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>, C> body_,
-         HeadView<C> head_,
+         const HeadView<C>& head_,
          const std::vector<::ygg::View<ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<::tyr::GroundTag, ::tyr::formalism::FluentTag>>, C>>&
              metric_effects_ = {}) :
         index(),
         binding(),
         body(),
-        head(),
         metric_effects()
     {
         set(binding_, binding);
         set(body_, body);
-        set(head_, head);
+        set(head_, this->head_member());
         set(metric_effects_, metric_effects);
     }
     Data(const Data& other) = default;
@@ -142,8 +167,8 @@ struct Data<::tyr::formalism::datalog::Rule<::tyr::GroundTag, R>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() noexcept { return std::tie(index, binding, body, head, metric_effects); }
-    auto cista_members() const noexcept { return std::tie(index, binding, body, head, metric_effects); }
+    auto cista_members() noexcept { return std::tie(index, binding, body, this->head_member(), metric_effects); }
+    auto cista_members() const noexcept { return std::tie(index, binding, body, this->head_member(), metric_effects); }
     auto identifying_members() const noexcept { return std::tie(binding); }
     void clear() noexcept
     {

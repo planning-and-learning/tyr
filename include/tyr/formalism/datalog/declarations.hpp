@@ -122,7 +122,7 @@ struct RuleHead;
 template<TaskKind T>
 struct RuleHead<T, PredicateTag>
 {
-    using type = ygg::Index<Atom<T, FluentTag>>;
+    using type = ygg::IndexList<Atom<T, FluentTag>>;
 };
 
 template<TaskKind T>

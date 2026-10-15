@@ -75,7 +75,7 @@ auto create_axiom_rule(formalism::planning::AxiomView<LiftedTag> axiom,
                                                                                                       context)
                               .first.get_index();
 
-    rule->head = new_head;
+    rule->heads.push_back(new_head);
 
     return formalism::datalog::insert(context.destination, *rule);
 }

@@ -57,7 +57,7 @@ RuleBindingFixture make_nullary_rule_binding(tyr::formalism::datalog::Repository
 
     auto rule_builder = ygg::Data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>();
     rule_builder.body = condition.get_index();
-    rule_builder.head = atom.get_index();
+    rule_builder.heads.push_back(atom.get_index());
     canonicalize(rule_builder);
     const auto [rule, rule_success] = repository.insert(rule_builder);
     EXPECT_TRUE(rule_success);
@@ -93,7 +93,7 @@ TEST(TyrDatalogCostPolicyTest, CostBucketsRecycleNodesAndRetainTables)
     auto repository = tyr::formalism::datalog::RepositoryFactory().create();
     const auto fixture = make_nullary_rule_binding(repository);
     auto predicate_data = ygg::Data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
-    predicate_data.relation = fixture.rule.get_head().get_predicate().get_index();
+    predicate_data.relation = fixture.rule.get_heads().front().get_predicate().get_index();
     const auto predicate = repository.insert(predicate_data).first;
     const auto function = make_nullary_function_binding(repository, "value");
     auto buckets = tyr::datalog::CostBuckets {};

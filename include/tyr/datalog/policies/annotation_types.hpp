@@ -97,16 +97,29 @@ struct PredicateAchiever
     WitnessAnnotation<formalism::PredicateTag> witness;
 };
 
-using PendingPredicateAchieverBuckets = std::map<Cost, std::vector<PredicateRuleBinding>>;
+struct PredicateAchieverKey : ygg::comparison::Mixin<PredicateAchieverKey>
+{
+    PredicateRuleBinding rule_key;
+    formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head;
 
-/// Owned by the program workspace and reused across solves: clear() keeps the capacity of by_rule and of the bucket vectors.
+    PredicateAchieverKey() = default;
+    PredicateAchieverKey(PredicateRuleBinding rule_key, formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head) : rule_key(rule_key), head(head)
+    {
+    }
+
+    auto identifying_members() const noexcept { return std::tie(rule_key, head); }
+};
+
+using PendingPredicateAchieverBuckets = std::map<Cost, std::vector<PredicateAchieverKey>>;
+
+/// Owned by the program workspace and reused across solves: clear() keeps the capacity of by_key and of the bucket vectors.
 struct PendingPredicateAchievers
 {
     PendingPredicateAchieverBuckets buckets;
-    ygg::UnorderedMap<PredicateRuleBinding, PredicateAchiever> by_rule;  ///< Cheapest unpublished achiever per rule; erased once published.
+    ygg::UnorderedMap<PredicateAchieverKey, PredicateAchiever> by_key;  ///< Cheapest unpublished achiever per rule and head; erased once published.
     std::vector<PendingPredicateAchieverBuckets::node_type> free_buckets;
 
-    std::vector<PredicateRuleBinding>& bucket(Cost cost)
+    std::vector<PredicateAchieverKey>& bucket(Cost cost)
     {
         if (const auto it = buckets.find(cost); it != buckets.end())
             return it->second;
@@ -130,7 +143,7 @@ struct PendingPredicateAchievers
 
     void clear()
     {
-        by_rule.clear();
+        by_key.clear();
         erase_buckets(buckets.end());
     }
 };
@@ -138,11 +151,11 @@ struct PendingPredicateAchievers
 inline void insert_pending_achiever(PendingPredicateAchievers& pending, PredicateAchiever achiever)
 {
     const auto cost = achiever.witness.get_cost();
-    const auto rule_key = achiever.witness.get_rule_key();
-    const auto it = pending.by_rule.find(rule_key);
-    if (it == pending.by_rule.end())
+    const auto key = PredicateAchieverKey(achiever.witness.get_rule_key(), achiever.head);
+    const auto it = pending.by_key.find(key);
+    if (it == pending.by_key.end())
     {
-        pending.by_rule.emplace(rule_key, std::move(achiever));
+        pending.by_key.emplace(key, std::move(achiever));
     }
     else
     {
@@ -150,7 +163,7 @@ inline void insert_pending_achiever(PendingPredicateAchievers& pending, Predicat
             return;
         it->second = std::move(achiever);
     }
-    pending.bucket(cost).push_back(rule_key);
+    pending.bucket(cost).push_back(key);
 }
 
 template<typename AnnotationPolicy>
@@ -158,15 +171,15 @@ void publish_pending_achievers(PendingPredicateAchievers& pending, PendingPredic
 {
     if constexpr (AnnotationPolicy::records_propositional_achievers)
         for (auto bucket = pending.buckets.begin(); bucket != end; ++bucket)
-            for (const auto rule_key : bucket->second)
+            for (const auto key : bucket->second)
             {
-                // A rule improved into a cheaper bucket appears again in its older buckets; only its current one publishes it.
+                // An achiever improved into a cheaper bucket appears again in its older buckets; only its current one publishes it.
                 // Published entries are erased: record_achiever keeps the cheapest witness per (head, rule) itself.
-                const auto it = pending.by_rule.find(rule_key);
-                if (it == pending.by_rule.end() || it->second.witness.get_cost() != bucket->first)
+                const auto it = pending.by_key.find(key);
+                if (it == pending.by_key.end() || it->second.witness.get_cost() != bucket->first)
                     continue;
                 annotation_policy.record_achiever(it->second.head, std::move(it->second.witness));
-                pending.by_rule.erase(it);
+                pending.by_key.erase(it);
             }
     pending.erase_buckets(end);
 }
@@ -597,13 +610,13 @@ concept FunctionAnnotationStore = requires(T& store,
     store.clear();
 };
 
-/// The predicate annotation staged by one ground rule firing; the ground engine fires one rule, i.e. one head, at a time.
+/// The predicate annotations staged by one ground rule firing; the ground engine fires one rule, i.e. its few heads, at a time.
 class StagedPredicateAnnotation
 {
 public:
     using Key = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
 
-    void clear() noexcept { m_entry.reset(); }
+    void clear() noexcept { m_entries.clear(); }
 
     Cost fetch_cost(Key key) const noexcept
     {
@@ -611,22 +624,32 @@ public:
         return annotation ? get_cost(*annotation) : std::numeric_limits<Cost>::max();
     }
 
-    const Annotation<>* find(Key key) const noexcept { return m_entry && m_entry->first == key ? &m_entry->second : nullptr; }
+    const Annotation<>* find(Key key) const noexcept
+    {
+        const auto it = std::find_if(m_entries.begin(), m_entries.end(), [&](const auto& entry) { return entry.first == key; });
+        return it != m_entries.end() ? &it->second : nullptr;
+    }
 
     std::optional<CostUpdate> insert_if_better(Key key, Annotation<> annotation)
     {
-        assert((!m_entry || m_entry->first == key) && "A ground rule firing stages a single head.");
         const auto new_cost = get_cost(annotation);
-        const auto old_cost = m_entry ? std::optional<Cost>(get_cost(m_entry->second)) : std::nullopt;
-        if (old_cost && *old_cost <= new_cost)
+        const auto it = std::find_if(m_entries.begin(), m_entries.end(), [&](const auto& entry) { return entry.first == key; });
+        if (it == m_entries.end())
+        {
+            m_entries.emplace_back(key, std::move(annotation));
+            return std::optional<CostUpdate>(std::in_place, std::nullopt, new_cost);
+        }
+
+        const auto old_cost = get_cost(it->second);
+        if (old_cost <= new_cost)
             return std::nullopt;
 
-        m_entry.emplace(key, std::move(annotation));
+        it->second = std::move(annotation);
         return std::optional<CostUpdate>(std::in_place, old_cost, new_cost);
     }
 
 private:
-    std::optional<std::pair<Key, Annotation<>>> m_entry;
+    std::vector<std::pair<Key, Annotation<>>> m_entries;
 };
 
 /// The function annotation staged by one ground rule firing (one head interval).

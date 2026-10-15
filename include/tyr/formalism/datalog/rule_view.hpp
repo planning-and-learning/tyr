@@ -52,7 +52,12 @@ public:
         return ygg::make_view(this->get_data().variables, this->get_context());
     }
     auto get_body() const noexcept { return ygg::make_view(this->get_data().body, this->get_context()); }
-    auto get_head() const noexcept { return ygg::make_view(this->get_data().head, this->get_context()); }
+    auto get_heads() const noexcept
+        requires std::same_as<R, ::tyr::formalism::PredicateTag>
+    { return ygg::make_view(this->get_data().heads, this->get_context()); }
+    auto get_head() const noexcept
+        requires std::same_as<R, ::tyr::formalism::FunctionTag>
+    { return ygg::make_view(this->get_data().head, this->get_context()); }
     auto get_metric_effects() const noexcept { return ygg::make_view(this->get_data().metric_effects, this->get_context()); }
 
     auto get_rule() const noexcept
@@ -76,6 +81,22 @@ public:
         return get_row().get_key();
     }
 };
+
+}
+
+namespace tyr::formalism::datalog
+{
+
+/// Calls f for each head of a predicate rule, or for the single head of a function rule.
+template<TaskKind T, RelationKind R, typename C, typename F>
+void for_each_head(::ygg::View<ygg::Index<Rule<T, R>>, C> rule, F&& f)
+{
+    if constexpr (std::same_as<R, PredicateTag>)
+        for (const auto head : rule.get_heads())
+            f(head);
+    else
+        f(rule.get_head());
+}
 
 }
 

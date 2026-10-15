@@ -191,7 +191,6 @@ create_metric_effects(formalism::planning::ActionView<LiftedTag> action,
 
 auto create_cond_effect_rule(formalism::planning::ActionView<LiftedTag> action,
                              formalism::planning::ConditionalEffectView<LiftedTag> cond_eff,
-                             formalism::planning::AtomView<LiftedTag, formalism::FluentTag> effect,
                              const ygg::DataList<formalism::datalog::NumericEffectOperator<LiftedTag, formalism::FluentTag>>& metric_effects,
                              TranslationContext<LiftedTag>& translation_context,
                              formalism::planning::MergeDatalogContext& context)
@@ -206,7 +205,9 @@ auto create_cond_effect_rule(formalism::planning::ActionView<LiftedTag> action,
 
     ygg::extend(new_conj_cond.get_variables(), rule->variables);
     rule->body = new_conj_cond.get_index();
-    rule->head = merge_p2d(effect, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index();
+    for (const auto literal : cond_eff.get_effect().get_literals())
+        if (literal.get_polarity())  /// ignore delete effects
+            rule->heads.push_back(merge_p2d(literal.get_atom(), translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
     rule->metric_effects.insert(rule->metric_effects.end(), metric_effects.begin(), metric_effects.end());
 
     return formalism::datalog::insert(context.destination, *rule);
@@ -248,12 +249,9 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Lifte
 
     for (const auto cond_eff : action.get_effects())
     {
-        for (const auto literal : cond_eff.get_effect().get_literals())
+        if (std::ranges::any_of(cond_eff.get_effect().get_literals(), [](const auto literal) { return literal.get_polarity(); }))
         {
-            if (!literal.get_polarity())
-                continue;  /// ignore delete effects
-
-            const auto rule = create_cond_effect_rule(action, cond_eff, literal.get_atom(), metric_effects, translation_context, context).first;
+            const auto rule = create_cond_effect_rule(action, cond_eff, metric_effects, translation_context, context).first;
 
             program.predicate_rules.push_back(rule.get_index());
             rule_to_action.predicate.emplace(rule.get_index(), action);

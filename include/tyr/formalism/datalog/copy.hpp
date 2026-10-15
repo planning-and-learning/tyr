@@ -394,16 +394,14 @@ inline std::pair<MetricView, bool> copy(MetricView element, CopyContext& context
     return datalog::insert(context.destination, *metric);
 }
 
-template<TaskKind T>
-auto merge_rule_head(AtomView<T, FluentTag> head, CopyContext& context)
+template<TaskKind T, RelationKind R, typename C>
+void copy_rule_heads(ygg::View<ygg::Index<Rule<T, R>>, C> element, ygg::Data<Rule<T, R>>& rule, CopyContext& context)
 {
-    return copy(head, context).first.get_index();
-}
-
-template<TaskKind T>
-auto merge_rule_head(NumericEffectOperatorView<T, FluentTag> head, CopyContext& context)
-{
-    return copy(head, context).get_data();
+    if constexpr (std::same_as<R, PredicateTag>)
+        for (const auto head : element.get_heads())
+            rule.heads.push_back(copy(head, context).first.get_index());
+    else
+        rule.head = copy(element.get_head(), context).get_data();
 }
 
 template<RelationKind R>
@@ -414,7 +412,7 @@ std::pair<RuleView<LiftedTag, R>, bool> copy(RuleView<LiftedTag, R> element, Cop
     for (const auto variable : element.get_variables())
         rule->variables.push_back(copy(variable, context).first.get_index());
     rule->body = copy(element.get_body(), context).first.get_index();
-    rule->head = merge_rule_head(element.get_head(), context);
+    copy_rule_heads(element, *rule, context);
     for (const auto metric_effect : element.get_metric_effects())
         rule->metric_effects.push_back(copy(metric_effect, context).get_data());
 
@@ -440,7 +438,7 @@ std::pair<RuleView<GroundTag, R>, bool> copy(RuleView<GroundTag, R> element, Cop
 
     rule->binding = copy(element.get_row(), context).first.get_index();
     rule->body = copy(element.get_body(), context).first.get_index();
-    rule->head = merge_rule_head(element.get_head(), context);
+    copy_rule_heads(element, *rule, context);
     for (const auto metric_effect : element.get_metric_effects())
         rule->metric_effects.push_back(copy(metric_effect, context).get_data());
 

@@ -64,7 +64,6 @@ struct CandidateEvidence
 
 struct PredicateCandidate
 {
-    formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head;
     Cost cost;
     Cost queue_label;
     std::optional<CandidateEvidence> evidence;
@@ -541,8 +540,7 @@ std::optional<Cost> evaluate_rule_priority(RuleInstance<Kind, R>& instance,
 }
 
 template<TaskKind Kind, typename AP, typename CP, typename CanContinue = rule_evaluation_detail::AlwaysContinue>
-std::optional<PredicateCandidate> evaluate_predicate_candidate(formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head,
-                                                               RuleInstance<Kind, formalism::PredicateTag>& instance,
+std::optional<PredicateCandidate> evaluate_predicate_candidate(RuleInstance<Kind, formalism::PredicateTag>& instance,
                                                                const AP& annotation_policy,
                                                                const CP& cost_policy,
                                                                const RuleEvaluationInput& input,
@@ -551,7 +549,7 @@ std::optional<PredicateCandidate> evaluate_predicate_candidate(formalism::datalo
 {
     if constexpr (!AP::stores_annotations)
     {
-        return PredicateCandidate { head, Cost(0), Cost(0), std::nullopt };
+        return PredicateCandidate { Cost(0), Cost(0), std::nullopt };
     }
     else
     {
@@ -561,13 +559,12 @@ std::optional<PredicateCandidate> evaluate_predicate_candidate(formalism::datalo
 
         const auto edge = reduce_cost(state->raw_edge, rule_evaluation_detail::get_rule_credit(cost_policy, instance));
         const auto cost = state->support_cost + edge;
-        return PredicateCandidate { head, cost, cost, CandidateEvidence { workspace.exact_supports } };
+        return PredicateCandidate { cost, cost, CandidateEvidence { workspace.exact_supports } };
     }
 }
 
 template<TaskKind Kind, typename AP, typename CP>
-auto evaluate_propositional_candidate(formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head,
-                                      RuleInstance<Kind, formalism::PredicateTag>& rule_instance,
+auto evaluate_propositional_candidate(RuleInstance<Kind, formalism::PredicateTag>& rule_instance,
                                       const AP& annotation_policy,
                                       const CP& cost_policy,
                                       const RuleEvaluationInput& input,
@@ -577,8 +574,7 @@ auto evaluate_propositional_candidate(formalism::datalog::PredicateBindingIndex<
     auto pruned = false;
     if constexpr (AP::stores_annotations && !AP::records_propositional_achievers && std::same_as<CP, RuleCostPolicy>)
     {
-        auto candidate = evaluate_predicate_candidate(head,
-                                                      rule_instance,
+        auto candidate = evaluate_predicate_candidate(rule_instance,
                                                       annotation_policy,
                                                       cost_policy,
                                                       input,
@@ -592,12 +588,13 @@ auto evaluate_propositional_candidate(formalism::datalog::PredicateBindingIndex<
     }
     else
     {
-        return std::pair(evaluate_predicate_candidate(head, rule_instance, annotation_policy, cost_policy, input, workspace), false);
+        return std::pair(evaluate_predicate_candidate(rule_instance, annotation_policy, cost_policy, input, workspace), false);
     }
 }
 
+/// Prunes only once the instance cannot improve any of its heads.
 template<TaskKind Kind, typename AP, typename CP, PredicateAnnotationStore DeltaAnnotations>
-auto evaluate_propositional_candidate(formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head,
+auto evaluate_propositional_candidate(std::span<const formalism::datalog::PredicateBindingIndex<formalism::FluentTag>> heads,
                                       RuleInstance<Kind, formalism::PredicateTag>& rule_instance,
                                       const AP& annotation_policy,
                                       const CP& cost_policy,
@@ -605,8 +602,10 @@ auto evaluate_propositional_candidate(formalism::datalog::PredicateBindingIndex<
                                       RuleEvaluationWorkspace& workspace,
                                       const DeltaAnnotations& delta_annotations)
 {
-    const auto best_cost = std::min(input.predicate_annotations.fetch_cost(head), delta_annotations.fetch_cost(head));
-    return evaluate_propositional_candidate(head, rule_instance, annotation_policy, cost_policy, input, workspace, best_cost);
+    auto best_cost = Cost(0);
+    for (const auto head : heads)
+        best_cost = std::max(best_cost, std::min(input.predicate_annotations.fetch_cost(head), delta_annotations.fetch_cost(head)));
+    return evaluate_propositional_candidate(rule_instance, annotation_policy, cost_policy, input, workspace, best_cost);
 }
 
 template<TaskKind Kind, typename AP, typename CP>
@@ -662,14 +661,16 @@ WitnessAnnotation<R> materialize_witness(RuleInstance<Kind, R>& instance, const 
     return WitnessAnnotation<R>(instance.witness_key().get_index(), candidate.cost, candidate.evidence->numeric_supports);
 }
 
+/// Evaluates the rule instance once and updates each of its heads with the shared witness.
 template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP, PredicateAnnotationStore DeltaAnnotations>
-RuleUpdateResult insert_propositional_update(formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head,
+RuleUpdateResult insert_propositional_update(std::span<const formalism::datalog::PredicateBindingIndex<formalism::FluentTag>> heads,
                                              RuleUpdateInput<Kind, formalism::PredicateTag, AP, CP>& input,
                                              PredicateHeadUpdates& head_updates,
                                              DeltaAnnotations& delta_annotations,
                                              std::optional<Cost> required_queue_label = std::nullopt)
 {
-    auto [candidate, pruned] = evaluate_propositional_candidate(head,
+    assert(!heads.empty());
+    auto [candidate, pruned] = evaluate_propositional_candidate(heads,
                                                                 input.rule_instance,
                                                                 input.annotation_policy,
                                                                 input.cost_policy,
@@ -682,38 +683,41 @@ RuleUpdateResult insert_propositional_update(formalism::datalog::PredicateBindin
             return { RuleUpdateStatus::Unavailable, std::nullopt };
 
         // A staged annotation can still need its head restored to the cost frontier after resume.
-        head_updates.insert(head);
+        for (const auto head : heads)
+            head_updates.insert(head);
         return { RuleUpdateStatus::Pruned, std::nullopt };
     }
 
-    assert(candidate->head == head);
     if (required_queue_label && candidate->queue_label != *required_queue_label)
         return { RuleUpdateStatus::QueueLabelChanged, candidate->queue_label };
 
     if constexpr (AP::stores_annotations)
     {
-        const auto can_update = input.annotation_policy.can_update(head, candidate->cost, input.evaluation.predicate_annotations, delta_annotations);
-        if constexpr (AP::records_propositional_achievers)
+        for (const auto head : heads)
         {
-            auto witness = materialize_witness(input.rule_instance, *candidate);
-            if (can_update)
+            const auto can_update = input.annotation_policy.can_update(head, candidate->cost, input.evaluation.predicate_annotations, delta_annotations);
+            if constexpr (AP::records_propositional_achievers)
             {
-                head_updates.insert_achiever(head, witness);
-                input.annotation_policy.try_update_candidate(head, std::move(witness), delta_annotations);
+                auto witness = materialize_witness(input.rule_instance, *candidate);
+                if (can_update)
+                {
+                    head_updates.insert_achiever(head, witness);
+                    input.annotation_policy.try_update_candidate(head, std::move(witness), delta_annotations);
+                }
+                else
+                {
+                    head_updates.insert_achiever(head, std::move(witness));
+                }
             }
-            else
+            else if (can_update)
             {
-                head_updates.insert_achiever(head, std::move(witness));
+                input.annotation_policy.try_update_candidate(head, materialize_witness(input.rule_instance, *candidate), delta_annotations);
             }
-        }
-        else if (can_update)
-        {
-            auto witness = materialize_witness(input.rule_instance, *candidate);
-            input.annotation_policy.try_update_candidate(head, std::move(witness), delta_annotations);
         }
     }
     // A previously staged certificate may still need to become an available fact after a resumed solve.
-    head_updates.insert(head);
+    for (const auto head : heads)
+        head_updates.insert(head);
     return { RuleUpdateStatus::Completed, candidate->queue_label };
 }
 

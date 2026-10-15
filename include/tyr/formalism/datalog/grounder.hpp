@@ -307,7 +307,8 @@ std::pair<RuleView<GroundTag, R>, bool> ground(RuleView<LiftedTag, R> element, G
     rule->binding = ground_binding(element, context).first.get_index();
     rule->body = ground(element.get_body(), context).first.get_index();
     if constexpr (std::same_as<R, PredicateTag>)
-        rule->head = ground(element.get_head(), context).first.get_index();
+        for (const auto head : element.get_heads())
+            rule->heads.push_back(ground(head, context).first.get_index());
     else
         rule->head = ground(element.get_head(), context).get_data();
     for (const auto metric_effect : element.get_metric_effects())

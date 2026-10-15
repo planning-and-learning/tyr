@@ -111,16 +111,19 @@ private:
         }
     }
 
-    void insert_nullary_update(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> head_atom,
+    void insert_nullary_update(formalism::PredicateTag,
                                RuleUpdateInput<LiftedTag, formalism::PredicateTag, AP, CP>& input,
                                RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& ctx)
     {
         auto& out = ctx.out();
-        const auto head = formalism::datalog::ground_binding(head_atom, out.ground_context()).first;
-        insert_propositional_update(head.get_index(), input, out.head_updates(), out.delta_annotations());
+        auto& heads = out.head_bindings();
+        heads.clear();
+        for (const auto head_atom : ctx.in().cws_rule().get_rule().get_heads())
+            heads.push_back(formalism::datalog::ground_binding(head_atom, out.ground_context()).first.get_index());
+        insert_propositional_update(std::span(std::as_const(heads)), input, out.head_updates(), out.delta_annotations());
     }
 
-    void insert_nullary_update(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag>,
+    void insert_nullary_update(formalism::FunctionTag,
                                RuleUpdateInput<LiftedTag, formalism::FunctionTag, AP, CP>& input,
                                RuleWorkerExecutionContext<formalism::FunctionTag, AP, TP, CP>& ctx)
     {
@@ -167,7 +170,7 @@ private:
 
         // Note: we never go through the consistency graph, and hence, have to check validity on the entire rule body.
         if (statically_applicable() && dynamically_applicable())
-            insert_nullary_update(in.cws_rule().get_rule().get_head(), input, wrctx);
+            insert_nullary_update(R {}, input, wrctx);
     }
 
     [[maybe_unused]] static bool ensure_novel_binding(const ygg::IndexList<formalism::Object>& binding,
@@ -177,7 +180,7 @@ private:
     }
 
     template<typename Callback>
-    void for_each_relevant_clique(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag>,
+    void for_each_relevant_clique(formalism::PredicateTag,
                                   kckp::DeltaKCKP& algorithm,
                                   Callback&& callback,
                                   kckp::Workspace& workspace,
@@ -194,16 +197,12 @@ private:
     }
 
     template<typename Callback>
-    void for_each_relevant_clique(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag>,
-                                  kckp::DeltaKCKP& algorithm,
-                                  Callback&& callback,
-                                  kckp::Workspace& workspace,
-                                  bool)
+    void for_each_relevant_clique(formalism::FunctionTag, kckp::DeltaKCKP& algorithm, Callback&& callback, kckp::Workspace& workspace, bool)
     {
         algorithm.for_each_clique(std::forward<Callback>(callback), workspace);
     }
 
-    inline bool require_novel_binding(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag>) noexcept
+    inline bool require_novel_binding(formalism::PredicateTag) noexcept
     {
 #ifdef TYR_ENABLE_SEMI_NAIVE
         return true;
@@ -212,10 +211,9 @@ private:
 #endif
     }
 
-    inline bool require_novel_binding(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag>) noexcept { return false; }
+    inline bool require_novel_binding(formalism::FunctionTag) noexcept { return false; }
 
-    bool try_generate_parallel(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag>,
-                               [[maybe_unused]] RuleExecutionContext<formalism::PredicateTag, AP, TP, CP>& rctx)
+    bool try_generate_parallel(formalism::PredicateTag, [[maybe_unused]] RuleExecutionContext<formalism::PredicateTag, AP, TP, CP>& rctx)
     {
 #if defined(TYR_ENABLE_INNER_PARALLELISM) && defined(TYR_ENABLE_SEMI_NAIVE)
         constexpr size_t kNumStripes = 2;
@@ -253,11 +251,7 @@ private:
         return false;
     }
 
-    bool try_generate_parallel(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag>,
-                               RuleExecutionContext<formalism::FunctionTag, AP, TP, CP>&)
-    {
-        return false;
-    }
+    bool try_generate_parallel(formalism::FunctionTag, RuleExecutionContext<formalism::FunctionTag, AP, TP, CP>&) { return false; }
 
     template<formalism::RelationKind R>
     bool is_current_binding_dynamically_applicable(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, const ApplicabilityContext& applicability_context)
@@ -269,52 +263,68 @@ private:
         return applicability_cache.dynamic_nullary && is_applicable(in.cws_rule().get_conflicting_overapproximation_condition(), applicability_context);
     }
 
-    bool try_process_predicate_binding(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> head_atom,
-                                       RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx,
-                                       RuleUpdateInput<LiftedTag, formalism::PredicateTag, AP, CP>& input,
-                                       const ApplicabilityContext& applicability_context)
+    /// Collects the heads the binding can update: committed facts are final, but still receive achievers.
+    /// Returns whether some head is not yet interned.
+    bool collect_predicate_heads(RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx, bool intern)
     {
         auto& in = wrctx.in();
         auto& out = wrctx.out();
         auto& ground_context = out.ground_context();
-        auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>(ground_context.builder);
-        binding->relation = head_atom.get_predicate().get_index();
-        formalism::datalog::ground(head_atom.get_terms(), ground_context, binding->objects);
-        formalism::canonicalize(*binding);
-        auto head = ground_context.destination.find(*binding);
-        if (head && in.fact_sets().template get<formalism::FluentTag>().predicate.contains(*head))
+        auto& heads = out.head_bindings();
+        heads.clear();
+        auto missing = false;
+        for (const auto head_atom : in.cws_rule().get_rule().get_heads())
         {
-            if constexpr (AP::records_propositional_achievers)
+            auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>(ground_context.builder);
+            binding->relation = head_atom.get_predicate().get_index();
+            formalism::datalog::ground(head_atom.get_terms(), ground_context, binding->objects);
+            formalism::canonicalize(*binding);
+            const auto head =
+                intern ? std::optional(formalism::datalog::insert(ground_context.destination, *binding).first) : ground_context.destination.find(*binding);
+            if (!head)
             {
-                if (!is_current_binding_dynamically_applicable(wrctx, applicability_context))
-                    return false;
-                assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
-                return insert_propositional_update(head->get_index(), input, out.head_updates(), out.delta_annotations()).is_handled();
+                missing = true;
+                continue;
             }
-            return true;
+            if (!AP::records_propositional_achievers && in.fact_sets().template get<formalism::FluentTag>().predicate.contains(*head))
+                continue;
+            heads.push_back(head->get_index());
         }
+        return missing;
+    }
+
+    bool try_process_predicate_binding(RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx,
+                                       RuleUpdateInput<LiftedTag, formalism::PredicateTag, AP, CP>& input,
+                                       const ApplicabilityContext& applicability_context)
+    {
+        [[maybe_unused]] auto& in = wrctx.in();
+        auto& out = wrctx.out();
+        const auto missing = collect_predicate_heads(wrctx, false);
+        if (!missing && out.head_bindings().empty())
+            return true;
 
         if (!is_current_binding_dynamically_applicable(wrctx, applicability_context))
             return false;
 
-        if (!head)
-            head = formalism::datalog::insert(ground_context.destination, *binding).first;
+        // Heads are interned only for applicable bindings.
+        if (missing)
+            collect_predicate_heads(wrctx, true);
         assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
-        return insert_propositional_update(head->get_index(), input, out.head_updates(), out.delta_annotations()).is_handled();
+        return insert_propositional_update(std::span(std::as_const(out.head_bindings())), input, out.head_updates(), out.delta_annotations()).is_handled();
     }
 
-    void process_clique_head(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> head_atom,
+    void process_clique_head(formalism::PredicateTag,
                              RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx,
                              RuleUpdateInput<LiftedTag, formalism::PredicateTag, AP, CP>& input,
                              const ApplicabilityContext& applicability_context)
     {
         // A rejected binding is generated again by the delta that makes it applicable (see generate_hyperedge_cliques).
         // Undefined metric effects stay undefined, or their fluent reads trigger a full enumeration of the rule.
-        if (!try_process_predicate_binding(head_atom, wrctx, input, applicability_context))
+        if (!try_process_predicate_binding(wrctx, input, applicability_context))
             ++wrctx.out().statistics().num_rejected_rules;
     }
 
-    void process_clique_head(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag>,
+    void process_clique_head(formalism::FunctionTag,
                              RuleWorkerExecutionContext<formalism::FunctionTag, AP, TP, CP>& wrctx,
                              RuleUpdateInput<LiftedTag, formalism::FunctionTag, AP, CP>& input,
                              const ApplicabilityContext& applicability_context)
@@ -373,7 +383,7 @@ private:
         }
 #endif
 
-        process_clique_head(in.cws_rule().get_rule().get_head(), wrctx, input, applicability_context);
+        process_clique_head(R {}, wrctx, input, applicability_context);
     }
 
     template<formalism::RelationKind R>
@@ -381,14 +391,13 @@ private:
     {
         auto& rule_out = rctx.out();
         auto& kckp_algorithm = rule_out.kckp();
-        const auto head = rctx.in().cws_rule().get_rule().get_head();
 #ifdef TYR_ENABLE_SEMI_NAIVE
         // Before the edge deltas, as the retried bindings were: equal-cost witnesses keep their first derivation.
         if constexpr (std::same_as<R, formalism::PredicateTag>)
             if (!enumerate_all)
                 generate_hyperedge_cliques(rctx);
 #endif
-        if (enumerate_all || !try_generate_parallel(head, rctx))
+        if (enumerate_all || !try_generate_parallel(R {}, rctx))
         {
             auto wrctx = rctx.get_rule_worker_execution_context();
             auto& out = wrctx.out();
@@ -396,9 +405,9 @@ private:
             ++out.statistics().num_executions;
 
             for_each_relevant_clique(
-                head,
+                R {},
                 kckp_algorithm,
-                [&](auto&& clique) { process_clique(wrctx, clique, require_novel_binding(head) && !enumerate_all); },
+                [&](auto&& clique) { process_clique(wrctx, clique, require_novel_binding(R {}) && !enumerate_all); },
                 kckp_workspace,
                 enumerate_all);
         }

@@ -161,7 +161,7 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
 
         const auto applicability_atom = create_applicability_atom(action, context).first.get_index();
 
-        rule->head = applicability_atom;
+        rule->heads.push_back(applicability_atom);
 
         const auto new_rule = formalism::datalog::insert(repository, *rule).first.get_index();
 
@@ -173,7 +173,7 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
     {
         program->predicate_rules.clear();
         program->predicate_rules.push_back(rule.get_index());
-        schema_programs.try_emplace(predicate_to_actions.at(rule.get_head().get_predicate()),
+        schema_programs.try_emplace(predicate_to_actions.at(rule.get_heads().front().get_predicate()),
                                     formalism::datalog::insert(repository, *program).first,
                                     translation_context.p2d);
     }

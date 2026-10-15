@@ -22,6 +22,10 @@
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 
+#include <cassert>
+#include <optional>
+#include <stdexcept>
+
 namespace tyr::analysis
 {
 namespace
@@ -76,12 +80,7 @@ template<formalism::RelationKind R>
 void add_rule_dependencies(formalism::datalog::ProgramView<LiftedTag> program, const RelationVertexMap& vertices, stratification::DepGraph& graph)
 {
     for (const auto rule : program.get_rules<R>())
-    {
-        const auto head = rule.get_head();
-        const auto head_vertex = get_head_vertex(head, vertices);
-
-        add_body_dependencies(rule, head_vertex, vertices, graph);
-    }
+        formalism::datalog::for_each_head(rule, [&](auto head) { add_body_dependencies(rule, get_head_vertex(head, vertices), vertices, graph); });
 }
 
 template<formalism::RelationKind R>
@@ -91,7 +90,19 @@ void bucket_rules_by_stratum(formalism::datalog::ProgramView<LiftedTag> program,
                              std::vector<RuleStratum>& buckets)
 {
     for (const auto rule : program.get_rules<R>())
-        buckets[relation_stratum[get_head_vertex(rule.get_head(), vertices)]].template get<R>().push_back(rule.get_index());
+    {
+        auto stratum = std::optional<ygg::uint_t> {};
+        formalism::datalog::for_each_head(rule,
+                                          [&](auto head)
+                                          {
+                                              const auto head_stratum = relation_stratum[get_head_vertex(head, vertices)];
+                                              if (stratum && *stratum != head_stratum)
+                                                  throw std::runtime_error("bucket_rules_by_stratum: the heads of a rule must share a stratum.");
+                                              stratum = head_stratum;
+                                          });
+        assert(stratum);
+        buckets[*stratum].template get<R>().push_back(rule.get_index());
+    }
 }
 
 }  // namespace

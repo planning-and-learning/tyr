@@ -118,7 +118,7 @@ formalism::datalog::RuleBindingView<R> create_rule_binding(GroundProgramBuildCon
 
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, R>>(context.builder);
     rule->body = new_condition.get_index();
-    rule->head = create_head(new_atom);
+    rule->head_member() = create_head(new_atom);
     const auto new_rule = formalism::datalog::insert(context.merge_context.destination, *rule).first;
 
     auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::datalog::Rule<LiftedTag, R>>>(context.builder);
@@ -295,14 +295,21 @@ create_metric_effects(formalism::planning::ActionView<GroundTag> action,
 
 formalism::datalog::RuleView<GroundTag, formalism::PredicateTag>
 create_ground_atom_rule(formalism::datalog::ConjunctiveConditionView<GroundTag> body,
-                        formalism::datalog::AtomView<GroundTag, formalism::FluentTag> head,
+                        const ygg::IndexList<formalism::datalog::Atom<GroundTag, formalism::FluentTag>>& heads,
                         GroundProgramBuildContext& context,
                         ygg::DataList<formalism::datalog::NumericEffectOperator<GroundTag, formalism::FluentTag>> metric_effects = {})
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<GroundTag, formalism::PredicateTag>>(context.builder);
-    rule->binding = create_rule_binding<formalism::PredicateTag>(context, [](auto atom) { return atom.get_index(); }).get_index();
+    rule->binding = create_rule_binding<formalism::PredicateTag>(context,
+                                                                 [](auto atom)
+                                                                 {
+                                                                     auto heads = ygg::IndexList<formalism::datalog::Atom<LiftedTag, formalism::FluentTag>> {};
+                                                                     heads.push_back(atom.get_index());
+                                                                     return heads;
+                                                                 })
+                        .get_index();
     rule->body = body.get_index();
-    rule->head = head.get_index();
+    rule->heads = heads;
     rule->metric_effects.insert(rule->metric_effects.end(), metric_effects.begin(), metric_effects.end());
     return formalism::datalog::insert(context.merge_context.destination, *rule).first;
 }
@@ -328,7 +335,9 @@ create_applicability_rule(formalism::planning::ActionView<GroundTag> action,
                           TranslationContext<GroundTag>& translation_context,
                           GroundProgramBuildContext& context)
 {
-    return create_ground_atom_rule(create_delete_free_condition(action.get_condition(), translation_context, context), applicability_atom, context);
+    auto heads = ygg::IndexList<formalism::datalog::Atom<GroundTag, formalism::FluentTag>> {};
+    heads.push_back(applicability_atom.get_index());
+    return create_ground_atom_rule(create_delete_free_condition(action.get_condition(), translation_context, context), heads, context);
 }
 
 formalism::datalog::ProgramView<GroundTag> finish_program(GroundProgramBuildContext& context)
@@ -354,15 +363,16 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Groun
     {
         const auto body = create_delete_free_effect_condition(applicability_atom, cond_eff.get_condition(), translation_context, context);
 
+        auto heads = ygg::IndexList<formalism::datalog::Atom<GroundTag, formalism::FluentTag>> {};
         for (const auto fact : cond_eff.get_effect().get_facts<formalism::PositiveTag>())
-        {
             if (const auto literal =
                     formalism::planning::merge_p2d(fact, true, translation_context.p2d.fluent_to_fluent_atom, context.fluent_predicates, context.merge_context))
-            {
-                const auto rule = create_ground_atom_rule(body, literal->get_atom(), context, metric_effects);
-                program.predicate_rules.push_back(rule.get_index());
-                rule_to_action.predicate.emplace(rule.get_row().get_index(), action);
-            }
+                heads.push_back(literal->get_atom().get_index());
+        if (!heads.empty())
+        {
+            const auto rule = create_ground_atom_rule(body, heads, context, metric_effects);
+            program.predicate_rules.push_back(rule.get_index());
+            rule_to_action.predicate.emplace(rule.get_row().get_index(), action);
         }
 
         const auto numeric_body = create_delete_free_numeric_effect_condition(action.get_condition(), cond_eff.get_condition(), translation_context, context);

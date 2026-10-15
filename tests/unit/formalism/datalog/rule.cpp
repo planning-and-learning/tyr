@@ -26,14 +26,14 @@ static_assert(requires(Data& data, const View& view) {
     data.index;
     data.variables;
     data.body;
-    data.head;
+    data.heads;
     data.metric_effects;
     data.clear();
     view.get_index();
     view.get_arity();
     view.get_variables();
     view.get_body();
-    view.get_head();
+    view.get_heads();
     view.get_metric_effects();
 });
 
@@ -61,7 +61,7 @@ static_assert(requires(Data& data, const View& view) {
     data.index;
     data.binding;
     data.body;
-    data.head;
+    data.heads;
     data.metric_effects;
     data.clear();
     view.get_index();
@@ -70,7 +70,7 @@ static_assert(requires(Data& data, const View& view) {
     view.get_objects();
     view.get_key();
     view.get_body();
-    view.get_head();
+    view.get_heads();
     view.get_metric_effects();
 });
 
