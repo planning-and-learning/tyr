@@ -117,9 +117,9 @@ private:
     void mark_goal_zone(PredicateHead head, size_t depth);
     void mark_goal_zone(NumericNode node, size_t depth);
     void mark_goal_zone(Precondition precondition, size_t depth);
-    bool is_before_goal_zone(PredicateHead head, size_t depth);
-    bool is_before_goal_zone(NumericNode node, size_t depth);
-    bool is_before_goal_zone(Precondition precondition, size_t depth);
+    void explore_before_goal_zone(Precondition node, std::vector<Precondition>& stack, std::vector<Precondition>& base);
+    void compute_before_goal_zone();
+    bool is_before_goal_zone(Precondition precondition) const;
     void clear_zones() noexcept;
     void seed_goal_zone();
     void clear_evaluation_views() noexcept;
@@ -138,8 +138,10 @@ private:
     ygg::UnorderedSet<NumericNode> m_numeric_goal_zone;
     ygg::UnorderedSet<PredicateHead> m_before_goal_zone;
     ygg::UnorderedSet<NumericNode> m_numeric_before_goal_zone;
-    ygg::UnorderedSet<PredicateHead> m_not_before_goal_zone;
-    ygg::UnorderedSet<NumericNode> m_numeric_not_before_goal_zone;
+    ygg::UnorderedSet<PredicateHead> m_before_goal_zone_explored;
+    ygg::UnorderedSet<NumericNode> m_numeric_before_goal_zone_explored;
+    ygg::UnorderedMap<PredicateHead, std::vector<Precondition>> m_before_goal_zone_dependents;
+    ygg::UnorderedMap<NumericNode, std::vector<Precondition>> m_numeric_before_goal_zone_dependents;
     ygg::UnorderedMap<ActionBinding, datalog::Cost> m_cut;
     ygg::UnorderedMap<RuleEdge, datalog::Cost> m_rule_cut;
     ygg::UnorderedMap<NumericEdge, datalog::Cost> m_numeric_cut;
@@ -400,92 +402,155 @@ void LMCutImplementation<Kind>::mark_goal_zone(NumericNode node, size_t depth)
 }
 
 template<TaskKind Kind>
-bool LMCutImplementation<Kind>::is_before_goal_zone(Precondition precondition, size_t depth)
+void LMCutImplementation<Kind>::explore_before_goal_zone(Precondition node, std::vector<Precondition>& stack, std::vector<Precondition>& base)
 {
-    return std::visit([&](auto node) { return is_before_goal_zone(node, depth); }, precondition);
+    auto is_base = false;
+    const auto add_preconditions = [&](const std::vector<Precondition>& preconditions)
+    {
+        if (preconditions.empty())
+            is_base = true;
+        for (const auto precondition : preconditions)
+        {
+            std::visit([&](auto key)
+                       {
+                           if constexpr (std::same_as<decltype(key), PredicateHead>)
+                               m_before_goal_zone_dependents[key].push_back(node);
+                           else
+                               m_numeric_before_goal_zone_dependents[key].push_back(node);
+                       },
+                       precondition);
+            stack.push_back(precondition);
+        }
+    };
+
+    std::visit(
+        [&](auto key)
+        {
+            if constexpr (std::same_as<decltype(key), PredicateHead>)
+            {
+                // Facts of the state start the justification graph, whether or not a rule derives them again.
+                if (const auto* annotation = this->m_workspace.annotations.find(key.get_index());
+                    annotation && std::holds_alternative<datalog::BaseAnnotation>(*annotation))
+                {
+                    is_base = true;
+                    return;
+                }
+
+                auto has_achiever = false;
+                const auto head_cost = this->get_predicate_cost(key);
+                this->for_each_achiever(key,
+                                        [&](const auto& witness)
+                                        {
+                                            if (use_numeric_edge_cuts() && witness.get_cost() != head_cost)
+                                                return;
+                                            has_achiever = true;
+                                            const auto action_binding = this->get_action_binding(witness);
+                                            const auto residual = action_binding ? get_witness_edge_residual_cost(witness) : datalog::Cost(0);
+                                            add_preconditions(get_witness_max_preconditions(witness, residual, 0));
+                                        });
+                if (!has_achiever)
+                    is_base = true;
+            }
+            else
+            {
+                const auto* witness = get_numeric_witness(key);
+                if (!witness || witness->get_cost() != get_numeric_cost(key))
+                {
+                    is_base = true;
+                    return;
+                }
+                const auto action_binding = this->get_action_binding(*witness);
+                const auto use_numeric_target = use_expanded_numeric_target();
+                const auto residual = action_binding ? (use_numeric_target ? get_witness_edge_residual_cost(*witness, &key) :
+                                                                             get_witness_edge_residual_cost(*witness)) :
+                                                       datalog::Cost(0);
+                add_preconditions(get_witness_max_preconditions(*witness, residual, 0, use_numeric_target ? &key : nullptr));
+            }
+        },
+        node);
+
+    if (is_base)
+        base.push_back(node);
+}
+
+/// A node is before the goal zone if one of its achievers has no max precondition or a max precondition before the goal zone,
+/// i.e., if the state reaches it in the justification graph without passing the goal zone. The nodes that the cut queries are
+/// explored once, and the before set is then propagated from the base nodes, so that cycles do not cut off reachability.
+template<TaskKind Kind>
+void LMCutImplementation<Kind>::compute_before_goal_zone()
+{
+    auto stack = std::vector<Precondition> {};
+    auto base = std::vector<Precondition> {};
+    const auto push_preconditions = [&](const std::vector<Precondition>& preconditions) { stack.insert(stack.end(), preconditions.begin(), preconditions.end()); };
+
+    for (const auto head : m_goal_zone)
+        this->for_each_achiever(head,
+                                [&](const auto& witness)
+                                {
+                                    if (const auto action_binding = this->get_action_binding(witness))
+                                        push_preconditions(get_witness_max_preconditions(witness, get_witness_edge_residual_cost(witness), 0));
+                                });
+    for (const auto& node : m_numeric_goal_zone)
+        if (const auto* witness = get_numeric_witness(node); witness && this->get_action_binding(*witness))
+        {
+            const auto use_numeric_target = use_expanded_numeric_target();
+            const auto residual = use_numeric_target ? get_witness_edge_residual_cost(*witness, &node) : get_witness_edge_residual_cost(*witness);
+            push_preconditions(get_witness_max_preconditions(*witness, residual, 0, use_numeric_target ? &node : nullptr));
+        }
+
+    while (!stack.empty())
+    {
+        const auto node = stack.back();
+        stack.pop_back();
+        const auto explored = std::visit(
+            [&](auto key)
+            {
+                if constexpr (std::same_as<decltype(key), PredicateHead>)
+                    return m_goal_zone.contains(key) || !m_before_goal_zone_explored.insert(key).second;
+                else
+                    return m_numeric_goal_zone.contains(key) || !m_numeric_before_goal_zone_explored.insert(key).second;
+            },
+            node);
+        if (!explored)
+            explore_before_goal_zone(node, stack, base);
+    }
+
+    while (!base.empty())
+    {
+        const auto node = base.back();
+        base.pop_back();
+        std::visit(
+            [&](auto key)
+            {
+                if constexpr (std::same_as<decltype(key), PredicateHead>)
+                {
+                    if (m_before_goal_zone.insert(key).second)
+                        for (const auto dependent : m_before_goal_zone_dependents[key])
+                            base.push_back(dependent);
+                }
+                else
+                {
+                    if (m_numeric_before_goal_zone.insert(key).second)
+                        for (const auto dependent : m_numeric_before_goal_zone_dependents[key])
+                            base.push_back(dependent);
+                }
+            },
+            node);
+    }
 }
 
 template<TaskKind Kind>
-bool LMCutImplementation<Kind>::is_before_goal_zone(PredicateHead head, size_t depth)
+bool LMCutImplementation<Kind>::is_before_goal_zone(Precondition precondition) const
 {
-    if (m_goal_zone.contains(head))
-        return false;
-    if (m_before_goal_zone.contains(head))
-        return true;
-    if (m_not_before_goal_zone.contains(head))
-        return false;
-
-    m_not_before_goal_zone.insert(head);
-
-    auto has_achiever = false;
-    auto before = false;
-    const auto head_cost = this->get_predicate_cost(head);
-    this->for_each_achiever(head,
-                            [&](const auto& witness)
-                            {
-                                if (before || (use_numeric_edge_cuts() && witness.get_cost() != head_cost))
-                                    return;
-
-                                has_achiever = true;
-                                const auto action_binding = this->get_action_binding(witness);
-                                const auto residual = action_binding ? get_witness_edge_residual_cost(witness) : datalog::Cost(0);
-                                const auto& preconditions = get_witness_max_preconditions(witness, residual, depth);
-                                before = preconditions.empty()
-                                         || std::ranges::any_of(preconditions,
-                                                                [&](const auto precondition) { return is_before_goal_zone(precondition, depth + 1); });
-                            });
-
-    if (!has_achiever)
-        before = true;
-
-    if (before)
-    {
-        m_not_before_goal_zone.erase(head);
-        m_before_goal_zone.insert(head);
-        return true;
-    }
-
-    return false;
-}
-
-template<TaskKind Kind>
-bool LMCutImplementation<Kind>::is_before_goal_zone(NumericNode node, size_t depth)
-{
-    if (m_numeric_goal_zone.contains(node))
-        return false;
-    if (m_numeric_before_goal_zone.contains(node))
-        return true;
-    if (m_numeric_not_before_goal_zone.contains(node))
-        return false;
-
-    m_numeric_not_before_goal_zone.insert(node);
-
-    auto before = false;
-    const auto* witness = get_numeric_witness(node);
-    if (witness && witness->get_cost() == get_numeric_cost(node))
-    {
-        const auto action_binding = this->get_action_binding(*witness);
-        const auto use_numeric_target = use_expanded_numeric_target();
-        const auto residual = action_binding ?
-                                  (use_numeric_target ? get_witness_edge_residual_cost(*witness, &node) : get_witness_edge_residual_cost(*witness)) :
-                                  datalog::Cost(0);
-        const auto& preconditions = get_witness_max_preconditions(*witness, residual, depth, use_numeric_target ? &node : nullptr);
-        before =
-            preconditions.empty() || std::ranges::any_of(preconditions, [&](const auto precondition) { return is_before_goal_zone(precondition, depth + 1); });
-    }
-    else
-    {
-        before = true;
-    }
-
-    if (before)
-    {
-        m_numeric_not_before_goal_zone.erase(node);
-        m_numeric_before_goal_zone.insert(node);
-        return true;
-    }
-
-    return false;
+    return std::visit(
+        [&](auto key)
+        {
+            if constexpr (std::same_as<decltype(key), PredicateHead>)
+                return m_before_goal_zone.contains(key);
+            else
+                return m_numeric_before_goal_zone.contains(key);
+        },
+        precondition);
 }
 
 template<TaskKind Kind>
@@ -495,8 +560,10 @@ void LMCutImplementation<Kind>::clear_zones() noexcept
     m_numeric_goal_zone.clear();
     m_before_goal_zone.clear();
     m_numeric_before_goal_zone.clear();
-    m_not_before_goal_zone.clear();
-    m_numeric_not_before_goal_zone.clear();
+    m_before_goal_zone_explored.clear();
+    m_numeric_before_goal_zone_explored.clear();
+    m_before_goal_zone_dependents.clear();
+    m_numeric_before_goal_zone_dependents.clear();
 }
 
 template<TaskKind Kind>
@@ -566,6 +633,7 @@ void LMCutImplementation<Kind>::extract_cut(CutFrontierAtoms* cut_frontier_atoms
     clear_zones();
     m_cut.clear();
     seed_goal_zone();
+    compute_before_goal_zone();
 
     auto inspect_witness = [&](const auto& witness, const PredicateHead* frontier_head)
     {
@@ -579,7 +647,7 @@ void LMCutImplementation<Kind>::extract_cut(CutFrontierAtoms* cut_frontier_atoms
 
         const auto& preconditions = get_witness_max_preconditions(witness, residual, 0);
         const auto crosses_cut =
-            preconditions.empty() || std::ranges::any_of(preconditions, [&](const auto precondition) { return is_before_goal_zone(precondition, 1); });
+            preconditions.empty() || std::ranges::any_of(preconditions, [&](const auto precondition) { return is_before_goal_zone(precondition); });
         if (crosses_cut)
         {
             const auto [it, inserted] = m_cut.emplace(*action_binding, residual);
@@ -605,6 +673,7 @@ void LMCutImplementation<Kind>::extract_expanded_cut(CutFrontierAtoms* cut_front
     m_rule_cut.clear();
     m_numeric_cut.clear();
     seed_goal_zone();
+    compute_before_goal_zone();
 
     auto inspect_rule_witness = [&](const auto& witness, PredicateHead frontier_head)
     {
@@ -616,7 +685,7 @@ void LMCutImplementation<Kind>::extract_expanded_cut(CutFrontierAtoms* cut_front
 
         const auto& preconditions = get_witness_max_preconditions(witness, residual, 0);
         const auto crosses_cut =
-            preconditions.empty() || std::ranges::any_of(preconditions, [&](const auto precondition) { return is_before_goal_zone(precondition, 1); });
+            preconditions.empty() || std::ranges::any_of(preconditions, [&](const auto precondition) { return is_before_goal_zone(precondition); });
         if (crosses_cut)
         {
             const auto [it, inserted] = m_rule_cut.emplace(witness.get_rule_key(), residual);
@@ -636,7 +705,7 @@ void LMCutImplementation<Kind>::extract_expanded_cut(CutFrontierAtoms* cut_front
 
         const auto& preconditions = get_witness_max_preconditions(witness, residual, 0, use_expanded_numeric_target() ? &node : nullptr);
         const auto crosses_cut =
-            preconditions.empty() || std::ranges::any_of(preconditions, [&](const auto precondition) { return is_before_goal_zone(precondition, 1); });
+            preconditions.empty() || std::ranges::any_of(preconditions, [&](const auto precondition) { return is_before_goal_zone(precondition); });
         if (crosses_cut)
         {
             const auto edge = NumericEdge { witness.get_rule_key(), node.key, node.interval };
