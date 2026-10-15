@@ -27,8 +27,11 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 
+#include <algorithm>
 #include <optional>
+#include <span>
 #include <stdexcept>
+#include <vector>
 #include <yggdrasil/containers/unique_object_pool.hpp>
 #include <yggdrasil/containers/unordered_set.hpp>
 
@@ -58,6 +61,7 @@ struct GroundProgramBuildContext
         ygg::UnorderedMap<formalism::planning::PredicateView<formalism::StaticTag>, formalism::datalog::PredicateView<formalism::StaticTag>>;
     using FluentPredicateMapping =
         ygg::UnorderedMap<formalism::planning::PredicateView<formalism::FluentTag>, formalism::datalog::PredicateView<formalism::FluentTag>>;
+    formalism::planning::TaskView<GroundTag> task;
     formalism::datalog::Builder builder;
     formalism::planning::MergeDatalogContext merge_context;
     ygg::UniqueObjectPoolPtr<ygg::Data<formalism::datalog::Program<GroundTag>>> program;
@@ -65,7 +69,8 @@ struct GroundProgramBuildContext
     FluentPredicateMapping fluent_predicates;
     ygg::uint_t next_rule_id = 0;
 
-    GroundProgramBuildContext(formalism::datalog::Repository& repository) :
+    GroundProgramBuildContext(formalism::planning::TaskView<GroundTag> task, formalism::datalog::Repository& repository) :
+        task(task),
         builder(),
         merge_context(builder, repository),
         program(formalism::datalog::checkout<formalism::datalog::Program<GroundTag>>(builder))
@@ -126,6 +131,31 @@ formalism::datalog::RuleBindingView<R> create_rule_binding(GroundProgramBuildCon
     return formalism::datalog::insert(context.merge_context.destination, *binding).first;
 }
 
+/// If ground bindings are packed, packs the applicability predicate of an action schema by the objects of its ground actions.
+void set_packed_applicability_layout(formalism::planning::TaskView<GroundTag> task,
+                                     formalism::planning::ActionView<GroundTag> action,
+                                     formalism::datalog::PredicateView<formalism::FluentTag> predicate,
+                                     formalism::datalog::Repository& repository)
+{
+    if (!formalism::datalog::packed_ground_bindings || formalism::datalog::has_binding_layout(repository, predicate.get_index()))
+        return;
+
+    auto domains = std::vector<std::vector<ygg::Index<formalism::Object>>>(predicate.get_arity());
+    for (const auto other : task.get_ground_actions())
+        if (other.get_action() == action.get_action())
+        {
+            auto position = size_t(0);
+            for (const auto object : other.get_objects())
+                domains[position++].push_back(object.get_index());
+        }
+    for (auto& domain : domains)
+    {
+        std::sort(domain.begin(), domain.end());
+        domain.erase(std::unique(domain.begin(), domain.end()), domain.end());
+    }
+    formalism::datalog::set_binding_layout(repository, predicate.get_index(), domains);
+}
+
 formalism::datalog::AtomView<GroundTag, formalism::FluentTag> create_applicability_atom(formalism::planning::ActionView<GroundTag> action,
                                                                                         GroundProgramBuildContext& context)
 {
@@ -135,6 +165,7 @@ formalism::datalog::AtomView<GroundTag, formalism::FluentTag> create_applicabili
     const auto new_predicate = formalism::datalog::insert(context.merge_context.destination, *predicate).first;
 
     context.program->fluent_predicates.push_back(new_predicate.get_index());
+    set_packed_applicability_layout(context.task, action, new_predicate, context.merge_context.destination);
 
     auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>(context.builder);
     binding->relation = new_predicate.get_index();
@@ -385,13 +416,70 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Groun
     }
 }
 
+/// If ground bindings are packed, packs the bindings of the predicates by the objects at each argument position of the given atoms.
+/// A ground task lists all of its atoms, so these domains are exact.
+template<formalism::FactKind F, typename Atoms, typename Mapping>
+void set_packed_binding_layouts(const Atoms& atoms, const Mapping& predicates, formalism::datalog::Repository& repository)
+{
+    if (!formalism::datalog::packed_ground_bindings)
+        return;
+
+    using ObjectDomains = std::vector<std::vector<ygg::Index<formalism::Object>>>;
+    auto domains = ygg::UnorderedMap<formalism::planning::PredicateView<F>, ObjectDomains> {};
+    for (const auto atom : atoms)
+    {
+        auto& atom_domains = domains[atom.get_predicate()];
+        atom_domains.resize(atom.get_predicate().get_arity());
+        auto position = size_t(0);
+        for (const auto object : atom.get_objects())
+            atom_domains[position++].push_back(object.get_index());
+    }
+
+    for (auto& [predicate, predicate_domains] : domains)
+    {
+        for (auto& domain : predicate_domains)
+        {
+            std::sort(domain.begin(), domain.end());
+            domain.erase(std::unique(domain.begin(), domain.end()), domain.end());
+        }
+        formalism::datalog::set_binding_layout(repository, predicates.at(predicate).get_index(), predicate_domains);
+    }
+}
+
+void set_packed_binding_layouts(formalism::planning::TaskView<GroundTag> task, GroundProgramBuildContext& context, formalism::datalog::Repository& repository)
+{
+    set_packed_binding_layouts<formalism::StaticTag>(task.get_atoms<formalism::StaticTag>(), context.static_predicates, repository);
+
+    auto fluent_atoms = std::vector<formalism::planning::AtomView<GroundTag, formalism::FluentTag>> {};
+    for (const auto atom : task.get_atoms<formalism::FluentTag>())
+        fluent_atoms.push_back(atom);
+    for (const auto fact : task.get_fluent_facts())
+        if (const auto atom = fact.get_atom())
+            fluent_atoms.push_back(*atom);
+    set_packed_binding_layouts<formalism::FluentTag>(fluent_atoms, context.fluent_predicates, repository);
+}
+
+/// Gives the copied predicates the binding layouts of their sources before their bindings are copied.
+template<formalism::FactKind F>
+void copy_packed_binding_layouts(formalism::datalog::ProgramView<GroundTag> source,
+                                 const formalism::datalog::Repository& source_repository,
+                                 formalism::datalog::CopyContext& context)
+{
+    for (const auto predicate : source.get_predicates<F>())
+        if (formalism::datalog::has_binding_layout(source_repository, predicate.get_index()))
+            formalism::datalog::copy_binding_layout(source_repository,
+                                                    predicate.get_index(),
+                                                    context.destination,
+                                                    formalism::datalog::copy(predicate, context).first.get_index());
+}
+
 formalism::datalog::ProgramView<GroundTag> create_rpg_ground_program(formalism::planning::TaskView<GroundTag> task,
                                                                      CostMode cost_mode,
                                                                      TranslationContext<GroundTag>& translation_context,
                                                                      RPGProgram<GroundTag>::RuleToActionMappings& mapping,
                                                                      formalism::datalog::Repository& repository)
 {
-    auto context = GroundProgramBuildContext(repository);
+    auto context = GroundProgramBuildContext(task, repository);
     auto& merge_context = context.merge_context;
 
     for (const auto predicate : task.get_domain().get_predicates<formalism::StaticTag>())
@@ -406,6 +494,7 @@ formalism::datalog::ProgramView<GroundTag> create_rpg_ground_program(formalism::
         context.fluent_predicates.emplace(predicate, new_predicate);
         context.program->fluent_predicates.push_back(new_predicate.get_index());
     }
+    set_packed_binding_layouts(task, context, repository);
 
     for (const auto function : task.get_domain().get_functions<formalism::StaticTag>())
         context.program->static_functions.push_back(formalism::planning::merge_p2d(function, merge_context).first.get_index());
@@ -559,9 +648,11 @@ datalog::Program<GroundTag> create_rpg_datalog_program(formalism::planning::Task
     const auto source_fact_sets = datalog::FactSets { source_static_fact_sets, source_fluent_fact_sets };
 
     auto repository = factory->create_shared(num_objects);
-    const auto program = datalog::remove_statically_inapplicable_rules(source_program, *repository);
     auto builder = formalism::datalog::Builder {};
     auto merge_context = formalism::datalog::CopyContext { builder, *repository };
+    copy_packed_binding_layouts<formalism::StaticTag>(source_program, source_repository, merge_context);
+    copy_packed_binding_layouts<formalism::FluentTag>(source_program, source_repository, merge_context);
+    const auto program = datalog::remove_statically_inapplicable_rules(source_program, *repository);
     translation_context = remap_translation_context(source_translation_context, merge_context);
     remap_rule_to_action<formalism::PredicateTag>(source_mapping.predicate, mapping.predicate, source_program.get_context(), merge_context, source_fact_sets);
     remap_rule_to_action<formalism::FunctionTag>(source_mapping.function, mapping.function, source_program.get_context(), merge_context, source_fact_sets);

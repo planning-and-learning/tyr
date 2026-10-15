@@ -77,7 +77,7 @@ static_assert(std::constructible_from<ygg::Data<tyr::formalism::datalog::Atom<::
 
 TEST(TyrFormalismDatalogGroundAtom, PreservesFormatting)
 {
-    auto repository = tyr::formalism::datalog::RepositoryFactory().create();
+    auto repository = tyr::formalism::datalog::RepositoryFactory().create(1);
 
     auto predicate_data = ygg::Data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("at"), 2);
     canonicalize(predicate_data);
@@ -95,7 +95,7 @@ TEST(TyrFormalismDatalogGroundAtom, PreservesFormatting)
     binding_data.objects.push_back(object.get_index());
     canonicalize(binding_data);
     const auto [binding, binding_created] = repository.insert(binding_data);
-    ASSERT_TRUE(binding_created);
+    ASSERT_EQ(binding_created, tyr::formalism::datalog::Repository::stores_bindings<tyr::formalism::Predicate<tyr::formalism::FluentTag>>);
 
     auto ground_atom_data = ygg::Data<tyr::formalism::datalog::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>>(binding.get_index());
     canonicalize(ground_atom_data);

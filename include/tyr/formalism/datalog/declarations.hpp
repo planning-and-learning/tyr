@@ -24,9 +24,11 @@
 
 #include <concepts>
 #include <memory>
+#include <type_traits>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/core/types.hpp>
+#include <yggdrasil/formalism/packed_relation_repository.hpp>
 
 namespace tyr::formalism::datalog
 {
@@ -195,8 +197,26 @@ using BuilderTypes = ygg::ConcatTypeListsT<SymbolRepositoryTypes, ygg::MapTypeLi
 
 using SymbolRepository = ygg::ApplyTypeListT<::ygg::formalism::ConcurrentSymbolRepository, SymbolRepositoryTypes>;
 
+/// Whether the ground bindings of fluent relations and static predicates are packed object positions (TYR_RANK_BASED_ATOMS)
+/// instead of interned. Static functions stay interned: grounding numeric constraints creates bindings of undefined static terms.
+#if defined(TYR_RANK_BASED_ATOMS)
+inline constexpr bool packed_ground_bindings = true;
+#else
+inline constexpr bool packed_ground_bindings = false;
+#endif
+
+template<typename O, typename T, bool ThreadSafe>
+struct RelationRepositorySelector
+{
+    using type =
+        std::conditional_t<packed_ground_bindings
+                               && (std::same_as<T, Predicate<StaticTag>> || std::same_as<T, Predicate<FluentTag>> || std::same_as<T, Function<FluentTag>>),
+                           ::ygg::formalism::PackedRelationRepository<O, T, ThreadSafe>,
+                           ::ygg::formalism::BasicRelationRepository<O, T, ThreadSafe>>;
+};
+
 template<typename... Ts>
-using TaggedRelationRepository = ::ygg::formalism::ConcurrentRelationRepository<ObjectTag, Ts...>;
+using TaggedRelationRepository = ::ygg::formalism::SelectedConcurrentRelationRepository<RelationRepositorySelector, ObjectTag, Ts...>;
 
 using RelationRepository = ygg::ApplyTypeListT<TaggedRelationRepository, RelationRepositoryTypes>;
 

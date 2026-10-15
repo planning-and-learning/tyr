@@ -28,9 +28,11 @@
 
 #include <cassert>
 #include <optional>
+#include <span>
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <vector>
 #include <yggdrasil/buffer/declarations.hpp>
 #include <yggdrasil/buffer/indexed_hash_set.hpp>
 #include <yggdrasil/buffer/segmented_buffer.hpp>
@@ -56,6 +58,32 @@ template<typename T>
 void prepare_for_insert(Repository&, ygg::Data<T>& data)
 {
     canonicalize(data);
+}
+
+/// Packs the bindings of relation g by the positions of their objects in the sorted argument domains; call before its first binding.
+/// A no-op for relations whose bindings are interned.
+template<typename Relation>
+void set_binding_layout(Repository& repository, ygg::Index<Relation> g, std::span<const std::vector<ygg::Index<formalism::Object>>> domains)
+{
+    if constexpr (!Repository::stores_bindings<Relation>)
+        repository.get_relation_repository<Relation>().set_layout(g, domains);
+}
+
+template<typename Relation>
+bool has_binding_layout(const Repository& repository, ygg::Index<Relation> g) noexcept
+{
+    if constexpr (!Repository::stores_bindings<Relation>)
+        return repository.get_relation_repository<Relation>().find_layout(g) != nullptr;
+    else
+        return false;
+}
+
+/// Gives relation target in destination the binding layout of relation source, which must have one.
+template<typename Relation>
+void copy_binding_layout(const Repository& source_repository, ygg::Index<Relation> source, Repository& destination, ygg::Index<Relation> target)
+{
+    if constexpr (!Repository::stores_bindings<Relation>)
+        destination.get_relation_repository<Relation>().set_layout(target, *source_repository.get_relation_repository<Relation>().find_layout(source));
 }
 
 template<RelationKind R>

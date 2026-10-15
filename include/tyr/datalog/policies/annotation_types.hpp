@@ -20,6 +20,7 @@
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
+#include "tyr/datalog/row_storage.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <algorithm>
@@ -322,7 +323,7 @@ private:
         Value value {};
     };
 
-    using Lane = std::conditional_t<ThreadSafe, ygg::SegmentedVector<Slot, 32, true>, std::vector<Slot>>;
+    using Lane = RowMap<Slot, ThreadSafe>;
 
     template<typename SlotT, typename Callback>
     static decltype(auto) with_slot_lock(SlotT& slot, Callback&& callback)
@@ -346,16 +347,7 @@ private:
         else if (relation_index >= m_lanes.size())
             m_lanes.resize(relation_index + 1);
 
-        auto& lane = m_lanes[relation_index];
-        const auto row_index = ygg::uint_t(row);
-        if constexpr (ThreadSafe)
-        {
-            while (lane.size() <= row_index)
-                lane.emplace_back();
-        }
-        else if (row_index >= lane.size())
-            lane.resize(row_index + 1);
-        return lane[row_index];
+        return m_lanes[relation_index].get_or_create(ygg::uint_t(row));
     }
 
     const Slot* find_slot(Relation relation, Row row) const noexcept
@@ -365,8 +357,7 @@ private:
         if (relation_index >= m_lanes.size())
             return nullptr;
 
-        const auto& lane = m_lanes[relation_index];
-        return row_index < lane.size() ? &lane[row_index] : nullptr;
+        return m_lanes[relation_index].find(row_index);
     }
 
     std::vector<Lane> m_lanes;

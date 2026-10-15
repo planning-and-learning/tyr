@@ -18,6 +18,7 @@
 #include "tyr/planning/programs/rpg.hpp"
 
 #include "../../programs/common.hpp"
+#include "packed_layouts.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
@@ -276,6 +277,8 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
     auto builder = formalism::datalog::Builder();
     auto context = formalism::planning::MergeDatalogContext(builder, destination);
     auto program = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
+    auto domain_storage = std::optional<analysis::TaskVariableDomains> {};
+    const auto* domains = packed_layout_domains(task, domain_storage);
 
     for (const auto predicate : task.get_domain().get_predicates<formalism::StaticTag>())
     {
@@ -303,6 +306,7 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
     if (const auto function = task.get_domain().get_auxiliary_function())
         program->fluent_functions.push_back(
             formalism::planning::merge_p2d<formalism::AuxiliaryTag, formalism::FluentTag>(function.value(), context).first.get_index());
+    set_packed_binding_layouts(task, domains, translation_context.p2d, destination);
 
     for (const auto object : task.get_domain().get_constants())
         program->objects.push_back(formalism::planning::merge_p2d(object, context).first.get_index());

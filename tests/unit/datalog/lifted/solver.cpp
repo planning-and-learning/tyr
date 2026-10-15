@@ -1030,7 +1030,7 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
 TEST(TyrDatalogLiftedBottomUpTest, RepeatedArgumentsNewAtomRecordsExistingHeadAchiever)
 {
     auto factory = std::make_shared<tyr::formalism::datalog::RepositoryFactory>();
-    auto repository = factory->create_shared();
+    auto repository = factory->create_shared(2);
     const auto intern = [&]<typename T>(ygg::Data<T> data)
     {
         if constexpr (requires { tyr::formalism::datalog::canonicalize(data); })
@@ -1148,7 +1148,7 @@ TEST(TyrDatalogLiftedBottomUpTest, NewHigherArityAtomsGenerateBindingsWithoutDel
     // consistency graph of the h rule has the clique (a,b,c) before t(a,b,c) and u(a,b,c) are derived in the same
     // iteration. Only the new atoms can generate h(a,b,c), and only the one of the first literal may (Debug checks duplicates).
     auto factory = std::make_shared<tyr::formalism::datalog::RepositoryFactory>();
-    auto repository = factory->create_shared();
+    auto repository = factory->create_shared(4);
     const auto intern = [&]<typename T>(ygg::Data<T> data)
     {
         if constexpr (requires { tyr::formalism::datalog::canonicalize(data); })
@@ -1316,7 +1316,8 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindi
     tyr::datalog::compute_model(context);
 
     EXPECT_EQ(workspace.workspace_repository.size(rule.get_index()), 1);
-    EXPECT_EQ(workspace.workspace_repository.size(goal.get_index()), 1);
+    EXPECT_EQ(workspace.workspace_repository.size(goal.get_index()),
+              tyr::formalism::datalog::Repository::stores_bindings<tyr::formalism::Predicate<tyr::formalism::FluentTag>> ? 1 : 0);
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, ProgramWorkspacesOwnIndependentRepositories)

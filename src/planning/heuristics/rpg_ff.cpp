@@ -24,6 +24,7 @@
 #include "tyr/datalog/policies/cost.hpp"
 #include "tyr/datalog/policies/numeric_support.hpp"
 #include "tyr/datalog/policies/termination.hpp"
+#include "tyr/datalog/row_storage.hpp"
 #include "tyr/planning/action_executor.hpp"
 
 #include <cassert>
@@ -31,7 +32,6 @@
 #include <utility>
 #include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/containers/dynamic_bitset.hpp>
 #include <yggdrasil/semantics/comparison.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 
@@ -88,8 +88,8 @@ struct FFRPGHeuristic<Kind>::Impl :
 
     ygg::float_t compute_result(const ygg::Builder<State<Kind>>& state)
     {
-        for (auto& bits : m_predicate_markings)
-            bits.reset();
+        for (auto& markings : m_predicate_markings)
+            markings.reset();
 
         const auto state_context = StateContext<Kind>(this->get_task(), state, ygg::float_t(0));
         if (const auto& goal = this->m_workspace.tp.get_goal())
@@ -164,18 +164,14 @@ private:
     }
 
     template<typename Relation, typename Row>
-    static bool mark(std::vector<boost::dynamic_bitset<>>& markings, Relation relation, Row row)
+    static bool mark(std::vector<datalog::RowSet>& markings, Relation relation, Row row)
     {
         const auto relation_index = ygg::uint_t(relation);
-        const auto row_index = ygg::uint_t(row);
         assert(relation_index < markings.size());
-        if (ygg::test(row_index, markings[relation_index]))
-            return true;
-        ygg::set(row_index, true, markings[relation_index]);
-        return false;
+        return !markings[relation_index].insert(ygg::uint_t(row));
     }
 
-    std::vector<boost::dynamic_bitset<>> m_predicate_markings;
+    std::vector<datalog::RowSet> m_predicate_markings;
     ygg::UnorderedSet<NumericCertificate> m_numeric_markings;
     ActionExecutor m_executor;
     NumericSupportWorkspace m_numeric_support_workspace;

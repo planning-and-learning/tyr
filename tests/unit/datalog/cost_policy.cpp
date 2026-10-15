@@ -83,7 +83,7 @@ tyr::formalism::datalog::FunctionBindingView<tyr::formalism::FluentTag> make_nul
     binding_builder.relation = function.get_index();
     canonicalize(binding_builder);
     const auto [binding, binding_success] = repository.insert(binding_builder);
-    EXPECT_TRUE(binding_success);
+    EXPECT_EQ(binding_success, tyr::formalism::datalog::Repository::stores_bindings<tyr::formalism::Function<tyr::formalism::FluentTag>>);
     return binding;
 }
 }

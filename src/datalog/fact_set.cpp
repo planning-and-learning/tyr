@@ -19,10 +19,8 @@
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
-#include <boost/dynamic_bitset.hpp>
 #include <limits>
 #include <stdexcept>
-#include <yggdrasil/containers/dynamic_bitset.hpp>
 
 namespace tyr::datalog
 {
@@ -36,14 +34,14 @@ PredicateFactSet<T>::PredicateFactSet(formalism::datalog::PredicateView<T> predi
     m_predicate(predicate),
     m_repository(repository),
     m_predicate_index(m_predicate.get_index()),
-    m_bitset()
+    m_rows()
 {
 }
 
 template<formalism::FactKind T>
 void PredicateFactSet<T>::reset() noexcept
 {
-    m_bitset.reset();
+    m_rows.reset();
 }
 
 template<formalism::FactKind T>
@@ -64,15 +62,7 @@ bool PredicateFactSet<T>::insert(formalism::datalog::AtomView<GroundTag, T> grou
 template<formalism::FactKind T>
 bool PredicateFactSet<T>::insert(formalism::datalog::PredicateBindingIndex<T> binding)
 {
-    const auto i = ygg::uint_t(binding.row);
-
-    if (!ygg::test(i, m_bitset))
-    {
-        ygg::set(i, true, m_bitset);
-        return true;
-    }
-
-    return false;
+    return m_rows.insert(ygg::uint_t(binding.row));
 }
 
 template<formalism::FactKind T>
@@ -96,13 +86,13 @@ bool PredicateFactSet<T>::insert(const std::vector<formalism::datalog::Predicate
 template<formalism::FactKind T>
 bool PredicateFactSet<T>::contains(formalism::datalog::PredicateBindingIndex<T> binding) const noexcept
 {
-    return ygg::test(ygg::uint_t(binding.row), m_bitset);
+    return m_rows.contains(ygg::uint_t(binding.row));
 }
 
 template<formalism::FactKind T>
 PredicateBindingViewRange<T> PredicateFactSet<T>::get_bindings() const noexcept
 {
-    auto rows = detail::PredicateFactRowRange { detail::PredicateFactRowIterator { m_bitset, true }, detail::PredicateFactRowIterator { m_bitset, false } };
+    auto rows = detail::PredicateFactRowRange { detail::PredicateFactRowIterator { m_rows.begin() }, detail::PredicateFactRowIterator { m_rows.end() } };
     auto bindings = ygg::make_view(detail::PredicateBindingRange<T> { m_predicate_index, rows }, m_repository);
     return { bindings.begin(), bindings.end() };
 }
@@ -197,7 +187,8 @@ FunctionFactSet<T>::FunctionFactSet(formalism::datalog::FunctionView<T> function
 template<formalism::FactKind T>
 void FunctionFactSet<T>::reset() noexcept
 {
-    m_remap.clear();
+    for (const auto row : m_bindings)
+        *m_remap.find(ygg::uint_t(row)) = 0;
     m_bindings.clear();
     m_values.clear();
 }
@@ -213,20 +204,15 @@ bool FunctionFactSet<T>::insert(formalism::datalog::FunctionBindingIndex<T> bind
 {
     const auto i = ygg::uint_t(binding.row);
 
-    if (i < m_remap.size())
+    auto& entry = m_remap.get_or_create(i);
+    if (entry != 0)
     {
-        const auto pos = m_remap[i];
-        if (pos != std::numeric_limits<ygg::uint_t>::max())
-        {
-            const auto old_interval = m_values[pos];
-            const auto new_interval = hull(old_interval, interval);
-            m_values[pos] = new_interval;
-            return old_interval != new_interval;
-        }
+        const auto old_interval = m_values[entry - 1];
+        const auto new_interval = hull(old_interval, interval);
+        m_values[entry - 1] = new_interval;
+        return old_interval != new_interval;
     }
-
-    const auto pos = ygg::uint_t(m_bindings.size());
-    ygg::set(i, pos, m_remap, std::numeric_limits<ygg::uint_t>::max());
+    entry = ygg::uint_t(m_bindings.size() + 1);
 
     m_bindings.push_back(binding.row);
     m_values.push_back(interval);
@@ -318,10 +304,8 @@ ygg::ClosedInterval<ygg::float_t> FunctionFactSet<T>::operator[](formalism::data
     const auto row = binding.row;
     const auto i = ygg::uint_t(row);
 
-    if (i >= m_remap.size())
-        return {};
-
-    return ygg::get(m_remap[i], m_values, ygg::ClosedInterval<ygg::float_t>());
+    const auto* entry = m_remap.find(i);
+    return entry && *entry != 0 ? m_values[*entry - 1] : ygg::ClosedInterval<ygg::float_t>();
 }
 
 template<formalism::FactKind T>

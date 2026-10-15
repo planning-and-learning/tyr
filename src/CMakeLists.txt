@@ -130,6 +130,7 @@ add_library(
 
     planning/lifted/programs/action.cpp
     planning/lifted/programs/axiom.cpp
+    planning/lifted/programs/packed_layouts.cpp
     planning/programs/common.cpp
     planning/lifted/programs/rpg.cpp
     planning/lifted/programs/ground.cpp
@@ -172,6 +173,10 @@ endif()
 
 if(TYR_ENABLE_SEMI_NAIVE)
     target_compile_definitions(core PUBLIC TYR_ENABLE_SEMI_NAIVE)
+endif()
+
+if(TYR_RANK_BASED_ATOMS)
+    target_compile_definitions(core PUBLIC TYR_RANK_BASED_ATOMS)
 endif()
 
 if("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Hashset")

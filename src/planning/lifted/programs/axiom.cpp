@@ -18,6 +18,7 @@
 #include "tyr/planning/lifted/programs/axiom.hpp"
 
 #include "../../programs/common.hpp"
+#include "packed_layouts.hpp"
 #include "tyr/formalism/datalog/datas.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -26,6 +27,8 @@
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
+
+#include <optional>
 
 namespace tyr::planning
 {
@@ -87,6 +90,8 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
     auto builder = formalism::datalog::Builder();
     auto context = formalism::planning::MergeDatalogContext(builder, repository);
     auto program = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
+    auto domain_storage = std::optional<analysis::TaskVariableDomains> {};
+    const auto* domains = packed_layout_domains(task, domain_storage);
 
     for (const auto predicate : task.get_domain().get_predicates<formalism::StaticTag>())
     {
@@ -125,6 +130,7 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
         translation_context.p2d.fluent_to_fluent_function.emplace(function, new_function);
         program->fluent_functions.push_back(new_function.get_index());
     }
+    set_packed_binding_layouts(task, domains, translation_context.p2d, repository);
 
     for (const auto object : task.get_domain().get_constants())
         program->objects.push_back(formalism::planning::merge_p2d(object, context).first.get_index());

@@ -18,9 +18,9 @@
 #ifndef TYR_DATALOG_FACT_SETS_HPP_
 #define TYR_DATALOG_FACT_SETS_HPP_
 
+#include "tyr/datalog/row_storage.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
-#include <boost/dynamic_bitset.hpp>
 #include <cassert>
 #include <iterator>
 #include <ranges>
@@ -35,6 +35,7 @@ namespace tyr::datalog
 namespace detail
 {
 
+/// The rows of a RowSet as relation binding rows.
 class PredicateFactRowIterator
 {
 public:
@@ -45,22 +46,13 @@ public:
     using iterator_concept = std::forward_iterator_tag;
 
     PredicateFactRowIterator() noexcept = default;
-    PredicateFactRowIterator(const boost::dynamic_bitset<>& data, bool begin) noexcept :
-        m_data(&data),
-        m_position(begin ? data.find_first() : boost::dynamic_bitset<>::npos)
-    {
-    }
+    explicit PredicateFactRowIterator(RowSet::const_iterator it) noexcept : m_it(it) {}
 
-    value_type operator*() const noexcept
-    {
-        assert(m_data);
-        return value_type { static_cast<ygg::uint_t>(m_position) };
-    }
+    value_type operator*() const noexcept { return value_type { static_cast<ygg::uint_t>(*m_it) }; }
 
     PredicateFactRowIterator& operator++() noexcept
     {
-        assert(m_data);
-        m_position = m_data->find_next(m_position);
+        ++m_it;
         return *this;
     }
 
@@ -71,14 +63,10 @@ public:
         return copy;
     }
 
-    friend bool operator==(const PredicateFactRowIterator& lhs, const PredicateFactRowIterator& rhs) noexcept
-    {
-        return lhs.m_data == rhs.m_data && lhs.m_position == rhs.m_position;
-    }
+    friend bool operator==(const PredicateFactRowIterator& lhs, const PredicateFactRowIterator& rhs) noexcept { return lhs.m_it == rhs.m_it; }
 
 private:
-    const boost::dynamic_bitset<>* m_data = nullptr;
-    boost::dynamic_bitset<>::size_type m_position = boost::dynamic_bitset<>::npos;
+    RowSet::const_iterator m_it;
 };
 
 using PredicateFactRowRange = std::ranges::subrange<PredicateFactRowIterator>;
@@ -103,7 +91,7 @@ private:
 
     ygg::Index<formalism::Predicate<T>> m_predicate_index;
 
-    boost::dynamic_bitset<> m_bitset;
+    RowSet m_rows;
 
 public:
     explicit PredicateFactSet(formalism::datalog::PredicateView<T> predicate, const formalism::datalog::Repository& repository);
@@ -156,7 +144,7 @@ private:
     const formalism::datalog::Repository& m_repository;
 
     ygg::Index<formalism::Function<T>> m_function_index;
-    std::vector<ygg::uint_t> m_remap;
+    RowMap<ygg::uint_t> m_remap;  ///< Position + 1 of each row's binding in m_bindings, 0 if absent.
     std::vector<ygg::Index<formalism::Row>> m_bindings;
     std::vector<ygg::ClosedInterval<ygg::float_t>> m_values;
 

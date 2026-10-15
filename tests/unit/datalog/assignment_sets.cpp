@@ -67,7 +67,7 @@ auto intern(tyr::formalism::datalog::Repository& repository, ygg::Data<T> data)
 
 struct Fixture
 {
-    tyr::formalism::datalog::Repository repository = tyr::formalism::datalog::RepositoryFactory().create();
+    tyr::formalism::datalog::Repository repository = tyr::formalism::datalog::RepositoryFactory().create(5);
     std::vector<tyr::formalism::datalog::ObjectView> objects;
 
     Fixture()
