@@ -68,6 +68,7 @@ public:
     explicit SolverPolicy(ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_ctx(ctx), m_program_stopwatch(ctx.out().statistics().total_time)
     {
         ++ctx.out().statistics().num_executions;
+        initialize_goal_cutoff();
     }
 
     bool next_stratum()
@@ -82,6 +83,7 @@ public:
     bool generate_updates(CostBuckets& cost_buckets, PendingPredicateAchievers& pending_achievers)
     {
         auto& ctx = stratum();
+        begin_goal_cutoff_iteration(ctx);
         run_active_rules<formalism::PredicateTag>(ctx);
         run_active_rules<formalism::FunctionTag>(ctx);
         // The rules consumed the facts committed since they last ran; the commit phase collects the next ones.
@@ -93,6 +95,133 @@ public:
     Scheduler<LiftedTag>& scheduler() { return stratum().out().scheduler(); }
 
 private:
+    using GoalAtom = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
+
+    /// Lower bound of a rule's edge cost: its constant increases of nullary metric functions. nullopt if a metric effect
+    /// can lower the cost or its amount is not constant.
+    static std::optional<Cost> get_edge_cost_lower_bound(formalism::datalog::RuleView<LiftedTag, formalism::PredicateTag> rule)
+    {
+        auto bound = std::optional<Cost>(Cost(0));
+        for (const auto metric_operator : rule.get_metric_effects())
+            ygg::visit(
+                [&](const auto effect)
+                {
+                    if (!bound)
+                        return;
+                    if (effect.get_operator() != formalism::NumericEffectOperatorKind::Increase)
+                    {
+                        bound.reset();
+                        return;
+                    }
+                    ygg::visit(
+                        [&]<typename Alternative>(const Alternative& alternative)
+                        {
+                            if constexpr (std::same_as<Alternative, ygg::float_t>)
+                            {
+                                if (alternative < ygg::float_t(0))
+                                    bound.reset();
+                                else if (effect.get_fterm().get_terms().empty())
+                                    *bound += Cost(alternative);
+                            }
+                            else
+                                bound.reset();
+                        },
+                        effect.get_fexpr().get_variant());
+                },
+                metric_operator.get_variant());
+        return bound;
+    }
+
+    /// Enables the goal cutoff where stopping an iteration early keeps every witness: positive fluent goals without numeric
+    /// constraints, propositional rules with known edge cost lower bounds, one stratum, and annotations without achievers.
+    void initialize_goal_cutoff()
+    {
+        if constexpr (AP::stores_annotations && !AP::records_propositional_achievers
+                      && std::same_as<CP, RuleCostPolicy> && !std::same_as<TP, NoTerminationPolicy>)
+        {
+            const auto& goal = m_ctx.out().tp().get_goal();
+            if (!goal || !goal->get_numeric_constraints().empty() || m_ctx.out().schedulers().size() != 1
+                || !m_ctx.in().template get_rules<formalism::FunctionTag>().empty())
+                return;
+            const auto fact_sets = FactSets { m_ctx.in().facts().fact_sets, m_ctx.out().facts().fact_sets };
+            if (!is_applicable(goal->template get_literals<formalism::StaticTag>(), fact_sets))
+                return;
+
+            auto min_edge_cost = std::numeric_limits<Cost>::max();
+            for (const auto& rule : m_ctx.in().template get_rules<formalism::PredicateTag>())
+            {
+                const auto bound = get_edge_cost_lower_bound(rule->get_rule());
+                if (!bound)
+                    return;
+                min_edge_cost = std::min(min_edge_cost, *bound);
+            }
+
+            m_goal_atoms.clear();
+            m_goal_positions.clear();
+            for (const auto literal : goal->template get_literals<formalism::FluentTag>())
+                if (m_goal_positions.emplace(literal.get_atom().get_row().get_index(), m_goal_atoms.size()).second)
+                    m_goal_atoms.push_back(literal.get_atom().get_row().get_index());
+            m_goal_final.assign(m_goal_atoms.size(), false);
+            m_min_edge_cost = min_edge_cost == std::numeric_limits<Cost>::max() ? Cost(0) : min_edge_cost;
+            m_goal_cutoff_enabled = !m_goal_atoms.empty();
+        }
+    }
+
+    /// The committed cost of the delta: later candidates contain an atom committed from now on, and buckets commit in
+    /// nondecreasing cost order. 0, a valid lower bound, if the delta has no predicate atom.
+    Cost get_delta_cost(StratumExecutionContext<AP, TP, CP>& ctx) const
+    {
+        const auto& program_out = ctx.out().program();
+        for (const auto& set : program_out.facts().delta_fact_sets.predicate.get_sets())
+            for (const auto atom : set.get_bindings())
+                if (const auto* annotation = program_out.annotations().find(atom.get_index()))
+                    return get_cost(*annotation);
+        return Cost(0);
+    }
+
+    /// Marks the goal atom at position i final if its tentative cost cannot decrease any more.
+    void observe_goal_atom(size_t i, Cost tentative_cost)
+    {
+        if (m_goal_final[i] || tentative_cost > m_goal_cutoff_bound)
+            return;
+        m_goal_final[i] = true;
+        if (++m_num_final_goals == m_goal_atoms.size())
+            m_goal_cutoff_stopped = true;
+    }
+
+    void begin_goal_cutoff_iteration(StratumExecutionContext<AP, TP, CP>& ctx)
+    {
+        m_goal_cutoff_stopped = false;
+        if (!m_goal_cutoff_enabled || !ctx.in().is_single_threaded())
+            return;
+
+        m_goal_cutoff_bound = get_delta_cost(ctx) + m_min_edge_cost;
+        std::fill(m_goal_final.begin(), m_goal_final.end(), false);
+        m_num_final_goals = 0;
+        const auto& program_out = ctx.out().program();
+        const auto& facts = program_out.facts().fact_sets.predicate;
+        for (size_t i = 0; i < m_goal_atoms.size(); ++i)
+        {
+            if (facts.contains(m_goal_atoms[i]))
+                observe_goal_atom(i, Cost(0));
+            else if (const auto* annotation = program_out.annotations().find(m_goal_atoms[i]))
+                observe_goal_atom(i, get_cost(*annotation));
+        }
+    }
+
+    /// Observes the tentative costs of the goal atoms among the heads of a processed binding.
+    void observe_goal_heads(StratumExecutionContext<AP, TP, CP>& ctx, std::span<const GoalAtom> heads)
+    {
+        if (!m_goal_cutoff_enabled || m_goal_cutoff_stopped)
+            return;
+        for (const auto head : heads)
+            if (const auto it = m_goal_positions.find(head); it != m_goal_positions.end())
+                if (const auto* annotation = ctx.out().program().delta_annotations().find(head))
+                    observe_goal_atom(it->second, get_cost(*annotation));
+    }
+
+    bool goal_cutoff_stopped() const noexcept { return m_goal_cutoff_stopped; }
+
     static void create_nullary_binding(ygg::IndexList<formalism::Object>& binding) { binding.clear(); }
 
     static void
@@ -310,7 +439,10 @@ private:
         if (missing)
             collect_predicate_heads(wrctx, true);
         assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
-        return insert_propositional_update(std::span(std::as_const(out.head_bindings())), input, out.head_updates(), out.delta_annotations()).is_handled();
+        const auto handled =
+            insert_propositional_update(std::span(std::as_const(out.head_bindings())), input, out.head_updates(), out.delta_annotations()).is_handled();
+        observe_goal_heads(stratum(), std::span(std::as_const(out.head_bindings())));
+        return handled;
     }
 
     void process_clique_head(formalism::PredicateTag,
@@ -407,7 +539,11 @@ private:
             for_each_relevant_clique(
                 R {},
                 kckp_algorithm,
-                [&](auto&& clique) { process_clique(wrctx, clique, require_novel_binding(R {}) && !enumerate_all); },
+                [&](auto&& clique)
+                {
+                    if (!goal_cutoff_stopped())
+                        process_clique(wrctx, clique, require_novel_binding(R {}) && !enumerate_all);
+                },
                 kckp_workspace,
                 enumerate_all);
         }
@@ -444,6 +580,8 @@ private:
                     out.anchor_vertices(),
                     [&](auto&& clique)
                     {
+                        if (goal_cutoff_stopped())
+                            return;
                         create_general_binding(clique, graph, out.ground_context().binding);
                         for (size_t j = 0; j < i; ++j)
                             if (is_applicable(literals[j], delta_context))
@@ -517,6 +655,8 @@ private:
             ++rule_out.statistics().num_executions;
 
             rctx.clear_iteration();  ///< Clear iteration before generate
+            if (goal_cutoff_stopped())
+                return;
 
             {
                 const auto initialize_time = ygg::StopwatchScope(rule_out.statistics().initialize_time);
@@ -607,6 +747,14 @@ private:
     ygg::StopwatchScope<std::chrono::nanoseconds> m_program_stopwatch;
     std::optional<StratumExecutionContext<AP, TP, CP>> m_stratum;
     size_t m_next_stratum = 0;
+    bool m_goal_cutoff_enabled = false;
+    bool m_goal_cutoff_stopped = false;
+    Cost m_min_edge_cost = Cost(0);
+    Cost m_goal_cutoff_bound = Cost(0);
+    std::vector<GoalAtom> m_goal_atoms;
+    ygg::UnorderedMap<GoalAtom, size_t> m_goal_positions;
+    std::vector<bool> m_goal_final;
+    size_t m_num_final_goals = 0;
 };
 
 template void compute_model(ProgramExecutionContext<LiftedTag, NoAnnotationPolicy, NoTerminationPolicy>& ctx);

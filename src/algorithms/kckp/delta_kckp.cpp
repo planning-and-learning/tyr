@@ -114,8 +114,30 @@ void DeltaKCKP::seed_without_anchor(Workspace& workspace) const
 }
 
 bool DeltaKCKP::seed_from_anchor(const Edge& edge, Workspace& workspace) const
+{ return prepare_anchor_source(edge.src, m_layout.vertex_to_partition[edge.dst.index], workspace) && seed_from_prepared_anchor(edge, workspace); }
+
+bool DeltaKCKP::prepare_anchor_source(Vertex source, ygg::uint_t target_partition, Workspace& workspace) const
 {
     workspace.prepare(m_layout);
+    const auto source_partition = m_layout.vertex_to_partition[source.index];
+    for (ygg::uint_t partition = 0; partition < m_layout.num_partitions; ++partition)
+    {
+        if (partition == source_partition || partition == target_partition)
+            continue;
+
+        const auto& info = m_layout.info.infos[partition];
+        auto row = ygg::BitsetSpan<uint64_t>(workspace.anchor_source_data.data() + info.block_offset, info.num_bits);
+        m_full_graph.matrix.copy_adjacency_to(source.index, partition, row);
+        if (partition < target_partition)
+            m_delta_graph.matrix.subtract_adjacency_from(source.index, partition, row);
+        if (!row.any())
+            return false;
+    }
+    return true;
+}
+
+bool DeltaKCKP::seed_from_prepared_anchor(const Edge& edge, Workspace& workspace) const
+{
     const auto source_partition = m_layout.vertex_to_partition[edge.src.index];
     const auto target_partition = m_layout.vertex_to_partition[edge.dst.index];
     assert(source_partition < target_partition);
@@ -137,16 +159,8 @@ bool DeltaKCKP::seed_from_anchor(const Edge& edge, Workspace& workspace) const
 
         const auto& info = m_layout.info.infos[partition];
         auto compatible = ygg::BitsetSpan<uint64_t>(compatible_row.data() + info.block_offset, info.num_bits);
-        m_full_graph.matrix.copy_adjacency_to(edge.src.index, partition, compatible);
+        compatible.copy_from(ygg::BitsetSpan<const uint64_t>(workspace.anchor_source_data.data() + info.block_offset, info.num_bits));
         m_full_graph.matrix.intersect_adjacency_with(edge.dst.index, partition, compatible);
-        if (!compatible.any())
-            return false;
-
-        if (partition < target_partition)
-            m_delta_graph.matrix.subtract_adjacency_from(edge.src.index, partition, compatible);
-        if (!compatible.any())
-            return false;
-
         if (partition < source_partition)
             m_delta_graph.matrix.subtract_adjacency_from(edge.dst.index, partition, compatible);
         if (!compatible.any())

@@ -29,6 +29,7 @@
 #include "tyr/datalog/rule_instance.hpp"
 
 #include <algorithm>
+#include <boost/dynamic_bitset.hpp>
 #include <cassert>
 #include <limits>
 #include <optional>
@@ -38,6 +39,7 @@
 #include <utility>
 #include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>
+#include <yggdrasil/containers/dynamic_bitset.hpp>
 #include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/semantics/comparison.hpp>
 #include <yggdrasil/semantics/hash.hpp>
@@ -85,22 +87,32 @@ private:
     using Binding = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
     using Witness = WitnessAnnotation<formalism::PredicateTag>;
 
+    /// The rows seen per relation; only membership is queried, so the order of bindings stays that of their first insertion.
+    std::vector<boost::dynamic_bitset<>> m_seen_rows;
+
 public:
-    ygg::UnorderedSet<Binding> seen_bindings;
     std::vector<Binding> bindings;
     std::vector<PredicateAchiever> achievers;
 
     void clear() noexcept
     {
-        seen_bindings.clear();
+        for (const auto binding : bindings)
+            m_seen_rows[ygg::uint_t(binding.relation)].reset(ygg::uint_t(binding.row));
         bindings.clear();
         achievers.clear();
     }
 
     void insert(Binding binding)
     {
-        if (seen_bindings.emplace(binding).second)
-            bindings.push_back(binding);
+        const auto relation = size_t(ygg::uint_t(binding.relation));
+        const auto row = size_t(ygg::uint_t(binding.row));
+        if (relation >= m_seen_rows.size())
+            m_seen_rows.resize(relation + 1);
+        auto& seen = m_seen_rows[relation];
+        if (ygg::test(row, seen))
+            return;
+        ygg::set(row, true, seen);
+        bindings.push_back(binding);
     }
 
     void insert_achiever(Binding head, Witness witness) { achievers.push_back(PredicateAchiever { head, std::move(witness) }); }

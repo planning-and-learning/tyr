@@ -23,6 +23,7 @@
 #include <bit>
 #include <boost/dynamic_bitset.hpp>
 #include <cassert>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -166,8 +167,15 @@ public:
         }
     }
 
-    template<typename Callback>
+    template<std::invocable<Edge> Callback>
     void for_each_edge(Callback&& callback) const noexcept
+    {
+        for_each_edge([](Vertex, ygg::uint_t) noexcept { return true; }, std::forward<Callback>(callback));
+    }
+
+    /// for_each_edge, but each source vertex and target partition are first passed to visit_source, which can skip their edges.
+    template<std::predicate<Vertex, ygg::uint_t> VisitSource, std::invocable<Edge> Callback>
+    void for_each_edge(VisitSource&& visit_source, Callback&& callback) const noexcept
     {
         for (ygg::uint_t source_partition = 0; source_partition < m_layout.num_partitions; ++source_partition)
         {
@@ -179,6 +187,8 @@ public:
                 const auto source_vertex = source_info.bit_offset + static_cast<ygg::uint_t>(source_bit);
                 for (ygg::uint_t target_partition = source_partition + 1; target_partition < m_layout.num_partitions; ++target_partition)
                 {
+                    if (!visit_source(Vertex(source_vertex), target_partition))
+                        continue;
                     const auto& target_info = m_layout.info.infos[target_partition];
                     for_each_adjacent_vertex(source_vertex,
                                              target_partition,
@@ -418,12 +428,14 @@ public:
             return;
         }
 
-        m_delta_graph.matrix.for_each_edge(
-            [&](Edge edge)
-            {
-                if (seed_from_anchor(edge, workspace))
-                    complete_from_seed<Edge>(callback, 0, workspace);
-            });
+        // The rows of an anchor's source are shared by its edges into a target partition, and if one is empty, no edge seeds.
+        m_delta_graph.matrix.for_each_edge([&](Vertex source, ygg::uint_t target_partition)
+                                           { return prepare_anchor_source(source, target_partition, workspace); },
+                                           [&](Edge edge)
+                                           {
+                                               if (seed_from_prepared_anchor(edge, workspace))
+                                                   complete_from_seed<Edge>(callback, 0, workspace);
+                                           });
     }
 
     /// Cliques that contain all anchor vertices (at most one per partition) and no delta vertex or edge.
@@ -441,6 +453,11 @@ public:
     const std::vector<Edge>& materialize_delta_edges();
     void seed_without_anchor(Workspace& workspace) const;
     bool seed_from_anchor(const Edge& edge, Workspace& workspace) const;
+    /// Computes the rows of the anchor source shared by its edges into the target partition: in every other partition, the
+    /// source's neighbours, without its delta neighbours before the target partition. Returns false if a row is empty.
+    bool prepare_anchor_source(Vertex source, ygg::uint_t target_partition, Workspace& workspace) const;
+    /// seed_from_anchor for an edge from the source last passed to prepare_anchor_source.
+    bool seed_from_prepared_anchor(const Edge& edge, Workspace& workspace) const;
     bool seed_from_vertices(std::span<const Vertex> vertices, Workspace& workspace) const;
 
     template<typename Anchor, typename Callback>
