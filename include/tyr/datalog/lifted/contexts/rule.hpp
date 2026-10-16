@@ -81,6 +81,8 @@ public:
         }
 
         auto& kckp_workspace() noexcept { return m_ws_worker.iteration.kckp_workspace; }
+        auto& known_head_masks() noexcept { return m_ws_worker.solve.known_head_masks; }
+        auto& known_head_key() noexcept { return m_ws_worker.solve.known_head_key; }
         auto& delta_annotations() noexcept { return m_rctx.stratum_out().program().delta_annotations(); }
         auto& delta_numeric_annotations() noexcept { return m_rctx.stratum_out().program().delta_numeric_annotations(); }
         auto& head_updates() noexcept { return m_ws_worker.iteration.head_updates; }

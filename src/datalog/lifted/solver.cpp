@@ -46,6 +46,7 @@
 
 #include <algorithm>
 #include <assert.h>
+#include <bit>
 #include <concepts>
 #include <oneapi/tbb/parallel_for.h>
 #include <oneapi/tbb/parallel_for_each.h>
@@ -574,6 +575,79 @@ private:
         process_clique_head(R {}, wrctx, input, applicability_context);
     }
 
+    /// Removes the candidates of the last clique partition whose heads are all facts: without achievers, such a binding
+    /// updates nothing. Building the mask of a partial solution checks every vertex of the partition, so it is (re)built once
+    /// the candidates it left to be checked one by one add up to the partition's size. Calls with few candidates skip it.
+    void filter_known_heads(RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx,
+                            ygg::uint_t partition,
+                            const kckp::Workspace& workspace,
+                            ygg::BitsetSpan<uint64_t> candidates)
+    {
+        constexpr size_t kMinCandidates = 16;
+        auto num_candidates = size_t(0);
+        for (const auto block : candidates.blocks())
+            num_candidates += size_t(std::popcount(block));
+        if (num_candidates < kMinCandidates)
+            return;
+
+        const auto& cws_rule = wrctx.in().cws_rule();
+        const auto& heads = *cws_rule.get_packed_heads();
+        if (!std::ranges::any_of(heads, [&](const auto& head) { return head.uses_parameter(partition); }))
+            return;
+
+        const auto& layout = cws_rule.get_static_consistency_graph().get_graph_layout();
+        auto& binding = wrctx.out().ground_context().binding;
+        binding.resize(layout.num_partitions);
+        for (ygg::uint_t p = 0; p < layout.num_partitions; ++p)
+            if (p != partition)
+                binding[p] = ygg::Index<formalism::Object>(layout.vertex_labels[workspace.partial_solution[p].index]);
+
+        auto& key = wrctx.out().known_head_key();
+        key.clear();
+        key.push_back(partition);
+        for (const auto& head : heads)
+            head.for_each_parameter(
+                [&](ygg::uint_t parameter)
+                {
+                    if (parameter != partition)
+                        key.push_back(ygg::uint_t(binding[parameter]));
+                });
+
+        auto& mask = wrctx.out().known_head_masks()[key];
+        const auto& info = layout.info.infos[partition];
+        if (mask.built)
+        {
+            for (size_t block = 0; block < mask.unknown.size(); ++block)
+                candidates.blocks()[block] &= mask.unknown[block];
+            num_candidates = 0;
+            for (const auto block : candidates.blocks())
+                num_candidates += size_t(std::popcount(block));
+        }
+        // Rebuild once the candidates still checked one by one add up to the partition's size, as the facts grew meanwhile.
+        mask.checked_candidates += num_candidates;
+        if (mask.checked_candidates < info.num_bits)
+            return;
+        mask.checked_candidates = 0;
+
+        const auto& facts = wrctx.in().fact_sets().template get<formalism::FluentTag>().predicate;
+        mask.unknown.assign(candidates.blocks().size(), 0);
+        for (size_t bit = 0; bit < info.num_bits; ++bit)
+        {
+            binding[partition] = ygg::Index<formalism::Object>(layout.vertex_labels[info.bit_offset + bit]);
+            const auto known = std::ranges::all_of(heads,
+                                                   [&](const auto& head)
+                                                   {
+                                                       const auto ground = head.encode(binding);
+                                                       return ground && facts.contains(*ground);
+                                                   });
+            if (!known)
+                mask.unknown[bit / 64] |= uint64_t(1) << (bit % 64);
+        }
+        mask.built = true;
+        for (size_t block = 0; block < mask.unknown.size(); ++block)
+            candidates.blocks()[block] &= mask.unknown[block];
+    }
+
     template<formalism::RelationKind R>
     void generate_general_case(RuleExecutionContext<R, AP, TP, CP>& rctx, bool enumerate_all)
     {
@@ -592,6 +666,31 @@ private:
             auto& kckp_workspace = out.kckp_workspace();
             ++out.statistics().num_executions;
 
+#ifdef TYR_ENABLE_SEMI_NAIVE
+            if constexpr (std::same_as<R, formalism::PredicateTag> && !AP::records_propositional_achievers)
+            {
+                if (!enumerate_all && rctx.in().cws_rule().get_packed_heads())
+                {
+                    struct KnownHeadPruning
+                    {
+                        SolverPolicy& policy;
+                        RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx;
+
+                        void filter_last(ygg::uint_t partition, const kckp::Workspace& workspace, ygg::BitsetSpan<uint64_t> candidates)
+                        { policy.filter_known_heads(wrctx, partition, workspace, candidates); }
+                    };
+                    kckp_algorithm.for_each_delta_clique(
+                        [&](auto&& clique)
+                        {
+                            if (!goal_cutoff_stopped())
+                                process_clique(wrctx, clique, require_novel_binding(R {}));
+                        },
+                        KnownHeadPruning { *this, wrctx },
+                        kckp_workspace);
+                    return;
+                }
+            }
+#endif
             for_each_relevant_clique(
                 R {},
                 kckp_algorithm,

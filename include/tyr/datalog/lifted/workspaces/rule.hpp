@@ -110,6 +110,18 @@ struct RuleWorkspace<LiftedTag, R>
         RuleEvaluationWorkspace rule_evaluation_workspace;
         ApplicabilityCache applicability_cache;
 
+        /// The candidates of a last clique partition whose heads are not all facts, keyed by that partition and the objects
+        /// of the other head parameters. Facts only grow during a solve, so a mask stays a valid under-approximation of the
+        /// known heads until the solve ends.
+        struct KnownHeadMask
+        {
+            size_t checked_candidates = 0;  ///< The candidates checked one by one since the mask was last built.
+            bool built = false;
+            std::vector<uint64_t> unknown;
+        };
+        ygg::UnorderedMap<std::vector<ygg::uint_t>, KnownHeadMask> known_head_masks;
+        std::vector<ygg::uint_t> known_head_key;
+
         /// Statistics
         RuleWorkerStatistics statistics;
     };
@@ -259,6 +271,7 @@ void RuleWorkspace<LiftedTag, R>::Solve::clear() noexcept
     rule_evaluation_workspace.selector.clear();
     rule_evaluation_workspace.exact_supports.clear();
     applicability_cache.clear();
+    known_head_masks.clear();
 }
 
 template<formalism::RelationKind R>

@@ -26,6 +26,7 @@
 #include <limits>
 #include <optional>
 #include <span>
+#include <utility>
 #include <vector>
 #include <yggdrasil/containers/dynamic_bitset.hpp>
 #include <yggdrasil/core/types.hpp>
@@ -193,15 +194,25 @@ struct Workspace
     std::span<const uint64_t> compatible_vertices(size_t depth) const noexcept;
 };
 
+/// Hook that skips cliques during their completion: filter_last may remove candidates of the last unassigned partition,
+/// given the vertices assigned so far.
+struct NoCliquePruning
+{
+    void filter_last(ygg::uint_t, const Workspace&, ygg::BitsetSpan<uint64_t>) const noexcept {}
+};
+
+inline constexpr NoCliquePruning no_clique_pruning {};
+
 namespace detail
 {
-template<typename SelectPartition, typename UpdateCandidates, typename Callback>
+template<typename SelectPartition, typename UpdateCandidates, typename Callback, typename Pruning = const NoCliquePruning>
 void complete_clique(const GraphLayout& layout,
                      size_t depth,
                      Workspace& workspace,
                      SelectPartition& select_partition,
                      UpdateCandidates& update_candidates,
-                     Callback& callback)
+                     Callback& callback,
+                     Pruning& pruning = no_clique_pruning)
 {
     const auto partition = select_partition(depth, workspace);
     if (partition == std::numeric_limits<ygg::uint_t>::max())
@@ -209,6 +220,8 @@ void complete_clique(const GraphLayout& layout,
 
     const auto& info = layout.info.infos[partition];
     const auto row = workspace.compatible_vertices(depth);
+    if (workspace.partial_solution_size + 1 == layout.num_partitions)
+        pruning.filter_last(partition, std::as_const(workspace), ygg::BitsetSpan<uint64_t>(row.data() + info.block_offset, info.num_bits));
     const auto candidates = ygg::BitsetSpan<const uint64_t>(row.data() + info.block_offset, info.num_bits);
 
     for (const auto bit : ygg::set_bit_indices(candidates))
@@ -223,7 +236,7 @@ void complete_clique(const GraphLayout& layout,
         {
             workspace.partition_bits.set(partition);
             if (update_candidates(vertex, depth, workspace))
-                complete_clique(layout, depth + 1, workspace, select_partition, update_candidates, callback);
+                complete_clique(layout, depth + 1, workspace, select_partition, update_candidates, callback, pruning);
             workspace.partition_bits.reset(partition);
         }
 
