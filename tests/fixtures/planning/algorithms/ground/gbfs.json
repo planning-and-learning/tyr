@@ -707,8 +707,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated_successors": 79,
-                "num_expanded": 40,
+                "num_generated_successors": 84,
+                "num_expanded": 45,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1029,7 +1029,7 @@
             },
             "hlmcut_unit": {
                 "num_generated_successors": 10,
-                "num_expanded": 7,
+                "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1045,7 +1045,7 @@
             },
             "hlmcut_general": {
                 "num_generated_successors": 10,
-                "num_expanded": 7,
+                "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1563,8 +1563,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 21,
-                "num_expanded": 16,
+                "num_generated_successors": 19,
+                "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1584,8 +1584,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated_successors": 21,
-                "num_expanded": 16,
+                "num_generated_successors": 19,
+                "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1762,8 +1762,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 12,
-                "num_expanded": 11,
+                "num_generated_successors": 10,
+                "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1781,8 +1781,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated_successors": 12,
-                "num_expanded": 11,
+                "num_generated_successors": 10,
+                "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4014,8 +4014,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 8,
-                "num_expanded": 7,
+                "num_generated_successors": 7,
+                "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4030,8 +4030,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated_successors": 8,
-                "num_expanded": 7,
+                "num_generated_successors": 7,
+                "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4368,8 +4368,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 72,
-                "num_expanded": 31,
+                "num_generated_successors": 29,
+                "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4387,8 +4387,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated_successors": 72,
-                "num_expanded": 31,
+                "num_generated_successors": 29,
+                "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4876,8 +4876,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 85,
-                "num_expanded": 41,
+                "num_generated_successors": 86,
+                "num_expanded": 42,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4893,8 +4893,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated_successors": 120,
-                "num_expanded": 50,
+                "num_generated_successors": 28,
+                "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5087,8 +5087,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 44,
-                "num_expanded": 37,
+                "num_generated_successors": 27,
+                "num_expanded": 18,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5107,8 +5107,8 @@
                 }
             },
             "hlmcut_general": {
-                "num_generated_successors": 44,
-                "num_expanded": 37,
+                "num_generated_successors": 27,
+                "num_expanded": 18,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
