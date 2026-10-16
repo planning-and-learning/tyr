@@ -115,6 +115,10 @@ std::pair<RuleBindingView<R>, bool> copy(RuleBindingView<R> element, CopyContext
 template<RelationKind R>
 std::pair<RuleView<GroundTag, R>, bool> copy(RuleView<GroundTag, R> element, CopyContext& context);
 
+/// Copies everything of the program but its rules into the program data.
+template<TaskKind T>
+void copy_except_rules(ProgramView<T> element, ygg::Data<Program<T>>& result, CopyContext& context);
+
 // Common
 
 inline std::pair<VariableView, bool> copy(VariableView element, CopyContext& context)
@@ -451,6 +455,31 @@ std::pair<RuleView<GroundTag, R>, bool> copy(RuleView<GroundTag, R> element, Cop
 
 namespace tyr::formalism::datalog
 {
+template<TaskKind T>
+void copy_except_rules(ProgramView<T> element, ygg::Data<Program<T>>& result, CopyContext& context)
+{
+    const auto copy_all = [&](const auto elements, auto& destination)
+    {
+        for (const auto e : elements)
+            destination.push_back(copy(e, context).first.get_index());
+    };
+
+    copy_all(element.template get_predicates<StaticTag>(), result.static_predicates);
+    copy_all(element.template get_predicates<FluentTag>(), result.fluent_predicates);
+    copy_all(element.template get_functions<StaticTag>(), result.static_functions);
+    copy_all(element.template get_functions<FluentTag>(), result.fluent_functions);
+    copy_all(element.get_objects(), result.objects);
+    copy_all(element.template get_atoms<StaticTag>(), result.static_atoms);
+    copy_all(element.template get_atoms<FluentTag>(), result.fluent_atoms);
+    copy_all(element.template get_fterm_values<StaticTag>(), result.static_fterm_values);
+    copy_all(element.template get_fterm_values<FluentTag>(), result.fluent_fterm_values);
+
+    if (const auto goal = element.get_goal())
+        result.goal = copy(*goal, context).first.get_index();
+    if (const auto metric = element.get_metric())
+        result.metric = copy(*metric, context).first.get_index();
+}
+
 extern template std::pair<PredicateView<StaticTag>, bool> copy(PredicateView<StaticTag> element, CopyContext& context);
 extern template std::pair<PredicateView<FluentTag>, bool> copy(PredicateView<FluentTag> element, CopyContext& context);
 
@@ -516,6 +545,9 @@ extern template std::pair<RuleBindingView<FunctionTag>, bool> copy(RuleBindingVi
 
 extern template std::pair<RuleView<GroundTag, PredicateTag>, bool> copy(RuleView<GroundTag, PredicateTag> element, CopyContext& context);
 extern template std::pair<RuleView<GroundTag, FunctionTag>, bool> copy(RuleView<GroundTag, FunctionTag> element, CopyContext& context);
+
+extern template void copy_except_rules(ProgramView<LiftedTag> element, ygg::Data<Program<LiftedTag>>& result, CopyContext& context);
+extern template void copy_except_rules(ProgramView<GroundTag> element, ygg::Data<Program<GroundTag>>& result, CopyContext& context);
 }
 
 #endif

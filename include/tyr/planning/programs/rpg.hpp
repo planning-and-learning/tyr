@@ -20,6 +20,7 @@
 
 #include "tyr/datalog/ground/program.hpp"
 #include "tyr/datalog/lifted/program.hpp"
+#include "tyr/datalog/rule_splitting.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/declarations.hpp"
@@ -52,7 +53,8 @@ public:
         RuleToActionMapping<formalism::FunctionTag> function;
     };
 
-    explicit RPGProgram(Task task, CostMode cost_mode = CostMode::GENERAL);
+    /// With split_rules, action rules project away the variables that only some of their preconditions use (lifted tasks only).
+    explicit RPGProgram(Task task, CostMode cost_mode = CostMode::GENERAL, bool split_rules = false);
 
     const TranslationContext<Kind>& get_translation_context() const noexcept { return m_translation_context; }
 
@@ -65,6 +67,9 @@ public:
             return m_rule_to_action.function;
     }
 
+    /// The splitting of the action rules, empty unless they were split.
+    const datalog::RuleSplitting& get_rule_splitting() const noexcept { return m_rule_splitting; }
+
     datalog::Program<Kind>& get_datalog_program() noexcept { return m_datalog_program; }
     const datalog::Program<Kind>& get_datalog_program() const noexcept { return m_datalog_program; }
     formalism::datalog::ConjunctiveConditionView<GroundTag> get_goal() const noexcept { return m_datalog_program.get_program().get_goal().value(); }
@@ -72,15 +77,15 @@ public:
 private:
     TranslationContext<Kind> m_translation_context;
     RuleToActionMappings m_rule_to_action;
+    datalog::RuleSplitting m_rule_splitting;
     datalog::Program<Kind> m_datalog_program;
 };
 
 template<>
-RPGProgram<GroundTag>::RPGProgram(formalism::planning::TaskView<GroundTag> task, CostMode cost_mode);
+RPGProgram<GroundTag>::RPGProgram(formalism::planning::TaskView<GroundTag> task, CostMode cost_mode, bool split_rules);
 
 template<>
-RPGProgram<LiftedTag>::RPGProgram(formalism::planning::TaskView<LiftedTag> task, CostMode cost_mode);
-
+RPGProgram<LiftedTag>::RPGProgram(formalism::planning::TaskView<LiftedTag> task, CostMode cost_mode, bool split_rules);
 }
 
 #endif

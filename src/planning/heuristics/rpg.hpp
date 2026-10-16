@@ -57,7 +57,10 @@ struct RPGDefinition
     RPGProgram<Kind> rpg_program;
     MetricTargets metric_targets;
 
-    RPGDefinition(TaskPtr<Kind> task, CostMode cost_mode) : task(std::move(task)), rpg_program(this->task->get_task(), cost_mode), metric_targets()
+    RPGDefinition(TaskPtr<Kind> task, CostMode cost_mode, bool split_rules = false) :
+        task(std::move(task)),
+        rpg_program(this->task->get_task(), cost_mode, split_rules),
+        metric_targets()
     {
         const auto metric = rpg_program.get_datalog_program().get_program().get_metric();
         if (!metric)
@@ -130,7 +133,8 @@ public:
     using Workspace = datalog::ProgramWorkspace<Kind, AP, TP, CP>;
 
     RPGEvaluator(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL) :
-        RPGEvaluator(std::make_shared<Definition>(std::move(task), cost_mode), std::move(execution_context))
+        // h_max, h_add and FF aggregate over the minimal bindings of a rule, so splitting preserves them (LM-cut builds its own definition).
+        RPGEvaluator(std::make_shared<Definition>(std::move(task), cost_mode, true), std::move(execution_context))
     {
     }
 

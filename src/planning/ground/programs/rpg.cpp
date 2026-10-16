@@ -571,7 +571,7 @@ datalog::Program<GroundTag> create_rpg_datalog_program(formalism::planning::Task
 }  // namespace
 
 template<>
-RPGProgram<GroundTag>::RPGProgram(formalism::planning::TaskView<GroundTag> task, CostMode cost_mode) :
+RPGProgram<GroundTag>::RPGProgram(formalism::planning::TaskView<GroundTag> task, CostMode cost_mode, bool) :
     m_translation_context(),
     m_rule_to_action(),
     m_datalog_program(create_rpg_datalog_program(task, cost_mode, m_translation_context, m_rule_to_action))

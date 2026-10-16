@@ -86,6 +86,9 @@ template std::pair<RuleBindingView<FunctionTag>, bool> copy(RuleBindingView<Func
 
 template std::pair<RuleView<GroundTag, PredicateTag>, bool> copy(RuleView<GroundTag, PredicateTag> element, CopyContext& context);
 template std::pair<RuleView<GroundTag, FunctionTag>, bool> copy(RuleView<GroundTag, FunctionTag> element, CopyContext& context);
+
+template void copy_except_rules(ProgramView<LiftedTag> element, ygg::Data<Program<LiftedTag>>& result, CopyContext& context);
+template void copy_except_rules(ProgramView<GroundTag> element, ygg::Data<Program<GroundTag>>& result, CopyContext& context);
 }
 
 #endif

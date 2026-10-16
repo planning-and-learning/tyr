@@ -18,6 +18,8 @@
 #include "tyr/planning/programs/rpg.hpp"
 
 #include "../../programs/common.hpp"
+#include "tyr/datalog/rule_splitting.hpp"
+#include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
@@ -346,24 +348,86 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
     return formalism::datalog::insert(destination, *program).first;
 }
 
+TranslationContext<LiftedTag> remap_translation_context(const TranslationContext<LiftedTag>& source, formalism::datalog::CopyContext& context)
+{
+    auto result = TranslationContext<LiftedTag> {};
+    const auto remap_keys = [&](const auto& source_mapping, auto& result_mapping)
+    {
+        for (const auto& [key, value] : source_mapping)
+            result_mapping.emplace(formalism::datalog::copy(key, context).first, value);
+    };
+    const auto remap_values = [&](const auto& source_mapping, auto& result_mapping)
+    {
+        for (const auto& [key, value] : source_mapping)
+            result_mapping.emplace(key, formalism::datalog::copy(value, context).first);
+    };
+
+    remap_keys(source.d2p.static_to_static_predicate, result.d2p.static_to_static_predicate);
+    remap_keys(source.d2p.fluent_to_fluent_predicate, result.d2p.fluent_to_fluent_predicate);
+    remap_keys(source.d2p.fluent_to_derived_predicate, result.d2p.fluent_to_derived_predicate);
+    remap_values(source.p2d.static_to_static_predicate, result.p2d.static_to_static_predicate);
+    remap_values(source.p2d.fluent_to_fluent_predicate, result.p2d.fluent_to_fluent_predicate);
+    remap_values(source.p2d.derived_to_fluent_predicate, result.p2d.derived_to_fluent_predicate);
+    remap_values(source.p2d.fluent_to_fluent_function, result.p2d.fluent_to_fluent_function);
+    return result;
+}
+
+/// The rules of the split program that stand for the actions of the source rules.
+RPGProgram<LiftedTag>::RuleToActionMappings remap_rule_to_action(const RPGProgram<LiftedTag>::RuleToActionMappings& source,
+                                                                 const formalism::datalog::Repository& source_repository,
+                                                                 const datalog::RuleSplitting& splitting,
+                                                                 formalism::datalog::CopyContext& context)
+{
+    auto result = RPGProgram<LiftedTag>::RuleToActionMappings {};
+    for (const auto& [rule, action] : source.predicate)
+    {
+        const auto it = splitting.main_rules.find(rule);
+        result.predicate.emplace(
+            it != splitting.main_rules.end() ? it->second : formalism::datalog::copy(ygg::make_view(rule, source_repository), context).first.get_index(),
+            action);
+    }
+    for (const auto& [rule, action] : source.function)
+        result.function.emplace(formalism::datalog::copy(ygg::make_view(rule, source_repository), context).first.get_index(), action);
+    return result;
+}
+
 auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task,
                             CostMode cost_mode,
+                            bool split_rules,
                             TranslationContext<LiftedTag>& translation_context,
-                            RPGProgram<LiftedTag>::RuleToActionMappings& rule_to_action)
+                            RPGProgram<LiftedTag>::RuleToActionMappings& rule_to_action,
+                            datalog::RuleSplitting& rule_splitting)
 {
     auto factory = std::make_shared<formalism::datalog::RepositoryFactory>();
+    if (!split_rules)
+    {
+        auto repository = factory->create_shared(task.get_num_objects());
+        auto program = create_program(task, cost_mode, translation_context, rule_to_action, *repository);
+        return datalog::Program<LiftedTag>(program, std::move(repository), std::move(factory));
+    }
+
+    auto source_repository = factory->create(task.get_num_objects());
+    auto source_translation_context = TranslationContext<LiftedTag> {};
+    auto source_rule_to_action = RPGProgram<LiftedTag>::RuleToActionMappings {};
+    const auto source_program = create_program(task, cost_mode, source_translation_context, source_rule_to_action, source_repository);
+
     auto repository = factory->create_shared(task.get_num_objects());
-    auto program = create_program(task, cost_mode, translation_context, rule_to_action, *repository);
+    const auto program = datalog::split_rules(source_program, *repository, rule_splitting);
+    auto builder = formalism::datalog::Builder {};
+    auto context = formalism::datalog::CopyContext { builder, *repository };
+    translation_context = remap_translation_context(source_translation_context, context);
+    rule_to_action = remap_rule_to_action(source_rule_to_action, source_repository, rule_splitting, context);
     return datalog::Program<LiftedTag>(program, std::move(repository), std::move(factory));
 }
 
 }
 
 template<>
-RPGProgram<LiftedTag>::RPGProgram(formalism::planning::TaskView<LiftedTag> task, CostMode cost_mode) :
+RPGProgram<LiftedTag>::RPGProgram(formalism::planning::TaskView<LiftedTag> task, CostMode cost_mode, bool split_rules) :
     m_translation_context(),
     m_rule_to_action(),
-    m_datalog_program(create_datalog_program(task, cost_mode, m_translation_context, m_rule_to_action))
+    m_rule_splitting(),
+    m_datalog_program(create_datalog_program(task, cost_mode, split_rules, m_translation_context, m_rule_to_action, m_rule_splitting))
 {
     // std::cout << m_datalog_program.get_program() << std::endl;
 }
