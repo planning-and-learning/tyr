@@ -20,7 +20,7 @@
 
 #include "tyr/datalog/applicability_lifted_decl.hpp"
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/datalog/numeric_utils.hpp"
+#include "tyr/formalism/numeric_expression_utils.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 
@@ -82,18 +82,18 @@ ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionTermView<
 
 inline ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionExpressionView<LiftedTag> element, const ApplicabilityContext& context)
 {
-    return evaluate_numeric_expression(element, [&](const auto term) { return evaluate(term, context); });
+    return formalism::evaluate_numeric_expression(element, [&](const auto term) { return evaluate(term, context); });
 }
 
 inline bool evaluate(formalism::datalog::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context)
 {
-    return evaluate_numeric_expression(element, [&](const auto term) { return evaluate(term, context); });
+    return formalism::evaluate_numeric_expression(element, [&](const auto term) { return evaluate(term, context); });
 }
 
 template<formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::NumericEffectView<LiftedTag, T> element, const ApplicabilityContext& context)
 {
-    return evaluate_numeric_effect(element, [&](const auto term) { return evaluate(term, context); });
+    return formalism::evaluate_numeric_effect(element, [&](const auto term) { return evaluate(term, context); });
 }
 
 template<formalism::FactKind T>

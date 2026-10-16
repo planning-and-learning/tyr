@@ -60,12 +60,6 @@ void collect_parameters(ArithmeticOperatorView<LiftedTag> element, ygg::Unordere
 
 void collect_parameters(BooleanOperatorView<LiftedTag> element, ygg::UnorderedSet<ParameterIndex>& result);
 
-template<FactKind F>
-void collect_parameters(NumericEffectView<LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result);
-
-template<FactKind F>
-void collect_parameters(NumericEffectOperatorView<LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result);
-
 auto collect_parameters(BooleanOperatorView<LiftedTag> element);
 
 /**
@@ -137,19 +131,6 @@ inline void collect_parameters(ArithmeticOperatorView<LiftedTag> element, ygg::U
 }
 
 inline void collect_parameters(BooleanOperatorView<LiftedTag> element, ygg::UnorderedSet<ParameterIndex>& result)
-{
-    visit([&](auto&& arg) { collect_parameters(arg, result); }, element.get_variant());
-}
-
-template<FactKind F>
-inline void collect_parameters(NumericEffectView<LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result)
-{
-    collect_parameters(element.get_fterm(), result);
-    collect_parameters(element.get_fexpr(), result);
-}
-
-template<FactKind F>
-inline void collect_parameters(NumericEffectOperatorView<LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result)
 {
     visit([&](auto&& arg) { collect_parameters(arg, result); }, element.get_variant());
 }

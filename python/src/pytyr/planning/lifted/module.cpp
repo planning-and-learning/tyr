@@ -119,7 +119,7 @@ should not be used further.
 
     using RelaxedProgram = RPGProgram<LiftedTag>;
     nb::class_<RelaxedProgram>(m, "RPGProgram")
-        .def(nb::init<formalism::planning::TaskView<LiftedTag>, CostMode>(), "task"_a, "cost_mode"_a = CostMode::GENERAL, nb::keep_alive<1, 2>())
+        .def(nb::init<formalism::planning::TaskView<LiftedTag>, CostMode>(), "task"_a, "cost_mode"_a = CostMode::UNIT, nb::keep_alive<1, 2>())
         .def("get_datalog_program", nb::overload_cast<>(&RelaxedProgram::get_datalog_program), nb::rv_policy::reference_internal)
         .def("get_goal", &RelaxedProgram::get_goal, nb::keep_alive<0, 1>())
         .def("get_rule_to_action_mapping",

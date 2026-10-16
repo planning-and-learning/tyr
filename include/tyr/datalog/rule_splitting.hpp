@@ -49,8 +49,8 @@ struct RuleSplitting
 
 /// Copies the program into the repository and projects the variables of its predicate rules that occur in no head and only
 /// in some preconditions: the preconditions that use such a variable are replaced by an atom over their variables that the
-/// rest of the rule needs, which a projection rule derives. Rules with numeric constraints or metric effects that depend on
-/// their variables are copied unchanged. The minimal sum and max costs of every atom are preserved.
+/// rest of the rule needs, which a projection rule of cost 0 derives. Rules with numeric constraints are copied unchanged.
+/// The minimal sum and max costs of every atom are preserved.
 formalism::datalog::ProgramView<LiftedTag>
 split_rules(formalism::datalog::ProgramView<LiftedTag> program, formalism::datalog::Repository& repository, RuleSplitting& splitting);
 

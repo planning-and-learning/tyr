@@ -276,26 +276,31 @@ make_lifted_numeric_program(bool include_source_rule = true, std::initializer_li
         tyr::formalism::NumericEffectOperatorKind::Assign,
         source_term.get_index(),
         ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(ygg::float_t(3))));
-    const auto source_metric_effect = intern(ygg::Data<tyr::formalism::datalog::NumericEffect<LiftedTag, tyr::formalism::FluentTag>>(
-        tyr::formalism::NumericEffectOperatorKind::Increase,
-        source_term.get_index(),
-        ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(ygg::float_t(2))));
     const auto target_assign_effect = intern(ygg::Data<tyr::formalism::datalog::NumericEffect<LiftedTag, tyr::formalism::FluentTag>>(
         tyr::formalism::NumericEffectOperatorKind::Assign,
         target_term.get_index(),
         ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(source_term.get_index())));
-    const auto target_metric_effect = intern(ygg::Data<tyr::formalism::datalog::NumericEffect<LiftedTag, tyr::formalism::FluentTag>>(
-        tyr::formalism::NumericEffectOperatorKind::Increase,
-        target_term.get_index(),
-        ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(source_term.get_index())));
+    // (source) >= 0 reads source once more, next to the target assignment.
+    const auto source_comparison = intern(ygg::Data<tyr::formalism::datalog::BinaryOperator<LiftedTag, tyr::formalism::BooleanOperatorKind>>(
+        tyr::formalism::BooleanOperatorKind::Ge,
+        ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(source_term.get_index()),
+        ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(ygg::float_t(0))));
+    const auto add_source_constraint = [&](ygg::Data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>& condition)
+    {
+        condition.numeric_constraints.emplace_back(
+            tyr::formalism::BooleanOperatorKind::Ge,
+            ygg::Data<tyr::formalism::datalog::BooleanOperator<LiftedTag>>::Variant(source_comparison.get_index()));
+    };
+    auto source_body_data = ygg::Data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>();
+    add_source_constraint(source_body_data);
+    const auto source_body = intern(std::move(source_body_data));
+
     auto target_rule_data = ygg::Data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::FunctionTag>>();
-    target_rule_data.body = empty_body.get_index();
+    target_rule_data.body = source_body.get_index();
     target_rule_data.head = ygg::Data<tyr::formalism::datalog::NumericEffectOperator<LiftedTag, tyr::formalism::FluentTag>>(
         tyr::formalism::NumericEffectOperatorKind::Assign,
         ygg::Data<tyr::formalism::datalog::NumericEffectOperator<LiftedTag, tyr::formalism::FluentTag>>::Variant(target_assign_effect.get_index()));
-    target_rule_data.metric_effects.emplace_back(
-        tyr::formalism::NumericEffectOperatorKind::Increase,
-        ygg::Data<tyr::formalism::datalog::NumericEffectOperator<LiftedTag, tyr::formalism::FluentTag>>::Variant(target_metric_effect.get_index()));
+    target_rule_data.cost = 3;
     const auto target_rule = intern(std::move(target_rule_data));
 
     auto source_rule_data = ygg::Data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::FunctionTag>>();
@@ -303,9 +308,7 @@ make_lifted_numeric_program(bool include_source_rule = true, std::initializer_li
     source_rule_data.head = ygg::Data<tyr::formalism::datalog::NumericEffectOperator<LiftedTag, tyr::formalism::FluentTag>>(
         tyr::formalism::NumericEffectOperatorKind::Assign,
         ygg::Data<tyr::formalism::datalog::NumericEffectOperator<LiftedTag, tyr::formalism::FluentTag>>::Variant(source_assign_effect.get_index()));
-    source_rule_data.metric_effects.emplace_back(
-        tyr::formalism::NumericEffectOperatorKind::Increase,
-        ygg::Data<tyr::formalism::datalog::NumericEffectOperator<LiftedTag, tyr::formalism::FluentTag>>::Variant(source_metric_effect.get_index()));
+    source_rule_data.cost = 2;
     const auto source_rule = intern(std::move(source_rule_data));
 
     const auto goal_predicate = intern(ygg::Data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("goal"), 0));
@@ -332,6 +335,7 @@ make_lifted_numeric_program(bool include_source_rule = true, std::initializer_li
     auto seed_body_data = ygg::Data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>();
     seed_body_data.variables.push_back(variable.get_index());
     seed_body_data.fluent_literals.push_back(seed_literal.get_index());
+    add_source_constraint(seed_body_data);
     const auto seed_body = intern(std::move(seed_body_data));
     auto seed_binding_data = ygg::Data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
     seed_binding_data.relation = seed_predicate.get_index();
@@ -342,11 +346,9 @@ make_lifted_numeric_program(bool include_source_rule = true, std::initializer_li
     auto predicate_rule_data = ygg::Data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>();
     if (general_goal_rule)
         predicate_rule_data.variables.push_back(variable.get_index());
-    predicate_rule_data.body = (general_goal_rule ? seed_body : empty_body).get_index();
+    predicate_rule_data.body = (general_goal_rule ? seed_body : source_body).get_index();
     predicate_rule_data.heads.push_back(goal_atom.get_index());
-    predicate_rule_data.metric_effects.emplace_back(
-        tyr::formalism::NumericEffectOperatorKind::Increase,
-        ygg::Data<tyr::formalism::datalog::NumericEffectOperator<LiftedTag, tyr::formalism::FluentTag>>::Variant(target_metric_effect.get_index()));
+    predicate_rule_data.cost = 3;
     const auto predicate_rule = intern(std::move(predicate_rule_data));
 
     auto program_data = ygg::Data<tyr::formalism::datalog::Program<LiftedTag>>();
@@ -406,9 +408,6 @@ struct LiftedPredicateProgram
     tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> goals;
     tyr::formalism::datalog::RuleBindingView<tyr::formalism::PredicateTag> first_binding;
     tyr::formalism::datalog::RuleBindingView<tyr::formalism::PredicateTag> second_binding;
-    tyr::formalism::datalog::FunctionBindingView<tyr::formalism::FluentTag> metric;
-    tyr::formalism::datalog::FunctionBindingView<tyr::formalism::FluentTag> first_lifted_metric;
-    tyr::formalism::datalog::FunctionBindingView<tyr::formalism::FluentTag> second_lifted_metric;
     tyr::datalog::Program<LiftedTag> program;
 
     LiftedPredicateProgram(tyr::formalism::datalog::RepositoryFactoryPtr factory_,
@@ -417,25 +416,20 @@ struct LiftedPredicateProgram
                            tyr::formalism::datalog::PredicateBindingView<tyr::formalism::FluentTag> goal_,
                            tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> goals_,
                            tyr::formalism::datalog::RuleBindingView<tyr::formalism::PredicateTag> first_binding_,
-                           tyr::formalism::datalog::RuleBindingView<tyr::formalism::PredicateTag> second_binding_,
-                           tyr::formalism::datalog::FunctionBindingView<tyr::formalism::FluentTag> metric_,
-                           tyr::formalism::datalog::FunctionBindingView<tyr::formalism::FluentTag> first_lifted_metric_,
-                           tyr::formalism::datalog::FunctionBindingView<tyr::formalism::FluentTag> second_lifted_metric_) :
+                           tyr::formalism::datalog::RuleBindingView<tyr::formalism::PredicateTag> second_binding_) :
         factory(std::move(factory_)),
         repository(std::move(repository_)),
         goal(goal_),
         goals(goals_),
         first_binding(first_binding_),
         second_binding(second_binding_),
-        metric(metric_),
-        first_lifted_metric(first_lifted_metric_),
-        second_lifted_metric(second_lifted_metric_),
         program(program_view, repository, factory)
     {
     }
 };
 
-LiftedPredicateProgram make_lifted_predicate_program(bool include_lifted_metric_effect = false)
+/// goal <- source(?x) with cost 2, and with include_numeric_constraint also (value ?x) >= 0 where (value a) = 5 and (value b) = 7.
+LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constraint = false)
 {
     auto factory = std::make_shared<tyr::formalism::datalog::RepositoryFactory>();
     auto repository = factory->create_shared();
@@ -449,8 +443,7 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_lifted_metric_
     };
     const auto source_predicate = intern(ygg::Data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("source"), 1));
     const auto goal_predicate = intern(ygg::Data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("goal"), 0));
-    const auto metric_function = intern(ygg::Data<tyr::formalism::Function<tyr::formalism::FluentTag>>(std::string("metric"), 0));
-    const auto lifted_metric_function = intern(ygg::Data<tyr::formalism::Function<tyr::formalism::FluentTag>>(std::string("lifted-metric"), 1));
+    const auto value_function = intern(ygg::Data<tyr::formalism::Function<tyr::formalism::FluentTag>>(std::string("value"), 1));
     const auto first_object = intern(ygg::Data<tyr::formalism::Object>(std::string("a")));
     const auto second_object = intern(ygg::Data<tyr::formalism::Object>(std::string("b")));
     const auto variable = intern(ygg::Data<tyr::formalism::Variable>(std::string("x")));
@@ -463,49 +456,29 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_lifted_metric_
     auto goal_atom_data = ygg::Data<tyr::formalism::datalog::Atom<LiftedTag, tyr::formalism::FluentTag>>();
     goal_atom_data.predicate = goal_predicate.get_index();
     const auto goal_atom = intern(std::move(goal_atom_data));
-    auto metric_term_data = ygg::Data<tyr::formalism::datalog::FunctionTerm<LiftedTag, tyr::formalism::FluentTag>>();
-    metric_term_data.function = metric_function.get_index();
-    const auto metric_term = intern(std::move(metric_term_data));
-    auto lifted_metric_term_data = ygg::Data<tyr::formalism::datalog::FunctionTerm<LiftedTag, tyr::formalism::FluentTag>>();
-    lifted_metric_term_data.function = lifted_metric_function.get_index();
-    lifted_metric_term_data.terms.emplace_back(tyr::formalism::ParameterIndex(0));
-    const auto lifted_metric_term = intern(std::move(lifted_metric_term_data));
-    const auto metric_effect = intern(ygg::Data<tyr::formalism::datalog::NumericEffect<LiftedTag, tyr::formalism::FluentTag>>(
-        tyr::formalism::NumericEffectOperatorKind::Increase,
-        metric_term.get_index(),
-        ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(ygg::float_t(2))));
-    const auto lifted_metric_effect = intern(ygg::Data<tyr::formalism::datalog::NumericEffect<LiftedTag, tyr::formalism::FluentTag>>(
-        tyr::formalism::NumericEffectOperatorKind::Increase,
-        lifted_metric_term.get_index(),
-        ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(ygg::float_t(3))));
-    const auto lifted_rhs_metric_effect = intern(ygg::Data<tyr::formalism::datalog::NumericEffect<LiftedTag, tyr::formalism::FluentTag>>(
-        tyr::formalism::NumericEffectOperatorKind::Increase,
-        metric_term.get_index(),
-        ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(lifted_metric_term.get_index())));
 
     auto body_data = ygg::Data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>();
     body_data.variables.push_back(variable.get_index());
     body_data.fluent_literals.push_back(source_literal.get_index());
+    if (include_numeric_constraint)
+    {
+        auto value_term_data = ygg::Data<tyr::formalism::datalog::FunctionTerm<LiftedTag, tyr::formalism::FluentTag>>();
+        value_term_data.function = value_function.get_index();
+        value_term_data.terms.emplace_back(tyr::formalism::ParameterIndex(0));
+        const auto value_term = intern(std::move(value_term_data));
+        const auto comparison = intern(ygg::Data<tyr::formalism::datalog::BinaryOperator<LiftedTag, tyr::formalism::BooleanOperatorKind>>(
+            tyr::formalism::BooleanOperatorKind::Ge,
+            ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(value_term.get_index()),
+            ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(ygg::float_t(0))));
+        body_data.numeric_constraints.emplace_back(tyr::formalism::BooleanOperatorKind::Ge,
+                                                   ygg::Data<tyr::formalism::datalog::BooleanOperator<LiftedTag>>::Variant(comparison.get_index()));
+    }
     const auto body = intern(std::move(body_data));
     auto rule_data = ygg::Data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>();
     rule_data.variables.push_back(variable.get_index());
     rule_data.body = body.get_index();
     rule_data.heads.push_back(goal_atom.get_index());
-    rule_data.metric_effects.emplace_back(
-        tyr::formalism::NumericEffectOperatorKind::Increase,
-        ygg::Data<tyr::formalism::datalog::NumericEffectOperator<LiftedTag, tyr::formalism::FluentTag>>::Variant(metric_effect.get_index()));
-    if (include_lifted_metric_effect)
-    {
-        rule_data.metric_effects.emplace_back(
-            tyr::formalism::NumericEffectOperatorKind::Increase,
-            ygg::Data<tyr::formalism::datalog::NumericEffectOperator<LiftedTag, tyr::formalism::FluentTag>>::Variant(metric_effect.get_index()));
-        rule_data.metric_effects.emplace_back(
-            tyr::formalism::NumericEffectOperatorKind::Increase,
-            ygg::Data<tyr::formalism::datalog::NumericEffectOperator<LiftedTag, tyr::formalism::FluentTag>>::Variant(lifted_metric_effect.get_index()));
-        rule_data.metric_effects.emplace_back(
-            tyr::formalism::NumericEffectOperatorKind::Increase,
-            ygg::Data<tyr::formalism::datalog::NumericEffectOperator<LiftedTag, tyr::formalism::FluentTag>>::Variant(lifted_rhs_metric_effect.get_index()));
-    }
+    rule_data.cost = 2;
     const auto rule = intern(std::move(rule_data));
 
     const auto bind_rule = [&](auto object)
@@ -517,17 +490,6 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_lifted_metric_
     };
     const auto first_binding = bind_rule(first_object);
     const auto second_binding = bind_rule(second_object);
-
-    const auto bind_function = [&](auto function, auto... objects)
-    {
-        auto data = ygg::Data<tyr::formalism::RelationBinding<tyr::formalism::Function<tyr::formalism::FluentTag>>>();
-        data.relation = function.get_index();
-        (data.objects.push_back(objects.get_index()), ...);
-        return intern(std::move(data));
-    };
-    const auto metric = bind_function(metric_function);
-    const auto first_lifted_metric = bind_function(lifted_metric_function, first_object);
-    const auto second_lifted_metric = bind_function(lifted_metric_function, second_object);
 
     const auto bind_source = [&](auto object)
     {
@@ -552,59 +514,26 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_lifted_metric_
     auto program_data = ygg::Data<tyr::formalism::datalog::Program<LiftedTag>>();
     program_data.objects = { first_object.get_index(), second_object.get_index() };
     program_data.fluent_predicates = { source_predicate.get_index(), goal_predicate.get_index() };
-    program_data.fluent_functions = { metric_function.get_index() };
-    if (include_lifted_metric_effect)
+    if (include_numeric_constraint)
     {
-        program_data.fluent_functions.push_back(lifted_metric_function.get_index());
-        const auto first_term = intern(ygg::Data<tyr::formalism::datalog::FunctionTerm<GroundTag, tyr::formalism::FluentTag>>(first_lifted_metric));
-        const auto second_term = intern(ygg::Data<tyr::formalism::datalog::FunctionTerm<GroundTag, tyr::formalism::FluentTag>>(second_lifted_metric));
+        const auto bind_value = [&](auto object)
+        {
+            auto data = ygg::Data<tyr::formalism::RelationBinding<tyr::formalism::Function<tyr::formalism::FluentTag>>>();
+            data.relation = value_function.get_index();
+            data.objects.push_back(object.get_index());
+            return intern(ygg::Data<tyr::formalism::datalog::FunctionTerm<GroundTag, tyr::formalism::FluentTag>>(intern(std::move(data))));
+        };
+        program_data.fluent_functions = { value_function.get_index() };
         program_data.fluent_fterm_values = {
-            intern(ygg::Data<tyr::formalism::datalog::FunctionTermValue<GroundTag, tyr::formalism::FluentTag>>(first_term, ygg::float_t(5))).get_index(),
-            intern(ygg::Data<tyr::formalism::datalog::FunctionTermValue<GroundTag, tyr::formalism::FluentTag>>(second_term, ygg::float_t(7))).get_index()
+            intern(ygg::Data<tyr::formalism::datalog::FunctionTermValue<GroundTag, tyr::formalism::FluentTag>>(bind_value(first_object), ygg::float_t(5))).get_index(),
+            intern(ygg::Data<tyr::formalism::datalog::FunctionTermValue<GroundTag, tyr::formalism::FluentTag>>(bind_value(second_object), ygg::float_t(7))).get_index()
         };
     }
     program_data.fluent_atoms = { ground_first_source.get_index(), ground_second_source.get_index() };
     program_data.predicate_rules = { rule.get_index() };
     const auto program = intern(std::move(program_data));
 
-    return LiftedPredicateProgram(factory, repository, program, goal, goals, first_binding, second_binding, metric, first_lifted_metric, second_lifted_metric);
-}
-
-TEST(TyrDatalogLiftedBottomUpTest, ConstRuleWorkspacePartitionsMetricEffectsByParameters)
-{
-    auto fixture = make_lifted_predicate_program(true);
-    const auto& workspace = fixture.program.get_const_program_workspace().get_rules<tyr::formalism::PredicateTag>().front().value();
-
-    EXPECT_EQ(workspace.get_rule().get_metric_effects().size(), 4);
-    ASSERT_EQ(workspace.get_lifted_effects().size(), 2);
-    ASSERT_EQ(workspace.get_nullary_effects().size(), 2);
-    EXPECT_EQ(&workspace.get_lifted_effects().front().get_context(), &fixture.program.get_program_repository());
-    EXPECT_EQ(&workspace.get_nullary_effects().front().get_context(), &fixture.program.get_program_repository());
-}
-
-TEST(TyrDatalogLiftedBottomUpTest, MixedMetricEffectsRespectExactTargetsAndRetainEvidence)
-{
-    auto fixture = make_lifted_predicate_program(true);
-    auto metric_targets = tyr::datalog::RuleCostPolicy::MetricTargets {};
-    metric_targets.insert(fixture.metric.get_index());
-    metric_targets.insert(fixture.first_lifted_metric.get_index());
-    using AnnotationPolicy = tyr::datalog::MinCostAnnotationPolicy<tyr::datalog::SumAggregation>;
-    using Workspace = tyr::datalog::ProgramWorkspace<LiftedTag, AnnotationPolicy, tyr::datalog::NoTerminationPolicy, tyr::datalog::RuleCostPolicy>;
-    auto workspace = Workspace(fixture.program, AnnotationPolicy(), tyr::datalog::NoTerminationPolicy(), tyr::datalog::RuleCostPolicy(&metric_targets));
-    auto context = tyr::datalog::ProgramExecutionContext(workspace);
-
-    tyr::datalog::compute_model(context);
-
-    const auto* annotation = workspace.annotations.find(fixture.goal.get_index());
-    ASSERT_NE(annotation, nullptr);
-    const auto* witness = std::get_if<tyr::datalog::WitnessAnnotation<tyr::formalism::PredicateTag>>(annotation);
-    ASSERT_NE(witness, nullptr);
-    EXPECT_EQ(witness->get_rule_key(), fixture.second_binding.get_index());
-    EXPECT_EQ(witness->get_cost(), 11);  // b: 2 + 2 + 0 (filtered target) + 7; a: 2 + 2 + 3 + 5 = 12.
-    ASSERT_EQ(witness->get_numeric_supports().size(), 1);
-    EXPECT_EQ(witness->get_numeric_supports().front().get_key(), fixture.second_lifted_metric.get_index());
-    EXPECT_EQ(witness->get_numeric_supports().front().get_interval(), ygg::ClosedInterval<ygg::float_t>(7, 7));
-    EXPECT_EQ(witness->get_numeric_supports().front().get_cost(), tyr::datalog::Cost(0));
+    return LiftedPredicateProgram(factory, repository, program, goal, goals, first_binding, second_binding);
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, PreparedContextMatchesOrdinaryContextAfterWorkspaceReuse)
@@ -766,18 +695,6 @@ TEST(TyrDatalogLiftedBottomUpTest, NoAnnotationPolicyComputesZeroCostNumericReac
     EXPECT_EQ(workspace.facts.fact_sets.function[fixture.target], expected);
     EXPECT_EQ(workspace.annotations.find(fixture.goal.get_index()), nullptr);
     EXPECT_EQ(workspace.numeric_annotations.size(), 0);
-}
-
-TEST(TyrDatalogLiftedBottomUpTest, NoAnnotationPolicyIgnoresUnavailableMetricInputs)
-{
-    auto fixture = make_lifted_numeric_program(false);
-    auto workspace = tyr::datalog::ProgramWorkspace<LiftedTag>(fixture.program);
-    auto context = tyr::datalog::ProgramExecutionContext(workspace);
-
-    tyr::datalog::compute_model(context);
-
-    EXPECT_TRUE(workspace.facts.fact_sets.predicate.contains(fixture.goal));
-    EXPECT_TRUE(empty(workspace.facts.fact_sets.function[fixture.target]));
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, SingleCoreTerminationExposesOnlyOptimalGoalFrontierAchievers)
@@ -1008,10 +925,9 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     const auto* ground_witness = std::get_if<tyr::datalog::WitnessAnnotation<tyr::formalism::FunctionTag>>(ground_annotation);
     ASSERT_NE(lifted_witness, nullptr);
     ASSERT_NE(ground_witness, nullptr);
-    EXPECT_EQ(lifted_witness->get_cost(), 5);
-    EXPECT_EQ(ground_witness->get_cost(), 5);
-    ASSERT_EQ(lifted_witness->get_numeric_supports().size(), 2);
-    ASSERT_EQ(ground_witness->get_numeric_supports().size(), 2);
+    EXPECT_EQ(lifted_witness->get_cost(), ground_witness->get_cost());
+    ASSERT_FALSE(ground_witness->get_numeric_supports().empty());
+    ASSERT_EQ(lifted_witness->get_numeric_supports().size(), ground_witness->get_numeric_supports().size());
     for (size_t i = 0; i < ground_witness->get_numeric_supports().size(); ++i)
     {
         const auto& ground_support = ground_witness->get_numeric_supports()[i];
@@ -1021,10 +937,14 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
         EXPECT_EQ(ground_support.get_interval(), lifted_support.get_interval());
         EXPECT_EQ(ground_support.get_cost(), lifted_support.get_cost());
     }
-    EXPECT_EQ(lifted_witness->get_numeric_supports()[0].get_interval(), low_support_interval);
-    EXPECT_EQ(lifted_witness->get_numeric_supports()[0].get_cost(), 2);
-    EXPECT_EQ(lifted_witness->get_numeric_supports()[1].get_interval(), high_support_interval);
-    EXPECT_EQ(lifted_witness->get_numeric_supports()[1].get_cost(), 2);
+    // The assignment target = source covers [1, 10] with the low and high certificates.
+    const auto has_support = [&](ygg::ClosedInterval<ygg::float_t> interval)
+    {
+        return std::ranges::any_of(lifted_witness->get_numeric_supports(),
+                                   [&](const auto& support) { return support.get_interval() == interval && support.get_cost() == 2; });
+    };
+    EXPECT_TRUE(has_support(low_support_interval));
+    EXPECT_TRUE(has_support(high_support_interval));
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, RepeatedArgumentsNewAtomRecordsExistingHeadAchiever)

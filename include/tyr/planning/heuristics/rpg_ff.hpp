@@ -30,7 +30,7 @@ template<TaskKind Kind>
 class FFRPGHeuristic : public Heuristic<Kind>
 {
 public:
-    FFRPGHeuristic(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
+    FFRPGHeuristic(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::UNIT);
     ~FFRPGHeuristic() override;
 
     FFRPGHeuristic(const FFRPGHeuristic&) = delete;
@@ -38,7 +38,7 @@ public:
     FFRPGHeuristic(FFRPGHeuristic&&) noexcept;
     FFRPGHeuristic& operator=(FFRPGHeuristic&&) noexcept;
 
-    static FFRPGHeuristicPtr<Kind> create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
+    static FFRPGHeuristicPtr<Kind> create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::UNIT);
 
     using Heuristic<Kind>::evaluate;
 

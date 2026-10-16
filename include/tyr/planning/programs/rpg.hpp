@@ -54,7 +54,7 @@ public:
     };
 
     /// With split_rules, action rules project away the variables that only some of their preconditions use (lifted tasks only).
-    explicit RPGProgram(Task task, CostMode cost_mode = CostMode::GENERAL, bool split_rules = false);
+    explicit RPGProgram(Task task, CostMode cost_mode = CostMode::UNIT, bool split_rules = false);
 
     const TranslationContext<Kind>& get_translation_context() const noexcept { return m_translation_context; }
 

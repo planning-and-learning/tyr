@@ -19,7 +19,7 @@
 #define TYR_DATALOG_RULE_EVALUATION_HPP_
 
 #include "tyr/datalog/cost_buckets.hpp"
-#include "tyr/datalog/numeric_utils.hpp"
+#include "tyr/formalism/numeric_expression_utils.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
 #include "tyr/datalog/policies/cost.hpp"
@@ -46,6 +46,18 @@
 
 namespace tyr::datalog
 {
+
+/// Conservative closure acceleration for detected label-preserving zero-edge bound growth.
+/// This does not imply exact numeric closure or global termination.
+inline ygg::ClosedInterval<ygg::float_t> widen_free_growth(ygg::ClosedInterval<ygg::float_t> next, ygg::ClosedInterval<ygg::float_t> current)
+{
+    if (empty(current))
+        return next;
+
+    constexpr auto inf = std::numeric_limits<ygg::float_t>::infinity();
+    return ygg::ClosedInterval<ygg::float_t>(lower(next) < lower(current) ? -inf : lower(next), upper(next) > upper(current) ? inf : upper(next));
+}
+
 
 struct RuleEvaluationInput
 {
@@ -369,47 +381,19 @@ Cost get_transition_credit(const CP& policy,
 template<bool CollectEvidence, TaskKind Kind, formalism::RelationKind R, typename AP, typename CP, typename CanContinue>
 std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& instance,
                                                        const AP&,
-                                                       const CP& cost_policy,
+                                                       const CP&,
                                                        const RuleEvaluationInput& input,
                                                        RuleEvaluationWorkspace& workspace,
                                                        CanContinue&& can_continue)
 {
     using Aggregation = typename AP::Aggregation;
     const auto aggregate = Aggregation {};
-    auto state = EvaluationState { Aggregation::identity(), Cost(0), std::nullopt, {}, {} };
+    auto state = EvaluationState { Aggregation::identity(), Cost(instance.get_rule().get_cost()), std::nullopt, {}, {} };
 
     workspace.exact_supports.clear();
 
     if (!can_continue(state.support_cost, state.raw_edge))
         return std::nullopt;
-
-    const auto evaluate_metric_effects = [&]
-    {
-        return instance.for_each_resolved_metric_effect(
-            [&](const ResolvedNumericEffect& effect)
-            {
-                if (!cost_policy.is_metric_target(effect.head))
-                    return true;
-                workspace.selector.clear();
-                const auto delta = metric_effect_delta(
-                    effect.operator_kind,
-                    [&] { return input.selector.select_fluent_interval(effect.head, workspace.selector.selection); },
-                    [&] { return input.selector.evaluate_effect_expression(effect.rhs, workspace.selector.selection); });
-                if (!delta)
-                    return false;
-
-                aggregate_selection_cost<Aggregation>(state.support_cost, workspace.selector);
-                state.raw_edge += *delta;
-                if (!can_continue(state.support_cost, state.raw_edge))
-                    return false;
-                return append_selection_evidence<CollectEvidence>(input, workspace);
-            });
-    };
-
-    // The pruning path evaluates metric effects first to establish an edge-cost lower bound.
-    if constexpr (!std::same_as<std::remove_cvref_t<CanContinue>, AlwaysContinue>)
-        if (!evaluate_metric_effects())
-            return std::nullopt;
 
     for (const auto literal : instance.get_body().template get_literals<formalism::FluentTag>())
     {
@@ -458,7 +442,7 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
         if (empty(rhs))
             return std::nullopt;
 
-        state.raw_interval = apply_numeric_effect(effect.operator_kind, lhs, rhs);
+        state.raw_interval = formalism::apply(effect.operator_kind, lhs, rhs);
         if (empty(state.raw_interval))
             return std::nullopt;
 
@@ -469,10 +453,6 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
         if (!append_selection_evidence<CollectEvidence>(input, workspace))
             return std::nullopt;
     }
-
-    if constexpr (std::same_as<std::remove_cvref_t<CanContinue>, AlwaysContinue>)
-        if (!evaluate_metric_effects())
-            return std::nullopt;
 
     return state;
 }
@@ -498,7 +478,7 @@ std::optional<FunctionCandidate> evaluate_unannotated_function(RuleInstance<Kind
     if (empty(rhs))
         return std::nullopt;
 
-    const auto raw_interval = apply_numeric_effect(effect.operator_kind, lhs, rhs);
+    const auto raw_interval = formalism::apply(effect.operator_kind, lhs, rhs);
     if (empty(raw_interval))
         return std::nullopt;
 

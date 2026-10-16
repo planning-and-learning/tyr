@@ -21,20 +21,20 @@ static_assert(std::constructible_from<Data,
                                       tyr::formalism::datalog::VariableViewList,
                                       tyr::formalism::datalog::ConjunctiveConditionView<::tyr::LiftedTag>,
                                       Data::HeadView<tyr::formalism::datalog::Repository>,
-                                      tyr::formalism::datalog::NumericEffectOperatorViewList<::tyr::LiftedTag, tyr::formalism::FluentTag>>);
+                                      ygg::float_t>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.variables;
     data.body;
     data.heads;
-    data.metric_effects;
+    data.cost;
     data.clear();
     view.get_index();
     view.get_arity();
     view.get_variables();
     view.get_body();
     view.get_heads();
-    view.get_metric_effects();
+    view.get_cost();
 });
 
 }
@@ -56,13 +56,13 @@ static_assert(std::constructible_from<Data,
                                       tyr::formalism::datalog::RuleBindingView<tyr::formalism::PredicateTag>,
                                       tyr::formalism::datalog::ConjunctiveConditionView<::tyr::GroundTag>,
                                       Data::HeadView<tyr::formalism::datalog::Repository>,
-                                      tyr::formalism::datalog::NumericEffectOperatorViewList<::tyr::GroundTag, tyr::formalism::FluentTag>>);
+                                      ygg::float_t>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.binding;
     data.body;
     data.heads;
-    data.metric_effects;
+    data.cost;
     data.clear();
     view.get_index();
     view.get_rule();
@@ -71,7 +71,7 @@ static_assert(requires(Data& data, const View& view) {
     view.get_key();
     view.get_body();
     view.get_heads();
-    view.get_metric_effects();
+    view.get_cost();
 });
 
 }

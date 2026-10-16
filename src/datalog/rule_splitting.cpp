@@ -36,16 +36,6 @@ namespace tyr::datalog
 {
 namespace
 {
-/// No metric effect depends on a variable of the rule, so that its cost is the same for all bindings of a projection.
-bool are_variable_free(const ygg::DataList<formalism::datalog::NumericEffectOperator<LiftedTag, formalism::FluentTag>>& metric_effects,
-                       const formalism::datalog::Repository& repository)
-{
-    auto parameters = ygg::UnorderedSet<formalism::ParameterIndex> {};
-    for (const auto& metric_effect : metric_effects)
-        formalism::datalog::collect_parameters(ygg::make_view(metric_effect, repository), parameters);
-    return parameters.empty();
-}
-
 /// Splits the rules of a program: the costs of a binding are sums or maxima over its preconditions, and the projected
 /// preconditions share no variable with the rest of the rule except the projection's, so the minimal costs are unchanged.
 /// Literals keep the source rule's parameter positions until a rule is emitted.
@@ -71,9 +61,9 @@ public:
     /// The projection rules are added to the program.
     std::optional<RuleSplitting::Rule> split(formalism::datalog::ConjunctiveConditionView<LiftedTag> condition,
                                              const std::vector<FluentAtom>& heads,
-                                             const ygg::DataList<formalism::datalog::NumericEffectOperator<LiftedTag, formalism::FluentTag>>& metric_effects)
+                                             ygg::float_t cost)
     {
-        if (!condition.get_numeric_constraints().empty() || !are_variable_free(metric_effects, m_context.destination))
+        if (!condition.get_numeric_constraints().empty())
             return std::nullopt;
 
         // Copies, since emitting rules inserts into the repository that holds the condition.
@@ -105,12 +95,12 @@ public:
         for (const auto& [projected, atom] : projections)
         {
             const auto [projection_rule, positions] =
-                emit_rule(variables, projected, { ygg::make_view(atom, m_context.destination).get_atom().get_index() }, {});
+                emit_rule(variables, projected, { ygg::make_view(atom, m_context.destination).get_atom().get_index() }, ygg::float_t(0));
             m_program.predicate_rules.push_back(projection_rule);
             m_splitting.origins.emplace(projection_rule, RuleSplitting::Origin { variables.size(), positions });
             m_splitting.projection_rules.emplace(ygg::make_view(atom, m_context.destination).get_atom().get_predicate().get_index(), projection_rule);
         }
-        const auto [main_rule, positions] = emit_rule(variables, body, heads, metric_effects);
+        const auto [main_rule, positions] = emit_rule(variables, body, heads, cost);
         m_splitting.origins.emplace(main_rule, RuleSplitting::Origin { variables.size(), positions });
         return main_rule;
     }
@@ -318,7 +308,7 @@ private:
     emit_rule(const ygg::IndexList<formalism::Variable>& variables,
               const Body& body,
               const std::vector<FluentAtom>& heads,
-              const ygg::DataList<formalism::datalog::NumericEffectOperator<LiftedTag, formalism::FluentTag>>& metric_effects)
+              ygg::float_t cost)
     {
         auto positions = std::vector<ygg::uint_t> {};
         for (const auto parameter : parameters_of(body))
@@ -342,7 +332,7 @@ private:
         rule->body = new_condition.get_index();
         for (const auto head : heads)
             rule->heads.push_back(renumber(ygg::make_view(head, m_context.destination), local));
-        rule->metric_effects.insert(rule->metric_effects.end(), metric_effects.begin(), metric_effects.end());
+        rule->cost = cost;
         return { formalism::datalog::insert(m_context.destination, *rule).first.get_index(), std::move(positions) };
     }
 
@@ -378,11 +368,7 @@ split_rules(formalism::datalog::ProgramView<LiftedTag> program, formalism::datal
         auto heads = std::vector<Splitter::FluentAtom> {};
         for (const auto head : rule.get_heads())
             heads.push_back(formalism::datalog::copy(head, context).first.get_index());
-        auto metric_effects = ygg::DataList<formalism::datalog::NumericEffectOperator<LiftedTag, formalism::FluentTag>> {};
-        for (const auto metric_effect : rule.get_metric_effects())
-            metric_effects.push_back(formalism::datalog::copy(metric_effect, context).get_data());
-
-        if (const auto main_rule = splitter.split(formalism::datalog::copy(rule.get_body(), context).first, heads, metric_effects))
+        if (const auto main_rule = splitter.split(formalism::datalog::copy(rule.get_body(), context).first, heads, rule.get_cost()))
         {
             result->predicate_rules.push_back(*main_rule);
             splitting.main_rules.emplace(rule.get_index(), *main_rule);

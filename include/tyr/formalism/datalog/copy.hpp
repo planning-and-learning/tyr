@@ -104,7 +104,6 @@ std::pair<ConjunctiveConditionView<LiftedTag>, bool> copy(ConjunctiveConditionVi
 
 std::pair<ConjunctiveConditionView<GroundTag>, bool> copy(ConjunctiveConditionView<GroundTag> element, CopyContext& context);
 
-std::pair<MetricView, bool> copy(MetricView element, CopyContext& context);
 
 template<RelationKind R>
 std::pair<RuleView<LiftedTag, R>, bool> copy(RuleView<LiftedTag, R> element, CopyContext& context);
@@ -389,15 +388,6 @@ inline std::pair<ConjunctiveConditionView<GroundTag>, bool> copy(ConjunctiveCond
     return datalog::insert(context.destination, *conj_cond);
 }
 
-inline std::pair<MetricView, bool> copy(MetricView element, CopyContext& context)
-{
-    auto metric = datalog::checkout<Metric>(context.builder);
-
-    metric->fexpr = copy(element.get_fexpr(), context).get_data();
-
-    return datalog::insert(context.destination, *metric);
-}
-
 template<TaskKind T, RelationKind R, typename C>
 void copy_rule_heads(ygg::View<ygg::Index<Rule<T, R>>, C> element, ygg::Data<Rule<T, R>>& rule, CopyContext& context)
 {
@@ -417,8 +407,7 @@ std::pair<RuleView<LiftedTag, R>, bool> copy(RuleView<LiftedTag, R> element, Cop
         rule->variables.push_back(copy(variable, context).first.get_index());
     rule->body = copy(element.get_body(), context).first.get_index();
     copy_rule_heads(element, *rule, context);
-    for (const auto metric_effect : element.get_metric_effects())
-        rule->metric_effects.push_back(copy(metric_effect, context).get_data());
+    rule->cost = element.get_cost();
 
     return datalog::insert(context.destination, *rule);
 }
@@ -443,8 +432,7 @@ std::pair<RuleView<GroundTag, R>, bool> copy(RuleView<GroundTag, R> element, Cop
     rule->binding = copy(element.get_row(), context).first.get_index();
     rule->body = copy(element.get_body(), context).first.get_index();
     copy_rule_heads(element, *rule, context);
-    for (const auto metric_effect : element.get_metric_effects())
-        rule->metric_effects.push_back(copy(metric_effect, context).get_data());
+    rule->cost = element.get_cost();
 
     return datalog::insert(context.destination, *rule);
 }
@@ -476,8 +464,6 @@ void copy_except_rules(ProgramView<T> element, ygg::Data<Program<T>>& result, Co
 
     if (const auto goal = element.get_goal())
         result.goal = copy(*goal, context).first.get_index();
-    if (const auto metric = element.get_metric())
-        result.metric = copy(*metric, context).first.get_index();
 }
 
 extern template std::pair<PredicateView<StaticTag>, bool> copy(PredicateView<StaticTag> element, CopyContext& context);

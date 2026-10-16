@@ -736,8 +736,8 @@ void bind_rpg_max_heuristic(nb::module_& m, const std::string& name)
                       { return std::make_shared<T>(std::move(task), std::move(execution_context), cost_mode); }),
              "task"_a,
              "execution_context"_a,
-             "cost_mode"_a = CostMode::GENERAL)
-        .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::GENERAL);
+             "cost_mode"_a = CostMode::UNIT)
+        .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::UNIT);
 }
 
 template<TaskKind Kind>
@@ -751,8 +751,8 @@ void bind_rpg_add_heuristic(nb::module_& m, const std::string& name)
                       { return std::make_shared<T>(std::move(task), std::move(execution_context), cost_mode); }),
              "task"_a,
              "execution_context"_a,
-             "cost_mode"_a = CostMode::GENERAL)
-        .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::GENERAL);
+             "cost_mode"_a = CostMode::UNIT)
+        .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::UNIT);
 }
 
 template<TaskKind Kind>
@@ -766,8 +766,8 @@ void bind_rpg_ff_heuristic(nb::module_& m, const std::string& name)
                       { return std::make_shared<T>(std::move(task), std::move(execution_context), cost_mode); }),
              "task"_a,
              "execution_context"_a,
-             "cost_mode"_a = CostMode::GENERAL)
-        .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::GENERAL);
+             "cost_mode"_a = CostMode::UNIT)
+        .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::UNIT);
 }
 
 template<TaskKind Kind>
@@ -781,8 +781,8 @@ void bind_lmcut_heuristic(nb::module_& m, const std::string& name)
                       { return std::make_shared<T>(std::move(task), std::move(execution_context), cost_mode); }),
              "task"_a,
              "execution_context"_a,
-             "cost_mode"_a = CostMode::GENERAL)
-        .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::GENERAL);
+             "cost_mode"_a = CostMode::UNIT)
+        .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::UNIT);
 }
 
 }  // namespace tyr::planning

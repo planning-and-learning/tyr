@@ -21,7 +21,7 @@
 #include "tyr/formalism/arithmetic_operator_utils.hpp"
 #include "tyr/formalism/boolean_operator_utils.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/numeric_effect_operator_utils.hpp"
+#include "tyr/formalism/numeric_effect_operator_utils.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/applicability_decl.hpp"
@@ -306,7 +306,7 @@ bool evaluate(formalism::planning::BooleanOperatorView<GroundTag> element, const
 template<TaskKind Kind, formalism::FactKind T>
 ygg::float_t evaluate(formalism::planning::NumericEffectView<GroundTag, T> element, const StateContext<Kind>& context)
 {
-    return formalism::planning::apply(element.get_operator(), evaluate(element.get_fterm(), context), evaluate(element.get_fexpr(), context));
+    return formalism::apply(element.get_operator(), evaluate(element.get_fterm(), context), evaluate(element.get_fexpr(), context));
 }
 
 template<TaskKind Kind, formalism::FactKind T>

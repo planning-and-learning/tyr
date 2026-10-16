@@ -38,7 +38,6 @@ void bind_formalism(nb::module_& m)
     bind_conjunctive_effect(m, repository);
     bind_conditional_effect(m, repository);
     bind_rule(m, repository);
-    bind_metric(m, repository);
     bind_program(m, repository);
     bind_arithmetic_operator(m, repository);
     bind_boolean_operator(m, repository);

@@ -97,43 +97,8 @@ public:
 private:
     using GoalAtom = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
 
-    /// Lower bound of a rule's edge cost: its constant increases of nullary metric functions. nullopt if a metric effect
-    /// can lower the cost or its amount is not constant.
-    static std::optional<Cost> get_edge_cost_lower_bound(formalism::datalog::RuleView<LiftedTag, formalism::PredicateTag> rule)
-    {
-        auto bound = std::optional<Cost>(Cost(0));
-        for (const auto metric_operator : rule.get_metric_effects())
-            ygg::visit(
-                [&](const auto effect)
-                {
-                    if (!bound)
-                        return;
-                    if (effect.get_operator() != formalism::NumericEffectOperatorKind::Increase)
-                    {
-                        bound.reset();
-                        return;
-                    }
-                    ygg::visit(
-                        [&]<typename Alternative>(const Alternative& alternative)
-                        {
-                            if constexpr (std::same_as<Alternative, ygg::float_t>)
-                            {
-                                if (alternative < ygg::float_t(0))
-                                    bound.reset();
-                                else if (effect.get_fterm().get_terms().empty())
-                                    *bound += Cost(alternative);
-                            }
-                            else
-                                bound.reset();
-                        },
-                        effect.get_fexpr().get_variant());
-                },
-                metric_operator.get_variant());
-        return bound;
-    }
-
     /// Enables the goal cutoff where stopping an iteration early keeps every witness: positive fluent goals without numeric
-    /// constraints, propositional rules with known edge cost lower bounds, one stratum, and annotations without achievers.
+    /// constraints, propositional rules only, one stratum, and annotations without achievers.
     void initialize_goal_cutoff()
     {
         if constexpr (AP::stores_annotations && !AP::records_propositional_achievers
@@ -149,12 +114,7 @@ private:
 
             auto min_edge_cost = std::numeric_limits<Cost>::max();
             for (const auto& rule : m_ctx.in().template get_rules<formalism::PredicateTag>())
-            {
-                const auto bound = get_edge_cost_lower_bound(rule->get_rule());
-                if (!bound)
-                    return;
-                min_edge_cost = std::min(min_edge_cost, *bound);
-            }
+                min_edge_cost = std::min(min_edge_cost, Cost(rule->get_rule().get_cost()));
 
             m_goal_atoms.clear();
             m_goal_positions.clear();
@@ -451,7 +411,7 @@ private:
                              const ApplicabilityContext& applicability_context)
     {
         // A rejected binding is generated again by the delta that makes it applicable (see generate_hyperedge_cliques).
-        // Undefined metric effects stay undefined, or their fluent reads trigger a full enumeration of the rule.
+        // Bindings rejected by a numeric constraint are retried because its fluent reads trigger a full enumeration of the rule.
         if (!try_process_predicate_binding(wrctx, input, applicability_context))
             ++wrctx.out().statistics().num_rejected_rules;
     }

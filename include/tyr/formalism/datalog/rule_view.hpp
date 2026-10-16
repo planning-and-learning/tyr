@@ -58,7 +58,7 @@ public:
     auto get_head() const noexcept
         requires std::same_as<R, ::tyr::formalism::FunctionTag>
     { return ygg::make_view(this->get_data().head, this->get_context()); }
-    auto get_metric_effects() const noexcept { return ygg::make_view(this->get_data().metric_effects, this->get_context()); }
+    auto get_cost() const noexcept { return this->get_data().cost; }
 
     auto get_rule() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>

@@ -311,8 +311,7 @@ std::pair<RuleView<GroundTag, R>, bool> ground(RuleView<LiftedTag, R> element, G
             rule->heads.push_back(ground(head, context).first.get_index());
     else
         rule->head = ground(element.get_head(), context).get_data();
-    for (const auto metric_effect : element.get_metric_effects())
-        rule->metric_effects.push_back(ground(metric_effect, context).get_data());
+    rule->cost = element.get_cost();
 
     // Canonicalize and Serialize
     return datalog::insert(context.destination, *rule);

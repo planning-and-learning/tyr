@@ -148,8 +148,6 @@ struct ConstRuleWorkspace<LiftedTag, R>
 public:
     auto get_rule() const noexcept { return rule; }
     auto get_nullary_condition() const noexcept { return nullary_condition; }
-    const auto& get_lifted_effects() const noexcept { return lifted_effects; }
-    const auto& get_nullary_effects() const noexcept { return nullary_effects; }
     auto get_conflicting_overapproximation_condition() const noexcept { return conflicting_overapproximation_condition; }
     auto get_hyperedge_condition() const noexcept { return hyperedge_condition; }
     const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
@@ -159,8 +157,6 @@ public:
 private:
     formalism::datalog::RuleView<LiftedTag, R> rule;
     formalism::datalog::ConjunctiveConditionView<GroundTag> nullary_condition;
-    formalism::datalog::NumericEffectOperatorViewList<LiftedTag, formalism::FluentTag> lifted_effects;
-    formalism::datalog::NumericEffectOperatorViewList<GroundTag, formalism::FluentTag> nullary_effects;
     formalism::datalog::ConjunctiveConditionView<LiftedTag> unary_overapproximation_condition;
     formalism::datalog::ConjunctiveConditionView<LiftedTag> binary_overapproximation_condition;
     formalism::datalog::ConjunctiveConditionView<LiftedTag> conflicting_overapproximation_condition;

@@ -15,12 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_PLANNING_NUMERIC_EFFECT_OPERATOR_UTILS_HPP_
-#define TYR_FORMALISM_PLANNING_NUMERIC_EFFECT_OPERATOR_UTILS_HPP_
+#ifndef TYR_FORMALISM_NUMERIC_EFFECT_OPERATOR_UTILS_HPP_
+#define TYR_FORMALISM_NUMERIC_EFFECT_OPERATOR_UTILS_HPP_
 
-#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 
-namespace tyr::formalism::planning
+#include <stdexcept>
+
+namespace tyr::formalism
 {
 /**
  * Float
