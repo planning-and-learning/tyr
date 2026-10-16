@@ -198,7 +198,7 @@ void RuleWorkspace<LiftedTag, R>::Common::initialize_iteration(const AssignmentS
 }
 
 template<formalism::RelationKind R>
-RuleWorkspace<LiftedTag, R>::Iteration::Iteration(const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common) :
+RuleWorkspace<LiftedTag, R>::Iteration::Iteration(const ConstRuleWorkspace<LiftedTag, R>&, const Common& common) :
     head_updates(make_head_updates(R {})),
     kckp_workspace(common.kckp.get_graph_layout())
 {

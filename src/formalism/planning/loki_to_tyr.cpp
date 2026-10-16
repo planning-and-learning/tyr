@@ -216,7 +216,7 @@ ParameterIndex LokiToTyrTranslator::ParameterIndexMapping::lookup_parameter_inde
 
 FunctionViewVariant LokiToTyrTranslator::translate_common(loki::formalism::FunctionSkeletonView element, Builder& builder, Repository& context)
 {
-    auto build_function = [&]<typename Tag>(Tag fact_tag) -> FunctionViewVariant
+    auto build_function = [&]<typename Tag>(Tag) -> FunctionViewVariant
     {
         auto function = planning::checkout<Function<Tag>>(builder);
         function->name = element.get_name();
@@ -246,7 +246,7 @@ ygg::Index<Variable> LokiToTyrTranslator::translate_common(loki::formalism::Para
 
 PredicateViewVariant LokiToTyrTranslator::translate_common(loki::formalism::PredicateView element, Builder& builder, Repository& context)
 {
-    auto build_predicate = [&]<typename Tag>(Tag fact_tag) -> PredicateViewVariant
+    auto build_predicate = [&]<typename Tag>(Tag) -> PredicateViewVariant
     {
         auto predicate = planning::checkout<Predicate<Tag>>(builder);
         predicate->name = element.get_name();
@@ -310,7 +310,7 @@ AtomViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::AtomView 
 {
     auto predicate_view_variant = translate_common(element.get_predicate(), builder, context);
 
-    auto build_atom = [&]<typename Tag>(Tag fact_tag, auto predicate) -> AtomViewVariant
+    auto build_atom = [&]<typename Tag>(Tag, auto predicate) -> AtomViewVariant
     {
         auto atom = planning::checkout<Atom<LiftedTag, Tag>>(builder);
         atom->predicate = predicate.get_index();
@@ -337,7 +337,7 @@ LiteralViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::Litera
 {
     auto atom_view_variant = translate_lifted(element.get_atom(), builder, context);
 
-    auto build_literal = [&]<typename Tag>(Tag fact_tag, auto atom) -> LiteralViewVariant
+    auto build_literal = [&]<typename Tag>(Tag, auto atom) -> LiteralViewVariant
     {
         auto literal = planning::checkout<Literal<LiftedTag, Tag>>(builder);
         literal->atom = atom.get_index();
@@ -457,7 +457,7 @@ FunctionTermViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::F
 {
     auto function_view_variant = translate_common(element.get_function(), builder, context);
 
-    auto build_function_term = [&]<typename Tag>(Tag fact_tag, auto function) -> FunctionTermViewVariant
+    auto build_function_term = [&]<typename Tag>(Tag, auto function) -> FunctionTermViewVariant
     {
         auto fterm = planning::checkout<FunctionTerm<LiftedTag, Tag>>(builder);
         fterm->function = function.get_index();
@@ -603,7 +603,7 @@ NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::
 {
     auto fterm_view_variant = translate_lifted(element.get_function(), builder, context);
 
-    auto build_numeric_effect_term_helper = [&]<typename Tag>(Tag fact_tag, NumericEffectOperatorKind operator_kind, auto fterm) -> NumericEffectViewVariant
+    auto build_numeric_effect_term_helper = [&]<typename Tag>(Tag, NumericEffectOperatorKind operator_kind, auto fterm) -> NumericEffectViewVariant
     {
         auto numeric_effect = planning::checkout<NumericEffect<LiftedTag, Tag>>(builder);
 
@@ -613,7 +613,7 @@ NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::
         return planning::insert(context, *numeric_effect).first;
     };
 
-    auto build_numeric_effect_term = [&]<typename Tag>(Tag fact_tag, auto fterm) -> NumericEffectViewVariant
+    auto build_numeric_effect_term = [&]<typename Tag>(Tag, auto fterm) -> NumericEffectViewVariant
     {
         if constexpr (std::is_same_v<Tag, AuxiliaryTag>)
         {
@@ -912,7 +912,7 @@ GroundAtomViewVariant LokiToTyrTranslator::translate_grounded(loki::formalism::A
 {
     auto predicate_view_variant = translate_common(element.get_predicate(), builder, context);
 
-    auto build_atom = [&]<typename Tag>(Tag fact_tag, auto predicate)
+    auto build_atom = [&]<typename Tag>(Tag, auto predicate)
     {
         auto atom = planning::checkout<Atom<GroundTag, Tag>>(builder);
         atom->binding =
@@ -960,7 +960,7 @@ GroundLiteralViewVariant LokiToTyrTranslator::translate_grounded(loki::formalism
 {
     auto atom_view_variant = translate_grounded(element.get_atom(), builder, context);
 
-    auto build_literal = [&]<typename Tag>(Tag fact_tag, auto atom)
+    auto build_literal = [&]<typename Tag>(Tag, auto atom)
     {
         auto literal = planning::checkout<Literal<GroundTag, Tag>>(builder);
         literal->atom = atom.get_index();
@@ -1094,7 +1094,7 @@ GroundFunctionTermViewVariant LokiToTyrTranslator::translate_grounded(loki::form
 {
     auto function_view_variant = translate_common(element.get_function(), builder, context);
 
-    auto build_function_term = [&]<typename Tag>(Tag fact_tag, auto function) -> GroundFunctionTermViewVariant
+    auto build_function_term = [&]<typename Tag>(Tag, auto function) -> GroundFunctionTermViewVariant
     {
         auto fterm = planning::checkout<FunctionTerm<GroundTag, Tag>>(builder);
         fterm->binding =
@@ -1123,7 +1123,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::InitialFunctionValueVie
 {
     auto fterm_view_variant = translate_grounded(element.get_function(), builder, context);
 
-    auto build_fterm_value = [&]<typename Tag>(Tag fact_tag, auto fterm) -> GroundFunctionTermValueViewVariant
+    auto build_fterm_value = [&]<typename Tag>(Tag, auto fterm) -> GroundFunctionTermValueViewVariant
     {
         auto fterm_value = planning::checkout<FunctionTermValue<GroundTag, Tag>>(builder);
         fterm_value->fterm = fterm.get_index();

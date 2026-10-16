@@ -391,7 +391,7 @@ void LMCutImplementation<Kind>::explore_before_goal_zone(Precondition node, std:
     {
         if (preconditions.empty())
             is_base = true;
-        for (const auto precondition : preconditions)
+        for (const auto& precondition : preconditions)
         {
             std::visit(
                 [&](auto key)
@@ -502,13 +502,13 @@ void LMCutImplementation<Kind>::compute_before_goal_zone()
                 if constexpr (std::same_as<decltype(key), PredicateHead>)
                 {
                     if (m_before_goal_zone.insert(key).second)
-                        for (const auto dependent : m_before_goal_zone_dependents[key])
+                        for (const auto& dependent : m_before_goal_zone_dependents[key])
                             base.push_back(dependent);
                 }
                 else
                 {
                     if (m_numeric_before_goal_zone.insert(key).second)
-                        for (const auto dependent : m_numeric_before_goal_zone_dependents[key])
+                        for (const auto& dependent : m_numeric_before_goal_zone_dependents[key])
                             base.push_back(dependent);
                 }
             },
