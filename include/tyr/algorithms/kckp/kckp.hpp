@@ -165,6 +165,7 @@ private:
 struct Workspace
 {
     std::vector<uint64_t> compatible_vertices_data;
+    std::vector<uint64_t> anchor_source_data;  ///< The rows of the prepared anchor source, see DeltaKCKP::prepare_anchor_source.
     size_t compatible_row_blocks { 0 };
     boost::dynamic_bitset<> partition_bits;
     std::vector<Vertex> partial_solution;
@@ -183,6 +184,7 @@ struct Workspace
 
         compatible_row_blocks = layout.info.num_blocks;
         compatible_vertices_data.resize(layout.num_partitions * compatible_row_blocks);
+        anchor_source_data.resize(compatible_row_blocks);
         partition_bits.resize(layout.num_partitions);
         partial_solution.resize(layout.num_partitions);
     }

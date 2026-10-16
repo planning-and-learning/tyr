@@ -22,8 +22,11 @@
 #include "tyr/datalog/policies/annotation_types.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
+#include <algorithm>
+#include <array>
 #include <cassert>
 #include <ranges>
+#include <span>
 #include <tuple>
 #include <utility>
 #include <yggdrasil/containers/associative_containers.hpp>
@@ -101,7 +104,13 @@ public:
     using MetricTargets = ygg::UnorderedSet<MetricTarget>;
 
     RuleCostPolicy() = default;
-    explicit RuleCostPolicy(const MetricTargets* metric_targets) noexcept : m_metric_targets(metric_targets) {}
+    /// The targets must not change afterwards: up to kNumListedTargets of them are copied for a lookup without hashing.
+    explicit RuleCostPolicy(const MetricTargets* metric_targets) noexcept : m_metric_targets(metric_targets)
+    {
+        if (metric_targets && metric_targets->size() <= kNumListedTargets)
+            for (const auto target : *metric_targets)
+                m_listed_targets[m_num_listed_targets++] = target;
+    }
 
     template<typename RuleKey>
     Cost get_cost(RuleKey) const noexcept
@@ -116,7 +125,12 @@ public:
 
     bool is_metric_target(MetricTarget binding) const noexcept
     {
-        return !m_metric_targets || m_metric_targets->contains(binding);
+        if (!m_metric_targets)
+            return true;
+        if (m_metric_targets->size() > kNumListedTargets)
+            return m_metric_targets->contains(binding);
+        const auto listed = std::span(m_listed_targets.data(), m_num_listed_targets);
+        return std::ranges::find(listed, binding) != listed.end();
     }
 
     void clear() noexcept {}
@@ -130,7 +144,11 @@ public:
     }
 
 private:
+    static constexpr size_t kNumListedTargets = 4;
+
     const MetricTargets* m_metric_targets { nullptr };
+    std::array<MetricTarget, kNumListedTargets> m_listed_targets {};
+    size_t m_num_listed_targets { 0 };
 };
 
 template<formalism::RelationKind R>
