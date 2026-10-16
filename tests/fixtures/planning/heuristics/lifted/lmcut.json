@@ -7,9 +7,6 @@
             "configs": {
                 "unit": {
                     "h": 24
-                },
-                "general": {
-                    "h": 142
                 }
             }
         },
@@ -19,9 +16,6 @@
             "task_file": "classical/tests/airport/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 8
-                },
-                "general": {
                     "h": 8
                 }
             }
@@ -33,9 +27,6 @@
             "configs": {
                 "unit": {
                     "h": 1
-                },
-                "general": {
-                    "h": 1
                 }
             }
         },
@@ -46,9 +37,6 @@
             "configs": {
                 "unit": {
                     "h": 5
-                },
-                "general": {
-                    "h": 14
                 }
             }
         },
@@ -58,9 +46,6 @@
             "task_file": "classical/tests/blocks_3/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 3
-                },
-                "general": {
                     "h": 3
                 }
             }
@@ -72,9 +57,6 @@
             "configs": {
                 "unit": {
                     "h": 3
-                },
-                "general": {
-                    "h": 3
                 }
             }
         },
@@ -84,9 +66,6 @@
             "task_file": "classical/tests/childsnack/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 3
-                },
-                "general": {
                     "h": 3
                 }
             }
@@ -98,9 +77,6 @@
             "configs": {
                 "unit": {
                     "h": 3
-                },
-                "general": {
-                    "h": 3
                 }
             }
         },
@@ -110,9 +86,6 @@
             "task_file": "classical/tests/driverlog/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 4
-                },
-                "general": {
                     "h": 4
                 }
             }
@@ -124,9 +97,6 @@
             "configs": {
                 "unit": {
                     "h": 4
-                },
-                "general": {
-                    "h": 4
                 }
             }
         },
@@ -136,9 +106,6 @@
             "task_file": "classical/tests/grid/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 3
-                },
-                "general": {
                     "h": 3
                 }
             }
@@ -150,9 +117,6 @@
             "configs": {
                 "unit": {
                     "h": 2
-                },
-                "general": {
-                    "h": 2
                 }
             }
         },
@@ -162,9 +126,6 @@
             "task_file": "classical/tests/hiking/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 2
-                },
-                "general": {
                     "h": 2
                 }
             }
@@ -176,9 +137,6 @@
             "configs": {
                 "unit": {
                     "h": 3
-                },
-                "general": {
-                    "h": 3
                 }
             }
         },
@@ -188,9 +146,6 @@
             "task_file": "classical/tests/miconic/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 4
-                },
-                "general": {
                     "h": 4
                 }
             }
@@ -202,9 +157,6 @@
             "configs": {
                 "unit": {
                     "h": 0
-                },
-                "general": {
-                    "h": 0
                 }
             }
         },
@@ -214,9 +166,6 @@
             "task_file": "classical/tests/miconic-simpleadl/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 3
-                },
-                "general": {
                     "h": 3
                 }
             }
@@ -228,9 +177,6 @@
             "configs": {
                 "unit": {
                     "h": 8
-                },
-                "general": {
-                    "h": 169009
                 }
             }
         },
@@ -240,9 +186,6 @@
             "task_file": "classical/tests/pathways/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 4
-                },
-                "general": {
                     "h": 4
                 }
             }
@@ -254,9 +197,6 @@
             "configs": {
                 "unit": {
                     "h": 0
-                },
-                "general": {
-                    "h": 0
                 }
             }
         },
@@ -266,9 +206,6 @@
             "task_file": "classical/tests/psr-middle/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 0
-                },
-                "general": {
                     "h": 0
                 }
             }
@@ -280,9 +217,6 @@
             "configs": {
                 "unit": {
                     "h": 11
-                },
-                "general": {
-                    "h": 11
                 }
             }
         },
@@ -292,9 +226,6 @@
             "task_file": "classical/tests/reward/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 4
-                },
-                "general": {
                     "h": 4
                 }
             }
@@ -306,9 +237,6 @@
             "configs": {
                 "unit": {
                     "h": 3
-                },
-                "general": {
-                    "h": 3
                 }
             }
         },
@@ -318,9 +246,6 @@
             "task_file": "classical/tests/satellite/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 5
-                },
-                "general": {
                     "h": 5
                 }
             }
@@ -332,9 +257,6 @@
             "configs": {
                 "unit": {
                     "h": 2
-                },
-                "general": {
-                    "h": 2
                 }
             }
         },
@@ -344,9 +266,6 @@
             "task_file": "classical/tests/sokoban/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 24
-                },
-                "general": {
                     "h": 24
                 }
             }
@@ -358,9 +277,6 @@
             "configs": {
                 "unit": {
                     "h": 3
-                },
-                "general": {
-                    "h": 3
                 }
             }
         },
@@ -371,9 +287,6 @@
             "configs": {
                 "unit": {
                     "h": 3
-                },
-                "general": {
-                    "h": 53
                 }
             }
         },
@@ -383,9 +296,6 @@
             "task_file": "classical/tests/visitall/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 6
-                },
-                "general": {
                     "h": 6
                 }
             }
@@ -397,9 +307,6 @@
             "configs": {
                 "unit": {
                     "h": 9
-                },
-                "general": {
-                    "h": 160
                 }
             }
         },
@@ -409,9 +316,6 @@
             "task_file": "numeric/tests/fo-counters/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 2
-                },
-                "general": {
                     "h": 2
                 }
             }
@@ -423,9 +327,6 @@
             "configs": {
                 "unit": {
                     "h": 5
-                },
-                "general": {
-                    "h": 0
                 }
             }
         },
@@ -435,9 +336,6 @@
             "task_file": "numeric/tests/refuel-adl/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 0
-                },
-                "general": {
                     "h": 0
                 }
             }
@@ -449,9 +347,6 @@
             "configs": {
                 "unit": {
                     "h": 3
-                },
-                "general": {
-                    "h": 775.49
                 }
             }
         },
@@ -462,9 +357,6 @@
             "configs": {
                 "unit": {
                     "h": 6
-                },
-                "general": {
-                    "h": 5812
                 }
             }
         },
@@ -475,9 +367,6 @@
             "configs": {
                 "unit": {
                     "h": 1
-                },
-                "general": {
-                    "h": 0
                 }
             }
         },
@@ -488,9 +377,6 @@
             "configs": {
                 "unit": {
                     "h": 2
-                },
-                "general": {
-                    "h": 0
                 }
             }
         },
@@ -501,9 +387,6 @@
             "configs": {
                 "unit": {
                     "h": 2
-                },
-                "general": {
-                    "h": 7
                 }
             }
         },
@@ -514,9 +397,6 @@
             "configs": {
                 "unit": {
                     "h": 3
-                },
-                "general": {
-                    "h": 0
                 }
             }
         },
@@ -527,9 +407,6 @@
             "configs": {
                 "unit": {
                     "h": 1
-                },
-                "general": {
-                    "h": 0
                 }
             }
         },
@@ -540,9 +417,6 @@
             "configs": {
                 "unit": {
                     "h": 5
-                },
-                "general": {
-                    "h": 0
                 }
             }
         },
@@ -553,9 +427,6 @@
             "configs": {
                 "unit": {
                     "h": 2
-                },
-                "general": {
-                    "h": 0
                 }
             }
         },
@@ -566,9 +437,6 @@
             "configs": {
                 "unit": {
                     "h": 2
-                },
-                "general": {
-                    "h": 0
                 }
             }
         },
@@ -579,9 +447,6 @@
             "configs": {
                 "unit": {
                     "h": 2
-                },
-                "general": {
-                    "h": 0
                 }
             }
         },
@@ -592,9 +457,6 @@
             "configs": {
                 "unit": {
                     "h": 2
-                },
-                "general": {
-                    "h": 0
                 }
             }
         },
@@ -605,9 +467,6 @@
             "configs": {
                 "unit": {
                     "h": 1
-                },
-                "general": {
-                    "h": 0
                 }
             }
         },
@@ -618,9 +477,6 @@
             "configs": {
                 "unit": {
                     "h": 3
-                },
-                "general": {
-                    "h": 0
                 }
             }
         },
@@ -631,9 +487,6 @@
             "configs": {
                 "unit": {
                     "h": 2
-                },
-                "general": {
-                    "h": 0
                 }
             }
         },
@@ -644,9 +497,6 @@
             "configs": {
                 "unit": {
                     "h": 4
-                },
-                "general": {
-                    "h": 0
                 }
             }
         },
@@ -657,9 +507,6 @@
             "configs": {
                 "unit": {
                     "h": 2
-                },
-                "general": {
-                    "h": 0
                 }
             }
         },
@@ -669,9 +516,6 @@
             "task_file": "numeric/tests/settersnumeric/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 2
-                },
-                "general": {
                     "h": 2
                 }
             }
@@ -683,9 +527,6 @@
             "configs": {
                 "unit": {
                     "h": 2
-                },
-                "general": {
-                    "h": 0
                 }
             }
         }

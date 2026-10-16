@@ -70,6 +70,8 @@ RunConfig: TypeAlias = Callable[["TaskKind", "HeuristicName | None", "CostSuffix
 
 HEURISTICS: tuple[HeuristicName, ...] = ("blind", "hmax", "hadd", "hff", "hlmcut")
 COST_SUFFIXES: tuple[CostSuffix, ...] = ("unit", "general")
+# The RPG heuristics support unit cost only; blind search also runs with the general metric.
+SEARCH_CONFIGS: list[ConfigSpec] = [(heuristic, suffix) for heuristic in HEURISTICS for suffix in COST_SUFFIXES if heuristic == "blind" or suffix == "unit"]
 RECORDED_STATUSES = (SearchStatus.SOLVED, SearchStatus.EXHAUSTED, SearchStatus.UNSOLVABLE)
 
 SEARCH_STATUS_NAMES = {
