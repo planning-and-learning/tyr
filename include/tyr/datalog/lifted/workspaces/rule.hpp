@@ -21,6 +21,7 @@
 #include "tyr/algorithms/kckp/delta_kckp.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/lifted/consistency_graph.hpp"
+#include "tyr/datalog/lifted/packed_atom.hpp"
 #include "tyr/datalog/rule_evaluation.hpp"
 #include "tyr/datalog/statistics/rule.hpp"
 #include "tyr/formalism/binding_index.hpp"
@@ -154,6 +155,26 @@ public:
     auto get_hyperedge_condition() const noexcept { return hyperedge_condition; }
     const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
 
+    template<formalism::FactKind F>
+    struct PackedLiteral
+    {
+        PackedAtom<F> atom;
+        bool polarity;
+    };
+
+    struct PackedConflictingLiterals
+    {
+        std::vector<PackedLiteral<formalism::StaticTag>> static_literals;
+        std::vector<PackedLiteral<formalism::FluentTag>> fluent_literals;
+    };
+
+    /// The literals of the conflicting overapproximation condition compiled against packed layouts, if all of them are.
+    const auto& get_packed_conflicting_literals() const noexcept { return packed_conflicting_literals; }
+    /// The heads of a predicate rule compiled against packed layouts, if all of them are.
+    const auto& get_packed_heads() const noexcept { return packed_heads; }
+    /// The atoms of the positive fluent body literals compiled against packed layouts, in body order, if all of them are.
+    const auto& get_packed_positive_fluent_body() const noexcept { return packed_positive_fluent_body; }
+
     ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag, R> rule, formalism::datalog::Repository& repository, kckp::Graph compatibility_graph);
 
 private:
@@ -167,6 +188,10 @@ private:
     formalism::datalog::ConjunctiveConditionView<LiftedTag> hyperedge_condition;
 
     StaticConsistencyGraph static_consistency_graph;
+
+    std::optional<PackedConflictingLiterals> packed_conflicting_literals;
+    std::optional<std::vector<PackedAtom<formalism::FluentTag>>> packed_heads;
+    std::optional<std::vector<PackedAtom<formalism::FluentTag>>> packed_positive_fluent_body;
 };
 
 /**

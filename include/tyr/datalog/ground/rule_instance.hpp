@@ -21,6 +21,7 @@
 #include "tyr/datalog/rule_instance.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
+#include <optional>
 #include <yggdrasil/containers/variant.hpp>
 
 namespace tyr::datalog
@@ -38,6 +39,16 @@ public:
     auto get_head() const noexcept { return m_rule.get_head(); }
 
     auto resolve(formalism::datalog::AtomView<GroundTag, formalism::FluentTag> atom) const noexcept { return atom.get_row(); }
+
+    /// Calls callback with the binding of each positive fluent body literal, in body order, while it returns true.
+    template<typename Callback>
+    bool for_each_positive_fluent_body_binding(Callback&& callback) const
+    {
+        for (const auto literal : get_body().template get_literals<formalism::FluentTag>())
+            if (literal.get_polarity() && !callback(std::optional(literal.get_atom().get_row().get_index())))
+                return false;
+        return true;
+    }
 
     auto resolve(formalism::datalog::BooleanOperatorView<GroundTag> constraint) const noexcept { return constraint; }
 

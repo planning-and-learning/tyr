@@ -47,6 +47,24 @@ public:
         return formalism::datalog::ground_binding(atom, m_grounder).first;
     }
 
+    /// Calls callback with the binding of each positive fluent body literal, in body order, while it returns true. With packed
+    /// bindings, a binding outside its argument domains is passed as nullopt: no fact has it.
+    template<typename Callback>
+    bool for_each_positive_fluent_body_binding(Callback&& callback) const
+    {
+        if (const auto& packed = m_workspace.get_packed_positive_fluent_body())
+        {
+            for (const auto& atom : *packed)
+                if (!callback(atom.encode(m_grounder.binding)))
+                    return false;
+            return true;
+        }
+        for (const auto literal : get_body().template get_literals<formalism::FluentTag>())
+            if (literal.get_polarity() && !callback(std::optional(resolve(literal.get_atom()).get_index())))
+                return false;
+        return true;
+    }
+
     auto resolve(formalism::datalog::BooleanOperatorView<LiftedTag> constraint) const { return formalism::datalog::ground(constraint, m_grounder); }
 
     ResolvedNumericEffect resolve(formalism::datalog::NumericEffectView<LiftedTag, formalism::FluentTag> effect) const

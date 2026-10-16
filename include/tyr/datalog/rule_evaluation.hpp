@@ -406,20 +406,18 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
         if (!evaluate_metric_effects())
             return std::nullopt;
 
-    for (const auto literal : instance.get_body().template get_literals<formalism::FluentTag>())
-    {
-        if (!literal.get_polarity())
-            continue;
+    const auto supported = instance.for_each_positive_fluent_body_binding(
+        [&](const auto binding)
+        {
+            const auto* annotation = binding ? input.predicate_annotations.find(*binding) : nullptr;
+            if (!annotation || get_cost(*annotation) == std::numeric_limits<Cost>::max())
+                return false;
 
-        const auto binding = instance.resolve(literal.get_atom());
-        const auto* annotation = input.predicate_annotations.find(binding.get_index());
-        if (!annotation || get_cost(*annotation) == std::numeric_limits<Cost>::max())
-            return std::nullopt;
-
-        state.support_cost = aggregate(state.support_cost, get_cost(*annotation));
-        if (!can_continue(state.support_cost, state.raw_edge))
-            return std::nullopt;
-    }
+            state.support_cost = aggregate(state.support_cost, get_cost(*annotation));
+            return can_continue(state.support_cost, state.raw_edge);
+        });
+    if (!supported)
+        return std::nullopt;
 
     for (const auto constraint : instance.get_body().get_numeric_constraints())
     {

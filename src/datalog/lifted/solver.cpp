@@ -391,6 +391,30 @@ private:
 
     bool try_generate_parallel(formalism::FunctionTag, RuleExecutionContext<formalism::FunctionTag, AP, TP, CP>&) { return false; }
 
+    template<formalism::FactKind F, typename Literals>
+    static bool are_packed_literals_applicable(const Literals& literals, const ygg::IndexList<formalism::Object>& binding, const FactSets& fact_sets)
+    {
+        const auto& facts = fact_sets.template get<F>().predicate;
+        return std::ranges::all_of(literals,
+                                   [&](const auto& literal)
+                                   {
+                                       const auto ground = literal.atom.encode(binding);
+                                       return ground ? facts.contains(*ground) == literal.polarity : !literal.polarity;
+                                   });
+    }
+
+    /// The static literals of the conflicting condition under the current binding.
+    template<formalism::RelationKind R>
+    bool is_current_binding_statically_applicable(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, const ApplicabilityContext& applicability_context)
+    {
+        const auto& cws_rule = wrctx.in().cws_rule();
+        if (const auto& packed = cws_rule.get_packed_conflicting_literals())
+            return are_packed_literals_applicable<formalism::StaticTag>(packed->static_literals,
+                                                                        wrctx.out().ground_context().binding,
+                                                                        applicability_context.fact_sets);
+        return is_applicable(cws_rule.get_conflicting_overapproximation_condition().template get_literals<formalism::StaticTag>(), applicability_context);
+    }
+
     template<formalism::RelationKind R>
     bool is_current_binding_dynamically_applicable(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, const ApplicabilityContext& applicability_context)
     {
@@ -398,7 +422,18 @@ private:
         auto& applicability_cache = wrctx.out().applicability_cache();
         if (!applicability_cache.dynamic_nullary)
             applicability_cache.dynamic_nullary = is_dynamically_applicable(in.cws_rule().get_nullary_condition(), in.fact_sets());
-        return applicability_cache.dynamic_nullary && is_applicable(in.cws_rule().get_conflicting_overapproximation_condition(), applicability_context);
+        if (!applicability_cache.dynamic_nullary)
+            return false;
+
+        const auto condition = in.cws_rule().get_conflicting_overapproximation_condition();
+        if (const auto& packed = in.cws_rule().get_packed_conflicting_literals())
+        {
+            const auto& binding = wrctx.out().ground_context().binding;
+            return are_packed_literals_applicable<formalism::StaticTag>(packed->static_literals, binding, applicability_context.fact_sets)
+                   && are_packed_literals_applicable<formalism::FluentTag>(packed->fluent_literals, binding, applicability_context.fact_sets)
+                   && is_applicable(condition.get_numeric_constraints(), applicability_context);
+        }
+        return is_applicable(condition, applicability_context);
     }
 
     /// Collects the heads the binding can update: committed facts are final, but still receive achievers.
@@ -410,6 +445,24 @@ private:
         auto& ground_context = out.ground_context();
         auto& heads = out.head_bindings();
         heads.clear();
+        if (const auto& packed_heads = in.cws_rule().get_packed_heads())
+        {
+            const auto& fluent_facts = in.fact_sets().template get<formalism::FluentTag>().predicate;
+            const auto all_encoded = std::ranges::all_of(*packed_heads,
+                                                         [&](const auto& packed_head)
+                                                         {
+                                                             const auto head = packed_head.encode(ground_context.binding);
+                                                             if (!head)
+                                                                 return false;
+                                                             if (AP::records_propositional_achievers || !fluent_facts.contains(*head))
+                                                                 heads.push_back(*head);
+                                                             return true;
+                                                         });
+            if (all_encoded)
+                return false;
+            // An object outside its argument's domain: the general path reports it as for interned bindings.
+            heads.clear();
+        }
         auto missing = false;
         for (const auto head_atom : in.cws_rule().get_rule().get_heads())
         {
@@ -502,16 +555,10 @@ private:
 
         ++out.statistics().num_generated_rules;
 
-        const auto conflicting_condition = in.cws_rule().get_conflicting_overapproximation_condition();
         const auto applicability_context = ApplicabilityContext { in.fact_sets(), out.ground_context() };
         auto& applicability_cache = out.applicability_cache();
 
-        const auto statically_applicable = [&]() {
-            return applicability_cache.static_nullary
-                   && is_applicable(conflicting_condition.template get_literals<formalism::StaticTag>(), applicability_context);
-        };
-
-        if (!statically_applicable())
+        if (!applicability_cache.static_nullary || !is_current_binding_statically_applicable(wrctx, applicability_context))
             return;
 
 #ifndef NDEBUG

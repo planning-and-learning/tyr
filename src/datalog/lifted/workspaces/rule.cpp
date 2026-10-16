@@ -23,6 +23,8 @@
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 
+#include <algorithm>
+
 namespace tyr::datalog
 {
 namespace
@@ -84,6 +86,48 @@ ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(formalism::datalog::RuleVie
     hyperedge_condition(create_hyperedge_conjunctive_condition(conflicting_overapproximation_condition, repository).first),
     static_consistency_graph(unary_overapproximation_condition, binary_overapproximation_condition, hyperedge_condition, std::move(compatibility_graph))
 {
+    const auto compile_literals = [&]<formalism::FactKind F>(auto literals, std::vector<PackedLiteral<F>>& result)
+    {
+        for (const auto literal : literals)
+        {
+            auto atom = PackedAtom<F>::compile(literal.get_atom(), repository);
+            if (!atom)
+                return false;
+            result.push_back(PackedLiteral<F> { std::move(*atom), literal.get_polarity() });
+        }
+        return true;
+    };
+    auto literals = PackedConflictingLiterals {};
+    if (compile_literals(conflicting_overapproximation_condition.template get_literals<formalism::StaticTag>(), literals.static_literals)
+        && compile_literals(conflicting_overapproximation_condition.template get_literals<formalism::FluentTag>(), literals.fluent_literals))
+        packed_conflicting_literals = std::move(literals);
+
+    auto body = std::vector<PackedAtom<formalism::FluentTag>> {};
+    const auto body_compiled = std::ranges::all_of(get_rule().get_body().template get_literals<formalism::FluentTag>(),
+                                                   [&](const auto literal)
+                                                   {
+                                                       if (!literal.get_polarity())
+                                                           return true;
+                                                       auto atom = PackedAtom<formalism::FluentTag>::compile(literal.get_atom(), repository);
+                                                       if (atom)
+                                                           body.push_back(std::move(*atom));
+                                                       return atom.has_value();
+                                                   });
+    if (body_compiled)
+        packed_positive_fluent_body = std::move(body);
+
+    if constexpr (std::same_as<R, formalism::PredicateTag>)
+    {
+        auto heads = std::vector<PackedAtom<formalism::FluentTag>> {};
+        for (const auto head : get_rule().get_heads())
+        {
+            auto atom = PackedAtom<formalism::FluentTag>::compile(head, repository);
+            if (!atom)
+                return;
+            heads.push_back(std::move(*atom));
+        }
+        packed_heads = std::move(heads);
+    }
 }
 
 template struct ConstRuleWorkspace<LiftedTag, formalism::PredicateTag>;
