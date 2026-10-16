@@ -32,7 +32,6 @@ static_assert(std::constructible_from<Data,
                                       tyr::formalism::datalog::FunctionTermValueViewList<::tyr::GroundTag, tyr::formalism::StaticTag>,
                                       tyr::formalism::datalog::FunctionTermValueViewList<::tyr::GroundTag, tyr::formalism::FluentTag>,
                                       std::optional<tyr::formalism::datalog::ConjunctiveConditionView<::tyr::GroundTag>>,
-                                      std::optional<tyr::formalism::datalog::MetricView>,
                                       tyr::formalism::datalog::RuleViewList<::tyr::LiftedTag, tyr::formalism::PredicateTag>,
                                       tyr::formalism::datalog::RuleViewList<::tyr::LiftedTag, tyr::formalism::FunctionTag>>);
 static_assert(requires(Data& data, const View& view) {
@@ -47,7 +46,6 @@ static_assert(requires(Data& data, const View& view) {
     data.static_fterm_values;
     data.fluent_fterm_values;
     data.goal;
-    data.metric;
     data.predicate_rules;
     data.function_rules;
     data.clear();
@@ -70,7 +68,6 @@ static_assert(requires(Data& data, const View& view) {
     view.template get_fterm_values<tyr::formalism::StaticTag>();
     view.template get_fterm_values<tyr::formalism::FluentTag>();
     view.get_goal();
-    view.get_metric();
     view.template get_rules<tyr::formalism::PredicateTag>();
     view.template get_rules<tyr::formalism::FunctionTag>();
 });
@@ -101,7 +98,6 @@ static_assert(std::constructible_from<Data,
                                       tyr::formalism::datalog::FunctionTermValueViewList<::tyr::GroundTag, tyr::formalism::StaticTag>,
                                       tyr::formalism::datalog::FunctionTermValueViewList<::tyr::GroundTag, tyr::formalism::FluentTag>,
                                       std::optional<tyr::formalism::datalog::ConjunctiveConditionView<::tyr::GroundTag>>,
-                                      std::optional<tyr::formalism::datalog::MetricView>,
                                       tyr::formalism::datalog::RuleViewList<::tyr::GroundTag, tyr::formalism::PredicateTag>,
                                       tyr::formalism::datalog::RuleViewList<::tyr::GroundTag, tyr::formalism::FunctionTag>>);
 static_assert(requires(Data& data, const View& view) {
@@ -116,7 +112,6 @@ static_assert(requires(Data& data, const View& view) {
     data.static_fterm_values;
     data.fluent_fterm_values;
     data.goal;
-    data.metric;
     data.predicate_rules;
     data.function_rules;
     data.clear();
@@ -141,7 +136,6 @@ static_assert(requires(Data& data, const View& view) {
     view.template get_fterm_values<tyr::formalism::StaticTag>();
     view.template get_fterm_values<tyr::formalism::FluentTag>();
     view.get_goal();
-    view.get_metric();
     view.template get_rules<tyr::formalism::PredicateTag>();
     view.template get_rules<tyr::formalism::FunctionTag>();
 });
@@ -281,8 +275,6 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
             intern(ygg::Data<tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, tyr::formalism::StaticTag>> { static_term.get_index(), 2.0 });
         const auto fluent_value =
             intern(ygg::Data<tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, tyr::formalism::FluentTag>> { retained_term.get_index(), 3.0 });
-        const auto metric = intern(ygg::Data<tyr::formalism::datalog::Metric> {
-            ygg::Data<tyr::formalism::datalog::FunctionExpression<::tyr::GroundTag>> { retained_term.get_index() } });
 
         auto program_data = ygg::Data<tyr::formalism::datalog::Program<::tyr::GroundTag>> {};
         program_data.static_predicates = { present.get_predicate().get_index(), absent.get_predicate().get_index() };
@@ -295,7 +287,6 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
         program_data.static_fterm_values = { static_value.get_index() };
         program_data.fluent_fterm_values = { fluent_value.get_index() };
         program_data.goal = goal.get_index();
-        program_data.metric = metric.get_index();
         program_data.predicate_rules = { removed_predicate_rule.get_index(), retained_predicate_rule.get_index() };
         program_data.function_rules = { removed_function_rule.get_index(), retained_function_rule.get_index() };
         filtered = tyr::datalog::remove_statically_inapplicable_rules(intern(std::move(program_data)), destination);
@@ -322,16 +313,6 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
     EXPECT_EQ(filtered->get_atoms<tyr::formalism::StaticTag>().front().get_predicate().get_name().str(), "present");
     ASSERT_TRUE(filtered->get_goal().has_value());
     EXPECT_EQ(filtered->get_goal().value().get_literals<tyr::formalism::FluentTag>().front().get_atom().get_predicate().get_name().str(), "retained-predicate");
-    ASSERT_TRUE(filtered->get_metric().has_value());
-    ygg::visit(
-        [&](auto value)
-        {
-            if constexpr (std::same_as<decltype(value), tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, tyr::formalism::FluentTag>>)
-                EXPECT_EQ(value.get_function().get_name().str(), "retained-function");
-            else
-                ADD_FAILURE() << "Expected a fluent function term metric";
-        },
-        filtered->get_metric().value().get_fexpr().get_variant());
     EXPECT_EQ((destination.size<tyr::formalism::datalog::Rule<::tyr::GroundTag, tyr::formalism::PredicateTag>>()), 1);
     EXPECT_EQ((destination.size<tyr::formalism::datalog::Rule<::tyr::GroundTag, tyr::formalism::FunctionTag>>()), 1);
 }

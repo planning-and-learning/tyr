@@ -51,22 +51,13 @@ namespace tyr::planning::detail
 template<TaskKind Kind>
 struct RPGDefinition
 {
-    using MetricTargets = datalog::RuleCostPolicy::MetricTargets;
-
     TaskPtr<Kind> task;
     RPGProgram<Kind> rpg_program;
-    MetricTargets metric_targets;
 
-    RPGDefinition(TaskPtr<Kind> task, CostMode cost_mode) : task(std::move(task)), rpg_program(this->task->get_task(), cost_mode), metric_targets()
+    RPGDefinition(TaskPtr<Kind> task, CostMode cost_mode, bool split_rules = false) :
+        task(std::move(task)),
+        rpg_program(this->task->get_task(), cost_mode, split_rules)
     {
-        const auto metric = rpg_program.get_datalog_program().get_program().get_metric();
-        if (!metric)
-            return;
-
-        auto fterms = ygg::UnorderedSet<formalism::datalog::FunctionTermView<GroundTag, formalism::FluentTag>> {};
-        formalism::datalog::collect_fterms(metric.value().get_fexpr(), fterms);
-        for (const auto fterm : fterms)
-            metric_targets.insert(fterm.get_row().get_index());
     }
 };
 
@@ -129,8 +120,9 @@ public:
     using Policy = RPGPolicy<Kind>;
     using Workspace = datalog::ProgramWorkspace<Kind, AP, TP, CP>;
 
-    RPGEvaluator(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL) :
-        RPGEvaluator(std::make_shared<Definition>(std::move(task), cost_mode), std::move(execution_context))
+    RPGEvaluator(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::UNIT) :
+        // h_max, h_add and FF aggregate over the minimal bindings of a rule, so splitting preserves them (LM-cut builds its own definition).
+        RPGEvaluator(std::make_shared<Definition>(std::move(task), cost_mode, true), std::move(execution_context))
     {
     }
 
@@ -270,10 +262,7 @@ private:
     {
         if constexpr (std::same_as<CP, datalog::RuleCostOverridePolicy<Kind>>)
             return CP(definition.rpg_program.template get_rule_to_action_mapping<formalism::PredicateTag>(),
-                      definition.rpg_program.template get_rule_to_action_mapping<formalism::FunctionTag>(),
-                      &definition.metric_targets);
-        else if constexpr (std::same_as<CP, datalog::RuleCostPolicy>)
-            return CP(&definition.metric_targets);
+                      definition.rpg_program.template get_rule_to_action_mapping<formalism::FunctionTag>());
         else
             return CP {};
     }

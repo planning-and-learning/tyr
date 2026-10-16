@@ -22,6 +22,7 @@
 #include "tyr/planning/declarations.hpp"
 
 #include <cista/containers/string.h>
+#include <stdexcept>
 #include <yggdrasil/core/types.hpp>
 
 namespace tyr::planning
@@ -31,6 +32,13 @@ extern ::cista::offset::string create_applicability_name(formalism::planning::Ac
 extern ::cista::offset::string create_triggered_name(formalism::planning::ActionView<LiftedTag> action, formalism::planning::ConditionalEffectView<LiftedTag> cond_eff);
 
 extern ::cista::offset::string create_applicability_name(formalism::planning::AxiomView<LiftedTag> axiom);
+
+/// The RPG heuristics charge each action rule a unit cost.
+inline void require_unit_cost(CostMode cost_mode)
+{
+    if (cost_mode != CostMode::UNIT)
+        throw std::invalid_argument("GENERAL action costs are unsupported in the RPG heuristics; use CostMode::UNIT.");
+}
 
 }
 

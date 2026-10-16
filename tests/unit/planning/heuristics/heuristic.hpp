@@ -30,6 +30,7 @@
 #include <memory>
 #include <optional>
 #include <ostream>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -263,37 +264,10 @@ void expect_ff_traverses_exact_numeric_head_supports()
 }
 
 template<TaskKind Kind>
-void expect_general_metric_targets_exact_binding()
+void expect_general_cost_mode_throws()
 {
-    static constexpr auto domain = std::string_view { R"(
-(define (domain exact-metric-binding)
-  (:requirements :strips :numeric-fluents)
-  (:predicates (done ?x))
-  (:functions (expense ?x))
-
-  (:action finish
-    :parameters (?x)
-    :precondition ()
-    :effect (and (done ?x) (increase (expense ?x) 5)))
-)
-)" };
-    static constexpr auto problem = std::string_view { R"(
-(define (problem exact-metric-binding-problem)
-  (:domain exact-metric-binding)
-  (:objects charged free)
-  (:init (= (expense charged) 0) (= (expense free) 0))
-  (:goal (done free))
-  (:metric minimize (expense charged))
-)
-)" };
-
-    auto parser = formalism::planning::Parser(std::string(domain), "exact-metric-binding-domain.pddl");
-    auto context =
-        create_heuristic_context<Kind>(tyr::planning::Task<LiftedTag>::create(parser.parse_task(std::string(problem), "exact-metric-binding-problem.pddl")));
-    const auto initial_state = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator).get_state();
-    auto heuristic = TestedHeuristic<Kind>::create(context.task, context.execution_context, CostMode::GENERAL);
-
-    EXPECT_EQ(heuristic->evaluate(initial_state), 0);
+    auto context = create_preferred_action_reset_context<Kind>();
+    EXPECT_THROW(TestedHeuristic<Kind>::create(context.task, context.execution_context, CostMode::GENERAL), std::invalid_argument);
 }
 
 inline void expect_optional_eq(ygg::float_t actual, std::optional<ygg::float_t> expected)

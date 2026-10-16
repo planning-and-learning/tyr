@@ -23,7 +23,7 @@
 #include "tyr/formalism/boolean_operator_utils.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
-#include "tyr/formalism/planning/numeric_effect_operator_utils.hpp"
+#include "tyr/formalism/numeric_effect_operator_utils.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
@@ -239,7 +239,7 @@ ygg::float_t evaluate(formalism::planning::NumericEffectView<LiftedTag, T> eleme
     // Sequenced for the same reason as the arithmetic binary operator above.
     const auto fexpr_value = evaluate(element.get_fexpr(), context);
     const auto fterm_value = evaluate(element.get_fterm(), context);
-    return formalism::planning::apply(element.get_operator(), fterm_value, fexpr_value);
+    return formalism::apply(element.get_operator(), fterm_value, fexpr_value);
 }
 
 template<formalism::FactKind T>

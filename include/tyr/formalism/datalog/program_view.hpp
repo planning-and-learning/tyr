@@ -60,7 +60,6 @@ public:
         return ygg::make_view(this->get_data().template get_fterm_values<F>(), this->get_context());
     }
     auto get_goal() const noexcept { return ygg::make_view(this->get_data().goal, this->get_context()); }
-    auto get_metric() const noexcept { return ygg::make_view(this->get_data().metric, this->get_context()); }
     template<::tyr::formalism::RelationKind R>
     auto get_rules() const noexcept
     {

@@ -23,6 +23,7 @@
 #include <bit>
 #include <boost/dynamic_bitset.hpp>
 #include <cassert>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -166,31 +167,14 @@ public:
         }
     }
 
-    template<typename Callback>
+    template<std::invocable<Edge> Callback>
     void for_each_edge(Callback&& callback) const noexcept
     {
-        for (ygg::uint_t source_partition = 0; source_partition < m_layout.num_partitions; ++source_partition)
-        {
-            const auto& source_info = m_layout.info.infos[source_partition];
-            const auto source_bits = m_affected_partitions.get_bitset(source_info);
-
-            for (const auto source_bit : ygg::set_bit_indices(source_bits))
-            {
-                const auto source_vertex = source_info.bit_offset + static_cast<ygg::uint_t>(source_bit);
-                for (ygg::uint_t target_partition = source_partition + 1; target_partition < m_layout.num_partitions; ++target_partition)
-                {
-                    const auto& target_info = m_layout.info.infos[target_partition];
-                    for_each_adjacent_vertex(source_vertex,
-                                             target_partition,
-                                             [&](size_t target_bit)
-                                             { callback(Edge(Vertex(source_vertex), Vertex(target_info.bit_offset + static_cast<ygg::uint_t>(target_bit)))); });
-                }
-            }
-        }
+        for_each_edge([](Vertex, ygg::uint_t) noexcept { return true; }, std::forward<Callback>(callback));
     }
 
     /// for_each_edge, but each source vertex and target partition are first passed to visit_source, which can skip their edges.
-    template<typename VisitSource, typename Callback>
+    template<std::predicate<Vertex, ygg::uint_t> VisitSource, std::invocable<Edge> Callback>
     void for_each_edge(VisitSource&& visit_source, Callback&& callback) const noexcept
     {
         for (ygg::uint_t source_partition = 0; source_partition < m_layout.num_partitions; ++source_partition)

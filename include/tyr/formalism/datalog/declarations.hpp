@@ -136,10 +136,6 @@ struct RuleHead<T, FunctionTag>
 template<TaskKind T, RelationKind R>
 using RuleHeadT = typename RuleHead<T, R>::type;
 
-struct Metric
-{
-};
-
 template<TaskKind T>
 struct Program
 {
@@ -177,7 +173,7 @@ using CompoundTypes = ygg::ConcatTypeListsT<ygg::TypeList<ConjunctiveCondition<L
                                             RuleTypes<LiftedTag>,
                                             ygg::TypeList<ConjunctiveCondition<GroundTag>, ConjunctiveEffect<GroundTag>, ConditionalEffect<GroundTag>>,
                                             RuleTypes<GroundTag>,
-                                            ygg::TypeList<Metric, Program<LiftedTag>, Program<GroundTag>>>;
+                                            ygg::TypeList<Program<LiftedTag>, Program<GroundTag>>>;
 
 using SymbolRepositoryTypes = ygg::ConcatTypeListsT<CoreTypes,
                                                     PredicateTypes,
@@ -277,10 +273,6 @@ template<FactKind F>
 using FunctionListView = ygg::View<ygg::IndexList<Function<F>>, Repository>;
 template<FactKind F>
 using FunctionViewList = std::vector<FunctionView<F>>;
-
-using MetricView = ygg::View<ygg::Index<Metric>, Repository>;
-
-using MetricListView = ygg::View<ygg::IndexList<Metric>, Repository>;
 
 template<TaskKind T>
 using MultiOperatorView = ygg::View<ygg::Index<MultiOperator<T>>, Repository>;

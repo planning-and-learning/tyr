@@ -156,17 +156,6 @@ void collect_rule_fluent_reads(Rule rule, Result& result)
 
     if constexpr (requires { rule.get_head(); })
         collect_semantic_head_reads(rule.get_head(), result);
-
-    for (const auto metric_effect : rule.get_metric_effects())
-        visit(
-            [&](auto effect)
-            {
-                const auto op = effect.get_operator();
-                const auto reads_target =
-                    op == NumericEffectOperatorKind::Assign || op == NumericEffectOperatorKind::ScaleUp || op == NumericEffectOperatorKind::ScaleDown;
-                collect_effect_reads(effect, reads_target, result);
-            },
-            metric_effect.get_variant());
 }
 }
 

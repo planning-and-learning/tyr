@@ -84,6 +84,7 @@ add_library(
     formalism/planning/parser.cpp
     formalism/planning/planning_task.cpp
 
+    datalog/rule_splitting.cpp
     datalog/static_rule_filter.cpp
     datalog/policies/annotation.cpp
     datalog/policies/cost.cpp

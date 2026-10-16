@@ -29,7 +29,6 @@
 #include "tyr/formalism/datalog/function_term_data.hpp"
 #include "tyr/formalism/datalog/function_term_value_data.hpp"
 #include "tyr/formalism/datalog/literal_data.hpp"
-#include "tyr/formalism/datalog/metric_data.hpp"
 #include "tyr/formalism/datalog/multi_operator_data.hpp"
 #include "tyr/formalism/datalog/numeric_effect_data.hpp"
 #include "tyr/formalism/datalog/numeric_effect_operator_data.hpp"

@@ -181,32 +181,4 @@ TEST(TyrDatalogCostPolicyTest, RuleCostOverridePolicyLiftedUsesExactOverride)
     EXPECT_EQ(policy.get_cost(fixture.binding), 3);
 }
 
-TEST(TyrDatalogCostPolicyTest, DefaultPoliciesAcceptEveryMetricBinding)
-{
-    auto factory = tyr::formalism::datalog::RepositoryFactory();
-    auto repository = factory.create();
-    const auto binding = make_nullary_function_binding(repository, "metric");
-
-    EXPECT_TRUE(tyr::datalog::RuleCostPolicy().is_metric_target(binding.get_index()));
-    EXPECT_TRUE(tyr::datalog::RuleCostOverridePolicy<LiftedTag>().is_metric_target(binding.get_index()));
-}
-
-TEST(TyrDatalogCostPolicyTest, FilteredPoliciesAcceptOnlyConfiguredMetricBindings)
-{
-    auto factory = tyr::formalism::datalog::RepositoryFactory();
-    auto repository = factory.create();
-    const auto target = make_nullary_function_binding(repository, "target");
-    const auto other = make_nullary_function_binding(repository, "other");
-    auto targets = tyr::datalog::RuleCostPolicy::MetricTargets {};
-    targets.insert(target.get_index());
-
-    const auto base = tyr::datalog::RuleCostPolicy(&targets);
-    const auto override = tyr::datalog::RuleCostOverridePolicy<LiftedTag>(&targets);
-
-    EXPECT_TRUE(base.is_metric_target(target.get_index()));
-    EXPECT_FALSE(base.is_metric_target(other.get_index()));
-    EXPECT_TRUE(override.is_metric_target(target.get_index()));
-    EXPECT_FALSE(override.is_metric_target(other.get_index()));
-}
-
 }

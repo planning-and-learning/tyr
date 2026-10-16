@@ -19,7 +19,7 @@
 #define TYR_DATALOG_POLICIES_NUMERIC_SUPPORT_HPP_
 
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/datalog/numeric_utils.hpp"
+#include "tyr/formalism/numeric_expression_utils.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -73,12 +73,12 @@ public:
 
     ygg::ClosedInterval<ygg::float_t> evaluate_effect_expression(formalism::datalog::FunctionExpressionView<GroundTag> expression, Selection& selection) const
     {
-        return evaluate_numeric_expression(expression, [&](const auto term) { return evaluate_term(term, selection); });
+        return formalism::evaluate_numeric_expression(expression, [&](const auto term) { return evaluate_term(term, selection); });
     }
 
     bool is_supported(formalism::datalog::BooleanOperatorView<GroundTag> constraint, Selection& selection) const
     {
-        return evaluate_numeric_expression(constraint, [&](const auto term) { return evaluate_term(term, selection); });
+        return formalism::evaluate_numeric_expression(constraint, [&](const auto term) { return evaluate_term(term, selection); });
     }
 
     ygg::ClosedInterval<ygg::float_t> select_fluent_interval(Key key, Selection& selection) const

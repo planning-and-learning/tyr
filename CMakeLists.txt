@@ -123,8 +123,8 @@ add_definitions(-DROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Dependencies
 
-set(TYR_YGGDRASIL_REQUIRED_VERSION 0.3.1)
-set(TYR_LOKI_REQUIRED_VERSION 1.3.0)
+set(TYR_YGGDRASIL_REQUIRED_VERSION 0.4.0)
+set(TYR_LOKI_REQUIRED_VERSION 1.4.0)
 
 include("${PROJECT_SOURCE_DIR}/cmake/bootstrap_pyyggdrasil.cmake")
 
@@ -206,7 +206,7 @@ if(TYR_BUILD_TESTS OR TYR_BUILD_PROFILING)
         RESULT_VARIABLE TYR_BENCHMARKS_RESULT
     )
     if(NOT TYR_BENCHMARKS_RESULT EQUAL 0)
-        message(FATAL_ERROR "Could not resolve the benchmark data root; install 'pypddl-datasets>=0.0.12,<0.1' into the configuring Python (${Python_EXECUTABLE}).")
+        message(FATAL_ERROR "Could not resolve the benchmark data root; install 'pypddl-datasets>=0.0.17,<0.1' into the configuring Python (${Python_EXECUTABLE}).")
     endif()
     message(STATUS "Benchmark data: ${TYR_BENCHMARKS_DIR}")
     add_compile_definitions(BENCHMARKS_DIR="${TYR_BENCHMARKS_DIR}")

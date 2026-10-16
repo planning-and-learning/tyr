@@ -71,82 +71,12 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 260,
-                "num_expanded": 71,
-                "num_deadends": 1,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 1117,
-                    "length": 55,
-                    "actions": [
-                        "(collect_resource worker2 worker1 worker2 round1 act_clay clay)",
-                        "(take_food worker1 noworker worker2 round1 num2 num3)",
-                        "(ag__finish_round_backhome round1 worker2)",
-                        "(ag__finish_round_renew round1)",
-                        "(ag__advance_round_normal round1 round2 act_sheep)",
-                        "(collect_resource worker2 worker1 worker2 round2 act_clay clay)",
-                        "(take_food worker1 noworker worker2 round2 num3 num4)",
-                        "(ag__finish_round_backhome round2 worker2)",
-                        "(ag__finish_round_renew round2)",
-                        "(ag__advance_round_normal round2 round3 act_sow)",
-                        "(collect_resource worker2 worker1 worker2 round3 act_clay clay)",
-                        "(collect_resource worker1 noworker worker2 round3 act_reed reed)",
-                        "(ag__finish_round_backhome round3 worker2)",
-                        "(ag__finish_round_renew round3)",
-                        "(ag__advance_round_normal round3 round4 act_fences)",
-                        "(build_fences boar worker2 worker1 worker2 round4)",
-                        "(collect_animal boar act_sheep worker1 noworker worker2 round4)",
-                        "(ag__finish_round_backhome round4 worker2)",
-                        "(ag__finish_round_renew round4)",
-                        "(ag__harvest_collect_end round4 stage1)",
-                        "(ag__harvest_feed round4 stage1 worker2 num4 num4 num0)",
-                        "(ag__harvest_breeding_animal round4 stage1 boar num0 num2)",
-                        "(ag__harvest_breed_end round4 stage1)",
-                        "(ag__finish_stage stage1 stage2 round4 round5 act_boar)",
-                        "(build_fences boar worker2 worker1 worker2 round5)",
-                        "(take_food worker1 noworker worker2 round5 num2 num3)",
-                        "(ag__finish_round_backhome round5 worker2)",
-                        "(ag__finish_round_renew round5)",
-                        "(ag__advance_round_normal round5 round6 act_improve)",
-                        "(build_fences boar worker2 worker1 worker2 round6)",
-                        "(take_food worker1 noworker worker2 round6 num3 num4)",
-                        "(ag__finish_round_backhome round6 worker2)",
-                        "(ag__finish_round_renew round6)",
-                        "(ag__advance_round_normal round6 round7 act_cattle)",
-                        "(build_fences boar worker2 worker1 worker2 round7)",
-                        "(collect_animal boar act_boar worker1 noworker worker2 round7)",
-                        "(ag__finish_round_backhome round7 worker2)",
-                        "(ag__finish_round_renew round7)",
-                        "(ag__harvest_collect_end round7 stage2)",
-                        "(ag__harvest_feed round7 stage2 worker2 num4 num4 num0)",
-                        "(ag__harvest_breeding_animal round7 stage2 boar num0 num2)",
-                        "(ag__harvest_breed_end round7 stage2)",
-                        "(ag__finish_stage stage2 stage3 round7 round8 act_carrot)",
-                        "(build_fences boar worker2 worker1 worker2 round8)",
-                        "(take_food worker1 noworker worker2 round8 num2 num3)",
-                        "(ag__finish_round_backhome round8 worker2)",
-                        "(ag__finish_round_renew round8)",
-                        "(ag__advance_round_normal round8 round9 void)",
-                        "(build_fences boar worker2 worker1 worker2 round9)",
-                        "(take_food worker1 noworker worker2 round9 num3 num4)",
-                        "(ag__finish_round_backhome round9 worker2)",
-                        "(ag__finish_round_renew round9)",
-                        "(ag__harvest_collect_end round9 stage3)",
-                        "(ag__harvest_feed round9 stage3 worker2 num4 num4 num0)",
-                        "(ag__harvest_breed_end round9 stage3)"
-                    ]
-                }
-            },
             "skipped": {
                 "blind_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "blind_general": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hmax_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hmax_general": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hadd_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hadd_general": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hlmcut_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hlmcut_general": "status OUT_OF_TIME within 1.0s/1000000 states"
+                "hlmcut_unit": "status OUT_OF_TIME within 1.0s/1000000 states"
             }
         },
         {
@@ -213,47 +143,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 16,
-                "num_expanded": 8,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 8,
-                    "length": 8,
-                    "actions": [
-                        "(move airplane_cfbeg medium south seg_rw_0_400 seg_rww_0_50 south)",
-                        "(move airplane_cfbeg medium south seg_rww_0_50 seg_tww4_0_50 north)",
-                        "(move airplane_cfbeg medium north seg_tww4_0_50 seg_tww3_0_50 north)",
-                        "(move airplane_cfbeg medium north seg_tww3_0_50 seg_tww2_0_50 north)",
-                        "(move airplane_cfbeg medium north seg_tww2_0_50 seg_tww1_0_200 north)",
-                        "(move airplane_cfbeg medium north seg_tww1_0_200 seg_ppdoor_0_40 south)",
-                        "(move airplane_cfbeg medium south seg_ppdoor_0_40 seg_pp_0_60 south)",
-                        "(park airplane_cfbeg medium seg_pp_0_60 south)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 16,
-                "num_expanded": 8,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 8,
-                    "length": 8,
-                    "actions": [
-                        "(move airplane_cfbeg medium south seg_rw_0_400 seg_rww_0_50 south)",
-                        "(move airplane_cfbeg medium south seg_rww_0_50 seg_tww4_0_50 north)",
-                        "(move airplane_cfbeg medium north seg_tww4_0_50 seg_tww3_0_50 north)",
-                        "(move airplane_cfbeg medium north seg_tww3_0_50 seg_tww2_0_50 north)",
-                        "(move airplane_cfbeg medium north seg_tww2_0_50 seg_tww1_0_200 north)",
-                        "(move airplane_cfbeg medium north seg_tww1_0_200 seg_ppdoor_0_40 south)",
-                        "(move airplane_cfbeg medium south seg_ppdoor_0_40 seg_pp_0_60 south)",
-                        "(park airplane_cfbeg medium seg_pp_0_60 south)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 16,
                 "num_expanded": 8,
                 "num_deadends": 0,
@@ -293,47 +183,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 16,
-                "num_expanded": 8,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 8,
-                    "length": 8,
-                    "actions": [
-                        "(move airplane_cfbeg medium south seg_rw_0_400 seg_rww_0_50 south)",
-                        "(move airplane_cfbeg medium south seg_rww_0_50 seg_tww4_0_50 north)",
-                        "(move airplane_cfbeg medium north seg_tww4_0_50 seg_tww3_0_50 north)",
-                        "(move airplane_cfbeg medium north seg_tww3_0_50 seg_tww2_0_50 north)",
-                        "(move airplane_cfbeg medium north seg_tww2_0_50 seg_tww1_0_200 north)",
-                        "(move airplane_cfbeg medium north seg_tww1_0_200 seg_ppdoor_0_40 south)",
-                        "(move airplane_cfbeg medium south seg_ppdoor_0_40 seg_pp_0_60 south)",
-                        "(park airplane_cfbeg medium seg_pp_0_60 south)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 16,
-                "num_expanded": 8,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 8,
-                    "length": 8,
-                    "actions": [
-                        "(move airplane_cfbeg medium south seg_rw_0_400 seg_rww_0_50 south)",
-                        "(move airplane_cfbeg medium south seg_rww_0_50 seg_tww4_0_50 north)",
-                        "(move airplane_cfbeg medium north seg_tww4_0_50 seg_tww3_0_50 north)",
-                        "(move airplane_cfbeg medium north seg_tww3_0_50 seg_tww2_0_50 north)",
-                        "(move airplane_cfbeg medium north seg_tww2_0_50 seg_tww1_0_200 north)",
-                        "(move airplane_cfbeg medium north seg_tww1_0_200 seg_ppdoor_0_40 south)",
-                        "(move airplane_cfbeg medium south seg_ppdoor_0_40 seg_pp_0_60 south)",
-                        "(park airplane_cfbeg medium seg_pp_0_60 south)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 16,
                 "num_expanded": 8,
                 "num_deadends": 0,
@@ -397,33 +247,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 1,
-                "num_expanded": 1,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 1,
-                    "length": 1,
-                    "actions": [
-                        "(assemble a-1-0 a-0-0)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 1,
-                "num_expanded": 1,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 1,
-                    "length": 1,
-                    "actions": [
-                        "(assemble a-1-0 a-0-0)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 1,
                 "num_expanded": 1,
                 "num_deadends": 0,
@@ -449,33 +273,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 1,
-                "num_expanded": 1,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 1,
-                    "length": 1,
-                    "actions": [
-                        "(assemble a-1-0 a-0-0)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 1,
-                "num_expanded": 1,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 1,
-                    "length": 1,
-                    "actions": [
-                        "(assemble a-1-0 a-0-0)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 1,
                 "num_expanded": 1,
                 "num_deadends": 0,
@@ -562,29 +360,6 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 74,
-                "num_expanded": 37,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 29,
-                    "length": 11,
-                    "actions": [
-                        "(grasp left shot1)",
-                        "(fill-shot shot1 ingredient1 left right dispenser1)",
-                        "(pour-shot-to-clean-shaker shot1 ingredient1 shaker1 left l0 l1)",
-                        "(clean-shot shot1 ingredient1 left right)",
-                        "(fill-shot shot1 ingredient2 left right dispenser2)",
-                        "(pour-shot-to-used-shaker shot1 ingredient2 shaker1 left l1 l2)",
-                        "(clean-shot shot1 ingredient2 left right)",
-                        "(grasp right shaker1)",
-                        "(leave left shot1)",
-                        "(shake cocktail1 ingredient1 ingredient2 shaker1 right left)",
-                        "(pour-shaker-to-shot cocktail1 shot1 right shaker1 l2 l1)"
-                    ]
-                }
-            },
             "hadd_unit": {
                 "num_generated_successors": 59,
                 "num_expanded": 26,
@@ -592,29 +367,6 @@
                 "num_pruned": 0,
                 "plan": {
                     "cost": 11,
-                    "length": 11,
-                    "actions": [
-                        "(grasp left shot1)",
-                        "(fill-shot shot1 ingredient1 left right dispenser1)",
-                        "(pour-shot-to-clean-shaker shot1 ingredient1 shaker1 left l0 l1)",
-                        "(clean-shot shot1 ingredient1 left right)",
-                        "(fill-shot shot1 ingredient2 left right dispenser2)",
-                        "(pour-shot-to-used-shaker shot1 ingredient2 shaker1 left l1 l2)",
-                        "(clean-shot shot1 ingredient2 left right)",
-                        "(grasp right shaker1)",
-                        "(leave left shot1)",
-                        "(shake cocktail1 ingredient1 ingredient2 shaker1 right left)",
-                        "(pour-shaker-to-shot cocktail1 shot1 right shaker1 l2 l1)"
-                    ]
-                }
-            },
-            "hadd_general": {
-                "num_generated_successors": 49,
-                "num_expanded": 22,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 29,
                     "length": 11,
                     "actions": [
                         "(grasp left shot1)",
@@ -654,29 +406,6 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 47,
-                "num_expanded": 21,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 29,
-                    "length": 11,
-                    "actions": [
-                        "(grasp left shot1)",
-                        "(fill-shot shot1 ingredient1 left right dispenser1)",
-                        "(pour-shot-to-clean-shaker shot1 ingredient1 shaker1 left l0 l1)",
-                        "(clean-shot shot1 ingredient1 left right)",
-                        "(fill-shot shot1 ingredient2 left right dispenser2)",
-                        "(pour-shot-to-used-shaker shot1 ingredient2 shaker1 left l1 l2)",
-                        "(clean-shot shot1 ingredient2 left right)",
-                        "(grasp right shaker1)",
-                        "(leave left shot1)",
-                        "(shake cocktail1 ingredient1 ingredient2 shaker1 right left)",
-                        "(pour-shaker-to-shot cocktail1 shot1 right shaker1 l2 l1)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
                 "num_generated_successors": 83,
                 "num_expanded": 42,
@@ -684,29 +413,6 @@
                 "num_pruned": 0,
                 "plan": {
                     "cost": 11,
-                    "length": 11,
-                    "actions": [
-                        "(grasp left shot1)",
-                        "(fill-shot shot1 ingredient1 left right dispenser1)",
-                        "(pour-shot-to-clean-shaker shot1 ingredient1 shaker1 left l0 l1)",
-                        "(clean-shot shot1 ingredient1 left right)",
-                        "(fill-shot shot1 ingredient2 left right dispenser2)",
-                        "(pour-shot-to-used-shaker shot1 ingredient2 shaker1 left l1 l2)",
-                        "(clean-shot shot1 ingredient2 left right)",
-                        "(grasp right shaker1)",
-                        "(leave left shot1)",
-                        "(shake cocktail1 ingredient1 ingredient2 shaker1 right left)",
-                        "(pour-shaker-to-shot cocktail1 shot1 right shaker1 l2 l1)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
-                "num_generated_successors": 81,
-                "num_expanded": 43,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 29,
                     "length": 11,
                     "actions": [
                         "(grasp left shot1)",
@@ -776,39 +482,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 19,
-                "num_expanded": 10,
-                "num_deadends": 3,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(move-b-to-t b3 b1)",
-                        "(move-b-to-t b1 b2)",
-                        "(move-t-to-b b3 b1)",
-                        "(move-t-to-b b2 b3)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 19,
-                "num_expanded": 10,
-                "num_deadends": 3,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(move-b-to-t b3 b1)",
-                        "(move-b-to-t b1 b2)",
-                        "(move-t-to-b b3 b1)",
-                        "(move-t-to-b b2 b3)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 19,
                 "num_expanded": 10,
                 "num_deadends": 3,
@@ -840,39 +514,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 17,
-                "num_expanded": 8,
-                "num_deadends": 2,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(move-b-to-t b3 b1)",
-                        "(move-b-to-t b1 b2)",
-                        "(move-t-to-b b3 b1)",
-                        "(move-t-to-b b2 b3)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 19,
-                "num_expanded": 10,
-                "num_deadends": 3,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(move-b-to-t b3 b1)",
-                        "(move-b-to-t b1 b2)",
-                        "(move-t-to-b b3 b1)",
-                        "(move-t-to-b b2 b3)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 19,
                 "num_expanded": 10,
                 "num_deadends": 3,
@@ -941,39 +583,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 9,
-                "num_expanded": 6,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(unstack b1 b3)",
-                        "(putdown b1)",
-                        "(pickup b2)",
-                        "(stack b2 b3)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 9,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(unstack b1 b3)",
-                        "(putdown b1)",
-                        "(pickup b2)",
-                        "(stack b2 b3)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 9,
                 "num_expanded": 5,
                 "num_deadends": 0,
@@ -1005,39 +615,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 9,
-                "num_expanded": 6,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(unstack b1 b3)",
-                        "(putdown b1)",
-                        "(pickup b2)",
-                        "(stack b2 b3)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 9,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(unstack b1 b3)",
-                        "(putdown b1)",
-                        "(pickup b2)",
-                        "(stack b2 b3)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 9,
                 "num_expanded": 5,
                 "num_deadends": 0,
@@ -1106,39 +684,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 6,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(make_sandwich sandw1 bread1 content1)",
-                        "(put_on_tray sandw1 tray1)",
-                        "(move_tray tray1 kitchen table1)",
-                        "(serve_sandwich sandw1 child1 tray1 table1)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 6,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(make_sandwich sandw1 bread1 content1)",
-                        "(put_on_tray sandw1 tray1)",
-                        "(move_tray tray1 kitchen table1)",
-                        "(serve_sandwich sandw1 child1 tray1 table1)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 6,
                 "num_expanded": 5,
                 "num_deadends": 0,
@@ -1170,39 +716,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 6,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(make_sandwich sandw1 bread1 content1)",
-                        "(put_on_tray sandw1 tray1)",
-                        "(move_tray tray1 kitchen table1)",
-                        "(serve_sandwich sandw1 child1 tray1 table1)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 6,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(make_sandwich sandw1 bread1 content1)",
-                        "(put_on_tray sandw1 tray1)",
-                        "(move_tray tray1 kitchen table1)",
-                        "(serve_sandwich sandw1 child1 tray1 table1)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 6,
                 "num_expanded": 5,
                 "num_deadends": 0,
@@ -1271,39 +785,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 7,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(move t1 c_1_1 c_1_0)",
-                        "(pick-package t1 p1 c_1_0)",
-                        "(move t1 c_1_0 c_0_0)",
-                        "(drop-package t1 p1 c_0_0)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 7,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(move t1 c_1_1 c_1_0)",
-                        "(pick-package t1 p1 c_1_0)",
-                        "(move t1 c_1_0 c_0_0)",
-                        "(drop-package t1 p1 c_0_0)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 7,
                 "num_expanded": 5,
                 "num_deadends": 0,
@@ -1335,39 +817,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 7,
-                "num_expanded": 6,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(move t1 c_1_1 c_1_0)",
-                        "(pick-package t1 p1 c_1_0)",
-                        "(move t1 c_1_0 c_0_0)",
-                        "(drop-package t1 p1 c_0_0)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 7,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(move t1 c_1_1 c_1_0)",
-                        "(pick-package t1 p1 c_1_0)",
-                        "(move t1 c_1_0 c_0_0)",
-                        "(drop-package t1 p1 c_0_0)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 7,
                 "num_expanded": 5,
                 "num_deadends": 0,
@@ -1451,49 +901,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 19,
-                "num_expanded": 14,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 9,
-                    "length": 9,
-                    "actions": [
-                        "(board-truck driver1 truck1 s0)",
-                        "(drive-truck truck1 s0 s1 driver1)",
-                        "(load-truck package1 truck1 s1)",
-                        "(drive-truck truck1 s1 s0 driver1)",
-                        "(unload-truck package1 truck1 s0)",
-                        "(drive-truck truck1 s0 s1 driver1)",
-                        "(disembark-truck driver1 truck1 s1)",
-                        "(walk driver1 s1 p0-1)",
-                        "(walk driver1 p0-1 s0)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 16,
-                "num_expanded": 11,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 9,
-                    "length": 9,
-                    "actions": [
-                        "(board-truck driver1 truck1 s0)",
-                        "(drive-truck truck1 s0 s1 driver1)",
-                        "(load-truck package1 truck1 s1)",
-                        "(drive-truck truck1 s1 s0 driver1)",
-                        "(unload-truck package1 truck1 s0)",
-                        "(drive-truck truck1 s0 s1 driver1)",
-                        "(disembark-truck driver1 truck1 s1)",
-                        "(walk driver1 s1 p0-1)",
-                        "(walk driver1 p0-1 s0)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 16,
                 "num_expanded": 11,
                 "num_deadends": 0,
@@ -1535,49 +943,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 21,
-                "num_expanded": 17,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 9,
-                    "length": 9,
-                    "actions": [
-                        "(board-truck driver1 truck1 s0)",
-                        "(drive-truck truck1 s0 s1 driver1)",
-                        "(load-truck package1 truck1 s1)",
-                        "(drive-truck truck1 s1 s0 driver1)",
-                        "(unload-truck package1 truck1 s0)",
-                        "(drive-truck truck1 s0 s1 driver1)",
-                        "(disembark-truck driver1 truck1 s1)",
-                        "(walk driver1 s1 p0-1)",
-                        "(walk driver1 p0-1 s0)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 17,
-                "num_expanded": 12,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 9,
-                    "length": 9,
-                    "actions": [
-                        "(board-truck driver1 truck1 s0)",
-                        "(drive-truck truck1 s0 s1 driver1)",
-                        "(load-truck package1 truck1 s1)",
-                        "(drive-truck truck1 s1 s0 driver1)",
-                        "(unload-truck package1 truck1 s0)",
-                        "(drive-truck truck1 s0 s1 driver1)",
-                        "(disembark-truck driver1 truck1 s1)",
-                        "(walk driver1 s1 p0-1)",
-                        "(walk driver1 p0-1 s0)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 17,
                 "num_expanded": 12,
                 "num_deadends": 0,
@@ -1660,45 +1026,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 12,
-                "num_expanded": 11,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 7,
-                    "length": 7,
-                    "actions": [
-                        "(board car1 loc3)",
-                        "(sail loc3 loc1)",
-                        "(debark car1 loc1)",
-                        "(sail loc1 loc3)",
-                        "(board car2 loc3)",
-                        "(sail loc3 loc1)",
-                        "(debark car2 loc1)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 10,
-                "num_expanded": 9,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 7,
-                    "length": 7,
-                    "actions": [
-                        "(board car1 loc3)",
-                        "(sail loc3 loc1)",
-                        "(debark car1 loc1)",
-                        "(sail loc1 loc3)",
-                        "(board car2 loc3)",
-                        "(sail loc3 loc1)",
-                        "(debark car2 loc1)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 10,
                 "num_expanded": 9,
                 "num_deadends": 0,
@@ -1736,45 +1064,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 10,
-                "num_expanded": 9,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 7,
-                    "length": 7,
-                    "actions": [
-                        "(board car1 loc3)",
-                        "(sail loc3 loc1)",
-                        "(debark car1 loc1)",
-                        "(sail loc1 loc3)",
-                        "(board car2 loc3)",
-                        "(sail loc3 loc1)",
-                        "(debark car2 loc1)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 11,
-                "num_expanded": 10,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 7,
-                    "length": 7,
-                    "actions": [
-                        "(board car2 loc3)",
-                        "(sail loc3 loc1)",
-                        "(debark car2 loc1)",
-                        "(sail loc1 loc3)",
-                        "(board car1 loc3)",
-                        "(sail loc3 loc1)",
-                        "(debark car1 loc1)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 11,
                 "num_expanded": 10,
                 "num_deadends": 0,
@@ -1846,39 +1136,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 10,
-                "num_expanded": 6,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(move f0-1f f0-0f)",
-                        "(pickup f0-0f key0-0)",
-                        "(move f0-0f f1-0f)",
-                        "(putdown f1-0f key0-0)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 10,
-                "num_expanded": 6,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(move f0-1f f0-0f)",
-                        "(pickup f0-0f key0-0)",
-                        "(move f0-0f f1-0f)",
-                        "(putdown f1-0f key0-0)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 10,
                 "num_expanded": 6,
                 "num_deadends": 0,
@@ -1910,39 +1168,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 8,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(move f0-1f f0-0f)",
-                        "(pickup f0-0f key0-0)",
-                        "(move f0-0f f1-0f)",
-                        "(putdown f1-0f key0-0)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 10,
-                "num_expanded": 6,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(move f0-1f f0-0f)",
-                        "(pickup f0-0f key0-0)",
-                        "(move f0-0f f1-0f)",
-                        "(putdown f1-0f key0-0)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 10,
                 "num_expanded": 6,
                 "num_deadends": 0,
@@ -2008,37 +1234,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 15,
-                "num_expanded": 11,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 3,
-                    "length": 3,
-                    "actions": [
-                        "(pick ball2 rooma left)",
-                        "(move rooma roomb)",
-                        "(drop ball2 roomb left)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 11,
-                "num_expanded": 6,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 3,
-                    "length": 3,
-                    "actions": [
-                        "(pick ball2 rooma left)",
-                        "(move rooma roomb)",
-                        "(drop ball2 roomb left)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 11,
                 "num_expanded": 6,
                 "num_deadends": 0,
@@ -2068,37 +1264,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 10,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 3,
-                    "length": 3,
-                    "actions": [
-                        "(pick ball2 rooma left)",
-                        "(move rooma roomb)",
-                        "(drop ball2 roomb left)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 15,
-                "num_expanded": 11,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 3,
-                    "length": 3,
-                    "actions": [
-                        "(pick ball2 rooma left)",
-                        "(move rooma roomb)",
-                        "(drop ball2 roomb left)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 15,
                 "num_expanded": 11,
                 "num_deadends": 0,
@@ -2166,22 +1332,6 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 22,
-                "num_expanded": 15,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(drive_tent girl0 place0 place1 car0 tent0)",
-                        "(put_up girl0 place1 tent0)",
-                        "(drive girl0 place1 place0 car0)",
-                        "(walk_together tent0 place1 guy0 place0 girl0 couple0)"
-                    ]
-                }
-            },
             "hadd_unit": {
                 "num_generated_successors": 20,
                 "num_expanded": 11,
@@ -2198,41 +1348,9 @@
                     ]
                 }
             },
-            "hadd_general": {
-                "num_generated_successors": 20,
-                "num_expanded": 11,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(drive_tent girl0 place0 place1 car0 tent0)",
-                        "(put_up girl0 place1 tent0)",
-                        "(drive girl0 place1 place0 car0)",
-                        "(walk_together tent0 place1 guy0 place0 girl0 couple0)"
-                    ]
-                }
-            },
             "hff_unit": {
-                "num_generated_successors": 18,
-                "num_expanded": 9,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(drive_tent girl0 place0 place1 car0 tent0)",
-                        "(put_up girl0 place1 tent0)",
-                        "(drive girl0 place1 place0 car0)",
-                        "(walk_together tent0 place1 guy0 place0 girl0 couple0)"
-                    ]
-                }
-            },
-            "hff_general": {
-                "num_generated_successors": 18,
-                "num_expanded": 9,
+                "num_generated_successors": 16,
+                "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -2247,22 +1365,6 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 22,
-                "num_expanded": 15,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(drive_tent girl0 place0 place1 car0 tent0)",
-                        "(put_up girl0 place1 tent0)",
-                        "(drive girl0 place1 place0 car0)",
-                        "(walk_together tent0 place1 guy0 place0 girl0 couple0)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 22,
                 "num_expanded": 15,
                 "num_deadends": 0,
@@ -2331,39 +1433,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 8,
-                "num_expanded": 6,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(drive-truck t0 l0-1 l0-0 c0)",
-                        "(load-truck p0 t0 l0-0)",
-                        "(drive-truck t0 l0-0 l0-1 c0)",
-                        "(unload-truck p0 t0 l0-1)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 8,
-                "num_expanded": 8,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(drive-truck t0 l0-1 l0-0 c0)",
-                        "(load-truck p0 t0 l0-0)",
-                        "(drive-truck t0 l0-0 l0-1 c0)",
-                        "(unload-truck p0 t0 l0-1)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 8,
                 "num_expanded": 8,
                 "num_deadends": 0,
@@ -2395,39 +1465,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 8,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(drive-truck t0 l0-1 l0-0 c0)",
-                        "(load-truck p0 t0 l0-0)",
-                        "(drive-truck t0 l0-0 l0-1 c0)",
-                        "(unload-truck p0 t0 l0-1)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 8,
-                "num_expanded": 6,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(drive-truck t0 l0-1 l0-0 c0)",
-                        "(load-truck p0 t0 l0-0)",
-                        "(drive-truck t0 l0-0 l0-1 c0)",
-                        "(unload-truck p0 t0 l0-1)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 8,
                 "num_expanded": 6,
                 "num_deadends": 0,
@@ -2499,41 +1537,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 12,
-                "num_expanded": 9,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 5,
-                    "length": 5,
-                    "actions": [
-                        "(board f0 p0)",
-                        "(board f0 p1)",
-                        "(up f0 f1)",
-                        "(depart f1 p0)",
-                        "(depart f1 p1)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 9,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 5,
-                    "length": 5,
-                    "actions": [
-                        "(board f0 p0)",
-                        "(board f0 p1)",
-                        "(up f0 f1)",
-                        "(depart f1 p0)",
-                        "(depart f1 p1)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 9,
                 "num_expanded": 5,
                 "num_deadends": 0,
@@ -2567,41 +1571,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 9,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 5,
-                    "length": 5,
-                    "actions": [
-                        "(board f0 p0)",
-                        "(board f0 p1)",
-                        "(up f0 f1)",
-                        "(depart f1 p0)",
-                        "(depart f1 p1)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 11,
-                "num_expanded": 8,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 5,
-                    "length": 5,
-                    "actions": [
-                        "(board f0 p0)",
-                        "(board f0 p1)",
-                        "(up f0 f1)",
-                        "(depart f1 p0)",
-                        "(depart f1 p1)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 11,
                 "num_expanded": 8,
                 "num_deadends": 0,
@@ -2680,45 +1650,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 45,
-                "num_expanded": 35,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 7,
-                    "length": 7,
-                    "actions": [
-                        "(stop f0)",
-                        "(up f0 f2)",
-                        "(stop f2)",
-                        "(down f2 f0)",
-                        "(up f0 f1)",
-                        "(stop f1)",
-                        "(stop f1)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 45,
-                "num_expanded": 35,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 7,
-                    "length": 7,
-                    "actions": [
-                        "(stop f0)",
-                        "(up f0 f2)",
-                        "(stop f2)",
-                        "(down f2 f0)",
-                        "(up f0 f1)",
-                        "(stop f1)",
-                        "(stop f1)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 45,
                 "num_expanded": 35,
                 "num_deadends": 0,
@@ -2756,45 +1688,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 45,
-                "num_expanded": 35,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 7,
-                    "length": 7,
-                    "actions": [
-                        "(stop f0)",
-                        "(up f0 f2)",
-                        "(stop f2)",
-                        "(down f2 f0)",
-                        "(up f0 f1)",
-                        "(stop f1)",
-                        "(stop f1)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 45,
-                "num_expanded": 35,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 7,
-                    "length": 7,
-                    "actions": [
-                        "(stop f0)",
-                        "(up f0 f2)",
-                        "(stop f2)",
-                        "(down f2 f0)",
-                        "(up f0 f1)",
-                        "(stop f1)",
-                        "(stop f1)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 45,
                 "num_expanded": 35,
                 "num_deadends": 0,
@@ -2866,39 +1760,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 4,
-                "num_expanded": 4,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(up f0 f1)",
-                        "(stop f1)",
-                        "(down f1 f0)",
-                        "(stop f0)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 4,
-                "num_expanded": 4,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(up f0 f1)",
-                        "(stop f1)",
-                        "(down f1 f0)",
-                        "(stop f0)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 4,
                 "num_expanded": 4,
                 "num_deadends": 0,
@@ -2930,39 +1792,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 4,
-                "num_expanded": 4,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(up f0 f1)",
-                        "(stop f1)",
-                        "(down f1 f0)",
-                        "(stop f0)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 4,
-                "num_expanded": 4,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(up f0 f1)",
-                        "(stop f1)",
-                        "(down f1 f0)",
-                        "(stop f0)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 4,
                 "num_expanded": 4,
                 "num_deadends": 0,
@@ -3046,29 +1876,6 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 15,
-                "num_expanded": 11,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 169009,
-                    "length": 11,
-                    "actions": [
-                        "(initialize)",
-                        "(blackfeeder-feed-letter sheet1)",
-                        "(blackcontainer-toime-letter sheet1)",
-                        "(blackprinter-simplex-letter sheet1 front image-1)",
-                        "(blackcontainer-fromime-letter sheet1)",
-                        "(endcap-move-letter sheet1)",
-                        "(htmoverblack-move-letter sheet1)",
-                        "(down-movetop-letter sheet1)",
-                        "(htmovercolor-move-letter sheet1)",
-                        "(up-movetop-letter sheet1)",
-                        "(finisher1-stack-letter sheet1 dummy-sheet)"
-                    ]
-                }
-            },
             "hadd_unit": {
                 "num_generated_successors": 15,
                 "num_expanded": 12,
@@ -3076,29 +1883,6 @@
                 "num_pruned": 0,
                 "plan": {
                     "cost": 11,
-                    "length": 11,
-                    "actions": [
-                        "(initialize)",
-                        "(blackfeeder-feed-letter sheet1)",
-                        "(blackcontainer-toime-letter sheet1)",
-                        "(blackprinter-simplex-letter sheet1 front image-1)",
-                        "(blackcontainer-fromime-letter sheet1)",
-                        "(endcap-move-letter sheet1)",
-                        "(htmoverblack-move-letter sheet1)",
-                        "(down-movetop-letter sheet1)",
-                        "(htmovercolor-move-letter sheet1)",
-                        "(up-movetop-letter sheet1)",
-                        "(finisher1-stack-letter sheet1 dummy-sheet)"
-                    ]
-                }
-            },
-            "hadd_general": {
-                "num_generated_successors": 15,
-                "num_expanded": 11,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 169009,
                     "length": 11,
                     "actions": [
                         "(initialize)",
@@ -3138,29 +1922,6 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 15,
-                "num_expanded": 11,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 169009,
-                    "length": 11,
-                    "actions": [
-                        "(initialize)",
-                        "(blackfeeder-feed-letter sheet1)",
-                        "(blackcontainer-toime-letter sheet1)",
-                        "(blackprinter-simplex-letter sheet1 front image-1)",
-                        "(blackcontainer-fromime-letter sheet1)",
-                        "(endcap-move-letter sheet1)",
-                        "(htmoverblack-move-letter sheet1)",
-                        "(down-movetop-letter sheet1)",
-                        "(htmovercolor-move-letter sheet1)",
-                        "(up-movetop-letter sheet1)",
-                        "(finisher1-stack-letter sheet1 dummy-sheet)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
                 "num_generated_successors": 11,
                 "num_expanded": 9,
@@ -3177,29 +1938,6 @@
                         "(colorprinter-simplexmono-letter sheet1 front image-1)",
                         "(colorcontainer-fromime-letter sheet1)",
                         "(up-moveup-letter sheet1)",
-                        "(finisher1-stack-letter sheet1 dummy-sheet)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
-                "num_generated_successors": 15,
-                "num_expanded": 11,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 169009,
-                    "length": 11,
-                    "actions": [
-                        "(initialize)",
-                        "(blackfeeder-feed-letter sheet1)",
-                        "(blackcontainer-toime-letter sheet1)",
-                        "(blackprinter-simplex-letter sheet1 front image-1)",
-                        "(blackcontainer-fromime-letter sheet1)",
-                        "(endcap-move-letter sheet1)",
-                        "(htmoverblack-move-letter sheet1)",
-                        "(down-movetop-letter sheet1)",
-                        "(htmovercolor-move-letter sheet1)",
-                        "(up-movetop-letter sheet1)",
                         "(finisher1-stack-letter sheet1 dummy-sheet)"
                     ]
                 }
@@ -3263,43 +2001,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 989,
-                "num_expanded": 163,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 6,
-                    "length": 6,
-                    "actions": [
-                        "(choose p300 l1 l0)",
-                        "(choose pcaf l2 l1)",
-                        "(initialize p300)",
-                        "(initialize pcaf)",
-                        "(associate pcaf p300 pcaf-p300)",
-                        "(dummy-action-1)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 226,
-                "num_expanded": 30,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 6,
-                    "length": 6,
-                    "actions": [
-                        "(choose p300 l1 l0)",
-                        "(choose pcaf l2 l1)",
-                        "(initialize p300)",
-                        "(initialize pcaf)",
-                        "(associate pcaf p300 pcaf-p300)",
-                        "(dummy-action-1)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 226,
                 "num_expanded": 30,
                 "num_deadends": 0,
@@ -3335,43 +2037,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 93,
-                "num_expanded": 6,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 6,
-                    "length": 6,
-                    "actions": [
-                        "(choose p300 l1 l0)",
-                        "(choose pcaf l2 l1)",
-                        "(initialize p300)",
-                        "(initialize pcaf)",
-                        "(associate pcaf p300 pcaf-p300)",
-                        "(dummy-action-1)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 989,
-                "num_expanded": 163,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 6,
-                    "length": 6,
-                    "actions": [
-                        "(choose p300 l1 l0)",
-                        "(choose pcaf l2 l1)",
-                        "(initialize p300)",
-                        "(initialize pcaf)",
-                        "(associate pcaf p300 pcaf-p300)",
-                        "(dummy-action-1)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 989,
                 "num_expanded": 163,
                 "num_deadends": 0,
@@ -3484,67 +2150,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 127,
-                "num_expanded": 118,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 18,
-                    "length": 18,
-                    "actions": [
-                        "(activate-trans philosopher-0 philosopher forks--pid-wfork state-1 state-6)",
-                        "(activate-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
-                        "(queue-write philosopher-0 forks--pid-wfork forks-0- fork)",
-                        "(advance-empty-queue-tail forks-0- queue-1 qs-0 qs-0 fork empty zero one)",
-                        "(perform-trans philosopher-0 philosopher forks--pid-wfork state-1 state-6)",
-                        "(activate-trans philosopher-0 philosopher forks--pid-rfork state-6 state-3)",
-                        "(queue-read philosopher-0 forks--pid-rfork forks-0- fork)",
-                        "(advance-queue-head forks-0- queue-1 qs-0 qs-0 fork one zero)",
-                        "(perform-trans philosopher-0 philosopher forks--pid-rfork state-6 state-3)",
-                        "(activate-trans philosopher-0 philosopher forks-__-pidp1__2_-rfork state-3 state-4)",
-                        "(queue-write philosopher-1 forks--pid-wfork forks-1- fork)",
-                        "(advance-empty-queue-tail forks-1- queue-1 qs-0 qs-0 fork empty zero one)",
-                        "(perform-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
-                        "(activate-trans philosopher-1 philosopher forks--pid-rfork state-6 state-3)",
-                        "(queue-read philosopher-1 forks--pid-rfork forks-1- fork)",
-                        "(advance-queue-head forks-1- queue-1 qs-0 qs-0 fork one zero)",
-                        "(perform-trans philosopher-1 philosopher forks--pid-rfork state-6 state-3)",
-                        "(activate-trans philosopher-1 philosopher forks-__-pidp1__2_-rfork state-3 state-4)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 127,
-                "num_expanded": 118,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 18,
-                    "length": 18,
-                    "actions": [
-                        "(activate-trans philosopher-0 philosopher forks--pid-wfork state-1 state-6)",
-                        "(activate-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
-                        "(queue-write philosopher-0 forks--pid-wfork forks-0- fork)",
-                        "(advance-empty-queue-tail forks-0- queue-1 qs-0 qs-0 fork empty zero one)",
-                        "(perform-trans philosopher-0 philosopher forks--pid-wfork state-1 state-6)",
-                        "(activate-trans philosopher-0 philosopher forks--pid-rfork state-6 state-3)",
-                        "(queue-read philosopher-0 forks--pid-rfork forks-0- fork)",
-                        "(advance-queue-head forks-0- queue-1 qs-0 qs-0 fork one zero)",
-                        "(perform-trans philosopher-0 philosopher forks--pid-rfork state-6 state-3)",
-                        "(activate-trans philosopher-0 philosopher forks-__-pidp1__2_-rfork state-3 state-4)",
-                        "(queue-write philosopher-1 forks--pid-wfork forks-1- fork)",
-                        "(advance-empty-queue-tail forks-1- queue-1 qs-0 qs-0 fork empty zero one)",
-                        "(perform-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
-                        "(activate-trans philosopher-1 philosopher forks--pid-rfork state-6 state-3)",
-                        "(queue-read philosopher-1 forks--pid-rfork forks-1- fork)",
-                        "(advance-queue-head forks-1- queue-1 qs-0 qs-0 fork one zero)",
-                        "(perform-trans philosopher-1 philosopher forks--pid-rfork state-6 state-3)",
-                        "(activate-trans philosopher-1 philosopher forks-__-pidp1__2_-rfork state-3 state-4)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 127,
                 "num_expanded": 118,
                 "num_deadends": 0,
@@ -3604,67 +2210,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 127,
-                "num_expanded": 118,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 18,
-                    "length": 18,
-                    "actions": [
-                        "(activate-trans philosopher-0 philosopher forks--pid-wfork state-1 state-6)",
-                        "(activate-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
-                        "(queue-write philosopher-0 forks--pid-wfork forks-0- fork)",
-                        "(advance-empty-queue-tail forks-0- queue-1 qs-0 qs-0 fork empty zero one)",
-                        "(perform-trans philosopher-0 philosopher forks--pid-wfork state-1 state-6)",
-                        "(activate-trans philosopher-0 philosopher forks--pid-rfork state-6 state-3)",
-                        "(queue-read philosopher-0 forks--pid-rfork forks-0- fork)",
-                        "(advance-queue-head forks-0- queue-1 qs-0 qs-0 fork one zero)",
-                        "(perform-trans philosopher-0 philosopher forks--pid-rfork state-6 state-3)",
-                        "(activate-trans philosopher-0 philosopher forks-__-pidp1__2_-rfork state-3 state-4)",
-                        "(queue-write philosopher-1 forks--pid-wfork forks-1- fork)",
-                        "(advance-empty-queue-tail forks-1- queue-1 qs-0 qs-0 fork empty zero one)",
-                        "(perform-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
-                        "(activate-trans philosopher-1 philosopher forks--pid-rfork state-6 state-3)",
-                        "(queue-read philosopher-1 forks--pid-rfork forks-1- fork)",
-                        "(advance-queue-head forks-1- queue-1 qs-0 qs-0 fork one zero)",
-                        "(perform-trans philosopher-1 philosopher forks--pid-rfork state-6 state-3)",
-                        "(activate-trans philosopher-1 philosopher forks-__-pidp1__2_-rfork state-3 state-4)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 127,
-                "num_expanded": 118,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 18,
-                    "length": 18,
-                    "actions": [
-                        "(activate-trans philosopher-0 philosopher forks--pid-wfork state-1 state-6)",
-                        "(activate-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
-                        "(queue-write philosopher-0 forks--pid-wfork forks-0- fork)",
-                        "(advance-empty-queue-tail forks-0- queue-1 qs-0 qs-0 fork empty zero one)",
-                        "(perform-trans philosopher-0 philosopher forks--pid-wfork state-1 state-6)",
-                        "(activate-trans philosopher-0 philosopher forks--pid-rfork state-6 state-3)",
-                        "(queue-read philosopher-0 forks--pid-rfork forks-0- fork)",
-                        "(advance-queue-head forks-0- queue-1 qs-0 qs-0 fork one zero)",
-                        "(perform-trans philosopher-0 philosopher forks--pid-rfork state-6 state-3)",
-                        "(activate-trans philosopher-0 philosopher forks-__-pidp1__2_-rfork state-3 state-4)",
-                        "(queue-write philosopher-1 forks--pid-wfork forks-1- fork)",
-                        "(advance-empty-queue-tail forks-1- queue-1 qs-0 qs-0 fork empty zero one)",
-                        "(perform-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
-                        "(activate-trans philosopher-1 philosopher forks--pid-rfork state-6 state-3)",
-                        "(queue-read philosopher-1 forks--pid-rfork forks-1- fork)",
-                        "(advance-queue-head forks-1- queue-1 qs-0 qs-0 fork one zero)",
-                        "(perform-trans philosopher-1 philosopher forks--pid-rfork state-6 state-3)",
-                        "(activate-trans philosopher-1 philosopher forks-__-pidp1__2_-rfork state-3 state-4)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 127,
                 "num_expanded": 118,
                 "num_deadends": 0,
@@ -3747,39 +2293,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 309,
-                "num_expanded": 62,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(wait)",
-                        "(open sd11)",
-                        "(open sd7)",
-                        "(close sd3)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 309,
-                "num_expanded": 62,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(wait)",
-                        "(open sd11)",
-                        "(open sd7)",
-                        "(close sd3)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 309,
                 "num_expanded": 62,
                 "num_deadends": 0,
@@ -3811,39 +2325,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 309,
-                "num_expanded": 62,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(wait)",
-                        "(open sd11)",
-                        "(open sd7)",
-                        "(close sd3)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 309,
-                "num_expanded": 62,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(wait)",
-                        "(open sd11)",
-                        "(open sd7)",
-                        "(close sd3)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 309,
                 "num_expanded": 62,
                 "num_deadends": 0,
@@ -3868,13 +2350,9 @@
                 "blind_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "blind_general": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hmax_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hmax_general": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hadd_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hadd_general": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hff_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hff_general": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hlmcut_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hlmcut_general": "status OUT_OF_TIME within 1.0s/1000000 states"
+                "hlmcut_unit": "status OUT_OF_TIME within 1.0s/1000000 states"
             }
         },
         {
@@ -3929,39 +2407,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 8,
-                "num_expanded": 7,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(move c_0_0 c_0_1)",
-                        "(pick-reward c_0_1)",
-                        "(move c_0_1 c_0_2)",
-                        "(pick-reward c_0_2)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 7,
-                "num_expanded": 6,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(move c_0_0 c_0_1)",
-                        "(pick-reward c_0_1)",
-                        "(move c_0_1 c_0_2)",
-                        "(pick-reward c_0_2)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 7,
                 "num_expanded": 6,
                 "num_deadends": 0,
@@ -3993,39 +2439,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 7,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(move c_0_0 c_0_1)",
-                        "(pick-reward c_0_1)",
-                        "(move c_0_1 c_0_2)",
-                        "(pick-reward c_0_2)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 7,
-                "num_expanded": 6,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(move c_0_0 c_0_1)",
-                        "(pick-reward c_0_1)",
-                        "(move c_0_1 c_0_2)",
-                        "(pick-reward c_0_2)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 7,
                 "num_expanded": 6,
                 "num_deadends": 0,
@@ -4094,39 +2508,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 12,
-                "num_expanded": 7,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(calibrate rover0 camera0 objective0 waypoint1)",
-                        "(take_image rover0 waypoint1 objective0 camera0 high_res)",
-                        "(navigate rover0 waypoint1 waypoint0)",
-                        "(communicate_image_data rover0 general objective0 high_res waypoint0 waypoint1)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 12,
-                "num_expanded": 7,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(calibrate rover0 camera0 objective0 waypoint1)",
-                        "(take_image rover0 waypoint1 objective0 camera0 high_res)",
-                        "(navigate rover0 waypoint1 waypoint0)",
-                        "(communicate_image_data rover0 general objective0 high_res waypoint0 waypoint1)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 12,
                 "num_expanded": 7,
                 "num_deadends": 0,
@@ -4158,39 +2540,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 8,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(calibrate rover0 camera0 objective0 waypoint1)",
-                        "(take_image rover0 waypoint1 objective0 camera0 high_res)",
-                        "(navigate rover0 waypoint1 waypoint0)",
-                        "(communicate_image_data rover0 general objective0 high_res waypoint0 waypoint1)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 12,
-                "num_expanded": 7,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(calibrate rover0 camera0 objective0 waypoint1)",
-                        "(take_image rover0 waypoint1 objective0 camera0 high_res)",
-                        "(navigate rover0 waypoint1 waypoint0)",
-                        "(communicate_image_data rover0 general objective0 high_res waypoint0 waypoint1)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 12,
                 "num_expanded": 7,
                 "num_deadends": 0,
@@ -4268,45 +2618,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 109,
-                "num_expanded": 48,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 7,
-                    "length": 7,
-                    "actions": [
-                        "(switch_on instrument0 satellite0)",
-                        "(turn_to satellite0 groundstation0 planet2)",
-                        "(calibrate satellite0 instrument0 groundstation0)",
-                        "(turn_to satellite0 planet2 groundstation0)",
-                        "(take_image satellite0 planet2 instrument0 thermograph1)",
-                        "(turn_to satellite0 star1 planet2)",
-                        "(take_image satellite0 star1 instrument0 thermograph1)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 36,
-                "num_expanded": 13,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 7,
-                    "length": 7,
-                    "actions": [
-                        "(switch_on instrument0 satellite0)",
-                        "(turn_to satellite0 groundstation0 planet2)",
-                        "(calibrate satellite0 instrument0 groundstation0)",
-                        "(turn_to satellite0 planet2 groundstation0)",
-                        "(take_image satellite0 planet2 instrument0 thermograph1)",
-                        "(turn_to satellite0 star1 planet2)",
-                        "(take_image satellite0 star1 instrument0 thermograph1)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 36,
                 "num_expanded": 13,
                 "num_deadends": 0,
@@ -4344,45 +2656,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 21,
-                "num_expanded": 8,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 7,
-                    "length": 7,
-                    "actions": [
-                        "(switch_on instrument0 satellite0)",
-                        "(turn_to satellite0 groundstation0 planet2)",
-                        "(calibrate satellite0 instrument0 groundstation0)",
-                        "(turn_to satellite0 planet2 groundstation0)",
-                        "(take_image satellite0 planet2 instrument0 thermograph1)",
-                        "(turn_to satellite0 star1 planet2)",
-                        "(take_image satellite0 star1 instrument0 thermograph1)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 36,
-                "num_expanded": 15,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 7,
-                    "length": 7,
-                    "actions": [
-                        "(switch_on instrument0 satellite0)",
-                        "(turn_to satellite0 groundstation0 planet2)",
-                        "(calibrate satellite0 instrument0 groundstation0)",
-                        "(turn_to satellite0 planet2 groundstation0)",
-                        "(take_image satellite0 planet2 instrument0 thermograph1)",
-                        "(turn_to satellite0 star1 planet2)",
-                        "(take_image satellite0 star1 instrument0 thermograph1)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 36,
                 "num_expanded": 15,
                 "num_deadends": 0,
@@ -4448,35 +2722,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 368,
-                "num_expanded": 22,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(do-lathe a0)",
-                        "(do-roll b0)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 368,
-                "num_expanded": 22,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(do-lathe a0)",
-                        "(do-roll b0)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 368,
                 "num_expanded": 22,
                 "num_deadends": 0,
@@ -4504,35 +2750,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 61,
-                "num_expanded": 2,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(do-lathe a0)",
-                        "(do-roll b0)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 368,
-                "num_expanded": 22,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(do-lathe a0)",
-                        "(do-roll b0)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 368,
                 "num_expanded": 22,
                 "num_deadends": 0,
@@ -4555,13 +2773,9 @@
                 "blind_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "blind_general": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hmax_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hmax_general": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hadd_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hadd_general": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hff_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hff_general": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hlmcut_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hlmcut_general": "status OUT_OF_TIME within 1.0s/1000000 states"
+                "hlmcut_unit": "status OUT_OF_TIME within 1.0s/1000000 states"
             }
         },
         {
@@ -4616,39 +2830,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 5,
-                "num_expanded": 5,
-                "num_deadends": 1,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(walk shed location1 bob)",
-                        "(pickup_spanner location1 spanner1 bob)",
-                        "(walk location1 gate bob)",
-                        "(tighten_nut gate spanner1 bob nut1)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 5,
-                "num_expanded": 4,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(walk shed location1 bob)",
-                        "(pickup_spanner location1 spanner1 bob)",
-                        "(walk location1 gate bob)",
-                        "(tighten_nut gate spanner1 bob nut1)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 5,
                 "num_expanded": 4,
                 "num_deadends": 0,
@@ -4680,39 +2862,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 5,
-                "num_expanded": 4,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(walk shed location1 bob)",
-                        "(pickup_spanner location1 spanner1 bob)",
-                        "(walk location1 gate bob)",
-                        "(tighten_nut gate spanner1 bob nut1)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 5,
-                "num_expanded": 5,
-                "num_deadends": 1,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(walk shed location1 bob)",
-                        "(pickup_spanner location1 spanner1 bob)",
-                        "(walk location1 gate bob)",
-                        "(tighten_nut gate spanner1 bob nut1)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 5,
                 "num_expanded": 5,
                 "num_deadends": 1,
@@ -4784,23 +2934,6 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 110,
-                "num_expanded": 43,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 54,
-                    "length": 5,
-                    "actions": [
-                        "(pick-up truck-1 city-loc-3 package-1 capacity-3 capacity-4)",
-                        "(pick-up truck-1 city-loc-3 package-2 capacity-2 capacity-3)",
-                        "(drive truck-1 city-loc-3 city-loc-2)",
-                        "(drop truck-1 city-loc-2 package-1 capacity-2 capacity-3)",
-                        "(drop truck-1 city-loc-2 package-2 capacity-3 capacity-4)"
-                    ]
-                }
-            },
             "hadd_unit": {
                 "num_generated_successors": 44,
                 "num_expanded": 15,
@@ -4817,23 +2950,6 @@
                         "(pick-up truck-2 city-loc-3 package-2 capacity-2 capacity-3)",
                         "(drive truck-2 city-loc-3 city-loc-2)",
                         "(drop truck-2 city-loc-2 package-2 capacity-2 capacity-3)"
-                    ]
-                }
-            },
-            "hadd_general": {
-                "num_generated_successors": 27,
-                "num_expanded": 8,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 54,
-                    "length": 5,
-                    "actions": [
-                        "(pick-up truck-1 city-loc-3 package-1 capacity-3 capacity-4)",
-                        "(pick-up truck-1 city-loc-3 package-2 capacity-2 capacity-3)",
-                        "(drive truck-1 city-loc-3 city-loc-2)",
-                        "(drop truck-1 city-loc-2 package-1 capacity-2 capacity-3)",
-                        "(drop truck-1 city-loc-2 package-2 capacity-3 capacity-4)"
                     ]
                 }
             },
@@ -4854,23 +2970,6 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 18,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 54,
-                    "length": 5,
-                    "actions": [
-                        "(pick-up truck-1 city-loc-3 package-1 capacity-3 capacity-4)",
-                        "(pick-up truck-1 city-loc-3 package-2 capacity-2 capacity-3)",
-                        "(drive truck-1 city-loc-3 city-loc-2)",
-                        "(drop truck-1 city-loc-2 package-1 capacity-2 capacity-3)",
-                        "(drop truck-1 city-loc-2 package-2 capacity-3 capacity-4)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
                 "num_generated_successors": 85,
                 "num_expanded": 39,
@@ -4878,23 +2977,6 @@
                 "num_pruned": 0,
                 "plan": {
                     "cost": 5,
-                    "length": 5,
-                    "actions": [
-                        "(pick-up truck-1 city-loc-3 package-1 capacity-3 capacity-4)",
-                        "(pick-up truck-1 city-loc-3 package-2 capacity-2 capacity-3)",
-                        "(drive truck-1 city-loc-3 city-loc-2)",
-                        "(drop truck-1 city-loc-2 package-1 capacity-2 capacity-3)",
-                        "(drop truck-1 city-loc-2 package-2 capacity-3 capacity-4)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
-                "num_generated_successors": 25,
-                "num_expanded": 8,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 54,
                     "length": 5,
                     "actions": [
                         "(pick-up truck-1 city-loc-3 package-1 capacity-3 capacity-4)",
@@ -4970,53 +3052,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 44,
-                "num_expanded": 37,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 8,
-                    "length": 8,
-                    "actions": [
-                        "(move loc-x0-y1 loc-x0-y2)",
-                        "(move loc-x0-y2 loc-x1-y2)",
-                        "(move loc-x1-y2 loc-x0-y2)",
-                        "(move loc-x0-y2 loc-x0-y1)",
-                        "(move loc-x0-y1 loc-x0-y0)",
-                        "(move loc-x0-y0 loc-x1-y0)",
-                        "(move loc-x1-y0 loc-x2-y0)",
-                        "(move loc-x2-y0 loc-x2-y1)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 24,
-                "num_expanded": 19,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 14,
-                    "length": 14,
-                    "actions": [
-                        "(move loc-x0-y1 loc-x0-y0)",
-                        "(move loc-x0-y0 loc-x1-y0)",
-                        "(move loc-x1-y0 loc-x2-y0)",
-                        "(move loc-x2-y0 loc-x1-y0)",
-                        "(move loc-x1-y0 loc-x0-y0)",
-                        "(move loc-x0-y0 loc-x0-y1)",
-                        "(move loc-x0-y1 loc-x0-y2)",
-                        "(move loc-x0-y2 loc-x1-y2)",
-                        "(move loc-x1-y2 loc-x0-y2)",
-                        "(move loc-x0-y2 loc-x0-y1)",
-                        "(move loc-x0-y1 loc-x0-y0)",
-                        "(move loc-x0-y0 loc-x1-y0)",
-                        "(move loc-x1-y0 loc-x2-y0)",
-                        "(move loc-x2-y0 loc-x2-y1)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 24,
                 "num_expanded": 19,
                 "num_deadends": 0,
@@ -5062,47 +3098,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 25,
-                "num_expanded": 16,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 8,
-                    "length": 8,
-                    "actions": [
-                        "(move loc-x0-y1 loc-x0-y2)",
-                        "(move loc-x0-y2 loc-x1-y2)",
-                        "(move loc-x1-y2 loc-x0-y2)",
-                        "(move loc-x0-y2 loc-x0-y1)",
-                        "(move loc-x0-y1 loc-x0-y0)",
-                        "(move loc-x0-y0 loc-x1-y0)",
-                        "(move loc-x1-y0 loc-x2-y0)",
-                        "(move loc-x2-y0 loc-x2-y1)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 27,
-                "num_expanded": 18,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 8,
-                    "length": 8,
-                    "actions": [
-                        "(move loc-x0-y1 loc-x0-y2)",
-                        "(move loc-x0-y2 loc-x1-y2)",
-                        "(move loc-x1-y2 loc-x0-y2)",
-                        "(move loc-x0-y2 loc-x0-y1)",
-                        "(move loc-x0-y1 loc-x0-y0)",
-                        "(move loc-x0-y0 loc-x1-y0)",
-                        "(move loc-x1-y0 loc-x2-y0)",
-                        "(move loc-x2-y0 loc-x2-y1)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 27,
                 "num_expanded": 18,
                 "num_deadends": 0,
@@ -5190,27 +3186,6 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 662,
-                "num_expanded": 122,
-                "num_deadends": 5,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 175,
-                    "length": 9,
-                    "actions": [
-                        "(do-saw-medium b0 p0 saw0 beech rough s3 s2 s1)",
-                        "(do-plane p0 planer0 rough natural untreated)",
-                        "(do-saw-medium b1 p1 saw0 cherry rough s3 s2 s1)",
-                        "(do-plane p1 planer0 rough natural untreated)",
-                        "(do-grind p0 grinder0 smooth natural untreated untreated)",
-                        "(do-immersion-varnish p0 immersion-varnisher0 mauve verysmooth)",
-                        "(do-plane p2 planer0 verysmooth natural colourfragments)",
-                        "(do-glaze p2 glazer0 mauve)",
-                        "(do-glaze p1 glazer0 green)"
-                    ]
-                }
-            },
             "hadd_unit": {
                 "num_generated_successors": 158,
                 "num_expanded": 27,
@@ -5231,32 +3206,6 @@
                         "(load-highspeed-saw b0 highspeed-saw0)",
                         "(do-plane p1 planer0 rough green glazed)",
                         "(do-glaze p1 glazer0 green)"
-                    ]
-                }
-            },
-            "hadd_general": {
-                "num_generated_successors": 550,
-                "num_expanded": 136,
-                "num_deadends": 1,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 240,
-                    "length": 14,
-                    "actions": [
-                        "(do-plane p2 planer0 verysmooth natural colourfragments)",
-                        "(do-glaze p2 glazer0 mauve)",
-                        "(do-saw-medium b0 p0 saw0 beech rough s3 s2 s1)",
-                        "(do-plane p0 planer0 rough natural untreated)",
-                        "(do-immersion-varnish p0 immersion-varnisher0 mauve smooth)",
-                        "(do-saw-medium b1 p1 saw0 cherry rough s3 s2 s1)",
-                        "(do-glaze p1 glazer0 green)",
-                        "(do-plane p2 planer0 smooth mauve glazed)",
-                        "(do-immersion-varnish p2 immersion-varnisher0 mauve smooth)",
-                        "(do-plane p1 planer0 rough green glazed)",
-                        "(do-glaze p1 glazer0 green)",
-                        "(do-plane p0 planer0 smooth mauve varnished)",
-                        "(do-grind p0 grinder0 smooth natural untreated untreated)",
-                        "(do-immersion-varnish p0 immersion-varnisher0 mauve verysmooth)"
                     ]
                 }
             },
@@ -5284,29 +3233,6 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 153,
-                "num_expanded": 19,
-                "num_deadends": 1,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 205,
-                    "length": 11,
-                    "actions": [
-                        "(do-plane p2 planer0 verysmooth natural colourfragments)",
-                        "(do-saw-medium b0 p0 saw0 beech rough s3 s2 s1)",
-                        "(do-glaze p0 glazer0 mauve)",
-                        "(do-saw-medium b1 p1 saw0 cherry rough s3 s2 s1)",
-                        "(do-glaze p1 glazer0 green)",
-                        "(do-plane p0 planer0 rough mauve glazed)",
-                        "(do-grind p0 grinder0 smooth natural untreated untreated)",
-                        "(do-immersion-varnish p0 immersion-varnisher0 mauve verysmooth)",
-                        "(do-plane p1 planer0 rough green glazed)",
-                        "(do-glaze p1 glazer0 green)",
-                        "(do-glaze p2 glazer0 mauve)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
                 "num_generated_successors": 158,
                 "num_expanded": 27,
@@ -5327,30 +3253,6 @@
                         "(load-highspeed-saw b0 highspeed-saw0)",
                         "(do-plane p1 planer0 rough green glazed)",
                         "(do-glaze p1 glazer0 green)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
-                "num_generated_successors": 178,
-                "num_expanded": 29,
-                "num_deadends": 1,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 230,
-                    "length": 12,
-                    "actions": [
-                        "(do-plane p2 planer0 verysmooth natural colourfragments)",
-                        "(do-glaze p2 glazer0 mauve)",
-                        "(do-saw-medium b0 p0 saw0 beech rough s3 s2 s1)",
-                        "(do-plane p0 planer0 rough natural untreated)",
-                        "(do-immersion-varnish p0 immersion-varnisher0 mauve smooth)",
-                        "(do-saw-medium b1 p1 saw0 cherry rough s3 s2 s1)",
-                        "(do-glaze p1 glazer0 green)",
-                        "(do-grind p0 grinder0 smooth mauve varnished colourfragments)",
-                        "(do-plane p1 planer0 rough green glazed)",
-                        "(do-glaze p1 glazer0 green)",
-                        "(do-grind p0 grinder0 verysmooth natural colourfragments untreated)",
-                        "(do-immersion-varnish p0 immersion-varnisher0 mauve verysmooth)"
                     ]
                 }
             }
@@ -5410,42 +3312,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 65,
-                "num_expanded": 17,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 5,
-                    "length": 5,
-                    "actions": [
-                        "(increase_rate c1)",
-                        "(increase_rate c2)",
-                        "(increase_rate c2)",
-                        "(increment c1)",
-                        "(increment c2)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 90,
-                "num_expanded": 19,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 6,
-                    "length": 6,
-                    "actions": [
-                        "(increase_rate c0)",
-                        "(increase_rate c1)",
-                        "(increase_rate c2)",
-                        "(increment c2)",
-                        "(increment c2)",
-                        "(increment c1)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 90,
                 "num_expanded": 19,
                 "num_deadends": 0,
@@ -5481,42 +3348,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 44,
-                "num_expanded": 7,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 6,
-                    "length": 6,
-                    "actions": [
-                        "(increase_rate c0)",
-                        "(increase_rate c1)",
-                        "(increase_rate c2)",
-                        "(increment c1)",
-                        "(increment c2)",
-                        "(increment c2)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 65,
-                "num_expanded": 17,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 5,
-                    "length": 5,
-                    "actions": [
-                        "(increase_rate c1)",
-                        "(increase_rate c2)",
-                        "(increase_rate c2)",
-                        "(increment c1)",
-                        "(increment c2)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 65,
                 "num_expanded": 17,
                 "num_deadends": 0,
@@ -5589,41 +3421,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 5,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 5,
-                    "length": 5,
-                    "actions": [
-                        "(refuel)",
-                        "(refuel)",
-                        "(refuel)",
-                        "(refuel)",
-                        "(refuel)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 5,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 5,
-                    "length": 5,
-                    "actions": [
-                        "(refuel)",
-                        "(refuel)",
-                        "(refuel)",
-                        "(refuel)",
-                        "(refuel)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 5,
                 "num_expanded": 5,
                 "num_deadends": 0,
@@ -5657,41 +3455,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 5,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 5,
-                    "length": 5,
-                    "actions": [
-                        "(refuel)",
-                        "(refuel)",
-                        "(refuel)",
-                        "(refuel)",
-                        "(refuel)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 5,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 5,
-                    "length": 5,
-                    "actions": [
-                        "(refuel)",
-                        "(refuel)",
-                        "(refuel)",
-                        "(refuel)",
-                        "(refuel)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 5,
                 "num_expanded": 5,
                 "num_deadends": 0,
@@ -5779,51 +3543,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 333,
-                "num_expanded": 312,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 10,
-                    "length": 10,
-                    "actions": [
-                        "(drive-vehicle v2 l1 fs1)",
-                        "(drive-vehicle v3 l1 fs1)",
-                        "(fuel-vehicle v1 fs1)",
-                        "(fuel-vehicle v1 fs1)",
-                        "(fuel-vehicle v1 fs1)",
-                        "(fuel-vehicle v2 fs1)",
-                        "(fuel-vehicle v2 fs1)",
-                        "(fuel-vehicle v2 fs1)",
-                        "(fuel-vehicle v3 fs1)",
-                        "(fuel-vehicle v3 fs1)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 333,
-                "num_expanded": 312,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 10,
-                    "length": 10,
-                    "actions": [
-                        "(drive-vehicle v2 l1 fs1)",
-                        "(drive-vehicle v3 l1 fs1)",
-                        "(fuel-vehicle v1 fs1)",
-                        "(fuel-vehicle v1 fs1)",
-                        "(fuel-vehicle v1 fs1)",
-                        "(fuel-vehicle v2 fs1)",
-                        "(fuel-vehicle v2 fs1)",
-                        "(fuel-vehicle v2 fs1)",
-                        "(fuel-vehicle v3 fs1)",
-                        "(fuel-vehicle v3 fs1)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 333,
                 "num_expanded": 312,
                 "num_deadends": 0,
@@ -5867,51 +3587,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 333,
-                "num_expanded": 312,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 10,
-                    "length": 10,
-                    "actions": [
-                        "(drive-vehicle v2 l1 fs1)",
-                        "(drive-vehicle v3 l1 fs1)",
-                        "(fuel-vehicle v1 fs1)",
-                        "(fuel-vehicle v1 fs1)",
-                        "(fuel-vehicle v1 fs1)",
-                        "(fuel-vehicle v2 fs1)",
-                        "(fuel-vehicle v2 fs1)",
-                        "(fuel-vehicle v2 fs1)",
-                        "(fuel-vehicle v3 fs1)",
-                        "(fuel-vehicle v3 fs1)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 333,
-                "num_expanded": 312,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 10,
-                    "length": 10,
-                    "actions": [
-                        "(drive-vehicle v2 l1 fs1)",
-                        "(drive-vehicle v3 l1 fs1)",
-                        "(fuel-vehicle v1 fs1)",
-                        "(fuel-vehicle v1 fs1)",
-                        "(fuel-vehicle v1 fs1)",
-                        "(fuel-vehicle v2 fs1)",
-                        "(fuel-vehicle v2 fs1)",
-                        "(fuel-vehicle v2 fs1)",
-                        "(fuel-vehicle v3 fs1)",
-                        "(fuel-vehicle v3 fs1)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 333,
                 "num_expanded": 312,
                 "num_deadends": 0,
@@ -5997,26 +3673,6 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 92,
-                "num_expanded": 57,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2049,
-                    "length": 8,
-                    "actions": [
-                        "(drive truck0 depot0 market1)",
-                        "(buy-all truck0 goods0 market1)",
-                        "(drive truck0 market1 market4)",
-                        "(buy-all truck0 goods1 market4)",
-                        "(drive truck0 market4 market3)",
-                        "(buy-allneeded truck0 goods1 market3)",
-                        "(buy-allneeded truck0 goods0 market3)",
-                        "(drive truck0 market3 depot0)"
-                    ]
-                }
-            },
             "hadd_unit": {
                 "num_generated_successors": 40,
                 "num_expanded": 18,
@@ -6037,29 +3693,6 @@
                     ]
                 }
             },
-            "hadd_general": {
-                "num_generated_successors": 42,
-                "num_expanded": 16,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2126.08,
-                    "length": 11,
-                    "actions": [
-                        "(drive truck0 depot0 market1)",
-                        "(buy-all truck0 goods0 market1)",
-                        "(drive truck0 market1 market4)",
-                        "(buy-all truck0 goods1 market4)",
-                        "(drive truck0 market4 market3)",
-                        "(buy-allneeded truck0 goods1 market3)",
-                        "(drive truck0 market3 market4)",
-                        "(buy-all truck0 goods0 market4)",
-                        "(drive truck0 market4 market3)",
-                        "(buy-allneeded truck0 goods0 market3)",
-                        "(drive truck0 market3 depot0)"
-                    ]
-                }
-            },
             "hff_unit": {
                 "num_generated_successors": 35,
                 "num_expanded": 13,
@@ -6067,26 +3700,6 @@
                 "num_pruned": 0,
                 "plan": {
                     "cost": 8,
-                    "length": 8,
-                    "actions": [
-                        "(drive truck0 depot0 market3)",
-                        "(buy-all truck0 goods1 market3)",
-                        "(drive truck0 market3 market4)",
-                        "(buy-all truck0 goods0 market4)",
-                        "(buy-allneeded truck0 goods1 market4)",
-                        "(drive truck0 market4 market3)",
-                        "(buy-allneeded truck0 goods0 market3)",
-                        "(drive truck0 market3 depot0)"
-                    ]
-                }
-            },
-            "hff_general": {
-                "num_generated_successors": 40,
-                "num_expanded": 13,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 1951.98,
                     "length": 8,
                     "actions": [
                         "(drive truck0 depot0 market3)",
@@ -6116,27 +3729,6 @@
                         "(buy-allneeded truck0 goods0 market4)",
                         "(buy-allneeded truck0 goods1 market4)",
                         "(drive truck0 market4 depot0)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
-                "num_generated_successors": 52,
-                "num_expanded": 24,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2368.41,
-                    "length": 9,
-                    "actions": [
-                        "(drive truck0 depot0 market3)",
-                        "(buy-all truck0 goods0 market3)",
-                        "(drive truck0 market3 market1)",
-                        "(buy-allneeded truck0 goods0 market1)",
-                        "(drive truck0 market1 market4)",
-                        "(buy-all truck0 goods1 market4)",
-                        "(drive truck0 market4 market3)",
-                        "(buy-allneeded truck0 goods1 market3)",
-                        "(drive truck0 market3 depot0)"
                     ]
                 }
             }
@@ -6208,29 +3800,6 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 402,
-                "num_expanded": 211,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 8524,
-                    "length": 11,
-                    "actions": [
-                        "(board person2 plane1 city0)",
-                        "(refuel plane1)",
-                        "(fly-slow plane1 city0 city1)",
-                        "(board person3 plane1 city1)",
-                        "(debark person2 plane1 city1)",
-                        "(fly-slow plane1 city1 city0)",
-                        "(refuel plane1)",
-                        "(board person1 plane1 city0)",
-                        "(fly-slow plane1 city0 city2)",
-                        "(debark person1 plane1 city2)",
-                        "(debark person3 plane1 city2)"
-                    ]
-                }
-            },
             "hadd_unit": {
                 "num_generated_successors": 46,
                 "num_expanded": 15,
@@ -6252,31 +3821,6 @@
                     ]
                 }
             },
-            "hadd_general": {
-                "num_generated_successors": 190,
-                "num_expanded": 71,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 13948,
-                    "length": 13,
-                    "actions": [
-                        "(board person1 plane1 city0)",
-                        "(fly-slow plane1 city0 city1)",
-                        "(board person3 plane1 city1)",
-                        "(refuel plane1)",
-                        "(fly-slow plane1 city1 city0)",
-                        "(board person2 plane1 city0)",
-                        "(fly-slow plane1 city0 city1)",
-                        "(debark person2 plane1 city1)",
-                        "(refuel plane1)",
-                        "(fly-slow plane1 city1 city0)",
-                        "(fly-slow plane1 city0 city2)",
-                        "(debark person1 plane1 city2)",
-                        "(debark person3 plane1 city2)"
-                    ]
-                }
-            },
             "hff_unit": {
                 "num_generated_successors": 32,
                 "num_expanded": 10,
@@ -6284,27 +3828,6 @@
                 "num_pruned": 0,
                 "plan": {
                     "cost": 9,
-                    "length": 9,
-                    "actions": [
-                        "(board person1 plane1 city0)",
-                        "(board person2 plane1 city0)",
-                        "(fly-slow plane1 city0 city1)",
-                        "(board person3 plane1 city1)",
-                        "(debark person2 plane1 city1)",
-                        "(refuel plane1)",
-                        "(fly-slow plane1 city1 city2)",
-                        "(debark person1 plane1 city2)",
-                        "(debark person3 plane1 city2)"
-                    ]
-                }
-            },
-            "hff_general": {
-                "num_generated_successors": 29,
-                "num_expanded": 9,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 5952,
                     "length": 9,
                     "actions": [
                         "(board person1 plane1 city0)",
@@ -6335,28 +3858,6 @@
                         "(debark person2 plane1 city1)",
                         "(refuel plane1)",
                         "(fly-slow plane1 city1 city2)",
-                        "(debark person1 plane1 city2)",
-                        "(debark person3 plane1 city2)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
-                "num_generated_successors": 142,
-                "num_expanded": 51,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 8524,
-                    "length": 10,
-                    "actions": [
-                        "(board person1 plane1 city0)",
-                        "(board person2 plane1 city0)",
-                        "(fly-slow plane1 city0 city1)",
-                        "(board person3 plane1 city1)",
-                        "(debark person2 plane1 city1)",
-                        "(refuel plane1)",
-                        "(fly-slow plane1 city1 city0)",
-                        "(fly-slow plane1 city0 city2)",
                         "(debark person1 plane1 city2)",
                         "(debark person3 plane1 city2)"
                     ]
@@ -6409,35 +3910,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 25,
-                "num_expanded": 2,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(move_block_down b1)",
-                        "(move_block_left b1)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 25,
-                "num_expanded": 2,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(move_block_down b1)",
-                        "(move_block_left b1)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 25,
                 "num_expanded": 2,
                 "num_deadends": 0,
@@ -6465,35 +3938,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 25,
-                "num_expanded": 2,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(move_block_down b1)",
-                        "(move_block_left b1)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 25,
-                "num_expanded": 2,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(move_block_down b1)",
-                        "(move_block_left b1)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 25,
                 "num_expanded": 2,
                 "num_deadends": 0,
@@ -6584,30 +4029,6 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 3287,
-                "num_expanded": 2654,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 12,
-                    "length": 12,
-                    "actions": [
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c1)",
-                        "(decrement c1)",
-                        "(decrement c1)",
-                        "(increment c3)",
-                        "(increment c3)",
-                        "(increment c3)"
-                    ]
-                }
-            },
             "hadd_unit": {
                 "num_generated_successors": 148,
                 "num_expanded": 35,
@@ -6629,30 +4050,6 @@
                         "(increment c3)",
                         "(increment c3)",
                         "(increment c2)"
-                    ]
-                }
-            },
-            "hadd_general": {
-                "num_generated_successors": 3287,
-                "num_expanded": 2654,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 12,
-                    "length": 12,
-                    "actions": [
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c1)",
-                        "(decrement c1)",
-                        "(decrement c1)",
-                        "(increment c3)",
-                        "(increment c3)",
-                        "(increment c3)"
                     ]
                 }
             },
@@ -6694,35 +4091,6 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 1395,
-                "num_expanded": 700,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 17,
-                    "length": 17,
-                    "actions": [
-                        "(decrement c1)",
-                        "(decrement c1)",
-                        "(decrement c2)",
-                        "(decrement c2)",
-                        "(increment c3)",
-                        "(decrement c1)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(increment c3)",
-                        "(increment c3)",
-                        "(increment c3)",
-                        "(increment c2)",
-                        "(increment c2)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
                 "num_generated_successors": 639,
                 "num_expanded": 229,
@@ -6743,30 +4111,6 @@
                         "(decrement c0)",
                         "(decrement c1)",
                         "(decrement c1)",
-                        "(increment c3)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
-                "num_generated_successors": 3287,
-                "num_expanded": 2654,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 12,
-                    "length": 12,
-                    "actions": [
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c1)",
-                        "(decrement c1)",
-                        "(decrement c1)",
-                        "(increment c3)",
-                        "(increment c3)",
                         "(increment c3)"
                     ]
                 }
@@ -6821,21 +4165,6 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 884,
-                "num_expanded": 131,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 7,
-                    "length": 3,
-                    "actions": [
-                        "(pick item4 rooma left1 bot1)",
-                        "(move bot1 rooma roomb)",
-                        "(drop item4 roomb left1 bot1)"
-                    ]
-                }
-            },
             "hadd_unit": {
                 "num_generated_successors": 107,
                 "num_expanded": 10,
@@ -6843,21 +4172,6 @@
                 "num_pruned": 0,
                 "plan": {
                     "cost": 3,
-                    "length": 3,
-                    "actions": [
-                        "(pick item4 rooma left1 bot1)",
-                        "(move bot1 rooma roomb)",
-                        "(drop item4 roomb left1 bot1)"
-                    ]
-                }
-            },
-            "hadd_general": {
-                "num_generated_successors": 166,
-                "num_expanded": 16,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 7,
                     "length": 3,
                     "actions": [
                         "(pick item4 rooma left1 bot1)",
@@ -6881,21 +4195,6 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 36,
-                "num_expanded": 3,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 7,
-                    "length": 3,
-                    "actions": [
-                        "(pick item4 rooma left1 bot1)",
-                        "(move bot1 rooma roomb)",
-                        "(drop item4 roomb left1 bot1)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
                 "num_generated_successors": 549,
                 "num_expanded": 96,
@@ -6908,22 +4207,6 @@
                         "(pick item4 rooma left1 bot1)",
                         "(move bot1 rooma roomb)",
                         "(drop item4 roomb left1 bot1)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
-                "num_generated_successors": 490,
-                "num_expanded": 60,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 9,
-                    "length": 4,
-                    "actions": [
-                        "(pick item1 rooma left1 bot1)",
-                        "(pick item4 rooma right1 bot1)",
-                        "(move bot1 rooma roomb)",
-                        "(drop item4 roomb right1 bot1)"
                     ]
                 }
             }
@@ -6980,22 +4263,6 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 53,
-                "num_expanded": 24,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(increase_z)",
-                        "(visit x0y0z1)",
-                        "(decrease_z)",
-                        "(visit x0y0z0)"
-                    ]
-                }
-            },
             "hadd_unit": {
                 "num_generated_successors": 31,
                 "num_expanded": 12,
@@ -7009,22 +4276,6 @@
                         "(increase_z)",
                         "(visit x0y0z1)",
                         "(decrease_z)"
-                    ]
-                }
-            },
-            "hadd_general": {
-                "num_generated_successors": 53,
-                "num_expanded": 24,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(increase_z)",
-                        "(visit x0y0z1)",
-                        "(decrease_z)",
-                        "(visit x0y0z0)"
                     ]
                 }
             },
@@ -7044,26 +4295,6 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 57,
-                "num_expanded": 26,
-                "num_deadends": 4,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 8,
-                    "length": 8,
-                    "actions": [
-                        "(increase_x)",
-                        "(increase_y)",
-                        "(increase_z)",
-                        "(decrease_x)",
-                        "(decrease_y)",
-                        "(visit x0y0z1)",
-                        "(decrease_z)",
-                        "(visit x0y0z0)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
                 "num_generated_successors": 25,
                 "num_expanded": 10,
@@ -7077,22 +4308,6 @@
                         "(increase_z)",
                         "(visit x0y0z1)",
                         "(decrease_z)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
-                "num_generated_successors": 53,
-                "num_expanded": 24,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(increase_z)",
-                        "(visit x0y0z1)",
-                        "(decrease_z)",
-                        "(visit x0y0z0)"
                     ]
                 }
             }
@@ -7140,33 +4355,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 1,
-                "num_expanded": 1,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 1,
-                    "length": 1,
-                    "actions": [
-                        "(move_forwards s0 wa0 wa1)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 1,
-                "num_expanded": 1,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 1,
-                    "length": 1,
-                    "actions": [
-                        "(move_forwards s0 wa0 wa1)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 1,
                 "num_expanded": 1,
                 "num_deadends": 0,
@@ -7192,33 +4381,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 1,
-                "num_expanded": 1,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 1,
-                    "length": 1,
-                    "actions": [
-                        "(move_forwards s0 wa0 wa1)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 1,
-                "num_expanded": 1,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 1,
-                    "length": 1,
-                    "actions": [
-                        "(move_forwards s0 wa0 wa1)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 1,
                 "num_expanded": 1,
                 "num_deadends": 0,
@@ -7300,39 +4463,10 @@
                     ]
                 }
             },
-            "hff_unit": {
-                "num_generated_successors": 17906,
-                "num_expanded": 3551,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 14,
-                    "length": 14,
-                    "actions": [
-                        "(move_down agent1)",
-                        "(move_down agent1)",
-                        "(move_down agent1)",
-                        "(load agent1 tap1)",
-                        "(move_up agent1)",
-                        "(move_up agent1)",
-                        "(move_up agent1)",
-                        "(move_down agent2)",
-                        "(move_down_right agent1)",
-                        "(move_down agent2)",
-                        "(move_up agent1)",
-                        "(move_down agent2)",
-                        "(move_right agent1)",
-                        "(pour agent1 plant1)"
-                    ]
-                }
-            },
             "skipped": {
-                "hmax_general": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hadd_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hadd_general": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hff_general": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hlmcut_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hlmcut_general": "status OUT_OF_TIME within 1.0s/1000000 states"
+                "hff_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
+                "hlmcut_unit": "status OUT_OF_TIME within 1.0s/1000000 states"
             }
         },
         {
@@ -7381,35 +4515,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 4,
-                "num_expanded": 2,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(move-fast farm0 farm1)",
-                        "(move-fast farm0 farm1)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 4,
-                "num_expanded": 2,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(move-fast farm0 farm1)",
-                        "(move-fast farm0 farm1)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 4,
                 "num_expanded": 2,
                 "num_deadends": 0,
@@ -7437,35 +4543,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 4,
-                "num_expanded": 2,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(move-slow farm0 farm1)",
-                        "(move-fast farm0 farm1)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 4,
-                "num_expanded": 2,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(move-fast farm0 farm1)",
-                        "(move-fast farm0 farm1)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 4,
                 "num_expanded": 2,
                 "num_deadends": 0,
@@ -7526,35 +4604,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 5,
-                "num_expanded": 2,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(hire-car)",
-                        "(move-by-car farm0 farm1)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 5,
-                "num_expanded": 2,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(hire-car)",
-                        "(move-by-car farm0 farm1)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 5,
                 "num_expanded": 2,
                 "num_deadends": 0,
@@ -7582,35 +4632,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 7,
-                "num_expanded": 3,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(hire-car)",
-                        "(move-by-car farm0 farm1)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 5,
-                "num_expanded": 2,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(hire-car)",
-                        "(move-by-car farm0 farm1)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 5,
                 "num_expanded": 2,
                 "num_deadends": 0,
@@ -7671,35 +4693,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 35,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(go_north_west b0)",
-                        "(save_person b0 p0)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 35,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(go_north_west b0)",
-                        "(save_person b0 p0)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 35,
                 "num_expanded": 5,
                 "num_deadends": 0,
@@ -7727,35 +4721,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 30,
-                "num_expanded": 4,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(go_west b0)",
-                        "(save_person b0 p0)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 35,
-                "num_expanded": 5,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(go_north_west b0)",
-                        "(save_person b0 p0)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 35,
                 "num_expanded": 5,
                 "num_deadends": 0,
@@ -7816,35 +4782,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 6,
-                "num_expanded": 3,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(pump_water_up t0000 n7)",
-                        "(pump_water_up t0000 n7)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 6,
-                "num_expanded": 3,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(pump_water_up t0000 n7)",
-                        "(pump_water_up t0000 n7)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 6,
                 "num_expanded": 3,
                 "num_deadends": 0,
@@ -7872,35 +4810,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 5,
-                "num_expanded": 2,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(pump_water_up t0000 n7)",
-                        "(pump_water_up t0000 n7)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 6,
-                "num_expanded": 3,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(pump_water_up t0000 n7)",
-                        "(pump_water_up t0000 n7)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 6,
                 "num_expanded": 3,
                 "num_deadends": 0,
@@ -7961,35 +4871,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 49,
-                "num_expanded": 6,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(buy camel0 food oslo)",
-                        "(travel camel0 oslo palanga)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 49,
-                "num_expanded": 6,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(buy camel0 food oslo)",
-                        "(travel camel0 oslo palanga)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 49,
                 "num_expanded": 6,
                 "num_deadends": 0,
@@ -8017,35 +4899,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 22,
-                "num_expanded": 2,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(buy camel0 food oslo)",
-                        "(travel camel0 oslo palanga)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 49,
-                "num_expanded": 6,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(buy camel0 food oslo)",
-                        "(travel camel0 oslo palanga)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 49,
                 "num_expanded": 6,
                 "num_deadends": 0,
@@ -8112,41 +4966,9 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 2913,
-                "num_expanded": 890,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(feast expectation tuna wurst)",
-                        "(overcome depression expectation wurst)",
-                        "(feast expectation wurst chicken)",
-                        "(succumb depression expectation chicken)"
-                    ]
-                }
-            },
             "hadd_unit": {
                 "num_generated_successors": 454,
                 "num_expanded": 41,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(feast expectation tuna wurst)",
-                        "(overcome depression expectation wurst)",
-                        "(feast expectation wurst chicken)",
-                        "(succumb depression expectation chicken)"
-                    ]
-                }
-            },
-            "hadd_general": {
-                "num_generated_successors": 2913,
-                "num_expanded": 890,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -8177,43 +4999,9 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 185,
-                "num_expanded": 9,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 6,
-                    "length": 6,
-                    "actions": [
-                        "(feast expectation tuna pistachio)",
-                        "(feast expectation pistachio chicken)",
-                        "(feast expectation chicken wurst)",
-                        "(overcome depression expectation wurst)",
-                        "(feast expectation wurst chicken)",
-                        "(succumb depression expectation chicken)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
                 "num_generated_successors": 881,
                 "num_expanded": 103,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 4,
-                    "length": 4,
-                    "actions": [
-                        "(feast expectation tuna wurst)",
-                        "(overcome depression expectation wurst)",
-                        "(feast expectation wurst chicken)",
-                        "(succumb depression expectation chicken)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
-                "num_generated_successors": 2913,
-                "num_expanded": 890,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -8274,35 +5062,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 152,
-                "num_expanded": 17,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(choose sp1)",
-                        "(initialize sp1)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 152,
-                "num_expanded": 17,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(choose sp1)",
-                        "(initialize sp1)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 152,
                 "num_expanded": 17,
                 "num_deadends": 0,
@@ -8330,35 +5090,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 32,
-                "num_expanded": 2,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(choose sp1)",
-                        "(initialize sp1)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 152,
-                "num_expanded": 17,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(choose sp1)",
-                        "(initialize sp1)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 152,
                 "num_expanded": 17,
                 "num_deadends": 0,
@@ -8411,23 +5143,6 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 1823,
-                "num_expanded": 524,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 0,
-                    "length": 5,
-                    "actions": [
-                        "(sample_rock rover0 rover0store waypoint0)",
-                        "(communicate_rock_data rover0 general waypoint0 waypoint0 waypoint1)",
-                        "(drop rover0 rover0store)",
-                        "(sample_soil rover0 rover0store waypoint0)",
-                        "(communicate_soil_data rover0 general waypoint0 waypoint0 waypoint1)"
-                    ]
-                }
-            },
             "hadd_unit": {
                 "num_generated_successors": 181,
                 "num_expanded": 36,
@@ -8435,23 +5150,6 @@
                 "num_pruned": 0,
                 "plan": {
                     "cost": 5,
-                    "length": 5,
-                    "actions": [
-                        "(sample_rock rover0 rover0store waypoint0)",
-                        "(communicate_rock_data rover0 general waypoint0 waypoint0 waypoint1)",
-                        "(drop rover0 rover0store)",
-                        "(sample_soil rover0 rover0store waypoint0)",
-                        "(communicate_soil_data rover0 general waypoint0 waypoint0 waypoint1)"
-                    ]
-                }
-            },
-            "hadd_general": {
-                "num_generated_successors": 1823,
-                "num_expanded": 524,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 0,
                     "length": 5,
                     "actions": [
                         "(sample_rock rover0 rover0store waypoint0)",
@@ -8479,23 +5177,6 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 120,
-                "num_expanded": 19,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 0,
-                    "length": 5,
-                    "actions": [
-                        "(sample_rock rover0 rover0store waypoint0)",
-                        "(communicate_rock_data rover0 general waypoint0 waypoint0 waypoint1)",
-                        "(drop rover0 rover0store)",
-                        "(sample_soil rover0 rover0store waypoint0)",
-                        "(communicate_soil_data rover0 general waypoint0 waypoint0 waypoint1)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
                 "num_generated_successors": 181,
                 "num_expanded": 36,
@@ -8503,23 +5184,6 @@
                 "num_pruned": 0,
                 "plan": {
                     "cost": 5,
-                    "length": 5,
-                    "actions": [
-                        "(sample_rock rover0 rover0store waypoint0)",
-                        "(communicate_rock_data rover0 general waypoint0 waypoint0 waypoint1)",
-                        "(drop rover0 rover0store)",
-                        "(sample_soil rover0 rover0store waypoint0)",
-                        "(communicate_soil_data rover0 general waypoint0 waypoint0 waypoint1)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
-                "num_generated_successors": 1823,
-                "num_expanded": 524,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 0,
                     "length": 5,
                     "actions": [
                         "(sample_rock rover0 rover0store waypoint0)",
@@ -8580,35 +5244,7 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 69,
-                "num_expanded": 6,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(go_north_west b0)",
-                        "(save_person b0 p0)"
-                    ]
-                }
-            },
             "hadd_unit": {
-                "num_generated_successors": 69,
-                "num_expanded": 6,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(go_north_west b0)",
-                        "(save_person b0 p0)"
-                    ]
-                }
-            },
-            "hadd_general": {
                 "num_generated_successors": 69,
                 "num_expanded": 6,
                 "num_deadends": 0,
@@ -8636,35 +5272,7 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 51,
-                "num_expanded": 4,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(go_west b0)",
-                        "(save_person b0 p0)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
-                "num_generated_successors": 69,
-                "num_expanded": 6,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(go_north_west b0)",
-                        "(save_person b0 p0)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
                 "num_generated_successors": 69,
                 "num_expanded": 6,
                 "num_deadends": 0,
@@ -8725,20 +5333,6 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 5,
-                "num_expanded": 2,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 6,
-                    "length": 2,
-                    "actions": [
-                        "(build-cabin location3)",
-                        "(fell-timber location3)"
-                    ]
-                }
-            },
             "hadd_unit": {
                 "num_generated_successors": 5,
                 "num_expanded": 2,
@@ -8746,20 +5340,6 @@
                 "num_pruned": 0,
                 "plan": {
                     "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(build-cabin location3)",
-                        "(fell-timber location3)"
-                    ]
-                }
-            },
-            "hadd_general": {
-                "num_generated_successors": 5,
-                "num_expanded": 2,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 6,
                     "length": 2,
                     "actions": [
                         "(build-cabin location3)",
@@ -8781,20 +5361,6 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 5,
-                "num_expanded": 2,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 6,
-                    "length": 2,
-                    "actions": [
-                        "(build-cabin location3)",
-                        "(fell-timber location3)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
                 "num_generated_successors": 5,
                 "num_expanded": 2,
@@ -8802,20 +5368,6 @@
                 "num_pruned": 0,
                 "plan": {
                     "cost": 2,
-                    "length": 2,
-                    "actions": [
-                        "(build-cabin location3)",
-                        "(fell-timber location3)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
-                "num_generated_successors": 5,
-                "num_expanded": 2,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 6,
                     "length": 2,
                     "actions": [
                         "(build-cabin location3)",
@@ -8873,40 +5425,10 @@
                     ]
                 }
             },
-            "hmax_general": {
-                "num_generated_successors": 643,
-                "num_expanded": 128,
-                "num_deadends": 4,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 3,
-                    "length": 3,
-                    "actions": [
-                        "(produce_sugar sugar-cane mill1 brand1)",
-                        "(setting-machine mill1)",
-                        "(produce_sugar sugar-cane mill1 brand1)"
-                    ]
-                }
-            },
             "hadd_unit": {
                 "num_generated_successors": 551,
                 "num_expanded": 86,
                 "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 3,
-                    "length": 3,
-                    "actions": [
-                        "(produce_sugar sugar-cane mill1 brand1)",
-                        "(setting-machine mill1)",
-                        "(produce_sugar sugar-cane mill1 brand1)"
-                    ]
-                }
-            },
-            "hadd_general": {
-                "num_generated_successors": 643,
-                "num_expanded": 128,
-                "num_deadends": 4,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 3,
@@ -8933,40 +5455,10 @@
                     ]
                 }
             },
-            "hff_general": {
-                "num_generated_successors": 104,
-                "num_expanded": 8,
-                "num_deadends": 1,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 3,
-                    "length": 3,
-                    "actions": [
-                        "(produce_sugar sugar-cane mill1 brand1)",
-                        "(setting-machine mill1)",
-                        "(produce_sugar sugar-cane mill1 brand1)"
-                    ]
-                }
-            },
             "hlmcut_unit": {
                 "num_generated_successors": 551,
                 "num_expanded": 86,
                 "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 3,
-                    "length": 3,
-                    "actions": [
-                        "(produce_sugar sugar-cane mill1 brand1)",
-                        "(setting-machine mill1)",
-                        "(produce_sugar sugar-cane mill1 brand1)"
-                    ]
-                }
-            },
-            "hlmcut_general": {
-                "num_generated_successors": 643,
-                "num_expanded": 128,
-                "num_deadends": 4,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 3,

@@ -17,7 +17,6 @@
 
 #include "tyr/algorithms/kckp/delta_kckp.hpp"
 
-#include <algorithm>
 #include <stdexcept>
 
 namespace tyr::kckp
@@ -115,46 +114,7 @@ void DeltaKCKP::seed_without_anchor(Workspace& workspace) const
 }
 
 bool DeltaKCKP::seed_from_anchor(const Edge& edge, Workspace& workspace) const
-{
-    workspace.prepare(m_layout);
-    const auto source_partition = m_layout.vertex_to_partition[edge.src.index];
-    const auto target_partition = m_layout.vertex_to_partition[edge.dst.index];
-    assert(source_partition < target_partition);
-
-    workspace.partial_solution[source_partition] = edge.src;
-    workspace.partial_solution[target_partition] = edge.dst;
-    workspace.partial_solution_size = 2;
-    workspace.anchor_pi = source_partition;
-    workspace.anchor_pj = target_partition;
-    workspace.partition_bits.reset();
-    workspace.partition_bits.set(source_partition);
-    workspace.partition_bits.set(target_partition);
-
-    auto compatible_row = workspace.compatible_vertices(0);
-    for (ygg::uint_t partition = 0; partition < m_layout.num_partitions; ++partition)
-    {
-        if (partition == source_partition || partition == target_partition)
-            continue;
-
-        const auto& info = m_layout.info.infos[partition];
-        auto compatible = ygg::BitsetSpan<uint64_t>(compatible_row.data() + info.block_offset, info.num_bits);
-        m_full_graph.matrix.copy_adjacency_to(edge.src.index, partition, compatible);
-        m_full_graph.matrix.intersect_adjacency_with(edge.dst.index, partition, compatible);
-        if (!compatible.any())
-            return false;
-
-        if (partition < target_partition)
-            m_delta_graph.matrix.subtract_adjacency_from(edge.src.index, partition, compatible);
-        if (!compatible.any())
-            return false;
-
-        if (partition < source_partition)
-            m_delta_graph.matrix.subtract_adjacency_from(edge.dst.index, partition, compatible);
-        if (!compatible.any())
-            return false;
-    }
-    return true;
-}
+{ return prepare_anchor_source(edge.src, m_layout.vertex_to_partition[edge.dst.index], workspace) && seed_from_prepared_anchor(edge, workspace); }
 
 bool DeltaKCKP::prepare_anchor_source(Vertex source, ygg::uint_t target_partition, Workspace& workspace) const
 {
@@ -199,7 +159,7 @@ bool DeltaKCKP::seed_from_prepared_anchor(const Edge& edge, Workspace& workspace
 
         const auto& info = m_layout.info.infos[partition];
         auto compatible = ygg::BitsetSpan<uint64_t>(compatible_row.data() + info.block_offset, info.num_bits);
-        std::copy_n(workspace.anchor_source_data.data() + info.block_offset, compatible.blocks().size(), compatible.blocks().data());
+        compatible.copy_from(ygg::BitsetSpan<const uint64_t>(workspace.anchor_source_data.data() + info.block_offset, info.num_bits));
         m_full_graph.matrix.intersect_adjacency_with(edge.dst.index, partition, compatible);
         if (partition < source_partition)
             m_delta_graph.matrix.subtract_adjacency_from(edge.dst.index, partition, compatible);

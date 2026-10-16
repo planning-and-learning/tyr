@@ -15,13 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/numeric_utils.hpp"
+#include "tyr/formalism/numeric_expression_utils.hpp"
 
-#include "tyr/datalog/policies/annotation_types.hpp"
-
-#include <array>
 #include <gtest/gtest.h>
-#include <optional>
 #include <vector>
 
 namespace tyr::tests
@@ -87,26 +83,26 @@ TEST(TyrDatalogNumericUtilsTest, TraversesExpressionsInDeterministicSupportOrder
 
     const auto arithmetic =
         BinaryExpression<formalism::ArithmeticOperatorKind> { formalism::ArithmeticOperatorKind::Sub, { 1, Interval(8, 8) }, { 2, Interval(3, 3) } };
-    EXPECT_EQ(datalog::evaluate_numeric_expression(arithmetic, resolve), Interval(5, 5));
+    EXPECT_EQ(formalism::evaluate_numeric_expression(arithmetic, resolve), Interval(5, 5));
     EXPECT_EQ(order, (std::vector<int> { 2, 1 }));
 
     order.clear();
     const auto boolean = BinaryExpression<formalism::BooleanOperatorKind> { formalism::BooleanOperatorKind::Gt, { 1, Interval(8, 8) }, { 2, Interval(3, 3) } };
-    EXPECT_TRUE(datalog::evaluate_numeric_expression(boolean, resolve));
+    EXPECT_TRUE(formalism::evaluate_numeric_expression(boolean, resolve));
     EXPECT_EQ(order, (std::vector<int> { 2, 1 }));
 
     order.clear();
     const auto reference_boolean = ReferenceBooleanExpression { { formalism::BooleanOperatorKind::Eq, { 1, Interval(1, 3) }, { 2, Interval(2, 4) } } };
-    EXPECT_TRUE(datalog::evaluate_numeric_expression(reference_boolean, resolve));
+    EXPECT_TRUE(formalism::evaluate_numeric_expression(reference_boolean, resolve));
     EXPECT_EQ(order, (std::vector<int> { 2, 1 }));
 
     order.clear();
     const auto multi = MultiExpression { formalism::ArithmeticOperatorKind::Add, { { 1, Interval(1, 1) }, { 2, Interval(2, 2) }, { 3, Interval(3, 3) } } };
-    EXPECT_EQ(datalog::evaluate_numeric_expression(multi, resolve), Interval(6, 6));
+    EXPECT_EQ(formalism::evaluate_numeric_expression(multi, resolve), Interval(6, 6));
     EXPECT_EQ(order, (std::vector<int> { 1, 2, 3 }));
 
     order.clear();
-    EXPECT_TRUE(empty(datalog::evaluate_numeric_expression(MultiExpression { formalism::ArithmeticOperatorKind::Add, {} }, resolve)));
+    EXPECT_TRUE(empty(formalism::evaluate_numeric_expression(MultiExpression { formalism::ArithmeticOperatorKind::Add, {} }, resolve)));
     EXPECT_TRUE(order.empty());
 }
 
@@ -120,52 +116,18 @@ TEST(TyrDatalogNumericUtilsTest, EvaluatesNumericEffectsLazilyRhsFirst)
     };
 
     const auto assign = NumericEffect { formalism::NumericEffectOperatorKind::Assign, { 1, Interval(2, 2) }, { 2, Interval(5, 5) } };
-    EXPECT_EQ(datalog::evaluate_numeric_effect(assign, resolve), Interval(5, 5));
+    EXPECT_EQ(formalism::evaluate_numeric_effect(assign, resolve), Interval(5, 5));
     EXPECT_EQ(order, (std::vector<int> { 2 }));
 
     order.clear();
     const auto increase = NumericEffect { formalism::NumericEffectOperatorKind::Increase, { 1, Interval(2, 2) }, { 2, Interval(5, 5) } };
-    EXPECT_EQ(datalog::evaluate_numeric_effect(increase, resolve), Interval(7, 7));
+    EXPECT_EQ(formalism::evaluate_numeric_effect(increase, resolve), Interval(7, 7));
     EXPECT_EQ(order, (std::vector<int> { 2, 1 }));
 
     order.clear();
     const auto unsupported = NumericEffect { formalism::NumericEffectOperatorKind::Increase, { 1, Interval(2, 2) }, { 2, {} } };
-    EXPECT_TRUE(empty(datalog::evaluate_numeric_effect(unsupported, resolve)));
+    EXPECT_TRUE(empty(formalism::evaluate_numeric_effect(unsupported, resolve)));
     EXPECT_EQ(order, (std::vector<int> { 2 }));
-}
-
-TEST(TyrDatalogNumericUtilsTest, SumsMetricEffectDeltasFromInitialCost)
-{
-    const auto effects = std::array { datalog::Cost(2), datalog::Cost(3) };
-    const auto result = datalog::sum_metric_effect_deltas(datalog::Cost(5), effects, [](const auto effect) { return std::optional(effect); });
-
-    ASSERT_TRUE(result);
-    EXPECT_EQ(*result, 10);
-}
-
-TEST(TyrDatalogNumericUtilsTest, StopsAtUnsupportedMetricEffect)
-{
-    const auto effects = std::array { datalog::Cost(1), datalog::Cost(2), datalog::Cost(3) };
-    auto num_evaluated = 0;
-    const auto result = datalog::sum_metric_effect_deltas(datalog::Cost(0),
-                                                          effects,
-                                                          [&](const auto effect) -> std::optional<datalog::Cost>
-                                                          {
-                                                              ++num_evaluated;
-                                                              return effect == datalog::Cost(2) ? std::nullopt : std::optional(effect);
-                                                          });
-
-    EXPECT_FALSE(result);
-    EXPECT_EQ(num_evaluated, 2);
-}
-
-TEST(TyrDatalogNumericUtilsTest, EmptyMetricEffectRangeKeepsInitialCost)
-{
-    const auto effects = std::array<datalog::Cost, 0> {};
-    const auto result = datalog::sum_metric_effect_deltas(datalog::Cost(7), effects, [](const auto) { return std::optional<datalog::Cost> {}; });
-
-    ASSERT_TRUE(result);
-    EXPECT_EQ(*result, 7);
 }
 
 }

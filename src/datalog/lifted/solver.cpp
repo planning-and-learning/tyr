@@ -98,47 +98,12 @@ public:
 private:
     using GoalAtom = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
 
-    /// Lower bound of a rule's edge cost: its constant increases of nullary metric functions. nullopt if a metric effect
-    /// can lower the cost or its amount is not constant.
-    static std::optional<Cost> get_edge_cost_lower_bound(formalism::datalog::RuleView<LiftedTag, formalism::PredicateTag> rule)
-    {
-        auto bound = std::optional<Cost>(Cost(0));
-        for (const auto metric_operator : rule.get_metric_effects())
-            ygg::visit(
-                [&](const auto effect)
-                {
-                    if (!bound)
-                        return;
-                    if (effect.get_operator() != formalism::NumericEffectOperatorKind::Increase)
-                    {
-                        bound.reset();
-                        return;
-                    }
-                    ygg::visit(
-                        [&](const auto& alternative)
-                        {
-                            if constexpr (std::same_as<std::remove_cvref_t<decltype(alternative)>, ygg::float_t>)
-                            {
-                                if (alternative < ygg::float_t(0))
-                                    bound.reset();
-                                else if (effect.get_fterm().get_terms().empty())
-                                    *bound += Cost(alternative);
-                            }
-                            else
-                                bound.reset();
-                        },
-                        effect.get_fexpr().get_variant());
-                },
-                metric_operator.get_variant());
-        return bound;
-    }
-
     /// Enables the goal cutoff where stopping an iteration early keeps every witness: positive fluent goals without numeric
-    /// constraints, propositional rules with known edge cost lower bounds, one stratum, and annotations without achievers.
+    /// constraints, propositional rules only, one stratum, and annotations without achievers.
     void initialize_goal_cutoff()
     {
         if constexpr (AP::stores_annotations && !AP::records_propositional_achievers
-                      && std::same_as<CP, RuleCostPolicy> && requires(const TP& tp) { tp.get_goal(); })
+                      && std::same_as<CP, RuleCostPolicy> && !std::same_as<TP, NoTerminationPolicy>)
         {
             const auto& goal = m_ctx.out().tp().get_goal();
             if (!goal || !goal->get_numeric_constraints().empty() || m_ctx.out().schedulers().size() != 1
@@ -150,12 +115,7 @@ private:
 
             auto min_edge_cost = std::numeric_limits<Cost>::max();
             for (const auto& rule : m_ctx.in().template get_rules<formalism::PredicateTag>())
-            {
-                const auto bound = get_edge_cost_lower_bound(rule->get_rule());
-                if (!bound)
-                    return;
-                min_edge_cost = std::min(min_edge_cost, *bound);
-            }
+                min_edge_cost = std::min(min_edge_cost, Cost(rule->get_rule().get_cost()));
 
             m_goal_atoms.clear();
             m_goal_positions.clear();
@@ -181,9 +141,9 @@ private:
     }
 
     /// Marks the goal atom at position i final if its tentative cost cannot decrease any more.
-    void observe_goal_atom(size_t i, const Cost* tentative_cost)
+    void observe_goal_atom(size_t i, Cost tentative_cost)
     {
-        if (m_goal_final[i] || !tentative_cost || *tentative_cost > m_goal_cutoff_bound)
+        if (m_goal_final[i] || tentative_cost > m_goal_cutoff_bound)
             return;
         m_goal_final[i] = true;
         if (++m_num_final_goals == m_goal_atoms.size())
@@ -204,15 +164,9 @@ private:
         for (size_t i = 0; i < m_goal_atoms.size(); ++i)
         {
             if (facts.contains(m_goal_atoms[i]))
-            {
-                const auto cost = Cost(0);
-                observe_goal_atom(i, &cost);
-            }
+                observe_goal_atom(i, Cost(0));
             else if (const auto* annotation = program_out.annotations().find(m_goal_atoms[i]))
-            {
-                const auto cost = get_cost(*annotation);
-                observe_goal_atom(i, &cost);
-            }
+                observe_goal_atom(i, get_cost(*annotation));
         }
     }
 
@@ -224,10 +178,7 @@ private:
         for (const auto head : heads)
             if (const auto it = m_goal_positions.find(head); it != m_goal_positions.end())
                 if (const auto* annotation = ctx.out().program().delta_annotations().find(head))
-                {
-                    const auto cost = get_cost(*annotation);
-                    observe_goal_atom(it->second, &cost);
-                }
+                    observe_goal_atom(it->second, get_cost(*annotation));
     }
 
     bool goal_cutoff_stopped() const noexcept { return m_goal_cutoff_stopped; }
@@ -514,7 +465,7 @@ private:
                              const ApplicabilityContext& applicability_context)
     {
         // A rejected binding is generated again by the delta that makes it applicable (see generate_hyperedge_cliques).
-        // Undefined metric effects stay undefined, or their fluent reads trigger a full enumeration of the rule.
+        // Bindings rejected by a numeric constraint are retried because its fluent reads trigger a full enumeration of the rule.
         if (!try_process_predicate_binding(wrctx, input, applicability_context))
             ++wrctx.out().statistics().num_rejected_rules;
     }

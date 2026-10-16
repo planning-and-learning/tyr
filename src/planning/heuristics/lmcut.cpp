@@ -92,17 +92,15 @@ struct LMCutImplementation :
 
     LMCutImplementation(std::shared_ptr<detail::RPGDefinition<Kind>> definition,
                         ygg::ExecutionContextPtr execution_context,
-                        CostMode cost_mode,
                         bool use_numeric_edge_cuts);
     LMCutImplementation(const LMCutImplementation& source, ygg::ExecutionContextPtr execution_context);
     ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state, CutFrontierAtoms* cut_frontier_atoms = nullptr);
 
 private:
     template<formalism::RelationKind R>
-    datalog::Cost get_witness_body_cost(const datalog::WitnessAnnotation<R>& witness, const NumericNode* excluded = nullptr);
+    datalog::Cost get_witness_body_cost(const datalog::WitnessAnnotation<R>& witness);
     template<formalism::RelationKind R>
-    datalog::Cost get_witness_edge_residual_cost(const datalog::WitnessAnnotation<R>& witness, const NumericNode* excluded = nullptr);
-    bool is_target_support(const datalog::NumericSupport& support, NumericNode node) const noexcept;
+    datalog::Cost get_witness_edge_residual_cost(const datalog::WitnessAnnotation<R>& witness);
     datalog::Cost get_numeric_support_cost(const datalog::NumericSupport& support);
     void append_numeric_support_preconditions(const datalog::NumericSupport& support, datalog::Cost body_cost, std::vector<Precondition>& result);
     void use_action_cost(ActionBinding action_binding, datalog::Cost cost);
@@ -113,7 +111,7 @@ private:
     const datalog::WitnessAnnotation<formalism::FunctionTag>* get_numeric_witness(NumericNode node) const noexcept;
     template<formalism::RelationKind R>
     const std::vector<Precondition>&
-    get_witness_max_preconditions(const datalog::WitnessAnnotation<R>& witness, datalog::Cost edge_cost, size_t depth, const NumericNode* excluded = nullptr);
+    get_witness_max_preconditions(const datalog::WitnessAnnotation<R>& witness, datalog::Cost edge_cost, size_t depth);
     void mark_goal_zone(PredicateHead head, size_t depth);
     void mark_goal_zone(NumericNode node, size_t depth);
     void mark_goal_zone(Precondition precondition, size_t depth);
@@ -127,9 +125,7 @@ private:
     void extract_cut(CutFrontierAtoms* cut_frontier_atoms);
     void extract_expanded_cut(CutFrontierAtoms* cut_frontier_atoms);
     bool use_numeric_edge_cuts() const noexcept { return m_use_numeric_edge_cuts; }
-    bool use_expanded_numeric_target() const noexcept { return use_numeric_edge_cuts() && m_cost_mode == CostMode::GENERAL; }
 
-    CostMode m_cost_mode;
     bool m_use_numeric_edge_cuts;
     ygg::UnorderedMap<ActionBinding, datalog::Cost> m_action_used_costs;
     ygg::UnorderedMap<RuleEdge, datalog::Cost> m_rule_edge_used_costs;
@@ -152,10 +148,8 @@ private:
 template<TaskKind Kind>
 LMCutImplementation<Kind>::LMCutImplementation(std::shared_ptr<detail::RPGDefinition<Kind>> definition,
                                                ygg::ExecutionContextPtr execution_context,
-                                               CostMode cost_mode,
                                                bool use_numeric_edge_cuts) :
     Base(std::move(definition), std::move(execution_context)),
-    m_cost_mode(cost_mode),
     m_use_numeric_edge_cuts(use_numeric_edge_cuts)
 {
     // Classic action cuts require every reachable operator arc. Numeric-edge
@@ -166,7 +160,6 @@ LMCutImplementation<Kind>::LMCutImplementation(std::shared_ptr<detail::RPGDefini
 template<TaskKind Kind>
 LMCutImplementation<Kind>::LMCutImplementation(const LMCutImplementation& source, ygg::ExecutionContextPtr execution_context) :
     Base(source, std::move(execution_context)),
-    m_cost_mode(source.m_cost_mode),
     m_use_numeric_edge_cuts(source.m_use_numeric_edge_cuts)
 {
     this->m_workspace.tp.set_early_termination(m_use_numeric_edge_cuts);
@@ -236,30 +229,23 @@ void LMCutImplementation<Kind>::use_action_cost(ActionBinding action_binding, da
 
 template<TaskKind Kind>
 template<formalism::RelationKind R>
-datalog::Cost LMCutImplementation<Kind>::get_witness_body_cost(const datalog::WitnessAnnotation<R>& witness, const NumericNode* excluded)
+datalog::Cost LMCutImplementation<Kind>::get_witness_body_cost(const datalog::WitnessAnnotation<R>& witness)
 {
     auto body_cost = datalog::Cost(0);
     this->for_each_witness_precondition(witness, [&](const auto precondition) { body_cost = std::max(body_cost, this->get_predicate_cost(precondition)); });
 
     for (const auto& support : witness.get_numeric_supports())
-        if (!excluded || !is_target_support(support, *excluded))
-            body_cost = std::max(body_cost, get_numeric_support_cost(support));
+        body_cost = std::max(body_cost, get_numeric_support_cost(support));
 
     return body_cost;
 }
 
 template<TaskKind Kind>
 template<formalism::RelationKind R>
-datalog::Cost LMCutImplementation<Kind>::get_witness_edge_residual_cost(const datalog::WitnessAnnotation<R>& witness, const NumericNode* excluded)
+datalog::Cost LMCutImplementation<Kind>::get_witness_edge_residual_cost(const datalog::WitnessAnnotation<R>& witness)
 {
-    const auto body_cost = get_witness_body_cost(witness, excluded);
+    const auto body_cost = get_witness_body_cost(witness);
     return witness.get_cost() <= body_cost ? datalog::Cost(0) : witness.get_cost() - body_cost;
-}
-
-template<TaskKind Kind>
-bool LMCutImplementation<Kind>::is_target_support(const datalog::NumericSupport& support, NumericNode node) const noexcept
-{
-    return support.get_key() == node.key && support.get_interval() == node.interval;
 }
 
 template<TaskKind Kind>
@@ -323,8 +309,7 @@ template<formalism::RelationKind R>
 const std::vector<typename LMCutImplementation<Kind>::Precondition>&
 LMCutImplementation<Kind>::get_witness_max_preconditions(const datalog::WitnessAnnotation<R>& witness,
                                                          datalog::Cost edge_cost,
-                                                         size_t depth,
-                                                         const NumericNode* excluded)
+                                                         size_t depth)
 {
     if (m_max_precondition_buffers.size() <= depth)
         m_max_precondition_buffers.emplace_back();
@@ -343,8 +328,7 @@ LMCutImplementation<Kind>::get_witness_max_preconditions(const datalog::WitnessA
                                         });
 
     for (const auto& support : witness.get_numeric_supports())
-        if (!excluded || !is_target_support(support, *excluded))
-            append_numeric_support_preconditions(support, body_cost, result);
+        append_numeric_support_preconditions(support, body_cost, result);
 
     return result;
 }
@@ -390,13 +374,11 @@ void LMCutImplementation<Kind>::mark_goal_zone(NumericNode node, size_t depth)
         return;
 
     const auto action_binding = this->get_action_binding(*witness);
-    const auto use_numeric_target = use_expanded_numeric_target();
-    const auto residual =
-        action_binding ? (use_numeric_target ? get_witness_edge_residual_cost(*witness, &node) : get_witness_edge_residual_cost(*witness)) : datalog::Cost(0);
+    const auto residual = action_binding ? get_witness_edge_residual_cost(*witness) : datalog::Cost(0);
     if (action_binding && residual > 0)
         return;
 
-    const auto& preconditions = get_witness_max_preconditions(*witness, residual, depth, use_numeric_target ? &node : nullptr);
+    const auto& preconditions = get_witness_max_preconditions(*witness, residual, depth);
     for (const auto& precondition : preconditions)
         mark_goal_zone(precondition, depth + 1);
 }
@@ -411,14 +393,15 @@ void LMCutImplementation<Kind>::explore_before_goal_zone(Precondition node, std:
             is_base = true;
         for (const auto precondition : preconditions)
         {
-            std::visit([&](auto key)
-                       {
-                           if constexpr (std::same_as<decltype(key), PredicateHead>)
-                               m_before_goal_zone_dependents[key].push_back(node);
-                           else
-                               m_numeric_before_goal_zone_dependents[key].push_back(node);
-                       },
-                       precondition);
+            std::visit(
+                [&](auto key)
+                {
+                    if constexpr (std::same_as<decltype(key), PredicateHead>)
+                        m_before_goal_zone_dependents[key].push_back(node);
+                    else
+                        m_numeric_before_goal_zone_dependents[key].push_back(node);
+                },
+                precondition);
             stack.push_back(precondition);
         }
     };
@@ -460,11 +443,8 @@ void LMCutImplementation<Kind>::explore_before_goal_zone(Precondition node, std:
                     return;
                 }
                 const auto action_binding = this->get_action_binding(*witness);
-                const auto use_numeric_target = use_expanded_numeric_target();
-                const auto residual = action_binding ? (use_numeric_target ? get_witness_edge_residual_cost(*witness, &key) :
-                                                                             get_witness_edge_residual_cost(*witness)) :
-                                                       datalog::Cost(0);
-                add_preconditions(get_witness_max_preconditions(*witness, residual, 0, use_numeric_target ? &key : nullptr));
+                const auto residual = action_binding ? get_witness_edge_residual_cost(*witness) : datalog::Cost(0);
+                add_preconditions(get_witness_max_preconditions(*witness, residual, 0));
             }
         },
         node);
@@ -481,7 +461,8 @@ void LMCutImplementation<Kind>::compute_before_goal_zone()
 {
     auto stack = std::vector<Precondition> {};
     auto base = std::vector<Precondition> {};
-    const auto push_preconditions = [&](const std::vector<Precondition>& preconditions) { stack.insert(stack.end(), preconditions.begin(), preconditions.end()); };
+    const auto push_preconditions = [&](const std::vector<Precondition>& preconditions)
+    { stack.insert(stack.end(), preconditions.begin(), preconditions.end()); };
 
     for (const auto head : m_goal_zone)
         this->for_each_achiever(head,
@@ -492,11 +473,7 @@ void LMCutImplementation<Kind>::compute_before_goal_zone()
                                 });
     for (const auto& node : m_numeric_goal_zone)
         if (const auto* witness = get_numeric_witness(node); witness && this->get_action_binding(*witness))
-        {
-            const auto use_numeric_target = use_expanded_numeric_target();
-            const auto residual = use_numeric_target ? get_witness_edge_residual_cost(*witness, &node) : get_witness_edge_residual_cost(*witness);
-            push_preconditions(get_witness_max_preconditions(*witness, residual, 0, use_numeric_target ? &node : nullptr));
-        }
+            push_preconditions(get_witness_max_preconditions(*witness, get_witness_edge_residual_cost(*witness), 0));
 
     while (!stack.empty())
     {
@@ -699,11 +676,11 @@ void LMCutImplementation<Kind>::extract_expanded_cut(CutFrontierAtoms* cut_front
     {
         if (!this->get_action_binding(witness))
             return;
-        const auto residual = use_expanded_numeric_target() ? get_witness_edge_residual_cost(witness, &node) : get_witness_edge_residual_cost(witness);
+        const auto residual = get_witness_edge_residual_cost(witness);
         if (residual == datalog::Cost(0))
             return;
 
-        const auto& preconditions = get_witness_max_preconditions(witness, residual, 0, use_expanded_numeric_target() ? &node : nullptr);
+        const auto& preconditions = get_witness_max_preconditions(witness, residual, 0);
         const auto crosses_cut =
             preconditions.empty() || std::ranges::any_of(preconditions, [&](const auto precondition) { return is_before_goal_zone(precondition); });
         if (crosses_cut)
@@ -760,7 +737,7 @@ private:
     {
         auto definition = std::make_shared<detail::RPGDefinition<Kind>>(std::move(task), cost_mode);
         const auto numeric_edge_cuts = requires_numeric_edge_cuts(definition->rpg_program.get_datalog_program().get_program());
-        return Implementation(std::move(definition), std::move(execution_context), cost_mode, numeric_edge_cuts);
+        return Implementation(std::move(definition), std::move(execution_context), numeric_edge_cuts);
     }
 
     Implementation m_implementation;

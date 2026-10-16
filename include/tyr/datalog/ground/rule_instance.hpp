@@ -57,15 +57,6 @@ public:
         return { effect.get_operator(), effect.get_fterm().get_row().get_index(), effect.get_fexpr() };
     }
 
-    template<typename Callback>
-    bool for_each_resolved_metric_effect(Callback&& callback) const
-    {
-        for (const auto& metric_operator : m_rule.get_metric_effects())
-            if (!ygg::visit([&](const auto metric_effect) { return callback(resolve(metric_effect)); }, metric_operator.get_variant()))
-                return false;
-        return true;
-    }
-
     auto witness_key() const noexcept { return m_rule.get_row(); }
 
 private:
