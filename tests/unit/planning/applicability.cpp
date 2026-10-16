@@ -877,7 +877,7 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
 
     for (const auto rule : global_rules)
     {
-        const auto action = action_program.get_predicate_to_action_mapping().at(rule.get_head().get_predicate());
+        const auto action = action_program.get_predicate_to_action_mapping().at(rule.get_heads().front().get_predicate());
         SCOPED_TRACE(action.get_name().str());
         const auto& schema = schemas.at(action);
         const auto& data = schema.program.get_data();

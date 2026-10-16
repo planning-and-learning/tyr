@@ -88,7 +88,6 @@ std::string to_string(const ygg::Data<NumericEffectOperator<GroundTag, FluentTag
 
 std::string to_string(const ygg::Data<FunctionExpression<LiftedTag>>& value);
 std::string to_string(const ygg::Data<FunctionExpression<GroundTag>>& value);
-std::string to_string(const ygg::Data<Metric>& value);
 std::string to_string(const ygg::Data<ConjunctiveCondition<LiftedTag>>& value);
 std::string to_string(const ygg::Data<ConjunctiveEffect<LiftedTag>>& value);
 std::string to_string(const ygg::Data<ConditionalEffect<LiftedTag>>& value);
@@ -157,7 +156,6 @@ std::string to_string(NumericEffectOperatorView<GroundTag, FluentTag> value);
 
 std::string to_string(FunctionExpressionView<LiftedTag> value);
 std::string to_string(FunctionExpressionView<GroundTag> value);
-std::string to_string(MetricView value);
 std::string to_string(ConjunctiveConditionView<LiftedTag> value);
 std::string to_string(ConjunctiveEffectView<LiftedTag> value);
 std::string to_string(ConditionalEffectView<LiftedTag> value);

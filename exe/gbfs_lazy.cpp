@@ -57,7 +57,7 @@ int main(int argc, char** argv)
         .implicit_value(true)
         .help("Disable invariant synthesis during ground task instantiation.");
     program.add_argument("-H", "--heuristic-type").default_value("blind").choices("blind", "goal_count", "rpg_max", "rpg_add", "rpg_ff", "lmcut");
-    program.add_argument("--heuristic-cost-type").default_value("general").choices("unit", "general");
+    program.add_argument("--heuristic-cost-type").default_value("unit").choices("unit", "general");
     program.add_argument("--search-cost-type").default_value("general").choices("unit", "general");
     program.add_argument("-V", "--verbosity")
         .default_value(size_t(1))

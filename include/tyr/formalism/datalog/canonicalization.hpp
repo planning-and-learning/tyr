@@ -119,19 +119,20 @@ bool is_canonical(const ygg::Data<ConditionalEffect<T>>&)
 }
 
 template<TaskKind T, RelationKind R>
-bool is_canonical(const ygg::Data<Rule<T, R>>&)
+bool is_canonical(const ygg::Data<Rule<T, R>>& data)
 {
-    return true;
+    if constexpr (std::same_as<R, PredicateTag>)
+        return is_canonical(data.heads);
+    else
+        return true;
 }
-
-inline bool is_canonical(const ygg::Data<Metric>&) { return true; }
 
 template<TaskKind T>
 bool is_canonical(const ygg::Data<Program<T>>& data)
 {
     return is_canonical(data.static_predicates) && is_canonical(data.fluent_predicates) && is_canonical(data.static_functions)
            && is_canonical(data.fluent_functions) && is_canonical(data.objects) && is_canonical(data.static_atoms) && is_canonical(data.fluent_atoms)
-           && is_canonical(data.static_fterm_values) && is_canonical(data.fluent_fterm_values) && is_canonical(data.goal) && is_canonical(data.metric)
+           && is_canonical(data.static_fterm_values) && is_canonical(data.fluent_fterm_values) && is_canonical(data.goal)
            && is_canonical(data.predicate_rules) && is_canonical(data.function_rules);
 }
 
@@ -230,14 +231,10 @@ void canonicalize(ygg::Data<ConditionalEffect<T>>&)
 }
 
 template<TaskKind T, RelationKind R>
-void canonicalize(ygg::Data<Rule<T, R>>&)
+void canonicalize(ygg::Data<Rule<T, R>>& data)
 {
-    // Trivially canonical
-}
-
-inline void canonicalize(ygg::Data<Metric>&)
-{
-    // Trivially canonical
+    if constexpr (std::same_as<R, PredicateTag>)
+        canonicalize(data.heads);
 }
 
 template<TaskKind T>
@@ -253,7 +250,6 @@ void canonicalize(ygg::Data<Program<T>>& data)
     canonicalize(data.static_fterm_values);
     canonicalize(data.fluent_fterm_values);
     canonicalize(data.goal);
-    canonicalize(data.metric);
     canonicalize(data.predicate_rules);
     canonicalize(data.function_rules);
 }

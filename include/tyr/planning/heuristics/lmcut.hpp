@@ -30,7 +30,7 @@ template<TaskKind Kind>
 class LMCutHeuristic : public Heuristic<Kind>
 {
 public:
-    LMCutHeuristic(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
+    LMCutHeuristic(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::UNIT);
     ~LMCutHeuristic() override;
 
     LMCutHeuristic(const LMCutHeuristic&) = delete;
@@ -38,7 +38,7 @@ public:
     LMCutHeuristic(LMCutHeuristic&&) noexcept;
     LMCutHeuristic& operator=(LMCutHeuristic&&) noexcept;
 
-    static LMCutHeuristicPtr<Kind> create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
+    static LMCutHeuristicPtr<Kind> create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::UNIT);
 
     using Heuristic<Kind>::evaluate;
 

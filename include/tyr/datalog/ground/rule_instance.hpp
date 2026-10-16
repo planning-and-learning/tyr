@@ -34,6 +34,7 @@ public:
 
     formalism::datalog::RuleView<GroundTag, R> get_rule() const noexcept { return m_rule; }
     auto get_body() const noexcept { return m_rule.get_body(); }
+    auto get_heads() const noexcept { return m_rule.get_heads(); }
     auto get_head() const noexcept { return m_rule.get_head(); }
 
     auto resolve(formalism::datalog::AtomView<GroundTag, formalism::FluentTag> atom) const noexcept { return atom.get_row(); }
@@ -43,15 +44,6 @@ public:
     ResolvedNumericEffect resolve(formalism::datalog::NumericEffectView<GroundTag, formalism::FluentTag> effect) const noexcept
     {
         return { effect.get_operator(), effect.get_fterm().get_row().get_index(), effect.get_fexpr() };
-    }
-
-    template<typename Callback>
-    bool for_each_resolved_metric_effect(Callback&& callback) const
-    {
-        for (const auto& metric_operator : m_rule.get_metric_effects())
-            if (!ygg::visit([&](const auto metric_effect) { return callback(resolve(metric_effect)); }, metric_operator.get_variant()))
-                return false;
-        return true;
     }
 
     auto witness_key() const noexcept { return m_rule.get_row(); }

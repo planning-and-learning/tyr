@@ -57,7 +57,7 @@ RuleBindingFixture make_nullary_rule_binding(tyr::formalism::datalog::Repository
 
     auto rule_builder = ygg::Data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>();
     rule_builder.body = condition.get_index();
-    rule_builder.head = atom.get_index();
+    rule_builder.heads.push_back(atom.get_index());
     canonicalize(rule_builder);
     const auto [rule, rule_success] = repository.insert(rule_builder);
     EXPECT_TRUE(rule_success);
@@ -93,7 +93,7 @@ TEST(TyrDatalogCostPolicyTest, CostBucketsRecycleNodesAndRetainTables)
     auto repository = tyr::formalism::datalog::RepositoryFactory().create();
     const auto fixture = make_nullary_rule_binding(repository);
     auto predicate_data = ygg::Data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
-    predicate_data.relation = fixture.rule.get_head().get_predicate().get_index();
+    predicate_data.relation = fixture.rule.get_heads().front().get_predicate().get_index();
     const auto predicate = repository.insert(predicate_data).first;
     const auto function = make_nullary_function_binding(repository, "value");
     auto buckets = tyr::datalog::CostBuckets {};
@@ -179,34 +179,6 @@ TEST(TyrDatalogCostPolicyTest, RuleCostOverridePolicyLiftedUsesExactOverride)
     policy.set_cost(fixture.binding.get_index(), 3);
 
     EXPECT_EQ(policy.get_cost(fixture.binding), 3);
-}
-
-TEST(TyrDatalogCostPolicyTest, DefaultPoliciesAcceptEveryMetricBinding)
-{
-    auto factory = tyr::formalism::datalog::RepositoryFactory();
-    auto repository = factory.create();
-    const auto binding = make_nullary_function_binding(repository, "metric");
-
-    EXPECT_TRUE(tyr::datalog::RuleCostPolicy().is_metric_target(binding.get_index()));
-    EXPECT_TRUE(tyr::datalog::RuleCostOverridePolicy<LiftedTag>().is_metric_target(binding.get_index()));
-}
-
-TEST(TyrDatalogCostPolicyTest, FilteredPoliciesAcceptOnlyConfiguredMetricBindings)
-{
-    auto factory = tyr::formalism::datalog::RepositoryFactory();
-    auto repository = factory.create();
-    const auto target = make_nullary_function_binding(repository, "target");
-    const auto other = make_nullary_function_binding(repository, "other");
-    auto targets = tyr::datalog::RuleCostPolicy::MetricTargets {};
-    targets.insert(target.get_index());
-
-    const auto base = tyr::datalog::RuleCostPolicy(&targets);
-    const auto override = tyr::datalog::RuleCostOverridePolicy<LiftedTag>(&targets);
-
-    EXPECT_TRUE(base.is_metric_target(target.get_index()));
-    EXPECT_FALSE(base.is_metric_target(other.get_index()));
-    EXPECT_TRUE(override.is_metric_target(target.get_index()));
-    EXPECT_FALSE(override.is_metric_target(other.get_index()));
 }
 
 }

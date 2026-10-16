@@ -499,7 +499,7 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
                 for (const auto op : rule.get_body().get_numeric_constraints())
                     apply_policy(op, insert_policy);
 
-                apply_policy(rule.get_head(), insert_policy);
+                formalism::datalog::for_each_head(rule, [&](auto head) { apply_policy(head, insert_policy); });
             }
         };
 
@@ -574,7 +574,7 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
             for (const auto op : rule.get_body().get_numeric_constraints())
                 apply_policy(op, lift_policy);
 
-            apply_policy(rule.get_head(), lift_policy);
+            formalism::datalog::for_each_head(rule, [&](auto head) { apply_policy(head, lift_policy); });
         }
     };
 

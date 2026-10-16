@@ -51,7 +51,6 @@ void bind_conjunctive_condition(nb::module_& m, RepositoryBinding& repository);
 void bind_conjunctive_effect(nb::module_& m, RepositoryBinding& repository);
 void bind_function_expression(nb::module_& m, RepositoryBinding& repository);
 void bind_rule(nb::module_& m, RepositoryBinding& repository);
-void bind_metric(nb::module_& m, RepositoryBinding& repository);
 void bind_program(nb::module_& m, RepositoryBinding& repository);
 
 }  // namespace tyr::formalism::datalog

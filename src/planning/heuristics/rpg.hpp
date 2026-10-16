@@ -51,22 +51,13 @@ namespace tyr::planning::detail
 template<TaskKind Kind>
 struct RPGDefinition
 {
-    using MetricTargets = datalog::RuleCostPolicy::MetricTargets;
-
     TaskPtr<Kind> task;
     RPGProgram<Kind> rpg_program;
-    MetricTargets metric_targets;
 
-    RPGDefinition(TaskPtr<Kind> task, CostMode cost_mode) : task(std::move(task)), rpg_program(this->task->get_task(), cost_mode), metric_targets()
+    RPGDefinition(TaskPtr<Kind> task, CostMode cost_mode, bool split_rules = false) :
+        task(std::move(task)),
+        rpg_program(this->task->get_task(), cost_mode, split_rules)
     {
-        const auto metric = rpg_program.get_datalog_program().get_program().get_metric();
-        if (!metric)
-            return;
-
-        auto fterms = ygg::UnorderedSet<formalism::datalog::FunctionTermView<GroundTag, formalism::FluentTag>> {};
-        formalism::datalog::collect_fterms(metric.value().get_fexpr(), fterms);
-        for (const auto fterm : fterms)
-            metric_targets.insert(fterm.get_row().get_index());
     }
 };
 
@@ -129,8 +120,9 @@ public:
     using Policy = RPGPolicy<Kind>;
     using Workspace = datalog::ProgramWorkspace<Kind, AP, TP, CP>;
 
-    RPGEvaluator(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL) :
-        RPGEvaluator(std::make_shared<Definition>(std::move(task), cost_mode), std::move(execution_context))
+    RPGEvaluator(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::UNIT) :
+        // h_max, h_add and FF aggregate over the minimal bindings of a rule, so splitting preserves them (LM-cut builds its own definition).
+        RPGEvaluator(std::make_shared<Definition>(std::move(task), cost_mode, true), std::move(execution_context))
     {
     }
 
@@ -139,23 +131,19 @@ public:
         m_execution_context(std::move(execution_context)),
         m_source_goal(m_definition->task->get_task().get_goal()),
         m_workspace(m_definition->rpg_program.get_datalog_program(), AP {}, TP {}, make_cost_policy(*m_definition))
-    {
-        Policy::set_goal(*m_definition, m_workspace, m_source_goal);
-    }
+    { materialize_goal(*m_definition, m_workspace, m_source_goal); }
 
     RPGEvaluator(const RPGEvaluator& source, ygg::ExecutionContextPtr execution_context) :
         m_definition(source.m_definition),
         m_execution_context(std::move(execution_context)),
         m_source_goal(source.m_source_goal),
         m_workspace(m_definition->rpg_program.get_datalog_program(), AP {}, TP {}, make_cost_policy(*m_definition))
-    {
-        Policy::set_goal(*m_definition, m_workspace, m_source_goal);
-    }
+    { materialize_goal(*m_definition, m_workspace, m_source_goal); }
 
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
     {
         m_source_goal = goal;
-        Policy::set_goal(*m_definition, m_workspace, m_source_goal);
+        materialize_goal(*m_definition, m_workspace, m_source_goal);
     }
 
     ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state)
@@ -167,7 +155,7 @@ public:
     void print_summary(size_t verbosity) const { Policy::print_summary(m_workspace, verbosity); }
 
 protected:
-    void begin_state_evaluation() { Policy::begin_state_evaluation(*m_definition, m_workspace, m_source_goal); }
+    void begin_state_evaluation() { m_workspace.clear_costs(); }
 
     ygg::float_t evaluate_current_state(const ygg::Builder<State<Kind>>& state)
     {
@@ -274,10 +262,7 @@ private:
     {
         if constexpr (std::same_as<CP, datalog::RuleCostOverridePolicy<Kind>>)
             return CP(definition.rpg_program.template get_rule_to_action_mapping<formalism::PredicateTag>(),
-                      definition.rpg_program.template get_rule_to_action_mapping<formalism::FunctionTag>(),
-                      &definition.metric_targets);
-        else if constexpr (std::same_as<CP, datalog::RuleCostPolicy>)
-            return CP(&definition.metric_targets);
+                      definition.rpg_program.template get_rule_to_action_mapping<formalism::FunctionTag>());
         else
             return CP {};
     }

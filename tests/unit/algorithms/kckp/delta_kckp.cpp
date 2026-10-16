@@ -77,9 +77,10 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
     const auto& rules = program.get_const_program_workspace().get_rules<tyr::formalism::PredicateTag>();
     for (ygg::uint_t i = 0; i < program_view.get_rules<tyr::formalism::PredicateTag>().size(); ++i)
     {
-        const auto is_pick =
-            action_program.get_predicate_to_action_mapping().at(program_view.get_rules<tyr::formalism::PredicateTag>()[i].get_head().get_predicate()).get_name()
-            == "pick";
+        const auto is_pick = action_program.get_predicate_to_action_mapping()
+                                 .at(program_view.get_rules<tyr::formalism::PredicateTag>()[i].get_heads().front().get_predicate())
+                                 .get_name()
+                             == "pick";
 
         if (is_pick)
         {
@@ -219,7 +220,7 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
     for (ygg::uint_t i = 0; i < program_view.get_rules<tyr::formalism::PredicateTag>().size(); ++i)
     {
         const auto rule = program_view.get_rules<tyr::formalism::PredicateTag>()[i];
-        if (action_program.get_predicate_to_action_mapping().at(rule.get_head().get_predicate()).get_name() != "move")
+        if (action_program.get_predicate_to_action_mapping().at(rule.get_heads().front().get_predicate()).get_name() != "move")
             continue;
 
         ASSERT_TRUE(rules[i].has_value());
@@ -345,7 +346,7 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
     for (ygg::uint_t i = 0; i < program_view.get_rules<tyr::formalism::PredicateTag>().size(); ++i)
     {
         const auto rule = program_view.get_rules<tyr::formalism::PredicateTag>()[i];
-        if (action_program.get_predicate_to_action_mapping().at(rule.get_head().get_predicate()).get_name() != "drive")
+        if (action_program.get_predicate_to_action_mapping().at(rule.get_heads().front().get_predicate()).get_name() != "drive")
             continue;
 
         ASSERT_TRUE(rules[i].has_value());

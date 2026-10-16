@@ -27,6 +27,7 @@
 #include <tuple>
 #include <utility>
 #include <yggdrasil/containers/associative_containers.hpp>
+#include <yggdrasil/formalism/binding_key.hpp>
 #include <yggdrasil/containers/unordered_set.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
@@ -45,31 +46,6 @@ struct ActionCostLookup
     {
         assert(rule_binding.get_data().size() >= action.get_arity());
         return std::make_pair(action.get_index(), std::views::take(rule_binding.get_data(), action.get_arity()));
-    }
-};
-
-struct ActionCostHash
-{
-    using is_transparent = void;
-
-    template<typename Key>
-    size_t operator()(const Key& key) const noexcept
-    {
-        const auto [relation, objects] = key.get_key();
-        return ygg::hash_combine(relation, ygg::hash_range(objects));
-    }
-};
-
-struct ActionCostEqual
-{
-    using is_transparent = void;
-
-    template<typename Lhs, typename Rhs>
-    bool operator()(const Lhs& lhs, const Rhs& rhs) const noexcept
-    {
-        const auto lhs_key = lhs.get_key();
-        const auto rhs_key = rhs.get_key();
-        return ygg::EqualTo<> {}(lhs_key.first, rhs_key.first) && ygg::equal_range(lhs_key.second, rhs_key.second);
     }
 };
 
@@ -95,13 +71,8 @@ struct NumericTransitionCostKey : ygg::comparison::Mixin<NumericTransitionCostKe
 
 class RuleCostPolicy
 {
-    using MetricTarget = ygg::Index<formalism::RelationBinding<formalism::Function<formalism::FluentTag>>>;
-
 public:
-    using MetricTargets = ygg::UnorderedSet<MetricTarget>;
-
     RuleCostPolicy() = default;
-    explicit RuleCostPolicy(const MetricTargets* metric_targets) noexcept : m_metric_targets(metric_targets) {}
 
     template<typename RuleKey>
     Cost get_cost(RuleKey) const noexcept
@@ -114,11 +85,6 @@ public:
         return Cost(0);
     }
 
-    bool is_metric_target(MetricTarget binding) const noexcept
-    {
-        return !m_metric_targets || m_metric_targets->contains(binding);
-    }
-
     void clear() noexcept {}
     template<typename RuleKey>
     void set_cost(RuleKey, Cost) noexcept
@@ -128,9 +94,6 @@ public:
     void set_cost(RuleKey, NumericKey, ygg::ClosedInterval<ygg::float_t>, Cost) noexcept
     {
     }
-
-private:
-    const MetricTargets* m_metric_targets { nullptr };
 };
 
 template<formalism::RelationKind R>
@@ -198,17 +161,8 @@ private:
 
 public:
     RuleCostOverridePolicy() = default;
-    using RuleCostPolicy::RuleCostPolicy;
     RuleCostOverridePolicy(const RuleToActionMapping<formalism::PredicateTag>& predicate_rule_to_action,
                            const RuleToActionMapping<formalism::FunctionTag>& function_rule_to_action) noexcept :
-        m_predicate_rule_to_action(&predicate_rule_to_action),
-        m_function_rule_to_action(&function_rule_to_action)
-    {
-    }
-    RuleCostOverridePolicy(const RuleToActionMapping<formalism::PredicateTag>& predicate_rule_to_action,
-                           const RuleToActionMapping<formalism::FunctionTag>& function_rule_to_action,
-                           const MetricTargets* metric_targets) noexcept :
-        RuleCostPolicy(metric_targets),
         m_predicate_rule_to_action(&predicate_rule_to_action),
         m_function_rule_to_action(&function_rule_to_action)
     {
@@ -299,7 +253,7 @@ protected:
     RuleCostOverrideStorage<formalism::FunctionTag> function_storage;
     const RuleToActionMapping<formalism::PredicateTag>* m_predicate_rule_to_action { nullptr };
     const RuleToActionMapping<formalism::FunctionTag>* m_function_rule_to_action { nullptr };
-    gtl::flat_hash_map<formalism::planning::ActionBindingView, Cost, ActionCostHash, ActionCostEqual> m_action_costs;
+    ygg::UnorderedMap<formalism::planning::ActionBindingView, Cost, ygg::formalism::BindingKeyHash, ygg::formalism::BindingKeyEqualTo> m_action_costs;
 };
 
 }

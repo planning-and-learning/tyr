@@ -32,7 +32,8 @@ HeuristicName: TypeAlias = Literal["rpg_max", "rpg_add", "rpg_ff", "lmcut"]
 JsonNumber: TypeAlias = int | float
 FixtureCase: TypeAlias = dict[str, object]
 
-COST_MODES: tuple[tuple[str, CostMode], ...] = (("unit", CostMode.UNIT), ("general", CostMode.GENERAL))
+# The RPG heuristics support unit cost only.
+COST_MODES: tuple[tuple[str, CostMode], ...] = (("unit", CostMode.UNIT),)
 
 
 class _ParserLike(Protocol):

@@ -273,7 +273,7 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(
 
     for (const auto rule : program.get_rules<formalism::PredicateTag>())
     {
-        const auto predicate = rule.get_head().get_predicate();
+        const auto predicate = rule.get_heads().front().get_predicate();
         const auto action = mapping.at(predicate);
         const auto& set = evaluator.workspace.facts.fact_sets.predicate.get_sets()[ygg::uint_t(predicate.get_index())];
         for (const auto& binding : set.get_bindings())

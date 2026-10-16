@@ -30,7 +30,7 @@ template<TaskKind Kind>
 class MaxRPGHeuristic : public Heuristic<Kind>
 {
 public:
-    MaxRPGHeuristic(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
+    MaxRPGHeuristic(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::UNIT);
     ~MaxRPGHeuristic() override;
 
     MaxRPGHeuristic(const MaxRPGHeuristic&) = delete;
@@ -38,7 +38,7 @@ public:
     MaxRPGHeuristic(MaxRPGHeuristic&&) noexcept;
     MaxRPGHeuristic& operator=(MaxRPGHeuristic&&) noexcept;
 
-    static MaxRPGHeuristicPtr<Kind> create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::GENERAL);
+    static MaxRPGHeuristicPtr<Kind> create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::UNIT);
 
     using Heuristic<Kind>::evaluate;
 

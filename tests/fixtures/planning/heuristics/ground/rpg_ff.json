@@ -7,9 +7,6 @@
             "configs": {
                 "unit": {
                     "h": 26
-                },
-                "general": {
-                    "h": 26
                 }
             }
         },
@@ -19,9 +16,6 @@
             "task_file": "classical/tests/airport/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 8
-                },
-                "general": {
                     "h": 8
                 }
             }
@@ -33,9 +27,6 @@
             "configs": {
                 "unit": {
                     "h": 1
-                },
-                "general": {
-                    "h": 1
                 }
             }
         },
@@ -45,9 +36,6 @@
             "task_file": "classical/tests/barman/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 8
-                },
-                "general": {
                     "h": 8
                 }
             }
@@ -59,9 +47,6 @@
             "configs": {
                 "unit": {
                     "h": 4
-                },
-                "general": {
-                    "h": 4
                 }
             }
         },
@@ -71,9 +56,6 @@
             "task_file": "classical/tests/blocks_4/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 4
-                },
-                "general": {
                     "h": 4
                 }
             }
@@ -85,9 +67,6 @@
             "configs": {
                 "unit": {
                     "h": 4
-                },
-                "general": {
-                    "h": 4
                 }
             }
         },
@@ -97,9 +76,6 @@
             "task_file": "classical/tests/delivery/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 5
-                },
-                "general": {
                     "h": 5
                 }
             }
@@ -111,9 +87,6 @@
             "configs": {
                 "unit": {
                     "h": 4
-                },
-                "general": {
-                    "h": 4
                 }
             }
         },
@@ -123,9 +96,6 @@
             "task_file": "classical/tests/ferry/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 5
-                },
-                "general": {
                     "h": 5
                 }
             }
@@ -137,9 +107,6 @@
             "configs": {
                 "unit": {
                     "h": 4
-                },
-                "general": {
-                    "h": 4
                 }
             }
         },
@@ -149,9 +116,6 @@
             "task_file": "classical/tests/gripper/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 3
-                },
-                "general": {
                     "h": 3
                 }
             }
@@ -163,9 +127,6 @@
             "configs": {
                 "unit": {
                     "h": 3
-                },
-                "general": {
-                    "h": 3
                 }
             }
         },
@@ -175,9 +136,6 @@
             "task_file": "classical/tests/logistics/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 3
-                },
-                "general": {
                     "h": 3
                 }
             }
@@ -189,9 +147,6 @@
             "configs": {
                 "unit": {
                     "h": 5
-                },
-                "general": {
-                    "h": 5
                 }
             }
         },
@@ -201,9 +156,6 @@
             "task_file": "classical/tests/miconic-fulladl/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 0
-                },
-                "general": {
                     "h": 0
                 }
             }
@@ -215,9 +167,6 @@
             "configs": {
                 "unit": {
                     "h": 3
-                },
-                "general": {
-                    "h": 3
                 }
             }
         },
@@ -227,9 +176,6 @@
             "task_file": "classical/tests/parcprinter/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 11
-                },
-                "general": {
                     "h": 11
                 }
             }
@@ -241,9 +187,6 @@
             "configs": {
                 "unit": {
                     "h": 6
-                },
-                "general": {
-                    "h": 6
                 }
             }
         },
@@ -253,9 +196,6 @@
             "task_file": "classical/tests/philosophers/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 0
-                },
-                "general": {
                     "h": 0
                 }
             }
@@ -267,9 +207,6 @@
             "configs": {
                 "unit": {
                     "h": 0
-                },
-                "general": {
-                    "h": 0
                 }
             }
         },
@@ -279,9 +216,6 @@
             "task_file": "classical/tests/pushworld/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 11
-                },
-                "general": {
                     "h": 11
                 }
             }
@@ -293,9 +227,6 @@
             "configs": {
                 "unit": {
                     "h": 4
-                },
-                "general": {
-                    "h": 4
                 }
             }
         },
@@ -305,9 +236,6 @@
             "task_file": "classical/tests/rovers/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 4
-                },
-                "general": {
                     "h": 4
                 }
             }
@@ -319,9 +247,6 @@
             "configs": {
                 "unit": {
                     "h": 6
-                },
-                "general": {
-                    "h": 6
                 }
             }
         },
@@ -331,9 +256,6 @@
             "task_file": "classical/tests/schedule/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 2
-                },
-                "general": {
                     "h": 2
                 }
             }
@@ -345,9 +267,6 @@
             "configs": {
                 "unit": {
                     "h": 38
-                },
-                "general": {
-                    "h": 38
                 }
             }
         },
@@ -357,9 +276,6 @@
             "task_file": "classical/tests/spanner/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 4
-                },
-                "general": {
                     "h": 4
                 }
             }
@@ -371,9 +287,6 @@
             "configs": {
                 "unit": {
                     "h": 5
-                },
-                "general": {
-                    "h": 5
                 }
             }
         },
@@ -383,9 +296,6 @@
             "task_file": "classical/tests/visitall/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 6
-                },
-                "general": {
                     "h": 6
                 }
             }
@@ -397,9 +307,6 @@
             "configs": {
                 "unit": {
                     "h": 11
-                },
-                "general": {
-                    "h": 11
                 }
             }
         },
@@ -409,9 +316,6 @@
             "task_file": "numeric/tests/fo-counters/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 4
-                },
-                "general": {
                     "h": 4
                 }
             }
@@ -423,9 +327,6 @@
             "configs": {
                 "unit": {
                     "h": 1
-                },
-                "general": {
-                    "h": 1
                 }
             }
         },
@@ -435,9 +336,6 @@
             "task_file": "numeric/tests/refuel-adl/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 0
-                },
-                "general": {
                     "h": 0
                 }
             }
@@ -449,9 +347,6 @@
             "configs": {
                 "unit": {
                     "h": 7
-                },
-                "general": {
-                    "h": 7
                 }
             }
         },
@@ -461,9 +356,6 @@
             "task_file": "numeric/tests/zenotravel/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 8
-                },
-                "general": {
                     "h": 8
                 }
             }
@@ -475,9 +367,6 @@
             "configs": {
                 "unit": {
                     "h": 2
-                },
-                "general": {
-                    "h": 2
                 }
             }
         },
@@ -488,9 +377,6 @@
             "configs": {
                 "unit": {
                     "h": 7
-                },
-                "general": {
-                    "h": 3
                 }
             }
         },
@@ -500,9 +386,6 @@
             "task_file": "numeric/tests/delivery/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 3
-                },
-                "general": {
                     "h": 3
                 }
             }
@@ -514,9 +397,6 @@
             "configs": {
                 "unit": {
                     "h": 3
-                },
-                "general": {
-                    "h": 8
                 }
             }
         },
@@ -527,9 +407,6 @@
             "configs": {
                 "unit": {
                     "h": 1
-                },
-                "general": {
-                    "h": 2
                 }
             }
         },
@@ -539,9 +416,6 @@
             "task_file": "numeric/tests/ext-plant-watering/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 6
-                },
-                "general": {
                     "h": 6
                 }
             }
@@ -553,9 +427,6 @@
             "configs": {
                 "unit": {
                     "h": 3
-                },
-                "general": {
-                    "h": 1
                 }
             }
         },
@@ -566,9 +437,6 @@
             "configs": {
                 "unit": {
                     "h": 2
-                },
-                "general": {
-                    "h": 1
                 }
             }
         },
@@ -579,9 +447,6 @@
             "configs": {
                 "unit": {
                     "h": 2
-                },
-                "general": {
-                    "h": 3
                 }
             }
         },
@@ -591,9 +456,6 @@
             "task_file": "numeric/tests/hydropower/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 1
-                },
-                "general": {
                     "h": 1
                 }
             }
@@ -605,9 +467,6 @@
             "configs": {
                 "unit": {
                     "h": 2
-                },
-                "general": {
-                    "h": 3
                 }
             }
         },
@@ -618,9 +477,6 @@
             "configs": {
                 "unit": {
                     "h": 4
-                },
-                "general": {
-                    "h": 6
                 }
             }
         },
@@ -630,9 +486,6 @@
             "task_file": "numeric/tests/pathwaysmetric/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 2
-                },
-                "general": {
                     "h": 2
                 }
             }
@@ -644,9 +497,6 @@
             "configs": {
                 "unit": {
                     "h": 4
-                },
-                "general": {
-                    "h": 5
                 }
             }
         },
@@ -657,9 +507,6 @@
             "configs": {
                 "unit": {
                     "h": 2
-                },
-                "general": {
-                    "h": 3
                 }
             }
         },
@@ -670,9 +517,6 @@
             "configs": {
                 "unit": {
                     "h": 2
-                },
-                "general": {
-                    "h": 2
                 }
             }
         },
@@ -682,9 +526,6 @@
             "task_file": "numeric/tests/sugar/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 1
-                },
-                "general": {
                     "h": 1
                 }
             }

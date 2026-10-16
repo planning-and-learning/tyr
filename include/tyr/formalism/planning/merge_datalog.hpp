@@ -158,8 +158,6 @@ ygg::Data<datalog::FunctionExpression<LiftedTag>> merge_p2d(FunctionExpressionVi
 
 ygg::Data<datalog::FunctionExpression<GroundTag>> merge_p2d(FunctionExpressionView<GroundTag> element, MergeDatalogContext& context);
 
-std::pair<datalog::MetricView, bool> merge_p2d(MetricView element, MergeDatalogContext& context);
-
 template<TaskKind T>
 std::pair<datalog::UnaryOperatorView<T>, bool> merge_p2d(UnaryOperatorView<T> element, MergeDatalogContext& context);
 
@@ -555,13 +553,6 @@ inline ygg::Data<datalog::FunctionExpression<GroundTag>> merge_p2d(FunctionExpre
                 return ygg::Data<datalog::FunctionExpression<GroundTag>>(merge_p2d(arg, context).first.get_index());
         },
         element.get_variant());
-}
-
-inline std::pair<datalog::MetricView, bool> merge_p2d(MetricView element, MergeDatalogContext& context)
-{
-    auto metric = datalog::checkout<datalog::Metric>(context.builder);
-    metric->fexpr = merge_p2d(element.get_fexpr(), context);
-    return datalog::insert(context.destination, *metric);
 }
 
 template<TaskKind T>

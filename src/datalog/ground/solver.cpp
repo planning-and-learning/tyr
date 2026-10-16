@@ -28,6 +28,7 @@
 #include <cassert>
 #include <concepts>
 #include <limits>
+#include <span>
 #include <utility>
 
 namespace tyr::datalog
@@ -76,8 +77,14 @@ private:
         {
             if constexpr (std::same_as<R, formalism::PredicateTag>)
             {
-                const auto head = input.rule_instance.resolve(input.rule_instance.get_head());
-                return insert_propositional_update(head.get_index(), input, scratch.predicate_updates, scratch.delta_annotations, entry->cost);
+                scratch.head_bindings.clear();
+                for (const auto head : input.rule_instance.get_heads())
+                    scratch.head_bindings.push_back(input.rule_instance.resolve(head).get_index());
+                return insert_propositional_update(std::span(std::as_const(scratch.head_bindings)),
+                                                   input,
+                                                   scratch.predicate_updates,
+                                                   scratch.delta_annotations,
+                                                   entry->cost);
             }
             else
             {

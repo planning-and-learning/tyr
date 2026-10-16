@@ -45,7 +45,6 @@ struct Data<::tyr::formalism::datalog::Program<T>>
     ygg::IndexList<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>> static_fterm_values;
     ygg::IndexList<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fluent_fterm_values;
     ::cista::optional<ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>> goal;
-    ::cista::optional<ygg::Index<::tyr::formalism::datalog::Metric>> metric;
     ygg::IndexList<::tyr::formalism::datalog::Rule<T, ::tyr::formalism::PredicateTag>> predicate_rules;
     ygg::IndexList<::tyr::formalism::datalog::Rule<T, ::tyr::formalism::FunctionTag>> function_rules;
 
@@ -60,7 +59,6 @@ struct Data<::tyr::formalism::datalog::Program<T>>
          ygg::IndexList<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>> static_fterm_values_,
          ygg::IndexList<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fluent_fterm_values_,
          ::cista::optional<ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>> goal_,
-         ::cista::optional<ygg::Index<::tyr::formalism::datalog::Metric>> metric_,
          ygg::IndexList<::tyr::formalism::datalog::Rule<T, ::tyr::formalism::PredicateTag>> predicate_rules_,
          ygg::IndexList<::tyr::formalism::datalog::Rule<T, ::tyr::formalism::FunctionTag>> function_rules_) :
         index(),
@@ -74,7 +72,6 @@ struct Data<::tyr::formalism::datalog::Program<T>>
         static_fterm_values(std::move(static_fterm_values_)),
         fluent_fterm_values(std::move(fluent_fterm_values_)),
         goal(goal_),
-        metric(metric_),
         predicate_rules(std::move(predicate_rules_)),
         function_rules(std::move(function_rules_))
     {
@@ -92,7 +89,6 @@ struct Data<::tyr::formalism::datalog::Program<T>>
          const std::vector<::ygg::View<ygg::Index<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>, C>>&
              fluent_fterm_values_,
          const std::optional<::ygg::View<ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>, C>>& goal_,
-         const std::optional<::ygg::View<ygg::Index<::tyr::formalism::datalog::Metric>, C>>& metric_,
          const std::vector<::ygg::View<ygg::Index<::tyr::formalism::datalog::Rule<T, ::tyr::formalism::PredicateTag>>, C>>& predicate_rules_,
          const std::vector<::ygg::View<ygg::Index<::tyr::formalism::datalog::Rule<T, ::tyr::formalism::FunctionTag>>, C>>& function_rules_) :
         index(),
@@ -106,7 +102,6 @@ struct Data<::tyr::formalism::datalog::Program<T>>
         static_fterm_values(),
         fluent_fterm_values(),
         goal(),
-        metric(),
         predicate_rules(),
         function_rules()
     {
@@ -120,7 +115,6 @@ struct Data<::tyr::formalism::datalog::Program<T>>
         set(static_fterm_values_, static_fterm_values);
         set(fluent_fterm_values_, fluent_fterm_values);
         set(goal_, goal);
-        set(metric_, metric);
         set(predicate_rules_, predicate_rules);
         set(function_rules_, function_rules);
     }
@@ -209,7 +203,6 @@ struct Data<::tyr::formalism::datalog::Program<T>>
                         static_fterm_values,
                         fluent_fterm_values,
                         goal,
-                        metric,
                         predicate_rules,
                         function_rules);
     }
@@ -226,7 +219,6 @@ struct Data<::tyr::formalism::datalog::Program<T>>
                         static_fterm_values,
                         fluent_fterm_values,
                         goal,
-                        metric,
                         predicate_rules,
                         function_rules);
     }
@@ -242,7 +234,6 @@ struct Data<::tyr::formalism::datalog::Program<T>>
                         static_fterm_values,
                         fluent_fterm_values,
                         goal,
-                        metric,
                         predicate_rules,
                         function_rules);
     }

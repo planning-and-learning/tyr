@@ -90,6 +90,9 @@ struct RuleWorkspace<LiftedTag, R>
 
         /// Hyperedge anchors
         std::vector<kckp::Vertex> anchor_vertices;
+
+        /// Heads of the current binding that the rule updates
+        std::vector<formalism::datalog::PredicateBindingIndex<formalism::FluentTag>> head_bindings;
     };
 
     struct Solve
@@ -145,8 +148,6 @@ struct ConstRuleWorkspace<LiftedTag, R>
 public:
     auto get_rule() const noexcept { return rule; }
     auto get_nullary_condition() const noexcept { return nullary_condition; }
-    const auto& get_lifted_effects() const noexcept { return lifted_effects; }
-    const auto& get_nullary_effects() const noexcept { return nullary_effects; }
     auto get_conflicting_overapproximation_condition() const noexcept { return conflicting_overapproximation_condition; }
     auto get_hyperedge_condition() const noexcept { return hyperedge_condition; }
     const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
@@ -156,8 +157,6 @@ public:
 private:
     formalism::datalog::RuleView<LiftedTag, R> rule;
     formalism::datalog::ConjunctiveConditionView<GroundTag> nullary_condition;
-    formalism::datalog::NumericEffectOperatorViewList<LiftedTag, formalism::FluentTag> lifted_effects;
-    formalism::datalog::NumericEffectOperatorViewList<GroundTag, formalism::FluentTag> nullary_effects;
     formalism::datalog::ConjunctiveConditionView<LiftedTag> unary_overapproximation_condition;
     formalism::datalog::ConjunctiveConditionView<LiftedTag> binary_overapproximation_condition;
     formalism::datalog::ConjunctiveConditionView<LiftedTag> conflicting_overapproximation_condition;
@@ -170,12 +169,12 @@ private:
  * Implementations
  */
 
-inline PredicateHeadUpdates make_head_updates(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag>) { return {}; }
+inline PredicateHeadUpdates make_head_updates(formalism::PredicateTag) { return {}; }
 
-inline FunctionHeadUpdates make_head_updates(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag>) { return {}; }
+inline FunctionHeadUpdates make_head_updates(formalism::FunctionTag) { return {}; }
 
-inline bool supports_inner_parallelism(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag>) noexcept { return true; }
-inline bool supports_inner_parallelism(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag>) noexcept { return false; }
+inline bool supports_inner_parallelism(formalism::PredicateTag) noexcept { return true; }
+inline bool supports_inner_parallelism(formalism::FunctionTag) noexcept { return false; }
 
 template<formalism::RelationKind R>
 RuleWorkspace<LiftedTag, R>::Common::Common(const StaticConsistencyGraph& static_consistency_graph) :
@@ -200,7 +199,7 @@ void RuleWorkspace<LiftedTag, R>::Common::initialize_iteration(const AssignmentS
 
 template<formalism::RelationKind R>
 RuleWorkspace<LiftedTag, R>::Iteration::Iteration(const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common) :
-    head_updates(make_head_updates(cws.get_rule().get_head())),
+    head_updates(make_head_updates(R {})),
     kckp_workspace(common.kckp.get_graph_layout())
 {
 }
@@ -256,7 +255,7 @@ RuleWorkspace<LiftedTag, R>::RuleWorkspace(const ConstRuleWorkspace<LiftedTag, R
 
 #if defined(TYR_ENABLE_INNER_PARALLELISM) && defined(TYR_ENABLE_SEMI_NAIVE)
     // Only propositional heads use partitionable delta KCKP; numeric effects require full KCKP enumeration.
-    if (supports_inner_parallelism(cws_.get_rule().get_head()) && cws_.get_rule().get_arity() > 2)
+    if (supports_inner_parallelism(R {}) && cws_.get_rule().get_arity() > 2)
         worker.emplace_back(cws_, common);
 #endif
 }

@@ -24,6 +24,8 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 
+#include <algorithm>
+
 namespace tyr::planning
 {
 namespace
@@ -128,7 +130,7 @@ auto create_applicability_rule(formalism::planning::ActionView<LiftedTag> action
 
     ygg::extend(new_conj_cond.get_variables(), rule->variables);
     rule->body = new_conj_cond.get_index();
-    rule->head = create_applicability_atom(action, context).first.get_index();
+    rule->heads.push_back(create_applicability_atom(action, context).first.get_index());
 
     return formalism::datalog::insert(context.destination, *rule);
 }
@@ -159,14 +161,13 @@ auto create_applicability_rule(formalism::planning::AxiomView<LiftedTag> axiom,
 
     ygg::extend(new_conj_cond.get_variables(), rule->variables);
     rule->body = new_conj_cond.get_index();
-    rule->head = create_applicability_atom(axiom, context).first.get_index();
+    rule->heads.push_back(create_applicability_atom(axiom, context).first.get_index());
 
     return formalism::datalog::insert(context.destination, *rule);
 }
 
 auto create_cond_effect_rule(formalism::planning::ActionView<LiftedTag> action,
                              formalism::planning::ConditionalEffectView<LiftedTag> cond_eff,
-                             formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> effect,
                              const TranslationContext<LiftedTag>& translation_context,
                              formalism::planning::MergeDatalogContext& context)
 {
@@ -188,7 +189,10 @@ auto create_cond_effect_rule(formalism::planning::ActionView<LiftedTag> action,
 
     ygg::extend(new_conj_cond.get_variables(), rule->variables);
     rule->body = new_conj_cond.get_index();
-    rule->head = effect.get_index();
+    for (const auto literal : cond_eff.get_effect().get_literals())
+        if (literal.get_polarity())  /// ignore delete effects
+            rule->heads.push_back(
+                formalism::planning::merge_p2d(literal.get_atom(), translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
 
     return formalism::datalog::insert(context.destination, *rule);
 }
@@ -212,7 +216,7 @@ auto create_effect_rule(formalism::planning::AxiomView<LiftedTag> axiom,
 
     ygg::extend(new_conj_cond.get_variables(), rule->variables);
     rule->body = new_conj_cond.get_index();
-    rule->head = effect.get_index();
+    rule->heads.push_back(effect.get_index());
 
     return formalism::datalog::insert(context.destination, *rule);
 }
@@ -236,19 +240,8 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Lifte
 
     for (const auto cond_eff : action.get_effects())
     {
-        for (const auto literal : cond_eff.get_effect().get_literals())
-        {
-            if (!literal.get_polarity())
-                continue;  /// ignore delete effects
-
-            program.predicate_rules.push_back(
-                create_cond_effect_rule(action,
-                                        cond_eff,
-                                        formalism::planning::merge_p2d(literal.get_atom(), translation_context.p2d.fluent_to_fluent_predicate, context).first,
-                                        translation_context,
-                                        context)
-                    .first.get_index());
-        }
+        if (std::ranges::any_of(cond_eff.get_effect().get_literals(), [](const auto literal) { return literal.get_polarity(); }))
+            program.predicate_rules.push_back(create_cond_effect_rule(action, cond_eff, translation_context, context).first.get_index());
     }
 }
 

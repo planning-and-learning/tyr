@@ -68,6 +68,7 @@ public:
     explicit SolverPolicy(ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_ctx(ctx), m_program_stopwatch(ctx.out().statistics().total_time)
     {
         ++ctx.out().statistics().num_executions;
+        initialize_goal_cutoff();
     }
 
     bool next_stratum()
@@ -82,6 +83,7 @@ public:
     bool generate_updates(CostBuckets& cost_buckets, PendingPredicateAchievers& pending_achievers)
     {
         auto& ctx = stratum();
+        begin_goal_cutoff_iteration(ctx);
         run_active_rules<formalism::PredicateTag>(ctx);
         run_active_rules<formalism::FunctionTag>(ctx);
         // The rules consumed the facts committed since they last ran; the commit phase collects the next ones.
@@ -93,6 +95,93 @@ public:
     Scheduler<LiftedTag>& scheduler() { return stratum().out().scheduler(); }
 
 private:
+    using GoalAtom = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
+
+    /// Enables the goal cutoff where stopping an iteration early keeps every witness: positive fluent goals without numeric
+    /// constraints, propositional rules only, one stratum, and annotations without achievers.
+    void initialize_goal_cutoff()
+    {
+        if constexpr (AP::stores_annotations && !AP::records_propositional_achievers
+                      && std::same_as<CP, RuleCostPolicy> && !std::same_as<TP, NoTerminationPolicy>)
+        {
+            const auto& goal = m_ctx.out().tp().get_goal();
+            if (!goal || !goal->get_numeric_constraints().empty() || m_ctx.out().schedulers().size() != 1
+                || !m_ctx.in().template get_rules<formalism::FunctionTag>().empty())
+                return;
+            const auto fact_sets = FactSets { m_ctx.in().facts().fact_sets, m_ctx.out().facts().fact_sets };
+            if (!is_applicable(goal->template get_literals<formalism::StaticTag>(), fact_sets))
+                return;
+
+            auto min_edge_cost = std::numeric_limits<Cost>::max();
+            for (const auto& rule : m_ctx.in().template get_rules<formalism::PredicateTag>())
+                min_edge_cost = std::min(min_edge_cost, Cost(rule->get_rule().get_cost()));
+
+            m_goal_atoms.clear();
+            m_goal_positions.clear();
+            for (const auto literal : goal->template get_literals<formalism::FluentTag>())
+                if (m_goal_positions.emplace(literal.get_atom().get_row().get_index(), m_goal_atoms.size()).second)
+                    m_goal_atoms.push_back(literal.get_atom().get_row().get_index());
+            m_goal_final.assign(m_goal_atoms.size(), false);
+            m_min_edge_cost = min_edge_cost == std::numeric_limits<Cost>::max() ? Cost(0) : min_edge_cost;
+            m_goal_cutoff_enabled = !m_goal_atoms.empty();
+        }
+    }
+
+    /// The committed cost of the delta: later candidates contain an atom committed from now on, and buckets commit in
+    /// nondecreasing cost order. 0, a valid lower bound, if the delta has no predicate atom.
+    Cost get_delta_cost(StratumExecutionContext<AP, TP, CP>& ctx) const
+    {
+        const auto& program_out = ctx.out().program();
+        for (const auto& set : program_out.facts().delta_fact_sets.predicate.get_sets())
+            for (const auto atom : set.get_bindings())
+                if (const auto* annotation = program_out.annotations().find(atom.get_index()))
+                    return get_cost(*annotation);
+        return Cost(0);
+    }
+
+    /// Marks the goal atom at position i final if its tentative cost cannot decrease any more.
+    void observe_goal_atom(size_t i, Cost tentative_cost)
+    {
+        if (m_goal_final[i] || tentative_cost > m_goal_cutoff_bound)
+            return;
+        m_goal_final[i] = true;
+        if (++m_num_final_goals == m_goal_atoms.size())
+            m_goal_cutoff_stopped = true;
+    }
+
+    void begin_goal_cutoff_iteration(StratumExecutionContext<AP, TP, CP>& ctx)
+    {
+        m_goal_cutoff_stopped = false;
+        if (!m_goal_cutoff_enabled || !ctx.in().is_single_threaded())
+            return;
+
+        m_goal_cutoff_bound = get_delta_cost(ctx) + m_min_edge_cost;
+        std::fill(m_goal_final.begin(), m_goal_final.end(), false);
+        m_num_final_goals = 0;
+        const auto& program_out = ctx.out().program();
+        const auto& facts = program_out.facts().fact_sets.predicate;
+        for (size_t i = 0; i < m_goal_atoms.size(); ++i)
+        {
+            if (facts.contains(m_goal_atoms[i]))
+                observe_goal_atom(i, Cost(0));
+            else if (const auto* annotation = program_out.annotations().find(m_goal_atoms[i]))
+                observe_goal_atom(i, get_cost(*annotation));
+        }
+    }
+
+    /// Observes the tentative costs of the goal atoms among the heads of a processed binding.
+    void observe_goal_heads(StratumExecutionContext<AP, TP, CP>& ctx, std::span<const GoalAtom> heads)
+    {
+        if (!m_goal_cutoff_enabled || m_goal_cutoff_stopped)
+            return;
+        for (const auto head : heads)
+            if (const auto it = m_goal_positions.find(head); it != m_goal_positions.end())
+                if (const auto* annotation = ctx.out().program().delta_annotations().find(head))
+                    observe_goal_atom(it->second, get_cost(*annotation));
+    }
+
+    bool goal_cutoff_stopped() const noexcept { return m_goal_cutoff_stopped; }
+
     static void create_nullary_binding(ygg::IndexList<formalism::Object>& binding) { binding.clear(); }
 
     static void
@@ -111,16 +200,19 @@ private:
         }
     }
 
-    void insert_nullary_update(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> head_atom,
+    void insert_nullary_update(formalism::PredicateTag,
                                RuleUpdateInput<LiftedTag, formalism::PredicateTag, AP, CP>& input,
                                RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& ctx)
     {
         auto& out = ctx.out();
-        const auto head = formalism::datalog::ground_binding(head_atom, out.ground_context()).first;
-        insert_propositional_update(head.get_index(), input, out.head_updates(), out.delta_annotations());
+        auto& heads = out.head_bindings();
+        heads.clear();
+        for (const auto head_atom : ctx.in().cws_rule().get_rule().get_heads())
+            heads.push_back(formalism::datalog::ground_binding(head_atom, out.ground_context()).first.get_index());
+        insert_propositional_update(std::span(std::as_const(heads)), input, out.head_updates(), out.delta_annotations());
     }
 
-    void insert_nullary_update(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag>,
+    void insert_nullary_update(formalism::FunctionTag,
                                RuleUpdateInput<LiftedTag, formalism::FunctionTag, AP, CP>& input,
                                RuleWorkerExecutionContext<formalism::FunctionTag, AP, TP, CP>& ctx)
     {
@@ -167,7 +259,7 @@ private:
 
         // Note: we never go through the consistency graph, and hence, have to check validity on the entire rule body.
         if (statically_applicable() && dynamically_applicable())
-            insert_nullary_update(in.cws_rule().get_rule().get_head(), input, wrctx);
+            insert_nullary_update(R {}, input, wrctx);
     }
 
     [[maybe_unused]] static bool ensure_novel_binding(const ygg::IndexList<formalism::Object>& binding,
@@ -177,7 +269,7 @@ private:
     }
 
     template<typename Callback>
-    void for_each_relevant_clique(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag>,
+    void for_each_relevant_clique(formalism::PredicateTag,
                                   kckp::DeltaKCKP& algorithm,
                                   Callback&& callback,
                                   kckp::Workspace& workspace,
@@ -194,16 +286,12 @@ private:
     }
 
     template<typename Callback>
-    void for_each_relevant_clique(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag>,
-                                  kckp::DeltaKCKP& algorithm,
-                                  Callback&& callback,
-                                  kckp::Workspace& workspace,
-                                  bool)
+    void for_each_relevant_clique(formalism::FunctionTag, kckp::DeltaKCKP& algorithm, Callback&& callback, kckp::Workspace& workspace, bool)
     {
         algorithm.for_each_clique(std::forward<Callback>(callback), workspace);
     }
 
-    inline bool require_novel_binding(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag>) noexcept
+    inline bool require_novel_binding(formalism::PredicateTag) noexcept
     {
 #ifdef TYR_ENABLE_SEMI_NAIVE
         return true;
@@ -212,10 +300,9 @@ private:
 #endif
     }
 
-    inline bool require_novel_binding(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag>) noexcept { return false; }
+    inline bool require_novel_binding(formalism::FunctionTag) noexcept { return false; }
 
-    bool try_generate_parallel(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag>,
-                               [[maybe_unused]] RuleExecutionContext<formalism::PredicateTag, AP, TP, CP>& rctx)
+    bool try_generate_parallel(formalism::PredicateTag, [[maybe_unused]] RuleExecutionContext<formalism::PredicateTag, AP, TP, CP>& rctx)
     {
 #if defined(TYR_ENABLE_INNER_PARALLELISM) && defined(TYR_ENABLE_SEMI_NAIVE)
         constexpr size_t kNumStripes = 2;
@@ -253,11 +340,7 @@ private:
         return false;
     }
 
-    bool try_generate_parallel(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag>,
-                               RuleExecutionContext<formalism::FunctionTag, AP, TP, CP>&)
-    {
-        return false;
-    }
+    bool try_generate_parallel(formalism::FunctionTag, RuleExecutionContext<formalism::FunctionTag, AP, TP, CP>&) { return false; }
 
     template<formalism::RelationKind R>
     bool is_current_binding_dynamically_applicable(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, const ApplicabilityContext& applicability_context)
@@ -269,52 +352,71 @@ private:
         return applicability_cache.dynamic_nullary && is_applicable(in.cws_rule().get_conflicting_overapproximation_condition(), applicability_context);
     }
 
-    bool try_process_predicate_binding(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> head_atom,
-                                       RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx,
-                                       RuleUpdateInput<LiftedTag, formalism::PredicateTag, AP, CP>& input,
-                                       const ApplicabilityContext& applicability_context)
+    /// Collects the heads the binding can update: committed facts are final, but still receive achievers.
+    /// Returns whether some head is not yet interned.
+    bool collect_predicate_heads(RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx, bool intern)
     {
         auto& in = wrctx.in();
         auto& out = wrctx.out();
         auto& ground_context = out.ground_context();
-        auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>(ground_context.builder);
-        binding->relation = head_atom.get_predicate().get_index();
-        formalism::datalog::ground(head_atom.get_terms(), ground_context, binding->objects);
-        formalism::canonicalize(*binding);
-        auto head = ground_context.destination.find(*binding);
-        if (head && in.fact_sets().template get<formalism::FluentTag>().predicate.contains(*head))
+        auto& heads = out.head_bindings();
+        heads.clear();
+        auto missing = false;
+        for (const auto head_atom : in.cws_rule().get_rule().get_heads())
         {
-            if constexpr (AP::records_propositional_achievers)
+            auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>(ground_context.builder);
+            binding->relation = head_atom.get_predicate().get_index();
+            formalism::datalog::ground(head_atom.get_terms(), ground_context, binding->objects);
+            formalism::canonicalize(*binding);
+            const auto head =
+                intern ? std::optional(formalism::datalog::insert(ground_context.destination, *binding).first) : ground_context.destination.find(*binding);
+            if (!head)
             {
-                if (!is_current_binding_dynamically_applicable(wrctx, applicability_context))
-                    return false;
-                assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
-                return insert_propositional_update(head->get_index(), input, out.head_updates(), out.delta_annotations()).is_handled();
+                missing = true;
+                continue;
             }
-            return true;
+            if (!AP::records_propositional_achievers && in.fact_sets().template get<formalism::FluentTag>().predicate.contains(*head))
+                continue;
+            heads.push_back(head->get_index());
         }
+        return missing;
+    }
+
+    bool try_process_predicate_binding(RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx,
+                                       RuleUpdateInput<LiftedTag, formalism::PredicateTag, AP, CP>& input,
+                                       const ApplicabilityContext& applicability_context)
+    {
+        [[maybe_unused]] auto& in = wrctx.in();
+        auto& out = wrctx.out();
+        const auto missing = collect_predicate_heads(wrctx, false);
+        if (!missing && out.head_bindings().empty())
+            return true;
 
         if (!is_current_binding_dynamically_applicable(wrctx, applicability_context))
             return false;
 
-        if (!head)
-            head = formalism::datalog::insert(ground_context.destination, *binding).first;
+        // Heads are interned only for applicable bindings.
+        if (missing)
+            collect_predicate_heads(wrctx, true);
         assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
-        return insert_propositional_update(head->get_index(), input, out.head_updates(), out.delta_annotations()).is_handled();
+        const auto handled =
+            insert_propositional_update(std::span(std::as_const(out.head_bindings())), input, out.head_updates(), out.delta_annotations()).is_handled();
+        observe_goal_heads(stratum(), std::span(std::as_const(out.head_bindings())));
+        return handled;
     }
 
-    void process_clique_head(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> head_atom,
+    void process_clique_head(formalism::PredicateTag,
                              RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx,
                              RuleUpdateInput<LiftedTag, formalism::PredicateTag, AP, CP>& input,
                              const ApplicabilityContext& applicability_context)
     {
         // A rejected binding is generated again by the delta that makes it applicable (see generate_hyperedge_cliques).
-        // Undefined metric effects stay undefined, or their fluent reads trigger a full enumeration of the rule.
-        if (!try_process_predicate_binding(head_atom, wrctx, input, applicability_context))
+        // Bindings rejected by a numeric constraint are retried because its fluent reads trigger a full enumeration of the rule.
+        if (!try_process_predicate_binding(wrctx, input, applicability_context))
             ++wrctx.out().statistics().num_rejected_rules;
     }
 
-    void process_clique_head(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag>,
+    void process_clique_head(formalism::FunctionTag,
                              RuleWorkerExecutionContext<formalism::FunctionTag, AP, TP, CP>& wrctx,
                              RuleUpdateInput<LiftedTag, formalism::FunctionTag, AP, CP>& input,
                              const ApplicabilityContext& applicability_context)
@@ -373,7 +475,7 @@ private:
         }
 #endif
 
-        process_clique_head(in.cws_rule().get_rule().get_head(), wrctx, input, applicability_context);
+        process_clique_head(R {}, wrctx, input, applicability_context);
     }
 
     template<formalism::RelationKind R>
@@ -381,14 +483,13 @@ private:
     {
         auto& rule_out = rctx.out();
         auto& kckp_algorithm = rule_out.kckp();
-        const auto head = rctx.in().cws_rule().get_rule().get_head();
 #ifdef TYR_ENABLE_SEMI_NAIVE
         // Before the edge deltas, as the retried bindings were: equal-cost witnesses keep their first derivation.
         if constexpr (std::same_as<R, formalism::PredicateTag>)
             if (!enumerate_all)
                 generate_hyperedge_cliques(rctx);
 #endif
-        if (enumerate_all || !try_generate_parallel(head, rctx))
+        if (enumerate_all || !try_generate_parallel(R {}, rctx))
         {
             auto wrctx = rctx.get_rule_worker_execution_context();
             auto& out = wrctx.out();
@@ -396,9 +497,13 @@ private:
             ++out.statistics().num_executions;
 
             for_each_relevant_clique(
-                head,
+                R {},
                 kckp_algorithm,
-                [&](auto&& clique) { process_clique(wrctx, clique, require_novel_binding(head) && !enumerate_all); },
+                [&](auto&& clique)
+                {
+                    if (!goal_cutoff_stopped())
+                        process_clique(wrctx, clique, require_novel_binding(R {}) && !enumerate_all);
+                },
                 kckp_workspace,
                 enumerate_all);
         }
@@ -435,6 +540,8 @@ private:
                     out.anchor_vertices(),
                     [&](auto&& clique)
                     {
+                        if (goal_cutoff_stopped())
+                            return;
                         create_general_binding(clique, graph, out.ground_context().binding);
                         for (size_t j = 0; j < i; ++j)
                             if (is_applicable(literals[j], delta_context))
@@ -508,6 +615,8 @@ private:
             ++rule_out.statistics().num_executions;
 
             rctx.clear_iteration();  ///< Clear iteration before generate
+            if (goal_cutoff_stopped())
+                return;
 
             {
                 const auto initialize_time = ygg::StopwatchScope(rule_out.statistics().initialize_time);
@@ -598,6 +707,14 @@ private:
     ygg::StopwatchScope<std::chrono::nanoseconds> m_program_stopwatch;
     std::optional<StratumExecutionContext<AP, TP, CP>> m_stratum;
     size_t m_next_stratum = 0;
+    bool m_goal_cutoff_enabled = false;
+    bool m_goal_cutoff_stopped = false;
+    Cost m_min_edge_cost = Cost(0);
+    Cost m_goal_cutoff_bound = Cost(0);
+    std::vector<GoalAtom> m_goal_atoms;
+    ygg::UnorderedMap<GoalAtom, size_t> m_goal_positions;
+    std::vector<bool> m_goal_final;
+    size_t m_num_final_goals = 0;
 };
 
 template void compute_model(ProgramExecutionContext<LiftedTag, NoAnnotationPolicy, NoTerminationPolicy>& ctx);

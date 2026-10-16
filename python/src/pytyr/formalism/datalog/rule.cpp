@@ -42,24 +42,38 @@ void bind_rule_kind(nb::module_& m, RepositoryBinding& repository, const std::st
             cls.def(nb::init<const VariableViewList&,
                              ConjunctiveConditionView<T>,
                              typename V::template HeadView<Repository>,
-                             const NumericEffectOperatorViewList<T, FluentTag>&>(),
+                             ygg::float_t>(),
                     "variables"_a,
                     "body"_a,
-                    "head"_a,
-                    "metric_effects"_a = NumericEffectOperatorViewList<T, FluentTag> {});
-            cls.def(nb::init<ygg::IndexList<Variable>, ygg::Index<ConjunctiveCondition<LiftedTag>>, RuleHeadT<LiftedTag, R>, ygg::DataList<NumericEffectOperator<LiftedTag, FluentTag>>>(), "variables"_a, "body"_a, "head"_a, "metric_effects"_a = ygg::DataList<NumericEffectOperator<T, FluentTag>> {});
+                    std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
+                    "cost"_a = ygg::float_t(0));
+            cls.def(nb::init<ygg::IndexList<Variable>,
+                             ygg::Index<ConjunctiveCondition<LiftedTag>>,
+                             RuleHeadT<LiftedTag, R>,
+                             ygg::float_t>(),
+                    "variables"_a,
+                    "body"_a,
+                    std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
+                    "cost"_a = ygg::float_t(0));
         }
         else
         {
             cls.def(nb::init<RuleBindingView<R>,
                              ConjunctiveConditionView<T>,
                              typename V::template HeadView<Repository>,
-                             const NumericEffectOperatorViewList<T, FluentTag>&>(),
+                             ygg::float_t>(),
                     "binding"_a,
                     "body"_a,
-                    "head"_a,
-                    "metric_effects"_a = NumericEffectOperatorViewList<T, FluentTag> {});
-            cls.def(nb::init<ygg::Index<RelationBinding<Rule<LiftedTag, R>>>, ygg::Index<ConjunctiveCondition<GroundTag>>, RuleHeadT<GroundTag, R>, ygg::DataList<NumericEffectOperator<GroundTag, FluentTag>>>(), "binding"_a, "body"_a, "head"_a, "metric_effects"_a = ygg::DataList<NumericEffectOperator<T, FluentTag>> {});
+                    std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
+                    "cost"_a = ygg::float_t(0));
+            cls.def(nb::init<ygg::Index<RelationBinding<Rule<LiftedTag, R>>>,
+                             ygg::Index<ConjunctiveCondition<GroundTag>>,
+                             RuleHeadT<GroundTag, R>,
+                             ygg::float_t>(),
+                    "binding"_a,
+                    "body"_a,
+                    std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
+                    "cost"_a = ygg::float_t(0));
         }
         ygg::add_print(cls);
         ygg::add_comparison(cls);
@@ -82,8 +96,11 @@ void bind_rule_kind(nb::module_& m, RepositoryBinding& repository, const std::st
             cls.def("get_objects", &V::get_objects);
         }
         cls.def("get_body", &V::get_body, nb::keep_alive<0, 1>());
-        cls.def("get_head", &V::get_head, nb::keep_alive<0, 1>());
-        cls.def("get_metric_effects", &V::get_metric_effects);
+        if constexpr (std::same_as<R, PredicateTag>)
+            cls.def("get_heads", &V::get_heads, nb::keep_alive<0, 1>());
+        else
+            cls.def("get_head", &V::get_head, nb::keep_alive<0, 1>());
+        cls.def("get_cost", &V::get_cost);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);

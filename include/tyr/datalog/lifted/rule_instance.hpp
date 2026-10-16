@@ -56,23 +56,6 @@ public:
                  formalism::datalog::ground(effect.get_fexpr(), m_grounder) };
     }
 
-    ResolvedNumericEffect resolve(formalism::datalog::NumericEffectView<GroundTag, formalism::FluentTag> effect) const noexcept
-    {
-        return { effect.get_operator(), effect.get_fterm().get_row().get_index(), effect.get_fexpr() };
-    }
-
-    template<typename Callback>
-    bool for_each_resolved_metric_effect(Callback&& callback) const
-    {
-        for (const auto& metric_operator : m_workspace.get_nullary_effects())
-            if (!ygg::visit([&](const auto metric_effect) { return callback(resolve(metric_effect)); }, metric_operator.get_variant()))
-                return false;
-        for (const auto& metric_operator : m_workspace.get_lifted_effects())
-            if (!ygg::visit([&](const auto metric_effect) { return callback(resolve(metric_effect)); }, metric_operator.get_variant()))
-                return false;
-        return true;
-    }
-
     auto witness_key() const
     {
         if (!m_witness_key)

@@ -42,26 +42,7 @@ formalism::datalog::ProgramView<GroundTag> remove_statically_inapplicable_rules(
     auto builder = formalism::datalog::Builder {};
     auto context = formalism::datalog::CopyContext { builder, repository };
     auto result = formalism::datalog::checkout<formalism::datalog::Program<GroundTag>>(builder);
-    const auto merge_all = [&](const auto elements, auto& destination)
-    {
-        for (const auto element : elements)
-            destination.push_back(formalism::datalog::copy(element, context).first.get_index());
-    };
-
-    merge_all(program.get_predicates<formalism::StaticTag>(), result->static_predicates);
-    merge_all(program.get_predicates<formalism::FluentTag>(), result->fluent_predicates);
-    merge_all(program.get_functions<formalism::StaticTag>(), result->static_functions);
-    merge_all(program.get_functions<formalism::FluentTag>(), result->fluent_functions);
-    merge_all(program.get_objects(), result->objects);
-    merge_all(program.get_atoms<formalism::StaticTag>(), result->static_atoms);
-    merge_all(program.get_atoms<formalism::FluentTag>(), result->fluent_atoms);
-    merge_all(program.get_fterm_values<formalism::StaticTag>(), result->static_fterm_values);
-    merge_all(program.get_fterm_values<formalism::FluentTag>(), result->fluent_fterm_values);
-
-    if (const auto goal = program.get_goal())
-        result->goal = formalism::datalog::copy(*goal, context).first.get_index();
-    if (const auto metric = program.get_metric())
-        result->metric = formalism::datalog::copy(*metric, context).first.get_index();
+    formalism::datalog::copy_except_rules(program, *result, context);
 
     const auto merge_applicable_rules = [&]<formalism::RelationKind R>()
     {

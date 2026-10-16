@@ -143,11 +143,6 @@ void collect_effect_reads(Effect effect, bool reads_target, Result& result)
 }
 
 template<TaskKind T, typename Result>
-void collect_semantic_head_reads(AtomView<T, FluentTag>, Result&)
-{
-}
-
-template<TaskKind T, typename Result>
 void collect_semantic_head_reads(NumericEffectOperatorView<T, FluentTag> head, Result& result)
 {
     visit([&](auto effect) { collect_effect_reads(effect, effect.get_operator() != NumericEffectOperatorKind::Assign, result); }, head.get_variant());
@@ -159,18 +154,8 @@ void collect_rule_fluent_reads(Rule rule, Result& result)
     for (const auto constraint : rule.get_body().get_numeric_constraints())
         collect_fterms(constraint, result);
 
-    collect_semantic_head_reads(rule.get_head(), result);
-
-    for (const auto metric_effect : rule.get_metric_effects())
-        visit(
-            [&](auto effect)
-            {
-                const auto op = effect.get_operator();
-                const auto reads_target =
-                    op == NumericEffectOperatorKind::Assign || op == NumericEffectOperatorKind::ScaleUp || op == NumericEffectOperatorKind::ScaleDown;
-                collect_effect_reads(effect, reads_target, result);
-            },
-            metric_effect.get_variant());
+    if constexpr (requires { rule.get_head(); })
+        collect_semantic_head_reads(rule.get_head(), result);
 }
 }
 

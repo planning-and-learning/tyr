@@ -207,11 +207,14 @@ std::string format_data(const ygg::Data<Rule<LiftedTag, R>>& value)
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "variables = ", value.variables);
         os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "head = ", value.head);
+        if constexpr (std::same_as<R, PredicateTag>)
+            fmt::print(os, "{}{}\n", "heads = ", value.heads);
+        else
+            fmt::print(os, "{}{}\n", "head = ", value.head);
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "body = ", value.body);
         os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "metric effects = ", value.metric_effects);
+        fmt::print(os, "{}{}\n", "cost = ", value.cost);
     }
     os << ygg::print_indent << ")";
     return os.str();
@@ -229,11 +232,14 @@ std::string format_view(RuleView<LiftedTag, R> value)
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "variables = ", value.get_variables());
         os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "head = ", value.get_head());
+        if constexpr (std::same_as<R, PredicateTag>)
+            fmt::print(os, "{}{}\n", "heads = ", value.get_heads());
+        else
+            fmt::print(os, "{}{}\n", "head = ", value.get_head());
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "body = ", value.get_body());
         os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "metric effects = ", value.get_metric_effects());
+        fmt::print(os, "{}{}\n", "cost = ", value.get_cost());
     }
     os << ygg::print_indent << ")";
     return os.str();
@@ -249,11 +255,14 @@ std::string format_data(const ygg::Data<Rule<GroundTag, R>>& value)
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "index = ", value.index);
         os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "head = ", value.head);
+        if constexpr (std::same_as<R, PredicateTag>)
+            fmt::print(os, "{}{}\n", "heads = ", value.heads);
+        else
+            fmt::print(os, "{}{}\n", "head = ", value.head);
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "body = ", value.body);
         os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "metric effects = ", value.metric_effects);
+        fmt::print(os, "{}{}\n", "cost = ", value.cost);
     }
     os << ygg::print_indent << ")";
     return os.str();
@@ -269,11 +278,14 @@ std::string format_view(RuleView<GroundTag, R> value)
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "index = ", value.get_index());
         os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "head = ", value.get_head());
+        if constexpr (std::same_as<R, PredicateTag>)
+            fmt::print(os, "{}{}\n", "heads = ", value.get_heads());
+        else
+            fmt::print(os, "{}{}\n", "head = ", value.get_head());
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "body = ", value.get_body());
         os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "metric effects = ", value.get_metric_effects());
+        fmt::print(os, "{}{}\n", "cost = ", value.get_cost());
     }
     os << ygg::print_indent << ")";
     return os.str();
@@ -395,8 +407,6 @@ std::string to_string(const ygg::Data<FunctionExpression<LiftedTag>>& value) { r
 std::string to_string(FunctionExpressionView<LiftedTag> value) { return fmt::format("{}", value.get_variant()); }
 std::string to_string(const ygg::Data<FunctionExpression<GroundTag>>& value) { return fmt::format("{}", value.variant); }
 std::string to_string(FunctionExpressionView<GroundTag> value) { return fmt::format("{}", value.get_variant()); }
-std::string to_string(const ygg::Data<Metric>& value) { return fmt::format("{}", value.fexpr); }
-std::string to_string(MetricView value) { return fmt::format("{}", value.get_fexpr()); }
 
 std::string to_string(const ygg::Data<ConjunctiveCondition<LiftedTag>>& value)
 {

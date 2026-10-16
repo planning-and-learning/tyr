@@ -61,22 +61,6 @@ struct RPGPolicy<LiftedTag>
         return formalism::planning::merge_atom_d2p<formalism::FluentTag, formalism::FluentTag>(head, mapping, merge_context).first;
     }
 
-    template<typename Workspace>
-    static void set_goal(RPGDefinition<LiftedTag>&, Workspace&, formalism::planning::ConjunctiveConditionView<GroundTag>) noexcept
-    {
-        // Lifted ground bindings live in the evaluation repository, which reset_evaluation()
-        // clears. The goal is therefore materialized in begin_state_evaluation() after the reset.
-    }
-
-    template<typename Workspace>
-    static void
-    begin_state_evaluation(RPGDefinition<LiftedTag>& definition, Workspace& workspace, formalism::planning::ConjunctiveConditionView<GroundTag> source_goal)
-    {
-        workspace.reset_evaluation();
-        // Lifted ground bindings live in the evaluation repository and must be restored after it is cleared.
-        materialize_goal(definition, workspace, source_goal);
-    }
-
     template<formalism::RelationKind R, typename Workspace>
     static std::optional<Action> get_action(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, const datalog::WitnessAnnotation<R>& witness)
     {
@@ -85,12 +69,53 @@ struct RPGPolicy<LiftedTag>
         if (it == mapping.end())
             return std::nullopt;
 
-        const auto rule_binding = ygg::make_view(witness.get_rule_key(), workspace.workspace_repository);
         auto grounder_context =
             formalism::planning::GrounderContext { workspace.planning_builder, *definition.task->get_repository(), workspace.binding };
         workspace.binding.clear();
+        if constexpr (std::same_as<R, formalism::PredicateTag>)
+        {
+            const auto& origins = definition.rpg_program.get_rule_splitting().origins;
+            if (const auto origin = origins.find(witness.get_rule_key().relation); origin != origins.end())
+            {
+                workspace.binding.resize(origin->second.num_source_variables);
+                recover_split_binding(definition, workspace, witness);
+                return formalism::planning::ground(it->second, grounder_context).first;
+            }
+        }
+        const auto rule_binding = ygg::make_view(witness.get_rule_key(), workspace.workspace_repository);
         ygg::extend(rule_binding.get_objects(), workspace.binding);
         return formalism::planning::ground(it->second, grounder_context).first;
+    }
+
+    /// Writes the objects that the witness of a split rule binds to its variables' positions among the source rule's variables,
+    /// and those of the projections it uses, through the witnesses of their atoms.
+    template<typename Workspace>
+    static void
+    recover_split_binding(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, const datalog::WitnessAnnotation<formalism::PredicateTag>& witness)
+    {
+        const auto& origin = definition.rpg_program.get_rule_splitting().origins.at(witness.get_rule_key().relation);
+        const auto rule_binding = ygg::make_view(witness.get_rule_key(), workspace.workspace_repository);
+        auto position = size_t(0);
+        for (const auto object : rule_binding.get_objects())
+            workspace.binding[origin.source_positions[position++]] = object.get_index();
+
+        const auto& projection_rules = definition.rpg_program.get_rule_splitting().projection_rules;
+        visit_witness_rule_instance(workspace,
+                                    witness,
+                                    [&](const auto& instance)
+                                    {
+                                        for (const auto literal : instance.get_body().template get_literals<formalism::FluentTag>())
+                                        {
+                                            if (!projection_rules.contains(literal.get_atom().get_predicate().get_index()))
+                                                continue;
+                                            const auto* annotation = workspace.annotations.find(instance.resolve(literal.get_atom()).get_index());
+                                            const auto* projection =
+                                                annotation ? std::get_if<datalog::WitnessAnnotation<formalism::PredicateTag>>(annotation) : nullptr;
+                                            assert(projection && "A derived projection atom has a witness.");
+                                            if (projection)
+                                                recover_split_binding(definition, workspace, *projection);
+                                        }
+                                    });
     }
 
     template<typename Workspace, typename Executor>
