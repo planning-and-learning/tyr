@@ -223,5 +223,7 @@ void bind_invariants(nb::module_& m)
     bind_mutex_groups(m);
 
     m.def("synthesize_invariants", &invariant::synthesize_invariants, "domain"_a);
+    m.def("compute_invariant_order_greedy", &invariant::compute_invariant_order_greedy, "invariants"_a);
+    m.def("compute_invariant_order_exhaustive", &invariant::compute_invariant_order_exhaustive, "invariants"_a);
 }
 }

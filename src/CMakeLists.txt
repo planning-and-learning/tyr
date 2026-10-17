@@ -69,6 +69,7 @@ add_library(
     formalism/planning/invariants/matcher.cpp
     formalism/planning/invariants/mutexes.cpp
     formalism/planning/invariants/normalization.cpp
+    formalism/planning/invariants/ordering.cpp
     formalism/planning/invariants/proof.cpp
     formalism/planning/invariants/refinement.cpp
     formalism/planning/invariants/synthesis.cpp

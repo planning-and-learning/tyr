@@ -16,6 +16,8 @@ from ..._pytyr.formalism.planning import (
 from ..._pytyr.formalism.planning import (
     Invariant,
     synthesize_invariants,
+    compute_invariant_order_greedy,
+    compute_invariant_order_exhaustive,
     ObjectSubstitution,
     TermSubstitution,
     InvariantMatchData,
