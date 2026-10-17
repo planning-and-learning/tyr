@@ -1414,7 +1414,7 @@ TEST(TyrPlanningPlanReconstructionTest, ParallelSearchDetectsGlobalExhaustion)
         make_test_parser(benchmark_root / "classical/tests/gripper/domain.pddl").parse_task(fixture_root / "parallel_gripper_unsolvable.pddl"));
     auto grounding_context = ygg::ExecutionContext::create(1);
     auto grounding_options = tyr::planning::GroundTaskInstantiationOptions {};
-    grounding_options.invariant_order = tyr::formalism::planning::invariant::InvariantList {};
+    grounding_options.disable_invariant_synthesis = true;
     auto ground_task = lifted_task->instantiate_ground_task(*grounding_context, grounding_options).task;
     ASSERT_NE(ground_task, nullptr);
 

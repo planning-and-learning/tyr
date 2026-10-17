@@ -44,34 +44,37 @@ def test_ferry_orders(ferry):
     ]
 
 
+def _ground(formalism_task, invariant_order):
+    options = lifted.GroundTaskInstantiationOptions()
+    options.invariant_order = invariant_order
+    result = lifted.Task(formalism_task).instantiate_ground_task(ExecutionContext(1), options)
+    assert result.status == lifted.GroundTaskInstantiationStatus.SUCCESS
+    # The result owns the ground task; the variables are views into it.
+    return result
+
+
+def _variable_predicates(variables):
+    return sorted(sorted(str(atom.get_predicate().get_name()) for atom in variable.get_atoms()) for variable in variables)
+
+
 def test_grounding_follows_the_order(ferry):
     _, formalism_task, invariants = ferry
-    order = compute_invariant_order_exhaustive(invariants)
 
-    result = lifted.Task(formalism_task).instantiate_ground_task(
-        ExecutionContext(1), lifted.GroundTaskInstantiationOptions(invariant_order=order)
-    )
+    result = _ground(formalism_task, compute_invariant_order_exhaustive(invariants))
 
-    assert result.status == lifted.GroundTaskInstantiationStatus.SUCCESS
-    mutex_groups = result.mutex_groups
-    assert mutex_groups.invariants == order
-    variables = result.task.get_fdr_context().get_variables()
-    assert len(variables) == len(mutex_groups.groups)
-    contents = [g for g in mutex_groups.groups if g.invariant_index == 0]
-    assert len(contents) == 1
-    assert sorted(str(atom.get_predicate().get_name()) for atom in contents[0].atoms) == ["empty-ferry", "on", "on"]
-    assert mutex_groups.fallbacks == []
+    assert _variable_predicates(result.task.get_fdr_context().get_variables()) == [["at", "at"], ["at", "at"], ["at-ferry", "at-ferry"], ["empty-ferry", "on", "on"]]
 
 
 def test_empty_order_gives_one_variable_per_atom(ferry):
     _, formalism_task, _ = ferry
 
-    result = lifted.Task(formalism_task).instantiate_ground_task(
-        ExecutionContext(1), lifted.GroundTaskInstantiationOptions(invariant_order=[])
-    )
+    result = _ground(formalism_task, [])
 
-    assert all(len(group.atoms) == 1 and group.invariant_index is None for group in result.mutex_groups.groups)
+    assert all(len(variable.get_atoms()) == 1 for variable in result.task.get_fdr_context().get_variables())
 
 
-def test_default_options_use_the_greedy_cover():
-    assert lifted.GroundTaskInstantiationOptions().invariant_order is None
+def test_options_stay_backward_compatible():
+    options = lifted.GroundTaskInstantiationOptions()
+    assert options.invariant_order is None
+    assert options.disable_invariant_synthesis is False
+    assert lifted.GroundTaskInstantiationOptions(disable_invariant_synthesis=True).disable_invariant_synthesis is True

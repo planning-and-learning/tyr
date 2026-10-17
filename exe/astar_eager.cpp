@@ -192,8 +192,7 @@ int main(int argc, char** argv)
         else
         {
             auto ground_task_instantiation_options = tyr::planning::GroundTaskInstantiationOptions();
-            if (disable_invariant_synthesis)
-                ground_task_instantiation_options.invariant_order = tyr::formalism::planning::invariant::InvariantList {};
+            ground_task_instantiation_options.disable_invariant_synthesis = disable_invariant_synthesis;
             auto ground_task_instantiation_result = lifted_task->instantiate_ground_task(*execution_context, ground_task_instantiation_options);
 
             if (ground_task_instantiation_result.status == tyr::planning::GroundTaskInstantiationStatus::PROVEN_UNSOLVABLE)

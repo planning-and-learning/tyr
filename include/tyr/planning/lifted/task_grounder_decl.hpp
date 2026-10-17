@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_LIFTED_TASK_GROUNDER_DECL_HPP_
 #define TYR_PLANNING_LIFTED_TASK_GROUNDER_DECL_HPP_
 
-#include "tyr/formalism/planning/invariants/mutexes.hpp"
+#include "tyr/formalism/planning/invariants/invariant.hpp"
 #include "tyr/planning/declarations.hpp"
 
 #include <optional>
@@ -37,17 +37,15 @@ struct GroundTaskInstantiationResult
 {
     TaskPtr<GroundTag> task = nullptr;
     GroundTaskInstantiationStatus status = GroundTaskInstantiationStatus::PROVEN_UNSOLVABLE;
-    /// The atoms, invariant and binding behind every FDR variable, in variable order.
-    formalism::planning::invariant::MutexGroups mutex_groups;
 };
 
 struct GroundTaskInstantiationOptions
 {
-    /// nullopt: greedy cover over all synthesized invariants.
-    /// Otherwise exactly these invariants, in this order (see compute_mutex_groups_in_order). Each must equal an
-    /// invariant synthesized for the task's domain, which includes invariants synthesized from another parser of the
-    /// same domain file; that parser must outlive the call. Unlisted invariants are not used, so an empty list yields
-    /// one variable per atom.
+    bool disable_invariant_synthesis = false;
+    /// Used unless invariant synthesis is disabled. nullopt: greedy cover over all synthesized invariants. Otherwise
+    /// exactly these invariants, in this order (see compute_mutex_groups_in_order). Each must equal an invariant
+    /// synthesized for the task's domain, which includes invariants synthesized from another parser of the same domain
+    /// file; that parser must outlive the call. Unlisted invariants are not used.
     std::optional<formalism::planning::invariant::InvariantList> invariant_order = std::nullopt;
 };
 

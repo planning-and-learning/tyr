@@ -59,16 +59,12 @@ void bind_lifted_module_definitions(nb::module_& m)
         .def(nb::init<>())
         .def(nb::init<TaskPtr<GroundTag>, GroundTaskInstantiationStatus>(), "task"_a, "status"_a)
         .def_rw("task", &GroundTaskInstantiationResult::task)
-        .def_rw("status", &GroundTaskInstantiationResult::status)
-        .def_ro("mutex_groups", &GroundTaskInstantiationResult::mutex_groups);
+        .def_rw("status", &GroundTaskInstantiationResult::status);
 
     nb::class_<GroundTaskInstantiationOptions>(m, "GroundTaskInstantiationOptions")
         .def(nb::init<>())
-        .def(
-            "__init__",
-            [](GroundTaskInstantiationOptions* self, std::optional<formalism::planning::invariant::InvariantList> invariant_order)
-            { new (self) GroundTaskInstantiationOptions { .invariant_order = std::move(invariant_order) }; },
-            "invariant_order"_a = nb::none())
+        .def(nb::init<bool>(), "disable_invariant_synthesis"_a = true)
+        .def_rw("disable_invariant_synthesis", &GroundTaskInstantiationOptions::disable_invariant_synthesis)
         .def_rw("invariant_order", &GroundTaskInstantiationOptions::invariant_order);
 
     auto task =
