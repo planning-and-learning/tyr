@@ -31,7 +31,8 @@ namespace tyr::formalism::planning::invariant
 /// variable and with one part yields groups of one atom; such invariants are left out.
 ///
 /// The result depends only on the set of invariants: ties are broken by more rigid variables, rigid variables at
-/// earlier argument positions, and the parts' text (predicate names, never repository indices).
+/// earlier argument positions, and the parts' text (predicate names, with rigid variables renamed to the smallest
+/// such text, so that the order does not depend on how an implementation numbers them).
 
 /// Repeatedly takes the residual covering the most atoms, n^r * (a*n + b).
 InvariantList compute_invariant_order_greedy(const InvariantList& invariants);

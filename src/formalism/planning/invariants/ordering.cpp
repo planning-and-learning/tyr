@@ -42,6 +42,9 @@ namespace
 /// Above this many assignments of one predicate component, the exhaustive order falls back to the greedy one.
 constexpr std::size_t max_assignments_per_component = 1'000'000;
 
+/// Invariants with more rigid variables keep their numbering instead of trying every renaming.
+constexpr std::size_t max_rigid_variables_to_rename = 4;
+
 /// A polynomial in the object count n with non-negative coefficients; coefficients[d] belongs to n^d.
 class Polynomial
 {
@@ -101,7 +104,8 @@ struct ResidualKey
     friend auto operator<=>(const ResidualKey&, const ResidualKey&) = default;
 };
 
-std::string term_text(const ygg::Data<Term>& term, std::size_t num_rigid_variables)
+/// `renaming[i]` is the name V<renaming[i]> of rigid variable i.
+std::string term_text(const ygg::Data<Term>& term, const std::vector<std::size_t>& renaming)
 {
     return std::visit(
         [&]<typename T>(const T& arg) -> std::string
@@ -109,7 +113,7 @@ std::string term_text(const ygg::Data<Term>& term, std::size_t num_rigid_variabl
             if constexpr (std::is_same_v<T, ParameterIndex>)
             {
                 const auto index = static_cast<ygg::uint_t>(arg);
-                return index < num_rigid_variables ? fmt::format("V{}", index) : std::string("*");
+                return index < renaming.size() ? fmt::format("V{}", renaming[index]) : std::string("*");
             }
             else if constexpr (std::is_same_v<T, ygg::Index<Object>>)
             {
@@ -135,8 +139,9 @@ std::optional<ygg::uint_t> parameter_of(const ygg::Data<Term>& term)
         term.variant);
 }
 
-Part make_part(const MutableAtom<FluentTag>& atom, std::size_t num_rigid_variables)
+Part make_part(const MutableAtom<FluentTag>& atom, const std::vector<std::size_t>& renaming)
 {
+    const auto num_rigid_variables = renaming.size();
     auto part = Part { .predicate = atom.predicate, .name = std::string(atom.predicate.get_name().view()) };
     part.first_rigid_position = atom.terms.size();
     auto texts = std::vector<std::string> {};
@@ -149,10 +154,45 @@ Part make_part(const MutableAtom<FluentTag>& atom, std::size_t num_rigid_variabl
             else
                 part.has_counted = true;
         }
-        texts.push_back(term_text(atom.terms[position], num_rigid_variables));
+        texts.push_back(term_text(atom.terms[position], renaming));
     }
     part.text = fmt::format("{}({})", part.name, fmt::join(texts, ","));
     return part;
+}
+
+std::vector<Part> make_parts(const Invariant& invariant, const std::vector<std::size_t>& renaming)
+{
+    auto parts = std::vector<Part> {};
+    for (const auto& atom : invariant.atoms)
+        parts.push_back(make_part(atom, renaming));
+    std::ranges::sort(parts, {}, &Part::text);
+    return parts;
+}
+
+/// The parts under the renaming of rigid variables whose sorted texts are smallest, so that the texts do not depend on
+/// how an implementation numbers rigid variables (Fast Downward's translator uses the same canonical form).
+std::vector<Part> canonical_parts(const Invariant& invariant)
+{
+    auto renaming = std::vector<std::size_t>(invariant.num_rigid_variables);
+    std::iota(renaming.begin(), renaming.end(), std::size_t { 0 });
+    auto best = make_parts(invariant, renaming);
+    if (renaming.size() > max_rigid_variables_to_rename)
+        return best;
+
+    const auto texts = [](const std::vector<Part>& parts)
+    {
+        auto result = std::vector<std::string> {};
+        for (const auto& part : parts)
+            result.push_back(part.text);
+        return result;
+    };
+    while (std::ranges::next_permutation(renaming).found)
+    {
+        auto parts = make_parts(invariant, renaming);
+        if (texts(parts) < texts(best))
+            best = std::move(parts);
+    }
+    return best;
 }
 
 /// The distinct invariants sorted by their text, so that the input order does not matter.
@@ -163,10 +203,7 @@ std::vector<Info> analyze(const InvariantList& invariants)
     {
         if (std::ranges::any_of(infos, [&](const Info& info) { return *info.invariant == invariant; }))
             continue;
-        auto info = Info { .invariant = &invariant, .num_rigid_variables = invariant.num_rigid_variables };
-        for (const auto& atom : invariant.atoms)
-            info.parts.push_back(make_part(atom, invariant.num_rigid_variables));
-        std::ranges::sort(info.parts, {}, &Part::text);
+        auto info = Info { .invariant = &invariant, .num_rigid_variables = invariant.num_rigid_variables, .parts = canonical_parts(invariant) };
         info.text = fmt::format("{{{}}}", fmt::join(info.parts | std::views::transform(&Part::text), ", "));
         infos.push_back(std::move(info));
     }
