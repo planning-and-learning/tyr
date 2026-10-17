@@ -365,5 +365,4 @@ std::vector<AtomViewList<GroundTag, FluentTag>> to_atom_groups(const MutexGroups
         result.push_back(group.atoms);
     return result;
 }
-
 }

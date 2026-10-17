@@ -429,11 +429,10 @@ void validate_invariant_order(const formalism::planning::invariant::InvariantLis
     }
 }
 
-formalism::planning::invariant::MutexGroups
-choose_mutex_groups(formalism::planning::DomainView domain,
-                    const formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>& initial_atoms,
-                    const formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>& fluent_atoms,
-                    const std::optional<formalism::planning::invariant::InvariantList>& invariant_order)
+formalism::planning::invariant::MutexGroups choose_mutex_groups(formalism::planning::DomainView domain,
+                                                                const formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>& initial_atoms,
+                                                                const formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>& fluent_atoms,
+                                                                const std::optional<formalism::planning::invariant::InvariantList>& invariant_order)
 {
     namespace invariant = formalism::planning::invariant;
 

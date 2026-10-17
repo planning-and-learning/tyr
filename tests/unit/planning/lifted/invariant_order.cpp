@@ -194,14 +194,15 @@ TEST(TyrPlanningInvariantOrderTest, DefaultIsGreedyCoverWithProvenance)
 
 TEST(TyrPlanningInvariantOrderTest, InstanceWithTwoInitialAtomsFallsBackToSingleAtoms)
 {
-    auto lifted = planning::Task<LiftedTag>::create(make_test_parser(ferry_domain).parse_task(R"(
+    auto lifted = planning::Task<LiftedTag>::create(make_test_parser(ferry_domain)
+                                                        .parse_task(R"(
 (define (problem ferry-two-positions)
   (:domain ferry)
   (:objects car1 car2 - car loc1 loc3 - location)
   (:init (empty-ferry) (at-ferry loc3) (at car1 loc1) (at car1 loc3) (at car2 loc3))
   (:goal (and (at car2 loc1))))
 )",
-                                                                                                 "ferry-two-positions.pddl"));
+                                                                    "ferry-two-positions.pddl"));
     const auto invariants = FerryInvariants(*lifted);
     const auto result = ground(*lifted, InvariantList { invariants.car, invariants.location });
 
