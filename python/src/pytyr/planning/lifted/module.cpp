@@ -24,6 +24,7 @@
 #include "iw/module.hpp"
 #include "siw/module.hpp"
 
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/vector.h>
@@ -58,12 +59,17 @@ void bind_lifted_module_definitions(nb::module_& m)
         .def(nb::init<>())
         .def(nb::init<TaskPtr<GroundTag>, GroundTaskInstantiationStatus>(), "task"_a, "status"_a)
         .def_rw("task", &GroundTaskInstantiationResult::task)
-        .def_rw("status", &GroundTaskInstantiationResult::status);
+        .def_rw("status", &GroundTaskInstantiationResult::status)
+        .def_ro("mutex_groups", &GroundTaskInstantiationResult::mutex_groups);
 
     nb::class_<GroundTaskInstantiationOptions>(m, "GroundTaskInstantiationOptions")
         .def(nb::init<>())
-        .def(nb::init<bool>(), "disable_invariant_synthesis"_a = true)
-        .def_rw("disable_invariant_synthesis", &GroundTaskInstantiationOptions::disable_invariant_synthesis);
+        .def(
+            "__init__",
+            [](GroundTaskInstantiationOptions* self, std::optional<formalism::planning::invariant::InvariantList> invariant_order)
+            { new (self) GroundTaskInstantiationOptions { .invariant_order = std::move(invariant_order) }; },
+            "invariant_order"_a = nb::none())
+        .def_rw("invariant_order", &GroundTaskInstantiationOptions::invariant_order);
 
     auto task =
         nb::class_<Task<LiftedTag>>(m, "Task")  //

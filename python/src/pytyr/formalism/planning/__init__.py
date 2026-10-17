@@ -23,6 +23,9 @@ from ..._pytyr.formalism.planning import (
     InvariantQueryResult,
     InvariantQueryResultMatch,
     InvariantMatcher,
+    MutexGroup,
+    MutexGroupFallback,
+    MutexGroups,
 )
 
 from ..._pytyr.formalism.planning import (

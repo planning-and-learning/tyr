@@ -26,6 +26,7 @@
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/planning/copy.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
+#include "tyr/formalism/planning/invariants/formatter.hpp"
 #include "tyr/formalism/planning/invariants/mutexes.hpp"
 #include "tyr/formalism/planning/invariants/synthesis.hpp"
 #include "tyr/formalism/planning/merge_planning.hpp"
@@ -40,8 +41,12 @@
 #include "tyr/planning/task_utils.hpp"
 
 #include <algorithm>
+#include <fmt/format.h>
+#include <optional>
+#include <stdexcept>
 #include <utility>
 #include <vector>
+#include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/semantics/equal_to.hpp>
 #include <yggdrasil/semantics/hash.hpp>
@@ -405,6 +410,41 @@ ground_pruned(formalism::planning::AxiomView<LiftedTag> element,
     // Canonicalize and Serialize
     return formalism::planning::insert(context.destination, *axiom).first;
 }
+
+/// Rejects orders that are not a sequence of distinct invariants synthesized for this domain, e.g. invariants
+/// synthesized from another parser's domain.
+void validate_invariant_order(const formalism::planning::invariant::InvariantList& invariant_order,
+                              const formalism::planning::invariant::InvariantList& synthesized)
+{
+    using formalism::planning::invariant::Invariant;
+
+    const auto known = ygg::UnorderedSet<Invariant>(synthesized.begin(), synthesized.end());
+    auto seen = ygg::UnorderedSet<Invariant> {};
+    for (const auto& invariant : invariant_order)
+    {
+        if (!known.contains(invariant))
+            throw std::invalid_argument(fmt::format("Invariant order contains an invariant not synthesized for this domain:\n{}", invariant));
+        if (!seen.insert(invariant).second)
+            throw std::invalid_argument(fmt::format("Invariant order contains an invariant twice:\n{}", invariant));
+    }
+}
+
+formalism::planning::invariant::MutexGroups
+choose_mutex_groups(formalism::planning::DomainView domain,
+                    const formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>& initial_atoms,
+                    const formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>& fluent_atoms,
+                    const std::optional<formalism::planning::invariant::InvariantList>& invariant_order)
+{
+    namespace invariant = formalism::planning::invariant;
+
+    if (!invariant_order.has_value())
+        return invariant::compute_mutex_groups(initial_atoms, fluent_atoms, invariant::synthesize_invariants(domain));
+
+    if (!invariant_order->empty())
+        validate_invariant_order(*invariant_order, invariant::synthesize_invariants(domain));
+
+    return invariant::compute_mutex_groups_in_order(initial_atoms, fluent_atoms, *invariant_order);
+}
 }
 
 GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_task,  //
@@ -500,26 +540,8 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     // std::cout << "Derived atoms:" << std::endl;
     // std::cout << derived_atoms << std::endl;
 
-    auto fdr_context = std::shared_ptr<formalism::planning::FDRContext> { nullptr };
-
-    if (options.disable_invariant_synthesis)
-    {
-        fdr_context = std::make_shared<formalism::planning::FDRContext>(fluent_atoms, repository);
-    }
-    else
-    {
-        auto invariants = formalism::planning::invariant::synthesize_invariants(planning_domain.get_domain());
-        auto mutex_groups = formalism::planning::invariant::compute_mutex_groups(initial_atoms, fluent_atoms, invariants);
-
-        // std::cout << "Invariants:" << std::endl;
-        // print(std::cout, invariants);
-        // std::cout << std::endl;
-        // std::cout << "Mutex groups:" << std::endl;
-        // print(std::cout, mutex_groups);
-        // std::cout << std::endl;
-
-        fdr_context = std::make_shared<formalism::planning::FDRContext>(mutex_groups, repository);
-    }
+    auto mutex_groups = choose_mutex_groups(planning_domain.get_domain(), initial_atoms, fluent_atoms, options.invariant_order);
+    auto fdr_context = std::make_shared<formalism::planning::FDRContext>(formalism::planning::invariant::to_atom_groups(mutex_groups), repository);
 
     for (const auto atom : task.get_atoms<formalism::StaticTag>())
         ground_task->static_atoms.push_back(copy(atom, merge_context).first.get_index());
@@ -556,7 +578,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     if (goal_or_nullopt.has_value())
         ground_task->goal = goal_or_nullopt->get_index();
     else
-        return GroundTaskInstantiationResult { nullptr, GroundTaskInstantiationStatus::PROVEN_UNSOLVABLE };
+        return GroundTaskInstantiationResult { nullptr, GroundTaskInstantiationStatus::PROVEN_UNSOLVABLE, std::move(mutex_groups) };
 
     /// --- Create FDR actions and axioms
 
@@ -642,6 +664,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
                                                                                             repository,
                                                                                             planning_task.get_domain(),
                                                                                             planning_task.get_path())),
-                                           GroundTaskInstantiationStatus::SUCCESS };
+                                           GroundTaskInstantiationStatus::SUCCESS,
+                                           std::move(mutex_groups) };
 }
 }

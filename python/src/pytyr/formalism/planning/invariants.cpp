@@ -126,6 +126,24 @@ void bind_invariant(nb::module_& m, const std::string& name)
     ygg::add_hash(cls);
 }
 
+void bind_mutex_groups(nb::module_& m)
+{
+    nb::class_<MutexGroup>(m, "MutexGroup")
+        .def_ro("atoms", &MutexGroup::atoms)
+        .def_ro("invariant_index", &MutexGroup::invariant_index)
+        .def_ro("binding", &MutexGroup::binding);
+
+    nb::class_<MutexGroupFallback>(m, "MutexGroupFallback")
+        .def_ro("invariant_index", &MutexGroupFallback::invariant_index)
+        .def_ro("binding", &MutexGroupFallback::binding)
+        .def_ro("atoms", &MutexGroupFallback::atoms);
+
+    nb::class_<MutexGroups>(m, "MutexGroups")
+        .def_ro("invariants", &MutexGroups::invariants)
+        .def_ro("groups", &MutexGroups::groups)
+        .def_ro("fallbacks", &MutexGroups::fallbacks);
+}
+
 void bind_invariant_match_data(nb::module_& m, const std::string& name)
 {
     using namespace nb::literals;
@@ -202,6 +220,7 @@ void bind_invariants(nb::module_& m)
     bind_query_result_match(m, "InvariantQueryResultMatch");
     bind_query_result(m, "InvariantQueryResult");
     bind_matcher(m, "InvariantMatcher");
+    bind_mutex_groups(m);
 
     m.def("synthesize_invariants", &invariant::synthesize_invariants, "domain"_a);
 }

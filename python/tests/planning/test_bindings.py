@@ -874,9 +874,10 @@ def test_ground_task_instantiation_result_default_is_explicit_failure():
     [
         (),
         (planning.lifted.GroundTaskInstantiationOptions(),),
-        (planning.lifted.GroundTaskInstantiationOptions(disable_invariant_synthesis=False),),
+        (planning.lifted.GroundTaskInstantiationOptions(invariant_order=None),),
+        (planning.lifted.GroundTaskInstantiationOptions(invariant_order=[]),),
     ],
-    ids=["omitted", "default", "invariant_synthesis"],
+    ids=["omitted", "default", "greedy_cover", "single_atom_variables"],
 )
 def test_lifted_task_instantiates_ground_task_from_parsed_pddl(options):
     parser_options = ParserOptions()
