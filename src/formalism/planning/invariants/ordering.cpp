@@ -18,6 +18,7 @@
 #include "tyr/formalism/planning/invariants/ordering.hpp"
 
 #include "tyr/formalism/planning/repository.hpp"
+#include "utils.hpp"
 
 #include <algorithm>
 #include <compare>
@@ -512,12 +513,13 @@ private:
     std::vector<const Info*> m_best_order;
 };
 
-MutableInvariantList to_invariants(const std::vector<const Info*>& order)
+/// The interned invariants in `order`; `mutables` is to_mutable(invariants), which the infos point into.
+InvariantViewList to_invariants(const std::vector<const Info*>& order, const MutableInvariantList& mutables, const InvariantViewList& invariants)
 {
-    auto result = MutableInvariantList {};
+    auto result = InvariantViewList {};
     result.reserve(order.size());
     for (const auto* info : order)
-        result.push_back(*info->invariant);
+        result.push_back(invariants[static_cast<std::size_t>(info->invariant - mutables.data())]);
     return result;
 }
 
@@ -533,15 +535,19 @@ std::vector<const Info*> pointers(const std::vector<Info>& infos)
 
 std::string canonical_text(const MutableInvariant& invariant) { return text_of(canonical_parts(invariant)); }
 
-MutableInvariantList compute_invariant_order_greedy(const MutableInvariantList& invariants)
+std::string canonical_text(InvariantView invariant) { return canonical_text(MutableInvariant(invariant)); }
+
+InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invariants)
 {
-    const auto infos = analyze(invariants);
-    return to_invariants(greedy_order(pointers(infos)));
+    const auto mutables = to_mutable(invariants);
+    const auto infos = analyze(mutables);
+    return to_invariants(greedy_order(pointers(infos)), mutables, invariants);
 }
 
-MutableInvariantList compute_invariant_order_exhaustive(const MutableInvariantList& invariants)
+InvariantViewList compute_invariant_order_exhaustive(const InvariantViewList& invariants)
 {
-    const auto infos = analyze(invariants);
+    const auto mutables = to_mutable(invariants);
+    const auto infos = analyze(mutables);
     auto order = std::vector<const Info*> {};
     for (const auto& component : split_into_components(infos))
     {
@@ -549,7 +555,7 @@ MutableInvariantList compute_invariant_order_exhaustive(const MutableInvariantLi
         const auto component_order = (search.num_assignments() > max_assignments_per_component) ? greedy_order(component.infos) : search.run();
         order.insert(order.end(), component_order.begin(), component_order.end());
     }
-    return to_invariants(order);
+    return to_invariants(order, mutables, invariants);
 }
 
 }  // namespace tyr::formalism::planning::invariant

@@ -411,38 +411,58 @@ ground_pruned(formalism::planning::AxiomView<LiftedTag> element,
     return formalism::planning::insert(context.destination, *axiom).first;
 }
 
-/// Rejects orders that are not a sequence of distinct invariants synthesized for this domain, e.g. invariants
-/// synthesized from another parser's domain.
-void validate_invariant_order(const formalism::planning::MutableInvariantList& invariant_order, const formalism::planning::MutableInvariantList& synthesized)
+/// Rejects orders that are not a sequence of distinct invariants synthesized for this domain and interned into its
+/// repository. Views of different repository trees can compare equal, so the repository is compared by address;
+/// `synthesized` was interned below it and shares the indices of invariants interned there.
+void validate_invariant_order(const formalism::planning::InvariantViewList& invariant_order,
+                              const formalism::planning::InvariantViewList& synthesized,
+                              const formalism::planning::Repository& domain_repository)
 {
-    using formalism::planning::MutableInvariant;
+    using formalism::planning::Invariant;
 
-    const auto known = ygg::UnorderedSet<MutableInvariant>(synthesized.begin(), synthesized.end());
-    auto seen = ygg::UnorderedSet<MutableInvariant> {};
-    for (const auto& invariant : invariant_order)
+    auto known = ygg::UnorderedSet<ygg::Index<Invariant>> {};
+    for (const auto invariant : synthesized)
+        known.insert(invariant.get_index());
+    auto seen = ygg::UnorderedSet<ygg::Index<Invariant>> {};
+    for (const auto invariant : invariant_order)
     {
-        if (!known.contains(invariant))
+        if (&invariant.get_context() != &domain_repository || !known.contains(invariant.get_index()))
             throw std::invalid_argument(fmt::format("Invariant order contains an invariant not synthesized for this domain:\n{}", invariant));
-        if (!seen.insert(invariant).second)
+        if (!seen.insert(invariant.get_index()).second)
             throw std::invalid_argument(fmt::format("Invariant order contains an invariant twice:\n{}", invariant));
     }
 }
 
+/// The FDR variables' atoms. Synthesis interns into `repository`, the ground task's new layer below the domain's
+/// repository: invariants already interned in the domain's repository are found there, others are added to the layer.
 std::vector<formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>>
-choose_mutex_groups(formalism::planning::DomainView domain,
+choose_mutex_groups(const formalism::planning::PlanningDomain& planning_domain,
+                    formalism::planning::Repository& repository,
                     const formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>& initial_atoms,
                     const formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>& fluent_atoms,
-                    const std::optional<formalism::planning::MutableInvariantList>& invariant_order)
+                    const std::optional<formalism::planning::InvariantViewList>& invariant_order)
 {
     namespace invariant = formalism::planning::invariant;
 
+    auto groups = std::vector<invariant::MutexGroup> {};
     if (!invariant_order.has_value())
-        return invariant::compute_mutex_groups(initial_atoms, fluent_atoms, invariant::synthesize_invariants(domain));
+    {
+        groups = invariant::compute_mutex_groups(initial_atoms, fluent_atoms, invariant::synthesize_invariants(planning_domain.get_domain(), repository));
+    }
+    else
+    {
+        if (!invariant_order->empty())
+            validate_invariant_order(*invariant_order,
+                                     invariant::synthesize_invariants(planning_domain.get_domain(), repository),
+                                     *planning_domain.get_repository());
+        groups = invariant::compute_mutex_groups_in_order(initial_atoms, fluent_atoms, *invariant_order);
+    }
 
-    if (!invariant_order->empty())
-        validate_invariant_order(*invariant_order, invariant::synthesize_invariants(domain));
-
-    return invariant::compute_mutex_groups_in_order(initial_atoms, fluent_atoms, *invariant_order);
+    auto result = std::vector<formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>> {};
+    result.reserve(groups.size());
+    for (auto& group : groups)
+        result.push_back(std::move(group.atoms));
+    return result;
 }
 }
 
@@ -547,7 +567,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     }
     else
     {
-        auto mutex_groups = choose_mutex_groups(planning_domain.get_domain(), initial_atoms, fluent_atoms, options.invariant_order);
+        auto mutex_groups = choose_mutex_groups(planning_domain, *repository, initial_atoms, fluent_atoms, options.invariant_order);
 
         fdr_context = std::make_shared<formalism::planning::FDRContext>(mutex_groups, repository);
     }

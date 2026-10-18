@@ -32,38 +32,38 @@ namespace tyr::tests
 {
 namespace
 {
-using formalism::planning::MutableInvariant;
-using formalism::planning::MutableInvariantList;
+using formalism::planning::InvariantView;
+using formalism::planning::InvariantViewList;
 using formalism::planning::invariant::compute_invariant_order_exhaustive;
 using formalism::planning::invariant::compute_invariant_order_greedy;
 
 const auto tests_root = std::filesystem::path(BENCHMARKS_DIR) / "classical/tests";
 
-/// Keeps the parsed task alive: the invariants' predicates refer to its repository.
+/// Keeps the domain alive: the invariants are interned into its repository.
 struct DomainInvariants
 {
-    formalism::planning::PlanningTask<LiftedTag> task;
-    MutableInvariantList invariants;
+    formalism::planning::PlanningDomain domain;
+    InvariantViewList invariants;
 
     explicit DomainInvariants(const std::filesystem::path& directory) :
-        task(make_test_parser(directory / "domain.pddl").parse_task(directory / "test-1.pddl")),
-        invariants(formalism::planning::invariant::synthesize_invariants(task.get_task().get_domain()))
+        domain(make_test_parser(directory / "domain.pddl").get_domain()),
+        invariants(formalism::planning::invariant::synthesize_invariants(domain.get_domain(), *domain.get_repository()))
     {
     }
 };
 
-std::set<std::string> predicate_names(const MutableInvariant& invariant)
+std::set<std::string> predicate_names(InvariantView invariant)
 {
     auto result = std::set<std::string> {};
-    for (const auto& atom : invariant.atoms)
-        result.insert(fmt::format("{}", atom.predicate.get_name()));
+    for (const auto atom : invariant.get_atoms())
+        result.insert(fmt::format("{}", atom.get_predicate().get_name()));
     return result;
 }
 
-std::vector<std::set<std::string>> names(const MutableInvariantList& order)
+std::vector<std::set<std::string>> names(const InvariantViewList& order)
 {
     auto result = std::vector<std::set<std::string>> {};
-    for (const auto& invariant : order)
+    for (const auto invariant : order)
         result.push_back(predicate_names(invariant));
     return result;
 }

@@ -96,15 +96,16 @@ def tyr_worker(domain: str, problem: str) -> list[Parts]:
 
     parser = Parser(domain, ParserOptions())
     result = []
-    for invariant in synthesize_invariants(parser.get_domain().get_domain()):
+    for invariant in synthesize_invariants(parser.get_domain()):
         parts = []
-        for atom in invariant.atoms:
+        for atom in invariant.get_atoms():
             args: list[Any] = []
-            for term in atom.terms:
-                match = re.fullmatch(r"ParameterIndex\((\d+)\)", str(term.variant))
+            for term in atom.get_terms():
+                variant = term.get_variant()
+                match = re.fullmatch(r"ParameterIndex\((\d+)\)", str(variant))
                 index = int(match[1]) if match else None
-                args.append(str(term.variant) if index is None else index if index < invariant.num_rigid_variables else -1)
-            parts.append({"predicate": str(atom.predicate.get_name()), "args": args})
+                args.append(str(variant) if index is None else index if index < invariant.get_num_rigid_variables() else -1)
+            parts.append({"predicate": str(atom.get_predicate().get_name()), "args": args})
         result.append(parts)
     return result
 

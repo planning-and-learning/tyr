@@ -78,7 +78,8 @@ parse_invariants(tyr::formalism::planning::Repository& repository, const boost::
     return result;
 }
 
-std::set<std::string> canonical_texts(const tyr::formalism::planning::MutableInvariantList& invariants)
+template<typename Invariants>
+std::set<std::string> canonical_texts(const Invariants& invariants)
 {
     auto result = std::set<std::string> {};
     for (const auto& invariant : invariants)
@@ -88,7 +89,7 @@ std::set<std::string> canonical_texts(const tyr::formalism::planning::MutableInv
 
 /// Equal up to how each invariant numbers its variables. The expected invariants of the classical and IPC cases are tyr's own,
 /// each proven by Fast Downward's balance check (fixture_generation.py).
-void expect_invariant_sets_equal(const tyr::formalism::planning::MutableInvariantList& actual, const tyr::formalism::planning::MutableInvariantList& expected)
+void expect_invariant_sets_equal(const tyr::formalism::planning::InvariantViewList& actual, const tyr::formalism::planning::MutableInvariantList& expected)
 {
     const auto actual_texts = canonical_texts(actual);
     const auto expected_texts = canonical_texts(expected);
@@ -111,12 +112,14 @@ void check_suite(const std::filesystem::path& fixture)
 
         SCOPED_TRACE(name);
 
-        auto lifted_task =
-            make_test_parser(ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(case_object, "domain_file", "case")))
-                .parse_task(ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(case_object, "task_file", "case")));
-        auto& repository = *lifted_task.get_repository();
+        auto parser =
+            make_test_parser(ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(case_object, "domain_file", "case")));
+        const auto domain = parser.get_domain();
+        const auto actual = tyr::formalism::planning::invariant::synthesize_invariants(domain.get_domain(), *domain.get_repository());
 
-        auto actual = tyr::formalism::planning::invariant::synthesize_invariants(lifted_task.get_task().get_domain());
+        auto lifted_task =
+            parser.parse_task(ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(case_object, "task_file", "case")));
+        auto& repository = *lifted_task.get_repository();
 
         expect_invariant_sets_equal(actual, parse_invariants(repository, case_object, "invariants"));
     }

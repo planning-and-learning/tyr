@@ -32,9 +32,10 @@ namespace tyr::formalism::planning::invariant
 struct InvariantMatchData
 {
 public:
-    InvariantMatchData(MutableInvariant inv, std::vector<unification::SubstitutionFunction<ygg::Index<Object>>> rigid_variable_bindings);
+    InvariantMatchData(InvariantView invariant, std::vector<unification::SubstitutionFunction<ygg::Index<Object>>> rigid_variable_bindings);
 
-    const auto& invariant() const noexcept { return m_inv; }
+    auto invariant() const noexcept { return m_invariant; }
+    const auto& mutable_invariant() const noexcept { return m_inv; }
     const auto& rigid_variable_bindings() const noexcept { return m_rigid_variable_bindings; }
     const auto& postings() const noexcept { return m_postings; }
 
@@ -42,6 +43,7 @@ private:
     void build_postings();
 
 private:
+    InvariantView m_invariant;
     MutableInvariant m_inv;
     std::vector<unification::SubstitutionFunction<ygg::Index<Object>>> m_rigid_variable_bindings;
 

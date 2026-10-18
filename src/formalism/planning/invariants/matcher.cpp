@@ -32,8 +32,9 @@
 namespace tyr::formalism::planning::invariant
 {
 
-InvariantMatchData::InvariantMatchData(MutableInvariant inv, std::vector<unification::SubstitutionFunction<ygg::Index<Object>>> rigid_variable_bindings) :
-    m_inv(std::move(inv)),
+InvariantMatchData::InvariantMatchData(InvariantView invariant, std::vector<unification::SubstitutionFunction<ygg::Index<Object>>> rigid_variable_bindings) :
+    m_invariant(invariant),
+    m_inv(invariant),
     m_rigid_variable_bindings(std::move(rigid_variable_bindings)),
     m_postings()
 {
@@ -77,7 +78,7 @@ namespace
 {
 bool intersect_matching_bindings(const InvariantMatchData& data, const InvariantSubstitution& sigma, boost::dynamic_bitset<>& candidates)
 {
-    const auto& inv = data.invariant();
+    const auto& inv = data.mutable_invariant();
     const auto& postings = data.postings();
     const auto num_bindings = data.rigid_variable_bindings().size();
 
@@ -119,7 +120,7 @@ void Matcher::query(const MutableAtom<FluentTag>& atom, QueryResult& result, Que
     for (size_t invariant_index = 0; invariant_index < m_invariant_match_data.size(); ++invariant_index)
     {
         const auto& data = m_invariant_match_data[invariant_index];
-        const auto& inv = data.invariant();
+        const auto& inv = data.mutable_invariant();
         const auto num_bindings = data.rigid_variable_bindings().size();
 
         if (num_bindings == 0)

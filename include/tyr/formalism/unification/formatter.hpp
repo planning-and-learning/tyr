@@ -21,8 +21,11 @@
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/unification/substitution.hpp"
 
+#include <fmt/core.h>
+#include <fmt/ostream.h>
+#include <fmt/ranges.h>
 #include <sstream>
-
+#include <yggdrasil/io/iostream.hpp>
 
 namespace fmt
 {

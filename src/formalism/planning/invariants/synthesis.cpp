@@ -63,9 +63,24 @@ MutableAction without_overridden_deletes(MutableAction action)
     }
     return action;
 }
+
+InvariantView intern(const MutableInvariant& invariant, Builder& builder, Repository& repository)
+{
+    auto data = checkout<Invariant>(builder);
+    data->num_rigid_variables = invariant.num_rigid_variables;
+    data->num_counted_variables = invariant.num_counted_variables;
+    for (const auto& atom : invariant.atoms)
+    {
+        auto atom_data = checkout<Atom<LiftedTag, FluentTag>>(builder);
+        atom_data->predicate = atom.predicate.get_index();
+        for (const auto& term : atom.terms)
+            atom_data->terms.push_back(term);
+        data->atoms.push_back(insert(repository, *atom_data).first.get_index());
+    }
+    return insert(repository, *data).first;
 }
 
-MutableInvariantList synthesize_invariants(DomainView domain)
+MutableInvariantList synthesize_mutable_invariants(DomainView domain)
 {
     auto ops = MutableActionList {};
     for (const auto& action : domain.get_actions())
@@ -110,5 +125,15 @@ MutableInvariantList synthesize_invariants(DomainView domain)
     }
 
     return accepted;
+}
+}  // namespace
+
+InvariantViewList synthesize_invariants(DomainView domain, Repository& repository)
+{
+    auto builder = Builder();
+    auto result = InvariantViewList {};
+    for (const auto& invariant : synthesize_mutable_invariants(domain))
+        result.push_back(intern(invariant, builder, repository));
+    return result;
 }
 }

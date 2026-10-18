@@ -34,21 +34,21 @@ def rigid_parameter_domains_from_task_variable_domains(
     task_variable_domains: TaskVariableDomains,
     all_object_indices: set[ObjectIndex],
 ) -> list[list[ObjectIndex]]:
-    domains = [set(all_object_indices) for _ in range(inv.num_rigid_variables)]
+    domains = [set(all_object_indices) for _ in range(inv.get_num_rigid_variables())]
 
     fluent_predicate_domains = task_variable_domains.fluent_predicate_domains
 
-    for atom in inv.atoms:
-        predicate_domains = fluent_predicate_domains[atom.predicate]
+    for atom in inv.get_atoms():
+        predicate_domains = fluent_predicate_domains[atom.get_predicate()]
 
-        for position, term in enumerate(atom.terms):
-            value = term.variant
+        for position, term in enumerate(atom.get_terms()):
+            value = term.get_variant()
 
             if not isinstance(value, ParameterIndex):
                 continue
 
             parameter = int(value)
-            if parameter >= inv.num_rigid_variables:
+            if parameter >= inv.get_num_rigid_variables():
                 continue
 
             allowed_objects = {
@@ -80,7 +80,7 @@ def enumerate_rigid_bindings(
         all_object_indices,
     )
 
-    if inv.num_rigid_variables == 0:
+    if inv.get_num_rigid_variables() == 0:
         return [ObjectSubstitution()]
 
     if not rigid_domains:
@@ -89,7 +89,7 @@ def enumerate_rigid_bindings(
     result: list[ObjectSubstitution] = []
 
     for assignment in product(*rigid_domains):
-        rho = ObjectSubstitution.from_range(ParameterIndex(0), inv.num_rigid_variables)
+        rho = ObjectSubstitution.from_range(ParameterIndex(0), inv.get_num_rigid_variables())
 
         ok = True
         for parameter, object_index in enumerate(assignment):
@@ -154,8 +154,9 @@ def main() -> None:
 
     planning_domain = parser.get_domain()
 
-    # 1. Synthesize invariants from the planning domain.
-    invariants = synthesize_invariants(planning_domain.get_domain())
+    # 1. Synthesize invariants from the planning domain. They are interned into the domain's repository, so this comes
+    #    before parsing tasks of the domain.
+    invariants = synthesize_invariants(planning_domain)
 
     print("Synthesized invariants:")
     for i, inv in enumerate(invariants):

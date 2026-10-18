@@ -7,6 +7,7 @@ from pytyr.formalism.planning import (
     compute_all_mutex_groups,
     compute_invariant_order_exhaustive,
     compute_invariant_order_greedy,
+    compute_mutex_groups_in_order,
     synthesize_invariants,
 )
 from pytyr.planning import lifted
@@ -16,15 +17,16 @@ FERRY = fetch_task("classical/tests/ferry/test-1.pddl")
 
 
 def _predicate_names(invariant):
-    return {str(atom.predicate.get_name()) for atom in invariant.atoms}
+    return {str(atom.get_predicate().get_name()) for atom in invariant.get_atoms()}
 
 
 @pytest.fixture
 def ferry():
     parser = Parser(str(FERRY.domain_path), ParserOptions())
+    # Interned into the domain's repository, so before any task of the domain is parsed.
+    invariants = synthesize_invariants(parser.get_domain())
     formalism_task = parser.parse_task(str(FERRY.task_path), ParserOptions())
-    invariants = synthesize_invariants(parser.get_domain().get_domain())
-    # The parser owns the repository the invariants refer to.
+    # The parser owns the repository the invariants are interned into.
     return parser, formalism_task, invariants
 
 
@@ -95,7 +97,7 @@ def test_all_mutex_groups_are_the_proven_instances(ferry):
 
     groups = compute_all_mutex_groups(initial_atoms, all_atoms, invariants)
 
-    texts = sorted(sorted(_atom_text(atom) for atom in group) for group in groups)
+    texts = sorted(sorted(_atom_text(atom) for atom in group.atoms) for group in groups)
     assert texts == [
         ["at(car1,loc1)", "at(car1,loc3)", "on(car1)"],
         ["at(car2,loc1)", "at(car2,loc3)", "on(car2)"],
@@ -104,6 +106,27 @@ def test_all_mutex_groups_are_the_proven_instances(ferry):
     ]
     assert sorted(canonical_text(invariant) for invariant in invariants) == [
         "{at(V0,*), on(V0)}", "{at-ferry(*)}", "{empty-ferry(), on(*)}"]
+    for group in groups:
+        assert group.invariant in invariants
+        assert len(group.objects) == group.invariant.get_num_rigid_variables()
+        assert all(set(group.objects) <= set(atom.get_objects()) for atom in group.atoms)
+
+
+def test_variables_trace_back_to_their_invariant(ferry):
+    _, formalism_task, invariants = ferry
+    order = compute_invariant_order_exhaustive(invariants)
+    result = _ground(formalism_task, order)
+    ground = result.task.get_task()
+    all_atoms = list(ground.get_fluent_atoms())
+    initial_atoms = [fact.get_atom() for fact in ground.get_fluent_facts()]
+
+    groups = compute_mutex_groups_in_order(initial_atoms, all_atoms, order)
+
+    # The same partition as the grounder's variables, each group naming the invariant it instantiates.
+    assert _variable_predicates(result.task.get_fdr_context().get_variables()) == sorted(
+        sorted(str(atom.get_predicate().get_name()) for atom in group.atoms) for group in groups)
+    contents = [group for group in groups if _predicate_names(group.invariant) == {"empty-ferry", "on"}]
+    assert len(contents) == 1 and contents[0].objects == []
 
 
 def test_all_mutex_groups_need_every_atom_in_index_order(ferry):

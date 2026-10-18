@@ -14,10 +14,12 @@ from ..._pytyr.formalism.planning import (
 )
 
 from ..._pytyr.formalism.planning import (
-    MutableInvariant,
+    MutexGroup,
     synthesize_invariants,
     compute_invariant_order_greedy,
     compute_invariant_order_exhaustive,
+    compute_mutex_groups,
+    compute_mutex_groups_in_order,
     compute_all_mutex_groups,
     canonical_text,
     ObjectSubstitution,

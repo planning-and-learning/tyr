@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_PLANNING_MUTABLE_INVARIANT_HPP_
 
 #include "tyr/formalism/planning/grounder.hpp"
+#include "tyr/formalism/planning/invariant_view.hpp"
 #include "tyr/formalism/planning/mutable/atom.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/unification/structure_traits_impl.hpp"
@@ -60,6 +61,16 @@ struct MutableInvariant : ygg::comparison::Mixin<MutableInvariant>
         atoms(std::move(atoms_)),
         predicates(std::move(predicates_))
     {
+    }
+    MutableInvariant(InvariantView element) :
+        num_rigid_variables(element.get_num_rigid_variables()),
+        num_counted_variables(element.get_num_counted_variables()),
+        atoms(),
+        predicates()
+    {
+        for (const auto atom : element.get_atoms())
+            atoms.emplace_back(atom);
+        canonicalize();
     }
 
     void canonicalize()

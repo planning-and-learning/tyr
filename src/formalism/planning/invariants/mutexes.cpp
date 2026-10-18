@@ -19,6 +19,7 @@
 
 #include "matching.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "utils.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -255,24 +256,34 @@ void mark_group_covered(const AtomViewList<GroundTag, FluentTag>& group, std::ve
     }
 }
 
-void add_single_atom_groups(const AtomViewList<GroundTag, FluentTag>& all_atoms,
-                            const std::vector<bool>& uncovered,
-                            std::vector<AtomViewList<GroundTag, FluentTag>>& result)
+MutexGroup make_single_atom_group(AtomView<GroundTag, FluentTag> atom) { return MutexGroup { std::nullopt, {}, { atom } }; }
+
+/// The atoms of `group`'s instance, with its invariant and rigid objects.
+MutexGroup make_group(const InvariantViewList& invariants, const InstanceGroup& group, AtomViewList<GroundTag, FluentTag> atoms)
+{
+    auto objects = ObjectViewList {};
+    objects.reserve(group.rigid_values.size());
+    for (const auto object : group.rigid_values)
+        objects.emplace_back(object, atoms.front().get_context());
+    return MutexGroup { invariants[group.inv_index], std::move(objects), std::move(atoms) };
+}
+
+void add_single_atom_groups(const AtomViewList<GroundTag, FluentTag>& all_atoms, const std::vector<bool>& uncovered, std::vector<MutexGroup>& result)
 {
     for (size_t pos = 0; pos < all_atoms.size(); ++pos)
     {
         if (uncovered[pos])
-            result.push_back(AtomViewList<GroundTag, FluentTag> { all_atoms[pos] });
+            result.push_back(make_single_atom_group(all_atoms[pos]));
     }
 }
 
-std::vector<AtomViewList<GroundTag, FluentTag>> choose_groups_greedily(const std::vector<InstanceGroup>& groups,
-                                                                       const AtomViewList<GroundTag, FluentTag>& all_atoms)
+std::vector<MutexGroup>
+choose_groups_greedily(const InvariantViewList& invariants, const std::vector<InstanceGroup>& groups, const AtomViewList<GroundTag, FluentTag>& all_atoms)
 {
     std::vector<bool> uncovered(all_atoms.size(), true);
     size_t num_uncovered = all_atoms.size();
 
-    std::vector<AtomViewList<GroundTag, FluentTag>> result;
+    std::vector<MutexGroup> result;
     result.reserve(groups.size() + all_atoms.size());
 
     while (num_uncovered > 0)
@@ -286,7 +297,7 @@ std::vector<AtomViewList<GroundTag, FluentTag>> choose_groups_greedily(const std
             break;
 
         mark_group_covered(selected_group, uncovered, num_uncovered);
-        result.push_back(std::move(selected_group));
+        result.push_back(make_group(invariants, groups[*best_idx], std::move(selected_group)));
     }
 
     add_single_atom_groups(all_atoms, uncovered, result);
@@ -304,31 +315,31 @@ void check_atoms_are_indexed_densely(const AtomViewList<GroundTag, FluentTag>& a
 
 }  // namespace
 
-std::vector<AtomViewList<GroundTag, FluentTag>> compute_mutex_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
-                                                                     const AtomViewList<GroundTag, FluentTag>& all_atoms,
-                                                                     const MutableInvariantList& invariants)
+std::vector<MutexGroup> compute_mutex_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
+                                             const AtomViewList<GroundTag, FluentTag>& all_atoms,
+                                             const InvariantViewList& invariants)
 {
     check_atoms_are_indexed_densely(all_atoms);
 
-    auto groups = instantiate_groups(initial_atoms, all_atoms, invariants);
+    auto groups = instantiate_groups(initial_atoms, all_atoms, to_mutable(invariants));
     // Candidates are the instances with exactly one true initial atom.
     std::erase_if(groups, [](const InstanceGroup& group) { return group.num_initial_atoms != 1; });
     std::sort(groups.begin(), groups.end(), deterministic_group_less);
 
-    return choose_groups_greedily(groups, all_atoms);
+    return choose_groups_greedily(invariants, groups, all_atoms);
 }
 
-std::vector<AtomViewList<GroundTag, FluentTag>> compute_mutex_groups_in_order(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
-                                                                              const AtomViewList<GroundTag, FluentTag>& all_atoms,
-                                                                              const MutableInvariantList& invariant_order)
+std::vector<MutexGroup> compute_mutex_groups_in_order(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
+                                                      const AtomViewList<GroundTag, FluentTag>& all_atoms,
+                                                      const InvariantViewList& invariant_order)
 {
     check_atoms_are_indexed_densely(all_atoms);
 
-    auto groups = instantiate_groups(initial_atoms, all_atoms, invariant_order);
+    auto groups = instantiate_groups(initial_atoms, all_atoms, to_mutable(invariant_order));
     // The invariant index is the position in the order, so this visits the invariants in order.
     std::sort(groups.begin(), groups.end(), deterministic_group_less);
 
-    std::vector<AtomViewList<GroundTag, FluentTag>> result;
+    std::vector<MutexGroup> result;
     result.reserve(groups.size() + all_atoms.size());
 
     std::vector<bool> uncovered(all_atoms.size(), true);
@@ -347,31 +358,31 @@ std::vector<AtomViewList<GroundTag, FluentTag>> compute_mutex_groups_in_order(co
             // The invariant does not hold for this instance, and not for any subset of it either: its atoms stay
             // single instead of falling through to later invariants, which would make the structure task-dependent.
             for (const auto atom : atoms)
-                result.push_back(AtomViewList<GroundTag, FluentTag> { atom });
+                result.push_back(make_single_atom_group(atom));
             continue;
         }
 
-        result.push_back(std::move(atoms));
+        result.push_back(make_group(invariant_order, group, std::move(atoms)));
     }
 
     add_single_atom_groups(all_atoms, uncovered, result);
 
     return result;
 }
-std::vector<AtomViewList<GroundTag, FluentTag>> compute_all_mutex_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
-                                                                         const AtomViewList<GroundTag, FluentTag>& all_atoms,
-                                                                         const MutableInvariantList& invariants)
+std::vector<MutexGroup> compute_all_mutex_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
+                                                 const AtomViewList<GroundTag, FluentTag>& all_atoms,
+                                                 const InvariantViewList& invariants)
 {
     check_atoms_are_indexed_densely(all_atoms);
 
-    auto groups = instantiate_groups(initial_atoms, all_atoms, invariants);
+    auto groups = instantiate_groups(initial_atoms, all_atoms, to_mutable(invariants));
     std::erase_if(groups, [](const InstanceGroup& group) { return group.num_initial_atoms > 1 || group.atoms.size() < 2; });
     std::sort(groups.begin(), groups.end(), deterministic_group_less);
 
-    auto result = std::vector<AtomViewList<GroundTag, FluentTag>> {};
+    auto result = std::vector<MutexGroup> {};
     result.reserve(groups.size());
     for (auto& group : groups)
-        result.push_back(std::move(group.atoms));
+        result.push_back(make_group(invariants, group, std::move(group.atoms)));
     return result;
 }
 }
