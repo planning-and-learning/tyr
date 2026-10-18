@@ -206,5 +206,7 @@ void bind_invariants(nb::module_& m)
     m.def("synthesize_invariants", &invariant::synthesize_invariants, "domain"_a);
     m.def("compute_invariant_order_greedy", &invariant::compute_invariant_order_greedy, "invariants"_a);
     m.def("compute_invariant_order_exhaustive", &invariant::compute_invariant_order_exhaustive, "invariants"_a);
+    m.def("compute_all_mutex_groups", &invariant::compute_all_mutex_groups, "initial_atoms"_a, "all_atoms"_a, "invariants"_a);
+    m.def("canonical_text", &invariant::canonical_text, "invariant"_a);
 }
 }

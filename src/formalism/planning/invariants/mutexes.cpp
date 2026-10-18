@@ -24,6 +24,7 @@
 #include <cassert>
 #include <cstddef>
 #include <optional>
+#include <stdexcept>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -164,7 +165,8 @@ std::vector<InstanceGroup> instantiate_groups(const AtomViewList<GroundTag, Flue
     for (const auto atom : initial_atoms)
     {
         const auto i = ygg::uint_t(atom.get_index());
-        assert(i < all_atoms.size() && "Assumes initial atoms are reachable");
+        if (i >= all_atoms.size())
+            throw std::invalid_argument("initial_atoms must be among all_atoms");
         is_initial[i] = true;
     }
 
@@ -292,10 +294,12 @@ std::vector<AtomViewList<GroundTag, FluentTag>> choose_groups_greedily(const std
     return result;
 }
 
-void assert_atoms_are_indexed_densely(const AtomViewList<GroundTag, FluentTag>& all_atoms)
+/// The covers index bit vectors by atom index, so all_atoms must hold exactly the atoms 0, 1, ... of its repository.
+void check_atoms_are_indexed_densely(const AtomViewList<GroundTag, FluentTag>& all_atoms)
 {
     for (ygg::uint_t i = 0; i < all_atoms.size(); ++i)
-        assert(ygg::uint_t(all_atoms[i].get_index()) == i);
+        if (ygg::uint_t(all_atoms[i].get_index()) != i)
+            throw std::invalid_argument("all_atoms must be the fluent atoms ordered by index, without gaps");
 }
 
 }  // namespace
@@ -304,7 +308,7 @@ std::vector<AtomViewList<GroundTag, FluentTag>> compute_mutex_groups(const AtomV
                                                                      const AtomViewList<GroundTag, FluentTag>& all_atoms,
                                                                      const InvariantList& invariants)
 {
-    assert_atoms_are_indexed_densely(all_atoms);
+    check_atoms_are_indexed_densely(all_atoms);
 
     auto groups = instantiate_groups(initial_atoms, all_atoms, invariants);
     // Candidates are the instances with exactly one true initial atom.
@@ -318,7 +322,7 @@ std::vector<AtomViewList<GroundTag, FluentTag>> compute_mutex_groups_in_order(co
                                                                               const AtomViewList<GroundTag, FluentTag>& all_atoms,
                                                                               const InvariantList& invariant_order)
 {
-    assert_atoms_are_indexed_densely(all_atoms);
+    check_atoms_are_indexed_densely(all_atoms);
 
     auto groups = instantiate_groups(initial_atoms, all_atoms, invariant_order);
     // The invariant index is the position in the order, so this visits the invariants in order.
@@ -352,6 +356,22 @@ std::vector<AtomViewList<GroundTag, FluentTag>> compute_mutex_groups_in_order(co
 
     add_single_atom_groups(all_atoms, uncovered, result);
 
+    return result;
+}
+std::vector<AtomViewList<GroundTag, FluentTag>> compute_all_mutex_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
+                                                                         const AtomViewList<GroundTag, FluentTag>& all_atoms,
+                                                                         const InvariantList& invariants)
+{
+    check_atoms_are_indexed_densely(all_atoms);
+
+    auto groups = instantiate_groups(initial_atoms, all_atoms, invariants);
+    std::erase_if(groups, [](const InstanceGroup& group) { return group.num_initial_atoms > 1 || group.atoms.size() < 2; });
+    std::sort(groups.begin(), groups.end(), deterministic_group_less);
+
+    auto result = std::vector<AtomViewList<GroundTag, FluentTag>> {};
+    result.reserve(groups.size());
+    for (auto& group : groups)
+        result.push_back(std::move(group.atoms));
     return result;
 }
 }

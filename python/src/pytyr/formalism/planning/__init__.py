@@ -18,6 +18,8 @@ from ..._pytyr.formalism.planning import (
     synthesize_invariants,
     compute_invariant_order_greedy,
     compute_invariant_order_exhaustive,
+    compute_all_mutex_groups,
+    canonical_text,
     ObjectSubstitution,
     TermSubstitution,
     InvariantMatchData,

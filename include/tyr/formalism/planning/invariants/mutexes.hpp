@@ -38,6 +38,12 @@ std::vector<AtomViewList<GroundTag, FluentTag>> compute_mutex_groups(const AtomV
 std::vector<AtomViewList<GroundTag, FluentTag>> compute_mutex_groups_in_order(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
                                                                               const AtomViewList<GroundTag, FluentTag>& all_atoms,
                                                                               const InvariantList& invariant_order);
+
+/// Every instance of the invariants with at least two reachable atoms and at most one true initial atom: all mutex groups
+/// the invariants prove for the task, overlapping in general. Deterministic order.
+std::vector<AtomViewList<GroundTag, FluentTag>> compute_all_mutex_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
+                                                                         const AtomViewList<GroundTag, FluentTag>& all_atoms,
+                                                                         const InvariantList& invariants);
 }
 
 #endif

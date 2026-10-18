@@ -3,6 +3,8 @@ from pypddl.formalism import ParserOptions
 from pypddl_datasets import fetch_task
 from pytyr.formalism.planning import (
     Parser,
+    canonical_text,
+    compute_all_mutex_groups,
     compute_invariant_order_exhaustive,
     compute_invariant_order_greedy,
     synthesize_invariants,
@@ -78,3 +80,36 @@ def test_options_stay_backward_compatible():
     assert options.invariant_order is None
     assert options.disable_invariant_synthesis is False
     assert lifted.GroundTaskInstantiationOptions(disable_invariant_synthesis=True).disable_invariant_synthesis is True
+
+
+def _atom_text(atom):
+    return f"{atom.get_predicate().get_name()}({','.join(str(o.get_name()) for o in atom.get_objects())})"
+
+
+def test_all_mutex_groups_are_the_proven_instances(ferry):
+    parser, formalism_task, invariants = ferry
+    result = lifted.Task(formalism_task).instantiate_ground_task(ExecutionContext(1), lifted.GroundTaskInstantiationOptions())
+    ground = result.task.get_task()
+    all_atoms = list(ground.get_fluent_atoms())
+    initial_atoms = [fact.get_atom() for fact in ground.get_fluent_facts()]
+
+    groups = compute_all_mutex_groups(initial_atoms, all_atoms, invariants)
+
+    texts = sorted(sorted(_atom_text(atom) for atom in group) for group in groups)
+    assert texts == [
+        ["at(car1,loc1)", "at(car1,loc3)", "on(car1)"],
+        ["at(car2,loc1)", "at(car2,loc3)", "on(car2)"],
+        ["at-ferry(loc1)", "at-ferry(loc3)"],
+        ["empty-ferry()", "on(car1)", "on(car2)"],
+    ]
+    assert sorted(canonical_text(invariant) for invariant in invariants) == [
+        "{at(V0,*), on(V0)}", "{at-ferry(*)}", "{empty-ferry(), on(*)}"]
+
+
+def test_all_mutex_groups_need_every_atom_in_index_order(ferry):
+    parser, formalism_task, invariants = ferry
+    result = lifted.Task(formalism_task).instantiate_ground_task(ExecutionContext(1), lifted.GroundTaskInstantiationOptions())
+    all_atoms = list(result.task.get_task().get_fluent_atoms())
+
+    with pytest.raises(ValueError):
+        compute_all_mutex_groups([], all_atoms[1:], invariants)
