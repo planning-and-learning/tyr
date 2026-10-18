@@ -33,7 +33,6 @@
 #include <algorithm>
 #include <map>
 #include <optional>
-#include <string>
 #include <vector>
 
 namespace tyr::formalism::planning::invariant
@@ -81,25 +80,56 @@ std::vector<EffectAtomRef> collect_relevant_effect_atoms(const MutableAction& op
     return result;
 }
 
-using LiteralsByPredicate = std::map<std::string, ConditionLiteralList>;
+/// Appends the literals of `condition` to `conjunction`; the proofs read only the literal lists.
+void append_condition(MutableConjunctiveCondition& conjunction, const MutableConjunctiveCondition& condition)
+{
+    conjunction.static_literals.insert(conjunction.static_literals.end(), condition.static_literals.begin(), condition.static_literals.end());
+    conjunction.fluent_literals.insert(conjunction.fluent_literals.end(), condition.fluent_literals.begin(), condition.fluent_literals.end());
+    conjunction.derived_literals.insert(conjunction.derived_literals.end(), condition.derived_literals.begin(), condition.derived_literals.end());
+}
 
 /// What holds when the action applies and the add effect adds something new: the precondition, the add effect's condition
 /// and the added atom being false (Helmert 2009, Fig. 7: o'.precond ∧ e.cond ∧ ¬e.atom).
-LiteralsByPredicate
-build_add_effect_produced_by_pred(const MutableAction& op, const MutableConditionalEffect& add_effect, const MutableAtom<FluentTag>& add_atom)
+MutableConjunctiveCondition
+build_add_effect_produced(const MutableAction& op, const MutableConditionalEffect& add_effect, const MutableAtom<FluentTag>& add_atom)
 {
-    auto literals = ConditionLiteralList {};
-    append_condition_literals(literals, op.condition);
-    append_condition_literals(literals, add_effect.condition);
-    literals.push_back(make_condition_literal(add_atom, false));
+    auto produced = MutableConjunctiveCondition(0, op.num_variables, {}, {}, {});
+    append_condition(produced, op.condition);
+    append_condition(produced, add_effect.condition);
+    produced.fluent_literals.emplace_back(add_atom, false);
+    return produced;
+}
 
-    auto produced_by_pred = LiteralsByPredicate {};
-    for (auto& literal : literals)
+/// Requires each literal of `required` to equal some literal of the same predicate and sign in `produced`; false if one
+/// has no candidate.
+template<FactKind T>
+bool add_entailment(ConstraintSystem& system, const MutableLiteralList<T>& required, const MutableLiteralList<T>& produced)
+{
+    for (const auto& lit : required)
     {
-        auto predicate = literal.predicate;
-        produced_by_pred[predicate].push_back(std::move(literal));
+        std::vector<EqualityConjunction> possibilities;
+
+        for (const auto& match : produced)
+        {
+            if (match.polarity != lit.polarity || match.atom.predicate != lit.atom.predicate)
+                continue;
+
+            std::vector<std::pair<ConstraintTerm, ConstraintTerm>> eqs;
+            eqs.reserve(lit.atom.terms.size());
+
+            for (size_t i = 0; i < lit.atom.terms.size(); ++i)
+                eqs.emplace_back(make_constraint_term(lit.atom.terms[i]), make_constraint_term(match.atom.terms[i]));
+
+            possibilities.emplace_back(std::move(eqs));
+        }
+
+        if (possibilities.empty())
+            return false;
+
+        system.add_equality_DNF(std::move(possibilities));
     }
-    return produced_by_pred;
+
+    return true;
 }
 
 ConstraintSystem make_param_system(const MutableAction& op, const MutableConditionalEffect& add_effect, const EqualityConjunction& add_cover)
@@ -152,47 +182,21 @@ ConstraintSystem make_param_system(const MutableAction& op, const MutableConditi
 }
 
 /// The delete effect balances the add effect if its condition and the deleted atom are entailed by what produced the add:
-/// every required literal equals some literal of the same sign in produced_by_pred.
+/// every required literal equals some literal of the same predicate and sign in `produced`.
 std::optional<ConstraintSystem> make_balance_system(const MutableAtom<FluentTag>& add_atom,
                                                     const MutableConjunctiveCondition& del_condition,
                                                     const MutableAtom<FluentTag>& del_atom,
-                                                    const LiteralsByPredicate& produced_by_pred)
+                                                    const MutableConjunctiveCondition& produced)
 {
     ConstraintSystem system;
 
-    auto del_required = ConditionLiteralList {};
-    append_condition_literals(del_required, del_condition);
-    del_required.push_back(make_condition_literal(del_atom, true));
+    auto del_fluent_required = del_condition.fluent_literals;
+    del_fluent_required.emplace_back(del_atom, true);
 
-    for (const auto& lit : del_required)
-    {
-        std::vector<EqualityConjunction> possibilities;
-
-        const auto it = produced_by_pred.find(lit.predicate);
-        if (it == produced_by_pred.end())
-            return std::nullopt;
-
-        for (const auto& match : it->second)
-        {
-            if (match.polarity != lit.polarity)
-                continue;
-
-            std::vector<std::pair<ConstraintTerm, ConstraintTerm>> eqs;
-            eqs.reserve(lit.terms.size());
-
-            for (size_t i = 0; i < lit.terms.size(); ++i)
-            {
-                eqs.emplace_back(make_constraint_term(lit.terms[i]), make_constraint_term(match.terms[i]));
-            }
-
-            possibilities.emplace_back(std::move(eqs));
-        }
-
-        if (possibilities.empty())
-            return std::nullopt;
-
-        system.add_equality_DNF(std::move(possibilities));
-    }
+    if (!add_entailment(system, del_condition.static_literals, produced.static_literals)
+        || !add_entailment(system, del_fluent_required, produced.fluent_literals)
+        || !add_entailment(system, del_condition.derived_literals, produced.derived_literals))
+        return std::nullopt;
 
     ensure_inequality(system, add_atom, del_atom);
     return system;
@@ -241,12 +245,12 @@ bool is_operator_too_heavy(const MutableAction& op, const Invariant& inv)
             ensure_cover(system, *lhs_pattern, lhs_atom, inv);
             ensure_cover(system, *rhs_pattern, rhs_atom, inv);
 
-            auto conjunction = ConditionLiteralList {};
-            append_condition_literals(conjunction, op.condition);
-            append_condition_literals(conjunction, lhs_cond);
-            append_condition_literals(conjunction, rhs_cond);
-            conjunction.push_back(make_condition_literal(lhs_atom, false));
-            conjunction.push_back(make_condition_literal(rhs_atom, false));
+            auto conjunction = MutableConjunctiveCondition(0, op.num_variables, {}, {}, {});
+            append_condition(conjunction, op.condition);
+            append_condition(conjunction, lhs_cond);
+            append_condition(conjunction, rhs_cond);
+            conjunction.fluent_literals.emplace_back(lhs_atom, false);
+            conjunction.fluent_literals.emplace_back(rhs_atom, false);
 
             ensure_conjunction_sat(system, conjunction);
 
@@ -267,7 +271,7 @@ bool is_add_effect_unbalanced(const MutableAction& op, const MutableConditionalE
     const auto add_cover = make_cover_equality_conjunction(*add_pattern, add_atom, inv);
 
     auto param_system = make_param_system(op, add_effect, add_cover);
-    const auto produced_by_pred = build_add_effect_produced_by_pred(op, add_effect, add_atom);
+    const auto produced = build_add_effect_produced(op, add_effect, add_atom);
 
     const auto del_effects = collect_relevant_effect_atoms(op, inv, false);
 
@@ -289,7 +293,7 @@ bool is_add_effect_unbalanced(const MutableAction& op, const MutableConditionalE
         const auto del_atom = unification::apply_substitution(*del_ref.atom, sigma);
         const auto del_condition = unification::apply_substitution(del_ref.effect->condition, sigma);
 
-        auto balance_system = make_balance_system(add_atom, del_condition, del_atom, produced_by_pred);
+        auto balance_system = make_balance_system(add_atom, del_condition, del_atom, produced);
         if (!balance_system.has_value())
             continue;
 

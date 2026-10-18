@@ -20,6 +20,8 @@
 #include <algorithm>
 #include <map>
 #include <set>
+#include <type_traits>
+#include <yggdrasil/containers/associative_containers.hpp>
 
 namespace tyr::formalism::planning::invariant
 {
@@ -341,38 +343,34 @@ void ensure_inequality(ConstraintSystem& system, const MutableAtom<FluentTag>& l
     system.add_inequality_disjunction(InequalityDisjunction(std::move(parts)));
 }
 
-void append_condition_literals(ConditionLiteralList& literals, const MutableConjunctiveCondition& condition)
+namespace
 {
-    for (const auto& literal : condition.static_literals)
-        literals.push_back(make_condition_literal(literal.atom, literal.polarity));
-    for (const auto& literal : condition.fluent_literals)
-        literals.push_back(make_condition_literal(literal.atom, literal.polarity));
-    for (const auto& literal : condition.derived_literals)
-        literals.push_back(make_condition_literal(literal.atom, literal.polarity));
-}
-
-void ensure_conjunction_sat(ConstraintSystem& system, const ConditionLiteralList& literals)
+template<FactKind T>
+void ensure_literals_sat(ConstraintSystem& system, const MutableLiteralList<T>& literals)
 {
-    std::map<std::string, std::vector<const ConditionLiteral*>> pos;
-    std::map<std::string, std::vector<const ConditionLiteral*>> neg;
+    ygg::UnorderedMap<PredicateView<T>, std::vector<const MutableLiteral<T>*>> pos;
+    ygg::UnorderedMap<PredicateView<T>, std::vector<const MutableLiteral<T>*>> neg;
 
     for (const auto& literal : literals)
     {
-        if (literal.predicate == "=")
+        if constexpr (std::is_same_v<T, StaticTag>)
         {
-            std::vector<std::pair<ConstraintTerm, ConstraintTerm>> parts;
-            if (literal.terms.size() == 2)
-                parts.emplace_back(make_constraint_term(literal.terms[0]), make_constraint_term(literal.terms[1]));
+            if (literal.atom.predicate.get_name().view() == "=")
+            {
+                std::vector<std::pair<ConstraintTerm, ConstraintTerm>> parts;
+                if (literal.atom.terms.size() == 2)
+                    parts.emplace_back(make_constraint_term(literal.atom.terms[0]), make_constraint_term(literal.atom.terms[1]));
 
-            if (literal.polarity)
-                system.add_equality_DNF({ EqualityConjunction(std::move(parts)) });
-            else
-                system.add_inequality_disjunction(InequalityDisjunction(std::move(parts)));
+                if (literal.polarity)
+                    system.add_equality_DNF({ EqualityConjunction(std::move(parts)) });
+                else
+                    system.add_inequality_disjunction(InequalityDisjunction(std::move(parts)));
 
-            continue;
+                continue;
+            }
         }
 
-        (literal.polarity ? pos : neg)[literal.predicate].push_back(&literal);
+        (literal.polarity ? pos : neg)[literal.atom.predicate].push_back(&literal);
     }
 
     for (const auto& [predicate, positives] : pos)
@@ -386,16 +384,24 @@ void ensure_conjunction_sat(ConstraintSystem& system, const ConditionLiteralList
             for (const auto* negative : neg_it->second)
             {
                 std::vector<std::pair<ConstraintTerm, ConstraintTerm>> parts;
-                parts.reserve(positive->terms.size());
+                parts.reserve(positive->atom.terms.size());
 
-                for (size_t i = 0; i < positive->terms.size(); ++i)
-                    parts.emplace_back(make_constraint_term(negative->terms[i]), make_constraint_term(positive->terms[i]));
+                for (size_t i = 0; i < positive->atom.terms.size(); ++i)
+                    parts.emplace_back(make_constraint_term(negative->atom.terms[i]), make_constraint_term(positive->atom.terms[i]));
 
                 if (!parts.empty())
                     system.add_inequality_disjunction(InequalityDisjunction(std::move(parts)));
             }
         }
     }
+}
+}  // namespace
+
+void ensure_conjunction_sat(ConstraintSystem& system, const MutableConjunctiveCondition& conjunction)
+{
+    ensure_literals_sat(system, conjunction.static_literals);
+    ensure_literals_sat(system, conjunction.fluent_literals);
+    ensure_literals_sat(system, conjunction.derived_literals);
 }
 
 }  // namespace tyr::formalism::planning::invariant
