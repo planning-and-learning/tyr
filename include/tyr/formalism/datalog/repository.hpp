@@ -74,4 +74,55 @@ std::optional<RuleView<GroundTag, R>> find_ground_rule(RuleBindingView<R> bindin
 
 }
 
+#ifndef TYR_HEADER_INSTANTIATION
+
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::Variable, true>;
+extern template class ygg::formalism::BasicSymbolRepository<ygg::formalism::Object<tyr::formalism::ObjectTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::Predicate<tyr::formalism::StaticTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::Predicate<tyr::formalism::FluentTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::Atom<tyr::LiftedTag, tyr::formalism::StaticTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::Atom<tyr::LiftedTag, tyr::formalism::FluentTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::Atom<tyr::GroundTag, tyr::formalism::StaticTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::Atom<tyr::GroundTag, tyr::formalism::FluentTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::Literal<tyr::LiftedTag, tyr::formalism::StaticTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::Literal<tyr::LiftedTag, tyr::formalism::FluentTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::Literal<tyr::GroundTag, tyr::formalism::StaticTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::Literal<tyr::GroundTag, tyr::formalism::FluentTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::Function<tyr::formalism::StaticTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::Function<tyr::formalism::FluentTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::Function<tyr::formalism::AuxiliaryTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::FunctionTerm<tyr::LiftedTag, tyr::formalism::StaticTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::FunctionTerm<tyr::LiftedTag, tyr::formalism::FluentTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::FunctionTerm<tyr::LiftedTag, tyr::formalism::AuxiliaryTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::FunctionTerm<tyr::GroundTag, tyr::formalism::StaticTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::FunctionTerm<tyr::GroundTag, tyr::formalism::FluentTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::FunctionTerm<tyr::GroundTag, tyr::formalism::AuxiliaryTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::FunctionTermValue<tyr::GroundTag, tyr::formalism::StaticTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::FunctionTermValue<tyr::GroundTag, tyr::formalism::FluentTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::FunctionTermValue<tyr::GroundTag, tyr::formalism::AuxiliaryTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::UnaryOperator<tyr::LiftedTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::BinaryOperator<tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::MultiOperator<tyr::LiftedTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::BinaryOperator<tyr::LiftedTag, tyr::formalism::BooleanOperatorKind>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::UnaryOperator<tyr::GroundTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::BinaryOperator<tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::MultiOperator<tyr::GroundTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::BinaryOperator<tyr::GroundTag, tyr::formalism::BooleanOperatorKind>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::NumericEffect<tyr::LiftedTag, tyr::formalism::FluentTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::NumericEffect<tyr::GroundTag, tyr::formalism::FluentTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::ConjunctiveCondition<tyr::LiftedTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::ConjunctiveEffect<tyr::LiftedTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::ConditionalEffect<tyr::LiftedTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::Rule<tyr::LiftedTag, tyr::formalism::PredicateTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::Rule<tyr::LiftedTag, tyr::formalism::FunctionTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::ConjunctiveCondition<tyr::GroundTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::ConjunctiveEffect<tyr::GroundTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::ConditionalEffect<tyr::GroundTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::Rule<tyr::GroundTag, tyr::formalism::PredicateTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::Rule<tyr::GroundTag, tyr::formalism::FunctionTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::Program<tyr::LiftedTag>, true>;
+extern template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::Program<tyr::GroundTag>, true>;
+
+#endif
+
 #endif
