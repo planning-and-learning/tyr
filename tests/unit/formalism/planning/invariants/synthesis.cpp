@@ -146,6 +146,8 @@ void check_suite(const std::filesystem::path& fixture)
             make_test_parser(ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(case_object, "domain_file", "case")));
         const auto domain = parser.get_domain();
         const auto actual = tyr::formalism::planning::invariant::synthesize_invariants(domain.get_domain(), *domain.get_repository());
+        // Synthesizing again finds the interned invariants.
+        EXPECT_EQ(tyr::formalism::planning::invariant::synthesize_invariants(domain.get_domain(), *domain.get_repository()), actual);
 
         auto lifted_task =
             parser.parse_task(ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(case_object, "task_file", "case")));
@@ -154,10 +156,51 @@ void check_suite(const std::filesystem::path& fixture)
         expect_invariant_sets_equal(actual, parse_invariants(repository, case_object, "invariants"));
     }
 }
+
+/// The greedy orders over the synthesized invariants equal the recorded ones (generate_orders.py), invariant by invariant.
+void check_orders(const std::filesystem::path& fixture)
+{
+    namespace invariant = tyr::formalism::planning::invariant;
+    const auto criteria = std::vector<std::pair<const char*, invariant::GreedyCriterion>> { { "max_group_size", invariant::GreedyCriterion::MaxGroupSize },
+                                                                                            { "max_coverage", invariant::GreedyCriterion::MaxCoverage } };
+
+    const auto suite = ygg::common::load_json_file(ygg::common::root_path() / fixture);
+    const auto& suite_object = ygg::common::as_object(suite, "suite");
+    for (const auto& case_value : ygg::common::as_array(suite_object, "cases", "suite"))
+    {
+        const auto& case_object = ygg::common::as_object(case_value, "case");
+        SCOPED_TRACE(ygg::common::as_string(case_object, "name", "case"));
+
+        auto parser =
+            make_test_parser(ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(case_object, "domain_file", "case")));
+        const auto domain = parser.get_domain();
+        auto& repository = *domain.get_repository();
+        const auto invariants = invariant::synthesize_invariants(domain.get_domain(), repository);
+
+        const auto& orders = ygg::common::as_object(case_object, "orders", "case");
+        for (const auto& [key, criterion] : criteria)
+        {
+            SCOPED_TRACE(key);
+            // The order depends on the set of invariants, not on their order.
+            EXPECT_EQ(invariant::compute_invariant_order_greedy(tyr::formalism::planning::InvariantViewList(invariants.rbegin(), invariants.rend()), criterion),
+                      invariant::compute_invariant_order_greedy(invariants, criterion));
+            auto actual = std::vector<std::string> {};
+            for (const auto inv : invariant::compute_invariant_order_greedy(invariants, criterion))
+                actual.push_back(invariant_text(inv));
+            auto expected = std::vector<std::string> {};
+            for (const auto& inv : parse_invariants(repository, orders, key))
+                expected.push_back(invariant_text(inv));
+            EXPECT_EQ(actual, expected);
+        }
+    }
+}
 }
 
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesis) { check_suite("tests/fixtures/formalism/invariants/synthesis.json"); }
 
 /// One domain file per IPC domain directory (up to five for directories with a domain file per problem).
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisIpc) { check_suite("tests/fixtures/formalism/invariants/ipc.json"); }
+
+/// Every domain of ipc.json and synthesis.json, so that any change to an order shows up in review.
+TEST(TyrTests, TyrFormalismPlanningInvariantOrders) { check_orders("tests/fixtures/formalism/invariants/orders.json"); }
 }

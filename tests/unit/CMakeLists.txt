@@ -97,8 +97,6 @@ target_include_directories(planning_state_routing PRIVATE ${PROJECT_SOURCE_DIR}/
 add_gtest(formalism_planning_invariants_synthesis "formalism/planning/invariants/synthesis.cpp")
 target_link_libraries(formalism_planning_invariants_synthesis PRIVATE Boost::json)
 add_gtest(planning_invariant_order "planning/lifted/invariant_order.cpp")
-add_gtest(formalism_planning_invariants_ordering "formalism/planning/invariants/ordering.cpp")
-add_gtest(formalism_planning_invariants_interning "formalism/planning/invariants/interning.cpp")
 add_gtest(formalism_unification "formalism/unification.cpp")
 add_gtest(formalism_numeric_expression_utils "formalism/numeric_expression_utils.cpp")
 add_gtest(algorithms_kckp "algorithms/kckp/kckp.cpp")
