@@ -212,8 +212,9 @@ InvariantList refine_candidate(const Invariant& inv, const Threat& threat, const
                 auto refined = Invariant(inv.num_rigid_variables, new_num_counted_variables, std::move(atoms));
                 normalize_invariant(refined);
 
-                if (!is_add_effect_unbalanced(op, effect, add_atom, refined))
-                    result.push_back(std::move(refined));
+                // Every match becomes a candidate, also one that does not balance this add effect yet: it can be refined
+                // further, as in Fast Downward's refine_candidate.
+                result.push_back(std::move(refined));
             }
         }
     }
