@@ -19,8 +19,11 @@
 #define TYR_TESTS_PLANNING_HEURISTICS_HEURISTIC_HPP_
 
 #include "planning/parser.hpp"
-#include "tyr/formalism/formalism.hpp"
-#include "tyr/planning/planning.hpp"
+#include "tyr/planning/factory.hpp"
+#include "tyr/planning/ground/task.hpp"
+#include "tyr/planning/heuristics/rpg_add.hpp"
+#include "tyr/planning/heuristics/rpg_ff.hpp"
+#include "tyr/planning/lifted/task.hpp"
 
 #include <algorithm>
 #include <boost/json.hpp>

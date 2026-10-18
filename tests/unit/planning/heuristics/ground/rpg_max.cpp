@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/planning.hpp"
+#include "tyr/planning/heuristics/rpg_max.hpp"
 
 namespace tyr::tests
 {
