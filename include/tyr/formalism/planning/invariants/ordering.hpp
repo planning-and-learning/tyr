@@ -35,13 +35,36 @@ namespace tyr::formalism::planning::invariant
 /// earlier argument positions, and the parts' text (predicate and constant names; MutableInvariant::canonicalize()
 /// numbers the rigid variables canonically, so the order does not depend on how an implementation numbers them).
 
-/// Repeatedly takes the residual covering the most atoms, n^r * (a*n + b).
-InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invariants);
+enum class GreedyCriterion
+{
+    /// The residual with the largest group a*n + b first, like Fast Downward's largest-first cover; ties: larger
+    /// total coverage n^r * (a*n + b).
+    GroupSize,
+    /// The residual covering the most atoms, n^r * (a*n + b), first. Can prefer many small groups to one large group.
+    TotalCoverage,
+};
 
-/// The order minimizing, lexicographically, the atoms left single and then the number of variables. Predicates that
-/// share no invariant are decided independently; a component with more than a million assignments falls back to the
-/// greedy order.
-InvariantViewList compute_invariant_order_exhaustive(const InvariantViewList& invariants);
+/// Repeatedly takes the best residual under `criterion`.
+InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invariants, GreedyCriterion criterion = GreedyCriterion::GroupSize);
+
+/// FDR variables counted below: n^r per used invariant (groups of a*n + b atoms) plus n^arity per predicate left
+/// binary (groups of one atom).
+enum class ExhaustiveObjective
+{
+    /// Fewest FDR variables, binary ones included (the set cover Fast Downward approximates); ties: LargestVariables.
+    FewestVariables,
+    /// Largest FDR variables: the larger largest group, then more groups of that size, then the next size down to the
+    /// binary variables; ties: fewer FDR variables.
+    LargestVariables,
+    /// Fewest atoms left binary, then fewest invariant variables. Can pick many small groups to avoid few binary atoms.
+    Coverage,
+};
+
+/// The order optimizing `objective` over all predicate -> {invariant | binary} assignments that an order induces;
+/// remaining ties are broken as described above. Predicates that share no invariant are decided independently; a
+/// component with more than a million assignments falls back to the greedy order (GroupSize, or TotalCoverage for
+/// Coverage).
+InvariantViewList compute_invariant_order_exhaustive(const InvariantViewList& invariants, ExhaustiveObjective objective = ExhaustiveObjective::FewestVariables);
 
 }
 

@@ -56,6 +56,19 @@ public:
         m_coefficients[degree] += coefficient;
     }
 
+    void add(const Polynomial& other)
+    {
+        for (std::size_t degree = 0; degree < other.m_coefficients.size(); ++degree)
+            add(degree, other.m_coefficients[degree]);
+    }
+
+    static Polynomial monomial(std::size_t degree)
+    {
+        auto result = Polynomial {};
+        result.add(degree, 1);
+        return result;
+    }
+
     /// Asymptotic order: the higher degree wins, then the coefficients from the highest degree down.
     friend std::strong_ordering operator<=>(const Polynomial& lhs, const Polynomial& rhs)
     {
@@ -202,6 +215,15 @@ public:
     /// Groups of one atom carry no mutex information: no counted variable and a single part.
     bool is_trivial() const noexcept { return num_counted_parts() == 0 && m_parts.size() < 2; }
 
+    /// Atoms of one instance, i.e. the size of one group: a * n + b.
+    Polynomial group_size() const
+    {
+        auto result = Polynomial {};
+        result.add(1, num_counted_parts());
+        result.add(0, m_parts.size() - num_counted_parts());
+        return result;
+    }
+
     /// Ground atoms covered by all instances: n^r * (a * n + b) for a parts with and b parts without a counted variable.
     Polynomial coverage() const
     {
@@ -243,7 +265,9 @@ private:
 
 using PredicateSet = ygg::UnorderedSet<PredicateView<FluentTag>>;
 
-std::vector<const Info*> greedy_order(const std::vector<const Info*>& infos)
+/// GroupSize: the largest residual group a*n+b first (FD's largest-first cover), then the larger total coverage.
+/// TotalCoverage: the residual covering the most atoms, n^r * (a*n+b). Ties: the smaller ResidualKey.
+std::vector<const Info*> greedy_order(const std::vector<const Info*>& infos, GreedyCriterion criterion)
 {
     auto taken = PredicateSet {};
     const auto is_free = [&](PredicateView<FluentTag> predicate) { return !taken.contains(predicate); };
@@ -253,6 +277,7 @@ std::vector<const Info*> greedy_order(const std::vector<const Info*>& infos)
     while (true)
     {
         auto best = std::optional<std::size_t> {};
+        auto best_size = Polynomial {};
         auto best_coverage = Polynomial {};
         auto best_key = ResidualKey {};
         for (std::size_t i = 0; i < infos.size(); ++i)
@@ -262,11 +287,21 @@ std::vector<const Info*> greedy_order(const std::vector<const Info*>& infos)
             const auto residual = Residual(*infos[i], is_free);
             if (residual.is_trivial())
                 continue;
+            const auto size = (criterion == GreedyCriterion::GroupSize) ? residual.group_size() : Polynomial {};
             const auto coverage = residual.coverage();
             auto key = residual.key();
-            if (!best || coverage > best_coverage || (coverage == best_coverage && key < best_key))
+            const auto is_better = [&]
+            {
+                if (size != best_size)
+                    return size > best_size;
+                if (coverage != best_coverage)
+                    return coverage > best_coverage;
+                return key < best_key;
+            };
+            if (!best || is_better())
             {
                 best = i;
+                best_size = size;
                 best_coverage = coverage;
                 best_key = std::move(key);
             }
@@ -335,20 +370,75 @@ std::vector<Component> split_into_components(const std::vector<Info>& infos)
     return components;
 }
 
-/// The value of an assignment; smaller is better.
+/// Group sizes with the number of variables of that size, largest size first.
+using Profile = std::vector<std::pair<Polynomial, Polynomial>>;
+
+void add_groups(Profile& profile, const Polynomial& size, const Polynomial& count)
+{
+    const auto it = std::ranges::find_if(profile, [&](const auto& entry) { return entry.first <= size; });
+    if (it != profile.end() && it->first == size)
+        it->second.add(count);
+    else
+        profile.insert(it, { size, count });
+}
+
+/// Greater means larger variables: the larger largest group wins, then more groups of that size, then the next size.
+std::strong_ordering compare_profiles(const Profile& lhs, const Profile& rhs)
+{
+    for (std::size_t i = 0; i < std::min(lhs.size(), rhs.size()); ++i)
+    {
+        if (const auto cmp = lhs[i].first <=> rhs[i].first; cmp != 0)
+            return cmp;
+        if (const auto cmp = lhs[i].second <=> rhs[i].second; cmp != 0)
+            return cmp;
+    }
+    return lhs.size() <=> rhs.size();
+}
+
+/// The value of an assignment under every objective.
 struct Score
 {
     Polynomial binary_atoms;
-    Polynomial variables;
-    std::vector<ResidualKey> keys;  // sorted
-
-    friend auto operator<=>(const Score&, const Score&) = default;
+    Polynomial invariant_variables;
+    Polynomial total_variables;  // invariant variables + binary atoms
+    Profile profile;
+    std::vector<ResidualKey> keys;  // sorted; smaller is preferred
 };
+
+bool is_better(const Score& lhs, const Score& rhs, ExhaustiveObjective objective)
+{
+    switch (objective)
+    {
+        case ExhaustiveObjective::FewestVariables:
+            if (const auto cmp = lhs.total_variables <=> rhs.total_variables; cmp != 0)
+                return cmp < 0;
+            if (const auto cmp = compare_profiles(lhs.profile, rhs.profile); cmp != 0)
+                return cmp > 0;
+            return lhs.keys < rhs.keys;
+        case ExhaustiveObjective::LargestVariables:
+            if (const auto cmp = compare_profiles(lhs.profile, rhs.profile); cmp != 0)
+                return cmp > 0;
+            if (const auto cmp = lhs.total_variables <=> rhs.total_variables; cmp != 0)
+                return cmp < 0;
+            return lhs.keys < rhs.keys;
+        case ExhaustiveObjective::Coverage:
+            return std::tie(lhs.binary_atoms, lhs.invariant_variables, lhs.keys) < std::tie(rhs.binary_atoms, rhs.invariant_variables, rhs.keys);
+    }
+    return false;
+}
+
+GreedyCriterion fallback_criterion(ExhaustiveObjective objective)
+{
+    return (objective == ExhaustiveObjective::Coverage) ? GreedyCriterion::TotalCoverage : GreedyCriterion::GroupSize;
+}
 
 class ExhaustiveSearch
 {
 public:
-    explicit ExhaustiveSearch(const Component& component) : m_component(component), m_owner(component.predicates.size())
+    ExhaustiveSearch(const Component& component, ExhaustiveObjective objective) :
+        m_component(component),
+        m_objective(objective),
+        m_owner(component.predicates.size())
     {
         for (const auto predicate : component.predicates)
         {
@@ -382,8 +472,8 @@ public:
 private:
     void enumerate(std::size_t index, const Polynomial& binary_lower_bound)
     {
-        if (m_best && binary_lower_bound > m_best->binary_atoms)
-            return;  // branch and bound: binary atoms dominate the score and only grow
+        if (m_best && can_prune(index, binary_lower_bound))
+            return;
         if (index == m_component.predicates.size())
         {
             evaluate();
@@ -398,6 +488,28 @@ private:
             m_owner[index] = info;
             enumerate(index + 1, binary_lower_bound);
         }
+    }
+
+    /// Branch and bound on the primary criterion, using lower bounds that only grow as more predicates are assigned.
+    bool can_prune(std::size_t index, const Polynomial& binary_lower_bound) const
+    {
+        switch (m_objective)
+        {
+            case ExhaustiveObjective::Coverage:
+                return binary_lower_bound > m_best->binary_atoms;
+            case ExhaustiveObjective::FewestVariables:
+            {
+                // Each invariant assigned so far adds its n^r variables once; every other predicate adds 0 or more.
+                auto lower_bound = binary_lower_bound;
+                for (std::size_t i = 0; i < index; ++i)
+                    if (m_owner[i] && std::find(m_owner.begin(), m_owner.begin() + i, m_owner[i]) == m_owner.begin() + i)
+                        lower_bound.add(m_owner[i]->num_rigid_variables, 1);
+                return lower_bound > m_best->total_variables;
+            }
+            case ExhaustiveObjective::LargestVariables:
+                return false;
+        }
+        return false;
     }
 
     void evaluate()
@@ -418,19 +530,28 @@ private:
 
         auto score = Score {};
         for (std::size_t i = 0; i < predicates.size(); ++i)
-            if (!m_owner[i])
-                score.binary_atoms.add(static_cast<std::size_t>(predicates[i].get_arity()), 1);
+        {
+            if (m_owner[i])
+                continue;
+            const auto num_atoms = Polynomial::monomial(static_cast<std::size_t>(predicates[i].get_arity()));
+            score.binary_atoms.add(num_atoms);
+            add_groups(score.profile, Polynomial::monomial(0), num_atoms);
+        }
         for (const auto* info : used)
         {
             const auto residual = Residual(*info, [&](PredicateView<FluentTag> predicate) { return owner_of(predicate) == info; });
             if (residual.is_trivial())
                 return;  // a used invariant must contribute groups of more than one atom
-            score.variables.add(info->num_rigid_variables, 1);
+            const auto num_variables = Polynomial::monomial(info->num_rigid_variables);
+            score.invariant_variables.add(num_variables);
+            add_groups(score.profile, residual.group_size(), num_variables);
             score.keys.push_back(residual.key());
         }
+        score.total_variables = score.invariant_variables;
+        score.total_variables.add(score.binary_atoms);
         std::ranges::sort(score.keys);
 
-        if (m_best && !(score < *m_best))
+        if (m_best && !is_better(score, *m_best, m_objective))
             return;
         auto order = to_order(used, owner_of);
         if (!order)
@@ -478,6 +599,7 @@ private:
     }
 
     const Component& m_component;
+    ExhaustiveObjective m_objective;
     std::vector<std::vector<const Info*>> m_options;
     std::vector<const Info*> m_owner;  // nullptr: binary
     std::optional<Score> m_best;
@@ -504,22 +626,23 @@ std::vector<const Info*> pointers(const std::vector<Info>& infos)
 
 }  // namespace
 
-InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invariants)
+InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invariants, GreedyCriterion criterion)
 {
     const auto mutables = to_mutable(invariants);
     const auto infos = analyze(mutables);
-    return to_invariants(greedy_order(pointers(infos)), mutables, invariants);
+    return to_invariants(greedy_order(pointers(infos), criterion), mutables, invariants);
 }
 
-InvariantViewList compute_invariant_order_exhaustive(const InvariantViewList& invariants)
+InvariantViewList compute_invariant_order_exhaustive(const InvariantViewList& invariants, ExhaustiveObjective objective)
 {
     const auto mutables = to_mutable(invariants);
     const auto infos = analyze(mutables);
     auto order = std::vector<const Info*> {};
     for (const auto& component : split_into_components(infos))
     {
-        auto search = ExhaustiveSearch(component);
-        const auto component_order = (search.num_assignments() > max_assignments_per_component) ? greedy_order(component.infos) : search.run();
+        auto search = ExhaustiveSearch(component, objective);
+        const auto component_order =
+            (search.num_assignments() > max_assignments_per_component) ? greedy_order(component.infos, fallback_criterion(objective)) : search.run();
         order.insert(order.end(), component_order.begin(), component_order.end());
     }
     return to_invariants(order, mutables, invariants);

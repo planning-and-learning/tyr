@@ -203,8 +203,16 @@ void bind_invariants(nb::module_& m)
         "domain"_a,
         "The domain's invariants, interned into its repository, which must outlive them. Call it before parsing tasks of the "
         "domain: a repository must not change once tasks branch from it; later calls only find the interned invariants.");
-    m.def("compute_invariant_order_greedy", &invariant::compute_invariant_order_greedy, "invariants"_a);
-    m.def("compute_invariant_order_exhaustive", &invariant::compute_invariant_order_exhaustive, "invariants"_a);
+    nb::enum_<GreedyCriterion>(m, "GreedyCriterion").value("GroupSize", GreedyCriterion::GroupSize).value("TotalCoverage", GreedyCriterion::TotalCoverage);
+    nb::enum_<ExhaustiveObjective>(m, "ExhaustiveObjective")
+        .value("FewestVariables", ExhaustiveObjective::FewestVariables)
+        .value("LargestVariables", ExhaustiveObjective::LargestVariables)
+        .value("Coverage", ExhaustiveObjective::Coverage);
+    m.def("compute_invariant_order_greedy", &invariant::compute_invariant_order_greedy, "invariants"_a, "criterion"_a = GreedyCriterion::GroupSize);
+    m.def("compute_invariant_order_exhaustive",
+          &invariant::compute_invariant_order_exhaustive,
+          "invariants"_a,
+          "objective"_a = ExhaustiveObjective::FewestVariables);
     m.def("compute_mutex_groups", &invariant::compute_mutex_groups, "initial_atoms"_a, "all_atoms"_a, "invariants"_a);
     m.def("compute_mutex_groups_in_order", &invariant::compute_mutex_groups_in_order, "initial_atoms"_a, "all_atoms"_a, "invariant_order"_a);
     m.def("compute_all_mutex_groups", &invariant::compute_all_mutex_groups, "initial_atoms"_a, "all_atoms"_a, "invariants"_a);

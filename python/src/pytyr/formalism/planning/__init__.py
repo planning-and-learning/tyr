@@ -16,6 +16,8 @@ from ..._pytyr.formalism.planning import (
 from ..._pytyr.formalism.planning import (
     MutexGroup,
     synthesize_invariants,
+    GreedyCriterion,
+    ExhaustiveObjective,
     compute_invariant_order_greedy,
     compute_invariant_order_exhaustive,
     compute_mutex_groups,
