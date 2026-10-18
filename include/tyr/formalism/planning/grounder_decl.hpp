@@ -19,7 +19,6 @@
 #define TYR_FORMALISM_PLANNING_GROUNDER_DECL_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/repository.hpp"
 
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/semantics/equal_to.hpp>

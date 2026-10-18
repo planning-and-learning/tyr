@@ -47,8 +47,6 @@
 namespace tyr::formalism::datalog
 {
 
-using Builder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, BuilderTypes>;
-
 using ygg::formalism::checkout;
 using ygg::formalism::insert;
 

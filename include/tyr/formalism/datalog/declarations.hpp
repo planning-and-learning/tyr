@@ -27,6 +27,7 @@
 #include <vector>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/core/types.hpp>
+#include <yggdrasil/formalism/builder.hpp>
 
 namespace tyr::formalism::datalog
 {
@@ -188,6 +189,7 @@ using SymbolRepositoryTypes = ygg::ConcatTypeListsT<CoreTypes,
                                                     CompoundTypes>;
 using RelationRepositoryTypes = ygg::ConcatTypeListsT<PredicateTypes, FunctionTypes, RuleTypes<LiftedTag>>;
 using BuilderTypes = ygg::ConcatTypeListsT<SymbolRepositoryTypes, ygg::MapTypeListT<RelationBinding, RelationRepositoryTypes>>;
+using Builder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, BuilderTypes>;
 
 using SymbolRepository = ygg::ApplyTypeListT<::ygg::formalism::ConcurrentSymbolRepository, SymbolRepositoryTypes>;
 

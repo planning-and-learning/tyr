@@ -46,8 +46,6 @@
 namespace tyr::formalism::planning
 {
 
-using Builder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, BuilderTypes>;
-
 using ygg::formalism::checkout;
 using ygg::formalism::insert;
 

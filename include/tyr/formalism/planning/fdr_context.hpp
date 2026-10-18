@@ -18,8 +18,11 @@
 #ifndef TYR_FORMALISM_FDR_CONTEXT_HPP_
 #define TYR_FORMALISM_FDR_CONTEXT_HPP_
 
+#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/planning/datas.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/fdr_variable_view.hpp"
 
 #include <atomic>
 #include <mutex>
