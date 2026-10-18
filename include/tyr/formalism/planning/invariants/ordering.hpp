@@ -31,9 +31,7 @@ namespace tyr::formalism::planning::invariant
 /// counted variable and b parts without. Polynomials compare by degree, then coefficient. A residual without counted
 /// variable and with one part yields groups of one atom; such invariants are left out.
 ///
-/// The result depends only on the set of invariants: ties are broken by more rigid variables, rigid variables at
-/// earlier argument positions, and the parts' text (predicate and constant names; MutableInvariant::canonicalize()
-/// numbers the rigid variables canonically, so the order does not depend on how an implementation numbers them).
+/// The result depends only on the set of invariants, not on their order: ties go to the invariant interned first.
 
 enum class GreedyCriterion
 {

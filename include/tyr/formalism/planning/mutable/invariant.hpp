@@ -62,10 +62,15 @@ struct MutableInvariant : ygg::comparison::Mixin<MutableInvariant>
     {
     }
 
-    /// Renames the rigid variables to the numbering whose sorted atom texts (predicate and constant names, `*` for the
-    /// counted variable) are smallest, then sorts and dedupes the atoms. So invariants that differ only in how their
-    /// variables are numbered become equal, independently of repository indices.
-    void canonicalize();
+    void canonicalize()
+    {
+        std::sort(atoms.begin(), atoms.end());
+        atoms.erase(std::unique(atoms.begin(), atoms.end()), atoms.end());
+
+        predicates.clear();
+        for (const auto& atom : atoms)
+            predicates.insert(atom.predicate);
+    }
 
     auto identifying_members() const noexcept { return std::tie(num_rigid_variables, num_counted_variables, atoms); }
 };

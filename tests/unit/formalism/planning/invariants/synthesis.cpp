@@ -78,8 +78,8 @@ parse_invariants(tyr::formalism::planning::Repository& repository, const boost::
     return result;
 }
 
-/// The atoms in text form, sorted. Both sides are canonical (MutableInvariant::canonicalize() numbers the rigid variables
-/// by predicate names), but live in different repositories, so atoms are compared by text rather than by index.
+/// The atoms in text form, sorted. Both sides live in different repositories, so atoms are compared by text rather than
+/// by index.
 std::string invariant_text(size_t num_rigid_variables, size_t num_counted_variables, std::vector<std::string> atoms)
 {
     std::ranges::sort(atoms);

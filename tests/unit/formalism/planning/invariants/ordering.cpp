@@ -104,6 +104,36 @@ TEST(TyrFormalismPlanningInvariantOrderingTest, OrdersDependOnlyOnTheSetOfInvari
     }
 }
 
+/// Two parsers of the same domain synthesize into separate repositories; the orders must agree.
+TEST(TyrFormalismPlanningInvariantOrderingTest, OrdersAreStableAcrossParsers)
+{
+    for (const auto& directory : test_domains())
+    {
+        SCOPED_TRACE(directory.filename().string());
+        const auto first = DomainInvariants(directory);
+        const auto second = DomainInvariants(directory);
+        for (const auto criterion : { GreedyCriterion::MaxGroupSize, GreedyCriterion::MaxCoverage })
+            EXPECT_EQ(names(compute_invariant_order_greedy(first.invariants, criterion)), names(compute_invariant_order_greedy(second.invariants, criterion)));
+    }
+}
+
+/// Parsing a task of the domain must not change the order of the domain's invariants.
+TEST(TyrFormalismPlanningInvariantOrderingTest, OrdersDoNotChangeWhenTasksAreParsed)
+{
+    for (const auto& directory : test_domains())
+    {
+        SCOPED_TRACE(directory.filename().string());
+        auto parser = make_test_parser(directory / "domain.pddl");
+        const auto domain = parser.get_domain();
+        const auto invariants = formalism::planning::invariant::synthesize_invariants(domain.get_domain(), *domain.get_repository());
+        const auto before = all_orders(invariants);
+
+        const auto task = parser.parse_task(directory / "test-1.pddl");
+
+        EXPECT_EQ(all_orders(invariants), before);
+    }
+}
+
 TEST(TyrFormalismPlanningInvariantOrderingTest, OrdersAreDistinctSynthesizedInvariants)
 {
     for (const auto& directory : test_domains())
@@ -135,11 +165,10 @@ TEST(TyrFormalismPlanningInvariantOrderingTest, Blocks)
 {
     const auto domain = DomainInvariants(tests_root / "blocks_4");
 
-    // "Where is the block" and "what is on the block" cover equally many atoms; on(?x, ?y) with the rigid variable
-    // first decides for "where is the block".
-    EXPECT_EQ(names(compute_invariant_order_greedy(domain.invariants)), (std::vector<std::set<std::string>> { { "holding", "on", "on-table" } }));
+    // "What is on the block" and "where is the block" are equally large; by name, {clear, holding, on} comes first.
+    EXPECT_EQ(names(compute_invariant_order_greedy(domain.invariants)), (std::vector<std::set<std::string>> { { "clear", "holding", "on" } }));
     EXPECT_EQ(names(compute_invariant_order_greedy(domain.invariants, GreedyCriterion::MaxCoverage)),
-              (std::vector<std::set<std::string>> { { "holding", "on", "on-table" } }));
+              (std::vector<std::set<std::string>> { { "clear", "holding", "on" } }));
 }
 
 TEST(TyrFormalismPlanningInvariantOrderingTest, Airport)
