@@ -87,7 +87,7 @@ add_gtest(
     "planning/state.cpp"
 )
 
-add_gtest(planning_applicability "planning/applicability.cpp")
+add_gtest(planning_applicability "planning/applicability.cpp" "planning/applicability_schema_ground.cpp" "planning/applicability_schema_lifted.cpp")
 add_gtest(planning_plan_reconstruction "planning/plan_reconstruction.cpp")
 add_gtest(planning_search_engine "planning/search_engine.cpp")
 target_include_directories(planning_search_engine PRIVATE ${PROJECT_SOURCE_DIR}/src)
