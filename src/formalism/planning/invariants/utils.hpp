@@ -18,18 +18,16 @@
 #ifndef TYR_SRC_FORMALISM_PLANNING_INVARIANTS_UTILS_HPP_
 #define TYR_SRC_FORMALISM_PLANNING_INVARIANTS_UTILS_HPP_
 
-#include "tyr/formalism/planning/invariants/invariant.hpp"
 #include "tyr/formalism/planning/mutable/atom.hpp"
+#include "tyr/formalism/planning/mutable/invariant.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
 namespace tyr::formalism::planning::invariant
 {
 
-inline const MutableAtom<FluentTag>* find_part(const Invariant& inv, PredicateView<FluentTag> predicate)
+inline const MutableAtom<FluentTag>* find_part(const MutableInvariant& inv, PredicateView<FluentTag> predicate)
 {
-    const auto it = std::find_if(inv.atoms.begin(),
-                                 inv.atoms.end(),
-                                 [&](const auto& atom) { return atom.predicate == predicate; });
+    const auto it = std::find_if(inv.atoms.begin(), inv.atoms.end(), [&](const auto& atom) { return atom.predicate == predicate; });
 
     return (it == inv.atoms.end()) ? nullptr : &*it;
 }

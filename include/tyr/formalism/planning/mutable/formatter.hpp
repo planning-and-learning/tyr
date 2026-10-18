@@ -24,6 +24,7 @@
 #include "tyr/formalism/planning/mutable/conditional_effect.hpp"
 #include "tyr/formalism/planning/mutable/conjunctive_condition.hpp"
 #include "tyr/formalism/planning/mutable/conjunctive_effect.hpp"
+#include "tyr/formalism/planning/mutable/invariant.hpp"
 #include "tyr/formalism/planning/mutable/literal.hpp"
 
 #include <fmt/core.h>
@@ -161,6 +162,30 @@ struct formatter<tyr::formalism::planning::MutableAction, char>
             fmt::print(os, "{}{}\n", "condition = ", value.condition);
             os << ygg::print_indent;
             fmt::print(os, "{}{}\n", "effects = ", value.effects);
+        }
+        os << ygg::print_indent << ")";
+        return fmt::format_to(ctx.out(), "{}", os.view());
+    }
+};
+
+template<>
+struct formatter<tyr::formalism::planning::MutableInvariant, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const tyr::formalism::planning::MutableInvariant& value, FormatContext& ctx) const
+    {
+        auto os = std::stringstream {};
+        os << "MutableInvariant(\n";
+        {
+            ygg::IndentScope scope(os);
+            os << ygg::print_indent;
+            fmt::print(os, "{}{}\n", "num rigid variables = ", value.num_rigid_variables);
+            os << ygg::print_indent;
+            fmt::print(os, "{}{}\n", "num counted variables = ", value.num_counted_variables);
+            os << ygg::print_indent;
+            fmt::print(os, "{}{}\n", "atoms = ", value.atoms);
         }
         os << ygg::print_indent << ")";
         return fmt::format_to(ctx.out(), "{}", os.view());

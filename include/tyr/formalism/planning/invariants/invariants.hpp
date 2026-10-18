@@ -18,8 +18,6 @@
 #ifndef TYR_FORMALISM_PLANNING_INVARIANTS_INVARIANTS_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANTS_INVARIANTS_HPP_
 
-#include "tyr/formalism/planning/invariants/formatter.hpp"
-#include "tyr/formalism/planning/invariants/invariant.hpp"
 #include "tyr/formalism/planning/invariants/matcher.hpp"
 #include "tyr/formalism/planning/invariants/mutexes.hpp"
 #include "tyr/formalism/planning/invariants/ordering.hpp"

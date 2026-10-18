@@ -18,9 +18,9 @@
 #ifndef TYR_FORMALISM_PLANNING_INVARIANTS_MATCHING_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANTS_MATCHING_HPP_
 
-#include "tyr/formalism/planning/invariants/invariant.hpp"
 #include "tyr/formalism/planning/mutable/atom.hpp"
 #include "tyr/formalism/planning/mutable/conditional_effect.hpp"
+#include "tyr/formalism/planning/mutable/invariant.hpp"
 #include "tyr/formalism/unification/substitution.hpp"
 
 namespace tyr::formalism::planning::invariant
@@ -36,16 +36,16 @@ struct ActionAlignment
     ActionSubstitution sigma;
 };
 
-bool covers(const Invariant& inv, const MutableAtom<FluentTag>& element);
+bool covers(const MutableInvariant& inv, const MutableAtom<FluentTag>& element);
 
 std::optional<InvariantSubstitution>
-match_invariant_against_ground_atom(const Invariant& inv, const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& ground_atom);
+match_invariant_against_ground_atom(const MutableInvariant& inv, const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& ground_atom);
 
-std::vector<ActionAlignment> enumerate_action_alignments(const Invariant& inv, const MutableAtom<FluentTag>& element, size_t num_action_variables);
+std::vector<ActionAlignment> enumerate_action_alignments(const MutableInvariant& inv, const MutableAtom<FluentTag>& element, size_t num_action_variables);
 
 std::vector<EffectSubstitution> enumerate_effect_renamings(const MutableConditionalEffect& effect,
                                                            const MutableAtom<FluentTag>& element,
-                                                           const Invariant& inv,
+                                                           const MutableInvariant& inv,
                                                            const ActionSubstitution& sigma_op);
 
 }  // namespace tyr::formalism::planning::invariant

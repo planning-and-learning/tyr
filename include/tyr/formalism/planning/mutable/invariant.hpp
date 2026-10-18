@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_PLANNING_INVARIANTS_INVARIANT_HPP_
-#define TYR_FORMALISM_PLANNING_INVARIANTS_INVARIANT_HPP_
+#ifndef TYR_FORMALISM_PLANNING_MUTABLE_INVARIANT_HPP_
+#define TYR_FORMALISM_PLANNING_MUTABLE_INVARIANT_HPP_
 
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/mutable/atom.hpp"
@@ -31,19 +31,19 @@
 #include <yggdrasil/semantics/comparison.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 
-namespace tyr::formalism::planning::invariant
+namespace tyr::formalism::planning
 {
 
-struct Invariant : ygg::comparison::Mixin<Invariant>
+struct MutableInvariant : ygg::comparison::Mixin<MutableInvariant>
 {
     size_t num_rigid_variables = 0;
     size_t num_counted_variables = 0;
     MutableAtomList<FluentTag> atoms;
     ygg::UnorderedSet<PredicateView<FluentTag>> predicates;
 
-    Invariant() = default;
+    MutableInvariant() = default;
 
-    Invariant(size_t num_rigid_variables_, size_t num_counted_variables_, MutableAtomList<FluentTag> atoms_) :
+    MutableInvariant(size_t num_rigid_variables_, size_t num_counted_variables_, MutableAtomList<FluentTag> atoms_) :
         num_rigid_variables(num_rigid_variables_),
         num_counted_variables(num_counted_variables_),
         atoms(std::move(atoms_)),
@@ -51,10 +51,10 @@ struct Invariant : ygg::comparison::Mixin<Invariant>
     {
         canonicalize();
     }
-    Invariant(size_t num_rigid_variables_,
-              size_t num_counted_variables_,
-              MutableAtomList<FluentTag> atoms_,
-              ygg::UnorderedSet<PredicateView<FluentTag>> predicates_) :
+    MutableInvariant(size_t num_rigid_variables_,
+                     size_t num_counted_variables_,
+                     MutableAtomList<FluentTag> atoms_,
+                     ygg::UnorderedSet<PredicateView<FluentTag>> predicates_) :
         num_rigid_variables(num_rigid_variables_),
         num_counted_variables(num_counted_variables_),
         atoms(std::move(atoms_)),
@@ -75,7 +75,7 @@ struct Invariant : ygg::comparison::Mixin<Invariant>
     auto identifying_members() const noexcept { return std::tie(num_rigid_variables, num_counted_variables, atoms); }
 };
 
-using InvariantList = std::vector<Invariant>;
+using MutableInvariantList = std::vector<MutableInvariant>;
 
 }
 
@@ -83,9 +83,9 @@ namespace tyr::formalism::unification
 {
 
 template<>
-struct structure_traits<planning::invariant::Invariant>
+struct structure_traits<planning::MutableInvariant>
 {
-    using Type = planning::invariant::Invariant;
+    using Type = planning::MutableInvariant;
 
     template<typename F>
     static bool zip_terms(const Type& lhs, const Type& rhs, F&& f)

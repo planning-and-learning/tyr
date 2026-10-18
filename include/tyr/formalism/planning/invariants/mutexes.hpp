@@ -19,7 +19,7 @@
 #define TYR_FORMALISM_PLANNING_INVARIANTS_MUTEXES_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/invariants/invariant.hpp"
+#include "tyr/formalism/planning/mutable/invariant.hpp"
 
 #include <vector>
 
@@ -30,20 +30,20 @@ namespace tyr::formalism::planning::invariant
 /// one true initial atom are candidates. Each returned group becomes one FDR variable.
 std::vector<AtomViewList<GroundTag, FluentTag>> compute_mutex_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
                                                                      const AtomViewList<GroundTag, FluentTag>& all_atoms,
-                                                                     const InvariantList& invariants);
+                                                                     const MutableInvariantList& invariants);
 
 /// Cover in a fixed invariant order: every atom joins the first invariant in the order that contains it, and atoms of
 /// no listed invariant stay single. An instance with more than one true initial atom violates its invariant; its
 /// atoms stay single. So the variable structure is determined by the order rather than by the task.
 std::vector<AtomViewList<GroundTag, FluentTag>> compute_mutex_groups_in_order(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
                                                                               const AtomViewList<GroundTag, FluentTag>& all_atoms,
-                                                                              const InvariantList& invariant_order);
+                                                                              const MutableInvariantList& invariant_order);
 
 /// Every instance of the invariants with at least two reachable atoms and at most one true initial atom: all mutex groups
 /// the invariants prove for the task, overlapping in general. Deterministic order.
 std::vector<AtomViewList<GroundTag, FluentTag>> compute_all_mutex_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
                                                                          const AtomViewList<GroundTag, FluentTag>& all_atoms,
-                                                                         const InvariantList& invariants);
+                                                                         const MutableInvariantList& invariants);
 }
 
 #endif

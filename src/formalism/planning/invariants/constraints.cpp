@@ -297,7 +297,7 @@ ConstraintTerm make_constraint_term(const ygg::Data<Term>& term)
 
 ConstraintTerm make_invariant_parameter_term(size_t index) { return InvariantParameter { index }; }
 
-EqualityConjunction make_cover_equality_conjunction(const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& atom, const Invariant& inv)
+EqualityConjunction make_cover_equality_conjunction(const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& atom, const MutableInvariant& inv)
 {
     assert(pattern.predicate == atom.predicate);
     assert(pattern.terms.size() == atom.terms.size());
@@ -324,7 +324,7 @@ EqualityConjunction make_cover_equality_conjunction(const MutableAtom<FluentTag>
     return EqualityConjunction(std::move(equalities));
 }
 
-void ensure_cover(ConstraintSystem& system, const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& atom, const Invariant& inv)
+void ensure_cover(ConstraintSystem& system, const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& atom, const MutableInvariant& inv)
 {
     system.add_equality_conjunction(make_cover_equality_conjunction(pattern, atom, inv));
 }

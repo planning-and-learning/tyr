@@ -55,7 +55,7 @@ auto atom(tyr::formalism::planning::Repository& repo, std::string_view predicate
     return tyr::formalism::planning::MutableAtom<tyr::formalism::FluentTag>(predicate, terms);
 }
 
-tyr::formalism::planning::invariant::Invariant parse_invariant(tyr::formalism::planning::Repository& repository, const boost::json::object& invariant_object)
+tyr::formalism::planning::MutableInvariant parse_invariant(tyr::formalism::planning::Repository& repository, const boost::json::object& invariant_object)
 {
     auto atoms = std::vector<tyr::formalism::planning::MutableAtom<tyr::formalism::FluentTag>> {};
     for (const auto& atom_value : ygg::common::as_array(invariant_object, "atoms", "invariant"))
@@ -64,21 +64,21 @@ tyr::formalism::planning::invariant::Invariant parse_invariant(tyr::formalism::p
         atoms.push_back(atom(repository, ygg::common::as_string(atom_object, "predicate", "atom"), parse_parameters(atom_object)));
     }
 
-    return tyr::formalism::planning::invariant::Invariant(ygg::common::as_size(invariant_object, "num_rigid_variables", "invariant"),
-                                                          ygg::common::as_size(invariant_object, "num_counted_variables", "invariant"),
-                                                          std::move(atoms));
+    return tyr::formalism::planning::MutableInvariant(ygg::common::as_size(invariant_object, "num_rigid_variables", "invariant"),
+                                                      ygg::common::as_size(invariant_object, "num_counted_variables", "invariant"),
+                                                      std::move(atoms));
 }
 
-std::vector<tyr::formalism::planning::invariant::Invariant>
+std::vector<tyr::formalism::planning::MutableInvariant>
 parse_invariants(tyr::formalism::planning::Repository& repository, const boost::json::object& case_object, const char* key)
 {
-    auto result = std::vector<tyr::formalism::planning::invariant::Invariant> {};
+    auto result = std::vector<tyr::formalism::planning::MutableInvariant> {};
     for (const auto& invariant_value : ygg::common::as_array(case_object, key, "case"))
         result.push_back(parse_invariant(repository, ygg::common::as_object(invariant_value, "invariant")));
     return result;
 }
 
-std::set<std::string> canonical_texts(const tyr::formalism::planning::invariant::InvariantList& invariants)
+std::set<std::string> canonical_texts(const tyr::formalism::planning::MutableInvariantList& invariants)
 {
     auto result = std::set<std::string> {};
     for (const auto& invariant : invariants)
@@ -88,8 +88,7 @@ std::set<std::string> canonical_texts(const tyr::formalism::planning::invariant:
 
 /// Equal up to how each invariant numbers its variables. The expected invariants of the classical and IPC cases are tyr's own,
 /// each proven by Fast Downward's balance check (fixture_generation.py).
-void expect_invariant_sets_equal(const tyr::formalism::planning::invariant::InvariantList& actual,
-                                 const tyr::formalism::planning::invariant::InvariantList& expected)
+void expect_invariant_sets_equal(const tyr::formalism::planning::MutableInvariantList& actual, const tyr::formalism::planning::MutableInvariantList& expected)
 {
     const auto actual_texts = canonical_texts(actual);
     const auto expected_texts = canonical_texts(expected);

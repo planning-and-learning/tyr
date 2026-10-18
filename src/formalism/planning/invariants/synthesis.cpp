@@ -21,9 +21,9 @@
 #include "refinement.hpp"
 #include "tyr/formalism/planning/expression_arity.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
-#include "tyr/formalism/planning/invariants/formatter.hpp"
-#include "tyr/formalism/planning/invariants/invariant.hpp"
 #include "tyr/formalism/planning/mutable/action.hpp"
+#include "tyr/formalism/planning/mutable/formatter.hpp"
+#include "tyr/formalism/planning/mutable/invariant.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
@@ -65,7 +65,7 @@ MutableAction without_overridden_deletes(MutableAction action)
 }
 }
 
-InvariantList synthesize_invariants(DomainView domain)
+MutableInvariantList synthesize_invariants(DomainView domain)
 {
     auto ops = MutableActionList {};
     for (const auto& action : domain.get_actions())
@@ -73,12 +73,12 @@ InvariantList synthesize_invariants(DomainView domain)
 
     // Breadth-first search with a closed list (Helmert 2009, Section 5). A candidate is refined on the first unbalanced
     // add effect in domain order, so its successors depend only on the candidate, and the result is deterministic.
-    auto queue = std::deque<Invariant> {};
-    auto seen = gtl::flat_hash_set<Invariant, ygg::Hash<Invariant>, ygg::EqualTo<Invariant>> {};
+    auto queue = std::deque<MutableInvariant> {};
+    auto seen = gtl::flat_hash_set<MutableInvariant, ygg::Hash<MutableInvariant>, ygg::EqualTo<MutableInvariant>> {};
 
-    const auto enqueue = [&](Invariant candidate)
+    const auto enqueue = [&](MutableInvariant candidate)
     {
-        candidate = Invariant(candidate.num_rigid_variables, candidate.num_counted_variables, std::move(candidate.atoms));
+        candidate = MutableInvariant(candidate.num_rigid_variables, candidate.num_counted_variables, std::move(candidate.atoms));
         normalize_invariant(candidate);
         if (seen.size() >= max_candidates)
             return;
@@ -89,7 +89,7 @@ InvariantList synthesize_invariants(DomainView domain)
     for (auto& candidate : make_initial_candidates(domain.get_predicates<FluentTag>()))
         enqueue(std::move(candidate));
 
-    auto accepted = InvariantList {};
+    auto accepted = MutableInvariantList {};
 
     while (!queue.empty())
     {

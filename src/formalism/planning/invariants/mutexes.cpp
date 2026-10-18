@@ -37,7 +37,7 @@ namespace
 {
 
 std::optional<std::vector<ygg::Index<Object>>>
-extract_rigid_values(const Invariant& inv, const MutableAtom<FluentTag>& pattern, AtomView<GroundTag, FluentTag> atom)
+extract_rigid_values(const MutableInvariant& inv, const MutableAtom<FluentTag>& pattern, AtomView<GroundTag, FluentTag> atom)
 {
     const auto sigma = match_invariant_against_ground_atom(inv, pattern, MutableAtom<FluentTag>(atom));
     if (!sigma.has_value())
@@ -159,7 +159,7 @@ bool uncovered_structural_less(const InstanceGroup& lhs, const InstanceGroup& rh
 /// instance its rigid values determine; parts of one invariant have distinct predicates, so instances do not overlap.
 std::vector<InstanceGroup> instantiate_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
                                               const AtomViewList<GroundTag, FluentTag>& all_atoms,
-                                              const InvariantList& invariants)
+                                              const MutableInvariantList& invariants)
 {
     auto is_initial = std::vector<bool>(all_atoms.size(), false);
     for (const auto atom : initial_atoms)
@@ -306,7 +306,7 @@ void check_atoms_are_indexed_densely(const AtomViewList<GroundTag, FluentTag>& a
 
 std::vector<AtomViewList<GroundTag, FluentTag>> compute_mutex_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
                                                                      const AtomViewList<GroundTag, FluentTag>& all_atoms,
-                                                                     const InvariantList& invariants)
+                                                                     const MutableInvariantList& invariants)
 {
     check_atoms_are_indexed_densely(all_atoms);
 
@@ -320,7 +320,7 @@ std::vector<AtomViewList<GroundTag, FluentTag>> compute_mutex_groups(const AtomV
 
 std::vector<AtomViewList<GroundTag, FluentTag>> compute_mutex_groups_in_order(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
                                                                               const AtomViewList<GroundTag, FluentTag>& all_atoms,
-                                                                              const InvariantList& invariant_order)
+                                                                              const MutableInvariantList& invariant_order)
 {
     check_atoms_are_indexed_densely(all_atoms);
 
@@ -360,7 +360,7 @@ std::vector<AtomViewList<GroundTag, FluentTag>> compute_mutex_groups_in_order(co
 }
 std::vector<AtomViewList<GroundTag, FluentTag>> compute_all_mutex_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
                                                                          const AtomViewList<GroundTag, FluentTag>& all_atoms,
-                                                                         const InvariantList& invariants)
+                                                                         const MutableInvariantList& invariants)
 {
     check_atoms_are_indexed_densely(all_atoms);
 

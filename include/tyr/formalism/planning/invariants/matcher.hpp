@@ -19,8 +19,8 @@
 #define TYR_FORMALISM_PLANNING_INVARIANTS_MATCHER_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/invariants/invariant.hpp"
 #include "tyr/formalism/planning/mutable/atom.hpp"
+#include "tyr/formalism/planning/mutable/invariant.hpp"
 #include "tyr/formalism/unification/match.hpp"
 #include "tyr/formalism/unification/substitution.hpp"
 
@@ -32,7 +32,7 @@ namespace tyr::formalism::planning::invariant
 struct InvariantMatchData
 {
 public:
-    InvariantMatchData(Invariant inv, std::vector<unification::SubstitutionFunction<ygg::Index<Object>>> rigid_variable_bindings);
+    InvariantMatchData(MutableInvariant inv, std::vector<unification::SubstitutionFunction<ygg::Index<Object>>> rigid_variable_bindings);
 
     const auto& invariant() const noexcept { return m_inv; }
     const auto& rigid_variable_bindings() const noexcept { return m_rigid_variable_bindings; }
@@ -42,7 +42,7 @@ private:
     void build_postings();
 
 private:
-    Invariant m_inv;
+    MutableInvariant m_inv;
     std::vector<unification::SubstitutionFunction<ygg::Index<Object>>> m_rigid_variable_bindings;
 
     /// postings[p][o][b] is true iff the b-th binding binds object o to rigid parameter p.

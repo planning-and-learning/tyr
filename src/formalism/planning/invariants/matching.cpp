@@ -141,7 +141,7 @@ std::optional<State> match_structure(const T& pattern, const T& element, State s
 }
 
 std::optional<InvariantSubstitution>
-match_cover_against_atom(const Invariant& inv, const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& element)
+match_cover_against_atom(const MutableInvariant& inv, const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& element)
 {
     auto state = TermMatchState {
         .sigma = InvariantSubstitution::from_range(ParameterIndex { ygg::uint_t(inv.num_rigid_variables) }, inv.num_counted_variables),
@@ -160,8 +160,10 @@ match_cover_against_atom(const Invariant& inv, const MutableAtom<FluentTag>& pat
     return std::move(result->sigma);
 }
 
-std::optional<EffectSubstitution>
-match_effect_cover_against_atom(const Invariant& inv, const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& element, size_t num_action_variables)
+std::optional<EffectSubstitution> match_effect_cover_against_atom(const MutableInvariant& inv,
+                                                                  const MutableAtom<FluentTag>& pattern,
+                                                                  const MutableAtom<FluentTag>& element,
+                                                                  size_t num_action_variables)
 {
     auto effect_parameters = std::vector<ParameterIndex> {};
 
@@ -206,7 +208,7 @@ match_effect_cover_against_atom(const Invariant& inv, const MutableAtom<FluentTa
 
 }  // namespace
 
-bool covers(const Invariant& inv, const MutableAtom<FluentTag>& element)
+bool covers(const MutableInvariant& inv, const MutableAtom<FluentTag>& element)
 {
     for (const auto& atom : inv.atoms)
     {
@@ -218,7 +220,7 @@ bool covers(const Invariant& inv, const MutableAtom<FluentTag>& element)
 }
 
 std::optional<InvariantSubstitution>
-match_invariant_against_ground_atom(const Invariant& inv, const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& ground_atom)
+match_invariant_against_ground_atom(const MutableInvariant& inv, const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& ground_atom)
 {
     auto state = TermMatchState {
         .sigma = InvariantSubstitution::from_range(ParameterIndex { 0 }, inv.num_rigid_variables + inv.num_counted_variables),
@@ -237,7 +239,7 @@ match_invariant_against_ground_atom(const Invariant& inv, const MutableAtom<Flue
     return std::move(result->sigma);
 }
 
-std::vector<ActionAlignment> enumerate_action_alignments(const Invariant& inv, const MutableAtom<FluentTag>& element, size_t num_action_variables)
+std::vector<ActionAlignment> enumerate_action_alignments(const MutableInvariant& inv, const MutableAtom<FluentTag>& element, size_t num_action_variables)
 {
     auto result = std::vector<ActionAlignment> {};
 
@@ -273,7 +275,7 @@ std::vector<ActionAlignment> enumerate_action_alignments(const Invariant& inv, c
 
 std::vector<EffectSubstitution> enumerate_effect_renamings(const MutableConditionalEffect& effect,
                                                            const MutableAtom<FluentTag>& element,
-                                                           const Invariant& inv,
+                                                           const MutableInvariant& inv,
                                                            const ActionSubstitution& sigma_op)
 {
     auto result = std::vector<EffectSubstitution> {};

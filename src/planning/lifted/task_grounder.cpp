@@ -26,10 +26,10 @@
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/planning/copy.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
-#include "tyr/formalism/planning/invariants/formatter.hpp"
 #include "tyr/formalism/planning/invariants/mutexes.hpp"
 #include "tyr/formalism/planning/invariants/synthesis.hpp"
 #include "tyr/formalism/planning/merge_planning.hpp"
+#include "tyr/formalism/planning/mutable/formatter.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/applicability.hpp"
@@ -413,13 +413,12 @@ ground_pruned(formalism::planning::AxiomView<LiftedTag> element,
 
 /// Rejects orders that are not a sequence of distinct invariants synthesized for this domain, e.g. invariants
 /// synthesized from another parser's domain.
-void validate_invariant_order(const formalism::planning::invariant::InvariantList& invariant_order,
-                              const formalism::planning::invariant::InvariantList& synthesized)
+void validate_invariant_order(const formalism::planning::MutableInvariantList& invariant_order, const formalism::planning::MutableInvariantList& synthesized)
 {
-    using formalism::planning::invariant::Invariant;
+    using formalism::planning::MutableInvariant;
 
-    const auto known = ygg::UnorderedSet<Invariant>(synthesized.begin(), synthesized.end());
-    auto seen = ygg::UnorderedSet<Invariant> {};
+    const auto known = ygg::UnorderedSet<MutableInvariant>(synthesized.begin(), synthesized.end());
+    auto seen = ygg::UnorderedSet<MutableInvariant> {};
     for (const auto& invariant : invariant_order)
     {
         if (!known.contains(invariant))
@@ -433,7 +432,7 @@ std::vector<formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>>
 choose_mutex_groups(formalism::planning::DomainView domain,
                     const formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>& initial_atoms,
                     const formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>& fluent_atoms,
-                    const std::optional<formalism::planning::invariant::InvariantList>& invariant_order)
+                    const std::optional<formalism::planning::MutableInvariantList>& invariant_order)
 {
     namespace invariant = formalism::planning::invariant;
 
@@ -579,8 +578,8 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
         if (const auto fact = std::as_const(*fdr_context).get_fact(copy(atom, merge_context).first))
             ground_task->fluent_facts.push_back(fact->get_data());
 
-    const auto static_state = StaticState(ygg::make_view(ground_task->static_atoms, *repository),
-                                          ygg::make_view(ground_task->static_fterm_values, *repository));
+    const auto static_state =
+        StaticState(ygg::make_view(ground_task->static_atoms, *repository), ygg::make_view(ground_task->static_fterm_values, *repository));
 
     /// --- Create FDR goal
     const auto goal_or_nullopt =

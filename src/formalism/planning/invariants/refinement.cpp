@@ -17,11 +17,10 @@
 
 #include "refinement.hpp"
 
-#include "tyr/formalism/planning/repository.hpp"
-
 #include "matching.hpp"
 #include "normalization.hpp"
 #include "proof.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 #include "utils.hpp"
 
 #include <algorithm>
@@ -172,9 +171,9 @@ MutableAtomList<FluentTag> possible_matches(const MutableAtom<FluentTag>& part,
 }
 }  // namespace
 
-InvariantList refine_candidate(const Invariant& inv, const Threat& threat, const MutableActionList& ops, PredicateListView<FluentTag>)
+MutableInvariantList refine_candidate(const MutableInvariant& inv, const Threat& threat, const MutableActionList& ops, PredicateListView<FluentTag>)
 {
-    InvariantList result;
+    MutableInvariantList result;
 
     const auto& op = ops[threat.op_index];
     const auto& effect = op.effects[threat.effect_index];
@@ -209,7 +208,7 @@ InvariantList refine_candidate(const Invariant& inv, const Threat& threat, const
                 auto atoms = inv.atoms;
                 atoms.push_back(phi_prime);
 
-                auto refined = Invariant(inv.num_rigid_variables, new_num_counted_variables, std::move(atoms));
+                auto refined = MutableInvariant(inv.num_rigid_variables, new_num_counted_variables, std::move(atoms));
                 normalize_invariant(refined);
 
                 // Every match becomes a candidate, also one that does not balance this add effect yet: it can be refined
@@ -222,9 +221,9 @@ InvariantList refine_candidate(const Invariant& inv, const Threat& threat, const
     return result;
 }
 
-InvariantList make_initial_candidates(PredicateListView<FluentTag> predicates)
+MutableInvariantList make_initial_candidates(PredicateListView<FluentTag> predicates)
 {
-    InvariantList result;
+    MutableInvariantList result;
 
     for (const auto predicate : predicates)
     {

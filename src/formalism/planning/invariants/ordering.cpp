@@ -86,7 +86,7 @@ struct Part
 
 struct Info
 {
-    const Invariant* invariant = nullptr;
+    const MutableInvariant* invariant = nullptr;
     std::size_t num_rigid_variables = 0;
     std::vector<Part> parts;  // sorted by text
     std::string text;         // all parts; distinguishes invariants whose residuals coincide
@@ -160,7 +160,7 @@ Part make_part(const MutableAtom<FluentTag>& atom, const std::vector<std::size_t
     return part;
 }
 
-std::vector<Part> make_parts(const Invariant& invariant, const std::vector<std::size_t>& renaming)
+std::vector<Part> make_parts(const MutableInvariant& invariant, const std::vector<std::size_t>& renaming)
 {
     auto parts = std::vector<Part> {};
     for (const auto& atom : invariant.atoms)
@@ -171,7 +171,7 @@ std::vector<Part> make_parts(const Invariant& invariant, const std::vector<std::
 
 /// The parts under the renaming of rigid variables whose sorted texts are smallest, so that the texts do not depend on
 /// how an implementation numbers rigid variables (Fast Downward's translator uses the same canonical form).
-std::vector<Part> canonical_parts(const Invariant& invariant)
+std::vector<Part> canonical_parts(const MutableInvariant& invariant)
 {
     auto renaming = std::vector<std::size_t>(invariant.num_rigid_variables);
     std::iota(renaming.begin(), renaming.end(), std::size_t { 0 });
@@ -198,7 +198,7 @@ std::vector<Part> canonical_parts(const Invariant& invariant)
 std::string text_of(const std::vector<Part>& parts) { return fmt::format("{{{}}}", fmt::join(parts | std::views::transform(&Part::text), ", ")); }
 
 /// The distinct invariants sorted by their text, so that the input order does not matter.
-std::vector<Info> analyze(const InvariantList& invariants)
+std::vector<Info> analyze(const MutableInvariantList& invariants)
 {
     auto infos = std::vector<Info> {};
     for (const auto& invariant : invariants)
@@ -512,9 +512,9 @@ private:
     std::vector<const Info*> m_best_order;
 };
 
-InvariantList to_invariants(const std::vector<const Info*>& order)
+MutableInvariantList to_invariants(const std::vector<const Info*>& order)
 {
-    auto result = InvariantList {};
+    auto result = MutableInvariantList {};
     result.reserve(order.size());
     for (const auto* info : order)
         result.push_back(*info->invariant);
@@ -531,15 +531,15 @@ std::vector<const Info*> pointers(const std::vector<Info>& infos)
 
 }  // namespace
 
-std::string canonical_text(const Invariant& invariant) { return text_of(canonical_parts(invariant)); }
+std::string canonical_text(const MutableInvariant& invariant) { return text_of(canonical_parts(invariant)); }
 
-InvariantList compute_invariant_order_greedy(const InvariantList& invariants)
+MutableInvariantList compute_invariant_order_greedy(const MutableInvariantList& invariants)
 {
     const auto infos = analyze(invariants);
     return to_invariants(greedy_order(pointers(infos)));
 }
 
-InvariantList compute_invariant_order_exhaustive(const InvariantList& invariants)
+MutableInvariantList compute_invariant_order_exhaustive(const MutableInvariantList& invariants)
 {
     const auto infos = analyze(invariants);
     auto order = std::vector<const Info*> {};

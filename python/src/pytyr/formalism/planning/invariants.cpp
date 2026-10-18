@@ -114,7 +114,7 @@ void bind_substitution_function(nb::module_& m, const std::string& name)
 
 void bind_invariant(nb::module_& m, const std::string& name)
 {
-    using V = Invariant;
+    using V = MutableInvariant;
 
     auto cls = nb::class_<V>(m, name.c_str())
                    .def_ro("num_rigid_variables", &V::num_rigid_variables)
@@ -133,7 +133,7 @@ void bind_invariant_match_data(nb::module_& m, const std::string& name)
     using ObjectSubstitution = unification::SubstitutionFunction<ygg::Index<Object>>;
 
     nb::class_<V>(m, name.c_str())
-        .def(nb::init<Invariant, std::vector<ObjectSubstitution>>(), "invariant"_a, "rigid_variable_bindings"_a)
+        .def(nb::init<MutableInvariant, std::vector<ObjectSubstitution>>(), "invariant"_a, "rigid_variable_bindings"_a)
         .def_prop_ro("invariant", &V::invariant, nb::rv_policy::reference_internal)
         .def_prop_ro("rigid_variable_bindings", &V::rigid_variable_bindings);
 }
@@ -194,7 +194,7 @@ void bind_matcher(nb::module_& m, const std::string& name)
 void bind_invariants(nb::module_& m)
 {
     using namespace nb::literals;
-    bind_invariant(m, "Invariant");
+    bind_invariant(m, "MutableInvariant");
     bind_substitution_function<ygg::Index<Object>>(m, "ObjectSubstitution");
     bind_substitution_function<ygg::Data<Term>>(m, "TermSubstitution");
     bind_invariant_match_data(m, "InvariantMatchData");

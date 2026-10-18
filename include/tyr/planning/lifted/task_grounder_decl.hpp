@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_LIFTED_TASK_GROUNDER_DECL_HPP_
 #define TYR_PLANNING_LIFTED_TASK_GROUNDER_DECL_HPP_
 
-#include "tyr/formalism/planning/invariants/invariant.hpp"
+#include "tyr/formalism/planning/mutable/invariant.hpp"
 #include "tyr/planning/declarations.hpp"
 
 #include <optional>
@@ -46,7 +46,7 @@ struct GroundTaskInstantiationOptions
     /// exactly these invariants, in this order (see compute_mutex_groups_in_order). Each must equal an invariant
     /// synthesized for the task's domain, which includes invariants synthesized from another parser of the same domain
     /// file; that parser must outlive the call. Unlisted invariants are not used.
-    std::optional<formalism::planning::invariant::InvariantList> invariant_order = std::nullopt;
+    std::optional<formalism::planning::MutableInvariantList> invariant_order = std::nullopt;
 };
 
 }

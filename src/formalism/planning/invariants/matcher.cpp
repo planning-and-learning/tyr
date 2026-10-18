@@ -18,8 +18,8 @@
 #include "tyr/formalism/planning/invariants/matcher.hpp"
 
 #include "matching.hpp"
-#include "tyr/formalism/planning/invariants/invariant.hpp"
 #include "tyr/formalism/planning/mutable/atom.hpp"
+#include "tyr/formalism/planning/mutable/invariant.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/unification/match.hpp"
 #include "tyr/formalism/unification/structure_traits_impl.hpp"
@@ -32,7 +32,7 @@
 namespace tyr::formalism::planning::invariant
 {
 
-InvariantMatchData::InvariantMatchData(Invariant inv, std::vector<unification::SubstitutionFunction<ygg::Index<Object>>> rigid_variable_bindings) :
+InvariantMatchData::InvariantMatchData(MutableInvariant inv, std::vector<unification::SubstitutionFunction<ygg::Index<Object>>> rigid_variable_bindings) :
     m_inv(std::move(inv)),
     m_rigid_variable_bindings(std::move(rigid_variable_bindings)),
     m_postings()

@@ -24,6 +24,7 @@
 #include "tyr/formalism/planning/mutable/conjunctive_condition.hpp"
 #include "tyr/formalism/planning/mutable/conjunctive_effect.hpp"
 #include "tyr/formalism/planning/mutable/formatter.hpp"
+#include "tyr/formalism/planning/mutable/invariant.hpp"
 #include "tyr/formalism/planning/mutable/literal.hpp"
 
 #endif

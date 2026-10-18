@@ -18,17 +18,20 @@
 #ifndef TYR_FORMALISM_PLANNING_INVARIANTS_PROOF_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANTS_PROOF_HPP_
 
-#include "tyr/formalism/planning/invariants/invariant.hpp"
 #include "tyr/formalism/planning/mutable/action.hpp"
 #include "tyr/formalism/planning/mutable/atom.hpp"
 #include "tyr/formalism/planning/mutable/conditional_effect.hpp"
+#include "tyr/formalism/planning/mutable/invariant.hpp"
 
 namespace tyr::formalism::planning::invariant
 {
 
-bool is_operator_too_heavy(const MutableAction& op, const Invariant& inv);
+bool is_operator_too_heavy(const MutableAction& op, const MutableInvariant& inv);
 
-bool is_add_effect_unbalanced(const MutableAction& op, const MutableConditionalEffect& effect, const MutableAtom<FluentTag>& add_atom, const Invariant& inv);
+bool is_add_effect_unbalanced(const MutableAction& op,
+                              const MutableConditionalEffect& effect,
+                              const MutableAtom<FluentTag>& add_atom,
+                              const MutableInvariant& inv);
 
 struct Threat
 {
@@ -50,7 +53,7 @@ struct ProofResult
     std::optional<Threat> threat;
 };
 
-ProofResult prove_invariant(const Invariant& inv, const MutableActionList& ops);
+ProofResult prove_invariant(const MutableInvariant& inv, const MutableActionList& ops);
 }
 
 #endif

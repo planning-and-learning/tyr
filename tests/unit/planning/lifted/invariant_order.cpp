@@ -32,13 +32,13 @@ namespace tyr::tests
 {
 namespace
 {
-using formalism::planning::invariant::Invariant;
-using formalism::planning::invariant::InvariantList;
+using formalism::planning::MutableInvariant;
+using formalism::planning::MutableInvariantList;
 
 const auto ferry_domain = std::filesystem::path(BENCHMARKS_DIR) / "classical/tests/ferry/domain.pddl";
 const auto ferry_task = std::filesystem::path(BENCHMARKS_DIR) / "classical/tests/ferry/test-1.pddl";
 
-std::set<std::string> predicate_names(const Invariant& invariant)
+std::set<std::string> predicate_names(const MutableInvariant& invariant)
 {
     auto result = std::set<std::string> {};
     for (const auto& atom : invariant.atoms)
@@ -46,9 +46,9 @@ std::set<std::string> predicate_names(const Invariant& invariant)
     return result;
 }
 
-const Invariant& find_invariant(const InvariantList& invariants, const std::set<std::string>& names)
+const MutableInvariant& find_invariant(const MutableInvariantList& invariants, const std::set<std::string>& names)
 {
-    const auto it = std::ranges::find_if(invariants, [&](const Invariant& invariant) { return predicate_names(invariant) == names; });
+    const auto it = std::ranges::find_if(invariants, [&](const MutableInvariant& invariant) { return predicate_names(invariant) == names; });
     if (it == invariants.end())
         throw std::logic_error(fmt::format("no invariant over {}", fmt::join(names, ", ")));
     return *it;
@@ -77,9 +77,9 @@ std::multiset<std::string> variable_texts(const planning::GroundTaskInstantiatio
 /// The ferry invariants of `lifted`'s domain: car position, ferry contents and ferry location.
 struct FerryInvariants
 {
-    Invariant car;
-    Invariant contents;
-    Invariant location;
+    MutableInvariant car;
+    MutableInvariant contents;
+    MutableInvariant location;
 
     explicit FerryInvariants(const planning::Task<LiftedTag>& lifted) :
         FerryInvariants(formalism::planning::invariant::synthesize_invariants(lifted.get_formalism_task().get_domain().get_domain()))
@@ -87,7 +87,7 @@ struct FerryInvariants
     }
 
 private:
-    explicit FerryInvariants(const InvariantList& invariants) :
+    explicit FerryInvariants(const MutableInvariantList& invariants) :
         car(find_invariant(invariants, { "at", "on" })),
         contents(find_invariant(invariants, { "empty-ferry", "on" })),
         location(find_invariant(invariants, { "at-ferry" }))
@@ -97,7 +97,7 @@ private:
 
 std::shared_ptr<planning::Task<LiftedTag>> parse_ferry() { return planning::Task<LiftedTag>::create(make_test_parser(ferry_domain).parse_task(ferry_task)); }
 
-planning::GroundTaskInstantiationResult ground(planning::Task<LiftedTag>& lifted, std::optional<InvariantList> invariant_order)
+planning::GroundTaskInstantiationResult ground(planning::Task<LiftedTag>& lifted, std::optional<MutableInvariantList> invariant_order)
 {
     auto context = ygg::ExecutionContext::create(1);
     auto options = planning::GroundTaskInstantiationOptions {};
@@ -115,7 +115,7 @@ TEST(TyrPlanningInvariantOrderTest, FerryContentsFirst)
     auto lifted = parse_ferry();
     const auto invariants = FerryInvariants(*lifted);
 
-    EXPECT_EQ(variable_texts(ground(*lifted, InvariantList { invariants.contents, invariants.car, invariants.location })),
+    EXPECT_EQ(variable_texts(ground(*lifted, MutableInvariantList { invariants.contents, invariants.car, invariants.location })),
               (std::multiset<std::string> { "empty-ferry() on(car1) on(car2)",
                                             "at(car1,loc1) at(car1,loc3)",
                                             "at(car2,loc1) at(car2,loc3)",
@@ -127,7 +127,7 @@ TEST(TyrPlanningInvariantOrderTest, CarPositionsFirstLeavesEmptyFerrySingle)
     auto lifted = parse_ferry();
     const auto invariants = FerryInvariants(*lifted);
 
-    EXPECT_EQ(variable_texts(ground(*lifted, InvariantList { invariants.car, invariants.location })),
+    EXPECT_EQ(variable_texts(ground(*lifted, MutableInvariantList { invariants.car, invariants.location })),
               (std::multiset<std::string> { "at(car1,loc1) at(car1,loc3) on(car1)",
                                             "at(car2,loc1) at(car2,loc3) on(car2)",
                                             "at-ferry(loc1) at-ferry(loc3)",
@@ -138,7 +138,7 @@ TEST(TyrPlanningInvariantOrderTest, EmptyOrderGivesOneVariablePerAtom)
 {
     auto lifted = parse_ferry();
 
-    for (const auto& text : variable_texts(ground(*lifted, InvariantList {})))
+    for (const auto& text : variable_texts(ground(*lifted, MutableInvariantList {})))
         EXPECT_EQ(text.find(' '), std::string::npos) << text;
 }
 
@@ -149,7 +149,7 @@ TEST(TyrPlanningInvariantOrderTest, DisabledInvariantSynthesisIgnoresTheOrder)
     auto context = ygg::ExecutionContext::create(1);
     auto options = planning::GroundTaskInstantiationOptions {};
     options.disable_invariant_synthesis = true;
-    options.invariant_order = InvariantList { invariants.contents };
+    options.invariant_order = MutableInvariantList { invariants.contents };
 
     const auto result = lifted->instantiate_ground_task(*context, options);
 
@@ -172,7 +172,7 @@ TEST(TyrPlanningInvariantOrderTest, ViolatedInstanceStaysSingle)
     const auto invariants = FerryInvariants(*lifted);
 
     // car1 is at two locations initially, so its instance is not a mutex; it does not fall through to ferry contents.
-    const auto variables = variable_texts(ground(*lifted, InvariantList { invariants.car, invariants.contents, invariants.location }));
+    const auto variables = variable_texts(ground(*lifted, MutableInvariantList { invariants.car, invariants.contents, invariants.location }));
 
     EXPECT_TRUE(variables.contains("at(car1,loc1)") && variables.contains("at(car1,loc3)") && variables.contains("on(car1)"));
     EXPECT_TRUE(variables.contains("at(car2,loc1) at(car2,loc3) on(car2)"));
@@ -183,7 +183,7 @@ TEST(TyrPlanningInvariantOrderTest, RejectsDuplicateInvariants)
 {
     auto lifted = parse_ferry();
     const auto invariants = FerryInvariants(*lifted);
-    EXPECT_THROW(ground(*lifted, InvariantList { invariants.car, invariants.car }), std::invalid_argument);
+    EXPECT_THROW(ground(*lifted, MutableInvariantList { invariants.car, invariants.car }), std::invalid_argument);
 }
 
 TEST(TyrPlanningInvariantOrderTest, AcceptsInvariantsOfAnotherParserOfTheSameDomain)
@@ -193,8 +193,8 @@ TEST(TyrPlanningInvariantOrderTest, AcceptsInvariantsOfAnotherParserOfTheSameDom
     const auto own = FerryInvariants(*lifted);
     const auto foreign = FerryInvariants(*other);
 
-    EXPECT_EQ(variable_texts(ground(*lifted, InvariantList { foreign.contents, foreign.car, foreign.location })),
-              variable_texts(ground(*lifted, InvariantList { own.contents, own.car, own.location })));
+    EXPECT_EQ(variable_texts(ground(*lifted, MutableInvariantList { foreign.contents, foreign.car, foreign.location })),
+              variable_texts(ground(*lifted, MutableInvariantList { own.contents, own.car, own.location })));
 }
 
 TEST(TyrPlanningInvariantOrderTest, RejectsInvariantsOfAnotherDomain)
@@ -204,10 +204,10 @@ TEST(TyrPlanningInvariantOrderTest, RejectsInvariantsOfAnotherDomain)
                                                         .parse_task(std::filesystem::path(BENCHMARKS_DIR) / "classical/tests/blocks_4/test-1.pddl"));
     const auto blocks_invariants = formalism::planning::invariant::synthesize_invariants(blocks->get_formalism_task().get_domain().get_domain());
     // Ferry has no invariant with three parts, so this one cannot coincide with a ferry invariant.
-    const auto it = std::ranges::find_if(blocks_invariants, [](const Invariant& invariant) { return invariant.atoms.size() == 3; });
+    const auto it = std::ranges::find_if(blocks_invariants, [](const MutableInvariant& invariant) { return invariant.atoms.size() == 3; });
     ASSERT_NE(it, blocks_invariants.end());
 
-    EXPECT_THROW(ground(*lifted, InvariantList { *it }), std::invalid_argument);
+    EXPECT_THROW(ground(*lifted, MutableInvariantList { *it }), std::invalid_argument);
 }
 
 }

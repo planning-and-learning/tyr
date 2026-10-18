@@ -14,7 +14,7 @@ from ..._pytyr.formalism.planning import (
 )
 
 from ..._pytyr.formalism.planning import (
-    Invariant,
+    MutableInvariant,
     synthesize_invariants,
     compute_invariant_order_greedy,
     compute_invariant_order_exhaustive,

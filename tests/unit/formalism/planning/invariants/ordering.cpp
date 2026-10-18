@@ -32,10 +32,10 @@ namespace tyr::tests
 {
 namespace
 {
+using formalism::planning::MutableInvariant;
+using formalism::planning::MutableInvariantList;
 using formalism::planning::invariant::compute_invariant_order_exhaustive;
 using formalism::planning::invariant::compute_invariant_order_greedy;
-using formalism::planning::invariant::Invariant;
-using formalism::planning::invariant::InvariantList;
 
 const auto tests_root = std::filesystem::path(BENCHMARKS_DIR) / "classical/tests";
 
@@ -43,7 +43,7 @@ const auto tests_root = std::filesystem::path(BENCHMARKS_DIR) / "classical/tests
 struct DomainInvariants
 {
     formalism::planning::PlanningTask<LiftedTag> task;
-    InvariantList invariants;
+    MutableInvariantList invariants;
 
     explicit DomainInvariants(const std::filesystem::path& directory) :
         task(make_test_parser(directory / "domain.pddl").parse_task(directory / "test-1.pddl")),
@@ -52,7 +52,7 @@ struct DomainInvariants
     }
 };
 
-std::set<std::string> predicate_names(const Invariant& invariant)
+std::set<std::string> predicate_names(const MutableInvariant& invariant)
 {
     auto result = std::set<std::string> {};
     for (const auto& atom : invariant.atoms)
@@ -60,7 +60,7 @@ std::set<std::string> predicate_names(const Invariant& invariant)
     return result;
 }
 
-std::vector<std::set<std::string>> names(const InvariantList& order)
+std::vector<std::set<std::string>> names(const MutableInvariantList& order)
 {
     auto result = std::vector<std::set<std::string>> {};
     for (const auto& invariant : order)

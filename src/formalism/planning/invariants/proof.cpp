@@ -61,7 +61,7 @@ struct EffectAtomRef
     const MutableAtom<FluentTag>* atom;
 };
 
-std::vector<EffectAtomRef> collect_relevant_effect_atoms(const MutableAction& op, const Invariant& inv, bool polarity)
+std::vector<EffectAtomRef> collect_relevant_effect_atoms(const MutableAction& op, const MutableInvariant& inv, bool polarity)
 {
     std::vector<EffectAtomRef> result;
 
@@ -204,7 +204,7 @@ std::optional<ConstraintSystem> make_balance_system(const MutableAtom<FluentTag>
 
 }  // namespace
 
-bool is_operator_too_heavy(const MutableAction& op, const Invariant& inv)
+bool is_operator_too_heavy(const MutableAction& op, const MutableInvariant& inv)
 {
     const auto add_effects = collect_relevant_effect_atoms(op, inv, true);
 
@@ -262,7 +262,10 @@ bool is_operator_too_heavy(const MutableAction& op, const Invariant& inv)
     return false;
 }
 
-bool is_add_effect_unbalanced(const MutableAction& op, const MutableConditionalEffect& add_effect, const MutableAtom<FluentTag>& add_atom, const Invariant& inv)
+bool is_add_effect_unbalanced(const MutableAction& op,
+                              const MutableConditionalEffect& add_effect,
+                              const MutableAtom<FluentTag>& add_atom,
+                              const MutableInvariant& inv)
 {
     const auto* add_pattern = find_part(inv, add_atom.predicate);
     if (add_pattern == nullptr)
@@ -310,7 +313,7 @@ bool is_add_effect_unbalanced(const MutableAction& op, const MutableConditionalE
     return true;
 }
 
-ProofResult prove_invariant(const Invariant& inv, const MutableActionList& ops)
+ProofResult prove_invariant(const MutableInvariant& inv, const MutableActionList& ops)
 {
     for (size_t op_index = 0; op_index < ops.size(); ++op_index)
     {
