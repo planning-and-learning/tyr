@@ -127,10 +127,7 @@ inline bool is_canonical(const ygg::Data<ConditionalEffect<LiftedTag>>&) { retur
 
 inline bool is_canonical(const ygg::Data<ConditionalEffect<GroundTag>>&) { return true; }
 
-inline bool is_canonical(const ygg::Data<ConjunctiveEffect<LiftedTag>>& data)
-{
-    return is_canonical(data.literals) && is_canonical(data.numeric_effects);
-}
+inline bool is_canonical(const ygg::Data<ConjunctiveEffect<LiftedTag>>& data) { return is_canonical(data.literals) && is_canonical(data.numeric_effects); }
 
 inline bool is_canonical(const ygg::Data<ConjunctiveEffect<GroundTag>>& data)
 {
@@ -165,6 +162,8 @@ bool is_canonical(const ygg::Data<FDRVariable<T>>&)
 {
     return true;
 }
+
+inline bool is_canonical(const ygg::Data<Invariant>& data) { return is_canonical(data.atoms); }
 
 template<FactKind T>
 bool is_canonical(const ygg::Data<FDRFact<T>>&)
@@ -351,6 +350,8 @@ void canonicalize(ygg::Data<FDRVariable<T>>&)
 {
     // Trivially canonical
 }
+
+inline void canonicalize(ygg::Data<Invariant>& data) { canonicalize(data.atoms); }
 
 template<FactKind T>
 void canonicalize(ygg::Data<FDRFact<T>>&)

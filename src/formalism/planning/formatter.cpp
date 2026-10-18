@@ -238,6 +238,30 @@ std::string fdr_variable(FDRVariableView<T> value)
                       });
 }
 
+std::string invariant(const ygg::Data<Invariant>& value)
+{
+    return structured("Invariant",
+                      [&](auto& os)
+                      {
+                          field(os, "index = ", value.index);
+                          field(os, "num rigid variables = ", value.num_rigid_variables);
+                          field(os, "num counted variables = ", value.num_counted_variables);
+                          field(os, "atoms = ", value.atoms);
+                      });
+}
+
+std::string invariant(InvariantView value)
+{
+    return structured("Invariant",
+                      [&](auto& os)
+                      {
+                          field(os, "index = ", value.get_index());
+                          field(os, "num rigid variables = ", value.get_num_rigid_variables());
+                          field(os, "num counted variables = ", value.get_num_counted_variables());
+                          field(os, "atoms = ", value.get_atoms());
+                      });
+}
+
 template<FactKind T>
 std::string fdr_fact(const ygg::Data<FDRFact<T>>& value)
 {
@@ -331,6 +355,8 @@ std::string to_string(const ygg::Data<NumericEffectOperator<LiftedTag, Auxiliary
 std::string to_string(const ygg::Data<NumericEffectOperator<GroundTag, FluentTag>>& value) { return detail::numeric_effect_operator(value); }
 std::string to_string(const ygg::Data<NumericEffectOperator<GroundTag, AuxiliaryTag>>& value) { return detail::numeric_effect_operator(value); }
 std::string to_string(const ygg::Data<FDRVariable<FluentTag>>& value) { return detail::fdr_variable(value); }
+
+std::string to_string(const ygg::Data<Invariant>& value) { return detail::invariant(value); }
 std::string to_string(const ygg::Data<FDRFact<FluentTag>>& value) { return detail::fdr_fact(value); }
 
 std::string to_string(const ygg::Data<FunctionExpression<LiftedTag>>& value) { return fmt::format("{}", value.variant); }
@@ -595,6 +621,8 @@ std::string to_string(NumericEffectOperatorView<LiftedTag, AuxiliaryTag> value) 
 std::string to_string(NumericEffectOperatorView<GroundTag, FluentTag> value) { return detail::numeric_effect_operator(value); }
 std::string to_string(NumericEffectOperatorView<GroundTag, AuxiliaryTag> value) { return detail::numeric_effect_operator(value); }
 std::string to_string(FDRVariableView<FluentTag> value) { return detail::fdr_variable(value); }
+
+std::string to_string(InvariantView value) { return detail::invariant(value); }
 std::string to_string(FDRFactView<FluentTag> value) { return detail::fdr_fact(value); }
 
 std::string to_string(FunctionExpressionView<LiftedTag> value) { return fmt::format("{}", value.get_variant()); }

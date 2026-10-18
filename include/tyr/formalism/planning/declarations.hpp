@@ -148,6 +148,10 @@ struct FDRVariable
 {
 };
 
+struct Invariant
+{
+};
+
 template<FactKind T>
 struct FDRFact
 {
@@ -178,6 +182,7 @@ using FunctionTermTypes = ygg::TypeList<FunctionTerm<T, StaticTag>, FunctionTerm
 template<TaskKind T>
 using FunctionTermValueTypes = ygg::TypeList<FunctionTermValue<T, StaticTag>, FunctionTermValue<T, FluentTag>, FunctionTermValue<T, AuxiliaryTag>>;
 using FDRVariableTypes = ygg::MapTypeListT<FDRVariable, ygg::TypeList<FluentTag>>;
+using InvariantTypes = ygg::TypeList<Invariant>;
 using FDRFactTypes = ygg::MapTypeListT<FDRFact, ygg::TypeList<FluentTag>>;
 
 template<TaskKind T>
@@ -227,6 +232,7 @@ using SymbolRepositoryTypes = ygg::ConcatTypeListsT<CoreTypes,
                                                     ControlTypes,
                                                     ProblemTypes,
                                                     FDRVariableTypes,
+                                                    InvariantTypes,
                                                     ConditionTypes>;
 
 using RelationRepositoryTypes = ygg::ConcatTypeListsT<PredicateTypes, FunctionTypes, StructureTypes>;
@@ -332,6 +338,10 @@ template<FactKind T>
 using FDRVariableListView = ygg::View<ygg::IndexList<FDRVariable<T>>, Repository>;
 template<FactKind T>
 using FDRVariableViewList = std::vector<FDRVariableView<T>>;
+
+using InvariantView = ygg::View<ygg::Index<Invariant>, Repository>;
+using InvariantListView = ygg::View<ygg::IndexList<Invariant>, Repository>;
+using InvariantViewList = std::vector<InvariantView>;
 
 template<TaskKind T>
 using FunctionExpressionView = ygg::View<ygg::Data<FunctionExpression<T>>, Repository>;

@@ -34,6 +34,7 @@
 #include "tyr/formalism/planning/function_expression_data.hpp"
 #include "tyr/formalism/planning/function_term_data.hpp"
 #include "tyr/formalism/planning/function_term_value_data.hpp"
+#include "tyr/formalism/planning/invariant_data.hpp"
 #include "tyr/formalism/planning/literal_data.hpp"
 #include "tyr/formalism/planning/metric_data.hpp"
 #include "tyr/formalism/planning/multi_operator_data.hpp"

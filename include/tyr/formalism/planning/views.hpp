@@ -33,6 +33,7 @@
 #include "tyr/formalism/planning/function_expression_view.hpp"
 #include "tyr/formalism/planning/function_term_value_view.hpp"
 #include "tyr/formalism/planning/function_term_view.hpp"
+#include "tyr/formalism/planning/invariant_view.hpp"
 #include "tyr/formalism/planning/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
 #include "tyr/formalism/planning/multi_operator_view.hpp"

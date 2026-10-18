@@ -113,6 +113,8 @@ std::string to_string(const ygg::Data<NumericEffectOperator<LiftedTag, Auxiliary
 std::string to_string(const ygg::Data<NumericEffectOperator<GroundTag, FluentTag>>& value);
 std::string to_string(const ygg::Data<NumericEffectOperator<GroundTag, AuxiliaryTag>>& value);
 std::string to_string(const ygg::Data<FDRVariable<FluentTag>>& value);
+
+std::string to_string(const ygg::Data<Invariant>& value);
 std::string to_string(const ygg::Data<FDRFact<FluentTag>>& value);
 
 std::string to_string(const ygg::Data<FunctionExpression<LiftedTag>>& value);
@@ -196,6 +198,8 @@ std::string to_string(NumericEffectOperatorView<LiftedTag, AuxiliaryTag> value);
 std::string to_string(NumericEffectOperatorView<GroundTag, FluentTag> value);
 std::string to_string(NumericEffectOperatorView<GroundTag, AuxiliaryTag> value);
 std::string to_string(FDRVariableView<FluentTag> value);
+
+std::string to_string(InvariantView value);
 std::string to_string(FDRFactView<FluentTag> value);
 
 std::string to_string(FunctionExpressionView<LiftedTag> value);

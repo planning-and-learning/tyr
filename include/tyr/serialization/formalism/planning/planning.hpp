@@ -20,6 +20,7 @@
 #include "tyr/serialization/formalism/planning/function_expression_view.hpp"
 #include "tyr/serialization/formalism/planning/function_term_value_view.hpp"
 #include "tyr/serialization/formalism/planning/function_term_view.hpp"
+#include "tyr/serialization/formalism/planning/invariant_view.hpp"
 #include "tyr/serialization/formalism/planning/literal_view.hpp"
 #include "tyr/serialization/formalism/planning/metric_view.hpp"
 #include "tyr/serialization/formalism/planning/multi_operator_view.hpp"

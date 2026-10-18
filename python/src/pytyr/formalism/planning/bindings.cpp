@@ -30,6 +30,7 @@ void bind_formalism(nb::module_& m)
     bind_atom(m, repository);
     bind_literal(m, repository);
     bind_fdr_variable(m, repository);
+    bind_invariant(m, repository);
     bind_function_term(m, repository);
     bind_function_term_value(m, repository);
     bind_unary_operator(m, repository);
