@@ -47,6 +47,7 @@ Before running a validation target, check whether the existing `build/` director
 
 - Compile on 16 cores only.
 - Explicitly instantiate templates when the set of types is small
+- Follow the template and include rules in yggdrasil's [docs/TEMPLATE_RULES.md](https://github.com/planning-and-learning/yggdrasil/blob/main/docs/TEMPLATE_RULES.md).
 - Use JSON fixtures for large repetitive test data.
 - Never modify JSON test fixtures just to make them pass without permission.
 - Keep changes scoped to the active task.
