@@ -18,6 +18,109 @@
 #include "normalization.hpp"
 
 #include "matching.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+
+#include <algorithm>
+#include <fmt/format.h>
+#include <fmt/ranges.h>
+#include <numeric>
+#include <optional>
+#include <string>
+#include <vector>
+
+namespace tyr::formalism::planning
+{
+namespace
+{
+/// `name(args)` with rigid variable i written as V<renaming[i]>, the counted variable as `*`, and constants by name.
+std::string atom_text(const MutableAtom<FluentTag>& atom, size_t num_rigid_variables, const std::vector<size_t>& renaming)
+{
+    auto args = std::vector<std::string> {};
+    args.reserve(atom.terms.size());
+    for (const auto& term : atom.terms)
+    {
+        args.push_back(std::visit(
+            [&]<typename T>(const T& arg) -> std::string
+            {
+                if constexpr (std::is_same_v<T, ParameterIndex>)
+                {
+                    const auto index = static_cast<ygg::uint_t>(arg);
+                    return index < num_rigid_variables ? fmt::format("V{}", renaming[index]) : std::string("*");
+                }
+                else if constexpr (std::is_same_v<T, ygg::Index<Object>>)
+                    return std::string(ygg::make_view(arg, atom.predicate.get_context()).get_name().view());
+                else
+                    static_assert(ygg::dependent_false<T>::value, "Missing case");
+            },
+            term.variant));
+    }
+    return fmt::format("{}({})", atom.predicate.get_name().view(), fmt::join(args, ","));
+}
+
+std::vector<std::string> sorted_atom_texts(const MutableAtomList<FluentTag>& atoms, size_t num_rigid_variables, const std::vector<size_t>& renaming)
+{
+    auto texts = std::vector<std::string> {};
+    texts.reserve(atoms.size());
+    for (const auto& atom : atoms)
+        texts.push_back(atom_text(atom, num_rigid_variables, renaming));
+    std::ranges::sort(texts);
+    return texts;
+}
+
+/// The renaming of rigid variables with the smallest sorted atom texts. Tries all r! renamings; invariants have few rigid
+/// variables (at most 3 on the IPC domains).
+std::vector<size_t> canonical_renaming(const MutableAtomList<FluentTag>& atoms, size_t num_rigid_variables)
+{
+    auto renaming = std::vector<size_t>(num_rigid_variables);
+    std::iota(renaming.begin(), renaming.end(), size_t { 0 });
+    auto best = renaming;
+    auto best_texts = sorted_atom_texts(atoms, num_rigid_variables, renaming);
+    while (std::ranges::next_permutation(renaming).found)
+    {
+        auto texts = sorted_atom_texts(atoms, num_rigid_variables, renaming);
+        if (texts < best_texts)
+        {
+            best = renaming;
+            best_texts = std::move(texts);
+        }
+    }
+    return best;
+}
+
+std::optional<ygg::uint_t> parameter_of(const ygg::Data<Term>& term)
+{
+    return std::visit(
+        []<typename T>(const T& arg) -> std::optional<ygg::uint_t>
+        {
+            if constexpr (std::is_same_v<T, ParameterIndex>)
+                return static_cast<ygg::uint_t>(arg);
+            return std::nullopt;
+        },
+        term.variant);
+}
+
+void rename_rigid_variables(MutableAtomList<FluentTag>& atoms, size_t num_rigid_variables, const std::vector<size_t>& renaming)
+{
+    for (auto& atom : atoms)
+        for (auto& term : atom.terms)
+            if (const auto parameter = parameter_of(term); parameter && *parameter < num_rigid_variables)
+                term = ygg::Data<Term>(ParameterIndex(renaming[*parameter]));
+}
+}
+
+void MutableInvariant::canonicalize()
+{
+    if (num_rigid_variables > 1)
+        rename_rigid_variables(atoms, num_rigid_variables, canonical_renaming(atoms, num_rigid_variables));
+
+    std::sort(atoms.begin(), atoms.end());
+    atoms.erase(std::unique(atoms.begin(), atoms.end()), atoms.end());
+
+    predicates.clear();
+    for (const auto& atom : atoms)
+        predicates.insert(atom.predicate);
+}
+}
 
 namespace tyr::formalism::planning::invariant
 {

@@ -21,7 +21,6 @@ from ..._pytyr.formalism.planning import (
     compute_mutex_groups,
     compute_mutex_groups_in_order,
     compute_all_mutex_groups,
-    canonical_text,
     ObjectSubstitution,
     TermSubstitution,
     InvariantMatchData,

@@ -37,7 +37,7 @@ Parts = list[dict[str, Any]]
 
 
 def canonical(parts: Parts) -> str:
-    """Text with rigid variables renamed to give the smallest sorted part texts (as tyr's canonical_text)."""
+    """Text with rigid variables renamed to give the smallest sorted part texts (as MutableInvariant::canonicalize numbers them)."""
     rigid = sorted({arg for part in parts for arg in part["args"] if isinstance(arg, int) and arg >= 0})
     best = None
     for renaming in itertools.permutations(range(len(rigid))):

@@ -43,9 +43,6 @@ namespace
 /// Above this many assignments of one predicate component, the exhaustive order falls back to the greedy one.
 constexpr std::size_t max_assignments_per_component = 1'000'000;
 
-/// Invariants with more rigid variables keep their numbering instead of trying every renaming.
-constexpr std::size_t max_rigid_variables_to_rename = 4;
-
 /// A polynomial in the object count n with non-negative coefficients; coefficients[d] belongs to n^d.
 class Polynomial
 {
@@ -105,8 +102,8 @@ struct ResidualKey
     friend auto operator<=>(const ResidualKey&, const ResidualKey&) = default;
 };
 
-/// `renaming[i]` is the name V<renaming[i]> of rigid variable i.
-std::string term_text(const ygg::Data<Term>& term, const std::vector<std::size_t>& renaming)
+/// Rigid variables as V<i>, the counted variable as `*`, constants by name (never by repository index).
+std::string term_text(const ygg::Data<Term>& term, std::size_t num_rigid_variables, PredicateView<FluentTag> predicate)
 {
     return std::visit(
         [&]<typename T>(const T& arg) -> std::string
@@ -114,11 +111,11 @@ std::string term_text(const ygg::Data<Term>& term, const std::vector<std::size_t
             if constexpr (std::is_same_v<T, ParameterIndex>)
             {
                 const auto index = static_cast<ygg::uint_t>(arg);
-                return index < renaming.size() ? fmt::format("V{}", renaming[index]) : std::string("*");
+                return index < num_rigid_variables ? fmt::format("V{}", index) : std::string("*");
             }
             else if constexpr (std::is_same_v<T, ygg::Index<Object>>)
             {
-                return fmt::format("c{}", static_cast<ygg::uint_t>(arg));
+                return std::string(ygg::make_view(arg, predicate.get_context()).get_name().view());
             }
             else
             {
@@ -140,9 +137,8 @@ std::optional<ygg::uint_t> parameter_of(const ygg::Data<Term>& term)
         term.variant);
 }
 
-Part make_part(const MutableAtom<FluentTag>& atom, const std::vector<std::size_t>& renaming)
+Part make_part(const MutableAtom<FluentTag>& atom, std::size_t num_rigid_variables)
 {
-    const auto num_rigid_variables = renaming.size();
     auto part = Part { .predicate = atom.predicate, .name = std::string(atom.predicate.get_name().view()) };
     part.first_rigid_position = atom.terms.size();
     auto texts = std::vector<std::string> {};
@@ -155,45 +151,21 @@ Part make_part(const MutableAtom<FluentTag>& atom, const std::vector<std::size_t
             else
                 part.has_counted = true;
         }
-        texts.push_back(term_text(atom.terms[position], renaming));
+        texts.push_back(term_text(atom.terms[position], num_rigid_variables, atom.predicate));
     }
     part.text = fmt::format("{}({})", part.name, fmt::join(texts, ","));
     return part;
 }
 
-std::vector<Part> make_parts(const MutableInvariant& invariant, const std::vector<std::size_t>& renaming)
+/// The parts sorted by text. MutableInvariant::canonicalize() numbers the rigid variables to give the smallest such texts,
+/// so they do not depend on how an implementation numbers them.
+std::vector<Part> make_parts(const MutableInvariant& invariant)
 {
     auto parts = std::vector<Part> {};
     for (const auto& atom : invariant.atoms)
-        parts.push_back(make_part(atom, renaming));
+        parts.push_back(make_part(atom, invariant.num_rigid_variables));
     std::ranges::sort(parts, {}, &Part::text);
     return parts;
-}
-
-/// The parts under the renaming of rigid variables whose sorted texts are smallest, so that the texts do not depend on
-/// how an implementation numbers rigid variables (Fast Downward's translator uses the same canonical form).
-std::vector<Part> canonical_parts(const MutableInvariant& invariant)
-{
-    auto renaming = std::vector<std::size_t>(invariant.num_rigid_variables);
-    std::iota(renaming.begin(), renaming.end(), std::size_t { 0 });
-    auto best = make_parts(invariant, renaming);
-    if (renaming.size() > max_rigid_variables_to_rename)
-        return best;
-
-    const auto texts = [](const std::vector<Part>& parts)
-    {
-        auto result = std::vector<std::string> {};
-        for (const auto& part : parts)
-            result.push_back(part.text);
-        return result;
-    };
-    while (std::ranges::next_permutation(renaming).found)
-    {
-        auto parts = make_parts(invariant, renaming);
-        if (texts(parts) < texts(best))
-            best = std::move(parts);
-    }
-    return best;
 }
 
 std::string text_of(const std::vector<Part>& parts) { return fmt::format("{{{}}}", fmt::join(parts | std::views::transform(&Part::text), ", ")); }
@@ -206,7 +178,7 @@ std::vector<Info> analyze(const MutableInvariantList& invariants)
     {
         if (std::ranges::any_of(infos, [&](const Info& info) { return *info.invariant == invariant; }))
             continue;
-        auto info = Info { .invariant = &invariant, .num_rigid_variables = invariant.num_rigid_variables, .parts = canonical_parts(invariant) };
+        auto info = Info { .invariant = &invariant, .num_rigid_variables = invariant.num_rigid_variables, .parts = make_parts(invariant) };
         info.text = text_of(info.parts);
         infos.push_back(std::move(info));
     }
@@ -325,8 +297,7 @@ std::vector<Component> split_into_components(const std::vector<Info>& infos)
                 predicates.emplace_back(part.name, part.predicate);
     std::ranges::sort(predicates, {}, &std::pair<std::string, PredicateView<FluentTag>>::first);
 
-    const auto index_of = [&](PredicateView<FluentTag> predicate)
-    {
+    const auto index_of = [&](PredicateView<FluentTag> predicate) {
         return static_cast<std::size_t>(std::ranges::find(predicates, predicate, &std::pair<std::string, PredicateView<FluentTag>>::second)
                                         - predicates.begin());
     };
@@ -532,10 +503,6 @@ std::vector<const Info*> pointers(const std::vector<Info>& infos)
 }
 
 }  // namespace
-
-std::string canonical_text(const MutableInvariant& invariant) { return text_of(canonical_parts(invariant)); }
-
-std::string canonical_text(InvariantView invariant) { return canonical_text(MutableInvariant(invariant)); }
 
 InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invariants)
 {

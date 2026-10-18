@@ -208,6 +208,5 @@ void bind_invariants(nb::module_& m)
     m.def("compute_mutex_groups", &invariant::compute_mutex_groups, "initial_atoms"_a, "all_atoms"_a, "invariants"_a);
     m.def("compute_mutex_groups_in_order", &invariant::compute_mutex_groups_in_order, "initial_atoms"_a, "all_atoms"_a, "invariant_order"_a);
     m.def("compute_all_mutex_groups", &invariant::compute_all_mutex_groups, "initial_atoms"_a, "all_atoms"_a, "invariants"_a);
-    m.def("canonical_text", nb::overload_cast<InvariantView>(&invariant::canonical_text), "invariant"_a);
 }
 }

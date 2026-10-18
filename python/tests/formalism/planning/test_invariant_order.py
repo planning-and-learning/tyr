@@ -3,7 +3,6 @@ from pypddl.formalism import ParserOptions
 from pypddl_datasets import fetch_task
 from pytyr.formalism.planning import (
     Parser,
-    canonical_text,
     compute_all_mutex_groups,
     compute_invariant_order_exhaustive,
     compute_invariant_order_greedy,
@@ -104,8 +103,8 @@ def test_all_mutex_groups_are_the_proven_instances(ferry):
         ["at-ferry(loc1)", "at-ferry(loc3)"],
         ["empty-ferry()", "on(car1)", "on(car2)"],
     ]
-    assert sorted(canonical_text(invariant) for invariant in invariants) == [
-        "{at(V0,*), on(V0)}", "{at-ferry(*)}", "{empty-ferry(), on(*)}"]
+    assert sorted((sorted(_predicate_names(invariant)), invariant.get_num_rigid_variables()) for invariant in invariants) == [
+        (["at", "on"], 1), (["at-ferry"], 0), (["empty-ferry", "on"], 0)]
     for group in groups:
         assert group.invariant in invariants
         assert len(group.objects) == group.invariant.get_num_rigid_variables()

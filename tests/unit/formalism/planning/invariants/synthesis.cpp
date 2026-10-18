@@ -78,21 +78,32 @@ parse_invariants(tyr::formalism::planning::Repository& repository, const boost::
     return result;
 }
 
+/// The atoms in text form, sorted. Both sides are canonical (MutableInvariant::canonicalize() numbers the rigid variables
+/// by predicate names), but live in different repositories, so atoms are compared by text rather than by index.
+std::string invariant_text(const tyr::formalism::planning::MutableInvariant& invariant)
+{
+    auto atoms = std::vector<std::string> {};
+    for (const auto& atom : invariant.atoms)
+        atoms.push_back(fmt::format("{}", atom));
+    std::ranges::sort(atoms);
+    return fmt::format("{} {} {{{}}}", invariant.num_rigid_variables, invariant.num_counted_variables, fmt::join(atoms, ", "));
+}
+
 template<typename Invariants>
-std::set<std::string> canonical_texts(const Invariants& invariants)
+std::set<std::string> invariant_texts(const Invariants& invariants)
 {
     auto result = std::set<std::string> {};
     for (const auto& invariant : invariants)
-        result.insert(tyr::formalism::planning::invariant::canonical_text(invariant));
+        result.insert(invariant_text(tyr::formalism::planning::MutableInvariant(invariant)));
     return result;
 }
 
-/// Equal up to how each invariant numbers its variables. The expected invariants of the classical and IPC cases are tyr's own,
-/// each proven by Fast Downward's balance check (fixture_generation.py).
+/// The expected invariants of the classical and IPC cases are tyr's own, each proven by Fast Downward's balance check
+/// (fixture_generation.py).
 void expect_invariant_sets_equal(const tyr::formalism::planning::InvariantViewList& actual, const tyr::formalism::planning::MutableInvariantList& expected)
 {
-    const auto actual_texts = canonical_texts(actual);
-    const auto expected_texts = canonical_texts(expected);
+    const auto actual_texts = invariant_texts(actual);
+    const auto expected_texts = invariant_texts(expected);
     auto only_actual = std::vector<std::string> {};
     auto only_expected = std::vector<std::string> {};
     std::ranges::set_difference(actual_texts, expected_texts, std::back_inserter(only_actual));

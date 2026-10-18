@@ -21,15 +21,8 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/mutable/invariant.hpp"
 
-#include <string>
-
 namespace tyr::formalism::planning::invariant
 {
-
-/// The invariant as text, e.g. `{at(V0,*), on(V0)}`, with rigid variables renamed to give the smallest text: equal for
-/// invariants that differ only in how their variables are numbered.
-std::string canonical_text(const MutableInvariant& invariant);
-std::string canonical_text(InvariantView invariant);
 
 /// Invariant orders for GroundTaskInstantiationOptions::invariant_order, computed from the invariants alone.
 ///
@@ -39,8 +32,8 @@ std::string canonical_text(InvariantView invariant);
 /// variable and with one part yields groups of one atom; such invariants are left out.
 ///
 /// The result depends only on the set of invariants: ties are broken by more rigid variables, rigid variables at
-/// earlier argument positions, and the parts' text (predicate names, with rigid variables renamed to the smallest
-/// such text, so that the order does not depend on how an implementation numbers them).
+/// earlier argument positions, and the parts' text (predicate and constant names; MutableInvariant::canonicalize()
+/// numbers the rigid variables canonically, so the order does not depend on how an implementation numbers them).
 
 /// Repeatedly takes the residual covering the most atoms, n^r * (a*n + b).
 InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invariants);
