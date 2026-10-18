@@ -28,8 +28,10 @@
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/datas.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
+#include "tyr/planning/lifted/programs/action.hpp"
+#include "tyr/planning/lifted/programs/axiom.hpp"
 #include "tyr/planning/lifted/programs/ground.hpp"
-#include "tyr/planning/planning.hpp"
+#include "tyr/planning/lifted/task.hpp"
 
 #include <algorithm>
 #include <array>
