@@ -15,7 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "heuristics.hpp"
 #include "statistics.hpp"
+
+#include <tyr/planning/algorithms/gbfs_lazy.hpp>
+#include <tyr/planning/algorithms/gbfs_lazy/event_handler.hpp>
 
 namespace tyr::tests
 {

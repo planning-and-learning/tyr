@@ -17,6 +17,13 @@
 
 #include "statistics.hpp"
 
+#include <tyr/planning/algorithms/brfs.hpp>
+#include <tyr/planning/algorithms/brfs/event_handler.hpp>
+#include <tyr/planning/algorithms/iw.hpp>
+#include <tyr/planning/algorithms/iw/event_handler.hpp>
+#include <tyr/planning/algorithms/siw.hpp>
+#include <tyr/planning/algorithms/siw/event_handler.hpp>
+
 #include <filesystem>
 
 namespace tyr::tests

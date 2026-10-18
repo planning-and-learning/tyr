@@ -31,8 +31,12 @@
 #include <ostream>
 #include <stdexcept>
 #include <string>
-#include <tyr/formalism/formalism.hpp>
-#include <tyr/planning/planning.hpp>
+#include <tyr/planning/algorithms/statistics.hpp>
+#include <tyr/planning/algorithms/utils.hpp>
+#include <tyr/planning/factory.hpp>
+#include <tyr/planning/ground/task.hpp>
+#include <tyr/planning/lifted/task.hpp>
+#include <tyr/planning/plan.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/serialization/json.hpp>
@@ -235,37 +239,6 @@ void expect_repository_statistics(const SearchContext<Kind>& context, const plan
               task_repository.template memory_usage<formalism::RelationBinding<formalism::Function<formalism::StaticTag>>>()
                   + task_repository.template memory_usage<formalism::RelationBinding<formalism::Function<formalism::FluentTag>>>()
                   + task_repository.template memory_usage<formalism::RelationBinding<formalism::Function<formalism::AuxiliaryTag>>>());
-}
-
-inline std::pair<std::string, CostMode> parse_costed_heuristic_key(const std::string& key)
-{
-    const auto pos = key.rfind('_');
-    if (pos == std::string::npos)
-        throw std::invalid_argument("parse_costed_heuristic_key(...): missing cost suffix in key: " + key);
-
-    const auto suffix = key.substr(pos + 1);
-    if (suffix == "unit")
-        return { key.substr(0, pos), CostMode::UNIT };
-    if (suffix == "general")
-        return { key.substr(0, pos), CostMode::GENERAL };
-
-    throw std::invalid_argument("parse_costed_heuristic_key(...): unknown cost suffix in key: " + key);
-}
-
-template<TaskKind Kind>
-planning::HeuristicPtr<Kind> create_search_heuristic(const std::string& name, const SearchContext<Kind>& context, CostMode cost_mode)
-{
-    if (name == "blind")
-        return planning::BlindHeuristic<Kind>::create();
-    if (name == "hmax")
-        return planning::MaxRPGHeuristic<Kind>::create(context.task, context.execution_context, cost_mode);
-    if (name == "hadd")
-        return planning::AddRPGHeuristic<Kind>::create(context.task, context.execution_context, cost_mode);
-    if (name == "hff")
-        return planning::FFRPGHeuristic<Kind>::create(context.task, context.execution_context, cost_mode);
-    if (name == "hlmcut")
-        return planning::LMCutHeuristic<Kind>::create(context.task, context.execution_context, cost_mode);
-    throw std::invalid_argument("create_search_heuristic(...): unknown heuristic: " + name);
 }
 
 }

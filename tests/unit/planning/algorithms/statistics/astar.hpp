@@ -15,7 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "heuristics.hpp"
 #include "statistics.hpp"
+
+#include <tyr/planning/algorithms/astar_eager.hpp>
+#include <tyr/planning/algorithms/astar_eager/event_handler.hpp>
 
 namespace tyr::tests
 {
