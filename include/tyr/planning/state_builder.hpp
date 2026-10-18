@@ -23,6 +23,7 @@
 #include "tyr/planning/ground/state_storage/iterators.hpp"
 #include "tyr/planning/lifted/state_storage/iterators.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/state_builder_concepts.hpp"
 
 #include <concepts>
 #include <ranges>
@@ -33,31 +34,6 @@
 
 namespace tyr::planning
 {
-
-template<typename T, typename Kind>
-concept StateBuilderConcept = requires(std::remove_reference_t<T>& s,
-                                       const std::remove_reference_t<T>& cs,
-                                       ygg::Index<State<Kind>> index,
-                                       ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>> variable,
-                                       ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>> fact,
-                                       ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> fterm,
-                                       ygg::float_t value,
-                                       ygg::Index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> atom) {
-    requires TaskKind<Kind>;
-    { s.clear() };
-    { s.clear_unextended_part() };
-    { s.clear_extended_part() };
-    { s.assign_unextended_part(cs) };
-    { s.swap(s) } noexcept;
-    { cs.get_index() } -> std::same_as<ygg::Index<State<Kind>>>;
-    { s.set(index) };
-    { cs.get(variable) } -> std::same_as<formalism::planning::FDRValue>;
-    { s.set(fact) };
-    { cs.get(fterm) } -> std::same_as<ygg::float_t>;
-    { s.set(fterm, value) };
-    { cs.test(atom) } -> std::same_as<bool>;
-    { s.set(atom) };
-};
 
 }
 

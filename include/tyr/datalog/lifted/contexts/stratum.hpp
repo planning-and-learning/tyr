@@ -20,9 +20,9 @@
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/lifted/contexts/rule.hpp"
-#include "tyr/datalog/policies/annotation_concept.hpp"
-#include "tyr/datalog/policies/cost_concept.hpp"
-#include "tyr/datalog/policies/termination_concept.hpp"
+#include "tyr/datalog/policies/annotation_concepts.hpp"
+#include "tyr/datalog/policies/cost_concepts.hpp"
+#include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/declarations.hpp"
 
 namespace tyr::datalog

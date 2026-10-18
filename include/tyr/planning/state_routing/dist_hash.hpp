@@ -23,6 +23,7 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/state_routing/dist_hash_concepts.hpp"
 
 #include <boost/hash2/xxhash.hpp>
 #include <cassert>
@@ -35,17 +36,6 @@
 
 namespace tyr::planning
 {
-
-struct RandomDistHashTag
-{
-};
-
-struct LMCutDistHashTag
-{
-};
-
-template<typename T>
-concept DistHashKind = std::same_as<T, RandomDistHashTag> || std::same_as<T, LMCutDistHashTag>;
 
 template<TaskKind Kind, DistHashKind HashKind>
 class DistHash;

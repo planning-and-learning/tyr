@@ -20,12 +20,12 @@
 
 #include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/formalism/numeric_expression_utils.hpp"
-#include "tyr/datalog/policies/annotation_concept.hpp"
+#include "tyr/datalog/policies/annotation_concepts.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
 #include "tyr/datalog/policies/cost.hpp"
-#include "tyr/datalog/policies/cost_concept.hpp"
+#include "tyr/datalog/policies/cost_concepts.hpp"
 #include "tyr/datalog/policies/numeric_support.hpp"
-#include "tyr/datalog/policies/termination_concept.hpp"
+#include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/datalog/rule_instance.hpp"
 
 #include <algorithm>

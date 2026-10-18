@@ -22,10 +22,10 @@
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/ground/workspaces/program.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
-#include "tyr/datalog/policies/annotation_concept.hpp"
-#include "tyr/datalog/policies/cost_concept.hpp"
+#include "tyr/datalog/policies/annotation_concepts.hpp"
+#include "tyr/datalog/policies/cost_concepts.hpp"
 #include "tyr/datalog/policies/termination.hpp"
-#include "tyr/datalog/policies/termination_concept.hpp"
+#include "tyr/datalog/policies/termination_concepts.hpp"
 
 #include <algorithm>
 #include <cassert>

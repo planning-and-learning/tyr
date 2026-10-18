@@ -22,10 +22,10 @@
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/lifted/workspaces/rule.hpp"
-#include "tyr/datalog/policies/annotation_concept.hpp"
+#include "tyr/datalog/policies/annotation_concepts.hpp"
 #include "tyr/datalog/policies/cost.hpp"
-#include "tyr/datalog/policies/cost_concept.hpp"
-#include "tyr/datalog/policies/termination_concept.hpp"
+#include "tyr/datalog/policies/cost_concepts.hpp"
+#include "tyr/datalog/policies/termination_concepts.hpp"
 
 #include <cassert>
 #include <cstddef>

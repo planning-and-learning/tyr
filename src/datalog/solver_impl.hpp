@@ -20,10 +20,10 @@
 
 #include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/datalog/policies/annotation_concept.hpp"
+#include "tyr/datalog/policies/annotation_concepts.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
-#include "tyr/datalog/policies/cost_concept.hpp"
-#include "tyr/datalog/policies/termination_concept.hpp"
+#include "tyr/datalog/policies/cost_concepts.hpp"
+#include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/datalog/solver.hpp"
 
 #include <concepts>

@@ -23,12 +23,12 @@
 #include "tyr/datalog/ground/scheduler.hpp"
 #include "tyr/datalog/ground/workspaces/facts.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
-#include "tyr/datalog/policies/annotation_concept.hpp"
+#include "tyr/datalog/policies/annotation_concepts.hpp"
 #include "tyr/datalog/policies/cost.hpp"
-#include "tyr/datalog/policies/cost_concept.hpp"
+#include "tyr/datalog/policies/cost_concepts.hpp"
 #include "tyr/datalog/policies/numeric_support.hpp"
 #include "tyr/datalog/policies/termination.hpp"
-#include "tyr/datalog/policies/termination_concept.hpp"
+#include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <type_traits>

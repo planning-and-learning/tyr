@@ -22,9 +22,9 @@
 #include "tyr/analysis/stratification.hpp"
 #include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/declarations.hpp"
-#include "tyr/datalog/policies/annotation_concept.hpp"
-#include "tyr/datalog/policies/cost_concept.hpp"
-#include "tyr/datalog/policies/termination_concept.hpp"
+#include "tyr/datalog/policies/annotation_concepts.hpp"
+#include "tyr/datalog/policies/cost_concepts.hpp"
+#include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 
 #include <boost/dynamic_bitset/dynamic_bitset.hpp>

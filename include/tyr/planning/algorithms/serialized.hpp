@@ -21,6 +21,7 @@
 #include "tyr/planning/algorithms/concepts.hpp"
 #include "tyr/planning/algorithms/serialized/event_handler.hpp"
 #include "tyr/planning/algorithms/serialized/statistics.hpp"
+#include "tyr/planning/algorithms/serialized_concepts.hpp"
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
@@ -54,11 +55,6 @@ struct Options
     std::optional<std::chrono::steady_clock::duration> max_time = std::nullopt;
 
     Options() = default;
-};
-
-template<typename T, typename Kind>
-concept SerializedSolverConcept = SolverConcept<T, Kind> && std::copy_constructible<T> && requires(T& solver) {
-    { solver.options } -> SolverOptionsConcept<Kind>;
 };
 
 namespace detail

@@ -17,7 +17,7 @@
 
 #include "tyr/datalog/policies/cost.hpp"
 
-#include "tyr/datalog/policies/cost_concept.hpp"
+#include "tyr/datalog/policies/cost_concepts.hpp"
 
 namespace tyr::datalog
 {

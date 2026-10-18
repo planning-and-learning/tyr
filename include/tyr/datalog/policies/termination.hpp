@@ -22,7 +22,7 @@
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/numeric_support.hpp"
-#include "tyr/datalog/policies/termination_concept.hpp"
+#include "tyr/datalog/policies/termination_concepts.hpp"
 
 #include <optional>
 #include <yggdrasil/core/config.hpp>

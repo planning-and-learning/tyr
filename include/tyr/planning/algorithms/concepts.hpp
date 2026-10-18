@@ -18,16 +18,20 @@
 #ifndef TYR_PLANNING_ALGORITHMS_CONCEPTS_HPP_
 #define TYR_PLANNING_ALGORITHMS_CONCEPTS_HPP_
 
-#include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/node_concepts.hpp"
 
 #include <chrono>
 #include <concepts>
 #include <optional>
 #include <utility>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
+template<TaskKind Kind>
+struct SearchResult;
+
 template<typename T, typename Kind>
 concept SolverConcept = TaskKind<Kind> && requires(T& solver, std::optional<Node<Kind>> start_node) {
     { solver.solve() } -> std::same_as<SearchResult<Kind>>;

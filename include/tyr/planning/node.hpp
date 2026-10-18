@@ -23,6 +23,7 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/planning/state_view.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/node_concepts.hpp"
 #include "tyr/planning/task.hpp"
 
 #include <concepts>
@@ -36,7 +37,7 @@
 
 namespace tyr::planning
 {
-template<TaskKind Kind, StateViewConcept<Kind> State = StateView<Kind>>
+template<TaskKind Kind, StateViewConcept<Kind> State>
 class Node : public ygg::comparison::Mixin<Node<Kind, State>>
 {
 public:
@@ -84,16 +85,9 @@ private:
     ygg::float_t m_metric;
 };
 
-template<TaskKind Kind, StateViewConcept<Kind> State = StateView<Kind>>
-using NodeList = std::vector<Node<Kind, State>>;
-
-template<TaskKind Kind>
-using PackedNodeList = std::vector<PackedNode<Kind>>;
-
 template<TaskKind Kind,
-         StateViewConcept<Kind> State = StateView<Kind>,
-         ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding =
-             formalism::planning::ActionBindingView>
+         StateViewConcept<Kind> State,
+         ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding>
 struct LabeledNode
 {
     using StateType = State;
@@ -116,22 +110,6 @@ struct PackedLabeledNode
 
     LabeledNode<Kind> unpack() const { return { label, node.unpack() }; }
 };
-
-template<TaskKind Kind,
-         StateViewConcept<Kind> State = StateView<Kind>,
-         ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding =
-             formalism::planning::ActionBindingView>
-using LabeledNodeList = std::vector<LabeledNode<Kind, State, Binding>>;
-
-template<TaskKind Kind>
-using PackedLabeledNodeList = std::vector<PackedLabeledNode<Kind>>;
-
-template<typename T, typename Kind>
-concept NodeConcept = TaskKind<Kind> && requires(const std::remove_reference_t<T>& cn) {
-    { cn.get_state() } -> StateViewConcept<Kind>;
-    { cn.get_metric() } -> std::same_as<ygg::float_t>;
-};
-
 }
 
 #endif

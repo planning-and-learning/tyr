@@ -17,7 +17,7 @@
 
 #include "tyr/datalog/policies/annotation.hpp"
 
-#include "tyr/datalog/policies/annotation_concept.hpp"
+#include "tyr/datalog/policies/annotation_concepts.hpp"
 
 #include <algorithm>
 

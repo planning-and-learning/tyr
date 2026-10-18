@@ -18,6 +18,7 @@
 #ifndef TYR_PLANNING_AXIOM_EVALUATOR_HPP_
 #define TYR_PLANNING_AXIOM_EVALUATOR_HPP_
 
+#include "tyr/planning/axiom_evaluator_concepts.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_builder.hpp"
 
@@ -30,16 +31,6 @@ namespace tyr::planning
 
 template<TaskKind Kind>
 class AxiomEvaluator;
-
-template<typename T, typename Kind>
-concept AxiomEvaluatorConcept = requires(T& r, const T& const_r, ygg::Builder<State<Kind>>& state_builder, ygg::ExecutionContextPtr execution_context) {
-    requires TaskKind<Kind>;
-    { r.compute_extended_state(state_builder) } -> std::same_as<void>;
-    { const_r.make_worker(execution_context) } -> std::same_as<AxiomEvaluatorPtr<Kind>>;
-    { const_r.get_task() } -> std::same_as<const TaskPtr<Kind>&>;
-    { const_r.get_execution_context() } -> std::same_as<const ygg::ExecutionContextPtr&>;
-    { r.get_index() } -> std::same_as<ygg::uint_t>;
-};
 
 }
 
