@@ -19,7 +19,6 @@
 #define TYR_FORMALISM_PLANNING_MUTABLE_INVARIANT_HPP_
 
 #include "tyr/formalism/planning/grounder.hpp"
-#include "tyr/formalism/planning/invariant_view.hpp"
 #include "tyr/formalism/planning/mutable/atom.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/unification/structure_traits_impl.hpp"
@@ -61,18 +60,6 @@ struct MutableInvariant : ygg::comparison::Mixin<MutableInvariant>
         atoms(std::move(atoms_)),
         predicates(std::move(predicates_))
     {
-    }
-    // A template, like MutableAtom's view constructors, so the view is instantiated where the repository is complete.
-    template<typename C>
-    MutableInvariant(ygg::View<ygg::Index<Invariant>, C> element) :
-        num_rigid_variables(element.get_num_rigid_variables()),
-        num_counted_variables(element.get_num_counted_variables()),
-        atoms(),
-        predicates()
-    {
-        for (const auto atom : element.get_atoms())
-            atoms.emplace_back(atom);
-        canonicalize();
     }
 
     /// Renames the rigid variables to the numbering whose sorted atom texts (predicate and constant names, `*` for the

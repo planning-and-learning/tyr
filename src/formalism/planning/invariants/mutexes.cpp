@@ -17,9 +17,7 @@
 
 #include "tyr/formalism/planning/invariants/mutexes.hpp"
 
-#include "matching.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "utils.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -37,46 +35,52 @@ namespace tyr::formalism::planning::invariant
 namespace
 {
 
-std::optional<std::vector<ygg::Index<Object>>>
-extract_rigid_values(const MutableInvariant& inv, const MutableAtom<FluentTag>& pattern, AtomView<GroundTag, FluentTag> atom)
+/// The objects `atom` binds the rigid variables of `part` to, or nullopt if it does not match the part: same arity,
+/// equal constants, repeated variables bound consistently, and every rigid variable bound.
+std::optional<std::vector<ygg::Index<Object>>> extract_rigid_values(InvariantView inv, AtomView<LiftedTag, FluentTag> part, AtomView<GroundTag, FluentTag> atom)
 {
-    const auto sigma = match_invariant_against_ground_atom(inv, pattern, MutableAtom<FluentTag>(atom));
-    if (!sigma.has_value())
+    const auto terms = part.get_terms();
+    const auto objects = atom.get_objects();
+    if (terms.size() != objects.size())
         return std::nullopt;
 
-    std::vector<ygg::Index<Object>> rigid_values;
-    rigid_values.reserve(inv.num_rigid_variables);
-
-    for (size_t i = 0; i < inv.num_rigid_variables; ++i)
+    auto binding = std::vector<std::optional<ygg::Index<Object>>>(inv.get_num_rigid_variables() + inv.get_num_counted_variables());
+    for (std::size_t position = 0; position < terms.size(); ++position)
     {
-        const auto& value = (*sigma)[ParameterIndex(i)];
-        if (!value.has_value())
-            return std::nullopt;
-
-        const auto maybe_object = std::visit(
-            []<typename T>(const T& arg) -> std::optional<ygg::Index<Object>>
+        const auto object = objects[position].get_index();
+        const bool matches = std::visit(
+            [&]<typename T>(const T& arg) -> bool
             {
-                if constexpr (std::is_same_v<T, ygg::Index<Object>>)
+                if constexpr (std::is_same_v<T, ParameterIndex>)
                 {
-                    return arg;
+                    auto& bound = binding[static_cast<ygg::uint_t>(arg)];
+                    if (bound.has_value() && *bound != object)
+                        return false;
+                    bound = object;
+                    return true;
                 }
-                else if constexpr (std::is_same_v<T, ParameterIndex>)
+                else if constexpr (std::is_same_v<T, ygg::Index<Object>>)
                 {
-                    return std::nullopt;
+                    return arg == object;
                 }
                 else
                 {
                     static_assert(ygg::dependent_false<T>::value, "Unhandled case");
                 }
             },
-            value->variant);
-
-        if (!maybe_object.has_value())
+            terms[position].get_data().variant);
+        if (!matches)
             return std::nullopt;
-
-        rigid_values.push_back(*maybe_object);
     }
 
+    auto rigid_values = std::vector<ygg::Index<Object>> {};
+    rigid_values.reserve(inv.get_num_rigid_variables());
+    for (std::size_t i = 0; i < inv.get_num_rigid_variables(); ++i)
+    {
+        if (!binding[i].has_value())
+            return std::nullopt;
+        rigid_values.push_back(*binding[i]);
+    }
     return rigid_values;
 }
 
@@ -160,7 +164,7 @@ bool uncovered_structural_less(const InstanceGroup& lhs, const InstanceGroup& rh
 /// instance its rigid values determine; parts of one invariant have distinct predicates, so instances do not overlap.
 std::vector<InstanceGroup> instantiate_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
                                               const AtomViewList<GroundTag, FluentTag>& all_atoms,
-                                              const MutableInvariantList& invariants)
+                                              const InvariantViewList& invariants)
 {
     auto is_initial = std::vector<bool>(all_atoms.size(), false);
     for (const auto atom : initial_atoms)
@@ -171,6 +175,11 @@ std::vector<InstanceGroup> instantiate_groups(const AtomViewList<GroundTag, Flue
         is_initial[i] = true;
     }
 
+    auto predicates = std::vector<ygg::UnorderedSet<PredicateView<FluentTag>>>(invariants.size());
+    for (size_t inv_index = 0; inv_index < invariants.size(); ++inv_index)
+        for (const auto part : invariants[inv_index].get_atoms())
+            predicates[inv_index].insert(part.get_predicate());
+
     auto groups = std::vector<InstanceGroup> {};
     auto group_index = ygg::Map<GroupKey, size_t> {};
 
@@ -178,13 +187,13 @@ std::vector<InstanceGroup> instantiate_groups(const AtomViewList<GroundTag, Flue
     {
         for (size_t inv_index = 0; inv_index < invariants.size(); ++inv_index)
         {
-            const auto& inv = invariants[inv_index];
-            if (!inv.predicates.contains(atom.get_predicate()))
+            const auto inv = invariants[inv_index];
+            if (!predicates[inv_index].contains(atom.get_predicate()))
                 continue;
 
-            for (const auto& part : inv.atoms)
+            for (const auto part : inv.get_atoms())
             {
-                if (part.predicate != atom.get_predicate())
+                if (part.get_predicate() != atom.get_predicate())
                     continue;
 
                 auto rigid_values = extract_rigid_values(inv, part, atom);
@@ -321,7 +330,7 @@ std::vector<MutexGroup> compute_mutex_groups(const AtomViewList<GroundTag, Fluen
 {
     check_atoms_are_indexed_densely(all_atoms);
 
-    auto groups = instantiate_groups(initial_atoms, all_atoms, to_mutable(invariants));
+    auto groups = instantiate_groups(initial_atoms, all_atoms, invariants);
     // Candidates are the instances with exactly one true initial atom.
     std::erase_if(groups, [](const InstanceGroup& group) { return group.num_initial_atoms != 1; });
     std::sort(groups.begin(), groups.end(), deterministic_group_less);
@@ -335,7 +344,7 @@ std::vector<MutexGroup> compute_mutex_groups_in_order(const AtomViewList<GroundT
 {
     check_atoms_are_indexed_densely(all_atoms);
 
-    auto groups = instantiate_groups(initial_atoms, all_atoms, to_mutable(invariant_order));
+    auto groups = instantiate_groups(initial_atoms, all_atoms, invariant_order);
     // The invariant index is the position in the order, so this visits the invariants in order.
     std::sort(groups.begin(), groups.end(), deterministic_group_less);
 
@@ -375,7 +384,7 @@ std::vector<MutexGroup> compute_all_mutex_groups(const AtomViewList<GroundTag, F
 {
     check_atoms_are_indexed_densely(all_atoms);
 
-    auto groups = instantiate_groups(initial_atoms, all_atoms, to_mutable(invariants));
+    auto groups = instantiate_groups(initial_atoms, all_atoms, invariants);
     std::erase_if(groups, [](const InstanceGroup& group) { return group.num_initial_atoms > 1 || group.atoms.size() < 2; });
     std::sort(groups.begin(), groups.end(), deterministic_group_less);
 

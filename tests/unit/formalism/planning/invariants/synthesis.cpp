@@ -80,13 +80,32 @@ parse_invariants(tyr::formalism::planning::Repository& repository, const boost::
 
 /// The atoms in text form, sorted. Both sides are canonical (MutableInvariant::canonicalize() numbers the rigid variables
 /// by predicate names), but live in different repositories, so atoms are compared by text rather than by index.
+std::string invariant_text(size_t num_rigid_variables, size_t num_counted_variables, std::vector<std::string> atoms)
+{
+    std::ranges::sort(atoms);
+    return fmt::format("{} {} {{{}}}", num_rigid_variables, num_counted_variables, fmt::join(atoms, ", "));
+}
+
 std::string invariant_text(const tyr::formalism::planning::MutableInvariant& invariant)
 {
     auto atoms = std::vector<std::string> {};
     for (const auto& atom : invariant.atoms)
         atoms.push_back(fmt::format("{}", atom));
-    std::ranges::sort(atoms);
-    return fmt::format("{} {} {{{}}}", invariant.num_rigid_variables, invariant.num_counted_variables, fmt::join(atoms, ", "));
+    return invariant_text(invariant.num_rigid_variables, invariant.num_counted_variables, std::move(atoms));
+}
+
+/// Formats the atoms like MutableAtom's formatter, so both sides give the same text.
+std::string invariant_text(tyr::formalism::planning::InvariantView invariant)
+{
+    auto atoms = std::vector<std::string> {};
+    for (const auto atom : invariant.get_atoms())
+    {
+        auto terms = std::vector<std::string> {};
+        for (const auto term : atom.get_terms())
+            terms.push_back(fmt::format("{}", term.get_data()));
+        atoms.push_back(fmt::format("({} {})", atom.get_predicate().get_name(), fmt::join(terms, " ")));
+    }
+    return invariant_text(invariant.get_num_rigid_variables(), invariant.get_num_counted_variables(), std::move(atoms));
 }
 
 template<typename Invariants>
@@ -94,7 +113,7 @@ std::set<std::string> invariant_texts(const Invariants& invariants)
 {
     auto result = std::set<std::string> {};
     for (const auto& invariant : invariants)
-        result.insert(invariant_text(tyr::formalism::planning::MutableInvariant(invariant)));
+        result.insert(invariant_text(invariant));
     return result;
 }
 

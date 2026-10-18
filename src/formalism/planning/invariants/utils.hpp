@@ -25,15 +25,6 @@
 namespace tyr::formalism::planning::invariant
 {
 
-inline MutableInvariantList to_mutable(const InvariantViewList& invariants)
-{
-    auto result = MutableInvariantList {};
-    result.reserve(invariants.size());
-    for (const auto invariant : invariants)
-        result.emplace_back(invariant);
-    return result;
-}
-
 inline const MutableAtom<FluentTag>* find_part(const MutableInvariant& inv, PredicateView<FluentTag> predicate)
 {
     const auto it = std::find_if(inv.atoms.begin(), inv.atoms.end(), [&](const auto& atom) { return atom.predicate == predicate; });

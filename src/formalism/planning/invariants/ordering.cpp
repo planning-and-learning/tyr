@@ -18,7 +18,6 @@
 #include "tyr/formalism/planning/invariants/ordering.hpp"
 
 #include "tyr/formalism/planning/repository.hpp"
-#include "utils.hpp"
 
 #include <algorithm>
 #include <compare>
@@ -97,7 +96,7 @@ struct Part
 
 struct Info
 {
-    const MutableInvariant* invariant = nullptr;
+    InvariantView invariant;
     std::size_t num_rigid_variables = 0;
     std::vector<Part> parts;  // sorted by text
     std::string text;         // all parts; distinguishes invariants whose residuals coincide
@@ -150,21 +149,24 @@ std::optional<ygg::uint_t> parameter_of(const ygg::Data<Term>& term)
         term.variant);
 }
 
-Part make_part(const MutableAtom<FluentTag>& atom, std::size_t num_rigid_variables)
+Part make_part(AtomView<LiftedTag, FluentTag> atom, std::size_t num_rigid_variables)
 {
-    auto part = Part { .predicate = atom.predicate, .name = std::string(atom.predicate.get_name().view()) };
-    part.first_rigid_position = atom.terms.size();
+    const auto predicate = atom.get_predicate();
+    const auto terms = atom.get_terms();
+    auto part = Part { .predicate = predicate, .name = std::string(predicate.get_name().view()) };
+    part.first_rigid_position = terms.size();
     auto texts = std::vector<std::string> {};
-    for (std::size_t position = 0; position < atom.terms.size(); ++position)
+    for (std::size_t position = 0; position < terms.size(); ++position)
     {
-        if (const auto parameter = parameter_of(atom.terms[position]))
+        const auto& term = terms[position].get_data();
+        if (const auto parameter = parameter_of(term))
         {
             if (*parameter < num_rigid_variables)
                 part.first_rigid_position = std::min(part.first_rigid_position, position);
             else
                 part.has_counted = true;
         }
-        texts.push_back(term_text(atom.terms[position], num_rigid_variables, atom.predicate));
+        texts.push_back(term_text(term, num_rigid_variables, predicate));
     }
     part.text = fmt::format("{}({})", part.name, fmt::join(texts, ","));
     return part;
@@ -172,11 +174,11 @@ Part make_part(const MutableAtom<FluentTag>& atom, std::size_t num_rigid_variabl
 
 /// The parts sorted by text. MutableInvariant::canonicalize() numbers the rigid variables to give the smallest such texts,
 /// so they do not depend on how an implementation numbers them.
-std::vector<Part> make_parts(const MutableInvariant& invariant)
+std::vector<Part> make_parts(InvariantView invariant)
 {
     auto parts = std::vector<Part> {};
-    for (const auto& atom : invariant.atoms)
-        parts.push_back(make_part(atom, invariant.num_rigid_variables));
+    for (const auto atom : invariant.get_atoms())
+        parts.push_back(make_part(atom, invariant.get_num_rigid_variables()));
     std::ranges::sort(parts, {}, &Part::text);
     return parts;
 }
@@ -184,14 +186,14 @@ std::vector<Part> make_parts(const MutableInvariant& invariant)
 std::string text_of(const std::vector<Part>& parts) { return fmt::format("{{{}}}", fmt::join(parts | std::views::transform(&Part::text), ", ")); }
 
 /// The distinct invariants sorted by their text, so that the input order does not matter.
-std::vector<Info> analyze(const MutableInvariantList& invariants)
+std::vector<Info> analyze(const InvariantViewList& invariants)
 {
     auto infos = std::vector<Info> {};
-    for (const auto& invariant : invariants)
+    for (const auto invariant : invariants)
     {
-        if (std::ranges::any_of(infos, [&](const Info& info) { return *info.invariant == invariant; }))
+        if (std::ranges::any_of(infos, [&](const Info& info) { return info.invariant == invariant; }))
             continue;
-        auto info = Info { .invariant = &invariant, .num_rigid_variables = invariant.num_rigid_variables, .parts = make_parts(invariant) };
+        auto info = Info { .invariant = invariant, .num_rigid_variables = invariant.get_num_rigid_variables(), .parts = make_parts(invariant) };
         info.text = text_of(info.parts);
         infos.push_back(std::move(info));
     }
@@ -606,13 +608,12 @@ private:
     std::vector<const Info*> m_best_order;
 };
 
-/// The interned invariants in `order`; `mutables` is to_mutable(invariants), which the infos point into.
-InvariantViewList to_invariants(const std::vector<const Info*>& order, const MutableInvariantList& mutables, const InvariantViewList& invariants)
+InvariantViewList to_invariants(const std::vector<const Info*>& order)
 {
     auto result = InvariantViewList {};
     result.reserve(order.size());
     for (const auto* info : order)
-        result.push_back(invariants[static_cast<std::size_t>(info->invariant - mutables.data())]);
+        result.push_back(info->invariant);
     return result;
 }
 
@@ -628,15 +629,13 @@ std::vector<const Info*> pointers(const std::vector<Info>& infos)
 
 InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invariants, GreedyCriterion criterion)
 {
-    const auto mutables = to_mutable(invariants);
-    const auto infos = analyze(mutables);
-    return to_invariants(greedy_order(pointers(infos), criterion), mutables, invariants);
+    const auto infos = analyze(invariants);
+    return to_invariants(greedy_order(pointers(infos), criterion));
 }
 
 InvariantViewList compute_invariant_order_exhaustive(const InvariantViewList& invariants, ExhaustiveObjective objective)
 {
-    const auto mutables = to_mutable(invariants);
-    const auto infos = analyze(mutables);
+    const auto infos = analyze(invariants);
     auto order = std::vector<const Info*> {};
     for (const auto& component : split_into_components(infos))
     {
@@ -645,7 +644,7 @@ InvariantViewList compute_invariant_order_exhaustive(const InvariantViewList& in
             (search.num_assignments() > max_assignments_per_component) ? greedy_order(component.infos, fallback_criterion(objective)) : search.run();
         order.insert(order.end(), component_order.begin(), component_order.end());
     }
-    return to_invariants(order, mutables, invariants);
+    return to_invariants(order);
 }
 
 }  // namespace tyr::formalism::planning::invariant

@@ -32,9 +32,21 @@
 namespace tyr::formalism::planning::invariant
 {
 
+namespace
+{
+/// The matcher's queries take MutableAtoms, so it matches against a mutable copy of the invariant.
+MutableInvariant to_mutable(InvariantView invariant)
+{
+    auto atoms = MutableAtomList<FluentTag> {};
+    for (const auto atom : invariant.get_atoms())
+        atoms.emplace_back(atom);
+    return MutableInvariant(invariant.get_num_rigid_variables(), invariant.get_num_counted_variables(), std::move(atoms));
+}
+}
+
 InvariantMatchData::InvariantMatchData(InvariantView invariant, std::vector<unification::SubstitutionFunction<ygg::Index<Object>>> rigid_variable_bindings) :
     m_invariant(invariant),
-    m_inv(invariant),
+    m_inv(to_mutable(invariant)),
     m_rigid_variable_bindings(std::move(rigid_variable_bindings)),
     m_postings()
 {
