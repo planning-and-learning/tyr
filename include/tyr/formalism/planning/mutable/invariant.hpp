@@ -62,7 +62,9 @@ struct MutableInvariant : ygg::comparison::Mixin<MutableInvariant>
         predicates(std::move(predicates_))
     {
     }
-    MutableInvariant(InvariantView element) :
+    // A template, like MutableAtom's view constructors, so the view is instantiated where the repository is complete.
+    template<typename C>
+    MutableInvariant(ygg::View<ygg::Index<Invariant>, C> element) :
         num_rigid_variables(element.get_num_rigid_variables()),
         num_counted_variables(element.get_num_counted_variables()),
         atoms(),
