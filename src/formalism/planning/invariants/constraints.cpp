@@ -341,24 +341,30 @@ void ensure_inequality(ConstraintSystem& system, const MutableAtom<FluentTag>& l
     system.add_inequality_disjunction(InequalityDisjunction(std::move(parts)));
 }
 
-void ensure_conjunction_sat(ConstraintSystem& system, const MutableLiteralList<FluentTag>& lits)
+void append_condition_literals(ConditionLiteralList& literals, const MutableConjunctiveCondition& condition)
 {
-    ygg::Map<PredicateView<FluentTag>, MutableLiteralList<FluentTag>> pos;
-    ygg::Map<PredicateView<FluentTag>, MutableLiteralList<FluentTag>> neg;
+    for (const auto& literal : condition.static_literals)
+        literals.push_back(make_condition_literal(literal.atom, literal.polarity));
+    for (const auto& literal : condition.fluent_literals)
+        literals.push_back(make_condition_literal(literal.atom, literal.polarity));
+    for (const auto& literal : condition.derived_literals)
+        literals.push_back(make_condition_literal(literal.atom, literal.polarity));
+}
 
-    for (const auto& lit : lits)
+void ensure_conjunction_sat(ConstraintSystem& system, const ConditionLiteralList& literals)
+{
+    std::map<std::string, std::vector<const ConditionLiteral*>> pos;
+    std::map<std::string, std::vector<const ConditionLiteral*>> neg;
+
+    for (const auto& literal : literals)
     {
-        if (lit.atom.predicate.get_name() == "=")
+        if (literal.predicate == "=")
         {
             std::vector<std::pair<ConstraintTerm, ConstraintTerm>> parts;
-            parts.reserve(lit.atom.terms.size() / 2);
+            if (literal.terms.size() == 2)
+                parts.emplace_back(make_constraint_term(literal.terms[0]), make_constraint_term(literal.terms[1]));
 
-            if (lit.atom.terms.size() == 2)
-            {
-                parts.emplace_back(make_constraint_term(lit.atom.terms[0]), make_constraint_term(lit.atom.terms[1]));
-            }
-
-            if (lit.polarity)
+            if (literal.polarity)
                 system.add_equality_DNF({ EqualityConjunction(std::move(parts)) });
             else
                 system.add_inequality_disjunction(InequalityDisjunction(std::move(parts)));
@@ -366,29 +372,24 @@ void ensure_conjunction_sat(ConstraintSystem& system, const MutableLiteralList<F
             continue;
         }
 
-        if (lit.polarity)
-            pos[lit.atom.predicate].push_back(lit);
-        else
-            neg[lit.atom.predicate].push_back(lit);
+        (literal.polarity ? pos : neg)[literal.predicate].push_back(&literal);
     }
 
-    for (const auto& [pred, posatoms] : pos)
+    for (const auto& [predicate, positives] : pos)
     {
-        const auto neg_it = neg.find(pred);
+        const auto neg_it = neg.find(predicate);
         if (neg_it == neg.end())
             continue;
 
-        for (const auto& posatom : posatoms)
+        for (const auto* positive : positives)
         {
-            for (const auto& negatom : neg_it->second)
+            for (const auto* negative : neg_it->second)
             {
                 std::vector<std::pair<ConstraintTerm, ConstraintTerm>> parts;
-                parts.reserve(posatom.atom.terms.size());
+                parts.reserve(positive->terms.size());
 
-                for (size_t i = 0; i < posatom.atom.terms.size(); ++i)
-                {
-                    parts.emplace_back(make_constraint_term(negatom.atom.terms[i]), make_constraint_term(posatom.atom.terms[i]));
-                }
+                for (size_t i = 0; i < positive->terms.size(); ++i)
+                    parts.emplace_back(make_constraint_term(negative->terms[i]), make_constraint_term(positive->terms[i]));
 
                 if (!parts.empty())
                     system.add_inequality_disjunction(InequalityDisjunction(std::move(parts)));

@@ -33,6 +33,7 @@
 #include <algorithm>
 #include <map>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace tyr::formalism::planning::invariant
@@ -80,19 +81,24 @@ std::vector<EffectAtomRef> collect_relevant_effect_atoms(const MutableAction& op
     return result;
 }
 
-ygg::Map<PredicateView<FluentTag>, MutableLiteralList<FluentTag>>
+using LiteralsByPredicate = std::map<std::string, ConditionLiteralList>;
+
+/// What holds when the action applies and the add effect adds something new: the precondition, the add effect's condition
+/// and the added atom being false (Helmert 2009, Fig. 7: o'.precond ∧ e.cond ∧ ¬e.atom).
+LiteralsByPredicate
 build_add_effect_produced_by_pred(const MutableAction& op, const MutableConditionalEffect& add_effect, const MutableAtom<FluentTag>& add_atom)
 {
-    ygg::Map<PredicateView<FluentTag>, MutableLiteralList<FluentTag>> produced_by_pred;
+    auto literals = ConditionLiteralList {};
+    append_condition_literals(literals, op.condition);
+    append_condition_literals(literals, add_effect.condition);
+    literals.push_back(make_condition_literal(add_atom, false));
 
-    for (const auto& lit : op.condition.fluent_literals)
-        produced_by_pred[lit.atom.predicate].push_back(lit);
-
-    for (const auto& lit : add_effect.effect.literals)
-        produced_by_pred[lit.atom.predicate].push_back(lit);
-
-    produced_by_pred[add_atom.predicate].push_back(MutableLiteral<FluentTag>(add_atom, false));
-
+    auto produced_by_pred = LiteralsByPredicate {};
+    for (auto& literal : literals)
+    {
+        auto predicate = literal.predicate;
+        produced_by_pred[predicate].push_back(std::move(literal));
+    }
     return produced_by_pred;
 }
 
@@ -145,21 +151,24 @@ ConstraintSystem make_param_system(const MutableAction& op, const MutableConditi
     return param_system;
 }
 
+/// The delete effect balances the add effect if its condition and the deleted atom are entailed by what produced the add:
+/// every required literal equals some literal of the same sign in produced_by_pred.
 std::optional<ConstraintSystem> make_balance_system(const MutableAtom<FluentTag>& add_atom,
-                                                    const MutableConditionalEffect& del_effect,
+                                                    const MutableConjunctiveCondition& del_condition,
                                                     const MutableAtom<FluentTag>& del_atom,
-                                                    const ygg::Map<PredicateView<FluentTag>, MutableLiteralList<FluentTag>>& produced_by_pred)
+                                                    const LiteralsByPredicate& produced_by_pred)
 {
     ConstraintSystem system;
 
-    MutableLiteralList<FluentTag> del_required = del_effect.condition.fluent_literals;
-    del_required.push_back(MutableLiteral<FluentTag>(del_atom, true));
+    auto del_required = ConditionLiteralList {};
+    append_condition_literals(del_required, del_condition);
+    del_required.push_back(make_condition_literal(del_atom, true));
 
     for (const auto& lit : del_required)
     {
         std::vector<EqualityConjunction> possibilities;
 
-        const auto it = produced_by_pred.find(lit.atom.predicate);
+        const auto it = produced_by_pred.find(lit.predicate);
         if (it == produced_by_pred.end())
             return std::nullopt;
 
@@ -169,11 +178,11 @@ std::optional<ConstraintSystem> make_balance_system(const MutableAtom<FluentTag>
                 continue;
 
             std::vector<std::pair<ConstraintTerm, ConstraintTerm>> eqs;
-            eqs.reserve(lit.atom.terms.size());
+            eqs.reserve(lit.terms.size());
 
-            for (size_t i = 0; i < lit.atom.terms.size(); ++i)
+            for (size_t i = 0; i < lit.terms.size(); ++i)
             {
-                eqs.emplace_back(make_constraint_term(lit.atom.terms[i]), make_constraint_term(match.atom.terms[i]));
+                eqs.emplace_back(make_constraint_term(lit.terms[i]), make_constraint_term(match.terms[i]));
             }
 
             possibilities.emplace_back(std::move(eqs));
@@ -195,9 +204,6 @@ bool is_operator_too_heavy(const MutableAction& op, const Invariant& inv)
 {
     const auto add_effects = collect_relevant_effect_atoms(op, inv, true);
 
-    if (add_effects.size() <= 1)
-        return false;
-
     size_t max_num_effect_variables = 0;
     for (const auto& eff : op.effects)
         max_num_effect_variables = std::max(max_num_effect_variables, eff.num_variables);
@@ -207,7 +213,10 @@ bool is_operator_too_heavy(const MutableAction& op, const Invariant& inv)
 
     for (size_t i = 0; i < add_effects.size(); ++i)
     {
-        for (size_t j = i + 1; j < add_effects.size(); ++j)
+        // An effect with its own variables is also paired with a fresh copy of itself: two of its instantiations can add
+        // two atoms of one instance (Helmert 2009, Fig. 7: duplicate quantified effects).
+        const auto first_partner = (add_effects[i].effect->num_variables > 0) ? i : i + 1;
+        for (size_t j = first_partner; j < add_effects.size(); ++j)
         {
             const auto& eff1 = add_effects[i];
             const auto& eff2 = add_effects[j];
@@ -232,11 +241,12 @@ bool is_operator_too_heavy(const MutableAction& op, const Invariant& inv)
             ensure_cover(system, *lhs_pattern, lhs_atom, inv);
             ensure_cover(system, *rhs_pattern, rhs_atom, inv);
 
-            MutableLiteralList<FluentTag> conjunction = op.condition.fluent_literals;
-            conjunction.insert(conjunction.end(), lhs_cond.fluent_literals.begin(), lhs_cond.fluent_literals.end());
-            conjunction.insert(conjunction.end(), rhs_cond.fluent_literals.begin(), rhs_cond.fluent_literals.end());
-            conjunction.push_back(MutableLiteral<FluentTag>(lhs_atom, false));
-            conjunction.push_back(MutableLiteral<FluentTag>(rhs_atom, false));
+            auto conjunction = ConditionLiteralList {};
+            append_condition_literals(conjunction, op.condition);
+            append_condition_literals(conjunction, lhs_cond);
+            append_condition_literals(conjunction, rhs_cond);
+            conjunction.push_back(make_condition_literal(lhs_atom, false));
+            conjunction.push_back(make_condition_literal(rhs_atom, false));
 
             ensure_conjunction_sat(system, conjunction);
 
@@ -261,19 +271,31 @@ bool is_add_effect_unbalanced(const MutableAction& op, const MutableConditionalE
 
     const auto del_effects = collect_relevant_effect_atoms(op, inv, false);
 
+    // A delete effect's own variables are renamed past every effect's local range, also within the add's effect, and stay
+    // free in the constraint system: Fast Downward flattens effects into one per literal, each with its own variables,
+    // and a universal delete balances the add if some instantiation of it is entailed.
+    size_t max_num_effect_variables = 0;
+    for (const auto& eff : op.effects)
+        max_num_effect_variables = std::max(max_num_effect_variables, eff.num_variables);
+    const size_t fresh_base = op.num_variables + max_num_effect_variables;
+
     for (const auto& del_ref : del_effects)
     {
         const auto* del_pattern = find_part(inv, del_ref.atom->predicate);
         if (del_pattern == nullptr)
             continue;
 
-        auto balance_system = make_balance_system(add_atom, *del_ref.effect, *del_ref.atom, produced_by_pred);
+        const auto sigma = make_effect_alpha_renaming(*del_ref.effect, fresh_base);
+        const auto del_atom = unification::apply_substitution(*del_ref.atom, sigma);
+        const auto del_condition = unification::apply_substitution(del_ref.effect->condition, sigma);
+
+        auto balance_system = make_balance_system(add_atom, del_condition, del_atom, produced_by_pred);
         if (!balance_system.has_value())
             continue;
 
         ConstraintSystem system;
         system.add_equality_conjunction(add_cover);
-        ensure_cover(system, *del_pattern, *del_ref.atom, inv);
+        ensure_cover(system, *del_pattern, del_atom, inv);
         system.extend(*balance_system);
         system.extend(param_system);
 

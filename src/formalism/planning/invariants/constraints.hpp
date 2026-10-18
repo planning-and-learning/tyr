@@ -20,10 +20,12 @@
 
 #include "tyr/formalism/planning/invariants/invariant.hpp"
 #include "tyr/formalism/planning/mutable/atom.hpp"
+#include "tyr/formalism/planning/mutable/conjunctive_condition.hpp"
 #include "tyr/formalism/planning/mutable/literal.hpp"
 
 #include <map>
 #include <optional>
+#include <string>
 #include <variant>
 #include <vector>
 #include <yggdrasil/semantics/comparison.hpp>
@@ -113,8 +115,30 @@ EqualityConjunction make_cover_equality_conjunction(const MutableAtom<FluentTag>
 
 void ensure_cover(ConstraintSystem& system, const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& atom, const Invariant& inv);
 void ensure_inequality(ConstraintSystem& system, const MutableAtom<FluentTag>& lhs, const MutableAtom<FluentTag>& rhs);
-void ensure_conjunction_sat(ConstraintSystem& system, const MutableLiteralList<FluentTag>& lits);
+/// A literal of a precondition or effect condition, whatever its kind of predicate. Proofs compare literals by predicate
+/// name: static (including types and `=`), fluent and derived literals all constrain when an action applies, as in
+/// Helmert (2009, Fig. 7).
+struct ConditionLiteral
+{
+    std::string predicate;
+    std::vector<ygg::Data<Term>> terms;
+    bool polarity;
+};
 
+using ConditionLiteralList = std::vector<ConditionLiteral>;
+
+template<FactKind T>
+ConditionLiteral make_condition_literal(const MutableAtom<T>& atom, bool polarity)
+{
+    return ConditionLiteral { .predicate = std::string(atom.predicate.get_name().view()), .terms = atom.terms, .polarity = polarity };
+}
+
+/// Appends every literal of the condition.
+void append_condition_literals(ConditionLiteralList& literals, const MutableConjunctiveCondition& condition);
+
+/// Requires the conjunction to be satisfiable: `=` literals become (in)equalities, and a positive and a negative literal
+/// of the same predicate must differ in some argument.
+void ensure_conjunction_sat(ConstraintSystem& system, const ConditionLiteralList& literals);
 }
 
 #endif
