@@ -38,31 +38,37 @@ struct MutableConjunctiveCondition : ygg::comparison::Mixin<MutableConjunctiveCo
     size_t num_variables;
     MutableLiteralList<StaticTag> static_literals;
     MutableLiteralList<FluentTag> fluent_literals;
+    MutableLiteralList<DerivedTag> derived_literals;
 
     MutableConjunctiveCondition() = default;
     MutableConjunctiveCondition(size_t num_parent_variables,
                                 size_t num_variables,
                                 MutableLiteralList<StaticTag> static_literals,
-                                MutableLiteralList<FluentTag> fluent_literals) :
+                                MutableLiteralList<FluentTag> fluent_literals,
+                                MutableLiteralList<DerivedTag> derived_literals = {}) :
         num_parent_variables(num_parent_variables),
         num_variables(num_variables),
         static_literals(std::move(static_literals)),
-        fluent_literals(std::move(fluent_literals))
+        fluent_literals(std::move(fluent_literals)),
+        derived_literals(std::move(derived_literals))
     {
     }
     MutableConjunctiveCondition(size_t num_parent_variables, ConjunctiveConditionView<LiftedTag> element) :
         num_parent_variables(num_parent_variables),
         num_variables(element.get_arity()),
         static_literals(),
-        fluent_literals()
+        fluent_literals(),
+        derived_literals()
     {
         for (const auto& literal : element.get_literals<StaticTag>())
             static_literals.emplace_back(literal);
         for (const auto& literal : element.get_literals<FluentTag>())
             fluent_literals.emplace_back(literal);
+        for (const auto& literal : element.get_literals<DerivedTag>())
+            derived_literals.emplace_back(literal);
     }
 
-    auto identifying_members() const noexcept { return std::tie(num_parent_variables, num_variables, static_literals, fluent_literals); }
+    auto identifying_members() const noexcept { return std::tie(num_parent_variables, num_variables, static_literals, fluent_literals, derived_literals); }
 };
 
 using MutableConjunctiveConditionList = std::vector<MutableConjunctiveCondition>;
@@ -84,7 +90,8 @@ struct structure_traits<planning::MutableConjunctiveCondition>
         if (lhs.num_variables != rhs.num_variables)
             return false;
 
-        return unification::zip_terms(lhs.static_literals, rhs.static_literals, f) && unification::zip_terms(lhs.fluent_literals, rhs.fluent_literals, f);
+        return unification::zip_terms(lhs.static_literals, rhs.static_literals, f) && unification::zip_terms(lhs.fluent_literals, rhs.fluent_literals, f)
+               && unification::zip_terms(lhs.derived_literals, rhs.derived_literals, f);
     }
 
     template<typename F>
@@ -93,7 +100,8 @@ struct structure_traits<planning::MutableConjunctiveCondition>
         return Type(value.num_parent_variables,
                     value.num_variables,
                     unification::transform_terms(value.static_literals, f),
-                    unification::transform_terms(value.fluent_literals, f));
+                    unification::transform_terms(value.fluent_literals, f),
+                    unification::transform_terms(value.derived_literals, f));
     }
 };
 }

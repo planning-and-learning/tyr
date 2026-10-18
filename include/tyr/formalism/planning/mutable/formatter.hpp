@@ -85,6 +85,8 @@ struct formatter<tyr::formalism::planning::MutableConjunctiveCondition, char>
             fmt::print(os, "{}{}\n", "static literals = ", value.static_literals);
             os << ygg::print_indent;
             fmt::print(os, "{}{}\n", "fluent literals = ", value.fluent_literals);
+            os << ygg::print_indent;
+            fmt::print(os, "{}{}\n", "derived literals = ", value.derived_literals);
         }
         os << ygg::print_indent << ")";
         return fmt::format_to(ctx.out(), "{}", os.view());
